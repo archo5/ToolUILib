@@ -20,7 +20,6 @@ class UIElement; // physical item
 class UINode; // logical item
 class UIContainer;
 class UIEventSystem;
-class UISystem;
 
 namespace prs {
 class PropertyBlock;
@@ -33,6 +32,7 @@ struct Block;
 
 namespace ui {
 class NativeWindowBase;
+class System;
 }
 
 
@@ -132,7 +132,7 @@ public:
 	UIObject* prev = nullptr;
 	UIObject* next = nullptr;
 
-	UISystem* system = nullptr;
+	ui::System* system = nullptr;
 	style::Block* styleProps = nullptr;
 
 	// final layout rectangles: C=content, P=padding, B=border

@@ -261,10 +261,12 @@ struct DataEditor : UINode
 		nw->GetWindow()->SetTitle("Subwindow A");
 		auto renderFunc = [](UIContainer* ctx)
 		{
+			ctx->Push<UIPanel>();
 			ctx->Make<ItemButton>()->Init("Only a button", []() {});
+			ctx->Make<ItemButton>()->Init("Only another button", []() {});
+			ctx->Pop();
 		};
-		// TODO
-		//nw->SetRenderFunc(renderFunc);
+		nw->GetWindow()->SetRenderFunc(renderFunc);
 #endif
 
 		btnGoBack = nullptr;

@@ -85,7 +85,7 @@ double hqtime()
 
 struct NativeWindow_Impl
 {
-	void Init(NativeWindowBase* owner, std::function<void(UIContainer*)> renderFunc)
+	void Init(NativeWindowBase* owner)
 	{
 		_sys.nativeWindow = owner;
 
@@ -93,7 +93,6 @@ struct NativeWindow_Impl
 		_rctx = GL::CreateRenderContext(_window);
 		ShowWindow(_window, SW_SHOW /* TODO nCmdShow */);
 
-		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
 
 		RECT clientRect;
@@ -109,6 +108,17 @@ struct NativeWindow_Impl
 			InitFont();
 			InitTheme();
 		}
+	}
+	~NativeWindow_Impl()
+	{
+		GL::FreeRenderContext(_rctx);
+		DestroyWindow(_window);
+	}
+
+	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+	{
+		auto& cont = GetContainer();
+		auto& evsys = GetEventSys();
 
 		struct Builder : UINode
 		{
@@ -122,11 +132,6 @@ struct NativeWindow_Impl
 		N->renderFunc = renderFunc;
 		cont._BuildUsing(N);
 		evsys.RecomputeLayout();
-	}
-	~NativeWindow_Impl()
-	{
-		GL::FreeRenderContext(_rctx);
-		DestroyWindow(_window);
 	}
 
 	void Redraw()
@@ -172,7 +177,7 @@ struct NativeWindow_Impl
 	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
 	UIContainer& GetContainer() { return _sys.container; }
 
-	UISystem _sys;
+	ui::System _sys;
 
 	HWND _window;
 	GL::RenderContext* _rctx;
@@ -180,15 +185,27 @@ struct NativeWindow_Impl
 	Menu* _menu;
 };
 
+NativeWindowBase::NativeWindowBase()
+{
+	_impl = new NativeWindow_Impl();
+	_impl->Init(this);
+}
+
 NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> renderFunc)
 {
 	_impl = new NativeWindow_Impl();
-	_impl->Init(this, renderFunc);
+	_impl->Init(this);
+	_impl->SetRenderFunc(renderFunc);
 }
 
 NativeWindowBase::~NativeWindowBase()
 {
 	delete _impl;
+}
+
+void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+{
+	_impl->SetRenderFunc(renderFunc);
 }
 
 void NativeWindowBase::SetTitle(const char* title)

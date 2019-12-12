@@ -17,10 +17,11 @@ struct NativeWindow_Impl;
 class NativeWindowBase
 {
 public:
-	NativeWindowBase() : NativeWindowBase([](UIContainer*) {}) {}
+	NativeWindowBase();
 	NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
 	~NativeWindowBase();
 
+	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
 	void SetTitle(const char* title);
 	Menu* GetMenu();
 	void SetMenu(Menu* m);

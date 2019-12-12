@@ -134,7 +134,7 @@ public:
 	}
 	bool LastIsNew() const { return lastIsNew; }
 
-	UISystem* system = nullptr;
+	ui::System* system = nullptr;
 	UINode* rootNode = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
@@ -157,28 +157,24 @@ class UILayoutEngine
 public:
 };
 
-// TODO is this needed?
-class UISystem
+
+namespace ui {
+
+class System
 {
 public:
-	UISystem()
+	System()
 	{
 		container.system = this;
 		eventSystem.container = &container;
-	}
-
-	template<class T> T* Build()
-	{
-		auto* obj = container.AllocIfDifferent<T>(container.rootNode);
-		container._BuildUsing(obj);
-		eventSystem.RecomputeLayout();
-		return obj;
 	}
 
 	UIContainer container;
 	UIEventSystem eventSystem;
 	ui::NativeWindowBase* nativeWindow;
 };
+
+} // ui
 
 
 inline const char* objtype(UIObject* obj)
