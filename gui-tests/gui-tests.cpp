@@ -257,12 +257,14 @@ struct DataEditor : UINode
 		ctx->Pop();
 
 #if 1
-		auto* nw = ctx->Push<ui::NativeWindow>();
-		nw->SetTitle("Subwindow A");
+		auto* nw = ctx->Make<ui::NativeWindowNode>();
+		nw->GetWindow()->SetTitle("Subwindow A");
+		auto renderFunc = [](UIContainer* ctx)
 		{
 			ctx->Make<ItemButton>()->Init("Only a button", []() {});
-		}
-		ctx->Pop();
+		};
+		// TODO
+		//nw->SetRenderFunc(renderFunc);
 #endif
 
 		btnGoBack = nullptr;
@@ -470,7 +472,10 @@ int uimain(int argc, char* argv[])
 	DEFER(dumpallocinfo());
 
 	ui::Application app(argc, argv);
-	app.BuildWithWindow<DataEditor>();
+	ui::NativeWindowBase de([](UIContainer* ctx)
+	{
+		ctx->Make<DataEditor>();
+	});
 	return app.Run();
 
 	//uisys.Build<TEST>();

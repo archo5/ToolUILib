@@ -394,6 +394,11 @@ float UIObject::ResolveUnits(style::Coord coord, float ref)
 	}
 }
 
+ui::NativeWindowBase* UIObject::GetNativeWindow() const
+{
+	return system->nativeWindow;
+}
+
 
 void UINode::Rerender()
 {

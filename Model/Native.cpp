@@ -72,11 +72,7 @@ void DebugDraw(UIObject* o)
 {
 	DebugDrawSelf(o);
 	for (auto* ch = o->firstChild; ch; ch = ch->next)
-	{
-		if (typeid(*ch) == typeid(NativeWindow))
-			continue;
 		DebugDraw(ch);
-	}
 }
 
 double hqtime()
@@ -87,15 +83,178 @@ double hqtime()
 	return double(cnt.QuadPart) / double(freq.QuadPart);
 }
 
-static NativeWindow* GetNativeWindow(HWND hWnd)
+struct NativeWindow_Impl
 {
-	return reinterpret_cast<NativeWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	void Init(NativeWindowBase* owner, std::function<void(UIContainer*)> renderFunc)
+	{
+		_sys.nativeWindow = owner;
+
+		_window = CreateWindowW(L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, 200, 200, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
+		_rctx = GL::CreateRenderContext(_window);
+		ShowWindow(_window, SW_SHOW /* TODO nCmdShow */);
+
+		auto& cont = GetContainer();
+		auto& evsys = GetEventSys();
+
+		RECT clientRect;
+		GetClientRect(_window, &clientRect);
+		evsys.width = float(clientRect.right);
+		evsys.height = float(clientRect.bottom);
+
+		// TODO fix
+		static bool init = false;
+		if (!init)
+		{
+			init = true;
+			InitFont();
+			InitTheme();
+		}
+
+		struct Builder : UINode
+		{
+			std::function<void(UIContainer*)> renderFunc;
+			void Render(UIContainer* ctx) override
+			{
+				renderFunc(ctx);
+			}
+		};
+		auto* N = cont.AllocIfDifferent<Builder>(cont.rootNode);
+		N->renderFunc = renderFunc;
+		cont._BuildUsing(N);
+		evsys.RecomputeLayout();
+	}
+	~NativeWindow_Impl()
+	{
+		GL::FreeRenderContext(_rctx);
+		DestroyWindow(_window);
+	}
+
+	void Redraw()
+	{
+		double t = hqtime();
+		static double prevTime = t;
+
+		GL::SetActiveContext(_rctx);
+
+		auto& cont = GetContainer();
+		auto& evsys = GetEventSys();
+
+		evsys.ProcessTimers(float(t - prevTime));
+		prevTime = t;
+
+		cont.ProcessNodeRenderStack();
+		evsys.RecomputeLayout();
+		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
+
+		//GL::Clear(20, 40, 80, 255);
+		GL::Clear(0x25, 0x25, 0x25, 255);
+		if (cont.rootNode)
+			cont.rootNode->OnPaint();
+		GL::SetTexture(g_themeTexture);
+		//GL::BatchRenderer br;
+		//br.Begin();
+		//br.Quad(20, 120, 256+20, 256+120, 0, 0, 1, 1);
+		//br.End();
+		//DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
+		//DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
+		//DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
+		//DrawTextLine(32, 32, "Test text", 1, 1, 1);
+		if (true)
+		{
+			// debug draw
+			if (cont.rootNode)
+				DebugDraw(cont.rootNode);
+		}
+
+		GL::Present(_rctx);
+	}
+
+	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
+	UIContainer& GetContainer() { return _sys.container; }
+
+	UISystem _sys;
+
+	HWND _window;
+	GL::RenderContext* _rctx;
+
+	Menu* _menu;
+};
+
+NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> renderFunc)
+{
+	_impl = new NativeWindow_Impl();
+	_impl->Init(this, renderFunc);
+}
+
+NativeWindowBase::~NativeWindowBase()
+{
+	delete _impl;
+}
+
+void NativeWindowBase::SetTitle(const char* title)
+{
+	SetWindowTextA(_impl->_window, title);
+}
+
+Menu* NativeWindowBase::GetMenu()
+{
+	return _impl->_menu;
+}
+
+void NativeWindowBase::SetMenu(Menu* m)
+{
+	_impl->_menu = m;
+	::SetMenu(_impl->_window, m ? (HMENU)m->GetNativeHandle() : nullptr);
+}
+
+void* NativeWindowBase::GetNativeHandle() const
+{
+	return (void*)_impl->_window;
+}
+
+
+void NativeWindowNode::OnLayout(const UIRect& rect)
+{
+	finalRectC = finalRectCP = finalRectCPB = {};
+}
+
+
+static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
+{
+	return reinterpret_cast<NativeWindow_Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+}
+
+
+Application::Application(int argc, char* argv[])
+{
+}
+
+Application::~Application()
+{
+	//system.container.Free();
+}
+
+int Application::Run()
+{
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+		if (msg.hwnd)
+		{
+			if (auto* window = GetNativeWindow(msg.hwnd))
+				window->Redraw();
+		}
+		//UI_Redraw(&system);
+	}
+	return msg.wParam;
 }
 
 static UIEventSystem* GetEventSys(HWND hWnd)
 {
 	if (auto* w = GetNativeWindow(hWnd))
-		return &w->system->eventSystem;
+		return &w->GetEventSys();
 	return nullptr;
 }
 
@@ -216,7 +375,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			GL::SetViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
 			if (auto* window = GetNativeWindow(hWnd))
 			{
-				auto& evsys = window->system->eventSystem;
+				auto& evsys = window->GetEventSys();
 				evsys.width = LOWORD(lParam);
 				evsys.height = HIWORD(lParam);
 				window->Redraw();
@@ -226,157 +385,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 
 	return DefWindowProcW(hWnd, message, wParam, lParam);
-}
-
-struct NativeWindow_Impl
-{
-	void Init(NativeWindow* owner)
-	{
-		_window = CreateWindowW(L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, 200, 200, 500, 400, NULL, NULL, GetModuleHandle(nullptr), owner);
-		_rctx = GL::CreateRenderContext(_window);
-		ShowWindow(_window, SW_SHOW /* TODO nCmdShow */);
-
-		RECT clientRect;
-		GetClientRect(_window, &clientRect);
-		auto& evsys = owner->system->eventSystem;
-		evsys.width = float(clientRect.right);
-		evsys.height = float(clientRect.bottom);
-
-		// TODO fix
-		static bool init = false;
-		if (!init)
-		{
-			init = true;
-			InitFont();
-			InitTheme();
-		}
-	}
-	~NativeWindow_Impl()
-	{
-		GL::FreeRenderContext(_rctx);
-		DestroyWindow(_window);
-	}
-
-	HWND _window;
-	GL::RenderContext* _rctx;
-	Menu* _menu;
-};
-
-NativeWindow::NativeWindow()
-{
-}
-
-NativeWindow::~NativeWindow()
-{
-	delete _impl;
-}
-
-void NativeWindow::OnInit()
-{
-	_impl = new NativeWindow_Impl();
-	_impl->Init(this);
-	//if (auto* pw = FindParentOfType<NativeWindow>())
-	//	SetParent(_impl->_window, pw->_impl->_window);
-}
-
-void NativeWindow::OnPaint()
-{
-	// stop the rendering of children in a parent window
-}
-
-void NativeWindow::OnLayout(const UIRect& rect)
-{
-	RECT wr = {};
-	GetClientRect(_impl->_window, &wr);
-	// ignore parent rect
-	UIElement::OnLayout({ 0, 0, float(wr.right - wr.left), float(wr.bottom - wr.top) });
-	// clear the generated final rect
-	finalRectC = finalRectCP = finalRectCPB = {};
-}
-
-void NativeWindow::SetTitle(const char* title)
-{
-	SetWindowTextA(_impl->_window, title);
-}
-
-Menu* NativeWindow::GetMenu()
-{
-	return _impl->_menu;
-}
-
-void NativeWindow::SetMenu(Menu* m)
-{
-	_impl->_menu = m;
-	::SetMenu(_impl->_window, m ? (HMENU)m->GetNativeHandle() : nullptr);
-}
-
-void* NativeWindow::GetNativeHandle() const
-{
-	return (void*)_impl->_window;
-}
-
-void NativeWindow::Redraw()
-{
-	double t = hqtime();
-	static double prevTime = t;
-
-	GL::SetActiveContext(_impl->_rctx);
-
-	auto& evsys = system->eventSystem;
-	evsys.ProcessTimers(float(t - prevTime));
-	prevTime = t;
-
-	system->container.ProcessNodeRenderStack();
-	evsys.RecomputeLayout();
-	evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
-
-	//GL::Clear(20, 40, 80, 255);
-	GL::Clear(0x25, 0x25, 0x25, 255);
-	PaintChildren();
-	GL::SetTexture(g_themeTexture);
-	//GL::BatchRenderer br;
-	//br.Begin();
-	//br.Quad(20, 120, 256+20, 256+120, 0, 0, 1, 1);
-	//br.End();
-	//DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
-	//DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
-	//DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
-	//DrawTextLine(32, 32, "Test text", 1, 1, 1);
-	if (true)
-	{
-		// debug draw
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			DebugDraw(ch);
-	}
-
-	GL::Present(_impl->_rctx);
-}
-
-
-Application::Application(int argc, char* argv[])
-{
-}
-
-Application::~Application()
-{
-	system.container.Free();
-}
-
-int Application::Run()
-{
-	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		if (msg.hwnd)
-		{
-			if (auto* window = GetNativeWindow(msg.hwnd))
-				window->Redraw();
-		}
-		//UI_Redraw(&system);
-	}
-	return msg.wParam;
 }
 
 

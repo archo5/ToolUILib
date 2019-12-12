@@ -73,7 +73,7 @@ int Menu::Show(UIObject* owner, bool call)
 	assert(owner);
 	if (!owner)
 		return -1;
-	auto* nativeWindow = owner->FindParentOfType<NativeWindow>();
+	auto* nativeWindow = owner->GetNativeWindow();
 	assert(nativeWindow);
 	if (!nativeWindow)
 		return -1;
@@ -131,7 +131,7 @@ void MenuElement::OnDestroy()
 	if (_menu)
 	{
 		if (IsTopBar())
-			FindParentOfType<NativeWindow>()->SetMenu(nullptr);
+			GetNativeWindow()->SetMenu(nullptr);
 		delete _menu;
 		_menu = nullptr;
 	}
@@ -146,7 +146,7 @@ void MenuElement::OnCompleteStructure()
 	auto oldmenu = _menu;
 	_menu = new Menu(list, IsTopBar());
 	if (IsTopBar())
-		FindParentOfType<NativeWindow>()->SetMenu(_menu);
+		GetNativeWindow()->SetMenu(_menu);
 	delete oldmenu; // deleted at the end, in case it was top bar, to avoid momentary disappearance
 }
 

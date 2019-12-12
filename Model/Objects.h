@@ -31,6 +31,10 @@ namespace style {
 struct Block;
 }
 
+namespace ui {
+class NativeWindowBase;
+}
+
 
 using UIRect = AABB<float>;
 
@@ -116,6 +120,8 @@ public:
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
 	UIRect GetBorderRect() const { return finalRectCPB; }
+
+	ui::NativeWindowBase* GetNativeWindow() const;
 
 	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
 

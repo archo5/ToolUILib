@@ -157,6 +157,7 @@ class UILayoutEngine
 public:
 };
 
+// TODO is this needed?
 class UISystem
 {
 public:
@@ -176,6 +177,7 @@ public:
 
 	UIContainer container;
 	UIEventSystem eventSystem;
+	ui::NativeWindowBase* nativeWindow;
 };
 
 

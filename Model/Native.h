@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "Objects.h"
 #include "System.h"
 
@@ -12,16 +14,12 @@ class Menu;
 
 
 struct NativeWindow_Impl;
-class NativeWindow : public UIElement
+class NativeWindowBase
 {
 public:
-	NativeWindow();
-	~NativeWindow();
-	void OnInit() override;
-	void OnPaint() override;
-	void OnLayout(const UIRect& rect) override;
-	float GetFullEstimatedWidth(float containerWidth, float containerHeight) override { return 0; }
-	float GetFullEstimatedHeight(float containerWidth, float containerHeight) override { return 0; }
+	NativeWindowBase() : NativeWindowBase([](UIContainer*) {}) {}
+	NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
+	~NativeWindowBase();
 
 	void SetTitle(const char* title);
 	Menu* GetMenu();
@@ -29,10 +27,23 @@ public:
 
 	void* GetNativeHandle() const;
 
-	void Redraw();
+private:
+
+	NativeWindow_Impl* _impl = nullptr;
+};
+
+class NativeWindowNode : public UINode
+{
+public:
+	void Render(UIContainer* ctx) override {}
+	void OnLayout(const UIRect& rect) override;
+	float GetFullEstimatedWidth(float containerWidth, float containerHeight) override { return 0; }
+	float GetFullEstimatedHeight(float containerWidth, float containerHeight) override { return 0; }
+
+	NativeWindowBase* GetWindow() { return &_window; }
 
 private:
-	NativeWindow_Impl* _impl = nullptr;
+	NativeWindowBase _window;
 };
 
 class Application
@@ -42,6 +53,7 @@ public:
 	~Application();
 	int Run();
 
+#if 0
 	template <class T> NativeWindow* BuildWithWindow()
 	{
 		struct DefaultWindowWrapper : UINode
@@ -58,6 +70,7 @@ public:
 	}
 
 	UISystem system;
+#endif
 };
 
 
