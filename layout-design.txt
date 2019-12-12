@@ -1,0 +1,32 @@
+
+required layout structures:
+
+- edge off
+  this is when one of the rectangle sides have been allocated to other controls than the rest of it
+  can be combined to remove multiple edges (top + bottom, top + right and so on)
+  window menu is one type of this
+
+- calculator
+  buttons are aligned on a grid, and can span more than one cell
+  size generally adapts uniformly but there may be exceptions
+
+- absolute/fixed
+  for emergencies, manual layouts, menus, tooltips, dropdowns, sidebar tools etc.
+
+- table
+  tables, tree views, detail views, property lists, settings menus
+  this probably requires special model-based controls though, beyond some small amount of data
+
+- scrollables
+  can be both containers whose children exceed their size (overflow) and separate scrollbars
+
+- stretch fill
+  when all edges have been removed, the remaining area is often the workspace
+
+- 3-slice
+  for managing separable sections: A=content_1, B=separator, C=content_2
+  should support both absolute and relative positioning, but...
+  ...separator has to stay unchanged (accounting for global scale, if it exists)
+
+- docking/partitioning
+  possibly done on a higher level, but would be nice to allow customization

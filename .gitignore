@@ -1,0 +1,21 @@
+# projects
+.vs
+*.vcxproj.user
+
+# build output
+*.log
+*.pch
+*.obj
+*.ilk
+*.idb
+*.pdb
+*.exe
+*.tlog
+*.lib
+*.dll
+
+# generated data
+*.tga
+
+# data
+*.wav

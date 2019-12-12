@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Core\PropertyStore.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Events.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Objects.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\OpenGL.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Theme.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Controls.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\System.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Layout.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="UniParser\UPScript.cpp">
+      <Filter>UniParser</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Native.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Menu.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stb_truetype.h" />
+    <ClInclude Include="Core\PropertyStore.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Math.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Events.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Objects.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\OpenGL.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Theme.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Controls.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\System.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Layout.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\String.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UniParser\UPScript.h">
+      <Filter>UniParser</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h" />
+    <ClInclude Include="Model\Native.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Menu.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Memory.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="gui-theme.tga" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="gui-theme.xcf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{7dd1ae12-c649-478f-ae10-3baf92977296}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{dac8ea47-74fa-41d2-900c-887b72af4dfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Model">
+      <UniqueIdentifier>{e83e766c-1405-4304-9bc3-1bfff95fe9b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UniParser">
+      <UniqueIdentifier>{c5b8e5a1-15a6-49f6-9d17-6dc4d05e4d1d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="layout-design.txt" />
+  </ItemGroup>
+</Project>
