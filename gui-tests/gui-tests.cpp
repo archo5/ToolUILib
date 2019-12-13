@@ -262,8 +262,21 @@ struct DataEditor : UINode
 		auto renderFunc = [](UIContainer* ctx)
 		{
 			ctx->Push<UIPanel>();
+			auto onClick = []()
+			{
+				ui::NativeWindowBase dlg;
+				auto render = [](UIContainer* ctx)
+				{
+					ctx->Push<UIPanel>();
+					ctx->Make<ItemButton>()->Init("Close", []() {});
+					ctx->Pop();
+				};
+				dlg.SetRenderFunc(render);
+				dlg.SetTitle("Dialog!");
+				dlg.ProcessEventsExclusive();
+			};
 			ctx->Make<ItemButton>()->Init("Only a button", []() {});
-			ctx->Make<ItemButton>()->Init("Only another button", []() {});
+			ctx->Make<ItemButton>()->Init("Only another button (dialog)", onClick);
 			ctx->Pop();
 		};
 		nw->GetWindow()->SetRenderFunc(renderFunc);

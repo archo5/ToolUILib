@@ -22,9 +22,14 @@ public:
 	~NativeWindowBase();
 
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+	std::string GetTitle();
 	void SetTitle(const char* title);
+	bool IsVisible();
+	void SetVisible(bool v);
 	Menu* GetMenu();
 	void SetMenu(Menu* m);
+
+	void ProcessEventsExclusive();
 
 	void* GetNativeHandle() const;
 

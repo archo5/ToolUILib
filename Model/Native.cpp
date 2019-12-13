@@ -91,7 +91,8 @@ struct NativeWindow_Impl
 
 		_window = CreateWindowW(L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, 200, 200, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
 		_rctx = GL::CreateRenderContext(_window);
-		ShowWindow(_window, SW_SHOW /* TODO nCmdShow */);
+
+		UpdateVisibilityState();
 
 		auto& evsys = GetEventSys();
 
@@ -174,6 +175,11 @@ struct NativeWindow_Impl
 		GL::Present(_rctx);
 	}
 
+	void UpdateVisibilityState()
+	{
+		ShowWindow(_window, visible ? SW_SHOW : SW_HIDE);
+	}
+
 	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
 	UIContainer& GetContainer() { return _sys.container; }
 
@@ -183,7 +189,22 @@ struct NativeWindow_Impl
 	GL::RenderContext* _rctx;
 
 	Menu* _menu;
+
+	bool visible = true;
 };
+
+static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
+{
+	return reinterpret_cast<NativeWindow_Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+}
+
+static UIEventSystem* GetEventSys(HWND hWnd)
+{
+	if (auto* w = GetNativeWindow(hWnd))
+		return &w->GetEventSys();
+	return nullptr;
+}
+
 
 NativeWindowBase::NativeWindowBase()
 {
@@ -208,9 +229,28 @@ void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFun
 	_impl->SetRenderFunc(renderFunc);
 }
 
+std::string NativeWindowBase::GetTitle()
+{
+	std::string title;
+	// TODO unicode
+	title.resize(GetWindowTextLengthA(_impl->_window));
+	GetWindowTextA(_impl->_window, &title[0], title.size());
+	return title;
+}
+
 void NativeWindowBase::SetTitle(const char* title)
 {
+	// TODO unicode
 	SetWindowTextA(_impl->_window, title);
+}
+
+bool NativeWindowBase::IsVisible()
+{
+	return _impl->visible;
+}
+
+void NativeWindowBase::SetVisible(bool v)
+{
 }
 
 Menu* NativeWindowBase::GetMenu()
@@ -224,6 +264,50 @@ void NativeWindowBase::SetMenu(Menu* m)
 	::SetMenu(_impl->_window, m ? (HMENU)m->GetNativeHandle() : nullptr);
 }
 
+BOOL CALLBACK DisableAllExcept(HWND win, LPARAM except)
+{
+	if (win != (HWND)except)
+		EnableWindow(win, FALSE);
+	return TRUE;
+}
+
+BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
+{
+	if (win != (HWND)except)
+	{
+		// TODO why are there 4 thread windows when only 3 are visible?
+		// TODO fix windows moving behind other windows on EnableWindow
+		WINDOWPLACEMENT pl;
+		memset(&pl, 0, sizeof(pl));
+		pl.length = sizeof(WINDOWPLACEMENT);
+		GetWindowPlacement(win, &pl);
+		EnableWindow(win, TRUE);
+		SetWindowPlacement(win, &pl);
+	}
+	return TRUE;
+}
+
+void NativeWindowBase::ProcessEventsExclusive()
+{
+	EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM) _impl->_window);
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+		if (msg.hwnd)
+		{
+			if (auto* window = GetNativeWindow(msg.hwnd))
+				window->Redraw();
+		}
+		if (!_impl->visible)
+			break;
+	}
+
+	EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM) _impl->_window);
+}
+
 void* NativeWindowBase::GetNativeHandle() const
 {
 	return (void*)_impl->_window;
@@ -233,12 +317,6 @@ void* NativeWindowBase::GetNativeHandle() const
 void NativeWindowNode::OnLayout(const UIRect& rect)
 {
 	finalRectC = finalRectCP = finalRectCPB = {};
-}
-
-
-static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
-{
-	return reinterpret_cast<NativeWindow_Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 }
 
 
@@ -268,13 +346,6 @@ int Application::Run()
 	return msg.wParam;
 }
 
-static UIEventSystem* GetEventSys(HWND hWnd)
-{
-	if (auto* w = GetNativeWindow(hWnd))
-		return &w->GetEventSys();
-	return nullptr;
-}
-
 static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
 {
 	auto w = LOWORD(wParam);
@@ -291,14 +362,23 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_NCCREATE:
 		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
 		SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
-		break;
+		return TRUE;
+#if 1
+	case WM_CLOSE:
+		if (auto* win = GetNativeWindow(hWnd))
+		{
+			win->visible = false;
+			win->UpdateVisibilityState();
+		}
+		return TRUE;
+#endif
 	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
+		//PostQuitMessage(0);
+		return TRUE;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
-		break;
+		return TRUE;
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
 		if (auto* evsys = GetEventSys(hWnd))
@@ -379,11 +459,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				}
 			}
 		}
-		break;
+		return TRUE;
 	case WM_CHAR:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnTextInput(wParam, lParam & 0xffff);
-		break;
+		return TRUE;
 	case WM_ERASEBKGND:
 		return FALSE;
 	case WM_SIZE:
