@@ -49,6 +49,7 @@ void UIContainer::Free()
 {
 	if (rootNode)
 	{
+		_Destroy(rootNode);
 		objectStack[0] = rootNode;
 		objectStackSize = 1;
 		ProcessObjectDeleteStack();

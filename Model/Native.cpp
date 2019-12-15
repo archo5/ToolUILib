@@ -13,6 +13,10 @@
 #include "../Render/Theme.h"
 
 
+static bool g_appQuit = false;
+static int g_appExitCode = 0;
+
+
 namespace ui {
 
 
@@ -182,6 +186,7 @@ struct NativeWindow_Impl
 
 	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
 	UIContainer& GetContainer() { return _sys.container; }
+	NativeWindowBase* GetOwner() { return _sys.nativeWindow; }
 
 	ui::System _sys;
 
@@ -221,7 +226,13 @@ NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> renderFunc)
 
 NativeWindowBase::~NativeWindowBase()
 {
+	_impl->GetContainer().Free();
 	delete _impl;
+}
+
+void NativeWindowBase::OnClose()
+{
+	SetVisible(false);
 }
 
 void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
@@ -251,6 +262,8 @@ bool NativeWindowBase::IsVisible()
 
 void NativeWindowBase::SetVisible(bool v)
 {
+	_impl->visible = v;
+	ShowWindow(_impl->_window, v ? SW_SHOW : SW_HIDE);
 }
 
 Menu* NativeWindowBase::GetMenu()
@@ -292,7 +305,7 @@ void NativeWindowBase::ProcessEventsExclusive()
 	EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM) _impl->_window);
 
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (!g_appQuit && _impl->visible && GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -301,8 +314,6 @@ void NativeWindowBase::ProcessEventsExclusive()
 			if (auto* window = GetNativeWindow(msg.hwnd))
 				window->Redraw();
 		}
-		if (!_impl->visible)
-			break;
 	}
 
 	EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM) _impl->_window);
@@ -311,6 +322,12 @@ void NativeWindowBase::ProcessEventsExclusive()
 void* NativeWindowBase::GetNativeHandle() const
 {
 	return (void*)_impl->_window;
+}
+
+
+void NativeMainWindow::OnClose()
+{
+	Application::Quit();
 }
 
 
@@ -329,10 +346,16 @@ Application::~Application()
 	//system.container.Free();
 }
 
+void Application::Quit(int code)
+{
+	g_appQuit = true;
+	g_appExitCode = code;
+}
+
 int Application::Run()
 {
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (!g_appQuit && GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -343,7 +366,7 @@ int Application::Run()
 		}
 		//UI_Redraw(&system);
 	}
-	return msg.wParam;
+	return g_appExitCode;
 }
 
 static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
@@ -363,18 +386,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
 		SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 		return TRUE;
-#if 1
 	case WM_CLOSE:
 		if (auto* win = GetNativeWindow(hWnd))
 		{
-			win->visible = false;
-			win->UpdateVisibilityState();
+			win->GetOwner()->OnClose();
+			return TRUE;
 		}
-		return TRUE;
-#endif
-	case WM_DESTROY:
-		//PostQuitMessage(0);
-		return TRUE;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
@@ -504,10 +521,48 @@ void InitializeWin32()
 }
 
 
+
+
+size_t numAllocs = 0, numNew = 0, numDelete = 0;
+void* operator new(size_t s)
+{
+	numAllocs++;
+	numNew++;
+	return malloc(s);
+}
+void* operator new[](size_t s)
+{
+	numAllocs++;
+	numNew++;
+	return malloc(s);
+}
+void operator delete(void* p)
+{
+	numAllocs--;
+	numDelete++;
+	free(p);
+}
+void operator delete[](void* p)
+{
+	numAllocs--;
+	numDelete++;
+	free(p);
+}
+
+void dumpallocinfo()
+{
+	printf("- allocs:%u new:%u delete:%u\n", (unsigned)numAllocs, (unsigned)numNew, (unsigned)numDelete);
+}
+
+
+
 int uimain(int argc, char* argv[]);
 
 int RealMain()
 {
+#define DEFER(f) struct _defer_##__LINE__ { ~_defer_##__LINE__() { f; } } _defer_inst_##__LINE__
+	DEFER(dumpallocinfo());
+
 	int argc = 0;
 	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	std::vector<std::string> args;

@@ -21,6 +21,7 @@ public:
 	NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
 	~NativeWindowBase();
 
+	virtual void OnClose();
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
 	std::string GetTitle();
 	void SetTitle(const char* title);
@@ -36,6 +37,18 @@ public:
 private:
 
 	NativeWindow_Impl* _impl = nullptr;
+};
+
+class NativeMainWindow : public NativeWindowBase
+{
+public:
+	void OnClose() override;
+};
+
+class NativeDialogWindow : public NativeWindowBase
+{
+public:
+	void Show() { ProcessEventsExclusive(); }
 };
 
 class NativeWindowNode : public UINode
@@ -57,6 +70,10 @@ class Application
 public:
 	Application(int argc, char* argv[]);
 	~Application();
+
+	static Application* GetInstance() { return _instance; }
+	static void Quit(int code = 0);
+
 	int Run();
 
 #if 0
@@ -77,6 +94,9 @@ public:
 
 	UISystem system;
 #endif
+
+private:
+	static Application* _instance;
 };
 
 

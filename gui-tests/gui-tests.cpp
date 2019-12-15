@@ -264,7 +264,7 @@ struct DataEditor : UINode
 			ctx->Push<UIPanel>();
 			auto onClick = []()
 			{
-				ui::NativeWindowBase dlg;
+				ui::NativeDialogWindow dlg;
 				auto render = [](UIContainer* ctx)
 				{
 					ctx->Push<UIPanel>();
@@ -273,7 +273,7 @@ struct DataEditor : UINode
 				};
 				dlg.SetRenderFunc(render);
 				dlg.SetTitle("Dialog!");
-				dlg.ProcessEventsExclusive();
+				dlg.Show();
 			};
 			ctx->Make<ItemButton>()->Init("Only a button", []() {});
 			ctx->Make<ItemButton>()->Init("Only another button (dialog)", onClick);
@@ -437,32 +437,6 @@ struct TEST : UINode
 
 
 
-
-
-
-
-
-size_t numAllocs = 0, numNew = 0, numDelete = 0;
-void* operator new(size_t s)
-{
-	numAllocs++;
-	numNew++;
-	return malloc(s);
-}
-void operator delete(void* p)
-{
-	numAllocs--;
-	numDelete++;
-	free(p);
-}
-
-void dumpallocinfo()
-{
-	printf("- allocs:%u new:%u delete:%u\n", (unsigned)numAllocs, (unsigned)numNew, (unsigned)numDelete);
-}
-
-
-
 struct CSSBuildCallback : style::IErrorCallback
 {
 	void OnError(const char* msg, int line, int pos) override
@@ -479,18 +453,23 @@ void EarlyTest()
 	puts("done");
 }
 
+struct MainWindow : ui::NativeMainWindow
+{
+	MainWindow()
+	{
+		SetRenderFunc([](UIContainer* ctx)
+		{
+			ctx->Make<DataEditor>();
+		});
+	}
+};
+
 int uimain(int argc, char* argv[])
 {
 	EarlyTest();
 
-#define DEFER(f) struct _defer_##__LINE__ { ~_defer_##__LINE__() { f; } } _defer_inst_##__LINE__
-	DEFER(dumpallocinfo());
-
 	ui::Application app(argc, argv);
-	ui::NativeWindowBase de([](UIContainer* ctx)
-	{
-		ctx->Make<DataEditor>();
-	});
+	MainWindow mw;
 	return app.Run();
 
 	//uisys.Build<TEST>();

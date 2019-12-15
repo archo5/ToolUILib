@@ -81,6 +81,7 @@ void FreeRenderContext(RenderContext* RC)
 	wglMakeCurrent(nullptr, nullptr);
 	wglDeleteContext(RC->rc);
 	// ReleaseDC(RC->dc); - TODO?
+	delete RC;
 }
 
 void SetActiveContext(RenderContext* RC)
