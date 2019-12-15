@@ -28,11 +28,36 @@ void _Check(const char* code, const char* file, int line)
 class RenderContext
 {
 public:
+	void AddToList()
+	{
+		if (!first)
+			first = this;
+		prev = last;
+		next = nullptr;
+		last = this;
+	}
+	~RenderContext()
+	{
+		if (prev)
+			prev->next = next;
+		if (next)
+			next->prev = prev;
+		if (first == this)
+			first = first->next;
+		if (last == this)
+			last = last->prev;
+	}
+
 	HDC dc;
 	HGLRC rc;
-};
 
-HGLRC prevRC;
+	static RenderContext* first;
+	static RenderContext* last;
+	RenderContext* prev = nullptr;
+	RenderContext* next = nullptr;
+};
+RenderContext* RenderContext::first;
+RenderContext* RenderContext::last;
 
 RenderContext* CreateRenderContext(HWND window)
 {
@@ -64,15 +89,15 @@ RenderContext* CreateRenderContext(HWND window)
 
 	RC->rc = wglCreateContext(RC->dc);
 	wglMakeCurrent(RC->dc, RC->rc);
-	if (prevRC)
-		wglShareLists(prevRC, RC->rc);
-	prevRC = RC->rc; // TODO fix
+	if (RenderContext::first)
+		wglShareLists(RenderContext::first->rc, RC->rc);
 
 	GLCHK(glDisable(GL_CULL_FACE));
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	RC->AddToList();
 	return RC;
 }
 

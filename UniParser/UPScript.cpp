@@ -150,7 +150,7 @@ struct Context
 			for (size_t i = 0; i < (op.arg1 + 15) / 16; i++)
 			{
 				fprintf(stdout, "  %08X ", unsigned(i << 4));
-				size_t end = std::min((i + 1) * 16, op.arg1);
+				size_t end = std::min(uint32_t(i + 1) * 16, op.arg1);
 				for (size_t j = i * 16; j < end; j++)
 					fprintf(stdout, " %02X", stack[F.stackBase + op.arg0 + j]);
 				if (op.arg1 > 16)
@@ -252,7 +252,7 @@ Script* Load(StringView text)
 		}
 		size_t size = VarTypeToSize(type);
 		curfn->stackSize = AlignUp(curfn->stackSize, size);
-		size_t off = curfn->stackSize;
+		uint32_t off = curfn->stackSize;
 		curfn->stackSize += size;
 		Var v = { name, type, off };
 		stackVars.push_back(v);
@@ -349,7 +349,7 @@ Script* Load(StringView text)
 			if (cmd == "dump") // dump the text and value of expression according to its type
 			{
 				line.take_while(IsSpace);
-				curfn->ops.push_back({ OP_DUMP_CODE_PREFIX, uint32_t(line.data() - S->text.data()), line.size() });
+				curfn->ops.push_back({ OP_DUMP_CODE_PREFIX, uint32_t(line.data() - S->text.data()), uint32_t(line.size()) });
 				auto v = FindVariable(line.take_while(IsIdent));
 				switch (v.type)
 				{
@@ -361,9 +361,9 @@ Script* Load(StringView text)
 			if (cmd == "dumpb")
 			{
 				line.take_while(IsSpace);
-				curfn->ops.push_back({ OP_DUMP_CODE_PREFIX, uint32_t(line.data() - S->text.data()), line.size() });
+				curfn->ops.push_back({ OP_DUMP_CODE_PREFIX, uint32_t(line.data() - S->text.data()), uint32_t(line.size()) });
 				auto v = FindVariable(line.take_while(IsIdent));
-				curfn->ops.push_back({ OP_DUMP_BYTES, v.off, VarTypeToSize(v.type) });
+				curfn->ops.push_back({ OP_DUMP_BYTES, v.off, uint32_t(VarTypeToSize(v.type)) });
 				continue;
 			}
 		}

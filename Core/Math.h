@@ -4,6 +4,12 @@
 #include <algorithm>
 
 
+template <class T> struct Point
+{
+	T x, y;
+};
+
+
 template<class T> struct AABB
 {
 	T x0, y0, x1, y1;
@@ -11,6 +17,7 @@ template<class T> struct AABB
 	T GetWidth() const { return x1 - x0; }
 	T GetHeight() const { return y1 - y0; }
 	bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
+	bool Contains(Point<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }
 	AABB ExtendBy(const AABB& ext) const { return { x0 - ext.x0, y0 - ext.y0, x1 + ext.x1, y1 + ext.y1 }; }
 };
 

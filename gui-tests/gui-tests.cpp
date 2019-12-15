@@ -96,6 +96,30 @@ struct DataEditor : UINode
 		float value2;
 	};
 
+	struct BasicButton : UINode
+	{
+		void Render(UIContainer* ctx) override
+		{
+			ctx->Push<UIButton>();
+			ctx->Text(name);
+			ctx->Pop();
+		}
+		void Init(const char* txt, const std::function<void()> cb)
+		{
+			name = txt;
+			callback = cb;
+		}
+		void OnEvent(UIEvent& e) override
+		{
+			if (e.type == UIEventType::Activate)
+			{
+				callback();
+			}
+		}
+		std::function<void()> callback;
+		const char* name;
+	};
+
 	struct ItemButton : UINode
 	{
 		ItemButton()
@@ -265,10 +289,19 @@ struct DataEditor : UINode
 			auto onClick = []()
 			{
 				ui::NativeDialogWindow dlg;
-				auto render = [](UIContainer* ctx)
+				auto render = [&dlg](UIContainer* ctx)
 				{
+					auto s = ctx->Push<UIPanel>()->GetStyle();
+					s.SetLayout(style::Layout::Stack);
+					s.SetStackingDirection(style::StackingDirection::RightToLeft);
+					ctx->Make<BasicButton>()->Init("X", [&dlg]() { dlg.OnClose(); });
+					ctx->Make<BasicButton>()->Init("[]", [&dlg]() {
+						dlg.SetState(dlg.GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); });
+					ctx->Make<BasicButton>()->Init("_", [&dlg]() { dlg.SetState(ui::WindowState::Minimized); });
+					ctx->Pop();
+
 					ctx->Push<UIPanel>();
-					ctx->Make<ItemButton>()->Init("Close", []() {});
+					ctx->Make<ItemButton>()->Init("Test", [&dlg]() { dlg.OnClose(); });
 					ctx->Pop();
 				};
 				dlg.SetRenderFunc(render);

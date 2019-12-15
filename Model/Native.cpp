@@ -13,11 +13,50 @@
 #include "../Render/Theme.h"
 
 
+#define WINDOW_CLASS_NAME L"UIWindow"
+
+
+enum MoveSizeStateType
+{
+	MSST_None,
+	MSST_Unknown,
+	MSST_Move,
+	MSST_Resize,
+};
+
+
 static bool g_appQuit = false;
 static int g_appExitCode = 0;
 
 
+bool IsOwnWindow(HWND win)
+{
+	WCHAR classname[sizeof(WINDOW_CLASS_NAME)];
+	UINT len = RealGetWindowClassW(win, classname, sizeof(WINDOW_CLASS_NAME));
+	return 0 == wcsncmp(classname, WINDOW_CLASS_NAME, sizeof(WINDOW_CLASS_NAME));
+}
+
+BOOL CALLBACK DisableAllExcept(HWND win, LPARAM except)
+{
+	// may contain IME windows so filter by class
+	if (win != (HWND)except && IsOwnWindow(win))
+		EnableWindow(win, FALSE);
+	return TRUE;
+}
+
+BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
+{
+	// may contain IME windows so filter by class
+	if (win != (HWND)except && IsOwnWindow(win))
+		EnableWindow(win, TRUE);
+	return TRUE;
+}
+
+
 namespace ui {
+
+
+static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
 void DebugDrawSelf(UIObject* o)
@@ -93,7 +132,7 @@ struct NativeWindow_Impl
 	{
 		_sys.nativeWindow = owner;
 
-		_window = CreateWindowW(L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, 200, 200, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
+		_window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
 		_rctx = GL::CreateRenderContext(_window);
 
 		UpdateVisibilityState();
@@ -181,7 +220,26 @@ struct NativeWindow_Impl
 
 	void UpdateVisibilityState()
 	{
+		if (!visible)
+			ExitExclusiveMode();
 		ShowWindow(_window, visible ? SW_SHOW : SW_HIDE);
+	}
+
+	void EnterExclusiveMode()
+	{
+		if (exclusiveMode)
+			return;
+		assert(visible);
+		EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM)_window);
+		exclusiveMode = true;
+	}
+
+	void ExitExclusiveMode()
+	{
+		if (!exclusiveMode)
+			return;
+		EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM)_window);
+		exclusiveMode = false;
 	}
 
 	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
@@ -196,6 +254,8 @@ struct NativeWindow_Impl
 	Menu* _menu;
 
 	bool visible = true;
+	bool exclusiveMode = false;
+	uint8_t sysMoveSizeState = MSST_None;
 };
 
 static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
@@ -263,7 +323,7 @@ bool NativeWindowBase::IsVisible()
 void NativeWindowBase::SetVisible(bool v)
 {
 	_impl->visible = v;
-	ShowWindow(_impl->_window, v ? SW_SHOW : SW_HIDE);
+	_impl->UpdateVisibilityState();
 }
 
 Menu* NativeWindowBase::GetMenu()
@@ -277,38 +337,27 @@ void NativeWindowBase::SetMenu(Menu* m)
 	::SetMenu(_impl->_window, m ? (HMENU)m->GetNativeHandle() : nullptr);
 }
 
-BOOL CALLBACK DisableAllExcept(HWND win, LPARAM except)
+Point<int> NativeWindowBase::GetPosition()
 {
-	if (win != (HWND)except)
-		EnableWindow(win, FALSE);
-	return TRUE;
+	RECT r = {};
+	GetWindowRect(_impl->_window, &r);
+	return { r.left, r.top };
 }
 
-BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
+void NativeWindowBase::SetPosition(int x, int y)
 {
-	if (win != (HWND)except)
-	{
-		// TODO why are there 4 thread windows when only 3 are visible?
-		// TODO fix windows moving behind other windows on EnableWindow
-		WINDOWPLACEMENT pl;
-		memset(&pl, 0, sizeof(pl));
-		pl.length = sizeof(WINDOWPLACEMENT);
-		GetWindowPlacement(win, &pl);
-		EnableWindow(win, TRUE);
-		SetWindowPlacement(win, &pl);
-	}
-	return TRUE;
+	SetWindowPos(_impl->_window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
 void NativeWindowBase::ProcessEventsExclusive()
 {
-	EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM) _impl->_window);
+	_impl->EnterExclusiveMode();
 
 	MSG msg;
 	while (!g_appQuit && _impl->visible && GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		DispatchMessageW(&msg);
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
@@ -316,12 +365,72 @@ void NativeWindowBase::ProcessEventsExclusive()
 		}
 	}
 
-	EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM) _impl->_window);
+	_impl->ExitExclusiveMode();
+}
+
+Point<int> NativeWindowBase::GetSize()
+{
+	RECT r = {};
+	GetWindowRect(_impl->_window, &r);
+	return { r.right - r.left, r.bottom - r.top };
+}
+
+void NativeWindowBase::SetSize(int x, int y)
+{
+	SetWindowPos(_impl->_window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
+
+WindowState NativeWindowBase::GetState()
+{
+	if (IsIconic(_impl->_window))
+		return WindowState::Minimized;
+	if (IsZoomed(_impl->_window))
+		return WindowState::Maximized;
+	return WindowState::Normal;
+}
+
+static int StateToShowCmd(WindowState ws)
+{
+	switch (ws)
+	{
+	case WindowState::Minimized: return SW_MINIMIZE;
+	case WindowState::Maximized: return SW_MAXIMIZE;
+	default: return SW_RESTORE;
+	}
+}
+
+void NativeWindowBase::SetState(WindowState ws)
+{
+	ShowWindow(_impl->_window, StateToShowCmd(ws));
+}
+
+NativeWindowGeometry NativeWindowBase::GetGeometry()
+{
+	WINDOWPLACEMENT wpl = {};
+	wpl.length = sizeof(wpl);
+	GetWindowPlacement(_impl->_window, &wpl);
+	auto rnp = wpl.rcNormalPosition;
+	return { { rnp.left, rnp.top }, { rnp.right - rnp.left, rnp.bottom - rnp.top }, wpl.showCmd | (wpl.flags << 4) };
+}
+
+void NativeWindowBase::SetGeometry(const NativeWindowGeometry& geom)
+{
+	WINDOWPLACEMENT wpl = {};
+	wpl.length = sizeof(wpl);
+	wpl.rcNormalPosition = { geom.position.x, geom.position.y, geom.position.x + geom.size.x, geom.position.y + geom.size.y };
+	wpl.showCmd = geom.state & 0xf;
+	wpl.flags = geom.state >> 4;
+	SetWindowPlacement(_impl->_window, &wpl);
 }
 
 void* NativeWindowBase::GetNativeHandle() const
 {
 	return (void*)_impl->_window;
+}
+
+bool NativeWindowBase::IsDragged() const
+{
+	return _impl->sysMoveSizeState == MSST_Move;
 }
 
 
@@ -358,7 +467,7 @@ int Application::Run()
 	while (!g_appQuit && GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		DispatchMessageW(&msg);
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
@@ -383,15 +492,16 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	switch (message)
 	{
 	case WM_NCCREATE:
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
+		SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCTW*)lParam)->lpCreateParams);
 		SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
-		return TRUE;
+		break;
 	case WM_CLOSE:
 		if (auto* win = GetNativeWindow(hWnd))
 		{
 			win->GetOwner()->OnClose();
 			return TRUE;
 		}
+		break;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
@@ -496,6 +606,19 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+	case WM_ENTERSIZEMOVE:
+		if (auto* window = GetNativeWindow(hWnd))
+			window->sysMoveSizeState = MSST_Unknown;
+		break;
+	case WM_EXITSIZEMOVE:
+		if (auto* window = GetNativeWindow(hWnd))
+			window->sysMoveSizeState = MSST_None;
+		break;
+	case WM_MOVING:
+		if (auto* window = GetNativeWindow(hWnd))
+			if (window->sysMoveSizeState == MSST_Unknown)
+				window->sysMoveSizeState = MSST_Move;
+		break;
 	}
 
 	return DefWindowProcW(hWnd, message, wParam, lParam);
@@ -516,7 +639,7 @@ void InitializeWin32()
 	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = nullptr;// GetSysColorBrush(COLOR_3DFACE);
-	wc.lpszClassName = L"UIWindow";
+	wc.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClassExW(&wc);
 }
 

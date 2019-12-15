@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include "../Core/Math.h"
 #include "Objects.h"
 #include "System.h"
 
@@ -11,6 +12,21 @@ namespace ui {
 
 
 class Menu;
+
+
+enum class WindowState : uint8_t
+{
+	Normal,
+	Minimized,
+	Maximized,
+};
+
+struct NativeWindowGeometry
+{
+	Point<int> position;
+	Point<int> size;
+	uint32_t state;
+};
 
 
 struct NativeWindow_Impl;
@@ -23,16 +39,34 @@ public:
 
 	virtual void OnClose();
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+
 	std::string GetTitle();
 	void SetTitle(const char* title);
+
 	bool IsVisible();
 	void SetVisible(bool v);
+
 	Menu* GetMenu();
 	void SetMenu(Menu* m);
+
+	Point<int> GetPosition();
+	void SetPosition(int x, int y);
+	void SetPosition(Point<int> p) { SetPosition(p.x, p.y); }
+
+	Point<int> GetSize();
+	void SetSize(int x, int y);
+	void SetSize(Point<int> p) { SetSize(p.x, p.y); }
+
+	WindowState GetState();
+	void SetState(WindowState ws);
+
+	NativeWindowGeometry GetGeometry();
+	void SetGeometry(const NativeWindowGeometry& geom);
 
 	void ProcessEventsExclusive();
 
 	void* GetNativeHandle() const;
+	bool IsDragged() const;
 
 private:
 
