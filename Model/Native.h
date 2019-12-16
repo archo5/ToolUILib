@@ -63,6 +63,9 @@ public:
 	NativeWindowGeometry GetGeometry();
 	void SetGeometry(const NativeWindowGeometry& geom);
 
+	bool IsInnerUIEnabled();
+	void SetInnerUIEnabled(bool enabled);
+
 	void ProcessEventsExclusive();
 
 	void* GetNativeHandle() const;

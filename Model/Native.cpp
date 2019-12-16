@@ -126,23 +126,60 @@ double hqtime()
 	return double(cnt.QuadPart) / double(freq.QuadPart);
 }
 
+struct ProxyEventSystem
+{
+	struct Target
+	{
+		UIEventSystem* target;
+		UIRect window;
+	};
+
+	void OnMouseMove(UIMouseCoord x, UIMouseCoord y)
+	{
+		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0);
+	}
+	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
+	{
+		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0);
+	}
+	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
+	{
+		mainTarget.target->OnKeyInput(down, vk, pk, numRepeats);
+	}
+	void OnKeyAction(UIKeyAction act, uint16_t numRepeats)
+	{
+		mainTarget.target->OnKeyAction(act, numRepeats);
+	}
+	void OnTextInput(uint32_t ch, uint16_t numRepeats)
+	{
+		mainTarget.target->OnTextInput(ch, numRepeats);
+	}
+
+	Target mainTarget;
+};
+
 struct NativeWindow_Impl
 {
 	void Init(NativeWindowBase* owner)
 	{
-		_sys.nativeWindow = owner;
+		system.nativeWindow = owner;
 
-		_window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
-		_rctx = GL::CreateRenderContext(_window);
+		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
+		renderCtx = GL::CreateRenderContext(window);
 
 		UpdateVisibilityState();
 
+		RECT clientRect;
+		GetClientRect(window, &clientRect);
+
 		auto& evsys = GetEventSys();
 
-		RECT clientRect;
-		GetClientRect(_window, &clientRect);
 		evsys.width = float(clientRect.right);
 		evsys.height = float(clientRect.bottom);
+
+		auto& pes = GetProxyEventSys();
+
+		pes.mainTarget = { &evsys, { 0, 0, evsys.width, evsys.height } };
 
 		// TODO fix
 		static bool init = false;
@@ -152,11 +189,13 @@ struct NativeWindow_Impl
 			InitFont();
 			InitTheme();
 		}
+
+		prevTime = hqtime();
 	}
 	~NativeWindow_Impl()
 	{
-		GL::FreeRenderContext(_rctx);
-		DestroyWindow(_window);
+		GL::FreeRenderContext(renderCtx);
+		DestroyWindow(window);
 	}
 
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
@@ -180,10 +219,12 @@ struct NativeWindow_Impl
 
 	void Redraw()
 	{
-		double t = hqtime();
-		static double prevTime = t;
+		if (!innerUIEnabled)
+			return;
 
-		GL::SetActiveContext(_rctx);
+		double t = hqtime();
+
+		GL::SetActiveContext(renderCtx);
 
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
@@ -199,7 +240,7 @@ struct NativeWindow_Impl
 		GL::Clear(0x25, 0x25, 0x25, 255);
 		if (cont.rootNode)
 			cont.rootNode->OnPaint();
-		GL::SetTexture(g_themeTexture);
+		//GL::SetTexture(g_themeTexture);
 		//GL::BatchRenderer br;
 		//br.Begin();
 		//br.Quad(20, 120, 256+20, 256+120, 0, 0, 1, 1);
@@ -215,14 +256,14 @@ struct NativeWindow_Impl
 				DebugDraw(cont.rootNode);
 		}
 
-		GL::Present(_rctx);
+		GL::Present(renderCtx);
 	}
 
 	void UpdateVisibilityState()
 	{
 		if (!visible)
 			ExitExclusiveMode();
-		ShowWindow(_window, visible ? SW_SHOW : SW_HIDE);
+		ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
 	}
 
 	void EnterExclusiveMode()
@@ -230,7 +271,7 @@ struct NativeWindow_Impl
 		if (exclusiveMode)
 			return;
 		assert(visible);
-		EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM)_window);
+		EnumThreadWindows(GetCurrentThreadId(), DisableAllExcept, (LPARAM)window);
 		exclusiveMode = true;
 	}
 
@@ -238,23 +279,27 @@ struct NativeWindow_Impl
 	{
 		if (!exclusiveMode)
 			return;
-		EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM)_window);
+		EnumThreadWindows(GetCurrentThreadId(), EnableAllExcept, (LPARAM)window);
 		exclusiveMode = false;
 	}
 
-	UIEventSystem& GetEventSys() { return _sys.eventSystem; }
-	UIContainer& GetContainer() { return _sys.container; }
-	NativeWindowBase* GetOwner() { return _sys.nativeWindow; }
+	UIEventSystem& GetEventSys() { return system.eventSystem; }
+	ProxyEventSystem& GetProxyEventSys() { return proxyEventSystem; }
+	UIContainer& GetContainer() { return system.container; }
+	NativeWindowBase* GetOwner() { return system.nativeWindow; }
 
-	ui::System _sys;
+	ui::System system;
+	ProxyEventSystem proxyEventSystem;
 
-	HWND _window;
-	GL::RenderContext* _rctx;
+	HWND window;
+	GL::RenderContext* renderCtx;
 
-	Menu* _menu;
+	Menu* menu;
 
+	double prevTime;
 	bool visible = true;
 	bool exclusiveMode = false;
+	bool innerUIEnabled = true;
 	uint8_t sysMoveSizeState = MSST_None;
 };
 
@@ -263,10 +308,10 @@ static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
 	return reinterpret_cast<NativeWindow_Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 }
 
-static UIEventSystem* GetEventSys(HWND hWnd)
+static ProxyEventSystem* GetEventSys(HWND hWnd)
 {
 	if (auto* w = GetNativeWindow(hWnd))
-		return &w->GetEventSys();
+		return &w->GetProxyEventSys();
 	return nullptr;
 }
 
@@ -304,15 +349,15 @@ std::string NativeWindowBase::GetTitle()
 {
 	std::string title;
 	// TODO unicode
-	title.resize(GetWindowTextLengthA(_impl->_window));
-	GetWindowTextA(_impl->_window, &title[0], title.size());
+	title.resize(GetWindowTextLengthA(_impl->window));
+	GetWindowTextA(_impl->window, &title[0], title.size());
 	return title;
 }
 
 void NativeWindowBase::SetTitle(const char* title)
 {
 	// TODO unicode
-	SetWindowTextA(_impl->_window, title);
+	SetWindowTextA(_impl->window, title);
 }
 
 bool NativeWindowBase::IsVisible()
@@ -328,25 +373,25 @@ void NativeWindowBase::SetVisible(bool v)
 
 Menu* NativeWindowBase::GetMenu()
 {
-	return _impl->_menu;
+	return _impl->menu;
 }
 
 void NativeWindowBase::SetMenu(Menu* m)
 {
-	_impl->_menu = m;
-	::SetMenu(_impl->_window, m ? (HMENU)m->GetNativeHandle() : nullptr);
+	_impl->menu = m;
+	::SetMenu(_impl->window, m ? (HMENU)m->GetNativeHandle() : nullptr);
 }
 
 Point<int> NativeWindowBase::GetPosition()
 {
 	RECT r = {};
-	GetWindowRect(_impl->_window, &r);
+	GetWindowRect(_impl->window, &r);
 	return { r.left, r.top };
 }
 
 void NativeWindowBase::SetPosition(int x, int y)
 {
-	SetWindowPos(_impl->_window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	SetWindowPos(_impl->window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
 void NativeWindowBase::ProcessEventsExclusive()
@@ -371,20 +416,20 @@ void NativeWindowBase::ProcessEventsExclusive()
 Point<int> NativeWindowBase::GetSize()
 {
 	RECT r = {};
-	GetWindowRect(_impl->_window, &r);
+	GetWindowRect(_impl->window, &r);
 	return { r.right - r.left, r.bottom - r.top };
 }
 
 void NativeWindowBase::SetSize(int x, int y)
 {
-	SetWindowPos(_impl->_window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	SetWindowPos(_impl->window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
 WindowState NativeWindowBase::GetState()
 {
-	if (IsIconic(_impl->_window))
+	if (IsIconic(_impl->window))
 		return WindowState::Minimized;
-	if (IsZoomed(_impl->_window))
+	if (IsZoomed(_impl->window))
 		return WindowState::Maximized;
 	return WindowState::Normal;
 }
@@ -401,14 +446,14 @@ static int StateToShowCmd(WindowState ws)
 
 void NativeWindowBase::SetState(WindowState ws)
 {
-	ShowWindow(_impl->_window, StateToShowCmd(ws));
+	ShowWindow(_impl->window, StateToShowCmd(ws));
 }
 
 NativeWindowGeometry NativeWindowBase::GetGeometry()
 {
 	WINDOWPLACEMENT wpl = {};
 	wpl.length = sizeof(wpl);
-	GetWindowPlacement(_impl->_window, &wpl);
+	GetWindowPlacement(_impl->window, &wpl);
 	auto rnp = wpl.rcNormalPosition;
 	return { { rnp.left, rnp.top }, { rnp.right - rnp.left, rnp.bottom - rnp.top }, wpl.showCmd | (wpl.flags << 4) };
 }
@@ -420,12 +465,22 @@ void NativeWindowBase::SetGeometry(const NativeWindowGeometry& geom)
 	wpl.rcNormalPosition = { geom.position.x, geom.position.y, geom.position.x + geom.size.x, geom.position.y + geom.size.y };
 	wpl.showCmd = geom.state & 0xf;
 	wpl.flags = geom.state >> 4;
-	SetWindowPlacement(_impl->_window, &wpl);
+	SetWindowPlacement(_impl->window, &wpl);
+}
+
+bool NativeWindowBase::IsInnerUIEnabled()
+{
+	return _impl->innerUIEnabled;
+}
+
+void NativeWindowBase::SetInnerUIEnabled(bool enabled)
+{
+	_impl->innerUIEnabled = enabled;
 }
 
 void* NativeWindowBase::GetNativeHandle() const
 {
-	return (void*)_impl->_window;
+	return (void*)_impl->window;
 }
 
 bool NativeWindowBase::IsDragged() const
@@ -592,7 +647,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			evsys->OnTextInput(wParam, lParam & 0xffff);
 		return TRUE;
 	case WM_ERASEBKGND:
-		return FALSE;
+		break;// return FALSE;
 	case WM_SIZE:
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
@@ -638,7 +693,7 @@ void InitializeWin32()
 	wc.lpfnWndProc = ui::WindowProc;
 	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = nullptr;// GetSysColorBrush(COLOR_3DFACE);
+	wc.hbrBackground = GetStockBrush(BLACK_BRUSH);
 	wc.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClassExW(&wc);
 }
