@@ -3,6 +3,10 @@
 #include <vector>
 
 
+namespace ui {
+class NativeWindowBase;
+} // ui
+
 class UIObject;
 class UINode;
 class UIElement;
@@ -122,6 +126,8 @@ public:
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats);
 	void OnKeyAction(UIKeyAction act, uint16_t numRepeats);
 	void OnTextInput(uint32_t ch, uint16_t numRepeats);
+
+	ui::NativeWindowBase* GetNativeWindow() const;
 
 	UIContainer* container;
 

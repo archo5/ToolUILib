@@ -280,7 +280,7 @@ struct DataEditor : UINode
 		}
 		ctx->Pop();
 
-#if 1
+#if 0
 		auto* nw = ctx->Make<ui::NativeWindowNode>();
 		nw->GetWindow()->SetTitle("Subwindow A");
 		auto renderFunc = [](UIContainer* ctx)
@@ -312,7 +312,31 @@ struct DataEditor : UINode
 			ctx->Make<ItemButton>()->Init("Only another button (dialog)", onClick);
 			ctx->Pop();
 		};
+		ctx->GetNativeWindow()->SetInnerUIEnabled(false);
+		nw->GetWindow()->SetParent(ctx->GetNativeWindow());
 		nw->GetWindow()->SetRenderFunc(renderFunc);
+#endif
+
+#if 1
+		auto* frm = ctx->Make<ui::InlineFrameNode>();
+		auto frf = [](UIContainer* ctx)
+		{
+			ctx->Push<UIPanel>();
+			ctx->Make<BasicButton>()->Init("In-frame button", []() {});
+			static int cur = 1;
+			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 1)->SetButtonStyle();
+			ctx->Text("One");
+			ctx->Pop();
+			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 2)->SetButtonStyle();
+			ctx->Text("Two");
+			ctx->Pop();
+			ctx->Pop();
+		};
+		frm->CreateFrameContents(frf);
+		auto frs = frm->GetStyle();
+		frs.SetPadding(4);
+		frs.SetMinWidth(100);
+		frs.SetMinHeight(100);
 #endif
 
 		btnGoBack = nullptr;

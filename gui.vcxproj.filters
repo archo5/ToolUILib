@@ -13,9 +13,6 @@
     <ClCompile Include="Render\OpenGL.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="Render\Theme.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="Model\Controls.cpp">
       <Filter>Model</Filter>
     </ClCompile>
@@ -34,6 +31,15 @@
     <ClCompile Include="Model\Menu.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Docking.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Theme.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Render.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -50,9 +56,6 @@
       <Filter>Model</Filter>
     </ClInclude>
     <ClInclude Include="Render\OpenGL.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\Theme.h">
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="Model\Controls.h">
@@ -80,12 +83,15 @@
     <ClInclude Include="Core\Memory.h">
       <Filter>Core</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="gui-theme.tga" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="gui-theme.xcf" />
+    <ClInclude Include="Model\Docking.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Theme.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Render.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

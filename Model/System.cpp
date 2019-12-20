@@ -151,3 +151,88 @@ void UIContainer::_Pop()
 	}
 	objectStackSize--;
 }
+
+ui::NativeWindowBase* UIContainer::GetNativeWindow() const
+{
+	return owner->nativeWindow;
+}
+
+
+namespace ui {
+
+void InlineFrameNode::OnDestroy()
+{
+	if (ownsContents && frameContents)
+	{
+		delete frameContents;
+		frameContents = nullptr;
+		ownsContents = false;
+	}
+}
+
+void InlineFrameNode::Render(UIContainer* ctx)
+{
+}
+
+void InlineFrameNode::OnEvent(UIEvent& ev)
+{
+	if (frameContents)
+	{
+		// pass events
+		if (ev.type == UIEventType::ButtonDown || ev.type == UIEventType::ButtonUp)
+			frameContents->eventSystem.OnMouseButton(ev.type == UIEventType::ButtonDown, ev.GetButton(), ev.x, ev.y);
+		if (ev.type == UIEventType::MouseMove)
+			frameContents->eventSystem.OnMouseMove(ev.x, ev.y);
+	}
+}
+
+void InlineFrameNode::OnPaint()
+{
+	if (frameContents &&
+		frameContents->container.rootNode)
+		frameContents->container.rootNode->OnPaint();
+}
+
+float InlineFrameNode::CalcEstimatedWidth(float containerWidth, float containerHeight)
+{
+	return 100; // default width
+}
+
+float InlineFrameNode::CalcEstimatedHeight(float containerWidth, float containerHeight)
+{
+	return 100; // default height
+}
+
+void InlineFrameNode::OnLayout(const UIRect& rect)
+{
+	UINode::OnLayout(rect);
+	if (frameContents &&
+		frameContents->container.rootNode)
+		frameContents->container.rootNode->OnLayout(finalRectC);
+}
+
+void InlineFrameNode::SetFrameContents(FrameContents* contents)
+{
+	if (ownsContents && frameContents)
+		delete frameContents;
+	frameContents = contents;
+	ownsContents = false;
+}
+
+void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc)
+{
+	if (ownsContents && frameContents)
+		delete frameContents;
+	frameContents = new FrameContents();
+	ownsContents = true;
+
+	auto& cont = frameContents->container;
+	auto& evsys = frameContents->eventSystem;
+
+	auto* N = cont.AllocIfDifferent<ui::RenderNode>(cont.rootNode);
+	N->renderFunc = renderFunc;
+	cont._BuildUsing(N);
+	evsys.RecomputeLayout();
+}
+
+} // ui

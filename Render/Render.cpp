@@ -5,7 +5,7 @@
 #include "../stb_truetype.h"
 
 #include "OpenGL.h"
-#include "Theme.h"
+#include "Render.h"
 
 
 unsigned char ttf_buffer[1 << 20];

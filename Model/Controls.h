@@ -39,19 +39,42 @@ struct UICheckbox : UIElement
 	bool checked = false;
 };
 
-struct UIRadioButton : UIElement
+namespace ui {
+
+class RadioButtonBase : public UIElement
 {
-	UIRadioButton();
+public:
+	RadioButtonBase();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
-	UIRadioButton* SetValue(bool v)
+	virtual void OnSelect() = 0;
+	virtual bool IsSelected() = 0;
+
+	void SetButtonStyle();
+
+	bool buttonStyle = false;
+};
+
+template <class T>
+class RadioButtonT : public RadioButtonBase
+{
+public:
+	RadioButtonT* Init(T& iref, T value)
 	{
-		checked = v;
+		_iptr = &iref;
+		_value = value;
 		return this;
 	}
-	bool checked = false;
+
+	void OnSelect() override { if (_iptr) *_iptr = _value; }
+	bool IsSelected() override { return _iptr && *_iptr == _value; }
+
+	T* _iptr = nullptr;
+	T _value = {};
 };
+
+} // ui
 
 struct UITextbox : UIElement
 {

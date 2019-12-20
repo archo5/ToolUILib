@@ -10,7 +10,7 @@
 #include "Menu.h"
 
 #include "../Render/OpenGL.h"
-#include "../Render/Theme.h"
+#include "../Render/Render.h"
 
 
 #define WINDOW_CLASS_NAME L"UIWindow"
@@ -136,22 +136,32 @@ struct ProxyEventSystem
 
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
 		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0);
 	}
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
 	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
 		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0);
 	}
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
 	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
 		mainTarget.target->OnKeyInput(down, vk, pk, numRepeats);
 	}
 	void OnKeyAction(UIKeyAction act, uint16_t numRepeats)
 	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
 		mainTarget.target->OnKeyAction(act, numRepeats);
 	}
 	void OnTextInput(uint32_t ch, uint16_t numRepeats)
 	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
 		mainTarget.target->OnTextInput(ch, numRepeats);
 	}
 
@@ -203,15 +213,7 @@ struct NativeWindow_Impl
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
 
-		struct Builder : UINode
-		{
-			std::function<void(UIContainer*)> renderFunc;
-			void Render(UIContainer* ctx) override
-			{
-				renderFunc(ctx);
-			}
-		};
-		auto* N = cont.AllocIfDifferent<Builder>(cont.rootNode);
+		auto* N = cont.AllocIfDifferent<ui::RenderNode>(cont.rootNode);
 		N->renderFunc = renderFunc;
 		cont._BuildUsing(N);
 		evsys.RecomputeLayout();
@@ -253,7 +255,7 @@ struct NativeWindow_Impl
 		{
 			// debug draw
 			if (cont.rootNode)
-				DebugDraw(cont.rootNode);
+				;// DebugDraw(cont.rootNode);
 		}
 
 		GL::Present(renderCtx);
@@ -288,7 +290,7 @@ struct NativeWindow_Impl
 	UIContainer& GetContainer() { return system.container; }
 	NativeWindowBase* GetOwner() { return system.nativeWindow; }
 
-	ui::System system;
+	ui::FrameContents system;
 	ProxyEventSystem proxyEventSystem;
 
 	HWND window;
@@ -466,6 +468,22 @@ void NativeWindowBase::SetGeometry(const NativeWindowGeometry& geom)
 	wpl.showCmd = geom.state & 0xf;
 	wpl.flags = geom.state >> 4;
 	SetWindowPlacement(_impl->window, &wpl);
+}
+
+NativeWindowBase* NativeWindowBase::GetParent() const
+{
+	auto pw = ::GetParent(_impl->window);
+	if (pw)
+	{
+		if (auto* pwh = GetNativeWindow(pw))
+			return pwh->GetOwner();
+	}
+	return nullptr;
+}
+
+void NativeWindowBase::SetParent(NativeWindowBase* parent)
+{
+	::SetParent(_impl->window, parent ? parent->_impl->window : nullptr);
 }
 
 bool NativeWindowBase::IsInnerUIEnabled()

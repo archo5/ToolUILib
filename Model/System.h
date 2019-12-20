@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "Objects.h"
 
 
@@ -55,7 +57,7 @@ public:
 			return static_cast<T*>(obj);
 		}
 		auto* p = new T();
-		p->system = system;
+		p->system = owner;
 		return p;
 	}
 	void AddToRenderStack(UINode* n)
@@ -134,7 +136,9 @@ public:
 	}
 	bool LastIsNew() const { return lastIsNew; }
 
-	ui::System* system = nullptr;
+	ui::NativeWindowBase* GetNativeWindow() const;
+
+	ui::FrameContents* owner = nullptr;
 	UINode* rootNode = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
@@ -160,18 +164,50 @@ public:
 
 namespace ui {
 
-class System
+class RenderNode : public UINode
 {
 public:
-	System()
+	void Render(UIContainer* ctx) override
 	{
-		container.system = this;
+		renderFunc(ctx);
+	}
+
+	std::function<void(UIContainer*)> renderFunc;
+};
+
+class FrameContents
+{
+public:
+	FrameContents()
+	{
+		container.owner = this;
 		eventSystem.container = &container;
 	}
 
 	UIContainer container;
 	UIEventSystem eventSystem;
 	ui::NativeWindowBase* nativeWindow;
+};
+
+class InlineFrameNode : public UINode
+{
+public:
+
+	void OnDestroy() override;
+	void OnEvent(UIEvent& ev) override;
+	void OnPaint() override;
+	float CalcEstimatedWidth(float containerWidth, float containerHeight) override;
+	float CalcEstimatedHeight(float containerWidth, float containerHeight) override;
+	void OnLayout(const UIRect& rect) override;
+	void Render(UIContainer* ctx) override;
+
+	void SetFrameContents(FrameContents* contents);
+	void CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc);
+
+private:
+
+	FrameContents* frameContents = nullptr;
+	bool ownsContents = false;
 };
 
 } // ui

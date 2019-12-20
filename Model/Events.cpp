@@ -321,3 +321,8 @@ void UIEventSystem::OnTextInput(uint32_t ch, uint16_t numRepeats)
 		BubblingEvent(ev);
 	}
 }
+
+ui::NativeWindowBase* UIEventSystem::GetNativeWindow() const
+{
+	return container->GetNativeWindow();
+}

@@ -8,7 +8,7 @@
 
 #include "../Core/Math.h"
 
-#include "../Render/Theme.h"
+#include "../Render/Render.h"
 
 #include "Events.h"
 #include "Layout.h"
@@ -32,11 +32,9 @@ struct Block;
 
 namespace ui {
 class NativeWindowBase;
-class System;
+class FrameContents;
 }
 
-
-using UIRect = AABB<float>;
 
 enum UIObjectFlags
 {
@@ -132,7 +130,7 @@ public:
 	UIObject* prev = nullptr;
 	UIObject* next = nullptr;
 
-	ui::System* system = nullptr;
+	ui::FrameContents* system = nullptr;
 	style::Block* styleProps = nullptr;
 
 	// final layout rectangles: C=content, P=padding, B=border

@@ -115,14 +115,16 @@
   <ItemGroup>
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
+    <ClCompile Include="Model\Docking.cpp" />
     <ClCompile Include="Model\Events.cpp" />
     <ClCompile Include="Model\Layout.cpp" />
     <ClCompile Include="Model\Menu.cpp" />
     <ClCompile Include="Model\Native.cpp" />
     <ClCompile Include="Model\Objects.cpp" />
     <ClCompile Include="Model\System.cpp" />
+    <ClCompile Include="Model\Theme.cpp" />
     <ClCompile Include="Render\OpenGL.cpp" />
-    <ClCompile Include="Render\Theme.cpp" />
+    <ClCompile Include="Render\Render.cpp" />
     <ClCompile Include="UniParser\UPScript.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -132,22 +134,18 @@
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Controls.h" />
+    <ClInclude Include="Model\Docking.h" />
     <ClInclude Include="Model\Events.h" />
     <ClInclude Include="Model\Layout.h" />
     <ClInclude Include="Model\Menu.h" />
     <ClInclude Include="Model\Native.h" />
     <ClInclude Include="Model\Objects.h" />
     <ClInclude Include="Model\System.h" />
+    <ClInclude Include="Model\Theme.h" />
     <ClInclude Include="Render\OpenGL.h" />
-    <ClInclude Include="Render\Theme.h" />
+    <ClInclude Include="Render\Render.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="UniParser\UPScript.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="gui-theme.tga" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="gui-theme.xcf" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="layout-design.txt" />

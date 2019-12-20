@@ -1,10 +1,14 @@
 
 #pragma once
 #include <vector>
+#include <functional>
+#include "../Core/Math.h"
 #include "../Core/String.h"
 
 
 class UIObject;
+
+using UIRect = AABB<float>;
 
 
 namespace style {
@@ -208,6 +212,26 @@ struct Coord
 	static Coord Percent(float p) { return Coord(p, CoordTypeUnit::Percent); }
 };
 
+enum PaintInfoItemState
+{
+	PS_Hover = 1 << 0,
+	PS_Down = 1 << 1,
+	PS_Disabled = 1 << 2,
+};
+
+struct PaintInfo
+{
+	UIRect rect;
+	UIObject* obj;
+	uint32_t state;
+
+	bool IsHovered() const { return (state & PS_Hover) != 0; }
+	bool IsDown() const { return (state & PS_Down) != 0; }
+	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
+};
+
+using PaintFunction = std::function<void(const PaintInfo&)>;
+
 struct IErrorCallback
 {
 	virtual void OnError(const char* message, int line, int ch) = 0;
@@ -227,6 +251,7 @@ struct Block
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;
 	BoxSizing box_sizing = BoxSizing::ContentBox;
+	PaintFunction paint_func;
 
 	Coord width;
 	Coord height;
@@ -302,7 +327,12 @@ public:
 
 class Accessor
 {
+	Block* GetOrCreate();
+
 public:
+
+	Accessor(Block* b);
+	Accessor(UIObject* o);
 
 #if 0
 	Display GetDisplay() const;
@@ -393,6 +423,7 @@ public:
 	void SetPadding(Coord t, Coord r, Coord b, Coord l);
 
 
+	style::Block* block;
 	UIObject* obj;
 };
 

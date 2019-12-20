@@ -107,7 +107,9 @@ void UICheckbox::OnLayout(const UIRect& rect)
 #endif
 
 
-UIRadioButton::UIRadioButton()
+namespace ui {
+
+RadioButtonBase::RadioButtonBase()
 {
 	GetStyle().SetLayout(style::Layout::InlineBlock);
 	//GetStyle().SetWidth(style::Coord::Percent(12));
@@ -116,20 +118,30 @@ UIRadioButton::UIRadioButton()
 	GetStyle().SetHeight(GetFontHeight() + 5 + 5);
 }
 
-void UIRadioButton::OnPaint()
+void RadioButtonBase::OnPaint()
 {
 	auto r = GetPaddingRect();
-	float w = std::min(r.GetWidth(), r.GetHeight());
-	DrawThemeElement(
-		IsInputDisabled() ? TE_RadioBgrDisabled :
-		IsClicked(0) ? TE_RadioBgrPressed :
-		IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-	if (checked)
-		DrawThemeElement(IsInputDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
+	if (buttonStyle)
+	{
+		DrawThemeElement(
+			IsInputDisabled() ? TE_ButtonDisabled :
+			IsClicked(0) || IsSelected() ? TE_ButtonPressed :
+			IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+	}
+	else
+	{
+		float w = std::min(r.GetWidth(), r.GetHeight());
+		DrawThemeElement(
+			IsInputDisabled() ? TE_RadioBgrDisabled :
+			IsClicked(0) ? TE_RadioBgrPressed :
+			IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
+		if (IsSelected())
+			DrawThemeElement(IsInputDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
+	}
 	UIElement::OnPaint();
 }
 
-void UIRadioButton::OnEvent(UIEvent& e)
+void RadioButtonBase::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
 	{
@@ -142,8 +154,21 @@ void UIRadioButton::OnEvent(UIEvent& e)
 			e.handled = true;
 			return;
 		}
+		OnSelect();
 	}
 }
+
+void RadioButtonBase::SetButtonStyle()
+{
+	GetStyle().SetLayout(style::Layout::InlineBlock);
+	GetStyle().SetBoxSizing(style::BoxSizing::BorderBox);
+	GetStyle().SetPadding(5);
+	GetStyle().SetWidth(style::Coord::Undefined());
+	GetStyle().SetHeight(style::Coord::Undefined());
+	buttonStyle = true;
+}
+
+} // ui
 
 
 UITextbox::UITextbox()

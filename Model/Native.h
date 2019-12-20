@@ -63,6 +63,9 @@ public:
 	NativeWindowGeometry GetGeometry();
 	void SetGeometry(const NativeWindowGeometry& geom);
 
+	NativeWindowBase* GetParent() const;
+	void SetParent(NativeWindowBase* parent);
+
 	bool IsInnerUIEnabled();
 	void SetInnerUIEnabled(bool enabled);
 

@@ -406,13 +406,22 @@ void Sheet::_Preprocess(StringView text, IErrorCallback* err)
 }
 
 
-static void CreateBlock(UIObject* obj)
+style::Block* Accessor::GetOrCreate()
 {
-	if (obj->styleProps)
-		return;
-	obj->styleProps = new Block;
+	if (block)
+		return block;
+	if (!obj->styleProps)
+		block = obj->styleProps = new Block;
+	return block = obj->styleProps;
 }
 
+Accessor::Accessor(Block* b) : block(b), obj(nullptr)
+{
+}
+
+Accessor::Accessor(UIObject* o) : block(o->styleProps), obj(o)
+{
+}
 
 #if 0
 Display Accessor::GetDisplay() const
@@ -445,8 +454,7 @@ Layout Accessor::GetLayout() const
 
 void Accessor::SetLayout(Layout v)
 {
-	CreateBlock(obj);
-	obj->styleProps->layout = v;
+	GetOrCreate()->layout = v;
 }
 
 StackingDirection Accessor::GetStackingDirection() const
@@ -456,8 +464,7 @@ StackingDirection Accessor::GetStackingDirection() const
 
 void Accessor::SetStackingDirection(StackingDirection v)
 {
-	CreateBlock(obj);
-	obj->styleProps->stacking_direction = v;
+	GetOrCreate()->stacking_direction = v;
 }
 
 Edge Accessor::GetEdge() const
@@ -467,8 +474,7 @@ Edge Accessor::GetEdge() const
 
 void Accessor::SetEdge(Edge v)
 {
-	CreateBlock(obj);
-	obj->styleProps->edge = v;
+	GetOrCreate()->edge = v;
 }
 
 BoxSizing Accessor::GetBoxSizing() const
@@ -478,8 +484,7 @@ BoxSizing Accessor::GetBoxSizing() const
 
 void Accessor::SetBoxSizing(BoxSizing v)
 {
-	CreateBlock(obj);
-	obj->styleProps->box_sizing = v;
+	GetOrCreate()->box_sizing = v;
 }
 
 Coord Accessor::GetWidth() const
@@ -489,8 +494,7 @@ Coord Accessor::GetWidth() const
 
 void Accessor::SetWidth(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->width = v;
+	GetOrCreate()->width = v;
 }
 
 Coord Accessor::GetHeight() const
@@ -500,8 +504,7 @@ Coord Accessor::GetHeight() const
 
 void Accessor::SetHeight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->height = v;
+	GetOrCreate()->height = v;
 }
 
 Coord Accessor::GetMinWidth() const
@@ -511,8 +514,7 @@ Coord Accessor::GetMinWidth() const
 
 void Accessor::SetMinWidth(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->min_width = v;
+	GetOrCreate()->min_width = v;
 }
 
 Coord Accessor::GetMinHeight() const
@@ -522,8 +524,7 @@ Coord Accessor::GetMinHeight() const
 
 void Accessor::SetMinHeight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->min_height = v;
+	GetOrCreate()->min_height = v;
 }
 
 Coord Accessor::GetMaxWidth() const
@@ -533,8 +534,7 @@ Coord Accessor::GetMaxWidth() const
 
 void Accessor::SetMaxWidth(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->max_width = v;
+	GetOrCreate()->max_width = v;
 }
 
 Coord Accessor::GetMaxHeight() const
@@ -544,8 +544,7 @@ Coord Accessor::GetMaxHeight() const
 
 void Accessor::SetMaxHeight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->max_height = v;
+	GetOrCreate()->max_height = v;
 }
 
 Coord Accessor::GetLeft() const
@@ -555,8 +554,7 @@ Coord Accessor::GetLeft() const
 
 void Accessor::SetLeft(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->left = v;
+	GetOrCreate()->left = v;
 }
 
 Coord Accessor::GetRight() const
@@ -566,8 +564,7 @@ Coord Accessor::GetRight() const
 
 void Accessor::SetRight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->right = v;
+	GetOrCreate()->right = v;
 }
 
 Coord Accessor::GetTop() const
@@ -577,8 +574,7 @@ Coord Accessor::GetTop() const
 
 void Accessor::SetTop(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->top = v;
+	GetOrCreate()->top = v;
 }
 
 Coord Accessor::GetBottom() const
@@ -588,8 +584,7 @@ Coord Accessor::GetBottom() const
 
 void Accessor::SetBottom(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->bottom = v;
+	GetOrCreate()->bottom = v;
 }
 
 Coord Accessor::GetMarginLeft() const
@@ -599,8 +594,7 @@ Coord Accessor::GetMarginLeft() const
 
 void Accessor::SetMarginLeft(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->margin_left = v;
+	GetOrCreate()->margin_left = v;
 }
 
 Coord Accessor::GetMarginRight() const
@@ -610,8 +604,7 @@ Coord Accessor::GetMarginRight() const
 
 void Accessor::SetMarginRight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->margin_right = v;
+	GetOrCreate()->margin_right = v;
 }
 
 Coord Accessor::GetMarginTop() const
@@ -621,8 +614,7 @@ Coord Accessor::GetMarginTop() const
 
 void Accessor::SetMarginTop(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->margin_top = v;
+	GetOrCreate()->margin_top = v;
 }
 
 Coord Accessor::GetMarginBottom() const
@@ -632,17 +624,16 @@ Coord Accessor::GetMarginBottom() const
 
 void Accessor::SetMarginBottom(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->margin_bottom = v;
+	GetOrCreate()->margin_bottom = v;
 }
 
 void Accessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 {
-	CreateBlock(obj);
-	obj->styleProps->margin_top = t;
-	obj->styleProps->margin_right = r;
-	obj->styleProps->margin_bottom = b;
-	obj->styleProps->margin_left = l;
+	GetOrCreate();
+	block->margin_top = t;
+	block->margin_right = r;
+	block->margin_bottom = b;
+	block->margin_left = l;
 }
 
 Coord Accessor::GetPaddingLeft() const
@@ -652,8 +643,7 @@ Coord Accessor::GetPaddingLeft() const
 
 void Accessor::SetPaddingLeft(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->padding_left = v;
+	GetOrCreate()->padding_left = v;
 }
 
 Coord Accessor::GetPaddingRight() const
@@ -663,8 +653,7 @@ Coord Accessor::GetPaddingRight() const
 
 void Accessor::SetPaddingRight(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->padding_right = v;
+	GetOrCreate()->padding_right = v;
 }
 
 Coord Accessor::GetPaddingTop() const
@@ -674,8 +663,7 @@ Coord Accessor::GetPaddingTop() const
 
 void Accessor::SetPaddingTop(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->padding_top = v;
+	GetOrCreate()->padding_top = v;
 }
 
 Coord Accessor::GetPaddingBottom() const
@@ -685,17 +673,16 @@ Coord Accessor::GetPaddingBottom() const
 
 void Accessor::SetPaddingBottom(Coord v)
 {
-	CreateBlock(obj);
-	obj->styleProps->padding_bottom = v;
+	GetOrCreate()->padding_bottom = v;
 }
 
 void Accessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
 {
-	CreateBlock(obj);
-	obj->styleProps->padding_top = t;
-	obj->styleProps->padding_right = r;
-	obj->styleProps->padding_bottom = b;
-	obj->styleProps->padding_left = l;
+	GetOrCreate();
+	block->padding_top = t;
+	block->padding_right = r;
+	block->padding_bottom = b;
+	block->padding_left = l;
 }
 
 
