@@ -164,6 +164,7 @@ void InlineFrameNode::OnDestroy()
 {
 	if (ownsContents && frameContents)
 	{
+		frameContents->container.Free();
 		delete frameContents;
 		frameContents = nullptr;
 		ownsContents = false;
@@ -214,7 +215,10 @@ void InlineFrameNode::OnLayout(const UIRect& rect)
 void InlineFrameNode::SetFrameContents(FrameContents* contents)
 {
 	if (ownsContents && frameContents)
+	{
+		frameContents->container.Free();
 		delete frameContents;
+	}
 	frameContents = contents;
 	ownsContents = false;
 }
@@ -222,7 +226,10 @@ void InlineFrameNode::SetFrameContents(FrameContents* contents)
 void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc)
 {
 	if (ownsContents && frameContents)
+	{
+		frameContents->container.Free();
 		delete frameContents;
+	}
 	frameContents = new FrameContents();
 	ownsContents = true;
 

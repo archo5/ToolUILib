@@ -2,146 +2,47 @@
 #include "Controls.h"
 #include "Layout.h"
 #include "System.h"
-
-
-UIPanel::UIPanel()
-{
-	GetStyle().SetBoxSizing(style::BoxSizing::BorderBox);
-	GetStyle().SetMargin(2);
-	GetStyle().SetPadding(6);
-}
-
-void UIPanel::OnPaint()
-{
-	auto r = GetPaddingRect();
-	DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-	UIElement::OnPaint();
-}
-
-
-UIButton::UIButton()
-{
-	GetStyle().SetLayout(style::Layout::InlineBlock);
-	GetStyle().SetBoxSizing(style::BoxSizing::BorderBox);
-	GetStyle().SetPadding(5);
-}
-
-void UIButton::OnPaint()
-{
-	auto r = GetPaddingRect();
-	DrawThemeElement(
-		IsInputDisabled() ? TE_ButtonDisabled :
-		IsClicked() ? TE_ButtonPressed : 
-		IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-	UIElement::OnPaint();
-}
-
-void UIButton::OnEvent(UIEvent& e)
-{
-	if (e.type == UIEventType::ButtonDown)
-	{
-		system->eventSystem.SetKeyboardFocus(this);
-	}
-	if (e.type == UIEventType::Activate)
-	{
-		if (IsInputDisabled())
-			e.handled = true;
-	}
-}
-
-
-UICheckbox::UICheckbox()
-{
-	GetStyle().SetLayout(style::Layout::InlineBlock);
-	//GetStyle().SetWidth(style::Coord::Percent(12));
-	//GetStyle().SetHeight(style::Coord::Percent(12));
-	GetStyle().SetWidth(GetFontHeight() + 5 + 5);
-	GetStyle().SetHeight(GetFontHeight() + 5 + 5);
-}
-
-void UICheckbox::OnPaint()
-{
-	auto r = GetPaddingRect();
-	float w = std::min(r.GetWidth(), r.GetHeight());
-	DrawThemeElement(
-		IsInputDisabled() ? TE_CheckBgrDisabled :
-		IsClicked(0) ? TE_CheckBgrPressed :
-		IsHovered() ? TE_CheckBgrHover : TE_CheckBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-	if (checked)
-		DrawThemeElement(IsInputDisabled() ? TE_CheckMarkDisabled : TE_CheckMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-	UIElement::OnPaint();
-}
-
-void UICheckbox::OnEvent(UIEvent& e)
-{
-	if (e.type == UIEventType::ButtonDown)
-	{
-		system->eventSystem.SetKeyboardFocus(this);
-	}
-	if (e.type == UIEventType::Activate)
-	{
-		if (IsInputDisabled())
-		{
-			e.handled = true;
-			return;
-		}
-		checked = !checked;
-		e.context->OnChange(this);
-	}
-}
-
-#if 0
-void UICheckbox::OnLayout(const UIRect& rect)
-{
-	finalRect = rect;
-
-	auto width = GetStyle().GetWidth();
-	if (width.IsDefined())
-		finalRect.x1 = finalRect.x0 + ResolveUnits(width, rect.x1 - rect.x0);
-
-	finalRect.y1 = finalRect.y0 + 24;
-	auto height = GetStyle().GetHeight();
-	if (height.IsDefined())
-		finalRect.y1 = finalRect.y0 + ResolveUnits(height, rect.x1 - rect.x0);
-}
-#endif
+#include "Theme.h"
 
 
 namespace ui {
 
-RadioButtonBase::RadioButtonBase()
+Panel::Panel()
 {
-	GetStyle().SetLayout(style::Layout::InlineBlock);
-	//GetStyle().SetWidth(style::Coord::Percent(12));
-	//GetStyle().SetHeight(style::Coord::Percent(12));
-	GetStyle().SetWidth(GetFontHeight() + 5 + 5);
-	GetStyle().SetHeight(GetFontHeight() + 5 + 5);
+	styleProps = ui::Theme::current->panel;
 }
 
-void RadioButtonBase::OnPaint()
+
+Button::Button()
 {
-	auto r = GetPaddingRect();
-	if (buttonStyle)
-	{
-		DrawThemeElement(
-			IsInputDisabled() ? TE_ButtonDisabled :
-			IsClicked(0) || IsSelected() ? TE_ButtonPressed :
-			IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-	}
-	else
-	{
-		float w = std::min(r.GetWidth(), r.GetHeight());
-		DrawThemeElement(
-			IsInputDisabled() ? TE_RadioBgrDisabled :
-			IsClicked(0) ? TE_RadioBgrPressed :
-			IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		if (IsSelected())
-			DrawThemeElement(IsInputDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-	}
-	UIElement::OnPaint();
+	styleProps = ui::Theme::current->button;
 }
 
-void RadioButtonBase::OnEvent(UIEvent& e)
+void Button::OnEvent(UIEvent& e)
+{
+	if (e.type == UIEventType::ButtonDown)
+	{
+		system->eventSystem.SetKeyboardFocus(this);
+	}
+	if (e.type == UIEventType::Activate)
+	{
+		if (IsInputDisabled())
+			e.handled = true;
+	}
+}
+
+
+void CheckableBase::OnPaint()
+{
+	style::PaintInfo info(this);
+	if (IsSelected())
+		info.state |= style::PS_Checked;
+	styleProps->paint_func(info);
+
+	PaintChildren();
+}
+
+void CheckableBase::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
 	{
@@ -155,17 +56,20 @@ void RadioButtonBase::OnEvent(UIEvent& e)
 			return;
 		}
 		OnSelect();
+		e.context->OnChange(this);
 	}
 }
 
-void RadioButtonBase::SetButtonStyle()
+
+CheckboxBase::CheckboxBase()
 {
-	GetStyle().SetLayout(style::Layout::InlineBlock);
-	GetStyle().SetBoxSizing(style::BoxSizing::BorderBox);
-	GetStyle().SetPadding(5);
-	GetStyle().SetWidth(style::Coord::Undefined());
-	GetStyle().SetHeight(style::Coord::Undefined());
-	buttonStyle = true;
+	styleProps = ui::Theme::current->checkbox;
+}
+
+
+RadioButtonBase::RadioButtonBase()
+{
+	styleProps = ui::Theme::current->radioButton;
 }
 
 } // ui
@@ -351,18 +255,19 @@ int UITextbox::_FindCursorPos(float vpx)
 
 UICollapsibleTreeNode::UICollapsibleTreeNode()
 {
-	GetStyle().SetLayout(style::Layout::Stack);
-	//GetStyle().SetPadding(1);
-	GetStyle().SetPaddingLeft(GetFontHeight());
+	styleProps = ui::Theme::current->collapsibleTreeNode;
 }
 
 void UICollapsibleTreeNode::OnPaint()
 {
-	auto r = GetPaddingRect();
-	DrawThemeElement(_hovered ?
-		open ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
-		open ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + GetFontHeight(), r.y0 + GetFontHeight());
-	UIElement::OnPaint();
+	style::PaintInfo info(this);
+	info.state &= ~style::PS_Hover;
+	if (_hovered)
+		info.state |= style::PS_Hover;
+	if (open)
+		info.state |= style::PS_Checked;
+	styleProps->paint_func(info);
+	PaintChildren();
 }
 
 void UICollapsibleTreeNode::OnEvent(UIEvent& e)

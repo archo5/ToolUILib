@@ -217,17 +217,21 @@ enum PaintInfoItemState
 	PS_Hover = 1 << 0,
 	PS_Down = 1 << 1,
 	PS_Disabled = 1 << 2,
+	PS_Checked = 1 << 3,
 };
 
 struct PaintInfo
 {
 	UIRect rect;
-	UIObject* obj;
-	uint32_t state;
+	const UIObject* obj;
+	uint32_t state = 0;
 
+	PaintInfo() {}
+	PaintInfo(const UIObject* o);
 	bool IsHovered() const { return (state & PS_Hover) != 0; }
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
+	bool IsChecked() const { return (state & PS_Checked) != 0; }
 };
 
 using PaintFunction = std::function<void(const PaintInfo&)>;
@@ -246,6 +250,8 @@ struct Block
 	void Compile(StringView& text, IErrorCallback* err);
 	void MergeDirect(const Block& o);
 	void MergeParent(const Block& o);
+
+	bool unique = false;
 
 	Layout layout = Layout::Undefined;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
@@ -353,6 +359,9 @@ public:
 
 	BoxSizing GetBoxSizing() const;
 	void SetBoxSizing(BoxSizing v);
+
+	PaintFunction GetPaintFunc() const;
+	PaintFunction& MutablePaintFunc();
 
 
 	Coord GetWidth() const;

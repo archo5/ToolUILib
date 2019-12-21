@@ -61,16 +61,14 @@ enum class Direction
 class UIObject
 {
 public:
+	UIObject();
 	virtual ~UIObject();
 	virtual void Reset() {}
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
 	virtual void OnCompleteStructure() {}
 	virtual void OnEvent(UIEvent& e) {}
-	virtual void OnPaint()
-	{
-		PaintChildren();
-	}
+	virtual void OnPaint();
 	void PaintChildren()
 	{
 		for (auto* ch = firstChild; ch; ch = ch->next)
@@ -113,6 +111,7 @@ public:
 	void SetInputDisabled(bool v);
 
 	style::Accessor GetStyle();
+	void SetStyle(style::Block* style);
 	float ResolveUnits(style::Coord coord, float ref);
 
 	UIRect GetContentRect() const { return finalRectC; }
@@ -171,7 +170,7 @@ public:
 		auto r = GetContentRect();
 		float w = r.x1 - r.x0;
 		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
-		UIElement::OnPaint();
+		PaintChildren();
 	}
 	void SetText(const char* t)
 	{

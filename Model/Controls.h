@@ -4,56 +4,61 @@
 #include "Objects.h"
 
 
-struct UIPanel : UIElement
-{
-	UIPanel();
-	void OnPaint() override;
-};
-
-struct UIButton : UIElement
-{
-	UIButton();
-	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
-
-	bool pressed = false;
-};
-
-struct UICheckbox : UIElement
-{
-	UICheckbox();
-	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
-	//void OnLayout(const UIRect& rect) override;
-
-	UICheckbox* SetValue(bool v)
-	{
-		checked = v;
-		return this;
-	}
-	bool GetValue() const
-	{
-		return checked;
-	}
-
-	bool checked = false;
-};
-
 namespace ui {
 
-class RadioButtonBase : public UIElement
+class Panel : public UIElement
 {
 public:
-	RadioButtonBase();
+	Panel();
+};
+
+class Button : public UIElement
+{
+public:
+	Button();
+	void OnEvent(UIEvent& e) override;
+};
+
+class CheckableBase : public UIElement
+{
+public:
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
 	virtual void OnSelect() = 0;
 	virtual bool IsSelected() = 0;
+};
 
-	void SetButtonStyle();
+class CheckboxBase : public CheckableBase
+{
+public:
+	CheckboxBase();
+};
 
-	bool buttonStyle = false;
+class Checkbox : public CheckboxBase
+{
+public:
+	virtual void OnSelect() override { SetChecked(!GetChecked()); }
+	virtual bool IsSelected() override { return GetChecked(); }
+
+	Checkbox* SetChecked(bool v)
+	{
+		_isChecked = v;
+		return this;
+	}
+	bool GetChecked() const
+	{
+		return _isChecked;
+	}
+
+private:
+	bool _isChecked = false;
+};
+
+class RadioButtonBase : public CheckableBase
+{
+public:
+	RadioButtonBase();
 };
 
 template <class T>

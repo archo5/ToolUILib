@@ -6,6 +6,7 @@ namespace ui {
 
 struct Theme
 {
+	style::Block* object;
 	style::Block* panel;
 	style::Block* button;
 	style::Block* checkbox;

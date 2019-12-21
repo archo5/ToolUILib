@@ -1,13 +1,25 @@
 
 #include "Objects.h"
 #include "System.h"
+#include "Theme.h"
 
+
+UIObject::UIObject()
+{
+	styleProps = ui::Theme::current->object;
+}
 
 UIObject::~UIObject()
 {
 	system->eventSystem.OnDestroy(this);
-	if (styleProps)
+	if (styleProps->unique)
 		delete styleProps;
+}
+
+void UIObject::OnPaint()
+{
+	styleProps->paint_func(this);
+	PaintChildren();
 }
 
 float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
@@ -377,6 +389,13 @@ void UIObject::SetInputDisabled(bool v)
 style::Accessor UIObject::GetStyle()
 {
 	return { this };
+}
+
+void UIObject::SetStyle(style::Block* style)
+{
+	if (styleProps && styleProps->unique)
+		delete styleProps;
+	styleProps = style;
 }
 
 float UIObject::ResolveUnits(style::Coord coord, float ref)

@@ -10,13 +10,13 @@ struct OpenClose : UINode
 	{
 		ctx->PushBox();
 
-		cb = ctx->Make<UICheckbox>()->SetValue(open);
+		cb = ctx->Make<ui::Checkbox>()->SetChecked(open);
 
-		openBtn = ctx->Push<UIButton>();
+		openBtn = ctx->Push<ui::Button>();
 		ctx->Text("Open");
 		ctx->Pop();
 
-		closeBtn = ctx->Push<UIButton>();
+		closeBtn = ctx->Push<ui::Button>();
 		ctx->Text("Close");
 		ctx->Pop();
 
@@ -43,7 +43,7 @@ struct OpenClose : UINode
 		{
 			if (e.target == cb)
 			{
-				open = cb->GetValue();
+				open = cb->GetChecked();
 				Rerender();
 			}
 		}
@@ -51,9 +51,9 @@ struct OpenClose : UINode
 
 	bool open = false;
 
-	UICheckbox* cb;
-	UIButton* openBtn;
-	UIButton* closeBtn;
+	ui::Checkbox* cb;
+	ui::Button* openBtn;
+	ui::Button* closeBtn;
 };
 
 
@@ -64,7 +64,7 @@ struct Calculator : UINode
 	{
 		for (int i = 0; i < 10; i++)
 		{
-			numberButtons[i] = ctx->Push<UIButton>();
+			numberButtons[i] = ctx->Push<ui::Button>();
 			ctx->Text(numberNames[i]);
 			ctx->Pop();
 		}
@@ -82,7 +82,7 @@ struct Calculator : UINode
 		}
 	}
 
-	UIButton* numberButtons[10];
+	ui::Button* numberButtons[10];
 };
 
 
@@ -100,7 +100,7 @@ struct DataEditor : UINode
 	{
 		void Render(UIContainer* ctx) override
 		{
-			ctx->Push<UIButton>();
+			ctx->Push<ui::Button>();
 			ctx->Text(name);
 			ctx->Pop();
 		}
@@ -130,7 +130,7 @@ struct DataEditor : UINode
 		void Render(UIContainer* ctx) override
 		{
 			static int wat = 0;
-			auto* b = ctx->Push<UIButton>();
+			auto* b = ctx->Push<ui::Button>();
 			b->GetStyle().SetWidth(style::Coord::Percent(100));
 			//b->SetInputDisabled(wat++ % 2);
 			ctx->Text(name);
@@ -209,14 +209,14 @@ struct DataEditor : UINode
 		}
 		void Render(UIContainer* ctx) override
 		{
-			cb = ctx->Make<UICheckbox>()->SetValue(*at);
+			cb = ctx->Make<ui::Checkbox>()->SetChecked(*at);
 			cb->SetInputDisabled(IsInputDisabled());
 		}
 		void OnEvent(UIEvent& e) override
 		{
 			if (e.type == UIEventType::Change)
 			{
-				*at = cb->GetValue();
+				*at = cb->GetChecked();
 			}
 		}
 		void SetInputDisabled(bool v)
@@ -225,7 +225,7 @@ struct DataEditor : UINode
 			if (cb)
 				cb->SetInputDisabled(v);
 		}
-		UICheckbox* cb = nullptr;
+		ui::Checkbox* cb = nullptr;
 		bool* at;
 	};
 
@@ -285,13 +285,13 @@ struct DataEditor : UINode
 		nw->GetWindow()->SetTitle("Subwindow A");
 		auto renderFunc = [](UIContainer* ctx)
 		{
-			ctx->Push<UIPanel>();
+			ctx->Push<ui::Panel>();
 			auto onClick = []()
 			{
 				ui::NativeDialogWindow dlg;
 				auto render = [&dlg](UIContainer* ctx)
 				{
-					auto s = ctx->Push<UIPanel>()->GetStyle();
+					auto s = ctx->Push<ui::Panel>()->GetStyle();
 					s.SetLayout(style::Layout::Stack);
 					s.SetStackingDirection(style::StackingDirection::RightToLeft);
 					ctx->Make<BasicButton>()->Init("X", [&dlg]() { dlg.OnClose(); });
@@ -300,7 +300,7 @@ struct DataEditor : UINode
 					ctx->Make<BasicButton>()->Init("_", [&dlg]() { dlg.SetState(ui::WindowState::Minimized); });
 					ctx->Pop();
 
-					ctx->Push<UIPanel>();
+					ctx->Push<ui::Panel>();
 					ctx->Make<ItemButton>()->Init("Test", [&dlg]() { dlg.OnClose(); });
 					ctx->Pop();
 				};
@@ -321,13 +321,16 @@ struct DataEditor : UINode
 		auto* frm = ctx->Make<ui::InlineFrameNode>();
 		auto frf = [](UIContainer* ctx)
 		{
-			ctx->Push<UIPanel>();
+			ctx->Push<ui::Panel>();
 			ctx->Make<BasicButton>()->Init("In-frame button", []() {});
 			static int cur = 1;
-			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 1)->SetButtonStyle();
+			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 0);
+			ctx->Text("Zero");
+			ctx->Pop();
+			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 1)->SetStyle(ui::Theme::current->button);
 			ctx->Text("One");
 			ctx->Pop();
-			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 2)->SetButtonStyle();
+			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 2)->SetStyle(ui::Theme::current->button);
 			ctx->Text("Two");
 			ctx->Pop();
 			ctx->Pop();
@@ -344,7 +347,7 @@ struct DataEditor : UINode
 		if (editing == SIZE_MAX)
 		{
 			ctx->Text("List");
-			ctx->Push<UIPanel>();
+			ctx->Push<ui::Panel>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
 				ctx->Make<ItemButton>()->Init(items[i].name.c_str(), [this, i]() { editing = i; Rerender(); });
@@ -392,7 +395,7 @@ struct DataEditor : UINode
 			b->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 			ctx->Text("Item:")->GetStyle().SetPadding(5);
 			ctx->Text(items[editing].name.c_str());
-			btnGoBack = ctx->Push<UIButton>();
+			btnGoBack = ctx->Push<ui::Button>();
 			ctx->Text("Go back");
 			ctx->Pop();
 			ctx->Pop();
@@ -436,7 +439,7 @@ struct DataEditor : UINode
 		{ "another test item", 123, false, 12.3f },
 		{ "third item", 333, true, 3.0f },
 	};
-	UIButton* btnGoBack;
+	ui::Button* btnGoBack;
 	UITextbox* tbName;
 	ui::Menu* topMenu;
 };
@@ -456,7 +459,7 @@ struct TEST : UINode
 
 		for (int i = 0; i < 3; i++)
 		{
-			testBtns[i] = ctx->Push<UIButton>();
+			testBtns[i] = ctx->Push<ui::Button>();
 			ctx->Text(testNames[i]);
 			ctx->Pop();
 		}
@@ -488,7 +491,7 @@ struct TEST : UINode
 		}
 	}
 
-	UIButton* testBtns[3];
+	ui::Button* testBtns[3];
 	int curTest = 0;
 };
 

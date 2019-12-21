@@ -8,6 +8,17 @@
 namespace style {
 
 
+PaintInfo::PaintInfo(const UIObject* o) : obj(o)
+{
+	rect = o->GetPaddingRect();
+	if (o->IsHovered())
+		state |= PS_Hover;
+	if (o->IsClicked())
+		state |= PS_Down;
+	if (o->IsInputDisabled())
+		state |= PS_Disabled;
+}
+
 void IErrorCallback::OnError(const char* message, const char* at)
 {
 	hadError = true;
@@ -408,10 +419,13 @@ void Sheet::_Preprocess(StringView text, IErrorCallback* err)
 
 style::Block* Accessor::GetOrCreate()
 {
-	if (block)
+	// TODO optimize?
+	if (block->unique || !obj)
 		return block;
-	if (!obj->styleProps)
-		block = obj->styleProps = new Block;
+	// TODO reference counting?
+	if (!obj->styleProps->unique)
+		obj->styleProps = new Block(*obj->styleProps);
+	obj->styleProps->unique = true;
 	return block = obj->styleProps;
 }
 
@@ -449,7 +463,7 @@ void Accessor::SetPosition(Position position)
 
 Layout Accessor::GetLayout() const
 {
-	return obj->styleProps ? obj->styleProps->layout : Layout::Undefined;
+	return block->layout;
 }
 
 void Accessor::SetLayout(Layout v)
@@ -459,7 +473,7 @@ void Accessor::SetLayout(Layout v)
 
 StackingDirection Accessor::GetStackingDirection() const
 {
-	return obj->styleProps ? obj->styleProps->stacking_direction : StackingDirection::Undefined;
+	return block->stacking_direction;
 }
 
 void Accessor::SetStackingDirection(StackingDirection v)
@@ -469,7 +483,7 @@ void Accessor::SetStackingDirection(StackingDirection v)
 
 Edge Accessor::GetEdge() const
 {
-	return obj->styleProps ? obj->styleProps->edge : Edge::Undefined;
+	return block->edge;
 }
 
 void Accessor::SetEdge(Edge v)
@@ -479,7 +493,7 @@ void Accessor::SetEdge(Edge v)
 
 BoxSizing Accessor::GetBoxSizing() const
 {
-	return obj->styleProps ? obj->styleProps->box_sizing : BoxSizing::Undefined;
+	return block->box_sizing;
 }
 
 void Accessor::SetBoxSizing(BoxSizing v)
@@ -487,9 +501,19 @@ void Accessor::SetBoxSizing(BoxSizing v)
 	GetOrCreate()->box_sizing = v;
 }
 
+PaintFunction Accessor::GetPaintFunc() const
+{
+	return block->paint_func;
+}
+
+PaintFunction& Accessor::MutablePaintFunc()
+{
+	return GetOrCreate()->paint_func;
+}
+
 Coord Accessor::GetWidth() const
 {
-	return obj->styleProps ? obj->styleProps->width : Coord::Undefined();
+	return block->width;
 }
 
 void Accessor::SetWidth(Coord v)
@@ -499,7 +523,7 @@ void Accessor::SetWidth(Coord v)
 
 Coord Accessor::GetHeight() const
 {
-	return obj->styleProps ? obj->styleProps->height : Coord::Undefined();
+	return block->height;
 }
 
 void Accessor::SetHeight(Coord v)
@@ -509,7 +533,7 @@ void Accessor::SetHeight(Coord v)
 
 Coord Accessor::GetMinWidth() const
 {
-	return obj->styleProps ? obj->styleProps->min_width : Coord::Undefined();
+	return block->min_width;
 }
 
 void Accessor::SetMinWidth(Coord v)
@@ -519,7 +543,7 @@ void Accessor::SetMinWidth(Coord v)
 
 Coord Accessor::GetMinHeight() const
 {
-	return obj->styleProps ? obj->styleProps->min_height : Coord::Undefined();
+	return block->min_height;
 }
 
 void Accessor::SetMinHeight(Coord v)
@@ -529,7 +553,7 @@ void Accessor::SetMinHeight(Coord v)
 
 Coord Accessor::GetMaxWidth() const
 {
-	return obj->styleProps ? obj->styleProps->max_width : Coord::Undefined();
+	return block->max_width;
 }
 
 void Accessor::SetMaxWidth(Coord v)
@@ -539,7 +563,7 @@ void Accessor::SetMaxWidth(Coord v)
 
 Coord Accessor::GetMaxHeight() const
 {
-	return obj->styleProps ? obj->styleProps->max_height : Coord::Undefined();
+	return block->max_height;
 }
 
 void Accessor::SetMaxHeight(Coord v)
@@ -549,7 +573,7 @@ void Accessor::SetMaxHeight(Coord v)
 
 Coord Accessor::GetLeft() const
 {
-	return obj->styleProps ? obj->styleProps->left : Coord::Undefined();
+	return block->left;
 }
 
 void Accessor::SetLeft(Coord v)
@@ -559,7 +583,7 @@ void Accessor::SetLeft(Coord v)
 
 Coord Accessor::GetRight() const
 {
-	return obj->styleProps ? obj->styleProps->right : Coord::Undefined();
+	return block->right;
 }
 
 void Accessor::SetRight(Coord v)
@@ -569,7 +593,7 @@ void Accessor::SetRight(Coord v)
 
 Coord Accessor::GetTop() const
 {
-	return obj->styleProps ? obj->styleProps->top : Coord::Undefined();
+	return block->top;
 }
 
 void Accessor::SetTop(Coord v)
@@ -579,7 +603,7 @@ void Accessor::SetTop(Coord v)
 
 Coord Accessor::GetBottom() const
 {
-	return obj->styleProps ? obj->styleProps->bottom : Coord::Undefined();
+	return block->bottom;
 }
 
 void Accessor::SetBottom(Coord v)
@@ -589,7 +613,7 @@ void Accessor::SetBottom(Coord v)
 
 Coord Accessor::GetMarginLeft() const
 {
-	return obj->styleProps ? obj->styleProps->margin_left : Coord::Undefined();
+	return block->margin_left;
 }
 
 void Accessor::SetMarginLeft(Coord v)
@@ -599,7 +623,7 @@ void Accessor::SetMarginLeft(Coord v)
 
 Coord Accessor::GetMarginRight() const
 {
-	return obj->styleProps ? obj->styleProps->margin_right : Coord::Undefined();
+	return block->margin_right;
 }
 
 void Accessor::SetMarginRight(Coord v)
@@ -609,7 +633,7 @@ void Accessor::SetMarginRight(Coord v)
 
 Coord Accessor::GetMarginTop() const
 {
-	return obj->styleProps ? obj->styleProps->margin_top : Coord::Undefined();
+	return block->margin_top;
 }
 
 void Accessor::SetMarginTop(Coord v)
@@ -619,7 +643,7 @@ void Accessor::SetMarginTop(Coord v)
 
 Coord Accessor::GetMarginBottom() const
 {
-	return obj->styleProps ? obj->styleProps->margin_bottom : Coord::Undefined();
+	return block->margin_bottom;
 }
 
 void Accessor::SetMarginBottom(Coord v)
@@ -638,7 +662,7 @@ void Accessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 
 Coord Accessor::GetPaddingLeft() const
 {
-	return obj->styleProps ? obj->styleProps->padding_left : Coord::Undefined();
+	return block->padding_left;
 }
 
 void Accessor::SetPaddingLeft(Coord v)
@@ -648,7 +672,7 @@ void Accessor::SetPaddingLeft(Coord v)
 
 Coord Accessor::GetPaddingRight() const
 {
-	return obj->styleProps ? obj->styleProps->padding_right : Coord::Undefined();
+	return block->padding_right;
 }
 
 void Accessor::SetPaddingRight(Coord v)
@@ -658,7 +682,7 @@ void Accessor::SetPaddingRight(Coord v)
 
 Coord Accessor::GetPaddingTop() const
 {
-	return obj->styleProps ? obj->styleProps->padding_top : Coord::Undefined();
+	return block->padding_top;
 }
 
 void Accessor::SetPaddingTop(Coord v)
@@ -668,7 +692,7 @@ void Accessor::SetPaddingTop(Coord v)
 
 Coord Accessor::GetPaddingBottom() const
 {
-	return obj->styleProps ? obj->styleProps->padding_bottom : Coord::Undefined();
+	return block->padding_bottom;
 }
 
 void Accessor::SetPaddingBottom(Coord v)
