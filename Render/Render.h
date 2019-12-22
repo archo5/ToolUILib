@@ -17,13 +17,22 @@ enum EThemeElement
 	TE_ButtonHover,
 	TE_ButtonPressed,
 	TE_ButtonDisabled,
+	TE_ButtonDownDisabled,
+
+	TE_Panel,
+
+	TE_TextboxNormal,
+	TE_TextboxDisabled,
 
 	TE_CheckBgrNormal,
 	TE_CheckBgrHover,
 	TE_CheckBgrPressed,
 	TE_CheckBgrDisabled,
+
 	TE_CheckMark,
 	TE_CheckMarkDisabled,
+	TE_CheckInd,
+	TE_CheckIndDisabled,
 
 	TE_RadioBgrNormal,
 	TE_RadioBgrHover,
@@ -32,13 +41,15 @@ enum EThemeElement
 	TE_RadioMark,
 	TE_RadioMarkDisabled,
 
+	TE_TabNormal,
+	TE_TabHover,
+	TE_TabSelected,
+	TE_TabPanel,
+
 	TE_TreeTickClosedNormal,
 	TE_TreeTickClosedHover,
 	TE_TreeTickOpenNormal,
 	TE_TreeTickOpenHover,
-
-	TE_Panel,
-	TE_Textbox,
 
 	TE__COUNT,
 };

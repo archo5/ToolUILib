@@ -4,6 +4,8 @@
 #include <shellapi.h>
 
 #include <codecvt>
+#undef min
+#undef max
 
 #include "Native.h"
 #include "System.h"

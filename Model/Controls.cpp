@@ -9,13 +9,13 @@ namespace ui {
 
 Panel::Panel()
 {
-	styleProps = ui::Theme::current->panel;
+	styleProps = Theme::current->panel;
 }
 
 
 Button::Button()
 {
-	styleProps = ui::Theme::current->button;
+	styleProps = Theme::current->button;
 }
 
 void Button::OnEvent(UIEvent& e)
@@ -27,7 +27,12 @@ void Button::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::Activate)
 	{
 		if (IsInputDisabled())
+		{
 			e.handled = true;
+			return;
+		}
+		if (onClick)
+			onClick();
 	}
 }
 
@@ -56,6 +61,8 @@ void CheckableBase::OnEvent(UIEvent& e)
 			return;
 		}
 		OnSelect();
+		if (onChange)
+			onChange();
 		e.context->OnChange(this);
 	}
 }
@@ -63,34 +70,142 @@ void CheckableBase::OnEvent(UIEvent& e)
 
 CheckboxBase::CheckboxBase()
 {
-	styleProps = ui::Theme::current->checkbox;
+	styleProps = Theme::current->checkbox;
 }
 
 
 RadioButtonBase::RadioButtonBase()
 {
-	styleProps = ui::Theme::current->radioButton;
+	styleProps = Theme::current->radioButton;
 }
 
-} // ui
 
-
-UITextbox::UITextbox()
+TabGroup::TabGroup()
 {
-	GetStyle().SetLayout(style::Layout::InlineBlock);
-	GetStyle().SetBoxSizing(style::BoxSizing::BorderBox);
-	GetStyle().SetPadding(5);
-	GetStyle().SetWidth(120);
-	GetStyle().SetHeight(GetFontHeight() + 5 + 5);
+	styleProps = Theme::current->tabGroup;
 }
 
-void UITextbox::OnPaint()
+void TabGroup::OnInit()
+{
+	_curButton = 0;
+	_curPanel = 0;
+}
+
+void TabGroup::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	for (UIObject* ch = firstChild; ch; ch = ch->next)
+	{
+		if (auto* p = dynamic_cast<TabPanel*>(ch))
+			if (p->id != active)
+				continue;
+		ch->OnPaint();
+	}
+}
+
+
+TabList::TabList()
+{
+	styleProps = Theme::current->tabList;
+}
+
+void TabList::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	if (auto* g = FindParentOfType<TabGroup>())
+	{
+		for (UIObject* ch = firstChild; ch; ch = ch->next)
+		{
+			if (auto* p = dynamic_cast<TabButton*>(ch))
+				if (p->id == g->active)
+					continue;
+			ch->OnPaint();
+		}
+	}
+	else
+		PaintChildren();
+}
+
+
+TabButton::TabButton()
+{
+	styleProps = Theme::current->tabButton;
+}
+
+void TabButton::OnInit()
+{
+	if (auto* g = FindParentOfType<TabGroup>())
+	{
+		id = g->_curButton++;
+		if (id == g->active)
+			g->_activeBtn = this;
+	}
+}
+
+void TabButton::OnDestroy()
+{
+	if (auto* g = FindParentOfType<TabGroup>())
+		if (g->_activeBtn == this)
+			g->_activeBtn = nullptr;
+}
+
+void TabButton::OnPaint()
+{
+	style::PaintInfo info(this);
+	if (FindParentOfType<TabGroup>()->active == id)
+		info.state |= style::PS_Checked;
+	styleProps->paint_func(info);
+	PaintChildren();
+}
+
+void TabButton::OnEvent(UIEvent& e)
+{
+	if (e.type == UIEventType::Activate && IsChildOrSame(e.GetTargetNode()))
+	{
+		if (auto* g = FindParentOfType<TabGroup>())
+		{
+			g->active = id;
+			g->_activeBtn = this;
+			g->RerenderNode();
+		}
+	}
+}
+
+
+TabPanel::TabPanel()
+{
+	styleProps = Theme::current->tabPanel;
+}
+
+void TabPanel::OnInit()
+{
+	if (auto* g = FindParentOfType<TabGroup>())
+		id = g->_curPanel++;
+}
+
+void TabPanel::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	if (auto* g = FindParentOfType<TabGroup>())
+		if (g->_activeBtn)
+			g->_activeBtn->Paint();
+
+	PaintChildren();
+}
+
+
+Textbox::Textbox()
+{
+	styleProps = Theme::current->textBoxBase;
+}
+
+void Textbox::OnPaint()
 {
 	// background
-	{
-		auto r = GetPaddingRect();
-		DrawThemeElement(TE_Textbox, r.x0, r.y0, r.x1, r.y1);
-	}
+	styleProps->paint_func(this);
 
 	{
 		auto r = GetContentRect();
@@ -126,10 +241,10 @@ void UITextbox::OnPaint()
 		}
 	}
 
-	UIElement::OnPaint();
+	PaintChildren();
 }
 
-void UITextbox::OnEvent(UIEvent& e)
+void Textbox::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
 	{
@@ -217,7 +332,7 @@ void UITextbox::OnEvent(UIEvent& e)
 	}
 }
 
-void UITextbox::EnterText(const char* str)
+void Textbox::EnterText(const char* str)
 {
 	EraseSelection();
 	size_t num = strlen(str);
@@ -226,7 +341,7 @@ void UITextbox::EnterText(const char* str)
 	system->eventSystem.OnChange(this);
 }
 
-void UITextbox::EraseSelection()
+void Textbox::EraseSelection()
 {
 	if (IsLongSelection())
 	{
@@ -237,7 +352,7 @@ void UITextbox::EraseSelection()
 	}
 }
 
-int UITextbox::_FindCursorPos(float vpx)
+int Textbox::_FindCursorPos(float vpx)
 {
 	auto r = GetContentRect();
 	// TODO kerning
@@ -253,12 +368,12 @@ int UITextbox::_FindCursorPos(float vpx)
 }
 
 
-UICollapsibleTreeNode::UICollapsibleTreeNode()
+CollapsibleTreeNode::CollapsibleTreeNode()
 {
-	styleProps = ui::Theme::current->collapsibleTreeNode;
+	styleProps = Theme::current->collapsibleTreeNode;
 }
 
-void UICollapsibleTreeNode::OnPaint()
+void CollapsibleTreeNode::OnPaint()
 {
 	style::PaintInfo info(this);
 	info.state &= ~style::PS_Hover;
@@ -270,7 +385,7 @@ void UICollapsibleTreeNode::OnPaint()
 	PaintChildren();
 }
 
-void UICollapsibleTreeNode::OnEvent(UIEvent& e)
+void CollapsibleTreeNode::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::MouseEnter || e.type == UIEventType::MouseMove)
 	{
@@ -288,3 +403,5 @@ void UICollapsibleTreeNode::OnEvent(UIEvent& e)
 		e.GetTargetNode()->Rerender();
 	}
 }
+
+} // ui

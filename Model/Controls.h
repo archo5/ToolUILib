@@ -17,6 +17,8 @@ class Button : public UIElement
 public:
 	Button();
 	void OnEvent(UIEvent& e) override;
+
+	std::function<void()> onClick;
 };
 
 class CheckableBase : public UIElement
@@ -27,6 +29,8 @@ public:
 
 	virtual void OnSelect() = 0;
 	virtual bool IsSelected() = 0;
+
+	std::function<void()> onChange;
 };
 
 class CheckboxBase : public CheckableBase
@@ -38,21 +42,17 @@ public:
 class Checkbox : public CheckboxBase
 {
 public:
-	virtual void OnSelect() override { SetChecked(!GetChecked()); }
-	virtual bool IsSelected() override { return GetChecked(); }
-
-	Checkbox* SetChecked(bool v)
+	Checkbox* Init(bool& bref)
 	{
-		_isChecked = v;
+		_bptr = &bref;
 		return this;
 	}
-	bool GetChecked() const
-	{
-		return _isChecked;
-	}
+
+	virtual void OnSelect() override { if (_bptr) *_bptr ^= true; }
+	virtual bool IsSelected() override { return _bptr && *_bptr; }
 
 private:
-	bool _isChecked = false;
+	bool* _bptr = nullptr;
 };
 
 class RadioButtonBase : public CheckableBase
@@ -79,11 +79,51 @@ public:
 	T _value = {};
 };
 
-} // ui
-
-struct UITextbox : UIElement
+class TabGroup : public UIElement
 {
-	UITextbox();
+public:
+	TabGroup();
+	void OnInit() override;
+	void OnPaint() override;
+
+	int active;
+	class TabButton* _activeBtn = nullptr;
+	int _curButton = 0;
+	int _curPanel = 0;
+};
+
+class TabList : public UIElement
+{
+public:
+	TabList();
+	void OnPaint() override;
+};
+
+class TabButton : public UIElement
+{
+public:
+	TabButton();
+	void OnInit() override;
+	void OnDestroy() override;
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+
+	int id;
+};
+
+class TabPanel : public UIElement
+{
+public:
+	TabPanel();
+	void OnInit() override;
+	void OnPaint() override;
+
+	int id;
+};
+
+struct Textbox : UIElement
+{
+	Textbox();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
@@ -99,9 +139,9 @@ struct UITextbox : UIElement
 	bool showCaretState = false;
 };
 
-struct UICollapsibleTreeNode : UIElement
+struct CollapsibleTreeNode : UIElement
 {
-	UICollapsibleTreeNode();
+	CollapsibleTreeNode();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
@@ -109,6 +149,8 @@ struct UICollapsibleTreeNode : UIElement
 	bool _hovered = false;
 };
 
-struct UITable : UINode
+struct Table : UINode
 {
 };
+
+} // ui

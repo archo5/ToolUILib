@@ -8,81 +8,164 @@ struct OpenClose : UINode
 {
 	void Render(UIContainer* ctx) override
 	{
-		ctx->PushBox();
+		ctx->Push<ui::Panel>();
 
-		cb = ctx->Make<ui::Checkbox>()->SetChecked(open);
+		ctx->Make<ui::Checkbox>()->Init(open)->onChange = [this]() { Rerender(); };
 
-		openBtn = ctx->Push<ui::Button>();
-		ctx->Text("Open");
-		ctx->Pop();
+		ctx->MakeWithText<ui::Button>("Open")->onClick = [this]() { open = true; Rerender(); };
 
-		closeBtn = ctx->Push<ui::Button>();
-		ctx->Text("Close");
-		ctx->Pop();
+		ctx->MakeWithText<ui::Button>("Close")->onClick = [this]() { open = false; Rerender(); };
 
 		if (open)
 		{
-			ctx->PushBox();
+			ctx->Push<ui::Panel>();
 			ctx->Text("It is open!");
 			ctx->Pop();
 		}
 
 		ctx->Pop();
 	}
-	void OnEvent(UIEvent& e) override
-	{
-		if (e.type == UIEventType::Activate)
-		{
-			if (e.target == openBtn || e.target == closeBtn)
-			{
-				open = e.target == openBtn;
-				Rerender();
-			}
-		}
-		if (e.type == UIEventType::Change)
-		{
-			if (e.target == cb)
-			{
-				open = cb->GetChecked();
-				Rerender();
-			}
-		}
-	}
 
 	bool open = false;
-
-	ui::Checkbox* cb;
-	ui::Button* openBtn;
-	ui::Button* closeBtn;
 };
 
 
-static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
+static const char* opNames[] = { "+", "-", "*", "/" };
 struct Calculator : UINode
 {
 	void Render(UIContainer* ctx) override
 	{
-		for (int i = 0; i < 10; i++)
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		{
-			numberButtons[i] = ctx->Push<ui::Button>();
-			ctx->Text(numberNames[i]);
-			ctx->Pop();
+			ctx->Make<ui::Textbox>()->text = operation;
+
+			ctx->MakeWithText<ui::Button>("<")->onClick = [this]() { if (!operation.empty()) operation.pop_back(); Rerender(); };
 		}
-	}
-	void OnEvent(UIEvent& e) override
-	{
-		if (e.type == UIEventType::Activate)
+		ctx->Pop();
+
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		for (int i = 0; i < 11; i++)
 		{
-			for (int i = 0; i < 10; i++)
+			ctx->MakeWithText<ui::Button>(numberNames[i])->onClick = [this, i]() { AddChar(numberNames[i][0]); };
+		}
+		ctx->Pop();
+
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		{
+			for (int i = 0; i < 4; i++)
 			{
-				if (e.target == numberButtons[i])
-				{
-				}
+				ctx->MakeWithText<ui::Button>(opNames[i])->onClick = [this, i]() { AddChar(opNames[i][0]); };
 			}
+
+			ctx->MakeWithText<ui::Button>("=")->onClick = [this]() { operation = ToString(Calculate()); Rerender(); };
 		}
+		ctx->Pop();
+
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		ctx->Text("=" + ToString(Calculate()));
+		ctx->Pop();
 	}
 
-	ui::Button* numberButtons[10];
+	void AddChar(char ch)
+	{
+		if (ch == '.')
+		{
+			// must be preceded by a number without a dot
+			if (operation.empty())
+				return;
+			for (size_t i = operation.size(); i > 0; )
+			{
+				i--;
+
+				if (operation[i] == '.')
+					return;
+				if (!isdigit(operation[i]))
+					break;
+			}
+		}
+		else if (ch == '+' || ch == '-' || ch == '*' || ch == '/')
+		{
+			// must be preceded by a number or a dot
+			if (operation.empty())
+				return;
+			if (!isdigit(operation.back()) && operation.back() != '.')
+				return;
+		}
+		operation.push_back(ch);
+		Rerender();
+	}
+
+	int precedence(char op)
+	{
+		if (op == '*' || op == '/')
+			return 2;
+		if (op == '+' || op == '-')
+			return 1;
+		return 0;
+	}
+	void Apply(std::vector<double>& numqueue, char op)
+	{
+		double b = numqueue.back();
+		numqueue.pop_back();
+		double& a = numqueue.back();
+		switch (op)
+		{
+		case '+': a += b; break;
+		case '-': a -= b; break;
+		case '*': a *= b; break;
+		case '/': a /= b; break;
+		}
+	}
+	double Calculate()
+	{
+		std::vector<double> numqueue;
+		std::vector<char> opstack;
+		bool lastwasop = false;
+		for (size_t i = 0; i < operation.size(); i++)
+		{
+			char c = operation[i];
+			if (isdigit(c))
+			{
+				char* end = nullptr;
+				numqueue.push_back(std::strtod(operation.c_str() + i, &end));
+				i = end - operation.c_str() - 1;
+				lastwasop = false;
+			}
+			else
+			{
+				while (!opstack.empty() && precedence(opstack.back()) > precedence(c))
+				{
+					Apply(numqueue, opstack.back());
+					opstack.pop_back();
+				}
+				opstack.push_back(c);
+				lastwasop = true;
+			}
+		}
+		if (lastwasop)
+			opstack.pop_back();
+		while (!opstack.empty() && numqueue.size() >= 2)
+		{
+			Apply(numqueue, opstack.back());
+			opstack.pop_back();
+		}
+		return !numqueue.empty() ? numqueue.back() : 0;
+	}
+
+	std::string ToString(double val)
+	{
+		std::string s = std::to_string(val);
+		while (!s.empty() && s.back() == '0')
+			s.pop_back();
+		if (s.empty())
+			s.push_back('0');
+		else if (s.back() == '.')
+			s.pop_back();
+		return s;
+	}
+
+	std::string operation;
 };
 
 
@@ -94,30 +177,6 @@ struct DataEditor : UINode
 		int value;
 		bool enable;
 		float value2;
-	};
-
-	struct BasicButton : UINode
-	{
-		void Render(UIContainer* ctx) override
-		{
-			ctx->Push<ui::Button>();
-			ctx->Text(name);
-			ctx->Pop();
-		}
-		void Init(const char* txt, const std::function<void()> cb)
-		{
-			name = txt;
-			callback = cb;
-		}
-		void OnEvent(UIEvent& e) override
-		{
-			if (e.type == UIEventType::Activate)
-			{
-				callback();
-			}
-		}
-		std::function<void()> callback;
-		const char* name;
 	};
 
 	struct ItemButton : UINode
@@ -200,35 +259,6 @@ struct DataEditor : UINode
 		}
 	};
 
-	struct Checkbox : UINode
-	{
-		Checkbox* Init(bool& val)
-		{
-			at = &val;
-			return this;
-		}
-		void Render(UIContainer* ctx) override
-		{
-			cb = ctx->Make<ui::Checkbox>()->SetChecked(*at);
-			cb->SetInputDisabled(IsInputDisabled());
-		}
-		void OnEvent(UIEvent& e) override
-		{
-			if (e.type == UIEventType::Change)
-			{
-				*at = cb->GetChecked();
-			}
-		}
-		void SetInputDisabled(bool v)
-		{
-			UINode::SetInputDisabled(v);
-			if (cb)
-				cb->SetInputDisabled(v);
-		}
-		ui::Checkbox* cb = nullptr;
-		bool* at;
-	};
-
 #if 0
 	void OnInit() override
 	{
@@ -294,10 +324,10 @@ struct DataEditor : UINode
 					auto s = ctx->Push<ui::Panel>()->GetStyle();
 					s.SetLayout(style::Layout::Stack);
 					s.SetStackingDirection(style::StackingDirection::RightToLeft);
-					ctx->Make<BasicButton>()->Init("X", [&dlg]() { dlg.OnClose(); });
-					ctx->Make<BasicButton>()->Init("[]", [&dlg]() {
-						dlg.SetState(dlg.GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); });
-					ctx->Make<BasicButton>()->Init("_", [&dlg]() { dlg.SetState(ui::WindowState::Minimized); });
+					ctx->MakeWithText<ui::Button>("X")->onClick = [&dlg]() { dlg.OnClose(); };
+					ctx->MakeWithText<ui::Button>("[]")->onClick = [&dlg]() {
+						dlg.SetState(dlg.GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); };
+					ctx->MakeWithText<ui::Button>("_")->onClick = [&dlg]() { dlg.SetState(ui::WindowState::Minimized); };
 					ctx->Pop();
 
 					ctx->Push<ui::Panel>();
@@ -322,7 +352,7 @@ struct DataEditor : UINode
 		auto frf = [](UIContainer* ctx)
 		{
 			ctx->Push<ui::Panel>();
-			ctx->Make<BasicButton>()->Init("In-frame button", []() {});
+			ctx->MakeWithText<ui::Button>("In-frame button");
 			static int cur = 1;
 			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 0);
 			ctx->Text("Zero");
@@ -342,6 +372,58 @@ struct DataEditor : UINode
 		frs.SetMinHeight(100);
 #endif
 
+		auto* tg = ctx->Push<ui::TabGroup>();
+		{
+			ctx->Push<ui::TabList>();
+			{
+				ctx->MakeWithText<ui::TabButton>("First tab");
+				ctx->MakeWithText<ui::TabButton>("Second tab");
+			}
+			ctx->Pop();
+
+			ctx->Push<ui::TabPanel>()->SetVisible(tg->active == 0);
+			{
+				ctx->Text("Contents of the first tab");
+			}
+			ctx->Pop();
+
+			ctx->Push<ui::TabPanel>()->SetVisible(tg->active == 1);
+			{
+				ctx->Text("Contents of the second tab");
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+
+		tg = ctx->Push<ui::TabGroup>();
+		{
+			ctx->Push<ui::TabList>();
+			{
+				ctx->MakeWithText<ui::TabButton>("First tab");
+				ctx->MakeWithText<ui::TabButton>("Second tab");
+			}
+			ctx->Pop();
+
+			if (tg->active == 0)
+			{
+				ctx->Push<ui::TabPanel>()->id = 0;
+				{
+					ctx->Text("Contents of the first tab");
+				}
+				ctx->Pop();
+			}
+
+			if (tg->active == 1)
+			{
+				ctx->Push<ui::TabPanel>()->id = 1;
+				{
+					ctx->Text("Contents of the second tab");
+				}
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
 		btnGoBack = nullptr;
 		tbName = nullptr;
 		if (editing == SIZE_MAX)
@@ -354,26 +436,26 @@ struct DataEditor : UINode
 			}
 			ctx->Pop();
 
-			auto* r1 = ctx->Push<UICollapsibleTreeNode>();
+			auto* r1 = ctx->Push<ui::CollapsibleTreeNode>();
 			ctx->Text("root item 1");
 			if (r1->open)
 			{
 				ctx->Text("- data under root item 1");
-				auto* r1c1 = ctx->Push<UICollapsibleTreeNode>();
+				auto* r1c1 = ctx->Push<ui::CollapsibleTreeNode>();
 				ctx->Text("child 1");
 				if (r1c1->open)
 				{
-					auto* r1c1c1 = ctx->Push<UICollapsibleTreeNode>();
+					auto* r1c1c1 = ctx->Push<ui::CollapsibleTreeNode>();
 					ctx->Text("subchild 1");
 					ctx->Pop();
 				}
 				ctx->Pop();
 
-				auto* r1c2 = ctx->Push<UICollapsibleTreeNode>();
+				auto* r1c2 = ctx->Push<ui::CollapsibleTreeNode>();
 				ctx->Text("child 2");
 				if (r1c2->open)
 				{
-					auto* r1c2c1 = ctx->Push<UICollapsibleTreeNode>();
+					auto* r1c2c1 = ctx->Push<ui::CollapsibleTreeNode>();
 					ctx->Text("subchild 1");
 					ctx->Pop();
 				}
@@ -381,7 +463,7 @@ struct DataEditor : UINode
 			}
 			ctx->Pop();
 
-			auto* r2 = ctx->Push<UICollapsibleTreeNode>();
+			auto* r2 = ctx->Push<ui::CollapsibleTreeNode>();
 			ctx->Text("root item 2");
 			if (r2->open)
 			{
@@ -402,13 +484,13 @@ struct DataEditor : UINode
 
 			Property::Make(ctx, "Name", [&]()
 			{
-				tbName = ctx->Make<UITextbox>();
+				tbName = ctx->Make<ui::Textbox>();
 				tbName->text = items[editing].name;
 			});
 
 			Property::Make(ctx, "Enable", [&]()
 			{
-				ctx->Make<Checkbox>()->Init(items[editing].enable);//->SetInputDisabled(true);
+				ctx->Make<ui::Checkbox>()->Init(items[editing].enable);//->SetInputDisabled(true);
 			});
 		}
 	}
@@ -440,7 +522,7 @@ struct DataEditor : UINode
 		{ "third item", 333, true, 3.0f },
 	};
 	ui::Button* btnGoBack;
-	UITextbox* tbName;
+	ui::Textbox* tbName;
 	ui::Menu* topMenu;
 };
 
@@ -459,7 +541,7 @@ struct TEST : UINode
 
 		for (int i = 0; i < 3; i++)
 		{
-			testBtns[i] = ctx->Push<ui::Button>();
+			ctx->Push<ui::RadioButtonT<int>>()->Init(curTest, i)->onChange = [this]() { Rerender(); };
 			ctx->Text(testNames[i]);
 			ctx->Pop();
 		}
@@ -475,23 +557,7 @@ struct TEST : UINode
 
 		ctx->Pop();
 	}
-	void OnEvent(UIEvent& e) override
-	{
-		if (e.type == UIEventType::Activate)
-		{
-			for (int i = 0; i < 3; i++)
-			{
-				if (e.target == testBtns[i])
-				{
-					curTest = i;
-					Rerender();
-					break;
-				}
-			}
-		}
-	}
 
-	ui::Button* testBtns[3];
 	int curTest = 0;
 };
 
@@ -520,6 +586,8 @@ struct MainWindow : ui::NativeMainWindow
 		SetRenderFunc([](UIContainer* ctx)
 		{
 			ctx->Make<DataEditor>();
+			//ctx->Make<OpenClose>();
+			//ctx->Make<TEST>();
 		});
 	}
 };
@@ -533,6 +601,5 @@ int uimain(int argc, char* argv[])
 	return app.Run();
 
 	//uisys.Build<TEST>();
-	//uisys.Build<DataEditor>();
 	//uisys.Build<FileStructureViewer>();
 }

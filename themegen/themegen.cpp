@@ -10,7 +10,7 @@
 
 struct RRect
 {
-	int x0, y0, x1, y1, corner;
+	int x0, y0, x1, y1, corner00, corner01, corner10, corner11;
 
 	RRect& shrink(int by)
 	{
@@ -33,6 +33,10 @@ struct RRect
 		y1 += y;
 		return *this;
 	}
+	void setcorner(int c)
+	{
+		corner00 = corner01 = corner10 = corner11 = c;
+	}
 	RRect& diagflip()
 	{
 		int tmp;
@@ -49,7 +53,10 @@ RRect combine(const RRect& a, const RRect& b)
 		a.y0 < b.y0 ? a.y0 : b.y0,
 		a.x1 > b.x1 ? a.x1 : b.x1,
 		a.y1 > b.y1 ? a.y1 : b.y1,
-		a.corner < b.corner ? a.corner : b.corner,
+		a.corner00 < b.corner00 ? a.corner00 : b.corner00,
+		a.corner01 < b.corner01 ? a.corner01 : b.corner01,
+		a.corner10 < b.corner10 ? a.corner10 : b.corner10,
+		a.corner11 < b.corner11 ? a.corner11 : b.corner11,
 	};
 }
 
@@ -107,7 +114,7 @@ Color alphablend(Color a, Color b)
 
 int lerp(int a, int b, float t)
 {
-	return roundf(a * (1 - t) + b * t);
+	return (int)roundf(a * (1 - t) + b * t);
 }
 Color lerp(Color a, Color b, float t)
 {
@@ -132,26 +139,26 @@ int aacircle(int x, int y, int cx, int cy, int radius)
 {
 	int r2 = radius * radius;
 	int d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
-	float q = radius - sqrt(d2) + 1.0f;
-	return q < 0 ? 0 : q > 1 ? 255 : q * 255;
+	float q = float(radius) - sqrtf(float(d2)) + 1.0f;
+	return q < 0 ? 0 : q > 1 ? 255 : int(q * 255);
 }
 
 int dorectmask(int x, int y, const RRect& rr)
 {
 	if (x < rr.x0 || x > rr.x1 || y < rr.y0 || y > rr.y1)
 		return 0;
-	if (x < rr.x0 + rr.corner &&
-		y < rr.y0 + rr.corner)
-		return aacircle(x, y, rr.x0 + rr.corner, rr.y0 + rr.corner, rr.corner);
-	if (x > rr.x1 - rr.corner &&
-		y < rr.y0 + rr.corner)
-		return aacircle(x, y, rr.x1 - rr.corner, rr.y0 + rr.corner, rr.corner);
-	if (x < rr.x0 + rr.corner &&
-		y > rr.y1 - rr.corner)
-		return aacircle(x, y, rr.x0 + rr.corner, rr.y1 - rr.corner, rr.corner);
-	if (x > rr.x1 - rr.corner &&
-		y > rr.y1 - rr.corner)
-		return aacircle(x, y, rr.x1 - rr.corner, rr.y1 - rr.corner, rr.corner);
+	if (x < rr.x0 + rr.corner00 &&
+		y < rr.y0 + rr.corner00)
+		return aacircle(x, y, rr.x0 + rr.corner00, rr.y0 + rr.corner00, rr.corner00);
+	if (x > rr.x1 - rr.corner10 &&
+		y < rr.y0 + rr.corner10)
+		return aacircle(x, y, rr.x1 - rr.corner10, rr.y0 + rr.corner10, rr.corner10);
+	if (x < rr.x0 + rr.corner01 &&
+		y > rr.y1 - rr.corner01)
+		return aacircle(x, y, rr.x0 + rr.corner01, rr.y1 - rr.corner01, rr.corner01);
+	if (x > rr.x1 - rr.corner11 &&
+		y > rr.y1 - rr.corner11)
+		return aacircle(x, y, rr.x1 - rr.corner11, rr.y1 - rr.corner11, rr.corner11);
 	return 255;
 }
 
@@ -319,17 +326,21 @@ void save(const char* path)
 
 enum State
 {
-	Normal,
-	Hover,
-	Down,
-	Disabled,
+	Normal = 1 << 0,
+	Hover = 1 << 1,
+	Down = 1 << 2,
+	Disabled = 1 << 3,
 };
+State operator | (State a, State b)
+{
+	return (State)(int(a) | int(b));
+}
 
 const Color bgcolor = hexcol("202020");
 
 void theme_panel(RRect rr)
 {
-	rr.corner = 2;
+	rr.setcorner(2);
 	rasterize(onecolor{ hexcol("ffffff", 30) }, multmask(rectmask{ rr }, invmask(rectmask{ rr.getshrunk(1) })), false);
 	rr.shrink(1);
 	rasterize(onecolor{ hexcol("000000", 80) }, multmask(rectmask{ rr }, invmask(rectmask{ rr.getshrunk(1) })), false);
@@ -341,15 +352,17 @@ void theme_panel(RRect rr)
 
 void theme_button(RRect rr, State state)
 {
-	rr.corner = 1;
+	rr.setcorner(1);
 	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
 	rr.shrink(1);
-	rasterize(onecolor{ state == Disabled ? hexcol("303030") : hexcol("4d4d4d") }, rectmask{ rr });
+	rasterize(onecolor{ state & Disabled ? hexcol("303030") : state == Down ? hexcol("404040") : hexcol("4d4d4d") }, rectmask{ rr });
 	rr.shrink(1);
 	if (state == Disabled)
 		rasterize(gradvert{ hexcol("252525"), rr.y0, hexcol("222222"), rr.y1 }, rectmask{ rr });
 	else if (state == Down)
 		rasterize(gradvert{ hexcol("292929"), rr.y0, hexcol("2b2b2b"), rr.y1 }, rectmask{ rr });
+	else if (state == (Disabled | Down))
+		rasterize(gradvert{ hexcol("202020"), rr.y0, hexcol("242424"), rr.y1 }, rectmask{ rr });
 	else if (state == Hover)
 		rasterize(gradvert{ hexcol("3a3a3a"), rr.y0, hexcol("2b2b2b"), rr.y1 }, rectmask{ rr });
 	else
@@ -358,7 +371,7 @@ void theme_button(RRect rr, State state)
 
 void theme_textbox(RRect rr, State state)
 {
-	rr.corner = 0;
+	rr.setcorner(0);
 	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
 	rr.shrink(1);
 	rasterize(onecolor{ state == Disabled ? hexcol("303030") : hexcol("4d4d4d") }, rectmask{ rr });
@@ -368,9 +381,9 @@ void theme_textbox(RRect rr, State state)
 
 void theme_checkbox(RRect rr, bool radio, State state)
 {
-	rr.corner = 1;
+	rr.setcorner(1);
 	if (radio)
-		rr.corner = (rr.x1 - rr.x0) / 2;
+		rr.setcorner((rr.x1 - rr.x0) / 2);
 	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
 	rr.shrink(1);
 #if 0
@@ -380,7 +393,7 @@ void theme_checkbox(RRect rr, bool radio, State state)
 	rr.shrink(1);
 #endif
 	if (radio)
-		rr.corner = (rr.x1 - rr.x0) / 2;
+		rr.setcorner((rr.x1 - rr.x0) / 2);
 	if (state == Disabled)
 		rasterize(gradrad{ (rr.x0 + rr.x1) / 2.f, (rr.y0 + rr.y1) / 2.f, (rr.x1 - rr.x0) / 2.f, hexcol("222222"), hexcol("252525") }, rectmask{ rr });
 	else if (state == Down)
@@ -452,10 +465,18 @@ void theme_cbtick(int x, int y, State state)
 	rasterize(onecolor{ col }, mask2);
 }
 
+void theme_cbbox(int x, int y, State state)
+{
+	RRect rr = RRect{ x, y, x + 31, y + 31 }.shrink(9);
+	rasterize(onecolor{ hexcol("000000") }, rectmask{ rr });
+	blur5(RRect{ x + 3, y + 3, x + 32 - 3, y + 32 - 3 });
+	rasterize(onecolor{ state == Disabled ? col_tickdis : col_tick }, rectmask{ rr });
+}
+
 void theme_radiotick(int x, int y, State state)
 {
 	RRect rr = RRect{ x, y, x + 31, y + 31 }.shrink(9);
-	rr.corner = (rr.x1 - rr.x0) / 2;
+	rr.setcorner((rr.x1 - rr.x0) / 2);
 	rasterize(onecolor{ hexcol("000000") }, rectmask{ rr });
 	blur5(RRect{ x + 3, y + 3, x + 32 - 3, y + 32 - 3 });
 
@@ -475,6 +496,36 @@ void theme_treetick(int x, int y, State state, bool open)
 	auto col = state == Hover ? hexcol("cd1a00") : hexcol("999999");
 	rasterize(onecolor{ col }, mask1);
 	rasterize(onecolor{ col }, mask2);
+}
+
+void theme_tab(int x, int y, State state, bool tab)
+{
+	RRect rr{ x, y, x + 31, y + 31 };
+	if (tab && state != Down)
+		rr.y0++;
+	//rr.shrink(1);
+	rr.setcorner(1);
+	if (tab)
+	{
+		rr.corner01 = rr.corner11 = 0;
+		rr.y1--;
+	}
+	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
+	rr.shrink(1);
+	if (tab)
+		rr.y1 += 2;
+	rasterize(onecolor{ state == Down ? hexcol("606060") : hexcol("6d6d6d") }, rectmask{ rr });
+	rr.shrink(1);
+	if (tab)
+		rr.y1++;
+	if (!tab)
+		rasterize(onecolor{ hexcol("4b4b4b") }, rectmask{ rr });
+	else if (state == Down)
+		rasterize(gradvert{ hexcol("494949"), rr.y0, hexcol("4b4b4b"), rr.y1 }, rectmask{ rr });
+	else if (state == Hover)
+		rasterize(gradvert{ hexcol("5a4a4a"), rr.y0, hexcol("4b3b3b"), rr.y1 }, rectmask{ rr });
+	else
+		rasterize(gradvert{ hexcol("444444"), rr.y0, hexcol("373737"), rr.y1 }, rectmask{ rr });
 }
 
 int main()
@@ -503,6 +554,11 @@ int main()
 	theme_button(RRect{ x, y, x + 31, y + 31 }.shrink(1), Down);
 	x += 32;
 	theme_button(RRect{ x, y, x + 31, y + 31 }.shrink(1), Disabled);
+	x += 32;
+	theme_button(RRect{ x, y, x + 31, y + 31 }.shrink(1), Disabled | Down);
+
+	x += 32;
+	theme_panel(RRect{ x, y, x + 31, y + 31 }.shrink(1));
 
 	x += 32;
 	theme_textbox(RRect{ x, y, x + 31, y + 31 }.shrink(1), Normal);
@@ -524,6 +580,11 @@ int main()
 	x += 32;
 	theme_cbtick(x, y, Disabled);
 
+	x += 32;
+	theme_cbbox(x, y, Normal);
+	x += 32;
+	theme_cbbox(x, y, Disabled);
+
 	x = 0;
 	y = 64;
 	theme_checkbox(RRect{ x, y, x + 31, y + 31 }.shrink(1), true, Normal);
@@ -541,7 +602,13 @@ int main()
 
 	x = 0;
 	y = 96;
-	theme_panel(RRect{ x, y, x + 31, y + 31 }.shrink(1));
+	theme_tab(x, y, Normal, true);
+	x += 32;
+	theme_tab(x, y, Hover, true);
+	x += 32;
+	theme_tab(x, y, Down, true);
+	x += 32;
+	theme_tab(x, y, Down, false);
 
 	x = 128;
 	theme_treetick(x, y, Normal, false);

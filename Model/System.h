@@ -90,6 +90,13 @@ public:
 		Pop();
 		return ret;
 	}
+	template<class T, class = typename T::IsElement> T* MakeWithText(StringView text)
+	{
+		auto* ret = Push<T>();
+		Text(text);
+		Pop();
+		return ret;
+	}
 	template<class T, class = typename T::IsElement> T* Push()
 	{
 		auto* obj = _Alloc<T>();
@@ -126,10 +133,10 @@ public:
 		}
 		return obj;
 	}
-	UIBoxElement* PushBox() { return Push<UIBoxElement>(); }
-	UITextElement* Text(const char* s)
+	ui::BoxElement* PushBox() { return Push<ui::BoxElement>(); }
+	ui::TextElement* Text(StringView s)
 	{
-		auto* T = Push<UITextElement>();
+		auto* T = Push<ui::TextElement>();
 		T->SetText(s);
 		Pop();
 		return T;

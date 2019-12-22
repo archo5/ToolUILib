@@ -13,6 +13,10 @@ struct Theme
 	style::Block* radioButton;
 	style::Block* collapsibleTreeNode;
 	style::Block* textBoxBase;
+	style::Block* tabGroup;
+	style::Block* tabList;
+	style::Block* tabButton;
+	style::Block* tabPanel;
 
 	static Theme* current;
 };

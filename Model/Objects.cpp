@@ -22,6 +22,12 @@ void UIObject::OnPaint()
 	PaintChildren();
 }
 
+void UIObject::Paint()
+{
+	if (_CanPaint())
+		OnPaint();
+}
+
 float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
 {
 	float size = 0;
@@ -139,6 +145,8 @@ float UIObject::GetEstimatedHeight(float containerWidth, float containerHeight)
 
 float UIObject::GetFullEstimatedWidth(float containerWidth, float containerHeight)
 {
+	if (!_NeedsLayout())
+		return 0;
 	auto style = GetStyle();
 	float size = GetEstimatedWidth(containerWidth, containerHeight);
 	auto box_sizing = style.GetBoxSizing();
@@ -154,6 +162,8 @@ float UIObject::GetFullEstimatedWidth(float containerWidth, float containerHeigh
 
 float UIObject::GetFullEstimatedHeight(float containerWidth, float containerHeight)
 {
+	if (!_NeedsLayout())
+		return 0;
 	auto style = GetStyle();
 	float size = GetEstimatedHeight(containerWidth, containerHeight);
 	auto box_sizing = style.GetBoxSizing();
@@ -165,6 +175,12 @@ float UIObject::GetFullEstimatedHeight(float containerWidth, float containerHeig
 	size += ResolveUnits(style.GetMarginTop(), containerHeight);
 	size += ResolveUnits(style.GetMarginBottom(), containerHeight);
 	return size;
+}
+
+void UIObject::PerformLayout(const UIRect& rect)
+{
+	if (_NeedsLayout())
+		OnLayout(rect);
 }
 
 void UIObject::OnLayout(const UIRect& rect)
@@ -196,8 +212,8 @@ void UIObject::OnLayout(const UIRect& rect)
 	UIRect Arect =
 	{
 		Mrect.x0 + Prect.x0,
-		Mrect.x1 + Prect.x1,
 		Mrect.y0 + Prect.y0,
+		Mrect.x1 + Prect.x1,
 		Mrect.y1 + Prect.y1,
 	};
 	UIRect inrect =
@@ -225,7 +241,7 @@ void UIObject::OnLayout(const UIRect& rect)
 		{
 			float w = ch->GetFullEstimatedWidth(rect.GetWidth(), rect.GetHeight());
 			float h = ch->GetFullEstimatedHeight(rect.GetWidth(), rect.GetHeight());
-			ch->OnLayout({ p, y0, p + w, y0 + h });
+			ch->PerformLayout({ p, y0, p + w, y0 + h });
 			p += w;
 			maxH = std::max(maxH, h);
 		}
@@ -245,7 +261,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
 				float h = ch->GetFullEstimatedHeight(inrect.GetWidth(), inrect.GetHeight());
-				ch->OnLayout({ inrect.x0, p, inrect.x1, p + h });
+				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h });
 				p += h;
 			}
 			fcr = { inrect.x0, inrect.y0, inrect.x1, p };
@@ -255,7 +271,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
 				float w = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight());
-				ch->OnLayout({ p - w, inrect.y0, p, inrect.y1 });
+				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 });
 				p -= w;
 			}
 			fcr = { p, inrect.y0, inrect.x1, inrect.y1 };
@@ -266,7 +282,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
 				float h = ch->GetFullEstimatedHeight(inrect.GetWidth(), inrect.GetHeight());
-				ch->OnLayout({ inrect.x0, p - h, inrect.x1, p });
+				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p });
 				p -= h;
 			}
 			fcr = { inrect.x0, p, inrect.x1, inrect.y1 };
@@ -277,7 +293,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
 				float w = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight());
-				ch->OnLayout({ p, inrect.y0, p + w, inrect.y1 });
+				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 });
 				p += w;
 			}
 			fcr = { inrect.x0, inrect.y0, p, inrect.y1 };
@@ -357,6 +373,12 @@ int UIObject::CountChildElements() const
 	return o;
 }
 
+void UIObject::RerenderNode()
+{
+	if (auto* n = FindParentOfType<UINode>())
+		n->Rerender();
+}
+
 bool UIObject::IsHovered() const
 {
 	return !!(flags & UIObject_IsHovered);
@@ -371,6 +393,19 @@ bool UIObject::IsClicked(int button) const
 bool UIObject::IsFocused() const
 {
 	return this == system->eventSystem.focusObj;
+}
+
+bool UIObject::IsVisible() const
+{
+	return !(flags & UIObject_IsHidden);
+}
+
+void UIObject::SetVisible(bool v)
+{
+	if (v)
+		flags &= ~UIObject_IsHidden;
+	else
+		flags |= UIObject_IsHidden;
 }
 
 bool UIObject::IsInputDisabled() const

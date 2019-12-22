@@ -114,7 +114,7 @@ struct FileStructureViewer : UINode
 					openness.push_back(false);
 				if (curLevel == openLevel)
 				{
-					auto* item = ctx->Push<UICollapsibleTreeNode>();
+					auto* item = ctx->Push<ui::CollapsibleTreeNode>();
 					if (ctx->LastIsNew())
 						item->open = openness[id];
 					else
@@ -158,10 +158,20 @@ struct FileStructureViewer : UINode
 	std::vector<bool> openness;
 };
 
+struct MainWindow : ui::NativeMainWindow
+{
+	MainWindow()
+	{
+		SetRenderFunc([](UIContainer* ctx)
+		{
+			ctx->Make<FileStructureViewer>();
+		});
+	}
+};
 
 int uimain(int argc, char* argv[])
 {
-	UIApplication app(argc, argv);
-	app.BuildWithWindow<FileStructureViewer>();
+	ui::Application app(argc, argv);
+	MainWindow mw;
 	return app.Run();
 }

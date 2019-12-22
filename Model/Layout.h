@@ -25,7 +25,17 @@ enum EnumKindID
 	EK_AlignContent,
 };
 
-enum class Layout
+enum class Presence : uint8_t
+{
+	Undefined,
+	Inherit,
+
+	None,
+	LayoutOnly,
+	Visible,
+};
+
+enum class Layout : uint8_t
 {
 	Undefined,
 	Inherit,
@@ -37,7 +47,7 @@ enum class Layout
 	EdgeSlice, // child-controlled multidirectional stacking at the edges of remaining space
 };
 
-enum class StackingDirection
+enum class StackingDirection : uint8_t
 {
 	Undefined,
 	Inherit,
@@ -48,7 +58,7 @@ enum class StackingDirection
 	LeftToRight,
 };
 
-enum class Edge
+enum class Edge : uint8_t
 {
 	Undefined,
 	Inherit,
@@ -59,7 +69,7 @@ enum class Edge
 	Left,
 };
 
-enum class BoxSizing
+enum class BoxSizing : uint8_t
 {
 	Undefined,
 	Inherit,
@@ -253,6 +263,7 @@ struct Block
 
 	bool unique = false;
 
+	Presence presence = Presence::Undefined;
 	Layout layout = Layout::Undefined;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;

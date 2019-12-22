@@ -7,6 +7,7 @@
 #include <new>
 
 #include "../Core/Math.h"
+#include "../Core/String.h"
 
 #include "../Render/Render.h"
 
@@ -50,6 +51,7 @@ enum UIObjectFlags
 	UIObject_IsClickedAnyMask = (UIObject_IsClickedL | UIObject_IsClickedR
 		| UIObject_IsClickedM | UIObject_IsClickedX1 | UIObject_IsClickedX2),
 	UIObject_IsDisabled = 1 << 8,
+	UIObject_IsHidden = 1 << 9,
 };
 
 enum class Direction
@@ -69,10 +71,11 @@ public:
 	virtual void OnCompleteStructure() {}
 	virtual void OnEvent(UIEvent& e) {}
 	virtual void OnPaint();
+	void Paint();
 	void PaintChildren()
 	{
 		for (auto* ch = firstChild; ch; ch = ch->next)
-			ch->OnPaint();
+			ch->Paint();
 	}
 	virtual float CalcEstimatedWidth(float containerWidth, float containerHeight);
 	virtual float CalcEstimatedHeight(float containerWidth, float containerHeight);
@@ -80,11 +83,16 @@ public:
 	float GetEstimatedHeight(float containerWidth, float containerHeight);
 	virtual float GetFullEstimatedWidth(float containerWidth, float containerHeight);
 	virtual float GetFullEstimatedHeight(float containerWidth, float containerHeight);
+	void PerformLayout(const UIRect& rect);
 	virtual void OnLayout(const UIRect& rect);
 	virtual bool Contains(float x, float y) const
 	{
 		return GetBorderRect().Contains(x, y);
 	}
+
+	bool _CanPaint() const { return !(flags & UIObject_IsHidden); }
+	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
+
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
 	int CountChildElements() const;
@@ -102,10 +110,14 @@ public:
 				return t;
 		return nullptr;
 	}
+	void RerenderNode();
 
 	bool IsHovered() const;
 	bool IsClicked(int button = 0) const;
 	bool IsFocused() const;
+
+	bool IsVisible() const;
+	void SetVisible(bool v);
 
 	bool IsInputDisabled() const;
 	void SetInputDisabled(bool v);
@@ -144,10 +156,12 @@ public:
 	typedef char IsElement[1];
 };
 
-class UITextElement : public UIElement
+namespace ui {
+
+class TextElement : public UIElement
 {
 public:
-	UITextElement()
+	TextElement()
 	{
 		GetStyle().SetLayout(style::Layout::InlineBlock);
 	}
@@ -172,17 +186,19 @@ public:
 		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
 		PaintChildren();
 	}
-	void SetText(const char* t)
+	void SetText(StringView t)
 	{
-		text = t;
+		text.assign(t.data(), t.size());
 	}
 
 	std::string text;
 };
 
-class UIBoxElement : public UIElement
+class BoxElement : public UIElement
 {
 };
+
+} // ui
 
 class UINode : public UIObject
 {

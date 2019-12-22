@@ -18,73 +18,57 @@ struct DrumGenerator : UINode
 	}
 	void Render(UIContainer* ctx) override
 	{
-		playBtn = ctx->Push<UIButton>();
-		ctx->Text("Play");
-		ctx->Pop();
+		ctx->MakeWithText<ui::Button>("Play")->onClick = [this]() { Regenerate(); Play(); };
 
 		for (int i = 0; i < 3; i++)
 		{
-			rbs[i] = ctx->Make<UIRadioButton>();
-			rbs[i]->SetValue(state == i);
+			ctx->Make<ui::RadioButtonT<int>>()->Init(state, i)->onChange = [this]() { Rerender(); };
 		}
 	}
-	void OnEvent(UIEvent& ev) override
+	void Play()
 	{
-		if (ev.type == UIEventType::Activate && ev.target->IsChildOrSame(playBtn))
-		{
-			Regenerate();
+		PCMWAVEFORMAT fmt;
+		fmt.wf.wFormatTag = 3;
+		fmt.wf.nChannels = 1;
+		fmt.wf.nSamplesPerSec = 44100;
+		fmt.wf.nAvgBytesPerSec = fmt.wf.nSamplesPerSec * fmt.wf.nChannels * 4;
+		fmt.wf.nBlockAlign = 4;
+		fmt.wBitsPerSample = 32;
+		char* data = new char[46 + genData.size() * 4];
+		char* p = data;
 
-			PCMWAVEFORMAT fmt;
-			fmt.wf.wFormatTag = 3;
-			fmt.wf.nChannels = 1;
-			fmt.wf.nSamplesPerSec = 44100;
-			fmt.wf.nAvgBytesPerSec = fmt.wf.nSamplesPerSec * fmt.wf.nChannels * 4;
-			fmt.wf.nBlockAlign = 4;
-			fmt.wBitsPerSample = 32;
-			char* data = new char[46 + genData.size() * 4];
-			char* p = data;
+		// riff chunk
+		memcpy(p, "RIFF", 4);
+		p += 4;
+		*(uint32_t*)p = 42 + genData.size() * 4;
+		p += 4;
+		memcpy(p, "WAVE", 4);
+		p += 4;
 
-			// riff chunk
-			memcpy(p, "RIFF", 4);
-			p += 4;
-			*(uint32_t*)p = 42 + genData.size() * 4;
-			p += 4;
-			memcpy(p, "WAVE", 4);
-			p += 4;
+		// format chunk
+		memcpy(p, "fmt ", 4);
+		p += 4;
+		*(uint32_t*)p = sizeof(PCMWAVEFORMAT) + 2;
+		p += 4;
+		memcpy(p, &fmt, sizeof(PCMWAVEFORMAT));
+		p += sizeof(PCMWAVEFORMAT);
 
-			// format chunk
-			memcpy(p, "fmt ", 4);
-			p += 4;
-			*(uint32_t*)p = sizeof(PCMWAVEFORMAT) + 2;
-			p += 4;
-			memcpy(p, &fmt, sizeof(PCMWAVEFORMAT));
-			p += sizeof(PCMWAVEFORMAT);
+		*(uint16_t*)p = 0; // format extension field
+		p += 2;
 
-			*(uint16_t*)p = 0; // format extension field
-			p += 2;
+		// data chunk
+		memcpy(p, "data", 4);
+		p += 4;
+		*(uint32_t*)p = genData.size() * 4;
+		p += 4;
+		memcpy(p, genData.data(), genData.size() * 4);
+		p += genData.size() * 4;
 
-			// data chunk
-			memcpy(p, "data", 4);
-			p += 4;
-			*(uint32_t*)p = genData.size() * 4;
-			p += 4;
-			memcpy(p, genData.data(), genData.size() * 4);
-			p += genData.size() * 4;
+		FILE* fp = fopen("gen.wav", "wb");
+		fwrite(data, 1, p - data, fp);
+		fclose(fp);
 
-			FILE* fp = fopen("gen.wav", "wb");
-			fwrite(data, 1, p - data, fp);
-			fclose(fp);
-
-			PlaySoundW((PWSTR) data, NULL, SND_MEMORY);
-		}
-		for (int i = 0; i < 3; i++)
-		{
-			if (ev.type == UIEventType::Activate && ev.target->IsChildOrSame(rbs[i]))
-			{
-				state = i;
-				Rerender();
-			}
-		}
+		PlaySoundW((PWSTR) data, NULL, SND_MEMORY);
 	}
 	void Regenerate()
 	{
@@ -112,16 +96,25 @@ struct DrumGenerator : UINode
 			genData[s] = o;
 		}
 	}
-	UIButton* playBtn;
-	UIRadioButton* rbs[3];
 	int state = 0;
 	std::vector<float> genData;
 };
 
+struct MainWindow : ui::NativeMainWindow
+{
+	MainWindow()
+	{
+		SetTitle("Drum generator");
+		SetRenderFunc([](UIContainer* ctx)
+		{
+			ctx->Make<DrumGenerator>();
+		});
+	}
+};
+
 int uimain(int argc, char* argv[])
 {
-	UIApplication app(argc, argv);
-	auto* w = app.BuildWithWindow<DrumGenerator>();
-	w->SetTitle("Drum generator");
+	ui::Application app(argc, argv);
+	MainWindow mw;
 	return app.Run();
 }
