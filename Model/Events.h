@@ -28,6 +28,12 @@ enum class UIEventType
 	MouseMove,
 	ButtonDown,
 	ButtonUp,
+	DragStart, // mouse move with left button down (target: original element)
+	DragEnd, // esc / release left button (target: original element)
+	DragEnter, // points at element under mouse
+	DragLeave,
+	DragMove,
+	DragDrop, // target: element under mouse
 
 	GotFocus,
 	LostFocus,

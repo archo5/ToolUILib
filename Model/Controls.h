@@ -30,6 +30,7 @@ public:
 	virtual void OnSelect() = 0;
 	virtual bool IsSelected() = 0;
 
+	// TODO generalize efficiently
 	std::function<void()> onChange;
 };
 
@@ -77,6 +78,51 @@ public:
 
 	T* _iptr = nullptr;
 	T _value = {};
+};
+
+class ListBox : public UIElement
+{
+public:
+	ListBox();
+};
+
+class SelectableBase : public UIElement
+{
+public:
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+
+	virtual void OnSelect(bool) = 0;
+	virtual bool IsSelected() = 0;
+
+	std::function<void()> onChange;
+};
+
+class Selectable : public SelectableBase
+{
+public:
+	Selectable();
+	Selectable* Init(bool& bref)
+	{
+		_bptr = &bref;
+		return this;
+	}
+
+	virtual void OnSelect(bool v) override { if (_bptr) *_bptr = v; }
+	virtual bool IsSelected() override { return _bptr && *_bptr; }
+
+private:
+	bool* _bptr = nullptr;
+};
+
+class ProgressBar : public UIElement
+{
+public:
+	ProgressBar();
+	void OnPaint();
+
+	style::BlockRef completionBarStyle;
+	float progress = 0.5f;
 };
 
 class TabGroup : public UIElement
@@ -149,8 +195,33 @@ struct CollapsibleTreeNode : UIElement
 	bool _hovered = false;
 };
 
-struct Table : UINode
+class TableDataSource
 {
+public:
+	virtual size_t GetNumRows() = 0;
+	virtual size_t GetNumCols() = 0;
+	virtual std::string GetRowName(size_t row) = 0;
+	virtual std::string GetColName(size_t col) = 0;
+	virtual std::string GetText(size_t row, size_t col) = 0;
+};
+
+class Table : public UINode
+{
+public:
+	Table();
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+	void Render(UIContainer* ctx) override;
+
+	TableDataSource* GetDataSource() const { return _dataSource; }
+	void SetDataSource(TableDataSource* src);
+
+	style::BlockRef cellStyle;
+	style::BlockRef rowHeaderStyle;
+	style::BlockRef colHeaderStyle;
+
+private:
+	TableDataSource* _dataSource;
 };
 
 } // ui

@@ -17,10 +17,17 @@ struct ThemeInit
 	style::Block dtRadioButton;
 	style::Block dtCollapsibleTreeNode;
 	style::Block dtTextBoxBase;
+	style::Block dtListBox;
+	style::Block dtProgressBarBase;
+	style::Block dtProgressBarCompletion;
 	style::Block dtTabGroup;
 	style::Block dtTabList;
 	style::Block dtTabButton;
 	style::Block dtTabPanel;
+	style::Block dtTableBase;
+	style::Block dtTableCell;
+	style::Block dtTableRowHeader;
+	style::Block dtTableColHeader;
 
 	ThemeInit()
 	{
@@ -31,15 +38,27 @@ struct ThemeInit
 		CreateRadioButton();
 		CreateCollapsibleTreeNode();
 		CreateTextBoxBase();
+		CreateListBox();
+		CreateProgressBarBase();
+		CreateProgressBarCompletion();
 		CreateTabGroup();
 		CreateTabList();
 		CreateTabButton();
 		CreateTabPanel();
+		CreateTableBase();
+		CreateTableCell();
+		CreateTableRowHeader();
+		CreateTableColHeader();
 		Theme::current = &defaultTheme;
+	}
+	void PreventHeapDelete(style::Accessor& a)
+	{
+		a.block->_refCount++;
 	}
 	void CreateObject()
 	{
 		style::Accessor a(&dtObject);
+		PreventHeapDelete(a);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 		};
@@ -48,6 +67,7 @@ struct ThemeInit
 	void CreatePanel()
 	{
 		style::Accessor a(&dtPanel);
+		PreventHeapDelete(a);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetMargin(2);
 		a.SetPadding(6);
@@ -61,6 +81,7 @@ struct ThemeInit
 	void CreateButton()
 	{
 		style::Accessor a(&dtButton);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
@@ -77,6 +98,7 @@ struct ThemeInit
 	void CreateCheckbox()
 	{
 		style::Accessor a(&dtCheckbox);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
 		//a.SetWidth(style::Coord::Percent(12));
 		//a.SetHeight(style::Coord::Percent(12));
@@ -98,6 +120,7 @@ struct ThemeInit
 	void CreateRadioButton()
 	{
 		style::Accessor a(&dtRadioButton);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
 		//a.SetWidth(style::Coord::Percent(12));
 		//a.SetHeight(style::Coord::Percent(12));
@@ -122,6 +145,7 @@ struct ThemeInit
 	void CreateCollapsibleTreeNode()
 	{
 		style::Accessor a(&dtCollapsibleTreeNode);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::Stack);
 		//a.SetPadding(1);
 		a.SetPaddingLeft(GetFontHeight());
@@ -137,6 +161,7 @@ struct ThemeInit
 	void CreateTextBoxBase()
 	{
 		style::Accessor a(&dtTextBoxBase);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
@@ -149,9 +174,52 @@ struct ThemeInit
 		};
 		defaultTheme.textBoxBase = a.block;
 	}
+	void CreateListBox()
+	{
+		style::Accessor a(&dtListBox);
+		PreventHeapDelete(a);
+		a.SetLayout(style::Layout::Stack);
+		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		a.SetPadding(5);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.listBox = a.block;
+	}
+	void CreateProgressBarBase()
+	{
+		style::Accessor a(&dtProgressBarBase);
+		PreventHeapDelete(a);
+		a.SetPadding(5);
+		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.progressBarBase = a.block;
+	}
+	void CreateProgressBarCompletion()
+	{
+		style::Accessor a(&dtProgressBarCompletion);
+		PreventHeapDelete(a);
+		a.SetLayout(style::Layout::InlineBlock);
+		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		a.SetMargin(2);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.progressBarCompletion = a.block;
+	}
 	void CreateTabGroup()
 	{
 		style::Accessor a(&dtTabGroup);
+		PreventHeapDelete(a);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetMargin(2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -162,6 +230,7 @@ struct ThemeInit
 	void CreateTabList()
 	{
 		style::Accessor a(&dtTabList);
+		PreventHeapDelete(a);
 		a.SetPadding(0, 4);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetLayout(style::Layout::Stack);
@@ -174,6 +243,7 @@ struct ThemeInit
 	void CreateTabButton()
 	{
 		style::Accessor a(&dtTabButton);
+		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
@@ -189,6 +259,7 @@ struct ThemeInit
 	void CreateTabPanel()
 	{
 		style::Accessor a(&dtTabPanel);
+		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
@@ -199,6 +270,83 @@ struct ThemeInit
 			DrawThemeElement(TE_TabPanel, r.x0, r.y0, r.x1, r.y1);
 		};
 		defaultTheme.tabPanel = a.block;
+	}
+	void CreateTableBase()
+	{
+		style::Accessor a(&dtTableBase);
+		PreventHeapDelete(a);
+		a.SetPadding(5);
+		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.tableBase = a.block;
+	}
+	void CreateTableCell()
+	{
+		style::Accessor a(&dtTableCell);
+		PreventHeapDelete(a);
+		a.SetPadding(1);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			GL::BatchRenderer br;
+			GL::SetTexture(0);
+			br.Begin();
+			br.SetColor(0.05f, 0.05f, 0.05f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.SetColor(0.15f, 0.15f, 0.15f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.End();
+		};
+		defaultTheme.tableCell = a.block;
+	}
+	void CreateTableRowHeader()
+	{
+		style::Accessor a(&dtTableRowHeader);
+		PreventHeapDelete(a);
+		a.SetPadding(1);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			GL::BatchRenderer br;
+			GL::SetTexture(0);
+			br.Begin();
+			br.SetColor(0.1f, 0.1f, 0.1f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.SetColor(0.2f, 0.2f, 0.2f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.End();
+		};
+		defaultTheme.tableRowHeader = a.block;
+	}
+	void CreateTableColHeader()
+	{
+		style::Accessor a(&dtTableColHeader);
+		PreventHeapDelete(a);
+		a.SetPadding(1);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			GL::BatchRenderer br;
+			GL::SetTexture(0);
+			br.Begin();
+			br.SetColor(0.1f, 0.1f, 0.1f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.SetColor(0.2f, 0.2f, 0.2f);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+			br.End();
+		};
+		defaultTheme.tableColHeader = a.block;
 	}
 }
 init;

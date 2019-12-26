@@ -226,6 +226,12 @@ void Block::MergeParent(const Block& o)
 	if (padding_bottom.unit == CoordTypeUnit::Inherit) padding_bottom = o.padding_bottom;
 }
 
+void Block::_Release()
+{
+	if (--_refCount <= 0)
+		delete this;
+}
+
 
 bool Selector::Element::IsDirectMatch(UIObject* obj) const
 {
@@ -420,20 +426,16 @@ void Sheet::_Preprocess(StringView text, IErrorCallback* err)
 style::Block* Accessor::GetOrCreate()
 {
 	// TODO optimize?
-	if (block->unique || !obj)
+	if (block->_refCount <= 1 || !blkref)
 		return block;
-	// TODO reference counting?
-	if (!obj->styleProps->unique)
-		obj->styleProps = new Block(*obj->styleProps);
-	obj->styleProps->unique = true;
-	return block = obj->styleProps;
+	return block = *blkref = new Block(**blkref);
 }
 
-Accessor::Accessor(Block* b) : block(b), obj(nullptr)
+Accessor::Accessor(Block* b) : block(b), blkref(nullptr)
 {
 }
 
-Accessor::Accessor(UIObject* o) : block(o->styleProps), obj(o)
+Accessor::Accessor(BlockRef& r, bool unique) : block(r), blkref(unique ? &r : nullptr)
 {
 }
 

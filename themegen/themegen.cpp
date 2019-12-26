@@ -355,7 +355,7 @@ void theme_button(RRect rr, State state)
 	rr.setcorner(1);
 	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
 	rr.shrink(1);
-	rasterize(onecolor{ state & Disabled ? hexcol("303030") : state == Down ? hexcol("404040") : hexcol("4d4d4d") }, rectmask{ rr });
+	rasterize(onecolor{ state & Disabled ? hexcol("202020") : state == Down ? hexcol("303030") : hexcol("4d4d4d") }, rectmask{ rr });
 	rr.shrink(1);
 	if (state == Disabled)
 		rasterize(gradvert{ hexcol("252525"), rr.y0, hexcol("222222"), rr.y1 }, rectmask{ rr });

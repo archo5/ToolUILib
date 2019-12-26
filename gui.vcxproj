@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\PropertyStore.cpp" />
+    <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
     <ClCompile Include="Model\Events.cpp" />
@@ -131,6 +132,7 @@
     <ClInclude Include="Core\Math.h" />
     <ClInclude Include="Core\Memory.h" />
     <ClInclude Include="Core\PropertyStore.h" />
+    <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Controls.h" />

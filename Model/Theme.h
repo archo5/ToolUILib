@@ -6,17 +6,25 @@ namespace ui {
 
 struct Theme
 {
-	style::Block* object;
-	style::Block* panel;
-	style::Block* button;
-	style::Block* checkbox;
-	style::Block* radioButton;
-	style::Block* collapsibleTreeNode;
-	style::Block* textBoxBase;
-	style::Block* tabGroup;
-	style::Block* tabList;
-	style::Block* tabButton;
-	style::Block* tabPanel;
+	// core controls
+	style::BlockRef object;
+	style::BlockRef panel;
+	style::BlockRef button;
+	style::BlockRef checkbox;
+	style::BlockRef radioButton;
+	style::BlockRef collapsibleTreeNode;
+	style::BlockRef textBoxBase;
+	style::BlockRef listBox;
+	style::BlockRef progressBarBase;
+	style::BlockRef progressBarCompletion;
+	style::BlockRef tabGroup;
+	style::BlockRef tabList;
+	style::BlockRef tabButton;
+	style::BlockRef tabPanel;
+	style::BlockRef tableBase;
+	style::BlockRef tableCell;
+	style::BlockRef tableRowHeader;
+	style::BlockRef tableColHeader;
 
 	static Theme* current;
 };

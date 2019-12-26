@@ -40,6 +40,9 @@
     <ClCompile Include="Render\Render.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Serialization.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -91,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="Render\Render.h">
       <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Serialization.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

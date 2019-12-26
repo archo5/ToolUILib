@@ -179,7 +179,7 @@ struct NativeWindow_Impl
 		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
 		renderCtx = GL::CreateRenderContext(window);
 
-		UpdateVisibilityState();
+		//UpdateVisibilityState();
 
 		RECT clientRect;
 		GetClientRect(window, &clientRect);
@@ -215,7 +215,7 @@ struct NativeWindow_Impl
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
 
-		auto* N = cont.AllocIfDifferent<ui::RenderNode>(cont.rootNode);
+		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
 		N->renderFunc = renderFunc;
 		cont._BuildUsing(N);
 		evsys.RecomputeLayout();
@@ -270,6 +270,18 @@ struct NativeWindow_Impl
 		ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
 	}
 
+	void UpdateStyle()
+	{
+		int ws = WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_DLGFRAME;
+		if (style & WS_Resizable)
+			ws |= WS_THICKFRAME;
+		if (style & WS_TitleBar)
+			ws |= WS_DLGFRAME;
+		ws = WS_THICKFRAME;
+		SetWindowLong(window, GWL_STYLE, ws);
+		SetWindowPos(window, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+	}
+
 	void EnterExclusiveMode()
 	{
 		if (exclusiveMode)
@@ -304,7 +316,9 @@ struct NativeWindow_Impl
 	bool visible = true;
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
+	bool firstShow = true;
 	uint8_t sysMoveSizeState = MSST_None;
+	WindowStyle style = WS_Default;
 };
 
 static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
@@ -326,12 +340,14 @@ NativeWindowBase::NativeWindowBase()
 	_impl->Init(this);
 }
 
+#if 0
 NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> renderFunc)
 {
 	_impl = new NativeWindow_Impl();
 	_impl->Init(this);
 	_impl->SetRenderFunc(renderFunc);
 }
+#endif
 
 NativeWindowBase::~NativeWindowBase()
 {
@@ -344,10 +360,12 @@ void NativeWindowBase::OnClose()
 	SetVisible(false);
 }
 
+#if 0
 void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
 {
 	_impl->SetRenderFunc(renderFunc);
 }
+#endif
 
 std::string NativeWindowBase::GetTitle()
 {
@@ -364,6 +382,17 @@ void NativeWindowBase::SetTitle(const char* title)
 	SetWindowTextA(_impl->window, title);
 }
 
+WindowStyle NativeWindowBase::GetStyle()
+{
+	return _impl->style;
+}
+
+void NativeWindowBase::SetStyle(WindowStyle ws)
+{
+	_impl->style = ws;
+	_impl->UpdateStyle();
+}
+
 bool NativeWindowBase::IsVisible()
 {
 	return _impl->visible;
@@ -373,6 +402,19 @@ void NativeWindowBase::SetVisible(bool v)
 {
 	_impl->visible = v;
 	_impl->UpdateVisibilityState();
+
+	if (v && _impl->firstShow)
+	{
+		_impl->firstShow = false;
+
+		auto& cont = _impl->GetContainer();
+		auto& evsys = _impl->GetEventSys();
+
+		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
+		N->renderFunc = [this](UIContainer* ctx) { OnRender(ctx); };
+		cont._BuildUsing(N);
+		evsys.RecomputeLayout();
+	}
 }
 
 Menu* NativeWindowBase::GetMenu()
@@ -506,6 +548,18 @@ void* NativeWindowBase::GetNativeHandle() const
 bool NativeWindowBase::IsDragged() const
 {
 	return _impl->sysMoveSizeState == MSST_Move;
+}
+
+
+void NativeWindowRenderFunc::OnRender(UIContainer* ctx)
+{
+	if (_renderFunc)
+		_renderFunc(ctx);
+}
+
+void NativeWindowRenderFunc::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+{
+	_renderFunc = renderFunc;
 }
 
 

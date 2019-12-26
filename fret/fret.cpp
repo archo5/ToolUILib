@@ -160,12 +160,9 @@ struct FileStructureViewer : UINode
 
 struct MainWindow : ui::NativeMainWindow
 {
-	MainWindow()
+	void OnRender(UIContainer* ctx) override
 	{
-		SetRenderFunc([](UIContainer* ctx)
-		{
-			ctx->Make<FileStructureViewer>();
-		});
+		ctx->Make<FileStructureViewer>();
 	}
 };
 
@@ -173,5 +170,6 @@ int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
 	MainWindow mw;
+	mw.SetVisible(true);
 	return app.Run();
 }

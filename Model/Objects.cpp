@@ -12,8 +12,6 @@ UIObject::UIObject()
 UIObject::~UIObject()
 {
 	system->eventSystem.OnDestroy(this);
-	if (styleProps->unique)
-		delete styleProps;
 }
 
 void UIObject::OnPaint()
@@ -423,13 +421,11 @@ void UIObject::SetInputDisabled(bool v)
 
 style::Accessor UIObject::GetStyle()
 {
-	return { this };
+	return style::Accessor(styleProps, true);
 }
 
 void UIObject::SetStyle(style::Block* style)
 {
-	if (styleProps && styleProps->unique)
-		delete styleProps;
 	styleProps = style;
 }
 

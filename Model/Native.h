@@ -21,6 +21,18 @@ enum class WindowState : uint8_t
 	Maximized,
 };
 
+enum WindowStyle
+{
+	WS_None = 0,
+	WS_TitleBar = 1 << 0,
+	WS_Resizable = 1 << 1,
+	WS_Default = WS_Resizable | WS_TitleBar,
+};
+inline constexpr WindowStyle operator | (WindowStyle a, WindowStyle b)
+{
+	return WindowStyle(int(a) | int(b));
+}
+
 struct NativeWindowGeometry
 {
 	Point<int> position;
@@ -34,14 +46,18 @@ class NativeWindowBase
 {
 public:
 	NativeWindowBase();
-	NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
+	//NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
 	~NativeWindowBase();
 
+	virtual void OnRender(UIContainer* ctx) = 0;
 	virtual void OnClose();
-	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+	//void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
 
 	std::string GetTitle();
 	void SetTitle(const char* title);
+
+	WindowStyle GetStyle();
+	void SetStyle(WindowStyle ws);
 
 	bool IsVisible();
 	void SetVisible(bool v);
@@ -79,6 +95,16 @@ private:
 	NativeWindow_Impl* _impl = nullptr;
 };
 
+class NativeWindowRenderFunc : public NativeWindowBase
+{
+public:
+	void OnRender(UIContainer* ctx) override;
+	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+
+private:
+	std::function<void(UIContainer*)> _renderFunc;
+};
+
 class NativeMainWindow : public NativeWindowBase
 {
 public:
@@ -88,7 +114,11 @@ public:
 class NativeDialogWindow : public NativeWindowBase
 {
 public:
-	void Show() { ProcessEventsExclusive(); }
+	void Show()
+	{
+		SetVisible(true);
+		ProcessEventsExclusive();
+	}
 };
 
 class NativeWindowNode : public UINode
@@ -99,10 +129,10 @@ public:
 	float GetFullEstimatedWidth(float containerWidth, float containerHeight) override { return 0; }
 	float GetFullEstimatedHeight(float containerWidth, float containerHeight) override { return 0; }
 
-	NativeWindowBase* GetWindow() { return &_window; }
+	NativeWindowRenderFunc* GetWindow() { return &_window; }
 
 private:
-	NativeWindowBase _window;
+	NativeWindowRenderFunc _window;
 };
 
 class Application

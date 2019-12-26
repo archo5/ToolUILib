@@ -260,8 +260,9 @@ struct Block
 	void Compile(StringView& text, IErrorCallback* err);
 	void MergeDirect(const Block& o);
 	void MergeParent(const Block& o);
+	void _Release();
 
-	bool unique = false;
+	uint32_t _refCount = 0;
 
 	Presence presence = Presence::Undefined;
 	Layout layout = Layout::Undefined;
@@ -342,14 +343,56 @@ public:
 	std::vector<Sheet> sheets;
 };
 
+class BlockRef
+{
+public:
+	BlockRef() : block(nullptr) {}
+	BlockRef(Block* b) : block(b) { b->_refCount++;  }
+	BlockRef(const BlockRef& b) : block(b.block) { if (block) block->_refCount++; }
+	BlockRef(BlockRef&& b) : block(b.block) { b.block = nullptr; }
+	~BlockRef() { if (block) block->_Release(); }
+	BlockRef& operator = (Block* b)
+	{
+		if (b)
+			b->_refCount++;
+		if (block)
+			block->_Release();
+		block = b;
+		return *this;
+	}
+	BlockRef& operator = (const BlockRef& b)
+	{
+		if (b.block)
+			b.block->_refCount++;
+		if (block)
+			block->_Release();
+		block = b.block;
+		return *this;
+	}
+	BlockRef& operator = (BlockRef&& b)
+	{
+		if (block && block != b.block)
+			block->_Release();
+		block = b.block;
+		b.block = nullptr;
+		return *this;
+	}
+	operator Block* () const { return block; }
+	Block& operator * () const { return *block; }
+	Block* operator -> () const { return block; }
+
+private:
+	Block* block;
+};
+
 class Accessor
 {
 	Block* GetOrCreate();
 
 public:
 
-	Accessor(Block* b);
-	Accessor(UIObject* o);
+	explicit Accessor(Block* b);
+	explicit Accessor(BlockRef& r, bool unique = true);
 
 #if 0
 	Display GetDisplay() const;
@@ -443,8 +486,8 @@ public:
 	void SetPadding(Coord t, Coord r, Coord b, Coord l);
 
 
-	style::Block* block;
-	UIObject* obj;
+	Block* block;
+	BlockRef* blkref;
 };
 
 void FlexLayout(UIObject* obj);

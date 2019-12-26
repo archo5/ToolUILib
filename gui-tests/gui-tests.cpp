@@ -310,7 +310,22 @@ struct DataEditor : UINode
 		}
 		ctx->Pop();
 
-#if 0
+		ctx->MakeWithText<ui::ProgressBar>("Processing...")->progress = 0.37f;
+
+		struct DS : ui::TableDataSource
+		{
+			size_t GetNumRows() { return 3; }
+			size_t GetNumCols() { return 4; }
+			std::string GetRowName(size_t row) { return "Row" + std::to_string(row); }
+			std::string GetColName(size_t col) { return "Col" + std::to_string(col); }
+			std::string GetText(size_t row, size_t col) { return "R" + std::to_string(row) + "C" + std::to_string(col); }
+		};
+		static DS ds;
+		auto* tbl = ctx->Make<ui::Table>();
+		tbl->SetDataSource(&ds);
+		tbl->GetStyle().SetHeight(90);
+
+#if 1
 		auto* nw = ctx->Make<ui::NativeWindowNode>();
 		nw->GetWindow()->SetTitle("Subwindow A");
 		auto renderFunc = [](UIContainer* ctx)
@@ -318,23 +333,28 @@ struct DataEditor : UINode
 			ctx->Push<ui::Panel>();
 			auto onClick = []()
 			{
-				ui::NativeDialogWindow dlg;
-				auto render = [&dlg](UIContainer* ctx)
+				struct DialogTest : ui::NativeDialogWindow
 				{
-					auto s = ctx->Push<ui::Panel>()->GetStyle();
-					s.SetLayout(style::Layout::Stack);
-					s.SetStackingDirection(style::StackingDirection::RightToLeft);
-					ctx->MakeWithText<ui::Button>("X")->onClick = [&dlg]() { dlg.OnClose(); };
-					ctx->MakeWithText<ui::Button>("[]")->onClick = [&dlg]() {
-						dlg.SetState(dlg.GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); };
-					ctx->MakeWithText<ui::Button>("_")->onClick = [&dlg]() { dlg.SetState(ui::WindowState::Minimized); };
-					ctx->Pop();
+					DialogTest()
+					{
+						SetStyle(ui::WS_Resizable);
+					}
+					void OnRender(UIContainer* ctx) override
+					{
+						auto s = ctx->Push<ui::Panel>()->GetStyle();
+						s.SetLayout(style::Layout::Stack);
+						s.SetStackingDirection(style::StackingDirection::RightToLeft);
+						ctx->MakeWithText<ui::Button>("X")->onClick = [this]() { OnClose(); };
+						ctx->MakeWithText<ui::Button>("[]")->onClick = [this]() {
+							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); };
+						ctx->MakeWithText<ui::Button>("_")->onClick = [this]() { SetState(ui::WindowState::Minimized); };
+						ctx->Pop();
 
-					ctx->Push<ui::Panel>();
-					ctx->Make<ItemButton>()->Init("Test", [&dlg]() { dlg.OnClose(); });
-					ctx->Pop();
-				};
-				dlg.SetRenderFunc(render);
+						ctx->Push<ui::Panel>();
+						ctx->Make<ItemButton>()->Init("Test", [this]() { OnClose(); });
+						ctx->Pop();
+					}
+				} dlg;
 				dlg.SetTitle("Dialog!");
 				dlg.Show();
 			};
@@ -342,9 +362,8 @@ struct DataEditor : UINode
 			ctx->Make<ItemButton>()->Init("Only another button (dialog)", onClick);
 			ctx->Pop();
 		};
-		ctx->GetNativeWindow()->SetInnerUIEnabled(false);
-		nw->GetWindow()->SetParent(ctx->GetNativeWindow());
 		nw->GetWindow()->SetRenderFunc(renderFunc);
+		nw->GetWindow()->SetVisible(true);
 #endif
 
 #if 1
@@ -372,6 +391,7 @@ struct DataEditor : UINode
 		frs.SetMinHeight(100);
 #endif
 
+#if 0
 		auto* tg = ctx->Push<ui::TabGroup>();
 		{
 			ctx->Push<ui::TabList>();
@@ -422,6 +442,14 @@ struct DataEditor : UINode
 				ctx->Pop();
 			}
 		}
+		ctx->Pop();
+#endif
+
+		static bool lbsel0 = false;
+		static bool lbsel1 = true;
+		ctx->Push<ui::ListBox>();
+		ctx->MakeWithText<ui::Selectable>("Item 1")->Init(lbsel0);
+		ctx->MakeWithText<ui::Selectable>("Item two")->Init(lbsel1);
 		ctx->Pop();
 
 		btnGoBack = nullptr;
@@ -581,14 +609,11 @@ void EarlyTest()
 
 struct MainWindow : ui::NativeMainWindow
 {
-	MainWindow()
+	void OnRender(UIContainer* ctx)
 	{
-		SetRenderFunc([](UIContainer* ctx)
-		{
-			ctx->Make<DataEditor>();
-			//ctx->Make<OpenClose>();
-			//ctx->Make<TEST>();
-		});
+		ctx->Make<DataEditor>();
+		//ctx->Make<OpenClose>();
+		//ctx->Make<TEST>();
 	}
 };
 
@@ -598,6 +623,7 @@ int uimain(int argc, char* argv[])
 
 	ui::Application app(argc, argv);
 	MainWindow mw;
+	mw.SetVisible(true);
 	return app.Run();
 
 	//uisys.Build<TEST>();

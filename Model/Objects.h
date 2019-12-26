@@ -7,6 +7,7 @@
 #include <new>
 
 #include "../Core/Math.h"
+#include "../Core/Serialization.h"
 #include "../Core/String.h"
 
 #include "../Render/Render.h"
@@ -142,7 +143,7 @@ public:
 	UIObject* next = nullptr;
 
 	ui::FrameContents* system = nullptr;
-	style::Block* styleProps = nullptr;
+	style::BlockRef styleProps;
 
 	// final layout rectangles: C=content, P=padding, B=border
 	UIRect finalRectC;
