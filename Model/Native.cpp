@@ -148,6 +148,12 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0);
 	}
+	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
+	{
+		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
+			return;
+		mainTarget.target->OnMouseScroll(dx, dy);
+	}
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
 	{
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
@@ -575,13 +581,18 @@ void NativeWindowNode::OnLayout(const UIRect& rect)
 }
 
 
+extern void SubscriptionTable_Init();
+extern void SubscriptionTable_Free();
+
 Application::Application(int argc, char* argv[])
 {
+	SubscriptionTable_Init();
 }
 
 Application::~Application()
 {
 	//system.container.Free();
+	SubscriptionTable_Free();
 }
 
 void Application::Quit(int code)
@@ -681,6 +692,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				HIWORD(wParam) == XBUTTON1 ? UIMouseButton::X1 : UIMouseButton::X2,
 				UIMouseCoord(GET_X_LPARAM(lParam)),
 				UIMouseCoord(GET_Y_LPARAM(lParam)));
+		}
+		return TRUE;
+	case WM_MOUSEWHEEL:
+		if (auto* evsys = GetEventSys(hWnd))
+		{
+			evsys->OnMouseScroll(0, GET_WHEEL_DELTA_WPARAM(wParam));
+		}
+		return TRUE;
+	case WM_MOUSEHWHEEL:
+		if (auto* evsys = GetEventSys(hWnd))
+		{
+			evsys->OnMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam), 0);
 		}
 		return TRUE;
 	case WM_KEYDOWN:

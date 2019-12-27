@@ -10,7 +10,7 @@ float randf()
 	return rand() / (float)RAND_MAX;
 }
 
-struct DrumGenerator : UINode
+struct DrumGenerator : ui::Node
 {
 	DrumGenerator()
 	{
@@ -105,10 +105,10 @@ struct MainWindow : ui::NativeMainWindow
 	MainWindow()
 	{
 		SetTitle("Drum generator");
-		SetRenderFunc([](UIContainer* ctx)
-		{
-			ctx->Make<DrumGenerator>();
-		});
+	}
+	void OnRender(UIContainer* ctx) override
+	{
+		ctx->Make<DrumGenerator>();
 	}
 };
 
@@ -116,5 +116,6 @@ int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
 	MainWindow mw;
+	mw.SetVisible(true);
 	return app.Run();
 }

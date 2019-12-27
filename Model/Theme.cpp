@@ -20,6 +20,12 @@ struct ThemeInit
 	style::Block dtListBox;
 	style::Block dtProgressBarBase;
 	style::Block dtProgressBarCompletion;
+	style::Block dtSliderHBase;
+	style::Block dtSliderHTrack;
+	style::Block dtSliderHTrackFill;
+	style::Block dtSliderHThumb;
+	style::Block dtScrollVTrack;
+	style::Block dtScrollVThumb;
 	style::Block dtTabGroup;
 	style::Block dtTabList;
 	style::Block dtTabButton;
@@ -41,6 +47,12 @@ struct ThemeInit
 		CreateListBox();
 		CreateProgressBarBase();
 		CreateProgressBarCompletion();
+		CreateSliderHBase();
+		CreateSliderHTrack();
+		CreateSliderHTrackFill();
+		CreateSliderHThumb();
+		CreateScrollVTrack();
+		CreateScrollVThumb();
 		CreateTabGroup();
 		CreateTabList();
 		CreateTabButton();
@@ -215,6 +227,86 @@ struct ThemeInit
 			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
 		};
 		defaultTheme.progressBarCompletion = a.block;
+	}
+	void CreateSliderHBase()
+	{
+		style::Accessor a(&dtSliderHBase);
+		PreventHeapDelete(a);
+		a.SetPaddingTop(20);
+		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+		};
+		defaultTheme.sliderHBase = a.block;
+	}
+	void CreateSliderHTrack()
+	{
+		style::Accessor a(&dtSliderHTrack);
+		PreventHeapDelete(a);
+		a.SetMargin(5);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.sliderHTrack = a.block;
+	}
+	void CreateSliderHTrackFill()
+	{
+		style::Accessor a(&dtSliderHTrackFill);
+		PreventHeapDelete(a);
+		a.SetMargin(5);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.sliderHTrackFill = a.block;
+	}
+	void CreateSliderHThumb()
+	{
+		style::Accessor a(&dtSliderHThumb);
+		PreventHeapDelete(a);
+		a.SetPadding(4, 4);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(
+				info.IsDown() ? TE_ButtonPressed :
+				info.IsHovered() ? TE_ButtonHover :
+				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
+				r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.sliderHThumb = a.block;
+	}
+	void CreateScrollVTrack()
+	{
+		style::Accessor a(&dtScrollVTrack);
+		PreventHeapDelete(a);
+		a.SetWidth(20);
+		a.SetPadding(2);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.scrollVTrack = a.block;
+	}
+	void CreateScrollVThumb()
+	{
+		style::Accessor a(&dtScrollVThumb);
+		PreventHeapDelete(a);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(
+				info.IsDown() ? TE_ButtonPressed :
+				info.IsHovered() ? TE_ButtonHover :
+				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
+				r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.scrollVThumb = a.block;
 	}
 	void CreateTabGroup()
 	{

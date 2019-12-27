@@ -5,10 +5,10 @@
 
 namespace ui {
 class NativeWindowBase;
+class Node;
 } // ui
 
 class UIObject;
-class UINode;
 class UIElement;
 class UIContainer;
 class UIEventSystem;
@@ -26,6 +26,7 @@ enum class UIEventType
 	MouseEnter,
 	MouseLeave,
 	MouseMove,
+	MouseScroll,
 	ButtonDown,
 	ButtonUp,
 	DragStart, // mouse move with left button down (target: original element)
@@ -88,6 +89,8 @@ struct UIEvent
 
 	UIMouseCoord x = 0;
 	UIMouseCoord y = 0;
+	UIMouseCoord dx = 0;
+	UIMouseCoord dy = 0;
 
 	uint32_t longCode = 0;
 	uint8_t shortCode = 0;
@@ -96,7 +99,7 @@ struct UIEvent
 	uint16_t numRepeats = 0;
 
 	UIEvent(UIEventSystem* ctx, UIObject* tgt, UIEventType ty) : context(ctx), target(tgt), current(tgt), type(ty) {}
-	UINode* GetTargetNode() const;
+	ui::Node* GetTargetNode() const;
 	UIMouseButton GetButton() const;
 	UIKeyAction GetKeyAction() const;
 	uint32_t GetUTF32Char() const;
@@ -122,13 +125,14 @@ public:
 	void OnDestroy(UIObject* o);
 	void OnCommit(UIElement* e);
 	void OnChange(UIElement* e);
-	void OnChange(UINode* n);
+	void OnChange(ui::Node* n);
 	void SetKeyboardFocus(UIObject* o);
 	void SetTimer(UIElement* tgt, float t, int id = 0);
 
 	UIObject* FindObjectAtPosition(float x, float y);
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
+	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats);
 	void OnKeyAction(UIKeyAction act, uint16_t numRepeats);
 	void OnTextInput(uint32_t ch, uint16_t numRepeats);

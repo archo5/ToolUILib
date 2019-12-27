@@ -114,15 +114,155 @@ void ProgressBar::OnPaint()
 	styleProps->paint_func(this);
 
 	style::PaintInfo cinfo(this);
-	float w = cinfo.rect.GetWidth();
-	cinfo.rect.y0 += ResolveUnits(completionBarStyle->margin_top, w);
-	cinfo.rect.y1 -= ResolveUnits(completionBarStyle->margin_bottom, w);
-	cinfo.rect.x0 += ResolveUnits(completionBarStyle->margin_left, w);
-	cinfo.rect.x1 -= ResolveUnits(completionBarStyle->margin_right, w);
+	cinfo.rect = cinfo.rect.ShrinkBy(GetMarginRect(completionBarStyle, cinfo.rect.GetWidth()));
 	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
 	completionBarStyle->paint_func(cinfo);
 
 	PaintChildren();
+}
+
+
+Slider::Slider()
+{
+	styleProps = Theme::current->sliderHBase;
+	trackStyle = Theme::current->sliderHTrack;
+	trackFillStyle = Theme::current->sliderHTrackFill;
+	thumbStyle = Theme::current->sliderHThumb;
+}
+
+void Slider::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	style::PaintInfo trkinfo(this);
+	float w = trkinfo.rect.GetWidth();
+	trkinfo.rect = trkinfo.rect.ShrinkBy(GetMarginRect(trackStyle, w));
+	trackStyle->paint_func(trkinfo);
+
+	if (valuePtr)
+	{
+		trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
+		trkinfo.rect.x1 = lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(*valuePtr));
+		auto prethumb = trkinfo.rect;
+
+		trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));
+		trackFillStyle->paint_func(trkinfo);
+
+		prethumb.x0 = prethumb.x1;
+		trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
+		thumbStyle->paint_func(trkinfo);
+	}
+
+	PaintChildren();
+}
+
+void Slider::OnEvent(UIEvent& e)
+{
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	{
+		_mxoff = 0;
+		// TODO if inside, calc offset
+	}
+	if (e.type == UIEventType::MouseMove && IsClicked())
+	{
+		if (valuePtr)
+			*valuePtr = PosToValue(e.x + _mxoff);
+	}
+}
+
+Slider* Slider::Init(float* vp, double vmin, double vmax, double step)
+{
+	valuePtr = vp;
+	minValue = vmin;
+	maxValue = vmax;
+	trackStep = step;
+	return this;
+}
+
+float Slider::PosToQ(float x)
+{
+	auto rect = GetPaddingRect();
+	float w = rect.GetWidth();
+	rect = rect.ShrinkBy(GetMarginRect(trackStyle, w));
+	rect = rect.ShrinkBy(GetPaddingRect(trackStyle, w));
+	float fw = rect.GetWidth();
+	return fw ? (x - rect.x0) / fw : 0;
+}
+
+double Slider::QToValue(float q)
+{
+	if (q < 0)
+		q = 0;
+	else if (q > 1)
+		q = 1;
+
+	double v = minValue * (1 - q) + maxValue * q;
+	if (trackStep)
+	{
+		v = round((v - minValue) / trackStep) * trackStep + minValue;
+
+		if (v > maxValue + 0.001 * (maxValue - minValue))
+			v -= trackStep;
+		if (v < minValue)
+			v = minValue;
+	}
+
+	return v;
+}
+
+float Slider::ValueToQ(double v)
+{
+	double diff = maxValue - minValue;
+	return diff ? float((v - minValue) / diff) : 0.0f;
+}
+
+
+ScrollArea::ScrollArea()
+{
+	trackVStyle = Theme::current->scrollVTrack;
+	thumbVStyle = Theme::current->scrollVThumb;
+}
+
+void ScrollArea::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	PaintChildren();
+
+	float w = GetContentRect().GetWidth();
+	style::PaintInfo vsinfo(this);
+	vsinfo.rect.x0 = vsinfo.rect.x1 - ResolveUnits(trackVStyle->width, w);
+	vsinfo.state &= ~style::PS_Down;
+	vsinfo.state &= ~style::PS_Hover;
+	trackVStyle->paint_func(vsinfo);
+	vsinfo.rect = vsinfo.rect.ShrinkBy(GetPaddingRect(trackVStyle, w));
+	vsinfo.rect.y0 += 10;
+	vsinfo.rect.y1 -= 10;
+	thumbVStyle->paint_func(vsinfo);
+}
+
+void ScrollArea::OnEvent(UIEvent& e)
+{
+	if (e.type == UIEventType::MouseScroll)
+	{
+		yoff -= e.dy / 4;
+	}
+}
+
+void ScrollArea::OnLayout(const UIRect& rect)
+{
+	UIRect r = rect;
+	r.y0 -= yoff;
+	r.y1 -= yoff;
+
+	UIElement::OnLayout(r);
+
+	finalRectC.y0 += yoff;
+	finalRectC.y1 += yoff;
+	finalRectCP.y0 += yoff;
+	finalRectCP.y1 += yoff;
+	finalRectCPB.y0 += yoff;
+	finalRectCPB.y1 += yoff;
 }
 
 
@@ -473,15 +613,17 @@ void Table::OnPaint()
 
 	style::PaintInfo info(this);
 
+	auto RC = GetContentRect();
+
 	// backgrounds
 	for (int r = 0; r < nr; r++)
 	{
 		info.rect =
 		{
-			finalRectC.x0,
-			finalRectC.y0 + chh + h * r,
-			finalRectC.x0 + rhw,
-			finalRectC.y0 + chh + h * (r + 1),
+			RC.x0,
+			RC.y0 + chh + h * r,
+			RC.x0 + rhw,
+			RC.y0 + chh + h * (r + 1),
 		};
 		rowHeaderStyle->paint_func(info);
 	}
@@ -489,10 +631,10 @@ void Table::OnPaint()
 	{
 		info.rect =
 		{
-			finalRectC.x0 + rhw + w * c,
-			finalRectC.y0,
-			finalRectC.x0 + rhw + w * (c + 1),
-			finalRectC.y0 + chh,
+			RC.x0 + rhw + w * c,
+			RC.y0,
+			RC.x0 + rhw + w * (c + 1),
+			RC.y0 + chh,
 		};
 		colHeaderStyle->paint_func(info);
 	}
@@ -502,10 +644,10 @@ void Table::OnPaint()
 		{
 			info.rect =
 			{
-				finalRectC.x0 + rhw + w * c,
-				finalRectC.y0 + chh + h * r,
-				finalRectC.x0 + rhw + w * (c + 1),
-				finalRectC.y0 + chh + h * (r + 1),
+				RC.x0 + rhw + w * c,
+				RC.y0 + chh + h * r,
+				RC.x0 + rhw + w * (c + 1),
+				RC.y0 + chh + h * (r + 1),
 			};
 			cellStyle->paint_func(info);
 		}
@@ -516,10 +658,10 @@ void Table::OnPaint()
 	{
 		UIRect rect =
 		{
-			finalRectC.x0,
-			finalRectC.y0 + chh + h * r,
-			finalRectC.x0 + rhw,
-			finalRectC.y0 + chh + h * (r + 1),
+			RC.x0,
+			RC.y0 + chh + h * r,
+			RC.x0 + rhw,
+			RC.y0 + chh + h * (r + 1),
 		};
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetRowName(r).c_str(), 1, 1, 1);
 	}
@@ -527,10 +669,10 @@ void Table::OnPaint()
 	{
 		UIRect rect =
 		{
-			finalRectC.x0 + rhw + w * c,
-			finalRectC.y0,
-			finalRectC.x0 + rhw + w * (c + 1),
-			finalRectC.y0 + chh,
+			RC.x0 + rhw + w * c,
+			RC.y0,
+			RC.x0 + rhw + w * (c + 1),
+			RC.y0 + chh,
 		};
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetColName(c).c_str(), 1, 1, 1);
 	}
@@ -540,10 +682,10 @@ void Table::OnPaint()
 		{
 			UIRect rect =
 			{
-				finalRectC.x0 + rhw + w * c,
-				finalRectC.y0 + chh + h * r,
-				finalRectC.x0 + rhw + w * (c + 1),
-				finalRectC.y0 + chh + h * (r + 1),
+				RC.x0 + rhw + w * c,
+				RC.y0 + chh + h * r,
+				RC.x0 + rhw + w * (c + 1),
+				RC.y0 + chh + h * (r + 1),
 			};
 			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetText(r, c).c_str(), 1, 1, 1);
 		}

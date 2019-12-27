@@ -119,10 +119,50 @@ class ProgressBar : public UIElement
 {
 public:
 	ProgressBar();
-	void OnPaint();
+	void OnPaint() override;
 
 	style::BlockRef completionBarStyle;
 	float progress = 0.5f;
+};
+
+class Slider : public UIElement
+{
+public:
+	Slider();
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+	Slider* Init(float* vp, double vmin = 0, double vmax = 1, double step = 0);
+
+	float PosToQ(float x);
+	double QToValue(float q);
+	float ValueToQ(double v);
+	double PosToValue(float x) { return QToValue(PosToQ(x)); }
+
+	double minValue = 0;
+	double maxValue = 1;
+	double trackStep = 0;
+	float* valuePtr = nullptr;
+
+	style::BlockRef trackStyle;
+	style::BlockRef trackFillStyle;
+	style::BlockRef thumbStyle;
+
+private:
+	float _mxoff = 0;
+};
+
+class ScrollArea : public UIElement
+{
+public:
+	ScrollArea();
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+	void OnLayout(const UIRect& rect) override;
+
+private:
+	style::BlockRef trackVStyle;
+	style::BlockRef thumbVStyle;
+	float yoff = 23;
 };
 
 class TabGroup : public UIElement
@@ -205,7 +245,7 @@ public:
 	virtual std::string GetText(size_t row, size_t col) = 0;
 };
 
-class Table : public UINode
+class Table : public ui::Node
 {
 public:
 	Table();

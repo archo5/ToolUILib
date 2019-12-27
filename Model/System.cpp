@@ -96,7 +96,7 @@ void UIContainer::ProcessNodeRenderStack()
 
 	while (nodeRenderStack.ContainsAny())
 	{
-		UINode* currentNode = static_cast<UINode*>(nodeRenderStack.Pop());
+		ui::Node* currentNode = static_cast<ui::Node*>(nodeRenderStack.Pop());
 
 		objectStackSize = 0;
 		_Push(currentNode);
@@ -118,7 +118,7 @@ void UIContainer::ProcessNodeRenderStack()
 	//currentNode = nullptr;
 }
 
-void UIContainer::_BuildUsing(UINode* n)
+void UIContainer::_BuildUsing(ui::Node* n)
 {
 	rootNode = n;
 	assert(!nodeRenderStack.ContainsAny());
@@ -206,7 +206,7 @@ float InlineFrameNode::CalcEstimatedHeight(float containerWidth, float container
 
 void InlineFrameNode::OnLayout(const UIRect& rect)
 {
-	UINode::OnLayout(rect);
+	Node::OnLayout(rect);
 	if (frameContents &&
 		frameContents->container.rootNode)
 		frameContents->container.rootNode->OnLayout(finalRectC);
@@ -236,7 +236,7 @@ void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> 
 	auto& cont = frameContents->container;
 	auto& evsys = frameContents->eventSystem;
 
-	auto* N = cont.AllocIfDifferent<ui::RenderNode>(cont.rootNode);
+	auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
 	N->renderFunc = renderFunc;
 	cont._BuildUsing(N);
 	evsys.RecomputeLayout();

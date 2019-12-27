@@ -121,7 +121,7 @@ public:
 	}
 };
 
-class NativeWindowNode : public UINode
+class NativeWindowNode : public Node
 {
 public:
 	void Render(UIContainer* ctx) override {}
@@ -149,7 +149,7 @@ public:
 #if 0
 	template <class T> NativeWindow* BuildWithWindow()
 	{
-		struct DefaultWindowWrapper : UINode
+		struct DefaultWindowWrapper : Node
 		{
 			NativeWindow* w = nullptr;
 			void Render(UIContainer* ctx) override

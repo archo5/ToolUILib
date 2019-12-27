@@ -1,4 +1,5 @@
 
+#include <unordered_map>
 #include "Objects.h"
 #include "System.h"
 #include "Theme.h"
@@ -193,20 +194,8 @@ void UIObject::OnLayout(const UIRect& rect)
 	auto max_height = style.GetMaxHeight();
 	auto box_sizing = style.GetBoxSizing();
 
-	UIRect Mrect =
-	{
-		ResolveUnits(style.GetMarginLeft(), rect.GetWidth()),
-		ResolveUnits(style.GetMarginTop(), rect.GetWidth()),
-		ResolveUnits(style.GetMarginRight(), rect.GetWidth()),
-		ResolveUnits(style.GetMarginBottom(), rect.GetWidth()),
-	};
-	UIRect Prect =
-	{
-		ResolveUnits(style.GetPaddingLeft(), rect.GetWidth()),
-		ResolveUnits(style.GetPaddingTop(), rect.GetWidth()),
-		ResolveUnits(style.GetPaddingRight(), rect.GetWidth()),
-		ResolveUnits(style.GetPaddingBottom(), rect.GetWidth()),
-	};
+	UIRect Mrect = GetMarginRect(style.block, rect.GetWidth());
+	UIRect Prect = GetPaddingRect(style.block, rect.GetWidth());
 	UIRect Arect =
 	{
 		Mrect.x0 + Prect.x0,
@@ -373,7 +362,7 @@ int UIObject::CountChildElements() const
 
 void UIObject::RerenderNode()
 {
-	if (auto* n = FindParentOfType<UINode>())
+	if (auto* n = FindParentOfType<ui::Node>())
 		n->Rerender();
 }
 
@@ -444,13 +433,212 @@ float UIObject::ResolveUnits(style::Coord coord, float ref)
 	}
 }
 
+UIRect UIObject::GetMarginRect(style::Block* style, float ref)
+{
+	return
+	{
+		ResolveUnits(style->margin_left, ref),
+		ResolveUnits(style->margin_top, ref),
+		ResolveUnits(style->margin_right, ref),
+		ResolveUnits(style->margin_bottom, ref),
+	};
+}
+
+UIRect UIObject::GetPaddingRect(style::Block* style, float ref)
+{
+	return
+	{
+		ResolveUnits(style->padding_left, ref),
+		ResolveUnits(style->padding_top, ref),
+		ResolveUnits(style->padding_right, ref),
+		ResolveUnits(style->padding_bottom, ref),
+	};
+}
+
 ui::NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
 }
 
 
-void UINode::Rerender()
+namespace ui {
+
+struct SubscrTableKey
+{
+	bool operator == (const SubscrTableKey& o) const
+	{
+		return tag == o.tag && at == o.at;
+	}
+
+	DataCategoryTag* tag;
+	uintptr_t at;
+};
+
+} // ui
+
+namespace std {
+
+template <>
+struct hash<ui::SubscrTableKey>
+{
+	size_t operator () (const ui::SubscrTableKey& k) const
+	{
+		return (uintptr_t(k.tag) * 151) ^ k.at;
+	}
+};
+
+} // std
+
+namespace ui {
+
+struct SubscrTableValue
+{
+	Subscription* _firstSub = nullptr;
+	Subscription* _lastSub = nullptr;
+};
+
+using SubscrTable = std::unordered_map<SubscrTableKey, SubscrTableValue*>;
+static SubscrTable* g_subscrTable;
+
+void SubscriptionTable_Init()
+{
+	g_subscrTable = new SubscrTable;
+}
+
+void SubscriptionTable_Free()
+{
+	//assert(g_subscrTable->empty());
+	delete g_subscrTable;
+	g_subscrTable = nullptr;
+}
+
+struct Subscription
+{
+	void Link()
+	{
+		// append to front because removal starts from that side as well
+		prevInNode = nullptr;
+		nextInNode = node->_firstSub;
+		if (nextInNode)
+			nextInNode->prevInNode = this;
+		else
+			node->_firstSub = node->_lastSub = this;
+
+		prevInTable = nullptr;
+		nextInTable = tableEntry->_firstSub;
+		if (nextInTable)
+			nextInTable->prevInTable = this;
+		else
+			tableEntry->_firstSub = tableEntry->_lastSub = this;
+	}
+	void Unlink()
+	{
+		// node
+		if (prevInNode)
+			prevInNode->nextInNode = nextInNode;
+		if (nextInNode)
+			nextInNode->prevInNode = prevInNode;
+		if (node->_firstSub == this)
+			node->_firstSub = nextInNode;
+		if (node->_lastSub == this)
+			node->_lastSub = prevInNode;
+
+		// table
+		if (prevInTable)
+			prevInTable->nextInTable = nextInTable;
+		if (nextInTable)
+			nextInTable->prevInTable = prevInTable;
+		if (tableEntry->_firstSub == this)
+			tableEntry->_firstSub = nextInTable;
+		if (tableEntry->_lastSub == this)
+			tableEntry->_lastSub = prevInTable;
+	}
+
+	Node* node;
+	SubscrTableValue* tableEntry;
+	DataCategoryTag* tag;
+	uintptr_t at;
+	Subscription* prevInNode;
+	Subscription* nextInNode;
+	Subscription* prevInTable;
+	Subscription* nextInTable;
+};
+
+static void _Notify(DataCategoryTag* tag, uintptr_t at)
+{
+	auto it = g_subscrTable->find({ tag, at });
+	if (it != g_subscrTable->end())
+	{
+		for (auto* s = it->second->_firstSub; s; s = s->nextInTable)
+			s->node->Rerender();
+	}
+}
+
+void Notify(DataCategoryTag* tag, uintptr_t at)
+{
+	if (at != ANY_ITEM)
+		_Notify(tag, at);
+	_Notify(tag, ANY_ITEM);
+}
+
+Node::~Node()
+{
+	while (_firstSub)
+	{
+		auto* s = _firstSub;
+		s->Unlink();
+		delete s;
+	}
+}
+
+void Node::Rerender()
 {
 	system->container.AddToRenderStack(this);
 }
+
+bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
+{
+	SubscrTableValue* lst;
+	auto it = g_subscrTable->find({ tag, at });
+	if (it != g_subscrTable->end())
+	{
+		lst = it->second;
+		// TODO compare list sizes to decide which is the shorter one to iterate
+		for (auto* s = _firstSub; s; s = s->nextInNode)
+			if (s->tag == tag && s->at == at)
+				return false;
+		//for (auto* s = lst->_firstSub; s; s = s->nextInTable)
+		//	if (s->node == this)
+		//		return false;
+	}
+	else
+		g_subscrTable->insert({ SubscrTableKey{ tag, at }, lst = new SubscrTableValue });
+
+	auto* s = new Subscription;
+	s->node = this;
+	s->tableEntry = lst;
+	s->tag = tag;
+	s->at = at;
+	s->Link();
+	return true;
+}
+
+bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
+{
+	auto it = g_subscrTable->find({ tag, at });
+	if (it == g_subscrTable->end())
+		return false;
+
+	// TODO compare list sizes to decide which is the shorter one to iterate
+	for (auto* s = _firstSub; s; s = s->nextInNode)
+	{
+		if (s->tag == tag && s->at == at)
+		{
+			s->Unlink();
+			delete s;
+		}
+	}
+	return true;
+}
+
+} // ui

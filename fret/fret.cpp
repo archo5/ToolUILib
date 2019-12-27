@@ -86,7 +86,7 @@ struct StructureParser
 	uint64_t arraySize;
 };
 
-struct FileStructureViewer : UINode
+struct FileStructureViewer : ui::Node
 {
 	FileStructureViewer()
 	{

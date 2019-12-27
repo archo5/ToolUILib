@@ -4,7 +4,7 @@
 #include "../GUI.h"
 
 
-struct OpenClose : UINode
+struct OpenClose : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
@@ -32,7 +32,7 @@ struct OpenClose : UINode
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
-struct Calculator : UINode
+struct Calculator : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
@@ -169,7 +169,8 @@ struct Calculator : UINode
 };
 
 
-struct DataEditor : UINode
+ui::DataCategoryTag DCT_ItemSelection[1];
+struct DataEditor : ui::Node
 {
 	struct Item
 	{
@@ -179,7 +180,7 @@ struct DataEditor : UINode
 		float value2;
 	};
 
-	struct ItemButton : UINode
+	struct ItemButton : ui::Node
 	{
 		ItemButton()
 		{
@@ -311,6 +312,8 @@ struct DataEditor : UINode
 		ctx->Pop();
 
 		ctx->MakeWithText<ui::ProgressBar>("Processing...")->progress = 0.37f;
+		static float sldval = 0.63f;
+		ctx->Make<ui::Slider>()->Init(&sldval, 0, 2, 0.1f);
 
 		struct DS : ui::TableDataSource
 		{
@@ -448,11 +451,13 @@ struct DataEditor : UINode
 		static bool lbsel0 = false;
 		static bool lbsel1 = true;
 		ctx->Push<ui::ListBox>();
+		ctx->Push<ui::ScrollArea>();
 		ctx->MakeWithText<ui::Selectable>("Item 1")->Init(lbsel0);
 		ctx->MakeWithText<ui::Selectable>("Item two")->Init(lbsel1);
 		ctx->Pop();
+		ctx->Pop();
 
-		btnGoBack = nullptr;
+		Subscribe(DCT_ItemSelection);
 		tbName = nullptr;
 		if (editing == SIZE_MAX)
 		{
@@ -460,7 +465,7 @@ struct DataEditor : UINode
 			ctx->Push<ui::Panel>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
-				ctx->Make<ItemButton>()->Init(items[i].name.c_str(), [this, i]() { editing = i; Rerender(); });
+				ctx->Make<ItemButton>()->Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
 			}
 			ctx->Pop();
 
@@ -505,7 +510,7 @@ struct DataEditor : UINode
 			b->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 			ctx->Text("Item:")->GetStyle().SetPadding(5);
 			ctx->Text(items[editing].name.c_str());
-			btnGoBack = ctx->Push<ui::Button>();
+			ctx->Push<ui::Button>()->onClick = [this]() { editing = SIZE_MAX; ui::Notify(DCT_ItemSelection); };
 			ctx->Text("Go back");
 			ctx->Pop();
 			ctx->Pop();
@@ -524,20 +529,11 @@ struct DataEditor : UINode
 	}
 	void OnEvent(UIEvent& e) override
 	{
-		if (e.type == UIEventType::Activate)
-		{
-			if (e.target->IsChildOrSame(btnGoBack))
-			{
-				editing = SIZE_MAX;
-				Rerender();
-			}
-		}
 		if (e.type == UIEventType::Commit)
 		{
 			if (e.target == tbName)
 			{
 				items[editing].name = tbName->text;
-				Rerender();
 			}
 		}
 	}
@@ -549,7 +545,6 @@ struct DataEditor : UINode
 		{ "another test item", 123, false, 12.3f },
 		{ "third item", 333, true, 3.0f },
 	};
-	ui::Button* btnGoBack;
 	ui::Textbox* tbName;
 	ui::Menu* topMenu;
 };
@@ -561,7 +556,7 @@ static const char* testNames[] =
 	"Test: Open/Close",
 	"Test: Calculator",
 };
-struct TEST : UINode
+struct TEST : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{

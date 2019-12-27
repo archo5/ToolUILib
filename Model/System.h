@@ -60,13 +60,13 @@ public:
 		p->system = owner;
 		return p;
 	}
-	void AddToRenderStack(UINode* n)
+	void AddToRenderStack(ui::Node* n)
 	{
 		nodeRenderStack.Add(n);
 	}
 	void ProcessNodeRenderStack();
 
-	void _BuildUsing(UINode* n);
+	void _BuildUsing(ui::Node* n);
 
 	void _Push(UIObject* obj);
 	void _Destroy(UIObject* obj);
@@ -146,14 +146,14 @@ public:
 	ui::NativeWindowBase* GetNativeWindow() const;
 
 	ui::FrameContents* owner = nullptr;
-	UINode* rootNode = nullptr;
+	ui::Node* rootNode = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
 	//int debugpad2 = 0;
 	UIObject* objectStack[128];
 	int debugpad4 = 0;
 	UIObject* objChildStack[128];
-	//UINode* currentNode;
+	//ui::Node* currentNode;
 	//int elementStackSize = 0;
 	int objectStackSize = 0;
 
@@ -171,7 +171,7 @@ public:
 
 namespace ui {
 
-class RenderNode : public UINode
+class RenderNode : public Node
 {
 public:
 	void Render(UIContainer* ctx) override
@@ -196,7 +196,7 @@ public:
 	ui::NativeWindowBase* nativeWindow;
 };
 
-class InlineFrameNode : public UINode
+class InlineFrameNode : public Node
 {
 public:
 
@@ -222,7 +222,7 @@ private:
 
 inline const char* objtype(UIObject* obj)
 {
-	if (dynamic_cast<UINode*>(obj))
+	if (dynamic_cast<ui::Node*>(obj))
 		return "node";
 	if (dynamic_cast<UIElement*>(obj))
 		return "element";

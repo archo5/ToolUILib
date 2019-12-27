@@ -17,6 +17,12 @@ struct Theme
 	style::BlockRef listBox;
 	style::BlockRef progressBarBase;
 	style::BlockRef progressBarCompletion;
+	style::BlockRef sliderHBase;
+	style::BlockRef sliderHTrack;
+	style::BlockRef sliderHTrackFill;
+	style::BlockRef sliderHThumb;
+	style::BlockRef scrollVTrack;
+	style::BlockRef scrollVThumb;
 	style::BlockRef tabGroup;
 	style::BlockRef tabList;
 	style::BlockRef tabButton;

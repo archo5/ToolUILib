@@ -19,7 +19,6 @@
 struct UIEvent;
 class UIObject; // any item
 class UIElement; // physical item
-class UINode; // logical item
 class UIContainer;
 class UIEventSystem;
 
@@ -35,6 +34,7 @@ struct Block;
 namespace ui {
 class NativeWindowBase;
 class FrameContents;
+class Node; // logical item
 }
 
 
@@ -126,6 +126,8 @@ public:
 	style::Accessor GetStyle();
 	void SetStyle(style::Block* style);
 	float ResolveUnits(style::Coord coord, float ref);
+	UIRect GetMarginRect(style::Block* style, float ref);
+	UIRect GetPaddingRect(style::Block* style, float ref);
 
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
@@ -199,13 +201,41 @@ class BoxElement : public UIElement
 {
 };
 
-} // ui
+struct Subscription;
+struct DataCategoryTag {};
 
-class UINode : public UIObject
+constexpr auto ANY_ITEM = uintptr_t(-1);
+
+void Notify(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
+inline void Notify(DataCategoryTag* tag, const void* ptr)
+{
+	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
+}
+
+class Node : public UIObject
 {
 public:
+	~Node();
 	typedef char IsNode[2];
 
 	virtual void Render(UIContainer* ctx) = 0;
 	void Rerender();
+
+	bool Subscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
+	bool Unsubscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
+	bool Subscribe(DataCategoryTag* tag, const void* ptr)
+	{
+		return Subscribe(tag, reinterpret_cast<uintptr_t>(ptr));
+	}
+	bool Unsubscribe(DataCategoryTag* tag, const void* ptr)
+	{
+		return Unsubscribe(tag, reinterpret_cast<uintptr_t>(ptr));
+	}
+
+private:
+	friend struct Subscription;
+	Subscription* _firstSub = nullptr;
+	Subscription* _lastSub = nullptr;
 };
+
+} // ui

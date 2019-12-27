@@ -4,10 +4,10 @@
 #include "System.h"
 
 
-UINode* UIEvent::GetTargetNode() const
+ui::Node* UIEvent::GetTargetNode() const
 {
 	for (auto* t = target; t; t = t->parent)
-		if (auto* n = dynamic_cast<UINode*>(t))
+		if (auto* n = dynamic_cast<ui::Node*>(t))
 			return n;
 	return nullptr;
 }
@@ -143,7 +143,7 @@ void UIEventSystem::OnChange(UIElement* e)
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnChange(UINode* n)
+void UIEventSystem::OnChange(ui::Node* n)
 {
 	n->Rerender();
 	UIEvent ev(this, n, UIEventType::Change);
@@ -289,6 +289,17 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 	}
 }
 
+void UIEventSystem::OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
+{
+	if (hoverObj)
+	{
+		UIEvent e(this, hoverObj, UIEventType::MouseScroll);
+		e.dx = dx;
+		e.dy = dy;
+		BubblingEvent(e);
+	}
+}
+
 void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
 {
 	if (focusObj)
@@ -297,6 +308,7 @@ void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numR
 		ev.longCode = vk;
 		ev.shortCode = pk;
 		ev.numRepeats = numRepeats;
+		BubblingEvent(ev);
 	}
 }
 
