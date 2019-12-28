@@ -591,7 +591,7 @@ void CollapsibleTreeNode::OnEvent(UIEvent& e)
 }
 
 
-Table::Table()
+TableView::TableView()
 {
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
@@ -599,7 +599,7 @@ Table::Table()
 	colHeaderStyle = Theme::current->tableColHeader;
 }
 
-void Table::OnPaint()
+void TableView::OnPaint()
 {
 	styleProps->paint_func(this);
 
@@ -607,7 +607,7 @@ void Table::OnPaint()
 	int chh = 20;
 	int w = 100;
 	int h = 20;
-	
+
 	int nc = _dataSource->GetNumCols();
 	int nr = _dataSource->GetNumRows();
 
@@ -694,18 +694,210 @@ void Table::OnPaint()
 	PaintChildren();
 }
 
-void Table::OnEvent(UIEvent& e)
+void TableView::OnEvent(UIEvent& e)
 {
 }
 
-void Table::Render(UIContainer* ctx)
+void TableView::Render(UIContainer* ctx)
 {
 }
 
-void Table::SetDataSource(TableDataSource* src)
+void TableView::SetDataSource(TableDataSource* src)
 {
 	_dataSource = src;
 	Rerender();
+}
+
+
+struct TreeView::PaintState
+{
+	style::PaintInfo info;
+	int nc;
+	float x;
+	float y;
+};
+
+struct TreeViewImpl
+{
+	TreeDataSource* dataSource = nullptr;
+	bool firstColWidthCalc = true;
+	std::vector<float> colEnds = { 1.0f };
+};
+
+TreeView::TreeView()
+{
+	_impl = new TreeViewImpl;
+	styleProps = Theme::current->tableBase;
+	cellStyle = Theme::current->tableCell;
+	expandButtonStyle = Theme::current->collapsibleTreeNode;
+	colHeaderStyle = Theme::current->tableColHeader;
+}
+
+TreeView::~TreeView()
+{
+	delete _impl;
+}
+
+void TreeView::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	int chh = 20;
+	int h = 20;
+
+	int nc = _impl->dataSource->GetNumCols();
+	int nr = 0;// _dataSource->GetNumRows();
+
+	style::PaintInfo info(this);
+
+	auto RC = GetContentRect();
+
+	// backgrounds
+	for (int c = 0; c < nc; c++)
+	{
+		info.rect =
+		{
+			RC.x0 + _impl->colEnds[c],
+			RC.y0,
+			RC.x0 + _impl->colEnds[c + 1],
+			RC.y0 + chh,
+		};
+		colHeaderStyle->paint_func(info);
+	}
+
+	// text
+	for (int c = 0; c < nc; c++)
+	{
+		UIRect rect =
+		{
+			RC.x0 + _impl->colEnds[c],
+			RC.y0,
+			RC.x0 + _impl->colEnds[c + 1],
+			RC.y0 + chh,
+		};
+		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
+	}
+
+	PaintState ps = { info, nc, RC.x0, RC.y0 + chh };
+	for (size_t i = 0, n = _impl->dataSource->GetChildCount(TreeDataSource::ROOT); i < n; i++)
+		_PaintOne(_impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
+
+	PaintChildren();
+}
+
+void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
+{
+	int h = 20;
+	int tab = 20;
+
+	// backgrounds
+	for (int c = 0; c < ps.nc; c++)
+	{
+		ps.info.rect =
+		{
+			ps.x + _impl->colEnds[c],
+			ps.y,
+			ps.x + _impl->colEnds[c + 1],
+			ps.y + h,
+		};
+		cellStyle->paint_func(ps.info);
+	}
+
+	// text
+	for (int c = 0; c < ps.nc; c++)
+	{
+		UIRect rect =
+		{
+			ps.x + _impl->colEnds[c],
+			ps.y,
+			ps.x + _impl->colEnds[c + 1],
+			ps.y + h,
+		};
+		if (c == 0)
+			rect.x0 += tab * lvl;
+		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(id, c).c_str(), 1, 1, 1);
+	}
+
+	ps.y += h;
+
+	if (true) // open
+	{
+		for (size_t i = 0, n = _impl->dataSource->GetChildCount(id); i < n; i++)
+			_PaintOne(_impl->dataSource->GetChild(id, i), lvl + 1, ps);
+	}
+}
+
+void TreeView::OnEvent(UIEvent& e)
+{
+}
+
+void TreeView::Render(UIContainer* ctx)
+{
+}
+
+TreeDataSource* TreeView::GetDataSource() const
+{
+	return _impl->dataSource;
+}
+
+void TreeView::SetDataSource(TreeDataSource* src)
+{
+	if (src != _impl->dataSource)
+		_impl->firstColWidthCalc = true;
+	_impl->dataSource = src;
+	
+	size_t nc = src->GetNumCols();
+	while (_impl->colEnds.size() < nc + 1)
+		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
+	while (_impl->colEnds.size() > nc + 1)
+		_impl->colEnds.pop_back();
+	
+	Rerender();
+}
+
+void TreeView::CalculateColumnWidths(bool firstTimeOnly)
+{
+	if (firstTimeOnly && !_impl->firstColWidthCalc)
+		return;
+
+	_impl->firstColWidthCalc = false;
+
+	int tab = 20;
+
+	auto nc = _impl->dataSource->GetNumCols();
+	std::vector<float> colWidths;
+	colWidths.resize(nc, 0.0f);
+
+	struct Entry
+	{
+		uintptr_t id;
+		int lev;
+	};
+	std::vector<Entry> stack = { Entry{ TreeDataSource::ROOT, 0 } };
+	while (!stack.empty())
+	{
+		Entry E = stack.back();
+		stack.pop_back();
+
+		for (size_t i = 0, n = _impl->dataSource->GetChildCount(E.id); i < n; i++)
+		{
+			uintptr_t chid = _impl->dataSource->GetChild(E.id, i);
+			stack.push_back({ chid, E.lev + 1 });
+
+			for (size_t c = 0; c < nc; c++)
+			{
+				std::string text = _impl->dataSource->GetText(chid, c);
+				float w = GetTextWidth(text.c_str());
+				if (c == 0)
+					w += tab * E.lev;
+				if (colWidths[c] < w)
+					colWidths[c] = w;
+			}
+		}
+	}
+
+	for (size_t c = 0; c < nc; c++)
+		_impl->colEnds[c + 1] = _impl->colEnds[c] + colWidths[c];
 }
 
 } // ui

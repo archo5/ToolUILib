@@ -315,7 +315,8 @@ struct DataEditor : ui::Node
 		static float sldval = 0.63f;
 		ctx->Make<ui::Slider>()->Init(&sldval, 0, 2, 0.1f);
 
-		struct DS : ui::TableDataSource
+#if 0
+		struct TableDS : ui::TableDataSource
 		{
 			size_t GetNumRows() { return 3; }
 			size_t GetNumCols() { return 4; }
@@ -323,10 +324,36 @@ struct DataEditor : ui::Node
 			std::string GetColName(size_t col) { return "Col" + std::to_string(col); }
 			std::string GetText(size_t row, size_t col) { return "R" + std::to_string(row) + "C" + std::to_string(col); }
 		};
-		static DS ds;
-		auto* tbl = ctx->Make<ui::Table>();
-		tbl->SetDataSource(&ds);
+		static TableDS tblds;
+		auto* tbl = ctx->Make<ui::TableView>();
+		tbl->SetDataSource(&tblds);
 		tbl->GetStyle().SetHeight(90);
+#endif
+
+#if 1
+		struct TreeDS : ui::TreeDataSource
+		{
+			size_t GetNumCols() { return 4; }
+			std::string GetColName(size_t col) { return "Col" + std::to_string(col); }
+			size_t GetChildCount(uintptr_t id)
+			{
+				if (id == ROOT) return 2;
+				if (id == 0) return 1;
+				return 0;
+			}
+			uintptr_t GetChild(uintptr_t id, size_t which)
+			{
+				if (id == ROOT) return which;
+				if (id == 0) return 2;
+				return 0;
+			}
+			std::string GetText(uintptr_t id, size_t col) { return "ID" + std::to_string(id) + "C" + std::to_string(col); }
+		};
+		static TreeDS treeds;
+		auto* trv = ctx->Make<ui::TreeView>();
+		trv->SetDataSource(&treeds);
+		trv->GetStyle().SetHeight(90);
+#endif
 
 #if 1
 		auto* nw = ctx->Make<ui::NativeWindowNode>();

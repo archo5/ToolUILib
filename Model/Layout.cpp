@@ -428,7 +428,10 @@ style::Block* Accessor::GetOrCreate()
 	// TODO optimize?
 	if (block->_refCount <= 1 || !blkref)
 		return block;
-	return block = *blkref = new Block(**blkref);
+	block = new Block(**blkref);
+	block->_refCount = 0;
+	*blkref = block;
+	return block;
 }
 
 Accessor::Accessor(Block* b) : block(b), blkref(nullptr)
