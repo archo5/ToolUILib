@@ -1,14 +1,14 @@
 
 #include "plugin.hpp"
 
-struct wavreader : Reader
+struct WAVReader : Reader
 {
-	void parse(const char*)
+	void Parse(const char*)
 	{
-		readchunk();
+		ReadChunk();
 	}
 	
-	void readchunk(bool isinfo = false)
+	void ReadChunk(bool isinfo = false)
 	{
 		PUSH("chunk");
 		READA(Magic, char, 4);
@@ -20,7 +20,7 @@ struct wavreader : Reader
 			isinfo = memcmp(ListMagic, "INFO", 4) == 0;
 			while (at < end)
 			{
-				readchunk(isinfo);
+				ReadChunk(isinfo);
 			}
 		}
 		else if (memcmp(Magic, "fmt ", 4) == 0)
@@ -41,4 +41,4 @@ struct wavreader : Reader
 	}
 };
 
-DEFINE_PLUGIN(wavreader);
+DEFINE_PLUGIN(WAVReader);

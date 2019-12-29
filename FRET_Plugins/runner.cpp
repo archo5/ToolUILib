@@ -94,7 +94,7 @@ struct RecvSocket
 	}
 };
 
-static __stdcall DWORD func(void* arg)
+static DWORD __stdcall func(void* arg)
 {
 	system("wav.exe -f loop.wav -s 12345");
 }

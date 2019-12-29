@@ -3,8 +3,25 @@
   <ItemGroup>
     <ClCompile Include="fret.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="..\FRET_Plugins\tar.cpp">
+      <Filter>plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FRET_Plugins\wav.cpp">
+      <Filter>plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FRET_Plugins\runner.cpp">
+      <Filter>plugins</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="..\FRET_Plugins\plugin.hpp">
+      <Filter>plugins</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="plugins">
+      <UniqueIdentifier>{651e1b2f-a22e-489d-98f6-02b0bfcec497}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

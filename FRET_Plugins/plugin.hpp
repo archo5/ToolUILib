@@ -1,4 +1,5 @@
 
+#define _CRT_SECURE_NO_WARNINGS
 #define __STDC_FORMAT_MACROS 1
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,11 +7,11 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <winsock2.h>
+#include <assert.h>
 
 char* get_file_contents(const char* filename, int& size)
 {
-	FILE *fp = fopen(filename, "rb");
-	if (fp)
+	if (FILE* fp = fopen(filename, "rb"))
 	{
 		fseek(fp, 0, SEEK_END);
 		size = ftell(fp);
@@ -20,7 +21,13 @@ char* get_file_contents(const char* filename, int& size)
 		fclose(fp);
 		return contents;
 	}
-	throw errno;
+	perror("failed to open file");
+	exit(1);
+}
+
+template <class T> void align_up(T& val, int div)
+{
+	val = (val + div - 1) & ~(div - 1);
 }
 
 #define READA(name, type, size) \
@@ -29,8 +36,13 @@ char* get_file_contents(const char* filename, int& size)
 #define READ(name, type) \
 	type name; \
 	rnd_(#name, &name, 1);
+#define MARK(name, type) \
+	mark_<type>(#name, 1);
 #define MARKA(name, type, size) \
 	mark_<type>(#name, size);
+#define PARSED(name, value) parsed_(#name, value)
+#define PARSEDA(name, arr) parsed_(#name, arr, sizeof(arr)/sizeof((arr)[0]))
+#define FILE_PLAIN(name, size) file_plain_(#name, size)
 
 typedef int8_t s8;
 typedef uint8_t u8;
@@ -40,6 +52,8 @@ typedef int32_t s32;
 typedef uint32_t u32;
 typedef int64_t s64;
 typedef uint64_t u64;
+typedef float f32;
+typedef double f64;
 
 struct SendSocket
 {
@@ -64,7 +78,7 @@ struct SendSocket
 		sockaddr_in my_addr;
 		my_addr.sin_family = AF_INET;
 		my_addr.sin_port = htons(port);
-		my_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 		memset(my_addr.sin_zero, 0, sizeof my_addr.sin_zero);
 		if (connect(s, (sockaddr*) &my_addr, sizeof(my_addr)) == -1)
 		{
@@ -133,11 +147,11 @@ struct Reader
 	
 	SendSocket socket_;
 	
-	void read(char* out, int count) { readb(out, sizeof(*out) * count); }
-	void read(int16_t* out, int count) { readb(out, sizeof(*out) * count); }
-	void read(uint16_t* out, int count) { readb(out, sizeof(*out) * count); }
-	void read(int32_t* out, int count) { readb(out, sizeof(*out) * count); }
-	void read(uint32_t* out, int count) { readb(out, sizeof(*out) * count); }
+	void read(char* out, size_t count) { readb(out, sizeof(*out) * count); }
+	void read(int16_t* out, size_t count) { readb(out, sizeof(*out) * count); }
+	void read(uint16_t* out, size_t count) { readb(out, sizeof(*out) * count); }
+	void read(int32_t* out, size_t count) { readb(out, sizeof(*out) * count); }
+	void read(uint32_t* out, size_t count) { readb(out, sizeof(*out) * count); }
 	void readb(void* out, int bytes)
 	{
 		if (at + bytes >= size_)
@@ -148,39 +162,78 @@ struct Reader
 		memcpy(out, &data_[at], bytes);
 		at += bytes;
 	}
-	template <class T> void netdump(T* v, int count)
+
+	bool previewbuf_write_(const char* str, size_t size, int& pchars)
+	{
+		int i = 0;
+		while (i < size && str[i] && pchars > 0)
+			previewbuf_[maxpreviewchars_ - pchars--] = str[i++];
+		return !(i < size && str[i]);
+	}
+
+	bool netdumpf_(int& pchars, const char* fmt, ...)
+	{
+		char bfr[64];
+		va_list args;
+		va_start(args, fmt);
+		int len = vsprintf(bfr, fmt, args);
+		va_end(args);
+		return previewbuf_write_(bfr, 64, pchars);
+	}
+	bool netdump_(int& pchars, s8 v) { return netdumpf_(pchars, "%" PRId8, v); }
+	bool netdump_(int& pchars, s16 v) { return netdumpf_(pchars, "%" PRId16, v); }
+	bool netdump_(int& pchars, s32 v) { return netdumpf_(pchars, "%" PRId32, v); }
+	bool netdump_(int& pchars, s64 v) { return netdumpf_(pchars, "%" PRId64, v); }
+	bool netdump_(int& pchars, u8 v) { return netdumpf_(pchars, "%" PRIu8, v); }
+	bool netdump_(int& pchars, u16 v) { return netdumpf_(pchars, "%" PRIu16, v); }
+	bool netdump_(int& pchars, u32 v) { return netdumpf_(pchars, "%" PRIu32, v); }
+	bool netdump_(int& pchars, u64 v) { return netdumpf_(pchars, "%" PRIu64, v); }
+	bool netdump_(int& pchars, float v) { return netdumpf_(pchars, "%g", v); }
+	bool netdump_(int& pchars, double v) { return netdumpf_(pchars, "%g", v); }
+	bool netdump_(int& pchars, char* v, size_t count)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			if (v[i] >= 32 && v[i] < 127)
+			{
+				if (!previewbuf_write_(&v[i], 1, pchars))
+					return false;
+			}
+			else
+			{
+				char tmp[5];
+				int len = snprintf(tmp, 5, "\\x%02X", v[i]);
+				if (!previewbuf_write_(tmp, len, pchars))
+					return false;
+			}
+		}
+		return true;
+	}
+	template <class T> bool netdump_(int& pchars, T* v, size_t count)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			if (!netdump_(pchars, v[i]))
+				return false;
+			if (i + 1 < count && !previewbuf_write_(" ", 1, pchars))
+				return false;
+		}
+		return true;
+	}
+
+	template <class T> void netdump(T* v, size_t count)
 	{
 		int pchars = maxpreviewchars_;
-		netdump_(v, count, pchars);
-		if (pchars <= 0)
+		if (!netdump_(pchars, v, count))
 		{
 			for (int i = 0; i < 3; i++)
-				previewbuf_[pchars - 1 - i] = '.';
+				previewbuf_[maxpreviewchars_ - 1 - i] = '.';
+			pchars = 0;
 		}
 		socket_.send_str(previewbuf_, maxpreviewchars_ - pchars);
 	}
-	void netdump_(char* v, int count, int& pchars)
-	{
-		for (int i = 0; i < count; i++)
-			if (v[i] >= 32 && v[i] < 127)
-				previewbuf_[maxpreviewchars_ - pchars--] = v[i];
-			else
-				pchars -= snprintf(previewbuf_ + maxpreviewchars_ - pchars, pchars, "\\x%02X", v[i]);
-	}
-	void netdump_(uint16_t* v, int count, int& pchars)
-	{
-		for (int i = 0; i < count && pchars > 0; i++)
-			pchars -= snprintf(previewbuf_ + maxpreviewchars_ - pchars, pchars, "%" PRIu16 " ", v[i]);
-	}
-	void netdump_(uint32_t* v, int count, int& pchars)
-	{
-		for (int i = 0; i < count && pchars > 0; i++)
-			pchars -= snprintf(previewbuf_ + maxpreviewchars_ - pchars, pchars, "%" PRIu32 " ", v[i]);
-	}
-	void dump(uint16_t* v, int count) { for (int i = 0; i < count; i++) printf("%" PRIu16 " ", v[i]); }
-	void dump(int32_t* v, int count) { for (int i = 0; i < count; i++) printf("%" PRId32 " ", v[i]); }
-	void dump(uint32_t* v, int count) { for (int i = 0; i < count; i++) printf("%" PRIu32 " ", v[i]); }
-	void dump(char* v, int count)
+
+	void dump(const char* v, size_t count)
 	{
 		fputc('"', stdout);
 		for (int i = 0; i < count; i++)
@@ -190,11 +243,29 @@ struct Reader
 				printf("\\x%02X", v[i]);
 		fputc('"', stdout);
 	}
-	char typecode(char*) { return 'u'; }
-	char typecode(s8*) { return 's'; }
-	char typecode(u8*) { return 'u'; }
-	char typecode(u16*) { return 'u'; }
-	char typecode(u32*) { return 'u'; }
+	void dump(const s8* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRId8 " ", v[i]); }
+	void dump(const s16* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRId16 " ", v[i]); }
+	void dump(const s32* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRId32 " ", v[i]); }
+	void dump(const s64* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRId64 " ", v[i]); }
+	void dump(const u8* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRIu8 " ", v[i]); }
+	void dump(const u16* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRIu16 " ", v[i]); }
+	void dump(const u32* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRIu32 " ", v[i]); }
+	void dump(const u64* v, size_t count) { for (int i = 0; i < count; i++) printf("%" PRIu64 " ", v[i]); }
+	void dump(const f32* v, size_t count) { for (int i = 0; i < count; i++) printf("%g ", v[i]); }
+	void dump(const f64* v, size_t count) { for (int i = 0; i < count; i++) printf("%g ", v[i]); }
+
+	static char typecode(const char*) { return 'c'; }
+	static char typecode(const s8*) { return 's'; }
+	static char typecode(const s16*) { return 's'; }
+	static char typecode(const s32*) { return 's'; }
+	static char typecode(const s64*) { return 's'; }
+	static char typecode(const u8*) { return 'u'; }
+	static char typecode(const u16*) { return 'u'; }
+	static char typecode(const u32*) { return 'u'; }
+	static char typecode(const u64*) { return 'u'; }
+	static char typecode(const f32*) { return 'f'; }
+	static char typecode(const f64*) { return 'f'; }
+
 	template <class T> void rnd_(const char* name, T* out, size_t size)
 	{
 		read(out, size);
@@ -237,11 +308,55 @@ struct Reader
 		}
 		at += sizeof(T) * size;
 	}
+	template <class T> void parsed_(const char* name, const T& val)
+	{
+		parsed_(name, &val, 1);
+	}
+	template <class T> void parsed_(const char* name, const T* arr, size_t size)
+	{
+		if (socket_.on())
+		{
+			socket_.send_char('F');
+			socket_.send_char(typecode(static_cast<T*>(nullptr)));
+			socket_.send_char('0' + sizeof(T));
+			socket_.send_uleb(at);
+			socket_.send_uleb(size);
+			socket_.send_str(name);
+			netdump(arr, size);
+		}
+		else
+		{
+			printlev_();
+			printf("%s = ", name);
+			dump(reinterpret_cast<const T*>(arr), size);
+			puts("");
+		}
+	}
+	void INFO(const char* name, const char* info)
+	{
+		if (socket_.on())
+		{
+			socket_.send_char('I');
+			socket_.send_str(name);
+			socket_.send_str(info);
+		}
+		else
+		{
+			printlev_();
+			printf("%s = %s\n", name, info);
+		}
+	}
+	void file_plain_(const char* name, u64 size)
+	{
+		mark_<char>(name, size);
+	}
+
 	void printlev_()
 	{
 		for (int i = 0; i < level_; i++)
 			printf("    ");
 	}
+
 	void PUSH(const char* name)
 	{
 		if (socket_.on())
@@ -305,14 +420,14 @@ struct Reader
 			socket_.init(send_port);
 		}
 		previewbuf_ = new char[maxpreviewchars_];
-		parse(type);
+		Parse(type);
 		delete [] previewbuf_;
 		socket_.free();
 		return EXIT_SUCCESS;
 	}
 	
 	// "at" is set to starting position before call
-	virtual void parse(const char* type) = 0;
+	virtual void Parse(const char* type) = 0;
 };
 
 #define DEFINE_PLUGIN(cls) \

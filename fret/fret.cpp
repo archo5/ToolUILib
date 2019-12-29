@@ -87,7 +87,7 @@ struct SocketSyncReadStream : ISyncReadStream
 			return 0;
 		int s = size;
 		auto p = (char*)buf;
-		for (;;)
+		while (s)
 		{
 			int ret = ::recv(rs, p, s, 0);
 			if (ret == 0)
@@ -147,6 +147,16 @@ struct StructureParser
 			fileOffset = ReadULEB(s);
 			arraySize = ReadULEB(s);
 
+			name.resize((size_t)ReadULEB(s));
+			if (s->Read(&name[0], name.size()) != name.size())
+				return 0; // failed to read the whole string
+
+			preview.resize((size_t)ReadULEB(s));
+			if (s->Read(&preview[0], preview.size()) != preview.size())
+				return 0; // failed to read the whole string
+		}
+		else if (type == 'I')
+		{
 			name.resize((size_t)ReadULEB(s));
 			if (s->Read(&name[0], name.size()) != name.size())
 				return 0; // failed to read the whole string
@@ -260,8 +270,10 @@ struct FileStructureDataSource : ui::TreeDataSource
 
 	static DWORD __stdcall func(void* arg)
 	{
+		auto path = (const char*)arg;
+		auto ext = strrchr(path, '.');
 		char buf[256];
-		sprintf(buf, "cd FRET_Plugins && wav.exe -f \"%s\" -s 12345", (const char*)arg);
+		sprintf(buf, "cd FRET_Plugins && %s.exe -f \"%s\" -s 12345", ext + 1, path);
 		::system(buf);
 		return 0;
 	}
@@ -270,9 +282,8 @@ struct FileStructureDataSource : ui::TreeDataSource
 		SocketSyncReadStream ssrs(12345);
 		HANDLE h = CreateThread(NULL, 1024 * 64, func, (void*)path, 0, NULL);
 		ssrs.Accept();
-		FileSyncReadStream fsrs("sockdump.txt");
 		StructureParser sp;
-		Parse(&fsrs, sp, &root);
+		Parse(&ssrs, sp, &root);
 		WaitForSingleObject(h, INFINITE);
 	}
 	void Parse(ISyncReadStream* srs, StructureParser& sp, Node* parent)
@@ -305,6 +316,14 @@ struct FileStructureDataSource : ui::TreeDataSource
 					text << "[" << sp.arraySize << "]";
 				}
 				n->type = text.str();
+				n->preview = sp.preview;
+				parent->children.push_back(n);
+				break;
+			}
+			case 'I':
+			{
+				auto* n = new Node;
+				n->name = sp.name;
 				n->preview = sp.preview;
 				parent->children.push_back(n);
 				break;
@@ -383,7 +402,8 @@ struct MainWindow : ui::NativeMainWindow
 {
 	MainWindow()
 	{
-		files.push_back(new REFile("loop.wav"));
+		//files.push_back(new REFile("loop.wav"));
+		files.push_back(new REFile("arch.tar"));
 	}
 	void OnRender(UIContainer* ctx) override
 	{
