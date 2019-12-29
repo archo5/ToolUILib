@@ -29,6 +29,25 @@ struct OpenClose : ui::Node
 	bool open = false;
 };
 
+struct EdgeSliceTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		auto s = ctx->Push<ui::Panel>()->GetStyle();
+		s.SetLayout(style::Layout::EdgeSlice);
+		s.SetBoxSizing(style::BoxSizing::BorderBox);
+		s.SetMargin(0);
+		s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+
+		ctx->MakeWithText<ui::Button>("Top")->GetStyle().SetEdge(style::Edge::Top);
+		ctx->MakeWithText<ui::Button>("Right")->GetStyle().SetEdge(style::Edge::Right);
+		ctx->MakeWithText<ui::Button>("Bottom")->GetStyle().SetEdge(style::Edge::Bottom);
+		ctx->MakeWithText<ui::Button>("Left")->GetStyle().SetEdge(style::Edge::Left);
+
+		ctx->Pop();
+	}
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -582,30 +601,33 @@ static const char* testNames[] =
 	"Test: Off",
 	"Test: Open/Close",
 	"Test: Calculator",
+	"Test: Edge slice",
 };
 struct TEST : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		ctx->PushBox();
-
-		for (int i = 0; i < 3; i++)
+		ctx->Push<ui::MenuBarElement>();
+		ctx->Push<ui::MenuItemElement>()->SetText("Test");
+		for (int i = 0; i < 4; i++)
 		{
-			ctx->Push<ui::RadioButtonT<int>>()->Init(curTest, i)->onChange = [this]() { Rerender(); };
-			ctx->Text(testNames[i]);
-			ctx->Pop();
+			auto fn = [this, i]()
+			{
+				curTest = i;
+				Rerender();
+			};
+			ctx->Make<ui::MenuItemElement>()->SetText(testNames[i]).SetChecked(curTest == i).onActivate = fn;
 		}
-
-		ctx->Text("----------------");
+		ctx->Pop();
+		ctx->Pop();
 
 		switch (curTest)
 		{
 		case 0: break;
 		case 1: ctx->Make<OpenClose>(); break;
 		case 2: ctx->Make<Calculator>(); break;
+		case 3: ctx->Make<EdgeSliceTest>(); break;
 		}
-
-		ctx->Pop();
 	}
 
 	int curTest = 0;
@@ -633,9 +655,9 @@ struct MainWindow : ui::NativeMainWindow
 {
 	void OnRender(UIContainer* ctx)
 	{
-		ctx->Make<DataEditor>();
+		//ctx->Make<DataEditor>();
 		//ctx->Make<OpenClose>();
-		//ctx->Make<TEST>();
+		ctx->Make<TEST>();
 	}
 };
 

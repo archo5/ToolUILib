@@ -259,11 +259,11 @@ struct NativeWindow_Impl
 		//DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
 		//DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
 		//DrawTextLine(32, 32, "Test text", 1, 1, 1);
-		if (true)
+		if (false)
 		{
 			// debug draw
 			if (cont.rootNode)
-				;// DebugDraw(cont.rootNode);
+				DebugDraw(cont.rootNode);
 		}
 
 		GL::Present(renderCtx);
@@ -770,6 +770,16 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* window = GetNativeWindow(hWnd))
 			if (window->sysMoveSizeState == MSST_Unknown)
 				window->sysMoveSizeState = MSST_Move;
+		break;
+	case WM_COMMAND:
+		if (auto* window = GetNativeWindow(hWnd))
+		{
+			if (HIWORD(wParam) == 0 && window->menu)
+			{
+				window->menu->CallActivationFunction(LOWORD(wParam) - 1);
+				return TRUE;
+			}
+		}
 		break;
 	}
 

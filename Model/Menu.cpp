@@ -95,6 +95,14 @@ int Menu::Show(UIObject* owner, bool call)
 	return at;
 }
 
+bool Menu::CallActivationFunction(int which)
+{
+	if (which < 0 || size_t(which) >= items.size() || !items[which].data->onActivate)
+		return false;
+	items[which].data->onActivate(this, which);
+	return true;
+}
+
 void Menu::_Unpack(ArrayView<MenuItem> miv, int parent)
 {
 	if (items.capacity() < items.size() + miv.size())
@@ -170,7 +178,7 @@ ArrayView<MenuItem> MenuElement::_AppendElements(UIObject* o)
 	{
 		if (auto* item = dynamic_cast<MenuItemElement*>(ch))
 		{
-			_items[i++] = MenuItem(item->text, {}, item->isDisabled, item->isChecked, _AppendElements(ch));
+			_items[i++] = MenuItem(item->text, {}, item->isDisabled, item->isChecked, _AppendElements(ch)).Func(item->onActivate);
 		}
 		else if (auto* sep = dynamic_cast<MenuSeparatorElement*>(ch))
 		{

@@ -172,7 +172,7 @@ public:
 	void OnInit() override;
 	void OnPaint() override;
 
-	int active;
+	int active = 0;
 	class TabButton* _activeBtn = nullptr;
 	int _curButton = 0;
 	int _curPanel = 0;

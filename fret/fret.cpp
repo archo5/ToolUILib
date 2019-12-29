@@ -26,6 +26,87 @@ struct FileSyncReadStream : ISyncReadStream
 	}
 };
 
+struct SocketSyncReadStream : ISyncReadStream
+{
+	SOCKET s = -1;
+	SOCKET rs = -1;
+	bool done = false;
+
+	SocketSyncReadStream(int port)
+	{
+		WSADATA wsadata;
+		if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
+		{
+			fprintf(stderr, "failed to initialize Windows Sockets\n");
+			exit(EXIT_FAILURE);
+		}
+
+		s = socket(PF_INET, SOCK_STREAM, 0);
+		if (s == -1)
+		{
+			fprintf(stderr, "failed to create socket\n");
+			exit(EXIT_FAILURE);
+		}
+
+		sockaddr_in my_addr;
+		my_addr.sin_family = AF_INET;
+		my_addr.sin_port = htons(port);
+		my_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		memset(my_addr.sin_zero, 0, sizeof my_addr.sin_zero);
+		if (bind(s, (sockaddr*)&my_addr, sizeof(my_addr)) == -1)
+		{
+			fprintf(stderr, "failed to bind to port %d\n", port);
+			exit(EXIT_FAILURE);
+		}
+
+		listen(s, 1);
+	}
+	~SocketSyncReadStream()
+	{
+		if (rs != -1)
+		{
+			closesocket(rs);
+			rs = -1;
+		}
+		if (s != -1)
+		{
+			closesocket(s);
+			s = -1;
+		}
+		WSACleanup();
+	}
+	void Accept()
+	{
+		sockaddr_storage oaddr;
+		int addr_size = sizeof(oaddr);
+		rs = ::accept(s, (sockaddr*)&oaddr, &addr_size);
+	}
+	int Read(void* buf, int size)
+	{
+		if (done)
+			return 0;
+		int s = size;
+		auto p = (char*)buf;
+		for (;;)
+		{
+			int ret = ::recv(rs, p, s, 0);
+			if (ret == 0)
+			{
+				done = true;
+				break;
+			}
+			if (ret == -1)
+			{
+				fprintf(stderr, "failed to recv\n");
+				continue;
+			}
+			p += ret;
+			s -= ret;
+		}
+		return size - s;
+	}
+};
+
 struct StructureParser
 {
 	static uint64_t ReadULEB(ISyncReadStream* s)
@@ -172,23 +253,33 @@ struct FileStructureDataSource : ui::TreeDataSource
 		std::vector<Node*> children;
 	};
 
-	FileStructureDataSource()
+	FileStructureDataSource(const char* path)
 	{
-		ParseAll();
+		ParseAll(path);
 	}
 
-	void ParseAll()
+	static DWORD __stdcall func(void* arg)
 	{
-		::system("cd FRET_Plugins && set RAW=1 && a > ../sockdump.txt");
+		char buf[256];
+		sprintf(buf, "cd FRET_Plugins && wav.exe -f \"%s\" -s 12345", (const char*)arg);
+		::system(buf);
+		return 0;
+	}
+	void ParseAll(const char* path)
+	{
+		SocketSyncReadStream ssrs(12345);
+		HANDLE h = CreateThread(NULL, 1024 * 64, func, (void*)path, 0, NULL);
+		ssrs.Accept();
 		FileSyncReadStream fsrs("sockdump.txt");
 		StructureParser sp;
-		Parse(fsrs, sp, &root);
+		Parse(&fsrs, sp, &root);
+		WaitForSingleObject(h, INFINITE);
 	}
-	void Parse(FileSyncReadStream& fsrs, StructureParser& sp, Node* parent)
+	void Parse(ISyncReadStream* srs, StructureParser& sp, Node* parent)
 	{
 		for (;;)
 		{
-			char type = sp.ReadNext(&fsrs);
+			char type = sp.ReadNext(srs);
 			if (type == 0)
 				break;
 			switch (type)
@@ -198,7 +289,7 @@ struct FileStructureDataSource : ui::TreeDataSource
 				auto* n = new Node;
 				n->name = sp.name;
 				parent->children.push_back(n);
-				Parse(fsrs, sp, n);
+				Parse(srs, sp, n);
 				break;
 			}
 			case '}':
@@ -263,19 +354,69 @@ struct FileStructureViewer2 : ui::Node
 	{
 		auto* trv = ctx->Make<ui::TreeView>();
 		trv->GetStyle().SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
-		trv->SetDataSource(&ds);
+		trv->SetDataSource(ds);
 		trv->CalculateColumnWidths();
 	}
 
-	FileStructureDataSource ds;
+	FileStructureDataSource* ds = nullptr;
+};
+
+struct REFile
+{
+	REFile(std::string n)
+	{
+		path = n;
+		name = n;
+		ds = new FileStructureDataSource(n.c_str());
+	}
+	~REFile()
+	{
+		delete ds;
+	}
+
+	std::string path;
+	std::string name;
+	FileStructureDataSource* ds;
 };
 
 struct MainWindow : ui::NativeMainWindow
 {
+	MainWindow()
+	{
+		files.push_back(new REFile("loop.wav"));
+	}
 	void OnRender(UIContainer* ctx) override
 	{
-		ctx->Make<FileStructureViewer2>();
+		auto s = ctx->Push<ui::TabGroup>()->GetStyle();
+		s.SetLayout(style::Layout::EdgeSlice);
+		s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+		{
+			ctx->Push<ui::TabList>();
+			{
+				for (auto* f : files)
+				{
+					ctx->Push<ui::TabButton>();
+					ctx->Text(f->name);
+					ctx->MakeWithText<ui::Button>("X");
+					ctx->Pop();
+				}
+			}
+			ctx->Pop();
+
+			for (auto* f : files)
+			{
+				auto* p = ctx->Push<ui::TabPanel>();
+				auto s = p->GetStyle();
+				s.SetLayout(style::Layout::EdgeSlice);
+				s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+				ctx->Make<FileStructureViewer2>()->ds = f->ds;
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
 	}
+
+	std::vector<REFile*> files;
 };
 
 int uimain(int argc, char* argv[])

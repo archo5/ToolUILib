@@ -74,6 +74,7 @@ public:
 	void* GetNativeHandle() const;
 
 	int Show(UIObject* owner, bool call = true);
+	bool CallActivationFunction(int which);
 
 private:
 
