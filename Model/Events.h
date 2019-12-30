@@ -132,6 +132,7 @@ public:
 	void SetTimer(UIElement* tgt, float t, int id = 0);
 
 	UIObject* FindObjectAtPosition(float x, float y);
+	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
@@ -144,6 +145,7 @@ public:
 	UIContainer* container;
 
 	UIObject* hoverObj = nullptr;
+	UIObject* dragHoverObj = nullptr;
 	UIObject* clickObj[5] = { nullptr };
 	UIObject* focusObj = nullptr;
 	std::vector<UITimerData> pendingTimers;

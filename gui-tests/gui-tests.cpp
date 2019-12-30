@@ -57,7 +57,7 @@ struct DragDropTest : ui::Node
 		{
 			auto* btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
 			btn->SetInputDisabled(slots[i] == 0);
-			HandleEvent(btn) = [this, i](UIEvent& e)
+			HandleEvent(btn) = [this, i, btn](UIEvent& e)
 			{
 				struct Data : ui::DragDropData
 				{
@@ -78,6 +78,14 @@ struct DragDropTest : ui::Node
 						e.handled = true;
 						Rerender();
 					}
+				}
+				else if (e.type == UIEventType::DragEnter)
+				{
+					btn->GetStyle().SetPaddingBottom(10);
+				}
+				else if (e.type == UIEventType::DragLeave)
+				{
+					btn->GetStyle().SetPaddingBottom(4);
 				}
 			};
 		}

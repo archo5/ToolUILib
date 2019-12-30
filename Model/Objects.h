@@ -55,6 +55,7 @@ enum UIObjectFlags
 		| UIObject_IsClickedM | UIObject_IsClickedX1 | UIObject_IsClickedX2),
 	UIObject_IsDisabled = 1 << 8,
 	UIObject_IsHidden = 1 << 9,
+	UIObject_DragHovered = 1 << 10, // TODO reorder
 };
 
 enum class Direction

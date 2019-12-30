@@ -114,6 +114,8 @@ void UIEventSystem::OnDestroy(UIObject* o)
 {
 	if (hoverObj == o)
 		hoverObj = nullptr;
+	if (dragHoverObj == o)
+		dragHoverObj = nullptr;
 	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
 		if (clickObj[i] == o)
 			clickObj[i] = nullptr;
@@ -198,6 +200,69 @@ UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
 	return o;
 }
 
+void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents)
+{
+	UIEvent ev(this, curHoverObj, dragEvents ? UIEventType::DragLeave : UIEventType::MouseLeave);
+	ev.x = x;
+	ev.y = y;
+
+	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
+
+	auto* o = curHoverObj;
+	while (o && !o->Contains(x, y))
+	{
+		o->flags &= ~hoverFlag;
+		ev.current = o;
+		o->OnEvent(ev);
+		o = o->parent;
+	}
+
+	ev.type = dragEvents ? UIEventType::DragMove : UIEventType::MouseMove;
+	ev.dx = x - prevMouseX;
+	ev.dy = y - prevMouseY;
+	for (auto* p = o; p; p = p->parent)
+	{
+		ev.current = p;
+		p->OnEvent(ev);
+	}
+
+	ev.type = dragEvents ? UIEventType::DragEnter : UIEventType::MouseEnter;
+	ev.dx = 0;
+	ev.dy = 0;
+	if (!o && container->rootNode && container->rootNode->Contains(x, y))
+	{
+		o = container->rootNode;
+		o->flags |= hoverFlag;
+		ev.current = o;
+		ev.target = o;
+		o->OnEvent(ev);
+	}
+
+	if (o)
+	{
+		bool found = true;
+		while (found)
+		{
+			found = false;
+			for (auto* ch = o->lastChild; ch; ch = ch->prev)
+			{
+				if (ch->Contains(x, y))
+				{
+					o = ch;
+					o->flags |= hoverFlag;
+					ev.current = o;
+					ev.target = o;
+					o->OnEvent(ev);
+					found = true;
+					break;
+				}
+			}
+		}
+	}
+
+	curHoverObj = o;
+}
+
 void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 {
 	if (clickObj[0] && !dragEventAttempted && (x != 0 || y != 0))
@@ -215,65 +280,44 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 				if (ev.handled || ui::DragDrop::GetData())
 				{
 					dragEventInProgress = ui::DragDrop::GetData() != nullptr;
+					if (dragEventInProgress)
+						dragHoverObj = nullptr; // allow it to be entered from root
 					break;
 				}
 			}
 		}
 	}
 
-	UIEvent ev(this, hoverObj, UIEventType::MouseLeave);
-	ev.x = x;
-	ev.y = y;
-
-	auto* o = hoverObj;
-	while (o && !o->Contains(x, y))
+	bool anyClicked = false;
+	for (int i = 0; i < 5; i++)
 	{
-		o->flags &= ~UIObject_IsHovered;
-		ev.current = o;
-		o->OnEvent(ev);
-		o = o->parent;
-	}
-
-	ev.type = UIEventType::MouseMove;
-	for (auto* p = o; p; p = p->parent)
-	{
-		ev.current = o;
-		o->OnEvent(ev);
-	}
-
-	ev.type = UIEventType::MouseEnter;
-	if (!o && container->rootNode && container->rootNode->Contains(x, y))
-	{
-		o = container->rootNode;
-		o->flags |= UIObject_IsHovered;
-		ev.current = o;
-		ev.target = o;
-		o->OnEvent(ev);
-	}
-
-	if (o)
-	{
-		bool found = true;
-		while (found)
+		if (clickObj[i])
 		{
-			found = false;
-			for (auto* ch = o->lastChild; ch; ch = ch->prev)
-			{
-				if (ch->Contains(x, y))
-				{
-					o = ch;
-					o->flags |= UIObject_IsHovered;
-					ev.current = o;
-					ev.target = o;
-					o->OnEvent(ev);
-					found = true;
-					break;
-				}
-			}
+			anyClicked = true;
+			break;
 		}
 	}
 
-	hoverObj = o;
+	if (anyClicked)
+	{
+		UIEvent ev(this, hoverObj, UIEventType::MouseMove);
+		ev.x = x;
+		ev.y = y;
+		ev.dx = x - prevMouseX;
+		ev.dy = y - prevMouseY;
+		for (auto* p = hoverObj; p; p = p->parent)
+		{
+			ev.current = p;
+			p->OnEvent(ev);
+		}
+	}
+	else
+	{
+		_UpdateHoverObj(hoverObj, x, y, false);
+	}
+	if (dragEventInProgress)
+		_UpdateHoverObj(dragHoverObj, x, y, true);
+
 	prevMouseX = x;
 	prevMouseY = y;
 }
@@ -316,9 +360,18 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 		if (dragEventInProgress)
 		{
 			ev.type = UIEventType::DragDrop;
-			ev.target = ev.current = hoverObj;
+			ev.target = ev.current = dragHoverObj;
 			ev.handled = false;
 			BubblingEvent(ev);
+
+			ev.type = UIEventType::DragLeave;
+			ev.target = dragHoverObj;
+			ev.handled = false;
+			for (auto* p = dragHoverObj; p; p = p->parent)
+			{
+				ev.current = p;
+				p->OnEvent(ev);
+			}
 
 			ev.type = UIEventType::DragEnd;
 			ev.target = ev.current = origClickObj;
@@ -326,6 +379,8 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			BubblingEvent(ev);
 
 			ui::DragDrop::SetData(nullptr);
+			dragHoverObj = nullptr;
+			dragEventInProgress = false;
 		}
 		dragEventAttempted = false;
 	}
