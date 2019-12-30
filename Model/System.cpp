@@ -102,6 +102,7 @@ void UIContainer::ProcessNodeRenderStack()
 		_Push(currentNode);
 
 		printf("rendering %s\n", typeid(*currentNode).name());
+		currentNode->ClearEventHandlers();
 		currentNode->Render(this);
 
 		if (objectStackSize > 1)
@@ -185,6 +186,7 @@ void InlineFrameNode::OnEvent(UIEvent& ev)
 		if (ev.type == UIEventType::MouseMove)
 			frameContents->eventSystem.OnMouseMove(ev.x, ev.y);
 	}
+	Node::OnEvent(ev);
 }
 
 void InlineFrameNode::OnPaint()

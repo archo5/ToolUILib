@@ -16,6 +16,8 @@ class UIEventSystem;
 
 enum class UIEventType
 {
+	Any,
+
 	Click,
 	Activate, // left click or space with focus (except input)
 	Change,
@@ -149,4 +151,37 @@ public:
 	float height = 100;
 	float prevMouseX = 0;
 	float prevMouseY = 0;
+
+	bool dragEventAttempted = false;
+	bool dragEventInProgress = false;
 };
+
+namespace ui {
+
+class DragDropData
+{
+public:
+	DragDropData() {}
+	DragDropData(const std::string& t) : type(t) {}
+	virtual ~DragDropData() {}
+
+	std::string type;
+};
+
+class DragDropText : public DragDropData
+{
+public:
+	DragDropText();
+	DragDropText(const std::string& ty, const std::string& txt) : DragDropData(ty), text(txt) {}
+
+	std::string text;
+};
+
+class DragDrop
+{
+public:
+	static void SetData(DragDropData* data);
+	static DragDropData* GetData(const char* type = nullptr);
+};
+
+} // ui

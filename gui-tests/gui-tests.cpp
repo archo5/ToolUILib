@@ -48,6 +48,44 @@ struct EdgeSliceTest : ui::Node
 	}
 };
 
+struct DragDropTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		for (int i = 0; i < 3; i++)
+		{
+			auto* btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
+			btn->SetInputDisabled(slots[i] == 0);
+			HandleEvent(btn) = [this, i](UIEvent& e)
+			{
+				struct Data : ui::DragDropData
+				{
+					Data(int f) : ui::DragDropData("slot item"), from(f) {}
+					int from;
+				};
+				if (e.type == UIEventType::DragStart)
+				{
+					if (slots[i] > 0)
+						ui::DragDrop::SetData(new Data(i));
+				}
+				else if (e.type == UIEventType::DragDrop)
+				{
+					if (auto* ddd = static_cast<Data*>(ui::DragDrop::GetData("slot item")))
+					{
+						slots[i]++;
+						slots[ddd->from]--;
+						e.handled = true;
+						Rerender();
+					}
+				}
+			};
+		}
+	}
+
+	int slots[3] = { 5, 2, 0 };
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -504,7 +542,6 @@ struct DataEditor : ui::Node
 		ctx->Pop();
 
 		Subscribe(DCT_ItemSelection);
-		tbName = nullptr;
 		if (editing == SIZE_MAX)
 		{
 			ctx->Text("List");
@@ -563,24 +600,19 @@ struct DataEditor : ui::Node
 
 			Property::Make(ctx, "Name", [&]()
 			{
-				tbName = ctx->Make<ui::Textbox>();
+				auto tbName = ctx->Make<ui::Textbox>();
 				tbName->text = items[editing].name;
+				HandleEvent(tbName, UIEventType::Commit) = [this, tbName](UIEvent&)
+				{
+					items[editing].name = tbName->text;
+					Rerender();
+				};
 			});
 
 			Property::Make(ctx, "Enable", [&]()
 			{
 				ctx->Make<ui::Checkbox>()->Init(items[editing].enable);//->SetInputDisabled(true);
 			});
-		}
-	}
-	void OnEvent(UIEvent& e) override
-	{
-		if (e.type == UIEventType::Commit)
-		{
-			if (e.target == tbName)
-			{
-				items[editing].name = tbName->text;
-			}
 		}
 	}
 
@@ -591,7 +623,6 @@ struct DataEditor : ui::Node
 		{ "another test item", 123, false, 12.3f },
 		{ "third item", 333, true, 3.0f },
 	};
-	ui::Textbox* tbName;
 	ui::Menu* topMenu;
 };
 
@@ -602,6 +633,7 @@ static const char* testNames[] =
 	"Test: Open/Close",
 	"Test: Calculator",
 	"Test: Edge slice",
+	"Test: Drag and drop",
 };
 struct TEST : ui::Node
 {
@@ -609,11 +641,12 @@ struct TEST : ui::Node
 	{
 		ctx->Push<ui::MenuBarElement>();
 		ctx->Push<ui::MenuItemElement>()->SetText("Test");
-		for (int i = 0; i < 4; i++)
+		for (size_t i = 0; i < sizeof(testNames) / sizeof(testNames[0]); i++)
 		{
 			auto fn = [this, i]()
 			{
 				curTest = i;
+				GetNativeWindow()->SetTitle(testNames[i]);
 				Rerender();
 			};
 			ctx->Make<ui::MenuItemElement>()->SetText(testNames[i]).SetChecked(curTest == i).onActivate = fn;
@@ -627,6 +660,7 @@ struct TEST : ui::Node
 		case 1: ctx->Make<OpenClose>(); break;
 		case 2: ctx->Make<Calculator>(); break;
 		case 3: ctx->Make<EdgeSliceTest>(); break;
+		case 4: ctx->Make<DragDropTest>(); break;
 		}
 	}
 

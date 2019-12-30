@@ -696,6 +696,7 @@ void TableView::OnPaint()
 
 void TableView::OnEvent(UIEvent& e)
 {
+	Node::OnEvent(e);
 }
 
 void TableView::Render(UIContainer* ctx)
@@ -829,6 +830,7 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 
 void TreeView::OnEvent(UIEvent& e)
 {
+	Node::OnEvent(e);
 }
 
 void TreeView::Render(UIContainer* ctx)

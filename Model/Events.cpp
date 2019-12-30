@@ -200,6 +200,27 @@ UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
 
 void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 {
+	if (clickObj[0] && !dragEventAttempted && (x != 0 || y != 0))
+	{
+		dragEventAttempted = true;
+		if (clickObj[0])
+		{
+			UIEvent ev(this, clickObj[0], UIEventType::DragStart);
+			ev.x = x;
+			ev.y = y;
+			dragEventInProgress = false;
+			for (auto* p = clickObj[0]; p; p = p->parent)
+			{
+				p->OnEvent(ev);
+				if (ev.handled || ui::DragDrop::GetData())
+				{
+					dragEventInProgress = ui::DragDrop::GetData() != nullptr;
+					break;
+				}
+			}
+		}
+	}
+
 	UIEvent ev(this, hoverObj, UIEventType::MouseLeave);
 	ev.x = x;
 	ev.y = y;
@@ -262,6 +283,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 	int id = int(which);
 	UIEvent ev(this, !down ? clickObj[id] : hoverObj, down ? UIEventType::ButtonDown : UIEventType::ButtonUp);
 	bool clicked = !down && clickObj[id] == hoverObj;
+	auto* origClickObj = clickObj[id];
 	clickObj[id] = down ? hoverObj : nullptr;
 	ev.shortCode = id;
 	ev.x = x;
@@ -280,12 +302,32 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 	if (clicked)
 	{
 		ev.type = UIEventType::Click;
+		ev.handled = false;
 		BubblingEvent(ev);
 		if (which == UIMouseButton::Left)
 		{
 			ev.type = UIEventType::Activate;
+			ev.handled = false;
 			BubblingEvent(ev);
 		}
+	}
+	if (!down && which == UIMouseButton::Left)
+	{
+		if (dragEventInProgress)
+		{
+			ev.type = UIEventType::DragDrop;
+			ev.target = ev.current = hoverObj;
+			ev.handled = false;
+			BubblingEvent(ev);
+
+			ev.type = UIEventType::DragEnd;
+			ev.target = ev.current = origClickObj;
+			ev.handled = false;
+			BubblingEvent(ev);
+
+			ui::DragDrop::SetData(nullptr);
+		}
+		dragEventAttempted = false;
 	}
 }
 
@@ -338,3 +380,23 @@ ui::NativeWindowBase* UIEventSystem::GetNativeWindow() const
 {
 	return container->GetNativeWindow();
 }
+
+
+namespace ui {
+
+static DragDropData* g_curDragDropData = nullptr;
+
+void DragDrop::SetData(DragDropData* data)
+{
+	delete g_curDragDropData;
+	g_curDragDropData = data;
+}
+
+DragDropData* DragDrop::GetData(const char* type)
+{
+	if (type && g_curDragDropData && g_curDragDropData->type != type)
+		return nullptr;
+	return g_curDragDropData;
+}
+
+} // ui

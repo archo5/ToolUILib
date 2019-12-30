@@ -35,6 +35,8 @@ namespace ui {
 class NativeWindowBase;
 class FrameContents;
 class Node; // logical item
+
+using EventFunc = std::function<void(UIEvent& e)>;
 }
 
 
@@ -201,6 +203,7 @@ class BoxElement : public UIElement
 {
 };
 
+struct EventHandlerEntry;
 struct Subscription;
 struct DataCategoryTag {};
 
@@ -218,6 +221,7 @@ public:
 	~Node();
 	typedef char IsNode[2];
 
+	void OnEvent(UIEvent& e) override;
 	virtual void Render(UIContainer* ctx) = 0;
 	void Rerender();
 
@@ -232,10 +236,15 @@ public:
 		return Unsubscribe(tag, reinterpret_cast<uintptr_t>(ptr));
 	}
 
+	EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
+	void ClearEventHandlers();
+
 private:
 	friend struct Subscription;
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
+	friend struct EventHandlerEntry;
+	EventHandlerEntry* _firstEH = nullptr;
 };
 
 } // ui

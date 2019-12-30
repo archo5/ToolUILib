@@ -569,6 +569,8 @@ void SubscriptionTable_Init()
 void SubscriptionTable_Free()
 {
 	//assert(g_subscrTable->empty());
+	for (auto& p : *g_subscrTable)
+		delete p.second;
 	delete g_subscrTable;
 	g_subscrTable = nullptr;
 }
@@ -625,6 +627,14 @@ struct Subscription
 	Subscription* nextInTable;
 };
 
+struct EventHandlerEntry
+{
+	EventHandlerEntry* next;
+	UIObject* target;
+	UIEventType type;
+	EventFunc func;
+};
+
 static void _Notify(DataCategoryTag* tag, uintptr_t at)
 {
 	auto it = g_subscrTable->find({ tag, at });
@@ -649,6 +659,19 @@ Node::~Node()
 		auto* s = _firstSub;
 		s->Unlink();
 		delete s;
+	}
+	ClearEventHandlers();
+}
+
+void Node::OnEvent(UIEvent& e)
+{
+	for (auto* n = _firstEH; n && !e.handled; n = n->next)
+	{
+		if (n->type != UIEventType::Any && n->type != e.type)
+			continue;
+		if (n->target && !e.target->IsChildOrSame(n->target))
+			continue;
+		n->func(e);
 	}
 }
 
@@ -700,6 +723,26 @@ bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 		}
 	}
 	return true;
+}
+
+EventFunc& Node::HandleEvent(UIObject* target, UIEventType type)
+{
+	auto eh = new EventHandlerEntry;
+	eh->next = _firstEH;
+	eh->target = target;
+	eh->type = type;
+	_firstEH = eh;
+	return eh->func;
+}
+
+void Node::ClearEventHandlers()
+{
+	while (_firstEH)
+	{
+		auto* n = _firstEH->next;
+		delete _firstEH;
+		_firstEH = n;
+	}
 }
 
 } // ui
