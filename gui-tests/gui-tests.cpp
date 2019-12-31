@@ -94,6 +94,87 @@ struct DragDropTest : ui::Node
 	int slots[3] = { 5, 2, 0 };
 };
 
+static ui::DataCategoryTag DCT_Node[1];
+struct NodeEditTest : ui::Node
+{
+	struct TreeNode
+	{
+		~TreeNode()
+		{
+			for (auto* ch : children)
+				delete ch;
+		}
+
+		std::string name;
+		std::vector<TreeNode*> children;
+	};
+
+	struct TreeNodeUI : ui::Node
+	{
+		void Render(UIContainer* ctx) override
+		{
+			Subscribe(DCT_Node, tgt);
+			ctx->Push<ui::Panel>();
+
+			if (parent)
+			{
+				ctx->MakeWithText<ui::Button>("Delete")->onClick = [this]()
+				{
+					delete tgt;
+					parent->children.erase(std::find(parent->children.begin(), parent->children.end(), tgt));
+					ui::Notify(DCT_Node, parent);
+				};
+			}
+
+			ctx->Text("Name");
+			auto* tbname = ctx->Make<ui::Textbox>();
+			tbname->text = tgt->name;
+			HandleEvent(tbname, UIEventType::Commit) = [this, tbname](UIEvent&)
+			{
+				tgt->name = tbname->text;
+			};
+
+			ctx->Push<ui::Panel>();
+			ctx->Text("Children");
+
+			for (size_t i = 0; i < tgt->children.size(); i++)
+			{
+				AddButton(ctx, i);
+				auto* tnui = ctx->Make<TreeNodeUI>();
+				tnui->tgt = tgt->children[i];
+				tnui->parent = tgt;
+			}
+			AddButton(ctx, tgt->children.size());
+
+			ctx->Pop();
+
+			ctx->Pop();
+		}
+
+		void AddButton(UIContainer* ctx, size_t inspos)
+		{
+			ctx->MakeWithText<ui::Button>("Add")->onClick = [this, inspos]()
+			{
+				static int ctr = 0;
+				auto* t = new TreeNode;
+				t->name = "new child " + std::to_string(ctr++);
+				tgt->children.insert(tgt->children.begin() + inspos, t);
+				ui::Notify(DCT_Node, tgt);
+			};
+		}
+
+		TreeNode* tgt = nullptr;
+		TreeNode* parent = nullptr;
+	};
+
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Make<TreeNodeUI>()->tgt = &root;
+	}
+
+	TreeNode root = { "root" };
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -642,6 +723,7 @@ static const char* testNames[] =
 	"Test: Calculator",
 	"Test: Edge slice",
 	"Test: Drag and drop",
+	"Test: Node editing",
 };
 struct TEST : ui::Node
 {
@@ -669,6 +751,7 @@ struct TEST : ui::Node
 		case 2: ctx->Make<Calculator>(); break;
 		case 3: ctx->Make<EdgeSliceTest>(); break;
 		case 4: ctx->Make<DragDropTest>(); break;
+		case 5: ctx->Make<NodeEditTest>(); break;
 		}
 	}
 
