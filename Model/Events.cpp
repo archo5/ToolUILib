@@ -325,64 +325,73 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
 {
 	int id = int(which);
-	UIEvent ev(this, !down ? clickObj[id] : hoverObj, down ? UIEventType::ButtonDown : UIEventType::ButtonUp);
-	bool clicked = !down && clickObj[id] == hoverObj;
-	auto* origClickObj = clickObj[id];
-	clickObj[id] = down ? hoverObj : nullptr;
+
+	UIEvent ev(this, hoverObj, UIEventType::ButtonDown);
 	ev.shortCode = id;
 	ev.x = x;
 	ev.y = y;
+
 	if (down)
 	{
-		for (auto* p = ev.target; p; p = p->parent)
+		for (auto* p = hoverObj; p; p = p->parent)
 			p->flags |= _UIObject_IsClicked_First << id;
+
+		clickObj[id] = hoverObj;
+		BubblingEvent(ev);
 	}
 	else
 	{
 		for (auto* p = ev.target; p; p = p->parent)
 			p->flags &= ~(_UIObject_IsClicked_First << id);
-	}
-	BubblingEvent(ev);
-	if (clicked)
-	{
-		ev.type = UIEventType::Click;
-		ev.handled = false;
-		BubblingEvent(ev);
+
+		if (clickObj[id] == hoverObj)
+		{
+			ev.type = UIEventType::Click;
+			ev.handled = false;
+			BubblingEvent(ev);
+			if (which == UIMouseButton::Left)
+			{
+				ev.type = UIEventType::Activate;
+				ev.handled = false;
+				BubblingEvent(ev);
+			}
+		}
+
 		if (which == UIMouseButton::Left)
 		{
-			ev.type = UIEventType::Activate;
-			ev.handled = false;
-			BubblingEvent(ev);
-		}
-	}
-	if (!down && which == UIMouseButton::Left)
-	{
-		if (dragEventInProgress)
-		{
-			ev.type = UIEventType::DragDrop;
-			ev.target = ev.current = dragHoverObj;
-			ev.handled = false;
-			BubblingEvent(ev);
-
-			ev.type = UIEventType::DragLeave;
-			ev.target = dragHoverObj;
-			ev.handled = false;
-			for (auto* p = dragHoverObj; p; p = p->parent)
+			if (dragEventInProgress)
 			{
-				ev.current = p;
-				p->OnEvent(ev);
+				ev.type = UIEventType::DragDrop;
+				ev.target = ev.current = dragHoverObj;
+				ev.handled = false;
+				BubblingEvent(ev);
+
+				ev.type = UIEventType::DragLeave;
+				ev.target = dragHoverObj;
+				ev.handled = false;
+				for (auto* p = dragHoverObj; p; p = p->parent)
+				{
+					ev.current = p;
+					p->OnEvent(ev);
+				}
+
+				ev.type = UIEventType::DragEnd;
+				ev.target = ev.current = clickObj[id];
+				ev.handled = false;
+				BubblingEvent(ev);
+
+				ui::DragDrop::SetData(nullptr);
+				dragHoverObj = nullptr;
+				dragEventInProgress = false;
 			}
-
-			ev.type = UIEventType::DragEnd;
-			ev.target = ev.current = origClickObj;
-			ev.handled = false;
-			BubblingEvent(ev);
-
-			ui::DragDrop::SetData(nullptr);
-			dragHoverObj = nullptr;
-			dragEventInProgress = false;
+			dragEventAttempted = false;
 		}
-		dragEventAttempted = false;
+
+		ev.type = UIEventType::ButtonUp;
+		ev.handled = false;
+		ev.target = ev.current = clickObj[id];
+		clickObj[id] = nullptr;
+		BubblingEvent(ev);
 	}
 }
 

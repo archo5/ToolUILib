@@ -1,12 +1,15 @@
 
 #pragma once
 #include <vector>
+#include "../Core/Math.h"
 
 
 namespace ui {
 class NativeWindowBase;
 class Node;
 } // ui
+
+using UIRect = AABB<float>;
 
 class UIObject;
 class UIElement;
@@ -159,6 +162,78 @@ public:
 };
 
 namespace ui {
+
+enum class SubUIDragState
+{
+	None,
+	Start,
+	Move,
+	Stop,
+};
+
+template <class T> struct SubUI
+{
+	static constexpr T NoValue = ~(T)0;
+
+	bool IsAnyPressed() const { return _pressed != NoValue; }
+	bool IsHovered(T id) const { return _hovered == id; }
+	bool IsPressed(T id) const { return _pressed == id; }
+
+	void InitOnEvent(UIEvent& e)
+	{
+		if (e.type == UIEventType::MouseMove)
+			_hovered = NoValue;
+		if (e.type == UIEventType::MouseLeave)
+			_hovered = NoValue;
+	}
+
+	bool ButtonOnEvent(T id, const UIRect& r, UIEvent& e)
+	{
+		if (e.type == UIEventType::MouseMove)
+		{
+			if (r.Contains(e.x, e.y))
+				_hovered = id;
+		}
+		else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hovered == id)
+			_pressed = id;
+		else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+			_pressed = NoValue;
+		else if (e.type == UIEventType::Activate)
+			if (_pressed == id && _hovered == id)
+				return true;
+		return false;
+	}
+
+	SubUIDragState DragOnEvent(T id, const UIRect& r, UIEvent& e)
+	{
+		if (e.type == UIEventType::MouseMove)
+		{
+			if (r.Contains(e.x, e.y))
+				_hovered = id;
+			if (_pressed == id)
+				return SubUIDragState::Move;
+		}
+		else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hovered == id)
+		{
+			_pressed = id;
+			return SubUIDragState::Start;
+		}
+		else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+		{
+			_pressed = NoValue;
+			return SubUIDragState::Stop;
+		}
+		return SubUIDragState::None;
+	}
+
+	void DragStart(T id)
+	{
+		_pressed = id;
+	}
+
+	T _hovered = NoValue;
+	T _pressed = NoValue;
+};
 
 class DragDropData
 {

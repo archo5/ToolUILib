@@ -1,5 +1,10 @@
 
 #include "Serialization.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#define NOUSER
+#define NONLS
 #include <Windows.h>
 
 

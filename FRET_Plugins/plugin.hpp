@@ -6,6 +6,10 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#define NOUSER
+#define NONLS
 #include <winsock2.h>
 #include <assert.h>
 

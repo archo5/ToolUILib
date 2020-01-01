@@ -14,6 +14,10 @@ template<class T> struct AABB
 {
 	T x0, y0, x1, y1;
 
+	static AABB UniformBorder(T v) { return { v, v, v, v }; }
+	static AABB FromPoint(T x, T y) { return { x, y, x, y }; }
+	static AABB FromCenterExtents(T x, T y, T e) { return { x - e, y - e, x + e, y + e }; }
+	static AABB FromCenterExtents(T x, T y, T ex, T ey) { return { x - ex, y - ey, x + ex, y + ey }; }
 	T GetWidth() const { return x1 - x0; }
 	T GetHeight() const { return y1 - y0; }
 	bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }

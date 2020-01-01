@@ -175,6 +175,131 @@ struct NodeEditTest : ui::Node
 	TreeNode root = { "root" };
 };
 
+struct SubUITest : ui::Node
+{
+	void OnPaint() override
+	{
+		style::PaintInfo info(this);
+		ui::Theme::current->textBoxBase->paint_func(info);
+		auto r = finalRectC;
+
+		GL::BatchRenderer br;
+
+		GL::SetTexture(0);
+		br.Begin();
+		if (subui.IsPressed(0))
+			br.SetColor(1, 0, 0, 0.5f);
+		else if (subui.IsHovered(0))
+			br.SetColor(0, 1, 0, 0.5f);
+		else
+			br.SetColor(0, 0, 1, 0.5f);
+		br.Quad(r.x0, r.y0, r.x0 + 50, r.y0 + 50, 0, 0, 1, 1);
+		br.End();
+		DrawTextLine(r.x0 + 25 - GetTextWidth("Button") / 2, r.y0 + 25 + GetFontHeight() / 2, "Button", 1, 1, 1);
+
+		GL::SetTexture(0);
+		br.Begin();
+		auto ddr = UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + draggableY, 10);
+		if (subui.IsPressed(1))
+			br.SetColor(1, 0, 1, 0.5f);
+		else if (subui.IsHovered(1))
+			br.SetColor(1, 1, 0, 0.5f);
+		else
+			br.SetColor(0, 1, 1, 0.5f);
+		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
+		br.End();
+		DrawTextLine(r.x0 + draggableX - GetTextWidth("D&D") / 2, r.y0 + draggableY + GetFontHeight() / 2, "D&D", 1, 1, 1);
+
+		GL::SetTexture(0);
+		br.Begin();
+		ddr = UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + 5, 10, 5);
+		if (subui.IsPressed(2))
+			br.SetColor(1, 0, 1, 0.5f);
+		else if (subui.IsHovered(2))
+			br.SetColor(1, 1, 0, 0.5f);
+		else
+			br.SetColor(0, 1, 1, 0.5f);
+		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
+		br.End();
+		DrawTextLine(r.x0 + draggableX - GetTextWidth("x") / 2, r.y0 + 5 + GetFontHeight() / 2, "x", 1, 1, 1);
+
+		GL::SetTexture(0);
+		br.Begin();
+		ddr = UIRect::FromCenterExtents(r.x0 + 5, r.y0 + draggableY, 5, 10);
+		if (subui.IsPressed(3))
+			br.SetColor(1, 0, 1, 0.5f);
+		else if (subui.IsHovered(3))
+			br.SetColor(1, 1, 0, 0.5f);
+		else
+			br.SetColor(0, 1, 1, 0.5f);
+		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
+		br.End();
+		DrawTextLine(r.x0 + 5 - GetTextWidth("y") / 2, r.y0 + draggableY + GetFontHeight() / 2, "y", 1, 1, 1);
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		auto r = finalRectC;
+
+		subui.InitOnEvent(e);
+		if (subui.ButtonOnEvent(0, UIRect{ r.x0, r.y0, r.x0 + 50, r.y0 + 50 }, e))
+		{
+			puts("0-50 clicked");
+		}
+		switch (subui.DragOnEvent(1, UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + draggableY, 10), e))
+		{
+		case ui::SubUIDragState::Start:
+			puts("drag start");
+			dox = draggableX - e.x;
+			doy = draggableY - e.y;
+			break;
+		case ui::SubUIDragState::Move:
+			puts("drag move");
+			draggableX = e.x + dox;
+			draggableY = e.y + doy;
+			break;
+		case ui::SubUIDragState::Stop:
+			puts("drag stop");
+			break;
+		}
+		switch (subui.DragOnEvent(2, UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + 5, 10, 5), e))
+		{
+		case ui::SubUIDragState::Start:
+			dox = draggableX - e.x;
+			break;
+		case ui::SubUIDragState::Move:
+			draggableX = e.x + dox;
+			break;
+		}
+		switch (subui.DragOnEvent(3, UIRect::FromCenterExtents(r.x0 + 5, r.y0 + draggableY, 5, 10), e))
+		{
+		case ui::SubUIDragState::Start:
+			doy = draggableY - e.y;
+			break;
+		case ui::SubUIDragState::Move:
+			draggableY = e.y + doy;
+			break;
+		}
+
+		if (e.type == UIEventType::ButtonDown && !subui.IsAnyPressed())
+		{
+			subui.DragStart(1);
+			dox = 0;
+			doy = 0;
+		}
+	}
+	void Render(UIContainer* ctx) override
+	{
+		GetStyle().SetPadding(3);
+		GetStyle().SetWidth(100);
+		GetStyle().SetHeight(100);
+	}
+
+	ui::SubUI<uint8_t> subui;
+	float draggableX = 75;
+	float draggableY = 75;
+	float dox = 0, doy = 0;
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -724,6 +849,7 @@ static const char* testNames[] =
 	"Test: Edge slice",
 	"Test: Drag and drop",
 	"Test: Node editing",
+	"Test: SubUI",
 };
 struct TEST : ui::Node
 {
@@ -752,6 +878,7 @@ struct TEST : ui::Node
 		case 3: ctx->Make<EdgeSliceTest>(); break;
 		case 4: ctx->Make<DragDropTest>(); break;
 		case 5: ctx->Make<NodeEditTest>(); break;
+		case 6: ctx->Make<SubUITest>(); break;
 		}
 	}
 

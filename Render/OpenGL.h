@@ -1,20 +1,13 @@
 
 #pragma once
 
-#pragma warning(disable:4996)
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef min
-#undef max
-
 
 namespace GL {
 
 using TexID = unsigned int;
 
 class RenderContext;
-RenderContext* CreateRenderContext(HWND window);
+RenderContext* CreateRenderContext(void* window);
 void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
 

@@ -4,6 +4,11 @@
 
 #include "OpenGL.h"
 
+#pragma warning(disable:4996)
+
+#define WIN32_LEAN_AND_MEAN
+#define NONLS
+#include <Windows.h>
 #include <gl/GL.h>
 
 
@@ -59,10 +64,10 @@ public:
 RenderContext* RenderContext::first;
 RenderContext* RenderContext::last;
 
-RenderContext* CreateRenderContext(HWND window)
+RenderContext* CreateRenderContext(void* window)
 {
 	RenderContext* RC = new RenderContext();
-	RC->dc = GetDC(window);
+	RC->dc = GetDC((HWND)window);
 
 	PIXELFORMATDESCRIPTOR pfd =
 	{

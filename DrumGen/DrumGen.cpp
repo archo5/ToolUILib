@@ -2,6 +2,11 @@
 #define _USE_MATH_DEFINES
 #include "../GUI.h"
 
+#pragma warning(disable:4996)
+#define WIN32_LEAN_AND_MEAN
+#define NOUSER
+#define NOGDI
+#define NONLS
 #include <Windows.h>
 #include <mmsystem.h>
 
