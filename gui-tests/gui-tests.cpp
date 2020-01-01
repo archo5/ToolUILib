@@ -37,7 +37,7 @@ struct EdgeSliceTest : ui::Node
 		s.SetLayout(style::Layout::EdgeSlice);
 		s.SetBoxSizing(style::BoxSizing::BorderBox);
 		s.SetMargin(0);
-		s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+		s.SetHeight(style::Coord::Percent(100));
 
 		ctx->MakeWithText<ui::Button>("Top")->GetStyle().SetEdge(style::Edge::Top);
 		ctx->MakeWithText<ui::Button>("Right")->GetStyle().SetEdge(style::Edge::Right);
@@ -298,6 +298,30 @@ struct SubUITest : ui::Node
 	float draggableX = 75;
 	float draggableY = 75;
 	float dox = 0, doy = 0;
+};
+
+struct SplitPaneTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		GetStyle().SetWidth(style::Coord::Percent(100));
+		GetStyle().SetHeight(style::Coord::Percent(100));
+
+		ctx->Push<ui::SplitPane>();
+
+		ctx->MakeWithText<ui::Panel>("Pane A");
+		ctx->MakeWithText<ui::Panel>("Pane B");
+
+		ctx->Push<ui::SplitPane>()->SetDirection(true);
+
+		ctx->MakeWithText<ui::Panel>("Pane C");
+		ctx->MakeWithText<ui::Panel>("Pane D");
+		ctx->MakeWithText<ui::Panel>("Pane E");
+
+		ctx->Pop();
+
+		ctx->Pop();
+	}
 };
 
 
@@ -850,6 +874,7 @@ static const char* testNames[] =
 	"Test: Drag and drop",
 	"Test: Node editing",
 	"Test: SubUI",
+	"Test: Split pane",
 };
 struct TEST : ui::Node
 {
@@ -879,6 +904,7 @@ struct TEST : ui::Node
 		case 4: ctx->Make<DragDropTest>(); break;
 		case 5: ctx->Make<NodeEditTest>(); break;
 		case 6: ctx->Make<SubUITest>(); break;
+		case 7: ctx->Make<SplitPaneTest>(); break;
 		}
 	}
 

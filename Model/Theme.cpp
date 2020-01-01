@@ -206,7 +206,7 @@ struct ThemeInit
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
-		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
@@ -234,7 +234,7 @@ struct ThemeInit
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
-		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 		};
@@ -354,7 +354,7 @@ struct ThemeInit
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
-		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.SetWidth(style::Coord::Percent(100));
 		a.SetMarginTop(-2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -369,7 +369,7 @@ struct ThemeInit
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetBoxSizing(style::BoxSizing::BorderBox);
-		a.SetWidth(style::Coord(100, style::CoordTypeUnit::Percent));
+		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 			auto r = info.rect;

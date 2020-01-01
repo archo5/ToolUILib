@@ -217,6 +217,250 @@ float Slider::ValueToQ(double v)
 }
 
 
+SplitPane::SplitPane()
+{
+	// TODO
+	vertSepStyle = Theme::current->button;
+	style::Accessor(vertSepStyle).SetWidth(8);
+	horSepStyle = Theme::current->button;
+	style::Accessor(horSepStyle).SetHeight(8);
+}
+
+static float SplitQToX(SplitPane* sp, float split)
+{
+	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
+	return lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split);
+}
+
+static float SplitQToY(SplitPane* sp, float split)
+{
+	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
+	return lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split);
+}
+
+static float SplitXToQ(SplitPane* sp, float c)
+{
+	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
+	return sp->finalRectC.GetWidth() > hw * 2 ? (c - sp->finalRectC.x0 - hw) / (sp->finalRectC.GetWidth() - hw * 2) : 0;
+}
+
+static float SplitYToQ(SplitPane* sp, float c)
+{
+	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
+	return sp->finalRectC.GetHeight() > hh * 2 ? (c - sp->finalRectC.y0 - hh) / (sp->finalRectC.GetHeight() - hh * 2) : 0;
+}
+
+static UIRect GetSplitRectH(SplitPane* sp, int which)
+{
+	float split = sp->_splits[which];
+	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
+	float x = roundf(lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split));
+	return { x - hw, sp->finalRectC.y0, x + hw, sp->finalRectC.y1 };
+}
+
+static UIRect GetSplitRectV(SplitPane* sp, int which)
+{
+	float split = sp->_splits[which];
+	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
+	float y = roundf(lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split));
+	return { sp->finalRectC.x0, y - hh, sp->finalRectC.x1, y + hh };
+}
+
+static float SplitWidthAsQ(SplitPane* sp)
+{
+	if (!sp->_verticalSplit)
+	{
+		float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
+		return w / std::max(w, sp->finalRectC.GetWidth() - w);
+	}
+	else
+	{
+		float w = sp->ResolveUnits(sp->vertSepStyle->height, sp->finalRectC.GetWidth());
+		return w / std::max(w, sp->finalRectC.GetHeight() - w);
+	}
+}
+
+static void CheckSplits(SplitPane* sp)
+{
+	// TODO optimize
+	size_t cc = sp->CountChildrenImmediate() - 1;
+	size_t oldsize = sp->_splits.size();
+	if (oldsize < cc)
+	{
+		// rescale to fit
+		float scale = cc ? cc / (float)oldsize : 1.0f;
+		for (auto& s : sp->_splits)
+			s *= scale;
+
+		sp->_splits.resize(cc);
+		for (size_t i = oldsize; i < cc; i++)
+			sp->_splits[i] = (i + 1.0f) / (cc + 1.0f);
+	}
+	else if (oldsize > cc)
+	{
+		sp->_splits.resize(cc);
+		// rescale to fit
+		float scale = cc ? oldsize / (float)cc : 1.0f;
+		for (auto& s : sp->_splits)
+			s *= scale;
+	}
+}
+
+void SplitPane::OnPaint()
+{
+	styleProps->paint_func(this);
+	PaintChildren();
+
+	style::PaintInfo info(this);
+	if (!_verticalSplit)
+	{
+		for (size_t i = 0; i < _splits.size(); i++)
+		{
+			auto ii = (uint16_t)i;
+			info.rect = GetSplitRectH(this, ii);
+			info.state &= ~(style::PS_Hover | style::PS_Down);
+			if (_splitUI.IsHovered(ii))
+				info.state |= style::PS_Hover;
+			if (_splitUI.IsPressed(ii))
+				info.state |= style::PS_Down;
+			vertSepStyle->paint_func(info);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < _splits.size(); i++)
+		{
+			auto ii = (uint16_t)i;
+			info.rect = GetSplitRectV(this, ii);
+			info.state &= ~(style::PS_Hover | style::PS_Down);
+			if (_splitUI.IsHovered(ii))
+				info.state |= style::PS_Hover;
+			if (_splitUI.IsPressed(ii))
+				info.state |= style::PS_Down;
+			horSepStyle->paint_func(info);
+		}
+	}
+}
+
+void SplitPane::OnEvent(UIEvent& e)
+{
+	CheckSplits(this);
+
+	_splitUI.InitOnEvent(e);
+	for (size_t i = 0; i < _splits.size(); i++)
+	{
+		if (!_verticalSplit)
+		{
+			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectH(this, i), e))
+			{
+			case SubUIDragState::Start:
+				_dragOff = SplitQToX(this, _splits[i]) - e.x;
+				break;
+			case SubUIDragState::Move:
+				SetSplit(i, SplitXToQ(this, e.x + _dragOff));
+				break;
+			}
+		}
+		else
+		{
+			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectV(this, i), e))
+			{
+			case SubUIDragState::Start:
+				_dragOff = SplitQToY(this, _splits[i]) - e.y;
+				break;
+			case SubUIDragState::Move:
+				SetSplit(i, SplitYToQ(this, e.y + _dragOff));
+				break;
+			}
+		}
+	}
+}
+
+void SplitPane::OnLayout(const UIRect& rect)
+{
+	CheckSplits(this);
+
+	finalRectCPB = rect;
+	finalRectCP = finalRectCPB; // TODO
+	finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
+
+	size_t split = 0;
+	if (!_verticalSplit)
+	{
+		float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
+		float prevEdge = finalRectC.x0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			UIRect r = finalRectC;
+			auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
+			split++;
+			r.x0 = prevEdge;
+			r.x1 = sr.x0;
+			ch->OnLayout(r);
+			prevEdge = sr.x1;
+		}
+	}
+	else
+	{
+		float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
+		float prevEdge = finalRectC.y0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			UIRect r = finalRectC;
+			auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
+			split++;
+			r.y0 = prevEdge;
+			r.y1 = sr.y0;
+			ch->OnLayout(r);
+			prevEdge = sr.y1;
+		}
+	}
+}
+
+float SplitPane::GetFullEstimatedWidth(float containerWidth, float containerHeight)
+{
+	return containerWidth;
+}
+
+float SplitPane::GetFullEstimatedHeight(float containerWidth, float containerHeight)
+{
+	return containerHeight;
+}
+
+float SplitPane::GetSplit(unsigned which)
+{
+	CheckSplits(this);
+	if (which >= _splits.size())
+		return 1;
+	return _splits[which];
+}
+
+SplitPane* SplitPane::SetSplit(unsigned which, float f, bool clamp)
+{
+	CheckSplits(this);
+	if (clamp)
+	{
+		float swq = SplitWidthAsQ(this);
+		if (which > 0)
+			f = std::max(f, _splits[which - 1] + swq);
+		else
+			f = std::max(f, 0.0f);
+		if (which + 1 < _splits.size())
+			f = std::min(f, _splits[which + 1] - swq);
+		else
+			f = std::min(f, 1.0f);
+	}
+	_splits[which] = f;
+	return this;
+}
+
+SplitPane* SplitPane::SetDirection(bool vertical)
+{
+	_verticalSplit = vertical;
+	return this;
+}
+
+
 ScrollArea::ScrollArea()
 {
 	trackVStyle = Theme::current->scrollVTrack;

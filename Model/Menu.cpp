@@ -148,7 +148,7 @@ void MenuElement::OnDestroy()
 void MenuElement::OnCompleteStructure()
 {
 	_items.clear();
-	_items.reserve(CountChildElements());
+	_items.reserve(CountChildrenRecursive());
 	auto list = _AppendElements(this);
 
 	auto oldmenu = _menu;

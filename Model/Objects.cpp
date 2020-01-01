@@ -413,11 +413,19 @@ bool UIObject::IsChildOrSame(UIObject* obj) const
 	return obj == this || IsChildOf(obj);
 }
 
-int UIObject::CountChildElements() const
+int UIObject::CountChildrenImmediate() const
 {
-	int o = 1;
+	int o = 0;
 	for (auto* ch = firstChild; ch; ch = ch->next)
-		o += ch->CountChildElements();
+		o += 1;
+	return o;
+}
+
+int UIObject::CountChildrenRecursive() const
+{
+	int o = 0;
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		o += 1 + ch->CountChildrenRecursive();
 	return o;
 }
 

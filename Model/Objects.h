@@ -99,7 +99,8 @@ public:
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
-	int CountChildElements() const;
+	int CountChildrenImmediate() const;
+	int CountChildrenRecursive() const;
 	int GetDepth() const
 	{
 		int out = 0;

@@ -147,8 +147,29 @@ public:
 	style::BlockRef trackFillStyle;
 	style::BlockRef thumbStyle;
 
-private:
 	float _mxoff = 0;
+};
+
+struct SplitPane : UIElement
+{
+	SplitPane();
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+	void OnLayout(const UIRect& rect) override;
+	float GetFullEstimatedWidth(float containerWidth, float containerHeight) override;
+	float GetFullEstimatedHeight(float containerWidth, float containerHeight) override;
+
+	float GetSplit(unsigned which);
+	SplitPane* SetSplit(unsigned which, float f, bool clamp = true);
+	bool GetDirection() const { return _verticalSplit; }
+	SplitPane* SetDirection(bool vertical);
+
+	style::BlockRef vertSepStyle; // for horizontal splitting
+	style::BlockRef horSepStyle; // for vertical splitting
+	std::vector<float> _splits;
+	bool _verticalSplit = false;
+	SubUI<uint16_t> _splitUI;
+	float _dragOff = 0;
 };
 
 class ScrollArea : public UIElement
@@ -159,7 +180,6 @@ public:
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect) override;
 
-private:
 	style::BlockRef trackVStyle;
 	style::BlockRef thumbVStyle;
 	float yoff = 23;

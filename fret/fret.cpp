@@ -372,7 +372,7 @@ struct FileStructureViewer2 : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		auto* trv = ctx->Make<ui::TreeView>();
-		trv->GetStyle().SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+		trv->GetStyle().SetHeight(style::Coord::Percent(100));
 		trv->SetDataSource(ds);
 		trv->CalculateColumnWidths();
 	}
@@ -409,7 +409,7 @@ struct MainWindow : ui::NativeMainWindow
 	{
 		auto s = ctx->Push<ui::TabGroup>()->GetStyle();
 		s.SetLayout(style::Layout::EdgeSlice);
-		s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+		s.SetHeight(style::Coord::Percent(100));
 		{
 			ctx->Push<ui::TabList>();
 			{
@@ -428,7 +428,7 @@ struct MainWindow : ui::NativeMainWindow
 				auto* p = ctx->Push<ui::TabPanel>();
 				auto s = p->GetStyle();
 				s.SetLayout(style::Layout::EdgeSlice);
-				s.SetHeight(style::Coord(100, style::CoordTypeUnit::Percent));
+				s.SetHeight(style::Coord::Percent(100));
 				ctx->Make<FileStructureViewer2>()->ds = f->ds;
 				ctx->Pop();
 			}
