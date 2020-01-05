@@ -12,3 +12,4 @@
 #include "Model/System.h"
 #include "Model/Menu.h"
 #include "Model/Theme.h"
+#include "Model/Graphics.h"

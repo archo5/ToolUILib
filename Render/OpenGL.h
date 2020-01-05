@@ -16,8 +16,9 @@ void SetViewport(int x0, int y0, int x1, int y1);
 void Clear(int r, int g, int b, int a);
 void Present(RenderContext* RC);
 
-TexID CreateTextureA8(unsigned char* data, unsigned width, unsigned height);
-TexID CreateTextureRGBA8(unsigned char* data, unsigned width, unsigned height);
+TexID CreateTextureA8(const void* data, unsigned width, unsigned height);
+TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height);
+void DestroyTexture(TexID tex);
 void SetTexture(TexID tex);
 
 struct BatchRenderer

@@ -325,6 +325,179 @@ struct SplitPaneTest : ui::Node
 };
 
 
+static const char* layoutShortNames[] =
+{
+	"ST", "SL", "SB", "SR",
+	"IB",
+	"ET", "EL", "EB", "ER",
+};
+static const char* layoutLongNames[] =
+{
+	"Stack top-down",
+	"Stack left-to-right",
+	"Stack bottom-up",
+	"Stack right-to-left",
+	"Inline block",
+	"Edge top child",
+	"Edge left child",
+	"Edge bottom child",
+	"Edge right child",
+};
+constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
+
+struct LayoutTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		static int parentLayout = 0;
+		static int childLayout = 0;
+
+		LayoutUI(ctx, parentLayout);
+		LayoutUI(ctx, childLayout);
+
+		SetLayout(ctx->Push<ui::Panel>()->GetStyle(), parentLayout, -1);
+		{
+			SetLayout(ctx->Push<ui::Panel>()->GetStyle(), childLayout, parentLayout);
+			{
+				ctx->Text("[c 1A]");
+				ctx->Text("[c 1B]");
+			}
+			ctx->Pop();
+
+			SetLayout(ctx->Push<ui::Panel>()->GetStyle(), childLayout, parentLayout);
+			{
+				ctx->Text("[c 2A]");
+				ctx->Text("[c 2B]");
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+	}
+
+	void LayoutUI(UIContainer* ctx, int& layout)
+	{
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		for (int i = 0; i < layoutCount; i++)
+		{
+			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(layout, i);
+			rb->onChange = [this]() { Rerender(); };
+			rb->SetStyle(ui::Theme::current->button);
+		}
+		ctx->Text(layoutLongNames[layout]);
+		ctx->Pop();
+	}
+
+	void SetLayout(style::Accessor s, int layout, int parentLayout)
+	{
+		switch (layout)
+		{
+		case 0:
+			s.SetLayout(style::Layout::Stack);
+			s.SetStackingDirection(style::StackingDirection::TopDown);
+			break;
+		case 1:
+			s.SetLayout(style::Layout::Stack);
+			s.SetStackingDirection(style::StackingDirection::LeftToRight);
+			break;
+		case 2:
+			s.SetLayout(style::Layout::Stack);
+			s.SetStackingDirection(style::StackingDirection::BottomUp);
+			break;
+		case 3:
+			s.SetLayout(style::Layout::Stack);
+			s.SetStackingDirection(style::StackingDirection::RightToLeft);
+			break;
+		case 4:
+			s.SetLayout(style::Layout::InlineBlock);
+			break;
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+			s.SetLayout(style::Layout::EdgeSlice);
+			break;
+		}
+
+		switch (parentLayout)
+		{
+		case 5:
+			s.SetEdge(style::Edge::Top);
+			break;
+		case 6:
+			s.SetEdge(style::Edge::Left);
+			break;
+		case 7:
+			s.SetEdge(style::Edge::Bottom);
+			break;
+		case 8:
+			s.SetEdge(style::Edge::Right);
+			break;
+		}
+	}
+};
+
+struct ImageTest : ui::Node
+{
+	ImageTest()
+	{
+		ui::Canvas c(32, 32);
+		auto p = c.GetPixels();
+		for (uint32_t i = 0; i < c.GetWidth() * c.GetHeight(); i++)
+		{
+			p[i] = (i / 4 + i / 4 / c.GetHeight()) % 2 ? 0xffffffff : 0;
+		}
+		img = new ui::Image(c);
+	}
+	~ImageTest()
+	{
+		delete img;
+	}
+	void Render(UIContainer* ctx) override
+	{
+		style::BlockRef pbr = ui::Theme::current->panel;
+		style::Accessor pa(pbr);
+		pa.SetLayout(style::Layout::InlineBlock);
+		pa.SetPadding(4);
+		pa.SetMargin(0);
+
+		style::BlockRef ibr = ui::Theme::current->image;
+		style::Accessor ia(ibr);
+		ia.SetHeight(25);
+
+		style::BlockRef ibr2 = ui::Theme::current->image;
+		style::Accessor ia2(ibr2);
+		ia2.SetWidth(25);
+
+		ui::ScaleMode scaleModes[3] = { ui::ScaleMode::Stretch, ui::ScaleMode::Fit, ui::ScaleMode::Fill };
+		const char* scaleModeNames[3] = { "Stretch", "Fit", "Fill" };
+
+		for (int mode = 0; mode < 6; mode++)
+		{
+			ctx->Push<ui::Panel>()->SetStyle(pbr);
+
+			for (int y = -1; y <= 1; y++)
+			{
+				for (int x = -1; x <= 1; x++)
+				{
+					ctx->Push<ui::Panel>()->SetStyle(pbr);
+					ctx->Make<ui::ImageElement>()
+						->SetImage(img)
+						->SetScaleMode(scaleModes[mode % 3], x, y)
+						->SetStyle(mode / 3 ? ibr2 : ibr);
+					ctx->Pop();
+				}
+			}
+
+			ctx->Text(scaleModeNames[mode % 3]);
+
+			ctx->Pop();
+		}
+	}
+
+	ui::Image* img;
+};
+
+
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
 struct Calculator : ui::Node
@@ -875,6 +1048,8 @@ static const char* testNames[] =
 	"Test: Node editing",
 	"Test: SubUI",
 	"Test: Split pane",
+	"Test: Layout",
+	"Test: Image",
 };
 struct TEST : ui::Node
 {
@@ -905,6 +1080,8 @@ struct TEST : ui::Node
 		case 5: ctx->Make<NodeEditTest>(); break;
 		case 6: ctx->Make<SubUITest>(); break;
 		case 7: ctx->Make<SplitPaneTest>(); break;
+		case 8: ctx->Make<LayoutTest>(); break;
+		case 9: ctx->Make<ImageTest>(); break;
 		}
 	}
 

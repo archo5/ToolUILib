@@ -81,6 +81,7 @@ public:
 		for (auto* ch = firstChild; ch; ch = ch->next)
 			ch->Paint();
 	}
+	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(float containerWidth, float containerHeight);
 	virtual float CalcEstimatedHeight(float containerWidth, float containerHeight);
 	float GetEstimatedWidth(float containerWidth, float containerHeight);

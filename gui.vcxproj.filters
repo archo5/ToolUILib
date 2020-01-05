@@ -43,6 +43,9 @@
     <ClCompile Include="Core\Serialization.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Graphics.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -97,6 +100,9 @@
     </ClInclude>
     <ClInclude Include="Core\Serialization.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Graphics.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

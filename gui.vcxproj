@@ -120,6 +120,7 @@
     <ClCompile Include="Model\Controls.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
     <ClCompile Include="Model\Events.cpp" />
+    <ClCompile Include="Model\Graphics.cpp" />
     <ClCompile Include="Model\Layout.cpp" />
     <ClCompile Include="Model\Menu.cpp" />
     <ClCompile Include="Model\Native.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="Model\Controls.h" />
     <ClInclude Include="Model\Docking.h" />
     <ClInclude Include="Model\Events.h" />
+    <ClInclude Include="Model\Graphics.h" />
     <ClInclude Include="Model\Layout.h" />
     <ClInclude Include="Model\Menu.h" />
     <ClInclude Include="Model\Native.h" />

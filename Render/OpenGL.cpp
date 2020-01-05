@@ -162,7 +162,7 @@ void Present(RenderContext* RC)
 	SwapBuffers(RC->dc);
 }
 
-TexID CreateTextureA8(unsigned char* data, unsigned width, unsigned height)
+TexID CreateTextureA8(const void* data, unsigned width, unsigned height)
 {
 	GLuint tex;
 	glGenTextures(1, &tex);
@@ -174,7 +174,7 @@ TexID CreateTextureA8(unsigned char* data, unsigned width, unsigned height)
 	return tex;
 }
 
-TexID CreateTextureRGBA8(unsigned char* data, unsigned width, unsigned height)
+TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height)
 {
 	GLuint tex;
 	glGenTextures(1, &tex);
@@ -184,6 +184,11 @@ TexID CreateTextureRGBA8(unsigned char* data, unsigned width, unsigned height)
 	glEnable(GL_TEXTURE_2D);
 
 	return tex;
+}
+
+void DestroyTexture(TexID tex)
+{
+	glDeleteTextures(1, &tex);
 }
 
 void SetTexture(TexID tex)

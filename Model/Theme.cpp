@@ -34,6 +34,7 @@ struct ThemeInit
 	style::Block dtTableCell;
 	style::Block dtTableRowHeader;
 	style::Block dtTableColHeader;
+	style::Block dtImage;
 
 	ThemeInit()
 	{
@@ -61,6 +62,7 @@ struct ThemeInit
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
+		CreateImage();
 		Theme::current = &defaultTheme;
 	}
 	void PreventHeapDelete(style::Accessor& a)
@@ -439,6 +441,16 @@ struct ThemeInit
 			br.End();
 		};
 		defaultTheme.tableColHeader = a.block;
+	}
+	void CreateImage()
+	{
+		style::Accessor a(&dtImage);
+		PreventHeapDelete(a);
+		a.SetLayout(style::Layout::InlineBlock);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+		};
+		defaultTheme.image = a.block;
 	}
 }
 init;

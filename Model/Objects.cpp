@@ -128,7 +128,14 @@ float UIObject::GetEstimatedWidth(float containerWidth, float containerHeight)
 {
 	auto style = GetStyle();
 	float size = 0;
+
 	auto width = style.GetWidth();
+	if (!width.IsDefined())
+	{
+		auto height = style::Coord::Undefined();
+		GetSize(width, height);
+	}
+
 	if (width.IsDefined())
 	{
 		size = ResolveUnits(width, containerWidth);
@@ -137,12 +144,14 @@ float UIObject::GetEstimatedWidth(float containerWidth, float containerHeight)
 	{
 		size = CalcEstimatedWidth(containerWidth, containerHeight);
 	}
+
 	auto min_width = style.GetMinWidth();
 	if (min_width.IsDefined())
 		size = std::max(size, ResolveUnits(min_width, containerWidth));
 	auto max_width = style.GetMaxWidth();
 	if (max_width.IsDefined())
 		size = std::min(size, ResolveUnits(max_width, containerWidth));
+
 	return size;
 }
 
@@ -150,7 +159,14 @@ float UIObject::GetEstimatedHeight(float containerWidth, float containerHeight)
 {
 	auto style = GetStyle();
 	float size = 0;
+
 	auto height = style.GetHeight();
+	if (!height.IsDefined())
+	{
+		auto width = style::Coord::Undefined();
+		GetSize(width, height);
+	}
+
 	if (height.IsDefined())
 	{
 		size = ResolveUnits(height, containerHeight);
@@ -159,12 +175,14 @@ float UIObject::GetEstimatedHeight(float containerWidth, float containerHeight)
 	{
 		size = CalcEstimatedHeight(containerWidth, containerHeight);
 	}
+
 	auto min_height = style.GetMinHeight();
 	if (min_height.IsDefined())
 		size = std::max(size, ResolveUnits(min_height, containerHeight));
 	auto max_height = style.GetMaxHeight();
 	if (max_height.IsDefined())
 		size = std::min(size, ResolveUnits(max_height, containerHeight));
+
 	return size;
 }
 
@@ -214,8 +232,16 @@ void UIObject::OnLayout(const UIRect& rect)
 
 	auto style = GetStyle();
 
+	auto swidth = style::Coord::Undefined();
+	auto sheight = style::Coord::Undefined();
+	GetSize(swidth, sheight);
 	auto width = style.GetWidth();
+	if (!width.IsDefined())
+		width = swidth;
 	auto height = style.GetHeight();
+	if (!height.IsDefined())
+		height = sheight;
+
 	auto min_width = style.GetMinWidth();
 	auto min_height = style.GetMinHeight();
 	auto max_width = style.GetMaxWidth();
