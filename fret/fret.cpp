@@ -367,6 +367,26 @@ struct FileStructureDataSource : ui::TreeDataSource
 	Node root;
 };
 
+struct Color4f
+{
+	static Color4f zero() { return { 0 }; }
+
+	Color4f(float f) : r(f), g(f), b(f), a(f) {}
+	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
+	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
+
+	void BlendOver(const Color4f& c)
+	{
+		float ca = c.a > 0 ? c.a + (1 - c.a) * (1 - a) : 0;
+		r = lerp(r, c.r, ca);
+		g = lerp(g, c.g, ca);
+		b = lerp(b, c.b, ca);
+		a = lerp(a, 1, c.a);
+	}
+
+	float r, g, b, a;
+};
+
 struct FileStructureViewer2 : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -380,22 +400,379 @@ struct FileStructureViewer2 : ui::Node
 	FileStructureDataSource* ds = nullptr;
 };
 
+Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
+Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
+Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
+
+enum DataType
+{
+	DT_I32,
+	DT_U32,
+	DT_F32,
+};
+uint8_t typeSizes[] = { 4, 4, 4 };
+
+struct Marker
+{
+	DataType type;
+	uint64_t at;
+	uint64_t count;
+	uint64_t repeats;
+	uint64_t stride;
+
+	bool Contains(uint64_t pos) const
+	{
+		if (pos < at)
+			return false;
+		pos -= at;
+		if (stride)
+		{
+			if (pos >= stride * repeats)
+				return false;
+			pos %= stride;
+		}
+		return pos < typeSizes[type] * count;
+	}
+	Color4f GetColor() const
+	{
+		switch (type)
+		{
+		case DT_I32: return colorInt32;
+		case DT_U32: return colorInt32;
+		case DT_F32: return colorFloat32;
+		}
+	}
+};
+
+ui::DataCategoryTag DCT_MarkedItems[1];
+struct MarkerData
+{
+	MarkerData()
+	{
+		markers.push_back({ DT_I32, 8, 1, 1, 0 });
+		markers.push_back({ DT_F32, 12, 3, 2, 12 });
+	}
+
+	Color4f GetMarkedColor(uint64_t pos)
+	{
+		for (const auto& m : markers)
+		{
+			if (m.Contains(pos))
+				return m.GetColor();
+		}
+		return Color4f::zero();
+	}
+	bool IsMarked(uint64_t pos, uint64_t len)
+	{
+		// TODO optimize
+		for (uint64_t i = 0; i < len; i++)
+		{
+			for (const auto& m : markers)
+				if (m.Contains(pos + i))
+					return true;
+		}
+		return false;
+	}
+	void AddMarker(DataType dt, uint64_t from, uint64_t to)
+	{
+		markers.push_back({ dt, from, (to - from) / typeSizes[dt], 1, 0 });
+		ui::Notify(DCT_MarkedItems, this);
+	}
+
+	std::vector<Marker> markers;
+};
+
 struct REFile
 {
 	REFile(std::string n)
 	{
 		path = n;
 		name = n;
-		ds = new FileStructureDataSource(n.c_str());
+		//ds = new FileStructureDataSource(n.c_str());
 	}
 	~REFile()
 	{
-		delete ds;
+		//delete ds;
 	}
 
 	std::string path;
 	std::string name;
 	FileStructureDataSource* ds;
+	MarkerData mdata;
+};
+
+struct HexViewer : UIElement
+{
+	HexViewer()
+	{
+		GetStyle().SetWidth(style::Coord::Percent(100));
+		GetStyle().SetHeight(style::Coord::Percent(100));
+	}
+	~HexViewer()
+	{
+		if (fp)
+			fclose(fp);
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		if (e.type == UIEventType::MouseMove)
+		{
+			float fh = GetFontHeight() + 4;
+			float x = finalRectC.x0 + 2;
+			float y = finalRectC.y0;
+			float x2 = x + 20 * 16 + 10;
+
+			hoverSection = -1;
+			hoverByte = UINT64_MAX;
+			if (e.x >= x && e.x < x + 16 * 20)
+			{
+				hoverSection = 0;
+				int xpos = std::min(std::max(0, int((e.x - x) / 20)), 16 - 1);
+				int ypos = (e.y - y) / fh;
+				hoverByte = GetBasePos() + xpos + ypos * 16;
+			}
+			else if (e.x >= x2 && e.x < x2 + 16 * 10)
+			{
+				hoverSection = 1;
+				int xpos = std::min(std::max(0, int((e.x - x2) / 10)), 16 - 1);
+				int ypos = (e.y - y) / fh;
+				hoverByte = GetBasePos() + xpos + ypos * 16;
+			}
+		}
+		else if (e.type == UIEventType::MouseLeave)
+		{
+			hoverSection = -1;
+			hoverByte = UINT64_MAX;
+		}
+		else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Right)
+		{
+			uint64_t pos = hoverByte;
+
+			char txt_pos[64];
+			snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
+
+			char txt_int32[32];
+			GetInt32Text(txt_int32, 32, pos);
+			char txt_uint32[32];
+			GetUInt32Text(txt_uint32, 32, pos);
+			char txt_float32[32];
+			GetFloat32Text(txt_float32, 32, pos);
+
+			ui::MenuItem items[] =
+			{
+				ui::MenuItem(txt_pos, {}, true),
+				ui::MenuItem("Mark int32", txt_int32).Func([this, pos]() { refile->mdata.AddMarker(DT_I32, pos, pos + 4); }),
+				ui::MenuItem("Mark uint32", txt_uint32).Func([this, pos]() { refile->mdata.AddMarker(DT_U32, pos, pos + 4); }),
+				ui::MenuItem("Mark float32", txt_float32).Func([this, pos]() { refile->mdata.AddMarker(DT_F32, pos, pos + 4); }),
+			};
+			ui::Menu menu(items);
+			menu.Show(this);
+		}
+	}
+	void OnPaint() override
+	{
+		uint8_t buf[16 * 64];
+		size_t sz = 0;
+		if (fp)
+		{
+			fseek(fp, GetBasePos(), SEEK_SET);
+			sz = fread(buf, 1, 16 * 64, fp);
+		}
+
+		float fh = GetFontHeight() + 4;
+		float x = finalRectC.x0 + 2;
+		float y = finalRectC.y0 + fh;
+		float x2 = x + 20 * 16 + 10;
+
+		GL::SetTexture(0);
+		GL::BatchRenderer br;
+		br.Begin();
+		for (size_t i = 0; i < sz; i++)
+		{
+			uint8_t v = buf[i];
+			Color4f col = GetByteTypeBin(buf, i, sz);
+			auto mc = refile->mdata.GetMarkedColor(GetBasePos() + i);
+			if (hoverByte == GetBasePos() + i)
+				col.BlendOver(colorHover);
+			if (mc.a > 0)
+				col.BlendOver(mc);
+			if (col.a > 0)
+			{
+				float xoff = (i % 16) * 20;
+				float yoff = (i / 16) * fh;
+				br.SetColor(col.r, col.g, col.b, col.a);
+				br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
+			}
+			col = GetByteTypeASCII(buf, i, sz);
+			if (hoverByte == GetBasePos() + i)
+				col.BlendOver(colorHover);
+			if (mc.a > 0)
+				col.BlendOver(mc);
+			if (col.a > 0)
+			{
+				float xoff = (i % 16) * 10;
+				float yoff = (i / 16) * fh;
+				br.SetColor(col.r, col.g, col.b, col.a);
+				br.Quad(x2 + xoff - 2, y + yoff - fh + 4, x2 + xoff + 8, y + yoff + 3, 0, 0, 1, 1);
+			}
+		}
+		br.End();
+
+		for (size_t i = 0; i < sz; i++)
+		{
+			uint8_t v = buf[i];
+			char str[3];
+			str[0] = "0123456789ABCDEF"[v >> 4];
+			str[1] = "0123456789ABCDEF"[v & 0xf];
+			str[2] = 0;
+			float xoff = (i % 16) * 20;
+			float yoff = (i / 16) * fh;
+			DrawTextLine(x + xoff, y + yoff, str, 1, 1, 1);
+			str[1] = IsASCII(v) ? v : '.';
+			DrawTextLine(x2 + xoff / 2, y + yoff, str + 1, 1, 1, 1);
+		}
+	}
+
+	uint64_t GetBasePos()
+	{
+		return 16 * 3800 * 0;
+	}
+
+	void Init(REFile* rf)
+	{
+		refile = rf;
+		if (fp)
+			fclose(fp);
+		fp = fopen(("FRET_Plugins/" + rf->path).c_str(), "rb");
+	}
+
+	Color4f GetByteTypeBin(uint8_t* buf, int at, int sz)
+	{
+		Color4f col(0);
+		if (IsFloat32InRange(buf, at, sz)) col.BlendOver(colorFloat32);
+		if (IsFloat32InRange(buf, at - 1, sz)) col.BlendOver(colorFloat32);
+		if (IsFloat32InRange(buf, at - 2, sz)) col.BlendOver(colorFloat32);
+		if (IsFloat32InRange(buf, at - 3, sz)) col.BlendOver(colorFloat32);
+		if (IsInt32InRange(buf, at, sz)) col.BlendOver(colorInt32);
+		if (IsInt32InRange(buf, at - 1, sz)) col.BlendOver(colorInt32);
+		if (IsInt32InRange(buf, at - 2, sz)) col.BlendOver(colorInt32);
+		if (IsInt32InRange(buf, at - 3, sz)) col.BlendOver(colorInt32);
+		return col;
+	}
+	Color4f GetByteTypeASCII(uint8_t* buf, int at, int sz)
+	{
+		Color4f col(0);
+		if (IsASCIIInRange(buf, at, sz)) col.BlendOver(colorASCII);
+		return col;
+	}
+
+	bool IsFloat32InRange(uint8_t* buf, int at, int sz)
+	{
+		if (!enableFloat32 || at < 0 || sz - at < 4)
+			return false;
+		if (refile->mdata.IsMarked(GetBasePos() + at, 4))
+			return false;
+		if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
+			return false;
+		float v;
+		memcpy(&v, &buf[at], 4);
+		return (v >= minFloat32 && v <= maxFloat32) || (v >= -maxFloat32 && v <= -minFloat32);
+	}
+	bool IsInt32InRange(uint8_t* buf, int at, int sz)
+	{
+		if (!enableInt32 || at < 0 || sz - at < 4)
+			return false;
+		if (refile->mdata.IsMarked(GetBasePos() + at, 4))
+			return false;
+		if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
+			return false;
+		int32_t v;
+		memcpy(&v, &buf[at], 4);
+		return v >= minInt32 && v <= maxInt32;
+	}
+	bool IsASCIIInRange(uint8_t* buf, int at, int sz)
+	{
+		if (!IsASCII(buf[at]))
+			return false;
+		int min = at;
+		int max = at;
+		while (min - 1 >= 0 && max - min < minASCIIChars && IsASCII(buf[min - 1]))
+			min--;
+		while (max + 1 < sz && max - min < minASCIIChars && IsASCII(buf[max + 1]))
+			max++;
+		return max - min >= minASCIIChars;
+	}
+	static bool IsASCII(uint8_t v)
+	{
+		return v >= 0x20 && v < 0x7f;
+	}
+
+	void GetInt32Text(char* buf, size_t bufsz, uint64_t pos)
+	{
+		int32_t v;
+		size_t sz = 0;
+		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
+		{
+			strncpy(buf, "-", bufsz);
+			return;
+		}
+		snprintf(buf, bufsz, "%" PRId32, v);
+	}
+	void GetUInt32Text(char* buf, size_t bufsz, uint64_t pos)
+	{
+		uint32_t v;
+		size_t sz = 0;
+		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
+		{
+			strncpy(buf, "-", bufsz);
+			return;
+		}
+		snprintf(buf, bufsz, "%" PRIu32, v);
+	}
+	void GetFloat32Text(char* buf, size_t bufsz, uint64_t pos)
+	{
+		float v;
+		size_t sz = 0;
+		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
+		{
+			strncpy(buf, "-", bufsz);
+			return;
+		}
+		snprintf(buf, bufsz, "%g", v);
+	}
+
+	REFile* refile = nullptr;
+	FILE* fp = nullptr;
+
+	bool excludeZeroes = true;
+	bool enableFloat32 = true;
+	float minFloat32 = 0.0001f;
+	float maxFloat32 = 10000;
+	bool enableInt32 = true;
+	int32_t minInt32 = -10000;
+	int32_t maxInt32 = 10000;
+	int minASCIIChars = 3;
+
+	Color4f colorHover{ 1, 1, 1, 0.3f };
+	uint64_t hoverByte = UINT64_MAX;
+	int hoverSection = -1;
+};
+
+struct MarkedItemsList : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		Subscribe(DCT_MarkedItems, mdata);
+		ctx->Text("Marked items");
+		for (const auto& m : mdata->markers)
+		{
+			ctx->Push<ui::Panel>();
+			ctx->Text("Offset:");
+			ctx->Pop();
+		}
+	}
+
+	MarkerData* mdata;
 };
 
 struct MainWindow : ui::NativeMainWindow
@@ -403,7 +780,8 @@ struct MainWindow : ui::NativeMainWindow
 	MainWindow()
 	{
 		//files.push_back(new REFile("loop.wav"));
-		files.push_back(new REFile("arch.tar"));
+		files.push_back(new REFile("tree.mesh"));
+		//files.push_back(new REFile("arch.tar"));
 	}
 	void OnRender(UIContainer* ctx) override
 	{
@@ -426,10 +804,26 @@ struct MainWindow : ui::NativeMainWindow
 			for (auto* f : files)
 			{
 				auto* p = ctx->Push<ui::TabPanel>();
-				auto s = p->GetStyle();
-				s.SetLayout(style::Layout::EdgeSlice);
-				s.SetHeight(style::Coord::Percent(100));
-				ctx->Make<FileStructureViewer2>()->ds = f->ds;
+				{
+					auto s = p->GetStyle();
+					s.SetLayout(style::Layout::EdgeSlice);
+					s.SetHeight(style::Coord::Percent(100));
+					ctx->Push<ui::Panel>();
+					{
+						//ctx->Make<FileStructureViewer2>()->ds = f->ds;
+						auto* sp = ctx->Push<ui::SplitPane>();
+						{
+							ctx->Make<HexViewer>()->Init(f);
+
+							ctx->PushBox();
+							ctx->Make<MarkedItemsList>()->mdata = &f->mdata;
+							ctx->Pop();
+						}
+						sp->SetSplit(0, 0.8f);
+						ctx->Pop();
+					}
+					ctx->Pop();
+				}
 				ctx->Pop();
 			}
 		}

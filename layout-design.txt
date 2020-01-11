@@ -1,7 +1,10 @@
 
 required layout structures:
 
-- edge off
++ stack
+  basic single-direction element stacking for general content
+
++ edge off
   this is when one of the rectangle sides have been allocated to other controls than the rest of it
   can be combined to remove multiple edges (top + bottom, top + right and so on)
   window menu is one type of this
@@ -23,7 +26,7 @@ required layout structures:
 - stretch fill
   when all edges have been removed, the remaining area is often the workspace
 
-- 3-slice
++ 3-slice
   for managing separable sections: A=content_1, B=separator, C=content_2
   should support both absolute and relative positioning, but...
   ...separator has to stay unchanged (accounting for global scale, if it exists)
