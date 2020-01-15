@@ -401,16 +401,19 @@ struct FileStructureViewer2 : ui::Node
 };
 
 Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
+Color4f colorInt16{ 0.3f, 0.1f, 0.9f, 0.3f };
 Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
 Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
 
 enum DataType
 {
+	DT_I16,
+	DT_U16,
 	DT_I32,
 	DT_U32,
 	DT_F32,
 };
-uint8_t typeSizes[] = { 4, 4, 4 };
+uint8_t typeSizes[] = { 2, 2, 4, 4, 4 };
 
 struct Marker
 {
@@ -437,9 +440,12 @@ struct Marker
 	{
 		switch (type)
 		{
+		case DT_I16: return colorInt16;
+		case DT_U16: return colorInt16;
 		case DT_I32: return colorInt32;
 		case DT_U32: return colorInt32;
 		case DT_F32: return colorFloat32;
+		default: return { 0 };
 		}
 	}
 };
@@ -551,22 +557,37 @@ struct HexViewer : UIElement
 			char txt_pos[64];
 			snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
 
+			char txt_int16[32];
+			GetInt16Text(txt_int16, 32, pos, true);
+			char txt_uint16[32];
+			GetInt16Text(txt_uint16, 32, pos, false);
 			char txt_int32[32];
-			GetInt32Text(txt_int32, 32, pos);
+			GetInt32Text(txt_int32, 32, pos, true);
 			char txt_uint32[32];
-			GetUInt32Text(txt_uint32, 32, pos);
+			GetInt32Text(txt_uint32, 32, pos, false);
 			char txt_float32[32];
 			GetFloat32Text(txt_float32, 32, pos);
 
 			ui::MenuItem items[] =
 			{
 				ui::MenuItem(txt_pos, {}, true),
+				ui::MenuItem("Mark int16", txt_int16).Func([this, pos]() { refile->mdata.AddMarker(DT_I16, pos, pos + 2); }),
+				ui::MenuItem("Mark uint16", txt_uint16).Func([this, pos]() { refile->mdata.AddMarker(DT_U16, pos, pos + 2); }),
 				ui::MenuItem("Mark int32", txt_int32).Func([this, pos]() { refile->mdata.AddMarker(DT_I32, pos, pos + 4); }),
 				ui::MenuItem("Mark uint32", txt_uint32).Func([this, pos]() { refile->mdata.AddMarker(DT_U32, pos, pos + 4); }),
 				ui::MenuItem("Mark float32", txt_float32).Func([this, pos]() { refile->mdata.AddMarker(DT_F32, pos, pos + 4); }),
 			};
 			ui::Menu menu(items);
 			menu.Show(this);
+		}
+		else if (e.type == UIEventType::MouseScroll)
+		{
+			int64_t diff = round(e.dy / 40) * 16;
+			if (diff > 0 && diff > basePos)
+				basePos = 0;
+			else
+				basePos -= diff;
+			basePos = std::min(GetFileLength() - 1, basePos);
 		}
 	}
 	void OnPaint() override
@@ -633,9 +654,10 @@ struct HexViewer : UIElement
 		}
 	}
 
+	uint64_t basePos = 16 * 3800 * 0;
 	uint64_t GetBasePos()
 	{
-		return 16 * 3800 * 0;
+		return basePos;
 	}
 
 	void Init(REFile* rf)
@@ -649,6 +671,8 @@ struct HexViewer : UIElement
 	Color4f GetByteTypeBin(uint8_t* buf, int at, int sz)
 	{
 		Color4f col(0);
+		if (IsInt16InRange(buf, at, sz)) col.BlendOver(colorInt16);
+		if (IsInt16InRange(buf, at - 1, sz)) col.BlendOver(colorInt16);
 		if (IsFloat32InRange(buf, at, sz)) col.BlendOver(colorFloat32);
 		if (IsFloat32InRange(buf, at - 1, sz)) col.BlendOver(colorFloat32);
 		if (IsFloat32InRange(buf, at - 2, sz)) col.BlendOver(colorFloat32);
@@ -666,17 +690,17 @@ struct HexViewer : UIElement
 		return col;
 	}
 
-	bool IsFloat32InRange(uint8_t* buf, int at, int sz)
+	bool IsInt16InRange(uint8_t* buf, int at, int sz)
 	{
-		if (!enableFloat32 || at < 0 || sz - at < 4)
+		if (!enableInt16 || at < 0 || sz - at < 2)
 			return false;
-		if (refile->mdata.IsMarked(GetBasePos() + at, 4))
+		if (refile->mdata.IsMarked(GetBasePos() + at, 2))
 			return false;
-		if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
+		if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0)
 			return false;
-		float v;
-		memcpy(&v, &buf[at], 4);
-		return (v >= minFloat32 && v <= maxFloat32) || (v >= -maxFloat32 && v <= -minFloat32);
+		int16_t v;
+		memcpy(&v, &buf[at], 2);
+		return v >= minInt16 && v <= maxInt16;
 	}
 	bool IsInt32InRange(uint8_t* buf, int at, int sz)
 	{
@@ -689,6 +713,18 @@ struct HexViewer : UIElement
 		int32_t v;
 		memcpy(&v, &buf[at], 4);
 		return v >= minInt32 && v <= maxInt32;
+	}
+	bool IsFloat32InRange(uint8_t* buf, int at, int sz)
+	{
+		if (!enableFloat32 || at < 0 || sz - at < 4)
+			return false;
+		if (refile->mdata.IsMarked(GetBasePos() + at, 4))
+			return false;
+		if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
+			return false;
+		float v;
+		memcpy(&v, &buf[at], 4);
+		return (v >= minFloat32 && v <= maxFloat32) || (v >= -maxFloat32 && v <= -minFloat32);
 	}
 	bool IsASCIIInRange(uint8_t* buf, int at, int sz)
 	{
@@ -706,8 +742,26 @@ struct HexViewer : UIElement
 	{
 		return v >= 0x20 && v < 0x7f;
 	}
+	uint64_t GetFileLength()
+	{
+		if (!fp)
+			return 0;
+		fseek(fp, 0, SEEK_END);
+		return _ftelli64(fp);
+	}
 
-	void GetInt32Text(char* buf, size_t bufsz, uint64_t pos)
+	void GetInt16Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
+	{
+		int16_t v;
+		size_t sz = 0;
+		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 2, 1, fp))
+		{
+			strncpy(buf, "-", bufsz);
+			return;
+		}
+		snprintf(buf, bufsz, sign ? "%" PRId16 : "%" PRIu16, v);
+	}
+	void GetInt32Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
 	{
 		int32_t v;
 		size_t sz = 0;
@@ -716,18 +770,7 @@ struct HexViewer : UIElement
 			strncpy(buf, "-", bufsz);
 			return;
 		}
-		snprintf(buf, bufsz, "%" PRId32, v);
-	}
-	void GetUInt32Text(char* buf, size_t bufsz, uint64_t pos)
-	{
-		uint32_t v;
-		size_t sz = 0;
-		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
-		{
-			strncpy(buf, "-", bufsz);
-			return;
-		}
-		snprintf(buf, bufsz, "%" PRIu32, v);
+		snprintf(buf, bufsz, sign ? "%" PRId32 : "%" PRIu32, v);
 	}
 	void GetFloat32Text(char* buf, size_t bufsz, uint64_t pos)
 	{
@@ -748,6 +791,9 @@ struct HexViewer : UIElement
 	bool enableFloat32 = true;
 	float minFloat32 = 0.0001f;
 	float maxFloat32 = 10000;
+	bool enableInt16 = true;
+	int32_t minInt16 = -2000;
+	int32_t maxInt16 = 2000;
 	bool enableInt32 = true;
 	int32_t minInt32 = -10000;
 	int32_t maxInt32 = 10000;

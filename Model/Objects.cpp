@@ -78,6 +78,23 @@ float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
 			break;
 		}
 		break; }
+	case style::Layout::StackExpand: {
+		auto dir = style.GetStackingDirection();
+		if (dir == style::StackingDirection::Undefined)
+			dir = style::StackingDirection::TopDown;
+		switch (dir)
+		{
+		case style::StackingDirection::TopDown:
+		case style::StackingDirection::BottomUp:
+			for (auto* ch = firstChild; ch; ch = ch->next)
+				size = std::max(size, ch->GetFullEstimatedWidth(containerWidth, containerHeight));
+			break;
+		case style::StackingDirection::LeftToRight:
+		case style::StackingDirection::RightToLeft:
+			size = containerWidth;
+			break;
+		}
+		break; }
 	case style::Layout::EdgeSlice:
 		size = containerWidth;
 		break;
@@ -109,6 +126,23 @@ float UIObject::CalcEstimatedHeight(float containerWidth, float containerHeight)
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = firstChild; ch; ch = ch->next)
 				size += ch->GetFullEstimatedHeight(containerWidth, containerHeight);
+			break;
+		case style::StackingDirection::LeftToRight:
+		case style::StackingDirection::RightToLeft:
+			for (auto* ch = firstChild; ch; ch = ch->next)
+				size = std::max(size, ch->GetFullEstimatedHeight(containerWidth, containerHeight));
+			break;
+		}
+		break; }
+	case style::Layout::StackExpand: {
+		auto dir = style.GetStackingDirection();
+		if (dir == style::StackingDirection::Undefined)
+			dir = style::StackingDirection::TopDown;
+		switch (dir)
+		{
+		case style::StackingDirection::TopDown:
+		case style::StackingDirection::BottomUp:
+			size = containerHeight;
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
@@ -338,6 +372,39 @@ void UIObject::OnLayout(const UIRect& rect)
 				p += w;
 			}
 			fcr = { inrect.x0, inrect.y0, p, inrect.y1 };
+			break; }
+		}
+		break; }
+	case Layout::StackExpand: {
+		auto dir = style.GetStackingDirection();
+		if (dir == StackingDirection::Undefined)
+			dir = StackingDirection::TopDown;
+		switch (dir)
+		{
+		case StackingDirection::LeftToRight: if (firstChild) {
+			float p = inrect.x0;
+			float sum = 0;
+			struct Item
+			{
+				UIObject* ch;
+				float minw;
+			};
+			std::vector<Item> items;
+			for (auto* ch = firstChild; ch; ch = ch->next)
+			{
+				float w = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight());
+				items.push_back({ ch, w });
+				sum += w;
+			}
+			float leftover = inrect.GetWidth() - sum;
+			float lo_per_item = leftover / items.size();
+			for (auto item : items)
+			{
+				float w = item.minw + lo_per_item;
+				item.ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 });
+				p += w;
+			}
+			fcr = { inrect.x0, inrect.y0, std::max(inrect.x1, p), inrect.y1 };
 			break; }
 		}
 		break; }

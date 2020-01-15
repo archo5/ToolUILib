@@ -44,6 +44,7 @@ enum class Layout : uint8_t
 	//Inline, // text-line formatting, can be split
 	InlineBlock, // text-line formatting, cannot be split
 	Stack, // parent-controlled single line stacking
+	StackExpand, // same as above but try to fill the space
 	EdgeSlice, // child-controlled multidirectional stacking at the edges of remaining space
 };
 

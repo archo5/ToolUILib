@@ -324,7 +324,6 @@ struct SplitPaneTest : ui::Node
 	}
 };
 
-
 static const char* layoutShortNames[] =
 {
 	"ST", "SL", "SB", "SR",
@@ -432,6 +431,47 @@ struct LayoutTest : ui::Node
 		case 8:
 			s.SetEdge(style::Edge::Right);
 			break;
+		}
+	}
+};
+
+struct LayoutTest2 : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		static int mode = 0;
+
+		static const char* layoutShortNames[] =
+		{
+			"HSL",
+		};
+		static const char* layoutLongNames[] =
+		{
+			"Horizontal stacking layout",
+		};
+		constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
+
+		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		for (int i = 0; i < layoutCount; i++)
+		{
+			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(mode, i);
+			rb->onChange = [this]() { Rerender(); };
+			rb->SetStyle(ui::Theme::current->button);
+		}
+		ctx->Text(layoutLongNames[mode]);
+		ctx->Pop();
+
+		if (mode == 0)
+		{
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); /*s.SetLayout(style::Layout::StackExpand);*/ s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("Another one")->GetStyle(); /*s.SetLayout(style::Layout::StackExpand);*/ s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->Pop();
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("Another one")->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->Pop();
 		}
 	}
 };
@@ -716,15 +756,26 @@ struct DataEditor : ui::Node
 		{
 			GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		}
-		static void Make(UIContainer* ctx, const char* label, std::function<void()> content)
+		static void Begin(UIContainer* ctx, const char* label = nullptr)
 		{
 			ctx->Push<Property>();
-			auto s = ctx->Text(label)->GetStyle();
-			s.SetPadding(5);
-			s.SetBoxSizing(style::BoxSizing::BorderBox);
-			s.SetWidth(style::Coord::Percent(40));
-			content();
+			if (label)
+			{
+				auto s = ctx->Text(label)->GetStyle();
+				s.SetPadding(5);
+				s.SetBoxSizing(style::BoxSizing::BorderBox);
+				s.SetWidth(style::Coord::Percent(40));
+			}
+		}
+		static void End(UIContainer* ctx)
+		{
 			ctx->Pop();
+		}
+		static void Make(UIContainer* ctx, const char* label, std::function<void()> content)
+		{
+			Begin(ctx, label);
+			content();
+			End(ctx);
 		}
 	};
 
@@ -1049,6 +1100,7 @@ static const char* testNames[] =
 	"Test: SubUI",
 	"Test: Split pane",
 	"Test: Layout",
+	"Test: Layout 2",
 	"Test: Image",
 };
 struct TEST : ui::Node
@@ -1081,7 +1133,8 @@ struct TEST : ui::Node
 		case 6: ctx->Make<SubUITest>(); break;
 		case 7: ctx->Make<SplitPaneTest>(); break;
 		case 8: ctx->Make<LayoutTest>(); break;
-		case 9: ctx->Make<ImageTest>(); break;
+		case 9: ctx->Make<LayoutTest2>(); break;
+		case 10: ctx->Make<ImageTest>(); break;
 		}
 	}
 
