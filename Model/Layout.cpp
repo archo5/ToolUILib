@@ -506,6 +506,16 @@ void Accessor::SetBoxSizing(BoxSizing v)
 	GetOrCreate()->box_sizing = v;
 }
 
+HAlign Accessor::GetHAlign() const
+{
+	return block->h_align;
+}
+
+void Accessor::SetHAlign(HAlign a)
+{
+	GetOrCreate()->h_align = a;
+}
+
 PaintFunction Accessor::GetPaintFunc() const
 {
 	return block->paint_func;

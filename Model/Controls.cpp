@@ -417,14 +417,14 @@ void SplitPane::OnLayout(const UIRect& rect)
 	}
 }
 
-float SplitPane::GetFullEstimatedWidth(float containerWidth, float containerHeight)
+Range<float> SplitPane::GetFullEstimatedWidth(float containerWidth, float containerHeight)
 {
-	return containerWidth;
+	return { containerWidth, containerWidth };
 }
 
-float SplitPane::GetFullEstimatedHeight(float containerWidth, float containerHeight)
+Range<float> SplitPane::GetFullEstimatedHeight(float containerWidth, float containerHeight)
 {
-	return containerHeight;
+	return { containerHeight, containerHeight };
 }
 
 float SplitPane::GetSplit(unsigned which)

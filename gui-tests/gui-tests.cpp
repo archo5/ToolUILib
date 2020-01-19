@@ -464,13 +464,42 @@ struct LayoutTest2 : ui::Node
 		if (mode == 0)
 		{
 			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); /*s.SetLayout(style::Layout::StackExpand);*/ s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			{ auto s = ctx->MakeWithText<ui::Button>("Another one")->GetStyle(); /*s.SetLayout(style::Layout::StackExpand);*/ s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One");
+			ctx->MakeWithText<ui::Button>("Another one");
+			ctx->Pop();
+			
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetWidth(100);
+			ctx->MakeWithText<ui::Button>("Another one");
+			ctx->MakeWithText<ui::Button>("The third");
+			ctx->Pop();
+			
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One");
+			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetWidth(100);
+			ctx->MakeWithText<ui::Button>("The third");
+			ctx->Pop();
+			
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One");
+			ctx->MakeWithText<ui::Button>("Another one");
+			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetWidth(100);
+			ctx->Pop();
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetMinWidth(50);
+			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetMinWidth(100);
+			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetMinWidth(150);
+			ctx->Pop();
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); s.SetMinWidth(100); s.SetWidth(style::Coord::Percent(30)); }
+			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 
 			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			{ auto s = ctx->MakeWithText<ui::Button>("Another one")->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One");
+			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 		}
 	}
@@ -754,6 +783,7 @@ struct DataEditor : ui::Node
 	{
 		Property()
 		{
+			GetStyle().SetLayout(style::Layout::StackExpand);
 			GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		}
 		static void Begin(UIContainer* ctx, const char* label = nullptr)
@@ -763,8 +793,8 @@ struct DataEditor : ui::Node
 			{
 				auto s = ctx->Text(label)->GetStyle();
 				s.SetPadding(5);
-				s.SetBoxSizing(style::BoxSizing::BorderBox);
-				s.SetWidth(style::Coord::Percent(40));
+				s.SetMinWidth(100);
+				s.SetWidth(style::Coord::Percent(30));
 			}
 		}
 		static void End(UIContainer* ctx)
@@ -1052,10 +1082,15 @@ struct DataEditor : ui::Node
 		else
 		{
 			auto* b = ctx->PushBox();
+			b->GetStyle().SetLayout(style::Layout::StackExpand);
 			b->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-			ctx->Text("Item:")->GetStyle().SetPadding(5);
+			{ auto s = ctx->Text("Item:")->GetStyle(); s.SetPadding(5); s.SetWidth(style::Coord::Fraction(0)); }
 			ctx->Text(items[editing].name.c_str());
-			ctx->Push<ui::Button>()->onClick = [this]() { editing = SIZE_MAX; ui::Notify(DCT_ItemSelection); };
+			{
+				auto* btn = ctx->Push<ui::Button>();
+				btn->GetStyle().SetWidth(style::Coord::Fraction(0));
+				btn->onClick = [this]() { editing = SIZE_MAX; ui::Notify(DCT_ItemSelection); };
+			}
 			ctx->Text("Go back");
 			ctx->Pop();
 			ctx->Pop();
@@ -1164,7 +1199,6 @@ struct MainWindow : ui::NativeMainWindow
 	void OnRender(UIContainer* ctx)
 	{
 		//ctx->Make<DataEditor>();
-		//ctx->Make<OpenClose>();
 		ctx->Make<TEST>();
 	}
 };

@@ -84,10 +84,10 @@ public:
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(float containerWidth, float containerHeight);
 	virtual float CalcEstimatedHeight(float containerWidth, float containerHeight);
-	float GetEstimatedWidth(float containerWidth, float containerHeight);
-	float GetEstimatedHeight(float containerWidth, float containerHeight);
-	virtual float GetFullEstimatedWidth(float containerWidth, float containerHeight);
-	virtual float GetFullEstimatedHeight(float containerWidth, float containerHeight);
+	Range<float> GetEstimatedWidth(float containerWidth, float containerHeight);
+	Range<float> GetEstimatedHeight(float containerWidth, float containerHeight);
+	virtual Range<float> GetFullEstimatedWidth(float containerWidth, float containerHeight);
+	virtual Range<float> GetFullEstimatedHeight(float containerWidth, float containerHeight);
 	void PerformLayout(const UIRect& rect);
 	virtual void OnLayout(const UIRect& rect);
 	virtual bool Contains(float x, float y) const
@@ -175,7 +175,7 @@ public:
 	}
 	float CalcEstimatedWidth(float containerWidth, float containerHeight) override
 	{
-		return GetTextWidth(text.c_str());
+		return ceilf(GetTextWidth(text.c_str()));
 	}
 	float CalcEstimatedHeight(float containerWidth, float containerHeight) override
 	{

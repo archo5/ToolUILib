@@ -82,7 +82,6 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtPanel);
 		PreventHeapDelete(a);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetMargin(2);
 		a.SetPadding(6);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -96,8 +95,11 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtButton);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
+		//a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::Layout::Stack);
+		a.SetStackingDirection(style::StackingDirection::LeftToRight);
+		a.SetHAlign(style::HAlign::Center);
+		a.SetWidth(style::Coord::Fraction(1));
 		a.SetPadding(5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -138,9 +140,9 @@ struct ThemeInit
 		a.SetLayout(style::Layout::InlineBlock);
 		//a.SetWidth(style::Coord::Percent(12));
 		//a.SetHeight(style::Coord::Percent(12));
-		//a.SetWidth(GetFontHeight() + 5 + 5);
+		a.SetWidth(GetFontHeight() + 5 + 5);
 		//a.SetMargin(5);
-		a.SetHeight(GetFontHeight());
+		//a.SetHeight(GetFontHeight());
 		a.SetPadding(5);
 		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -177,9 +179,8 @@ struct ThemeInit
 		style::Accessor a(&dtTextBoxBase);
 		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
-		a.SetWidth(120);
+		a.SetWidth(style::Coord::Fraction(1));
 		a.SetHeight(GetFontHeight() + 5 + 5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -193,7 +194,6 @@ struct ThemeInit
 		style::Accessor a(&dtListBox);
 		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::Stack);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -207,7 +207,6 @@ struct ThemeInit
 		style::Accessor a(&dtProgressBarBase);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -221,7 +220,6 @@ struct ThemeInit
 		style::Accessor a(&dtProgressBarCompletion);
 		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetMargin(2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -235,7 +233,6 @@ struct ThemeInit
 		style::Accessor a(&dtSliderHBase);
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -314,7 +311,6 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtTabGroup);
 		PreventHeapDelete(a);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetMargin(2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -326,7 +322,6 @@ struct ThemeInit
 		style::Accessor a(&dtTabList);
 		PreventHeapDelete(a);
 		a.SetPadding(0, 4);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetLayout(style::Layout::Stack);
 		a.SetStackingDirection(style::StackingDirection::LeftToRight);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -339,7 +334,6 @@ struct ThemeInit
 		style::Accessor a(&dtTabButton);
 		PreventHeapDelete(a);
 		a.SetLayout(style::Layout::InlineBlock);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetPadding(5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -355,7 +349,6 @@ struct ThemeInit
 		style::Accessor a(&dtTabPanel);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetWidth(style::Coord::Percent(100));
 		a.SetMarginTop(-2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -370,7 +363,6 @@ struct ThemeInit
 		style::Accessor a(&dtTableBase);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetBoxSizing(style::BoxSizing::BorderBox);
 		a.SetWidth(style::Coord::Percent(100));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{

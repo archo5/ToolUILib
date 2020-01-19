@@ -9,6 +9,11 @@ template <class T> struct Point
 	T x, y;
 };
 
+template <class T> struct Range
+{
+	T min, max;
+};
+
 
 template<class T> struct AABB
 {

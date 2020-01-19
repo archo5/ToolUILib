@@ -156,8 +156,8 @@ struct SplitPane : UIElement
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect) override;
-	float GetFullEstimatedWidth(float containerWidth, float containerHeight) override;
-	float GetFullEstimatedHeight(float containerWidth, float containerHeight) override;
+	Range<float> GetFullEstimatedWidth(float containerWidth, float containerHeight) override;
+	Range<float> GetFullEstimatedHeight(float containerWidth, float containerHeight) override;
 
 	float GetSplit(unsigned which);
 	SplitPane* SetSplit(unsigned which, float f, bool clamp = true);

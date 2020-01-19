@@ -79,6 +79,17 @@ enum class BoxSizing : uint8_t
 	BorderBox,
 };
 
+enum class HAlign : uint8_t
+{
+	Undefined,
+	Inherit,
+
+	Left,
+	Center,
+	Right,
+	Justify,
+};
+
 enum class Display
 {
 	Undefined,
@@ -206,8 +217,9 @@ enum class CoordTypeUnit
 	Inherit,
 	Auto,
 
-	Percent,
 	Pixels,
+	Percent,
+	Fraction,
 };
 
 struct Coord
@@ -218,9 +230,10 @@ struct Coord
 	Coord() : value(0), unit(CoordTypeUnit::Undefined) {}
 	Coord(float px) : value(px), unit(CoordTypeUnit::Pixels) {}
 	Coord(float v, CoordTypeUnit u) : value(v), unit(u) {}
-	bool IsDefined() const { return unit != CoordTypeUnit::Undefined; }
+	bool IsDefined(bool fraction = false) const { return unit != CoordTypeUnit::Undefined && (fraction ? true : unit != CoordTypeUnit::Fraction); }
 	static const Coord Undefined() { return {}; }
 	static Coord Percent(float p) { return Coord(p, CoordTypeUnit::Percent); }
+	static Coord Fraction(float f) { return Coord(f, CoordTypeUnit::Fraction); }
 };
 
 enum PaintInfoItemState
@@ -269,7 +282,8 @@ struct Block
 	Layout layout = Layout::Undefined;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;
-	BoxSizing box_sizing = BoxSizing::ContentBox;
+	BoxSizing box_sizing = BoxSizing::Undefined;
+	HAlign h_align = HAlign::Undefined;
 	PaintFunction paint_func;
 
 	Coord width;
@@ -414,6 +428,9 @@ public:
 
 	BoxSizing GetBoxSizing() const;
 	void SetBoxSizing(BoxSizing v);
+
+	HAlign GetHAlign() const;
+	void SetHAlign(HAlign a);
 
 	PaintFunction GetPaintFunc() const;
 	PaintFunction& MutablePaintFunc();
