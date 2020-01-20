@@ -376,7 +376,7 @@ void SplitPane::OnEvent(UIEvent& e)
 	}
 }
 
-void SplitPane::OnLayout(const UIRect& rect)
+void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
 	CheckSplits(this);
 
@@ -396,7 +396,7 @@ void SplitPane::OnLayout(const UIRect& rect)
 			split++;
 			r.x0 = prevEdge;
 			r.x1 = sr.x0;
-			ch->OnLayout(r);
+			ch->OnLayout(r, finalRectC.GetSize());
 			prevEdge = sr.x1;
 		}
 	}
@@ -411,20 +411,20 @@ void SplitPane::OnLayout(const UIRect& rect)
 			split++;
 			r.y0 = prevEdge;
 			r.y1 = sr.y0;
-			ch->OnLayout(r);
+			ch->OnLayout(r, finalRectC.GetSize());
 			prevEdge = sr.y1;
 		}
 	}
 }
 
-Range<float> SplitPane::GetFullEstimatedWidth(float containerWidth, float containerHeight)
+Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize)
 {
-	return { containerWidth, containerWidth };
+	return { containerSize.x, containerSize.x };
 }
 
-Range<float> SplitPane::GetFullEstimatedHeight(float containerWidth, float containerHeight)
+Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize)
 {
-	return { containerHeight, containerHeight };
+	return { containerSize.y, containerSize.y };
 }
 
 float SplitPane::GetSplit(unsigned which)
@@ -493,13 +493,13 @@ void ScrollArea::OnEvent(UIEvent& e)
 	}
 }
 
-void ScrollArea::OnLayout(const UIRect& rect)
+void ScrollArea::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
 	UIRect r = rect;
 	r.y0 -= yoff;
 	r.y1 -= yoff;
 
-	UIElement::OnLayout(r);
+	UIElement::OnLayout(r, containerSize);
 
 	finalRectC.y0 += yoff;
 	finalRectC.y1 += yoff;

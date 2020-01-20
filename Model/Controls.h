@@ -155,9 +155,9 @@ struct SplitPane : UIElement
 	SplitPane();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
-	void OnLayout(const UIRect& rect) override;
-	Range<float> GetFullEstimatedWidth(float containerWidth, float containerHeight) override;
-	Range<float> GetFullEstimatedHeight(float containerWidth, float containerHeight) override;
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize) override;
+	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize) override;
 
 	float GetSplit(unsigned which);
 	SplitPane* SetSplit(unsigned which, float f, bool clamp = true);
@@ -178,7 +178,7 @@ public:
 	ScrollArea();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
 
 	style::BlockRef trackVStyle;
 	style::BlockRef thumbVStyle;

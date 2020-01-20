@@ -196,22 +196,22 @@ void InlineFrameNode::OnPaint()
 		frameContents->container.rootNode->OnPaint();
 }
 
-float InlineFrameNode::CalcEstimatedWidth(float containerWidth, float containerHeight)
+float InlineFrameNode::CalcEstimatedWidth(const Size<float>& containerSize)
 {
 	return 100; // default width
 }
 
-float InlineFrameNode::CalcEstimatedHeight(float containerWidth, float containerHeight)
+float InlineFrameNode::CalcEstimatedHeight(const Size<float>& containerSize)
 {
 	return 100; // default height
 }
 
-void InlineFrameNode::OnLayout(const UIRect& rect)
+void InlineFrameNode::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
-	Node::OnLayout(rect);
+	Node::OnLayout(rect, containerSize);
 	if (frameContents &&
 		frameContents->container.rootNode)
-		frameContents->container.rootNode->OnLayout(finalRectC);
+		frameContents->container.rootNode->OnLayout(finalRectC, containerSize);
 }
 
 void InlineFrameNode::SetFrameContents(FrameContents* contents)

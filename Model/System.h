@@ -203,9 +203,9 @@ public:
 	void OnDestroy() override;
 	void OnEvent(UIEvent& ev) override;
 	void OnPaint() override;
-	float CalcEstimatedWidth(float containerWidth, float containerHeight) override;
-	float CalcEstimatedHeight(float containerWidth, float containerHeight) override;
-	void OnLayout(const UIRect& rect) override;
+	float CalcEstimatedWidth(const Size<float>& containerSize) override;
+	float CalcEstimatedHeight(const Size<float>& containerSize) override;
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
 	void Render(UIContainer* ctx) override;
 
 	void SetFrameContents(FrameContents* contents);

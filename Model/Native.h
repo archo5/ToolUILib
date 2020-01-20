@@ -125,9 +125,9 @@ class NativeWindowNode : public Node
 {
 public:
 	void Render(UIContainer* ctx) override {}
-	void OnLayout(const UIRect& rect) override;
-	Range<float> GetFullEstimatedWidth(float containerWidth, float containerHeight) override { return {}; }
-	Range<float> GetFullEstimatedHeight(float containerWidth, float containerHeight) override { return {}; }
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize) override { return {}; }
+	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize) override { return {}; }
 
 	NativeWindowRenderFunc* GetWindow() { return &_window; }
 

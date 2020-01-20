@@ -575,7 +575,7 @@ void NativeMainWindow::OnClose()
 }
 
 
-void NativeWindowNode::OnLayout(const UIRect& rect)
+void NativeWindowNode::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
 	finalRectC = finalRectCP = finalRectCPB = {};
 }

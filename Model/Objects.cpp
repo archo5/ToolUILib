@@ -27,7 +27,7 @@ void UIObject::Paint()
 		OnPaint();
 }
 
-static Point<float> CalcEdgeSliceSize(UIObject* o, float containerWidth, float containerHeight)
+static Point<float> CalcEdgeSliceSize(UIObject* o, const Size<float>& containerSize)
 {
 	Point<float> ret = {};
 	for (auto* ch = o->lastChild; ch; ch = ch->prev)
@@ -35,19 +35,19 @@ static Point<float> CalcEdgeSliceSize(UIObject* o, float containerWidth, float c
 		auto e = ch->GetStyle().GetEdge();
 		if (e == style::Edge::Left || e == style::Edge::Right)
 		{
-			ret.x += ch->GetFullEstimatedWidth(containerWidth, containerHeight).min;
-			ret.y = std::max(ret.y, ch->GetFullEstimatedHeight(containerWidth, containerHeight).min);
+			ret.x += ch->GetFullEstimatedWidth(containerSize).min;
+			ret.y = std::max(ret.y, ch->GetFullEstimatedHeight(containerSize).min);
 		}
 		else
 		{
-			ret.x = std::max(ret.x, ch->GetFullEstimatedWidth(containerWidth, containerHeight).min);
-			ret.y += ch->GetFullEstimatedHeight(containerWidth, containerHeight).min;
+			ret.x = std::max(ret.x, ch->GetFullEstimatedWidth(containerSize).min);
+			ret.y += ch->GetFullEstimatedHeight(containerSize).min;
 		}
 	}
 	return ret;
 }
 
-float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
+float UIObject::CalcEstimatedWidth(const Size<float>& containerSize)
 {
 	float size = 0;
 	auto style = GetStyle();
@@ -58,7 +58,7 @@ float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
 	{
 	case style::Layout::InlineBlock:
 		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedWidth(containerWidth, containerHeight).min);
+			size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
 		break;
 	case style::Layout::Stack: {
 		auto dir = style.GetStackingDirection();
@@ -69,12 +69,12 @@ float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerWidth, containerHeight).min);
+				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedWidth(containerWidth, containerHeight).min;
+				size += ch->GetFullEstimatedWidth(containerSize).min;
 			break;
 		}
 		break; }
@@ -87,22 +87,22 @@ float UIObject::CalcEstimatedWidth(float containerWidth, float containerHeight)
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerWidth, containerHeight).min);
+				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
-			size = containerWidth;
+			size = containerSize.x;
 			break;
 		}
 		break; }
 	case style::Layout::EdgeSlice:
-		size = containerWidth;
+		size = containerSize.x;
 		break;
 	}
 	return size;
 }
 
-float UIObject::CalcEstimatedHeight(float containerWidth, float containerHeight)
+float UIObject::CalcEstimatedHeight(const Size<float>& containerSize)
 {
 	float size = 0;
 	auto style = GetStyle();
@@ -114,7 +114,7 @@ float UIObject::CalcEstimatedHeight(float containerWidth, float containerHeight)
 	case style::Layout::InlineBlock:
 		size = GetFontHeight();
 		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedHeight(containerWidth, containerHeight).min);
+			size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
 		break;
 	case style::Layout::Stack: {
 		auto dir = style.GetStackingDirection();
@@ -125,12 +125,12 @@ float UIObject::CalcEstimatedHeight(float containerWidth, float containerHeight)
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedHeight(containerWidth, containerHeight).min;
+				size += ch->GetFullEstimatedHeight(containerSize).min;
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerWidth, containerHeight).min);
+				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
 			break;
 		}
 		break; }
@@ -142,23 +142,23 @@ float UIObject::CalcEstimatedHeight(float containerWidth, float containerHeight)
 		{
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
-			size = containerHeight;
+			size = containerSize.y;
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerWidth, containerHeight).min);
+				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
 			break;
 		}
 		break; }
 	case style::Layout::EdgeSlice:
-		size = containerHeight;
+		size = containerSize.y;
 		break;
 	}
 	return size;
 }
 
-Range<float> UIObject::GetEstimatedWidth(float containerWidth, float containerHeight)
+Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -173,17 +173,17 @@ Range<float> UIObject::GetEstimatedWidth(float containerWidth, float containerHe
 	float maxsize = FLT_MAX;
 	if (width.IsDefined())
 	{
-		size = maxsize = ResolveUnits(width, containerWidth);
+		size = maxsize = ResolveUnits(width, containerSize.x);
 	}
 	else
 	{
-		size = CalcEstimatedWidth(containerWidth, containerHeight);
+		size = CalcEstimatedWidth(containerSize);
 	}
 
 	auto min_width = style.GetMinWidth();
 	if (min_width.IsDefined())
 	{
-		float w = ResolveUnits(min_width, containerWidth);
+		float w = ResolveUnits(min_width, containerSize.x);
 		size = std::max(size, w);
 		maxsize = std::max(maxsize, w);
 	}
@@ -191,14 +191,14 @@ Range<float> UIObject::GetEstimatedWidth(float containerWidth, float containerHe
 	auto max_width = style.GetMaxWidth();
 	if (max_width.IsDefined())
 	{
-		maxsize = ResolveUnits(max_width, containerWidth);
+		maxsize = ResolveUnits(max_width, containerSize.x);
 		size = std::min(size, maxsize);
 	}
 
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetEstimatedHeight(float containerWidth, float containerHeight)
+Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -213,17 +213,17 @@ Range<float> UIObject::GetEstimatedHeight(float containerWidth, float containerH
 	float maxsize = FLT_MAX;
 	if (height.IsDefined())
 	{
-		size = maxsize = ResolveUnits(height, containerHeight);
+		size = maxsize = ResolveUnits(height, containerSize.y);
 	}
 	else
 	{
-		size = CalcEstimatedHeight(containerWidth, containerHeight);
+		size = CalcEstimatedHeight(containerSize);
 	}
 
 	auto min_height = style.GetMinHeight();
 	if (min_height.IsDefined())
 	{
-		float h = ResolveUnits(min_height, containerHeight);
+		float h = ResolveUnits(min_height, containerSize.y);
 		size = std::max(size, h);
 		maxsize = std::max(maxsize, h);
 	}
@@ -231,54 +231,54 @@ Range<float> UIObject::GetEstimatedHeight(float containerWidth, float containerH
 	auto max_height = style.GetMaxHeight();
 	if (max_height.IsDefined())
 	{
-		maxsize = ResolveUnits(max_height, containerHeight);
+		maxsize = ResolveUnits(max_height, containerSize.y);
 		size = std::min(size, maxsize);
 	}
 
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetFullEstimatedWidth(float containerWidth, float containerHeight)
+Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize)
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
 	auto style = GetStyle();
-	auto s = GetEstimatedWidth(containerWidth, containerHeight);
+	auto s = GetEstimatedWidth(containerSize);
 	auto box_sizing = style.GetBoxSizing();
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetWidth().IsDefined())
 	{
-		s.min += ResolveUnits(style.GetPaddingLeft(), containerWidth);
-		s.min += ResolveUnits(style.GetPaddingRight(), containerWidth);
+		s.min += ResolveUnits(style.GetPaddingLeft(), containerSize.x);
+		s.min += ResolveUnits(style.GetPaddingRight(), containerSize.x);
 	}
-	s.min += ResolveUnits(style.GetMarginLeft(), containerWidth);
-	s.min += ResolveUnits(style.GetMarginRight(), containerWidth);
+	s.min += ResolveUnits(style.GetMarginLeft(), containerSize.x);
+	s.min += ResolveUnits(style.GetMarginRight(), containerSize.x);
 	return s;
 }
 
-Range<float> UIObject::GetFullEstimatedHeight(float containerWidth, float containerHeight)
+Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize)
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
 	auto style = GetStyle();
-	auto s = GetEstimatedHeight(containerWidth, containerHeight);
+	auto s = GetEstimatedHeight(containerSize);
 	auto box_sizing = style.GetBoxSizing();
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetHeight().IsDefined())
 	{
-		s.min += ResolveUnits(style.GetPaddingTop(), containerHeight);
-		s.min += ResolveUnits(style.GetPaddingBottom(), containerHeight);
+		s.min += ResolveUnits(style.GetPaddingTop(), containerSize.y);
+		s.min += ResolveUnits(style.GetPaddingBottom(), containerSize.y);
 	}
-	s.min += ResolveUnits(style.GetMarginTop(), containerHeight);
-	s.min += ResolveUnits(style.GetMarginBottom(), containerHeight);
+	s.min += ResolveUnits(style.GetMarginTop(), containerSize.y);
+	s.min += ResolveUnits(style.GetMarginBottom(), containerSize.y);
 	return s;
 }
 
-void UIObject::PerformLayout(const UIRect& rect)
+void UIObject::PerformLayout(const UIRect& rect, const Size<float>& containerSize)
 {
 	if (_NeedsLayout())
-		OnLayout(rect);
+		OnLayout(rect, containerSize);
 }
 
-void UIObject::OnLayout(const UIRect& rect)
+void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
 	using namespace style;
 
@@ -338,9 +338,9 @@ void UIObject::OnLayout(const UIRect& rect)
 		float maxH = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 		{
-			float w = ch->GetFullEstimatedWidth(rect.GetWidth(), rect.GetHeight()).min;
-			float h = ch->GetFullEstimatedHeight(rect.GetWidth(), rect.GetHeight()).min;
-			ch->PerformLayout({ p, y0, p + w, y0 + h });
+			float w = ch->GetFullEstimatedWidth(rect.GetSize()).min;
+			float h = ch->GetFullEstimatedHeight(rect.GetSize()).min;
+			ch->PerformLayout({ p, y0, p + w, y0 + h }, inrect.GetSize());
 			p += w;
 			maxH = std::max(maxH, h);
 		}
@@ -359,8 +359,8 @@ void UIObject::OnLayout(const UIRect& rect)
 			float p = inrect.y0;
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetWidth(), inrect.GetHeight()).min;
-				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h });
+				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
+				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
 				p += h;
 			}
 			fcr = { inrect.x0, inrect.y0, inrect.x1, p };
@@ -369,8 +369,8 @@ void UIObject::OnLayout(const UIRect& rect)
 			float p = inrect.x1;
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight()).min;
-				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 });
+				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
+				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
 				p -= w;
 			}
 			fcr = { p, inrect.y0, inrect.x1, inrect.y1 };
@@ -380,8 +380,8 @@ void UIObject::OnLayout(const UIRect& rect)
 			float p = inrect.y1;
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetWidth(), inrect.GetHeight()).min;
-				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p });
+				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
+				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p }, inrect.GetSize());
 				p -= h;
 			}
 			fcr = { inrect.x0, p, inrect.x1, inrect.y1 };
@@ -395,7 +395,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			{
 				float tw = 0;
 				for (auto* ch = firstChild; ch; ch = ch->next)
-					tw += ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight()).min;
+					tw += ch->GetFullEstimatedWidth(inrect.GetSize()).min;
 				float diff = inrect.GetWidth() - tw;
 				switch (ha)
 				{
@@ -416,8 +416,8 @@ void UIObject::OnLayout(const UIRect& rect)
 			}
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight()).min;
-				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 });
+				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
+				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
 				p += w + xw;
 			}
 			fcr = { inrect.x0, inrect.y0, p - xw, inrect.y1 };
@@ -445,7 +445,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			std::vector<int> sorted;
 			for (auto* ch = firstChild; ch; ch = ch->next)
 			{
-				auto s = ch->GetFullEstimatedWidth(inrect.GetWidth(), inrect.GetHeight());
+				auto s = ch->GetFullEstimatedWidth(inrect.GetSize());
 				auto sw = ch->GetStyle().GetWidth();
 				float fr = sw.unit == style::CoordTypeUnit::Fraction ? sw.value : 1;
 				items.push_back({ ch, s.min, s.max, s.min, fr });
@@ -474,7 +474,7 @@ void UIObject::OnLayout(const UIRect& rect)
 			}
 			for (const auto& item : items)
 			{
-				item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 });
+				item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
 				p += item.w;
 			}
 			fcr = { inrect.x0, inrect.y0, std::max(inrect.x1, p), inrect.y1 };
@@ -492,23 +492,23 @@ void UIObject::OnLayout(const UIRect& rect)
 			switch (e)
 			{
 			case Edge::Top:
-				d = ch->GetFullEstimatedHeight(subr.GetWidth(), subr.GetHeight()).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d });
+				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
+				ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
 				subr.y0 += d;
 				break;
 			case Edge::Bottom:
-				d = ch->GetFullEstimatedHeight(subr.GetWidth(), subr.GetHeight()).min;
-				ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 });
+				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
+				ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
 				subr.y1 -= d;
 				break;
 			case Edge::Left:
-				d = ch->GetFullEstimatedWidth(subr.GetWidth(), subr.GetHeight()).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 });
+				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
+				ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
 				subr.x0 += d;
 				break;
 			case Edge::Right:
-				d = ch->GetFullEstimatedWidth(subr.GetWidth(), subr.GetHeight()).min;
-				ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 });
+				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
+				ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
 				subr.x1 -= d;
 				break;
 			}
@@ -519,11 +519,11 @@ void UIObject::OnLayout(const UIRect& rect)
 	if (width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
 	{
 		float orig = fcr.GetWidth();
-		float tgt = width.IsDefined() ? ResolveUnits(width, rect.GetWidth()) : orig;
+		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) : orig;
 		if (min_width.IsDefined())
-			tgt = std::max(tgt, ResolveUnits(min_width, rect.GetWidth()));
+			tgt = std::max(tgt, ResolveUnits(min_width, containerSize.x));
 		if (max_width.IsDefined())
-			tgt = std::min(tgt, ResolveUnits(max_width, rect.GetWidth()));
+			tgt = std::min(tgt, ResolveUnits(max_width, containerSize.x));
 		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.x0 + Prect.x1;
 		if (tgt != orig)
@@ -541,11 +541,11 @@ void UIObject::OnLayout(const UIRect& rect)
 	if (height.IsDefined() || min_height.IsDefined() || max_height.IsDefined())
 	{
 		float orig = fcr.GetHeight();
-		float tgt = height.IsDefined() ? ResolveUnits(height, rect.GetHeight()) : orig;
+		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) : orig;
 		if (min_height.IsDefined())
-			tgt = std::max(tgt, ResolveUnits(min_height, rect.GetHeight()));
+			tgt = std::max(tgt, ResolveUnits(min_height, containerSize.y));
 		if (max_height.IsDefined())
-			tgt = std::min(tgt, ResolveUnits(max_height, rect.GetHeight()));
+			tgt = std::min(tgt, ResolveUnits(max_height, containerSize.y));
 		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.y0 + Prect.y1;
 		if (tgt != orig)

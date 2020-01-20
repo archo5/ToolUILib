@@ -76,7 +76,7 @@ void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt)
 void UIEventSystem::RecomputeLayout()
 {
 	if (container->rootNode)
-		container->rootNode->OnLayout({ 0, 0, width, height });
+		container->rootNode->OnLayout({ 0, 0, width, height }, { width, height });
 }
 
 void UIEventSystem::ProcessTimers(float dt)

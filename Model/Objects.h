@@ -82,14 +82,14 @@ public:
 			ch->Paint();
 	}
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
-	virtual float CalcEstimatedWidth(float containerWidth, float containerHeight);
-	virtual float CalcEstimatedHeight(float containerWidth, float containerHeight);
-	Range<float> GetEstimatedWidth(float containerWidth, float containerHeight);
-	Range<float> GetEstimatedHeight(float containerWidth, float containerHeight);
-	virtual Range<float> GetFullEstimatedWidth(float containerWidth, float containerHeight);
-	virtual Range<float> GetFullEstimatedHeight(float containerWidth, float containerHeight);
-	void PerformLayout(const UIRect& rect);
-	virtual void OnLayout(const UIRect& rect);
+	virtual float CalcEstimatedWidth(const Size<float>& containerSize);
+	virtual float CalcEstimatedHeight(const Size<float>& containerSize);
+	Range<float> GetEstimatedWidth(const Size<float>& containerSize);
+	Range<float> GetEstimatedHeight(const Size<float>& containerSize);
+	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize);
+	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize);
+	void PerformLayout(const UIRect& rect, const Size<float>& containerSize);
+	virtual void OnLayout(const UIRect& rect, const Size<float>& containerSize);
 	virtual bool Contains(float x, float y) const
 	{
 		return GetBorderRect().Contains(x, y);
@@ -173,15 +173,15 @@ public:
 	{
 		GetStyle().SetLayout(style::Layout::InlineBlock);
 	}
-	float CalcEstimatedWidth(float containerWidth, float containerHeight) override
+	float CalcEstimatedWidth(const Size<float>& containerSize) override
 	{
 		return ceilf(GetTextWidth(text.c_str()));
 	}
-	float CalcEstimatedHeight(float containerWidth, float containerHeight) override
+	float CalcEstimatedHeight(const Size<float>& containerSize) override
 	{
 		return GetFontHeight();
 	}
-	void OnLayout(const UIRect& rect)
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override
 	{
 		finalRectC = finalRectCP = finalRectCPB = rect;
 		//finalRect.x1 = finalRect.x0 + GetTextWidth(text)
