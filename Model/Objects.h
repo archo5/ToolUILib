@@ -171,7 +171,7 @@ class TextElement : public UIElement
 public:
 	TextElement()
 	{
-		GetStyle().SetLayout(style::Layout::InlineBlock);
+		GetStyle().SetLayout(style::layouts::InlineBlock());
 	}
 	float CalcEstimatedWidth(const Size<float>& containerSize) override
 	{

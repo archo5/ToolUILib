@@ -96,7 +96,7 @@ struct ThemeInit
 		style::Accessor a(&dtButton);
 		PreventHeapDelete(a);
 		//a.SetLayout(style::Layout::InlineBlock);
-		a.SetLayout(style::Layout::Stack);
+		a.SetLayout(style::layouts::Stack());
 		a.SetStackingDirection(style::StackingDirection::LeftToRight);
 		a.SetHAlign(style::HAlign::Center);
 		a.SetWidth(style::Coord::Fraction(1));
@@ -115,7 +115,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtCheckbox);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		//a.SetWidth(style::Coord::Percent(12));
 		//a.SetHeight(style::Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
@@ -137,7 +137,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtRadioButton);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		//a.SetWidth(style::Coord::Percent(12));
 		//a.SetHeight(style::Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
@@ -162,7 +162,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtCollapsibleTreeNode);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::Stack);
+		a.SetLayout(style::layouts::Stack());
 		//a.SetPadding(1);
 		a.SetPaddingLeft(GetFontHeight());
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
@@ -178,7 +178,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtTextBoxBase);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		a.SetPadding(5);
 		a.SetWidth(style::Coord::Fraction(1));
 		a.SetHeight(GetFontHeight() + 5 + 5);
@@ -193,7 +193,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtListBox);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::Stack);
+		a.SetLayout(style::layouts::Stack());
 		a.SetPadding(5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -219,7 +219,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtProgressBarCompletion);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		a.SetMargin(2);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -322,7 +322,7 @@ struct ThemeInit
 		style::Accessor a(&dtTabList);
 		PreventHeapDelete(a);
 		a.SetPadding(0, 4);
-		a.SetLayout(style::Layout::Stack);
+		a.SetLayout(style::layouts::Stack());
 		a.SetStackingDirection(style::StackingDirection::LeftToRight);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -333,7 +333,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtTabButton);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		a.SetPadding(5);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
@@ -438,7 +438,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtImage);
 		PreventHeapDelete(a);
-		a.SetLayout(style::Layout::InlineBlock);
+		a.SetLayout(style::layouts::InlineBlock());
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 		};

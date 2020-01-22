@@ -832,7 +832,7 @@ struct MainWindow : ui::NativeMainWindow
 	void OnRender(UIContainer* ctx) override
 	{
 		auto s = ctx->Push<ui::TabGroup>()->GetStyle();
-		s.SetLayout(style::Layout::EdgeSlice);
+		s.SetLayout(style::layouts::EdgeSlice());
 		s.SetHeight(style::Coord::Percent(100));
 		{
 			ctx->Push<ui::TabList>();
@@ -852,7 +852,7 @@ struct MainWindow : ui::NativeMainWindow
 				auto* p = ctx->Push<ui::TabPanel>();
 				{
 					auto s = p->GetStyle();
-					s.SetLayout(style::Layout::EdgeSlice);
+					s.SetLayout(style::layouts::EdgeSlice());
 					s.SetHeight(style::Coord::Percent(100));
 					ctx->Push<ui::Panel>();
 					{

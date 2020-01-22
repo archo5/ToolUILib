@@ -49,113 +49,19 @@ static Point<float> CalcEdgeSliceSize(UIObject* o, const Size<float>& containerS
 
 float UIObject::CalcEstimatedWidth(const Size<float>& containerSize)
 {
-	float size = 0;
-	auto style = GetStyle();
-	auto layout = style.GetLayout();
-	if (layout == style::Layout::Undefined)
-		layout = style::Layout::Stack;
-	switch (layout)
-	{
-	case style::Layout::InlineBlock:
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
-		break;
-	case style::Layout::Stack: {
-		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
-		switch (dir)
-		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
-			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedWidth(containerSize).min;
-			break;
-		}
-		break; }
-	case style::Layout::StackExpand: {
-		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
-		switch (dir)
-		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
-			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
-			size = containerSize.x;
-			break;
-		}
-		break; }
-	case style::Layout::EdgeSlice:
-		size = containerSize.x;
-		break;
-	}
-	return size;
+	auto layout = GetStyle().GetLayout();
+	if (layout == nullptr)
+		layout = style::layouts::Stack();
+	return layout->CalcEstimatedWidth(this, containerSize);
 }
 
 float UIObject::CalcEstimatedHeight(const Size<float>& containerSize)
 {
 	float size = 0;
-	auto style = GetStyle();
-	auto layout = style.GetLayout();
-	if (layout == style::Layout::Undefined)
-		layout = style::Layout::Stack;
-	switch (layout)
-	{
-	case style::Layout::InlineBlock:
-		size = GetFontHeight();
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
-		break;
-	case style::Layout::Stack: {
-		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
-		switch (dir)
-		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedHeight(containerSize).min;
-			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
-			break;
-		}
-		break; }
-	case style::Layout::StackExpand: {
-		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
-		switch (dir)
-		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
-			size = containerSize.y;
-			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
-			for (auto* ch = firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
-			break;
-		}
-		break; }
-	case style::Layout::EdgeSlice:
-		size = containerSize.y;
-		break;
-	}
-	return size;
+	auto layout = GetStyle().GetLayout();
+	if (layout == nullptr)
+		layout = style::layouts::Stack();
+	return layout->CalcEstimatedHeight(this, containerSize);
 }
 
 Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize)
@@ -323,202 +229,15 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 		rect.y1 - Arect.y1,
 	};
 
-	float scaleOriginX = inrect.x0;
-	float scaleOriginY = inrect.y0;
-
 	auto layout = style.GetLayout();
-	if (layout == Layout::Undefined)
-		layout = Layout::Stack;
-	UIRect fcr = inrect;
-	switch (layout)
-	{
-	case Layout::InlineBlock: {
-		float p = inrect.x0;
-		float y0 = inrect.y0;
-		float maxH = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			float w = ch->GetFullEstimatedWidth(rect.GetSize()).min;
-			float h = ch->GetFullEstimatedHeight(rect.GetSize()).min;
-			ch->PerformLayout({ p, y0, p + w, y0 + h }, inrect.GetSize());
-			p += w;
-			maxH = std::max(maxH, h);
-		}
-		fcr = { inrect.x0, inrect.y0, p, y0 + maxH };
-		break; }
-	case Layout::Stack: {
-		// put items one after another in the indicated direction
-		// container size adapts to child elements in stacking direction, and to parent in the other
-		// margins are collapsed
-		auto dir = style.GetStackingDirection();
-		if (dir == StackingDirection::Undefined)
-			dir = StackingDirection::TopDown;
-		switch (dir)
-		{
-		case StackingDirection::TopDown: {
-			float p = inrect.y0;
-			for (auto* ch = firstChild; ch; ch = ch->next)
-			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
-				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
-				p += h;
-			}
-			fcr = { inrect.x0, inrect.y0, inrect.x1, p };
-			break; }
-		case StackingDirection::RightToLeft: {
-			float p = inrect.x1;
-			for (auto* ch = firstChild; ch; ch = ch->next)
-			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
-				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
-				p -= w;
-			}
-			fcr = { p, inrect.y0, inrect.x1, inrect.y1 };
-			scaleOriginX = inrect.x1;
-			break; }
-		case StackingDirection::BottomUp: {
-			float p = inrect.y1;
-			for (auto* ch = firstChild; ch; ch = ch->next)
-			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
-				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p }, inrect.GetSize());
-				p -= h;
-			}
-			fcr = { inrect.x0, p, inrect.x1, inrect.y1 };
-			scaleOriginY = inrect.y1;
-			break; }
-		case StackingDirection::LeftToRight: {
-			float p = inrect.x0;
-			float xw = 0;
-			auto ha = style.GetHAlign();
-			if (ha != style::HAlign::Undefined && ha != style::HAlign::Left)
-			{
-				float tw = 0;
-				for (auto* ch = firstChild; ch; ch = ch->next)
-					tw += ch->GetFullEstimatedWidth(inrect.GetSize()).min;
-				float diff = inrect.GetWidth() - tw;
-				switch (ha)
-				{
-				case style::HAlign::Center:
-					p += diff / 2;
-					break;
-				case style::HAlign::Right:
-					p += diff;
-					break;
-				case style::HAlign::Justify: {
-					auto cc = CountChildrenImmediate();
-					if (cc > 1)
-						xw += diff / (cc - 1);
-					else
-						p += diff / 2;
-					break; }
-				}
-			}
-			for (auto* ch = firstChild; ch; ch = ch->next)
-			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
-				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
-				p += w + xw;
-			}
-			fcr = { inrect.x0, inrect.y0, p - xw, inrect.y1 };
-			break; }
-		}
-		break; }
-	case Layout::StackExpand: {
-		auto dir = style.GetStackingDirection();
-		if (dir == StackingDirection::Undefined)
-			dir = StackingDirection::TopDown;
-		switch (dir)
-		{
-		case StackingDirection::LeftToRight: if (firstChild) {
-			float p = inrect.x0;
-			float sum = 0, frsum = 0;
-			struct Item
-			{
-				UIObject* ch;
-				float minw;
-				float maxw;
-				float w;
-				float fr;
-			};
-			std::vector<Item> items;
-			std::vector<int> sorted;
-			for (auto* ch = firstChild; ch; ch = ch->next)
-			{
-				auto s = ch->GetFullEstimatedWidth(inrect.GetSize());
-				auto sw = ch->GetStyle().GetWidth();
-				float fr = sw.unit == style::CoordTypeUnit::Fraction ? sw.value : 1;
-				items.push_back({ ch, s.min, s.max, s.min, fr });
-				sorted.push_back(sorted.size());
-				sum += s.min;
-				frsum += fr;
-			}
-			std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
-			{
-				const auto& a = items[ia];
-				const auto& b = items[ib];
-				return (a.maxw - a.minw) < (b.maxw - b.minw);
-			});
-			float leftover = std::max(inrect.GetWidth() - sum, 0.0f);
-			for (auto idx : sorted)
-			{
-				auto& item = items[idx];
-				float mylo = leftover * item.fr / frsum;
-				float w = item.minw + mylo;
-				if (w > item.maxw)
-					w = item.maxw;
-				float actual_lo = w - item.minw;
-				leftover -= actual_lo;
-				frsum -= item.fr;
-				item.w = w;
-			}
-			for (const auto& item : items)
-			{
-				item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
-				p += item.w;
-			}
-			fcr = { inrect.x0, inrect.y0, std::max(inrect.x1, p), inrect.y1 };
-			break; }
-		}
-		break; }
-	case Layout::EdgeSlice: {
-		auto subr = inrect;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			auto e = ch->GetStyle().GetEdge();
-			if (e == Edge::Undefined)
-				e = Edge::Top;
-			float d;
-			switch (e)
-			{
-			case Edge::Top:
-				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
-				subr.y0 += d;
-				break;
-			case Edge::Bottom:
-				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
-				ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
-				subr.y1 -= d;
-				break;
-			case Edge::Left:
-				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
-				subr.x0 += d;
-				break;
-			case Edge::Right:
-				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
-				ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
-				subr.x1 -= d;
-				break;
-			}
-		}
-		break; }
-	}
+	if (layout == nullptr)
+		layout = style::layouts::Stack();
+	LayoutState state = { inrect, { inrect.x0, inrect.y0 } };
+	layout->OnLayout(this, inrect, state);
 
 	if (width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
 	{
-		float orig = fcr.GetWidth();
+		float orig = state.finalContentRect.GetWidth();
 		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) : orig;
 		if (min_width.IsDefined())
 			tgt = std::max(tgt, ResolveUnits(min_width, containerSize.x));
@@ -531,16 +250,16 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 			if (orig)
 			{
 				float scale = tgt / orig;
-				fcr.x0 = scaleOriginX + (fcr.x0 - scaleOriginX) * scale;
-				fcr.x1 = scaleOriginX + (fcr.x1 - scaleOriginX) * scale;
+				state.finalContentRect.x0 = state.scaleOrigin.x + (state.finalContentRect.x0 - state.scaleOrigin.x) * scale;
+				state.finalContentRect.x1 = state.scaleOrigin.x + (state.finalContentRect.x1 - state.scaleOrigin.x) * scale;
 			}
 			else
-				fcr.x1 += tgt;
+				state.finalContentRect.x1 += tgt;
 		}
 	}
 	if (height.IsDefined() || min_height.IsDefined() || max_height.IsDefined())
 	{
-		float orig = fcr.GetHeight();
+		float orig = state.finalContentRect.GetHeight();
 		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) : orig;
 		if (min_height.IsDefined())
 			tgt = std::max(tgt, ResolveUnits(min_height, containerSize.y));
@@ -553,16 +272,16 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 			if (orig)
 			{
 				float scale = tgt / orig;
-				fcr.y0 = scaleOriginY + (fcr.y0 - scaleOriginY) * scale;
-				fcr.y1 = scaleOriginY + (fcr.y1 - scaleOriginY) * scale;
+				state.finalContentRect.y0 = state.scaleOrigin.y + (state.finalContentRect.y0 - state.scaleOrigin.y) * scale;
+				state.finalContentRect.y1 = state.scaleOrigin.y + (state.finalContentRect.y1 - state.scaleOrigin.y) * scale;
 			}
 			else
-				fcr.y1 += tgt;
+				state.finalContentRect.y1 += tgt;
 		}
 	}
 
-	finalRectC = fcr;
-	finalRectCP = fcr.ExtendBy(Prect);
+	finalRectC = state.finalContentRect;
+	finalRectCP = state.finalContentRect.ExtendBy(Prect);
 	finalRectCPB = finalRectCP; // no border yet
 }
 

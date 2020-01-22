@@ -34,7 +34,7 @@ struct EdgeSliceTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		auto s = ctx->Push<ui::Panel>()->GetStyle();
-		s.SetLayout(style::Layout::EdgeSlice);
+		s.SetLayout(style::layouts::EdgeSlice());
 		s.SetBoxSizing(style::BoxSizing::BorderBox);
 		s.SetMargin(0);
 		s.SetHeight(style::Coord::Percent(100));
@@ -391,29 +391,29 @@ struct LayoutTest : ui::Node
 		switch (layout)
 		{
 		case 0:
-			s.SetLayout(style::Layout::Stack);
+			s.SetLayout(style::layouts::Stack());
 			s.SetStackingDirection(style::StackingDirection::TopDown);
 			break;
 		case 1:
-			s.SetLayout(style::Layout::Stack);
+			s.SetLayout(style::layouts::Stack());
 			s.SetStackingDirection(style::StackingDirection::LeftToRight);
 			break;
 		case 2:
-			s.SetLayout(style::Layout::Stack);
+			s.SetLayout(style::layouts::Stack());
 			s.SetStackingDirection(style::StackingDirection::BottomUp);
 			break;
 		case 3:
-			s.SetLayout(style::Layout::Stack);
+			s.SetLayout(style::layouts::Stack());
 			s.SetStackingDirection(style::StackingDirection::RightToLeft);
 			break;
 		case 4:
-			s.SetLayout(style::Layout::InlineBlock);
+			s.SetLayout(style::layouts::InlineBlock());
 			break;
 		case 5:
 		case 6:
 		case 7:
 		case 8:
-			s.SetLayout(style::Layout::EdgeSlice);
+			s.SetLayout(style::layouts::EdgeSlice());
 			break;
 		}
 
@@ -463,41 +463,41 @@ struct LayoutTest2 : ui::Node
 
 		if (mode == 0)
 		{
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
-			
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetWidth(100);
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->MakeWithText<ui::Button>("The third");
 			ctx->Pop();
-			
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetWidth(100);
 			ctx->MakeWithText<ui::Button>("The third");
 			ctx->Pop();
-			
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetWidth(100);
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetMinWidth(50);
 			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetMinWidth(100);
 			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetMinWidth(150);
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::StackExpand); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); s.SetMinWidth(100); s.SetWidth(style::Coord::Percent(30)); }
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::Layout::Stack); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::Stack()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
@@ -525,7 +525,7 @@ struct ImageTest : ui::Node
 	{
 		style::BlockRef pbr = ui::Theme::current->panel;
 		style::Accessor pa(pbr);
-		pa.SetLayout(style::Layout::InlineBlock);
+		pa.SetLayout(style::layouts::InlineBlock());
 		pa.SetPadding(4);
 		pa.SetMargin(0);
 
@@ -721,7 +721,7 @@ struct DataEditor : ui::Node
 	{
 		ItemButton()
 		{
-			GetStyle().SetLayout(style::Layout::Stack);
+			GetStyle().SetLayout(style::layouts::Stack());
 			//GetStyle().SetMargin(32);
 		}
 		void Render(UIContainer* ctx) override
@@ -783,7 +783,7 @@ struct DataEditor : ui::Node
 	{
 		Property()
 		{
-			GetStyle().SetLayout(style::Layout::StackExpand);
+			GetStyle().SetLayout(style::layouts::StackExpand());
 			GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		}
 		static void Begin(UIContainer* ctx, const char* label = nullptr)
@@ -921,7 +921,7 @@ struct DataEditor : ui::Node
 					void OnRender(UIContainer* ctx) override
 					{
 						auto s = ctx->Push<ui::Panel>()->GetStyle();
-						s.SetLayout(style::Layout::Stack);
+						s.SetLayout(style::layouts::Stack());
 						s.SetStackingDirection(style::StackingDirection::RightToLeft);
 						ctx->MakeWithText<ui::Button>("X")->onClick = [this]() { OnClose(); };
 						ctx->MakeWithText<ui::Button>("[]")->onClick = [this]() {
@@ -1082,7 +1082,7 @@ struct DataEditor : ui::Node
 		else
 		{
 			auto* b = ctx->PushBox();
-			b->GetStyle().SetLayout(style::Layout::StackExpand);
+			b->GetStyle().SetLayout(style::layouts::StackExpand());
 			b->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 			{ auto s = ctx->Text("Item:")->GetStyle(); s.SetPadding(5); s.SetWidth(style::Coord::Fraction(0)); }
 			ctx->Text(items[editing].name.c_str());

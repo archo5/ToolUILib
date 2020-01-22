@@ -34,7 +34,7 @@ enum class Presence : uint8_t
 	LayoutOnly,
 	Visible,
 };
-
+/*
 enum class Layout : uint8_t
 {
 	Undefined,
@@ -47,6 +47,28 @@ enum class Layout : uint8_t
 	StackExpand, // same as above but try to fill the space
 	EdgeSlice, // child-controlled multidirectional stacking at the edges of remaining space
 };
+*/
+struct LayoutState
+{
+	UIRect finalContentRect;
+	Point<float> scaleOrigin;
+};
+
+struct Layout
+{
+	virtual float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize) = 0;
+	virtual float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize) = 0;
+	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
+};
+
+namespace layouts {
+
+Layout* InlineBlock();
+Layout* Stack();
+Layout* StackExpand();
+Layout* EdgeSlice();
+
+}
 
 enum class StackingDirection : uint8_t
 {
@@ -279,7 +301,7 @@ struct Block
 	uint32_t _refCount = 0;
 
 	Presence presence = Presence::Undefined;
-	Layout layout = Layout::Undefined;
+	Layout* layout = nullptr;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;
 	BoxSizing box_sizing = BoxSizing::Undefined;
@@ -417,8 +439,8 @@ public:
 	void SetPosition(Position position);
 #endif
 
-	Layout GetLayout() const;
-	void SetLayout(Layout v);
+	Layout* GetLayout() const;
+	void SetLayout(Layout* v);
 
 	StackingDirection GetStackingDirection() const;
 	void SetStackingDirection(StackingDirection v);
