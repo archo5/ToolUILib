@@ -566,6 +566,34 @@ struct ImageTest : ui::Node
 	ui::Image* img;
 };
 
+struct ThreadWorkerTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		ctx->MakeWithText<ui::Button>("Do it")->onClick = [this]()
+		{
+			wq.Push([this]()
+			{
+				for (int i = 0; i <= 100; i++)
+				{
+					if (wq.HasItems() || wq.IsQuitting())
+						return;
+					// TODO make it safe to push these events before destroying the node
+					ui::Application::PushEvent([this, i]() { progress = i / 100.0f; Rerender(); });
+#pragma warning (disable:4996)
+					_sleep(20);
+				}
+			}, true);
+		};
+		auto* pb = ctx->MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
+		pb->progress = progress;
+	}
+
+	float progress = 0;
+
+	WorkerQueue wq;
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -1137,6 +1165,7 @@ static const char* testNames[] =
 	"Test: Layout",
 	"Test: Layout 2",
 	"Test: Image",
+	"Test: Thread worker test",
 };
 struct TEST : ui::Node
 {
@@ -1170,6 +1199,7 @@ struct TEST : ui::Node
 		case 8: ctx->Make<LayoutTest>(); break;
 		case 9: ctx->Make<LayoutTest2>(); break;
 		case 10: ctx->Make<ImageTest>(); break;
+		case 11: ctx->Make<ThreadWorkerTest>(); break;
 		}
 	}
 

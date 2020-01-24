@@ -584,8 +584,14 @@ void NativeWindowNode::OnLayout(const UIRect& rect, const Size<float>& container
 extern void SubscriptionTable_Init();
 extern void SubscriptionTable_Free();
 
+static EventQueue* g_mainEventQueue;
+static DWORD g_mainThreadID;
+
 Application::Application(int argc, char* argv[])
 {
+	g_mainEventQueue = new EventQueue;
+	g_mainThreadID = GetCurrentThreadId();
+
 	SubscriptionTable_Init();
 }
 
@@ -593,12 +599,25 @@ Application::~Application()
 {
 	//system.container.Free();
 	SubscriptionTable_Free();
+
+	delete g_mainEventQueue;
+	g_mainEventQueue = nullptr;
 }
 
 void Application::Quit(int code)
 {
 	g_appQuit = true;
 	g_appExitCode = code;
+}
+
+EventQueue& Application::_GetEventQueue()
+{
+	return *g_mainEventQueue;
+}
+
+void Application::_SignalEvent()
+{
+	PostThreadMessageW(g_mainThreadID, WM_USER + 1, 0, 0);
 }
 
 int Application::Run()
@@ -608,6 +627,9 @@ int Application::Run()
 	{
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
+
+		g_mainEventQueue->RunAllCurrent();
+
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))

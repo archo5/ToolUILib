@@ -5,6 +5,7 @@
 
 #include "Core/String.h"
 #include "Core/Math.h"
+#include "Core/Threading.h"
 
 #include "Model/Events.h"
 #include "Model/Controls.h"

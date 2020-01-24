@@ -46,6 +46,9 @@
     <ClCompile Include="Model\Graphics.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Threading.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="Model\Graphics.h">
       <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threading.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

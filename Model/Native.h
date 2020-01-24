@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "../Core/Math.h"
+#include "../Core/Threading.h"
 #include "Objects.h"
 #include "System.h"
 
@@ -143,6 +144,15 @@ public:
 
 	static Application* GetInstance() { return _instance; }
 	static void Quit(int code = 0);
+
+	template <class F>
+	static void PushEvent(F&& f)
+	{
+		_GetEventQueue().Push(std::move(f));
+		_SignalEvent();
+	}
+	static EventQueue& _GetEventQueue();
+	static void _SignalEvent();
 
 	int Run();
 
