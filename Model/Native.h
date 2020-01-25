@@ -146,9 +146,15 @@ public:
 	static void Quit(int code = 0);
 
 	template <class F>
-	static void PushEvent(F&& f)
+	static void PushEvent(UIObject* obj, F&& f)
 	{
-		_GetEventQueue().Push(std::move(f));
+		auto lt = obj->GetLivenessToken();
+		auto fw = [lt, f{ std::move(f) }]()
+		{
+			if (lt.IsAlive())
+				f();
+		};
+		_GetEventQueue().Push(std::move(fw));
 		_SignalEvent();
 	}
 	static EventQueue& _GetEventQueue();

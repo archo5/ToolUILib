@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <typeinfo>
+#include <atomic>
 #include <new>
 
 #include "../Core/Math.h"
@@ -62,6 +63,62 @@ enum class Direction
 {
 	Horizontal,
 	Vertical,
+};
+
+struct LivenessToken
+{
+	struct Data
+	{
+		std::atomic<int32_t> ref;
+		std::atomic_bool alive;
+	};
+
+	Data* _data;
+
+	LivenessToken() : _data(nullptr) {}
+	LivenessToken(Data* d) : _data(d) { if (d) d->ref++; }
+	LivenessToken(const LivenessToken& o) : _data(o._data) { if (_data) _data->ref++; }
+	LivenessToken(LivenessToken&& o) : _data(o._data) { o._data = nullptr; }
+	~LivenessToken() { Release(); }
+	LivenessToken& operator = (const LivenessToken& o)
+	{
+		Release();
+		_data = o._data;
+		if (_data)
+			_data->ref++;
+		return *this;
+	}
+	LivenessToken& operator = (LivenessToken&& o)
+	{
+		Release();
+		_data = o._data;
+		o._data = nullptr;
+		return *this;
+	}
+	void Release()
+	{
+		if (_data && --_data->ref <= 0)
+		{
+			delete _data;
+			_data = nullptr;
+		}
+	}
+
+	bool IsAlive() const
+	{
+		return _data && _data->alive;
+	}
+	void SetAlive(bool alive)
+	{
+		if (_data)
+			_data->alive = alive;
+	}
+	LivenessToken& GetOrCreate()
+	{
+		if (!_data)
+			_data = new Data{ 1, true };
+		return *this;
+	}
 };
 
 class UIObject
@@ -139,6 +196,7 @@ public:
 	UIRect GetBorderRect() const { return finalRectCPB; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
+	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 
 	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
 
@@ -151,6 +209,7 @@ public:
 
 	ui::FrameContents* system = nullptr;
 	style::BlockRef styleProps;
+	LivenessToken _livenessToken;
 
 	// final layout rectangles: C=content, P=padding, B=border
 	UIRect finalRectC;

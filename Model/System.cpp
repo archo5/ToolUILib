@@ -137,6 +137,7 @@ void UIContainer::_Push(UIObject* obj)
 
 void UIContainer::_Destroy(UIObject* obj)
 {
+	obj->_livenessToken.SetAlive(false);
 	obj->OnDestroy();
 	for (auto* ch = obj->firstChild; ch; ch = ch->next)
 		_Destroy(ch);
@@ -145,6 +146,7 @@ void UIContainer::_Destroy(UIObject* obj)
 void UIContainer::_Pop()
 {
 	objectStack[objectStackSize - 1]->OnCompleteStructure();
+	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
 	if (objChildStack[objectStackSize - 1])
 	{
 		// remove leftover children

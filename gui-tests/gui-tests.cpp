@@ -578,8 +578,12 @@ struct ThreadWorkerTest : ui::Node
 				{
 					if (wq.HasItems() || wq.IsQuitting())
 						return;
-					// TODO make it safe to push these events before destroying the node
-					ui::Application::PushEvent([this, i]() { progress = i / 100.0f; Rerender(); });
+					// TODO make it so that rerendering triggers a repaint of the window
+					ui::Application::PushEvent(this, [this, i]()
+					{
+						progress = i / 100.0f;
+						Rerender();
+					});
 #pragma warning (disable:4996)
 					_sleep(20);
 				}
