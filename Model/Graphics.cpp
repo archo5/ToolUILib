@@ -26,7 +26,7 @@ void ImageElement::OnPaint()
 			br.Quad(c.x0, c.y0, c.x1, c.y1, 0, 0, 1, 1);
 			break;
 		case ScaleMode::Fit: {
-			float iasp = _image->GetWidth() / _image->GetHeight();
+			float iasp = _image->GetWidth() / (float)_image->GetHeight();
 			float w = c.GetWidth(), h = c.GetHeight();
 			float rasp = w / h;
 			if (iasp > rasp) // matched width, adjust height
@@ -38,7 +38,7 @@ void ImageElement::OnPaint()
 			br.Quad(x, y, x + w, y + h, 0, 0, 1, 1);
 			break; }
 		case ScaleMode::Fill: {
-			float iasp = _image->GetWidth() / _image->GetHeight();
+			float iasp = _image->GetWidth() / (float)_image->GetHeight();
 			float w = c.GetWidth(), h = c.GetHeight();
 			float rasp = w / h;
 			if (iasp < rasp) // matched width, adjust height

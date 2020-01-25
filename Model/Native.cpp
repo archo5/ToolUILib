@@ -58,6 +58,9 @@ BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
 namespace ui {
 
 
+DataCategoryTag DCT_ResizeWindow[1];
+
+
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
@@ -655,13 +658,11 @@ int Application::Run()
 				window->GetOwner()->InvalidateAll();
 		}
 
-		double t0 = hqtime();
 		for (auto* win : *g_windowRepaintList)
 			win->Redraw();
 		for (auto* win : *g_windowRepaintList)
 			win->invalidated = false;
 		g_windowRepaintList->clear();
-		printf("redraw end: %g s\n", hqtime() - t0);
 	}
 	return g_appExitCode;
 }
@@ -800,9 +801,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if (auto* window = GetNativeWindow(hWnd))
 			{
 				auto& evsys = window->GetEventSys();
-				evsys.width = LOWORD(lParam);
-				evsys.height = HIWORD(lParam);
-				window->Redraw();
+				auto w = LOWORD(lParam);
+				auto h = HIWORD(lParam);
+				if (w != evsys.width || h != evsys.height)
+				{
+					ui::Notify(DCT_ResizeWindow, window->GetOwner());
+				}
+				evsys.width = w;
+				evsys.height = h;
+				window->GetOwner()->InvalidateAll();
 			}
 		}
 		break;

@@ -15,6 +15,9 @@ namespace ui {
 class Menu;
 
 
+extern DataCategoryTag DCT_ResizeWindow[1];
+
+
 enum class WindowState : uint8_t
 {
 	Normal,

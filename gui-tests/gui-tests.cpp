@@ -597,6 +597,64 @@ struct ThreadWorkerTest : ui::Node
 	WorkerQueue wq;
 };
 
+struct ThreadedImageRenderingTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
+
+		auto* img = ctx->Make<ui::ImageElement>();
+		img->GetStyle().SetWidth(style::Coord::Percent(100));
+		img->GetStyle().SetHeight(style::Coord::Percent(100));
+		img->SetScaleMode(ui::ScaleMode::Fill);
+		img->SetImage(image);
+
+		ui::Application::PushEvent(this, [this, img]()
+		{
+			int tw = img->finalRectC.GetWidth();
+			int th = img->finalRectC.GetHeight();
+
+			if (image && image->GetWidth() == tw && image->GetHeight() == th)
+				return;
+
+			wq.Push([this, tw, th]()
+			{
+				ui::Canvas canvas(tw, th);
+
+				auto* px = canvas.GetPixels();
+				for (uint32_t y = 0; y < th; y++)
+				{
+					if (wq.HasItems() || wq.IsQuitting())
+						return;
+
+					for (uint32_t x = 0; x < tw; x++)
+					{
+						float res = (((x & 1) + (y & 1)) & 1) ? 1.0f : 0.1f;
+						float s = sinf(x * 0.02f) * 0.2f + 0.5f;
+						double q = 1 - fabsf(y / float(th) - s) / 0.1f;
+						if (q < 0)
+							q = 0;
+						res *= 1 - q;
+						res += 0.5f * q;
+						uint8_t c = res * 255;
+						px[x + y * tw] = 0xff000000 | (c << 16) | (c << 8) | c;
+					}
+				}
+
+				ui::Application::PushEvent(this, [this, canvas{ std::move(canvas) }]()
+				{
+					delete image;
+					image = new ui::Image(canvas);
+					Rerender();
+				});
+			}, true);
+		});
+	}
+
+	WorkerQueue wq;
+	ui::Image* image = nullptr;
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -1169,6 +1227,7 @@ static const char* testNames[] =
 	"Test: Layout 2",
 	"Test: Image",
 	"Test: Thread worker test",
+	"Test: Threaded image rendering test",
 };
 struct TEST : ui::Node
 {
@@ -1203,6 +1262,7 @@ struct TEST : ui::Node
 		case 9: ctx->Make<LayoutTest2>(); break;
 		case 10: ctx->Make<ImageTest>(); break;
 		case 11: ctx->Make<ThreadWorkerTest>(); break;
+		case 12: ctx->Make<ThreadedImageRenderingTest>(); break;
 		}
 	}
 
