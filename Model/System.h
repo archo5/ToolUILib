@@ -6,6 +6,9 @@
 #include "Objects.h"
 
 
+#define DEBUG_FLOW(x) //x
+
+
 template<class T> void Node_AddChild(T* node, T* ch)
 {
 	assert(ch->parent == nullptr);
@@ -75,12 +78,12 @@ public:
 	{
 		assert(objectStackSize > 1);
 		_Pop();
-		printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name());
+		DEBUG_FLOW(printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name()));
 	}
 	template<class T, class = typename T::IsNode> T* Make(decltype(bool()) = 0)
 	{
 		T* obj = _Alloc<T>();
-		printf("  make %s\n", typeid(*obj).name());
+		DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
 		AddToRenderStack(obj);
 		return obj;
 	}
@@ -100,7 +103,7 @@ public:
 	template<class T, class = typename T::IsElement> T* Push()
 	{
 		auto* obj = _Alloc<T>();
-		printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name());
+		DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
 		_Push(obj);
 		return obj;
 	}
@@ -113,19 +116,19 @@ public:
 		if (obj == objChildStack[objectStackSize - 1])
 		{
 			// continue the match streak
-			puts("/// match streak ///");
+			DEBUG_FLOW(puts("/// match streak ///"));
 			objChildStack[objectStackSize - 1] = obj->next;
 			lastIsNew = false;
 		}
 		else
 		{
-			objectStack[objectStackSize - 1]->dump();
+			DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
 			if (objChildStack[objectStackSize - 1])
 			{
 				// delete all nodes starting from this child, the match streak is gone
 				DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
 			}
-			puts(">>> new element >>>");
+			DEBUG_FLOW(puts(">>> new element >>>"));
 			Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
 			obj->OnInit();
 			objChildStack[objectStackSize - 1] = nullptr;

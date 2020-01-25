@@ -176,6 +176,9 @@ struct ProxyEventSystem
 	Target mainTarget;
 };
 
+struct NativeWindow_Impl;
+static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
+
 struct NativeWindow_Impl
 {
 	void Init(NativeWindowBase* owner)
@@ -209,9 +212,13 @@ struct NativeWindow_Impl
 		}
 
 		prevTime = hqtime();
+
+		owner->InvalidateAll();
 	}
 	~NativeWindow_Impl()
 	{
+		if (invalidated)
+			g_windowRepaintList->erase(std::remove(g_windowRepaintList->begin(), g_windowRepaintList->end(), this), g_windowRepaintList->end());
 		GL::FreeRenderContext(renderCtx);
 		DestroyWindow(window);
 	}
@@ -323,6 +330,7 @@ struct NativeWindow_Impl
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
 	bool firstShow = true;
+	bool invalidated = false;
 	uint8_t sysMoveSizeState = MSST_None;
 	WindowStyle style = WS_Default;
 };
@@ -546,6 +554,14 @@ void NativeWindowBase::SetInnerUIEnabled(bool enabled)
 	_impl->innerUIEnabled = enabled;
 }
 
+void NativeWindowBase::InvalidateAll()
+{
+	if (_impl->invalidated)
+		return;
+	_impl->invalidated = true;
+	g_windowRepaintList->push_back(_impl);
+}
+
 void* NativeWindowBase::GetNativeHandle() const
 {
 	return (void*)_impl->window;
@@ -591,6 +607,7 @@ Application::Application(int argc, char* argv[])
 {
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
+	g_windowRepaintList = new std::vector<NativeWindow_Impl*>;
 
 	SubscriptionTable_Init();
 }
@@ -600,6 +617,8 @@ Application::~Application()
 	//system.container.Free();
 	SubscriptionTable_Free();
 
+	delete g_windowRepaintList;
+	g_windowRepaintList = nullptr;
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
 }
@@ -633,9 +652,16 @@ int Application::Run()
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
-				window->Redraw();
+				window->GetOwner()->InvalidateAll();
 		}
-		//UI_Redraw(&system);
+
+		double t0 = hqtime();
+		for (auto* win : *g_windowRepaintList)
+			win->Redraw();
+		for (auto* win : *g_windowRepaintList)
+			win->invalidated = false;
+		g_windowRepaintList->clear();
+		printf("redraw end: %g s\n", hqtime() - t0);
 	}
 	return g_appExitCode;
 }

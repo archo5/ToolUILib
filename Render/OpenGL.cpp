@@ -97,6 +97,8 @@ RenderContext* CreateRenderContext(void* window)
 	if (RenderContext::first)
 		wglShareLists(RenderContext::first->rc, RC->rc);
 
+	((BOOL(__stdcall *)(int))wglGetProcAddress("wglSwapIntervalEXT"))(0);
+
 	GLCHK(glDisable(GL_CULL_FACE));
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);

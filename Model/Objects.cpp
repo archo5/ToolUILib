@@ -1,6 +1,7 @@
 
 #include <unordered_map>
 #include "Objects.h"
+#include "Native.h"
 #include "System.h"
 #include "Theme.h"
 
@@ -574,6 +575,7 @@ void Node::OnEvent(UIEvent& e)
 void Node::Rerender()
 {
 	system->container.AddToRenderStack(this);
+	GetNativeWindow()->InvalidateAll();
 }
 
 bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)

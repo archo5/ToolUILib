@@ -578,7 +578,6 @@ struct ThreadWorkerTest : ui::Node
 				{
 					if (wq.HasItems() || wq.IsQuitting())
 						return;
-					// TODO make it so that rerendering triggers a repaint of the window
 					ui::Application::PushEvent(this, [this, i]()
 					{
 						progress = i / 100.0f;

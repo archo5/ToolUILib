@@ -66,7 +66,7 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 		for (auto* n = cur->firstChild; n != nullptr; n = n->next)
 			objectStack[objectStackSize++] = n;
 
-		printf("    deleting %p\n", cur);
+		DEBUG_FLOW(printf("    deleting %p\n", cur));
 		delete cur;
 	}
 }
@@ -90,7 +90,7 @@ void UIContainer::DeleteObjectsStartingFrom(UIObject* obj)
 void UIContainer::ProcessNodeRenderStack()
 {
 	if (nodeRenderStack.ContainsAny())
-		puts(" ---- processing node RENDER stack ----");
+		DEBUG_FLOW(puts(" ---- processing node RENDER stack ----"));
 
 	nodeRenderStack.RemoveChildren();
 
@@ -101,7 +101,7 @@ void UIContainer::ProcessNodeRenderStack()
 		objectStackSize = 0;
 		_Push(currentNode);
 
-		printf("rendering %s\n", typeid(*currentNode).name());
+		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
 		currentNode->ClearEventHandlers();
 		currentNode->Render(this);
 

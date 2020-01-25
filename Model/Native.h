@@ -86,6 +86,8 @@ public:
 	bool IsInnerUIEnabled();
 	void SetInnerUIEnabled(bool enabled);
 
+	void InvalidateAll();
+
 	void ProcessEventsExclusive();
 
 	void* GetNativeHandle() const;
