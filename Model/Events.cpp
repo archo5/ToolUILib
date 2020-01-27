@@ -133,13 +133,13 @@ void UIEventSystem::OnDestroy(UIObject* o)
 	}
 }
 
-void UIEventSystem::OnCommit(UIElement* e)
+void UIEventSystem::OnCommit(UIObject* e)
 {
 	UIEvent ev(this, e, UIEventType::Commit);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnChange(UIElement* e)
+void UIEventSystem::OnChange(UIObject* e)
 {
 	UIEvent ev(this, e, UIEventType::Change);
 	BubblingEvent(ev);

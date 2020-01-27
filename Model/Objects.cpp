@@ -538,7 +538,7 @@ static void _Notify(DataCategoryTag* tag, uintptr_t at)
 	if (it != g_subscrTable->end())
 	{
 		for (auto* s = it->second->_firstSub; s; s = s->nextInTable)
-			s->node->Rerender();
+			s->node->OnNotify(tag, at);
 	}
 }
 
@@ -576,6 +576,11 @@ void Node::Rerender()
 {
 	system->container.AddToRenderStack(this);
 	GetNativeWindow()->InvalidateAll();
+}
+
+void Node::OnNotify(DataCategoryTag* /*tag*/, uintptr_t /*at*/)
+{
+	Rerender();
 }
 
 bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)

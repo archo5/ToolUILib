@@ -150,6 +150,22 @@ public:
 	float _mxoff = 0;
 };
 
+struct Property : UIElement
+{
+	Property();
+	static void Begin(UIContainer* ctx, const char* label = nullptr);
+	static void End(UIContainer* ctx);
+	static void Make(UIContainer* ctx, const char* label, std::function<void()> content)
+	{
+		Begin(ctx, label);
+		content();
+		End(ctx);
+	}
+
+	static UIObject* Label(UIContainer* ctx, const char* label);
+	static void EditFloat(UIContainer* ctx, const char* label, float* v);
+};
+
 struct SplitPane : UIElement
 {
 	SplitPane();

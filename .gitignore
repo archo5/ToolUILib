@@ -9,6 +9,8 @@
 *.ilk
 *.idb
 *.pdb
+*.iobj
+*.ipdb
 *.exe
 *.tlog
 *.lib

@@ -147,9 +147,11 @@ public:
 	bool LastIsNew() const { return lastIsNew; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
+	ui::Node* GetCurrentNode() const { return _curNode; }
 
 	ui::FrameContents* owner = nullptr;
 	ui::Node* rootNode = nullptr;
+	ui::Node* _curNode = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
 	//int debugpad2 = 0;

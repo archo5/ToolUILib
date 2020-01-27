@@ -599,6 +599,10 @@ struct ThreadWorkerTest : ui::Node
 
 struct ThreadedImageRenderingTest : ui::Node
 {
+	~ThreadedImageRenderingTest()
+	{
+		delete image;
+	}
 	void Render(UIContainer* ctx) override
 	{
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
@@ -611,8 +615,9 @@ struct ThreadedImageRenderingTest : ui::Node
 
 		ui::Application::PushEvent(this, [this, img]()
 		{
-			int tw = img->finalRectC.GetWidth();
-			int th = img->finalRectC.GetHeight();
+			auto cr = img->GetContentRect();
+			int tw = cr.GetWidth();
+			int th = cr.GetHeight();
 
 			if (image && image->GetWidth() == tw && image->GetHeight() == th)
 				return;
@@ -866,36 +871,6 @@ struct DataEditor : ui::Node
 		}
 		std::function<void()> callback;
 		const char* name;
-	};
-
-	struct Property : UIElement
-	{
-		Property()
-		{
-			GetStyle().SetLayout(style::layouts::StackExpand());
-			GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-		}
-		static void Begin(UIContainer* ctx, const char* label = nullptr)
-		{
-			ctx->Push<Property>();
-			if (label)
-			{
-				auto s = ctx->Text(label)->GetStyle();
-				s.SetPadding(5);
-				s.SetMinWidth(100);
-				s.SetWidth(style::Coord::Percent(30));
-			}
-		}
-		static void End(UIContainer* ctx)
-		{
-			ctx->Pop();
-		}
-		static void Make(UIContainer* ctx, const char* label, std::function<void()> content)
-		{
-			Begin(ctx, label);
-			content();
-			End(ctx);
-		}
 	};
 
 #if 0
@@ -1184,7 +1159,7 @@ struct DataEditor : ui::Node
 			ctx->Pop();
 			ctx->Pop();
 
-			Property::Make(ctx, "Name", [&]()
+			ui::Property::Make(ctx, "Name", [&]()
 			{
 				auto tbName = ctx->Make<ui::Textbox>();
 				tbName->text = items[editing].name;
@@ -1195,7 +1170,7 @@ struct DataEditor : ui::Node
 				};
 			});
 
-			Property::Make(ctx, "Enable", [&]()
+			ui::Property::Make(ctx, "Enable", [&]()
 			{
 				ctx->Make<ui::Checkbox>()->Init(items[editing].enable);//->SetInputDisabled(true);
 			});

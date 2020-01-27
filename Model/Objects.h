@@ -287,6 +287,7 @@ public:
 	virtual void Render(UIContainer* ctx) = 0;
 	void Rerender();
 
+	virtual void OnNotify(DataCategoryTag* tag, uintptr_t at);
 	bool Subscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
 	bool Unsubscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
 	bool Subscribe(DataCategoryTag* tag, const void* ptr)

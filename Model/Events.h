@@ -128,8 +128,8 @@ public:
 
 	void Repaint(UIElement* e);
 	void OnDestroy(UIObject* o);
-	void OnCommit(UIElement* e);
-	void OnChange(UIElement* e);
+	void OnCommit(UIObject* e);
+	void OnChange(UIObject* e);
 	void OnChange(ui::Node* n);
 	void SetKeyboardFocus(UIObject* o);
 	void SetTimer(UIElement* tgt, float t, int id = 0);

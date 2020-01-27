@@ -22,6 +22,23 @@ struct Canvas
 		c._pixels = nullptr;
 	}
 	~Canvas() { delete[] _pixels; }
+	Canvas& operator = (const Canvas& c)
+	{
+		SetSize(c.GetWidth(), c.GetHeight());
+		memcpy(_pixels, c._pixels, _width * _height * 4);
+		return *this;
+	}
+	Canvas& operator = (Canvas&& c)
+	{
+		delete _pixels;
+		_width = c._width;
+		_height = c._height;
+		_pixels = c._pixels;
+		c._width = 0;
+		c._height = 0;
+		c._pixels = nullptr;
+		return *this;
+	}
 
 	uint32_t GetWidth() const { return _width; }
 	uint32_t GetHeight() const { return _height; }
@@ -35,6 +52,8 @@ struct Canvas
 
 	void SetSize(uint32_t w, uint32_t h)
 	{
+		if (_width == w && _height == h)
+			return;
 		delete[] _pixels;
 		_width = w;
 		_height = h;

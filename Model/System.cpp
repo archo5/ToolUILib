@@ -103,7 +103,9 @@ void UIContainer::ProcessNodeRenderStack()
 
 		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
 		currentNode->ClearEventHandlers();
+		_curNode = currentNode;
 		currentNode->Render(this);
+		_curNode = nullptr;
 
 		if (objectStackSize > 1)
 		{

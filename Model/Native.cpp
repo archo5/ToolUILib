@@ -878,12 +878,16 @@ void* operator new[](size_t s)
 }
 void operator delete(void* p)
 {
+	if (!p)
+		return;
 	numAllocs--;
 	numDelete++;
 	free(p);
 }
 void operator delete[](void* p)
 {
+	if (!p)
+		return;
 	numAllocs--;
 	numDelete++;
 	free(p);

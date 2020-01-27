@@ -217,6 +217,63 @@ float Slider::ValueToQ(double v)
 }
 
 
+Property::Property()
+{
+	GetStyle().SetLayout(style::layouts::StackExpand());
+	GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+}
+
+void Property::Begin(UIContainer* ctx, const char* label)
+{
+	ctx->Push<Property>();
+	if (label)
+	{
+		Label(ctx, label);
+	}
+}
+
+void Property::End(UIContainer* ctx)
+{
+	ctx->Pop();
+}
+
+UIObject* Property::Label(UIContainer* ctx, const char* label)
+{
+	auto* el = ctx->Text(label);
+	auto s = el->GetStyle();
+	s.SetPadding(5);
+	s.SetMinWidth(100);
+	s.SetWidth(style::Coord::Percent(30));
+	return el;
+}
+
+void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
+{
+	Property::Begin(ctx);
+	auto* lbl = Property::Label(ctx, label);
+	auto* tb = ctx->Make<Textbox>();
+	auto* node = ctx->GetCurrentNode();
+	node->HandleEvent(lbl) = [v, node](UIEvent& e)
+	{
+		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+		{
+			*v += 0.1f * e.dx;
+			e.context->OnCommit(e.target);
+			node->Rerender();
+		}
+	};
+	char buf[64];
+	snprintf(buf, 64, "%g", *v);
+	tb->text = buf;
+	node->HandleEvent(tb, UIEventType::Commit) = [v, tb, node](UIEvent&)
+	{
+		*v = atof(tb->text.c_str());
+		node->Rerender();
+	};
+	Property::End(ctx);
+}
+
+
 SplitPane::SplitPane()
 {
 	// TODO
