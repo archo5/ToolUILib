@@ -261,6 +261,11 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 			e.context->OnCommit(e.target);
 			node->Rerender();
 		}
+		if (e.type == UIEventType::SetCursor)
+		{
+			e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
+			e.handled = true;
+		}
 	};
 	char buf[64];
 	snprintf(buf, 64, "%g", *v);
@@ -430,6 +435,11 @@ void SplitPane::OnEvent(UIEvent& e)
 				break;
 			}
 		}
+	}
+	if (e.type == UIEventType::SetCursor && _splitUI.IsAnyHovered())
+	{
+		e.context->SetDefaultCursor(_verticalSplit ? ui::DefaultCursor::ResizeRow : ui::DefaultCursor::ResizeCol);
+		e.handled = true;
 	}
 }
 
@@ -748,6 +758,11 @@ void Textbox::OnEvent(UIEvent& e)
 	{
 		if (IsClicked(0))
 			endCursor = _FindCursorPos(e.x);
+	}
+	else if (e.type == UIEventType::SetCursor)
+	{
+		e.context->SetDefaultCursor(DefaultCursor::Text);
+		e.handled = true;
 	}
 	else if (e.type == UIEventType::Timer)
 	{

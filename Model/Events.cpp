@@ -1,6 +1,7 @@
 
 #include "Events.h"
 #include "Objects.h"
+#include "Native.h"
 #include "System.h"
 
 
@@ -177,6 +178,11 @@ void UIEventSystem::SetTimer(UIElement* tgt, float t, int id)
 	pendingTimers.push_back({ tgt, t, id });
 }
 
+void UIEventSystem::SetDefaultCursor(ui::DefaultCursor cur)
+{
+	GetNativeWindow()->SetDefaultCursor(cur);
+}
+
 UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
 {
 	UIObject* o = container->rootNode;
@@ -263,6 +269,16 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	curHoverObj = o;
 }
 
+void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
+{
+	UIEvent ev(this, hoverObj, UIEventType::SetCursor);
+	BubblingEvent(ev);
+	if (!ev.handled)
+	{
+		SetDefaultCursor(ui::DefaultCursor::Default);
+	}
+}
+
 void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 {
 	if (clickObj[0] && !dragEventAttempted && (x != 0 || y != 0))
@@ -314,6 +330,7 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 	else
 	{
 		_UpdateHoverObj(hoverObj, x, y, false);
+		_UpdateCursor(hoverObj);
 	}
 	if (dragEventInProgress)
 		_UpdateHoverObj(dragHoverObj, x, y, true);

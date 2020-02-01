@@ -32,6 +32,7 @@ enum class UIEventType
 	MouseLeave,
 	MouseMove,
 	MouseScroll,
+	SetCursor,
 	ButtonDown,
 	ButtonUp,
 	DragStart, // mouse move with left button down (target: original element)
@@ -81,6 +82,30 @@ enum class UIKeyAction
 	Paste,
 	SelectAll,
 };
+
+namespace ui {
+enum class DefaultCursor
+{
+	None,
+	Default,
+	Pointer,
+	Crosshair,
+	Help,
+	Text,
+	NotAllowed,
+	Progress,
+	Wait,
+	ResizeAll,
+	ResizeHorizontal,
+	ResizeVertical,
+	ResizeNESW,
+	ResizeNWSE,
+	ResizeCol,
+	ResizeRow,
+
+	_COUNT,
+};
+} // ui
 
 using UIMouseCoord = float;
 
@@ -133,9 +158,11 @@ public:
 	void OnChange(ui::Node* n);
 	void SetKeyboardFocus(UIObject* o);
 	void SetTimer(UIElement* tgt, float t, int id = 0);
+	void SetDefaultCursor(ui::DefaultCursor cur);
 
 	UIObject* FindObjectAtPosition(float x, float y);
 	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
+	void _UpdateCursor(UIObject* hoverObj);
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
@@ -175,6 +202,7 @@ template <class T> struct SubUI
 {
 	static constexpr T NoValue = ~(T)0;
 
+	bool IsAnyHovered() const { return _hovered != NoValue; }
 	bool IsAnyPressed() const { return _pressed != NoValue; }
 	bool IsHovered(T id) const { return _hovered == id; }
 	bool IsPressed(T id) const { return _pressed == id; }

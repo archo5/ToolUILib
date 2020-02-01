@@ -91,6 +91,8 @@ public:
 
 	void InvalidateAll();
 
+	void SetDefaultCursor(DefaultCursor cur);
+
 	void ProcessEventsExclusive();
 
 	void* GetNativeHandle() const;

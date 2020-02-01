@@ -27,9 +27,150 @@ enum MoveSizeStateType
 };
 
 
+static constexpr uint32_t _bbe(uint32_t x)
+{
+	return (x >> 24) | ((x >> 8) & 0xff00U) | ((x & 0xff00U) << 8) | (x << 24);
+}
+static constexpr uint32_t operator "" _bmp(const char* bits)
+{
+	uint32_t o = 0;
+	for (int i = 0; i < 32 && bits[i]; i++)
+		o |= ((bits[i] == '1' ? 1 : 0) << i);
+	return _bbe(o);
+}
+static constexpr uint32_t operator "" _ibmp(const char* bits)
+{
+	uint32_t o = 0;
+	for (int i = 0; i < 32 && bits[i]; i++)
+		o |= ((bits[i] == '1' ? 1 : 0) << i);
+	return _bbe(~o);
+}
+static constexpr uint32_t R = ~0U;
+
+
+static const uint32_t g_noCursorAND[] = { R };
+static const uint32_t g_noCursorXOR[] = { 0 };
+static const uint32_t g_resizeColCursorAND[] =
+{
+	R, R, R, R, R, R, R, // [0-6]
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000101111110100000000000_ibmp,
+	00000000001111111111110000000000_ibmp,
+	00000000011111111111111000000000_ibmp,
+	00000000111111111111111100000000_ibmp,
+	00000000011111111111111000000000_ibmp,
+	00000000001111111111110000000000_ibmp,
+	00000000000101111110100000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	00000000000001111110000000000000_ibmp,
+	R, R, R, R, R, R, R, R, // [24-31]
+};
+static const uint32_t g_resizeColCursorXOR[] =
+{
+	0, 0, 0, 0, 0, 0, 0, // [0-6]
+	00000000000001111110000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000101011010100000000000_bmp,
+	00000000001011011011010000000000_bmp,
+	00000000010011011011001000000000_bmp,
+	00000000100000011000000100000000_bmp,
+	00000000010011011011001000000000_bmp,
+	00000000001011011011010000000000_bmp,
+	00000000000101011010100000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001011010000000000000_bmp,
+	00000000000001111110000000000000_bmp,
+	0, 0, 0, 0, 0, 0, 0, 0, // [24-31]
+};
+static const uint32_t g_resizeRowCursorAND[] =
+{
+	R, R, R, R, R, R, R, R, // [0-7]
+	00000000000000010000000000000000_ibmp,
+	00000000000000111000000000000000_ibmp,
+	00000000000001111100000000000000_ibmp,
+	00000000000011111110000000000000_ibmp,
+	00000000000001111100000000000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000001111111111111111100000000_ibmp,
+	00000000000001111100000000000000_ibmp,
+	00000000000011111110000000000000_ibmp,
+	00000000000001111100000000000000_ibmp,
+	00000000000000111000000000000000_ibmp,
+	00000000000000010000000000000000_ibmp,
+	R, R, R, R, R, R, R, R, // [24-31]
+};
+static const uint32_t g_resizeRowCursorXOR[] =
+{
+	0, 0, 0, 0, 0, 0, 0, 0, // [0-7]
+	00000000000000010000000000000000_bmp,
+	00000000000000101000000000000000_bmp,
+	00000000000001000100000000000000_bmp,
+	00000000000010000010000000000000_bmp,
+	00000000000001101100000000000000_bmp,
+	00000001111111101111111100000000_bmp,
+	00000001000000000000000100000000_bmp,
+	00000001111111111111111100000000_bmp,
+	00000001111111111111111100000000_bmp,
+	00000001000000000000000100000000_bmp,
+	00000001111111101111111100000000_bmp,
+	00000000000001101100000000000000_bmp,
+	00000000000010000010000000000000_bmp,
+	00000000000001000100000000000000_bmp,
+	00000000000000101000000000000000_bmp,
+	00000000000000010000000000000000_bmp,
+	0, 0, 0, 0, 0, 0, 0, 0, // [24-31]
+};
+
+
 static bool g_appQuit = false;
 static int g_appExitCode = 0;
 
+static HCURSOR g_defaultCursors[(int)ui::DefaultCursor::_COUNT];
+
+
+static void LoadDefaultCursors()
+{
+	auto hinst = (HINSTANCE)GetModuleHandleW(nullptr);
+	g_defaultCursors[(int)ui::DefaultCursor::None] = ::CreateCursor(hinst, 0, 0, 1, 1, g_noCursorAND, g_noCursorXOR);
+	g_defaultCursors[(int)ui::DefaultCursor::Default] = ::LoadCursor(nullptr, IDC_ARROW);
+	g_defaultCursors[(int)ui::DefaultCursor::Pointer] = ::LoadCursor(nullptr, IDC_HAND);
+	g_defaultCursors[(int)ui::DefaultCursor::Crosshair] = ::LoadCursor(nullptr, IDC_CROSS);
+	g_defaultCursors[(int)ui::DefaultCursor::Help] = ::LoadCursor(nullptr, IDC_HELP);
+	g_defaultCursors[(int)ui::DefaultCursor::Text] = ::LoadCursor(nullptr, IDC_IBEAM);
+	g_defaultCursors[(int)ui::DefaultCursor::NotAllowed] = ::LoadCursor(nullptr, IDC_NO);
+	g_defaultCursors[(int)ui::DefaultCursor::Progress] = ::LoadCursor(nullptr, IDC_APPSTARTING);
+	g_defaultCursors[(int)ui::DefaultCursor::Wait] = ::LoadCursor(nullptr, IDC_WAIT);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeAll] = ::LoadCursor(nullptr, IDC_SIZEALL);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeHorizontal] = ::LoadCursor(nullptr, IDC_SIZEWE);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeVertical] = ::LoadCursor(nullptr, IDC_SIZENS);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeNESW] = ::LoadCursor(nullptr, IDC_SIZENESW);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeNWSE] = ::LoadCursor(nullptr, IDC_SIZENWSE);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeCol] = ::CreateCursor(hinst, 15, 15, 32, 32, g_resizeColCursorAND, g_resizeColCursorXOR);
+	g_defaultCursors[(int)ui::DefaultCursor::ResizeRow] = ::CreateCursor(hinst, 15, 15, 32, 32, g_resizeRowCursorAND, g_resizeRowCursorXOR);
+}
+
+static void UnloadDefaultCursors()
+{
+	::DestroyCursor(g_defaultCursors[(int)ui::DefaultCursor::None]);
+	::DestroyCursor(g_defaultCursors[(int)ui::DefaultCursor::ResizeCol]);
+	::DestroyCursor(g_defaultCursors[(int)ui::DefaultCursor::ResizeRow]);
+}
 
 bool IsOwnWindow(HWND win)
 {
@@ -217,6 +358,7 @@ struct NativeWindow_Impl
 		prevTime = hqtime();
 
 		owner->InvalidateAll();
+		cursor = g_defaultCursors[(int)DefaultCursor::Default];
 	}
 	~NativeWindow_Impl()
 	{
@@ -324,6 +466,7 @@ struct NativeWindow_Impl
 	ProxyEventSystem proxyEventSystem;
 
 	HWND window;
+	HCURSOR cursor;
 	GL::RenderContext* renderCtx;
 
 	Menu* menu;
@@ -565,6 +708,11 @@ void NativeWindowBase::InvalidateAll()
 	g_windowRepaintList->push_back(_impl);
 }
 
+void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
+{
+	_impl->cursor = g_defaultCursors[(int)cur];
+}
+
 void* NativeWindowBase::GetNativeHandle() const
 {
 	return (void*)_impl->window;
@@ -612,6 +760,7 @@ Application::Application(int argc, char* argv[])
 	g_mainThreadID = GetCurrentThreadId();
 	g_windowRepaintList = new std::vector<NativeWindow_Impl*>;
 
+	LoadDefaultCursors();
 	SubscriptionTable_Init();
 }
 
@@ -619,6 +768,7 @@ Application::~Application()
 {
 	//system.container.Free();
 	SubscriptionTable_Free();
+	UnloadDefaultCursors();
 
 	delete g_windowRepaintList;
 	g_windowRepaintList = nullptr;
@@ -694,6 +844,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+		return TRUE;
+	case WM_SETCURSOR:
+		if (auto* win = GetNativeWindow(hWnd))
+			SetCursor(win->cursor);
 		return TRUE;
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
