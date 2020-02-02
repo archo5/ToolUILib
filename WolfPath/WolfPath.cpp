@@ -298,8 +298,11 @@ struct RenderView : ui::Node
 		{
 			auto cr = imageEl->GetContentRect();
 			int scale = 1;
-			int tw = cr.GetWidth() / scale;
-			int th = cr.GetHeight() / scale;
+#if !NDEBUG
+			scale = 2;
+#endif
+			int tw = int(cr.GetWidth() / scale);
+			int th = int(cr.GetHeight() / scale);
 
 			if (!force && image && image->GetWidth() == tw && image->GetHeight() == th)
 				return;
@@ -384,8 +387,9 @@ struct InspectorView : ui::Node
 	{
 		ctx->Text("Camera");
 		auto* cameraBox = ctx->PushBox();
-		//ui::PropEditFloat3(ctx, "Camera position", &cameraPos.x);
 		ui::Property::EditFloat(ctx, "FOV", &cameraFOV);
+		ui::Property::EditFloat3(ctx, "Position", &cameraPos.x);
+		ui::Property::EditFloat3(ctx, "Direction", &cameraDir.x);
 		HandleEvent(cameraBox, UIEventType::Commit) = [](UIEvent& e)
 		{
 			ui::Notify(DCT_CameraEdited);

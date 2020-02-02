@@ -163,7 +163,12 @@ struct Property : UIElement
 	}
 
 	static UIObject* Label(UIContainer* ctx, const char* label);
+	static UIObject* MinLabel(UIContainer* ctx, const char* label);
+
 	static void EditFloat(UIContainer* ctx, const char* label, float* v);
+	static void EditFloat2(UIContainer* ctx, const char* label, float* v);
+	static void EditFloat3(UIContainer* ctx, const char* label, float* v);
+	static void EditFloat4(UIContainer* ctx, const char* label, float* v);
 };
 
 struct SplitPane : UIElement
@@ -172,8 +177,8 @@ struct SplitPane : UIElement
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
-	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize) override;
-	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize) override;
+	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
+	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
 
 	float GetSplit(unsigned which);
 	SplitPane* SetSplit(unsigned which, float f, bool clamp = true);

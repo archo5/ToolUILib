@@ -200,12 +200,12 @@ void InlineFrameNode::OnPaint()
 		frameContents->container.rootNode->OnPaint();
 }
 
-float InlineFrameNode::CalcEstimatedWidth(const Size<float>& containerSize)
+float InlineFrameNode::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	return 100; // default width
 }
 
-float InlineFrameNode::CalcEstimatedHeight(const Size<float>& containerSize)
+float InlineFrameNode::CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
 {
 	return 100; // default height
 }

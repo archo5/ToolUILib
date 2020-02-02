@@ -97,7 +97,7 @@ struct WorkerQueueImpl
 	std::mutex m;
 	std::condition_variable cv;
 	std::thread t;
-	std::atomic_bool quit{ false };
+	bool quit = false;
 };
 
 static void WorkerQueueProc(WorkerQueueImpl* wqi)
@@ -126,7 +126,10 @@ WorkerQueue::WorkerQueue()
 
 WorkerQueue::~WorkerQueue()
 {
-	_impl->quit = true;
+	{
+		std::lock_guard<std::mutex> g(_impl->m);
+		_impl->quit = true;
+	}
 	_impl->cv.notify_one();
 	_impl->t.join();
 	delete _impl;
@@ -134,9 +137,9 @@ WorkerQueue::~WorkerQueue()
 
 void WorkerQueue::_AddToQueue(Entry* e, bool clear)
 {
-	assert(!_impl->quit);
 	{
 		std::lock_guard<std::mutex> g(_impl->m);
+		assert(!_impl->quit);
 		if (clear)
 		{
 			while (!_impl->q.empty())

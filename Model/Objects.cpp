@@ -28,44 +28,24 @@ void UIObject::Paint()
 		OnPaint();
 }
 
-static Point<float> CalcEdgeSliceSize(UIObject* o, const Size<float>& containerSize)
-{
-	Point<float> ret = {};
-	for (auto* ch = o->lastChild; ch; ch = ch->prev)
-	{
-		auto e = ch->GetStyle().GetEdge();
-		if (e == style::Edge::Left || e == style::Edge::Right)
-		{
-			ret.x += ch->GetFullEstimatedWidth(containerSize).min;
-			ret.y = std::max(ret.y, ch->GetFullEstimatedHeight(containerSize).min);
-		}
-		else
-		{
-			ret.x = std::max(ret.x, ch->GetFullEstimatedWidth(containerSize).min);
-			ret.y += ch->GetFullEstimatedHeight(containerSize).min;
-		}
-	}
-	return ret;
-}
-
-float UIObject::CalcEstimatedWidth(const Size<float>& containerSize)
+float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
 		layout = style::layouts::Stack();
-	return layout->CalcEstimatedWidth(this, containerSize);
+	return layout->CalcEstimatedWidth(this, containerSize, type);
 }
 
-float UIObject::CalcEstimatedHeight(const Size<float>& containerSize)
+float UIObject::CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
 {
 	float size = 0;
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
 		layout = style::layouts::Stack();
-	return layout->CalcEstimatedHeight(this, containerSize);
+	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
-Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize)
+Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -84,7 +64,7 @@ Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize)
 	}
 	else
 	{
-		size = CalcEstimatedWidth(containerSize);
+		size = CalcEstimatedWidth(containerSize, type);
 	}
 
 	auto min_width = style.GetMinWidth();
@@ -105,7 +85,7 @@ Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize)
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize)
+Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -124,7 +104,7 @@ Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize)
 	}
 	else
 	{
-		size = CalcEstimatedHeight(containerSize);
+		size = CalcEstimatedHeight(containerSize, type);
 	}
 
 	auto min_height = style.GetMinHeight();
@@ -145,12 +125,12 @@ Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize)
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize)
+Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
 	auto style = GetStyle();
-	auto s = GetEstimatedWidth(containerSize);
+	auto s = GetEstimatedWidth(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetWidth().IsDefined())
 	{
@@ -162,12 +142,12 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize)
 	return s;
 }
 
-Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize)
+Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
 	auto style = GetStyle();
-	auto s = GetEstimatedHeight(containerSize);
+	auto s = GetEstimatedHeight(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetHeight().IsDefined())
 	{

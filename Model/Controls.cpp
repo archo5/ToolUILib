@@ -247,6 +247,15 @@ UIObject* Property::Label(UIContainer* ctx, const char* label)
 	return el;
 }
 
+UIObject* Property::MinLabel(UIContainer* ctx, const char* label)
+{
+	auto* el = ctx->Text(label);
+	auto s = el->GetStyle();
+	s.SetPadding(5);
+	s.SetWidth(style::Coord::Fraction(0));
+	return el;
+}
+
 void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 {
 	Property::Begin(ctx);
@@ -276,6 +285,75 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 		node->Rerender();
 	};
 	Property::End(ctx);
+}
+
+static const char* subLabelNames[] = { "X", "Y", "Z", "W" };
+static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size)
+{
+	Property::Begin(ctx);
+	auto* lbl = Property::Label(ctx, label);
+
+	auto* box = ctx->PushBox();
+	box->GetStyle().SetLayout(style::layouts::StackExpand());
+	box->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+	{
+		for (int i = 0; i < size; i++)
+		{
+			float* vc = v + i;
+			auto* cbox = ctx->PushBox();
+			cbox->GetStyle().SetLayout(style::layouts::StackExpand());
+			cbox->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+			cbox->GetStyle().SetWidth(style::Coord::Fraction(1));
+
+			auto* xlbl = Property::MinLabel(ctx, subLabelNames[i]);
+			auto* tb = ctx->Make<Textbox>();
+			tb->GetStyle().SetWidth(style::Coord::Fraction(0.2f));
+			auto* node = ctx->GetCurrentNode();
+			node->HandleEvent(xlbl) = [vc, node](UIEvent& e)
+			{
+				if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+				{
+					*vc += 0.1f * e.dx;
+					e.context->OnCommit(e.target);
+					node->Rerender();
+				}
+				if (e.type == UIEventType::SetCursor)
+				{
+					e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
+					e.handled = true;
+				}
+			};
+
+			char buf[64];
+			snprintf(buf, 64, "%g", v[i]);
+			tb->text = buf;
+			node->HandleEvent(tb, UIEventType::Commit) = [vc, tb, node](UIEvent&)
+			{
+				*vc = atof(tb->text.c_str());
+				node->Rerender();
+			};
+
+			ctx->Pop();
+		}
+	}
+	ctx->Pop();
+
+	Property::End(ctx);
+}
+
+void Property::EditFloat2(UIContainer* ctx, const char* label, float* v)
+{
+	EditFloatVec(ctx, label, v, 2);
+}
+
+void Property::EditFloat3(UIContainer* ctx, const char* label, float* v)
+{
+	EditFloatVec(ctx, label, v, 3);
+}
+
+void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
+{
+	EditFloatVec(ctx, label, v, 4);
 }
 
 
@@ -484,12 +562,12 @@ void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	}
 }
 
-Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize)
+Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize)
+Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
 {
 	return { containerSize.y, containerSize.y };
 }

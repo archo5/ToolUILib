@@ -846,9 +846,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
 		return TRUE;
 	case WM_SETCURSOR:
-		if (auto* win = GetNativeWindow(hWnd))
-			SetCursor(win->cursor);
-		return TRUE;
+		if (LOWORD(lParam) == HTCLIENT)
+		{
+			if (auto* win = GetNativeWindow(hWnd))
+				SetCursor(win->cursor);
+			return TRUE;
+		}
+		break;
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
 		if (auto* evsys = GetEventSys(hWnd))

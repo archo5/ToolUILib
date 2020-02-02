@@ -12,18 +12,18 @@ namespace layouts {
 
 struct InlineBlockLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		float size = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
+			size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		float size = GetFontHeight();
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
+			size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
 		return size;
 	}
 	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
@@ -34,8 +34,8 @@ struct InlineBlockLayout : Layout
 		float maxH = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 		{
-			float w = ch->GetFullEstimatedWidth(contSize).min;
-			float h = ch->GetFullEstimatedHeight(contSize).min;
+			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Exact).min;
+			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Exact).min;
 			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
 			p += w;
 			maxH = std::max(maxH, h);
@@ -48,7 +48,7 @@ Layout* InlineBlock() { return &g_inlineBlockLayout; }
 
 struct StackLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -60,17 +60,17 @@ struct StackLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
+				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedWidth(containerSize).min;
+				size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 			break;
 		}
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -82,12 +82,12 @@ struct StackLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedHeight(containerSize).min;
+				size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
+				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
 			break;
 		}
 		return size;
@@ -107,7 +107,7 @@ struct StackLayout : Layout
 			float p = inrect.y0;
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
+				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
 				p += h;
 			}
@@ -117,7 +117,7 @@ struct StackLayout : Layout
 			float p = inrect.x1;
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
+				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
 				p -= w;
 			}
@@ -128,7 +128,7 @@ struct StackLayout : Layout
 			float p = inrect.y1;
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize()).min;
+				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p }, inrect.GetSize());
 				p -= h;
 			}
@@ -143,7 +143,7 @@ struct StackLayout : Layout
 			{
 				float tw = 0;
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-					tw += ch->GetFullEstimatedWidth(inrect.GetSize()).min;
+					tw += ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 				float diff = inrect.GetWidth() - tw;
 				switch (ha)
 				{
@@ -164,7 +164,7 @@ struct StackLayout : Layout
 			}
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize()).min;
+				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
 				p += w + xw;
 			}
@@ -178,7 +178,7 @@ Layout* Stack() { return &g_stackLayout; }
 
 struct StackExpandLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -190,16 +190,22 @@ struct StackExpandLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize).min);
+				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
-			size = containerSize.x;
+			if (type == EstSizeType::Expanding)
+			{
+				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
+					size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+			}
+			else
+				size = containerSize.x;
 			break;
 		}
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -210,12 +216,18 @@ struct StackExpandLayout : Layout
 		{
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
-			size = containerSize.y;
+			if (type == EstSizeType::Expanding)
+			{
+				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
+					size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
+			}
+			else
+				size = containerSize.y;
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize).min);
+				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
 			break;
 		}
 		return size;
@@ -243,7 +255,7 @@ struct StackExpandLayout : Layout
 			std::vector<int> sorted;
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				auto s = ch->GetFullEstimatedWidth(inrect.GetSize());
+				auto s = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
 				auto sw = ch->GetStyle().GetWidth();
 				float fr = sw.unit == style::CoordTypeUnit::Fraction ? sw.value : 1;
 				items.push_back({ ch, s.min, s.max, s.min, fr });
@@ -286,11 +298,11 @@ Layout* StackExpand() { return &g_stackExpandLayout; }
 
 struct EdgeSliceLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		return containerSize.x;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize)
+	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		return containerSize.y;
 	}
@@ -306,22 +318,22 @@ struct EdgeSliceLayout : Layout
 			switch (e)
 			{
 			case Edge::Top:
-				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
+				d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
 				subr.y0 += d;
 				break;
 			case Edge::Bottom:
-				d = ch->GetFullEstimatedHeight(subr.GetSize()).min;
+				d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
 				subr.y1 -= d;
 				break;
 			case Edge::Left:
-				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
+				d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
 				subr.x0 += d;
 				break;
 			case Edge::Right:
-				d = ch->GetFullEstimatedWidth(subr.GetSize()).min;
+				d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
 				subr.x1 -= d;
 				break;

@@ -139,12 +139,12 @@ public:
 			ch->Paint();
 	}
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
-	virtual float CalcEstimatedWidth(const Size<float>& containerSize);
-	virtual float CalcEstimatedHeight(const Size<float>& containerSize);
-	Range<float> GetEstimatedWidth(const Size<float>& containerSize);
-	Range<float> GetEstimatedHeight(const Size<float>& containerSize);
-	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize);
-	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize);
+	virtual float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
+	virtual float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
+	Range<float> GetEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
+	Range<float> GetEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
+	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
+	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
 	void PerformLayout(const UIRect& rect, const Size<float>& containerSize);
 	virtual void OnLayout(const UIRect& rect, const Size<float>& containerSize);
 	virtual bool Contains(float x, float y) const
@@ -232,17 +232,18 @@ public:
 	{
 		GetStyle().SetLayout(style::layouts::InlineBlock());
 	}
-	float CalcEstimatedWidth(const Size<float>& containerSize) override
+	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(text.c_str()));
 	}
-	float CalcEstimatedHeight(const Size<float>& containerSize) override
+	float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override
 	{
 		return GetFontHeight();
 	}
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override
 	{
-		finalRectC = finalRectCP = finalRectCPB = rect;
+		finalRectCP = finalRectCPB = rect;
+		finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
 		//finalRect.x1 = finalRect.x0 + GetTextWidth(text)
 		//finalRect.y1 = finalRect.y0 + GetFontHeight();
 	}

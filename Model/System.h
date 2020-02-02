@@ -208,8 +208,8 @@ public:
 	void OnDestroy() override;
 	void OnEvent(UIEvent& ev) override;
 	void OnPaint() override;
-	float CalcEstimatedWidth(const Size<float>& containerSize) override;
-	float CalcEstimatedHeight(const Size<float>& containerSize) override;
+	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
+	float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
 	void Render(UIContainer* ctx) override;
 

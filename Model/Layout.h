@@ -54,10 +54,16 @@ struct LayoutState
 	Point<float> scaleOrigin;
 };
 
+enum class EstSizeType
+{
+	Exact,
+	Expanding,
+};
+
 struct Layout
 {
-	virtual float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize) = 0;
-	virtual float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize) = 0;
+	virtual float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type) = 0;
+	virtual float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type) = 0;
 	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
 };
 
