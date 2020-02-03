@@ -233,7 +233,7 @@ struct ThemeInit
 		style::Accessor a(&dtSliderHBase);
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
-		a.SetWidth(style::Coord::Percent(100));
+		a.SetWidth(style::Coord::Fraction(1));
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 		};

@@ -371,10 +371,10 @@ void theme_button(RRect rr, State state)
 
 void theme_textbox(RRect rr, State state)
 {
-	rr.setcorner(0);
-	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
+	rr.setcorner(3);
+	rasterize(onecolor{ state == Disabled ? hexcol("202020") : hexcol("2d2d2d") }, rectmask{ rr });
 	rr.shrink(1);
-	rasterize(onecolor{ state == Disabled ? hexcol("303030") : hexcol("4d4d4d") }, rectmask{ rr });
+	rasterize(onecolor{ hexcol("1a1a1a") }, rectmask{ rr });
 	rr.shrink(1);
 	rasterize(onecolor{ hexcol("1e1e1e") }, rectmask{ rr });
 }

@@ -660,6 +660,25 @@ struct ThreadedImageRenderingTest : ui::Node
 	ui::Image* image = nullptr;
 };
 
+struct SlidersTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		static float sldval0 = 0.63f;
+		ctx->Make<ui::Slider>()->Init(&sldval0, 0, 1);
+
+		ui::Property::Begin(ctx, "Slider 1: 0-2 step=0");
+		static float sldval1 = 0.63f;
+		ctx->Make<ui::Slider>()->Init(&sldval1, 0, 2);
+		ui::Property::End(ctx);
+
+		ui::Property::Begin(ctx, "Slider 2: 0-2 step=0.1");
+		static float sldval2 = 0.63f;
+		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f);
+		ui::Property::End(ctx);
+	}
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -1203,6 +1222,7 @@ static const char* testNames[] =
 	"Test: Image",
 	"Test: Thread worker test",
 	"Test: Threaded image rendering test",
+	"Test: Sliders",
 };
 struct TEST : ui::Node
 {
@@ -1238,6 +1258,7 @@ struct TEST : ui::Node
 		case 10: ctx->Make<ImageTest>(); break;
 		case 11: ctx->Make<ThreadWorkerTest>(); break;
 		case 12: ctx->Make<ThreadedImageRenderingTest>(); break;
+		case 13: ctx->Make<SlidersTest>(); break;
 		}
 	}
 
