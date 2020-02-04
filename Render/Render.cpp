@@ -192,6 +192,12 @@ static void Draw9Slice(GL::BatchRenderer& br, const Sprite& s, int w, int h, flo
 	br.Quad(ix1, iy1, ox1, oy1, tix1, tiy1, tox1, toy1);
 }
 
+AABB<float> GetThemeElementBorderWidths(EThemeElement e)
+{
+	auto& s = g_themeSprites[e];
+	return { float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) };
+}
+
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 {
 	GL::SetTexture(g_themeTexture);

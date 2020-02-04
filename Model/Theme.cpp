@@ -243,11 +243,16 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtSliderHTrack);
 		PreventHeapDelete(a);
-		a.SetMargin(5);
+		a.SetMargin(8);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+			if (r.GetWidth() > 0)
+			{
+				auto el = info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal;
+				r = r.ExtendBy(UIRect::UniformBorder(3));
+				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
+			}
 		};
 		defaultTheme.sliderHTrack = a.block;
 	}
@@ -255,11 +260,16 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtSliderHTrackFill);
 		PreventHeapDelete(a);
-		a.SetMargin(5);
+		a.SetMargin(8);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+			if (r.GetWidth() > 0)
+			{
+				auto el = info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal;
+				r = r.ExtendBy(UIRect::UniformBorder(3));
+				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
+			}
 		};
 		defaultTheme.sliderHTrackFill = a.block;
 	}
@@ -267,7 +277,7 @@ struct ThemeInit
 	{
 		style::Accessor a(&dtSliderHThumb);
 		PreventHeapDelete(a);
-		a.SetPadding(4, 4);
+		a.SetPadding(6, 4);
 		a.MutablePaintFunc() = [](const style::PaintInfo& info)
 		{
 			auto r = info.rect;

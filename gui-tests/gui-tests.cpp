@@ -676,6 +676,35 @@ struct SlidersTest : ui::Node
 		static float sldval2 = 0.63f;
 		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f);
 		ui::Property::End(ctx);
+
+		ui::Property::Begin(ctx, "Slider 3: custom track bg");
+		static float sldval3 = 0.63f;
+		if (auto* s = ctx->Make<ui::Slider>()->Init(&sldval3, 0, 1))
+		{
+			auto& fn = style::Accessor(s->trackStyle).MutablePaintFunc();
+			fn = [fn](const style::PaintInfo& info)
+			{
+				fn(info);
+				auto r = info.rect;
+				GL::SetTexture(0);
+				GL::BatchRenderer br;
+				br.Begin();
+				br.SetColor(0, 0, 0);
+				br.Pos(r.x0, r.y1);
+				br.Pos(r.x0, r.y0);
+				br.SetColor(1, 0, 0);
+				br.Pos(r.x1, r.y0);
+				br.Pos(r.x1, r.y0);
+				br.Pos(r.x1, r.y1);
+				br.SetColor(0, 0, 0);
+				br.Pos(r.x0, r.y1);
+				br.End();
+			};
+			style::Accessor(s->trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info)
+			{
+			};
+		}
+		ui::Property::End(ctx);
 	}
 };
 
