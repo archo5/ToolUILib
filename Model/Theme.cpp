@@ -35,6 +35,7 @@ struct ThemeInit
 	style::Block dtTableRowHeader;
 	style::Block dtTableColHeader;
 	style::Block dtImage;
+	style::Block dtSelectorContainer;
 	style::Block dtSelector;
 
 	ThemeInit()
@@ -64,6 +65,7 @@ struct ThemeInit
 		CreateTableRowHeader();
 		CreateTableColHeader();
 		CreateImage();
+		CreateSelectorContainer();
 		CreateSelector();
 		Theme::current = &defaultTheme;
 	}
@@ -455,6 +457,13 @@ struct ThemeInit
 		{
 		};
 		defaultTheme.image = a.block;
+	}
+	void CreateSelectorContainer()
+	{
+		style::Accessor a(&dtSelectorContainer);
+		PreventHeapDelete(a);
+		a.SetPadding(8);
+		defaultTheme.selectorContainer = a.block;
 	}
 	void CreateSelector()
 	{

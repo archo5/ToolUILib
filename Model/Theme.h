@@ -32,6 +32,7 @@ struct Theme
 	style::BlockRef tableRowHeader;
 	style::BlockRef tableColHeader;
 	style::BlockRef image;
+	style::BlockRef selectorContainer;
 	style::BlockRef selector;
 
 	static Theme* current;

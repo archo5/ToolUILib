@@ -710,12 +710,19 @@ struct SlidersTest : ui::Node
 		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f)->GetStyle().SetHeight(40);
 		ui::Property::End(ctx);
 
+		ui::Property::Begin(ctx, "Color picker parts");
+		static float hue = 0.6f, sat = 0.3f, val = 0.8f;
 		{
-			static float hue = 0.6f, sat = 0.3f;
 			auto s = ctx->Make<ui::HueSatPicker>()->Init(hue, sat).GetStyle();
 			s.SetWidth(100);
 			s.SetHeight(100);
 		}
+		{
+			auto s = ctx->Make<ui::ColorPicker2D>()->Init(ui::CM_HSV, ui::CC_Hue, hue, ui::CC_Val, val).GetStyle();
+			s.SetWidth(120);
+			s.SetHeight(100);
+		}
+		ui::Property::End(ctx);
 	}
 };
 

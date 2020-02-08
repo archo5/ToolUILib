@@ -173,4 +173,51 @@ struct HueSatPicker : UIElement
 	Image* _bgImage = nullptr;
 };
 
+enum ColorMode
+{
+	CM_RGB,
+	CM_HSV,
+};
+
+enum ColorComponent
+{
+	CC_0 = 0,
+	CC_1 = 1,
+	CC_2 = 2,
+	CC_Red = 0,
+	CC_Green = 1,
+	CC_Blue = 2,
+	CC_Hue = 0,
+	CC_Sat = 1,
+	CC_Val = 2,
+};
+
+struct ColorPicker2D : UIElement
+{
+	ColorPicker2D();
+	~ColorPicker2D();
+	void OnEvent(UIEvent& e) override;
+	void OnPaint() override;
+
+	ColorPicker2D& Init(ColorMode mode, ColorComponent cx, float& x, ColorComponent cy, float& y)
+	{
+		_mode = mode;
+		_cx = cx;
+		_cy = cy;
+		_x = &x;
+		_y = &y;
+		return *this;
+	}
+
+	void _RegenerateBackground(int w, int h);
+
+	style::BlockRef selectorStyle;
+	ColorMode _mode = CM_RGB;
+	ColorComponent _cx = CC_0;
+	ColorComponent _cy = CC_1;
+	float* _x = nullptr;
+	float* _y = nullptr;
+	Image* _bgImage = nullptr;
+};
+
 } // ui
