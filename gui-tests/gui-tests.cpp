@@ -705,6 +705,17 @@ struct SlidersTest : ui::Node
 			};
 		}
 		ui::Property::End(ctx);
+
+		ui::Property::Begin(ctx, "Slider 4: vert stretched");
+		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f)->GetStyle().SetHeight(40);
+		ui::Property::End(ctx);
+
+		{
+			static float hue = 0.6f, sat = 0.3f;
+			auto s = ctx->Make<ui::HueSatPicker>()->Init(hue, sat).GetStyle();
+			s.SetWidth(100);
+			s.SetHeight(100);
+		}
 	}
 };
 

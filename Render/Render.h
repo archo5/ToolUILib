@@ -42,6 +42,10 @@ enum EThemeElement
 	TE_RadioMark,
 	TE_RadioMarkDisabled,
 
+	TE_Selector32,
+	TE_Selector16,
+	TE_Selector12,
+
 	TE_TabNormal,
 	TE_TabHover,
 	TE_TabSelected,

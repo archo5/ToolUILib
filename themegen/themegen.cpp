@@ -483,6 +483,21 @@ void theme_radiotick(int x, int y, State state)
 	rasterize(onecolor{ state == Disabled ? col_tickdis : col_tick }, rectmask{ rr });
 }
 
+void theme_selector(RRect rr)
+{
+	rr.setcorner((rr.x1 - rr.x0) / 2);
+	rasterize(onecolor{ hexcol("000000") }, rectmask{ rr });
+	rr.shrink(1);
+	rr.setcorner((rr.x1 - rr.x0) / 2);
+	rasterize(onecolor{ hexcol("ffffff") }, rectmask{ rr });
+	rr.shrink(1);
+	rr.setcorner((rr.x1 - rr.x0) / 2);
+	rasterize(onecolor{ hexcol("000000") }, rectmask{ rr });
+	rr.shrink(1);
+	rr.setcorner((rr.x1 - rr.x0) / 2);
+	rasterize(onecolor{ hexcol("000000", 0) }, rectmask{ rr }, false);
+}
+
 void theme_treetick(int x, int y, State state, bool open)
 {
 	auto bmask1 = diagflipmask(offsetmask(diagrectmask{ 8.5f, 13.5f, 14.f, 23.f }.hpo(), 2, -1), !open);
@@ -599,6 +614,13 @@ int main()
 	theme_radiotick(x, y, Normal);
 	x += 32;
 	theme_radiotick(x, y, Disabled);
+
+	x += 32;
+	theme_selector(RRect{ x, y, x + 31, y + 31 }.shrink(1));
+	x += 32;
+	theme_selector(RRect{ x, y, x + 15, y + 15 }.shrink(1));
+	x += 16;
+	theme_selector(RRect{ x, y, x + 11, y + 11 }.shrink(1));
 
 	x = 0;
 	y = 96;

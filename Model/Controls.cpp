@@ -142,7 +142,7 @@ void Slider::OnPaint()
 	if (valuePtr)
 	{
 		trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
-		trkinfo.rect.x1 = lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(*valuePtr));
+		trkinfo.rect.x1 = round(lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(*valuePtr)));
 		auto prethumb = trkinfo.rect;
 
 		trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));

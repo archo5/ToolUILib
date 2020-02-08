@@ -4,6 +4,52 @@
 #include "Objects.h"
 
 
+struct Color4f
+{
+	static Color4f Zero() { return { 0 }; }
+	static Color4f Black() { return { 0, 1 }; }
+	static Color4f White() { return { 1 }; }
+	static Color4f HSV(float h, float s, float v, float a = 1)
+	{
+		h = fmodf(h, 1);
+		h *= 6;
+		float c = v * s;
+		float x = c * (1 - fabsf(fmodf(h, 2) - 1));
+		float m = v - c;
+		if (h < 1) return { c + m, x + m, m, a };
+		if (h < 2) return { x + m, c + m, m, a };
+		if (h < 3) return { m, c + m, x + m, a };
+		if (h < 4) return { m, x + m, c + m, a };
+		if (h < 5) return { x + m, m, c + m, a };
+		return { c + m, m, x + m, a };
+	}
+
+	Color4f(float f) : r(f), g(f), b(f), a(f) {}
+	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
+	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
+
+	void BlendOver(const Color4f& c)
+	{
+		float ca = c.a > 0 ? c.a + (1 - c.a) * (1 - a) : 0;
+		r = lerp(r, c.r, ca);
+		g = lerp(g, c.g, ca);
+		b = lerp(b, c.b, ca);
+		a = lerp(a, 1, c.a);
+	}
+
+	uint32_t GetColor32()
+	{
+		uint8_t rb = std::max(0.0f, std::min(1.0f, r)) * 255;
+		uint8_t gb = std::max(0.0f, std::min(1.0f, g)) * 255;
+		uint8_t bb = std::max(0.0f, std::min(1.0f, b)) * 255;
+		uint8_t ab = std::max(0.0f, std::min(1.0f, a)) * 255;
+		return (ab << 24) | (bb << 16) | (gb << 8) | rb;
+	}
+
+	float r, g, b, a;
+};
+
+
 namespace ui {
 
 struct Canvas
@@ -103,6 +149,28 @@ struct ImageElement : UIElement
 	ScaleMode _scaleMode = ScaleMode::Fit;
 	float _anchorX = 0;
 	float _anchorY = 0;
+};
+
+struct HueSatPicker : UIElement
+{
+	HueSatPicker();
+	~HueSatPicker();
+	void OnEvent(UIEvent& e) override;
+	void OnPaint() override;
+
+	HueSatPicker& Init(float& hue, float& sat)
+	{
+		_hue = &hue;
+		_sat = &sat;
+		return *this;
+	}
+
+	void _RegenerateBackground(int w);
+
+	style::BlockRef selectorStyle;
+	float* _hue = nullptr;
+	float* _sat = nullptr;
+	Image* _bgImage = nullptr;
 };
 
 } // ui

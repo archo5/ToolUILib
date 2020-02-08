@@ -367,26 +367,6 @@ struct FileStructureDataSource : ui::TreeDataSource
 	Node root;
 };
 
-struct Color4f
-{
-	static Color4f zero() { return { 0 }; }
-
-	Color4f(float f) : r(f), g(f), b(f), a(f) {}
-	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
-	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
-
-	void BlendOver(const Color4f& c)
-	{
-		float ca = c.a > 0 ? c.a + (1 - c.a) * (1 - a) : 0;
-		r = lerp(r, c.r, ca);
-		g = lerp(g, c.g, ca);
-		b = lerp(b, c.b, ca);
-		a = lerp(a, 1, c.a);
-	}
-
-	float r, g, b, a;
-};
-
 struct FileStructureViewer2 : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -466,7 +446,7 @@ struct MarkerData
 			if (m.Contains(pos))
 				return m.GetColor();
 		}
-		return Color4f::zero();
+		return Color4f::Zero();
 	}
 	bool IsMarked(uint64_t pos, uint64_t len)
 	{
