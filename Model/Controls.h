@@ -115,9 +115,8 @@ private:
 	bool* _bptr = nullptr;
 };
 
-class ProgressBar : public UIElement
+struct ProgressBar : UIElement
 {
-public:
 	ProgressBar();
 	void OnPaint() override;
 
@@ -125,23 +124,46 @@ public:
 	float progress = 0.5f;
 };
 
-class Slider : public UIElement
+struct FloatLimits
 {
-public:
-	Slider();
+	double min = -DBL_MAX;
+	double max = DBL_MAX;
+	double step = 0;
+};
+
+struct Slider : UIElement
+{
+	void OnInit() override;
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
-	Slider* Init(float* vp, double vmin = 0, double vmax = 1, double step = 0);
 
-	float PosToQ(float x);
-	double QToValue(float q);
-	float ValueToQ(double v);
-	double PosToValue(float x) { return QToValue(PosToQ(x)); }
+	double PosToQ(double x);
+	double QToValue(double q);
+	double ValueToQ(double v);
+	double PosToValue(double x) { return QToValue(PosToQ(x)); }
 
-	double minValue = 0;
-	double maxValue = 1;
-	double trackStep = 0;
-	float* valuePtr = nullptr;
+	double GetValue() const { return _value; }
+	Slider& SetValue(double v) { _value = v; return *this; }
+	FloatLimits GetLimits() const { return _limits; }
+	Slider& SetLimits(FloatLimits limits) { _limits = limits; return *this; }
+
+	Slider& Init(float& vp, FloatLimits limits = { 0, 1, 0 })
+	{
+		SetLimits(limits);
+		SetValue(vp);
+		HandleEvent(UIEventType::Change) = [this, &vp](UIEvent&) { vp = (float)GetValue(); };
+		return *this;
+	}
+	Slider& Init(double& vp, FloatLimits limits = { 0, 1, 0 })
+	{
+		SetLimits(limits);
+		SetValue(vp);
+		HandleEvent(UIEventType::Change) = [this, &vp](UIEvent&) { vp = GetValue(); };
+		return *this;
+	}
+
+	double _value = 0;
+	FloatLimits _limits = { 0, 1, 0 };
 
 	style::BlockRef trackStyle;
 	style::BlockRef trackFillStyle;
@@ -162,8 +184,8 @@ struct Property : UIElement
 		End(ctx);
 	}
 
-	static UIObject* Label(UIContainer* ctx, const char* label);
-	static UIObject* MinLabel(UIContainer* ctx, const char* label);
+	static UIObject& Label(UIContainer* ctx, const char* label);
+	static UIObject& MinLabel(UIContainer* ctx, const char* label);
 
 	static void EditFloat(UIContainer* ctx, const char* label, float* v);
 	static void EditFloat2(UIContainer* ctx, const char* label, float* v);
@@ -259,6 +281,11 @@ struct Textbox : UIElement
 	void EraseSelection();
 
 	int _FindCursorPos(float vpx);
+
+	std::string GetText() const { return text; }
+	Textbox& SetText(const std::string& s);
+
+	Textbox& Init(float& val);
 
 	std::string text;
 	int startCursor = 0;

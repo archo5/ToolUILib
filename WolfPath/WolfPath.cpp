@@ -386,11 +386,11 @@ struct InspectorView : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Text("Camera");
-		auto* cameraBox = ctx->PushBox();
+		auto& cameraBox = ctx->PushBox();
 		ui::Property::EditFloat(ctx, "FOV", &cameraFOV);
 		ui::Property::EditFloat3(ctx, "Position", &cameraPos.x);
 		ui::Property::EditFloat3(ctx, "Direction", &cameraDir.x);
-		HandleEvent(cameraBox, UIEventType::Commit) = [](UIEvent& e)
+		cameraBox.HandleEvent(UIEventType::Commit) = [](UIEvent& e)
 		{
 			ui::Notify(DCT_CameraEdited);
 		};

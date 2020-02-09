@@ -665,23 +665,23 @@ struct SlidersTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		static float sldval0 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(&sldval0, 0, 1);
+		ctx->Make<ui::Slider>()->Init(sldval0, { 0, 1 });
 
 		ui::Property::Begin(ctx, "Slider 1: 0-2 step=0");
 		static float sldval1 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(&sldval1, 0, 2);
+		ctx->Make<ui::Slider>()->Init(sldval1, { 0, 2 });
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 2: 0-2 step=0.1");
 		static float sldval2 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f);
+		ctx->Make<ui::Slider>()->Init(sldval2, { 0, 2, 0.1 });
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 3: custom track bg");
 		static float sldval3 = 0.63f;
-		if (auto* s = ctx->Make<ui::Slider>()->Init(&sldval3, 0, 1))
 		{
-			auto& fn = style::Accessor(s->trackStyle).MutablePaintFunc();
+			auto& s = ctx->Make<ui::Slider>()->Init(sldval3, { 0, 1 });
+			auto& fn = style::Accessor(s.trackStyle).MutablePaintFunc();
 			fn = [fn](const style::PaintInfo& info)
 			{
 				fn(info);
@@ -700,14 +700,14 @@ struct SlidersTest : ui::Node
 				br.Pos(r.x0, r.y1);
 				br.End();
 			};
-			style::Accessor(s->trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info)
+			style::Accessor(s.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info)
 			{
 			};
 		}
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 4: vert stretched");
-		ctx->Make<ui::Slider>()->Init(&sldval2, 0, 2, 0.1f)->GetStyle().SetHeight(40);
+		ctx->Make<ui::Slider>()->Init(sldval2, { 0, 2, 0.1 }) + ui::Height(40);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Color picker parts");
@@ -718,11 +718,19 @@ struct SlidersTest : ui::Node
 			s.SetHeight(100);
 		}
 		{
-			auto s = ctx->Make<ui::ColorPicker2D>()->Init(ui::CM_HSV, ui::CC_Hue, hue, ui::CC_Val, val).GetStyle();
+			auto s = ctx->Make<ui::ColorCompPicker2D>()->Init(hue, sat).GetStyle();
 			s.SetWidth(120);
 			s.SetHeight(100);
 		}
 		ui::Property::End(ctx);
+	}
+};
+
+struct ColorPickerTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Make<ui::ColorPicker>();
 	}
 };
 
@@ -992,7 +1000,7 @@ struct DataEditor : ui::Node
 
 		ctx->MakeWithText<ui::ProgressBar>("Processing...")->progress = 0.37f;
 		static float sldval = 0.63f;
-		ctx->Make<ui::Slider>()->Init(&sldval, 0, 2, 0.1f);
+		ctx->Make<ui::Slider>()->Init(sldval, { 0, 2, 0.1 });
 
 #if 0
 		struct TableDS : ui::TableDataSource
@@ -1211,10 +1219,10 @@ struct DataEditor : ui::Node
 		}
 		else
 		{
-			auto* b = ctx->PushBox();
-			b->GetStyle().SetLayout(style::layouts::StackExpand());
-			b->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-			{ auto s = ctx->Text("Item:")->GetStyle(); s.SetPadding(5); s.SetWidth(style::Coord::Fraction(0)); }
+			ctx->PushBox()
+				+ ui::Layout(style::layouts::StackExpand())
+				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
+			ctx->Text("Item:") + ui::Padding(5) + ui::Width(style::Coord::Fraction(0));
 			ctx->Text(items[editing].name.c_str());
 			{
 				auto* btn = ctx->Push<ui::Button>();
@@ -1270,6 +1278,7 @@ static const char* testNames[] =
 	"Test: Thread worker test",
 	"Test: Threaded image rendering test",
 	"Test: Sliders",
+	"Test: Color picker",
 };
 struct TEST : ui::Node
 {
@@ -1286,6 +1295,11 @@ struct TEST : ui::Node
 				Rerender();
 			};
 			ctx->Make<ui::MenuItemElement>()->SetText(testNames[i]).SetChecked(curTest == i).onActivate = fn;
+		}
+		ctx->Pop();
+		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
+		{
+			ctx->Make<ui::MenuItemElement>()->SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
 		}
 		ctx->Pop();
 		ctx->Pop();
@@ -1306,6 +1320,62 @@ struct TEST : ui::Node
 		case 11: ctx->Make<ThreadWorkerTest>(); break;
 		case 12: ctx->Make<ThreadedImageRenderingTest>(); break;
 		case 13: ctx->Make<SlidersTest>(); break;
+		case 14: ctx->Make<ColorPickerTest>(); break;
+		}
+	}
+
+	static const char* cln(const char* s)
+	{
+		auto* ss = strchr(s, ' ');
+		if (ss)
+			s = ss + 1;
+		if (strncmp(s, "style::layouts::", sizeof("style::layouts::") - 1) == 0)
+			s += sizeof("style::layouts::") - 1;
+		return s;
+	}
+	static const style::Layout* glo(UIObject* o)
+	{
+		auto* lo = o->GetStyle().GetLayout();
+		return lo ? lo : style::layouts::Stack();
+	}
+	static const char* dir(const style::Accessor& a)
+	{
+		static const char* names[] = { "-", "Inh", "T-B", "R-L", "B-T", "L-R" };
+		return names[(int)a.GetStackingDirection()];
+	}
+	static const char* ctu(style::CoordTypeUnit u)
+	{
+		static const char* names[] = { "undefined", "inherit", "auto", "px", "%", "fr" };
+		return names[(int)u];
+	}
+	static const char* costr(const style::Coord& c)
+	{
+		static char buf[128];
+		auto* us = ctu(c.unit);
+		if (c.unit == style::CoordTypeUnit::Undefined ||
+			c.unit == style::CoordTypeUnit::Inherit ||
+			c.unit == style::CoordTypeUnit::Auto)
+			return us;
+		snprintf(buf, 128, "%g%s", c.value, us);
+		return buf;
+	}
+	static void DumpLayout(UIObject* o, int lev = 0)
+	{
+		for (int i = 0; i < lev; i++)
+			printf("  ");
+		auto* lo = glo(o);
+		printf("%s  -%s", cln(typeid(*o).name()), cln(typeid(*lo).name()));
+		if (lo == style::layouts::Stack() || lo == style::layouts::StackExpand())
+			printf(":%s", dir(o->GetStyle()));
+		printf(" w=%s", costr(o->GetStyle().GetWidth()));
+		printf(" h=%s", costr(o->GetStyle().GetHeight()));
+		auto cr = o->GetContentRect();
+		printf(" [%g;%g - %g;%g]", cr.x0, cr.y0, cr.x1, cr.y1);
+		puts("");
+
+		for (auto* ch = o->firstChild; ch; ch = ch->next)
+		{
+			DumpLayout(ch, lev + 1);
 		}
 	}
 

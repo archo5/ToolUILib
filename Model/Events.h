@@ -6,15 +6,15 @@
 
 namespace ui {
 class NativeWindowBase;
-class Node;
+struct Node;
 } // ui
 
 using UIRect = AABB<float>;
 
-class UIObject;
-class UIElement;
-class UIContainer;
-class UIEventSystem;
+struct UIObject;
+struct UIElement;
+struct UIContainer;
+struct UIEventSystem;
 
 
 enum class UIEventType
@@ -143,9 +143,8 @@ struct UITimerData
 	int id;
 };
 
-class UIEventSystem
+struct UIEventSystem
 {
-public:
 	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr);
 
 	void RecomputeLayout();

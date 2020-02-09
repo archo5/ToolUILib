@@ -6,7 +6,7 @@
 #include "../Core/String.h"
 
 
-class UIObject;
+struct UIObject;
 
 using UIRect = AABB<float>;
 

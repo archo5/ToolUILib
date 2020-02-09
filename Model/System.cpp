@@ -102,7 +102,6 @@ void UIContainer::ProcessNodeRenderStack()
 		_Push(currentNode);
 
 		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
-		currentNode->ClearEventHandlers();
 		_curNode = currentNode;
 		currentNode->Render(this);
 		_curNode = nullptr;
@@ -134,6 +133,7 @@ void UIContainer::_Push(UIObject* obj)
 {
 	objectStack[objectStackSize] = obj;
 	objChildStack[objectStackSize] = obj->firstChild;
+	obj->ClearEventHandlers();
 	objectStackSize++;
 }
 

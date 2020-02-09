@@ -397,6 +397,8 @@ struct NativeWindow_Impl
 		cont.ProcessNodeRenderStack();
 		evsys.RecomputeLayout();
 		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
+		cont.ProcessNodeRenderStack();
+		evsys.RecomputeLayout();
 
 		//GL::Clear(20, 40, 80, 255);
 		GL::Clear(0x25, 0x25, 0x25, 255);

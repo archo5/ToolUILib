@@ -23,10 +23,36 @@ struct Color4f
 		if (h < 5) return { x + m, m, c + m, a };
 		return { c + m, m, x + m, a };
 	}
+	float GetHue()
+	{
+		float max = GetValue();
+		float min = std::min(r, std::min(g, b));
+		float c = max - min;
+		if (c == 0)
+			return 0;
+		if (max == r)
+			return ((g - b) / c) / 6;
+		if (max == g)
+			return (2 + (b - r) / c) / 6;
+		return (4 + (r - g) / c) / 6;
+	}
+	float GetSaturation()
+	{
+		float max = GetValue();
+		float min = std::min(r, std::min(g, b));
+		float c = max - min;
+		return max == 0 ? 0 : c / max;
+	}
+	float GetValue()
+	{
+		return std::max(r, std::max(g, b));
+	}
 
 	Color4f(float f) : r(f), g(f), b(f), a(f) {}
 	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
+
+	bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
 	void BlendOver(const Color4f& c)
 	{
@@ -39,10 +65,10 @@ struct Color4f
 
 	uint32_t GetColor32()
 	{
-		uint8_t rb = std::max(0.0f, std::min(1.0f, r)) * 255;
-		uint8_t gb = std::max(0.0f, std::min(1.0f, g)) * 255;
-		uint8_t bb = std::max(0.0f, std::min(1.0f, b)) * 255;
-		uint8_t ab = std::max(0.0f, std::min(1.0f, a)) * 255;
+		auto rb = uint8_t(std::max(0.0f, std::min(1.0f, r)) * 255);
+		auto gb = uint8_t(std::max(0.0f, std::min(1.0f, g)) * 255);
+		auto bb = uint8_t(std::max(0.0f, std::min(1.0f, b)) * 255);
+		auto ab = uint8_t(std::max(0.0f, std::min(1.0f, a)) * 255);
 		return (ab << 24) | (bb << 16) | (gb << 8) | rb;
 	}
 
@@ -160,23 +186,24 @@ struct HueSatPicker : UIElement
 
 	HueSatPicker& Init(float& hue, float& sat)
 	{
-		_hue = &hue;
-		_sat = &sat;
+		_hue = hue;
+		_sat = sat;
+		HandleEvent(UIEventType::Change) = [&hue, &sat, this](UIEvent&) { hue = _hue; sat = _sat; };
 		return *this;
 	}
 
 	void _RegenerateBackground(int w);
 
 	style::BlockRef selectorStyle;
-	float* _hue = nullptr;
-	float* _sat = nullptr;
+	float _hue = 0;
+	float _sat = 0;
 	Image* _bgImage = nullptr;
 };
 
 enum ColorMode
 {
-	CM_RGB,
-	CM_HSV,
+	CM_RGB = 0,
+	CM_HSV = 1,
 };
 
 enum ColorComponent
@@ -192,32 +219,99 @@ enum ColorComponent
 	CC_Val = 2,
 };
 
-struct ColorPicker2D : UIElement
+struct ColorCompPicker2DSettings
 {
-	ColorPicker2D();
-	~ColorPicker2D();
+	ColorCompPicker2DSettings() : _mode(CM_HSV), _ccx(CC_Hue), _ccy(CC_Sat), _invx(false), _invy(true), _baseColor(1, 0, 0) {}
+	ColorCompPicker2DSettings(ColorMode cm, ColorComponent ccx, ColorComponent ccy, Color4f baseColor = Color4f(1, 0, 0)) :
+		ColorCompPicker2DSettings(cm, ccx, false, ccy, true, baseColor) {}
+	ColorCompPicker2DSettings(ColorMode cm, ColorComponent ccx, bool invertX, ColorComponent ccy, bool invertY, Color4f baseColor = Color4f(1, 0, 0)) :
+		_mode(cm), _ccx(ccx), _ccy(ccy), _invx(invertX), _invy(invertY), _baseColor(baseColor)
+	{
+	}
+	bool operator == (const ColorCompPicker2DSettings& o) const
+	{
+		return _mode == o._mode && _ccx == o._ccx && _ccy == o._ccy && _invx == o._invx && _invy == o._invy && _baseColor == o._baseColor;
+	}
+	bool operator != (const ColorCompPicker2DSettings& o) const { return !(*this == o); }
+
+	ColorMode _mode;
+	ColorComponent _ccx;
+	ColorComponent _ccy;
+	bool _invx;
+	bool _invy;
+	Color4f _baseColor;
+};
+
+struct ColorCompPicker2D : UIElement
+{
+	ColorCompPicker2D();
+	~ColorCompPicker2D();
 	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
 
-	ColorPicker2D& Init(ColorMode mode, ColorComponent cx, float& x, ColorComponent cy, float& y)
+	ColorCompPicker2DSettings GetSettings() const { return _settings; }
+	ColorCompPicker2D& SetSettings(const ColorCompPicker2DSettings& s) { _settings = s; return *this; }
+
+	float GetX() const { return _x; }
+	ColorCompPicker2D& SetX(float v) { _x = v; return *this; }
+
+	float GetY() const { return _y; }
+	ColorCompPicker2D& SetY(float v) { _y = v; return *this; }
+
+	ColorCompPicker2D& Init(float& x, float& y, ColorCompPicker2DSettings s = {})
 	{
-		_mode = mode;
-		_cx = cx;
-		_cy = cy;
-		_x = &x;
-		_y = &y;
+		SetSettings(s);
+		SetX(x);
+		SetY(y);
+		HandleEvent(UIEventType::Change) = [&x, &y, this](UIEvent&) { x = _x; y = _y; RerenderNode(); };
 		return *this;
 	}
 
 	void _RegenerateBackground(int w, int h);
 
 	style::BlockRef selectorStyle;
-	ColorMode _mode = CM_RGB;
-	ColorComponent _cx = CC_0;
-	ColorComponent _cy = CC_1;
-	float* _x = nullptr;
-	float* _y = nullptr;
+	ColorCompPicker2DSettings _settings, _curImgSettings;
+	float _x = 0;
+	float _y = 0;
 	Image* _bgImage = nullptr;
+};
+
+struct ColorPicker : Node
+{
+	void Render(UIContainer* ctx) override;
+
+	Color4f GetColor() const { return _rgba; }
+	ColorPicker& SetColor(const Color4f& c)
+	{
+		_rgba = c;
+		_UpdateRGB();
+		return *this;
+	}
+	ColorPicker& SetColor(float h, float s, float v, float a = 1)
+	{
+		_hue = h;
+		_sat = s;
+		_val = v;
+		_rgba.a = a;
+		_UpdateHSV();
+		return *this;
+	}
+
+	void _UpdateRGB()
+	{
+		_hue = _rgba.GetHue();
+		_sat = _rgba.GetSaturation();
+		_val = _rgba.GetValue();
+	}
+	void _UpdateHSV()
+	{
+		_rgba = Color4f::HSV(_hue, _sat, _val, _rgba.a);
+	}
+
+	Color4f _rgba = Color4f::White();
+	float _hue = 0;
+	float _sat = 0;
+	float _val = 1;
 };
 
 } // ui

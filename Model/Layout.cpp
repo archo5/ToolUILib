@@ -60,7 +60,7 @@ struct StackLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
+				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
@@ -87,7 +87,7 @@ struct StackLayout : Layout
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
+				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 			break;
 		}
 		return size;

@@ -6,6 +6,16 @@
 #include "Theme.h"
 
 
+namespace ui {
+struct EventHandlerEntry
+{
+	EventHandlerEntry* next;
+	UIObject* target;
+	UIEventType type;
+	EventFunc func;
+};
+} // ui
+
 UIObject::UIObject()
 {
 	styleProps = ui::Theme::current->object;
@@ -14,6 +24,45 @@ UIObject::UIObject()
 UIObject::~UIObject()
 {
 	system->eventSystem.OnDestroy(this);
+	ClearEventHandlers();
+}
+
+void UIObject::_DoEvent(UIEvent& e)
+{
+	for (auto* n = _firstEH; n && !e.handled; n = n->next)
+	{
+		if (n->type != UIEventType::Any && n->type != e.type)
+			continue;
+		if (n->target && !e.target->IsChildOrSame(n->target))
+			continue;
+		n->func(e);
+	}
+	OnEvent(e);
+}
+
+ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
+{
+	auto eh = new ui::EventHandlerEntry;
+	if (_lastEH)
+		_lastEH->next = eh;
+	else
+		_firstEH = _lastEH = eh;
+	eh->next = nullptr;
+	eh->target = target;
+	eh->type = type;
+	_lastEH = eh;
+	return eh->func;
+}
+
+void UIObject::ClearEventHandlers()
+{
+	while (_firstEH)
+	{
+		auto* n = _firstEH->next;
+		delete _firstEH;
+		_firstEH = n;
+	}
+	_lastEH = nullptr;
 }
 
 void UIObject::OnPaint()
@@ -504,14 +553,6 @@ struct Subscription
 	Subscription* nextInTable;
 };
 
-struct EventHandlerEntry
-{
-	EventHandlerEntry* next;
-	UIObject* target;
-	UIEventType type;
-	EventFunc func;
-};
-
 static void _Notify(DataCategoryTag* tag, uintptr_t at)
 {
 	auto it = g_subscrTable->find({ tag, at });
@@ -536,19 +577,6 @@ Node::~Node()
 		auto* s = _firstSub;
 		s->Unlink();
 		delete s;
-	}
-	ClearEventHandlers();
-}
-
-void Node::OnEvent(UIEvent& e)
-{
-	for (auto* n = _firstEH; n && !e.handled; n = n->next)
-	{
-		if (n->type != UIEventType::Any && n->type != e.type)
-			continue;
-		if (n->target && !e.target->IsChildOrSame(n->target))
-			continue;
-		n->func(e);
 	}
 }
 
@@ -606,26 +634,6 @@ bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 		}
 	}
 	return true;
-}
-
-EventFunc& Node::HandleEvent(UIObject* target, UIEventType type)
-{
-	auto eh = new EventHandlerEntry;
-	eh->next = _firstEH;
-	eh->target = target;
-	eh->type = type;
-	_firstEH = eh;
-	return eh->func;
-}
-
-void Node::ClearEventHandlers()
-{
-	while (_firstEH)
-	{
-		auto* n = _firstEH->next;
-		delete _firstEH;
-		_firstEH = n;
-	}
 }
 
 } // ui

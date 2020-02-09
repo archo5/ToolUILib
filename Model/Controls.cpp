@@ -22,7 +22,7 @@ void Button::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
 	{
-		system->eventSystem.SetKeyboardFocus(this);
+		e.context->SetKeyboardFocus(this);
 	}
 	if (e.type == UIEventType::Activate)
 	{
@@ -51,7 +51,7 @@ void CheckableBase::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
 	{
-		system->eventSystem.SetKeyboardFocus(this);
+		e.context->SetKeyboardFocus(this);
 	}
 	if (e.type == UIEventType::Activate)
 	{
@@ -122,7 +122,7 @@ void ProgressBar::OnPaint()
 }
 
 
-Slider::Slider()
+void Slider::OnInit()
 {
 	styleProps = Theme::current->sliderHBase;
 	trackStyle = Theme::current->sliderHTrack;
@@ -134,24 +134,24 @@ void Slider::OnPaint()
 {
 	styleProps->paint_func(this);
 
+	// track
 	style::PaintInfo trkinfo(this);
 	float w = trkinfo.rect.GetWidth();
 	trkinfo.rect = trkinfo.rect.ShrinkBy(GetMarginRect(trackStyle, w));
 	trackStyle->paint_func(trkinfo);
 
-	if (valuePtr)
-	{
-		trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
-		trkinfo.rect.x1 = round(lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(*valuePtr)));
-		auto prethumb = trkinfo.rect;
+	// track fill
+	trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
+	trkinfo.rect.x1 = round(lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(_value)));
+	auto prethumb = trkinfo.rect;
 
-		trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));
-		trackFillStyle->paint_func(trkinfo);
+	trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));
+	trackFillStyle->paint_func(trkinfo);
 
-		prethumb.x0 = prethumb.x1;
-		trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
-		thumbStyle->paint_func(trkinfo);
-	}
+	// thumb
+	prethumb.x0 = prethumb.x1;
+	trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
+	thumbStyle->paint_func(trkinfo);
 
 	PaintChildren();
 }
@@ -165,55 +165,46 @@ void Slider::OnEvent(UIEvent& e)
 	}
 	if (e.type == UIEventType::MouseMove && IsClicked())
 	{
-		if (valuePtr)
-			*valuePtr = PosToValue(e.x + _mxoff);
+		_value = PosToValue(e.x + _mxoff);
+		e.context->OnChange(this);
 	}
 }
 
-Slider* Slider::Init(float* vp, double vmin, double vmax, double step)
-{
-	valuePtr = vp;
-	minValue = vmin;
-	maxValue = vmax;
-	trackStep = step;
-	return this;
-}
-
-float Slider::PosToQ(float x)
+double Slider::PosToQ(double x)
 {
 	auto rect = GetPaddingRect();
 	float w = rect.GetWidth();
 	rect = rect.ShrinkBy(GetMarginRect(trackStyle, w));
 	rect = rect.ShrinkBy(GetPaddingRect(trackStyle, w));
 	float fw = rect.GetWidth();
-	return fw ? (x - rect.x0) / fw : 0;
+	return std::max(0.0, std::min(1.0, fw ? (x - rect.x0) / fw : 0));
 }
 
-double Slider::QToValue(float q)
+double Slider::QToValue(double q)
 {
 	if (q < 0)
 		q = 0;
 	else if (q > 1)
 		q = 1;
 
-	double v = minValue * (1 - q) + maxValue * q;
-	if (trackStep)
+	double v = _limits.min * (1 - q) + _limits.max * q;
+	if (_limits.step)
 	{
-		v = round((v - minValue) / trackStep) * trackStep + minValue;
+		v = round((v - _limits.min) / _limits.step) * _limits.step + _limits.min;
 
-		if (v > maxValue + 0.001 * (maxValue - minValue))
-			v -= trackStep;
-		if (v < minValue)
-			v = minValue;
+		if (v > _limits.max + 0.001 * (_limits.max - _limits.min))
+			v -= _limits.step;
+		if (v < _limits.min)
+			v = _limits.min;
 	}
 
 	return v;
 }
 
-float Slider::ValueToQ(double v)
+double Slider::ValueToQ(double v)
 {
-	double diff = maxValue - minValue;
-	return diff ? float((v - minValue) / diff) : 0.0f;
+	double diff = _limits.max - _limits.min;
+	return std::max(0.0, std::min(1.0, diff ? ((v - _limits.min) / diff) : 0.0));
 }
 
 
@@ -237,38 +228,33 @@ void Property::End(UIContainer* ctx)
 	ctx->Pop();
 }
 
-UIObject* Property::Label(UIContainer* ctx, const char* label)
+UIObject& Property::Label(UIContainer* ctx, const char* label)
 {
-	auto* el = ctx->Text(label);
-	auto s = el->GetStyle();
-	s.SetPadding(5);
-	s.SetMinWidth(100);
-	s.SetWidth(style::Coord::Percent(30));
-	return el;
+	return ctx->Text(label)
+		+ Padding(5)
+		+ MinWidth(100)
+		+ Width(style::Coord::Percent(30));
 }
 
-UIObject* Property::MinLabel(UIContainer* ctx, const char* label)
+UIObject& Property::MinLabel(UIContainer* ctx, const char* label)
 {
-	auto* el = ctx->Text(label);
-	auto s = el->GetStyle();
-	s.SetPadding(5);
-	s.SetWidth(style::Coord::Fraction(0));
-	return el;
+	return ctx->Text(label)
+		+ Padding(5)
+		+ Width(style::Coord::Fraction(0));
 }
 
 void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 {
 	Property::Begin(ctx);
-	auto* lbl = Property::Label(ctx, label);
+	auto& lbl = Property::Label(ctx, label);
 	auto* tb = ctx->Make<Textbox>();
-	auto* node = ctx->GetCurrentNode();
-	node->HandleEvent(lbl) = [v, node](UIEvent& e)
+	lbl.HandleEvent() = [v](UIEvent& e)
 	{
 		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 		{
 			*v += 0.1f * e.dx;
 			e.context->OnCommit(e.target);
-			node->Rerender();
+			e.target->RerenderNode();
 		}
 		if (e.type == UIEventType::SetCursor)
 		{
@@ -279,10 +265,10 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 	char buf[64];
 	snprintf(buf, 64, "%g", *v);
 	tb->text = buf;
-	node->HandleEvent(tb, UIEventType::Commit) = [v, tb, node](UIEvent&)
+	tb->HandleEvent(UIEventType::Commit) = [v, tb](UIEvent& e)
 	{
 		*v = atof(tb->text.c_str());
-		node->Rerender();
+		e.target->RerenderNode();
 	};
 	Property::End(ctx);
 }
@@ -290,32 +276,27 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 static const char* subLabelNames[] = { "X", "Y", "Z", "W" };
 static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size)
 {
-	Property::Begin(ctx);
-	auto* lbl = Property::Label(ctx, label);
+	Property::Begin(ctx, label);
 
-	auto* box = ctx->PushBox();
-	box->GetStyle().SetLayout(style::layouts::StackExpand());
-	box->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+	ctx->PushBox()
+		+ Layout(style::layouts::StackExpand())
+		+ StackingDirection(style::StackingDirection::LeftToRight);
 	{
 		for (int i = 0; i < size; i++)
 		{
 			float* vc = v + i;
-			auto* cbox = ctx->PushBox();
-			cbox->GetStyle().SetLayout(style::layouts::StackExpand());
-			cbox->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-			cbox->GetStyle().SetWidth(style::Coord::Fraction(1));
+			ctx->PushBox()
+				+ Layout(style::layouts::StackExpand())
+				+ StackingDirection(style::StackingDirection::LeftToRight)
+				+ Width(style::Coord::Fraction(1));
 
-			auto* xlbl = Property::MinLabel(ctx, subLabelNames[i]);
-			auto* tb = ctx->Make<Textbox>();
-			tb->GetStyle().SetWidth(style::Coord::Fraction(0.2f));
-			auto* node = ctx->GetCurrentNode();
-			node->HandleEvent(xlbl) = [vc, node](UIEvent& e)
+			Property::MinLabel(ctx, subLabelNames[i]).HandleEvent() = [vc](UIEvent& e)
 			{
 				if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 				{
 					*vc += 0.1f * e.dx;
 					e.context->OnCommit(e.target);
-					node->Rerender();
+					e.target->RerenderNode();
 				}
 				if (e.type == UIEventType::SetCursor)
 				{
@@ -324,13 +305,15 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 				}
 			};
 
+			auto& tb = *ctx->Make<Textbox>();
+			tb + Width(style::Coord::Fraction(0.2f));
 			char buf[64];
 			snprintf(buf, 64, "%g", v[i]);
-			tb->text = buf;
-			node->HandleEvent(tb, UIEventType::Commit) = [vc, tb, node](UIEvent&)
+			tb.text = buf;
+			tb.HandleEvent(UIEventType::Commit) = [vc, &tb](UIEvent& e)
 			{
-				*vc = atof(tb->text.c_str());
-				node->Rerender();
+				*vc = atof(tb.text.c_str());
+				e.target->RerenderNode();
 			};
 
 			ctx->Pop();
@@ -825,7 +808,7 @@ void Textbox::OnEvent(UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
 			startCursor = endCursor = _FindCursorPos(e.x);
-		system->eventSystem.SetKeyboardFocus(this);
+		e.context->SetKeyboardFocus(this);
 	}
 	else if (e.type == UIEventType::ButtonUp)
 	{
@@ -846,37 +829,37 @@ void Textbox::OnEvent(UIEvent& e)
 	{
 		showCaretState = !showCaretState;
 		if (IsFocused())
-			system->eventSystem.SetTimer(this, 0.5f);
+			e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == UIEventType::GotFocus)
 	{
 		showCaretState = true;
-		system->eventSystem.SetTimer(this, 0.5f);
+		e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == UIEventType::LostFocus)
 	{
-		system->eventSystem.OnCommit(this);
+		e.context->OnCommit(this);
 	}
 	else if (e.type == UIEventType::KeyAction)
 	{
 		switch (e.GetKeyAction())
 		{
 		case UIKeyAction::Enter:
-			system->eventSystem.SetKeyboardFocus(nullptr);
+			e.context->SetKeyboardFocus(nullptr);
 			break;
 		case UIKeyAction::Backspace:
 			if (IsLongSelection())
 				EraseSelection();
 			else if (endCursor > 0)
 				text.erase(startCursor = --endCursor, 1); // TODO unicode
-			system->eventSystem.OnChange(this);
+			e.context->OnChange(this);
 			break;
 		case UIKeyAction::Delete:
 			if (IsLongSelection())
 				EraseSelection();
 			else if (endCursor + 1 < text.size())
 				text.erase(endCursor, 1); // TODO unicode
-			system->eventSystem.OnChange(this);
+			e.context->OnChange(this);
 			break;
 
 		case UIKeyAction::Left:
@@ -945,6 +928,28 @@ int Textbox::_FindCursorPos(float vpx)
 		x += lw;
 	}
 	return text.size();
+}
+
+Textbox& Textbox::SetText(const std::string& s)
+{
+	text = s;
+	if (startCursor > text.size())
+		startCursor = text.size();
+	if (endCursor > text.size())
+		endCursor = text.size();
+	return *this;
+}
+
+Textbox& Textbox::Init(float& val)
+{
+	if (!InUse())
+	{
+		char bfr[64];
+		snprintf(bfr, 64, "%g", val);
+		SetText(bfr);
+	}
+	HandleEvent(UIEventType::Change) = [this, &val](UIEvent&) { val = atof(GetText().c_str()); };
+	return *this;
 }
 
 

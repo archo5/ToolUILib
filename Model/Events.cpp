@@ -69,7 +69,7 @@ void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt)
 	while (obj != tgt && !e.handled)
 	{
 		e.current = obj;
-		obj->OnEvent(e);
+		obj->_DoEvent(e);
 		obj = obj->parent;
 	}
 }
@@ -91,7 +91,7 @@ void UIEventSystem::ProcessTimers(float dt)
 		{
 			UIEvent ev(this, T.target, UIEventType::Timer);
 			size_t sizeBefore = pendingTimers.size();
-			T.target->OnEvent(ev);
+			T.target->_DoEvent(ev);
 			bool added = pendingTimers.size() > sizeBefore;
 
 			if (i + 1 < pendingTimers.size())
@@ -161,7 +161,7 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 	if (focusObj)
 	{
 		UIEvent ev(this, focusObj, UIEventType::LostFocus);
-		focusObj->OnEvent(ev);
+		focusObj->_DoEvent(ev);
 	}
 
 	focusObj = o;
@@ -169,7 +169,7 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 	if (focusObj)
 	{
 		UIEvent ev(this, focusObj, UIEventType::GotFocus);
-		focusObj->OnEvent(ev);
+		focusObj->_DoEvent(ev);
 	}
 }
 
@@ -219,7 +219,7 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	{
 		o->flags &= ~hoverFlag;
 		ev.current = o;
-		o->OnEvent(ev);
+		o->_DoEvent(ev);
 		o = o->parent;
 	}
 
@@ -229,7 +229,7 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	for (auto* p = o; p; p = p->parent)
 	{
 		ev.current = p;
-		p->OnEvent(ev);
+		p->_DoEvent(ev);
 	}
 
 	ev.type = dragEvents ? UIEventType::DragEnter : UIEventType::MouseEnter;
@@ -241,7 +241,7 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 		o->flags |= hoverFlag;
 		ev.current = o;
 		ev.target = o;
-		o->OnEvent(ev);
+		o->_DoEvent(ev);
 	}
 
 	if (o)
@@ -258,7 +258,7 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 					o->flags |= hoverFlag;
 					ev.current = o;
 					ev.target = o;
-					o->OnEvent(ev);
+					o->_DoEvent(ev);
 					found = true;
 					break;
 				}
@@ -292,7 +292,7 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 			dragEventInProgress = false;
 			for (auto* p = clickObj[0]; p; p = p->parent)
 			{
-				p->OnEvent(ev);
+				p->_DoEvent(ev);
 				if (ev.handled || ui::DragDrop::GetData())
 				{
 					dragEventInProgress = ui::DragDrop::GetData() != nullptr;
@@ -324,7 +324,7 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 		for (auto* p = hoverObj; p; p = p->parent)
 		{
 			ev.current = p;
-			p->OnEvent(ev);
+			p->_DoEvent(ev);
 		}
 	}
 	else
@@ -389,7 +389,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 				for (auto* p = dragHoverObj; p; p = p->parent)
 				{
 					ev.current = p;
-					p->OnEvent(ev);
+					p->_DoEvent(ev);
 				}
 
 				ev.type = UIEventType::DragEnd;

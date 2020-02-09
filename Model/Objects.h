@@ -18,10 +18,10 @@
 
 
 struct UIEvent;
-class UIObject; // any item
-class UIElement; // physical item
-class UIContainer;
-class UIEventSystem;
+struct UIObject; // any item
+struct UIElement; // physical item
+struct UIContainer;
+struct UIEventSystem;
 
 namespace prs {
 class PropertyBlock;
@@ -35,7 +35,8 @@ struct Block;
 namespace ui {
 class NativeWindowBase;
 class FrameContents;
-class Node; // logical item
+struct EventHandlerEntry;
+struct Node; // logical item
 
 using EventFunc = std::function<void(UIEvent& e)>;
 }
@@ -121,16 +122,22 @@ struct LivenessToken
 	}
 };
 
-class UIObject
+struct UIObject
 {
-public:
 	UIObject();
 	virtual ~UIObject();
 	virtual void Reset() {}
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
 	virtual void OnCompleteStructure() {}
+
 	virtual void OnEvent(UIEvent& e) {}
+	void _DoEvent(UIEvent& e);
+
+	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
+	ui::EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
+	void ClearEventHandlers();
+
 	virtual void OnPaint();
 	void Paint();
 	void PaintChildren()
@@ -152,6 +159,7 @@ public:
 		return GetBorderRect().Contains(x, y);
 	}
 
+	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & UIObject_IsHidden); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 
@@ -207,6 +215,9 @@ public:
 	UIObject* prev = nullptr;
 	UIObject* next = nullptr;
 
+	ui::EventHandlerEntry* _firstEH = nullptr;
+	ui::EventHandlerEntry* _lastEH = nullptr;
+
 	ui::FrameContents* system = nullptr;
 	style::BlockRef styleProps;
 	LivenessToken _livenessToken;
@@ -217,17 +228,15 @@ public:
 	UIRect finalRectCPB;
 };
 
-class UIElement : public UIObject
+struct UIElement : UIObject
 {
-public:
 	typedef char IsElement[1];
 };
 
 namespace ui {
 
-class TextElement : public UIElement
+struct TextElement : UIElement
 {
-public:
 	TextElement()
 	{
 		GetStyle().SetLayout(style::layouts::InlineBlock());
@@ -262,11 +271,10 @@ public:
 	std::string text;
 };
 
-class BoxElement : public UIElement
+struct BoxElement : UIElement
 {
 };
 
-struct EventHandlerEntry;
 struct Subscription;
 struct DataCategoryTag {};
 
@@ -278,13 +286,11 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
 }
 
-class Node : public UIObject
+struct Node : UIObject
 {
-public:
 	~Node();
 	typedef char IsNode[2];
 
-	void OnEvent(UIEvent& e) override;
 	virtual void Render(UIContainer* ctx) = 0;
 	void Rerender();
 
@@ -300,15 +306,71 @@ public:
 		return Unsubscribe(tag, reinterpret_cast<uintptr_t>(ptr));
 	}
 
-	EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
-	void ClearEventHandlers();
-
-private:
-	friend struct Subscription;
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
-	friend struct EventHandlerEntry;
-	EventHandlerEntry* _firstEH = nullptr;
+};
+
+struct Modifier
+{
+	virtual void Apply(UIObject* obj) const = 0;
+};
+
+inline UIObject& operator + (UIObject& o, const Modifier& m)
+{
+	m.Apply(&o);
+	return o;
+}
+
+struct Layout : Modifier
+{
+	style::Layout* _layout;
+	Layout(style::Layout* layout) : _layout(layout) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetLayout(_layout); }
+};
+
+struct StackingDirection : Modifier
+{
+	style::StackingDirection _dir;
+	StackingDirection(style::StackingDirection dir) : _dir(dir) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetStackingDirection(_dir); }
+};
+
+struct Width : Modifier
+{
+	style::Coord _c;
+	Width(const style::Coord& c) : _c(c) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetWidth(_c); }
+};
+
+struct Height : Modifier
+{
+	style::Coord _c;
+	Height(const style::Coord& c) : _c(c) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetHeight(_c); }
+};
+
+struct MinWidth : Modifier
+{
+	style::Coord _c;
+	MinWidth(const style::Coord& c) : _c(c) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetMinWidth(_c); }
+};
+
+struct Padding : Modifier
+{
+	style::Coord _l, _r, _t, _b;
+	Padding(const style::Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
+};
+
+struct EventHandler : Modifier
+{
+	std::function<void(UIEvent&)> _evfn;
+	UIEventType _type = UIEventType::Any;
+	UIObject* _tgt = nullptr;
+	EventHandler(std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)) {}
+	EventHandler(UIEventType t, std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
+	void Apply(UIObject* obj) const override { obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
 };
 
 } // ui

@@ -25,10 +25,8 @@ template<class T> void Node_AddChild(T* node, T* ch)
 	}
 }
 
-class UIObjectDirtyStack
+struct UIObjectDirtyStack
 {
-public:
-
 	UIObjectDirtyStack(uint32_t f) : flag(f) {}
 	bool ContainsAny() const { return size != 0; }
 	void ClearWithoutFlags()
@@ -46,9 +44,8 @@ public:
 	uint32_t flag;
 };
 
-class UIContainer
+struct UIContainer
 {
-public:
 	void Free();
 	void ProcessObjectDeleteStack(int first = 0);
 	void DeleteObjectsStartingFrom(UIObject* obj);
@@ -130,19 +127,19 @@ public:
 			}
 			DEBUG_FLOW(puts(">>> new element >>>"));
 			Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
-			obj->OnInit();
 			objChildStack[objectStackSize - 1] = nullptr;
 			lastIsNew = true;
 		}
+		obj->OnInit();
 		return obj;
 	}
-	ui::BoxElement* PushBox() { return Push<ui::BoxElement>(); }
-	ui::TextElement* Text(StringView s)
+	ui::BoxElement& PushBox() { return *Push<ui::BoxElement>(); }
+	ui::TextElement& Text(StringView s)
 	{
 		auto* T = Push<ui::TextElement>();
 		T->SetText(s);
 		Pop();
-		return T;
+		return *T;
 	}
 	bool LastIsNew() const { return lastIsNew; }
 
