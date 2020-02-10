@@ -282,10 +282,23 @@ struct Textbox : UIElement
 
 	int _FindCursorPos(float vpx);
 
-	std::string GetText() const { return text; }
+	const std::string& GetText() const { return text; }
 	Textbox& SetText(const std::string& s);
 
 	Textbox& Init(float& val);
+	template <size_t N> Textbox& Init(char (&val)[N])
+	{
+		if (!InUse())
+			SetText(val);
+		HandleEvent(UIEventType::Change) = [this, &val](UIEvent&)
+		{
+			auto& t = GetText();
+			size_t s = std::min(t.size(), N - 1);
+			memcpy(val, t.c_str(), s);
+			val[s] = 0;
+		};
+		return *this;
+	}
 
 	std::string text;
 	int startCursor = 0;

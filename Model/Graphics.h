@@ -4,11 +4,36 @@
 #include "Objects.h"
 
 
+static uint8_t gethex(char c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+	return 0;
+}
+
+static uint8_t gethex(char c1, char c2)
+{
+	return (gethex(c1) << 4) | gethex(c2);
+}
+
+static char hexchar(uint8_t v)
+{
+	return "0123456789ABCDEF"[v];
+}
+
+
 struct Color4f
 {
 	static Color4f Zero() { return { 0 }; }
 	static Color4f Black() { return { 0, 1 }; }
 	static Color4f White() { return { 1 }; }
+	static Color4f Hex(const char* hex, float a = 1)
+	{
+		char ntx[6] = {}; // copy hex with null termination to ignore garbage after the first null byte
+		strncpy(ntx, hex, 6);
+		return { gethex(ntx[0], ntx[1]) / 255.f, gethex(ntx[2], ntx[3]) / 255.f, gethex(ntx[4], ntx[5]) / 255.f, a };
+	}
 	static Color4f HSV(float h, float s, float v, float a = 1)
 	{
 		h = fmodf(h, 1);
@@ -22,6 +47,16 @@ struct Color4f
 		if (h < 4) return { m, x + m, c + m, a };
 		if (h < 5) return { x + m, m, c + m, a };
 		return { c + m, m, x + m, a };
+	}
+	void GetHex(char buf[7])
+	{
+		uint8_t r = GetRed8(), g = GetGreen8(), b = GetBlue8();
+		buf[0] = hexchar(r >> 4);
+		buf[1] = hexchar(r & 0xf);
+		buf[2] = hexchar(g >> 4);
+		buf[3] = hexchar(g & 0xf);
+		buf[4] = hexchar(b >> 4);
+		buf[5] = hexchar(b & 0xf);
 	}
 	float GetHue()
 	{
@@ -63,12 +98,16 @@ struct Color4f
 		a = lerp(a, 1, c.a);
 	}
 
+	uint8_t GetRed8() const { return uint8_t(std::max(0.0f, std::min(1.0f, r)) * 255); }
+	uint8_t GetGreen8() const { return uint8_t(std::max(0.0f, std::min(1.0f, g)) * 255); }
+	uint8_t GetBlue8() const { return uint8_t(std::max(0.0f, std::min(1.0f, b)) * 255); }
+	uint8_t GetAlpha8() const { return uint8_t(std::max(0.0f, std::min(1.0f, a)) * 255); }
 	uint32_t GetColor32()
 	{
-		auto rb = uint8_t(std::max(0.0f, std::min(1.0f, r)) * 255);
-		auto gb = uint8_t(std::max(0.0f, std::min(1.0f, g)) * 255);
-		auto bb = uint8_t(std::max(0.0f, std::min(1.0f, b)) * 255);
-		auto ab = uint8_t(std::max(0.0f, std::min(1.0f, a)) * 255);
+		auto rb = GetRed8();
+		auto gb = GetGreen8();
+		auto bb = GetBlue8();
+		auto ab = GetAlpha8();
 		return (ab << 24) | (bb << 16) | (gb << 8) | rb;
 	}
 
@@ -162,9 +201,21 @@ enum class ScaleMode
 	Fill, // the whole rectangle is covered by some part of the image, aspect is preserved
 };
 
+struct ColorBlock : UIElement
+{
+	void OnInit() override;
+	void OnPaint() override;
+	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override { outWidth = 20; outHeight = 20; }
+
+	Color4f GetColor() const { return _color; }
+	ColorBlock& SetColor(const Color4f& col) { _color = col; return *this; }
+
+	Color4f _color = Color4f::Black();
+};
+
 struct ImageElement : UIElement
 {
-	ImageElement();
+	void OnInit() override;
 	void OnPaint() override;
 	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
 
@@ -299,6 +350,11 @@ struct ColorPicker : Node
 
 	void _UpdateRGB()
 	{
+		_RGB2HSV();
+		_rgba.GetHex(hex);
+	}
+	void _RGB2HSV()
+	{
 		_hue = _rgba.GetHue();
 		_sat = _rgba.GetSaturation();
 		_val = _rgba.GetValue();
@@ -306,12 +362,19 @@ struct ColorPicker : Node
 	void _UpdateHSV()
 	{
 		_rgba = Color4f::HSV(_hue, _sat, _val, _rgba.a);
+		_rgba.GetHex(hex);
+	}
+	void _UpdateHex()
+	{
+		_rgba = Color4f::Hex(hex, _rgba.a);
+		_RGB2HSV();
 	}
 
 	Color4f _rgba = Color4f::White();
 	float _hue = 0;
 	float _sat = 0;
 	float _val = 1;
+	char hex[7] = "FFFFFF";
 };
 
 } // ui

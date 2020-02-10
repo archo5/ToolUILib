@@ -34,6 +34,7 @@ struct ThemeInit
 	style::Block dtTableCell;
 	style::Block dtTableRowHeader;
 	style::Block dtTableColHeader;
+	style::Block dtColorBlock;
 	style::Block dtImage;
 	style::Block dtSelectorContainer;
 	style::Block dtSelector;
@@ -64,6 +65,7 @@ struct ThemeInit
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
+		CreateColorBlock();
 		CreateImage();
 		CreateSelectorContainer();
 		CreateSelector();
@@ -447,6 +449,19 @@ struct ThemeInit
 			br.End();
 		};
 		defaultTheme.tableColHeader = a.block;
+	}
+	void CreateColorBlock()
+	{
+		style::Accessor a(&dtColorBlock);
+		PreventHeapDelete(a);
+		a.SetLayout(style::layouts::InlineBlock());
+		a.SetPadding(3);
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
+		};
+		defaultTheme.colorBlock = a.block;
 	}
 	void CreateImage()
 	{

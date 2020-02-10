@@ -31,6 +31,7 @@ struct Theme
 	style::BlockRef tableCell;
 	style::BlockRef tableRowHeader;
 	style::BlockRef tableColHeader;
+	style::BlockRef colorBlock;
 	style::BlockRef image;
 	style::BlockRef selectorContainer;
 	style::BlockRef selector;

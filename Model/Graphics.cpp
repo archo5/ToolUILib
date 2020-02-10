@@ -7,7 +7,29 @@
 
 namespace ui {
 
-ImageElement::ImageElement()
+
+void ColorBlock::OnInit()
+{
+	styleProps = Theme::current->colorBlock;
+}
+
+void ColorBlock::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	GL::SetTexture(0);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.SetColor(_color.r, _color.g, _color.b, _color.a);
+	auto r = GetContentRect();
+	br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
+	br.End();
+
+	PaintChildren();
+}
+
+
+void ImageElement::OnInit()
 {
 	styleProps = Theme::current->image;
 }
@@ -22,6 +44,7 @@ void ImageElement::OnPaint()
 		GL::SetTexture(_image->_texture);
 		GL::BatchRenderer br;
 		br.Begin();
+		br.SetColor(1, 1, 1);
 		switch (_scaleMode)
 		{
 		case ScaleMode::Stretch:
@@ -128,6 +151,7 @@ void HueSatPicker::OnPaint()
 	GL::SetTexture(_bgImage->_texture);
 	GL::BatchRenderer br;
 	br.Begin();
+	br.SetColor(1, 1, 1, 1);
 	br.Quad(cr.x0, cr.y0, cr.x0 + tgtw, cr.y0 + tgtw, 0, 0, 1, 1);
 	br.End();
 
@@ -325,8 +349,8 @@ void ColorPicker::Render(UIContainer* ctx)
 			+ Width(style::Coord::Fraction(0)); // TODO any way to make this unnecessary?
 		{
 			auto& hsp = ctx->Make<HueSatPicker>()->Init(_hue, _sat)
-				+ Width(200)
-				+ Height(200);
+				+ Width(240)
+				+ Height(240);
 			hsp.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateHSV(); };
 		}
 		ctx->Pop();
@@ -441,6 +465,18 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("A") + Width(10);
 				ctx->Make<Slider>()->Init(_rgba.a, limit);
 				ctx->Make<Textbox>()->Init(_rgba.a) + Width(50);
+			}
+			Property::End(ctx);
+
+			Property::Begin(ctx);
+			{
+				*ctx->Push<Panel>() + StackingDirection(style::StackingDirection::LeftToRight) + Padding(3);
+				ctx->Make<ColorBlock>()->SetColor({ _rgba.r, _rgba.g, _rgba.b, 1 }) + Width(50) + Height(60) + Padding(0);
+				ctx->Make<ColorBlock>()->SetColor(_rgba) + Width(50) + Height(60) + Padding(0);
+				ctx->Pop();
+
+				ctx->Text("Hex:") + Width(30);
+				ctx->Make<Textbox>()->Init(hex) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHex(); });
 			}
 			Property::End(ctx);
 
