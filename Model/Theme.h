@@ -1,8 +1,18 @@
 
 #pragma once
+#include <memory>
 #include "Layout.h"
+#include "Graphics.h"
 
 namespace ui {
+
+enum class ThemeImage
+{
+	Unknown = 0,
+	CheckerboardBackground,
+
+	_COUNT,
+};
 
 struct Theme
 {
@@ -35,6 +45,8 @@ struct Theme
 	style::BlockRef image;
 	style::BlockRef selectorContainer;
 	style::BlockRef selector;
+
+	virtual std::shared_ptr<Image> GetImage(ThemeImage ti) = 0;
 
 	static Theme* current;
 };

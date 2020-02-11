@@ -1,6 +1,6 @@
 
 #pragma once
-
+#include <memory>
 #include "Objects.h"
 
 
@@ -211,6 +211,7 @@ struct ColorBlock : UIElement
 	ColorBlock& SetColor(const Color4f& col) { _color = col; return *this; }
 
 	Color4f _color = Color4f::Black();
+	std::shared_ptr<Image> _bgImage;
 };
 
 struct ImageElement : UIElement

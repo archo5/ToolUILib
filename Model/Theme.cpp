@@ -7,9 +7,8 @@ namespace ui {
 Theme* Theme::current;
 
 static
-struct ThemeInit
+struct DefaultTheme : Theme
 {
-	Theme defaultTheme;
 	style::Block dtObject;
 	style::Block dtPanel;
 	style::Block dtButton;
@@ -39,7 +38,7 @@ struct ThemeInit
 	style::Block dtSelectorContainer;
 	style::Block dtSelector;
 
-	ThemeInit()
+	DefaultTheme()
 	{
 		CreateObject();
 		CreatePanel();
@@ -69,6 +68,7 @@ struct ThemeInit
 		CreateImage();
 		CreateSelectorContainer();
 		CreateSelector();
+#define defaultTheme (*this) // TODO
 		Theme::current = &defaultTheme;
 	}
 	void PreventHeapDelete(style::Accessor& a)
@@ -492,6 +492,31 @@ struct ThemeInit
 			DrawThemeElement(TE_Selector16, r.x0, r.y0, r.x1, r.y1);
 		};
 		defaultTheme.selector = a.block;
+	}
+
+	std::weak_ptr<Image> cache[(int)ThemeImage::_COUNT];
+	std::shared_ptr<Image> GetImage(ThemeImage ti) override
+	{
+		auto& cpos = cache[int(ti)];
+		if (!cpos.expired())
+			return cpos.lock();
+		auto img = GetImageUncached(ti);
+		cpos = img;
+		return img;
+	}
+	std::shared_ptr<Image> GetImageUncached(ThemeImage ti)
+	{
+		switch (ti)
+		{
+		case ThemeImage::CheckerboardBackground: {
+			Canvas c(16, 16);
+			for (int y = 0; y < 16; y++)
+				for (int x = 0; x < 16; x++)
+					c.GetPixels()[x + y * 16] = ((x < 8) ^ (y < 8) ? Color4f(0.2f, 1) : Color4f(0.4f, 1)).GetColor32();
+			return std::make_shared<Image>(c); }
+		default:
+			return nullptr;
+		}
 	}
 }
 init;

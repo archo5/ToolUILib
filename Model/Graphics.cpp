@@ -11,17 +11,28 @@ namespace ui {
 void ColorBlock::OnInit()
 {
 	styleProps = Theme::current->colorBlock;
+	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 }
 
 void ColorBlock::OnPaint()
 {
 	styleProps->paint_func(this);
 
-	GL::SetTexture(0);
 	GL::BatchRenderer br;
+	auto r = GetContentRect();
+
+	if (_color.a != 1)
+	{
+		GL::SetTexture(_bgImage->_texture);
+		br.Begin();
+		br.SetColor(1, 1, 1, 1);
+		br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
+		br.End();
+	}
+	
+	GL::SetTexture(0);
 	br.Begin();
 	br.SetColor(_color.r, _color.g, _color.b, _color.a);
-	auto r = GetContentRect();
 	br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
 	br.End();
 
@@ -475,8 +486,10 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Make<ColorBlock>()->SetColor(_rgba) + Width(50) + Height(60) + Padding(0);
 				ctx->Pop();
 
+				//ctx->PushBox() + Layout(style::layouts::StackExpand()) + StackingDirection(style::StackingDirection::LeftToRight) + Height(22);
 				ctx->Text("Hex:") + Width(30);
 				ctx->Make<Textbox>()->Init(hex) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHex(); });
+				//ctx->Pop();
 			}
 			Property::End(ctx);
 
