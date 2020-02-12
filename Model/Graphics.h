@@ -83,6 +83,7 @@ struct Color4f
 		return std::max(r, std::max(g, b));
 	}
 
+	Color4f() : r(1), g(1), b(1), a(1) {}
 	Color4f(float f) : r(f), g(f), b(f), a(f) {}
 	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
@@ -294,6 +295,12 @@ struct ColorCompPicker2DSettings
 	Color4f _baseColor;
 };
 
+struct ColorDragDropData : DragDropData
+{
+	ColorDragDropData(const Color4f& c) : DragDropData("color"), color(c) {}
+	Color4f color;
+};
+
 struct ColorCompPicker2D : UIElement
 {
 	ColorCompPicker2D();
@@ -370,6 +377,14 @@ struct ColorPicker : Node
 		_rgba = Color4f::Hex(hex, _rgba.a);
 		_RGB2HSV();
 	}
+
+	struct SavedColors
+	{
+		SavedColors();
+
+		Color4f colors[16];
+	};
+	static SavedColors& GetSavedColors();
 
 	Color4f _rgba = Color4f::White();
 	float _hue = 0;

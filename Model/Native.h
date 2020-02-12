@@ -89,6 +89,9 @@ public:
 	bool IsInnerUIEnabled();
 	void SetInnerUIEnabled(bool enabled);
 
+	bool IsDebugDrawEnabled();
+	void SetDebugDrawEnabled(bool enabled);
+
 	void InvalidateAll();
 
 	void SetDefaultCursor(DefaultCursor cur);

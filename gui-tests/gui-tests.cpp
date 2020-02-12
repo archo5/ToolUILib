@@ -1300,6 +1300,8 @@ struct TEST : ui::Node
 		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
 		{
 			ctx->Make<ui::MenuItemElement>()->SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
+			ctx->Make<ui::MenuItemElement>()->SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
+				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rerender(); };
 		}
 		ctx->Pop();
 		ctx->Pop();

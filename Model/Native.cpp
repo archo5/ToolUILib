@@ -232,7 +232,7 @@ void DebugDrawSelf(UIObject* o)
 	B.Pos(r.x0 + pl, r.y1 - pb); B.Pos(r.x1 - pr, r.y1 - pb); B.Pos(r.x1, r.y1);
 	B.Pos(r.x0, r.y1); B.Pos(r.x0, r.y0); B.Pos(r.x0 + pl, r.y0 + pt);
 	B.Pos(r.x0 + pl, r.y0 + pt); B.Pos(r.x0 + pl, r.y1 - pb); B.Pos(r.x0, r.y1);
-#if 0
+#if 1
 	// border
 	B.SetColor(0.5f, 0.9f, 0.6f, a);
 	B.Pos(r.x0, r.y0); B.Pos(r.x1, r.y0); B.Pos(r.x1 + br, r.y0 - bt);
@@ -413,7 +413,7 @@ struct NativeWindow_Impl
 		//DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
 		//DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
 		//DrawTextLine(32, 32, "Test text", 1, 1, 1);
-		if (false)
+		if (debugDrawEnabled)
 		{
 			// debug draw
 			if (cont.rootNode)
@@ -477,6 +477,7 @@ struct NativeWindow_Impl
 	bool visible = true;
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
+	bool debugDrawEnabled = false;
 	bool firstShow = true;
 	bool invalidated = false;
 	uint8_t sysMoveSizeState = MSST_None;
@@ -700,6 +701,16 @@ bool NativeWindowBase::IsInnerUIEnabled()
 void NativeWindowBase::SetInnerUIEnabled(bool enabled)
 {
 	_impl->innerUIEnabled = enabled;
+}
+
+bool NativeWindowBase::IsDebugDrawEnabled()
+{
+	return _impl->debugDrawEnabled;
+}
+
+void NativeWindowBase::SetDebugDrawEnabled(bool enabled)
+{
+	_impl->debugDrawEnabled = enabled;
 }
 
 void NativeWindowBase::InvalidateAll()

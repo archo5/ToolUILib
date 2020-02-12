@@ -348,6 +348,21 @@ static UIRect RectHSlice(UIRect r, float i, float n)
 	return { lerp(r.x0, r.x1, i / n), r.y0, lerp(r.x0, r.x1, (i + 1) / n), r.y1 };
 }
 
+ColorPicker::SavedColors::SavedColors()
+{
+	for (int i = 0; i < 16; i++)
+	{
+		colors[i] = Color4f::HSV(i / 2 / 8.0f, i % 2 ? 0.25f : 0.75f, 0.8f);
+	}
+}
+
+ColorPicker::SavedColors g_savedColors;
+
+ColorPicker::SavedColors& ColorPicker::GetSavedColors()
+{
+	return g_savedColors;
+}
+
 void ColorPicker::Render(UIContainer* ctx)
 {
 	HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
@@ -481,13 +496,25 @@ void ColorPicker::Render(UIContainer* ctx)
 
 			Property::Begin(ctx);
 			{
-				*ctx->Push<Panel>() + StackingDirection(style::StackingDirection::LeftToRight) + Padding(3);
+				*ctx->Push<Panel>()
+					+ StackingDirection(style::StackingDirection::LeftToRight)
+					+ Padding(3)
+					+ EventHandler(UIEventType::DragStart, [this](UIEvent&) { ui::DragDrop::SetData(new ColorDragDropData(_rgba)); })
+					+ EventHandler(UIEventType::DragDrop, [this](UIEvent&)
+				{
+					if (auto* cddd = static_cast<ColorDragDropData*>(ui::DragDrop::GetData("color")))
+					{
+						_rgba = cddd->color;
+						_UpdateRGB();
+						Rerender();
+					}
+				});
 				ctx->Make<ColorBlock>()->SetColor({ _rgba.r, _rgba.g, _rgba.b, 1 }) + Width(50) + Height(60) + Padding(0);
 				ctx->Make<ColorBlock>()->SetColor(_rgba) + Width(50) + Height(60) + Padding(0);
 				ctx->Pop();
 
 				//ctx->PushBox() + Layout(style::layouts::StackExpand()) + StackingDirection(style::StackingDirection::LeftToRight) + Height(22);
-				ctx->Text("Hex:") + Width(30);
+				ctx->Text("Hex:") + Width(30) + Height(22);
 				ctx->Make<Textbox>()->Init(hex) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHex(); });
 				//ctx->Pop();
 			}
@@ -496,6 +523,28 @@ void ColorPicker::Render(UIContainer* ctx)
 		//	ctx->Pop();
 		}
 		ctx->Pop();
+	}
+	ctx->Pop();
+
+	ctx->PushBox()
+		+ Layout(style::layouts::InlineBlock())
+		+ StackingDirection(style::StackingDirection::LeftToRight)
+		+ Padding(8);
+	{
+		auto& sc = GetSavedColors();
+		for (int i = 0; i < 16; i++)
+		{
+			ctx->Make<ColorBlock>()->SetColor(sc.colors[i])
+				+ EventHandler(UIEventType::DragStart, [i](UIEvent&) { ui::DragDrop::SetData(new ColorDragDropData(GetSavedColors().colors[i])); })
+				+ EventHandler(UIEventType::DragDrop, [this, i](UIEvent&)
+			{
+				if (auto* cddd = static_cast<ColorDragDropData*>(ui::DragDrop::GetData("color")))
+				{
+					GetSavedColors().colors[i] = cddd->color;
+					Rerender();
+				}
+			});
+		}
 	}
 	ctx->Pop();
 }

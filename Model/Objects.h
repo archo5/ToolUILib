@@ -243,6 +243,7 @@ struct TextElement : UIElement
 	{
 		GetStyle().SetLayout(style::layouts::InlineBlock());
 	}
+#if 0
 	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(text.c_str()));
@@ -257,6 +258,12 @@ struct TextElement : UIElement
 		finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
 		//finalRect.x1 = finalRect.x0 + GetTextWidth(text)
 		//finalRect.y1 = finalRect.y0 + GetFontHeight();
+	}
+#endif
+	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
+	{
+		outWidth = ceilf(GetTextWidth(text.c_str()));
+		outHeight = GetFontHeight();
 	}
 	void OnPaint() override
 	{
