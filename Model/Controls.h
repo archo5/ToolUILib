@@ -275,6 +275,7 @@ struct Textbox : UIElement
 	Textbox();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
+	void OnSerialize(IDataSerializer& s) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
 	void EnterText(const char* str);

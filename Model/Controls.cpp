@@ -895,6 +895,11 @@ void Textbox::OnEvent(UIEvent& e)
 	}
 }
 
+void Textbox::OnSerialize(IDataSerializer& s)
+{
+	s << startCursor << endCursor << showCaretState;
+}
+
 void Textbox::EnterText(const char* str)
 {
 	EraseSelection();

@@ -124,14 +124,51 @@ struct LivenessToken
 	}
 };
 
+struct IDataSerializer
+{
+	virtual void Process(void* data, size_t size) = 0;
+
+	template <class T> IDataSerializer& operator << (T& val)
+	{
+		Process(&val, sizeof(val));
+		return *this;
+	}
+};
+
+struct DataWriteSerializer : IDataSerializer
+{
+	DataWriteSerializer(char* _p) : p(_p) {}
+	void Process(void* data, size_t size) override
+	{
+		memcpy(p, data, size);
+		p += size;
+	}
+
+	char* p;
+};
+
+struct DataReadSerializer : IDataSerializer
+{
+	DataReadSerializer(char* _p) : p(_p) {}
+	void Process(void* data, size_t size) override
+	{
+		memcpy(data, p, size);
+		p += size;
+	}
+
+	char* p;
+};
+
 struct UIObject
 {
 	UIObject();
 	virtual ~UIObject();
-	virtual void Reset() {}
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
 	virtual void OnCompleteStructure() {}
+
+	virtual void OnSerialize(IDataSerializer&) {}
+	void _SerializePersistent(IDataSerializer& s);
 
 	virtual void OnEvent(UIEvent& e) {}
 	void _DoEvent(UIEvent& e);
@@ -225,9 +262,15 @@ struct UIObject
 	LivenessToken _livenessToken;
 
 	// final layout rectangles: C=content, P=padding, B=border
-	UIRect finalRectC;
-	UIRect finalRectCP;
-	UIRect finalRectCPB;
+	UIRect finalRectC = {};
+	UIRect finalRectCP = {};
+	UIRect finalRectCPB = {};
+
+	// size cache
+	uint32_t _cacheFrameWidth = {};
+	uint32_t _cacheFrameHeight = {};
+	Range<float> _cacheValueWidth = {};
+	Range<float> _cacheValueHeight = {};
 };
 
 struct UIElement : UIObject
@@ -239,10 +282,7 @@ namespace ui {
 
 struct TextElement : UIElement
 {
-	TextElement()
-	{
-		GetStyle().SetLayout(style::layouts::InlineBlock());
-	}
+	TextElement();
 #if 0
 	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override
 	{
@@ -260,18 +300,9 @@ struct TextElement : UIElement
 		//finalRect.y1 = finalRect.y0 + GetFontHeight();
 	}
 #endif
-	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
-	{
-		outWidth = ceilf(GetTextWidth(text.c_str()));
-		outHeight = GetFontHeight();
-	}
-	void OnPaint() override
-	{
-		auto r = GetContentRect();
-		float w = r.x1 - r.x0;
-		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
-		PaintChildren();
-	}
+	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
+	void OnPaint() override;
+
 	void SetText(StringView t)
 	{
 		text.assign(t.data(), t.size());

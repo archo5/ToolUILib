@@ -734,6 +734,66 @@ struct ColorPickerTest : ui::Node
 	}
 };
 
+struct HighElementCountTest : ui::Node
+{
+	struct DummyElement : UIElement
+	{
+		void OnPaint() override
+		{
+			GL::SetTexture(0);
+			GL::BatchRenderer br;
+			br.Begin();
+			br.SetColor(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f);
+			auto r = GetContentRect();
+			br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
+			br.End();
+		}
+		void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
+		{
+			outWidth = 100;
+			outHeight = 1;
+		}
+	};
+	void Render(UIContainer* ctx) override
+	{
+		for (int i = 0; i < 1000; i++)
+			ctx->Make<DummyElement>();
+	}
+};
+
+struct ElementResetTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		if (first)
+		{
+			*ctx->MakeWithText<ui::Button>("First")
+				+ ui::Width(300)
+				+ ui::EventHandler(UIEventType::Click, [this](UIEvent&) { first = false; Rerender(); });
+
+			auto& tb = *ctx->Make<ui::Textbox>();
+			tb + ui::EventHandler(UIEventType::Change, [this, &tb](UIEvent&) { text[0] = tb.GetText(); });
+			tb.SetText(text[0]);
+		}
+		else
+		{
+			*ctx->MakeWithText<ui::Button>("Second")
+				+ ui::Height(30)
+				+ ui::EventHandler(UIEventType::Click, [this](UIEvent&) { first = true; Rerender(); });
+
+			auto& tb = *ctx->Make<ui::Textbox>();
+			tb + ui::EventHandler(UIEventType::Change, [this, &tb](UIEvent&) { text[1] = tb.GetText(); });
+			tb.SetText(text[1]);
+		}
+
+		auto& tb = *ctx->Make<ui::Textbox>();
+		tb + ui::EventHandler(UIEventType::Change, [this, &tb](UIEvent&) { text[2] = tb.GetText(); });
+		tb.SetText(text[2]);
+	}
+	bool first = true;
+	std::string text[3] = { "first", "second", "third" };
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -1264,21 +1324,23 @@ struct DataEditor : ui::Node
 
 static const char* testNames[] =
 {
-	"Test: Off",
-	"Test: Open/Close",
-	"Test: Calculator",
-	"Test: Edge slice",
-	"Test: Drag and drop",
-	"Test: Node editing",
-	"Test: SubUI",
-	"Test: Split pane",
-	"Test: Layout",
-	"Test: Layout 2",
-	"Test: Image",
-	"Test: Thread worker test",
-	"Test: Threaded image rendering test",
-	"Test: Sliders",
-	"Test: Color picker",
+	"Off",
+	"Open/Close",
+	"Calculator",
+	"Edge slice",
+	"Drag and drop",
+	"Node editing",
+	"SubUI",
+	"Split pane",
+	"Layout",
+	"Layout 2",
+	"Image",
+	"Thread worker test",
+	"Threaded image rendering test",
+	"Sliders",
+	"Color picker",
+	"High element count test",
+	"Element reset test",
 };
 struct TEST : ui::Node
 {
@@ -1323,6 +1385,8 @@ struct TEST : ui::Node
 		case 12: ctx->Make<ThreadedImageRenderingTest>(); break;
 		case 13: ctx->Make<SlidersTest>(); break;
 		case 14: ctx->Make<ColorPickerTest>(); break;
+		case 15: ctx->Make<HighElementCountTest>(); break;
+		case 16: ctx->Make<ElementResetTest>(); break;
 		}
 	}
 

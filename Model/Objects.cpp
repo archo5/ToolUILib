@@ -7,6 +7,8 @@
 
 
 namespace ui {
+extern uint32_t g_curLayoutFrame;
+
 struct EventHandlerEntry
 {
 	EventHandlerEntry* next;
@@ -23,8 +25,19 @@ UIObject::UIObject()
 
 UIObject::~UIObject()
 {
-	system->eventSystem.OnDestroy(this);
 	ClearEventHandlers();
+}
+
+void UIObject::_SerializePersistent(IDataSerializer& s)
+{
+	s << system;
+	s << parent;
+	s << prev;
+	s << next;
+	s << firstChild;
+	s << lastChild;
+	s << flags;
+	OnSerialize(s);
 }
 
 void UIObject::_DoEvent(UIEvent& e)
@@ -178,6 +191,8 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
+	if (ui::g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
 	auto style = GetStyle();
 	auto s = GetEstimatedWidth(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
@@ -188,6 +203,8 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 	}
 	s.min += ResolveUnits(style.GetMarginLeft(), containerSize.x);
 	s.min += ResolveUnits(style.GetMarginRight(), containerSize.x);
+	_cacheFrameWidth = ui::g_curLayoutFrame;
+	_cacheValueWidth = s;
 	return s;
 }
 
@@ -195,6 +212,8 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 {
 	if (!_NeedsLayout())
 		return { 0, FLT_MAX };
+	if (ui::g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
 	auto style = GetStyle();
 	auto s = GetEstimatedHeight(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
@@ -205,6 +224,8 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 	}
 	s.min += ResolveUnits(style.GetMarginTop(), containerSize.y);
 	s.min += ResolveUnits(style.GetMarginBottom(), containerSize.y);
+	_cacheFrameHeight = ui::g_curLayoutFrame;
+	_cacheValueHeight = s;
 	return s;
 }
 
@@ -449,6 +470,27 @@ ui::NativeWindowBase* UIObject::GetNativeWindow() const
 
 
 namespace ui {
+
+TextElement::TextElement()
+{
+	styleProps = Theme::current->text;
+}
+
+void TextElement::GetSize(style::Coord& outWidth, style::Coord& outHeight)
+{
+	outWidth = ceilf(GetTextWidth(text.c_str()));
+	outHeight = GetFontHeight();
+}
+
+void TextElement::OnPaint()
+{
+	styleProps->paint_func(this);
+	auto r = GetContentRect();
+	float w = r.x1 - r.x0;
+	DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
+	PaintChildren();
+}
+
 
 struct SubscrTableKey
 {

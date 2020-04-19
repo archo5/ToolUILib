@@ -53,8 +53,15 @@ struct UIContainer
 	{
 		if (obj && typeid(*obj) == typeid(T))
 		{
-			obj->Reset();
-			return static_cast<T*>(obj);
+			auto* t = static_cast<T*>(obj);
+			char buf[512];
+			DataWriteSerializer dws(buf);
+			t->_SerializePersistent(dws);
+			t->~T();
+			new (t) T();
+			DataReadSerializer drs(buf);
+			t->_SerializePersistent(drs);
+			return t;
 		}
 		auto* p = new T();
 		p->system = owner;
@@ -152,9 +159,9 @@ struct UIContainer
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
 	//int debugpad2 = 0;
-	UIObject* objectStack[128];
+	UIObject* objectStack[1024];
 	int debugpad4 = 0;
-	UIObject* objChildStack[128];
+	UIObject* objChildStack[1024];
 	//ui::Node* currentNode;
 	//int elementStackSize = 0;
 	int objectStackSize = 0;

@@ -5,6 +5,11 @@
 #include "System.h"
 
 
+namespace ui {
+uint32_t g_curLayoutFrame = 0;
+} // ui
+
+
 ui::Node* UIEvent::GetTargetNode() const
 {
 	for (auto* t = target; t; t = t->parent)
@@ -76,6 +81,7 @@ void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt)
 
 void UIEventSystem::RecomputeLayout()
 {
+	ui::g_curLayoutFrame++;
 	if (container->rootNode)
 		container->rootNode->OnLayout({ 0, 0, width, height }, { width, height });
 }

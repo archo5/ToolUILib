@@ -18,6 +18,7 @@ struct Theme
 {
 	// core controls
 	style::BlockRef object;
+	style::BlockRef text;
 	style::BlockRef panel;
 	style::BlockRef button;
 	style::BlockRef checkbox;

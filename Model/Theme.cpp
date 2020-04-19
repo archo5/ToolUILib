@@ -10,6 +10,7 @@ static
 struct DefaultTheme : Theme
 {
 	style::Block dtObject;
+	style::Block dtText;
 	style::Block dtPanel;
 	style::Block dtButton;
 	style::Block dtCheckbox;
@@ -41,6 +42,7 @@ struct DefaultTheme : Theme
 	DefaultTheme()
 	{
 		CreateObject();
+		CreateText();
 		CreatePanel();
 		CreateButton();
 		CreateCheckbox();
@@ -83,6 +85,16 @@ struct DefaultTheme : Theme
 		{
 		};
 		defaultTheme.object = a.block;
+	}
+	void CreateText()
+	{
+		style::Accessor a(&dtText);
+		PreventHeapDelete(a);
+		a.SetLayout(style::layouts::InlineBlock());
+		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		{
+		};
+		defaultTheme.text = a.block;
 	}
 	void CreatePanel()
 	{

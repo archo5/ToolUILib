@@ -67,6 +67,7 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 			objectStack[objectStackSize++] = n;
 
 		DEBUG_FLOW(printf("    deleting %p\n", cur));
+		cur->system->eventSystem.OnDestroy(cur);
 		delete cur;
 	}
 }
