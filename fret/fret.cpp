@@ -790,10 +790,13 @@ struct MarkedItemsList : ui::Node
 	{
 		Subscribe(DCT_MarkedItems, mdata);
 		ctx->Text("Marked items");
-		for (const auto& m : mdata->markers)
+		for (auto& m : mdata->markers)
 		{
 			ctx->Push<ui::Panel>();
-			ctx->Text("Offset:");
+			ui::imm::EditInt(ctx, "Offset", m.at);
+			ui::imm::EditInt(ctx, "Count", m.count);
+			ui::imm::EditInt(ctx, "Repeats", m.repeats);
+			ui::imm::EditInt(ctx, "Stride", m.stride);
 			ctx->Pop();
 		}
 	}

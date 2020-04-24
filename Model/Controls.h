@@ -196,6 +196,9 @@ struct Property : UIElement
 namespace imm {
 
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
+bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
+bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
+bool EditInt(UIContainer* ctx, const char* label, uint64_t& val, uint64_t speed = 1, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
 bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 
 } // imm

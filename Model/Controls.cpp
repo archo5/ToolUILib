@@ -391,10 +391,11 @@ template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum&
 	{
 		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 		{
-			TNum nv = val + e.dx * speed;
-			if (nv > vmax)
+			typename std::make_signed<TNum>::type diff = e.dx * speed;
+			TNum nv = val + diff;
+			if (nv > vmax || (diff > 0 && nv < val))
 				nv = vmax;
-			if (nv < vmin)
+			if (nv < vmin || (diff < 0 && nv > val))
 				nv = vmin;
 
 			char buf[1024];
@@ -422,6 +423,21 @@ template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum&
 }
 
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed, int vmin, int vmax, const char* fmt)
+{
+	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
+}
+
+bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
+{
+	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
+}
+
+bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
+{
+	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
+}
+
+bool EditInt(UIContainer* ctx, const char* label, uint64_t& val, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
 	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
 }
