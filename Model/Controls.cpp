@@ -340,6 +340,59 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 }
 
 
+namespace imm {
+
+bool EditInt(UIContainer* ctx, const char* label, int& val)
+{
+	Property::Begin(ctx);
+	auto& lbl = Property::Label(ctx, label);
+	auto* tb = ctx->Make<Textbox>();
+
+	bool edited = false;
+	if (tb->flags & UIObject_IsEdited)
+	{
+		val = atoi(tb->text.c_str());
+		tb->flags &= UIObject_IsEdited;
+		edited = true;
+	}
+
+	char buf[12];
+	snprintf(buf, 12, "%d", val);
+	tb->text = buf;
+
+	lbl.HandleEvent() = [val, tb](UIEvent& e)
+	{
+		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+		{
+			int nv = val + e.dx;
+
+			char buf[12];
+			snprintf(buf, 12, "%d", nv);
+			tb->text = buf;
+			tb->flags |= UIObject_IsEdited;
+
+			e.context->OnCommit(e.target);
+			e.target->RerenderNode();
+		}
+		if (e.type == UIEventType::SetCursor)
+		{
+			e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
+			e.handled = true;
+		}
+	};
+	tb->HandleEvent(UIEventType::Commit) = [tb](UIEvent& e)
+	{
+		tb->flags |= UIObject_IsEdited;
+		e.target->RerenderNode();
+	};
+
+	Property::End(ctx);
+	return edited;
+}
+
+} // imm
+
+
 SplitPane::SplitPane()
 {
 	// TODO
@@ -898,6 +951,12 @@ void Textbox::OnEvent(UIEvent& e)
 void Textbox::OnSerialize(IDataSerializer& s)
 {
 	s << startCursor << endCursor << showCaretState;
+
+	uint32_t len = text.size();
+	s << len;
+	text.resize(len);
+	if (len)
+		s.Process(&text[0], len);
 }
 
 void Textbox::EnterText(const char* str)

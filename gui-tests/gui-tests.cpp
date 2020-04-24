@@ -794,6 +794,22 @@ struct ElementResetTest : ui::Node
 	std::string text[3] = { "first", "second", "third" };
 };
 
+struct IMGUITest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		{
+			int tmp = intVal;
+			if (ui::imm::EditInt(ctx, "intVal", tmp))
+				intVal = tmp;
+
+			ctx->Text("intVal: " + std::to_string(intVal));
+		}
+	}
+
+	int intVal = 15;
+};
+
 
 static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
 static const char* opNames[] = { "+", "-", "*", "/" };
@@ -1341,6 +1357,7 @@ static const char* testNames[] =
 	"Color picker",
 	"High element count test",
 	"Element reset test",
+	"IMGUI test",
 };
 struct TEST : ui::Node
 {
@@ -1387,6 +1404,7 @@ struct TEST : ui::Node
 		case 14: ctx->Make<ColorPickerTest>(); break;
 		case 15: ctx->Make<HighElementCountTest>(); break;
 		case 16: ctx->Make<ElementResetTest>(); break;
+		case 17: ctx->Make<IMGUITest>(); break;
 		}
 	}
 

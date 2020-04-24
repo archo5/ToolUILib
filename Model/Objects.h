@@ -60,6 +60,7 @@ enum UIObjectFlags
 	UIObject_IsDisabled = 1 << 8,
 	UIObject_IsHidden = 1 << 9,
 	UIObject_DragHovered = 1 << 10, // TODO reorder
+	UIObject_IsEdited = 1 << 11,
 };
 
 enum class Direction

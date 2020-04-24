@@ -193,6 +193,12 @@ struct Property : UIElement
 	static void EditFloat4(UIContainer* ctx, const char* label, float* v);
 };
 
+namespace imm {
+
+bool EditInt(UIContainer* ctx, const char* label, int& val);
+
+} // imm
+
 struct SplitPane : UIElement
 {
 	SplitPane();
