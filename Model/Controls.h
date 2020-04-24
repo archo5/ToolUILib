@@ -195,7 +195,8 @@ struct Property : UIElement
 
 namespace imm {
 
-bool EditInt(UIContainer* ctx, const char* label, int& val);
+bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
+bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 
 } // imm
 

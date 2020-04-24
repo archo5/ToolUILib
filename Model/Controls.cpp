@@ -342,33 +342,64 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 
 namespace imm {
 
-bool EditInt(UIContainer* ctx, const char* label, int& val)
+struct NumFmtBox
+{
+	char fmt[8];
+
+	NumFmtBox(const char* f)
+	{
+		fmt[0] = ' ';
+		strncpy(fmt + 1, f, 6);
+		fmt[7] = '\0';
+	}
+};
+
+const char* RemoveNegZero(const char* str)
+{
+	return strncmp(str, "-0", 3) == 0 ? "0" : str;
+}
+
+template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum& val, TNum speed, TNum vmin, TNum vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto& lbl = Property::Label(ctx, label);
 	auto* tb = ctx->Make<Textbox>();
 
+	NumFmtBox fb(fmt);
+
 	bool edited = false;
 	if (tb->flags & UIObject_IsEdited)
 	{
-		val = atoi(tb->text.c_str());
-		tb->flags &= UIObject_IsEdited;
+		decltype(val + 0) tmp = 0;
+		sscanf(tb->text.c_str(), fb.fmt, &tmp);
+		if (tmp == 0)
+			tmp = 0;
+		if (tmp > vmax)
+			tmp = vmax;
+		if (tmp < vmin)
+			tmp = vmin;
+		val = tmp;
+		tb->flags &= ~UIObject_IsEdited;
 		edited = true;
 	}
 
-	char buf[12];
-	snprintf(buf, 12, "%d", val);
-	tb->text = buf;
+	char buf[1024];
+	snprintf(buf, 1024, fb.fmt + 1, val);
+	tb->text = RemoveNegZero(buf);
 
-	lbl.HandleEvent() = [val, tb](UIEvent& e)
+	lbl.HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
 	{
 		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 		{
-			int nv = val + e.dx;
+			TNum nv = val + e.dx * speed;
+			if (nv > vmax)
+				nv = vmax;
+			if (nv < vmin)
+				nv = vmin;
 
-			char buf[12];
-			snprintf(buf, 12, "%d", nv);
-			tb->text = buf;
+			char buf[1024];
+			snprintf(buf, 1024, fb.fmt + 1, nv);
+			tb->text = RemoveNegZero(buf);
 			tb->flags |= UIObject_IsEdited;
 
 			e.context->OnCommit(e.target);
@@ -388,6 +419,16 @@ bool EditInt(UIContainer* ctx, const char* label, int& val)
 
 	Property::End(ctx);
 	return edited;
+}
+
+bool EditInt(UIContainer* ctx, const char* label, int& val, int speed, int vmin, int vmax, const char* fmt)
+{
+	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
+}
+
+bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed, float vmin, float vmax, const char* fmt)
+{
+	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
 }
 
 } // imm

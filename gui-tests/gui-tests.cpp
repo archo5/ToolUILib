@@ -798,16 +798,27 @@ struct IMGUITest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
+		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %d")->Init(intFmt, 0)->onChange = [this]() { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %x")->Init(intFmt, 1)->onChange = [this]() { Rerender(); };
 		{
 			int tmp = intVal;
-			if (ui::imm::EditInt(ctx, "intVal", tmp))
+			if (ui::imm::EditInt(ctx, "intVal", tmp, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ctx->Text("intVal: " + std::to_string(intVal));
 		}
+		{
+			float tmp = floatVal;
+			if (ui::imm::EditFloat(ctx, "floatVal", tmp, 0.1f, -37.4f, 154.1f))
+				floatVal = tmp;
+
+			ctx->Text("floatVal: " + std::to_string(floatVal));
+		}
 	}
 
+	int intFmt = 0;
 	int intVal = 15;
+	float floatVal = 3.14f;
 };
 
 
