@@ -756,9 +756,26 @@ struct HighElementCountTest : ui::Node
 	};
 	void Render(UIContainer* ctx) override
 	{
+		ctx->PushBox();// + ui::StackingDirection(style::StackingDirection::LeftToRight); TODO FIX
+		ctx->MakeWithText<ui::RadioButtonT<int>>("no styles")->Init(styleMode, 0)->onChange = [this]() { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("same style")->Init(styleMode, 1)->onChange = [this]() { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("different styles")->Init(styleMode, 2)->onChange = [this]() { Rerender(); };
+		ctx->Pop();
+
 		for (int i = 0; i < 1000; i++)
-			ctx->Make<DummyElement>();
+		{
+			auto* el = ctx->Make<DummyElement>();
+			switch (styleMode)
+			{
+			case 0: break;
+			case 1: *el + ui::Width(200); break;
+			case 2: *el + ui::Width(100 + i * 0.02f); break;
+			}
+		}
+
+		printf("# blocks: %d\n", style::g_numBlocks);
 	}
+	int styleMode;
 };
 
 struct ElementResetTest : ui::Node
@@ -1349,26 +1366,31 @@ struct DataEditor : ui::Node
 };
 
 
-static const char* testNames[] =
+struct TestEntry
 {
-	"Off",
-	"Open/Close",
-	"Calculator",
-	"Edge slice",
-	"Drag and drop",
-	"Node editing",
-	"SubUI",
-	"Split pane",
-	"Layout",
-	"Layout 2",
-	"Image",
-	"Thread worker test",
-	"Threaded image rendering test",
-	"Sliders",
-	"Color picker",
-	"High element count test",
-	"Element reset test",
-	"IMGUI test",
+	const char* name;
+	void(*func)(UIContainer* ctx);
+};
+static TestEntry testEntries[] =
+{
+	{ "Off", [](UIContainer* ctx) {} },
+	{ "Open/Close", [](UIContainer* ctx) { ctx->Make<OpenClose>(); } },
+	{ "Calculator", [](UIContainer* ctx) { ctx->Make<Calculator>(); } },
+	{ "Edge slice", [](UIContainer* ctx) { ctx->Make<EdgeSliceTest>(); } },
+	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
+	{ "Node editing", [](UIContainer* ctx) { ctx->Make<NodeEditTest>(); } },
+	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
+	{ "Split pane", [](UIContainer* ctx) { ctx->Make<SplitPaneTest>(); } },
+	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
+	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
+	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
+	{ "Thread worker test", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
+	{ "Threaded image rendering test", [](UIContainer* ctx) { ctx->Make<ThreadedImageRenderingTest>(); } },
+	{ "Sliders", [](UIContainer* ctx) { ctx->Make<SlidersTest>(); } },
+	{ "Color picker", [](UIContainer* ctx) { ctx->Make<ColorPickerTest>(); } },
+	{ "High element count test", [](UIContainer* ctx) { ctx->Make<HighElementCountTest>(); } },
+	{ "Element reset test", [](UIContainer* ctx) { ctx->Make<ElementResetTest>(); } },
+	{ "IMGUI test", [](UIContainer* ctx) { ctx->Make<IMGUITest>(); } },
 };
 struct TEST : ui::Node
 {
@@ -1376,15 +1398,15 @@ struct TEST : ui::Node
 	{
 		ctx->Push<ui::MenuBarElement>();
 		ctx->Push<ui::MenuItemElement>()->SetText("Test");
-		for (size_t i = 0; i < sizeof(testNames) / sizeof(testNames[0]); i++)
+		for (size_t i = 0; i < sizeof(testEntries) / sizeof(testEntries[0]); i++)
 		{
 			auto fn = [this, i]()
 			{
 				curTest = i;
-				GetNativeWindow()->SetTitle(testNames[i]);
+				GetNativeWindow()->SetTitle(testEntries[i].name);
 				Rerender();
 			};
-			ctx->Make<ui::MenuItemElement>()->SetText(testNames[i]).SetChecked(curTest == i).onActivate = fn;
+			ctx->Make<ui::MenuItemElement>()->SetText(testEntries[i].name).SetChecked(curTest == i).onActivate = fn;
 		}
 		ctx->Pop();
 		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
@@ -1396,27 +1418,7 @@ struct TEST : ui::Node
 		ctx->Pop();
 		ctx->Pop();
 
-		switch (curTest)
-		{
-		case 0: break;
-		case 1: ctx->Make<OpenClose>(); break;
-		case 2: ctx->Make<Calculator>(); break;
-		case 3: ctx->Make<EdgeSliceTest>(); break;
-		case 4: ctx->Make<DragDropTest>(); break;
-		case 5: ctx->Make<NodeEditTest>(); break;
-		case 6: ctx->Make<SubUITest>(); break;
-		case 7: ctx->Make<SplitPaneTest>(); break;
-		case 8: ctx->Make<LayoutTest>(); break;
-		case 9: ctx->Make<LayoutTest2>(); break;
-		case 10: ctx->Make<ImageTest>(); break;
-		case 11: ctx->Make<ThreadWorkerTest>(); break;
-		case 12: ctx->Make<ThreadedImageRenderingTest>(); break;
-		case 13: ctx->Make<SlidersTest>(); break;
-		case 14: ctx->Make<ColorPickerTest>(); break;
-		case 15: ctx->Make<HighElementCountTest>(); break;
-		case 16: ctx->Make<ElementResetTest>(); break;
-		case 17: ctx->Make<IMGUITest>(); break;
-		}
+		testEntries[curTest].func(ctx);
 	}
 
 	static const char* cln(const char* s)

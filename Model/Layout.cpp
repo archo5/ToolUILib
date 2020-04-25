@@ -346,6 +346,9 @@ Layout* EdgeSlice() { return &g_edgeSliceLayout; }
 } // layouts
 
 
+int g_numBlocks;
+
+
 PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 {
 	rect = o->GetPaddingRect();
