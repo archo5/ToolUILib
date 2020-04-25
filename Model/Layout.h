@@ -269,6 +269,10 @@ struct Coord
 	Coord(float px) : value(px), unit(CoordTypeUnit::Pixels) {}
 	Coord(float v, CoordTypeUnit u) : value(v), unit(u) {}
 	bool IsDefined(bool fraction = false) const { return unit != CoordTypeUnit::Undefined && (fraction ? true : unit != CoordTypeUnit::Fraction); }
+	bool operator == (const Coord& o) const
+	{
+		return unit == o.unit && (unit <= CoordTypeUnit::Auto || value == o.value);
+	}
 	static const Coord Undefined() { return {}; }
 	static Coord Percent(float p) { return Coord(p, CoordTypeUnit::Percent); }
 	static Coord Fraction(float f) { return Coord(f, CoordTypeUnit::Fraction); }
@@ -297,6 +301,12 @@ struct PaintInfo
 };
 
 using PaintFunction = std::function<void(const PaintInfo&)>;
+inline bool operator == (const PaintFunction& a, const PaintFunction& b)
+{
+	// cannot compare two instances in practice
+	// even if the underlying function pointer is the same, data may be different
+	return false;
+}
 
 struct IErrorCallback
 {
@@ -307,14 +317,65 @@ struct IErrorCallback
 	bool hadError = false;
 };
 
+struct PropChange
+{
+	int which;
+
+	virtual bool Equal(PropChange* other) = 0;
+};
+
+template <class T>
+struct PropChangeImpl : PropChange
+{
+	T value;
+
+	bool Equal(PropChange* other) override
+	{
+		if (which != other->which)
+			return false;
+		return value == static_cast<PropChangeImpl*>(other)->value;
+	}
+};
+
+typedef bool FnIsPropEqual(const void* a, const void* b);
+typedef void FnPropCopy(void* a, const void* b);
+
+template <class T>
+struct PropFuncs
+{
+	static bool IsEqual(const void* a, const void* b)
+	{
+		return *static_cast<const T*>(a) == *static_cast<const T*>(b);
+	}
+	static void Copy(void* a, const void* b)
+	{
+		*static_cast<T*>(a) = *static_cast<const T*>(b);
+	}
+};
+
 struct Block
 {
+	~Block();
 	void Compile(StringView& text, IErrorCallback* err);
 	void MergeDirect(const Block& o);
 	void MergeParent(const Block& o);
 	void _Release();
 
+	Block* _GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref);
+	template <class T> Block* GetWithChange(int off, const T& val)
+	{
+		return _GetWithChange(off, PropFuncs<T>::IsEqual, PropFuncs<T>::Copy, &val);
+	}
+
 	uint32_t _refCount = 0;
+	int _numChildren = 0;
+	int _parentDiffOffset = 0;
+	FnIsPropEqual* _parentDiffFunc = nullptr;
+	Block* _parent = nullptr;
+	Block* _prev = nullptr;
+	Block* _next = nullptr;
+	Block* _firstChild = nullptr;
+	Block* _lastChild = nullptr;
 
 	Presence presence = Presence::Undefined;
 	Layout* layout = nullptr;
@@ -442,8 +503,6 @@ private:
 
 class Accessor
 {
-	Block* GetOrCreate();
-
 public:
 
 	explicit Accessor(Block* b);
@@ -473,7 +532,7 @@ public:
 	void SetHAlign(HAlign a);
 
 	PaintFunction GetPaintFunc() const;
-	PaintFunction& MutablePaintFunc();
+	void SetPaintFunc(const PaintFunction& f);
 
 
 	Coord GetWidth() const;

@@ -681,8 +681,8 @@ struct SlidersTest : ui::Node
 		static float sldval3 = 0.63f;
 		{
 			auto& s = ctx->Make<ui::Slider>()->Init(sldval3, { 0, 1 });
-			auto& fn = style::Accessor(s.trackStyle).MutablePaintFunc();
-			fn = [fn](const style::PaintInfo& info)
+			style::Accessor a(s.trackStyle);
+			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const style::PaintInfo& info)
 			{
 				fn(info);
 				auto r = info.rect;
@@ -699,10 +699,8 @@ struct SlidersTest : ui::Node
 				br.SetColor(0, 0, 0);
 				br.Pos(r.x0, r.y1);
 				br.End();
-			};
-			style::Accessor(s.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info)
-			{
-			};
+			});
+			style::Accessor(s.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 		}
 		ui::Property::End(ctx);
 

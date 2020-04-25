@@ -394,14 +394,14 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("H") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_hue, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateHSV(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, sat{ _sat }, val{ _val }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, sat{ _sat }, val{ _val }](const style::PaintInfo& info)
 				{
 					fn(info);
 					for (int i = 0; i < 6; i++)
 						DrawHGradQuad(RectHSlice(info.rect, i, 6), Color4f::HSV(i / 6.0f, sat, val), Color4f::HSV((i + 1) / 6.0f, sat, val));
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_hue) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHSV(); });
 			}
 			Property::End(ctx);
@@ -411,13 +411,13 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("S") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_sat, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateHSV(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, hue{ _hue }, val{ _val }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _hue }, val{ _val }](const style::PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, 0, val), Color4f::HSV(hue, 1, val));
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_sat) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHSV(); });
 			}
 			Property::End(ctx);
@@ -427,13 +427,13 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("V") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_val, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateHSV(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, hue{ _hue }, sat{ _sat }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _hue }, sat{ _sat }](const style::PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, sat, 0), Color4f::HSV(hue, sat, 1));
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_val) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateHSV(); });
 			}
 			Property::End(ctx);
@@ -443,13 +443,13 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("R") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_rgba.r, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateRGB(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, col{ _rgba }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _rgba }](const style::PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { 0, col.g, col.b }, { 1, col.g, col.b });
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_rgba.r) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateRGB(); });
 			}
 			Property::End(ctx);
@@ -459,13 +459,13 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("G") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_rgba.g, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateRGB(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, col{ _rgba }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _rgba }](const style::PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { col.r, 0, col.b }, { col.r, 1, col.b });
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_rgba.g) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateRGB(); });
 			}
 			Property::End(ctx);
@@ -475,13 +475,13 @@ void ColorPicker::Render(UIContainer* ctx)
 				ctx->Text("B") + Width(10);
 				auto& sl = ctx->Make<Slider>()->Init(_rgba.b, limit);
 				sl.HandleEvent(UIEventType::Change) = [this](UIEvent&) { _UpdateRGB(); };
-				auto& fn = style::Accessor(sl.trackStyle).MutablePaintFunc();
-				fn = [fn, col{ _rgba }](const style::PaintInfo& info)
+				style::Accessor a(sl.trackStyle);
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _rgba }](const style::PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { col.r, col.g, 0 }, { col.r, col.g, 1 });
-				};
-				style::Accessor(sl.trackFillStyle).MutablePaintFunc() = [](const style::PaintInfo& info) {};
+				});
+				style::Accessor(sl.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 				ctx->Make<Textbox>()->Init(_rgba.b) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _UpdateRGB(); });
 			}
 			Property::End(ctx);

@@ -567,10 +567,71 @@ void Block::MergeParent(const Block& o)
 	if (padding_bottom.unit == CoordTypeUnit::Inherit) padding_bottom = o.padding_bottom;
 }
 
+Block::~Block()
+{
+	for (auto* ch = _firstChild; ch; ch = ch->_next)
+	{
+		ch->_parent = nullptr;
+	}
+
+	if (_prev)
+		_prev->_next = _next;
+	else if (_parent)
+		_parent->_firstChild = _next;
+
+	if (_next)
+		_next->_prev = _prev;
+	else if (_parent)
+		_parent->_lastChild = _prev;
+
+	if (_parent)
+	{
+		_parent->_numChildren--;
+		_parent->_Release();
+	}
+}
+
 void Block::_Release()
 {
 	if (--_refCount <= 0)
 		delete this;
+}
+
+Block* Block::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref)
+{
+	for (auto* ch = _firstChild; ch; ch = ch->_next)
+	{
+		if (ch->_parentDiffOffset == off && feq(reinterpret_cast<char*>(ch) + off, ref))
+		{
+			return ch;
+		}
+	}
+
+	// create new
+	Block* copy = new Block(*this);
+	copy->_refCount = 0;
+	copy->_numChildren = 0;
+	copy->_prev = nullptr;
+	copy->_next = nullptr;
+	copy->_firstChild = nullptr;
+	copy->_lastChild = nullptr;
+	// copy prop
+	fcopy(reinterpret_cast<char*>(copy) + off, ref);
+	// link
+	copy->_parent = this;
+	if (_firstChild)
+	{
+		_firstChild->_prev = copy;
+		copy->_next = _firstChild;
+	}
+	else
+		_lastChild = copy;
+	_firstChild = copy;
+	//copy->_parentDiffFunc = feq; TODO needed?
+	copy->_parentDiffOffset = off;
+	_refCount++;
+	_numChildren++;
+	return copy;
 }
 
 
@@ -764,17 +825,6 @@ void Sheet::_Preprocess(StringView text, IErrorCallback* err)
 }
 
 
-style::Block* Accessor::GetOrCreate()
-{
-	// TODO optimize?
-	if (block->_refCount <= 1 || !blkref)
-		return block;
-	block = new Block(**blkref);
-	block->_refCount = 0;
-	*blkref = block;
-	return block;
-}
-
 Accessor::Accessor(Block* b) : block(b), blkref(nullptr)
 {
 }
@@ -807,6 +857,19 @@ void Accessor::SetPosition(Position position)
 }
 #endif
 
+template <class T> void AccSet(Accessor& a, int off, T v)
+{
+	if (a.blkref)
+	{
+		if (auto* it = a.block->GetWithChange(off, v))
+		{
+			*a.blkref = a.block = it;
+			return;
+		}
+	}
+	PropFuncs<T>::Copy(reinterpret_cast<char*>(a.block) + off, &v);
+}
+
 Layout* Accessor::GetLayout() const
 {
 	return block->layout;
@@ -814,7 +877,7 @@ Layout* Accessor::GetLayout() const
 
 void Accessor::SetLayout(Layout* v)
 {
-	GetOrCreate()->layout = v;
+	AccSet(*this, offsetof(Block, layout), v);
 }
 
 StackingDirection Accessor::GetStackingDirection() const
@@ -824,7 +887,7 @@ StackingDirection Accessor::GetStackingDirection() const
 
 void Accessor::SetStackingDirection(StackingDirection v)
 {
-	GetOrCreate()->stacking_direction = v;
+	AccSet(*this, offsetof(Block, stacking_direction), v);
 }
 
 Edge Accessor::GetEdge() const
@@ -834,7 +897,7 @@ Edge Accessor::GetEdge() const
 
 void Accessor::SetEdge(Edge v)
 {
-	GetOrCreate()->edge = v;
+	AccSet(*this, offsetof(Block, edge), v);
 }
 
 BoxSizing Accessor::GetBoxSizing() const
@@ -844,7 +907,7 @@ BoxSizing Accessor::GetBoxSizing() const
 
 void Accessor::SetBoxSizing(BoxSizing v)
 {
-	GetOrCreate()->box_sizing = v;
+	AccSet(*this, offsetof(Block, box_sizing), v);
 }
 
 HAlign Accessor::GetHAlign() const
@@ -854,7 +917,7 @@ HAlign Accessor::GetHAlign() const
 
 void Accessor::SetHAlign(HAlign a)
 {
-	GetOrCreate()->h_align = a;
+	AccSet(*this, offsetof(Block, h_align), a);
 }
 
 PaintFunction Accessor::GetPaintFunc() const
@@ -862,9 +925,9 @@ PaintFunction Accessor::GetPaintFunc() const
 	return block->paint_func;
 }
 
-PaintFunction& Accessor::MutablePaintFunc()
+void Accessor::SetPaintFunc(const PaintFunction& f)
 {
-	return GetOrCreate()->paint_func;
+	AccSet(*this, offsetof(Block, paint_func), f);
 }
 
 Coord Accessor::GetWidth() const
@@ -874,7 +937,7 @@ Coord Accessor::GetWidth() const
 
 void Accessor::SetWidth(Coord v)
 {
-	GetOrCreate()->width = v;
+	AccSet(*this, offsetof(Block, width), v);
 }
 
 Coord Accessor::GetHeight() const
@@ -884,7 +947,7 @@ Coord Accessor::GetHeight() const
 
 void Accessor::SetHeight(Coord v)
 {
-	GetOrCreate()->height = v;
+	AccSet(*this, offsetof(Block, height), v);
 }
 
 Coord Accessor::GetMinWidth() const
@@ -894,7 +957,7 @@ Coord Accessor::GetMinWidth() const
 
 void Accessor::SetMinWidth(Coord v)
 {
-	GetOrCreate()->min_width = v;
+	AccSet(*this, offsetof(Block, min_width), v);
 }
 
 Coord Accessor::GetMinHeight() const
@@ -904,7 +967,7 @@ Coord Accessor::GetMinHeight() const
 
 void Accessor::SetMinHeight(Coord v)
 {
-	GetOrCreate()->min_height = v;
+	AccSet(*this, offsetof(Block, min_height), v);
 }
 
 Coord Accessor::GetMaxWidth() const
@@ -914,7 +977,7 @@ Coord Accessor::GetMaxWidth() const
 
 void Accessor::SetMaxWidth(Coord v)
 {
-	GetOrCreate()->max_width = v;
+	AccSet(*this, offsetof(Block, max_width), v);
 }
 
 Coord Accessor::GetMaxHeight() const
@@ -924,7 +987,7 @@ Coord Accessor::GetMaxHeight() const
 
 void Accessor::SetMaxHeight(Coord v)
 {
-	GetOrCreate()->max_height = v;
+	AccSet(*this, offsetof(Block, max_height), v);
 }
 
 Coord Accessor::GetLeft() const
@@ -934,7 +997,7 @@ Coord Accessor::GetLeft() const
 
 void Accessor::SetLeft(Coord v)
 {
-	GetOrCreate()->left = v;
+	AccSet(*this, offsetof(Block, left), v);
 }
 
 Coord Accessor::GetRight() const
@@ -944,7 +1007,7 @@ Coord Accessor::GetRight() const
 
 void Accessor::SetRight(Coord v)
 {
-	GetOrCreate()->right = v;
+	AccSet(*this, offsetof(Block, right), v);
 }
 
 Coord Accessor::GetTop() const
@@ -954,7 +1017,7 @@ Coord Accessor::GetTop() const
 
 void Accessor::SetTop(Coord v)
 {
-	GetOrCreate()->top = v;
+	AccSet(*this, offsetof(Block, top), v);
 }
 
 Coord Accessor::GetBottom() const
@@ -964,7 +1027,7 @@ Coord Accessor::GetBottom() const
 
 void Accessor::SetBottom(Coord v)
 {
-	GetOrCreate()->bottom = v;
+	AccSet(*this, offsetof(Block, bottom), v);
 }
 
 Coord Accessor::GetMarginLeft() const
@@ -974,7 +1037,7 @@ Coord Accessor::GetMarginLeft() const
 
 void Accessor::SetMarginLeft(Coord v)
 {
-	GetOrCreate()->margin_left = v;
+	AccSet(*this, offsetof(Block, margin_left), v);
 }
 
 Coord Accessor::GetMarginRight() const
@@ -984,7 +1047,7 @@ Coord Accessor::GetMarginRight() const
 
 void Accessor::SetMarginRight(Coord v)
 {
-	GetOrCreate()->margin_right = v;
+	AccSet(*this, offsetof(Block, margin_right), v);
 }
 
 Coord Accessor::GetMarginTop() const
@@ -994,7 +1057,7 @@ Coord Accessor::GetMarginTop() const
 
 void Accessor::SetMarginTop(Coord v)
 {
-	GetOrCreate()->margin_top = v;
+	AccSet(*this, offsetof(Block, margin_top), v);
 }
 
 Coord Accessor::GetMarginBottom() const
@@ -1004,16 +1067,23 @@ Coord Accessor::GetMarginBottom() const
 
 void Accessor::SetMarginBottom(Coord v)
 {
-	GetOrCreate()->margin_bottom = v;
+	AccSet(*this, offsetof(Block, margin_bottom), v);
 }
 
 void Accessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 {
+	// TODO?
+#if 0
 	GetOrCreate();
 	block->margin_top = t;
 	block->margin_right = r;
 	block->margin_bottom = b;
 	block->margin_left = l;
+#endif
+	AccSet(*this, offsetof(Block, margin_top), t);
+	AccSet(*this, offsetof(Block, margin_right), r);
+	AccSet(*this, offsetof(Block, margin_bottom), b);
+	AccSet(*this, offsetof(Block, margin_left), l);
 }
 
 Coord Accessor::GetPaddingLeft() const
@@ -1023,7 +1093,7 @@ Coord Accessor::GetPaddingLeft() const
 
 void Accessor::SetPaddingLeft(Coord v)
 {
-	GetOrCreate()->padding_left = v;
+	AccSet(*this, offsetof(Block, padding_left), v);
 }
 
 Coord Accessor::GetPaddingRight() const
@@ -1033,7 +1103,7 @@ Coord Accessor::GetPaddingRight() const
 
 void Accessor::SetPaddingRight(Coord v)
 {
-	GetOrCreate()->padding_right = v;
+	AccSet(*this, offsetof(Block, padding_right), v);
 }
 
 Coord Accessor::GetPaddingTop() const
@@ -1043,7 +1113,7 @@ Coord Accessor::GetPaddingTop() const
 
 void Accessor::SetPaddingTop(Coord v)
 {
-	GetOrCreate()->padding_top = v;
+	AccSet(*this, offsetof(Block, padding_top), v);
 }
 
 Coord Accessor::GetPaddingBottom() const
@@ -1053,16 +1123,23 @@ Coord Accessor::GetPaddingBottom() const
 
 void Accessor::SetPaddingBottom(Coord v)
 {
-	GetOrCreate()->padding_bottom = v;
+	AccSet(*this, offsetof(Block, padding_bottom), v);
 }
 
 void Accessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
 {
+	// TODO?
+#if 0
 	GetOrCreate();
 	block->padding_top = t;
 	block->padding_right = r;
 	block->padding_bottom = b;
 	block->padding_left = l;
+#endif
+	AccSet(*this, offsetof(Block, padding_top), t);
+	AccSet(*this, offsetof(Block, padding_right), r);
+	AccSet(*this, offsetof(Block, padding_bottom), b);
+	AccSet(*this, offsetof(Block, padding_left), l);
 }
 
 

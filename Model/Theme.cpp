@@ -81,9 +81,9 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtObject);
 		PreventHeapDelete(a);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.object = a.block;
 	}
 	void CreateText()
@@ -91,9 +91,9 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtText);
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.text = a.block;
 	}
 	void CreatePanel()
@@ -102,11 +102,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetMargin(2);
 		a.SetPadding(6);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.panel = a.block;
 	}
 	void CreateButton()
@@ -119,14 +119,14 @@ struct DefaultTheme : Theme
 		a.SetHAlign(style::HAlign::Center);
 		a.SetWidth(style::Coord::Fraction(1));
 		a.SetPadding(5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
 				info.IsDisabled() ? TE_ButtonDisabled :
 				info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
 				info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.button = a.block;
 	}
 	void CreateCheckbox()
@@ -138,7 +138,7 @@ struct DefaultTheme : Theme
 		//a.SetHeight(style::Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = std::min(r.GetWidth(), r.GetHeight());
@@ -148,7 +148,7 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_CheckBgrHover : TE_CheckBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
 			if (info.IsChecked())
 				DrawThemeElement(info.IsDisabled() ? TE_CheckMarkDisabled : TE_CheckMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		};
+		});
 		defaultTheme.checkbox = a.block;
 	}
 	void CreateRadioButton()
@@ -163,7 +163,7 @@ struct DefaultTheme : Theme
 		//a.SetHeight(GetFontHeight());
 		a.SetPadding(5);
 		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = std::min(r.GetWidth(), r.GetHeight());
@@ -173,7 +173,7 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
 			if (info.IsChecked())
 				DrawThemeElement(info.IsDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		};
+		});
 		defaultTheme.radioButton = a.block;
 	}
 	void CreateCollapsibleTreeNode()
@@ -183,13 +183,13 @@ struct DefaultTheme : Theme
 		a.SetLayout(style::layouts::Stack());
 		//a.SetPadding(1);
 		a.SetPaddingLeft(GetFontHeight());
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsHovered() ?
 				info.IsChecked() ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
 				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + GetFontHeight(), r.y0 + GetFontHeight());
-		};
+		});
 		defaultTheme.collapsibleTreeNode = a.block;
 	}
 	void CreateTextBoxBase()
@@ -200,11 +200,11 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetWidth(style::Coord::Fraction(1));
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.textBoxBase = a.block;
 	}
 	void CreateListBox()
@@ -213,11 +213,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::Stack());
 		a.SetPadding(5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.listBox = a.block;
 	}
 	void CreateProgressBarBase()
@@ -226,11 +226,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetWidth(style::Coord::Percent(100));
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.progressBarBase = a.block;
 	}
 	void CreateProgressBarCompletion()
@@ -239,11 +239,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
 		a.SetMargin(2);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.progressBarCompletion = a.block;
 	}
 	void CreateSliderHBase()
@@ -252,9 +252,9 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
 		a.SetWidth(style::Coord::Fraction(1));
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.sliderHBase = a.block;
 	}
 	void CreateSliderHTrack()
@@ -262,7 +262,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtSliderHTrack);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -271,7 +271,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
-		};
+		});
 		defaultTheme.sliderHTrack = a.block;
 	}
 	void CreateSliderHTrackFill()
@@ -279,7 +279,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtSliderHTrackFill);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -288,7 +288,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
-		};
+		});
 		defaultTheme.sliderHTrackFill = a.block;
 	}
 	void CreateSliderHThumb()
@@ -296,7 +296,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtSliderHThumb);
 		PreventHeapDelete(a);
 		a.SetPadding(6, 4);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -304,7 +304,7 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_ButtonHover :
 				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
 				r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.sliderHThumb = a.block;
 	}
 	void CreateScrollVTrack()
@@ -313,18 +313,18 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetWidth(20);
 		a.SetPadding(2);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.scrollVTrack = a.block;
 	}
 	void CreateScrollVThumb()
 	{
 		style::Accessor a(&dtScrollVThumb);
 		PreventHeapDelete(a);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -332,7 +332,7 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_ButtonHover :
 				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
 				r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.scrollVThumb = a.block;
 	}
 	void CreateTabGroup()
@@ -340,9 +340,9 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtTabGroup);
 		PreventHeapDelete(a);
 		a.SetMargin(2);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.tabGroup = a.block;
 	}
 	void CreateTabList()
@@ -352,9 +352,9 @@ struct DefaultTheme : Theme
 		a.SetPadding(0, 4);
 		a.SetLayout(style::layouts::Stack());
 		a.SetStackingDirection(style::StackingDirection::LeftToRight);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.tabList = a.block;
 	}
 	void CreateTabButton()
@@ -363,13 +363,13 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
 		a.SetPadding(5);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
 				info.IsDown() || info.IsChecked() ? TE_TabSelected :
 				info.IsHovered() ? TE_TabHover : TE_TabNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.tabButton = a.block;
 	}
 	void CreateTabPanel()
@@ -379,11 +379,11 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetWidth(style::Coord::Percent(100));
 		a.SetMarginTop(-2);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_TabPanel, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.tabPanel = a.block;
 	}
 	void CreateTableBase()
@@ -392,11 +392,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetWidth(style::Coord::Percent(100));
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.tableBase = a.block;
 	}
 	void CreateTableCell()
@@ -404,7 +404,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtTableCell);
 		PreventHeapDelete(a);
 		a.SetPadding(1);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;
 			GL::SetTexture(0);
@@ -417,7 +417,7 @@ struct DefaultTheme : Theme
 			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.End();
-		};
+		});
 		defaultTheme.tableCell = a.block;
 	}
 	void CreateTableRowHeader()
@@ -425,7 +425,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtTableRowHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;
 			GL::SetTexture(0);
@@ -438,7 +438,7 @@ struct DefaultTheme : Theme
 			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.End();
-		};
+		});
 		defaultTheme.tableRowHeader = a.block;
 	}
 	void CreateTableColHeader()
@@ -446,7 +446,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtTableColHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;
 			GL::SetTexture(0);
@@ -459,7 +459,7 @@ struct DefaultTheme : Theme
 			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
 			br.End();
-		};
+		});
 		defaultTheme.tableColHeader = a.block;
 	}
 	void CreateColorBlock()
@@ -468,11 +468,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
 		a.SetPadding(3);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.colorBlock = a.block;
 	}
 	void CreateImage()
@@ -480,9 +480,9 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtImage);
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-		};
+		});
 		defaultTheme.image = a.block;
 	}
 	void CreateSelectorContainer()
@@ -498,11 +498,11 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetWidth(16);
 		a.SetHeight(16);
-		a.MutablePaintFunc() = [](const style::PaintInfo& info)
+		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Selector16, r.x0, r.y0, r.x1, r.y1);
-		};
+		});
 		defaultTheme.selector = a.block;
 	}
 
