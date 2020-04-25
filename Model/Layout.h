@@ -10,8 +10,18 @@ struct UIObject;
 
 using UIRect = AABB<float>;
 
+template <int& at>
+struct InstanceCounter
+{
+	InstanceCounter() { at++; }
+	InstanceCounter(const InstanceCounter&) { at++; }
+	~InstanceCounter() { at--; }
+};
+
 
 namespace style {
+
+extern int g_numBlocks;
 
 enum EnumKindID
 {
@@ -297,15 +307,6 @@ struct IErrorCallback
 	bool hadError = false;
 };
 
-template <int* at>
-struct InstanceCounter
-{
-	InstanceCounter() { (*at)++; }
-	InstanceCounter(const InstanceCounter&) { (*at)++; }
-	~InstanceCounter() { (*at)--; }
-};
-extern int g_numBlocks;
-
 struct Block
 {
 	void Compile(StringView& text, IErrorCallback* err);
@@ -343,7 +344,7 @@ struct Block
 	Coord padding_top;
 	Coord padding_bottom;
 
-	InstanceCounter<&g_numBlocks> _ic;
+	InstanceCounter<g_numBlocks> _ic;
 };
 static_assert(sizeof(Block) < 256, "style block getting too big?");
 
