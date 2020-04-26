@@ -35,7 +35,7 @@ struct Block;
 }
 
 namespace ui {
-class NativeWindowBase;
+struct NativeWindowBase;
 class FrameContents;
 struct EventHandlerEntry;
 struct Node; // logical item

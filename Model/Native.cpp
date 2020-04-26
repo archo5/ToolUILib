@@ -761,14 +761,107 @@ void NativeWindowNode::OnLayout(const UIRect& rect, const Size<float>& container
 }
 
 
+struct Inspector : ui::NativeDialogWindow
+{
+	Inspector()
+	{
+		SetTitle("Inspector");
+		SetSize(1024, 768);
+	}
+
+	struct InspectorUI : ui::Node
+	{
+		static constexpr int TAB_W = 10;
+
+		Inspector* insp;
+
+		void Render(UIContainer* ctx) override {}
+
+		static const char* CleanName(const char* name)
+		{
+			if (strncmp(name, "struct ", 7) == 0) name += 7;
+			if (strncmp(name, "class ", 6) == 0) name += 6;
+			if (strncmp(name, "ui::", 4) == 0) name += 4;
+			return name;
+		}
+
+		void PaintObject(UIObject* obj, int x, int& y)
+		{
+			int h = GetFontHeight();
+
+			if (obj == insp->selObj)
+			{
+				GL::SetTexture(0);
+				GL::BatchRenderer br;
+				br.Begin();
+				br.SetColor(0.5f, 0, 0);
+				br.Quad(0, y, 400, y + h, 0, 0, 0, 0);
+				br.End();
+			}
+
+			y += h;
+			DrawTextLine(x, y, CleanName(typeid(*obj).name()), 1, 1, 1);
+			char bfr[1024];
+			auto& fr = obj->finalRectC;
+			snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
+			DrawTextLine(300, y, bfr, 1, 1, 1);
+
+			for (auto* ch = obj->firstChild; ch; ch = ch->next)
+			{
+				PaintObject(ch, x + TAB_W, y);
+			}
+		}
+
+		void OnPaint() override
+		{
+			auto& c = insp->selWindow->_impl->GetContainer();
+			int y = GetFontHeight();
+			DrawTextLine(0, y, "Name", 1, 1, 1, 0.6f);
+			DrawTextLine(300, y, "Rect", 1, 1, 1, 0.6f);
+			PaintObject(c.rootNode, 0, y);
+			//DrawTextLine(10, 10, "inspector", 1, 1, 1);
+		}
+
+		void OnEvent(UIEvent& e) override
+		{
+		}
+	};
+
+	void OnRender(UIContainer* ctx) override
+	{
+		ui = ctx->Make<InspectorUI>();
+		*ui + ui::Layout(style::layouts::EdgeSlice());
+		ui->insp = this;
+	}
+
+	void Select(NativeWindowBase* window, UIObject* obj)
+	{
+		selWindow = window;
+		selObj = obj;
+		if (ui)
+			ui->Rerender();
+	}
+
+	InspectorUI* ui = nullptr;
+
+	NativeWindowBase* selWindow = nullptr;
+	UIObject* selObj = nullptr;
+};
+
+
 extern void SubscriptionTable_Init();
 extern void SubscriptionTable_Free();
 
 static EventQueue* g_mainEventQueue;
 static DWORD g_mainThreadID;
 
+Application* Application::_instance;
+
 Application::Application(int argc, char* argv[])
 {
+	assert(_instance == nullptr);
+	_instance = this;
+
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
 	g_windowRepaintList = new std::vector<NativeWindow_Impl*>;
@@ -779,6 +872,9 @@ Application::Application(int argc, char* argv[])
 
 Application::~Application()
 {
+	if (_inspector)
+		delete _inspector;
+
 	//system.container.Free();
 	SubscriptionTable_Free();
 	UnloadDefaultCursors();
@@ -787,12 +883,23 @@ Application::~Application()
 	g_windowRepaintList = nullptr;
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
+
+	assert(_instance == this);
+	_instance = nullptr;
 }
 
 void Application::Quit(int code)
 {
 	g_appQuit = true;
 	g_appExitCode = code;
+}
+
+void Application::OpenInspector(NativeWindowBase* window, UIObject* obj)
+{
+	if (!_instance->_inspector)
+		_instance->_inspector = new Inspector();
+	_instance->_inspector->Select(window, obj);
+	_instance->_inspector->SetVisible(true);
 }
 
 EventQueue& Application::_GetEventQueue()
@@ -871,6 +978,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
 			evsys->OnMouseButton(
 				message == WM_LBUTTONDOWN,
 				UIMouseButton::Left,
@@ -883,6 +991,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
 			evsys->OnMouseButton(
 				message == WM_RBUTTONDOWN,
 				UIMouseButton::Right,
@@ -895,6 +1004,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
 			evsys->OnMouseButton(
 				message == WM_MBUTTONDOWN,
 				UIMouseButton::Middle,
@@ -907,6 +1017,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
 			evsys->OnMouseButton(
 				message == WM_XBUTTONDOWN,
 				HIWORD(wParam) == XBUTTON1 ? UIMouseButton::X1 : UIMouseButton::X2,
@@ -955,6 +1066,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				case 'C': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::Copy, numRepeats); break;
 				case 'V': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::Paste, numRepeats); break;
 				case 'A': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::SelectAll, numRepeats); break;
+
+				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, numRepeats); break;
 				}
 			}
 		}

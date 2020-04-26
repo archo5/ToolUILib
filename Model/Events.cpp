@@ -449,7 +449,12 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats)
 		ev.shortCode = uint8_t(act);
 		ev.numRepeats = numRepeats;
 		BubblingEvent(ev);
+
+		if (!ev.handled && act == UIKeyAction::Inspect)
+			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
 	}
+	else if (act == UIKeyAction::Inspect)
+		ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
 }
 
 void UIEventSystem::OnTextInput(uint32_t ch, uint16_t numRepeats)

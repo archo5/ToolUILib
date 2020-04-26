@@ -195,6 +195,7 @@ struct Property : UIElement
 
 namespace imm {
 
+bool EditButton(UIContainer* ctx, const char* label, const char* text);
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
 bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
 bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
@@ -322,6 +323,7 @@ struct CollapsibleTreeNode : UIElement
 	CollapsibleTreeNode();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
+	void OnSerialize(IDataSerializer& s) override;
 
 	bool open = false;
 	bool _hovered = false;

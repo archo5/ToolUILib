@@ -230,6 +230,8 @@ void Property::End(UIContainer* ctx)
 
 UIObject& Property::Label(UIContainer* ctx, const char* label)
 {
+	if (*label == '\b')
+		return MinLabel(ctx, label + 1);
 	return ctx->Text(label)
 		+ Padding(5)
 		+ MinWidth(100)
@@ -342,6 +344,25 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 
 namespace imm {
 
+bool EditButton(UIContainer* ctx, const char* label, const char* text)
+{
+	Property::Begin(ctx, label);
+	auto* btn = ctx->MakeWithText<ui::Button>(text);
+	btn->onClick = [btn]()
+	{
+		btn->flags |= UIObject_IsEdited;
+		btn->RerenderNode();
+	};
+	Property::End(ctx);
+	bool clicked = false;
+	if (btn->flags & UIObject_IsEdited)
+	{
+		clicked = true;
+		btn->flags &= ~UIObject_IsEdited;
+	}
+	return clicked;
+}
+
 struct NumFmtBox
 {
 	char fmt[8];
@@ -362,7 +383,7 @@ const char* RemoveNegZero(const char* str)
 template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum& val, TNum speed, TNum vmin, TNum vmax, const char* fmt)
 {
 	Property::Begin(ctx);
-	auto& lbl = Property::Label(ctx, label);
+	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
 	auto* tb = ctx->Make<Textbox>();
 
 	NumFmtBox fb(fmt);
@@ -387,31 +408,34 @@ template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum&
 	snprintf(buf, 1024, fb.fmt + 1, val);
 	tb->text = RemoveNegZero(buf);
 
-	lbl.HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
+	if (lbl)
 	{
-		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+		lbl->HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
 		{
-			typename std::make_signed<TNum>::type diff = e.dx * speed;
-			TNum nv = val + diff;
-			if (nv > vmax || (diff > 0 && nv < val))
-				nv = vmax;
-			if (nv < vmin || (diff < 0 && nv > val))
-				nv = vmin;
+			if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+			{
+				typename std::make_signed<TNum>::type diff = e.dx * speed;
+				TNum nv = val + diff;
+				if (nv > vmax || (diff > 0 && nv < val))
+					nv = vmax;
+				if (nv < vmin || (diff < 0 && nv > val))
+					nv = vmin;
 
-			char buf[1024];
-			snprintf(buf, 1024, fb.fmt + 1, nv);
-			tb->text = RemoveNegZero(buf);
-			tb->flags |= UIObject_IsEdited;
+				char buf[1024];
+				snprintf(buf, 1024, fb.fmt + 1, nv);
+				tb->text = RemoveNegZero(buf);
+				tb->flags |= UIObject_IsEdited;
 
-			e.context->OnCommit(e.target);
-			e.target->RerenderNode();
-		}
-		if (e.type == UIEventType::SetCursor)
-		{
-			e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
-			e.handled = true;
-		}
-	};
+				e.context->OnCommit(e.target);
+				e.target->RerenderNode();
+			}
+			if (e.type == UIEventType::SetCursor)
+			{
+				e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
+				e.handled = true;
+			}
+		};
+	}
 	tb->HandleEvent(UIEventType::Commit) = [tb](UIEvent& e)
 	{
 		tb->flags |= UIObject_IsEdited;
@@ -503,11 +527,15 @@ static float SplitWidthAsQ(SplitPane* sp)
 {
 	if (!sp->_verticalSplit)
 	{
+		if (sp->finalRectC.GetWidth() == 0)
+			return 0;
 		float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
 		return w / std::max(w, sp->finalRectC.GetWidth() - w);
 	}
 	else
 	{
+		if (sp->finalRectC.GetHeight() == 0)
+			return 0;
 		float w = sp->ResolveUnits(sp->vertSepStyle->height, sp->finalRectC.GetWidth());
 		return w / std::max(w, sp->finalRectC.GetHeight() - w);
 	}
@@ -1108,6 +1136,11 @@ void CollapsibleTreeNode::OnEvent(UIEvent& e)
 		open = !open;
 		e.GetTargetNode()->Rerender();
 	}
+}
+
+void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
+{
+	s << open;
 }
 
 

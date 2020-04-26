@@ -46,9 +46,8 @@ struct NativeWindowGeometry
 
 
 struct NativeWindow_Impl;
-class NativeWindowBase
+struct NativeWindowBase
 {
-public:
 	NativeWindowBase();
 	//NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
 	~NativeWindowBase();
@@ -101,8 +100,6 @@ public:
 	void* GetNativeHandle() const;
 	bool IsDragged() const;
 
-private:
-
 	NativeWindow_Impl* _impl = nullptr;
 };
 
@@ -146,6 +143,8 @@ private:
 	NativeWindowRenderFunc _window;
 };
 
+struct Inspector;
+
 class Application
 {
 public:
@@ -154,6 +153,7 @@ public:
 
 	static Application* GetInstance() { return _instance; }
 	static void Quit(int code = 0);
+	static void OpenInspector(NativeWindowBase* window = nullptr, UIObject* obj = nullptr);
 
 	template <class F>
 	static void PushEvent(UIObject* obj, F&& f)
@@ -190,6 +190,8 @@ public:
 
 	UISystem system;
 #endif
+
+	Inspector* _inspector = nullptr;
 
 private:
 	static Application* _instance;

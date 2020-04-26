@@ -468,6 +468,45 @@ struct MarkerData
 	std::vector<Marker> markers;
 };
 
+struct HighlightSettings
+{
+	bool excludeZeroes = true;
+	bool enableFloat32 = true;
+	float minFloat32 = 0.0001f;
+	float maxFloat32 = 10000;
+	bool enableInt16 = true;
+	int32_t minInt16 = -2000;
+	int32_t maxInt16 = 2000;
+	bool enableInt32 = true;
+	int32_t minInt32 = -10000;
+	int32_t maxInt32 = 10000;
+	int minASCIIChars = 3;
+
+	void EditUI(UIContainer* ctx)
+	{
+		ui::Property::Begin(ctx, "float32");
+		//ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ui::imm::EditFloat(ctx, "\bMin", minFloat32, 0.01f);
+		ui::imm::EditFloat(ctx, "\bMax", maxFloat32);
+		//ctx->Pop();
+		ui::Property::End(ctx);
+
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ui::imm::EditInt(ctx, "Min int16", minInt16);
+		ui::imm::EditInt(ctx, "Max int16", maxInt16);
+		ctx->Pop();
+
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ui::imm::EditInt(ctx, "Min int32", minInt32);
+		ui::imm::EditInt(ctx, "Max int32", maxInt32);
+		ctx->Pop();
+
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ui::imm::EditInt(ctx, "Min ASCII chars", minASCIIChars);
+		ctx->Pop();
+	}
+};
+
 struct REFile
 {
 	REFile(std::string n)
@@ -485,9 +524,11 @@ struct REFile
 	std::string name;
 	FileStructureDataSource* ds;
 	MarkerData mdata;
+	uint32_t byteWidth = 16;
+	HighlightSettings highlightSettings;
 };
 
-struct HexViewer : UIElement
+struct HexViewer : UIElement, HighlightSettings
 {
 	HexViewer()
 	{
@@ -501,26 +542,28 @@ struct HexViewer : UIElement
 	}
 	void OnEvent(UIEvent& e) override
 	{
+		int W = refile->byteWidth;
+
 		if (e.type == UIEventType::MouseMove)
 		{
 			float fh = GetFontHeight() + 4;
 			float x = finalRectC.x0 + 2;
 			float y = finalRectC.y0;
-			float x2 = x + 20 * 16 + 10;
+			float x2 = x + 20 * W + 10;
 
 			hoverSection = -1;
 			hoverByte = UINT64_MAX;
-			if (e.x >= x && e.x < x + 16 * 20)
+			if (e.x >= x && e.x < x + W * 20)
 			{
 				hoverSection = 0;
-				int xpos = std::min(std::max(0, int((e.x - x) / 20)), 16 - 1);
+				int xpos = std::min(std::max(0, int((e.x - x) / 20)), W - 1);
 				int ypos = (e.y - y) / fh;
 				hoverByte = GetBasePos() + xpos + ypos * 16;
 			}
-			else if (e.x >= x2 && e.x < x2 + 16 * 10)
+			else if (e.x >= x2 && e.x < x2 + W * 10)
 			{
 				hoverSection = 1;
-				int xpos = std::min(std::max(0, int((e.x - x2) / 10)), 16 - 1);
+				int xpos = std::min(std::max(0, int((e.x - x2) / 10)), W - 1);
 				int ypos = (e.y - y) / fh;
 				hoverByte = GetBasePos() + xpos + ypos * 16;
 			}
@@ -572,18 +615,20 @@ struct HexViewer : UIElement
 	}
 	void OnPaint() override
 	{
-		uint8_t buf[16 * 64];
+		int W = refile->byteWidth;
+
+		uint8_t buf[256 * 64];
 		size_t sz = 0;
 		if (fp)
 		{
 			fseek(fp, GetBasePos(), SEEK_SET);
-			sz = fread(buf, 1, 16 * 64, fp);
+			sz = fread(buf, 1, W * 64, fp);
 		}
 
 		float fh = GetFontHeight() + 4;
 		float x = finalRectC.x0 + 2;
 		float y = finalRectC.y0 + fh;
-		float x2 = x + 20 * 16 + 10;
+		float x2 = x + 20 * W + 10;
 
 		GL::SetTexture(0);
 		GL::BatchRenderer br;
@@ -599,8 +644,8 @@ struct HexViewer : UIElement
 				col.BlendOver(mc);
 			if (col.a > 0)
 			{
-				float xoff = (i % 16) * 20;
-				float yoff = (i / 16) * fh;
+				float xoff = (i % W) * 20;
+				float yoff = (i / W) * fh;
 				br.SetColor(col.r, col.g, col.b, col.a);
 				br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
 			}
@@ -611,8 +656,8 @@ struct HexViewer : UIElement
 				col.BlendOver(mc);
 			if (col.a > 0)
 			{
-				float xoff = (i % 16) * 10;
-				float yoff = (i / 16) * fh;
+				float xoff = (i % W) * 10;
+				float yoff = (i / W) * fh;
 				br.SetColor(col.r, col.g, col.b, col.a);
 				br.Quad(x2 + xoff - 2, y + yoff - fh + 4, x2 + xoff + 8, y + yoff + 3, 0, 0, 1, 1);
 			}
@@ -626,8 +671,8 @@ struct HexViewer : UIElement
 			str[0] = "0123456789ABCDEF"[v >> 4];
 			str[1] = "0123456789ABCDEF"[v & 0xf];
 			str[2] = 0;
-			float xoff = (i % 16) * 20;
-			float yoff = (i / 16) * fh;
+			float xoff = (i % W) * 20;
+			float yoff = (i / W) * fh;
 			DrawTextLine(x + xoff, y + yoff, str, 1, 1, 1);
 			str[1] = IsASCII(v) ? v : '.';
 			DrawTextLine(x2 + xoff / 2, y + yoff, str + 1, 1, 1, 1);
@@ -767,18 +812,6 @@ struct HexViewer : UIElement
 	REFile* refile = nullptr;
 	FILE* fp = nullptr;
 
-	bool excludeZeroes = true;
-	bool enableFloat32 = true;
-	float minFloat32 = 0.0001f;
-	float maxFloat32 = 10000;
-	bool enableInt16 = true;
-	int32_t minInt16 = -2000;
-	int32_t maxInt16 = 2000;
-	bool enableInt32 = true;
-	int32_t minInt32 = -10000;
-	int32_t maxInt32 = 10000;
-	int minASCIIChars = 3;
-
 	Color4f colorHover{ 1, 1, 1, 0.3f };
 	uint64_t hoverByte = UINT64_MAX;
 	int hoverSection = -1;
@@ -789,10 +822,17 @@ struct MarkedItemsList : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		Subscribe(DCT_MarkedItems, mdata);
-		ctx->Text("Marked items");
+		ctx->Text("Edit marked items");
 		for (auto& m : mdata->markers)
 		{
 			ctx->Push<ui::Panel>();
+			if (ui::imm::EditButton(ctx, "Type", "EDIT"))
+			{
+				std::vector<ui::MenuItem> items;
+				items.push_back(ui::MenuItem("int32", {}, false, true));
+				ui::Menu m(items);
+				m.Show(this);
+			}
 			ui::imm::EditInt(ctx, "Offset", m.at);
 			ui::imm::EditInt(ctx, "Count", m.count);
 			ui::imm::EditInt(ctx, "Repeats", m.repeats);
@@ -808,6 +848,7 @@ struct MainWindow : ui::NativeMainWindow
 {
 	MainWindow()
 	{
+		SetSize(1200, 800);
 		//files.push_back(new REFile("loop.wav"));
 		files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
@@ -842,13 +883,37 @@ struct MainWindow : ui::NativeMainWindow
 						//ctx->Make<FileStructureViewer2>()->ds = f->ds;
 						auto* sp = ctx->Push<ui::SplitPane>();
 						{
-							ctx->Make<HexViewer>()->Init(f);
+							ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
+
+							ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+							auto* vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
+							auto* hs = ctx->MakeWithText<ui::CollapsibleTreeNode>("Highlight settings");
+							ctx->Pop();
+
+							if (vs->open)
+							{
+								ui::imm::EditInt(ctx, "Width", f->byteWidth, 1, 1, 256);
+							}
+							if (hs->open)
+							{
+								f->highlightSettings.EditUI(ctx);
+							}
+
+							auto* hv = ctx->Make<HexViewer>();
+							hv->Init(f);
+							*static_cast<HighlightSettings*>(hv) = f->highlightSettings;
+							ctx->Pop();
+
+							ctx->PushBox();
+							ctx->Text("Marked items");
+							ctx->Pop();
 
 							ctx->PushBox();
 							ctx->Make<MarkedItemsList>()->mdata = &f->mdata;
 							ctx->Pop();
 						}
-						sp->SetSplit(0, 0.8f);
+						sp->SetSplit(0, 0.45f);
+						sp->SetSplit(1, 0.7f);
 						ctx->Pop();
 					}
 					ctx->Pop();

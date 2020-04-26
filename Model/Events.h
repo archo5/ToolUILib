@@ -5,7 +5,7 @@
 
 
 namespace ui {
-class NativeWindowBase;
+struct NativeWindowBase;
 struct Node;
 } // ui
 
@@ -81,6 +81,8 @@ enum class UIKeyAction
 	Copy,
 	Paste,
 	SelectAll,
+
+	Inspect,
 };
 
 namespace ui {
