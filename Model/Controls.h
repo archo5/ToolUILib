@@ -40,6 +40,23 @@ public:
 	CheckboxBase();
 };
 
+// TODO
+class CheckboxData : public CheckboxBase
+{
+public:
+	CheckboxData* Init(bool val)
+	{
+		value = val;
+		return this;
+	}
+	void OnSerialize(IDataSerializer& s) override { s << value; }
+
+	virtual void OnSelect() override { value ^= true; }
+	virtual bool IsSelected() override { return value; }
+
+	bool value;
+};
+
 class Checkbox : public CheckboxBase
 {
 public:
@@ -196,6 +213,7 @@ struct Property : UIElement
 namespace imm {
 
 bool EditButton(UIContainer* ctx, const char* label, const char* text);
+bool EditBool(UIContainer* ctx, const char* label, bool& val);
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
 bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
 bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);

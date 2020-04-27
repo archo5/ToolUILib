@@ -363,6 +363,27 @@ bool EditButton(UIContainer* ctx, const char* label, const char* text)
 	return clicked;
 }
 
+bool EditBool(UIContainer* ctx, const char* label, bool& val)
+{
+	Property::Begin(ctx, label);
+	auto* cb = ctx->Make<CheckboxData>();
+	bool edited = false;
+	if (cb->flags & UIObject_IsEdited)
+	{
+		val = cb->value;
+		cb->flags &= ~UIObject_IsEdited;
+		edited = true;
+	}
+	cb->onChange = [cb]()
+	{
+		cb->flags |= UIObject_IsEdited;
+		cb->RerenderNode();
+	};
+	cb->Init(val);
+	Property::End(ctx);
+	return edited;
+}
+
 struct NumFmtBox
 {
 	char fmt[8];
@@ -379,6 +400,13 @@ const char* RemoveNegZero(const char* str)
 {
 	return strncmp(str, "-0", 3) == 0 ? "0" : str;
 }
+
+template <class T> struct MakeSigned {};
+template <> struct MakeSigned<int> { using type = int; };
+template <> struct MakeSigned<unsigned> { using type = int; };
+template <> struct MakeSigned<int64_t> { using type = int64_t; };
+template <> struct MakeSigned<uint64_t> { using type = int64_t; };
+template <> struct MakeSigned<float> { using type = float; };
 
 template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum& val, TNum speed, TNum vmin, TNum vmax, const char* fmt)
 {
@@ -414,7 +442,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, const char* label, TNum&
 		{
 			if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 			{
-				typename std::make_signed<TNum>::type diff = e.dx * speed;
+				typename MakeSigned<TNum>::type diff = e.dx * speed;
 				TNum nv = val + diff;
 				if (nv > vmax || (diff > 0 && nv < val))
 					nv = vmax;

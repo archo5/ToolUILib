@@ -196,13 +196,16 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 	auto style = GetStyle();
 	auto s = GetEstimatedWidth(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
+
+	float w_add = ResolveUnits(style.GetMarginLeft(), containerSize.x) + ResolveUnits(style.GetMarginRight(), containerSize.x);
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetWidth().IsDefined())
 	{
-		s.min += ResolveUnits(style.GetPaddingLeft(), containerSize.x);
-		s.min += ResolveUnits(style.GetPaddingRight(), containerSize.x);
+		w_add += ResolveUnits(style.GetPaddingLeft(), containerSize.x) + ResolveUnits(style.GetPaddingRight(), containerSize.x);
 	}
-	s.min += ResolveUnits(style.GetMarginLeft(), containerSize.x);
-	s.min += ResolveUnits(style.GetMarginRight(), containerSize.x);
+	s.min += w_add;
+	if (s.max < FLT_MAX)
+		s.max += w_add;
+
 	_cacheFrameWidth = ui::g_curLayoutFrame;
 	_cacheValueWidth = s;
 	return s;
@@ -217,13 +220,16 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 	auto style = GetStyle();
 	auto s = GetEstimatedHeight(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
+
+	float h_add = ResolveUnits(style.GetMarginTop(), containerSize.y) + ResolveUnits(style.GetMarginBottom(), containerSize.y);
 	if (box_sizing == style::BoxSizing::ContentBox || !style.GetHeight().IsDefined())
 	{
-		s.min += ResolveUnits(style.GetPaddingTop(), containerSize.y);
-		s.min += ResolveUnits(style.GetPaddingBottom(), containerSize.y);
+		h_add += ResolveUnits(style.GetPaddingTop(), containerSize.y) + ResolveUnits(style.GetPaddingBottom(), containerSize.y);
 	}
-	s.min += ResolveUnits(style.GetMarginTop(), containerSize.y);
-	s.min += ResolveUnits(style.GetMarginBottom(), containerSize.y);
+	s.min += h_add;
+	if (s.max < FLT_MAX)
+		s.max += h_add;
+
 	_cacheFrameHeight = ui::g_curLayoutFrame;
 	_cacheValueHeight = s;
 	return s;

@@ -1077,7 +1077,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			evsys->OnTextInput(wParam, lParam & 0xffff);
 		return TRUE;
 	case WM_ERASEBKGND:
-		break;// return FALSE;
+		return FALSE;
 	case WM_SIZE:
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
@@ -1109,6 +1109,26 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* window = GetNativeWindow(hWnd))
 			if (window->sysMoveSizeState == MSST_Unknown)
 				window->sysMoveSizeState = MSST_Move;
+		break;
+	case WM_SIZING:
+		if (auto* window = GetNativeWindow(hWnd))
+		{
+			//auto r = *(RECT*)lParam;
+			RECT r = {};
+			GetClientRect(hWnd, &r);
+			auto w = r.right - r.left;
+			auto h = r.bottom - r.top;
+			GL::SetViewport(0, 0, w, h);
+			auto& evsys = window->GetEventSys();
+			if (w != evsys.width || h != evsys.height)
+			{
+				ui::Notify(DCT_ResizeWindow, window->GetOwner());
+			}
+			evsys.width = w;
+			evsys.height = h;
+			window->GetOwner()->InvalidateAll();
+			window->Redraw();
+		}
 		break;
 	case WM_COMMAND:
 		if (auto* window = GetNativeWindow(hWnd))

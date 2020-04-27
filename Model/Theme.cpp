@@ -91,6 +91,7 @@ struct DefaultTheme : Theme
 		style::Accessor a(&dtText);
 		PreventHeapDelete(a);
 		a.SetLayout(style::layouts::InlineBlock());
+		a.SetBoxSizing(style::BoxSizing::ContentBox);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 		});

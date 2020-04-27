@@ -376,6 +376,13 @@ struct StackingDirection : Modifier
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetStackingDirection(_dir); }
 };
 
+struct BoxSizing : Modifier
+{
+	style::BoxSizing _bs;
+	BoxSizing(style::BoxSizing bs) : _bs(bs) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetBoxSizing(_bs); }
+};
+
 struct Width : Modifier
 {
 	style::Coord _c;

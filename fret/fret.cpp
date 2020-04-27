@@ -484,26 +484,31 @@ struct HighlightSettings
 
 	void EditUI(UIContainer* ctx)
 	{
+		ui::imm::EditBool(ctx, "Exclude zeroes", excludeZeroes);
+
 		ui::Property::Begin(ctx, "float32");
 		//ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ui::imm::EditBool(ctx, nullptr, enableFloat32);
 		ui::imm::EditFloat(ctx, "\bMin", minFloat32, 0.01f);
 		ui::imm::EditFloat(ctx, "\bMax", maxFloat32);
 		//ctx->Pop();
 		ui::Property::End(ctx);
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-		ui::imm::EditInt(ctx, "Min int16", minInt16);
-		ui::imm::EditInt(ctx, "Max int16", maxInt16);
-		ctx->Pop();
+		ui::Property::Begin(ctx, "int16");
+		ui::imm::EditBool(ctx, nullptr, enableInt16);
+		ui::imm::EditInt(ctx, "\bMin", minInt16);
+		ui::imm::EditInt(ctx, "\bMax", maxInt16);
+		ui::Property::End(ctx);
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-		ui::imm::EditInt(ctx, "Min int32", minInt32);
-		ui::imm::EditInt(ctx, "Max int32", maxInt32);
-		ctx->Pop();
+		ui::Property::Begin(ctx, "int32");
+		ui::imm::EditBool(ctx, nullptr, enableInt32);
+		ui::imm::EditInt(ctx, "\bMin", minInt32);
+		ui::imm::EditInt(ctx, "\bMax", maxInt32);
+		ui::Property::End(ctx);
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-		ui::imm::EditInt(ctx, "Min ASCII chars", minASCIIChars);
-		ctx->Pop();
+		ui::Property::Begin(ctx, "ASCII");
+		ui::imm::EditInt(ctx, "\bMin chars", minASCIIChars, 1, 1, 128);
+		ui::Property::End(ctx);
 	}
 };
 
@@ -849,8 +854,8 @@ struct MainWindow : ui::NativeMainWindow
 	MainWindow()
 	{
 		SetSize(1200, 800);
-		//files.push_back(new REFile("loop.wav"));
-		files.push_back(new REFile("tree.mesh"));
+		files.push_back(new REFile("loop.wav"));
+		//files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
 	}
 	void OnRender(UIContainer* ctx) override

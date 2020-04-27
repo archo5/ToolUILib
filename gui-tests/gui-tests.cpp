@@ -505,6 +505,157 @@ struct LayoutTest2 : ui::Node
 	}
 };
 
+struct SizeTest : ui::Node
+{
+	struct Test
+	{
+		UIObject* obj;
+		std::function<std::string()> func;
+	};
+
+	void OnPaint() override
+	{
+		ui::Node::OnPaint();
+		for (const auto& t : tests)
+		{
+			auto res = t.func();
+			if (res.size())
+			{
+				DrawTextLine(t.obj->finalRectC.x1, t.obj->finalRectC.y1, res.c_str(), 1, 0, 0);
+			}
+		}
+	}
+
+	void Render(UIContainer* ctx) override
+	{
+		tests.clear();
+		ctx->Text("Any errors will be drawn next to the element in red");
+
+		TestContentSize(ctx->Text("Testing text element size"), ceilf(GetTextWidth("Testing text element size")), GetFontHeight());
+
+		ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		{
+			auto& txt1 = ctx->Text("Text size + padding") + ui::Padding(5);
+			TestContentSize(txt1, ceilf(GetTextWidth("Text size + padding")), GetFontHeight());
+			TestFullSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
+			TestEstSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
+		}
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5);
+			ctx->Text("Testing text in box");
+			ctx->Pop();
+			TestContentSize(box, ceilf(GetTextWidth("Testing text in box")), GetFontHeight());
+			TestFullSize(box, ceilf(GetTextWidth("Testing text in box")) + 10, GetFontHeight() + 10);
+			TestFullX(box, ceilf(GetTextWidth("Text size + padding")) + 10);
+		}
+		ctx->Pop();
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::BoxSizing(style::BoxSizing::BorderBox);
+			ctx->Text("Testing text in box [border]");
+			ctx->Pop();
+			TestContentSize(box, ceilf(GetTextWidth("Testing text in box [border]")), GetFontHeight());
+			TestFullSize(box, ceilf(GetTextWidth("Testing text in box [border]")) + 10, GetFontHeight() + 10);
+		}
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::BoxSizing(style::BoxSizing::ContentBox);
+			ctx->Text("Testing text in box [content]");
+			ctx->Pop();
+			TestContentSize(box, ceilf(GetTextWidth("Testing text in box [content]")), GetFontHeight());
+			TestFullSize(box, ceilf(GetTextWidth("Testing text in box [content]")) + 10, GetFontHeight() + 10);
+		}
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140);
+			ctx->Text("Testing text in box +W");
+			ctx->Pop();
+			TestContentSize(box, 140 - 10, GetFontHeight());
+			TestFullSize(box, 140, GetFontHeight() + 10);
+		}
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140) + ui::BoxSizing(style::BoxSizing::BorderBox);
+			ctx->Text("Testing text in box +W [border]");
+			ctx->Pop();
+			TestContentSize(box, 140 - 10, GetFontHeight());
+			TestFullSize(box, 140, GetFontHeight() + 10);
+		}
+
+		{
+			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140) + ui::BoxSizing(style::BoxSizing::ContentBox);
+			ctx->Text("Testing text in box +W [content]");
+			ctx->Pop();
+			TestContentSize(box, 140, GetFontHeight());
+			TestFullSize(box, 140 + 10, GetFontHeight() + 10);
+		}
+	}
+
+	static std::string TestSize(UIRect& r, float w, float h)
+	{
+		if (fabsf(r.GetWidth() - w) > 0.0001f || fabsf(r.GetHeight() - h) > 0.0001f)
+		{
+			char bfr[1024];
+			snprintf(bfr, 1024, "expected %g;%g - got %g;%g", w, h, r.GetWidth(), r.GetHeight());
+			return bfr;
+		}
+		return {};
+	}
+
+	void TestContentSize(UIObject& obj, float w, float h)
+	{
+		auto fn = [obj{ &obj }, w, h]()->std::string
+		{
+			return TestSize(obj->finalRectC, w, h);
+		};
+		tests.push_back({ &obj, fn });
+	}
+
+	void TestFullSize(UIObject& obj, float w, float h)
+	{
+		auto fn = [obj{ &obj }, w, h]()->std::string
+		{
+			return TestSize(obj->finalRectCPB, w, h);
+		};
+		tests.push_back({ &obj, fn });
+	}
+
+	void TestFullX(UIObject& obj, float x)
+	{
+		auto fn = [obj{ &obj }, x]()->std::string
+		{
+			auto r = obj->finalRectCPB;
+			if (fabsf(r.x0 - x) > 0.0001f)
+			{
+				char bfr[1024];
+				snprintf(bfr, 1024, "expected x %g - got %g", x, r.x0);
+				return bfr;
+			}
+			return {};
+		};
+		tests.push_back({ &obj, fn });
+	}
+
+	void TestEstSize(UIObject& obj, float w, float h)
+	{
+		auto fn = [obj{ &obj }, w, h]()->std::string
+		{
+			auto ew = obj->GetFullEstimatedWidth({ 500, 500 }, style::EstSizeType::Exact);
+			auto eh = obj->GetFullEstimatedHeight({ 500, 500 }, style::EstSizeType::Exact);
+			if (ew.max < ew.min)
+				return "est.width: max < min";
+			if (eh.max < eh.min)
+				return "est.height: max < min";
+			UIRect r{ 0, 0, ew.min, eh.min };
+			return TestSize(r, w, h);
+		};
+		tests.push_back({ &obj, fn });
+	}
+
+	std::vector<Test> tests;
+};
+
 struct ImageTest : ui::Node
 {
 	ImageTest()
@@ -813,26 +964,56 @@ struct IMGUITest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
+		{
+			auto tmp = boolVal;
+			if (ui::imm::EditBool(ctx, "bool", boolVal))
+				boolVal = tmp;
+		}
 		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %d")->Init(intFmt, 0)->onChange = [this]() { Rerender(); };
 		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %x")->Init(intFmt, 1)->onChange = [this]() { Rerender(); };
 		{
-			int tmp = intVal;
-			if (ui::imm::EditInt(ctx, "intVal", tmp, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			auto tmp = intVal;
+			if (ui::imm::EditInt(ctx, "int", tmp, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
-			ctx->Text("intVal: " + std::to_string(intVal));
+			ctx->Text("int: " + std::to_string(intVal));
 		}
 		{
-			float tmp = floatVal;
-			if (ui::imm::EditFloat(ctx, "floatVal", tmp, 0.1f, -37.4f, 154.1f))
+			auto tmp = uintVal;
+			if (ui::imm::EditInt(ctx, "uint", tmp, 1, 0, 1234, intFmt ? "%x" : "%d"))
+				uintVal = tmp;
+
+			ctx->Text("uint: " + std::to_string(uintVal));
+		}
+		{
+			auto tmp = int64Val;
+			if (ui::imm::EditInt(ctx, "int64", tmp, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+				int64Val = tmp;
+
+			ctx->Text("int64: " + std::to_string(int64Val));
+		}
+		{
+			auto tmp = uint64Val;
+			if (ui::imm::EditInt(ctx, "uint64", tmp, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+				uint64Val = tmp;
+
+			ctx->Text("uint64: " + std::to_string(uint64Val));
+		}
+		{
+			auto tmp = floatVal;
+			if (ui::imm::EditFloat(ctx, "float", tmp, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
-			ctx->Text("floatVal: " + std::to_string(floatVal));
+			ctx->Text("float: " + std::to_string(floatVal));
 		}
 	}
 
+	bool boolVal = true;
 	int intFmt = 0;
 	int intVal = 15;
+	int64_t int64Val = 123;
+	unsigned uintVal = 1;
+	uint64_t uint64Val = 2;
 	float floatVal = 3.14f;
 };
 
@@ -1381,6 +1562,7 @@ static TestEntry testEntries[] =
 	{ "Split pane", [](UIContainer* ctx) { ctx->Make<SplitPaneTest>(); } },
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
+	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },
 	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
 	{ "Thread worker test", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
 	{ "Threaded image rendering test", [](UIContainer* ctx) { ctx->Make<ThreadedImageRenderingTest>(); } },
