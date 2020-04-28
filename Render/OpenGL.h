@@ -12,6 +12,8 @@ void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
 
 void SetViewport(int x0, int y0, int x1, int y1);
+void PushScissorRect(int x0, int y0, int x1, int y1);
+void PopScissorRect();
 
 void Clear(int r, int g, int b, int a);
 void Present(RenderContext* RC);

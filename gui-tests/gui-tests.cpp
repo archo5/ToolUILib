@@ -656,6 +656,17 @@ struct SizeTest : ui::Node
 	std::vector<Test> tests;
 };
 
+struct ScrollbarTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		*ctx->Push<ui::ScrollArea>() + ui::Width(300) + ui::Height(200);
+		for (int i = 0; i < 20; i++)
+			ctx->Text("Inside scroll area");
+		ctx->Pop();
+	}
+};
+
 struct ImageTest : ui::Node
 {
 	ImageTest()
@@ -1563,6 +1574,7 @@ static TestEntry testEntries[] =
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
 	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },
+	{ "Scrollbars", [](UIContainer* ctx) { ctx->Make<ScrollbarTest>(); } },
 	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
 	{ "Thread worker test", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
 	{ "Threaded image rendering test", [](UIContainer* ctx) { ctx->Make<ThreadedImageRenderingTest>(); } },

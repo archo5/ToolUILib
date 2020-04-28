@@ -344,16 +344,16 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 
 namespace imm {
 
-bool EditButton(UIContainer* ctx, const char* label, const char* text)
+bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods)
 {
-	Property::Begin(ctx, label);
 	auto* btn = ctx->MakeWithText<ui::Button>(text);
+	for (auto* mod : mods)
+		mod->Apply(btn);
 	btn->onClick = [btn]()
 	{
 		btn->flags |= UIObject_IsEdited;
 		btn->RerenderNode();
 	};
-	Property::End(ctx);
 	bool clicked = false;
 	if (btn->flags & UIObject_IsEdited)
 	{
@@ -497,6 +497,45 @@ bool EditInt(UIContainer* ctx, const char* label, uint64_t& val, uint64_t speed,
 bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed, float vmin, float vmax, const char* fmt)
 {
 	return EditNumber(ctx, label, val, speed, vmin, vmax, fmt);
+}
+
+bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods)
+{
+	auto* tb = ctx->Make<ui::Textbox>();
+	for (auto* mod : mods)
+		mod->Apply(tb);
+	bool changed = false;
+	if (tb->flags & UIObject_IsEdited)
+	{
+		retfn(tb->GetText().c_str());
+		tb->flags &= ~UIObject_IsEdited;
+		changed = true;
+	}
+	else // text can be invalidated if retfn is called
+		tb->SetText(text);
+	tb->HandleEvent(UIEventType::Change) = [tb](UIEvent&)
+	{
+		tb->flags |= UIObject_IsEdited;
+		tb->RerenderNode();
+	};
+	return changed;
+}
+
+
+bool PropButton(UIContainer* ctx, const char* label, const char* text, std::initializer_list<ui::Modifier*> mods)
+{
+	Property::Begin(ctx, label);
+	bool ret = Button(ctx, text, mods);
+	Property::End(ctx);
+	return ret;
+}
+
+bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods)
+{
+	Property::Begin(ctx, label);
+	bool ret = EditString(ctx, text, retfn, mods);
+	Property::End(ctx);
+	return ret;
 }
 
 } // imm
@@ -755,10 +794,60 @@ SplitPane* SplitPane::SetDirection(bool vertical)
 }
 
 
-ScrollArea::ScrollArea()
+ScrollbarV::ScrollbarV()
 {
 	trackVStyle = Theme::current->scrollVTrack;
 	thumbVStyle = Theme::current->scrollVThumb;
+}
+
+style::Coord ScrollbarV::GetWidth()
+{
+	return trackVStyle->width;
+}
+
+UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
+{
+	UIRect rect = info.rect.ShrinkBy(info.owner->GetPaddingRect(trackVStyle, info.rect.GetWidth()));
+	float viewportSize = std::max(info.viewportSize, 1.0f);
+	float contentSize = std::max(info.contentSize, viewportSize);
+	float localMin = std::min(1.0f, std::max(0.0f, info.contentOff / contentSize));
+	float localMax = std::min(1.0f, std::max(0.0f, (info.contentOff + viewportSize) / contentSize));
+	return { rect.x0, round(lerp(rect.y0, rect.y1, localMin)), rect.x1, round(lerp(rect.y0, rect.y1, localMax)) };
+}
+
+void ScrollbarV::OnPaint(const ScrollbarData& info)
+{
+	style::PaintInfo vsinfo;
+	vsinfo.obj = info.owner;
+	vsinfo.rect = info.rect;
+	trackVStyle->paint_func(vsinfo);
+
+	vsinfo.rect = GetThumbRect(info);
+	vsinfo.state = 0;
+	if (uiState.IsHovered(0))
+		vsinfo.state |= style::PS_Hover;
+	if (uiState.IsPressed(0))
+		vsinfo.state |= style::PS_Down;
+	thumbVStyle->paint_func(vsinfo);
+}
+
+void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
+{
+	uiState.InitOnEvent(e);
+	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
+	{
+	case ui::SubUIDragState::Start:
+		dragOff = info.contentOff - e.y;
+		break;
+	case ui::SubUIDragState::Move:
+		info.contentOff = std::min(std::max(info.contentSize - info.viewportSize, 0.0f), std::max(0.0f, e.y + dragOff));
+		break;
+	}
+}
+
+
+ScrollArea::ScrollArea()
+{
 }
 
 void ScrollArea::OnPaint()
@@ -767,24 +856,27 @@ void ScrollArea::OnPaint()
 
 	PaintChildren();
 
-	float w = GetContentRect().GetWidth();
-	style::PaintInfo vsinfo(this);
-	vsinfo.rect.x0 = vsinfo.rect.x1 - ResolveUnits(trackVStyle->width, w);
-	vsinfo.state &= ~style::PS_Down;
-	vsinfo.state &= ~style::PS_Hover;
-	trackVStyle->paint_func(vsinfo);
-	vsinfo.rect = vsinfo.rect.ShrinkBy(GetPaddingRect(trackVStyle, w));
-	vsinfo.rect.y0 += 10;
-	vsinfo.rect.y1 -= 10;
-	thumbVStyle->paint_func(vsinfo);
+	auto cr = GetContentRect();
+	float w = cr.GetWidth();
+	auto sbvr = cr;
+	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
+	sbv.OnPaint({ this, sbvr, cr.GetHeight(), 300, yoff });
 }
 
 void ScrollArea::OnEvent(UIEvent& e)
 {
+	auto cr = GetContentRect();
+	float w = cr.GetWidth();
+	auto sbvr = cr;
+	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
+	ScrollbarData info = { this, sbvr, cr.GetHeight(), 300, yoff };
+
 	if (e.type == UIEventType::MouseScroll)
 	{
 		yoff -= e.dy / 4;
+		yoff = std::min(std::max(info.contentSize - info.viewportSize, 0.0f), std::max(0.0f, yoff));
 	}
+	sbv.OnEvent(info, e);
 }
 
 void ScrollArea::OnLayout(const UIRect& rect, const Size<float>& containerSize)
@@ -801,6 +893,11 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	finalRectCP.y1 += yoff;
 	finalRectCPB.y0 += yoff;
 	finalRectCPB.y1 += yoff;
+}
+
+void ScrollArea::OnSerialize(IDataSerializer& s)
+{
+	s << yoff;
 }
 
 

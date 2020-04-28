@@ -212,13 +212,17 @@ struct Property : UIElement
 
 namespace imm {
 
-bool EditButton(UIContainer* ctx, const char* label, const char* text);
+bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods = {});
 bool EditBool(UIContainer* ctx, const char* label, bool& val);
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
 bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
 bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
 bool EditInt(UIContainer* ctx, const char* label, uint64_t& val, uint64_t speed = 1, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
 bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
+bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods = {});
+
+bool PropButton(UIContainer* ctx, const char* label, const char* text, std::initializer_list<ui::Modifier*> mods = {});
+bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods = {});
 
 } // imm
 
@@ -244,6 +248,29 @@ struct SplitPane : UIElement
 	float _dragOff = 0;
 };
 
+struct ScrollbarData
+{
+	UIObject* owner;
+	UIRect rect;
+	float viewportSize;
+	float contentSize;
+	float& contentOff;
+};
+
+struct ScrollbarV
+{
+	ScrollbarV();
+	style::Coord GetWidth();
+	UIRect GetThumbRect(const ScrollbarData& info);
+	void OnPaint(const ScrollbarData& info);
+	void OnEvent(const ScrollbarData& info, UIEvent& e);
+
+	style::BlockRef trackVStyle;
+	style::BlockRef thumbVStyle;
+	SubUI<int> uiState;
+	float dragOff;
+};
+
 class ScrollArea : public UIElement
 {
 public:
@@ -251,10 +278,10 @@ public:
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	void OnSerialize(IDataSerializer& s) override;
 
-	style::BlockRef trackVStyle;
-	style::BlockRef thumbVStyle;
 	float yoff = 23;
+	ScrollbarV sbv;
 };
 
 class TabGroup : public UIElement

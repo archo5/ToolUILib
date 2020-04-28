@@ -3,11 +3,13 @@
 #include <stdlib.h>
 
 #include "OpenGL.h"
+#include "../Core/Math.h"
 
 #pragma warning(disable:4996)
 
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
+#define NOMINMAX
 #include <Windows.h>
 #include <gl/GL.h>
 
@@ -121,12 +123,46 @@ void SetActiveContext(RenderContext* RC)
 	wglMakeCurrent(RC->dc, RC->rc);
 }
 
+RECT scissorStack[100];
+int scissorCount = 1;
+
 void SetViewport(int x0, int y0, int x1, int y1)
 {
 	glViewport(x0, y0, x1 - x0, y1 - y0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	GLCHK(glOrtho(x0, x1, y1, y0, -1, 1));
+	scissorStack[0] = { x0, y0, x1, y1 };
+	scissorCount = 1;
+}
+
+void ApplyScissor()
+{
+	RECT r = scissorStack[scissorCount - 1];
+	GLCHK(glScissor(r.left, scissorStack[0].bottom - r.bottom, std::max(r.right - r.left, 0L), std::max(r.bottom - r.top, 0L)));
+}
+
+void PushScissorRect(int x0, int y0, int x1, int y1)
+{
+	int i = scissorCount++;
+	RECT r = scissorStack[i - 1];
+	if (r.left < x0) r.left = x0;
+	if (r.right > x1) r.right = x1;
+	if (r.top < y0) r.top = y0;
+	if (r.bottom > y1) r.bottom = y1;
+	scissorStack[i] = r;
+	ApplyScissor();
+	GLCHK(glEnable(GL_SCISSOR_TEST));
+}
+
+void PopScissorRect()
+{
+	scissorCount--;
+	ApplyScissor();
+	if (scissorCount <= 1)
+	{
+		GLCHK(glDisable(GL_SCISSOR_TEST));
+	}
 }
 
 void Clear(int r, int g, int b, int a)

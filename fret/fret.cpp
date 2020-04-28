@@ -468,6 +468,159 @@ struct MarkerData
 	std::vector<Marker> markers;
 };
 
+ui::DataCategoryTag DCT_Struct[1];
+struct DataDesc
+{
+	struct Field
+	{
+		std::string type;
+		std::string name;
+		uint64_t count;
+	};
+	struct Struct
+	{
+		bool serialized = false;
+		std::vector<Field> fields;
+	};
+	struct StructInst
+	{
+		std::string type;
+		uint64_t off;
+		std::string notes;
+	};
+
+	// data
+	std::unordered_map<std::string, Struct*> structs;
+	std::vector<StructInst> instances;
+
+	// ui state
+	int editMode = 0;
+	uint32_t curInst = 0;
+	uint32_t curField = 0;
+
+	void BRB(UIContainer* ctx, const char* text, int& at, int val)
+	{
+		auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(text);
+		rb->Init(at, val);
+		rb->onChange = [rb]() { rb->RerenderNode(); };
+		rb->SetStyle(ui::Theme::current->button);
+	}
+	void Edit(UIContainer* ctx)
+	{
+		auto* all = ctx->Push<ui::Panel>();
+
+		ui::imm::EditInt(ctx, "Current instance ID", curInst, 1, 0, instances.empty() ? 0 : instances.size() - 1);
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->Text("Edit:") + ui::Padding(5);
+		BRB(ctx, "instance", editMode, 0);
+		BRB(ctx, "struct", editMode, 1);
+		BRB(ctx, "field", editMode, 2);
+		ctx->Pop();
+
+		if (editMode == 0)
+		{
+			if (curInst < instances.size())
+			{
+				auto& I = instances[curInst];
+
+				ui::imm::EditInt(ctx, "Offset", I.off);
+				if (ui::imm::PropButton(ctx, "Edit struct:", I.type.c_str()))
+				{
+					editMode = 1;
+					all->RerenderNode();
+				}
+				ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+			}
+		}
+		if (editMode == 1)
+		{
+			if (curInst < instances.size())
+			{
+				auto& I = instances[curInst];
+
+				ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+				ctx->Text("Struct:") + ui::Padding(5);
+				ctx->Text(I.type.c_str()) + ui::Padding(5);
+				ctx->Pop();
+
+				auto it = structs.find(I.type);
+				if (it != structs.end())
+				{
+					auto& S = *it->second;
+					ui::imm::EditBool(ctx, "Is serialized?", S.serialized);
+					ctx->Push<ui::Panel>();
+					for (size_t i = 0; i < S.fields.size(); i++)
+					{
+						auto& F = S.fields[i];
+						ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+						//ctx->Text(F.name.c_str());
+						//ctx->Text(F.type.c_str());
+						//ui::imm::EditInt(ctx, "\bCount", F.count);
+						char info[128];
+						snprintf(info, 128, "%s: %s[%" PRIu64 "]", F.name.c_str(), F.type.c_str(), F.count);
+						*ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
+						//ctx->MakeWithText<ui::Button>("Edit");
+						if (i > 0 && ui::imm::Button(ctx, "<", { &ui::Width(20) }))
+						{
+							std::swap(S.fields[i - 1], S.fields[i]);
+							all->RerenderNode();
+						}
+						if (i + 1 < S.fields.size() && ui::imm::Button(ctx, ">", { &ui::Width(20) }))
+						{
+							std::swap(S.fields[i + 1], S.fields[i]);
+							all->RerenderNode();
+						}
+						if (ui::imm::Button(ctx, "Edit", { &ui::Width(50) }))
+						{
+							editMode = 2;
+							curField = i;
+							all->RerenderNode();
+						}
+						if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+						{
+							S.fields.erase(S.fields.begin() + i);
+							all->RerenderNode();
+						}
+						ctx->Pop();
+					}
+					if (ui::imm::Button(ctx, "Add"))
+					{
+						S.fields.push_back({ "int32", "unnamed", 1 });
+						editMode = 2;
+						curField = S.fields.size() - 1;
+						all->RerenderNode();
+					}
+					ctx->Pop();
+				}
+				else
+				{
+					ctx->Text("-- NOT FOUND --") + ui::Padding(10);
+				}
+			}
+		}
+		if (editMode == 2)
+		{
+			if (curInst < instances.size())
+			{
+				auto& I = instances[curInst];
+
+				auto it = structs.find(I.type);
+				if (it != structs.end())
+				{
+					auto& S = *it->second;
+					if (curField < S.fields.size())
+					{
+						auto& F = S.fields[curField];
+						ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
+					}
+				}
+			}
+		}
+
+		ctx->Pop();
+	}
+};
+
 struct HighlightSettings
 {
 	bool excludeZeroes = true;
@@ -487,11 +640,9 @@ struct HighlightSettings
 		ui::imm::EditBool(ctx, "Exclude zeroes", excludeZeroes);
 
 		ui::Property::Begin(ctx, "float32");
-		//ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		ui::imm::EditBool(ctx, nullptr, enableFloat32);
 		ui::imm::EditFloat(ctx, "\bMin", minFloat32, 0.01f);
 		ui::imm::EditFloat(ctx, "\bMax", maxFloat32);
-		//ctx->Pop();
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "int16");
@@ -531,6 +682,7 @@ struct REFile
 	MarkerData mdata;
 	uint32_t byteWidth = 16;
 	HighlightSettings highlightSettings;
+	DataDesc desc;
 };
 
 struct HexViewer : UIElement, HighlightSettings
@@ -683,6 +835,10 @@ struct HexViewer : UIElement, HighlightSettings
 			DrawTextLine(x2 + xoff / 2, y + yoff, str + 1, 1, 1, 1);
 		}
 	}
+	void OnSerialize(IDataSerializer& s) override
+	{
+		s << basePos;
+	}
 
 	uint64_t basePos = 16 * 3800 * 0;
 	uint64_t GetBasePos()
@@ -831,7 +987,7 @@ struct MarkedItemsList : ui::Node
 		for (auto& m : mdata->markers)
 		{
 			ctx->Push<ui::Panel>();
-			if (ui::imm::EditButton(ctx, "Type", "EDIT"))
+			if (ui::imm::PropButton(ctx, "Type", "EDIT"))
 			{
 				std::vector<ui::MenuItem> items;
 				items.push_back(ui::MenuItem("int32", {}, false, true));
@@ -854,7 +1010,18 @@ struct MainWindow : ui::NativeMainWindow
 	MainWindow()
 	{
 		SetSize(1200, 800);
-		files.push_back(new REFile("loop.wav"));
+#if 1
+		{
+			auto* f = new REFile("loop.wav");
+			auto* section = new DataDesc::Struct;
+			section->serialized = true;
+			section->fields.push_back({ "char", "type", 4 });
+			section->fields.push_back({ "u32", "size", 1 });
+			f->desc.structs["section"] = section;
+			f->desc.instances.push_back({ "section", 0, "root section" });
+			files.push_back(f);
+		}
+#endif
 		//files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
 	}
@@ -883,7 +1050,8 @@ struct MainWindow : ui::NativeMainWindow
 					auto s = p->GetStyle();
 					s.SetLayout(style::layouts::EdgeSlice());
 					s.SetHeight(style::Coord::Percent(100));
-					ctx->Push<ui::Panel>();
+					//s.SetBoxSizing(style::BoxSizing::BorderBox);
+					*ctx->Push<ui::Panel>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Height(style::Coord::Percent(100));
 					{
 						//ctx->Make<FileStructureViewer2>()->ds = f->ds;
 						auto* sp = ctx->Push<ui::SplitPane>();
@@ -895,6 +1063,7 @@ struct MainWindow : ui::NativeMainWindow
 							auto* hs = ctx->MakeWithText<ui::CollapsibleTreeNode>("Highlight settings");
 							ctx->Pop();
 
+							ctx->PushBox(); // tree stabilization box
 							if (vs->open)
 							{
 								ui::imm::EditInt(ctx, "Width", f->byteWidth, 1, 1, 256);
@@ -903,6 +1072,7 @@ struct MainWindow : ui::NativeMainWindow
 							{
 								f->highlightSettings.EditUI(ctx);
 							}
+							ctx->Pop(); // end tree stabilization box
 
 							auto* hv = ctx->Make<HexViewer>();
 							hv->Init(f);
@@ -915,6 +1085,7 @@ struct MainWindow : ui::NativeMainWindow
 
 							ctx->PushBox();
 							ctx->Make<MarkedItemsList>()->mdata = &f->mdata;
+							f->desc.Edit(ctx);
 							ctx->Pop();
 						}
 						sp->SetSplit(0, 0.45f);

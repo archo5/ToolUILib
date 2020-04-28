@@ -182,8 +182,10 @@ struct UIObject
 	void Paint();
 	void PaintChildren()
 	{
+		GL::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
 		for (auto* ch = firstChild; ch; ch = ch->next)
 			ch->Paint();
+		GL::PopScissorRect();
 	}
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
