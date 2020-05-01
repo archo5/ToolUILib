@@ -202,7 +202,8 @@ struct CompactNodeEditTest : ui::Node
 
 		void UI(UIContainer* ctx) override
 		{
-			ui::imm::EditInt(ctx, "\b#", number);
+			auto& lbl = ui::Property::Label(ctx, "\b#");
+			ui::imm::EditInt(ctx, &lbl, number, { &ui::Width(50) });
 		}
 		int Compute(ComputeInfo&) override { return number; }
 	};
@@ -212,7 +213,8 @@ struct CompactNodeEditTest : ui::Node
 
 		void UI(UIContainer* ctx) override
 		{
-			ui::imm::PropEditString(ctx, "\bName:", name.c_str(), [this](const char* s) { name = s; });
+			auto& lbl = ui::Property::Label(ctx, "\bName:");
+			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { &ui::Width(50) });
 		}
 		int Compute(ComputeInfo& cinfo) override
 		{
@@ -303,7 +305,7 @@ struct CompactNodeEditTest : ui::Node
 				del = &v;
 			}
 			ui::imm::PropEditString(ctx, "\bName", v.name.c_str(), [&v](const char* s) { v.name = s; });
-			ui::imm::EditInt(ctx, "\bValue", v.value);
+			ui::imm::PropEditInt(ctx, "\bValue", v.value);
 			ui::Property::End(ctx);
 		}
 
@@ -1192,35 +1194,35 @@ struct IMGUITest : ui::Node
 		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %x")->Init(intFmt, 1)->onChange = [this]() { Rerender(); };
 		{
 			auto tmp = intVal;
-			if (ui::imm::EditInt(ctx, "int", tmp, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "int", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ctx->Text("int: " + std::to_string(intVal));
 		}
 		{
 			auto tmp = uintVal;
-			if (ui::imm::EditInt(ctx, "uint", tmp, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "uint", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
 			ctx->Text("uint: " + std::to_string(uintVal));
 		}
 		{
 			auto tmp = int64Val;
-			if (ui::imm::EditInt(ctx, "int64", tmp, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt(ctx, "int64", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
 			ctx->Text("int64: " + std::to_string(int64Val));
 		}
 		{
 			auto tmp = uint64Val;
-			if (ui::imm::EditInt(ctx, "uint64", tmp, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt(ctx, "uint64", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
 			ctx->Text("uint64: " + std::to_string(uint64Val));
 		}
 		{
 			auto tmp = floatVal;
-			if (ui::imm::EditFloat(ctx, "float", tmp, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat(ctx, "float", tmp, {}, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
 			ctx->Text("float: " + std::to_string(floatVal));

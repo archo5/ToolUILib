@@ -611,7 +611,7 @@ struct DataDesc
 	{
 		auto* all = ctx->Push<ui::Panel>();
 
-		ui::imm::EditInt(ctx, "Current instance ID", curInst, 1, 0, instances.empty() ? 0 : instances.size() - 1);
+		ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		ctx->Text("Edit:") + ui::Padding(5);
 		BRB(ctx, "instance", editMode, 0);
@@ -626,7 +626,7 @@ struct DataDesc
 				auto& I = instances[curInst];
 
 				ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
-				ui::imm::EditInt(ctx, "Offset", I.off);
+				ui::imm::PropEditInt(ctx, "Offset", I.off);
 				if (ui::imm::PropButton(ctx, "Edit struct:", I.type.c_str()))
 				{
 					editMode = 1;
@@ -762,10 +762,10 @@ struct DataDesc
 					{
 						auto& F = S.fields[curField];
 						if (!S.serialized)
-							ui::imm::EditInt(ctx, "Offset", F.off);
+							ui::imm::PropEditInt(ctx, "Offset", F.off);
 						ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
 						ui::imm::PropEditString(ctx, "Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
-						ui::imm::EditInt(ctx, "Count", F.count, 1, 1);
+						ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1, 1);
 					}
 				}
 			}
@@ -795,24 +795,24 @@ struct HighlightSettings
 
 		ui::Property::Begin(ctx, "float32");
 		ui::imm::PropEditBool(ctx, nullptr, enableFloat32);
-		ui::imm::EditFloat(ctx, "\bMin", minFloat32, 0.01f);
-		ui::imm::EditFloat(ctx, "\bMax", maxFloat32);
+		ui::imm::PropEditFloat(ctx, "\bMin", minFloat32, {}, 0.01f);
+		ui::imm::PropEditFloat(ctx, "\bMax", maxFloat32);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "int16");
 		ui::imm::PropEditBool(ctx, nullptr, enableInt16);
-		ui::imm::EditInt(ctx, "\bMin", minInt16);
-		ui::imm::EditInt(ctx, "\bMax", maxInt16);
+		ui::imm::PropEditInt(ctx, "\bMin", minInt16);
+		ui::imm::PropEditInt(ctx, "\bMax", maxInt16);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "int32");
 		ui::imm::PropEditBool(ctx, nullptr, enableInt32);
-		ui::imm::EditInt(ctx, "\bMin", minInt32);
-		ui::imm::EditInt(ctx, "\bMax", maxInt32);
+		ui::imm::PropEditInt(ctx, "\bMin", minInt32);
+		ui::imm::PropEditInt(ctx, "\bMax", maxInt32);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "ASCII");
-		ui::imm::EditInt(ctx, "\bMin chars", minASCIIChars, 1, 1, 128);
+		ui::imm::PropEditInt(ctx, "\bMin chars", minASCIIChars, {}, 1, 1, 128);
 		ui::Property::End(ctx);
 	}
 };
@@ -1148,10 +1148,10 @@ struct MarkedItemsList : ui::Node
 				ui::Menu m(items);
 				m.Show(this);
 			}
-			ui::imm::EditInt(ctx, "Offset", m.at);
-			ui::imm::EditInt(ctx, "Count", m.count);
-			ui::imm::EditInt(ctx, "Repeats", m.repeats);
-			ui::imm::EditInt(ctx, "Stride", m.stride);
+			ui::imm::PropEditInt(ctx, "Offset", m.at);
+			ui::imm::PropEditInt(ctx, "Count", m.count);
+			ui::imm::PropEditInt(ctx, "Repeats", m.repeats);
+			ui::imm::PropEditInt(ctx, "Stride", m.stride);
 			ctx->Pop();
 		}
 	}
@@ -1230,7 +1230,7 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->PushBox(); // tree stabilization box
 							if (vs->open)
 							{
-								ui::imm::EditInt(ctx, "Width", f->byteWidth, 1, 1, 256);
+								ui::imm::PropEditInt(ctx, "Width", f->byteWidth, {}, 1, 1, 256);
 							}
 							if (hs->open)
 							{
