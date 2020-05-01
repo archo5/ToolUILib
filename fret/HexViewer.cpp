@@ -182,7 +182,7 @@ void HexViewer::OnEvent(UIEvent& e)
 			*basePos = 0;
 		else
 			*basePos -= diff;
-		*basePos = std::min(GetFileLength() - 1, *basePos);
+		*basePos = std::min(dataSource->GetSize() - 1, *basePos);
 		RerenderNode();
 	}
 }
@@ -192,12 +192,7 @@ void HexViewer::OnPaint()
 	int W = *byteWidth;
 
 	uint8_t buf[256 * 64];
-	size_t sz = 0;
-	if (fp)
-	{
-		fseek(fp, GetBasePos(), SEEK_SET);
-		sz = fread(buf, 1, W * 64, fp);
-	}
+	size_t sz = dataSource->Read(GetBasePos(), W * 64, buf);
 
 	float fh = GetFontHeight() + 4;
 	float x = finalRectC.x0 + 2;

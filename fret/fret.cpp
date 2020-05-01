@@ -6,17 +6,19 @@
 #include "HexViewer.h"
 
 
-struct REFile
+struct REFile : FileDataSource
 {
 	REFile(std::string n)
 	{
 		path = n;
 		name = n;
-		//ds = new FileStructureDataSource(n.c_str());
 		highlighter.markerData = &markerData;
+		//ds = new FileStructureDataSource(n.c_str());
+		fp = fopen(("FRET_Plugins/" + n).c_str(), "rb");
 	}
 	~REFile()
 	{
+		fclose(fp);
 		//delete ds;
 	}
 
@@ -118,7 +120,7 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->Pop(); // end tree stabilization box
 
 							auto* hv = ctx->Make<HexViewer>();
-							hv->Init(("FRET_Plugins/" + f->path).c_str(), &f->basePos, &f->byteWidth, &f->highlighter);
+							hv->Init(f, &f->basePos, &f->byteWidth, &f->highlighter);
 							ctx->Pop();
 
 							ctx->PushBox();
@@ -127,7 +129,7 @@ struct MainWindow : ui::NativeMainWindow
 
 							ctx->PushBox();
 							ctx->Make<MarkedItemsList>()->markerData = &f->markerData;
-							f->desc.Edit(ctx, f->path.c_str());
+							f->desc.Edit(ctx, f);
 							ctx->Pop();
 						}
 						sp->SetSplit(0, 0.45f);

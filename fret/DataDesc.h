@@ -93,5 +93,5 @@ struct DataDesc
 	};
 	static void ReadBuiltinFieldPreview(IDataSource* ds, uint64_t off, uint64_t count, const BuiltinTypeInfo& BTI, std::string& outPreview);
 	void ReadStruct(IDataSource* ds, const Struct& S, uint64_t off, std::vector<ReadField>& out);
-	void Edit(UIContainer* ctx, const char* path);
+	void Edit(UIContainer* ctx, IDataSource* ds);
 };

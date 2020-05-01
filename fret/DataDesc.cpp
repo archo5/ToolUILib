@@ -181,7 +181,7 @@ static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 	rb->SetStyle(ui::Theme::current->button);
 }
 
-void DataDesc::Edit(UIContainer* ctx, const char* path)
+void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
 {
 	auto* all = ctx->Push<ui::Panel>();
 
@@ -238,12 +238,9 @@ void DataDesc::Edit(UIContainer* ctx, const char* path)
 					std::vector<ReadField> rfs;
 				};
 				ctx->MakeWithText<ui::BoxElement>("Data");
-				FileDataSource fds;
 				Data data;
 				data.S = &S;
-				fds.fp = fopen(("FRET_Plugins/" + std::string(path)).c_str(), "rb");
-				ReadStruct(&fds, S, I.off, data.rfs);
-				fclose(fds.fp);
+				ReadStruct(ds, S, I.off, data.rfs);
 				for (size_t i = 0; i < S.fields.size(); i++)
 				{
 					auto& F = S.fields[i];

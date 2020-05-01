@@ -1,6 +1,7 @@
 
 #pragma once
 #include "pch.h"
+#include "FileReaders.h"
 #include "DataDesc.h"
 
 
@@ -43,8 +44,6 @@ struct HexViewer : UIElement
 	}
 	~HexViewer()
 	{
-		if (fp)
-			fclose(fp);
 	}
 	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
@@ -59,29 +58,18 @@ struct HexViewer : UIElement
 		return *basePos;
 	}
 
-	void Init(const char* file, uint64_t* bpos, uint32_t* bwid, Highlighter* hltr)
+	void Init(IDataSource* ds, uint64_t* bpos, uint32_t* bwid, Highlighter* hltr)
 	{
-		if (fp)
-			fclose(fp);
-		fp = fopen(file, "rb");
+		dataSource = ds;
 		basePos = bpos;
 		byteWidth = bwid;
 		highlighter = hltr;
 	}
 
-	uint64_t GetFileLength()
-	{
-		if (!fp)
-			return 0;
-		fseek(fp, 0, SEEK_END);
-		return _ftelli64(fp);
-	}
-
 	void GetInt16Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
 	{
 		int16_t v;
-		size_t sz = 0;
-		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 2, 1, fp))
+		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
 		{
 			strncpy(buf, "-", bufsz);
 			return;
@@ -91,8 +79,7 @@ struct HexViewer : UIElement
 	void GetInt32Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
 	{
 		int32_t v;
-		size_t sz = 0;
-		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
+		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
 		{
 			strncpy(buf, "-", bufsz);
 			return;
@@ -102,8 +89,7 @@ struct HexViewer : UIElement
 	void GetFloat32Text(char* buf, size_t bufsz, uint64_t pos)
 	{
 		float v;
-		size_t sz = 0;
-		if (!fp || fseek(fp, pos, SEEK_SET) || !fread(&v, 4, 1, fp))
+		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
 		{
 			strncpy(buf, "-", bufsz);
 			return;
@@ -112,11 +98,10 @@ struct HexViewer : UIElement
 	}
 
 	// input data
-	uint64_t* basePos;
-	uint32_t* byteWidth;
+	IDataSource* dataSource = nullptr;
+	uint64_t* basePos = nullptr;
+	uint32_t* byteWidth = nullptr;
 	Highlighter* highlighter = nullptr;
-
-	FILE* fp = nullptr;
 
 	Color4f colorHover{ 1, 1, 1, 0.3f };
 	uint64_t hoverByte = UINT64_MAX;
