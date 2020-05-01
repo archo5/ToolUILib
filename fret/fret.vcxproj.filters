@@ -12,12 +12,19 @@
     <ClCompile Include="..\FRET_Plugins\runner.cpp">
       <Filter>plugins</Filter>
     </ClCompile>
+    <ClCompile Include="DataDesc.cpp" />
+    <ClCompile Include="FileStructureViewer.cpp" />
+    <ClCompile Include="HexViewer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="..\FRET_Plugins\plugin.hpp">
       <Filter>plugins</Filter>
     </ClInclude>
+    <ClInclude Include="FileReaders.h" />
+    <ClInclude Include="HexViewer.h" />
+    <ClInclude Include="DataDesc.h" />
+    <ClInclude Include="FileStructureViewer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">
