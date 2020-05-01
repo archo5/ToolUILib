@@ -16,7 +16,7 @@ struct InlineBlockLayout : Layout
 	{
 		float size = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
+			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
 		return size;
 	}
 	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)

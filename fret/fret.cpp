@@ -468,6 +468,43 @@ struct MarkerData
 	std::vector<Marker> markers;
 };
 
+struct IDataSource
+{
+	virtual void Read(uint64_t at, size_t size, void* out) = 0;
+};
+
+struct FileDataSource : IDataSource
+{
+	void Read(uint64_t at, size_t size, void* out) override
+	{
+		_fseeki64(fp, at, SEEK_SET);
+		size_t rd = fread(out, 1, size, fp);
+		if (rd < size)
+			memset((char*)out + rd, 0, size - rd);
+	}
+
+	FILE* fp;
+};
+
+struct BuiltinTypeInfo
+{
+	uint8_t size;
+	bool separated;
+	void(*append_to_str)(const void* src, std::string& out);
+};
+
+static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
+{
+	{ "pad", { 1, false, [](const void* src, std::string& out) {} } },
+	{ "char", { 1, false, [](const void* src, std::string& out) { out.push_back(*(const char*)src); } } },
+	{ "i8", { 1, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId8, *(const int8_t*)src); out += bfr; } } },
+	{ "u8", { 1, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu8, *(const uint8_t*)src); out += bfr; } } },
+	{ "i16", { 2, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId16, *(const int16_t*)src); out += bfr; } } },
+	{ "u16", { 2, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu16, *(const uint16_t*)src); out += bfr; } } },
+	{ "i32", { 4, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId32, *(const int32_t*)src); out += bfr; } } },
+	{ "u32", { 4, true, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu32, *(const uint32_t*)src); out += bfr; } } },
+};
+
 ui::DataCategoryTag DCT_Struct[1];
 struct DataDesc
 {
@@ -475,12 +512,14 @@ struct DataDesc
 	{
 		std::string type;
 		std::string name;
-		uint64_t count;
+		uint64_t count = 1;
+		uint64_t off = 0;
 	};
 	struct Struct
 	{
 		bool serialized = false;
 		std::vector<Field> fields;
+		uint64_t size = 0;
 	};
 	struct StructInst
 	{
@@ -498,6 +537,69 @@ struct DataDesc
 	uint32_t curInst = 0;
 	uint32_t curField = 0;
 
+	uint64_t GetFixedFieldSize(const Field& field)
+	{
+		auto it = g_builtinTypes.find(field.type);
+		if (it != g_builtinTypes.end())
+			return it->second.size;
+		auto sit = structs.find(field.type);
+		if (sit != structs.end() && !sit->second->serialized)
+			return sit->second->size;
+		return UINT64_MAX;
+	}
+
+	struct ReadField
+	{
+		std::string preview;
+		uint64_t off;
+	};
+	void ReadBuiltinFieldPreview(IDataSource* ds, uint64_t off, uint64_t count, const BuiltinTypeInfo& BTI, std::string& outPreview)
+	{
+		char bfr[8];
+		for (int i = 0; i < std::min(count, 16ULL); i++)
+		{
+			if (BTI.separated && i > 0)
+				outPreview += ", ";
+			ds->Read(off, BTI.size, bfr);
+			BTI.append_to_str(bfr, outPreview);
+			off += BTI.size;
+		}
+		if (count > 16)
+		{
+			outPreview += "...";
+		}
+	}
+	void ReadStruct(IDataSource* ds, const Struct& S, uint64_t off, std::vector<ReadField>& out)
+	{
+		if (S.serialized)
+		{
+			for (const auto& F : S.fields)
+			{
+				ReadField rf = { "", off };
+				auto it = g_builtinTypes.find(F.type);
+				if (it != g_builtinTypes.end())
+				{
+					ReadBuiltinFieldPreview(ds, off, F.count, it->second, rf.preview);
+					off += it->second.size * F.count;
+				}
+				out.push_back(rf);
+			}
+		}
+		else
+		{
+			for (const auto& F : S.fields)
+			{
+				ReadField rf = { "", off };
+				auto it = g_builtinTypes.find(F.type);
+				if (it != g_builtinTypes.end())
+				{
+					ReadBuiltinFieldPreview(ds, off + F.off, F.count, it->second, rf.preview);
+				}
+				out.push_back(rf);
+			}
+		}
+	}
+
 	void BRB(UIContainer* ctx, const char* text, int& at, int val)
 	{
 		auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(text);
@@ -505,7 +607,7 @@ struct DataDesc
 		rb->onChange = [rb]() { rb->RerenderNode(); };
 		rb->SetStyle(ui::Theme::current->button);
 	}
-	void Edit(UIContainer* ctx)
+	void Edit(UIContainer* ctx, const char* path)
 	{
 		auto* all = ctx->Push<ui::Panel>();
 
@@ -523,13 +625,61 @@ struct DataDesc
 			{
 				auto& I = instances[curInst];
 
+				ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
 				ui::imm::EditInt(ctx, "Offset", I.off);
 				if (ui::imm::PropButton(ctx, "Edit struct:", I.type.c_str()))
 				{
 					editMode = 1;
 					all->RerenderNode();
 				}
-				ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+
+				auto it = structs.find(I.type);
+				if (it != structs.end())
+				{
+					auto& S = *it->second;
+					struct Data : ui::TableDataSource
+					{
+						size_t GetNumRows() override { return rfs.size(); }
+						size_t GetNumCols() override { return 3; }
+						std::string GetRowName(size_t row) override { return std::to_string(row + 1); }
+						std::string GetColName(size_t col) override
+						{
+							if (col == 0) return "Name";
+							if (col == 1) return "Type";
+							if (col == 2) return "Preview";
+							return "";
+						}
+						std::string GetText(size_t row, size_t col) override
+						{
+							switch (col)
+							{
+							case 0: return S->fields[row].name;
+							case 1: return S->fields[row].type + "[" + std::to_string(S->fields[row].count) + "]";
+							case 2: return rfs[row].preview;
+							default: return "";
+							}
+						}
+
+						Struct* S;
+						std::vector<ReadField> rfs;
+					};
+					ctx->MakeWithText<ui::BoxElement>("Data");
+					FileDataSource fds;
+					Data data;
+					data.S = &S;
+					fds.fp = fopen(("FRET_Plugins/" + std::string(path)).c_str(), "rb");
+					ReadStruct(&fds, S, I.off, data.rfs);
+					fclose(fds.fp);
+					for (size_t i = 0; i < S.fields.size(); i++)
+					{
+						auto& F = S.fields[i];
+						char bfr[256];
+						snprintf(bfr, 256, "%s: %s[%" PRIu64 "]=%s", F.name.c_str(), F.type.c_str(), F.count, data.rfs[i].preview.c_str());
+						*ctx->MakeWithText<ui::BoxElement>(bfr) + ui::Padding(5);
+					}
+					/*auto* tv = ctx->Make<ui::TableView>();
+					tv->SetDataSource(&data); TODO */
+				}
 			}
 		}
 		if (editMode == 1)
@@ -547,7 +697,7 @@ struct DataDesc
 				if (it != structs.end())
 				{
 					auto& S = *it->second;
-					ui::imm::EditBool(ctx, "Is serialized?", S.serialized);
+					ui::imm::PropEditBool(ctx, "Is serialized?", S.serialized);
 					ctx->Push<ui::Panel>();
 					for (size_t i = 0; i < S.fields.size(); i++)
 					{
@@ -585,7 +735,7 @@ struct DataDesc
 					}
 					if (ui::imm::Button(ctx, "Add"))
 					{
-						S.fields.push_back({ "int32", "unnamed", 1 });
+						S.fields.push_back({ "i32", "unnamed", 1 });
 						editMode = 2;
 						curField = S.fields.size() - 1;
 						all->RerenderNode();
@@ -611,7 +761,11 @@ struct DataDesc
 					if (curField < S.fields.size())
 					{
 						auto& F = S.fields[curField];
+						if (!S.serialized)
+							ui::imm::EditInt(ctx, "Offset", F.off);
 						ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
+						ui::imm::PropEditString(ctx, "Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
+						ui::imm::EditInt(ctx, "Count", F.count, 1, 1);
 					}
 				}
 			}
@@ -637,22 +791,22 @@ struct HighlightSettings
 
 	void EditUI(UIContainer* ctx)
 	{
-		ui::imm::EditBool(ctx, "Exclude zeroes", excludeZeroes);
+		ui::imm::PropEditBool(ctx, "Exclude zeroes", excludeZeroes);
 
 		ui::Property::Begin(ctx, "float32");
-		ui::imm::EditBool(ctx, nullptr, enableFloat32);
+		ui::imm::PropEditBool(ctx, nullptr, enableFloat32);
 		ui::imm::EditFloat(ctx, "\bMin", minFloat32, 0.01f);
 		ui::imm::EditFloat(ctx, "\bMax", maxFloat32);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "int16");
-		ui::imm::EditBool(ctx, nullptr, enableInt16);
+		ui::imm::PropEditBool(ctx, nullptr, enableInt16);
 		ui::imm::EditInt(ctx, "\bMin", minInt16);
 		ui::imm::EditInt(ctx, "\bMax", maxInt16);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "int32");
-		ui::imm::EditBool(ctx, nullptr, enableInt32);
+		ui::imm::PropEditBool(ctx, nullptr, enableInt32);
 		ui::imm::EditInt(ctx, "\bMin", minInt32);
 		ui::imm::EditInt(ctx, "\bMax", maxInt32);
 		ui::Property::End(ctx);
@@ -1013,12 +1167,22 @@ struct MainWindow : ui::NativeMainWindow
 #if 1
 		{
 			auto* f = new REFile("loop.wav");
-			auto* section = new DataDesc::Struct;
-			section->serialized = true;
-			section->fields.push_back({ "char", "type", 4 });
-			section->fields.push_back({ "u32", "size", 1 });
-			f->desc.structs["section"] = section;
-			f->desc.instances.push_back({ "section", 0, "root section" });
+			auto* chunk = new DataDesc::Struct;
+			chunk->serialized = true;
+			chunk->fields.push_back({ "char", "type", 4 });
+			chunk->fields.push_back({ "u32", "size", 1 });
+			f->desc.structs["chunk"] = chunk;
+			auto* fmt_data = new DataDesc::Struct;
+			fmt_data->serialized = true;
+			fmt_data->fields.push_back({ "u16", "AudioFormat", 1 });
+			fmt_data->fields.push_back({ "u16", "NumChannels", 1 });
+			fmt_data->fields.push_back({ "u32", "SampleRate", 1 });
+			fmt_data->fields.push_back({ "u32", "ByteRate", 1 });
+			fmt_data->fields.push_back({ "u16", "BlockAlign", 1 });
+			fmt_data->fields.push_back({ "u16", "BitsPerSample", 1 });
+			f->desc.structs["fmt_data"] = fmt_data;
+			f->desc.instances.push_back({ "chunk", 0, "RIFF chunk" });
+			f->desc.instances.push_back({ "fmt_data", 20, "fmt chunk data" });
 			files.push_back(f);
 		}
 #endif
@@ -1085,7 +1249,7 @@ struct MainWindow : ui::NativeMainWindow
 
 							ctx->PushBox();
 							ctx->Make<MarkedItemsList>()->mdata = &f->mdata;
-							f->desc.Edit(ctx);
+							f->desc.Edit(ctx, f->path.c_str());
 							ctx->Pop();
 						}
 						sp->SetSplit(0, 0.45f);

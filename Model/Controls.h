@@ -213,7 +213,7 @@ struct Property : UIElement
 namespace imm {
 
 bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods = {});
-bool EditBool(UIContainer* ctx, const char* label, bool& val);
+bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods = {});
 bool EditInt(UIContainer* ctx, const char* label, int& val, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
 bool EditInt(UIContainer* ctx, const char* label, unsigned& val, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
 bool EditInt(UIContainer* ctx, const char* label, int64_t& val, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
@@ -222,6 +222,7 @@ bool EditFloat(UIContainer* ctx, const char* label, float& val, float speed = 1,
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods = {});
 
 bool PropButton(UIContainer* ctx, const char* label, const char* text, std::initializer_list<ui::Modifier*> mods = {});
+bool PropEditBool(UIContainer* ctx, const char* label, bool& val, std::initializer_list<ui::Modifier*> mods = {});
 bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods = {});
 
 } // imm

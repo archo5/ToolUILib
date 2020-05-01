@@ -359,13 +359,13 @@ bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifi
 	{
 		clicked = true;
 		btn->flags &= ~UIObject_IsEdited;
+		btn->RerenderNode();
 	}
 	return clicked;
 }
 
-bool EditBool(UIContainer* ctx, const char* label, bool& val)
+bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods)
 {
-	Property::Begin(ctx, label);
 	auto* cb = ctx->Make<CheckboxData>();
 	bool edited = false;
 	if (cb->flags & UIObject_IsEdited)
@@ -373,6 +373,7 @@ bool EditBool(UIContainer* ctx, const char* label, bool& val)
 		val = cb->value;
 		cb->flags &= ~UIObject_IsEdited;
 		edited = true;
+		cb->RerenderNode();
 	}
 	cb->onChange = [cb]()
 	{
@@ -380,7 +381,6 @@ bool EditBool(UIContainer* ctx, const char* label, bool& val)
 		cb->RerenderNode();
 	};
 	cb->Init(val);
-	Property::End(ctx);
 	return edited;
 }
 
@@ -509,6 +509,7 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 	{
 		retfn(tb->GetText().c_str());
 		tb->flags &= ~UIObject_IsEdited;
+		tb->RerenderNode();
 		changed = true;
 	}
 	else // text can be invalidated if retfn is called
@@ -526,6 +527,14 @@ bool PropButton(UIContainer* ctx, const char* label, const char* text, std::init
 {
 	Property::Begin(ctx, label);
 	bool ret = Button(ctx, text, mods);
+	Property::End(ctx);
+	return ret;
+}
+
+bool PropEditBool(UIContainer* ctx, const char* label, bool& val, std::initializer_list<ui::Modifier*> mods)
+{
+	Property::Begin(ctx, label);
+	bool ret = EditBool(ctx, val);
 	Property::End(ctx);
 	return ret;
 }

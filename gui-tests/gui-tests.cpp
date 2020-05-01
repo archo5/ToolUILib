@@ -94,6 +94,7 @@ struct DragDropTest : ui::Node
 	int slots[3] = { 5, 2, 0 };
 };
 
+
 static ui::DataCategoryTag DCT_Node[1];
 struct NodeEditTest : ui::Node
 {
@@ -174,6 +175,213 @@ struct NodeEditTest : ui::Node
 
 	TreeNode root = { "root" };
 };
+
+
+struct CompactNodeEditTest : ui::Node
+{
+	struct Variable
+	{
+		std::string name;
+		int value = 0;
+	};
+	struct ComputeInfo
+	{
+		std::vector<Variable>& variables;
+		std::string& errors;
+	};
+
+	struct ExprNode
+	{
+		virtual void UI(UIContainer* ctx) = 0;
+		virtual int Compute(ComputeInfo& cinfo) = 0;
+	};
+	static void NodeUI(UIContainer* ctx, ExprNode*& node);
+	struct NumberNode : ExprNode
+	{
+		int number = 0;
+
+		void UI(UIContainer* ctx) override
+		{
+			ui::imm::EditInt(ctx, "\b#", number);
+		}
+		int Compute(ComputeInfo&) override { return number; }
+	};
+	struct VarNode : ExprNode
+	{
+		std::string name;
+
+		void UI(UIContainer* ctx) override
+		{
+			ui::imm::PropEditString(ctx, "\bName:", name.c_str(), [this](const char* s) { name = s; });
+		}
+		int Compute(ComputeInfo& cinfo) override
+		{
+			for (auto& var : cinfo.variables)
+				if (var.name == name)
+					return var.value;
+			cinfo.errors += "variable '" + name + "' not found\n";
+			return 0;
+		}
+	};
+	struct BinOpNode : ExprNode
+	{
+		ExprNode* a = nullptr;
+		ExprNode* b = nullptr;
+
+		void UI(UIContainer* ctx) override
+		{
+			*ctx->Push<ui::Panel>() + ui::Padding(2) + ui::Layout(style::layouts::InlineBlock());
+			NodeUI(ctx, a);
+			ctx->Text(Name()) + ui::Padding(5);
+			NodeUI(ctx, b);
+			ctx->Pop();
+		}
+		int Compute(ComputeInfo& cinfo) override
+		{
+			int va = 0, vb = 0;
+			if (a)
+				va = a->Compute(cinfo);
+			else
+				cinfo.errors += "'" + std::string(Name()) + "': missing left operand";
+			if (b)
+				vb = b->Compute(cinfo);
+			else
+				cinfo.errors += "'" + std::string(Name()) + "': missing right operand";
+			return Calculate(va, vb, cinfo);
+		}
+		virtual const char* Name() = 0;
+		virtual int Calculate(int a, int b, ComputeInfo& cinfo) = 0;
+	};
+	struct AddNode : BinOpNode
+	{
+		const char* Name() override { return "+"; }
+		int Calculate(int a, int b, ComputeInfo&) override { return a + b; }
+	};
+	struct SubNode : BinOpNode
+	{
+		const char* Name() override { return "-"; }
+		int Calculate(int a, int b, ComputeInfo&) override { return a - b; }
+	};
+	struct MulNode : BinOpNode
+	{
+		const char* Name() override { return "*"; }
+		int Calculate(int a, int b, ComputeInfo&) override { return a * b; }
+	};
+	struct DivNode : BinOpNode
+	{
+		const char* Name() override { return "/"; }
+		int Calculate(int a, int b, ComputeInfo& cinfo) override
+		{
+			if (b == 0)
+			{
+				cinfo.errors += "division by zero\n";
+				return 0;
+			}
+			return a / b;
+		}
+	};
+
+	void Render(UIContainer* ctx) override
+	{
+		ui::Property::Begin(ctx, "Expression:");
+
+		ctx->PushBox() + ui::Layout(style::layouts::Stack()) + ui::Width(style::Coord::Percent(100));
+		NodeUI(ctx, root);
+		ctx->Pop();
+
+		ui::Property::End(ctx);
+
+		ui::Property::Begin(ctx, "Variables:");
+		ctx->PushBox();
+
+		Variable* del = nullptr;
+		for (auto& v : variables)
+		{
+			ui::Property::Begin(ctx);
+			if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+			{
+				del = &v;
+			}
+			ui::imm::PropEditString(ctx, "\bName", v.name.c_str(), [&v](const char* s) { v.name = s; });
+			ui::imm::EditInt(ctx, "\bValue", v.value);
+			ui::Property::End(ctx);
+		}
+
+		if (del)
+		{
+			variables.erase(variables.begin() + (del - variables.data()));
+			Rerender();
+		}
+
+		if (ui::imm::Button(ctx, "Add"))
+		{
+			variables.push_back({ "unnamed", 0 });
+		}
+
+		ctx->Pop();
+		ui::Property::End(ctx);
+
+		ui::Property::Begin(ctx, "Computed value:");
+
+		if (root)
+		{
+			std::string errors;
+			ComputeInfo cinfo = { variables, errors };
+			int val = root->Compute(cinfo);
+			if (cinfo.errors.size())
+				ctx->Text("Errors during calculation:\n" + cinfo.errors);
+			else
+				ctx->Text(std::to_string(val));
+		}
+		else
+			ctx->Text("- no expression -");
+
+		ui::Property::End(ctx);
+	}
+
+	std::vector<Variable> variables{ { "test", 5 } };
+	ExprNode* root = nullptr;
+};
+void CompactNodeEditTest::NodeUI(UIContainer* ctx, ExprNode*& node)
+{
+	auto& b = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock());
+	if (node)
+	{
+		b.HandleEvent(UIEventType::Click) = [&node](UIEvent& e)
+		{
+			if (e.GetButton() == UIMouseButton::Right)
+			{
+				ui::MenuItem items[] =
+				{
+					ui::MenuItem("Delete").Func([&node, &e]() { delete node; node = nullptr; e.target->RerenderNode(); }),
+				};
+				ui::Menu menu(items);
+				menu.Show(e.target);
+				e.handled = true;
+			}
+		};
+		node->UI(ctx);
+	}
+	else
+	{
+		if (ui::imm::Button(ctx, "+", { &ui::Layout(style::layouts::InlineBlock()) }))
+		{
+			ui::MenuItem items[] =
+			{
+				ui::MenuItem("Number").Func([&node, &b]() { node = new NumberNode; b.RerenderNode(); }),
+				ui::MenuItem("Variable").Func([&node, &b]() { node = new VarNode; b.RerenderNode(); }),
+				ui::MenuItem("Add").Func([&node, &b]() { node = new AddNode; b.RerenderNode(); }),
+				ui::MenuItem("Subtract").Func([&node, &b]() { node = new SubNode; b.RerenderNode(); }),
+				ui::MenuItem("Multiply").Func([&node, &b]() { node = new MulNode; b.RerenderNode(); }),
+				ui::MenuItem("Divide").Func([&node, &b]() { node = new DivNode; b.RerenderNode(); }),
+			};
+			ui::Menu menu(items);
+			menu.Show(&b);
+		}
+	}
+	ctx->Pop();
+}
+
 
 struct SubUITest : ui::Node
 {
@@ -977,7 +1185,7 @@ struct IMGUITest : ui::Node
 	{
 		{
 			auto tmp = boolVal;
-			if (ui::imm::EditBool(ctx, "bool", boolVal))
+			if (ui::imm::PropEditBool(ctx, "bool", tmp))
 				boolVal = tmp;
 		}
 		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %d")->Init(intFmt, 0)->onChange = [this]() { Rerender(); };
@@ -1565,10 +1773,8 @@ static TestEntry testEntries[] =
 {
 	{ "Off", [](UIContainer* ctx) {} },
 	{ "Open/Close", [](UIContainer* ctx) { ctx->Make<OpenClose>(); } },
-	{ "Calculator", [](UIContainer* ctx) { ctx->Make<Calculator>(); } },
 	{ "Edge slice", [](UIContainer* ctx) { ctx->Make<EdgeSliceTest>(); } },
 	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
-	{ "Node editing", [](UIContainer* ctx) { ctx->Make<NodeEditTest>(); } },
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
 	{ "Split pane", [](UIContainer* ctx) { ctx->Make<SplitPaneTest>(); } },
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
@@ -1584,23 +1790,44 @@ static TestEntry testEntries[] =
 	{ "Element reset test", [](UIContainer* ctx) { ctx->Make<ElementResetTest>(); } },
 	{ "IMGUI test", [](UIContainer* ctx) { ctx->Make<IMGUITest>(); } },
 };
+static TestEntry demoEntries[] =
+{
+	{ "Calculator", [](UIContainer* ctx) { ctx->Make<Calculator>(); } },
+	{ "Node editing", [](UIContainer* ctx) { ctx->Make<NodeEditTest>(); } },
+	{ "Compact node editing", [](UIContainer* ctx) { ctx->Make<CompactNodeEditTest>(); } },
+};
 struct TEST : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Push<ui::MenuBarElement>();
+
 		ctx->Push<ui::MenuItemElement>()->SetText("Test");
-		for (size_t i = 0; i < sizeof(testEntries) / sizeof(testEntries[0]); i++)
+		for (auto& entry : testEntries)
 		{
-			auto fn = [this, i]()
+			auto fn = [this, &entry]()
 			{
-				curTest = i;
-				GetNativeWindow()->SetTitle(testEntries[i].name);
+				curTest = &entry;
+				GetNativeWindow()->SetTitle(entry.name);
 				Rerender();
 			};
-			ctx->Make<ui::MenuItemElement>()->SetText(testEntries[i].name).SetChecked(curTest == i).onActivate = fn;
+			ctx->Make<ui::MenuItemElement>()->SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
 		}
 		ctx->Pop();
+
+		ctx->Push<ui::MenuItemElement>()->SetText("Demo");
+		for (auto& entry : demoEntries)
+		{
+			auto fn = [this, &entry]()
+			{
+				curTest = &entry;
+				GetNativeWindow()->SetTitle(entry.name);
+				Rerender();
+			};
+			ctx->Make<ui::MenuItemElement>()->SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
+		}
+		ctx->Pop();
+
 		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
 		{
 			ctx->Make<ui::MenuItemElement>()->SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
@@ -1608,9 +1835,11 @@ struct TEST : ui::Node
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rerender(); };
 		}
 		ctx->Pop();
+
 		ctx->Pop();
 
-		testEntries[curTest].func(ctx);
+		if (curTest)
+			curTest->func(ctx);
 	}
 
 	static const char* cln(const char* s)
@@ -1668,7 +1897,7 @@ struct TEST : ui::Node
 		}
 	}
 
-	int curTest = 0;
+	TestEntry* curTest = nullptr;
 };
 
 

@@ -782,6 +782,7 @@ struct Inspector : ui::NativeDialogWindow
 			if (strncmp(name, "struct ", 7) == 0) name += 7;
 			if (strncmp(name, "class ", 6) == 0) name += 6;
 			if (strncmp(name, "ui::", 4) == 0) name += 4;
+			if (strncmp(name, "style::layouts::", 5 + 7 + 4) == 0) name += 5 + 7 + 4;
 			return name;
 		}
 
@@ -805,6 +806,8 @@ struct Inspector : ui::NativeDialogWindow
 			auto& fr = obj->finalRectC;
 			snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
 			DrawTextLine(300, y, bfr, 1, 1, 1);
+			if (obj->GetStyle().GetLayout())
+				DrawTextLine(400, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), 1, 1, 1);
 
 			for (auto* ch = obj->firstChild; ch; ch = ch->next)
 			{
@@ -818,6 +821,7 @@ struct Inspector : ui::NativeDialogWindow
 			int y = GetFontHeight();
 			DrawTextLine(0, y, "Name", 1, 1, 1, 0.6f);
 			DrawTextLine(300, y, "Rect", 1, 1, 1, 0.6f);
+			DrawTextLine(400, y, "Layout", 1, 1, 1, 0.6f);
 			PaintObject(c.rootNode, 0, y);
 			//DrawTextLine(10, 10, "inspector", 1, 1, 1);
 		}
