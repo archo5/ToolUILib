@@ -14,6 +14,14 @@ Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
 
 
 static uint8_t typeSizes[] = { 2, 2, 4, 4, 4 };
+static const char* typeNames[] =
+{
+	"i16",
+	"u16",
+	"i32",
+	"u32",
+	"f32",
+};
 
 bool Marker::Contains(uint64_t pos) const
 {
@@ -69,6 +77,46 @@ void MarkerData::AddMarker(DataType dt, uint64_t from, uint64_t to)
 {
 	markers.push_back({ dt, from, (to - from) / typeSizes[dt], 1, 0 });
 	ui::Notify(DCT_MarkedItems, this);
+}
+
+enum COLS
+{
+	MD_COL_At,
+	MD_COL_Type,
+	MD_COL_Count,
+	MD_COL_Repeats,
+	MD_COL_Stride,
+};
+
+std::string MarkerData::GetRowName(size_t row)
+{
+	return std::to_string(row);
+}
+
+std::string MarkerData::GetColName(size_t col)
+{
+	switch (col)
+	{
+	case MD_COL_At: return "Offset";
+	case MD_COL_Type: return "Type";
+	case MD_COL_Count: return "Count";
+	case MD_COL_Repeats: return "Repeats";
+	case MD_COL_Stride: return "Stride";
+	default: return "";
+	}
+}
+
+std::string MarkerData::GetText(size_t row, size_t col)
+{
+	switch (col)
+	{
+	case MD_COL_At: return std::to_string(markers[row].at);
+	case MD_COL_Type: return typeNames[markers[row].type];
+	case MD_COL_Count: return std::to_string(markers[row].count);
+	case MD_COL_Repeats: return std::to_string(markers[row].repeats);
+	case MD_COL_Stride: return std::to_string(markers[row].stride);
+	default: return "";
+	}
 }
 
 

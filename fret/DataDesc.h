@@ -35,11 +35,17 @@ struct Marker
 };
 
 extern ui::DataCategoryTag DCT_MarkedItems[1];
-struct MarkerData
+struct MarkerData : ui::TableDataSource
 {
 	Color4f GetMarkedColor(uint64_t pos);
 	bool IsMarked(uint64_t pos, uint64_t len);
 	void AddMarker(DataType dt, uint64_t from, uint64_t to);
+
+	size_t GetNumRows() override { return markers.size(); }
+	size_t GetNumCols() override { return 5; }
+	std::string GetRowName(size_t row) override;
+	std::string GetColName(size_t col) override;
+	std::string GetText(size_t row, size_t col) override;
 
 	std::vector<Marker> markers;
 };

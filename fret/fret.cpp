@@ -27,7 +27,7 @@ struct REFile : FileDataSource
 	FileStructureDataSource* ds;
 	MarkerData markerData;
 	uint64_t basePos = 0;
-	uint32_t byteWidth = 16;
+	uint32_t byteWidth = 8;
 	Highlighter highlighter;
 	DataDesc desc;
 };
@@ -125,6 +125,10 @@ struct MainWindow : ui::NativeMainWindow
 
 							ctx->PushBox();
 							ctx->Text("Marked items");
+							auto* tv = ctx->Make<ui::TableView>();
+							*tv + ui::Layout(style::layouts::EdgeSlice());
+							tv->SetDataSource(&f->markerData);
+							tv->CalculateColumnWidths();
 							ctx->Pop();
 
 							ctx->PushBox();
@@ -132,7 +136,7 @@ struct MainWindow : ui::NativeMainWindow
 							f->desc.Edit(ctx, f);
 							ctx->Pop();
 						}
-						sp->SetSplit(0, 0.45f);
+						sp->SetSplit(0, 0.25f);
 						sp->SetSplit(1, 0.7f);
 						ctx->Pop();
 					}

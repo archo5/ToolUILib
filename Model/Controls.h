@@ -394,19 +394,21 @@ class TableView : public ui::Node
 {
 public:
 	TableView();
+	~TableView();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 	void Render(UIContainer* ctx) override;
 
-	TableDataSource* GetDataSource() const { return _dataSource; }
+	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
+	void CalculateColumnWidths(bool includeHeader = true, bool firstTimeOnly = true);
 
 	style::BlockRef cellStyle;
 	style::BlockRef rowHeaderStyle;
 	style::BlockRef colHeaderStyle;
 
 private:
-	TableDataSource* _dataSource;
+	struct TableViewImpl* _impl;
 };
 
 class TreeDataSource

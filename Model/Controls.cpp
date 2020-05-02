@@ -1322,12 +1322,25 @@ void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
 }
 
 
+struct TableViewImpl
+{
+	TableDataSource* dataSource = nullptr;
+	bool firstColWidthCalc = true;
+	std::vector<float> colEnds = { 1.0f };
+};
+
 TableView::TableView()
 {
+	_impl = new TableViewImpl;
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
 	colHeaderStyle = Theme::current->tableColHeader;
+}
+
+TableView::~TableView()
+{
+	delete _impl;
 }
 
 void TableView::OnPaint()
@@ -1336,17 +1349,17 @@ void TableView::OnPaint()
 
 	int rhw = 80;
 	int chh = 20;
-	int w = 100;
 	int h = 20;
 
-	int nc = _dataSource->GetNumCols();
-	int nr = _dataSource->GetNumRows();
+	int nc = _impl->dataSource->GetNumCols();
+	int nr = _impl->dataSource->GetNumRows();
 
 	style::PaintInfo info(this);
 
 	auto RC = GetContentRect();
 
 	// backgrounds
+	// - row header
 	for (int r = 0; r < nr; r++)
 	{
 		info.rect =
@@ -1358,26 +1371,28 @@ void TableView::OnPaint()
 		};
 		rowHeaderStyle->paint_func(info);
 	}
+	// - column header
 	for (int c = 0; c < nc; c++)
 	{
 		info.rect =
 		{
-			RC.x0 + rhw + w * c,
+			RC.x0 + rhw + _impl->colEnds[c],
 			RC.y0,
-			RC.x0 + rhw + w * (c + 1),
+			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
 		colHeaderStyle->paint_func(info);
 	}
+	// - cells
 	for (int r = 0; r < nr; r++)
 	{
 		for (int c = 0; c < nc; c++)
 		{
 			info.rect =
 			{
-				RC.x0 + rhw + w * c,
+				RC.x0 + rhw + _impl->colEnds[c],
 				RC.y0 + chh + h * r,
-				RC.x0 + rhw + w * (c + 1),
+				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh + h * (r + 1),
 			};
 			cellStyle->paint_func(info);
@@ -1385,6 +1400,7 @@ void TableView::OnPaint()
 	}
 
 	// text
+	// - row header
 	for (int r = 0; r < nr; r++)
 	{
 		UIRect rect =
@@ -1394,31 +1410,33 @@ void TableView::OnPaint()
 			RC.x0 + rhw,
 			RC.y0 + chh + h * (r + 1),
 		};
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetRowName(r).c_str(), 1, 1, 1);
+		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
 	}
+	// - column header
 	for (int c = 0; c < nc; c++)
 	{
 		UIRect rect =
 		{
-			RC.x0 + rhw + w * c,
+			RC.x0 + rhw + _impl->colEnds[c],
 			RC.y0,
-			RC.x0 + rhw + w * (c + 1),
+			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetColName(c).c_str(), 1, 1, 1);
+		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
 	}
+	// - cells
 	for (int r = 0; r < nr; r++)
 	{
 		for (int c = 0; c < nc; c++)
 		{
 			UIRect rect =
 			{
-				RC.x0 + rhw + w * c,
+				RC.x0 + rhw + _impl->colEnds[c],
 				RC.y0 + chh + h * r,
-				RC.x0 + rhw + w * (c + 1),
+				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh + h * (r + 1),
 			};
-			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _dataSource->GetText(r, c).c_str(), 1, 1, 1);
+			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(r, c).c_str(), 1, 1, 1);
 		}
 	}
 
@@ -1434,10 +1452,61 @@ void TableView::Render(UIContainer* ctx)
 {
 }
 
+TableDataSource* TableView::GetDataSource() const
+{
+	return _impl->dataSource;
+}
+
 void TableView::SetDataSource(TableDataSource* src)
 {
-	_dataSource = src;
+	if (src != _impl->dataSource)
+		_impl->firstColWidthCalc = true;
+	_impl->dataSource = src;
+
+	size_t nc = src->GetNumCols();
+	while (_impl->colEnds.size() < nc + 1)
+		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
+	while (_impl->colEnds.size() > nc + 1)
+		_impl->colEnds.pop_back();
+
 	Rerender();
+}
+
+void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
+{
+	if (firstTimeOnly && !_impl->firstColWidthCalc)
+		return;
+
+	_impl->firstColWidthCalc = false;
+
+	auto nc = _impl->dataSource->GetNumCols();
+	std::vector<float> colWidths;
+	colWidths.resize(nc, 0.0f);
+
+	if (includeHeader)
+	{
+		for (size_t c = 0; c < nc; c++)
+		{
+			std::string text = _impl->dataSource->GetColName(c);
+			float w = GetTextWidth(text.c_str());
+			if (colWidths[c] < w)
+				colWidths[c] = w;
+		}
+	}
+
+	for (size_t i = 0, n = _impl->dataSource->GetNumRows(); i < n; i++)
+	{
+		for (size_t c = 0; c < nc; c++)
+		{
+			std::string text = _impl->dataSource->GetText(i, c);
+			float w = GetTextWidth(text.c_str());
+			if (colWidths[c] < w)
+				colWidths[c] = w;
+		}
+	}
+
+	for (size_t c = 0; c < nc; c++)
+		_impl->colEnds[c + 1] = _impl->colEnds[c] + colWidths[c];
 }
 
 
