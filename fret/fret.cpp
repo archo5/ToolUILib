@@ -121,23 +121,75 @@ struct MainWindow : ui::NativeMainWindow
 
 							auto* hv = ctx->Make<HexViewer>();
 							hv->Init(f, &f->basePos, &f->byteWidth, &f->highlighter);
+							hv->HandleEvent(UIEventType::Click) = [f, hv](UIEvent& e)
+							{
+								if (e.GetButton() == UIMouseButton::Right)
+								{
+									uint64_t pos = hv->hoverByte;
+
+									char txt_pos[64];
+									snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
+
+									char txt_int16[32];
+									hv->GetInt16Text(txt_int16, 32, pos, true);
+									char txt_uint16[32];
+									hv->GetInt16Text(txt_uint16, 32, pos, false);
+									char txt_int32[32];
+									hv->GetInt32Text(txt_int32, 32, pos, true);
+									char txt_uint32[32];
+									hv->GetInt32Text(txt_uint32, 32, pos, false);
+									char txt_float32[32];
+									hv->GetFloat32Text(txt_float32, 32, pos);
+
+									std::vector<ui::MenuItem> structs;
+									for (auto& s : f->desc.structs)
+									{
+										auto fn = [f, pos, s]()
+										{
+											f->desc.curInst = f->desc.instances.size();
+											f->desc.instances.push_back({ s.first, pos, "" });
+										};
+										structs.push_back(ui::MenuItem(s.first).Func(fn));
+									}
+									ui::MenuItem items[] =
+									{
+										ui::MenuItem(txt_pos, {}, true),
+										ui::MenuItem::Submenu("Place struct", structs),
+										ui::MenuItem::Separator(),
+										ui::MenuItem("Mark int16", txt_int16).Func([f, pos]() { f->markerData.AddMarker(DT_I16, pos, pos + 2); }),
+										ui::MenuItem("Mark uint16", txt_uint16).Func([f, pos]() { f->markerData.AddMarker(DT_U16, pos, pos + 2); }),
+										ui::MenuItem("Mark int32", txt_int32).Func([f, pos]() { f->markerData.AddMarker(DT_I32, pos, pos + 4); }),
+										ui::MenuItem("Mark uint32", txt_uint32).Func([f, pos]() { f->markerData.AddMarker(DT_U32, pos, pos + 4); }),
+										ui::MenuItem("Mark float32", txt_float32).Func([f, pos]() { f->markerData.AddMarker(DT_F32, pos, pos + 4); }),
+									};
+									ui::Menu menu(items);
+									menu.Show(hv);
+									hv->RerenderNode();
+								}
+							};
 							ctx->Pop();
 
-							ctx->PushBox();
+							auto& ed = ctx->PushBox();
 							ctx->Text("Marked items");
 							auto* tv = ctx->Make<ui::TableView>();
 							*tv + ui::Layout(style::layouts::EdgeSlice());
 							tv->SetDataSource(&f->markerData);
 							tv->CalculateColumnWidths();
+							// TODO cannot currently apply event handler to `tv` (node) directly from outside
+							ed.HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
 							ctx->Pop();
 
 							ctx->PushBox();
-							ctx->Make<MarkedItemsList>()->markerData = &f->markerData;
+							if (tv->selection.AnySelected())
+							{
+								size_t pos = tv->selection.GetFirstSelection();
+								if (tv->IsValidRow(pos))
+									ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
+							}
 							f->desc.Edit(ctx, f);
 							ctx->Pop();
 						}
-						sp->SetSplit(0, 0.25f);
-						sp->SetSplit(1, 0.7f);
+						sp->SetSplits({ 0.25f, 0.7f });
 						ctx->Pop();
 					}
 					ctx->Pop();

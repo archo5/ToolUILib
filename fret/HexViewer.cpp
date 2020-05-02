@@ -145,36 +145,6 @@ void HexViewer::OnEvent(UIEvent& e)
 		hoverSection = -1;
 		hoverByte = UINT64_MAX;
 	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Right)
-	{
-		uint64_t pos = hoverByte;
-
-		char txt_pos[64];
-		snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
-
-		char txt_int16[32];
-		GetInt16Text(txt_int16, 32, pos, true);
-		char txt_uint16[32];
-		GetInt16Text(txt_uint16, 32, pos, false);
-		char txt_int32[32];
-		GetInt32Text(txt_int32, 32, pos, true);
-		char txt_uint32[32];
-		GetInt32Text(txt_uint32, 32, pos, false);
-		char txt_float32[32];
-		GetFloat32Text(txt_float32, 32, pos);
-
-		ui::MenuItem items[] =
-		{
-			ui::MenuItem(txt_pos, {}, true),
-			ui::MenuItem("Mark int16", txt_int16).Func([this, pos]() { highlighter->markerData->AddMarker(DT_I16, pos, pos + 2); }),
-			ui::MenuItem("Mark uint16", txt_uint16).Func([this, pos]() { highlighter->markerData->AddMarker(DT_U16, pos, pos + 2); }),
-			ui::MenuItem("Mark int32", txt_int32).Func([this, pos]() { highlighter->markerData->AddMarker(DT_I32, pos, pos + 4); }),
-			ui::MenuItem("Mark uint32", txt_uint32).Func([this, pos]() { highlighter->markerData->AddMarker(DT_U32, pos, pos + 4); }),
-			ui::MenuItem("Mark float32", txt_float32).Func([this, pos]() { highlighter->markerData->AddMarker(DT_F32, pos, pos + 4); }),
-		};
-		ui::Menu menu(items);
-		menu.Show(this);
-	}
 	else if (e.type == UIEventType::MouseScroll)
 	{
 		int64_t diff = round(e.dy / 40) * 16;

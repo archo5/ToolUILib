@@ -410,13 +410,13 @@ struct MainWindow : ui::NativeMainWindow
 				ctx->Make<RenderView>();
 				ctx->Make<EditorView>();
 
-				vsp->SetSplit(0, 0.6f);
+				vsp->SetSplits({ 0.6f });
 			}
 			ctx->Pop();
 
 			ctx->Make<InspectorView>();
 
-			hsp->SetSplit(0, 0.6f);
+			vsp->SetSplits({ 0.6f });
 		}
 		ctx->Pop();
 	}

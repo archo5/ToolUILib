@@ -410,9 +410,19 @@ struct DefaultTheme : Theme
 			GL::BatchRenderer br;
 			GL::SetTexture(0);
 			br.Begin();
-			br.SetColor(0.05f, 0.05f, 0.05f);
+			if (info.IsChecked())
+				br.SetColor(0.45f, 0.05f, 0.0f);
+			else if (info.IsHovered())
+				br.SetColor(0.25f, 0.05f, 0.0f);
+			else
+				br.SetColor(0.05f, 0.05f, 0.05f);
 			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.SetColor(0.15f, 0.15f, 0.15f);
+			if (info.IsChecked())
+				br.SetColor(0.45f, 0.1f, 0.0f);
+			else if (info.IsHovered())
+				br.SetColor(0.25f, 0.1f, 0.05f);
+			else
+				br.SetColor(0.15f, 0.15f, 0.15f);
 			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
 			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
 			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);

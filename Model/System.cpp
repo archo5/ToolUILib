@@ -134,6 +134,7 @@ void UIContainer::_Push(UIObject* obj)
 {
 	objectStack[objectStackSize] = obj;
 	objChildStack[objectStackSize] = obj->firstChild;
+	// TODO consider how to make it possible to apply handlers from outside after creating nodes
 	obj->ClearEventHandlers();
 	objectStackSize++;
 }

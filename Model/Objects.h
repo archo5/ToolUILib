@@ -128,6 +128,7 @@ struct LivenessToken
 struct IDataSerializer
 {
 	virtual void Process(void* data, size_t size) = 0;
+	virtual bool IsWriter() = 0;
 
 	template <class T> IDataSerializer& operator << (T& val)
 	{
@@ -144,6 +145,7 @@ struct DataWriteSerializer : IDataSerializer
 		memcpy(p, data, size);
 		p += size;
 	}
+	bool IsWriter() override { return true; }
 
 	char* p;
 };
@@ -156,6 +158,7 @@ struct DataReadSerializer : IDataSerializer
 		memcpy(data, p, size);
 		p += size;
 	}
+	bool IsWriter() override { return false; }
 
 	char* p;
 };

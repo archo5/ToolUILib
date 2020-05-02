@@ -48,6 +48,7 @@ enum class UIEventType
 	KeyUp,
 	KeyAction,
 	TextInput,
+	SelectionChange,
 };
 
 enum class UIMouseButton

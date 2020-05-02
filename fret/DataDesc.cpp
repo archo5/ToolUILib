@@ -4,6 +4,7 @@
 #include "FileReaders.h"
 
 
+ui::DataCategoryTag DCT_Marker[1];
 ui::DataCategoryTag DCT_MarkedItems[1];
 ui::DataCategoryTag DCT_Struct[1];
 
@@ -120,6 +121,31 @@ std::string MarkerData::GetText(size_t row, size_t col)
 }
 
 
+void MarkedItemEditor::Render(UIContainer* ctx)
+{
+	Subscribe(DCT_Marker, marker);
+	ctx->Text("Marker");
+
+	ctx->Push<ui::Panel>();
+	if (ui::imm::PropButton(ctx, "Type", typeNames[marker->type]))
+	{
+		std::vector<ui::MenuItem> items;
+		int at = 0;
+		for (auto* type : typeNames)
+			items.push_back(ui::MenuItem(type, {}, false, at++ == marker->type));
+		ui::Menu menu(items);
+		int pos = menu.Show(this);
+		if (pos >= 0)
+			marker->type = (DataType)pos;
+	}
+	ui::imm::PropEditInt(ctx, "Offset", marker->at);
+	ui::imm::PropEditInt(ctx, "Count", marker->count);
+	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
+	ui::imm::PropEditInt(ctx, "Stride", marker->stride);
+	ctx->Pop();
+}
+
+
 void MarkedItemsList::Render(UIContainer* ctx)
 {
 	Subscribe(DCT_MarkedItems, markerData);
@@ -127,12 +153,16 @@ void MarkedItemsList::Render(UIContainer* ctx)
 	for (auto& m : markerData->markers)
 	{
 		ctx->Push<ui::Panel>();
-		if (ui::imm::PropButton(ctx, "Type", "EDIT"))
+		if (ui::imm::PropButton(ctx, "Type", typeNames[m.type]))
 		{
 			std::vector<ui::MenuItem> items;
-			items.push_back(ui::MenuItem("int32", {}, false, true));
-			ui::Menu m(items);
-			m.Show(this);
+			int at = 0;
+			for (auto* type : typeNames)
+				items.push_back(ui::MenuItem(type, {}, false, at++ == m.type));
+			ui::Menu menu(items);
+			int pos = menu.Show(this);
+			if (pos >= 0)
+				m.type = (DataType)pos;
 		}
 		ui::imm::PropEditInt(ctx, "Offset", m.at);
 		ui::imm::PropEditInt(ctx, "Count", m.count);

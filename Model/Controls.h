@@ -238,17 +238,17 @@ struct SplitPane : UIElement
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	void OnSerialize(IDataSerializer& s) override;
 	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
 	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
 
-	float GetSplit(unsigned which);
-	SplitPane* SetSplit(unsigned which, float f, bool clamp = true);
-	bool GetDirection() const { return _verticalSplit; }
+	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
 
 	style::BlockRef vertSepStyle; // for horizontal splitting
 	style::BlockRef horSepStyle; // for vertical splitting
 	std::vector<float> _splits;
+	bool _splitsSet = false;
 	bool _verticalSplit = false;
 	SubUI<uint16_t> _splitUI;
 	float _dragOff = 0;
@@ -380,9 +380,22 @@ struct CollapsibleTreeNode : UIElement
 	bool _hovered = false;
 };
 
-class TableDataSource
+struct Selection1D
 {
-public:
+	Selection1D();
+	~Selection1D();
+	void OnSerialize(IDataSerializer& s);
+	void Clear();
+	bool AnySelected();
+	uintptr_t GetFirstSelection();
+	bool IsSelected(uintptr_t id);
+	void SetSelected(uintptr_t id, bool sel);
+
+	struct Selection1DImpl* _impl;
+};
+
+struct TableDataSource
+{
 	virtual size_t GetNumRows() = 0;
 	virtual size_t GetNumCols() = 0;
 	virtual std::string GetRowName(size_t row) = 0;
@@ -397,15 +410,20 @@ public:
 	~TableView();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
+	void OnSerialize(IDataSerializer& s) override;
 	void Render(UIContainer* ctx) override;
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
 	void CalculateColumnWidths(bool includeHeader = true, bool firstTimeOnly = true);
 
+	bool IsValidRow(uintptr_t pos);
+	size_t GetRowAt(float y);
+
 	style::BlockRef cellStyle;
 	style::BlockRef rowHeaderStyle;
 	style::BlockRef colHeaderStyle;
+	Selection1D selection;
 
 private:
 	struct TableViewImpl* _impl;

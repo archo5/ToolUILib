@@ -34,6 +34,7 @@ struct Marker
 	Color4f GetColor() const;
 };
 
+extern ui::DataCategoryTag DCT_Marker[1];
 extern ui::DataCategoryTag DCT_MarkedItems[1];
 struct MarkerData : ui::TableDataSource
 {
@@ -48,6 +49,13 @@ struct MarkerData : ui::TableDataSource
 	std::string GetText(size_t row, size_t col) override;
 
 	std::vector<Marker> markers;
+};
+
+struct MarkedItemEditor : ui::Node
+{
+	void Render(UIContainer* ctx) override;
+
+	Marker* marker;
 };
 
 struct MarkedItemsList : ui::Node

@@ -1,4 +1,5 @@
 
+#include <unordered_set>
 #include "Controls.h"
 #include "Layout.h"
 #include "System.h"
@@ -738,7 +739,7 @@ void SplitPane::OnEvent(UIEvent& e)
 				_dragOff = SplitQToX(this, _splits[i]) - e.x;
 				break;
 			case SubUIDragState::Move:
-				SetSplit(i, SplitXToQ(this, e.x + _dragOff));
+				_splits[i] = SplitXToQ(this, e.x + _dragOff);
 				break;
 			}
 		}
@@ -750,7 +751,7 @@ void SplitPane::OnEvent(UIEvent& e)
 				_dragOff = SplitQToY(this, _splits[i]) - e.y;
 				break;
 			case SubUIDragState::Move:
-				SetSplit(i, SplitYToQ(this, e.y + _dragOff));
+				_splits[i] = SplitYToQ(this, e.y + _dragOff);
 				break;
 			}
 		}
@@ -803,6 +804,16 @@ void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	}
 }
 
+void SplitPane::OnSerialize(IDataSerializer& s)
+{
+	s << _splitsSet;
+	auto size = _splits.size();
+	s << size;
+	_splits.resize(size);
+	for (auto& v : _splits)
+		s << v;
+}
+
 Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
 {
 	return { containerSize.x, containerSize.x };
@@ -813,14 +824,7 @@ Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize,
 	return { containerSize.y, containerSize.y };
 }
 
-float SplitPane::GetSplit(unsigned which)
-{
-	CheckSplits(this);
-	if (which >= _splits.size())
-		return 1;
-	return _splits[which];
-}
-
+#if 0
 SplitPane* SplitPane::SetSplit(unsigned which, float f, bool clamp)
 {
 	CheckSplits(this);
@@ -837,6 +841,17 @@ SplitPane* SplitPane::SetSplit(unsigned which, float f, bool clamp)
 			f = std::min(f, 1.0f);
 	}
 	_splits[which] = f;
+	return this;
+}
+#endif
+
+SplitPane* SplitPane::SetSplits(std::initializer_list<float> splits, bool firstTimeOnly)
+{
+	if (!firstTimeOnly || !_splitsSet)
+	{
+		_splits = splits;
+		_splitsSet = true;
+	}
 	return this;
 }
 
@@ -1322,11 +1337,78 @@ void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
 }
 
 
+struct Selection1DImpl
+{
+	std::unordered_set<uintptr_t> sel;
+};
+
+Selection1D::Selection1D()
+{
+	_impl = new Selection1DImpl;
+}
+
+Selection1D::~Selection1D()
+{
+	delete _impl;
+}
+
+void Selection1D::OnSerialize(IDataSerializer& s)
+{
+	auto size = _impl->sel.size();
+	s << size;
+	if (s.IsWriter())
+	{
+		for (auto v : _impl->sel)
+			s << v;
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			uintptr_t v;
+			s << v;
+			_impl->sel.insert(v);
+		}
+	}
+}
+
+void Selection1D::Clear()
+{
+	_impl->sel.clear();
+}
+
+bool Selection1D::AnySelected()
+{
+	return _impl->sel.size() > 0;
+}
+
+uintptr_t Selection1D::GetFirstSelection()
+{
+	for (auto v : _impl->sel)
+		return v;
+	return UINTPTR_MAX;
+}
+
+bool Selection1D::IsSelected(uintptr_t id)
+{
+	return _impl->sel.find(id) != _impl->sel.end();
+}
+
+void Selection1D::SetSelected(uintptr_t id, bool sel)
+{
+	if (sel)
+		_impl->sel.insert(id);
+	else
+		_impl->sel.erase(id);
+}
+
+
 struct TableViewImpl
 {
 	TableDataSource* dataSource = nullptr;
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
+	size_t hoverRow = SIZE_MAX;
 };
 
 TableView::TableView()
@@ -1351,8 +1433,8 @@ void TableView::OnPaint()
 	int chh = 20;
 	int h = 20;
 
-	int nc = _impl->dataSource->GetNumCols();
-	int nr = _impl->dataSource->GetNumRows();
+	size_t nc = _impl->dataSource->GetNumCols();
+	size_t nr = _impl->dataSource->GetNumRows();
 
 	style::PaintInfo info(this);
 
@@ -1360,7 +1442,7 @@ void TableView::OnPaint()
 
 	// backgrounds
 	// - row header
-	for (int r = 0; r < nr; r++)
+	for (size_t r = 0; r < nr; r++)
 	{
 		info.rect =
 		{
@@ -1372,7 +1454,7 @@ void TableView::OnPaint()
 		rowHeaderStyle->paint_func(info);
 	}
 	// - column header
-	for (int c = 0; c < nc; c++)
+	for (size_t c = 0; c < nc; c++)
 	{
 		info.rect =
 		{
@@ -1384,9 +1466,9 @@ void TableView::OnPaint()
 		colHeaderStyle->paint_func(info);
 	}
 	// - cells
-	for (int r = 0; r < nr; r++)
+	for (size_t r = 0; r < nr; r++)
 	{
-		for (int c = 0; c < nc; c++)
+		for (size_t c = 0; c < nc; c++)
 		{
 			info.rect =
 			{
@@ -1395,6 +1477,14 @@ void TableView::OnPaint()
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh + h * (r + 1),
 			};
+			if (selection.IsSelected(r))
+				info.state |= style::PS_Checked;
+			else
+				info.state &= ~style::PS_Checked;
+			if (_impl->hoverRow == r)
+				info.state |= style::PS_Hover;
+			else
+				info.state &= ~style::PS_Hover;
 			cellStyle->paint_func(info);
 		}
 	}
@@ -1445,7 +1535,36 @@ void TableView::OnPaint()
 
 void TableView::OnEvent(UIEvent& e)
 {
-	Node::OnEvent(e);
+	if (e.type == UIEventType::MouseMove)
+	{
+		_impl->hoverRow = GetRowAt(e.y);
+	}
+	if (e.type == UIEventType::MouseLeave)
+	{
+		_impl->hoverRow = SIZE_MAX;
+	}
+	if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left)
+	{
+		selection.Clear();
+		size_t at = GetRowAt(e.y);
+		if (at < SIZE_MAX)
+			selection.SetSelected(at, true);
+		e.handled = true;
+
+		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		e.context->BubblingEvent(selev);
+	}
+}
+
+void TableView::OnSerialize(IDataSerializer& s)
+{
+	s << _impl->firstColWidthCalc;
+	auto size = _impl->colEnds.size();
+	s << size;
+	_impl->colEnds.resize(size);
+	for (auto& v : _impl->colEnds)
+		s << v;
+	selection.OnSerialize(s);
 }
 
 void TableView::Render(UIContainer* ctx)
@@ -1507,6 +1626,21 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 	for (size_t c = 0; c < nc; c++)
 		_impl->colEnds[c + 1] = _impl->colEnds[c] + colWidths[c];
+}
+
+bool TableView::IsValidRow(uintptr_t pos)
+{
+	return pos < _impl->dataSource->GetNumRows();
+}
+
+size_t TableView::GetRowAt(float y)
+{
+	y -= finalRectC.y0;
+	y -= 20; // col header height
+	y = floor(y / 20);
+	size_t row = y;
+	size_t numRows = _impl->dataSource->GetNumRows();
+	return row < numRows ? row : SIZE_MAX;
 }
 
 
