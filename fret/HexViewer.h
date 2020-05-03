@@ -66,37 +66,6 @@ struct HexViewer : UIElement
 		highlighter = hltr;
 	}
 
-	void GetInt16Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
-	{
-		int16_t v;
-		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
-		{
-			strncpy(buf, "-", bufsz);
-			return;
-		}
-		snprintf(buf, bufsz, sign ? "%" PRId16 : "%" PRIu16, v);
-	}
-	void GetInt32Text(char* buf, size_t bufsz, uint64_t pos, bool sign)
-	{
-		int32_t v;
-		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
-		{
-			strncpy(buf, "-", bufsz);
-			return;
-		}
-		snprintf(buf, bufsz, sign ? "%" PRId32 : "%" PRIu32, v);
-	}
-	void GetFloat32Text(char* buf, size_t bufsz, uint64_t pos)
-	{
-		float v;
-		if (dataSource->Read(pos, sizeof(v), &v) < sizeof(v))
-		{
-			strncpy(buf, "-", bufsz);
-			return;
-		}
-		snprintf(buf, bufsz, "%g", v);
-	}
-
 	// input data
 	IDataSource* dataSource = nullptr;
 	uint64_t* basePos = nullptr;

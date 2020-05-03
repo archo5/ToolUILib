@@ -42,23 +42,44 @@ struct MainWindow : ui::NativeMainWindow
 			auto* f = new REFile("loop.wav");
 
 			auto* chunk = new DataDesc::Struct;
+			chunk->name = "chunk";
 			chunk->serialized = true;
-			chunk->fields.push_back({ "char", "type", 4 });
-			chunk->fields.push_back({ "u32", "size", 1 });
+			chunk->fields.push_back({ "char", "type", 0, 4 });
+			chunk->fields.push_back({ "u32", "size" });
+			chunk->fields.push_back({ "list_data", "list_data" });
+			chunk->fields.push_back({ "fmt_data", "fmt_data" });
+			chunk->fields.push_back({ "str_data", "str_data" });
 			f->desc.structs["chunk"] = chunk;
 
+			auto* list_data = new DataDesc::Struct;
+			list_data->name = "list_data";
+			list_data->serialized = true;
+			list_data->params.push_back({ "size", 0 });
+			list_data->fields.push_back({ "char", "subtype", 0, 4 });
+			list_data->fields.push_back({ "chunk", "chunks", 0, 0, "size", true });
+			f->desc.structs["list_data"] = list_data;
+
 			auto* fmt_data = new DataDesc::Struct;
+			fmt_data->name = "fmt_data";
 			fmt_data->serialized = true;
-			fmt_data->fields.push_back({ "u16", "AudioFormat", 1 });
-			fmt_data->fields.push_back({ "u16", "NumChannels", 1 });
-			fmt_data->fields.push_back({ "u32", "SampleRate", 1 });
-			fmt_data->fields.push_back({ "u32", "ByteRate", 1 });
-			fmt_data->fields.push_back({ "u16", "BlockAlign", 1 });
-			fmt_data->fields.push_back({ "u16", "BitsPerSample", 1 });
+			fmt_data->fields.push_back({ "u16", "AudioFormat" });
+			fmt_data->fields.push_back({ "u16", "NumChannels" });
+			fmt_data->fields.push_back({ "u32", "SampleRate" });
+			fmt_data->fields.push_back({ "u32", "ByteRate" });
+			fmt_data->fields.push_back({ "u16", "BlockAlign" });
+			fmt_data->fields.push_back({ "u16", "BitsPerSample" });
 			f->desc.structs["fmt_data"] = fmt_data;
 
-			f->desc.instances.push_back({ "chunk", 0, "RIFF chunk" });
-			f->desc.instances.push_back({ "fmt_data", 20, "fmt chunk data" });
+			auto* str_data = new DataDesc::Struct;
+			str_data->name = "str_data";
+			str_data->serialized = true;
+			str_data->params.push_back({ "size", 0 });
+			str_data->fields.push_back({ "char", "text", 0, 0, "size" });
+			f->desc.structs["str_data"] = str_data;
+
+			f->desc.instances.push_back({ chunk, 0, "RIFF chunk", true });
+			f->desc.instances.push_back({ fmt_data, 20, "fmt chunk data", true });
+			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, { { "size", 28 } } });
 
 			files.push_back(f);
 
@@ -127,19 +148,29 @@ struct MainWindow : ui::NativeMainWindow
 								{
 									uint64_t pos = hv->hoverByte;
 
-									char txt_pos[64];
+									char txt_pos[32];
 									snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
 
+									char txt_int8[32];
+									f->GetInt8Text(txt_int8, 32, pos, true);
+									char txt_uint8[32];
+									f->GetInt8Text(txt_uint8, 32, pos, false);
 									char txt_int16[32];
-									hv->GetInt16Text(txt_int16, 32, pos, true);
+									f->GetInt16Text(txt_int16, 32, pos, true);
 									char txt_uint16[32];
-									hv->GetInt16Text(txt_uint16, 32, pos, false);
+									f->GetInt16Text(txt_uint16, 32, pos, false);
 									char txt_int32[32];
-									hv->GetInt32Text(txt_int32, 32, pos, true);
+									f->GetInt32Text(txt_int32, 32, pos, true);
 									char txt_uint32[32];
-									hv->GetInt32Text(txt_uint32, 32, pos, false);
+									f->GetInt32Text(txt_uint32, 32, pos, false);
+									char txt_int64[32];
+									f->GetInt64Text(txt_int64, 32, pos, true);
+									char txt_uint64[32];
+									f->GetInt64Text(txt_uint64, 32, pos, false);
 									char txt_float32[32];
-									hv->GetFloat32Text(txt_float32, 32, pos);
+									f->GetFloat32Text(txt_float32, 32, pos);
+									char txt_float64[32];
+									f->GetFloat64Text(txt_float64, 32, pos);
 
 									std::vector<ui::MenuItem> structs;
 									for (auto& s : f->desc.structs)
@@ -147,7 +178,7 @@ struct MainWindow : ui::NativeMainWindow
 										auto fn = [f, pos, s]()
 										{
 											f->desc.curInst = f->desc.instances.size();
-											f->desc.instances.push_back({ s.first, pos, "" });
+											f->desc.instances.push_back({ s.second, pos, "", true });
 										};
 										structs.push_back(ui::MenuItem(s.first).Func(fn));
 									}
@@ -156,11 +187,16 @@ struct MainWindow : ui::NativeMainWindow
 										ui::MenuItem(txt_pos, {}, true),
 										ui::MenuItem::Submenu("Place struct", structs),
 										ui::MenuItem::Separator(),
+										ui::MenuItem("Mark int8", txt_int8).Func([f, pos]() { f->markerData.AddMarker(DT_I8, pos, pos + 1); }),
+										ui::MenuItem("Mark uint8", txt_uint8).Func([f, pos]() { f->markerData.AddMarker(DT_U8, pos, pos + 1); }),
 										ui::MenuItem("Mark int16", txt_int16).Func([f, pos]() { f->markerData.AddMarker(DT_I16, pos, pos + 2); }),
 										ui::MenuItem("Mark uint16", txt_uint16).Func([f, pos]() { f->markerData.AddMarker(DT_U16, pos, pos + 2); }),
 										ui::MenuItem("Mark int32", txt_int32).Func([f, pos]() { f->markerData.AddMarker(DT_I32, pos, pos + 4); }),
 										ui::MenuItem("Mark uint32", txt_uint32).Func([f, pos]() { f->markerData.AddMarker(DT_U32, pos, pos + 4); }),
+										ui::MenuItem("Mark int64", txt_int64).Func([f, pos]() { f->markerData.AddMarker(DT_I64, pos, pos + 8); }),
+										ui::MenuItem("Mark uint64", txt_uint64).Func([f, pos]() { f->markerData.AddMarker(DT_U64, pos, pos + 8); }),
 										ui::MenuItem("Mark float32", txt_float32).Func([f, pos]() { f->markerData.AddMarker(DT_F32, pos, pos + 4); }),
+										ui::MenuItem("Mark float64", txt_float64).Func([f, pos]() { f->markerData.AddMarker(DT_F64, pos, pos + 8); }),
 									};
 									ui::Menu menu(items);
 									menu.Show(hv);
@@ -189,7 +225,7 @@ struct MainWindow : ui::NativeMainWindow
 							f->desc.Edit(ctx, f);
 							ctx->Pop();
 						}
-						sp->SetSplits({ 0.25f, 0.7f });
+						sp->SetSplits({ 0.3f, 0.7f });
 						ctx->Pop();
 					}
 					ctx->Pop();

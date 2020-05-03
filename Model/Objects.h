@@ -367,6 +367,13 @@ inline UIObject& operator + (UIObject& o, const Modifier& m)
 	return o;
 }
 
+struct Enable : Modifier
+{
+	bool _enable;
+	Enable(bool e) : _enable(e) {}
+	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
+};
+
 struct Layout : Modifier
 {
 	style::Layout* _layout;

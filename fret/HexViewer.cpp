@@ -119,20 +119,20 @@ void HexViewer::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::MouseMove)
 	{
 		float fh = GetFontHeight() + 4;
-		float x = finalRectC.x0 + 2;
-		float y = finalRectC.y0;
+		float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
+		float y = finalRectC.y0 + fh;
 		float x2 = x + 20 * W + 10;
 
 		hoverSection = -1;
 		hoverByte = UINT64_MAX;
-		if (e.x >= x && e.x < x + W * 20)
+		if (e.y >= y && e.x >= x && e.x < x + W * 20)
 		{
 			hoverSection = 0;
 			int xpos = std::min(std::max(0, int((e.x - x) / 20)), W - 1);
 			int ypos = (e.y - y) / fh;
 			hoverByte = GetBasePos() + xpos + ypos * W;
 		}
-		else if (e.x >= x2 && e.x < x2 + W * 10)
+		else if (e.y >= y && e.x >= x2 && e.x < x2 + W * 10)
 		{
 			hoverSection = 1;
 			int xpos = std::min(std::max(0, int((e.x - x2) / 10)), W - 1);
@@ -165,8 +165,8 @@ void HexViewer::OnPaint()
 	size_t sz = dataSource->Read(GetBasePos(), W * 64, buf);
 
 	float fh = GetFontHeight() + 4;
-	float x = finalRectC.x0 + 2;
-	float y = finalRectC.y0 + fh;
+	float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
+	float y = finalRectC.y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
 
 	GL::SetTexture(0);
@@ -202,6 +202,27 @@ void HexViewer::OnPaint()
 		}
 	}
 	br.End();
+
+	auto size = dataSource->GetSize();
+	for (int i = 0; i < 64; i++)
+	{
+		if (GetBasePos() + i * W >= size)
+			break;
+		char str[16];
+		snprintf(str, 16, "%" PRIX64, GetBasePos() + i * W);
+		float w = GetTextWidth(str);
+		DrawTextLine(x - w - 10, y + i * fh, str, 1, 1, 1, 0.5f);
+	}
+
+	for (int i = 0; i < W; i++)
+	{
+		char str[3];
+		str[0] = "0123456789ABCDEF"[i >> 4];
+		str[1] = "0123456789ABCDEF"[i & 0xf];
+		str[2] = 0;
+		float xoff = (i % W) * 20;
+		DrawTextLine(x + xoff, y - fh, str, 1, 1, 1, 0.5f);
+	}
 
 	for (size_t i = 0; i < sz; i++)
 	{

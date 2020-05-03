@@ -178,6 +178,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="DataDesc.cpp" />
+    <ClCompile Include="FileReaders.cpp" />
     <ClCompile Include="FileStructureViewer.cpp" />
     <ClCompile Include="fret.cpp" />
     <ClCompile Include="HexViewer.cpp" />

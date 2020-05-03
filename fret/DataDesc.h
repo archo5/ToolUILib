@@ -15,11 +15,16 @@ struct BuiltinTypeInfo;
 
 enum DataType
 {
+	DT_I8,
+	DT_U8,
 	DT_I16,
 	DT_U16,
 	DT_I32,
 	DT_U32,
+	DT_I64,
+	DT_U64,
 	DT_F32,
+	DT_F64,
 };
 
 struct Marker
@@ -69,24 +74,40 @@ struct MarkedItemsList : ui::Node
 extern ui::DataCategoryTag DCT_Struct[1];
 struct DataDesc
 {
+	struct Param
+	{
+		std::string name;
+		int64_t intVal;
+	};
+	struct Arg
+	{
+		std::string name;
+		int64_t intVal;
+	};
 	struct Field
 	{
 		std::string type;
 		std::string name;
-		uint64_t count = 1;
 		uint64_t off = 0;
+		int64_t count = 1;
+		std::string countSrc;
+		bool countIsMaxSize = false;
 	};
 	struct Struct
 	{
+		std::string name;
 		bool serialized = false;
+		std::vector<Param> params;
 		std::vector<Field> fields;
 		uint64_t size = 0;
 	};
 	struct StructInst
 	{
-		std::string type;
-		uint64_t off;
+		Struct* def = nullptr;
+		uint64_t off = 0;
 		std::string notes;
+		bool userCreated = true;
+		std::vector<Arg> args;
 	};
 
 	// data
@@ -104,8 +125,17 @@ struct DataDesc
 	{
 		std::string preview;
 		uint64_t off;
+		int64_t count;
+		int64_t intVal;
 	};
-	static void ReadBuiltinFieldPreview(IDataSource* ds, uint64_t off, uint64_t count, const BuiltinTypeInfo& BTI, std::string& outPreview);
-	void ReadStruct(IDataSource* ds, const Struct& S, uint64_t off, std::vector<ReadField>& out);
+	static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, ReadField& rf);
+	static int64_t GetFieldCount(IDataSource* ds, const StructInst& SI, const Field& F, const std::vector<ReadField>& rfs);
+	static void ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out);
+
 	void Edit(UIContainer* ctx, IDataSource* ds);
+	void EditInstance(UIContainer* ctx, IDataSource* ds);
+	void EditStruct(UIContainer* ctx);
+	void EditField(UIContainer* ctx);
+
+	size_t AddInst(const std::string& name, uint64_t off, bool userCreated);
 };
