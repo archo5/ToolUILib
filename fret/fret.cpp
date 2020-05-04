@@ -15,6 +15,9 @@ struct REFile : FileDataSource
 		highlighter.markerData = &markerData;
 		//ds = new FileStructureDataSource(n.c_str());
 		fp = fopen(("FRET_Plugins/" + n).c_str(), "rb");
+
+		ddiSrc.dataDesc = &desc;
+		ddiSrc.dataSource = this;
 	}
 	~REFile()
 	{
@@ -30,6 +33,7 @@ struct REFile : FileDataSource
 	uint32_t byteWidth = 8;
 	Highlighter highlighter;
 	DataDesc desc;
+	DataDescInstanceSource ddiSrc;
 };
 
 struct MainWindow : ui::NativeMainWindow
@@ -99,7 +103,7 @@ struct MainWindow : ui::NativeMainWindow
 
 			f->desc.instances.push_back({ chunk, 0, "RIFF chunk", true });
 			f->desc.instances.push_back({ fmt_data, 20, "fmt chunk data", true });
-			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, false, 0, { { "size", 28 } } });
+			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, false, 1, { { "size", 28 } } });
 
 			files.push_back(f);
 
@@ -226,6 +230,22 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->Pop();
 
 							auto& ed = ctx->PushBox();
+#if 1
+							ctx->Text("Instances") + ui::Padding(5);
+							f->ddiSrc.Edit(ctx);
+							auto* tv = ctx->Make<ui::TableView>();
+							*tv + ui::Layout(style::layouts::EdgeSlice());
+							tv->SetDataSource(&f->ddiSrc);
+							f->ddiSrc.refilter = true;
+							tv->CalculateColumnWidths();
+							ed.HandleEvent(tv, UIEventType::SelectionChange) = [f, tv](UIEvent& e)
+							{
+								auto sel = tv->selection.GetFirstSelection();
+								if (tv->IsValidRow(sel))
+									f->desc.curInst = f->ddiSrc._indices[sel];
+								e.current->RerenderNode();
+							};
+#else
 							ctx->Text("Marked items");
 							auto* tv = ctx->Make<ui::TableView>();
 							*tv + ui::Layout(style::layouts::EdgeSlice());
@@ -233,15 +253,18 @@ struct MainWindow : ui::NativeMainWindow
 							tv->CalculateColumnWidths();
 							// TODO cannot currently apply event handler to `tv` (node) directly from outside
 							ed.HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
+#endif
 							ctx->Pop();
 
 							ctx->PushBox();
+#if 0
 							if (tv->selection.AnySelected())
 							{
 								size_t pos = tv->selection.GetFirstSelection();
 								if (tv->IsValidRow(pos))
 									ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
 							}
+#endif
 							f->desc.Edit(ctx, f);
 							ctx->Pop();
 						}

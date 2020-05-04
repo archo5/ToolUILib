@@ -154,3 +154,24 @@ struct DataDesc
 
 	size_t AddInst(const std::string& name, int64_t off, bool userCreated);
 };
+
+struct DataDescInstanceSource : ui::TableDataSource
+{
+	size_t GetNumRows() override;
+	size_t GetNumCols() override;
+	std::string GetRowName(size_t row) override;
+	std::string GetColName(size_t col) override;
+	std::string GetText(size_t row, size_t col) override;
+
+	void Edit(UIContainer* ctx);
+
+	void _Refilter();
+
+	std::vector<size_t> _indices;
+	bool refilter = true;
+
+	DataDesc* dataDesc = nullptr;
+	IDataSource* dataSource = nullptr;
+	DataDesc::Struct* filterStruct = nullptr;
+	bool filterUserCreated = false;
+};

@@ -93,7 +93,7 @@ void MarkerData::AddMarker(DataType dt, uint64_t from, uint64_t to)
 	ui::Notify(DCT_MarkedItems, this);
 }
 
-enum COLS
+enum COLS_MD
 {
 	MD_COL_At,
 	MD_COL_Type,
@@ -770,4 +770,101 @@ size_t DataDesc::AddInst(const std::string& name, int64_t off, bool userCreated)
 	}
 	instances.push_back({ structs.find(name)->second, off, "", userCreated });
 	return instances.size() - 1;
+}
+
+
+enum COLS_DDI
+{
+	DDI_COL_ID,
+	DDI_COL_User,
+	DDI_COL_Offset,
+	DDI_COL_Struct,
+
+	DDI_COL_FirstField,
+	DDI_COL_HEADER_SIZE = DDI_COL_FirstField,
+};
+
+size_t DataDescInstanceSource::GetNumRows()
+{
+	_Refilter();
+	return _indices.size();
+}
+
+size_t DataDescInstanceSource::GetNumCols()
+{
+	return filterStruct && dataSource ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
+}
+
+std::string DataDescInstanceSource::GetRowName(size_t row)
+{
+	return std::to_string(row);
+}
+
+std::string DataDescInstanceSource::GetColName(size_t col)
+{
+	switch (col)
+	{
+	case DDI_COL_ID: return "ID";
+	case DDI_COL_User: return "User";
+	case DDI_COL_Offset: return "Offset";
+	case DDI_COL_Struct: return "Struct";
+	default: return filterStruct->fields[col - DDI_COL_FirstField].name;
+	}
+}
+
+std::string DataDescInstanceSource::GetText(size_t row, size_t col)
+{
+	switch (col)
+	{
+	case DDI_COL_ID: return std::to_string(_indices[row]);
+	case DDI_COL_User: return dataDesc->instances[_indices[row]].userCreated ? "+" : "";
+	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
+	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
+	default:
+		// TODO optimize to avoid reparsing for each col
+	{
+		auto& inst = dataDesc->instances[_indices[row]];
+		std::vector<DataDesc::ReadField> rfs;
+		dataDesc->ReadStruct(dataSource, inst, inst.off, rfs);
+		auto& rf = rfs[col - DDI_COL_FirstField];
+		return rf.preview;
+	} break;
+	}
+}
+
+void DataDescInstanceSource::Edit(UIContainer* ctx)
+{
+	if (ui::imm::PropButton(ctx, "Filter by struct", filterStruct ? filterStruct->name.c_str() : "<none>"))
+	{
+		std::vector<ui::MenuItem> items;
+		items.push_back(ui::MenuItem("<none>").Func([this]() { filterStruct = nullptr; refilter = true; }));
+		for (auto& sp : dataDesc->structs)
+		{
+			auto* S = sp.second;
+			items.push_back(ui::MenuItem(sp.first).Func([this, S]() { filterStruct = S; refilter = true; }));
+		}
+		ui::Menu(items).Show(ctx->GetCurrentNode());
+	}
+	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
+		refilter = true;
+}
+
+void DataDescInstanceSource::_Refilter()
+{
+	if (!refilter)
+		return;
+
+	_indices.clear();
+	_indices.reserve(dataDesc->instances.size());
+	for (size_t i = 0; i < dataDesc->instances.size(); i++)
+	{
+		auto& I = dataDesc->instances[i];
+		if (filterStruct && filterStruct != I.def)
+			continue;
+		if (filterUserCreated && !I.userCreated)
+			continue;
+		_indices.push_back(i);
+	}
+
+	refilter = false;
 }
