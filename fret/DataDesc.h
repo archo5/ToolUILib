@@ -84,14 +84,27 @@ struct DataDesc
 		std::string name;
 		int64_t intVal;
 	};
+	struct CompArg
+	{
+		std::string name;
+		std::string src;
+		int64_t intVal;
+	};
+	struct Condition
+	{
+		std::string field;
+		std::string value;
+	};
 	struct Field
 	{
 		std::string type;
 		std::string name;
-		uint64_t off = 0;
+		int64_t off = 0;
 		int64_t count = 1;
 		std::string countSrc;
 		bool countIsMaxSize = false;
+		std::vector<CompArg> structArgs;
+		std::vector<Condition> conditions;
 	};
 	struct Struct
 	{
@@ -99,14 +112,17 @@ struct DataDesc
 		bool serialized = false;
 		std::vector<Param> params;
 		std::vector<Field> fields;
-		uint64_t size = 0;
+		int64_t size = 0;
+		std::string sizeSrc;
 	};
 	struct StructInst
 	{
 		Struct* def = nullptr;
-		uint64_t off = 0;
+		int64_t off = 0;
 		std::string notes;
 		bool userCreated = true;
+		bool remainingCountIsSize = false;
+		int64_t remainingCount = 1;
 		std::vector<Arg> args;
 	};
 
@@ -127,15 +143,14 @@ struct DataDesc
 		uint64_t off;
 		int64_t count;
 		int64_t intVal;
+		bool present;
 	};
-	static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, ReadField& rf);
-	static int64_t GetFieldCount(IDataSource* ds, const StructInst& SI, const Field& F, const std::vector<ReadField>& rfs);
-	static void ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out);
+	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out);
 
 	void Edit(UIContainer* ctx, IDataSource* ds);
 	void EditInstance(UIContainer* ctx, IDataSource* ds);
 	void EditStruct(UIContainer* ctx);
 	void EditField(UIContainer* ctx);
 
-	size_t AddInst(const std::string& name, uint64_t off, bool userCreated);
+	size_t AddInst(const std::string& name, int64_t off, bool userCreated);
 };

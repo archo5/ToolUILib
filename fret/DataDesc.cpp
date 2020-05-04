@@ -217,9 +217,9 @@ uint64_t DataDesc::GetFixedFieldSize(const Field& field)
 	return UINT64_MAX;
 }
 
-void DataDesc::ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, ReadField& rf)
+static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf)
 {
-	char bfr[8];
+	__declspec(align(8)) char bfr[8];
 	uint64_t off = rf.off;
 	for (int64_t i = 0; i < std::min(rf.count, 24LL); i++)
 	{
@@ -227,6 +227,7 @@ void DataDesc::ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& B
 			rf.preview += ", ";
 		ds->Read(off, BTI.size, bfr);
 		BTI.append_to_str(bfr, rf.preview);
+		rf.intVal = BTI.get_int64(bfr);
 		off += BTI.size;
 	}
 	if (rf.count > 24)
@@ -235,7 +236,7 @@ void DataDesc::ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& B
 	}
 }
 
-int64_t DataDesc::GetFieldCount(IDataSource* ds, const StructInst& SI, const Field& F, const std::vector<ReadField>& rfs)
+static int64_t GetFieldCount(const DataDesc::StructInst& SI, const DataDesc::Field& F, const std::vector<DataDesc::ReadField>& rfs)
 {
 	if (F.countSrc.empty())
 		return F.count;
@@ -255,47 +256,157 @@ int64_t DataDesc::GetFieldCount(IDataSource* ds, const StructInst& SI, const Fie
 	for (auto& ia : SI.args)
 	{
 		if (F.countSrc == ia.name)
-			return ia.intVal;
+			return ia.intVal + F.count;
 	}
 
 	// search parameter default values
 	for (auto& P : SI.def->params)
 	{
 		if (F.countSrc == P.name)
-			return P.intVal;
+			return P.intVal + F.count;
 	}
 
 	return 0;
 }
 
-void DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out)
+static int64_t GetCompArgValue(const DataDesc::StructInst& SI, const DataDesc::Field& F, const std::vector<DataDesc::ReadField>& rfs, const DataDesc::CompArg& arg)
+{
+	if (arg.src.empty())
+		return arg.intVal;
+
+	// search previous fields
+	int at = 0;
+	for (auto& field : SI.def->fields)
+	{
+		if (&field == &F)
+			break;
+		if (arg.src == field.name)
+			return rfs[at].intVal + arg.intVal;
+		at++;
+	}
+
+	// search arguments
+	for (auto& ia : SI.args)
+	{
+		if (arg.src == ia.name)
+			return ia.intVal + arg.intVal;
+	}
+
+	// search parameter default values
+	for (auto& P : SI.def->params)
+	{
+		if (arg.src == P.name)
+			return P.intVal + arg.intVal;
+	}
+
+	return 0;
+}
+
+static bool EvaluateCondition(const DataDesc::Condition& cnd, const DataDesc::StructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+{
+	if (cnd.field.empty())
+		return true;
+
+	for (size_t i = 0; i < rfs.size(); i++)
+	{
+		if (SI.def->fields[i].name == cnd.field && rfs[i].preview == cnd.value)
+			return true;
+	}
+
+	return false;
+}
+
+static bool EvaluateConditions(const DataDesc::Field& F, const DataDesc::StructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+{
+	if (F.conditions.empty())
+		return true;
+	for (auto& cnd : F.conditions)
+		if (EvaluateCondition(cnd, SI, rfs))
+			return true;
+	return false;
+}
+
+static int64_t DUMP(const std::string& txt, int64_t val)
+{
+	printf("%s: %" PRId64 "\n", txt.c_str(), val);
+	return val;
+}
+
+static int64_t GetStructSize(const DataDesc::Struct* S, const DataDesc::StructInst& SI/*, const DataDesc::Field& F*/, const std::vector<DataDesc::ReadField>& rfs)
+{
+	if (S->sizeSrc.size())
+	{
+#if 0
+		for (auto& ca : F.structArgs)
+			if (ca.name == S->sizeSrc)
+				return DUMP(S->name + "|structArg", GetCompArgValue(SI, F, rfs, ca) + S->size);
+#endif
+
+		for (size_t i = 0; i < rfs.size(); i++)
+			if (S->fields[i].name == S->sizeSrc)
+				return rfs[i].intVal + S->size;
+
+#if 1
+		for (auto& arg : SI.args)
+			if (arg.name == S->sizeSrc)
+				return DUMP(S->name + "|instArg", arg.intVal + S->size);
+#endif
+	}
+	return DUMP(S->name + "|noSrc", S->size);
+}
+
+int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out)
 {
 	if (SI.def->serialized)
 	{
+		auto origOff = off;
 		for (const auto& F : SI.def->fields)
 		{
-			ReadField rf = { "", off, GetFieldCount(ds, SI, F, out), 0 };
-			auto it = g_builtinTypes.find(F.type);
-			if (it != g_builtinTypes.end())
+			DataDesc::ReadField rf = { "", off, 0, 0, false };
+			if (EvaluateConditions(F, SI, out))
 			{
-				ReadBuiltinFieldPrimary(ds, it->second, rf);
-				off += it->second.size * F.count;
+				rf.present = true;
+				rf.count = GetFieldCount(SI, F, out);
+
+				auto it = g_builtinTypes.find(F.type);
+				if (it != g_builtinTypes.end())
+				{
+					ReadBuiltinFieldPrimary(ds, it->second, rf);
+					off += it->second.size * F.count;
+				}
+				else
+				{
+					auto sit = structs.find(F.type);
+					if (sit != structs.end() && sit->second->sizeSrc.empty())
+					{
+						// only add size if it's manually specified
+						off += sit->second->size;
+					}
+				}
 			}
 			out.push_back(rf);
 		}
+		return off - origOff;
 	}
 	else
 	{
 		for (const auto& F : SI.def->fields)
 		{
-			ReadField rf = { "", off + F.off, GetFieldCount(ds, SI, F, out), 0 };
-			auto it = g_builtinTypes.find(F.type);
-			if (it != g_builtinTypes.end())
+			DataDesc::ReadField rf = { "", off + F.off, 0, 0 };
+			if (EvaluateConditions(F, SI, out))
 			{
-				ReadBuiltinFieldPrimary(ds, it->second, rf);
+				rf.present = true;
+				rf.count = GetFieldCount(SI, F, out);
+
+				auto it = g_builtinTypes.find(F.type);
+				if (it != g_builtinTypes.end())
+				{
+					ReadBuiltinFieldPrimary(ds, it->second, rf);
+				}
 			}
 			out.push_back(rf);
 		}
+		return SI.def->size;
 	}
 }
 
@@ -308,10 +419,12 @@ static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 	rb->SetStyle(ui::Theme::current->button);
 }
 
+static bool advancedAccess = false;
 void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
 {
 	ctx->Push<ui::Panel>();
 
+	ui::imm::PropEditBool(ctx, "Advanced access", advancedAccess);
 	ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 	ctx->Text("Edit:") + ui::Padding(5);
@@ -348,6 +461,13 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 		{
 			editMode = 1;
 			ctx->GetCurrentNode()->Rerender();
+		}
+
+		if (advancedAccess)
+		{
+			ui::imm::PropEditBool(ctx, "User created", SI.userCreated);
+			ui::imm::PropEditBool(ctx, "Use remaining size", SI.remainingCountIsSize);
+			ui::imm::PropEditInt(ctx, SI.remainingCountIsSize ? "Remaining size" : "Remaining count", SI.remainingCount);
 		}
 
 		ctx->Text("Arguments") + ui::Padding(5);
@@ -402,22 +522,65 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 				Struct* S;
 				std::vector<ReadField> rfs;
 			};
-			ctx->MakeWithText<ui::BoxElement>("Data");
 			Data data;
 			data.S = &S;
-			ReadStruct(ds, SI, SI.off, data.rfs);
+			auto size = ReadStruct(ds, SI, SI.off, data.rfs);
+			if (S.sizeSrc.size())
+			{
+				size = GetStructSize(&S, SI, data.rfs);
+			}
+			auto remSizeSub = SI.remainingCountIsSize ? size : 1;
+
+			char bfr[256];
+			snprintf(bfr, 256, "Next instance (@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64 ")",
+				SI.off + size,
+				size,
+				SI.remainingCountIsSize ? "size" : "count",
+				SI.remainingCount - remSizeSub);
+			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr))
+			{
+				auto SIcopy = SI;
+				SIcopy.off += size;
+				curInst = instances.size();
+				SIcopy.remainingCount -= remSizeSub;
+				SIcopy.userCreated = false;
+				instances.push_back(SIcopy);
+			}
+
+			snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
+			ctx->Text(bfr) + ui::Padding(5);
+
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
 				auto& F = S.fields[i];
 				char bfr[256];
-				snprintf(bfr, 256, "%s: %s[%" PRId64 "]=%s", F.name.c_str(), F.type.c_str(), data.rfs[i].count, data.rfs[i].preview.c_str());
+				snprintf(bfr, 256, "%s: %s[%s%" PRId64 "]=%s",
+					F.name.c_str(),
+					F.type.c_str(),
+					F.countIsMaxSize ? "up to " : "",
+					data.rfs[i].count,
+					data.rfs[i].present ? data.rfs[i].preview.c_str() : "<not present>");
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 				ctx->Text(bfr) + ui::Padding(5);
-				if (g_builtinTypes.find(F.type) == g_builtinTypes.end())
+
+				auto strit = structs.find(F.type);
+				if (strit != structs.end() && data.rfs[i].present)
 				{
 					if (ui::imm::Button(ctx, "View"))
 					{
+						auto SIcopy = SI;
+						size_t prevSize = instances.size();
 						curInst = AddInst(F.type, data.rfs[i].off, false);
+						auto& CI = instances[curInst];
+						CI.remainingCountIsSize = F.countIsMaxSize;
+						CI.remainingCount = data.rfs[i].count;
+						if (prevSize != instances.size())
+						{
+							for (auto& SA : F.structArgs)
+							{
+								CI.args.push_back({ SA.name, GetCompArgValue(SIcopy, F, data.rfs, SA) });
+							}
+						}
 					}
 				}
 				ctx->Pop();
@@ -455,7 +618,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				ui::imm::PropEditInt(ctx, "\bValue", P.intVal);
 				if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
 				{
-					S.fields.erase(S.fields.begin() + i);
+					S.params.erase(S.params.begin() + i);
 					ctx->GetCurrentNode()->Rerender();
 				}
 				ctx->Pop();
@@ -545,12 +708,57 @@ void DataDesc::EditField(UIContainer* ctx)
 				ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1);
 				ui::imm::PropEditString(ctx, "Count source", F.countSrc.c_str(), [&F](const char* s) { F.countSrc = s; });
 				ui::imm::PropEditBool(ctx, "Count is max. size", F.countIsMaxSize);
+
+				ctx->Text("Struct arguments") + ui::Padding(5);
+				ctx->Push<ui::Panel>();
+				for (size_t i = 0; i < F.structArgs.size(); i++)
+				{
+					auto& SA = F.structArgs[i];
+					ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+					ui::imm::PropEditString(ctx, "\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
+					ui::imm::PropEditString(ctx, "\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
+					ui::imm::PropEditInt(ctx, "\bOffset", SA.intVal);
+					if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+					{
+						F.structArgs.erase(F.structArgs.begin() + i);
+						ctx->GetCurrentNode()->Rerender();
+					}
+					ctx->Pop();
+				}
+				if (ui::imm::Button(ctx, "Add"))
+				{
+					F.structArgs.push_back({ "unnamed", "", 0 });
+					ctx->GetCurrentNode()->Rerender();
+				}
+				ctx->Pop();
+
+				ctx->Text("Conditions") + ui::Padding(5);
+				ctx->Push<ui::Panel>();
+				for (size_t i = 0; i < F.conditions.size(); i++)
+				{
+					auto& C = F.conditions[i];
+					ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+					ui::imm::PropEditString(ctx, "\bField", C.field.c_str(), [&C](const char* v) { C.field = v; });
+					ui::imm::PropEditString(ctx, "\bValue", C.value.c_str(), [&C](const char* v) { C.value = v; });
+					if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+					{
+						F.conditions.erase(F.conditions.begin() + i);
+						ctx->GetCurrentNode()->Rerender();
+					}
+					ctx->Pop();
+				}
+				if (ui::imm::Button(ctx, "Add"))
+				{
+					F.conditions.push_back({ "unnamed", "" });
+					ctx->GetCurrentNode()->Rerender();
+				}
+				ctx->Pop();
 			}
 		}
 	}
 }
 
-size_t DataDesc::AddInst(const std::string& name, uint64_t off, bool userCreated)
+size_t DataDesc::AddInst(const std::string& name, int64_t off, bool userCreated)
 {
 	for (size_t i = 0; i < instances.size(); i++)
 	{

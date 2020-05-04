@@ -46,9 +46,27 @@ struct MainWindow : ui::NativeMainWindow
 			chunk->serialized = true;
 			chunk->fields.push_back({ "char", "type", 0, 4 });
 			chunk->fields.push_back({ "u32", "size" });
-			chunk->fields.push_back({ "list_data", "list_data" });
-			chunk->fields.push_back({ "fmt_data", "fmt_data" });
-			chunk->fields.push_back({ "str_data", "str_data" });
+			for (DataDesc::Field f;
+				f.name = "list_data",
+				f.type = "list_data",
+				f.structArgs = { { "size", "size", 0 } },
+				f.conditions = { { "type", "RIFF" }, { "type", "LIST" } },
+				chunk->fields.push_back(f),
+				false; );
+			for (DataDesc::Field f;
+				f.name = "fmt_data",
+				f.type = "fmt_data",
+				f.conditions = { { "type", "fmt " } },
+				chunk->fields.push_back(f),
+				false; );
+			for (DataDesc::Field f;
+				f.name = "str_data",
+				f.type = "str_data",
+				f.conditions = { { "type", "ICMT" } },
+				chunk->fields.push_back(f),
+				false; );
+			chunk->size = 8;
+			chunk->sizeSrc = "size";
 			f->desc.structs["chunk"] = chunk;
 
 			auto* list_data = new DataDesc::Struct;
@@ -56,7 +74,8 @@ struct MainWindow : ui::NativeMainWindow
 			list_data->serialized = true;
 			list_data->params.push_back({ "size", 0 });
 			list_data->fields.push_back({ "char", "subtype", 0, 4 });
-			list_data->fields.push_back({ "chunk", "chunks", 0, 0, "size", true });
+			list_data->fields.push_back({ "chunk", "chunks", 0, -4, "size", true });
+			list_data->sizeSrc = "size";
 			f->desc.structs["list_data"] = list_data;
 
 			auto* fmt_data = new DataDesc::Struct;
@@ -75,11 +94,12 @@ struct MainWindow : ui::NativeMainWindow
 			str_data->serialized = true;
 			str_data->params.push_back({ "size", 0 });
 			str_data->fields.push_back({ "char", "text", 0, 0, "size" });
+			str_data->sizeSrc = "size";
 			f->desc.structs["str_data"] = str_data;
 
 			f->desc.instances.push_back({ chunk, 0, "RIFF chunk", true });
 			f->desc.instances.push_back({ fmt_data, 20, "fmt chunk data", true });
-			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, { { "size", 28 } } });
+			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, false, 0, { { "size", 28 } } });
 
 			files.push_back(f);
 
@@ -146,7 +166,7 @@ struct MainWindow : ui::NativeMainWindow
 							{
 								if (e.GetButton() == UIMouseButton::Right)
 								{
-									uint64_t pos = hv->hoverByte;
+									int64_t pos = hv->hoverByte;
 
 									char txt_pos[32];
 									snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
