@@ -103,6 +103,7 @@ struct DataDesc
 		int64_t count = 1;
 		std::string countSrc;
 		bool countIsMaxSize = false;
+		bool readUntil0 = false;
 		std::vector<CompArg> structArgs;
 		std::vector<Condition> conditions;
 	};
@@ -140,19 +141,22 @@ struct DataDesc
 	struct ReadField
 	{
 		std::string preview;
-		uint64_t off;
+		int64_t off;
 		int64_t count;
 		int64_t intVal;
 		bool present;
 	};
-	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out);
+	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out);
 
 	void Edit(UIContainer* ctx, IDataSource* ds);
 	void EditInstance(UIContainer* ctx, IDataSource* ds);
 	void EditStruct(UIContainer* ctx);
 	void EditField(UIContainer* ctx);
 
-	size_t AddInst(const std::string& name, int64_t off, bool userCreated);
+	size_t AddInst(const StructInst& src);
+	size_t CreateNextInstance(const StructInst& SI, int64_t structSize);
+	size_t CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
+	void ExpandAllInstances(IDataSource* ds);
 };
 
 struct DataDescInstanceSource : ui::TableDataSource

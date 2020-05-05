@@ -73,8 +73,8 @@ struct NativeWindowBase
 	void SetPosition(Point<int> p) { SetPosition(p.x, p.y); }
 
 	Point<int> GetSize();
-	void SetSize(int x, int y);
-	void SetSize(Point<int> p) { SetSize(p.x, p.y); }
+	void SetSize(int x, int y, bool inner = true);
+	void SetSize(Point<int> p, bool inner = true) { SetSize(p.x, p.y, inner); }
 
 	WindowState GetState();
 	void SetState(WindowState ws);

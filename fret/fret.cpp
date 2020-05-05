@@ -197,12 +197,25 @@ struct MainWindow : ui::NativeMainWindow
 									f->GetFloat64Text(txt_float64, 32, pos);
 
 									std::vector<ui::MenuItem> structs;
+									{
+										auto nsfn = [f, pos]()
+										{
+											auto* ns = new DataDesc::Struct;
+											do
+											{
+												ns->name = "struct" + std::to_string(rand() % 10000);
+											} while (f->desc.structs.count(ns->name));
+											f->desc.structs[ns->name] = ns;
+											f->desc.curInst = f->desc.AddInst({ ns, pos, "", true });
+										};
+										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(nsfn));
+										structs.push_back(ui::MenuItem::Separator());
+									}
 									for (auto& s : f->desc.structs)
 									{
 										auto fn = [f, pos, s]()
 										{
-											f->desc.curInst = f->desc.instances.size();
-											f->desc.instances.push_back({ s.second, pos, "", true });
+											f->desc.curInst = f->desc.AddInst({ s.second, pos, "", true });
 										};
 										structs.push_back(ui::MenuItem(s.first).Func(fn));
 									}

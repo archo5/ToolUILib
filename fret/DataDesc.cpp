@@ -197,7 +197,7 @@ struct BuiltinTypeInfo
 static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 {
 	{ "pad", { 1, false, [](const void* src) -> int64_t { return 0; }, [](const void* src, std::string& out) {} } },
-	{ "char", { 1, false, [](const void* src) -> int64_t { return 0; }, [](const void* src, std::string& out) { out.push_back(*(const char*)src); } } },
+	{ "char", { 1, false, [](const void* src) -> int64_t { return *(const char*)src; }, [](const void* src, std::string& out) { out.push_back(*(const char*)src); } } },
 	{ "i8", { 1, true, [](const void* src) -> int64_t { return *(const int8_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId8, *(const int8_t*)src); out += bfr; } } },
 	{ "u8", { 1, true, [](const void* src) -> int64_t { return *(const uint8_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu8, *(const uint8_t*)src); out += bfr; } } },
 	{ "i16", { 2, true, [](const void* src) -> int64_t { return *(const int16_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId16, *(const int16_t*)src); out += bfr; } } },
@@ -217,7 +217,7 @@ uint64_t DataDesc::GetFixedFieldSize(const Field& field)
 	return UINT64_MAX;
 }
 
-static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf)
+static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf, bool readUntil0)
 {
 	__declspec(align(8)) char bfr[8];
 	uint64_t off = rf.off;
@@ -229,6 +229,8 @@ static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI,
 		BTI.append_to_str(bfr, rf.preview);
 		rf.intVal = BTI.get_int64(bfr);
 		off += BTI.size;
+		if (readUntil0 && rf.intVal == 0)
+			return;
 	}
 	if (rf.count > 24)
 	{
@@ -355,7 +357,7 @@ static int64_t GetStructSize(const DataDesc::Struct* S, const DataDesc::StructIn
 	return DUMP(S->name + "|noSrc", S->size);
 }
 
-int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off, std::vector<ReadField>& out)
+int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out)
 {
 	if (SI.def->serialized)
 	{
@@ -371,7 +373,7 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off
 				auto it = g_builtinTypes.find(F.type);
 				if (it != g_builtinTypes.end())
 				{
-					ReadBuiltinFieldPrimary(ds, it->second, rf);
+					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 					off += it->second.size * F.count;
 				}
 				else
@@ -401,7 +403,7 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, uint64_t off
 				auto it = g_builtinTypes.find(F.type);
 				if (it != g_builtinTypes.end())
 				{
-					ReadBuiltinFieldPrimary(ds, it->second, rf);
+					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 				}
 			}
 			out.push_back(rf);
@@ -423,6 +425,17 @@ static bool advancedAccess = false;
 void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
 {
 	ctx->Push<ui::Panel>();
+
+	ui::Property::Begin(ctx);
+	if (ui::imm::Button(ctx, "Expand all instances"))
+	{
+		ExpandAllInstances(ds);
+	}
+	if (ui::imm::Button(ctx, "Delete auto-created"))
+	{
+		instances.erase(std::remove_if(instances.begin(), instances.end(), [](const StructInst& SI) { return !SI.userCreated; }), instances.end());
+	}
+	ui::Property::End(ctx);
 
 	ui::imm::PropEditBool(ctx, "Advanced access", advancedAccess);
 	ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
@@ -539,12 +552,7 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 				SI.remainingCount - remSizeSub);
 			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr))
 			{
-				auto SIcopy = SI;
-				SIcopy.off += size;
-				curInst = instances.size();
-				SIcopy.remainingCount -= remSizeSub;
-				SIcopy.userCreated = false;
-				instances.push_back(SIcopy);
+				curInst = CreateNextInstance(SI, size);
 			}
 
 			snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
@@ -568,19 +576,7 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 				{
 					if (ui::imm::Button(ctx, "View"))
 					{
-						auto SIcopy = SI;
-						size_t prevSize = instances.size();
-						curInst = AddInst(F.type, data.rfs[i].off, false);
-						auto& CI = instances[curInst];
-						CI.remainingCountIsSize = F.countIsMaxSize;
-						CI.remainingCount = data.rfs[i].count;
-						if (prevSize != instances.size())
-						{
-							for (auto& SA : F.structArgs)
-							{
-								CI.args.push_back({ SA.name, GetCompArgValue(SIcopy, F, data.rfs, SA) });
-							}
-						}
+						curInst = CreateFieldInstance(SI, data.rfs, i);
 					}
 				}
 				ctx->Pop();
@@ -591,6 +587,47 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 	}
 }
 
+struct RenameDialog : ui::NativeDialogWindow
+{
+	RenameDialog(StringView name)
+	{
+		newName.assign(name.data(), name.size());
+		SetTitle(("Rename struct: " + newName).c_str());
+		SetSize(400, 16 * 3 + 24 * 2);
+		SetStyle(ui::WindowStyle::WS_TitleBar);
+	}
+	void OnClose() override
+	{
+		rename = false;
+		SetVisible(false);
+	}
+	void OnRender(UIContainer* ctx) override
+	{
+		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice()) + ui::Padding(16);
+		ui::imm::PropEditString(ctx, "New name:", newName.c_str(), [this](const char* s) { newName = s; });
+
+		*ctx->Make<ui::BoxElement>() + ui::Height(16);
+
+		ui::Property::Begin(ctx);
+		if (ui::imm::Button(ctx, "OK", { &ui::Height(30) }))
+		{
+			rename = true;
+			SetVisible(false);
+		}
+		*ctx->Make<ui::BoxElement>() + ui::Width(16);
+		if (ui::imm::Button(ctx, "Cancel", { &ui::Height(30) }))
+		{
+			rename = false;
+			SetVisible(false);
+		}
+		ui::Property::End(ctx);
+		ctx->Pop();
+	}
+
+	bool rename = false;
+	std::string newName;
+};
+
 void DataDesc::EditStruct(UIContainer* ctx)
 {
 	if (curInst < instances.size())
@@ -600,6 +637,33 @@ void DataDesc::EditStruct(UIContainer* ctx)
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		ctx->Text("Struct:") + ui::Padding(5);
 		ctx->Text(SI.def->name) + ui::Padding(5);
+		if (ui::imm::Button(ctx, "Rename"))
+		{
+			RenameDialog rd(SI.def->name);
+			for (;;)
+			{
+				rd.Show();
+				if (rd.rename && rd.newName != SI.def->name)
+				{
+					if (rd.newName.empty())
+					{
+						// TODO msgbox/rt
+						puts("Name empty!");
+						continue;
+					}
+					if (structs.find(rd.newName) != structs.end())
+					{
+						// TODO msgbox/rt
+						puts("Name already used!");
+						continue;
+					}
+					structs[rd.newName] = SI.def;
+					structs.erase(SI.def->name);
+					SI.def->name = rd.newName;
+				}
+				break;
+			}
+		}
 		ctx->Pop();
 
 		auto it = structs.find(SI.def->name);
@@ -674,7 +738,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			}
 			if (ui::imm::Button(ctx, "Add"))
 			{
-				S.fields.push_back({ "i32", "unnamed", 1 });
+				S.fields.push_back({ "i32", "unnamed" });
 				editMode = 2;
 				curField = S.fields.size() - 1;
 				ctx->GetCurrentNode()->Rerender();
@@ -708,6 +772,7 @@ void DataDesc::EditField(UIContainer* ctx)
 				ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1);
 				ui::imm::PropEditString(ctx, "Count source", F.countSrc.c_str(), [&F](const char* s) { F.countSrc = s; });
 				ui::imm::PropEditBool(ctx, "Count is max. size", F.countIsMaxSize);
+				ui::imm::PropEditBool(ctx, "Read until 0", F.readUntil0);
 
 				ctx->Text("Struct arguments") + ui::Padding(5);
 				ctx->Push<ui::Panel>();
@@ -758,18 +823,77 @@ void DataDesc::EditField(UIContainer* ctx)
 	}
 }
 
-size_t DataDesc::AddInst(const std::string& name, int64_t off, bool userCreated)
+size_t DataDesc::AddInst(const StructInst& src)
 {
+	printf("trying to create %s @ %" PRId64 "\n", src.def->name.c_str(), src.off);
 	for (size_t i = 0; i < instances.size(); i++)
 	{
 		auto& I = instances[i];
-		if (userCreated)
+		if (src.userCreated)
 			I.userCreated = true;
-		if (I.off == off && I.def->name == name)
+		if (I.off == src.off && I.def == src.def)
 			return i;
 	}
-	instances.push_back({ structs.find(name)->second, off, "", userCreated });
+	auto copy = src;
+	instances.push_back(copy);
 	return instances.size() - 1;
+}
+
+size_t DataDesc::CreateNextInstance(const StructInst& SI, int64_t structSize)
+{
+	int64_t remSizeSub = SI.remainingCountIsSize ? structSize : 1;
+	assert(SI.remainingCount - remSizeSub);
+	{
+		auto SIcopy = SI;
+		SIcopy.off += structSize;
+		SIcopy.remainingCount -= remSizeSub;
+		SIcopy.userCreated = false;
+		return AddInst(SIcopy);
+	}
+}
+
+size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID)
+{
+	auto& F = SI.def->fields[fieldID];
+	auto SIcopy = SI;
+	StructInst newSI = { structs.find(F.type)->second, rfs[fieldID].off, "", false };
+	newSI.remainingCountIsSize = F.countIsMaxSize;
+	newSI.remainingCount = rfs[fieldID].count;
+	size_t prevSize = instances.size();
+	auto newInst = AddInst(newSI);
+	auto& CI = instances[newInst];
+	if (prevSize != instances.size())
+	{
+		for (auto& SA : F.structArgs)
+		{
+			CI.args.push_back({ SA.name, GetCompArgValue(SIcopy, F, rfs, SA) });
+		}
+	}
+	return newInst;
+}
+
+void DataDesc::ExpandAllInstances(IDataSource* ds)
+{
+	std::vector<ReadField> rfs;
+	for (size_t i = 0; i < instances.size(); i++)
+	{
+		auto SI = instances[i];
+		auto& S = *SI.def;
+		rfs.clear();
+		auto size = ReadStruct(ds, SI, SI.off, rfs);
+		if (S.sizeSrc.size())
+		{
+			size = GetStructSize(&S, SI, rfs);
+		}
+
+		auto remSizeSub = SI.remainingCountIsSize ? size : 1;
+		if (SI.remainingCount - remSizeSub)
+			CreateNextInstance(instances[i], size);
+
+		for (size_t j = 0; j < S.fields.size(); j++)
+			if (rfs[j].present && structs.count(S.fields[j].type))
+				CreateFieldInstance(SI, rfs, j);
+	}
 }
 
 

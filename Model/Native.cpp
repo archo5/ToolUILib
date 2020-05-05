@@ -400,6 +400,8 @@ struct NativeWindow_Impl
 		cont.ProcessNodeRenderStack();
 		evsys.RecomputeLayout();
 
+		GL::SetActiveContext(renderCtx);
+
 		//GL::Clear(20, 40, 80, 255);
 		GL::Clear(0x25, 0x25, 0x25, 255);
 		if (cont.rootNode)
@@ -432,12 +434,11 @@ struct NativeWindow_Impl
 
 	void UpdateStyle()
 	{
-		int ws = WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_DLGFRAME;
+		int ws = WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_DLGFRAME | WS_MAXIMIZEBOX);
 		if (style & WS_Resizable)
-			ws |= WS_THICKFRAME;
+			ws |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 		if (style & WS_TitleBar)
 			ws |= WS_DLGFRAME;
-		ws = WS_THICKFRAME;
 		SetWindowLong(window, GWL_STYLE, ws);
 		SetWindowPos(window, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 	}
@@ -629,8 +630,17 @@ Point<int> NativeWindowBase::GetSize()
 	return { r.right - r.left, r.bottom - r.top };
 }
 
-void NativeWindowBase::SetSize(int x, int y)
+void NativeWindowBase::SetSize(int x, int y, bool inner)
 {
+	if (inner)
+	{
+		RECT r = { 0, 0, x, y };
+		if (AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu))
+		{
+			x = r.right - r.left;
+			y = r.bottom - r.top;
+		}
+	}
 	SetWindowPos(_impl->window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1066,10 +1076,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, numRepeats); break;
 				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, numRepeats); break;
 
-				case 'X': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::Cut, numRepeats); break;
-				case 'C': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::Copy, numRepeats); break;
-				case 'V': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::Paste, numRepeats); break;
-				case 'A': if (GetKeyState(VK_CONTROL)) evsys->OnKeyAction(UIKeyAction::SelectAll, numRepeats); break;
+				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, numRepeats); break;
+				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Copy, numRepeats); break;
+				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Paste, numRepeats); break;
+				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::SelectAll, numRepeats); break;
 
 				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, numRepeats); break;
 				}
