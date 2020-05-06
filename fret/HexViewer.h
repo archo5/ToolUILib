@@ -51,6 +51,9 @@ struct HexViewer : UIElement
 	{
 		s << hoverByte;
 		s << hoverSection;
+		s << selectionStart;
+		s << selectionEnd;
+		s << mouseDown;
 	}
 
 	uint64_t GetBasePos()
@@ -73,6 +76,10 @@ struct HexViewer : UIElement
 	Highlighter* highlighter = nullptr;
 
 	Color4f colorHover{ 1, 1, 1, 0.3f };
+	Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };
 	uint64_t hoverByte = UINT64_MAX;
 	int hoverSection = -1;
+	uint64_t selectionStart = UINT64_MAX;
+	uint64_t selectionEnd = UINT64_MAX;
+	bool mouseDown = false;
 };

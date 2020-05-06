@@ -31,6 +31,10 @@ static const char* typeNames[] =
 	"f32",
 	"f64",
 };
+const char* GetDataTypeName(DataType t)
+{
+	return typeNames[t];
+}
 
 bool Marker::Contains(uint64_t pos) const
 {
@@ -204,6 +208,7 @@ static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 	{ "u16", { 2, true, [](const void* src) -> int64_t { return *(const uint16_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu16, *(const uint16_t*)src); out += bfr; } } },
 	{ "i32", { 4, true, [](const void* src) -> int64_t { return *(const int32_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId32, *(const int32_t*)src); out += bfr; } } },
 	{ "u32", { 4, true, [](const void* src) -> int64_t { return *(const uint32_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu32, *(const uint32_t*)src); out += bfr; } } },
+	{ "f32", { 4, true, [](const void* src) -> int64_t { return *(const float*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%g", *(const float*)src); out += bfr; } } },
 };
 
 uint64_t DataDesc::GetFixedFieldSize(const Field& field)
@@ -704,13 +709,15 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				//ctx->Text(F.type.c_str());
 				//ui::imm::EditInt(ctx, "\bCount", F.count);
 				char info[128];
-				snprintf(info, 128, "%s: %s[%s%s%s%" PRId64 "]",
+				int cc = snprintf(info, 128, "%s: %s[%s%s%s%" PRId64 "]",
 					F.name.c_str(),
 					F.type.c_str(),
 					F.countIsMaxSize ? "up to " : "",
 					F.countSrc.c_str(),
 					F.count >= 0 && F.countSrc.size() ? "+" : "",
 					F.count);
+				if (!S.serialized)
+					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
 				*ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
 				//ctx->MakeWithText<ui::Button>("Edit");
 				if (ui::imm::Button(ctx, "<", { &ui::Width(20), &ui::Enable(i > 0) }))

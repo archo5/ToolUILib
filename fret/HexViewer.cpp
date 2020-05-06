@@ -116,7 +116,20 @@ void HexViewer::OnEvent(UIEvent& e)
 {
 	int W = *byteWidth;
 
-	if (e.type == UIEventType::MouseMove)
+	if (e.type == UIEventType::ButtonDown)
+	{
+		if (e.GetButton() == UIMouseButton::Left)
+		{
+			mouseDown = true;
+			selectionStart = selectionEnd = hoverByte;
+		}
+	}
+	else if (e.type == UIEventType::ButtonUp)
+	{
+		if (e.GetButton() == UIMouseButton::Left)
+			mouseDown = false;
+	}
+	else if (e.type == UIEventType::MouseMove)
 	{
 		float fh = GetFontHeight() + 4;
 		float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
@@ -138,6 +151,10 @@ void HexViewer::OnEvent(UIEvent& e)
 			int xpos = std::min(std::max(0, int((e.x - x2) / 10)), W - 1);
 			int ypos = (e.y - y) / fh;
 			hoverByte = GetBasePos() + xpos + ypos * W;
+		}
+		if (mouseDown)
+		{
+			selectionEnd = hoverByte;
 		}
 	}
 	else if (e.type == UIEventType::MouseLeave)
@@ -161,6 +178,9 @@ void HexViewer::OnPaint()
 {
 	int W = *byteWidth;
 
+	auto minSel = std::min(selectionStart, selectionEnd);
+	auto maxSel = std::max(selectionStart, selectionEnd);
+
 	uint8_t buf[256 * 64];
 	size_t sz = dataSource->Read(GetBasePos(), W * 64, buf);
 
@@ -175,12 +195,15 @@ void HexViewer::OnPaint()
 	for (size_t i = 0; i < sz; i++)
 	{
 		uint8_t v = buf[i];
-		Color4f col = highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
 		auto mc = highlighter->markerData->GetMarkedColor(GetBasePos() + i);
-		if (hoverByte == GetBasePos() + i)
-			col.BlendOver(colorHover);
+
+		Color4f col = highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
 		if (mc.a > 0)
 			col.BlendOver(mc);
+		if (hoverByte == GetBasePos() + i)
+			col.BlendOver(colorHover);
+		if (GetBasePos() + i >= minSel && GetBasePos() + i <= maxSel)
+			col.BlendOver(colorSelect);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 20;
@@ -188,11 +211,14 @@ void HexViewer::OnPaint()
 			br.SetColor(col.r, col.g, col.b, col.a);
 			br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
 		}
+
 		col = highlighter->GetByteTypeASCII(GetBasePos(), buf, i, sz);
-		if (hoverByte == GetBasePos() + i)
-			col.BlendOver(colorHover);
 		if (mc.a > 0)
 			col.BlendOver(mc);
+		if (hoverByte == GetBasePos() + i)
+			col.BlendOver(colorHover);
+		if (GetBasePos() + i >= minSel && GetBasePos() + i <= maxSel)
+			col.BlendOver(colorSelect);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 10;

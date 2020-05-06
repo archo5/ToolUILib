@@ -27,6 +27,8 @@ enum DataType
 	DT_F64,
 };
 
+const char* GetDataTypeName(DataType t);
+
 struct Marker
 {
 	DataType type;

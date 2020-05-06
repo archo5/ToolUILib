@@ -198,17 +198,46 @@ struct MainWindow : ui::NativeMainWindow
 
 									std::vector<ui::MenuItem> structs;
 									{
-										auto nsfn = [f, pos]()
+										auto createBlank = [f, hv, pos]()
 										{
 											auto* ns = new DataDesc::Struct;
 											do
 											{
 												ns->name = "struct" + std::to_string(rand() % 10000);
 											} while (f->desc.structs.count(ns->name));
+											int64_t off = pos;
+											if (hv->selectionStart != UINT64_MAX && hv->selectionEnd != UINT64_MAX)
+											{
+												off = std::min(hv->selectionStart, hv->selectionEnd);
+												ns->size = abs(int(hv->selectionEnd - hv->selectionStart)) + 1;
+											}
 											f->desc.structs[ns->name] = ns;
-											f->desc.curInst = f->desc.AddInst({ ns, pos, "", true });
+											f->desc.curInst = f->desc.AddInst({ ns, off, "", true });
+											return ns;
 										};
-										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(nsfn));
+										auto createBlankOpt = [createBlank]() { createBlank(); };
+										auto createFromMarkersOpt = [createBlank, f, hv]()
+										{
+											auto* ns = createBlank();
+											auto selMin = std::min(hv->selectionStart, hv->selectionEnd);
+											auto selMax = std::max(hv->selectionStart, hv->selectionEnd);
+											int at = 0;
+											for (Marker& M : f->markerData.markers)
+											{
+												if (M.at < selMin || M.at > selMax)
+													continue;
+												for (DataDesc::Field f;
+													f.type = GetDataTypeName(M.type),
+													f.name = f.type + "_" + std::to_string(at++),
+													f.off = M.at - selMin,
+													f.count = M.count,
+													ns->fields.push_back(f),
+													false;);
+											}
+										};
+										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(createBlankOpt));
+										structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
+											hv->selectionStart == UINT64_MAX || hv->selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
 										structs.push_back(ui::MenuItem::Separator());
 									}
 									for (auto& s : f->desc.structs)
