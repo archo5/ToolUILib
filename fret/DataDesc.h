@@ -15,6 +15,7 @@ struct BuiltinTypeInfo;
 
 enum DataType
 {
+	DT_CHAR,
 	DT_I8,
 	DT_U8,
 	DT_I16,

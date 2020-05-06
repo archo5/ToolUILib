@@ -171,9 +171,15 @@ struct MainWindow : ui::NativeMainWindow
 								if (e.GetButton() == UIMouseButton::Right)
 								{
 									int64_t pos = hv->hoverByte;
+									auto selMin = std::min(hv->selectionStart, hv->selectionEnd);
+									if (selMin != UINT64_MAX)
+										pos = selMin;
 
-									char txt_pos[32];
-									snprintf(txt_pos, 32, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
+									char txt_pos[64];
+									snprintf(txt_pos, 64, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
+
+									char txt_ascii[32];
+									f->GetASCIIText(txt_ascii, 32, pos);
 
 									char txt_int8[32];
 									f->GetInt8Text(txt_int8, 32, pos, true);
@@ -238,6 +244,7 @@ struct MainWindow : ui::NativeMainWindow
 										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(createBlankOpt));
 										structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
 											hv->selectionStart == UINT64_MAX || hv->selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
+										if (f->desc.structs.size())
 										structs.push_back(ui::MenuItem::Separator());
 									}
 									for (auto& s : f->desc.structs)
@@ -253,6 +260,7 @@ struct MainWindow : ui::NativeMainWindow
 										ui::MenuItem(txt_pos, {}, true),
 										ui::MenuItem::Submenu("Place struct", structs),
 										ui::MenuItem::Separator(),
+										ui::MenuItem("Mark ASCII", txt_ascii).Func([f, pos]() { f->markerData.AddMarker(DT_CHAR, pos, pos + 1); }),
 										ui::MenuItem("Mark int8", txt_int8).Func([f, pos]() { f->markerData.AddMarker(DT_I8, pos, pos + 1); }),
 										ui::MenuItem("Mark uint8", txt_uint8).Func([f, pos]() { f->markerData.AddMarker(DT_U8, pos, pos + 1); }),
 										ui::MenuItem("Mark int16", txt_int16).Func([f, pos]() { f->markerData.AddMarker(DT_I16, pos, pos + 2); }),

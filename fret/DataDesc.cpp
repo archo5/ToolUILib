@@ -8,6 +8,7 @@ ui::DataCategoryTag DCT_Marker[1];
 ui::DataCategoryTag DCT_MarkedItems[1];
 ui::DataCategoryTag DCT_Struct[1];
 
+Color4f colorChar{ 0.3f, 0.9f, 0.1f, 0.3f };
 Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
 Color4f colorFloat64{ 0.9f, 0.2f, 0.0f, 0.3f };
 Color4f colorInt8{ 0.3f, 0.1f, 0.9f, 0.3f };
@@ -17,9 +18,10 @@ Color4f colorInt64{ 0.0f, 0.4f, 0.9f, 0.3f };
 Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
 
 
-static uint8_t typeSizes[] = { 1, 1, 2, 2, 4, 4, 8, 8, 4, 8 };
+static uint8_t typeSizes[] = { 1, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8 };
 static const char* typeNames[] =
 {
+	"char",
 	"i8",
 	"u8",
 	"i16",
@@ -54,6 +56,7 @@ Color4f Marker::GetColor() const
 {
 	switch (type)
 	{
+	case DT_CHAR: return colorChar;
 	case DT_I8: return colorInt8;
 	case DT_U8: return colorInt8;
 	case DT_I16: return colorInt16;
@@ -222,25 +225,44 @@ uint64_t DataDesc::GetFixedFieldSize(const Field& field)
 	return UINT64_MAX;
 }
 
-static void ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf, bool readUntil0)
+static int64_t ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf, bool readUntil0)
 {
 	__declspec(align(8)) char bfr[8];
-	uint64_t off = rf.off;
-	for (int64_t i = 0; i < std::min(rf.count, 24LL); i++)
+	int64_t off = rf.off;
+
+	int64_t retSize = rf.count * BTI.size;
+	int64_t readCount = rf.count;
+	if (!readUntil0 && readCount > 24LL)
+		readCount = 24LL;
+
+	bool previewAppend = true;
+	for (int64_t i = 0; i < readCount; i++)
 	{
-		if (BTI.separated && i > 0)
-			rf.preview += ", ";
 		ds->Read(off, BTI.size, bfr);
-		BTI.append_to_str(bfr, rf.preview);
+
+		if (rf.preview.size() <= 24)
+		{
+			if (BTI.separated && i > 0)
+				rf.preview += ", ";
+			BTI.append_to_str(bfr, rf.preview);
+		}
+
 		rf.intVal = BTI.get_int64(bfr);
+
 		off += BTI.size;
+
 		if (readUntil0 && rf.intVal == 0)
-			return;
+		{
+			retSize = off - rf.off;
+			break;
+		}
 	}
-	if (rf.count > 24)
+	if (rf.preview.size() > 24)
 	{
 		rf.preview += "...";
 	}
+
+	return retSize;
 }
 
 static int64_t GetFieldCount(const DataDesc::StructInst& SI, const DataDesc::Field& F, const std::vector<DataDesc::ReadField>& rfs)
@@ -378,8 +400,7 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off,
 				auto it = g_builtinTypes.find(F.type);
 				if (it != g_builtinTypes.end())
 				{
-					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
-					off += it->second.size * F.count;
+					off += ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 				}
 				else
 				{
