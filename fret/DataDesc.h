@@ -1,6 +1,7 @@
 
 #pragma once
 #include "pch.h"
+#include "FileReaders.h"
 
 
 extern Color4f colorFloat32;
@@ -26,6 +27,8 @@ enum DataType
 	DT_U64,
 	DT_F32,
 	DT_F64,
+
+	DT__COUNT,
 };
 
 const char* GetDataTypeName(DataType t);
@@ -49,6 +52,9 @@ struct MarkerData : ui::TableDataSource
 	Color4f GetMarkedColor(uint64_t pos);
 	bool IsMarked(uint64_t pos, uint64_t len);
 	void AddMarker(DataType dt, uint64_t from, uint64_t to);
+
+	void Load(const char* key, NamedTextSerializeReader& r);
+	void Save(const char* key, NamedTextSerializeWriter& w);
 
 	size_t GetNumRows() override { return markers.size(); }
 	size_t GetNumCols() override { return 5; }
@@ -77,6 +83,13 @@ struct MarkedItemsList : ui::Node
 extern ui::DataCategoryTag DCT_Struct[1];
 struct DataDesc
 {
+	struct File
+	{
+		uint64_t id = UINT64_MAX;
+		std::string name;
+		IDataSource* dataSource = nullptr;
+		MarkerData markerData;
+	};
 	struct Param
 	{
 		std::string name;
@@ -122,6 +135,7 @@ struct DataDesc
 	struct StructInst
 	{
 		Struct* def = nullptr;
+		File* file = nullptr;
 		int64_t off = 0;
 		std::string notes;
 		bool userCreated = true;
@@ -131,8 +145,12 @@ struct DataDesc
 	};
 
 	// data
+	std::vector<File*> files;
 	std::unordered_map<std::string, Struct*> structs;
 	std::vector<StructInst> instances;
+
+	// ID allocation
+	uint64_t fileIDAlloc = 0;
 
 	// ui state
 	int editMode = 0;
@@ -151,15 +169,25 @@ struct DataDesc
 	};
 	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out);
 
-	void Edit(UIContainer* ctx, IDataSource* ds);
-	void EditInstance(UIContainer* ctx, IDataSource* ds);
+	void Edit(UIContainer* ctx);
+	void EditInstance(UIContainer* ctx);
 	void EditStruct(UIContainer* ctx);
 	void EditField(UIContainer* ctx);
 
 	size_t AddInst(const StructInst& src);
 	size_t CreateNextInstance(const StructInst& SI, int64_t structSize);
 	size_t CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
-	void ExpandAllInstances(IDataSource* ds);
+	void ExpandAllInstances();
+
+	~DataDesc();
+	void Clear();
+	File* CreateNewFile();
+	File* FindFileByID(uint64_t id);
+	Struct* CreateNewStruct(const std::string& name);
+	Struct* FindStructByName(const std::string& name);
+
+	void Load(const char* key, NamedTextSerializeReader& r);
+	void Save(const char* key, NamedTextSerializeWriter& w);
 };
 
 struct DataDescInstanceSource : ui::TableDataSource
@@ -174,11 +202,12 @@ struct DataDescInstanceSource : ui::TableDataSource
 
 	void _Refilter();
 
+	std::vector<DataDesc::ReadField> _rfs;
 	std::vector<size_t> _indices;
 	bool refilter = true;
 
 	DataDesc* dataDesc = nullptr;
-	IDataSource* dataSource = nullptr;
 	DataDesc::Struct* filterStruct = nullptr;
+	DataDesc::File* filterFile = nullptr;
 	bool filterUserCreated = false;
 };

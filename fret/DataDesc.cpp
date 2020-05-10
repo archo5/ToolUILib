@@ -100,6 +100,60 @@ void MarkerData::AddMarker(DataType dt, uint64_t from, uint64_t to)
 	ui::Notify(DCT_MarkedItems, this);
 }
 
+void MarkerData::Load(const char* key, NamedTextSerializeReader& r)
+{
+	markers.clear();
+
+	r.BeginDict(key);
+
+	r.BeginArray("markers");
+	for (auto E : r.GetCurrentRange())
+	{
+		r.BeginEntry(E);
+		r.BeginDict("");
+
+		Marker M;
+		M.type = DT_CHAR;
+		auto type = r.ReadString("type");
+		for (int i = 0; i < DT__COUNT; i++)
+			if (typeNames[i] == type)
+				M.type = (DataType)i;
+		M.at = r.ReadUInt64("at");
+		M.count = r.ReadUInt64("count");
+		M.repeats = r.ReadUInt64("repeats");
+		M.stride = r.ReadUInt64("stride");
+		markers.push_back(M);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	r.EndDict();
+}
+
+void MarkerData::Save(const char* key, NamedTextSerializeWriter& w)
+{
+	w.BeginDict(key);
+
+	w.BeginArray("markers");
+	for (const Marker& M : markers)
+	{
+		w.BeginDict("");
+
+		w.WriteString("type", typeNames[M.type]);
+		w.WriteInt("at", M.at);
+		w.WriteInt("count", M.count);
+		w.WriteInt("repeats", M.repeats);
+		w.WriteInt("stride", M.stride);
+
+		w.EndDict();
+	}
+	w.EndArray();
+
+	w.EndDict();
+}
+
 enum COLS_MD
 {
 	MD_COL_At,
@@ -412,7 +466,7 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off,
 					}
 				}
 			}
-			out.push_back(rf);
+			out.push_back(std::move(rf));
 		}
 		return off - origOff;
 	}
@@ -448,14 +502,14 @@ static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 }
 
 static bool advancedAccess = false;
-void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
+void DataDesc::Edit(UIContainer* ctx)
 {
 	ctx->Push<ui::Panel>();
 
 	ui::Property::Begin(ctx);
 	if (ui::imm::Button(ctx, "Expand all instances"))
 	{
-		ExpandAllInstances(ds);
+		ExpandAllInstances();
 	}
 	if (ui::imm::Button(ctx, "Delete auto-created"))
 	{
@@ -474,7 +528,7 @@ void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
 
 	if (editMode == 0)
 	{
-		EditInstance(ctx, ds);
+		EditInstance(ctx);
 	}
 	if (editMode == 1)
 	{
@@ -488,7 +542,7 @@ void DataDesc::Edit(UIContainer* ctx, IDataSource* ds)
 	ctx->Pop();
 }
 
-void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
+void DataDesc::EditInstance(UIContainer* ctx)
 {
 	if (curInst < instances.size())
 	{
@@ -563,7 +617,7 @@ void DataDesc::EditInstance(UIContainer* ctx, IDataSource* ds)
 			};
 			Data data;
 			data.S = &S;
-			auto size = ReadStruct(ds, SI, SI.off, data.rfs);
+			auto size = ReadStruct(SI.file->dataSource, SI, SI.off, data.rfs);
 			if (S.sizeSrc.size())
 			{
 				size = GetStructSize(&S, SI, data.rfs);
@@ -857,10 +911,14 @@ size_t DataDesc::AddInst(const StructInst& src)
 	for (size_t i = 0; i < instances.size(); i++)
 	{
 		auto& I = instances[i];
-		if (src.userCreated)
-			I.userCreated = true;
 		if (I.off == src.off && I.def == src.def)
+		{
+			if (src.userCreated)
+				I.userCreated = true;
+			I.remainingCount = src.remainingCount;
+			I.remainingCountIsSize = src.remainingCountIsSize;
 			return i;
+		}
 	}
 	auto copy = src;
 	instances.push_back(copy);
@@ -884,7 +942,7 @@ size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<Rea
 {
 	auto& F = SI.def->fields[fieldID];
 	auto SIcopy = SI;
-	StructInst newSI = { structs.find(F.type)->second, rfs[fieldID].off, "", false };
+	StructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", false };
 	newSI.remainingCountIsSize = F.countIsMaxSize;
 	newSI.remainingCount = rfs[fieldID].count;
 	size_t prevSize = instances.size();
@@ -900,7 +958,7 @@ size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<Rea
 	return newInst;
 }
 
-void DataDesc::ExpandAllInstances(IDataSource* ds)
+void DataDesc::ExpandAllInstances()
 {
 	std::vector<ReadField> rfs;
 	for (size_t i = 0; i < instances.size(); i++)
@@ -908,7 +966,7 @@ void DataDesc::ExpandAllInstances(IDataSource* ds)
 		auto SI = instances[i];
 		auto& S = *SI.def;
 		rfs.clear();
-		auto size = ReadStruct(ds, SI, SI.off, rfs);
+		auto size = ReadStruct(SI.file->dataSource, SI, SI.off, rfs);
 		if (S.sizeSrc.size())
 		{
 			size = GetStructSize(&S, SI, rfs);
@@ -924,11 +982,331 @@ void DataDesc::ExpandAllInstances(IDataSource* ds)
 	}
 }
 
+DataDesc::~DataDesc()
+{
+	Clear();
+}
+
+void DataDesc::Clear()
+{
+	for (auto* F : files)
+		delete F;
+	files.clear();
+	fileIDAlloc = 0;
+
+	for (auto& sp : structs)
+		delete sp.second;
+	structs.clear();
+
+	instances.clear();
+}
+
+DataDesc::File* DataDesc::CreateNewFile()
+{
+	auto* F = new File;
+	F->id = fileIDAlloc++;
+	files.push_back(F);
+	return F;
+}
+
+DataDesc::File* DataDesc::FindFileByID(uint64_t id)
+{
+	for (auto* F : files)
+		if (F->id == id)
+			return F;
+	return nullptr;
+}
+
+DataDesc::Struct* DataDesc::CreateNewStruct(const std::string& name)
+{
+	assert(structs.count(name) == 0);
+	auto* S = new Struct;
+	S->name = name;
+	structs[name] = S;
+	return S;
+}
+
+DataDesc::Struct* DataDesc::FindStructByName(const std::string& name)
+{
+	auto it = structs.find(name);
+	if (it != structs.end())
+		return it->second;
+	return nullptr;
+}
+
+void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
+{
+	r.BeginDict(key);
+
+	r.BeginArray("files");
+	for (auto E : r.GetCurrentRange())
+	{
+		r.BeginEntry(E);
+		r.BeginDict("");
+
+		auto* F = CreateNewFile();
+		F->id = r.ReadUInt64("id");
+		F->name = r.ReadString("name");
+		F->markerData.Load("markerData", r);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	fileIDAlloc = r.ReadUInt64("fileIDAlloc");
+
+	r.BeginArray("structs");
+	for (auto E : r.GetCurrentRange())
+	{
+		r.BeginEntry(E);
+		r.BeginDict("");
+
+		auto name = r.ReadString("name");
+		auto* S = CreateNewStruct(name);
+		S->serialized = r.ReadBool("serialized");
+
+		r.BeginArray("params");
+		for (auto E2 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E2);
+			r.BeginDict("");
+
+			Param P;
+			P.name = r.ReadString("name");
+			P.intVal = r.ReadInt64("intVal");
+			S->params.push_back(P);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+
+		r.BeginArray("fields");
+		for (auto E2 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E2);
+			r.BeginDict("");
+
+			Field F;
+			F.type = r.ReadString("type");
+			F.name = r.ReadString("name");
+			F.off = r.ReadInt64("off");
+			F.count = r.ReadInt64("count");
+			F.countSrc = r.ReadString("countSrc");
+			F.countIsMaxSize = r.ReadBool("countIsMaxSize");
+			F.readUntil0 = r.ReadBool("readUntil0");
+
+			r.BeginArray("structArgs");
+			for (auto E3 : r.GetCurrentRange())
+			{
+				r.BeginEntry(E3);
+				r.BeginDict("");
+
+				CompArg A;
+				A.name = r.ReadString("name");
+				A.src = r.ReadString("src");
+				A.intVal = r.ReadInt64("intVal");
+				F.structArgs.push_back(A);
+
+				r.EndDict();
+				r.EndEntry();
+			}
+			r.EndArray();
+
+			r.BeginArray("conditions");
+			for (auto E3 : r.GetCurrentRange())
+			{
+				r.BeginEntry(E3);
+				r.BeginDict("");
+
+				Condition C;
+				C.field = r.ReadString("field");
+				C.value = r.ReadString("value");
+				F.conditions.push_back(C);
+
+				r.EndDict();
+				r.EndEntry();
+			}
+			r.EndArray();
+			S->fields.push_back(F);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+
+		S->size = r.ReadInt64("size");
+		S->sizeSrc = r.ReadString("sizeSrc");
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	r.BeginArray("instances");
+	for (auto E : r.GetCurrentRange())
+	{
+		r.BeginEntry(E);
+		r.BeginDict("");
+
+		StructInst SI;
+		SI.def = FindStructByName(r.ReadString("struct"));
+		SI.file = FindFileByID(r.ReadUInt64("file"));
+		SI.off = r.ReadInt64("off");
+		SI.notes = r.ReadString("notes");
+		SI.userCreated = r.ReadBool("userCreated");
+		SI.remainingCountIsSize = r.ReadBool("remainingCountIsSize");
+		SI.remainingCount = r.ReadInt64("remainingCount");
+
+		r.BeginArray("args");
+		for (auto E2 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E2);
+			r.BeginDict("");
+
+			Arg A;
+			A.name = r.ReadString("name");
+			A.intVal = r.ReadInt64("intVal");
+			SI.args.push_back(A);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+		instances.push_back(SI);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	r.EndDict();
+}
+
+void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
+{
+	w.BeginDict(key);
+
+	w.BeginArray("files");
+	for (auto* F : files)
+	{
+		w.BeginDict("");
+
+		w.WriteInt("id", F->id);
+		w.WriteString("name", F->name);
+		F->markerData.Save("markerData", w);
+
+		w.EndDict();
+	}
+	w.EndArray();
+
+	w.WriteInt("fileIDAlloc", fileIDAlloc);
+
+	w.BeginArray("structs");
+	for (const auto& sp : structs)
+	{
+		Struct* S = sp.second;
+
+		w.BeginDict("");
+
+		w.WriteString("name", S->name);
+		w.WriteBool("serialized", S->serialized);
+
+		w.BeginArray("params");
+		for (Param& P : S->params)
+		{
+			w.BeginDict("");
+			w.WriteString("name", P.name);
+			w.WriteInt("intVal", P.intVal);
+			w.EndDict();
+		}
+		w.EndArray();
+
+		w.BeginArray("fields");
+		for (const Field& F : S->fields)
+		{
+			w.BeginDict("");
+			w.WriteString("type", F.type);
+			w.WriteString("name", F.name);
+			w.WriteInt("off", F.off);
+			w.WriteInt("count", F.count);
+			w.WriteString("countSrc", F.countSrc);
+			w.WriteBool("countIsMaxSize", F.countIsMaxSize);
+			w.WriteBool("readUntil0", F.readUntil0);
+
+			w.BeginArray("structArgs");
+			for (const CompArg& A : F.structArgs)
+			{
+				w.BeginDict("");
+				w.WriteString("name", A.name);
+				w.WriteString("src", A.src);
+				w.WriteInt("intVal", A.intVal);
+				w.EndDict();
+			}
+			w.EndArray();
+
+			w.BeginArray("conditions");
+			for (const Condition& C : F.conditions)
+			{
+				w.BeginDict("");
+				w.WriteString("field", C.field);
+				w.WriteString("value", C.value);
+				w.EndDict();
+			}
+			w.EndArray();
+
+			w.EndDict();
+		}
+		w.EndArray();
+
+		w.WriteInt("size", S->size);
+		w.WriteString("sizeSrc", S->sizeSrc);
+
+		w.EndDict();
+	}
+	w.EndArray();
+
+	w.BeginArray("instances");
+	for (const StructInst& SI : instances)
+	{
+		w.BeginDict("");
+
+		w.WriteString("struct", SI.def->name);
+		w.WriteInt("file", SI.file->id);
+		w.WriteInt("off", SI.off);
+		w.WriteString("notes", SI.notes);
+		w.WriteBool("userCreated", SI.userCreated);
+		w.WriteBool("remainingCountIsSize", SI.remainingCountIsSize);
+		w.WriteInt("remainingCount", SI.remainingCount);
+
+		w.BeginArray("args");
+		for (const Arg& A : SI.args)
+		{
+			w.BeginDict("");
+			w.WriteString("name", A.name);
+			w.WriteInt("intVal", A.intVal);
+			w.EndDict();
+		}
+		w.EndArray();
+
+		w.EndDict();
+	}
+	w.EndArray();
+
+	w.WriteInt("editMode", editMode);
+	w.WriteInt("curInst", curInst);
+	w.WriteInt("curField", curField);
+
+	w.EndDict();
+}
+
 
 enum COLS_DDI
 {
 	DDI_COL_ID,
 	DDI_COL_User,
+	DDI_COL_File,
 	DDI_COL_Offset,
 	DDI_COL_Struct,
 
@@ -944,7 +1322,7 @@ size_t DataDescInstanceSource::GetNumRows()
 
 size_t DataDescInstanceSource::GetNumCols()
 {
-	return filterStruct && dataSource ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
+	return filterStruct ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
 }
 
 std::string DataDescInstanceSource::GetRowName(size_t row)
@@ -958,6 +1336,7 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 	{
 	case DDI_COL_ID: return "ID";
 	case DDI_COL_User: return "User";
+	case DDI_COL_File: return "File";
 	case DDI_COL_Offset: return "Offset";
 	case DDI_COL_Struct: return "Struct";
 	default: return filterStruct->fields[col - DDI_COL_FirstField].name;
@@ -970,15 +1349,16 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);
 	case DDI_COL_User: return dataDesc->instances[_indices[row]].userCreated ? "+" : "";
+	case DDI_COL_File: return dataDesc->instances[_indices[row]].file->name;
 	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
 	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
 	default:
 		// TODO optimize to avoid reparsing for each col
 	{
 		auto& inst = dataDesc->instances[_indices[row]];
-		std::vector<DataDesc::ReadField> rfs;
-		dataDesc->ReadStruct(dataSource, inst, inst.off, rfs);
-		auto& rf = rfs[col - DDI_COL_FirstField];
+		_rfs.clear();
+		dataDesc->ReadStruct(inst.file->dataSource, inst, inst.off, _rfs);
+		auto& rf = _rfs[col - DDI_COL_FirstField];
 		return rf.preview;
 	} break;
 	}
@@ -997,6 +1377,16 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		}
 		ui::Menu(items).Show(ctx->GetCurrentNode());
 	}
+	if (ui::imm::PropButton(ctx, "Filter by file", filterFile ? filterFile->name.c_str() : "<none>"))
+	{
+		std::vector<ui::MenuItem> items;
+		items.push_back(ui::MenuItem("<none>").Func([this]() { filterFile = nullptr; refilter = true; }));
+		for (auto* F : dataDesc->files)
+		{
+			items.push_back(ui::MenuItem(F->name).Func([this, F]() { filterFile = F; refilter = true; }));
+		}
+		ui::Menu(items).Show(ctx->GetCurrentNode());
+	}
 	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
 		refilter = true;
 }
@@ -1012,6 +1402,8 @@ void DataDescInstanceSource::_Refilter()
 	{
 		auto& I = dataDesc->instances[i];
 		if (filterStruct && filterStruct != I.def)
+			continue;
+		if (filterFile && filterFile != I.file)
 			continue;
 		if (filterUserCreated && !I.userCreated)
 			continue;

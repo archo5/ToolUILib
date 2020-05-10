@@ -3,6 +3,44 @@
 #include "HexViewer.h"
 
 
+void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
+{
+	r.BeginDict(key);
+
+	excludeZeroes = r.ReadBool("excludeZeroes");
+	enableFloat32 = r.ReadBool("enableFloat32");
+	minFloat32 = r.ReadFloat("minFloat32");
+	maxFloat32 = r.ReadFloat("maxFloat32");
+	enableInt16 = r.ReadBool("enableInt16");
+	minInt16 = r.ReadInt("minInt16");
+	maxInt16 = r.ReadInt("maxInt16");
+	enableInt32 = r.ReadBool("enableInt32");
+	minInt32 = r.ReadInt("minInt32");
+	maxInt32 = r.ReadInt("maxInt32");
+	minASCIIChars = r.ReadInt("minASCIIChars");
+
+	r.EndDict();
+}
+
+void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
+{
+	w.BeginDict(key);
+	
+	w.WriteBool("excludeZeroes", excludeZeroes);
+	w.WriteBool("enableFloat32", enableFloat32);
+	w.WriteFloat("minFloat32", minFloat32);
+	w.WriteFloat("maxFloat32", maxFloat32);
+	w.WriteBool("enableInt16", enableInt16);
+	w.WriteInt("minInt16", minInt16);
+	w.WriteInt("maxInt16", maxInt16);
+	w.WriteBool("enableInt32", enableInt32);
+	w.WriteInt("minInt32", minInt32);
+	w.WriteInt("maxInt32", maxInt32);
+	w.WriteInt("minASCIIChars", minASCIIChars);
+
+	w.EndDict();
+}
+
 void HighlightSettings::EditUI(UIContainer* ctx)
 {
 	ui::imm::PropEditBool(ctx, "Exclude zeroes", excludeZeroes);

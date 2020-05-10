@@ -23,6 +23,8 @@ struct StringView
 	const char* data() const { return _data; }
 	size_t size() const { return _size; }
 	bool empty() const { return _size == 0; }
+	const char& first() const { return _data[0]; }
+	const char& last() const { return _data[_size - 1]; }
 	const char* begin() const { return _data; }
 	const char* end() const { return _data + _size; }
 	bool operator == (const StringView& o) const { return _size == o._size && memcmp(_data, o._data, _size) == 0; }
@@ -30,7 +32,7 @@ struct StringView
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{
-		assert(at < _size);
+		assert(at <= _size);
 		return StringView(_data + at, std::min(_size - at, size));
 	}
 	StringView ltrim() const
@@ -42,6 +44,19 @@ struct StringView
 			out._size--;
 		}
 		return out;
+	}
+	StringView rtrim() const
+	{
+		StringView out = *this;
+		while (out._size && IsSpace(out._data[out._size - 1]))
+		{
+			out._size--;
+		}
+		return out;
+	}
+	StringView trim() const
+	{
+		return ltrim().rtrim();
 	}
 
 	bool starts_with(StringView sub) const
@@ -62,7 +77,7 @@ struct StringView
 	}
 	size_t find_first_at(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const
 	{
-		for (size_t i = from; i < _size - sub._size; i++)
+		for (size_t i = from; i <= _size - sub._size; i++)
 			if (memcmp(&_data[i], sub._data, sub._size) == 0)
 				return i;
 		return def;

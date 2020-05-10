@@ -6,32 +6,97 @@
 #include "HexViewer.h"
 
 
-struct REFile : FileDataSource
+struct OpenedFile
 {
-	REFile(std::string n)
+	void Load(NamedTextSerializeReader& r)
 	{
-		path = n;
-		name = n;
-		highlighter.markerData = &markerData;
-		//ds = new FileStructureDataSource(n.c_str());
-		fp = fopen(("FRET_Plugins/" + n).c_str(), "rb");
-
-		ddiSrc.dataDesc = &desc;
-		ddiSrc.dataSource = this;
+		r.BeginDict("");
+		fileID = r.ReadUInt64("fileID");
+		basePos = r.ReadUInt64("basePos");
+		byteWidth = r.ReadUInt("byteWidth");
+		highlighter.Load("highlighter", r);
+		r.EndDict();
 	}
-	~REFile()
+	void Save(NamedTextSerializeWriter& w)
 	{
-		fclose(fp);
-		//delete ds;
+		w.BeginDict("");
+		w.WriteInt("fileID", fileID);
+		w.WriteInt("basePos", basePos);
+		w.WriteInt("byteWidth", byteWidth);
+		highlighter.Save("highlighter", w);
+		w.EndDict();
 	}
 
-	std::string path;
-	std::string name;
-	FileStructureDataSource* ds;
-	MarkerData markerData;
+	DataDesc::File* ddFile = nullptr;
+	uint64_t fileID = 0;
 	uint64_t basePos = 0;
 	uint32_t byteWidth = 8;
 	Highlighter highlighter;
+};
+
+struct Workspace
+{
+	Workspace()
+	{
+		ddiSrc.dataDesc = &desc;
+	}
+	~Workspace()
+	{
+		Clear();
+	}
+
+	void Clear()
+	{
+		desc.Clear();
+		for (auto* F : openedFiles)
+			delete F;
+		openedFiles.clear();
+	}
+
+	void Load(NamedTextSerializeReader& r)
+	{
+		Clear();
+		r.BeginDict("workspace");
+
+		desc.Load("desc", r);
+		for (auto* F : desc.files)
+		{
+			F->dataSource = new FileDataSource(("FRET_Plugins/" + F->name).c_str());
+		}
+
+		r.BeginArray("openedFiles");
+		for (auto E : r.GetCurrentRange())
+		{
+			r.BeginEntry(E);
+
+			auto* F = new OpenedFile;
+			F->Load(r);
+			F->ddFile = desc.FindFileByID(F->fileID);
+			F->highlighter.markerData = &F->ddFile->markerData;
+			openedFiles.push_back(F);
+
+			r.EndEntry();
+		}
+		r.EndArray();
+
+		r.EndDict();
+	}
+	void Save(NamedTextSerializeWriter& w)
+	{
+		w.BeginDict("workspace");
+		w.WriteString("version", "1");
+
+		desc.Save("desc", w);
+
+		w.BeginArray("openedFiles");
+		for (auto* F : openedFiles)
+			F->Save(w);
+		w.EndArray();
+
+		w.EndDict();
+	}
+
+	std::vector<OpenedFile*> openedFiles;
 	DataDesc desc;
 	DataDescInstanceSource ddiSrc;
 };
@@ -41,76 +106,13 @@ struct MainWindow : ui::NativeMainWindow
 	MainWindow()
 	{
 		SetSize(1200, 800);
-#if 1
-		{
-			auto* f = new REFile("loop.wav");
-
-			auto* chunk = new DataDesc::Struct;
-			chunk->name = "chunk";
-			chunk->serialized = true;
-			chunk->fields.push_back({ "char", "type", 0, 4 });
-			chunk->fields.push_back({ "u32", "size" });
-			for (DataDesc::Field f;
-				f.name = "list_data",
-				f.type = "list_data",
-				f.structArgs = { { "size", "size", 0 } },
-				f.conditions = { { "type", "RIFF" }, { "type", "LIST" } },
-				chunk->fields.push_back(f),
-				false; );
-			for (DataDesc::Field f;
-				f.name = "fmt_data",
-				f.type = "fmt_data",
-				f.conditions = { { "type", "fmt " } },
-				chunk->fields.push_back(f),
-				false; );
-			for (DataDesc::Field f;
-				f.name = "str_data",
-				f.type = "str_data",
-				f.conditions = { { "type", "ICMT" } },
-				chunk->fields.push_back(f),
-				false; );
-			chunk->size = 8;
-			chunk->sizeSrc = "size";
-			f->desc.structs["chunk"] = chunk;
-
-			auto* list_data = new DataDesc::Struct;
-			list_data->name = "list_data";
-			list_data->serialized = true;
-			list_data->params.push_back({ "size", 0 });
-			list_data->fields.push_back({ "char", "subtype", 0, 4 });
-			list_data->fields.push_back({ "chunk", "chunks", 0, -4, "size", true });
-			list_data->sizeSrc = "size";
-			f->desc.structs["list_data"] = list_data;
-
-			auto* fmt_data = new DataDesc::Struct;
-			fmt_data->name = "fmt_data";
-			fmt_data->serialized = true;
-			fmt_data->fields.push_back({ "u16", "AudioFormat" });
-			fmt_data->fields.push_back({ "u16", "NumChannels" });
-			fmt_data->fields.push_back({ "u32", "SampleRate" });
-			fmt_data->fields.push_back({ "u32", "ByteRate" });
-			fmt_data->fields.push_back({ "u16", "BlockAlign" });
-			fmt_data->fields.push_back({ "u16", "BitsPerSample" });
-			f->desc.structs["fmt_data"] = fmt_data;
-
-			auto* str_data = new DataDesc::Struct;
-			str_data->name = "str_data";
-			str_data->serialized = true;
-			str_data->params.push_back({ "size", 0 });
-			str_data->fields.push_back({ "char", "text", 0, 0, "size" });
-			str_data->sizeSrc = "size";
-			f->desc.structs["str_data"] = str_data;
-
-			f->desc.instances.push_back({ chunk, 0, "RIFF chunk", true });
-			f->desc.instances.push_back({ fmt_data, 20, "fmt chunk data", true });
-			f->desc.instances.push_back({ str_data, 56, "ICMT data", true, false, 1, { { "size", 28 } } });
-
-			files.push_back(f);
-
-			f->markerData.markers.push_back({ DT_I32, 8, 1, 1, 0 });
-			f->markerData.markers.push_back({ DT_F32, 12, 3, 2, 12 });
-		}
-#endif
+		FileDataSource fds("FRET_Plugins/wav.bdaw");
+		std::string wsdata;
+		wsdata.resize(fds.GetSize());
+		fds.Read(0, fds.GetSize(), &wsdata[0]);
+		NamedTextSerializeReader ntsr;
+		printf("parsed: %s\n", ntsr.Parse(wsdata) ? "yes" : "no");
+		workspace.Load(ntsr);
 		//files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
 	}
@@ -122,18 +124,21 @@ struct MainWindow : ui::NativeMainWindow
 		{
 			ctx->Push<ui::TabList>();
 			{
-				for (auto* f : files)
+				for (auto* f : workspace.openedFiles)
 				{
 					ctx->Push<ui::TabButton>();
-					ctx->Text(f->name);
+					ctx->Text(f->ddFile->name);
 					ctx->MakeWithText<ui::Button>("X");
 					ctx->Pop();
 				}
 			}
 			ctx->Pop();
 
-			for (auto* f : files)
+			for (auto* of : workspace.openedFiles)
 			{
+				DataDesc::File* f = of->ddFile;
+				IDataSource* ds = f->dataSource;
+
 				auto* p = ctx->Push<ui::TabPanel>();
 				{
 					auto s = p->GetStyle();
@@ -155,18 +160,18 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->PushBox(); // tree stabilization box
 							if (vs->open)
 							{
-								ui::imm::PropEditInt(ctx, "Width", f->byteWidth, {}, 1, 1, 256);
-								ui::imm::PropEditInt(ctx, "Position", f->basePos, {}, 1, 0);
+								ui::imm::PropEditInt(ctx, "Width", of->byteWidth, {}, 1, 1, 256);
+								ui::imm::PropEditInt(ctx, "Position", of->basePos, {}, 1, 0);
 							}
 							if (hs->open)
 							{
-								f->highlighter.EditUI(ctx);
+								of->highlighter.EditUI(ctx);
 							}
 							ctx->Pop(); // end tree stabilization box
 
 							auto* hv = ctx->Make<HexViewer>();
-							hv->Init(f, &f->basePos, &f->byteWidth, &f->highlighter);
-							hv->HandleEvent(UIEventType::Click) = [f, hv](UIEvent& e)
+							hv->Init(f->dataSource, &of->basePos, &of->byteWidth, &of->highlighter);
+							hv->HandleEvent(UIEventType::Click) = [this, f, ds, hv](UIEvent& e)
 							{
 								if (e.GetButton() == UIMouseButton::Right)
 								{
@@ -179,46 +184,46 @@ struct MainWindow : ui::NativeMainWindow
 									snprintf(txt_pos, 64, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
 
 									char txt_ascii[32];
-									f->GetASCIIText(txt_ascii, 32, pos);
+									ds->GetASCIIText(txt_ascii, 32, pos);
 
 									char txt_int8[32];
-									f->GetInt8Text(txt_int8, 32, pos, true);
+									ds->GetInt8Text(txt_int8, 32, pos, true);
 									char txt_uint8[32];
-									f->GetInt8Text(txt_uint8, 32, pos, false);
+									ds->GetInt8Text(txt_uint8, 32, pos, false);
 									char txt_int16[32];
-									f->GetInt16Text(txt_int16, 32, pos, true);
+									ds->GetInt16Text(txt_int16, 32, pos, true);
 									char txt_uint16[32];
-									f->GetInt16Text(txt_uint16, 32, pos, false);
+									ds->GetInt16Text(txt_uint16, 32, pos, false);
 									char txt_int32[32];
-									f->GetInt32Text(txt_int32, 32, pos, true);
+									ds->GetInt32Text(txt_int32, 32, pos, true);
 									char txt_uint32[32];
-									f->GetInt32Text(txt_uint32, 32, pos, false);
+									ds->GetInt32Text(txt_uint32, 32, pos, false);
 									char txt_int64[32];
-									f->GetInt64Text(txt_int64, 32, pos, true);
+									ds->GetInt64Text(txt_int64, 32, pos, true);
 									char txt_uint64[32];
-									f->GetInt64Text(txt_uint64, 32, pos, false);
+									ds->GetInt64Text(txt_uint64, 32, pos, false);
 									char txt_float32[32];
-									f->GetFloat32Text(txt_float32, 32, pos);
+									ds->GetFloat32Text(txt_float32, 32, pos);
 									char txt_float64[32];
-									f->GetFloat64Text(txt_float64, 32, pos);
+									ds->GetFloat64Text(txt_float64, 32, pos);
 
 									std::vector<ui::MenuItem> structs;
 									{
-										auto createBlank = [f, hv, pos]()
+										auto createBlank = [this, f, hv, pos]()
 										{
 											auto* ns = new DataDesc::Struct;
 											do
 											{
 												ns->name = "struct" + std::to_string(rand() % 10000);
-											} while (f->desc.structs.count(ns->name));
+											} while (workspace.desc.structs.count(ns->name));
 											int64_t off = pos;
 											if (hv->selectionStart != UINT64_MAX && hv->selectionEnd != UINT64_MAX)
 											{
 												off = std::min(hv->selectionStart, hv->selectionEnd);
 												ns->size = abs(int(hv->selectionEnd - hv->selectionStart)) + 1;
 											}
-											f->desc.structs[ns->name] = ns;
-											f->desc.curInst = f->desc.AddInst({ ns, off, "", true });
+											workspace.desc.structs[ns->name] = ns;
+											workspace.desc.curInst = workspace.desc.AddInst({ ns, f, off, "", true });
 											return ns;
 										};
 										auto createBlankOpt = [createBlank]() { createBlank(); };
@@ -244,14 +249,14 @@ struct MainWindow : ui::NativeMainWindow
 										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(createBlankOpt));
 										structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
 											hv->selectionStart == UINT64_MAX || hv->selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
-										if (f->desc.structs.size())
-										structs.push_back(ui::MenuItem::Separator());
+										if (workspace.desc.structs.size())
+											structs.push_back(ui::MenuItem::Separator());
 									}
-									for (auto& s : f->desc.structs)
+									for (auto& s : workspace.desc.structs)
 									{
-										auto fn = [f, pos, s]()
+										auto fn = [this, f, pos, s]()
 										{
-											f->desc.curInst = f->desc.AddInst({ s.second, pos, "", true });
+											workspace.desc.curInst = workspace.desc.AddInst({ s.second, f, pos, "", true });
 										};
 										structs.push_back(ui::MenuItem(s.first).Func(fn));
 									}
@@ -282,17 +287,17 @@ struct MainWindow : ui::NativeMainWindow
 							auto& ed = ctx->PushBox();
 #if 1
 							ctx->Text("Instances") + ui::Padding(5);
-							f->ddiSrc.Edit(ctx);
+							workspace.ddiSrc.Edit(ctx);
 							auto* tv = ctx->Make<ui::TableView>();
 							*tv + ui::Layout(style::layouts::EdgeSlice());
-							tv->SetDataSource(&f->ddiSrc);
-							f->ddiSrc.refilter = true;
+							tv->SetDataSource(&workspace.ddiSrc);
+							workspace.ddiSrc.refilter = true;
 							tv->CalculateColumnWidths();
-							ed.HandleEvent(tv, UIEventType::SelectionChange) = [f, tv](UIEvent& e)
+							ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
 							{
 								auto sel = tv->selection.GetFirstSelection();
 								if (tv->IsValidRow(sel))
-									f->desc.curInst = f->ddiSrc._indices[sel];
+									workspace.desc.curInst = workspace.ddiSrc._indices[sel];
 								e.current->RerenderNode();
 							};
 #else
@@ -315,7 +320,7 @@ struct MainWindow : ui::NativeMainWindow
 									ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
 							}
 #endif
-							f->desc.Edit(ctx, f);
+							workspace.desc.Edit(ctx);
 							ctx->Pop();
 						}
 						sp->SetSplits({ 0.3f, 0.7f });
@@ -329,7 +334,7 @@ struct MainWindow : ui::NativeMainWindow
 		ctx->Pop();
 	}
 
-	std::vector<REFile*> files;
+	Workspace workspace;
 };
 
 int uimain(int argc, char* argv[])

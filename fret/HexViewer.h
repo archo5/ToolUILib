@@ -19,6 +19,9 @@ struct HighlightSettings
 	int32_t maxInt32 = 10000;
 	int minASCIIChars = 3;
 
+	void Load(const char* key, NamedTextSerializeReader& r);
+	void Save(const char* key, NamedTextSerializeWriter& w);
+
 	void EditUI(UIContainer* ctx);
 };
 
