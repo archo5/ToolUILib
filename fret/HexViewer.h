@@ -17,7 +17,7 @@ struct HighlightSettings
 	bool enableInt32 = true;
 	int32_t minInt32 = -10000;
 	int32_t maxInt32 = 10000;
-	int minASCIIChars = 3;
+	unsigned minASCIIChars = 3;
 
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);
@@ -25,17 +25,12 @@ struct HighlightSettings
 	void EditUI(UIContainer* ctx);
 };
 
-struct Highlighter : HighlightSettings
+struct ByteColors
 {
-	Color4f GetByteTypeBin(uint64_t basePos, uint8_t* buf, int at, int sz);
-	Color4f GetByteTypeASCII(uint64_t basePos, uint8_t* buf, int at, int sz);
-
-	bool IsInt16InRange(uint64_t basePos, uint8_t* buf, int at, int sz);
-	bool IsInt32InRange(uint64_t basePos, uint8_t* buf, int at, int sz);
-	bool IsFloat32InRange(uint64_t basePos, uint8_t* buf, int at, int sz);
-	bool IsASCIIInRange(uint64_t basePos, uint8_t* buf, int at, int sz);
-
-	MarkerData* markerData = nullptr;
+	Color4f hexColor = { 0, 0 };
+	Color4f asciiColor = { 0, 0 };
+	Color4f leftBracketColor = { 0, 0 };
+	Color4f rightBracketColor = { 0, 0 };
 };
 
 struct HexViewer : UIElement
@@ -64,19 +59,21 @@ struct HexViewer : UIElement
 		return *basePos;
 	}
 
-	void Init(IDataSource* ds, uint64_t* bpos, uint32_t* bwid, Highlighter* hltr)
+	void Init(DataDesc* dd, DataDesc::File* f, uint64_t* bpos, uint32_t* bwid, HighlightSettings* hs)
 	{
-		dataSource = ds;
+		dataDesc = dd;
+		file = f;
 		basePos = bpos;
 		byteWidth = bwid;
-		highlighter = hltr;
+		highlightSettings = hs;
 	}
 
 	// input data
-	IDataSource* dataSource = nullptr;
+	DataDesc* dataDesc = nullptr;
+	DataDesc::File* file = nullptr;
 	uint64_t* basePos = nullptr;
 	uint32_t* byteWidth = nullptr;
-	Highlighter* highlighter = nullptr;
+	HighlightSettings* highlightSettings = nullptr;
 
 	Color4f colorHover{ 1, 1, 1, 0.3f };
 	Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };

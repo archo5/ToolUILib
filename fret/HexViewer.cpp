@@ -17,7 +17,7 @@ void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
 	enableInt32 = r.ReadBool("enableInt32");
 	minInt32 = r.ReadInt("minInt32");
 	maxInt32 = r.ReadInt("maxInt32");
-	minASCIIChars = r.ReadInt("minASCIIChars");
+	minASCIIChars = r.ReadUInt("minASCIIChars");
 
 	r.EndDict();
 }
@@ -69,84 +69,127 @@ void HighlightSettings::EditUI(UIContainer* ctx)
 }
 
 
-Color4f Highlighter::GetByteTypeBin(uint64_t basePos, uint8_t* buf, int at, int sz)
-{
-	Color4f col(0);
-	if (IsInt16InRange(basePos, buf, at, sz)) col.BlendOver(colorInt16);
-	if (IsInt16InRange(basePos, buf, at - 1, sz)) col.BlendOver(colorInt16);
-	if (IsFloat32InRange(basePos, buf, at, sz)) col.BlendOver(colorFloat32);
-	if (IsFloat32InRange(basePos, buf, at - 1, sz)) col.BlendOver(colorFloat32);
-	if (IsFloat32InRange(basePos, buf, at - 2, sz)) col.BlendOver(colorFloat32);
-	if (IsFloat32InRange(basePos, buf, at - 3, sz)) col.BlendOver(colorFloat32);
-	if (IsInt32InRange(basePos, buf, at, sz)) col.BlendOver(colorInt32);
-	if (IsInt32InRange(basePos, buf, at - 1, sz)) col.BlendOver(colorInt32);
-	if (IsInt32InRange(basePos, buf, at - 2, sz)) col.BlendOver(colorInt32);
-	if (IsInt32InRange(basePos, buf, at - 3, sz)) col.BlendOver(colorInt32);
-	return col;
-}
-
-Color4f Highlighter::GetByteTypeASCII(uint64_t basePos, uint8_t* buf, int at, int sz)
-{
-	Color4f col(0);
-	if (IsASCIIInRange(basePos, buf, at, sz)) col.BlendOver(colorASCII);
-	return col;
-}
-
-bool Highlighter::IsInt16InRange(uint64_t basePos, uint8_t* buf, int at, int sz)
-{
-	if (!enableInt16 || at < 0 || sz - at < 2)
-		return false;
-	if (markerData->IsMarked(basePos + at, 2))
-		return false;
-	if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0)
-		return false;
-	int16_t v;
-	memcpy(&v, &buf[at], 2);
-	return v >= minInt16 && v <= maxInt16;
-}
-
-bool Highlighter::IsInt32InRange(uint64_t basePos, uint8_t* buf, int at, int sz)
-{
-	if (!enableInt32 || at < 0 || sz - at < 4)
-		return false;
-	if (markerData->IsMarked(basePos + at, 4))
-		return false;
-	if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
-		return false;
-	int32_t v;
-	memcpy(&v, &buf[at], 4);
-	return v >= minInt32 && v <= maxInt32;
-}
-
-bool Highlighter::IsFloat32InRange(uint64_t basePos, uint8_t* buf, int at, int sz)
-{
-	if (!enableFloat32 || at < 0 || sz - at < 4)
-		return false;
-	if (markerData->IsMarked(basePos + at, 4))
-		return false;
-	if (excludeZeroes && buf[at] == 0 && buf[at + 1] == 0 && buf[at + 2] == 0 && buf[at + 3] == 0)
-		return false;
-	float v;
-	memcpy(&v, &buf[at], 4);
-	return (v >= minFloat32 && v <= maxFloat32) || (v >= -maxFloat32 && v <= -minFloat32);
-}
-
 static bool IsASCII(uint8_t v)
 {
 	return v >= 0x20 && v < 0x7f;
 }
 
-bool Highlighter::IsASCIIInRange(uint64_t basePos, uint8_t* buf, int at, int sz)
+static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* file, uint64_t basePos, ByteColors* outColors, uint8_t* bytes, size_t numBytes)
 {
-	if (!IsASCII(buf[at]))
-		return false;
-	int min = at;
-	int max = at;
-	while (min - 1 >= 0 && max - min < minASCIIChars && IsASCII(buf[min - 1]))
-		min--;
-	while (max + 1 < sz && max - min < minASCIIChars && IsASCII(buf[max + 1]))
-		max++;
-	return max - min >= minASCIIChars;
+	for (auto& M : file->markerData.markers)
+	{
+		uint64_t start = M.at;
+		uint64_t end = M.GetEnd();
+		size_t ss = start > basePos ? start - basePos : 0;
+		size_t se = end > basePos ? end - basePos : 0;
+		if (ss > numBytes)
+			ss = numBytes;
+		if (se > numBytes)
+			se = numBytes;
+		for (size_t i = ss; i < se; i++)
+		{
+			if (unsigned flags = M.ContainInfo(basePos + i))
+			{
+				auto mc = M.GetColor();
+				auto& oc = outColors[i];
+				oc.asciiColor.BlendOver(mc);
+				oc.hexColor.BlendOver(mc);
+				Color4f mc2 = { sqrtf(mc.r), sqrtf(mc.g), sqrtf(mc.b), sqrtf(mc.a) };
+				if (flags & 2)
+					oc.leftBracketColor.BlendOver(mc2);
+				if (flags & 4)
+					oc.rightBracketColor.BlendOver(mc2);
+			}
+		}
+	}
+
+	for (auto& SI : desc->instances)
+	{
+		if (SI.off >= int64_t(basePos) && SI.off < int64_t(basePos + numBytes))
+		{
+			outColors[SI.off - basePos].leftBracketColor.BlendOver(&SI == &desc->instances[desc->curInst] ? colorCurInst : colorInst);
+		}
+	}
+
+	// ayto highlights
+	if (hs->enableFloat32 || hs->enableInt32)
+	{
+		for (size_t i = 0; i < numBytes - 4; i++)
+		{
+			if (outColors[i].hexColor.a ||
+				outColors[i + 1].hexColor.a ||
+				outColors[i + 2].hexColor.a ||
+				outColors[i + 3].hexColor.a)
+				continue;
+			if (hs->excludeZeroes && bytes[i] == 0 && bytes[i + 1] == 0 && bytes[i + 2] == 0 && bytes[i + 3] == 0)
+				continue;
+
+			if (hs->enableFloat32)
+			{
+				float v;
+				memcpy(&v, &bytes[i], 4);
+				if ((v >= hs->minFloat32 && v <= hs->maxFloat32) || (v >= -hs->maxFloat32 && v <= -hs->minFloat32))
+				{
+					for (int j = 0; j < 4; j++)
+						outColors[i + j].hexColor.BlendOver(colorFloat32);
+				}
+			}
+
+			if (hs->enableInt32)
+			{
+				int32_t v;
+				memcpy(&v, &bytes[i], 4);
+				if (v >= hs->minInt32 && v <= hs->maxInt32)
+				{
+					for (int j = 0; j < 4; j++)
+						outColors[i + j].hexColor.BlendOver(colorInt32);
+				}
+			}
+		}
+	}
+
+	if (hs->enableInt16)
+	{
+		for (size_t i = 0; i < numBytes - 2; i++)
+		{
+			if (outColors[i].hexColor.a ||
+				outColors[i + 1].hexColor.a)
+				continue;
+			if (hs->excludeZeroes && bytes[i] == 0 && bytes[i + 1] == 0)
+				continue;
+
+			int16_t v;
+			memcpy(&v, &bytes[i], 2);
+			if (v >= hs->minInt16 && v <= hs->maxInt16)
+			{
+				outColors[i].hexColor.BlendOver(colorInt32);
+				outColors[i + 1].hexColor.BlendOver(colorInt32);
+			}
+		}
+	}
+
+	if (hs->minASCIIChars > 0)
+	{
+		size_t start = SIZE_MAX;
+		bool prev = false;
+		for (size_t i = 0; i < numBytes; i++)
+		{
+			bool cur = IsASCII(bytes[i]);
+			if (cur && !prev)
+				start = i;
+			else if (prev && !cur && i - start >= hs->minASCIIChars)
+			{
+				for (size_t j = start; j < i; j++)
+					outColors[j].asciiColor.BlendOver(colorASCII);
+			}
+			prev = cur;
+		}
+		if (prev && numBytes - start >= hs->minASCIIChars)
+		{
+			for (size_t j = start; j < numBytes; j++)
+				outColors[j].asciiColor.BlendOver(colorASCII);
+		}
+	}
 }
 
 
@@ -207,7 +250,7 @@ void HexViewer::OnEvent(UIEvent& e)
 			*basePos = 0;
 		else
 			*basePos -= diff;
-		*basePos = std::min(dataSource->GetSize() - 1, *basePos);
+		*basePos = std::min(file->dataSource->GetSize() - 1, *basePos);
 		RerenderNode();
 	}
 }
@@ -220,12 +263,16 @@ void HexViewer::OnPaint()
 	auto maxSel = std::max(selectionStart, selectionEnd);
 
 	uint8_t buf[256 * 64];
-	size_t sz = dataSource->Read(GetBasePos(), W * 64, buf);
+	static ByteColors bcol[256 * 64];
+	memset(&bcol, 0, sizeof(bcol));
+	size_t sz = file->dataSource->Read(GetBasePos(), W * 64, buf);
 
 	float fh = GetFontHeight() + 4;
 	float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
 	float y = finalRectC.y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
+
+	Highlight(highlightSettings, dataDesc, file, *basePos, &bcol[0], buf, sz);
 
 	GL::SetTexture(0);
 	GL::BatchRenderer br;
@@ -233,15 +280,13 @@ void HexViewer::OnPaint()
 	for (size_t i = 0; i < sz; i++)
 	{
 		uint8_t v = buf[i];
-		auto mc = highlighter->markerData->GetMarkedColor(GetBasePos() + i);
+		auto pos = GetBasePos() + i;
 
-		Color4f col = highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
-		if (mc.a > 0)
-			col.BlendOver(mc);
-		if (hoverByte == GetBasePos() + i)
-			col.BlendOver(colorHover);
-		if (GetBasePos() + i >= minSel && GetBasePos() + i <= maxSel)
+		Color4f col = bcol[i].hexColor;// highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
+		if (pos >= minSel && pos <= maxSel)
 			col.BlendOver(colorSelect);
+		if (hoverByte == pos)
+			col.BlendOver(colorHover);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 20;
@@ -250,13 +295,11 @@ void HexViewer::OnPaint()
 			br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
 		}
 
-		col = highlighter->GetByteTypeASCII(GetBasePos(), buf, i, sz);
-		if (mc.a > 0)
-			col.BlendOver(mc);
-		if (hoverByte == GetBasePos() + i)
-			col.BlendOver(colorHover);
-		if (GetBasePos() + i >= minSel && GetBasePos() + i <= maxSel)
+		col = bcol[i].asciiColor;// highlighter->GetByteTypeASCII(GetBasePos(), buf, i, sz);
+		if (pos >= minSel && pos <= maxSel)
 			col.BlendOver(colorSelect);
+		if (hoverByte == pos)
+			col.BlendOver(colorHover);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 10;
@@ -264,10 +307,32 @@ void HexViewer::OnPaint()
 			br.SetColor(col.r, col.g, col.b, col.a);
 			br.Quad(x2 + xoff - 2, y + yoff - fh + 4, x2 + xoff + 8, y + yoff + 3, 0, 0, 1, 1);
 		}
+
+		col = bcol[i].leftBracketColor;
+		if (col.a > 0)
+		{
+			float xoff = (i % W) * 20;
+			float yoff = (i / W) * fh;
+			br.SetColor(col.r, col.g, col.b, col.a);
+			br.Quad(x + xoff - 2, y + yoff - fh + 5, x + xoff - 1, y + yoff + 2, 0, 0, 1, 1);
+			br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 4, y + yoff - fh + 5, 0, 0, 1, 1);
+			br.Quad(x + xoff - 2, y + yoff + 2, x + xoff + 4, y + yoff + 3, 0, 0, 1, 1);
+		}
+
+		col = bcol[i].rightBracketColor;
+		if (col.a > 0)
+		{
+			float xoff = (i % W) * 20;
+			float yoff = (i / W) * fh;
+			br.SetColor(col.r, col.g, col.b, col.a);
+			br.Quad(x + xoff + 17, y + yoff - fh + 5, x + xoff + 18, y + yoff + 2, 0, 0, 1, 1);
+			br.Quad(x + xoff + 12, y + yoff - fh + 4, x + xoff + 18, y + yoff - fh + 5, 0, 0, 1, 1);
+			br.Quad(x + xoff + 12, y + yoff + 2, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
+		}
 	}
 	br.End();
 
-	auto size = dataSource->GetSize();
+	auto size = file->dataSource->GetSize();
 	for (int i = 0; i < 64; i++)
 	{
 		if (GetBasePos() + i * W >= size)

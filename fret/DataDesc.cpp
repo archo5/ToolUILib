@@ -16,6 +16,8 @@ Color4f colorInt16{ 0.2f, 0.2f, 0.9f, 0.3f };
 Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
 Color4f colorInt64{ 0.0f, 0.4f, 0.9f, 0.3f };
 Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
+Color4f colorInst{ 0.9f, 0.9f, 0.9f, 0.6f };
+Color4f colorCurInst{ 0.9f, 0.2f, 0.0f, 0.8f };
 
 
 static uint8_t typeSizes[] = { 1, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8 };
@@ -52,6 +54,36 @@ bool Marker::Contains(uint64_t pos) const
 	return pos < typeSizes[type] * count;
 }
 
+unsigned Marker::ContainInfo(uint64_t pos) const
+{
+	if (pos < at)
+		return 0;
+	pos -= at;
+	if (stride)
+	{
+		if (pos >= stride * repeats)
+			return 0;
+		pos %= stride;
+	}
+
+	if (pos >= typeSizes[type] * count)
+		return 0;
+
+	unsigned ret = 1;
+	pos %= typeSizes[type];
+	if (pos == 0)
+		ret |= 2;
+	if (pos == typeSizes[type] - 1)
+		ret |= 4;
+	return ret;
+
+}
+
+uint64_t Marker::GetEnd() const
+{
+	return at + count * typeSizes[type] + stride * repeats;
+}
+
 Color4f Marker::GetColor() const
 {
 	switch (type)
@@ -71,28 +103,6 @@ Color4f Marker::GetColor() const
 	}
 }
 
-
-Color4f MarkerData::GetMarkedColor(uint64_t pos)
-{
-	for (const auto& m : markers)
-	{
-		if (m.Contains(pos))
-			return m.GetColor();
-	}
-	return Color4f::Zero();
-}
-
-bool MarkerData::IsMarked(uint64_t pos, uint64_t len)
-{
-	// TODO optimize
-	for (uint64_t i = 0; i < len; i++)
-	{
-		for (const auto& m : markers)
-			if (m.Contains(pos + i))
-				return true;
-	}
-	return false;
-}
 
 void MarkerData::AddMarker(DataType dt, uint64_t from, uint64_t to)
 {
@@ -454,6 +464,8 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off,
 				auto it = g_builtinTypes.find(F.type);
 				if (it != g_builtinTypes.end())
 				{
+					if (F.countIsMaxSize)
+						rf.count /= it->second.size;
 					off += ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 				}
 				else
@@ -483,6 +495,8 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off,
 				auto it = g_builtinTypes.find(F.type);
 				if (it != g_builtinTypes.end())
 				{
+					if (F.countIsMaxSize)
+						rf.count /= it->second.size;
 					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 				}
 			}
@@ -642,11 +656,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			{
 				auto& F = S.fields[i];
 				char bfr[256];
-				snprintf(bfr, 256, "%s: %s[%s%" PRId64 "]=%s",
+				snprintf(bfr, 256, "%s: %s[%s%" PRId64 "]@%" PRId64 "=%s",
 					F.name.c_str(),
 					F.type.c_str(),
 					F.countIsMaxSize ? "up to " : "",
 					data.rfs[i].count,
+					data.rfs[i].off,
 					data.rfs[i].present ? data.rfs[i].preview.c_str() : "<not present>");
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 				ctx->Text(bfr) + ui::Padding(5);
@@ -751,6 +766,9 @@ void DataDesc::EditStruct(UIContainer* ctx)
 		{
 			auto& S = *it->second;
 			ui::imm::PropEditBool(ctx, "Is serialized?", S.serialized);
+
+			ui::imm::PropEditInt(ctx, "Size", S.size);
+			ui::imm::PropEditString(ctx, "Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
 			ctx->Text("Parameters") + ui::Padding(5);
 			ctx->Push<ui::Panel>();

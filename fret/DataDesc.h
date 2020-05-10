@@ -8,6 +8,8 @@ extern Color4f colorFloat32;
 extern Color4f colorInt16;
 extern Color4f colorInt32;
 extern Color4f colorASCII;
+extern Color4f colorInst;
+extern Color4f colorCurInst;
 
 
 struct IDataSource;
@@ -42,6 +44,8 @@ struct Marker
 	uint64_t stride;
 
 	bool Contains(uint64_t pos) const;
+	unsigned ContainInfo(uint64_t pos) const; // 1 - overlap, 2 - left edge, 4 - right edge
+	uint64_t GetEnd() const;
 	Color4f GetColor() const;
 };
 
@@ -49,8 +53,6 @@ extern ui::DataCategoryTag DCT_Marker[1];
 extern ui::DataCategoryTag DCT_MarkedItems[1];
 struct MarkerData : ui::TableDataSource
 {
-	Color4f GetMarkedColor(uint64_t pos);
-	bool IsMarked(uint64_t pos, uint64_t len);
 	void AddMarker(DataType dt, uint64_t from, uint64_t to);
 
 	void Load(const char* key, NamedTextSerializeReader& r);

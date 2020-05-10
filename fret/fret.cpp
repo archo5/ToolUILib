@@ -14,7 +14,7 @@ struct OpenedFile
 		fileID = r.ReadUInt64("fileID");
 		basePos = r.ReadUInt64("basePos");
 		byteWidth = r.ReadUInt("byteWidth");
-		highlighter.Load("highlighter", r);
+		highlightSettings.Load("highlighter", r);
 		r.EndDict();
 	}
 	void Save(NamedTextSerializeWriter& w)
@@ -23,7 +23,7 @@ struct OpenedFile
 		w.WriteInt("fileID", fileID);
 		w.WriteInt("basePos", basePos);
 		w.WriteInt("byteWidth", byteWidth);
-		highlighter.Save("highlighter", w);
+		highlightSettings.Save("highlighter", w);
 		w.EndDict();
 	}
 
@@ -31,7 +31,7 @@ struct OpenedFile
 	uint64_t fileID = 0;
 	uint64_t basePos = 0;
 	uint32_t byteWidth = 8;
-	Highlighter highlighter;
+	HighlightSettings highlightSettings;
 };
 
 struct Workspace
@@ -72,7 +72,6 @@ struct Workspace
 			auto* F = new OpenedFile;
 			F->Load(r);
 			F->ddFile = desc.FindFileByID(F->fileID);
-			F->highlighter.markerData = &F->ddFile->markerData;
 			openedFiles.push_back(F);
 
 			r.EndEntry();
@@ -165,12 +164,12 @@ struct MainWindow : ui::NativeMainWindow
 							}
 							if (hs->open)
 							{
-								of->highlighter.EditUI(ctx);
+								of->highlightSettings.EditUI(ctx);
 							}
 							ctx->Pop(); // end tree stabilization box
 
 							auto* hv = ctx->Make<HexViewer>();
-							hv->Init(f->dataSource, &of->basePos, &of->byteWidth, &of->highlighter);
+							hv->Init(&workspace.desc, f, &of->basePos, &of->byteWidth, &of->highlightSettings);
 							hv->HandleEvent(UIEventType::Click) = [this, f, ds, hv](UIEvent& e)
 							{
 								if (e.GetButton() == UIMouseButton::Right)
