@@ -296,6 +296,7 @@ public:
 	TabGroup();
 	void OnInit() override;
 	void OnPaint() override;
+	void OnSerialize(IDataSerializer& s) override;
 
 	int active = 0;
 	class TabButton* _activeBtn = nullptr;

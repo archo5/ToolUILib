@@ -176,7 +176,8 @@ struct MainWindow : ui::NativeMainWindow
 								{
 									int64_t pos = hv->hoverByte;
 									auto selMin = std::min(hv->selectionStart, hv->selectionEnd);
-									if (selMin != UINT64_MAX)
+									auto selMax = std::max(hv->selectionStart, hv->selectionEnd);
+									if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
 										pos = selMin;
 
 									char txt_pos[64];
@@ -283,8 +284,74 @@ struct MainWindow : ui::NativeMainWindow
 							};
 							ctx->Pop();
 
+							auto& tg = *ctx->Push<ui::TabGroup>();
+							tg + ui::Layout(style::layouts::EdgeSlice());
+							tg + ui::Height(style::Coord::Percent(100));
+							{
+								ctx->Push<ui::TabList>();
+								ctx->MakeWithText<ui::TabButton>("Markers")->id = 0;
+								ctx->MakeWithText<ui::TabButton>("Structures")->id = 1;
+								ctx->Pop();
+
+								if (tg.active == 0)
+								{
+									auto& tp = *ctx->Push<ui::TabPanel>();
+									tp + ui::Layout(style::layouts::EdgeSlice());
+									tp + ui::Height(style::Coord::Percent(100));
+									tp.id = 0;
+
+									auto& spmkr = *ctx->Push<ui::SplitPane>();
+									{
 							auto& ed = ctx->PushBox();
-#if 1
+
+										ctx->Text("Marked items") + ui::Padding(5);
+										auto* tv = ctx->Make<ui::TableView>();
+										*tv + ui::Layout(style::layouts::EdgeSlice());
+										tv->SetDataSource(&f->markerData);
+										tv->CalculateColumnWidths();
+										// TODO cannot currently apply event handler to `tv` (node) directly from outside
+										ed.HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
+										ed.HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
+										{
+											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+											{
+												size_t pos = tv->selection.GetFirstSelection();
+												if (tv->IsValidRow(pos))
+												{
+													f->markerData.markers.erase(f->markerData.markers.begin() + pos);
+													e.current->RerenderNode();
+												}
+											}
+										};
+
+										ctx->Pop();
+
+										ctx->PushBox();
+										if (tv->selection.AnySelected())
+										{
+											size_t pos = tv->selection.GetFirstSelection();
+											if (tv->IsValidRow(pos))
+												ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
+										}
+										ctx->Pop();
+									}
+									ctx->Pop();
+									spmkr.SetSplits({ 0.6f });
+
+									ctx->Pop();
+								}
+
+								if (tg.active == 1)
+								{
+									auto& tp = *ctx->Push<ui::TabPanel>();
+									tp + ui::Layout(style::layouts::EdgeSlice());
+									tp + ui::Height(style::Coord::Percent(100));
+									tp.id = 1;
+
+									auto& spstr = *ctx->Push<ui::SplitPane>();
+									{
+										auto& ed = ctx->PushBox();
+
 							ctx->Text("Instances") + ui::Padding(5);
 							workspace.ddiSrc.Edit(ctx);
 							auto* tv = ctx->Make<ui::TableView>();
@@ -299,30 +366,38 @@ struct MainWindow : ui::NativeMainWindow
 									workspace.desc.curInst = workspace.ddiSrc._indices[sel];
 								e.current->RerenderNode();
 							};
-#else
-							ctx->Text("Marked items");
-							auto* tv = ctx->Make<ui::TableView>();
-							*tv + ui::Layout(style::layouts::EdgeSlice());
-							tv->SetDataSource(&f->markerData);
-							tv->CalculateColumnWidths();
-							// TODO cannot currently apply event handler to `tv` (node) directly from outside
-							ed.HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
-#endif
-							ctx->Pop();
-
-							ctx->PushBox();
-#if 0
-							if (tv->selection.AnySelected())
+										ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
+										{
+											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
 							{
 								size_t pos = tv->selection.GetFirstSelection();
 								if (tv->IsValidRow(pos))
-									ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
+												{
+													if (pos == workspace.desc.curInst)
+														workspace.desc.curInst = 0;
+													workspace.desc.instances.erase(workspace.desc.instances.begin() + pos);
+													workspace.ddiSrc.refilter = true;
+													e.current->RerenderNode();
 							}
-#endif
+											}
+										};
+
+										ctx->Pop();
+									}
+									{
+										ctx->PushBox();
 							workspace.desc.Edit(ctx);
 							ctx->Pop();
 						}
-						sp->SetSplits({ 0.3f, 0.7f });
+									ctx->Pop();
+									spstr.SetSplits({ 0.6f });
+
+									ctx->Pop();
+								}
+							}
+							ctx->Pop();
+						}
+						sp->SetSplits({ 0.3f });
 						ctx->Pop();
 					}
 					ctx->Pop();

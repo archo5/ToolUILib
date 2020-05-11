@@ -561,7 +561,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 	if (curInst < instances.size())
 	{
 		auto& SI = instances[curInst];
+		bool del = false;
 
+		if (ui::imm::Button(ctx, "Delete"))
+		{
+			del = true;
+		}
 		ui::imm::PropEditString(ctx, "Notes", SI.notes.c_str(), [&SI](const char* s) { SI.notes = s; });
 		ui::imm::PropEditInt(ctx, "Offset", SI.off);
 		if (ui::imm::PropButton(ctx, "Edit struct:", SI.def->name.c_str()))
@@ -678,6 +683,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			}
 			/*auto* tv = ctx->Make<ui::TableView>();
 			tv->SetDataSource(&data); TODO */
+		}
+
+		if (del)
+		{
+			instances.erase(instances.begin() + curInst);
+			curInst = 0;
 		}
 	}
 }

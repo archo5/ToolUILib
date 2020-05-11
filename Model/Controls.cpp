@@ -993,6 +993,11 @@ void TabGroup::OnPaint()
 	}
 }
 
+void TabGroup::OnSerialize(IDataSerializer& s)
+{
+	s << active;
+}
+
 
 TabList::TabList()
 {
@@ -1535,6 +1540,10 @@ void TableView::OnPaint()
 
 void TableView::OnEvent(UIEvent& e)
 {
+	if (e.type == UIEventType::ButtonDown)
+	{
+		e.context->SetKeyboardFocus(this);
+	}
 	if (e.type == UIEventType::MouseMove)
 	{
 		_impl->hoverRow = GetRowAt(e.y);
@@ -1764,7 +1773,10 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 
 void TreeView::OnEvent(UIEvent& e)
 {
-	Node::OnEvent(e);
+	if (e.type == UIEventType::ButtonDown)
+	{
+		e.context->SetKeyboardFocus(this);
+	}
 }
 
 void TreeView::Render(UIContainer* ctx)
