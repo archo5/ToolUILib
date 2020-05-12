@@ -75,7 +75,7 @@ struct UIContainer
 
 	void _BuildUsing(ui::Node* n);
 
-	void _Push(UIObject* obj);
+	void _Push(UIObject* obj, bool isCurNode);
 	void _Destroy(UIObject* obj);
 	void _Pop();
 	void Pop()
@@ -108,7 +108,7 @@ struct UIContainer
 	{
 		auto* obj = _Alloc<T>();
 		DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
-		_Push(obj);
+		_Push(obj, false);
 		return obj;
 	}
 	template<class T> T* _Alloc()

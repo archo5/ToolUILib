@@ -1434,16 +1434,22 @@ void TableView::OnPaint()
 {
 	styleProps->paint_func(this);
 
-	int rhw = 80;
-	int chh = 20;
-	int h = 20;
-
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
 
 	style::PaintInfo info(this);
 
 	auto RC = GetContentRect();
+
+	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
+	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+
+	float rhw = 80 + padRH.x0 + padRH.x1;
+	float rhh = 20 + padRH.y0 + padRH.y1;
+	float chh = 20 + padCH.y0 + padCH.y1;
+	float cellh = 20 + padC.y0 + padC.y1;
+	float h = std::max(rhh, cellh);
 
 	// backgrounds
 	// - row header
@@ -1496,7 +1502,7 @@ void TableView::OnPaint()
 
 	// text
 	// - row header
-	for (int r = 0; r < nr; r++)
+	for (size_t r = 0; r < nr; r++)
 	{
 		UIRect rect =
 		{
@@ -1505,10 +1511,11 @@ void TableView::OnPaint()
 			RC.x0 + rhw,
 			RC.y0 + chh + h * (r + 1),
 		};
+		rect = rect.ShrinkBy(padRH);
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
 	}
 	// - column header
-	for (int c = 0; c < nc; c++)
+	for (size_t c = 0; c < nc; c++)
 	{
 		UIRect rect =
 		{
@@ -1517,12 +1524,13 @@ void TableView::OnPaint()
 			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
+		rect = rect.ShrinkBy(padCH);
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
 	}
 	// - cells
-	for (int r = 0; r < nr; r++)
+	for (size_t r = 0; r < nr; r++)
 	{
-		for (int c = 0; c < nc; c++)
+		for (size_t c = 0; c < nc; c++)
 		{
 			UIRect rect =
 			{
@@ -1531,6 +1539,7 @@ void TableView::OnPaint()
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh + h * (r + 1),
 			};
+			rect = rect.ShrinkBy(padC);
 			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(r, c).c_str(), 1, 1, 1);
 		}
 	}
@@ -1611,12 +1620,16 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	std::vector<float> colWidths;
 	colWidths.resize(nc, 0.0f);
 
+	auto RC = GetContentRect();
+	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
+	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+
 	if (includeHeader)
 	{
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetColName(c);
-			float w = GetTextWidth(text.c_str());
+			float w = GetTextWidth(text.c_str()) + padCH.x0 + padCH.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
@@ -1627,7 +1640,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetText(i, c);
-			float w = GetTextWidth(text.c_str());
+			float w = GetTextWidth(text.c_str()) + padC.x0 + padC.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
@@ -1644,12 +1657,28 @@ bool TableView::IsValidRow(uintptr_t pos)
 
 size_t TableView::GetRowAt(float y)
 {
-	y -= finalRectC.y0;
-	y -= 20; // col header height
-	y = floor(y / 20);
+	auto RC = GetContentRect();
+
+	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
+	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+
+	float rhh = 20 + padRH.y0 + padRH.y1;
+	float chh = 20 + padCH.y0 + padCH.y1;
+	float cellh = 20 + padC.y0 + padC.y1;
+	float h = std::max(rhh, cellh);
+
+	y -= RC.y0;
+	y -= chh;
+	y = floor(y / h);
 	size_t row = y;
 	size_t numRows = _impl->dataSource->GetNumRows();
 	return row < numRows ? row : SIZE_MAX;
+}
+
+size_t TableView::GetHoverRow() const
+{
+	return _impl->hoverRow;
 }
 
 

@@ -265,10 +265,23 @@ struct BuiltinTypeInfo
 	void(*append_to_str)(const void* src, std::string& out);
 };
 
+static void AddChar(std::string& out, char c)
+{
+	if (c >= 0x20 && c < 0x7f)
+		out.push_back(c);
+	else
+	{
+		out.push_back('\\');
+		out.push_back('x');
+		out.push_back("0123456789abcdef"[c >> 4]);
+		out.push_back("0123456789abcdef"[c & 15]);
+	}
+}
+
 static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 {
 	{ "pad", { 1, false, [](const void* src) -> int64_t { return 0; }, [](const void* src, std::string& out) {} } },
-	{ "char", { 1, false, [](const void* src) -> int64_t { return *(const char*)src; }, [](const void* src, std::string& out) { out.push_back(*(const char*)src); } } },
+	{ "char", { 1, false, [](const void* src) -> int64_t { return *(const char*)src; }, [](const void* src, std::string& out) { AddChar(out, *(const char*)src); } } },
 	{ "i8", { 1, true, [](const void* src) -> int64_t { return *(const int8_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId8, *(const int8_t*)src); out += bfr; } } },
 	{ "u8", { 1, true, [](const void* src) -> int64_t { return *(const uint8_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu8, *(const uint8_t*)src); out += bfr; } } },
 	{ "i16", { 2, true, [](const void* src) -> int64_t { return *(const int16_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRId16, *(const int16_t*)src); out += bfr; } } },
@@ -333,6 +346,9 @@ static int64_t GetFieldCount(const DataDesc::StructInst& SI, const DataDesc::Fie
 {
 	if (F.countSrc.empty())
 		return F.count;
+
+	if (F.countSrc == ":file-size")
+		return SI.file->dataSource->GetSize() + F.count;
 
 	// search previous fields
 	int at = 0;
@@ -519,17 +535,6 @@ static bool advancedAccess = false;
 void DataDesc::Edit(UIContainer* ctx)
 {
 	ctx->Push<ui::Panel>();
-
-	ui::Property::Begin(ctx);
-	if (ui::imm::Button(ctx, "Expand all instances"))
-	{
-		ExpandAllInstances();
-	}
-	if (ui::imm::Button(ctx, "Delete auto-created"))
-	{
-		instances.erase(std::remove_if(instances.begin(), instances.end(), [](const StructInst& SI) { return !SI.userCreated; }), instances.end());
-	}
-	ui::Property::End(ctx);
 
 	ui::imm::PropEditBool(ctx, "Advanced access", advancedAccess);
 	ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
@@ -987,11 +992,13 @@ size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<Rea
 	return newInst;
 }
 
-void DataDesc::ExpandAllInstances()
+void DataDesc::ExpandAllInstances(File* filterFile)
 {
 	std::vector<ReadField> rfs;
 	for (size_t i = 0; i < instances.size(); i++)
 	{
+		if (filterFile && instances[i].file != filterFile)
+			continue;
 		auto SI = instances[i];
 		auto& S = *SI.def;
 		rfs.clear();
@@ -1009,6 +1016,20 @@ void DataDesc::ExpandAllInstances()
 			if (rfs[j].present && structs.count(S.fields[j].type))
 				CreateFieldInstance(SI, rfs, j);
 	}
+}
+
+void DataDesc::DeleteAllInstances(File* filterFile, Struct* filterStruct)
+{
+	instances.erase(std::remove_if(instances.begin(), instances.end(), [filterFile, filterStruct](const DataDesc::StructInst& SI)
+	{
+		if (SI.userCreated)
+			return false;
+		if (filterFile && SI.file != filterFile)
+			return false;
+		if (filterStruct && SI.def != filterStruct)
+			return false;
+		return true;
+	}), instances.end());
 }
 
 DataDesc::~DataDesc()
@@ -1351,7 +1372,12 @@ size_t DataDescInstanceSource::GetNumRows()
 
 size_t DataDescInstanceSource::GetNumCols()
 {
-	return filterStruct ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
+	size_t ncols = filterStruct ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
+	if (filterFile)
+		ncols--;
+	if (filterStruct)
+		ncols--;
+	return ncols;
 }
 
 std::string DataDescInstanceSource::GetRowName(size_t row)
@@ -1361,6 +1387,10 @@ std::string DataDescInstanceSource::GetRowName(size_t row)
 
 std::string DataDescInstanceSource::GetColName(size_t col)
 {
+	if (filterFile && col >= DDI_COL_File)
+		col++;
+	if (filterStruct && col >= DDI_COL_Struct)
+		col++;
 	switch (col)
 	{
 	case DDI_COL_ID: return "ID";
@@ -1374,6 +1404,10 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 
 std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 {
+	if (filterFile && col >= DDI_COL_File)
+		col++;
+	if (filterStruct && col >= DDI_COL_Struct)
+		col++;
 	switch (col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);

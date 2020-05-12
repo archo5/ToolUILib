@@ -68,6 +68,12 @@ bool UIEvent::GetUTF8Text(char out[5]) const
 }
 
 
+UIEventSystem::UIEventSystem()
+{
+	for (auto& val : clickLastTimes)
+		val = ui::platform::GetTimeMs();
+}
+
 void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt)
 {
 	UIObject* obj = e.target;
@@ -369,9 +375,16 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 
 		if (clickObj[id] == hoverObj)
 		{
+			uint32_t t = ui::platform::GetTimeMs();
+			unsigned clickCount = (t - clickLastTimes[id] < ui::platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
+			clickLastTimes[id] = t;
+			clickCounts[id] = clickCount;
+
 			ev.type = UIEventType::Click;
+			ev.numRepeats = clickCount;
 			ev.handled = false;
 			BubblingEvent(ev);
+			ev.numRepeats = 0;
 			if (which == UIMouseButton::Left)
 			{
 				ev.type = UIEventType::Activate;

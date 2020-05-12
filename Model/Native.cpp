@@ -199,6 +199,21 @@ BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
 namespace ui {
 
 
+namespace platform {
+
+uint32_t GetTimeMs()
+{
+	return ::GetTickCount();
+}
+
+uint32_t GetDoubleClickTime()
+{
+	return ::GetDoubleClickTime();
+}
+
+} // platform
+
+
 DataCategoryTag DCT_ResizeWindow[1];
 
 

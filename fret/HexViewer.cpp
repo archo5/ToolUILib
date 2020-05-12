@@ -105,16 +105,18 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* fil
 
 	for (auto& SI : desc->instances)
 	{
+		if (SI.file != file)
+			continue;
 		if (SI.off >= int64_t(basePos) && SI.off < int64_t(basePos + numBytes))
 		{
 			outColors[SI.off - basePos].leftBracketColor.BlendOver(&SI == &desc->instances[desc->curInst] ? colorCurInst : colorInst);
 		}
 	}
 
-	// ayto highlights
+	// auto highlights
 	if (hs->enableFloat32 || hs->enableInt32)
 	{
-		for (size_t i = 0; i < numBytes - 4; i++)
+		for (size_t i = 0; i + 4 < numBytes; i++)
 		{
 			if (outColors[i].hexColor.a ||
 				outColors[i + 1].hexColor.a ||
@@ -150,7 +152,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* fil
 
 	if (hs->enableInt16)
 	{
-		for (size_t i = 0; i < numBytes - 2; i++)
+		for (size_t i = 0; i + 2 < numBytes; i++)
 		{
 			if (outColors[i].hexColor.a ||
 				outColors[i + 1].hexColor.a)
@@ -174,7 +176,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* fil
 		bool prev = false;
 		for (size_t i = 0; i < numBytes; i++)
 		{
-			bool cur = IsASCII(bytes[i]);
+			bool cur = outColors[i].asciiColor.a == 0 && IsASCII(bytes[i]);
 			if (cur && !prev)
 				start = i;
 			else if (prev && !cur && i - start >= hs->minASCIIChars)

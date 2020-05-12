@@ -100,7 +100,7 @@ void UIContainer::ProcessNodeRenderStack()
 		ui::Node* currentNode = static_cast<ui::Node*>(nodeRenderStack.Pop());
 
 		objectStackSize = 0;
-		_Push(currentNode);
+		_Push(currentNode, true);
 
 		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
 		_curNode = currentNode;
@@ -130,12 +130,11 @@ void UIContainer::_BuildUsing(ui::Node* n)
 	ProcessNodeRenderStack();
 }
 
-void UIContainer::_Push(UIObject* obj)
+void UIContainer::_Push(UIObject* obj, bool isCurNode)
 {
 	objectStack[objectStackSize] = obj;
 	objChildStack[objectStackSize] = obj->firstChild;
-	// TODO consider how to make it possible to apply handlers from outside after creating nodes
-	obj->ClearEventHandlers();
+	obj->ClearEventHandlers(isCurNode);
 	objectStackSize++;
 }
 

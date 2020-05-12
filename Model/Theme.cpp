@@ -404,7 +404,7 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtTableCell);
 		PreventHeapDelete(a);
-		a.SetPadding(1);
+		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;
@@ -435,7 +435,7 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtTableRowHeader);
 		PreventHeapDelete(a);
-		a.SetPadding(1);
+		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;
@@ -456,7 +456,7 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtTableColHeader);
 		PreventHeapDelete(a);
-		a.SetPadding(1);
+		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			GL::BatchRenderer br;

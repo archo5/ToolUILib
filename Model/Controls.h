@@ -420,6 +420,7 @@ public:
 
 	bool IsValidRow(uintptr_t pos);
 	size_t GetRowAt(float y);
+	size_t GetHoverRow() const;
 
 	style::BlockRef cellStyle;
 	style::BlockRef rowHeaderStyle;

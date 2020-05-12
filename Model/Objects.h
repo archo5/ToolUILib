@@ -179,7 +179,7 @@ struct UIObject
 
 	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
 	ui::EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
-	void ClearEventHandlers();
+	void ClearEventHandlers(bool localOnly = false);
 
 	virtual void OnPaint();
 	void Paint();

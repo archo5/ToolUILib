@@ -61,7 +61,10 @@ struct Workspace
 		desc.Load("desc", r);
 		for (auto* F : desc.files)
 		{
-			F->dataSource = new FileDataSource(("FRET_Plugins/" + F->name).c_str());
+			std::string path = F->name;
+			if (path.size() < 2 || path[1] != ':')
+				path = "FRET_Plugins/" + path;
+			F->dataSource = new FileDataSource(path.c_str());
 		}
 
 		r.BeginArray("openedFiles");
@@ -100,12 +103,15 @@ struct Workspace
 	DataDescInstanceSource ddiSrc;
 };
 
+#define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
+
 struct MainWindow : ui::NativeMainWindow
 {
 	MainWindow()
 	{
+		SetTitle("Binary Data Analysis Tool");
 		SetSize(1200, 800);
-		FileDataSource fds("FRET_Plugins/wav.bdaw");
+		FileDataSource fds(CUR_WORKSPACE);
 		std::string wsdata;
 		wsdata.resize(fds.GetSize());
 		fds.Read(0, fds.GetSize(), &wsdata[0]);
@@ -117,15 +123,29 @@ struct MainWindow : ui::NativeMainWindow
 	}
 	void OnRender(UIContainer* ctx) override
 	{
-		auto s = ctx->Push<ui::TabGroup>()->GetStyle();
-		s.SetLayout(style::layouts::EdgeSlice());
-		s.SetHeight(style::Coord::Percent(100));
+		ctx->Push<ui::MenuBarElement>();
+		ctx->Push<ui::MenuItemElement>()->SetText("Save").Func([&]()
+		{
+			NamedTextSerializeWriter ntsw;
+			workspace.Save(ntsw);
+			for (FILE* f = fopen(CUR_WORKSPACE, "w");
+				fwrite(ntsw.data.data(), ntsw.data.size(), 1, f),
+				fclose(f),
+				false;);
+		});
+		ctx->Pop();
+		ctx->Pop();
+
+		auto& fileTG = *ctx->Push<ui::TabGroup>();
+		fileTG + ui::Layout(style::layouts::EdgeSlice());
+		fileTG + ui::Height(style::Coord::Percent(100));
 		{
 			ctx->Push<ui::TabList>();
 			{
+				int nf = 0;
 				for (auto* f : workspace.openedFiles)
 				{
-					ctx->Push<ui::TabButton>();
+					ctx->Push<ui::TabButton>()->id = nf++;
 					ctx->Text(f->ddFile->name);
 					ctx->MakeWithText<ui::Button>("X");
 					ctx->Pop();
@@ -133,12 +153,16 @@ struct MainWindow : ui::NativeMainWindow
 			}
 			ctx->Pop();
 
+			int nf = 0;
 			for (auto* of : workspace.openedFiles)
 			{
+				if (fileTG.active != nf++)
+					continue;
 				DataDesc::File* f = of->ddFile;
 				IDataSource* ds = f->dataSource;
 
 				auto* p = ctx->Push<ui::TabPanel>();
+				p->id = nf - 1;
 				{
 					auto s = p->GetStyle();
 					s.SetLayout(style::layouts::EdgeSlice());
@@ -302,7 +326,7 @@ struct MainWindow : ui::NativeMainWindow
 
 									auto& spmkr = *ctx->Push<ui::SplitPane>();
 									{
-							auto& ed = ctx->PushBox();
+										auto& ed = ctx->PushBox();
 
 										ctx->Text("Marked items") + ui::Padding(5);
 										auto* tv = ctx->Make<ui::TableView>();
@@ -352,33 +376,72 @@ struct MainWindow : ui::NativeMainWindow
 									{
 										auto& ed = ctx->PushBox();
 
-							ctx->Text("Instances") + ui::Padding(5);
-							workspace.ddiSrc.Edit(ctx);
-							auto* tv = ctx->Make<ui::TableView>();
-							*tv + ui::Layout(style::layouts::EdgeSlice());
-							tv->SetDataSource(&workspace.ddiSrc);
-							workspace.ddiSrc.refilter = true;
-							tv->CalculateColumnWidths();
-							ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
-							{
-								auto sel = tv->selection.GetFirstSelection();
-								if (tv->IsValidRow(sel))
-									workspace.desc.curInst = workspace.ddiSrc._indices[sel];
-								e.current->RerenderNode();
-							};
+										workspace.ddiSrc.Edit(ctx);
+
+										ui::Property::Begin(ctx);
+										ctx->Text("Instances") + ui::Padding(5);
+										if (ui::imm::Button(ctx, "Expand all instances"))
+										{
+											workspace.desc.ExpandAllInstances(workspace.ddiSrc.filterFile);
+										}
+										if (ui::imm::Button(ctx, "Delete auto-created"))
+										{
+											workspace.desc.DeleteAllInstances(workspace.ddiSrc.filterFile, workspace.ddiSrc.filterStruct);
+										}
+										ui::Property::End(ctx);
+
+										auto* tv = ctx->Make<ui::TableView>();
+										*tv + ui::Layout(style::layouts::EdgeSlice());
+										tv->SetDataSource(&workspace.ddiSrc);
+										workspace.ddiSrc.refilter = true;
+										tv->CalculateColumnWidths();
+										ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
+										{
+											auto sel = tv->selection.GetFirstSelection();
+											if (tv->IsValidRow(sel))
+												workspace.desc.curInst = workspace.ddiSrc._indices[sel];
+											e.current->RerenderNode();
+										};
+										tv->HandleEvent(tv, UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
+										{
+											size_t row = tv->GetHoverRow();
+											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
+											{
+												auto idx = workspace.ddiSrc._indices[row];
+												auto& SI = workspace.desc.instances[idx];
+												// find tab showing this SI
+												OpenedFile* ofile = nullptr;
+												int ofid = -1;
+												for (auto* of : workspace.openedFiles)
+												{
+													ofid++;
+													if (of->ddFile != SI.file)
+														continue;
+													ofile = of;
+													break;
+												}
+												// TODO open a new tab if not opened already
+												if (ofile)
+												{
+													fileTG.active = ofid;
+													ofile->basePos = SI.off;
+													fileTG.RerenderNode();
+												}
+											}
+										};
 										ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
 										{
 											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
-							{
-								size_t pos = tv->selection.GetFirstSelection();
-								if (tv->IsValidRow(pos))
+											{
+												size_t pos = tv->selection.GetFirstSelection();
+												if (tv->IsValidRow(pos))
 												{
 													if (pos == workspace.desc.curInst)
 														workspace.desc.curInst = 0;
 													workspace.desc.instances.erase(workspace.desc.instances.begin() + pos);
 													workspace.ddiSrc.refilter = true;
 													e.current->RerenderNode();
-							}
+												}
 											}
 										};
 
@@ -386,9 +449,9 @@ struct MainWindow : ui::NativeMainWindow
 									}
 									{
 										ctx->PushBox();
-							workspace.desc.Edit(ctx);
-							ctx->Pop();
-						}
+										workspace.desc.Edit(ctx);
+										ctx->Pop();
+									}
 									ctx->Pop();
 									spstr.SetSplits({ 0.6f });
 

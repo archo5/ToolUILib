@@ -179,7 +179,8 @@ struct DataDesc
 	size_t AddInst(const StructInst& src);
 	size_t CreateNextInstance(const StructInst& SI, int64_t structSize);
 	size_t CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
-	void ExpandAllInstances();
+	void ExpandAllInstances(File* filterFile = nullptr);
+	void DeleteAllInstances(File* filterFile = nullptr, Struct* filterStruct = nullptr);
 
 	~DataDesc();
 	void Clear();

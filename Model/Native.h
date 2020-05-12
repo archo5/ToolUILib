@@ -15,6 +15,12 @@ namespace ui {
 class Menu;
 
 
+namespace platform {
+uint32_t GetTimeMs();
+uint32_t GetDoubleClickTime();
+} // platform
+
+
 extern DataCategoryTag DCT_ResizeWindow[1];
 
 

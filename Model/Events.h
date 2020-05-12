@@ -148,6 +148,7 @@ struct UITimerData
 
 struct UIEventSystem
 {
+	UIEventSystem();
 	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr);
 
 	void RecomputeLayout();
@@ -178,7 +179,9 @@ struct UIEventSystem
 
 	UIObject* hoverObj = nullptr;
 	UIObject* dragHoverObj = nullptr;
-	UIObject* clickObj[5] = { nullptr };
+	UIObject* clickObj[5] = {};
+	unsigned clickCounts[5] = {};
+	uint32_t clickLastTimes[5] = {};
 	UIObject* focusObj = nullptr;
 	std::vector<UITimerData> pendingTimers;
 	float width = 100;

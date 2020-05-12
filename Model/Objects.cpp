@@ -14,6 +14,7 @@ struct EventHandlerEntry
 	EventHandlerEntry* next;
 	UIObject* target;
 	UIEventType type;
+	bool isLocal;
 	EventFunc func;
 };
 } // ui
@@ -50,7 +51,8 @@ void UIObject::_DoEvent(UIEvent& e)
 			continue;
 		n->func(e);
 	}
-	OnEvent(e);
+	if (!e.handled)
+		OnEvent(e);
 }
 
 ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
@@ -63,12 +65,32 @@ ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
 	eh->next = nullptr;
 	eh->target = target;
 	eh->type = type;
+	eh->isLocal = system->container._curNode == this;
 	_lastEH = eh;
 	return eh->func;
 }
 
-void UIObject::ClearEventHandlers()
+void UIObject::ClearEventHandlers(bool localOnly)
 {
+	if (localOnly)
+	{
+		auto** eh = &_firstEH;
+		while (*eh)
+		{
+			auto* n = (*eh)->next;
+			if ((*eh)->isLocal)
+			{
+				delete *eh;
+				*eh = n;
+			}
+			else
+				eh = &(*eh)->next;
+		}
+		if (_firstEH == nullptr)
+			_lastEH = nullptr;
+		return;
+	}
+
 	while (_firstEH)
 	{
 		auto* n = _firstEH->next;
