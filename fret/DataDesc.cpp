@@ -532,7 +532,7 @@ static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 }
 
 static bool advancedAccess = false;
-void DataDesc::Edit(UIContainer* ctx)
+void DataDesc::EditStructuralItems(UIContainer* ctx)
 {
 	ctx->Push<ui::Panel>();
 
@@ -939,6 +939,35 @@ void DataDesc::EditField(UIContainer* ctx)
 	}
 }
 
+void DataDesc::EditImageItems(UIContainer* ctx)
+{
+	if (curImage < images.size())
+	{
+		ctx->Push<ui::Panel>();
+
+		auto& I = images[curImage];
+		bool del = false;
+
+		if (ui::imm::Button(ctx, "Delete"))
+		{
+			del = true;
+		}
+		ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+		ui::imm::PropEditInt(ctx, "Image offset", I.offImage);
+		ui::imm::PropEditInt(ctx, "Palette offset", I.offPalette);
+		ui::imm::PropEditInt(ctx, "Width", I.width);
+		ui::imm::PropEditInt(ctx, "Height", I.height);
+
+		if (del)
+		{
+			images.erase(images.begin() + curImage);
+			curImage = 0;
+		}
+
+		ctx->Pop();
+	}
+}
+
 size_t DataDesc::AddInst(const StructInst& src)
 {
 	printf("trying to create %s @ %" PRId64 "\n", src.def->name.c_str(), src.off);
@@ -1049,6 +1078,8 @@ void DataDesc::Clear()
 	structs.clear();
 
 	instances.clear();
+
+	images.clear();
 }
 
 DataDesc::File* DataDesc::CreateNewFile()
@@ -1231,6 +1262,33 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 	}
 	r.EndArray();
 
+	r.BeginArray("images");
+	for (auto E : r.GetCurrentRange())
+	{
+		r.BeginEntry(E);
+		r.BeginDict("");
+
+		Image I;
+		I.file = FindFileByID(r.ReadUInt64("file"));
+		I.offImage = r.ReadInt64("offImage");
+		I.offPalette = r.ReadInt64("offPalette");
+		I.width = r.ReadUInt("width");
+		I.height = r.ReadUInt("height");
+		I.format = r.ReadString("format");
+		I.notes = r.ReadString("notes");
+		I.userCreated = r.ReadBool("userCreated");
+		images.push_back(I);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	editMode = r.ReadInt("editMode");
+	curInst = r.ReadUInt("curInst");
+	curImage = r.ReadUInt("curImage");
+	curField = r.ReadUInt("curField");
+
 	r.EndDict();
 }
 
@@ -1344,8 +1402,27 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	}
 	w.EndArray();
 
+	w.BeginArray("images");
+	for (const Image& I : images)
+	{
+		w.BeginDict("");
+
+		w.WriteInt("file", I.file->id);
+		w.WriteInt("offImage", I.offImage);
+		w.WriteInt("offPalette", I.offPalette);
+		w.WriteInt("width", I.width);
+		w.WriteInt("height", I.height);
+		w.WriteString("format", I.format);
+		w.WriteString("notes", I.notes);
+		w.WriteBool("userCreated", I.userCreated);
+
+		w.EndDict();
+	}
+	w.EndArray();
+
 	w.WriteInt("editMode", editMode);
 	w.WriteInt("curInst", curInst);
+	w.WriteInt("curImage", curImage);
 	w.WriteInt("curField", curField);
 
 	w.EndDict();
@@ -1466,6 +1543,112 @@ void DataDescInstanceSource::_Refilter()
 		auto& I = dataDesc->instances[i];
 		if (filterStruct && filterStruct != I.def)
 			continue;
+		if (filterFile && filterFile != I.file)
+			continue;
+		if (filterUserCreated && !I.userCreated)
+			continue;
+		_indices.push_back(i);
+	}
+
+	refilter = false;
+}
+
+
+enum COLS_DDIMG
+{
+	DDIMG_COL_ID,
+	DDIMG_COL_User,
+	DDIMG_COL_File,
+	DDIMG_COL_ImgOff,
+	DDIMG_COL_PalOff,
+	DDIMG_COL_Format,
+	DDIMG_COL_Width,
+	DDIMG_COL_Height,
+
+	DDIMG_COL_HEADER_SIZE,
+};
+
+size_t DataDescImageSource::GetNumRows()
+{
+	_Refilter();
+	return _indices.size();
+}
+
+size_t DataDescImageSource::GetNumCols()
+{
+	size_t ncols = DDIMG_COL_HEADER_SIZE;
+	if (filterFile)
+		ncols--;
+	return ncols;
+}
+
+std::string DataDescImageSource::GetRowName(size_t row)
+{
+	return std::to_string(row);
+}
+
+std::string DataDescImageSource::GetColName(size_t col)
+{
+	if (filterFile && col >= DDIMG_COL_File)
+		col++;
+	switch (col)
+	{
+	case DDIMG_COL_ID: return "ID";
+	case DDIMG_COL_User: return "User";
+	case DDIMG_COL_File: return "File";
+	case DDIMG_COL_ImgOff: return "Image Offset";
+	case DDIMG_COL_PalOff: return "Palette Offset";
+	case DDIMG_COL_Format: return "Format";
+	case DDIMG_COL_Width: return "Width";
+	case DDIMG_COL_Height: return "Height";
+	default: return "???";
+	}
+}
+
+std::string DataDescImageSource::GetText(size_t row, size_t col)
+{
+	if (filterFile && col >= DDIMG_COL_File)
+		col++;
+	switch (col)
+	{
+	case DDIMG_COL_ID: return std::to_string(_indices[row]);
+	case DDIMG_COL_User: return dataDesc->images[_indices[row]].userCreated ? "+" : "";
+	case DDIMG_COL_File: return dataDesc->images[_indices[row]].file->name;
+	case DDIMG_COL_ImgOff: return std::to_string(dataDesc->images[_indices[row]].offImage);
+	case DDIMG_COL_PalOff: return std::to_string(dataDesc->images[_indices[row]].offPalette);
+	case DDIMG_COL_Format: return dataDesc->images[_indices[row]].format;
+	case DDIMG_COL_Width: return std::to_string(dataDesc->images[_indices[row]].width);
+	case DDIMG_COL_Height: return std::to_string(dataDesc->images[_indices[row]].height);
+	default: return "???";
+	}
+}
+
+void DataDescImageSource::Edit(UIContainer* ctx)
+{
+	if (ui::imm::PropButton(ctx, "Filter by file", filterFile ? filterFile->name.c_str() : "<none>"))
+	{
+		std::vector<ui::MenuItem> items;
+		items.push_back(ui::MenuItem("<none>").Func([this]() { filterFile = nullptr; refilter = true; }));
+		for (auto* F : dataDesc->files)
+		{
+			items.push_back(ui::MenuItem(F->name).Func([this, F]() { filterFile = F; refilter = true; }));
+		}
+		ui::Menu(items).Show(ctx->GetCurrentNode());
+	}
+	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
+		refilter = true;
+}
+
+void DataDescImageSource::_Refilter()
+{
+	if (!refilter)
+		return;
+
+	_indices.clear();
+	_indices.reserve(dataDesc->images.size());
+	for (size_t i = 0; i < dataDesc->images.size(); i++)
+	{
+		auto& I = dataDesc->images[i];
 		if (filterFile && filterFile != I.file)
 			continue;
 		if (filterUserCreated && !I.userCreated)

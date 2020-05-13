@@ -4,6 +4,7 @@
 #include "FileStructureViewer.h"
 #include "DataDesc.h"
 #include "HexViewer.h"
+#include "ImageParsers.h"
 
 
 struct OpenedFile
@@ -39,6 +40,7 @@ struct Workspace
 	Workspace()
 	{
 		ddiSrc.dataDesc = &desc;
+		ddimgSrc.dataDesc = &desc;
 	}
 	~Workspace()
 	{
@@ -97,10 +99,35 @@ struct Workspace
 
 		w.EndDict();
 	}
+	ui::Image* GetImage(const DataDesc::Image& imgDesc)
+	{
+		if (curImg)
+		{
+			if (imgDesc.file == curImgDesc.file &&
+				imgDesc.offImage == curImgDesc.offImage &&
+				imgDesc.offPalette == curImgDesc.offPalette &&
+				imgDesc.format == curImgDesc.format &&
+				imgDesc.width == curImgDesc.width &&
+				imgDesc.height == curImgDesc.height)
+			{
+				return curImg;
+			}
+		}
+
+		delete curImg;
+		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height);
+		curImgDesc = imgDesc;
+		return curImg;
+	}
 
 	std::vector<OpenedFile*> openedFiles;
 	DataDesc desc;
 	DataDescInstanceSource ddiSrc;
+	DataDescImageSource ddimgSrc;
+
+	// runtime cache
+	ui::Image* curImg = nullptr;
+	DataDesc::Image curImgDesc;
 };
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
@@ -284,10 +311,28 @@ struct MainWindow : ui::NativeMainWindow
 										};
 										structs.push_back(ui::MenuItem(s.first).Func(fn));
 									}
+
+									std::vector<ui::MenuItem> images;
+									auto createImageOpt = [this, f, hv, pos]()
+									{
+										DataDesc::Image img;
+										img.userCreated = true;
+										img.width = 4;
+										img.height = 4;
+										img.offImage = pos;
+										img.format = "RGBX8";
+										img.file = f;
+										workspace.desc.curImage = workspace.desc.images.size();
+										workspace.desc.images.push_back(img);
+									};
+									//images.push_back(ui::MenuItem("category?", {}, true));
+									images.push_back(ui::MenuItem("RGBX8").Func(createImageOpt));
+
 									ui::MenuItem items[] =
 									{
 										ui::MenuItem(txt_pos, {}, true),
 										ui::MenuItem::Submenu("Place struct", structs),
+										ui::MenuItem::Submenu("Place image", images),
 										ui::MenuItem::Separator(),
 										ui::MenuItem("Mark ASCII", txt_ascii).Func([f, pos]() { f->markerData.AddMarker(DT_CHAR, pos, pos + 1); }),
 										ui::MenuItem("Mark int8", txt_int8).Func([f, pos]() { f->markerData.AddMarker(DT_I8, pos, pos + 1); }),
@@ -315,6 +360,7 @@ struct MainWindow : ui::NativeMainWindow
 								ctx->Push<ui::TabList>();
 								ctx->MakeWithText<ui::TabButton>("Markers")->id = 0;
 								ctx->MakeWithText<ui::TabButton>("Structures")->id = 1;
+								ctx->MakeWithText<ui::TabButton>("Images")->id = 2;
 								ctx->Pop();
 
 								if (tg.active == 0)
@@ -449,11 +495,102 @@ struct MainWindow : ui::NativeMainWindow
 									}
 									{
 										ctx->PushBox();
-										workspace.desc.Edit(ctx);
+										workspace.desc.EditStructuralItems(ctx);
 										ctx->Pop();
 									}
 									ctx->Pop();
 									spstr.SetSplits({ 0.6f });
+
+									ctx->Pop();
+								}
+
+								if (tg.active == 2)
+								{
+									auto& tp = *ctx->Push<ui::TabPanel>();
+									tp + ui::Layout(style::layouts::EdgeSlice());
+									tp + ui::Height(style::Coord::Percent(100));
+									tp.id = 2;
+
+									auto& spstr = *ctx->Push<ui::SplitPane>();
+									{
+										auto& ed = ctx->PushBox();
+
+										workspace.ddimgSrc.Edit(ctx);
+
+										auto* tv = ctx->Make<ui::TableView>();
+										*tv + ui::Layout(style::layouts::EdgeSlice());
+										tv->SetDataSource(&workspace.ddimgSrc);
+										workspace.ddimgSrc.refilter = true;
+										tv->CalculateColumnWidths();
+										ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
+										{
+											auto sel = tv->selection.GetFirstSelection();
+											if (tv->IsValidRow(sel))
+												workspace.desc.curInst = workspace.ddimgSrc._indices[sel];
+											e.current->RerenderNode();
+										};
+										tv->HandleEvent(tv, UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
+										{
+											size_t row = tv->GetHoverRow();
+											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
+											{
+												auto idx = workspace.ddimgSrc._indices[row];
+												auto& SI = workspace.desc.images[idx];
+												// find tab showing this SI
+												OpenedFile* ofile = nullptr;
+												int ofid = -1;
+												for (auto* of : workspace.openedFiles)
+												{
+													ofid++;
+													if (of->ddFile != SI.file)
+														continue;
+													ofile = of;
+													break;
+												}
+												// TODO open a new tab if not opened already
+												if (ofile)
+												{
+													fileTG.active = ofid;
+													ofile->basePos = SI.offImage;
+													fileTG.RerenderNode();
+												}
+											}
+										};
+										ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
+										{
+											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+											{
+												size_t pos = tv->selection.GetFirstSelection();
+												if (tv->IsValidRow(pos))
+												{
+													if (pos == workspace.desc.curInst)
+														workspace.desc.curInst = 0;
+													workspace.desc.images.erase(workspace.desc.images.begin() + pos);
+													workspace.ddimgSrc.refilter = true;
+													e.current->RerenderNode();
+												}
+											}
+										};
+
+										ctx->Pop();
+									}
+									{
+										ctx->PushBox();
+										if (workspace.desc.curImage < workspace.desc.images.size())
+										{
+											ctx->Push<ui::Panel>();
+											auto* img = ctx->Make<ui::ImageElement>();
+											*img + ui::Width(style::Coord::Percent(100));
+											*img + ui::Height(200);
+											img->SetImage(workspace.GetImage(workspace.desc.images[workspace.desc.curImage]));
+											img->SetScaleMode(ui::ScaleMode::Fit);
+											ctx->Pop();
+										}
+										workspace.desc.EditImageItems(ctx);
+										ctx->Pop();
+									}
+									ctx->Pop();
+									spstr.SetSplits({ 0.5f });
 
 									ctx->Pop();
 								}

@@ -16,6 +16,7 @@
     <ClCompile Include="FileStructureViewer.cpp" />
     <ClCompile Include="HexViewer.cpp" />
     <ClCompile Include="FileReaders.cpp" />
+    <ClCompile Include="ImageParsers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -26,6 +27,7 @@
     <ClInclude Include="HexViewer.h" />
     <ClInclude Include="DataDesc.h" />
     <ClInclude Include="FileStructureViewer.h" />
+    <ClInclude Include="ImageParsers.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">

@@ -145,11 +145,23 @@ struct DataDesc
 		int64_t remainingCount = 1;
 		std::vector<Arg> args;
 	};
+	struct Image
+	{
+		File* file = nullptr;
+		int64_t offImage = 0;
+		int64_t offPalette = 0;
+		uint32_t width = 0;
+		uint32_t height = 0;
+		std::string format;
+		std::string notes;
+		bool userCreated = true;
+	};
 
 	// data
 	std::vector<File*> files;
 	std::unordered_map<std::string, Struct*> structs;
 	std::vector<StructInst> instances;
+	std::vector<Image> images;
 
 	// ID allocation
 	uint64_t fileIDAlloc = 0;
@@ -157,6 +169,7 @@ struct DataDesc
 	// ui state
 	int editMode = 0;
 	uint32_t curInst = 0;
+	uint32_t curImage = 0;
 	uint32_t curField = 0;
 
 	uint64_t GetFixedFieldSize(const Field& field);
@@ -171,10 +184,12 @@ struct DataDesc
 	};
 	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out);
 
-	void Edit(UIContainer* ctx);
+	void EditStructuralItems(UIContainer* ctx);
 	void EditInstance(UIContainer* ctx);
 	void EditStruct(UIContainer* ctx);
 	void EditField(UIContainer* ctx);
+
+	void EditImageItems(UIContainer* ctx);
 
 	size_t AddInst(const StructInst& src);
 	size_t CreateNextInstance(const StructInst& SI, int64_t structSize);
@@ -211,6 +226,26 @@ struct DataDescInstanceSource : ui::TableDataSource
 
 	DataDesc* dataDesc = nullptr;
 	DataDesc::Struct* filterStruct = nullptr;
+	DataDesc::File* filterFile = nullptr;
+	bool filterUserCreated = false;
+};
+
+struct DataDescImageSource : ui::TableDataSource
+{
+	size_t GetNumRows() override;
+	size_t GetNumCols() override;
+	std::string GetRowName(size_t row) override;
+	std::string GetColName(size_t col) override;
+	std::string GetText(size_t row, size_t col) override;
+
+	void Edit(UIContainer* ctx);
+
+	void _Refilter();
+
+	std::vector<size_t> _indices;
+	bool refilter = true;
+
+	DataDesc* dataDesc = nullptr;
 	DataDesc::File* filterFile = nullptr;
 	bool filterUserCreated = false;
 };
