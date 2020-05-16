@@ -204,6 +204,9 @@ struct DataDesc
 	Struct* CreateNewStruct(const std::string& name);
 	Struct* FindStructByName(const std::string& name);
 
+	void DeleteImage(size_t id);
+	size_t DuplicateImage(size_t id);
+
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);
 };

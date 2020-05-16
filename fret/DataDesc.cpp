@@ -946,23 +946,15 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 		ctx->Push<ui::Panel>();
 
 		auto& I = images[curImage];
-		bool del = false;
 
-		if (ui::imm::Button(ctx, "Delete"))
-		{
-			del = true;
-		}
-		ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
-		ui::imm::PropEditInt(ctx, "Image offset", I.offImage);
-		ui::imm::PropEditInt(ctx, "Palette offset", I.offPalette);
-		ui::imm::PropEditInt(ctx, "Width", I.width);
-		ui::imm::PropEditInt(ctx, "Height", I.height);
-
-		if (del)
-		{
-			images.erase(images.begin() + curImage);
-			curImage = 0;
-		}
+		bool chg = false;
+		chg |= ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+		chg |= ui::imm::PropEditInt(ctx, "Image offset", I.offImage);
+		chg |= ui::imm::PropEditInt(ctx, "Palette offset", I.offPalette);
+		chg |= ui::imm::PropEditInt(ctx, "Width", I.width);
+		chg |= ui::imm::PropEditInt(ctx, "Height", I.height);
+		if (chg)
+			ctx->GetCurrentNode()->Rerender();
 
 		ctx->Pop();
 	}
@@ -974,7 +966,7 @@ size_t DataDesc::AddInst(const StructInst& src)
 	for (size_t i = 0; i < instances.size(); i++)
 	{
 		auto& I = instances[i];
-		if (I.off == src.off && I.def == src.def)
+		if (I.off == src.off && I.def == src.def && I.file == src.file)
 		{
 			if (src.userCreated)
 				I.userCreated = true;
@@ -1113,6 +1105,19 @@ DataDesc::Struct* DataDesc::FindStructByName(const std::string& name)
 	if (it != structs.end())
 		return it->second;
 	return nullptr;
+}
+
+void DataDesc::DeleteImage(size_t id)
+{
+	images.erase(images.begin() + id);
+	if (curImage == id)
+		curImage = 0;
+}
+
+size_t DataDesc::DuplicateImage(size_t id)
+{
+	images.push_back(images[id]);
+	return images.size() - 1;
 }
 
 void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
@@ -1312,9 +1317,13 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.WriteInt("fileIDAlloc", fileIDAlloc);
 
 	w.BeginArray("structs");
+	std::vector<std::string> structNames;
 	for (const auto& sp : structs)
+		structNames.push_back(sp.first);
+	std::sort(structNames.begin(), structNames.end());
+	for (const auto& sname : structNames)
 	{
-		Struct* S = sp.second;
+		Struct* S = structs.find(sname)->second;
 
 		w.BeginDict("");
 

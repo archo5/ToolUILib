@@ -313,20 +313,23 @@ struct MainWindow : ui::NativeMainWindow
 									}
 
 									std::vector<ui::MenuItem> images;
-									auto createImageOpt = [this, f, hv, pos]()
+									auto createImageOpt = [this, f, hv, pos](const char* fmt)
 									{
 										DataDesc::Image img;
 										img.userCreated = true;
 										img.width = 4;
 										img.height = 4;
 										img.offImage = pos;
-										img.format = "RGBX8";
+										img.format = fmt;
 										img.file = f;
 										workspace.desc.curImage = workspace.desc.images.size();
 										workspace.desc.images.push_back(img);
 									};
-									//images.push_back(ui::MenuItem("category?", {}, true));
-									images.push_back(ui::MenuItem("RGBX8").Func(createImageOpt));
+									images.push_back(ui::MenuItem("- Basic -", {}, true));
+									images.push_back(ui::MenuItem("RGBX8").Func([createImageOpt]() { createImageOpt("RGBX8"); }));
+									images.push_back(ui::MenuItem("RGBo8").Func([createImageOpt]() { createImageOpt("RGBo8"); }));
+									images.push_back(ui::MenuItem("- PSX -", {}, true));
+									images.push_back(ui::MenuItem("4BPP_RGBo8").Func([createImageOpt]() { createImageOpt("4BPP_RGBo8"); }));
 
 									ui::MenuItem items[] =
 									{
@@ -526,7 +529,7 @@ struct MainWindow : ui::NativeMainWindow
 										{
 											auto sel = tv->selection.GetFirstSelection();
 											if (tv->IsValidRow(sel))
-												workspace.desc.curInst = workspace.ddimgSrc._indices[sel];
+												workspace.desc.curImage = workspace.ddimgSrc._indices[sel];
 											e.current->RerenderNode();
 										};
 										tv->HandleEvent(tv, UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
@@ -535,14 +538,14 @@ struct MainWindow : ui::NativeMainWindow
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
 											{
 												auto idx = workspace.ddimgSrc._indices[row];
-												auto& SI = workspace.desc.images[idx];
+												auto& IMG = workspace.desc.images[idx];
 												// find tab showing this SI
 												OpenedFile* ofile = nullptr;
 												int ofid = -1;
 												for (auto* of : workspace.openedFiles)
 												{
 													ofid++;
-													if (of->ddFile != SI.file)
+													if (of->ddFile != IMG.file)
 														continue;
 													ofile = of;
 													break;
@@ -551,9 +554,22 @@ struct MainWindow : ui::NativeMainWindow
 												if (ofile)
 												{
 													fileTG.active = ofid;
-													ofile->basePos = SI.offImage;
+													ofile->basePos = IMG.offImage;
 													fileTG.RerenderNode();
 												}
+											}
+											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Right)
+											{
+												auto idx = workspace.ddimgSrc._indices[row];
+												auto& IMG = workspace.desc.images[idx];
+												ui::MenuItem items[] =
+												{
+													ui::MenuItem("Delete").Func([this, idx, &e]() { workspace.desc.DeleteImage(idx); e.current->RerenderNode(); }),
+													ui::MenuItem("Duplicate").Func([this, idx, &e]() { workspace.desc.curImage = workspace.desc.DuplicateImage(idx); e.current->RerenderNode(); }),
+												};
+												ui::Menu menu(items);
+												menu.Show(e.current);
+												e.handled = true;
 											}
 										};
 										ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
@@ -563,8 +579,8 @@ struct MainWindow : ui::NativeMainWindow
 												size_t pos = tv->selection.GetFirstSelection();
 												if (tv->IsValidRow(pos))
 												{
-													if (pos == workspace.desc.curInst)
-														workspace.desc.curInst = 0;
+													if (pos == workspace.desc.curImage)
+														workspace.desc.curImage = 0;
 													workspace.desc.images.erase(workspace.desc.images.begin() + pos);
 													workspace.ddimgSrc.refilter = true;
 													e.current->RerenderNode();
