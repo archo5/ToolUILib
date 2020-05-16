@@ -329,6 +329,8 @@ struct MainWindow : ui::NativeMainWindow
 									images.push_back(ui::MenuItem("RGBX8").Func([createImageOpt]() { createImageOpt("RGBX8"); }));
 									images.push_back(ui::MenuItem("RGBo8").Func([createImageOpt]() { createImageOpt("RGBo8"); }));
 									images.push_back(ui::MenuItem("- PSX -", {}, true));
+									images.push_back(ui::MenuItem("RGB5").Func([createImageOpt]() { createImageOpt("RGB5"); }));
+									images.push_back(ui::MenuItem("4BPP_RGB5").Func([createImageOpt]() { createImageOpt("4BPP_RGB5"); }));
 									images.push_back(ui::MenuItem("4BPP_RGBo8").Func([createImageOpt]() { createImageOpt("4BPP_RGBo8"); }));
 
 									ui::MenuItem items[] =
@@ -382,9 +384,18 @@ struct MainWindow : ui::NativeMainWindow
 										*tv + ui::Layout(style::layouts::EdgeSlice());
 										tv->SetDataSource(&f->markerData);
 										tv->CalculateColumnWidths();
-										// TODO cannot currently apply event handler to `tv` (node) directly from outside
-										ed.HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
-										ed.HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
+										tv->HandleEvent(tv, UIEventType::Click) = [this, f, of, tv, &fileTG](UIEvent& e)
+										{
+											size_t row = tv->GetHoverRow();
+											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
+											{
+												Marker& M = f->markerData.markers[row];
+												of->basePos = M.at;
+												fileTG.RerenderNode();
+											}
+										};
+										tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
+										tv->HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
 										{
 											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
 											{
@@ -444,14 +455,14 @@ struct MainWindow : ui::NativeMainWindow
 										tv->SetDataSource(&workspace.ddiSrc);
 										workspace.ddiSrc.refilter = true;
 										tv->CalculateColumnWidths();
-										ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
+										tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
 										{
 											auto sel = tv->selection.GetFirstSelection();
 											if (tv->IsValidRow(sel))
 												workspace.desc.curInst = workspace.ddiSrc._indices[sel];
 											e.current->RerenderNode();
 										};
-										tv->HandleEvent(tv, UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
+										tv->HandleEvent(UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
 										{
 											size_t row = tv->GetHoverRow();
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
@@ -478,7 +489,7 @@ struct MainWindow : ui::NativeMainWindow
 												}
 											}
 										};
-										ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
+										tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)
 										{
 											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
 											{
@@ -539,7 +550,7 @@ struct MainWindow : ui::NativeMainWindow
 											{
 												auto idx = workspace.ddimgSrc._indices[row];
 												auto& IMG = workspace.desc.images[idx];
-												// find tab showing this SI
+												// find tab showing this image
 												OpenedFile* ofile = nullptr;
 												int ofid = -1;
 												for (auto* of : workspace.openedFiles)
@@ -598,6 +609,19 @@ struct MainWindow : ui::NativeMainWindow
 											auto* img = ctx->Make<ui::ImageElement>();
 											*img + ui::Width(style::Coord::Percent(100));
 											*img + ui::Height(200);
+											img->GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+											{
+												auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
+
+												GL::BatchRenderer br;
+												auto r = info.rect;
+
+												GL::SetTexture(bgr->_texture);
+												br.Begin();
+												br.SetColor(1, 1, 1, 1);
+												br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+												br.End();
+											});
 											img->SetImage(workspace.GetImage(workspace.desc.images[workspace.desc.curImage]));
 											img->SetScaleMode(ui::ScaleMode::Fit);
 											ctx->Pop();

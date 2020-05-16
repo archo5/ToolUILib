@@ -132,6 +132,7 @@ void MarkerData::Load(const char* key, NamedTextSerializeReader& r)
 		M.count = r.ReadUInt64("count");
 		M.repeats = r.ReadUInt64("repeats");
 		M.stride = r.ReadUInt64("stride");
+		M.notes = r.ReadString("notes");
 		markers.push_back(M);
 
 		r.EndDict();
@@ -156,6 +157,7 @@ void MarkerData::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteInt("count", M.count);
 		w.WriteInt("repeats", M.repeats);
 		w.WriteInt("stride", M.stride);
+		w.WriteString("notes", M.notes);
 
 		w.EndDict();
 	}
@@ -171,7 +173,15 @@ enum COLS_MD
 	MD_COL_Count,
 	MD_COL_Repeats,
 	MD_COL_Stride,
+	MD_COL_Notes,
+
+	MD_COL__COUNT,
 };
+
+size_t MarkerData::GetNumCols()
+{
+	return MD_COL__COUNT;
+}
 
 std::string MarkerData::GetRowName(size_t row)
 {
@@ -187,6 +197,7 @@ std::string MarkerData::GetColName(size_t col)
 	case MD_COL_Count: return "Count";
 	case MD_COL_Repeats: return "Repeats";
 	case MD_COL_Stride: return "Stride";
+	case MD_COL_Notes: return "Notes";
 	default: return "";
 	}
 }
@@ -200,6 +211,7 @@ std::string MarkerData::GetText(size_t row, size_t col)
 	case MD_COL_Count: return std::to_string(markers[row].count);
 	case MD_COL_Repeats: return std::to_string(markers[row].repeats);
 	case MD_COL_Stride: return std::to_string(markers[row].stride);
+	case MD_COL_Notes: return markers[row].notes;
 	default: return "";
 	}
 }
@@ -226,6 +238,7 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	ui::imm::PropEditInt(ctx, "Count", marker->count);
 	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
 	ui::imm::PropEditInt(ctx, "Stride", marker->stride);
+	ui::imm::PropEditString(ctx, "Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
 	ctx->Pop();
 }
 

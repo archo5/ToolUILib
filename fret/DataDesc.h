@@ -42,6 +42,7 @@ struct Marker
 	uint64_t count;
 	uint64_t repeats;
 	uint64_t stride;
+	std::string notes;
 
 	bool Contains(uint64_t pos) const;
 	unsigned ContainInfo(uint64_t pos) const; // 1 - overlap, 2 - left edge, 4 - right edge
@@ -59,7 +60,7 @@ struct MarkerData : ui::TableDataSource
 	void Save(const char* key, NamedTextSerializeWriter& w);
 
 	size_t GetNumRows() override { return markers.size(); }
-	size_t GetNumCols() override { return 5; }
+	size_t GetNumCols() override;
 	std::string GetRowName(size_t row) override;
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
