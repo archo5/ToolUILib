@@ -33,6 +33,12 @@ struct UIObjectDirtyStack
 	{
 		size = 0;
 	}
+	void Swap(UIObjectDirtyStack& o)
+	{
+		assert(flag == o.flag);
+		std::swap(stack, o.stack);
+		std::swap(size, o.size);
+	}
 	void Add(UIObject* n);
 	UIObject* Pop();
 	void RemoveChildren();
@@ -69,7 +75,10 @@ struct UIContainer
 	}
 	void AddToRenderStack(ui::Node* n)
 	{
-		nodeRenderStack.Add(n);
+		if (n->_lastRenderedFrameID != _lastRenderedFrameID)
+			nodeRenderStack.Add(n);
+		else
+			nextFrameNodeRenderStack.Add(n);
 	}
 	void ProcessNodeRenderStack();
 
@@ -87,6 +96,7 @@ struct UIContainer
 	template<class T, class = typename T::IsNode> T* Make(decltype(bool()) = 0)
 	{
 		T* obj = _Alloc<T>();
+		obj->_lastRenderedFrameID = _lastRenderedFrameID - 1;
 		DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
 		AddToRenderStack(obj);
 		return obj;
@@ -165,8 +175,10 @@ struct UIContainer
 	//ui::Node* currentNode;
 	//int elementStackSize = 0;
 	int objectStackSize = 0;
+	uint64_t _lastRenderedFrameID = 1;
 
 	UIObjectDirtyStack nodeRenderStack{ UIObject_IsInRenderStack };
+	UIObjectDirtyStack nextFrameNodeRenderStack{ UIObject_IsInRenderStack };
 
 	bool isLayoutDirty = false;
 	bool lastIsNew = false;

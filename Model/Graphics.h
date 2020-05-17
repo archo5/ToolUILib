@@ -66,7 +66,7 @@ struct Color4f
 		if (c == 0)
 			return 0;
 		if (max == r)
-			return ((g - b) / c) / 6;
+			return fmodf(((g - b) / c) / 6 + 1, 1);
 		if (max == g)
 			return (2 + (b - r) / c) / 6;
 		return (4 + (r - g) / c) / 6;

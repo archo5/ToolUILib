@@ -346,13 +346,12 @@ struct Textbox : UIElement
 
 	int _FindCursorPos(float vpx);
 
-	const std::string& GetText() const { return text; }
+	const std::string& GetText() const { return _text; }
 	Textbox& SetText(const std::string& s);
 
 	Textbox& Init(float& val);
 	template <size_t N> Textbox& Init(char (&val)[N])
 	{
-		if (!InUse())
 			SetText(val);
 		HandleEvent(UIEventType::Change) = [this, &val](UIEvent&)
 		{
@@ -364,7 +363,7 @@ struct Textbox : UIElement
 		return *this;
 	}
 
-	std::string text;
+	std::string _text;
 	int startCursor = 0;
 	int endCursor = 0;
 	bool showCaretState = false;

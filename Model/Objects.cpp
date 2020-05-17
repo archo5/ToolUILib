@@ -70,27 +70,29 @@ ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
 	return eh->func;
 }
 
-void UIObject::ClearEventHandlers(bool localOnly)
+void UIObject::ClearLocalEventHandlers()
 {
-	if (localOnly)
+	auto** eh = &_firstEH;
+	ui::EventHandlerEntry* lastEH = nullptr;
+	while (*eh)
 	{
-		auto** eh = &_firstEH;
-		while (*eh)
+		auto* n = (*eh)->next;
+		if ((*eh)->isLocal)
 		{
-			auto* n = (*eh)->next;
-			if ((*eh)->isLocal)
-			{
-				delete *eh;
-				*eh = n;
-			}
-			else
-				eh = &(*eh)->next;
+			delete *eh;
+			*eh = n;
 		}
-		if (_firstEH == nullptr)
-			_lastEH = nullptr;
-		return;
+		else
+		{
+			lastEH = *eh;
+			eh = &(*eh)->next;
+		}
 	}
+	_lastEH = lastEH;
+}
 
+void UIObject::ClearEventHandlers()
+{
 	while (_firstEH)
 	{
 		auto* n = _firstEH->next;

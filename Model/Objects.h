@@ -179,7 +179,8 @@ struct UIObject
 
 	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
 	ui::EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
-	void ClearEventHandlers(bool localOnly = false);
+	void ClearEventHandlers();
+	void ClearLocalEventHandlers();
 
 	virtual void OnPaint();
 	void Paint();
@@ -354,6 +355,7 @@ struct Node : UIObject
 
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
+	uint64_t _lastRenderedFrameID = 0;
 };
 
 struct Modifier

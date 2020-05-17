@@ -13,8 +13,8 @@ struct OpenedFile
 	{
 		r.BeginDict("");
 		fileID = r.ReadUInt64("fileID");
-		basePos = r.ReadUInt64("basePos");
-		byteWidth = r.ReadUInt("byteWidth");
+		hexViewerState.basePos = r.ReadUInt64("basePos");
+		hexViewerState.byteWidth = r.ReadUInt("byteWidth");
 		highlightSettings.Load("highlighter", r);
 		r.EndDict();
 	}
@@ -22,16 +22,15 @@ struct OpenedFile
 	{
 		w.BeginDict("");
 		w.WriteInt("fileID", fileID);
-		w.WriteInt("basePos", basePos);
-		w.WriteInt("byteWidth", byteWidth);
+		w.WriteInt("basePos", hexViewerState.basePos);
+		w.WriteInt("byteWidth", hexViewerState.byteWidth);
 		highlightSettings.Save("highlighter", w);
 		w.EndDict();
 	}
 
 	DataDesc::File* ddFile = nullptr;
 	uint64_t fileID = 0;
-	uint64_t basePos = 0;
-	uint32_t byteWidth = 8;
+	HexViewerState hexViewerState;
 	HighlightSettings highlightSettings;
 };
 
@@ -202,6 +201,19 @@ struct MainWindow : ui::NativeMainWindow
 						{
 							ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
+							ctx->PushBox();
+							if (of->hexViewerState.selectionStart != UINT64_MAX)
+							{
+								auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+								auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+								char buf[256];
+								snprintf(buf, 256, "Selection: %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")", selMin, selMax, selMax - selMin + 1);
+								ctx->Text(buf);
+							}
+							else
+								ctx->Text("Selection: <none>");
+							ctx->Pop();
+
 							ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 							auto* vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
 							auto* hs = ctx->MakeWithText<ui::CollapsibleTreeNode>("Highlight settings");
@@ -210,8 +222,8 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->PushBox(); // tree stabilization box
 							if (vs->open)
 							{
-								ui::imm::PropEditInt(ctx, "Width", of->byteWidth, {}, 1, 1, 256);
-								ui::imm::PropEditInt(ctx, "Position", of->basePos, {}, 1, 0);
+								ui::imm::PropEditInt(ctx, "Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
+								ui::imm::PropEditInt(ctx, "Position", of->hexViewerState.basePos, {}, 1, 0);
 							}
 							if (hs->open)
 							{
@@ -220,14 +232,14 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->Pop(); // end tree stabilization box
 
 							auto* hv = ctx->Make<HexViewer>();
-							hv->Init(&workspace.desc, f, &of->basePos, &of->byteWidth, &of->highlightSettings);
-							hv->HandleEvent(UIEventType::Click) = [this, f, ds, hv](UIEvent& e)
+							hv->Init(&workspace.desc, f, &of->hexViewerState, &of->highlightSettings);
+							hv->HandleEvent(UIEventType::Click) = [this, f, ds, hv, of](UIEvent& e)
 							{
 								if (e.GetButton() == UIMouseButton::Right)
 								{
-									int64_t pos = hv->hoverByte;
-									auto selMin = std::min(hv->selectionStart, hv->selectionEnd);
-									auto selMax = std::max(hv->selectionStart, hv->selectionEnd);
+									int64_t pos = of->hexViewerState.hoverByte;
+									auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+									auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 									if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
 										pos = selMin;
 
@@ -260,7 +272,7 @@ struct MainWindow : ui::NativeMainWindow
 
 									std::vector<ui::MenuItem> structs;
 									{
-										auto createBlank = [this, f, hv, pos]()
+										auto createBlank = [this, f, of, hv, pos]()
 										{
 											auto* ns = new DataDesc::Struct;
 											do
@@ -268,21 +280,21 @@ struct MainWindow : ui::NativeMainWindow
 												ns->name = "struct" + std::to_string(rand() % 10000);
 											} while (workspace.desc.structs.count(ns->name));
 											int64_t off = pos;
-											if (hv->selectionStart != UINT64_MAX && hv->selectionEnd != UINT64_MAX)
+											if (of->hexViewerState.selectionStart != UINT64_MAX && of->hexViewerState.selectionEnd != UINT64_MAX)
 											{
-												off = std::min(hv->selectionStart, hv->selectionEnd);
-												ns->size = abs(int(hv->selectionEnd - hv->selectionStart)) + 1;
+												off = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+												ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
 											}
 											workspace.desc.structs[ns->name] = ns;
 											workspace.desc.curInst = workspace.desc.AddInst({ ns, f, off, "", true });
 											return ns;
 										};
 										auto createBlankOpt = [createBlank]() { createBlank(); };
-										auto createFromMarkersOpt = [createBlank, f, hv]()
+										auto createFromMarkersOpt = [createBlank, f, of, hv]()
 										{
 											auto* ns = createBlank();
-											auto selMin = std::min(hv->selectionStart, hv->selectionEnd);
-											auto selMax = std::max(hv->selectionStart, hv->selectionEnd);
+											auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+											auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 											int at = 0;
 											for (Marker& M : f->markerData.markers)
 											{
@@ -299,7 +311,7 @@ struct MainWindow : ui::NativeMainWindow
 										};
 										structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(createBlankOpt));
 										structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
-											hv->selectionStart == UINT64_MAX || hv->selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
+											of->hexViewerState.selectionStart == UINT64_MAX || of->hexViewerState.selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
 										if (workspace.desc.structs.size())
 											structs.push_back(ui::MenuItem::Separator());
 									}
@@ -390,7 +402,7 @@ struct MainWindow : ui::NativeMainWindow
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
 											{
 												Marker& M = f->markerData.markers[row];
-												of->basePos = M.at;
+												of->hexViewerState.basePos = M.at;
 												fileTG.RerenderNode();
 											}
 										};
@@ -484,7 +496,7 @@ struct MainWindow : ui::NativeMainWindow
 												if (ofile)
 												{
 													fileTG.active = ofid;
-													ofile->basePos = SI.off;
+													ofile->hexViewerState.basePos = SI.off;
 													fileTG.RerenderNode();
 												}
 											}
@@ -565,7 +577,7 @@ struct MainWindow : ui::NativeMainWindow
 												if (ofile)
 												{
 													fileTG.active = ofid;
-													ofile->basePos = IMG.offImage;
+													ofile->hexViewerState.basePos = IMG.offImage;
 													fileTG.RerenderNode();
 												}
 											}

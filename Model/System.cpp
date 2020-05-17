@@ -91,7 +91,12 @@ void UIContainer::DeleteObjectsStartingFrom(UIObject* obj)
 void UIContainer::ProcessNodeRenderStack()
 {
 	if (nodeRenderStack.ContainsAny())
+	{
 		DEBUG_FLOW(puts(" ---- processing node RENDER stack ----"));
+		_lastRenderedFrameID++;
+	}
+	else
+		return;
 
 	nodeRenderStack.RemoveChildren();
 
@@ -104,6 +109,8 @@ void UIContainer::ProcessNodeRenderStack()
 
 		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
 		_curNode = currentNode;
+		currentNode->_lastRenderedFrameID = _lastRenderedFrameID;
+		currentNode->ClearLocalEventHandlers();
 		currentNode->Render(this);
 		_curNode = nullptr;
 
@@ -118,7 +125,9 @@ void UIContainer::ProcessNodeRenderStack()
 
 		_Pop(); // root
 	}
-	//currentNode = nullptr;
+
+	nodeRenderStack.Swap(nextFrameNodeRenderStack);
+	_lastRenderedFrameID++;
 }
 
 void UIContainer::_BuildUsing(ui::Node* n)
@@ -134,7 +143,6 @@ void UIContainer::_Push(UIObject* obj, bool isCurNode)
 {
 	objectStack[objectStackSize] = obj;
 	objChildStack[objectStackSize] = obj->firstChild;
-	obj->ClearEventHandlers(isCurNode);
 	objectStackSize++;
 }
 

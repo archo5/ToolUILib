@@ -197,20 +197,21 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* fil
 
 void HexViewer::OnEvent(UIEvent& e)
 {
-	int W = *byteWidth;
+	int W = state->byteWidth;
 
 	if (e.type == UIEventType::ButtonDown)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
 		{
-			mouseDown = true;
-			selectionStart = selectionEnd = hoverByte;
+			state->mouseDown = true;
+			state->selectionStart = state->selectionEnd = state->hoverByte;
+			RerenderNode();
 		}
 	}
 	else if (e.type == UIEventType::ButtonUp)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
-			mouseDown = false;
+			state->mouseDown = false;
 	}
 	else if (e.type == UIEventType::MouseMove)
 	{
@@ -219,50 +220,52 @@ void HexViewer::OnEvent(UIEvent& e)
 		float y = finalRectC.y0 + fh;
 		float x2 = x + 20 * W + 10;
 
-		hoverSection = -1;
-		hoverByte = UINT64_MAX;
+		state->hoverSection = -1;
+		state->hoverByte = UINT64_MAX;
 		if (e.y >= y && e.x >= x && e.x < x + W * 20)
 		{
-			hoverSection = 0;
+			state->hoverSection = 0;
 			int xpos = std::min(std::max(0, int((e.x - x) / 20)), W - 1);
 			int ypos = (e.y - y) / fh;
-			hoverByte = GetBasePos() + xpos + ypos * W;
+			state->hoverByte = GetBasePos() + xpos + ypos * W;
 		}
 		else if (e.y >= y && e.x >= x2 && e.x < x2 + W * 10)
 		{
-			hoverSection = 1;
+			state->hoverSection = 1;
 			int xpos = std::min(std::max(0, int((e.x - x2) / 10)), W - 1);
 			int ypos = (e.y - y) / fh;
-			hoverByte = GetBasePos() + xpos + ypos * W;
+			state->hoverByte = GetBasePos() + xpos + ypos * W;
 		}
-		if (mouseDown)
+		if (state->mouseDown)
 		{
-			selectionEnd = hoverByte;
+			state->selectionEnd = state->hoverByte;
 		}
+		RerenderNode();
 	}
 	else if (e.type == UIEventType::MouseLeave)
 	{
-		hoverSection = -1;
-		hoverByte = UINT64_MAX;
+		state->hoverSection = -1;
+		state->hoverByte = UINT64_MAX;
+		RerenderNode();
 	}
 	else if (e.type == UIEventType::MouseScroll)
 	{
 		int64_t diff = round(e.dy / 40) * 16;
-		if (diff > 0 && diff > *basePos)
-			*basePos = 0;
+		if (diff > 0 && diff > state->basePos)
+			state->basePos = 0;
 		else
-			*basePos -= diff;
-		*basePos = std::min(file->dataSource->GetSize() - 1, *basePos);
+			state->basePos -= diff;
+		state->basePos = std::min(file->dataSource->GetSize() - 1, state->basePos);
 		RerenderNode();
 	}
 }
 
 void HexViewer::OnPaint()
 {
-	int W = *byteWidth;
+	int W = state->byteWidth;
 
-	auto minSel = std::min(selectionStart, selectionEnd);
-	auto maxSel = std::max(selectionStart, selectionEnd);
+	auto minSel = std::min(state->selectionStart, state->selectionEnd);
+	auto maxSel = std::max(state->selectionStart, state->selectionEnd);
 
 	uint8_t buf[256 * 64];
 	static ByteColors bcol[256 * 64];
@@ -274,7 +277,7 @@ void HexViewer::OnPaint()
 	float y = finalRectC.y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
 
-	Highlight(highlightSettings, dataDesc, file, *basePos, &bcol[0], buf, sz);
+	Highlight(highlightSettings, dataDesc, file, state->basePos, &bcol[0], buf, sz);
 
 	GL::SetTexture(0);
 	GL::BatchRenderer br;
@@ -286,9 +289,9 @@ void HexViewer::OnPaint()
 
 		Color4f col = bcol[i].hexColor;// highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
 		if (pos >= minSel && pos <= maxSel)
-			col.BlendOver(colorSelect);
-		if (hoverByte == pos)
-			col.BlendOver(colorHover);
+			col.BlendOver(state->colorSelect);
+		if (state->hoverByte == pos)
+			col.BlendOver(state->colorHover);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 20;
@@ -299,9 +302,9 @@ void HexViewer::OnPaint()
 
 		col = bcol[i].asciiColor;// highlighter->GetByteTypeASCII(GetBasePos(), buf, i, sz);
 		if (pos >= minSel && pos <= maxSel)
-			col.BlendOver(colorSelect);
-		if (hoverByte == pos)
-			col.BlendOver(colorHover);
+			col.BlendOver(state->colorSelect);
+		if (state->hoverByte == pos)
+			col.BlendOver(state->colorHover);
 		if (col.a > 0)
 		{
 			float xoff = (i % W) * 10;

@@ -25,6 +25,10 @@ struct OpenClose : ui::Node
 
 		ctx->Pop();
 	}
+	void OnSerialize(IDataSerializer& s) override
+	{
+		s << open;
+	}
 
 	bool open = false;
 };
@@ -90,6 +94,10 @@ struct DragDropTest : ui::Node
 			};
 		}
 	}
+	void OnSerialize(IDataSerializer& s) override
+	{
+		s << slots;
+	}
 
 	int slots[3] = { 5, 2, 0 };
 };
@@ -127,13 +135,7 @@ struct NodeEditTest : ui::Node
 				};
 			}
 
-			ctx->Text("Name");
-			auto* tbname = ctx->Make<ui::Textbox>();
-			tbname->text = tgt->name;
-			HandleEvent(tbname, UIEventType::Commit) = [this, tbname](UIEvent&)
-			{
-				tgt->name = tbname->text;
-			};
+			ui::imm::PropEditString(ctx, "Name", tgt->name.c_str(), [this](const char* v) { tgt->name = v; });
 
 			ctx->Push<ui::Panel>();
 			ctx->Text("Children");
@@ -173,8 +175,9 @@ struct NodeEditTest : ui::Node
 		ctx->Make<TreeNodeUI>()->tgt = &root;
 	}
 
-	TreeNode root = { "root" };
+	static TreeNode root;
 };
+NodeEditTest::TreeNode NodeEditTest::root = { "root" };
 
 
 struct CompactNodeEditTest : ui::Node
@@ -1096,11 +1099,16 @@ struct SlidersTest : ui::Node
 	}
 };
 
+static Color4f colorPickerTestCol;
 struct ColorPickerTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		ctx->Make<ui::ColorPicker>();
+		auto& cp = ctx->Make<ui::ColorPicker>()->SetColor(colorPickerTestCol);
+		cp.HandleEvent(UIEventType::Change) = [&cp](UIEvent& e)
+		{
+			colorPickerTestCol = cp.GetColor();
+		};
 	}
 };
 
@@ -1247,7 +1255,7 @@ struct Calculator : ui::Node
 	{
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		{
-			ctx->Make<ui::Textbox>()->text = operation;
+			ctx->Make<ui::Textbox>()->SetText(operation);
 
 			ctx->MakeWithText<ui::Button>("<")->onClick = [this]() { if (!operation.empty()) operation.pop_back(); Rerender(); };
 		}
@@ -1740,10 +1748,10 @@ struct DataEditor : ui::Node
 			ui::Property::Make(ctx, "Name", [&]()
 			{
 				auto tbName = ctx->Make<ui::Textbox>();
-				tbName->text = items[editing].name;
+				tbName->SetText(items[editing].name);
 				HandleEvent(tbName, UIEventType::Commit) = [this, tbName](UIEvent&)
 				{
-					items[editing].name = tbName->text;
+					items[editing].name = tbName->GetText();
 					Rerender();
 				};
 			});
@@ -1798,6 +1806,7 @@ static TestEntry demoEntries[] =
 	{ "Node editing", [](UIContainer* ctx) { ctx->Make<NodeEditTest>(); } },
 	{ "Compact node editing", [](UIContainer* ctx) { ctx->Make<CompactNodeEditTest>(); } },
 };
+static bool rerenderAlways;
 struct TEST : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -1832,6 +1841,7 @@ struct TEST : ui::Node
 
 		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
 		{
+			ctx->Make<ui::MenuItemElement>()->SetText("Rerender always").SetChecked(rerenderAlways).onActivate = [this]() { rerenderAlways ^= true; Rerender(); };
 			ctx->Make<ui::MenuItemElement>()->SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
 			ctx->Make<ui::MenuItemElement>()->SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rerender(); };
@@ -1842,6 +1852,9 @@ struct TEST : ui::Node
 
 		if (curTest)
 			curTest->func(ctx);
+
+		if (rerenderAlways)
+			Rerender();
 	}
 
 	static const char* cln(const char* s)

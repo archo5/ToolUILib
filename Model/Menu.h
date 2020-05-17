@@ -119,6 +119,10 @@ class MenuElement : public UIElement
 {
 public:
 	virtual bool IsTopBar() { return false; }
+	void OnSerialize(IDataSerializer& s) override
+	{
+		s << _menu;
+	}
 	void OnDestroy() override;
 	void OnCompleteStructure() override;
 

@@ -33,6 +33,20 @@ struct ByteColors
 	Color4f rightBracketColor = { 0, 0 };
 };
 
+struct HexViewerState
+{
+	uint64_t basePos = 0;
+	uint32_t byteWidth = 8;
+
+	Color4f colorHover{ 1, 1, 1, 0.3f };
+	Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };
+	uint64_t hoverByte = UINT64_MAX;
+	int hoverSection = -1;
+	uint64_t selectionStart = UINT64_MAX;
+	uint64_t selectionEnd = UINT64_MAX;
+	bool mouseDown = false;
+};
+
 struct HexViewer : UIElement
 {
 	HexViewer()
@@ -45,41 +59,23 @@ struct HexViewer : UIElement
 	}
 	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
-	void OnSerialize(IDataSerializer& s) override
-	{
-		s << hoverByte;
-		s << hoverSection;
-		s << selectionStart;
-		s << selectionEnd;
-		s << mouseDown;
-	}
 
 	uint64_t GetBasePos()
 	{
-		return *basePos;
+		return state->basePos;
 	}
 
-	void Init(DataDesc* dd, DataDesc::File* f, uint64_t* bpos, uint32_t* bwid, HighlightSettings* hs)
+	void Init(DataDesc* dd, DataDesc::File* f, HexViewerState* hvs, HighlightSettings* hs)
 	{
 		dataDesc = dd;
 		file = f;
-		basePos = bpos;
-		byteWidth = bwid;
+		state = hvs;
 		highlightSettings = hs;
 	}
 
 	// input data
 	DataDesc* dataDesc = nullptr;
 	DataDesc::File* file = nullptr;
-	uint64_t* basePos = nullptr;
-	uint32_t* byteWidth = nullptr;
+	HexViewerState* state = nullptr;
 	HighlightSettings* highlightSettings = nullptr;
-
-	Color4f colorHover{ 1, 1, 1, 0.3f };
-	Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };
-	uint64_t hoverByte = UINT64_MAX;
-	int hoverSection = -1;
-	uint64_t selectionStart = UINT64_MAX;
-	uint64_t selectionEnd = UINT64_MAX;
-	bool mouseDown = false;
 };

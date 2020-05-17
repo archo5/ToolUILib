@@ -267,10 +267,10 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 	};
 	char buf[64];
 	snprintf(buf, 64, "%g", *v);
-	tb->text = buf;
+	tb->SetText(buf);
 	tb->HandleEvent(UIEventType::Commit) = [v, tb](UIEvent& e)
 	{
-		*v = atof(tb->text.c_str());
+		*v = atof(tb->GetText().c_str());
 		e.target->RerenderNode();
 	};
 	Property::End(ctx);
@@ -312,10 +312,10 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 			tb + Width(style::Coord::Fraction(0.2f));
 			char buf[64];
 			snprintf(buf, 64, "%g", v[i]);
-			tb.text = buf;
+			tb.SetText(buf);
 			tb.HandleEvent(UIEventType::Commit) = [vc, &tb](UIEvent& e)
 			{
-				*vc = atof(tb.text.c_str());
+				*vc = atof(tb.GetText().c_str());
 				e.target->RerenderNode();
 			};
 
@@ -421,7 +421,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	if (tb->flags & UIObject_IsEdited)
 	{
 		decltype(val + 0) tmp = 0;
-		sscanf(tb->text.c_str(), fb.fmt, &tmp);
+		sscanf(tb->GetText().c_str(), fb.fmt, &tmp);
 		if (tmp == 0)
 			tmp = 0;
 		if (tmp > vmax)
@@ -435,7 +435,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 
 	char buf[1024];
 	snprintf(buf, 1024, fb.fmt + 1, val);
-	tb->text = RemoveNegZero(buf);
+	tb->SetText(RemoveNegZero(buf));
 
 	if (dragObj)
 	{
@@ -452,7 +452,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 
 				char buf[1024];
 				snprintf(buf, 1024, fb.fmt + 1, nv);
-				tb->text = RemoveNegZero(buf);
+				tb->SetText(RemoveNegZero(buf));
 				tb->flags |= UIObject_IsEdited;
 
 				e.context->OnCommit(e.target);
@@ -1103,7 +1103,7 @@ void Textbox::OnPaint()
 
 	{
 		auto r = GetContentRect();
-		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
+		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _text.c_str(), 1, 1, 1);
 
 		if (IsFocused())
 		{
@@ -1111,8 +1111,8 @@ void Textbox::OnPaint()
 			{
 				int minpos = startCursor < endCursor ? startCursor : endCursor;
 				int maxpos = startCursor > endCursor ? startCursor : endCursor;
-				float x0 = GetTextWidth(text.c_str(), minpos);
-				float x1 = GetTextWidth(text.c_str(), maxpos);
+				float x0 = GetTextWidth(_text.c_str(), minpos);
+				float x1 = GetTextWidth(_text.c_str(), maxpos);
 
 				GL::SetTexture(0);
 				GL::BatchRenderer br;
@@ -1124,7 +1124,7 @@ void Textbox::OnPaint()
 
 			if (showCaretState)
 			{
-				float x = GetTextWidth(text.c_str(), endCursor);
+				float x = GetTextWidth(_text.c_str(), endCursor);
 				GL::SetTexture(0);
 				GL::BatchRenderer br;
 				br.Begin();
@@ -1187,14 +1187,14 @@ void Textbox::OnEvent(UIEvent& e)
 			if (IsLongSelection())
 				EraseSelection();
 			else if (endCursor > 0)
-				text.erase(startCursor = --endCursor, 1); // TODO unicode
+				_text.erase(startCursor = --endCursor, 1); // TODO unicode
 			e.context->OnChange(this);
 			break;
 		case UIKeyAction::Delete:
 			if (IsLongSelection())
 				EraseSelection();
-			else if (endCursor + 1 < text.size())
-				text.erase(endCursor, 1); // TODO unicode
+			else if (endCursor + 1 < _text.size())
+				_text.erase(endCursor, 1); // TODO unicode
 			e.context->OnChange(this);
 			break;
 
@@ -1207,19 +1207,19 @@ void Textbox::OnEvent(UIEvent& e)
 		case UIKeyAction::Right:
 			if (IsLongSelection())
 				startCursor = endCursor = startCursor > endCursor ? startCursor : endCursor;
-			else if (endCursor < text.size())
+			else if (endCursor < _text.size())
 				startCursor = ++endCursor;
 			break;
 		case UIKeyAction::Home:
 			startCursor = endCursor = 0;
 			break;
 		case UIKeyAction::End:
-			startCursor = endCursor = text.size();
+			startCursor = endCursor = _text.size();
 			break;
 
 		case UIKeyAction::SelectAll:
 			startCursor = 0;
-			endCursor = text.size();
+			endCursor = _text.size();
 			break;
 		}
 	}
@@ -1235,18 +1235,18 @@ void Textbox::OnSerialize(IDataSerializer& s)
 {
 	s << startCursor << endCursor << showCaretState;
 
-	uint32_t len = text.size();
+	uint32_t len = _text.size();
 	s << len;
-	text.resize(len);
+	_text.resize(len);
 	if (len)
-		s.Process(&text[0], len);
+		s.Process(&_text[0], len);
 }
 
 void Textbox::EnterText(const char* str)
 {
 	EraseSelection();
 	size_t num = strlen(str);
-	text.insert(endCursor, str, num);
+	_text.insert(endCursor, str, num);
 	startCursor = endCursor += num;
 	system->eventSystem.OnChange(this);
 }
@@ -1257,7 +1257,7 @@ void Textbox::EraseSelection()
 	{
 		int min = startCursor < endCursor ? startCursor : endCursor;
 		int max = startCursor > endCursor ? startCursor : endCursor;
-		text.erase(min, max - min);
+		_text.erase(min, max - min);
 		startCursor = endCursor = min;
 	}
 }
@@ -1267,23 +1267,25 @@ int Textbox::_FindCursorPos(float vpx)
 	auto r = GetContentRect();
 	// TODO kerning
 	float x = r.x0;
-	for (size_t i = 0; i < text.size(); i++)
+	for (size_t i = 0; i < _text.size(); i++)
 	{
-		float lw = GetTextWidth(&text[i], 1);
+		float lw = GetTextWidth(&_text[i], 1);
 		if (vpx < x + lw * 0.5f)
 			return i;
 		x += lw;
 	}
-	return text.size();
+	return _text.size();
 }
 
 Textbox& Textbox::SetText(const std::string& s)
 {
-	text = s;
-	if (startCursor > text.size())
-		startCursor = text.size();
-	if (endCursor > text.size())
-		endCursor = text.size();
+	if (InUse())
+		return *this;
+	_text = s;
+	if (startCursor > _text.size())
+		startCursor = _text.size();
+	if (endCursor > _text.size())
+		endCursor = _text.size();
 	return *this;
 }
 
