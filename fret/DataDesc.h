@@ -2,6 +2,7 @@
 #pragma once
 #include "pch.h"
 #include "FileReaders.h"
+#include "MathExpr.h"
 
 
 extern Color4f colorFloat32;
@@ -83,72 +84,102 @@ struct MarkedItemsList : ui::Node
 };
 
 
+struct DDFile
+{
+	uint64_t id = UINT64_MAX;
+	std::string name;
+	IDataSource* dataSource = nullptr;
+	MarkerData markerData;
+};
+struct DDParam
+{
+	std::string name;
+	int64_t intVal;
+};
+struct DDCondition
+{
+	std::string field;
+	std::string value;
+};
+struct DDCompArg
+{
+	std::string name;
+	std::string src;
+	int64_t intVal;
+};
+struct DDField
+{
+	std::string type;
+	std::string name;
+
+	int64_t off = 0;
+	std::string offExpr;
+	MathExpr* offExprInst = nullptr;
+	void UpdateOffExpr()
+	{
+		if (offExpr.empty())
+		{
+			if (offExprInst)
+			{
+				delete offExprInst;
+				offExprInst = nullptr;
+			}
+		}
+		else
+		{
+			if (!offExprInst)
+				offExprInst = new MathExpr;
+			offExprInst->Compile(offExpr.c_str());
+		}
+	}
+
+	int64_t count = 1;
+	std::string countSrc;
+	bool countIsMaxSize = false;
+	bool readUntil0 = false;
+	std::vector<DDCompArg> structArgs;
+	std::vector<DDCondition> conditions;
+
+	bool IsComputed() const
+	{
+		return !offExpr.empty();
+	}
+};
+struct DDStruct
+{
+	std::string name;
+	bool serialized = false;
+	std::vector<DDParam> params;
+	std::vector<DDField> fields;
+	int64_t size = 0;
+	std::string sizeSrc;
+
+	size_t FindFieldByName(StringView name);
+};
+struct DDArg
+{
+	std::string name;
+	int64_t intVal;
+};
+struct DDStructInst
+{
+	DDStruct* def = nullptr;
+	DDFile* file = nullptr;
+	int64_t off = 0;
+	std::string notes;
+	bool userCreated = true;
+	bool remainingCountIsSize = false;
+	int64_t remainingCount = 1;
+	std::vector<DDArg> args;
+};
+
+
 extern ui::DataCategoryTag DCT_Struct[1];
 struct DataDesc
 {
-	struct File
-	{
-		uint64_t id = UINT64_MAX;
-		std::string name;
-		IDataSource* dataSource = nullptr;
-		MarkerData markerData;
-	};
-	struct Param
-	{
-		std::string name;
-		int64_t intVal;
-	};
-	struct Arg
-	{
-		std::string name;
-		int64_t intVal;
-	};
-	struct CompArg
-	{
-		std::string name;
-		std::string src;
-		int64_t intVal;
-	};
-	struct Condition
-	{
-		std::string field;
-		std::string value;
-	};
-	struct Field
-	{
-		std::string type;
-		std::string name;
-		int64_t off = 0;
-		int64_t count = 1;
-		std::string countSrc;
-		bool countIsMaxSize = false;
-		bool readUntil0 = false;
-		std::vector<CompArg> structArgs;
-		std::vector<Condition> conditions;
-	};
-	struct Struct
-	{
-		std::string name;
-		bool serialized = false;
-		std::vector<Param> params;
-		std::vector<Field> fields;
-		int64_t size = 0;
-		std::string sizeSrc;
-	};
-	struct StructInst
-	{
-		Struct* def = nullptr;
-		File* file = nullptr;
-		int64_t off = 0;
-		std::string notes;
-		bool userCreated = true;
-		bool remainingCountIsSize = false;
-		int64_t remainingCount = 1;
-		std::vector<Arg> args;
-	};
 	struct Image
 	{
-		File* file = nullptr;
+		DDFile* file = nullptr;
 		int64_t offImage = 0;
 		int64_t offPalette = 0;
 		uint32_t width = 0;
@@ -159,9 +190,9 @@ struct DataDesc
 	};
 
 	// data
-	std::vector<File*> files;
-	std::unordered_map<std::string, Struct*> structs;
-	std::vector<StructInst> instances;
+	std::vector<DDFile*> files;
+	std::unordered_map<std::string, DDStruct*> structs;
+	std::vector<DDStructInst> instances;
 	std::vector<Image> images;
 
 	// ID allocation
@@ -173,7 +204,7 @@ struct DataDesc
 	uint32_t curImage = 0;
 	uint32_t curField = 0;
 
-	uint64_t GetFixedFieldSize(const Field& field);
+	uint64_t GetFixedFieldSize(const DDField& field);
 
 	struct ReadField
 	{
@@ -183,7 +214,7 @@ struct DataDesc
 		int64_t intVal;
 		bool present;
 	};
-	int64_t ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out);
+	int64_t ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out, bool computed = true);
 
 	void EditStructuralItems(UIContainer* ctx);
 	void EditInstance(UIContainer* ctx);
@@ -192,18 +223,18 @@ struct DataDesc
 
 	void EditImageItems(UIContainer* ctx);
 
-	size_t AddInst(const StructInst& src);
-	size_t CreateNextInstance(const StructInst& SI, int64_t structSize);
-	size_t CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
-	void ExpandAllInstances(File* filterFile = nullptr);
-	void DeleteAllInstances(File* filterFile = nullptr, Struct* filterStruct = nullptr);
+	size_t AddInst(const DDStructInst& src);
+	size_t CreateNextInstance(const DDStructInst& SI, int64_t structSize);
+	size_t CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
+	void ExpandAllInstances(DDFile* filterFile = nullptr);
+	void DeleteAllInstances(DDFile* filterFile = nullptr, DDStruct* filterStruct = nullptr);
 
 	~DataDesc();
 	void Clear();
-	File* CreateNewFile();
-	File* FindFileByID(uint64_t id);
-	Struct* CreateNewStruct(const std::string& name);
-	Struct* FindStructByName(const std::string& name);
+	DDFile* CreateNewFile();
+	DDFile* FindFileByID(uint64_t id);
+	DDStruct* CreateNewStruct(const std::string& name);
+	DDStruct* FindStructByName(const std::string& name);
 
 	void DeleteImage(size_t id);
 	size_t DuplicateImage(size_t id);
@@ -229,8 +260,8 @@ struct DataDescInstanceSource : ui::TableDataSource
 	bool refilter = true;
 
 	DataDesc* dataDesc = nullptr;
-	DataDesc::Struct* filterStruct = nullptr;
-	DataDesc::File* filterFile = nullptr;
+	DDStruct* filterStruct = nullptr;
+	DDFile* filterFile = nullptr;
 	bool filterUserCreated = false;
 };
 
@@ -250,6 +281,6 @@ struct DataDescImageSource : ui::TableDataSource
 	bool refilter = true;
 
 	DataDesc* dataDesc = nullptr;
-	DataDesc::File* filterFile = nullptr;
+	DDFile* filterFile = nullptr;
 	bool filterUserCreated = false;
 };

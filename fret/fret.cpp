@@ -28,7 +28,7 @@ struct OpenedFile
 		w.EndDict();
 	}
 
-	DataDesc::File* ddFile = nullptr;
+	DDFile* ddFile = nullptr;
 	uint64_t fileID = 0;
 	HexViewerState hexViewerState;
 	HighlightSettings highlightSettings;
@@ -184,7 +184,7 @@ struct MainWindow : ui::NativeMainWindow
 			{
 				if (fileTG.active != nf++)
 					continue;
-				DataDesc::File* f = of->ddFile;
+				DDFile* f = of->ddFile;
 				IDataSource* ds = f->dataSource;
 
 				auto* p = ctx->Push<ui::TabPanel>();
@@ -274,7 +274,7 @@ struct MainWindow : ui::NativeMainWindow
 									{
 										auto createBlank = [this, f, of, hv, pos]()
 										{
-											auto* ns = new DataDesc::Struct;
+											auto* ns = new DDStruct;
 											do
 											{
 												ns->name = "struct" + std::to_string(rand() % 10000);
@@ -300,7 +300,7 @@ struct MainWindow : ui::NativeMainWindow
 											{
 												if (M.at < selMin || M.at > selMax)
 													continue;
-												for (DataDesc::Field f;
+												for (DDField f;
 													f.type = GetDataTypeName(M.type),
 													f.name = f.type + "_" + std::to_string(at++),
 													f.off = M.at - selMin,

@@ -74,7 +74,7 @@ static bool IsASCII(uint8_t v)
 	return v >= 0x20 && v < 0x7f;
 }
 
-static void Highlight(HighlightSettings* hs, DataDesc* desc, DataDesc::File* file, uint64_t basePos, ByteColors* outColors, uint8_t* bytes, size_t numBytes)
+static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint64_t basePos, ByteColors* outColors, uint8_t* bytes, size_t numBytes)
 {
 	for (auto& M : file->markerData.markers)
 	{

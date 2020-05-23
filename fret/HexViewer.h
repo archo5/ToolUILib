@@ -65,7 +65,7 @@ struct HexViewer : UIElement
 		return state->basePos;
 	}
 
-	void Init(DataDesc* dd, DataDesc::File* f, HexViewerState* hvs, HighlightSettings* hs)
+	void Init(DataDesc* dd, DDFile* f, HexViewerState* hvs, HighlightSettings* hs)
 	{
 		dataDesc = dd;
 		file = f;
@@ -75,7 +75,7 @@ struct HexViewer : UIElement
 
 	// input data
 	DataDesc* dataDesc = nullptr;
-	DataDesc::File* file = nullptr;
+	DDFile* file = nullptr;
 	HexViewerState* state = nullptr;
 	HighlightSettings* highlightSettings = nullptr;
 };

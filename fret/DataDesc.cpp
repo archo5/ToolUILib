@@ -304,7 +304,15 @@ static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 	{ "f32", { 4, true, [](const void* src) -> int64_t { return *(const float*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%g", *(const float*)src); out += bfr; } } },
 };
 
-uint64_t DataDesc::GetFixedFieldSize(const Field& field)
+size_t DDStruct::FindFieldByName(StringView name)
+{
+	for (size_t i = 0; i < fields.size(); i++)
+		if (StringView(fields[i].name) == name)
+			return i;
+	return SIZE_MAX;
+}
+
+uint64_t DataDesc::GetFixedFieldSize(const DDField& field)
 {
 	auto it = g_builtinTypes.find(field.type);
 	if (it != g_builtinTypes.end())
@@ -355,7 +363,7 @@ static int64_t ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& B
 	return retSize;
 }
 
-static int64_t GetFieldCount(const DataDesc::StructInst& SI, const DataDesc::Field& F, const std::vector<DataDesc::ReadField>& rfs)
+static int64_t GetFieldCount(const DDStructInst& SI, const DDField& F, const std::vector<DataDesc::ReadField>& rfs)
 {
 	if (F.countSrc.empty())
 		return F.count;
@@ -391,7 +399,7 @@ static int64_t GetFieldCount(const DataDesc::StructInst& SI, const DataDesc::Fie
 	return 0;
 }
 
-static int64_t GetCompArgValue(const DataDesc::StructInst& SI, const DataDesc::Field& F, const std::vector<DataDesc::ReadField>& rfs, const DataDesc::CompArg& arg)
+static int64_t GetCompArgValue(const DDStructInst& SI, const DDField& F, const std::vector<DataDesc::ReadField>& rfs, const DDCompArg& arg)
 {
 	if (arg.src.empty())
 		return arg.intVal;
@@ -424,7 +432,7 @@ static int64_t GetCompArgValue(const DataDesc::StructInst& SI, const DataDesc::F
 	return 0;
 }
 
-static bool EvaluateCondition(const DataDesc::Condition& cnd, const DataDesc::StructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+static bool EvaluateCondition(const DDCondition& cnd, const DDStructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
 {
 	if (cnd.field.empty())
 		return true;
@@ -438,7 +446,7 @@ static bool EvaluateCondition(const DataDesc::Condition& cnd, const DataDesc::St
 	return false;
 }
 
-static bool EvaluateConditions(const DataDesc::Field& F, const DataDesc::StructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+static bool EvaluateConditions(const DDField& F, const DDStructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
 {
 	if (F.conditions.empty())
 		return true;
@@ -454,7 +462,7 @@ static int64_t DUMP(const std::string& txt, int64_t val)
 	return val;
 }
 
-static int64_t GetStructSize(const DataDesc::Struct* S, const DataDesc::StructInst& SI/*, const DataDesc::Field& F*/, const std::vector<DataDesc::ReadField>& rfs)
+static int64_t GetStructSize(const DDStruct* S, const DDStructInst& SI/*, const DDField& F*/, const std::vector<DataDesc::ReadField>& rfs)
 {
 	if (S->sizeSrc.size())
 	{
@@ -477,16 +485,24 @@ static int64_t GetStructSize(const DataDesc::Struct* S, const DataDesc::StructIn
 	return DUMP(S->name + "|noSrc", S->size);
 }
 
-int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off, std::vector<ReadField>& out)
+int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out, bool computed)
 {
+	VariableSource vs;
+	{
+		vs.desc = this;
+		vs.root = &SI;
+	}
+	IDataSource* ds = SI.file->dataSource;
 	if (SI.def->serialized)
 	{
-		auto origOff = off;
+		int64_t off = SI.off;
 		for (const auto& F : SI.def->fields)
 		{
 			DataDesc::ReadField rf = { "", off, 0, 0, false };
-			if (EvaluateConditions(F, SI, out))
+			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
 			{
+				if (F.offExprInst)
+					rf.off = F.offExprInst->Evaluate(&vs);
 				rf.present = true;
 				rf.count = GetFieldCount(SI, F, out);
 
@@ -509,15 +525,17 @@ int64_t DataDesc::ReadStruct(IDataSource* ds, const StructInst& SI, int64_t off,
 			}
 			out.push_back(std::move(rf));
 		}
-		return off - origOff;
+		return off - SI.off;
 	}
 	else
 	{
 		for (const auto& F : SI.def->fields)
 		{
-			DataDesc::ReadField rf = { "", off + F.off, 0, 0 };
-			if (EvaluateConditions(F, SI, out))
+			DataDesc::ReadField rf = { "", SI.off + F.off, 0, 0 };
+			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
 			{
+				if (F.offExprInst)
+					rf.off = F.offExprInst->Evaluate(&vs);
 				rf.present = true;
 				rf.count = GetFieldCount(SI, F, out);
 
@@ -649,12 +667,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 					}
 				}
 
-				Struct* S;
+				DDStruct* S;
 				std::vector<ReadField> rfs;
 			};
 			Data data;
 			data.S = &S;
-			auto size = ReadStruct(SI.file->dataSource, SI, SI.off, data.rfs);
+			auto size = ReadStruct(SI, data.rfs);
 			if (S.sizeSrc.size())
 			{
 				size = GetStructSize(&S, SI, data.rfs);
@@ -896,6 +914,7 @@ void DataDesc::EditField(UIContainer* ctx)
 				auto& F = S.fields[curField];
 				if (!S.serialized)
 					ui::imm::PropEditInt(ctx, "Offset", F.off);
+				ui::imm::PropEditString(ctx, "Off.expr.", F.offExpr.c_str(), [&F](const char* v) { F.offExpr = v; F.UpdateOffExpr(); });
 				ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
 				ui::imm::PropEditString(ctx, "Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
 				ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1);
@@ -973,7 +992,7 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 	}
 }
 
-size_t DataDesc::AddInst(const StructInst& src)
+size_t DataDesc::AddInst(const DDStructInst& src)
 {
 	printf("trying to create %s @ %" PRId64 "\n", src.def->name.c_str(), src.off);
 	for (size_t i = 0; i < instances.size(); i++)
@@ -993,7 +1012,7 @@ size_t DataDesc::AddInst(const StructInst& src)
 	return instances.size() - 1;
 }
 
-size_t DataDesc::CreateNextInstance(const StructInst& SI, int64_t structSize)
+size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize)
 {
 	int64_t remSizeSub = SI.remainingCountIsSize ? structSize : 1;
 	assert(SI.remainingCount - remSizeSub);
@@ -1006,11 +1025,11 @@ size_t DataDesc::CreateNextInstance(const StructInst& SI, int64_t structSize)
 	}
 }
 
-size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID)
+size_t DataDesc::CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID)
 {
 	auto& F = SI.def->fields[fieldID];
 	auto SIcopy = SI;
-	StructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", false };
+	DDStructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", false };
 	newSI.remainingCountIsSize = F.countIsMaxSize;
 	newSI.remainingCount = rfs[fieldID].count;
 	size_t prevSize = instances.size();
@@ -1026,7 +1045,7 @@ size_t DataDesc::CreateFieldInstance(const StructInst& SI, const std::vector<Rea
 	return newInst;
 }
 
-void DataDesc::ExpandAllInstances(File* filterFile)
+void DataDesc::ExpandAllInstances(DDFile* filterFile)
 {
 	std::vector<ReadField> rfs;
 	for (size_t i = 0; i < instances.size(); i++)
@@ -1036,7 +1055,7 @@ void DataDesc::ExpandAllInstances(File* filterFile)
 		auto SI = instances[i];
 		auto& S = *SI.def;
 		rfs.clear();
-		auto size = ReadStruct(SI.file->dataSource, SI, SI.off, rfs);
+		auto size = ReadStruct(SI, rfs);
 		if (S.sizeSrc.size())
 		{
 			size = GetStructSize(&S, SI, rfs);
@@ -1052,9 +1071,9 @@ void DataDesc::ExpandAllInstances(File* filterFile)
 	}
 }
 
-void DataDesc::DeleteAllInstances(File* filterFile, Struct* filterStruct)
+void DataDesc::DeleteAllInstances(DDFile* filterFile, DDStruct* filterStruct)
 {
-	instances.erase(std::remove_if(instances.begin(), instances.end(), [filterFile, filterStruct](const DataDesc::StructInst& SI)
+	instances.erase(std::remove_if(instances.begin(), instances.end(), [filterFile, filterStruct](const DDStructInst& SI)
 	{
 		if (SI.userCreated)
 			return false;
@@ -1087,15 +1106,15 @@ void DataDesc::Clear()
 	images.clear();
 }
 
-DataDesc::File* DataDesc::CreateNewFile()
+DDFile* DataDesc::CreateNewFile()
 {
-	auto* F = new File;
+	auto* F = new DDFile;
 	F->id = fileIDAlloc++;
 	files.push_back(F);
 	return F;
 }
 
-DataDesc::File* DataDesc::FindFileByID(uint64_t id)
+DDFile* DataDesc::FindFileByID(uint64_t id)
 {
 	for (auto* F : files)
 		if (F->id == id)
@@ -1103,16 +1122,16 @@ DataDesc::File* DataDesc::FindFileByID(uint64_t id)
 	return nullptr;
 }
 
-DataDesc::Struct* DataDesc::CreateNewStruct(const std::string& name)
+DDStruct* DataDesc::CreateNewStruct(const std::string& name)
 {
 	assert(structs.count(name) == 0);
-	auto* S = new Struct;
+	auto* S = new DDStruct;
 	S->name = name;
 	structs[name] = S;
 	return S;
 }
 
-DataDesc::Struct* DataDesc::FindStructByName(const std::string& name)
+DDStruct* DataDesc::FindStructByName(const std::string& name)
 {
 	auto it = structs.find(name);
 	if (it != structs.end())
@@ -1171,7 +1190,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 			r.BeginEntry(E2);
 			r.BeginDict("");
 
-			Param P;
+			DDParam P;
 			P.name = r.ReadString("name");
 			P.intVal = r.ReadInt64("intVal");
 			S->params.push_back(P);
@@ -1187,10 +1206,16 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 			r.BeginEntry(E2);
 			r.BeginDict("");
 
-			Field F;
+			DDField F;
 			F.type = r.ReadString("type");
 			F.name = r.ReadString("name");
 			F.off = r.ReadInt64("off");
+			F.offExpr = r.ReadString("offExpr");
+			if (!F.offExpr.empty())
+			{
+				F.offExprInst = new MathExpr;
+				F.offExprInst->Compile(F.offExpr.c_str());
+			}
 			F.count = r.ReadInt64("count");
 			F.countSrc = r.ReadString("countSrc");
 			F.countIsMaxSize = r.ReadBool("countIsMaxSize");
@@ -1202,7 +1227,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 				r.BeginEntry(E3);
 				r.BeginDict("");
 
-				CompArg A;
+				DDCompArg A;
 				A.name = r.ReadString("name");
 				A.src = r.ReadString("src");
 				A.intVal = r.ReadInt64("intVal");
@@ -1219,7 +1244,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 				r.BeginEntry(E3);
 				r.BeginDict("");
 
-				Condition C;
+				DDCondition C;
 				C.field = r.ReadString("field");
 				C.value = r.ReadString("value");
 				F.conditions.push_back(C);
@@ -1249,7 +1274,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		r.BeginEntry(E);
 		r.BeginDict("");
 
-		StructInst SI;
+		DDStructInst SI;
 		SI.def = FindStructByName(r.ReadString("struct"));
 		SI.file = FindFileByID(r.ReadUInt64("file"));
 		SI.off = r.ReadInt64("off");
@@ -1264,7 +1289,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 			r.BeginEntry(E2);
 			r.BeginDict("");
 
-			Arg A;
+			DDArg A;
 			A.name = r.ReadString("name");
 			A.intVal = r.ReadInt64("intVal");
 			SI.args.push_back(A);
@@ -1336,7 +1361,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	std::sort(structNames.begin(), structNames.end());
 	for (const auto& sname : structNames)
 	{
-		Struct* S = structs.find(sname)->second;
+		DDStruct* S = structs.find(sname)->second;
 
 		w.BeginDict("");
 
@@ -1344,7 +1369,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteBool("serialized", S->serialized);
 
 		w.BeginArray("params");
-		for (Param& P : S->params)
+		for (DDParam& P : S->params)
 		{
 			w.BeginDict("");
 			w.WriteString("name", P.name);
@@ -1354,19 +1379,20 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 		w.EndArray();
 
 		w.BeginArray("fields");
-		for (const Field& F : S->fields)
+		for (const DDField& F : S->fields)
 		{
 			w.BeginDict("");
 			w.WriteString("type", F.type);
 			w.WriteString("name", F.name);
 			w.WriteInt("off", F.off);
+			w.WriteString("offExpr", F.offExpr);
 			w.WriteInt("count", F.count);
 			w.WriteString("countSrc", F.countSrc);
 			w.WriteBool("countIsMaxSize", F.countIsMaxSize);
 			w.WriteBool("readUntil0", F.readUntil0);
 
 			w.BeginArray("structArgs");
-			for (const CompArg& A : F.structArgs)
+			for (const DDCompArg& A : F.structArgs)
 			{
 				w.BeginDict("");
 				w.WriteString("name", A.name);
@@ -1377,7 +1403,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 			w.EndArray();
 
 			w.BeginArray("conditions");
-			for (const Condition& C : F.conditions)
+			for (const DDCondition& C : F.conditions)
 			{
 				w.BeginDict("");
 				w.WriteString("field", C.field);
@@ -1398,7 +1424,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndArray();
 
 	w.BeginArray("instances");
-	for (const StructInst& SI : instances)
+	for (const DDStructInst& SI : instances)
 	{
 		w.BeginDict("");
 
@@ -1411,7 +1437,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteInt("remainingCount", SI.remainingCount);
 
 		w.BeginArray("args");
-		for (const Arg& A : SI.args)
+		for (const DDArg& A : SI.args)
 		{
 			w.BeginDict("");
 			w.WriteString("name", A.name);
@@ -1519,7 +1545,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	{
 		auto& inst = dataDesc->instances[_indices[row]];
 		_rfs.clear();
-		dataDesc->ReadStruct(inst.file->dataSource, inst, inst.off, _rfs);
+		dataDesc->ReadStruct(inst, _rfs);
 		auto& rf = _rfs[col - DDI_COL_FirstField];
 		return rf.preview;
 	} break;

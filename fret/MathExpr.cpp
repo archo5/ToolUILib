@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include "MathExpr.h"
+#include "DataDesc.h"
 
 
 enum class MEOperation : uint8_t
@@ -22,6 +23,7 @@ enum class MEOperation : uint8_t
 
 struct ValueNode
 {
+	virtual ~ValueNode() {}
 	virtual int64_t Eval(IVariableSource*) const = 0;
 	virtual void Dump(int level) const = 0;
 };
@@ -48,6 +50,7 @@ struct ConstantNode : ValueNode
 
 struct UnaryOpNode : ValueNode
 {
+	~UnaryOpNode() { delete src; }
 	virtual int64_t Do(int64_t a) const = 0;
 	int64_t Eval(IVariableSource* vs) const override { return Do(src->Eval(vs)); }
 
@@ -76,6 +79,7 @@ struct BitwiseInvertNode : UnaryOpNode
 
 struct BinaryOpNode : ValueNode
 {
+	~BinaryOpNode() { delete srcA; delete srcB; }
 	virtual int64_t Do(int64_t a, int64_t b) const = 0;
 	int64_t Eval(IVariableSource* vs) const override { return Do(srcA->Eval(vs), srcB->Eval(vs)); }
 
@@ -154,7 +158,8 @@ struct RShiftNode : BinaryOpNode
 
 struct StructQueryNode
 {
-	virtual std::vector<DataDesc::StructInst*> Query(IVariableSource* vs) = 0;
+	virtual ~StructQueryNode() { delete which; }
+	virtual StructQueryResults Query(IVariableSource* vs) = 0;
 	virtual void Dump(int level) const = 0;
 	void DumpConditions(int level) const
 	{
@@ -171,22 +176,22 @@ struct StructQueryNode
 			fprintf(stderr, "\n");
 	}
 
-	std::vector<DataDesc::Condition> conditions;
+	std::vector<DDCondition> conditions;
 	ValueNode* which = nullptr;
 };
 
 struct ErrorQueryNode : StructQueryNode
 {
-	std::vector<DataDesc::StructInst*> Query(IVariableSource* vs) override { return {}; }
+	StructQueryResults Query(IVariableSource* vs) override { return {}; }
 	void Dump(int level) const override { DMPLEV(level); fprintf(stderr, "ERROR\n"); }
 };
 
 struct RootQueryNode : StructQueryNode
 {
-	std::vector<DataDesc::StructInst*> Query(IVariableSource* vs) override
+	StructQueryResults Query(IVariableSource* vs) override
 	{
 		int64_t nth = which ? which->Eval(vs) : 0;
-		return vs->RootQuery(typeName, conditions, which ? &nth : 0);
+		return vs->RootQuery(typeName, { conditions, !!which, nth });
 	}
 	void Dump(int level) const override
 	{
@@ -200,10 +205,11 @@ struct RootQueryNode : StructQueryNode
 
 struct SubQueryNode : StructQueryNode
 {
-	std::vector<DataDesc::StructInst*> Query(IVariableSource* vs) override
+	virtual ~SubQueryNode() { delete query; }
+	StructQueryResults Query(IVariableSource* vs) override
 	{
 		int64_t nth = which ? which->Eval(vs) : 0;
-		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, conditions, which ? &nth : 0);
+		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, { conditions, !!which, nth });
 	}
 	void Dump(int level) const override
 	{
@@ -220,11 +226,12 @@ struct SubQueryNode : StructQueryNode
 
 struct MemberFieldNode : ValueNode
 {
+	virtual ~MemberFieldNode() { delete query; }
 	int64_t Eval(IVariableSource* vs) const override
 	{
-		std::vector<DataDesc::StructInst*> insts = query ? query->Query(vs) : vs->GetInitialSet();
+		StructQueryResults insts = query ? query->Query(vs) : vs->GetInitialSet();
 		int64_t ret = 0;
-		if (insts.size() > 0 && vs->GetVariable(insts[0], name, ret))
+		if (insts.size() > 0 && vs->GetVariable(insts[0], name, isOffset, ret))
 			return ret;
 		return 0;
 	}
@@ -241,8 +248,35 @@ struct MemberFieldNode : ValueNode
 	bool isOffset = false;
 };
 
+struct StructOffsetNode : ValueNode
+{
+	virtual ~StructOffsetNode() { delete query; }
+	int64_t Eval(IVariableSource* vs) const override
+	{
+		StructQueryResults insts = query ? query->Query(vs) : vs->GetInitialSet();
+		int64_t ret = 0;
+		if (insts.size() > 0 && insts[0])
+			return insts[0]->off;
+		return 0;
+	}
+	void Dump(int level) const override
+	{
+		DMPLEV(level);
+		fprintf(stderr, "struct offset with query:\n");
+		if (query)
+			query->Dump(level + 1);
+	}
+
+	StructQueryNode* query = nullptr;
+};
+
 struct CompiledMathExpr
 {
+	~CompiledMathExpr()
+	{
+		delete root;
+	}
+
 	ValueNode* root;
 };
 
@@ -457,6 +491,13 @@ struct Compiler
 				N->query = ParseQuery(r);
 				return N;
 			}
+			if (tokens[r.from].type == OP_OFFSET)
+			{
+				auto* N = new StructOffsetNode;
+				r.from++;
+				N->query = ParseQuery(r, true);
+				return N;
+			}
 			puts("ERROR: CANNOT PARSE");
 			return new ErrorNode;
 		}
@@ -484,17 +525,20 @@ struct Compiler
 		return N;
 	}
 
-	StructQueryNode* ParseQuery(Range r)
+	StructQueryNode* ParseQuery(Range r, bool isFirstPrequery = false)
 	{
 		if (r.from == r.to)
 			return nullptr;
 
-		if (tokens[r.to - 1].type != OP_MEMBER)
+		if (!isFirstPrequery)
 		{
-			puts("ERROR: BAD PREQUERY");
-			return new ErrorQueryNode;
+			if (tokens[r.to - 1].type != OP_MEMBER)
+			{
+				puts("ERROR: BAD PREQUERY");
+				return new ErrorQueryNode;
+			}
+			r.to--;
 		}
-		r.to--;
 
 		if (r.from == r.to)
 		{
@@ -565,6 +609,101 @@ struct Compiler
 };
 
 
+static bool Matches(const StructQueryFilter& filter, DataDesc* desc, const DDStructInst* inst)
+{
+	if (filter.conditions.empty())
+		return true;
+	std::vector<DataDesc::ReadField> rfs;
+	desc->ReadStruct(*inst, rfs, false);
+	for (const auto& C : filter.conditions)
+	{
+		size_t fid = inst->def->FindFieldByName(C.field);
+		if (fid == SIZE_MAX)
+			return false;
+		if (rfs[fid].preview != C.value)
+			return false;
+	}
+	return true;
+}
+
+static StructQueryResults GetNth(StructQueryResults& res, int64_t nth)
+{
+	if (nth < 0 || nth >= res.size())
+		return {};
+	// TODO n = 0 fast path?
+	std::sort(res.begin(), res.end(), [](const DDStructInst* A, const DDStructInst* B) { return A->off < B->off; });
+	return { res[nth] };
+}
+
+bool VariableSource::GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal)
+{
+	std::vector<DataDesc::ReadField> rfs;
+	desc->ReadStruct(*inst, rfs, false);
+	for (size_t i = 0; i < rfs.size(); i++)
+	{
+		if (inst->def->fields[i].name != field)
+			continue;
+		outVal = offset ? rfs[i].off : rfs[i].intVal;
+		return true;
+	}
+	return false;
+}
+
+StructQueryResults VariableSource::GetInitialSet()
+{
+	return { root };
+}
+
+StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter)
+{
+	std::vector<DataDesc::ReadField> rfs;
+	StructQueryResults res;
+	for (auto* inst : src)
+	{
+		auto& SI = *inst;
+		size_t fid = SI.def->FindFieldByName(field);
+		if (fid == SIZE_MAX)
+			continue;
+
+		auto* str = desc->FindStructByName(SI.def->fields[fid].type);
+		if (!str)
+			continue;
+
+		rfs.clear();
+		desc->ReadStruct(SI, rfs, false);
+
+		size_t finst = desc->CreateFieldInstance(SI, rfs, fid);
+		if (!Matches(filter, desc, &desc->instances[finst]))
+			continue;
+
+		res.push_back(&desc->instances[finst]);
+	}
+	if (filter.returnNth)
+		res = GetNth(res, filter.nth);
+	return res;
+}
+
+StructQueryResults VariableSource::RootQuery(const std::string& typeName, const StructQueryFilter& filter)
+{
+	StructQueryResults res;
+	auto* F = root->file;
+	for (auto& SI : desc->instances)
+	{
+		if (SI.file != F)
+			continue;
+		if (SI.def->name != typeName)
+			continue;
+		if (!Matches(filter, desc, &SI))
+			continue;
+
+		res.push_back(&SI);
+	}
+	if (filter.returnNth)
+		res = GetNth(res, filter.nth);
+	return res;
+}
+
+
 MathExpr::~MathExpr()
 {
 	delete _impl;
@@ -591,30 +730,35 @@ int64_t MathExpr::Evaluate(IVariableSource* vsrc)
 }
 
 
-#if 1
+#if 0
 struct MathExprTest
 {
 	MathExprTest()
 	{
+		Test();
+		exit(0);
+	}
+	void Test()
+	{
 		struct TVS : IVariableSource
 		{
-			bool GetVariable(DataDesc::StructInst* inst, const std::string& field, int64_t& outVal) override
+			bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) override
 			{
-				printf("GET VARIABLE %s\n", field.c_str());
+				printf("GET VARIABLE%s %s\n", offset ? " OFFSET" : "", field.c_str());
 				outVal = 42;
 				return true;
 			}
-			std::vector<DataDesc::StructInst*> GetInitialSet() override
+			StructQueryResults GetInitialSet() override
 			{
 				puts("GET INITIAL SET");
 				return { nullptr };
 			}
-			std::vector<DataDesc::StructInst*> Subquery(const std::vector<DataDesc::StructInst*>& src, const std::string& field, const std::vector<DataDesc::Condition>& conditions, int64_t* nth) override
+			StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override
 			{
 				printf("SUBQUERY %s\n", field.c_str());
 				return { nullptr };
 			}
-			std::vector<DataDesc::StructInst*> RootQuery(const std::string& typeName, const std::vector<DataDesc::Condition>& conditions, int64_t* nth) override
+			StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override
 			{
 				printf("ROOT QUERY %s\n", typeName.c_str());
 				return { nullptr };
@@ -625,10 +769,11 @@ struct MathExprTest
 		e.Compile("(15 + 3) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @#potato) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @#\"potato\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @#potato.\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @#potato.field.grain) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-
-		exit(0);
 	}
 }
 gMathExprTest;
