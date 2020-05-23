@@ -469,8 +469,8 @@ bool NamedTextSerializeReader::Parse(StringView all)
 	for (int i = 0; i < prevIndent; i++)
 		entries[entryStack[i]].childSkip = entries.size() - entryStack[i];
 
-	for (auto& E : entries)
-		printf("indent=%d childSkip=%d key=\"%.*s\" value=\"%.*s\"\n", E.indent, int(E.childSkip), int(E.key.size()), E.key.data(), int(E.value.size()), E.value.data());
+	//for (auto& E : entries)
+	//	printf("indent=%d childSkip=%d key=\"%.*s\" value=\"%.*s\"\n", E.indent, int(E.childSkip), int(E.key.size()), E.key.data(), int(E.value.size()), E.value.data());
 	return true;
 }
 

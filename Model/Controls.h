@@ -352,7 +352,7 @@ struct Textbox : UIElement
 	Textbox& Init(float& val);
 	template <size_t N> Textbox& Init(char (&val)[N])
 	{
-			SetText(val);
+		SetText(val);
 		HandleEvent(UIEventType::Change) = [this, &val](UIEvent&)
 		{
 			auto& t = GetText();
