@@ -73,7 +73,9 @@ struct MarkedItemEditor : ui::Node
 {
 	void Render(UIContainer* ctx) override;
 
+	IDataSource* dataSource;
 	Marker* marker;
+	std::vector<std::string> analysis;
 };
 
 struct MarkedItemsList : ui::Node

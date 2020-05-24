@@ -191,7 +191,7 @@ struct RootQueryNode : StructQueryNode
 	StructQueryResults Query(IVariableSource* vs) override
 	{
 		int64_t nth = which ? which->Eval(vs) : 0;
-		return vs->RootQuery(typeName, { conditions, !!which, nth });
+		return typeName == "" ? vs->GetInitialSet() : vs->RootQuery(typeName, { conditions, !!which, nth });
 	}
 	void Dump(int level) const override
 	{
@@ -389,7 +389,7 @@ struct Compiler
 					return { isStruct ? STRUCT_NAME : FIELD_NAME, name };
 			}
 			else
-				puts("ERROR: BAD STRUCT NAME");
+				return { STRUCT_NAME, it.substr(0, 0) };
 		}
 
 		puts("ERROR!");
@@ -768,6 +768,7 @@ struct MathExprTest
 		e.Compile("15 + 3 * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + 3) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(@# + field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @#potato) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));

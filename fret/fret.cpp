@@ -202,16 +202,31 @@ struct MainWindow : ui::NativeMainWindow
 							ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
 							ctx->PushBox();
-							if (of->hexViewerState.selectionStart != UINT64_MAX)
 							{
-								auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-								auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 								char buf[256];
-								snprintf(buf, 256, "Selection: %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")", selMin, selMax, selMax - selMin + 1);
+								if (of->hexViewerState.selectionStart != UINT64_MAX)
+								{
+									int64_t selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+									int64_t selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+									int64_t len = selMax - selMin + 1;
+									int64_t ciOff = 0, ciSize = 0;
+									if (workspace.desc.curInst < workspace.desc.instances.size())
+									{
+										auto& SI = workspace.desc.instances[workspace.desc.curInst];
+										ciOff = SI.off;
+										ciSize = SI.def->size;
+									}
+									snprintf(buf, 256,
+										"Selection: %" PRIu64 " - %" PRIu64 " (%" PRIu64 ") rel: %" PRId64 " fit: %" PRId64 " rem: %" PRId64,
+										selMin, selMax, len,
+										selMin - ciOff,
+										ciSize ? len / ciSize : 0,
+										ciSize ? len % ciSize : 0);
+								}
+								else
+									snprintf(buf, 256, "Selection: <none>");
 								ctx->Text(buf);
 							}
-							else
-								ctx->Text("Selection: <none>");
 							ctx->Pop();
 
 							ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
@@ -427,7 +442,11 @@ struct MainWindow : ui::NativeMainWindow
 										{
 											size_t pos = tv->selection.GetFirstSelection();
 											if (tv->IsValidRow(pos))
-												ctx->Make<MarkedItemEditor>()->marker = &f->markerData.markers[pos];
+											{
+												auto* MIE = ctx->Make<MarkedItemEditor>();
+												MIE->dataSource = f->dataSource;
+												MIE->marker = &f->markerData.markers[pos];
+											}
 										}
 										ctx->Pop();
 									}

@@ -40,6 +40,47 @@ const char* GetDataTypeName(DataType t)
 	return typeNames[t];
 }
 
+template <class T> T modulus(T a, T b) { return a % b; }
+float modulus(float a, float b) { return fmodf(a, b); }
+double modulus(double a, double b) { return fmod(a, b); }
+template <class T> T greatest_common_divisor(T a, T b)
+{
+	if (b == 0)
+		return a;
+	return greatest_common_divisor(b, modulus(a, b));
+}
+
+typedef std::string AnalysisFunc(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count);
+template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count)
+{
+	T min = std::numeric_limits<T>::max();
+	T max = std::numeric_limits<T>::min();
+	T gcd = 0;
+	for (uint64_t i = 0; i < count; i++)
+	{
+		T val;
+		ds->Read(off + stride * i, sizeof(val), &val);
+		min = std::min(min, val);
+		max = std::max(max, val);
+		gcd = greatest_common_divisor(gcd, val);
+	}
+	return "min=" + std::to_string(min) + " max=" + std::to_string(max) + " gcd=" + std::to_string(gcd);
+}
+static AnalysisFunc* analysisFuncs[] =
+{
+	AnalysisFuncImpl<char>,
+	AnalysisFuncImpl<int8_t>,
+	AnalysisFuncImpl<uint8_t>,
+	AnalysisFuncImpl<int16_t>,
+	AnalysisFuncImpl<uint16_t>,
+	AnalysisFuncImpl<int32_t>,
+	AnalysisFuncImpl<uint32_t>,
+	AnalysisFuncImpl<int64_t>,
+	AnalysisFuncImpl<uint64_t>,
+	AnalysisFuncImpl<float>,
+	AnalysisFuncImpl<double>,
+};
+
 bool Marker::Contains(uint64_t pos) const
 {
 	if (pos < at)
@@ -239,6 +280,28 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
 	ui::imm::PropEditInt(ctx, "Stride", marker->stride);
 	ui::imm::PropEditString(ctx, "Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
+	ctx->Pop();
+
+	ctx->Push<ui::Panel>();
+	if (ui::imm::Button(ctx, "Analyze"))
+	{
+		analysis.clear();
+		if (marker->repeats <= 1)
+		{
+			// analyze a single array
+			analysis.push_back("array: " + analysisFuncs[marker->type](dataSource, marker->at, typeSizes[marker->type], marker->count));
+		}
+		else
+		{
+			// analyze each array element separately
+			for (uint64_t i = 0; i < marker->count; i++)
+			{
+				analysis.push_back(std::to_string(i) + ": " + analysisFuncs[marker->type](dataSource, marker->at + i * typeSizes[marker->type], marker->stride, marker->repeats));
+			}
+		}
+	}
+	for (const auto& S : analysis)
+		ctx->Text(S.c_str());
 	ctx->Pop();
 }
 
