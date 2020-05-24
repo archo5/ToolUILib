@@ -1560,10 +1560,10 @@ size_t DataDescInstanceSource::GetNumRows()
 
 size_t DataDescInstanceSource::GetNumCols()
 {
-	size_t ncols = filterStruct ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
-	if (filterFile)
+	size_t ncols = filterStructEnable && filterStruct ? DDI_COL_HEADER_SIZE + filterStruct->fields.size() : DDI_COL_HEADER_SIZE;
+	if (filterFileEnable && filterFile)
 		ncols--;
-	if (filterStruct)
+	if (filterStructEnable && filterStruct)
 		ncols--;
 	return ncols;
 }
@@ -1575,9 +1575,9 @@ std::string DataDescInstanceSource::GetRowName(size_t row)
 
 std::string DataDescInstanceSource::GetColName(size_t col)
 {
-	if (filterFile && col >= DDI_COL_File)
+	if (filterFileEnable && filterFile && col >= DDI_COL_File)
 		col++;
-	if (filterStruct && col >= DDI_COL_Struct)
+	if (filterStructEnable && filterStruct && col >= DDI_COL_Struct)
 		col++;
 	switch (col)
 	{
@@ -1592,9 +1592,9 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 
 std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 {
-	if (filterFile && col >= DDI_COL_File)
+	if (filterFileEnable && filterFile && col >= DDI_COL_File)
 		col++;
-	if (filterStruct && col >= DDI_COL_Struct)
+	if (filterStructEnable && filterStruct && col >= DDI_COL_Struct)
 		col++;
 	switch (col)
 	{
@@ -1617,7 +1617,10 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 
 void DataDescInstanceSource::Edit(UIContainer* ctx)
 {
-	if (ui::imm::PropButton(ctx, "Filter by struct", filterStruct ? filterStruct->name.c_str() : "<none>"))
+	ui::Property::Begin(ctx, "Filter by struct");
+	if (ui::imm::EditBool(ctx, filterStructEnable))
+		refilter = true;
+	if (ui::imm::Button(ctx, filterStruct ? filterStruct->name.c_str() : "<none>"))
 	{
 		std::vector<ui::MenuItem> items;
 		items.push_back(ui::MenuItem("<none>").Func([this]() { filterStruct = nullptr; refilter = true; }));
@@ -1628,7 +1631,55 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		}
 		ui::Menu(items).Show(ctx->GetCurrentNode());
 	}
-	if (ui::imm::PropButton(ctx, "Filter by file", filterFile ? filterFile->name.c_str() : "<none>"))
+	ui::Property::End(ctx);
+
+	if (!filterStructEnable || !filterStruct)
+	{
+		ui::Property::Begin(ctx, "Hide structs");
+		if (ui::imm::EditBool(ctx, filterHideStructsEnable))
+			refilter = true;
+
+		std::vector<DDStruct*> structs(filterHideStructs.begin(), filterHideStructs.end());
+		std::sort(structs.begin(), structs.end(), [](const DDStruct* A, const DDStruct* B) { return A->name < B->name; });
+
+		std::string buttonName;
+		for (auto* S : structs)
+		{
+			if (buttonName.size())
+				buttonName += ", ";
+			buttonName += S->name;
+		}
+		if (ui::imm::Button(ctx, structs.empty() ? "<none>" : buttonName.c_str()))
+		{
+			structs.clear();
+			for (auto& kvp : dataDesc->structs)
+				structs.push_back(kvp.second);
+			std::sort(structs.begin(), structs.end(), [](const DDStruct* A, const DDStruct* B) { return A->name < B->name; });
+
+			std::vector<ui::MenuItem> items;
+			items.push_back(ui::MenuItem("<none>").Func([this]() { filterHideStructs.clear(); refilter = true; }));
+			items.push_back(ui::MenuItem("<all>").Func([this, &structs]() { filterHideStructs.insert(structs.begin(), structs.end()); refilter = true; }));
+			items.push_back(ui::MenuItem::Separator());
+			for (auto* S : structs)
+			{
+				items.push_back(ui::MenuItem(S->name, {}, false, filterHideStructs.count(S)).Func([this, S]()
+				{
+					if (filterHideStructs.count(S))
+						filterHideStructs.erase(S);
+					else
+						filterHideStructs.insert(S);
+					refilter = true;
+				}));
+			}
+			ui::Menu(items).Show(ctx->GetCurrentNode());
+		}
+		ui::Property::End(ctx);
+	}
+
+	ui::Property::Begin(ctx, "Filter by file");
+	if (ui::imm::EditBool(ctx, filterFileEnable))
+		refilter = true;
+	if (ui::imm::Button(ctx, filterFile ? filterFile->name.c_str() : "<none>"))
 	{
 		std::vector<ui::MenuItem> items;
 		items.push_back(ui::MenuItem("<none>").Func([this]() { filterFile = nullptr; refilter = true; }));
@@ -1638,6 +1689,8 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		}
 		ui::Menu(items).Show(ctx->GetCurrentNode());
 	}
+	ui::Property::End(ctx);
+
 	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
 		refilter = true;
 }
@@ -1652,9 +1705,11 @@ void DataDescInstanceSource::_Refilter()
 	for (size_t i = 0; i < dataDesc->instances.size(); i++)
 	{
 		auto& I = dataDesc->instances[i];
-		if (filterStruct && filterStruct != I.def)
+		if (filterStructEnable && filterStruct && filterStruct != I.def)
 			continue;
-		if (filterFile && filterFile != I.file)
+		else if (filterHideStructsEnable && filterHideStructs.count(I.def))
+			continue;
+		if (filterFileEnable && filterFile && filterFile != I.file)
 			continue;
 		if (filterUserCreated && !I.userCreated)
 			continue;

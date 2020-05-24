@@ -262,8 +262,18 @@ struct DataDescInstanceSource : ui::TableDataSource
 	bool refilter = true;
 
 	DataDesc* dataDesc = nullptr;
+
+	bool filterStructEnable = true;
+	bool filterStructFollow = true;
 	DDStruct* filterStruct = nullptr;
+
+	bool filterHideStructsEnable = true;
+	std::unordered_set<DDStruct*> filterHideStructs;
+
+	bool filterFileEnable = true;
+	bool filterFileFollow = true;
 	DDFile* filterFile = nullptr;
+
 	bool filterUserCreated = false;
 };
 
