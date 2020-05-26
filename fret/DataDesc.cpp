@@ -367,12 +367,200 @@ static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 	{ "f32", { 4, true, [](const void* src) -> int64_t { return *(const float*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%g", *(const float*)src); out += bfr; } } },
 };
 
+void DDStructResource::Load(NamedTextSerializeReader& r)
+{
+	auto rsrcType = r.ReadString("type");
+	if (rsrcType == "image")
+		type = DDStructResourceType::Image;
+
+	switch (type)
+	{
+	case DDStructResourceType::Image:
+		r.BeginDict("image");
+
+		image.format = r.ReadString("format");
+		image.imgOff.SetExpr(r.ReadString("imgOff"));
+		image.palOff.SetExpr(r.ReadString("palOff"));
+		image.width.SetExpr(r.ReadString("width"));
+		image.height.SetExpr(r.ReadString("height"));
+
+		r.EndDict();
+		break;
+	}
+}
+
+void DDStructResource::Save(NamedTextSerializeWriter& w)
+{
+	switch (type)
+	{
+	case DDStructResourceType::Image:
+		w.WriteString("type", "image");
+		w.BeginDict("image");
+
+		w.WriteString("format", image.format);
+		w.WriteString("imgOff", image.imgOff.expr);
+		w.WriteString("palOff", image.palOff.expr);
+		w.WriteString("width", image.width.expr);
+		w.WriteString("height", image.height.expr);
+
+		w.EndDict();
+		break;
+	}
+}
+
 size_t DDStruct::FindFieldByName(StringView name)
 {
 	for (size_t i = 0; i < fields.size(); i++)
 		if (StringView(fields[i].name) == name)
 			return i;
 	return SIZE_MAX;
+}
+
+void DDStruct::Load(NamedTextSerializeReader& r)
+{
+	serialized = r.ReadBool("serialized");
+
+	r.BeginArray("params");
+	for (auto E2 : r.GetCurrentRange())
+	{
+		r.BeginEntry(E2);
+		r.BeginDict("");
+
+		DDParam P;
+		P.name = r.ReadString("name");
+		P.intVal = r.ReadInt64("intVal");
+		params.push_back(P);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	r.BeginArray("fields");
+	for (auto E2 : r.GetCurrentRange())
+	{
+		r.BeginEntry(E2);
+		r.BeginDict("");
+
+		DDField F;
+		F.type = r.ReadString("type");
+		F.name = r.ReadString("name");
+		F.off = r.ReadInt64("off");
+		F.offExpr.SetExpr(r.ReadString("offExpr"));
+		F.count = r.ReadInt64("count");
+		F.countSrc = r.ReadString("countSrc");
+		F.countIsMaxSize = r.ReadBool("countIsMaxSize");
+		F.readUntil0 = r.ReadBool("readUntil0");
+
+		r.BeginArray("structArgs");
+		for (auto E3 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E3);
+			r.BeginDict("");
+
+			DDCompArg A;
+			A.name = r.ReadString("name");
+			A.src = r.ReadString("src");
+			A.intVal = r.ReadInt64("intVal");
+			F.structArgs.push_back(A);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+
+		r.BeginArray("conditions");
+		for (auto E3 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E3);
+			r.BeginDict("");
+
+			DDCondition C;
+			C.field = r.ReadString("field");
+			C.value = r.ReadString("value");
+			F.conditions.push_back(C);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+		fields.push_back(F);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
+
+	r.BeginDict("resource");
+	resource.Load(r);
+	r.EndDict();
+
+	size = r.ReadInt64("size");
+	sizeSrc = r.ReadString("sizeSrc");
+}
+
+void DDStruct::Save(NamedTextSerializeWriter& w)
+{
+	w.WriteString("name", name);
+	w.WriteBool("serialized", serialized);
+
+	w.BeginArray("params");
+	for (DDParam& P : params)
+	{
+		w.BeginDict("");
+		w.WriteString("name", P.name);
+		w.WriteInt("intVal", P.intVal);
+		w.EndDict();
+	}
+	w.EndArray();
+
+	w.BeginArray("fields");
+	for (const DDField& F : fields)
+	{
+		w.BeginDict("");
+		w.WriteString("type", F.type);
+		w.WriteString("name", F.name);
+		w.WriteInt("off", F.off);
+		w.WriteString("offExpr", F.offExpr.expr);
+		w.WriteInt("count", F.count);
+		w.WriteString("countSrc", F.countSrc);
+		w.WriteBool("countIsMaxSize", F.countIsMaxSize);
+		w.WriteBool("readUntil0", F.readUntil0);
+
+		w.BeginArray("structArgs");
+		for (const DDCompArg& A : F.structArgs)
+		{
+			w.BeginDict("");
+			w.WriteString("name", A.name);
+			w.WriteString("src", A.src);
+			w.WriteInt("intVal", A.intVal);
+			w.EndDict();
+		}
+		w.EndArray();
+
+		w.BeginArray("conditions");
+		for (const DDCondition& C : F.conditions)
+		{
+			w.BeginDict("");
+			w.WriteString("field", C.field);
+			w.WriteString("value", C.value);
+			w.EndDict();
+		}
+		w.EndArray();
+
+		w.EndDict();
+	}
+	w.EndArray();
+
+	if (resource.type != DDStructResourceType::None)
+	{
+		w.BeginDict("resource");
+		resource.Save(w);
+		w.EndDict();
+	}
+
+	w.WriteInt("size", size);
+	w.WriteString("sizeSrc", sizeSrc);
 }
 
 uint64_t DataDesc::GetFixedFieldSize(const DDField& field)
@@ -564,8 +752,8 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 			DataDesc::ReadField rf = { "", off, 0, 0, false };
 			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
 			{
-				if (F.offExprInst)
-					rf.off = F.offExprInst->Evaluate(&vs);
+				if (F.offExpr.inst)
+					rf.off = F.offExpr.inst->Evaluate(&vs);
 				rf.present = true;
 				rf.count = GetFieldCount(SI, F, out);
 
@@ -597,8 +785,8 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 			DataDesc::ReadField rf = { "", SI.off + F.off, 0, 0 };
 			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
 			{
-				if (F.offExprInst)
-					rf.off = F.offExprInst->Evaluate(&vs);
+				if (F.offExpr.inst)
+					rf.off = F.offExpr.inst->Evaluate(&vs);
 				rf.present = true;
 				rf.count = GetFieldCount(SI, F, out);
 
@@ -626,11 +814,27 @@ static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 }
 
 static bool advancedAccess = false;
+static MathExprObj testQuery;
 void DataDesc::EditStructuralItems(UIContainer* ctx)
 {
 	ctx->Push<ui::Panel>();
 
 	ui::imm::PropEditBool(ctx, "Advanced access", advancedAccess);
+	if (advancedAccess)
+	{
+		ui::imm::PropEditString(ctx, "\bTQ:", testQuery.expr.c_str(), [](const char* v) { testQuery.SetExpr(v); });
+		if (testQuery.inst)
+		{
+			char bfr[128];
+			VariableSource vs;
+			{
+				vs.desc = this;
+				vs.root = &instances[curInst];
+			}
+			snprintf(bfr, 128, "Value: %" PRId64, testQuery.inst->Evaluate(&vs));
+			ctx->Text(bfr);
+		}
+	}
 	ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 	ctx->Text("Edit:") + ui::Padding(5);
@@ -782,6 +986,27 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			}
 			/*auto* tv = ctx->Make<ui::TableView>();
 			tv->SetDataSource(&data); TODO */
+
+			if (S.resource.type == DDStructResourceType::Image)
+			{
+				if (ui::imm::Button(ctx, "Open image"))
+				{
+					VariableSource vs;
+					{
+						vs.desc = this;
+						vs.root = &SI;
+					}
+					Image img;
+					img.file = SI.file;
+					img.offImage = S.resource.image.imgOff.Evaluate(vs);
+					img.offPalette = S.resource.image.palOff.Evaluate(vs);
+					img.width = S.resource.image.width.Evaluate(vs);
+					img.height = S.resource.image.height.Evaluate(vs);
+					img.format = S.resource.image.format;
+					img.userCreated = false;
+					images.push_back(img);
+				}
+			}
 		}
 
 		if (del)
@@ -954,6 +1179,32 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				ctx->GetCurrentNode()->Rerender();
 			}
 			ctx->Pop();
+
+			ctx->Text("Resource") + ui::Padding(5);
+			ui::Property::Begin(ctx);
+			ctx->Text("Type:") + ui::Padding(5);
+			{
+				auto* rb = ctx->MakeWithText<ui::RadioButtonT<DDStructResourceType>>("None");
+				rb->Init(S.resource.type, DDStructResourceType::None);
+				rb->onChange = [rb]() { rb->RerenderNode(); };
+				rb->SetStyle(ui::Theme::current->button);
+			}
+			{
+				auto* rb = ctx->MakeWithText<ui::RadioButtonT<DDStructResourceType>>("Image");
+				rb->Init(S.resource.type, DDStructResourceType::Image);
+				rb->onChange = [rb]() { rb->RerenderNode(); };
+				rb->SetStyle(ui::Theme::current->button);
+			}
+			ui::Property::End(ctx);
+
+			if (S.resource.type == DDStructResourceType::Image)
+			{
+				ui::imm::PropEditString(ctx, "Format", S.resource.image.format.c_str(), [&S](const char* v) { S.resource.image.format = v; });
+				ui::imm::PropEditString(ctx, "Image offset", S.resource.image.imgOff.expr.c_str(), [&S](const char* v) { S.resource.image.imgOff.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Palette offset", S.resource.image.palOff.expr.c_str(), [&S](const char* v) { S.resource.image.palOff.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Width", S.resource.image.width.expr.c_str(), [&S](const char* v) { S.resource.image.width.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Height", S.resource.image.height.expr.c_str(), [&S](const char* v) { S.resource.image.height.SetExpr(v); });
+			}
 		}
 		else
 		{
@@ -977,7 +1228,7 @@ void DataDesc::EditField(UIContainer* ctx)
 				auto& F = S.fields[curField];
 				if (!S.serialized)
 					ui::imm::PropEditInt(ctx, "Offset", F.off);
-				ui::imm::PropEditString(ctx, "Off.expr.", F.offExpr.c_str(), [&F](const char* v) { F.offExpr = v; F.UpdateOffExpr(); });
+				ui::imm::PropEditString(ctx, "Off.expr.", F.offExpr.expr.c_str(), [&F](const char* v) { F.offExpr.SetExpr(v); });
 				ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
 				ui::imm::PropEditString(ctx, "Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
 				ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1);
@@ -1245,86 +1496,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 
 		auto name = r.ReadString("name");
 		auto* S = CreateNewStruct(name);
-		S->serialized = r.ReadBool("serialized");
-
-		r.BeginArray("params");
-		for (auto E2 : r.GetCurrentRange())
-		{
-			r.BeginEntry(E2);
-			r.BeginDict("");
-
-			DDParam P;
-			P.name = r.ReadString("name");
-			P.intVal = r.ReadInt64("intVal");
-			S->params.push_back(P);
-
-			r.EndDict();
-			r.EndEntry();
-		}
-		r.EndArray();
-
-		r.BeginArray("fields");
-		for (auto E2 : r.GetCurrentRange())
-		{
-			r.BeginEntry(E2);
-			r.BeginDict("");
-
-			DDField F;
-			F.type = r.ReadString("type");
-			F.name = r.ReadString("name");
-			F.off = r.ReadInt64("off");
-			F.offExpr = r.ReadString("offExpr");
-			if (!F.offExpr.empty())
-			{
-				F.offExprInst = new MathExpr;
-				F.offExprInst->Compile(F.offExpr.c_str());
-			}
-			F.count = r.ReadInt64("count");
-			F.countSrc = r.ReadString("countSrc");
-			F.countIsMaxSize = r.ReadBool("countIsMaxSize");
-			F.readUntil0 = r.ReadBool("readUntil0");
-
-			r.BeginArray("structArgs");
-			for (auto E3 : r.GetCurrentRange())
-			{
-				r.BeginEntry(E3);
-				r.BeginDict("");
-
-				DDCompArg A;
-				A.name = r.ReadString("name");
-				A.src = r.ReadString("src");
-				A.intVal = r.ReadInt64("intVal");
-				F.structArgs.push_back(A);
-
-				r.EndDict();
-				r.EndEntry();
-			}
-			r.EndArray();
-
-			r.BeginArray("conditions");
-			for (auto E3 : r.GetCurrentRange())
-			{
-				r.BeginEntry(E3);
-				r.BeginDict("");
-
-				DDCondition C;
-				C.field = r.ReadString("field");
-				C.value = r.ReadString("value");
-				F.conditions.push_back(C);
-
-				r.EndDict();
-				r.EndEntry();
-			}
-			r.EndArray();
-			S->fields.push_back(F);
-
-			r.EndDict();
-			r.EndEntry();
-		}
-		r.EndArray();
-
-		S->size = r.ReadInt64("size");
-		S->sizeSrc = r.ReadString("sizeSrc");
+		S->Load(r);
 
 		r.EndDict();
 		r.EndEntry();
@@ -1428,59 +1600,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 
 		w.BeginDict("");
 
-		w.WriteString("name", S->name);
-		w.WriteBool("serialized", S->serialized);
-
-		w.BeginArray("params");
-		for (DDParam& P : S->params)
-		{
-			w.BeginDict("");
-			w.WriteString("name", P.name);
-			w.WriteInt("intVal", P.intVal);
-			w.EndDict();
-		}
-		w.EndArray();
-
-		w.BeginArray("fields");
-		for (const DDField& F : S->fields)
-		{
-			w.BeginDict("");
-			w.WriteString("type", F.type);
-			w.WriteString("name", F.name);
-			w.WriteInt("off", F.off);
-			w.WriteString("offExpr", F.offExpr);
-			w.WriteInt("count", F.count);
-			w.WriteString("countSrc", F.countSrc);
-			w.WriteBool("countIsMaxSize", F.countIsMaxSize);
-			w.WriteBool("readUntil0", F.readUntil0);
-
-			w.BeginArray("structArgs");
-			for (const DDCompArg& A : F.structArgs)
-			{
-				w.BeginDict("");
-				w.WriteString("name", A.name);
-				w.WriteString("src", A.src);
-				w.WriteInt("intVal", A.intVal);
-				w.EndDict();
-			}
-			w.EndArray();
-
-			w.BeginArray("conditions");
-			for (const DDCondition& C : F.conditions)
-			{
-				w.BeginDict("");
-				w.WriteString("field", C.field);
-				w.WriteString("value", C.value);
-				w.EndDict();
-			}
-			w.EndArray();
-
-			w.EndDict();
-		}
-		w.EndArray();
-
-		w.WriteInt("size", S->size);
-		w.WriteString("sizeSrc", S->sizeSrc);
+		S->Save(w);
 
 		w.EndDict();
 	}

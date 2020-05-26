@@ -156,16 +156,14 @@ struct RShiftNode : BinaryOpNode
 	const char* Name() const override { return ">>"; }
 };
 
-struct StructQueryNode
+struct StructQueryNodeFilters
 {
-	virtual ~StructQueryNode() { delete which; }
-	virtual StructQueryResults Query(IVariableSource* vs) = 0;
-	virtual void Dump(int level) const = 0;
-	void DumpConditions(int level) const
+	virtual ~StructQueryNodeFilters() { delete which; }
+	void Dump(int level) const
 	{
 		for (auto& C : conditions)
 		{
-			fprintf(stderr, " \"%s\"=\"%s\"", C.field.c_str(), C.value.c_str());
+			fprintf(stderr, " ?\"%s\"=\"%s\"", C.field.c_str(), C.value.c_str());
 		}
 		if (which)
 		{
@@ -180,6 +178,14 @@ struct StructQueryNode
 	ValueNode* which = nullptr;
 };
 
+struct StructQueryNode
+{
+	virtual StructQueryResults Query(IVariableSource* vs) = 0;
+	virtual void Dump(int level) const = 0;
+
+	StructQueryNodeFilters filters;
+};
+
 struct ErrorQueryNode : StructQueryNode
 {
 	StructQueryResults Query(IVariableSource* vs) override { return {}; }
@@ -190,14 +196,14 @@ struct RootQueryNode : StructQueryNode
 {
 	StructQueryResults Query(IVariableSource* vs) override
 	{
-		int64_t nth = which ? which->Eval(vs) : 0;
-		return typeName == "" ? vs->GetInitialSet() : vs->RootQuery(typeName, { conditions, !!which, nth });
+		int64_t nth = filters.which ? filters.which->Eval(vs) : 0;
+		return typeName == "" ? vs->GetInitialSet() : vs->RootQuery(typeName, { filters.conditions, !!filters.which, nth });
 	}
 	void Dump(int level) const override
 	{
 		DMPLEV(level);
 		fprintf(stderr, "root (struct) query \"%s\"", typeName.c_str());
-		DumpConditions(level);
+		filters.Dump(level);
 	}
 
 	std::string typeName;
@@ -208,14 +214,14 @@ struct SubQueryNode : StructQueryNode
 	virtual ~SubQueryNode() { delete query; }
 	StructQueryResults Query(IVariableSource* vs) override
 	{
-		int64_t nth = which ? which->Eval(vs) : 0;
-		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, { conditions, !!which, nth });
+		int64_t nth = filters.which ? filters.which->Eval(vs) : 0;
+		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, { filters.conditions, !!filters.which, nth });
 	}
 	void Dump(int level) const override
 	{
 		DMPLEV(level);
 		fprintf(stderr, "subfield query \"%s\"", name.c_str());
-		DumpConditions(level);
+		filters.Dump(level);
 		if (query)
 			query->Dump(level + 1);
 	}
@@ -305,9 +311,11 @@ enum METokenType
 	PEXPR_END = ')',
 	SEXPR_START = '[',
 	SEXPR_END = ']',
+	COMMA = ',',
 	OP_OFFSET = '@',
 	OP_MEMBER = '.',
 	OP_READ = '$',
+	OP_EQUAL = '=',
 };
 
 struct Token
@@ -318,13 +326,13 @@ struct Token
 
 static StringView operatorStrings[] =
 {
-	"(", ")", "[", "]", "@", ".", "$",
+	"(", ")", "[", "]", ",", "@", ".", "$", "=",
 	"+", "-", "*", "/", "%",
 	"&", "|", "^", "<<", ">>", "~",
 };
 static METokenType operatorTypes[] =
 {
-	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, OP_OFFSET, OP_MEMBER, OP_READ,
+	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, COMMA, OP_OFFSET, OP_MEMBER, OP_READ, OP_EQUAL,
 	OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
 	OP_AND, OP_OR, OP_XOR, OP_LSH, OP_RSH, OP_INV,
 };
@@ -416,7 +424,7 @@ struct Compiler
 		int minScore = 99;
 		size_t at = r.to;
 		constexpr int MAX = 32;
-		static char exprStack[MAX];
+		char exprStack[MAX] = {};
 		int level = 0;
 		for (size_t i = r.from; i < r.to; i++)
 		{
@@ -525,6 +533,81 @@ struct Compiler
 		return N;
 	}
 
+	size_t FindNextComma(Range r)
+	{
+		constexpr int MAX = 32;
+		char exprStack[MAX] = {};
+		int level = 0;
+		for (size_t i = r.from; i < r.to; i++)
+		{
+			if (tokens[i].type == PEXPR_START || tokens[i].type == SEXPR_START)
+			{
+				if (level >= MAX)
+					return r.to;
+				exprStack[level++] = tokens[i].type == PEXPR_START ? PEXPR_END : SEXPR_END;
+				continue;
+			}
+			if (tokens[i].type == PEXPR_END || tokens[i].type == SEXPR_END)
+			{
+				if (exprStack[--level] != tokens[i].type)
+					return r.to;
+				continue;
+			}
+			if (level > 0)
+				continue;
+			if (tokens[i].type == COMMA)
+				return i;
+		}
+		return r.to;
+	}
+
+	void ParseCondition(Range& r, StructQueryNodeFilters& qnfs)
+	{
+		size_t comma = FindNextComma(r);
+
+		if (tokens[r.from].type == FIELD_NAME)
+		{
+			if (r.from + 3 == comma && tokens[r.from + 1].type == OP_EQUAL && tokens[r.from + 2].type == FIELD_NAME)
+			{
+				DDCondition C;
+				C.field.assign(tokens[r.from].text.data(), tokens[r.from].text.size());
+				C.value.assign(tokens[r.from + 2].text.data(), tokens[r.from + 2].text.size());
+				qnfs.conditions.push_back(C);
+			}
+			else
+			{
+				puts("ERROR: BAD COND");
+			}
+		}
+		else if (tokens[r.from].type == STRUCT_NAME && tokens[r.from].text == "")
+		{
+			if (r.from + 3 <= comma && tokens[r.from + 1].type == OP_EQUAL)
+			{
+				qnfs.which = ParseExpr({ r.from + 2, comma });
+			}
+			else
+			{
+				puts("ERROR: BAD INDEX");
+			}
+		}
+		else
+		{
+			puts("ERROR: UNKNOWN FILTER");
+		}
+
+		r.from = comma + 1;
+	}
+
+	void ParseConditions(Range r, StructQueryNodeFilters& qnfs)
+	{
+		while (r.from < r.to)
+		{
+			ParseCondition(r, qnfs);
+			if (r.from < r.to && tokens[r.from].type == COMMA)
+				r.from++;
+		}
+	}
+
 	StructQueryNode* ParseQuery(Range r, bool isFirstPrequery = false)
 	{
 		if (r.from == r.to)
@@ -546,7 +629,51 @@ struct Compiler
 			return new ErrorQueryNode;
 		}
 
-		// TODO parse conditions
+		StructQueryNodeFilters qnfs;
+		if (tokens[r.to - 1].type == SEXPR_END)
+		{
+			constexpr int MAX = 32;
+			char exprStack[MAX] = {};
+			int level = 0;
+			exprStack[level++] = SEXPR_START;
+			size_t cond = r.to;
+			for (size_t i = r.to - 1; i > r.from; )
+			{
+				i--;
+				cond = i;
+				auto& T = tokens[i];
+				if (T.type == SEXPR_START || T.type == PEXPR_START)
+				{
+					if (exprStack[level - 1])
+					{
+						level--;
+						if (level == 0)
+							break;
+					}
+					else
+					{
+						puts("ERROR: BAD CONDITION");
+						return new ErrorQueryNode;
+					}
+				}
+				else if (T.type == SEXPR_END || T.type == PEXPR_END)
+				{
+					if (level >= MAX)
+					{
+						puts("ERROR: TOO MANY BRACES");
+						return new ErrorQueryNode;
+					}
+					exprStack[level++] = T.type;
+				}
+			}
+			if (cond == r.from)
+			{
+				puts("ERROR: BAD COND");
+				return new ErrorQueryNode;
+			}
+			ParseConditions({ cond + 1, r.to - 1 }, qnfs);
+			r.to = cond;
+		}
 
 		if (tokens[r.to - 1].type == FIELD_NAME)
 		{
@@ -555,6 +682,8 @@ struct Compiler
 			N->name.assign(name.data(), name.size());
 			r.to--;
 			N->query = ParseQuery(r);
+			N->filters = qnfs;
+			qnfs.which = nullptr;
 			return N;
 		}
 
@@ -569,6 +698,8 @@ struct Compiler
 			auto* N = new RootQueryNode;
 			auto name = tokens[r.to - 1].text;
 			N->typeName.assign(name.data(), name.size());
+			N->filters = qnfs;
+			qnfs.which = nullptr;
 			return N;
 		}
 
@@ -671,15 +802,51 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 
 		rfs.clear();
 		desc->ReadStruct(SI, rfs, false);
-
-		size_t finst = desc->CreateFieldInstance(SI, rfs, fid);
-		if (!Matches(filter, desc, &desc->instances[finst]))
+		if (!rfs[fid].present)
 			continue;
 
-		res.push_back(&desc->instances[finst]);
+		size_t finst = desc->CreateFieldInstance(SI, rfs, fid);
+		if (filter.returnNth)
+		{
+			for (int64_t i = 0; i <= filter.nth; )
+			{
+				auto* ch = &desc->instances[finst];
+
+				if (Matches(filter, desc, ch))
+				{
+					if (i++ == filter.nth)
+					{
+						res.push_back(ch);
+						break;
+					}
+				}
+
+				int64_t size = 64 /* TODO */;
+				int64_t remSize = ch->remainingCountIsSize ? size : 1;
+				if (ch->remainingCount - remSize <= 0)
+					break;
+
+				finst = desc->CreateNextInstance(*ch, size);
+			}
+		}
+		else
+		{
+			for (;;)
+			{
+				auto* ch = &desc->instances[finst];
+
+				if (Matches(filter, desc, ch))
+					res.push_back(ch);
+
+				int64_t size = 64 /* TODO */;
+				int64_t remSize = ch->remainingCountIsSize ? size : 1;
+				if (ch->remainingCount - remSize <= 0)
+					break;
+
+				finst = desc->CreateNextInstance(*ch, size);
+			}
+		}
 	}
-	if (filter.returnNth)
-		res = GetNth(res, filter.nth);
 	return res;
 }
 
@@ -775,6 +942,9 @@ struct MathExprTest
 		e.Compile("(15 + @#\"potato\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @#potato.\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 		e.Compile("(15 + @#potato.field.grain) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @#potato[field=value]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @#potato[#=3]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		e.Compile("(15 + @#potato[#=3+5, field=\"value\"]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
 	}
 }
 gMathExprTest;

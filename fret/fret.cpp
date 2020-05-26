@@ -114,7 +114,7 @@ struct Workspace
 		}
 
 		delete curImg;
-		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height);
+		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), { imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height });
 		curImgDesc = imgDesc;
 		return curImg;
 	}
@@ -340,25 +340,30 @@ struct MainWindow : ui::NativeMainWindow
 									}
 
 									std::vector<ui::MenuItem> images;
-									auto createImageOpt = [this, f, hv, pos](const char* fmt)
+									auto createImageOpt = [this, f, hv, pos](StringView fmt)
 									{
 										DataDesc::Image img;
 										img.userCreated = true;
 										img.width = 4;
 										img.height = 4;
 										img.offImage = pos;
-										img.format = fmt;
+										img.format.assign(fmt.data(), fmt.size());
 										img.file = f;
 										workspace.desc.curImage = workspace.desc.images.size();
 										workspace.desc.images.push_back(img);
 									};
-									images.push_back(ui::MenuItem("- Basic -", {}, true));
-									images.push_back(ui::MenuItem("RGBX8").Func([createImageOpt]() { createImageOpt("RGBX8"); }));
-									images.push_back(ui::MenuItem("RGBo8").Func([createImageOpt]() { createImageOpt("RGBo8"); }));
-									images.push_back(ui::MenuItem("- PSX -", {}, true));
-									images.push_back(ui::MenuItem("RGB5").Func([createImageOpt]() { createImageOpt("RGB5"); }));
-									images.push_back(ui::MenuItem("4BPP_RGB5").Func([createImageOpt]() { createImageOpt("4BPP_RGB5"); }));
-									images.push_back(ui::MenuItem("4BPP_RGBo8").Func([createImageOpt]() { createImageOpt("4BPP_RGBo8"); }));
+									StringView prevCat;
+									for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
+									{
+										StringView cat = GetImageFormatCategory(i);
+										if (cat != prevCat)
+										{
+											prevCat = cat;
+											images.push_back(ui::MenuItem(cat, {}, true));
+										}
+										StringView name = GetImageFormatName(i);
+										images.push_back(ui::MenuItem(name).Func([createImageOpt, name]() { createImageOpt(name); }));
+									}
 
 									ui::MenuItem items[] =
 									{

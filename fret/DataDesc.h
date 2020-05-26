@@ -86,6 +86,34 @@ struct MarkedItemsList : ui::Node
 };
 
 
+struct MathExprObj
+{
+	std::string expr;
+	MathExpr* inst = nullptr;
+
+	void Recompile()
+	{
+		delete inst;
+		inst = nullptr;
+		if (expr.size())
+		{
+			inst = new MathExpr;
+			inst->Compile(expr.c_str());
+		}
+	}
+	int64_t Evaluate(IVariableSource& vs)
+	{
+		return inst ? inst->Evaluate(&vs) : 0;
+	}
+	void SetExpr(const std::string& ne)
+	{
+		if (expr == ne)
+			return;
+		expr = ne;
+		Recompile();
+	}
+};
+
 struct DDFile
 {
 	uint64_t id = UINT64_MAX;
@@ -115,25 +143,7 @@ struct DDField
 	std::string name;
 
 	int64_t off = 0;
-	std::string offExpr;
-	MathExpr* offExprInst = nullptr;
-	void UpdateOffExpr()
-	{
-		if (offExpr.empty())
-		{
-			if (offExprInst)
-			{
-				delete offExprInst;
-				offExprInst = nullptr;
-			}
-		}
-		else
-		{
-			if (!offExprInst)
-				offExprInst = new MathExpr;
-			offExprInst->Compile(offExpr.c_str());
-		}
-	}
+	MathExprObj offExpr;
 
 	int64_t count = 1;
 	std::string countSrc;
@@ -144,8 +154,30 @@ struct DDField
 
 	bool IsComputed() const
 	{
-		return !offExpr.empty();
+		return !offExpr.expr.empty();
 	}
+};
+enum class DDStructResourceType
+{
+	None,
+	Image,
+};
+struct DDStructResource
+{
+	DDStructResourceType type = DDStructResourceType::None;
+
+	struct Image
+	{
+		std::string format;
+		MathExprObj imgOff;
+		MathExprObj palOff;
+		MathExprObj width;
+		MathExprObj height;
+	}
+	image;
+
+	void Load(NamedTextSerializeReader& r);
+	void Save(NamedTextSerializeWriter& w);
 };
 struct DDStruct
 {
@@ -155,8 +187,11 @@ struct DDStruct
 	std::vector<DDField> fields;
 	int64_t size = 0;
 	std::string sizeSrc;
+	DDStructResource resource;
 
 	size_t FindFieldByName(StringView name);
+	void Load(NamedTextSerializeReader& r);
+	void Save(NamedTextSerializeWriter& w);
 };
 struct DDArg
 {
