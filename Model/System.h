@@ -214,7 +214,7 @@ public:
 
 	UIContainer container;
 	UIEventSystem eventSystem;
-	ui::NativeWindowBase* nativeWindow;
+	ui::NativeWindowBase* nativeWindow = nullptr;
 };
 
 class InlineFrameNode : public Node

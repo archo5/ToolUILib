@@ -23,7 +23,11 @@ struct DrumGenerator : ui::Node
 	}
 	void Render(UIContainer* ctx) override
 	{
-		ctx->MakeWithText<ui::Button>("Play")->onClick = [this]() { Regenerate(); Play(); };
+		if (ui::imm::Button(ctx, "Play"))
+		{
+			Regenerate();
+			Play();
+		}
 
 		for (int i = 0; i < 3; i++)
 		{

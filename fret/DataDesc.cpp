@@ -56,6 +56,10 @@ template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, u
 	T min = std::numeric_limits<T>::max();
 	T max = std::numeric_limits<T>::min();
 	T gcd = 0;
+	T prev = 0;
+	bool eq = count > 1;
+	bool asc = count > 1;
+	bool asceq = count > 1;
 	for (uint64_t i = 0; i < count; i++)
 	{
 		T val;
@@ -63,8 +67,25 @@ template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, u
 		min = std::min(min, val);
 		max = std::max(max, val);
 		gcd = greatest_common_divisor(gcd, val);
+		if (i > 0)
+		{
+			if (val != prev)
+				eq = false;
+			if (val <= prev)
+				asc = false;
+			if (val < prev)
+				asceq = false;
+		}
+		prev = val;
 	}
-	return "min=" + std::to_string(min) + " max=" + std::to_string(max) + " gcd=" + std::to_string(gcd);
+	auto ret = "min=" + std::to_string(min) + " max=" + std::to_string(max) + " gcd=" + std::to_string(gcd);
+	if (eq)
+		ret += " eq";
+	else if (asc)
+		ret += " asc";
+	else if (asceq)
+		ret += " asceq";
+	return ret;
 }
 static AnalysisFunc* analysisFuncs[] =
 {
@@ -744,6 +765,10 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 		vs.root = &SI;
 	}
 	IDataSource* ds = SI.file->dataSource;
+	if (out.capacity() - out.size() < SI.def->fields.size())
+	{
+		out.reserve(out.size() + SI.def->fields.size());
+	}
 	if (SI.def->serialized)
 	{
 		int64_t off = SI.off;
@@ -798,7 +823,7 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
 				}
 			}
-			out.push_back(rf);
+			out.push_back(std::move(rf));
 		}
 		return SI.def->size;
 	}

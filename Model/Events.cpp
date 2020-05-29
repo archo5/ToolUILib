@@ -74,11 +74,13 @@ UIEventSystem::UIEventSystem()
 		val = ui::platform::GetTimeMs();
 }
 
-void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt)
+void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt, bool stopOnDisabled)
 {
 	UIObject* obj = e.target;
 	while (obj != tgt && !e.handled)
 	{
+		if (stopOnDisabled && obj->IsInputDisabled())
+			break;
 		e.current = obj;
 		obj->_DoEvent(e);
 		obj = obj->parent;
@@ -389,7 +391,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			{
 				ev.type = UIEventType::Activate;
 				ev.handled = false;
-				BubblingEvent(ev);
+				BubblingEvent(ev, nullptr, true);
 			}
 		}
 

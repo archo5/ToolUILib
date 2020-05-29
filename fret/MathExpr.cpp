@@ -854,11 +854,12 @@ StructQueryResults VariableSource::RootQuery(const std::string& typeName, const 
 {
 	StructQueryResults res;
 	auto* F = root->file;
+	auto* S = desc->FindStructByName(typeName);
+	if (!S)
+		return res;
 	for (auto& SI : desc->instances)
 	{
-		if (SI.file != F)
-			continue;
-		if (SI.def->name != typeName)
+		if (SI.def != S || SI.file != F)
 			continue;
 		if (!Matches(filter, desc, &SI))
 			continue;

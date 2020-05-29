@@ -31,7 +31,7 @@ struct MenuItem
 
 	MenuItem& Func(const std::function<void()>& f)
 	{
-		onActivate = [=](Menu*, int) { f(); };
+		onActivate = f ? [=](Menu*, int) { f(); } : std::function<void(Menu*, int)>();
 		return *this;
 	}
 	MenuItem& Func(const std::function<void(Menu*, int)>& f)

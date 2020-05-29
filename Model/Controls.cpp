@@ -25,16 +25,6 @@ void Button::OnEvent(UIEvent& e)
 	{
 		e.context->SetKeyboardFocus(this);
 	}
-	if (e.type == UIEventType::Activate)
-	{
-		if (IsInputDisabled())
-		{
-			e.handled = true;
-			return;
-		}
-		if (onClick)
-			onClick();
-	}
 }
 
 
@@ -56,11 +46,6 @@ void CheckableBase::OnEvent(UIEvent& e)
 	}
 	if (e.type == UIEventType::Activate)
 	{
-		if (IsInputDisabled())
-		{
-			e.handled = true;
-			return;
-		}
 		OnSelect();
 		if (onChange)
 			onChange();
@@ -350,7 +335,7 @@ bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifi
 	auto* btn = ctx->MakeWithText<ui::Button>(text);
 	for (auto* mod : mods)
 		mod->Apply(btn);
-	btn->onClick = [btn]()
+	btn->HandleEvent(UIEventType::Activate) = [btn](UIEvent&)
 	{
 		btn->flags |= UIObject_IsEdited;
 		btn->RerenderNode();
@@ -367,21 +352,66 @@ bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifi
 
 bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods)
 {
-	auto* cb = ctx->Make<CheckboxData>();
+	auto* cb = ctx->Make<Checkbox>();
+	for (auto* mod : mods)
+		mod->Apply(cb);
 	bool edited = false;
 	if (cb->flags & UIObject_IsEdited)
 	{
-		val = cb->value;
+		val = cb->GetChecked();
 		cb->flags &= ~UIObject_IsEdited;
 		edited = true;
 		cb->RerenderNode();
 	}
-	cb->onChange = [cb]()
+	cb->HandleEvent(UIEventType::Change) = [cb](UIEvent&)
 	{
 		cb->flags |= UIObject_IsEdited;
 		cb->RerenderNode();
 	};
-	cb->Init(val);
+	cb->SetChecked(val);
+	return edited;
+}
+
+bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*> mods)
+{
+	auto* cb = ctx->Make<ui::Checkbox>();
+	for (auto* mod : mods)
+		mod->Apply(cb);
+	bool edited = false;
+	if (cb->flags & UIObject_IsEdited)
+	{
+		cb->flags &= ~UIObject_IsEdited;
+		edited = true;
+		cb->RerenderNode();
+	}
+	cb->HandleEvent(UIEventType::Activate) = [cb](UIEvent&)
+	{
+		cb->flags |= UIObject_IsEdited;
+		cb->RerenderNode();
+	};
+	cb->SetChecked(val);
+	return edited;
+}
+
+bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, std::initializer_list<ui::Modifier*> mods)
+{
+	auto* cb = text ? ctx->MakeWithText<ui::Checkbox>(text) : ctx->Make<ui::Checkbox>();
+	cb->SetStyle(Theme::current->radioButton);
+	for (auto* mod : mods)
+		mod->Apply(cb);
+	bool edited = false;
+	if (cb->flags & UIObject_IsEdited)
+	{
+		cb->flags &= ~UIObject_IsEdited;
+		edited = true;
+		cb->RerenderNode();
+	}
+	cb->HandleEvent(UIEventType::Activate) = [cb](UIEvent&)
+	{
+		cb->flags |= UIObject_IsEdited;
+		cb->RerenderNode();
+	};
+	cb->SetChecked(val);
 	return edited;
 }
 
@@ -431,6 +461,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 		val = tmp;
 		tb->flags &= ~UIObject_IsEdited;
 		edited = true;
+		tb->RerenderNode();
 	}
 
 	char buf[1024];
@@ -441,8 +472,12 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	{
 		dragObj->HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
 		{
+			if (tb->IsInputDisabled())
+				return;
 			if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
 			{
+				if (tb->IsFocused())
+					e.context->SetKeyboardFocus(nullptr);
 				typename MakeSigned<TNum>::type diff = e.dx * speed;
 				TNum nv = val + diff;
 				if (nv > vmax || (diff > 0 && nv < val))
@@ -534,7 +569,7 @@ bool PropButton(UIContainer* ctx, const char* label, const char* text, std::init
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, std::initializer_list<ui::Modifier*> mods)
 {
 	Property::Begin(ctx, label);
-	bool ret = EditBool(ctx, val);
+	bool ret = EditBool(ctx, val, mods);
 	Property::End(ctx);
 	return ret;
 }
@@ -902,13 +937,16 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 {
 	uiState.InitOnEvent(e);
+	float dragSpeed = std::max(1.0f, info.contentSize / std::max(info.viewportSize, 1.0f));
+	float maxOff = std::max(info.contentSize - info.viewportSize, 0.0f);
 	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
 	{
 	case ui::SubUIDragState::Start:
-		dragOff = info.contentOff - e.y;
+		dragStartContentOff = info.contentOff;
+		dragStartCursorPos = e.y;
 		break;
 	case ui::SubUIDragState::Move:
-		info.contentOff = std::min(std::max(info.contentSize - info.viewportSize, 0.0f), std::max(0.0f, e.y + dragOff));
+		info.contentOff = std::min(maxOff, std::max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
 		break;
 	}
 }
@@ -1144,7 +1182,8 @@ void Textbox::OnEvent(UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
 			startCursor = endCursor = _FindCursorPos(e.x);
-		e.context->SetKeyboardFocus(this);
+		if (!IsInputDisabled())
+			e.context->SetKeyboardFocus(this);
 	}
 	else if (e.type == UIEventType::ButtonUp)
 	{
@@ -1184,6 +1223,8 @@ void Textbox::OnEvent(UIEvent& e)
 			e.context->SetKeyboardFocus(nullptr);
 			break;
 		case UIKeyAction::Backspace:
+			if (IsInputDisabled())
+				break;
 			if (IsLongSelection())
 				EraseSelection();
 			else if (endCursor > 0)
@@ -1191,6 +1232,8 @@ void Textbox::OnEvent(UIEvent& e)
 			e.context->OnChange(this);
 			break;
 		case UIKeyAction::Delete:
+			if (IsInputDisabled())
+				break;
 			if (IsLongSelection())
 				EraseSelection();
 			else if (endCursor + 1 < _text.size())
@@ -1225,9 +1268,12 @@ void Textbox::OnEvent(UIEvent& e)
 	}
 	else if (e.type == UIEventType::TextInput)
 	{
-		char ch[5];
-		if (e.GetUTF32Char() >= 32 && e.GetUTF8Text(ch))
-			EnterText(ch);
+		if (!IsInputDisabled())
+		{
+			char ch[5];
+			if (e.GetUTF32Char() >= 32 && e.GetUTF8Text(ch))
+				EnterText(ch);
+		}
 	}
 }
 
@@ -1453,20 +1499,49 @@ void TableView::OnPaint()
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);
 
-	// backgrounds
+	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
+	auto sbrect = RC;
+	sbrect.x0 = sbrect.x1 - sbw;
+	sbrect.y0 += chh;
+	RC.x1 -= sbw;
+
+	size_t minR = floor(yOff / h);
+	size_t maxR = size_t(floor((yOff + sbrect.GetHeight()) / h));
+	if (maxR > nr)
+		maxR = nr;
+
 	// - row header
-	for (size_t r = 0; r < nr; r++)
+	GL::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
+	// background:
+	for (size_t r = minR; r < maxR; r++)
 	{
 		info.rect =
 		{
 			RC.x0,
-			RC.y0 + chh + h * r,
+			RC.y0 + chh - yOff + h * r,
 			RC.x0 + rhw,
-			RC.y0 + chh + h * (r + 1),
+			RC.y0 + chh - yOff + h * (r + 1),
 		};
 		rowHeaderStyle->paint_func(info);
 	}
+	// text:
+	for (size_t r = minR; r < maxR; r++)
+	{
+		UIRect rect =
+		{
+			RC.x0,
+			RC.y0 + chh - yOff + h * r,
+			RC.x0 + rhw,
+			RC.y0 + chh - yOff + h * (r + 1),
+		};
+		rect = rect.ShrinkBy(padRH);
+		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
+	}
+	GL::PopScissorRect();
+
 	// - column header
+	GL::PushScissorRect(RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh);
+	// background:
 	for (size_t c = 0; c < nc; c++)
 	{
 		info.rect =
@@ -1478,45 +1553,7 @@ void TableView::OnPaint()
 		};
 		colHeaderStyle->paint_func(info);
 	}
-	// - cells
-	for (size_t r = 0; r < nr; r++)
-	{
-		for (size_t c = 0; c < nc; c++)
-		{
-			info.rect =
-			{
-				RC.x0 + rhw + _impl->colEnds[c],
-				RC.y0 + chh + h * r,
-				RC.x0 + rhw + _impl->colEnds[c + 1],
-				RC.y0 + chh + h * (r + 1),
-			};
-			if (selection.IsSelected(r))
-				info.state |= style::PS_Checked;
-			else
-				info.state &= ~style::PS_Checked;
-			if (_impl->hoverRow == r)
-				info.state |= style::PS_Hover;
-			else
-				info.state &= ~style::PS_Hover;
-			cellStyle->paint_func(info);
-		}
-	}
-
-	// text
-	// - row header
-	for (size_t r = 0; r < nr; r++)
-	{
-		UIRect rect =
-		{
-			RC.x0,
-			RC.y0 + chh + h * r,
-			RC.x0 + rhw,
-			RC.y0 + chh + h * (r + 1),
-		};
-		rect = rect.ShrinkBy(padRH);
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
-	}
-	// - column header
+	// text:
 	for (size_t c = 0; c < nc; c++)
 	{
 		UIRect rect =
@@ -1529,35 +1566,90 @@ void TableView::OnPaint()
 		rect = rect.ShrinkBy(padCH);
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
 	}
+	GL::PopScissorRect();
+
 	// - cells
-	for (size_t r = 0; r < nr; r++)
+	GL::PushScissorRect(RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1);
+	// background:
+	for (size_t r = minR; r < maxR; r++)
+	{
+		for (size_t c = 0; c < nc; c++)
+		{
+			info.rect =
+			{
+				RC.x0 + rhw + _impl->colEnds[c],
+				RC.y0 + chh - yOff + h * r,
+				RC.x0 + rhw + _impl->colEnds[c + 1],
+				RC.y0 + chh - yOff + h * (r + 1),
+			};
+			if (selection.IsSelected(r))
+				info.state |= style::PS_Checked;
+			else
+				info.state &= ~style::PS_Checked;
+			if (_impl->hoverRow == r)
+				info.state |= style::PS_Hover;
+			else
+				info.state &= ~style::PS_Hover;
+			cellStyle->paint_func(info);
+		}
+	}
+	// text:
+	for (size_t r = minR; r < maxR; r++)
 	{
 		for (size_t c = 0; c < nc; c++)
 		{
 			UIRect rect =
 			{
 				RC.x0 + rhw + _impl->colEnds[c],
-				RC.y0 + chh + h * r,
+				RC.y0 + chh - yOff + h * r,
 				RC.x0 + rhw + _impl->colEnds[c + 1],
-				RC.y0 + chh + h * (r + 1),
+				RC.y0 + chh - yOff + h * (r + 1),
 			};
 			rect = rect.ShrinkBy(padC);
 			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(r, c).c_str(), 1, 1, 1);
 		}
 	}
+	GL::PopScissorRect();
+
+	scrollbarV.OnPaint({ this, sbrect, sbrect.GetHeight(), chh + nr * h, yOff });
 
 	PaintChildren();
 }
 
 void TableView::OnEvent(UIEvent& e)
 {
+	size_t nr = _impl->dataSource->GetNumRows();
+
+	auto RC = GetContentRect();
+
+	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
+	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+
+	float rhw = 80 + padRH.x0 + padRH.x1;
+	float rhh = 20 + padRH.y0 + padRH.y1;
+	float chh = 20 + padCH.y0 + padCH.y1;
+	float cellh = 20 + padC.y0 + padC.y1;
+	float h = std::max(rhh, cellh);
+
+	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
+	auto sbrect = RC;
+	sbrect.x0 = sbrect.x1 - sbw;
+	sbrect.y0 += chh;
+	RC.x1 -= sbw;
+	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
+	scrollbarV.OnEvent(sbd, e);
+
 	if (e.type == UIEventType::ButtonDown)
 	{
 		e.context->SetKeyboardFocus(this);
 	}
 	if (e.type == UIEventType::MouseMove)
 	{
-		_impl->hoverRow = GetRowAt(e.y);
+		if (e.x < RC.x1 && e.y > RC.y0 + chh)
+			_impl->hoverRow = GetRowAt(e.y);
+		else
+			_impl->hoverRow = SIZE_MAX;
 	}
 	if (e.type == UIEventType::MouseLeave)
 	{
@@ -1565,14 +1657,17 @@ void TableView::OnEvent(UIEvent& e)
 	}
 	if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left)
 	{
-		selection.Clear();
-		size_t at = GetRowAt(e.y);
-		if (at < SIZE_MAX)
-			selection.SetSelected(at, true);
-		e.handled = true;
+		if (e.x < RC.x1 && e.y > RC.y0 + chh)
+		{
+			selection.Clear();
+			size_t at = GetRowAt(e.y);
+			if (at < SIZE_MAX)
+				selection.SetSelected(at, true);
+			e.handled = true;
 
-		UIEvent selev(e.context, this, UIEventType::SelectionChange);
-		e.context->BubblingEvent(selev);
+			UIEvent selev(e.context, this, UIEventType::SelectionChange);
+			e.context->BubblingEvent(selev);
+		}
 	}
 }
 
@@ -1584,6 +1679,7 @@ void TableView::OnSerialize(IDataSerializer& s)
 	_impl->colEnds.resize(size);
 	for (auto& v : _impl->colEnds)
 		s << v;
+	s << yOff;
 	selection.OnSerialize(s);
 }
 
@@ -1670,6 +1766,7 @@ size_t TableView::GetRowAt(float y)
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);
 
+	y += yOff;
 	y -= RC.y0;
 	y -= chh;
 	y = floor(y / h);

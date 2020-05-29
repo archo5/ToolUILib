@@ -235,6 +235,7 @@ void InlineFrameNode::SetFrameContents(FrameContents* contents)
 		delete frameContents;
 	}
 	frameContents = contents;
+	contents->nativeWindow = GetNativeWindow();
 	ownsContents = false;
 }
 
@@ -246,6 +247,7 @@ void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> 
 		delete frameContents;
 	}
 	frameContents = new FrameContents();
+	frameContents->nativeWindow = GetNativeWindow();
 	ownsContents = true;
 
 	auto& cont = frameContents->container;

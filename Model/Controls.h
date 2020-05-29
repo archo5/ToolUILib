@@ -6,24 +6,19 @@
 
 namespace ui {
 
-class Panel : public UIElement
+struct Panel : UIElement
 {
-public:
 	Panel();
 };
 
-class Button : public UIElement
+struct Button : UIElement
 {
-public:
 	Button();
 	void OnEvent(UIEvent& e) override;
-
-	std::function<void()> onClick;
 };
 
-class CheckableBase : public UIElement
+struct CheckableBase : UIElement
 {
-public:
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
@@ -34,55 +29,35 @@ public:
 	std::function<void()> onChange;
 };
 
-class CheckboxBase : public CheckableBase
+struct CheckboxBase : CheckableBase
 {
-public:
 	CheckboxBase();
 };
 
-// TODO
-class CheckboxData : public CheckboxBase
+struct Checkbox : CheckboxBase
 {
-public:
-	CheckboxData* Init(bool val)
+	bool GetChecked() const { return _value; }
+	Checkbox* SetChecked(bool val)
 	{
-		value = val;
+		_value = val;
 		return this;
 	}
-	void OnSerialize(IDataSerializer& s) override { s << value; }
+	void OnSerialize(IDataSerializer& s) override { s << _value; }
 
-	virtual void OnSelect() override { value ^= true; }
-	virtual bool IsSelected() override { return value; }
+	virtual void OnSelect() override { _value ^= true; }
+	virtual bool IsSelected() override { return _value; }
 
-	bool value;
+	bool _value;
 };
 
-class Checkbox : public CheckboxBase
+struct RadioButtonBase : CheckableBase
 {
-public:
-	Checkbox* Init(bool& bref)
-	{
-		_bptr = &bref;
-		return this;
-	}
-
-	virtual void OnSelect() override { if (_bptr) *_bptr ^= true; }
-	virtual bool IsSelected() override { return _bptr && *_bptr; }
-
-private:
-	bool* _bptr = nullptr;
-};
-
-class RadioButtonBase : public CheckableBase
-{
-public:
 	RadioButtonBase();
 };
 
 template <class T>
-class RadioButtonT : public RadioButtonBase
+struct RadioButtonT : RadioButtonBase
 {
-public:
 	RadioButtonT* Init(T& iref, T value)
 	{
 		_iptr = &iref;
@@ -97,15 +72,13 @@ public:
 	T _value = {};
 };
 
-class ListBox : public UIElement
+struct ListBox : UIElement
 {
-public:
 	ListBox();
 };
 
-class SelectableBase : public UIElement
+struct SelectableBase : UIElement
 {
-public:
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
@@ -115,9 +88,8 @@ public:
 	std::function<void()> onChange;
 };
 
-class Selectable : public SelectableBase
+struct Selectable : SelectableBase
 {
-public:
 	Selectable();
 	Selectable* Init(bool& bref)
 	{
@@ -214,6 +186,17 @@ namespace imm {
 
 bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods = {});
 bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods = {});
+bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*> mods = {});
+bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, std::initializer_list<ui::Modifier*> mods = {});
+template <class T> bool RadioButton(UIContainer* ctx, T& val, T cur, const char* text, std::initializer_list<ui::Modifier*> mods = {})
+{
+	if (RadioButtonRaw(ctx, val == cur, text, mods))
+	{
+		val = cur;
+		return true;
+	}
+	return false;
+}
 bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, std::initializer_list<ui::Modifier*> mods = {}, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
 bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, std::initializer_list<ui::Modifier*> mods = {}, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
 bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, std::initializer_list<ui::Modifier*> mods = {}, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
@@ -274,7 +257,8 @@ struct ScrollbarV
 	style::BlockRef trackVStyle;
 	style::BlockRef thumbVStyle;
 	SubUI<int> uiState;
-	float dragOff;
+	float dragStartContentOff;
+	float dragStartCursorPos;
 };
 
 class ScrollArea : public UIElement
@@ -425,6 +409,8 @@ public:
 	style::BlockRef rowHeaderStyle;
 	style::BlockRef colHeaderStyle;
 	Selection1D selection;
+	ScrollbarV scrollbarV;
+	float yOff = 0;
 
 private:
 	struct TableViewImpl* _impl;

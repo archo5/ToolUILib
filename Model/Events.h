@@ -149,7 +149,7 @@ struct UITimerData
 struct UIEventSystem
 {
 	UIEventSystem();
-	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr);
+	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr, bool stopOnDisabled = false);
 
 	void RecomputeLayout();
 	void ProcessTimers(float dt);

@@ -10,11 +10,12 @@ struct OpenClose : ui::Node
 	{
 		ctx->Push<ui::Panel>();
 
-		ctx->Make<ui::Checkbox>()->Init(open)->onChange = [this]() { Rerender(); };
+		auto* cb = ctx->Make<ui::Checkbox>()->SetChecked(open);
+		cb->onChange = [this, cb]() { open = cb->GetChecked(); Rerender(); };
 
-		ctx->MakeWithText<ui::Button>("Open")->onClick = [this]() { open = true; Rerender(); };
+		ctx->MakeWithText<ui::Button>("Open")->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { open = true; Rerender(); };
 
-		ctx->MakeWithText<ui::Button>("Close")->onClick = [this]() { open = false; Rerender(); };
+		ctx->MakeWithText<ui::Button>("Close")->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { open = false; Rerender(); };
 
 		if (open)
 		{
@@ -127,7 +128,7 @@ struct NodeEditTest : ui::Node
 
 			if (parent)
 			{
-				ctx->MakeWithText<ui::Button>("Delete")->onClick = [this]()
+				ctx->MakeWithText<ui::Button>("Delete")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
 				{
 					delete tgt;
 					parent->children.erase(std::find(parent->children.begin(), parent->children.end(), tgt));
@@ -156,7 +157,7 @@ struct NodeEditTest : ui::Node
 
 		void AddButton(UIContainer* ctx, size_t inspos)
 		{
-			ctx->MakeWithText<ui::Button>("Add")->onClick = [this, inspos]()
+			ctx->MakeWithText<ui::Button>("Add")->HandleEvent(UIEventType::Activate) = [this, inspos](UIEvent&)
 			{
 				static int ctr = 0;
 				auto* t = new TreeNode;
@@ -945,7 +946,7 @@ struct ThreadWorkerTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		ctx->MakeWithText<ui::Button>("Do it")->onClick = [this]()
+		ctx->MakeWithText<ui::Button>("Do it")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
 		{
 			wq.Push([this]()
 			{
@@ -1193,47 +1194,96 @@ struct IMGUITest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
+		ui::Property::Begin(ctx, "buttons");
+		if (ui::imm::Button(ctx, "working button"))
+			puts("working button");
+		if (ui::imm::Button(ctx, "disabled button", { &ui::Enable(false) }))
+			puts("DISABLED button SHOULD NOT APPEAR");
+		ui::Property::End(ctx);
+
 		{
+			ui::Property::Begin(ctx, "bool");
 			auto tmp = boolVal;
-			if (ui::imm::PropEditBool(ctx, "bool", tmp))
+			if (ui::imm::PropEditBool(ctx, "\bworking", tmp))
 				boolVal = tmp;
+			if (ui::imm::PropEditBool(ctx, "\bdisabled", tmp, { &ui::Enable(false) }))
+				boolVal = tmp;
+			ui::Property::End(ctx);
 		}
-		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %d")->Init(intFmt, 0)->onChange = [this]() { Rerender(); };
-		ctx->MakeWithText<ui::RadioButtonT<int>>("int format: %x")->Init(intFmt, 1)->onChange = [this]() { Rerender(); };
+
 		{
+			ui::Property::Begin(ctx, "int format: %d");
+			auto tmp = intFmt;
+			if (ui::imm::RadioButton(ctx, tmp, 0, "\bworking"))
+				intFmt = tmp;
+			if (ui::imm::RadioButton(ctx, tmp, 0, "\bdisabled", { &ui::Enable(false) }))
+				intFmt = tmp;
+			ui::Property::End(ctx);
+		}
+		{
+			ui::Property::Begin(ctx, "int format: %x");
+			auto tmp = intFmt;
+			if (ui::imm::RadioButton(ctx, tmp, 1, "\bworking"))
+				intFmt = tmp;
+			if (ui::imm::RadioButton(ctx, tmp, 1, "\bdisabled", { &ui::Enable(false) }))
+				intFmt = tmp;
+			ui::Property::End(ctx);
+		}
+
+		{
+			ui::Property::Begin(ctx, "int");
 			auto tmp = intVal;
-			if (ui::imm::PropEditInt(ctx, "int", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
+				intVal = tmp;
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
-			ctx->Text("int: " + std::to_string(intVal));
+			ctx->Text("int: " + std::to_string(intVal)) + ui::Padding(5);
+			ui::Property::End(ctx);
 		}
 		{
+			ui::Property::Begin(ctx, "uint");
 			auto tmp = uintVal;
-			if (ui::imm::PropEditInt(ctx, "uint", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
+				uintVal = tmp;
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
-			ctx->Text("uint: " + std::to_string(uintVal));
+			ctx->Text("uint: " + std::to_string(uintVal)) + ui::Padding(5);
+			ui::Property::End(ctx);
 		}
 		{
+			ui::Property::Begin(ctx, "int64");
 			auto tmp = int64Val;
-			if (ui::imm::PropEditInt(ctx, "int64", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+				int64Val = tmp;
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
-			ctx->Text("int64: " + std::to_string(int64Val));
+			ctx->Text("int64: " + std::to_string(int64Val)) + ui::Padding(5);
+			ui::Property::End(ctx);
 		}
 		{
+			ui::Property::Begin(ctx, "uint64");
 			auto tmp = uint64Val;
-			if (ui::imm::PropEditInt(ctx, "uint64", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+				uint64Val = tmp;
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
-			ctx->Text("uint64: " + std::to_string(uint64Val));
+			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::Padding(5);
+			ui::Property::End(ctx);
 		}
 		{
+			ui::Property::Begin(ctx, "float");
 			auto tmp = floatVal;
-			if (ui::imm::PropEditFloat(ctx, "float", tmp, {}, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat(ctx, "\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
+				floatVal = tmp;
+			if (ui::imm::PropEditFloat(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
-			ctx->Text("float: " + std::to_string(floatVal));
+			ctx->Text("float: " + std::to_string(floatVal)) + ui::Padding(5);
+			ui::Property::End(ctx);
 		}
 	}
 
@@ -1257,14 +1307,21 @@ struct Calculator : ui::Node
 		{
 			ctx->Make<ui::Textbox>()->SetText(operation);
 
-			ctx->MakeWithText<ui::Button>("<")->onClick = [this]() { if (!operation.empty()) operation.pop_back(); Rerender(); };
+			if (ui::imm::Button(ctx, "<"))
+			{
+				if (!operation.empty())
+					operation.pop_back();
+			}
 		}
 		ctx->Pop();
 
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < 11; i++)
 		{
-			ctx->MakeWithText<ui::Button>(numberNames[i])->onClick = [this, i]() { AddChar(numberNames[i][0]); };
+			if (ui::imm::Button(ctx, numberNames[i]))
+			{
+				AddChar(numberNames[i][0]);
+			}
 		}
 		ctx->Pop();
 
@@ -1272,10 +1329,16 @@ struct Calculator : ui::Node
 		{
 			for (int i = 0; i < 4; i++)
 			{
-				ctx->MakeWithText<ui::Button>(opNames[i])->onClick = [this, i]() { AddChar(opNames[i][0]); };
+				if (ui::imm::Button(ctx, opNames[i]))
+				{
+					AddChar(opNames[i][0]);
+				}
 			}
 
-			ctx->MakeWithText<ui::Button>("=")->onClick = [this]() { operation = ToString(Calculate()); Rerender(); };
+			if (ui::imm::Button(ctx, "="))
+			{
+				operation = ToString(Calculate());
+			}
 		}
 		ctx->Pop();
 
@@ -1573,10 +1636,12 @@ struct DataEditor : ui::Node
 						auto s = ctx->Push<ui::Panel>()->GetStyle();
 						s.SetLayout(style::layouts::Stack());
 						s.SetStackingDirection(style::StackingDirection::RightToLeft);
-						ctx->MakeWithText<ui::Button>("X")->onClick = [this]() { OnClose(); };
-						ctx->MakeWithText<ui::Button>("[]")->onClick = [this]() {
-							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized); };
-						ctx->MakeWithText<ui::Button>("_")->onClick = [this]() { SetState(ui::WindowState::Minimized); };
+						if (ui::imm::Button(ctx, "X"))
+							OnClose();
+						if (ui::imm::Button(ctx, "[]"))
+							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized);
+						if (ui::imm::Button(ctx, "_"))
+							SetState(ui::WindowState::Minimized);
 						ctx->Pop();
 
 						ctx->Push<ui::Panel>();
@@ -1736,30 +1801,15 @@ struct DataEditor : ui::Node
 				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
 			ctx->Text("Item:") + ui::Padding(5) + ui::Width(style::Coord::Fraction(0));
 			ctx->Text(items[editing].name.c_str());
+			if (ui::imm::Button(ctx, "Go back", { &ui::Width(style::Coord::Fraction(0)) }))
 			{
-				auto* btn = ctx->Push<ui::Button>();
-				btn->GetStyle().SetWidth(style::Coord::Fraction(0));
-				btn->onClick = [this]() { editing = SIZE_MAX; ui::Notify(DCT_ItemSelection); };
+				editing = SIZE_MAX;
+				ui::Notify(DCT_ItemSelection);
 			}
-			ctx->Text("Go back");
-			ctx->Pop();
 			ctx->Pop();
 
-			ui::Property::Make(ctx, "Name", [&]()
-			{
-				auto tbName = ctx->Make<ui::Textbox>();
-				tbName->SetText(items[editing].name);
-				HandleEvent(tbName, UIEventType::Commit) = [this, tbName](UIEvent&)
-				{
-					items[editing].name = tbName->GetText();
-					Rerender();
-				};
-			});
-
-			ui::Property::Make(ctx, "Enable", [&]()
-			{
-				ctx->Make<ui::Checkbox>()->Init(items[editing].enable);//->SetInputDisabled(true);
-			});
+			ui::imm::PropEditString(ctx, "Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });
+			ui::imm::PropEditBool(ctx, "Enable", items[editing].enable);
 		}
 	}
 
