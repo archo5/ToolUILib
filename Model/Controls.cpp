@@ -24,6 +24,11 @@ void Button::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::ButtonDown)
 	{
 		e.context->SetKeyboardFocus(this);
+		e.handled = true;
+	}
+	if (e.type == UIEventType::Activate)
+	{
+		e.handled = true;
 	}
 }
 
@@ -47,9 +52,8 @@ void CheckableBase::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::Activate)
 	{
 		OnSelect();
-		if (onChange)
-			onChange();
 		e.context->OnChange(this);
+		e.context->OnCommit(this);
 	}
 }
 
@@ -350,28 +354,6 @@ bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifi
 	return clicked;
 }
 
-bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods)
-{
-	auto* cb = ctx->Make<Checkbox>();
-	for (auto* mod : mods)
-		mod->Apply(cb);
-	bool edited = false;
-	if (cb->flags & UIObject_IsEdited)
-	{
-		val = cb->GetChecked();
-		cb->flags &= ~UIObject_IsEdited;
-		edited = true;
-		cb->RerenderNode();
-	}
-	cb->HandleEvent(UIEventType::Change) = [cb](UIEvent&)
-	{
-		cb->flags |= UIObject_IsEdited;
-		cb->RerenderNode();
-	};
-	cb->SetChecked(val);
-	return edited;
-}
-
 bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*> mods)
 {
 	auto* cb = ctx->Make<ui::Checkbox>();
@@ -389,29 +371,38 @@ bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*
 		cb->flags |= UIObject_IsEdited;
 		cb->RerenderNode();
 	};
-	cb->SetChecked(val);
+	cb->Init(val);
 	return edited;
+}
+
+bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods)
+{
+	if (CheckboxRaw(ctx, val, mods))
+	{
+		val = !val;
+		return true;
+	}
+	return false;
 }
 
 bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, std::initializer_list<ui::Modifier*> mods)
 {
-	auto* cb = text ? ctx->MakeWithText<ui::Checkbox>(text) : ctx->Make<ui::Checkbox>();
-	cb->SetStyle(Theme::current->radioButton);
+	auto* rb = text ? ctx->MakeWithText<ui::RadioButton>(text) : ctx->Make<ui::RadioButton>();
 	for (auto* mod : mods)
-		mod->Apply(cb);
+		mod->Apply(rb);
 	bool edited = false;
-	if (cb->flags & UIObject_IsEdited)
+	if (rb->flags & UIObject_IsEdited)
 	{
-		cb->flags &= ~UIObject_IsEdited;
+		rb->flags &= ~UIObject_IsEdited;
 		edited = true;
-		cb->RerenderNode();
+		rb->RerenderNode();
 	}
-	cb->HandleEvent(UIEventType::Activate) = [cb](UIEvent&)
+	rb->HandleEvent(UIEventType::Activate) = [rb](UIEvent&)
 	{
-		cb->flags |= UIObject_IsEdited;
-		cb->RerenderNode();
+		rb->flags |= UIObject_IsEdited;
+		rb->RerenderNode();
 	};
-	cb->SetChecked(val);
+	rb->Init(val);
 	return edited;
 }
 
@@ -1012,37 +1003,13 @@ TabGroup::TabGroup()
 	styleProps = Theme::current->tabGroup;
 }
 
-void TabGroup::OnInit()
-{
-	_curButton = 0;
-	_curPanel = 0;
-}
 
-void TabGroup::OnPaint()
-{
-	styleProps->paint_func(this);
-
-	for (UIObject* ch = firstChild; ch; ch = ch->next)
-	{
-		if (auto* p = dynamic_cast<TabPanel*>(ch))
-			if (p->id != active)
-				continue;
-		ch->OnPaint();
-	}
-}
-
-void TabGroup::OnSerialize(IDataSerializer& s)
-{
-	s << active;
-}
-
-
-TabList::TabList()
+TabButtonList::TabButtonList()
 {
 	styleProps = Theme::current->tabList;
 }
 
-void TabList::OnPaint()
+void TabButtonList::OnPaint()
 {
 	styleProps->paint_func(this);
 
@@ -1050,8 +1017,8 @@ void TabList::OnPaint()
 	{
 		for (UIObject* ch = firstChild; ch; ch = ch->next)
 		{
-			if (auto* p = dynamic_cast<TabButton*>(ch))
-				if (p->id == g->active)
+			if (auto* p = dynamic_cast<TabButtonBase*>(ch))
+				if (p->IsSelected())
 					continue;
 			ch->OnPaint();
 		}
@@ -1061,47 +1028,35 @@ void TabList::OnPaint()
 }
 
 
-TabButton::TabButton()
+TabButtonBase::TabButtonBase()
 {
 	styleProps = Theme::current->tabButton;
 }
 
-void TabButton::OnInit()
-{
-	if (auto* g = FindParentOfType<TabGroup>())
-	{
-		id = g->_curButton++;
-		if (id == g->active)
-			g->_activeBtn = this;
-	}
-}
-
-void TabButton::OnDestroy()
+void TabButtonBase::OnDestroy()
 {
 	if (auto* g = FindParentOfType<TabGroup>())
 		if (g->_activeBtn == this)
 			g->_activeBtn = nullptr;
 }
 
-void TabButton::OnPaint()
+void TabButtonBase::OnPaint()
 {
 	style::PaintInfo info(this);
-	if (FindParentOfType<TabGroup>()->active == id)
+	if (IsSelected())
 		info.state |= style::PS_Checked;
 	styleProps->paint_func(info);
 	PaintChildren();
 }
 
-void TabButton::OnEvent(UIEvent& e)
+void TabButtonBase::OnEvent(UIEvent& e)
 {
 	if ((e.type == UIEventType::Activate || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
 	{
-		if (auto* g = FindParentOfType<TabGroup>())
-		{
-			g->active = id;
-			g->_activeBtn = this;
-			g->RerenderNode();
-		}
+		OnSelect();
+		e.context->OnChange(this);
+		e.context->OnCommit(this);
+		e.handled = true;
 	}
 }
 
@@ -1109,12 +1064,6 @@ void TabButton::OnEvent(UIEvent& e)
 TabPanel::TabPanel()
 {
 	styleProps = Theme::current->tabPanel;
-}
-
-void TabPanel::OnInit()
-{
-	if (auto* g = FindParentOfType<TabGroup>())
-		id = g->_curPanel++;
 }
 
 void TabPanel::OnPaint()

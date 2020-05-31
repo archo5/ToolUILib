@@ -22,11 +22,8 @@ struct CheckableBase : UIElement
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
-	virtual void OnSelect() = 0;
-	virtual bool IsSelected() = 0;
-
-	// TODO generalize efficiently
-	std::function<void()> onChange;
+	virtual void OnSelect() {}
+	virtual bool IsSelected() const { return !!(flags & UIObject_IsChecked); }
 };
 
 struct CheckboxBase : CheckableBase
@@ -36,8 +33,18 @@ struct CheckboxBase : CheckableBase
 
 struct Checkbox : CheckboxBase
 {
+	Checkbox* Init(bool checked)
+	{
+		SetFlag(UIObject_IsChecked, checked);
+		return this;
+	}
+	// implement Activate event to flip source state
+};
+
+struct CheckboxBoolState : CheckboxBase
+{
 	bool GetChecked() const { return _value; }
-	Checkbox* SetChecked(bool val)
+	CheckboxBoolState* SetChecked(bool val)
 	{
 		_value = val;
 		return this;
@@ -45,14 +52,49 @@ struct Checkbox : CheckboxBase
 	void OnSerialize(IDataSerializer& s) override { s << _value; }
 
 	virtual void OnSelect() override { _value ^= true; }
-	virtual bool IsSelected() override { return _value; }
+	virtual bool IsSelected() const override { return _value; }
 
 	bool _value;
+};
+
+template <class T>
+struct CheckboxFlagT : CheckboxBase
+{
+	CheckboxFlagT* Init(T& iref, T value)
+	{
+		_iptr = &iref;
+		_value = value;
+		return this;
+	}
+
+	void OnSelect() override
+	{
+		if (!_iptr)
+			return;
+		if (!IsSelected())
+			*_iptr |= _value;
+		else
+			*_iptr &= ~_value;
+	}
+	bool IsSelected() const override { return _iptr && (*_iptr & _value) == _value; }
+
+	T* _iptr = nullptr;
+	T _value = {};
 };
 
 struct RadioButtonBase : CheckableBase
 {
 	RadioButtonBase();
+};
+
+struct RadioButton : RadioButtonBase
+{
+	RadioButton* Init(bool selected)
+	{
+		SetFlag(UIObject_IsChecked, selected);
+		return this;
+	}
+	// implement Activate event to set source state
 };
 
 template <class T>
@@ -66,7 +108,7 @@ struct RadioButtonT : RadioButtonBase
 	}
 
 	void OnSelect() override { if (_iptr) *_iptr = _value; }
-	bool IsSelected() override { return _iptr && *_iptr == _value; }
+	bool IsSelected() const override { return _iptr && *_iptr == _value; }
 
 	T* _iptr = nullptr;
 	T _value = {};
@@ -185,8 +227,20 @@ struct Property : UIElement
 namespace imm {
 
 bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods = {});
-bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods = {});
 bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*> mods = {});
+bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods = {});
+template <class T> bool EditFlag(UIContainer* ctx, T& val, T cur, std::initializer_list<ui::Modifier*> mods = {})
+{
+	if (CheckboxRaw(ctx, (val & cur) == cur, mods))
+	{
+		if ((val & cur) != cur)
+			val |= cur;
+		else
+			val &= ~cur;
+		return true;
+	}
+	return false;
+}
 bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, std::initializer_list<ui::Modifier*> mods = {});
 template <class T> bool RadioButton(UIContainer* ctx, T& val, T cur, const char* text, std::initializer_list<ui::Modifier*> mods = {})
 {
@@ -278,43 +332,72 @@ class TabGroup : public UIElement
 {
 public:
 	TabGroup();
-	void OnInit() override;
-	void OnPaint() override;
-	void OnSerialize(IDataSerializer& s) override;
 
-	int active = 0;
-	class TabButton* _activeBtn = nullptr;
-	int _curButton = 0;
-	int _curPanel = 0;
+	struct TabButtonBase* _activeBtn = nullptr;
 };
 
-class TabList : public UIElement
+class TabButtonList : public UIElement
 {
 public:
-	TabList();
+	TabButtonList();
 	void OnPaint() override;
 };
 
-class TabButton : public UIElement
+struct TabButtonBase : UIElement
 {
-public:
-	TabButton();
-	void OnInit() override;
+	TabButtonBase();
 	void OnDestroy() override;
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
-	int id;
+	virtual void OnSelect() {}
+	virtual bool IsSelected() const { return !!(flags & UIObject_IsChecked); }
+};
+
+struct TabButton : TabButtonBase
+{
+	TabButton* Init(bool selected)
+	{
+		SetFlag(UIObject_IsChecked, selected);
+		if (selected)
+			if (auto* g = FindParentOfType<TabGroup>())
+				g->_activeBtn = this;
+		return this;
+	}
+	// implement Activate event to set source state
+};
+
+template <class T>
+struct TabButtonT : TabButtonBase
+{
+	TabButtonT* Init(T& iref, T value)
+	{
+		_iptr = &iref;
+		_value = value;
+		if (iref == value)
+			if (auto* g = FindParentOfType<TabGroup>())
+				g->_activeBtn = this;
+		return this;
+	}
+
+	void OnSelect() override
+	{
+		if (!_iptr)
+			return;
+		*_iptr = _value;
+		RerenderNode();
+	}
+	bool IsSelected() const override { return _iptr && *_iptr == _value; }
+
+	T* _iptr = nullptr;
+	T _value = {};
 };
 
 class TabPanel : public UIElement
 {
 public:
 	TabPanel();
-	void OnInit() override;
 	void OnPaint() override;
-
-	int id;
 };
 
 struct Textbox : UIElement

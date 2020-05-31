@@ -10,8 +10,8 @@ struct OpenClose : ui::Node
 	{
 		ctx->Push<ui::Panel>();
 
-		auto* cb = ctx->Make<ui::Checkbox>()->SetChecked(open);
-		cb->onChange = [this, cb]() { open = cb->GetChecked(); Rerender(); };
+		auto* cb = ctx->Make<ui::Checkbox>()->Init(open);
+		cb->HandleEvent(UIEventType::Change) = [this, cb](UIEvent&) { open = !open; Rerender(); };
 
 		ctx->MakeWithText<ui::Button>("Open")->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { open = true; Rerender(); };
 
@@ -538,6 +538,79 @@ struct SplitPaneTest : ui::Node
 	}
 };
 
+struct TabTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Push<ui::TabGroup>();
+		{
+			ctx->Push<ui::TabButtonList>();
+			{
+				ctx->MakeWithText<ui::TabButtonT<int>>("First tab")->Init(tab1, 0);
+				ctx->MakeWithText<ui::TabButton>("Second tab")->Init(tab1 == 1)->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+				{
+					tab1 = 1;
+					Rerender();
+				};
+			}
+			ctx->Pop();
+
+			ctx->Push<ui::TabPanel>()->SetVisible(tab1 == 0);
+			{
+				ctx->Text("Contents of the first tab (SetVisible)");
+			}
+			ctx->Pop();
+
+			ctx->Push<ui::TabPanel>()->SetVisible(tab1 == 1);
+			{
+				ctx->Text("Contents of the second tab (SetVisible)");
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+
+		ctx->Push<ui::TabGroup>();
+		{
+			ctx->Push<ui::TabButtonList>();
+			{
+				ctx->MakeWithText<ui::TabButton>("First tab")->Init(tab2 == 0)->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+				{
+					tab2 = 0;
+					Rerender();
+				};
+				ctx->MakeWithText<ui::TabButtonT<int>>("Second tab")->Init(tab2, 1);
+			}
+			ctx->Pop();
+
+			if (tab2 == 0)
+			{
+				ctx->Push<ui::TabPanel>();
+				{
+					ctx->Text("Contents of the first tab (conditional render)");
+				}
+				ctx->Pop();
+			}
+
+			if (tab2 == 1)
+			{
+				ctx->Push<ui::TabPanel>();
+				{
+					ctx->Text("Contents of the second tab (conditional render)");
+				}
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+	}
+
+	void OnSerialize(IDataSerializer& s)
+	{
+		s << tab1 << tab2;
+	}
+
+	int tab1 = 0, tab2 = 0;
+};
+
 static const char* layoutShortNames[] =
 {
 	"ST", "SL", "SB", "SR",
@@ -593,7 +666,7 @@ struct LayoutTest : ui::Node
 		for (int i = 0; i < layoutCount; i++)
 		{
 			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(layout, i);
-			rb->onChange = [this]() { Rerender(); };
+			rb->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 			rb->SetStyle(ui::Theme::current->button);
 		}
 		ctx->Text(layoutLongNames[layout]);
@@ -669,7 +742,7 @@ struct LayoutTest2 : ui::Node
 		for (int i = 0; i < layoutCount; i++)
 		{
 			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(mode, i);
-			rb->onChange = [this]() { Rerender(); };
+			rb->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 			rb->SetStyle(ui::Theme::current->button);
 		}
 		ctx->Text(layoutLongNames[mode]);
@@ -1136,9 +1209,9 @@ struct HighElementCountTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		ctx->PushBox();// + ui::StackingDirection(style::StackingDirection::LeftToRight); TODO FIX
-		ctx->MakeWithText<ui::RadioButtonT<int>>("no styles")->Init(styleMode, 0)->onChange = [this]() { Rerender(); };
-		ctx->MakeWithText<ui::RadioButtonT<int>>("same style")->Init(styleMode, 1)->onChange = [this]() { Rerender(); };
-		ctx->MakeWithText<ui::RadioButtonT<int>>("different styles")->Init(styleMode, 2)->onChange = [this]() { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("no styles")->Init(styleMode, 0)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("same style")->Init(styleMode, 1)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		ctx->MakeWithText<ui::RadioButtonT<int>>("different styles")->Init(styleMode, 2)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 		ctx->Pop();
 
 		for (int i = 0; i < 1000; i++)
@@ -1206,6 +1279,8 @@ struct IMGUITest : ui::Node
 			auto tmp = boolVal;
 			if (ui::imm::PropEditBool(ctx, "\bworking", tmp))
 				boolVal = tmp;
+			if (ui::imm::CheckboxRaw(ctx, tmp))
+				boolVal = !tmp;
 			if (ui::imm::PropEditBool(ctx, "\bdisabled", tmp, { &ui::Enable(false) }))
 				boolVal = tmp;
 			ui::Property::End(ctx);
@@ -1216,6 +1291,8 @@ struct IMGUITest : ui::Node
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 0, "\bworking"))
 				intFmt = tmp;
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, " "))
+				intFmt = 0;
 			if (ui::imm::RadioButton(ctx, tmp, 0, "\bdisabled", { &ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
@@ -1225,6 +1302,8 @@ struct IMGUITest : ui::Node
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 1, "\bworking"))
 				intFmt = tmp;
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, " "))
+				intFmt = 1;
 			if (ui::imm::RadioButton(ctx, tmp, 1, "\bdisabled", { &ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
@@ -1685,60 +1764,6 @@ struct DataEditor : ui::Node
 		frs.SetMinHeight(100);
 #endif
 
-#if 0
-		auto* tg = ctx->Push<ui::TabGroup>();
-		{
-			ctx->Push<ui::TabList>();
-			{
-				ctx->MakeWithText<ui::TabButton>("First tab");
-				ctx->MakeWithText<ui::TabButton>("Second tab");
-			}
-			ctx->Pop();
-
-			ctx->Push<ui::TabPanel>()->SetVisible(tg->active == 0);
-			{
-				ctx->Text("Contents of the first tab");
-			}
-			ctx->Pop();
-
-			ctx->Push<ui::TabPanel>()->SetVisible(tg->active == 1);
-			{
-				ctx->Text("Contents of the second tab");
-			}
-			ctx->Pop();
-		}
-		ctx->Pop();
-
-		tg = ctx->Push<ui::TabGroup>();
-		{
-			ctx->Push<ui::TabList>();
-			{
-				ctx->MakeWithText<ui::TabButton>("First tab");
-				ctx->MakeWithText<ui::TabButton>("Second tab");
-			}
-			ctx->Pop();
-
-			if (tg->active == 0)
-			{
-				ctx->Push<ui::TabPanel>()->id = 0;
-				{
-					ctx->Text("Contents of the first tab");
-				}
-				ctx->Pop();
-			}
-
-			if (tg->active == 1)
-			{
-				ctx->Push<ui::TabPanel>()->id = 1;
-				{
-					ctx->Text("Contents of the second tab");
-				}
-				ctx->Pop();
-			}
-		}
-		ctx->Pop();
-#endif
-
 		static bool lbsel0 = false;
 		static bool lbsel1 = true;
 		ctx->Push<ui::ListBox>();
@@ -1837,6 +1862,7 @@ static TestEntry testEntries[] =
 	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
 	{ "Split pane", [](UIContainer* ctx) { ctx->Make<SplitPaneTest>(); } },
+	{ "Tabs", [](UIContainer* ctx) { ctx->Make<TabTest>(); } },
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
 	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },

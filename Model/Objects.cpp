@@ -366,6 +366,14 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	finalRectCPB = finalRectCP; // no border yet
 }
 
+void UIObject::SetFlag(UIObjectFlags flag, bool set)
+{
+	if (set)
+		flags |= flag;
+	else
+		flags &= ~flag;
+}
+
 bool UIObject::IsChildOf(UIObject* obj) const
 {
 	for (auto* p = parent; p; p = p->parent)

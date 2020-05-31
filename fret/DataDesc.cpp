@@ -832,10 +832,7 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 
 static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 {
-	auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(text);
-	rb->Init(at, val);
-	rb->onChange = [rb]() { rb->RerenderNode(); };
-	rb->SetStyle(ui::Theme::current->button);
+	ui::imm::RadioButton(ctx, at, val, text, { &ui::Style(ui::Theme::current->button) });
 }
 
 static bool advancedAccess = false;
@@ -1208,18 +1205,8 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			ctx->Text("Resource") + ui::Padding(5);
 			ui::Property::Begin(ctx);
 			ctx->Text("Type:") + ui::Padding(5);
-			{
-				auto* rb = ctx->MakeWithText<ui::RadioButtonT<DDStructResourceType>>("None");
-				rb->Init(S.resource.type, DDStructResourceType::None);
-				rb->onChange = [rb]() { rb->RerenderNode(); };
-				rb->SetStyle(ui::Theme::current->button);
-			}
-			{
-				auto* rb = ctx->MakeWithText<ui::RadioButtonT<DDStructResourceType>>("Image");
-				rb->Init(S.resource.type, DDStructResourceType::Image);
-				rb->onChange = [rb]() { rb->RerenderNode(); };
-				rb->SetStyle(ui::Theme::current->button);
-			}
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", { &ui::Style(ui::Theme::current->button) });
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", { &ui::Style(ui::Theme::current->button) });
 			ui::Property::End(ctx);
 
 			if (S.resource.type == DDStructResourceType::Image)

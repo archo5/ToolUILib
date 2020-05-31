@@ -34,6 +34,13 @@ struct OpenedFile
 	HighlightSettings highlightSettings;
 };
 
+enum class SubtabType
+{
+	Markers,
+	Structures,
+	Images,
+};
+
 struct Workspace
 {
 	Workspace()
@@ -120,6 +127,8 @@ struct Workspace
 	}
 
 	std::vector<OpenedFile*> openedFiles;
+	int curOpenedFile = 0;
+	SubtabType curSubtab = SubtabType::Markers;
 	DataDesc desc;
 	DataDescInstanceSource ddiSrc;
 	DataDescImageSource ddimgSrc;
@@ -162,16 +171,16 @@ struct MainWindow : ui::NativeMainWindow
 		ctx->Pop();
 		ctx->Pop();
 
-		auto& fileTG = *ctx->Push<ui::TabGroup>();
-		fileTG + ui::Layout(style::layouts::EdgeSlice());
-		fileTG + ui::Height(style::Coord::Percent(100));
+		*ctx->Push<ui::TabGroup>()
+			+ ui::Layout(style::layouts::EdgeSlice())
+			+ ui::Height(style::Coord::Percent(100));
 		{
-			ctx->Push<ui::TabList>();
+			ctx->Push<ui::TabButtonList>();
 			{
 				int nf = 0;
 				for (auto* f : workspace.openedFiles)
 				{
-					ctx->Push<ui::TabButton>()->id = nf++;
+					ctx->Push<ui::TabButtonT<int>>()->Init(workspace.curOpenedFile, nf++);
 					ctx->Text(f->ddFile->name);
 					ctx->MakeWithText<ui::Button>("X");
 					ctx->Pop();
@@ -182,13 +191,12 @@ struct MainWindow : ui::NativeMainWindow
 			int nf = 0;
 			for (auto* of : workspace.openedFiles)
 			{
-				if (fileTG.active != nf++)
+				if (workspace.curOpenedFile != nf++)
 					continue;
 				DDFile* f = of->ddFile;
 				IDataSource* ds = f->dataSource;
 
 				auto* p = ctx->Push<ui::TabPanel>();
-				p->id = nf - 1;
 				{
 					auto s = p->GetStyle();
 					s.SetLayout(style::layouts::EdgeSlice());
@@ -390,23 +398,22 @@ struct MainWindow : ui::NativeMainWindow
 							};
 							ctx->Pop();
 
-							auto& tg = *ctx->Push<ui::TabGroup>();
-							tg + ui::Layout(style::layouts::EdgeSlice());
-							tg + ui::Height(style::Coord::Percent(100));
+							*ctx->Push<ui::TabGroup>()
+								+ ui::Layout(style::layouts::EdgeSlice())
+								+ ui::Height(style::Coord::Percent(100));
 							{
-								ctx->Push<ui::TabList>();
-								ctx->MakeWithText<ui::TabButton>("Markers")->id = 0;
-								ctx->MakeWithText<ui::TabButton>("Structures")->id = 1;
-								ctx->MakeWithText<ui::TabButton>("Images")->id = 2;
+								ctx->Push<ui::TabButtonList>();
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Markers")->Init(workspace.curSubtab, SubtabType::Markers);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Structures")->Init(workspace.curSubtab, SubtabType::Structures);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Images")->Init(workspace.curSubtab, SubtabType::Images);
 								ctx->Pop();
 
-								if (tg.active == 0)
-								{
-									auto& tp = *ctx->Push<ui::TabPanel>();
-									tp + ui::Layout(style::layouts::EdgeSlice());
-									tp + ui::Height(style::Coord::Percent(100));
-									tp.id = 0;
+								*ctx->Push<ui::TabPanel>()
+									+ ui::Layout(style::layouts::EdgeSlice())
+									+ ui::Height(style::Coord::Percent(100));
 
+								if (workspace.curSubtab == SubtabType::Markers)
+								{
 									auto& spmkr = *ctx->Push<ui::SplitPane>();
 									{
 										auto& ed = ctx->PushBox();
@@ -416,14 +423,14 @@ struct MainWindow : ui::NativeMainWindow
 										*tv + ui::Layout(style::layouts::EdgeSlice());
 										tv->SetDataSource(&f->markerData);
 										tv->CalculateColumnWidths();
-										tv->HandleEvent(tv, UIEventType::Click) = [this, f, of, tv, &fileTG](UIEvent& e)
+										tv->HandleEvent(tv, UIEventType::Click) = [this, f, of, tv](UIEvent& e)
 										{
 											size_t row = tv->GetHoverRow();
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
 											{
 												Marker& M = f->markerData.markers[row];
 												of->hexViewerState.basePos = M.at;
-												fileTG.RerenderNode();
+												tv->RerenderNode();
 											}
 										};
 										tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
@@ -457,17 +464,10 @@ struct MainWindow : ui::NativeMainWindow
 									}
 									ctx->Pop();
 									spmkr.SetSplits({ 0.6f });
-
-									ctx->Pop();
 								}
 
-								if (tg.active == 1)
+								if (workspace.curSubtab == SubtabType::Structures)
 								{
-									auto& tp = *ctx->Push<ui::TabPanel>();
-									tp + ui::Layout(style::layouts::EdgeSlice());
-									tp + ui::Height(style::Coord::Percent(100));
-									tp.id = 1;
-
 									auto& spstr = *ctx->Push<ui::SplitPane>();
 									{
 										auto& ed = ctx->PushBox();
@@ -498,7 +498,7 @@ struct MainWindow : ui::NativeMainWindow
 												workspace.desc.curInst = workspace.ddiSrc._indices[sel];
 											e.current->RerenderNode();
 										};
-										tv->HandleEvent(UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
+										tv->HandleEvent(UIEventType::Click) = [this, tv](UIEvent& e)
 										{
 											size_t row = tv->GetHoverRow();
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
@@ -519,9 +519,9 @@ struct MainWindow : ui::NativeMainWindow
 												// TODO open a new tab if not opened already
 												if (ofile)
 												{
-													fileTG.active = ofid;
+													workspace.curOpenedFile = ofid;
 													ofile->hexViewerState.basePos = SI.off;
-													fileTG.RerenderNode();
+													tv->RerenderNode();
 												}
 											}
 										};
@@ -550,17 +550,10 @@ struct MainWindow : ui::NativeMainWindow
 									}
 									ctx->Pop();
 									spstr.SetSplits({ 0.6f });
-
-									ctx->Pop();
 								}
 
-								if (tg.active == 2)
+								if (workspace.curSubtab == SubtabType::Images)
 								{
-									auto& tp = *ctx->Push<ui::TabPanel>();
-									tp + ui::Layout(style::layouts::EdgeSlice());
-									tp + ui::Height(style::Coord::Percent(100));
-									tp.id = 2;
-
 									auto& spstr = *ctx->Push<ui::SplitPane>();
 									{
 										auto& ed = ctx->PushBox();
@@ -579,7 +572,7 @@ struct MainWindow : ui::NativeMainWindow
 												workspace.desc.curImage = workspace.ddimgSrc._indices[sel];
 											e.current->RerenderNode();
 										};
-										tv->HandleEvent(tv, UIEventType::Click) = [this, tv, &fileTG](UIEvent& e)
+										tv->HandleEvent(tv, UIEventType::Click) = [this, tv](UIEvent& e)
 										{
 											size_t row = tv->GetHoverRow();
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
@@ -600,9 +593,9 @@ struct MainWindow : ui::NativeMainWindow
 												// TODO open a new tab if not opened already
 												if (ofile)
 												{
-													fileTG.active = ofid;
+													workspace.curOpenedFile = ofid;
 													ofile->hexViewerState.basePos = IMG.offImage;
-													fileTG.RerenderNode();
+													tv->RerenderNode();
 												}
 											}
 											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Right)
@@ -667,9 +660,10 @@ struct MainWindow : ui::NativeMainWindow
 									}
 									ctx->Pop();
 									spstr.SetSplits({ 0.5f });
-
-									ctx->Pop();
 								}
+
+								// tab panel
+								ctx->Pop();
 							}
 							ctx->Pop();
 						}

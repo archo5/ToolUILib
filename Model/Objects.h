@@ -61,6 +61,7 @@ enum UIObjectFlags
 	UIObject_IsHidden = 1 << 9,
 	UIObject_DragHovered = 1 << 10, // TODO reorder
 	UIObject_IsEdited = 1 << 11,
+	UIObject_IsChecked = 1 << 12,
 };
 
 enum class Direction
@@ -205,6 +206,7 @@ struct UIObject
 		return GetBorderRect().Contains(x, y);
 	}
 
+	void SetFlag(UIObjectFlags flag, bool set);
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & UIObject_IsHidden); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
@@ -374,6 +376,13 @@ struct Enable : Modifier
 	bool _enable;
 	Enable(bool e) : _enable(e) {}
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
+};
+
+struct Style : Modifier
+{
+	style::Block* _style;
+	Style(style::Block* style) : _style(style) {}
+	void Apply(UIObject* obj) const override { obj->SetStyle(_style); }
 };
 
 struct Layout : Modifier

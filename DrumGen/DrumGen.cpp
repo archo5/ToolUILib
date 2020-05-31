@@ -31,7 +31,7 @@ struct DrumGenerator : ui::Node
 
 		for (int i = 0; i < 3; i++)
 		{
-			ctx->Make<ui::RadioButtonT<int>>()->Init(state, i)->onChange = [this]() { Rerender(); };
+			ui::imm::RadioButton(ctx, state, i, nullptr);
 		}
 	}
 	void Play()
