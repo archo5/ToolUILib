@@ -34,11 +34,95 @@ struct OpenedFile
 	HighlightSettings highlightSettings;
 };
 
+struct TabHighlights : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		auto& spmkr = *ctx->Push<ui::SplitPane>();
+		{
+			auto& ed = ctx->PushBox();
+
+			ctx->Text("Highlighted items") + ui::Padding(5);
+
+			ctx->Pop();
+
+			ctx->PushBox();
+			of->highlightSettings.EditUI(ctx);
+			ctx->Pop();
+		}
+		ctx->Pop();
+		spmkr.SetSplits({ 0.6f });
+	}
+
+	OpenedFile* of = nullptr;
+};
+
+struct TabMarkers : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		auto* f = of->ddFile;
+		auto& spmkr = *ctx->Push<ui::SplitPane>();
+		{
+			auto& ed = ctx->PushBox();
+
+			ctx->Text("Marked items") + ui::Padding(5);
+			auto* tv = ctx->Make<ui::TableView>();
+			*tv + ui::Layout(style::layouts::EdgeSlice());
+			tv->SetDataSource(&f->markerData);
+			tv->CalculateColumnWidths();
+			tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
+			{
+				size_t row = tv->GetHoverRow();
+				if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
+				{
+					Marker& M = f->markerData.markers[row];
+					of->hexViewerState.basePos = M.at;
+					tv->RerenderNode();
+				}
+			};
+			tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
+			tv->HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
+			{
+				if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+				{
+					size_t pos = tv->selection.GetFirstSelection();
+					if (tv->IsValidRow(pos))
+					{
+						f->markerData.markers.erase(f->markerData.markers.begin() + pos);
+						e.current->RerenderNode();
+					}
+				}
+			};
+
+			ctx->Pop();
+
+			ctx->PushBox();
+			if (tv->selection.AnySelected())
+			{
+				size_t pos = tv->selection.GetFirstSelection();
+				if (tv->IsValidRow(pos))
+				{
+					auto* MIE = ctx->Make<MarkedItemEditor>();
+					MIE->dataSource = f->dataSource;
+					MIE->marker = &f->markerData.markers[pos];
+				}
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+		spmkr.SetSplits({ 0.6f });
+	}
+
+	OpenedFile* of = nullptr;
+};
+
 enum class SubtabType
 {
-	Markers,
-	Structures,
-	Images,
+	Highlights = 0,
+	Markers = 1,
+	Structures = 2,
+	Images = 3,
 };
 
 struct Workspace
@@ -239,7 +323,6 @@ struct MainWindow : ui::NativeMainWindow
 
 							ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 							auto* vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
-							auto* hs = ctx->MakeWithText<ui::CollapsibleTreeNode>("Highlight settings");
 							ctx->Pop();
 
 							ctx->PushBox(); // tree stabilization box
@@ -247,10 +330,6 @@ struct MainWindow : ui::NativeMainWindow
 							{
 								ui::imm::PropEditInt(ctx, "Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
 								ui::imm::PropEditInt(ctx, "Position", of->hexViewerState.basePos, {}, 1, 0);
-							}
-							if (hs->open)
-							{
-								of->highlightSettings.EditUI(ctx);
 							}
 							ctx->Pop(); // end tree stabilization box
 
@@ -403,6 +482,7 @@ struct MainWindow : ui::NativeMainWindow
 								+ ui::Height(style::Coord::Percent(100));
 							{
 								ctx->Push<ui::TabButtonList>();
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Highlights")->Init(workspace.curSubtab, SubtabType::Highlights);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Markers")->Init(workspace.curSubtab, SubtabType::Markers);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Structures")->Init(workspace.curSubtab, SubtabType::Structures);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Images")->Init(workspace.curSubtab, SubtabType::Images);
@@ -412,58 +492,14 @@ struct MainWindow : ui::NativeMainWindow
 									+ ui::Layout(style::layouts::EdgeSlice())
 									+ ui::Height(style::Coord::Percent(100));
 
+								if (workspace.curSubtab == SubtabType::Highlights)
+								{
+									ctx->Make<TabHighlights>()->of = of;
+								}
+
 								if (workspace.curSubtab == SubtabType::Markers)
 								{
-									auto& spmkr = *ctx->Push<ui::SplitPane>();
-									{
-										auto& ed = ctx->PushBox();
-
-										ctx->Text("Marked items") + ui::Padding(5);
-										auto* tv = ctx->Make<ui::TableView>();
-										*tv + ui::Layout(style::layouts::EdgeSlice());
-										tv->SetDataSource(&f->markerData);
-										tv->CalculateColumnWidths();
-										tv->HandleEvent(tv, UIEventType::Click) = [this, f, of, tv](UIEvent& e)
-										{
-											size_t row = tv->GetHoverRow();
-											if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
-											{
-												Marker& M = f->markerData.markers[row];
-												of->hexViewerState.basePos = M.at;
-												tv->RerenderNode();
-											}
-										};
-										tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
-										tv->HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
-										{
-											if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
-											{
-												size_t pos = tv->selection.GetFirstSelection();
-												if (tv->IsValidRow(pos))
-												{
-													f->markerData.markers.erase(f->markerData.markers.begin() + pos);
-													e.current->RerenderNode();
-												}
-											}
-										};
-
-										ctx->Pop();
-
-										ctx->PushBox();
-										if (tv->selection.AnySelected())
-										{
-											size_t pos = tv->selection.GetFirstSelection();
-											if (tv->IsValidRow(pos))
-											{
-												auto* MIE = ctx->Make<MarkedItemEditor>();
-												MIE->dataSource = f->dataSource;
-												MIE->marker = &f->markerData.markers[pos];
-											}
-										}
-										ctx->Pop();
-									}
-									ctx->Pop();
-									spmkr.SetSplits({ 0.6f });
+									ctx->Make<TabMarkers>()->of = of;
 								}
 
 								if (workspace.curSubtab == SubtabType::Structures)
