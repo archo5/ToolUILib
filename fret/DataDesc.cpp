@@ -832,7 +832,7 @@ int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out
 
 static void BRB(UIContainer* ctx, const char* text, int& at, int val)
 {
-	ui::imm::RadioButton(ctx, at, val, text, { &ui::Style(ui::Theme::current->button) });
+	ui::imm::RadioButton(ctx, at, val, text, { ui::Style(ui::Theme::current->button) });
 }
 
 static bool advancedAccess = false;
@@ -915,7 +915,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 			ui::imm::PropEditString(ctx, "\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
 			ui::imm::PropEditInt(ctx, "\bValue", A.intVal);
-			if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+			if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 			{
 				SI.args.erase(SI.args.begin() + i);
 				ctx->GetCurrentNode()->Rerender();
@@ -1061,13 +1061,13 @@ struct RenameDialog : ui::NativeDialogWindow
 		*ctx->Make<ui::BoxElement>() + ui::Height(16);
 
 		ui::Property::Begin(ctx);
-		if (ui::imm::Button(ctx, "OK", { &ui::Height(30) }))
+		if (ui::imm::Button(ctx, "OK", { ui::Height(30) }))
 		{
 			rename = true;
 			SetVisible(false);
 		}
 		*ctx->Make<ui::BoxElement>() + ui::Width(16);
-		if (ui::imm::Button(ctx, "Cancel", { &ui::Height(30) }))
+		if (ui::imm::Button(ctx, "Cancel", { ui::Height(30) }))
 		{
 			rename = false;
 			SetVisible(false);
@@ -1135,7 +1135,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 				ui::imm::PropEditString(ctx, "\bName", P.name.c_str(), [&P](const char* v) { P.name = v; });
 				ui::imm::PropEditInt(ctx, "\bValue", P.intVal);
-				if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+				if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 				{
 					S.params.erase(S.params.begin() + i);
 					ctx->GetCurrentNode()->Rerender();
@@ -1170,23 +1170,23 @@ void DataDesc::EditStruct(UIContainer* ctx)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
 				*ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
 				//ctx->MakeWithText<ui::Button>("Edit");
-				if (ui::imm::Button(ctx, "<", { &ui::Width(20), &ui::Enable(i > 0) }))
+				if (ui::imm::Button(ctx, "<", { ui::Width(20), ui::Enable(i > 0) }))
 				{
 					std::swap(S.fields[i - 1], S.fields[i]);
 					ctx->GetCurrentNode()->Rerender();
 				}
-				if (ui::imm::Button(ctx, ">", { &ui::Width(20), &ui::Enable(i + 1 < S.fields.size()) }))
+				if (ui::imm::Button(ctx, ">", { ui::Width(20), ui::Enable(i + 1 < S.fields.size()) }))
 				{
 					std::swap(S.fields[i + 1], S.fields[i]);
 					ctx->GetCurrentNode()->Rerender();
 				}
-				if (ui::imm::Button(ctx, "Edit", { &ui::Width(50) }))
+				if (ui::imm::Button(ctx, "Edit", { ui::Width(50) }))
 				{
 					editMode = 2;
 					curField = i;
 					ctx->GetCurrentNode()->Rerender();
 				}
-				if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+				if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 				{
 					S.fields.erase(S.fields.begin() + i);
 					ctx->GetCurrentNode()->Rerender();
@@ -1205,8 +1205,8 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			ctx->Text("Resource") + ui::Padding(5);
 			ui::Property::Begin(ctx);
 			ctx->Text("Type:") + ui::Padding(5);
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", { &ui::Style(ui::Theme::current->button) });
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", { &ui::Style(ui::Theme::current->button) });
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", { ui::Style(ui::Theme::current->button) });
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", { ui::Style(ui::Theme::current->button) });
 			ui::Property::End(ctx);
 
 			if (S.resource.type == DDStructResourceType::Image)
@@ -1257,7 +1257,7 @@ void DataDesc::EditField(UIContainer* ctx)
 					ui::imm::PropEditString(ctx, "\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
 					ui::imm::PropEditString(ctx, "\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
 					ui::imm::PropEditInt(ctx, "\bOffset", SA.intVal);
-					if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 					{
 						F.structArgs.erase(F.structArgs.begin() + i);
 						ctx->GetCurrentNode()->Rerender();
@@ -1279,7 +1279,7 @@ void DataDesc::EditField(UIContainer* ctx)
 					ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 					ui::imm::PropEditString(ctx, "\bField", C.field.c_str(), [&C](const char* v) { C.field = v; });
 					ui::imm::PropEditString(ctx, "\bValue", C.value.c_str(), [&C](const char* v) { C.value = v; });
-					if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 					{
 						F.conditions.erase(F.conditions.begin() + i);
 						ctx->GetCurrentNode()->Rerender();

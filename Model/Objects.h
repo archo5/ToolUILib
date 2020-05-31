@@ -365,6 +365,17 @@ struct Modifier
 	virtual void Apply(UIObject* obj) const = 0;
 };
 
+template <class T>
+struct CRef
+{
+	CRef(const T& ref) : _ref(ref) {}
+	operator const T& () const { return _ref; }
+	const T* operator -> () const { return &_ref; }
+	const T& operator * () const { return _ref; }
+	const T& _ref;
+};
+using ModInitList = std::initializer_list<CRef<Modifier>>;
+
 inline UIObject& operator + (UIObject& o, const Modifier& m)
 {
 	m.Apply(&o);

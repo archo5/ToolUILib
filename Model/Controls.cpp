@@ -334,10 +334,10 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 
 namespace imm {
 
-bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifier*> mods)
+bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 {
 	auto* btn = ctx->MakeWithText<ui::Button>(text);
-	for (auto* mod : mods)
+	for (auto& mod : mods)
 		mod->Apply(btn);
 	btn->HandleEvent(UIEventType::Activate) = [btn](UIEvent&)
 	{
@@ -354,10 +354,10 @@ bool Button(UIContainer* ctx, const char* text, std::initializer_list<ui::Modifi
 	return clicked;
 }
 
-bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*> mods)
+bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 {
 	auto* cb = ctx->Make<ui::Checkbox>();
-	for (auto* mod : mods)
+	for (auto& mod : mods)
 		mod->Apply(cb);
 	bool edited = false;
 	if (cb->flags & UIObject_IsEdited)
@@ -375,7 +375,7 @@ bool CheckboxRaw(UIContainer* ctx, bool val, std::initializer_list<ui::Modifier*
 	return edited;
 }
 
-bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> mods)
+bool EditBool(UIContainer* ctx, bool& val, ModInitList mods)
 {
 	if (CheckboxRaw(ctx, val, mods))
 	{
@@ -385,10 +385,10 @@ bool EditBool(UIContainer* ctx, bool& val, std::initializer_list<ui::Modifier*> 
 	return false;
 }
 
-bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, std::initializer_list<ui::Modifier*> mods)
+bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods)
 {
 	auto* rb = text ? ctx->MakeWithText<ui::RadioButton>(text) : ctx->Make<ui::RadioButton>();
-	for (auto* mod : mods)
+	for (auto& mod : mods)
 		mod->Apply(rb);
 	bool edited = false;
 	if (rb->flags & UIObject_IsEdited)
@@ -430,7 +430,7 @@ template <> struct MakeSigned<int64_t> { using type = int64_t; };
 template <> struct MakeSigned<uint64_t> { using type = int64_t; };
 template <> struct MakeSigned<float> { using type = float; };
 
-template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, std::initializer_list<ui::Modifier*> mods, TNum speed, TNum vmin, TNum vmax, const char* fmt)
+template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, ModInitList mods, TNum speed, TNum vmin, TNum vmax, const char* fmt)
 {
 	auto* tb = ctx->Make<Textbox>();
 	for (auto& mod : mods)
@@ -500,35 +500,35 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	return edited;
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, std::initializer_list<ui::Modifier*> mods, int speed, int vmin, int vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods, int speed, int vmin, int vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, std::initializer_list<ui::Modifier*> mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, std::initializer_list<ui::Modifier*> mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, std::initializer_list<ui::Modifier*> mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, std::initializer_list<ui::Modifier*> mods, float speed, float vmin, float vmax, const char* fmt)
+bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods)
+bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	auto* tb = ctx->Make<ui::Textbox>();
-	for (auto* mod : mods)
+	for (auto& mod : mods)
 		mod->Apply(tb);
 	bool changed = false;
 	if (tb->flags & UIObject_IsEdited)
@@ -549,7 +549,7 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 }
 
 
-bool PropButton(UIContainer* ctx, const char* label, const char* text, std::initializer_list<ui::Modifier*> mods)
+bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
 	Property::Begin(ctx, label);
 	bool ret = Button(ctx, text, mods);
@@ -557,7 +557,7 @@ bool PropButton(UIContainer* ctx, const char* label, const char* text, std::init
 	return ret;
 }
 
-bool PropEditBool(UIContainer* ctx, const char* label, bool& val, std::initializer_list<ui::Modifier*> mods)
+bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods)
 {
 	Property::Begin(ctx, label);
 	bool ret = EditBool(ctx, val, mods);
@@ -565,7 +565,7 @@ bool PropEditBool(UIContainer* ctx, const char* label, bool& val, std::initializ
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int& val, std::initializer_list<ui::Modifier*> mods, int speed, int vmin, int vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, int speed, int vmin, int vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -574,7 +574,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, int& val, std::initializer
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, std::initializer_list<ui::Modifier*> mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -583,7 +583,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, std::initia
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, std::initializer_list<ui::Modifier*> mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -592,7 +592,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, std::initial
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, std::initializer_list<ui::Modifier*> mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -601,7 +601,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, std::initia
 	return ret;
 }
 
-bool PropEditFloat(UIContainer* ctx, const char* label, float& val, std::initializer_list<ui::Modifier*> mods, float speed, float vmin, float vmax, const char* fmt)
+bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -610,7 +610,7 @@ bool PropEditFloat(UIContainer* ctx, const char* label, float& val, std::initial
 	return ret;
 }
 
-bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, std::initializer_list<ui::Modifier*> mods)
+bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	Property::Begin(ctx, label);
 	bool ret = EditString(ctx, text, retfn, mods);

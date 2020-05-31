@@ -207,7 +207,7 @@ struct CompactNodeEditTest : ui::Node
 		void UI(UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\b#");
-			ui::imm::EditInt(ctx, &lbl, number, { &ui::Width(50) });
+			ui::imm::EditInt(ctx, &lbl, number, { ui::Width(50) });
 		}
 		int Compute(ComputeInfo&) override { return number; }
 	};
@@ -218,7 +218,7 @@ struct CompactNodeEditTest : ui::Node
 		void UI(UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\bName:");
-			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { &ui::Width(50) });
+			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { ui::Width(50) });
 		}
 		int Compute(ComputeInfo& cinfo) override
 		{
@@ -304,7 +304,7 @@ struct CompactNodeEditTest : ui::Node
 		for (auto& v : variables)
 		{
 			ui::Property::Begin(ctx);
-			if (ui::imm::Button(ctx, "X", { &ui::Width(20) }))
+			if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 			{
 				del = &v;
 			}
@@ -370,7 +370,7 @@ void CompactNodeEditTest::NodeUI(UIContainer* ctx, ExprNode*& node)
 	}
 	else
 	{
-		if (ui::imm::Button(ctx, "+", { &ui::Layout(style::layouts::InlineBlock()) }))
+		if (ui::imm::Button(ctx, "+", { ui::Layout(style::layouts::InlineBlock()) }))
 		{
 			ui::MenuItem items[] =
 			{
@@ -1270,7 +1270,7 @@ struct IMGUITest : ui::Node
 		ui::Property::Begin(ctx, "buttons");
 		if (ui::imm::Button(ctx, "working button"))
 			puts("working button");
-		if (ui::imm::Button(ctx, "disabled button", { &ui::Enable(false) }))
+		if (ui::imm::Button(ctx, "disabled button", { ui::Enable(false) }))
 			puts("DISABLED button SHOULD NOT APPEAR");
 		ui::Property::End(ctx);
 
@@ -1281,7 +1281,7 @@ struct IMGUITest : ui::Node
 				boolVal = tmp;
 			if (ui::imm::CheckboxRaw(ctx, tmp))
 				boolVal = !tmp;
-			if (ui::imm::PropEditBool(ctx, "\bdisabled", tmp, { &ui::Enable(false) }))
+			if (ui::imm::PropEditBool(ctx, "\bdisabled", tmp, { ui::Enable(false) }))
 				boolVal = tmp;
 			ui::Property::End(ctx);
 		}
@@ -1293,7 +1293,7 @@ struct IMGUITest : ui::Node
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, " "))
 				intFmt = 0;
-			if (ui::imm::RadioButton(ctx, tmp, 0, "\bdisabled", { &ui::Enable(false) }))
+			if (ui::imm::RadioButton(ctx, tmp, 0, "\bdisabled", { ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
 		}
@@ -1304,7 +1304,7 @@ struct IMGUITest : ui::Node
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, " "))
 				intFmt = 1;
-			if (ui::imm::RadioButton(ctx, tmp, 1, "\bdisabled", { &ui::Enable(false) }))
+			if (ui::imm::RadioButton(ctx, tmp, 1, "\bdisabled", { ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
 		}
@@ -1314,7 +1314,7 @@ struct IMGUITest : ui::Node
 			auto tmp = intVal;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ctx->Text("int: " + std::to_string(intVal)) + ui::Padding(5);
@@ -1325,7 +1325,7 @@ struct IMGUITest : ui::Node
 			auto tmp = uintVal;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
 			ctx->Text("uint: " + std::to_string(uintVal)) + ui::Padding(5);
@@ -1336,7 +1336,7 @@ struct IMGUITest : ui::Node
 			auto tmp = int64Val;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
 			ctx->Text("int64: " + std::to_string(int64Val)) + ui::Padding(5);
@@ -1347,7 +1347,7 @@ struct IMGUITest : ui::Node
 			auto tmp = uint64Val;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
 			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::Padding(5);
@@ -1358,7 +1358,7 @@ struct IMGUITest : ui::Node
 			auto tmp = floatVal;
 			if (ui::imm::PropEditFloat(ctx, "\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
-			if (ui::imm::PropEditFloat(ctx, "\bdisabled", tmp, { &ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
 			ctx->Text("float: " + std::to_string(floatVal)) + ui::Padding(5);
@@ -1826,7 +1826,7 @@ struct DataEditor : ui::Node
 				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
 			ctx->Text("Item:") + ui::Padding(5) + ui::Width(style::Coord::Fraction(0));
 			ctx->Text(items[editing].name.c_str());
-			if (ui::imm::Button(ctx, "Go back", { &ui::Width(style::Coord::Fraction(0)) }))
+			if (ui::imm::Button(ctx, "Go back", { ui::Width(style::Coord::Fraction(0)) }))
 			{
 				editing = SIZE_MAX;
 				ui::Notify(DCT_ItemSelection);
