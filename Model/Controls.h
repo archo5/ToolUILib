@@ -258,6 +258,7 @@ bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mod
 bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods = {}, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
 
+void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods = {});
 bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods = {}, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");

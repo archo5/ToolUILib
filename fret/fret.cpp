@@ -34,13 +34,78 @@ struct OpenedFile
 	HighlightSettings highlightSettings;
 };
 
+struct TabInspect : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		Subscribe(DCT_HexViewerState, &of->hexViewerState);
+
+		auto& spmkr = *ctx->Push<ui::SplitPane>();
+		{
+			ctx->PushBox();
+
+			auto pos = of->hexViewerState.hoverByte;
+			if (of->hexViewerState.selectionStart != UINT64_MAX)
+				pos = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+
+			auto* ds = of->ddFile->dataSource;
+
+			char txt_ascii[32];
+			ds->GetASCIIText(txt_ascii, 32, pos);
+
+			char txt_int8[32];
+			ds->GetInt8Text(txt_int8, 32, pos, true);
+			char txt_uint8[32];
+			ds->GetInt8Text(txt_uint8, 32, pos, false);
+			char txt_int16[32];
+			ds->GetInt16Text(txt_int16, 32, pos, true);
+			char txt_uint16[32];
+			ds->GetInt16Text(txt_uint16, 32, pos, false);
+			char txt_int32[32];
+			ds->GetInt32Text(txt_int32, 32, pos, true);
+			char txt_uint32[32];
+			ds->GetInt32Text(txt_uint32, 32, pos, false);
+			char txt_int64[32];
+			ds->GetInt64Text(txt_int64, 32, pos, true);
+			char txt_uint64[32];
+			ds->GetInt64Text(txt_uint64, 32, pos, false);
+			char txt_float32[32];
+			ds->GetFloat32Text(txt_float32, 32, pos);
+			char txt_float64[32];
+			ds->GetFloat64Text(txt_float64, 32, pos);
+
+			ui::imm::PropText(ctx, "i8", txt_int8);
+			ui::imm::PropText(ctx, "u8", txt_uint8);
+			ui::imm::PropText(ctx, "i16", txt_int16);
+			ui::imm::PropText(ctx, "u16", txt_uint16);
+			ui::imm::PropText(ctx, "i32", txt_int32);
+			ui::imm::PropText(ctx, "u32", txt_uint32);
+			ui::imm::PropText(ctx, "i64", txt_int64);
+			ui::imm::PropText(ctx, "u64", txt_uint64);
+			ui::imm::PropText(ctx, "f32", txt_float32);
+			ui::imm::PropText(ctx, "f64", txt_float64);
+			ui::imm::PropText(ctx, "ASCII", txt_ascii);
+
+			ctx->Pop();
+
+			ctx->PushBox();
+			ctx->Text("Settings") + ui::Padding(5);
+			ctx->Pop();
+		}
+		ctx->Pop();
+		spmkr.SetSplits({ 0.6f });
+	}
+
+	OpenedFile* of = nullptr;
+};
+
 struct TabHighlights : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
 		auto& spmkr = *ctx->Push<ui::SplitPane>();
 		{
-			auto& ed = ctx->PushBox();
+			ctx->PushBox();
 
 			ctx->Text("Highlighted items") + ui::Padding(5);
 
@@ -64,7 +129,7 @@ struct TabMarkers : ui::Node
 		auto* f = of->ddFile;
 		auto& spmkr = *ctx->Push<ui::SplitPane>();
 		{
-			auto& ed = ctx->PushBox();
+			ctx->PushBox();
 
 			ctx->Text("Marked items") + ui::Padding(5);
 			auto* tv = ctx->Make<ui::TableView>();
@@ -119,10 +184,11 @@ struct TabMarkers : ui::Node
 
 enum class SubtabType
 {
-	Highlights = 0,
-	Markers = 1,
-	Structures = 2,
-	Images = 3,
+	Inspect = 0,
+	Highlights = 1,
+	Markers = 2,
+	Structures = 3,
+	Images = 4,
 };
 
 struct Workspace
@@ -228,7 +294,7 @@ struct TabStructures : ui::Node
 	{
 		auto& spstr = *ctx->Push<ui::SplitPane>();
 		{
-			auto& ed = ctx->PushBox();
+			ctx->PushBox();
 
 			workspace->ddiSrc.Edit(ctx);
 
@@ -319,7 +385,7 @@ struct TabImages : ui::Node
 	{
 		auto& spstr = *ctx->Push<ui::SplitPane>();
 		{
-			auto& ed = ctx->PushBox();
+			ctx->PushBox();
 
 			workspace->ddimgSrc.Edit(ctx);
 
@@ -328,7 +394,7 @@ struct TabImages : ui::Node
 			tv->SetDataSource(&workspace->ddimgSrc);
 			workspace->ddimgSrc.refilter = true;
 			tv->CalculateColumnWidths();
-			ed.HandleEvent(tv, UIEventType::SelectionChange) = [this, tv](UIEvent& e)
+			tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
 			{
 				auto sel = tv->selection.GetFirstSelection();
 				if (tv->IsValidRow(sel))
@@ -375,7 +441,7 @@ struct TabImages : ui::Node
 					e.handled = true;
 				}
 			};
-			ed.HandleEvent(tv, UIEventType::KeyAction) = [this, tv](UIEvent& e)
+			tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)
 			{
 				if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
 				{
@@ -699,6 +765,7 @@ struct MainWindow : ui::NativeMainWindow
 								+ ui::Height(style::Coord::Percent(100));
 							{
 								ctx->Push<ui::TabButtonList>();
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Inspect")->Init(workspace.curSubtab, SubtabType::Inspect);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Highlights")->Init(workspace.curSubtab, SubtabType::Highlights);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Markers")->Init(workspace.curSubtab, SubtabType::Markers);
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Structures")->Init(workspace.curSubtab, SubtabType::Structures);
@@ -708,6 +775,11 @@ struct MainWindow : ui::NativeMainWindow
 								*ctx->Push<ui::TabPanel>()
 									+ ui::Layout(style::layouts::EdgeSlice())
 									+ ui::Height(style::Coord::Percent(100));
+
+								if (workspace.curSubtab == SubtabType::Inspect)
+								{
+									ctx->Make<TabInspect>()->of = of;
+								}
 
 								if (workspace.curSubtab == SubtabType::Highlights)
 								{

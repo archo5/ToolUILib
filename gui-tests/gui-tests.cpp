@@ -57,7 +57,7 @@ struct DragDropTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < 3; i++)
 		{
 			auto* btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
@@ -94,13 +94,58 @@ struct DragDropTest : ui::Node
 				}
 			};
 		}
+		ctx->Pop();
+
+		ctx->Push<ui::ListBox>();
+		for (int i = 0; i < 4; i++)
+		{
+			ctx->Push<ui::Selectable>()->HandleEvent() = [this, i](UIEvent& e)
+			{
+				struct Data : ui::DragDropData
+				{
+					Data(int f) : ui::DragDropData("current location"), at(f) {}
+					int at;
+				};
+				if (e.type == UIEventType::DragStart)
+				{
+					e.target->FindParentOfType<ui::Selectable>();
+					ui::DragDrop::SetData(new Data(i));
+				}
+				else if (e.type == UIEventType::DragEnter)
+				{
+					if (auto* ddd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
+					{
+						// TODO transfer click state to current object
+						if (ddd->at != i)
+							Rerender();
+						while (ddd->at < i)
+						{
+							int pos = ddd->at++;
+							std::swap(iids[pos], iids[pos + 1]);
+						}
+						while (ddd->at > i)
+						{
+							int pos = ddd->at--;
+							std::swap(iids[pos], iids[pos - 1]);
+						}
+					}
+				}
+			};
+			char bfr[32];
+			snprintf(bfr, 32, "item %d", iids[i]);
+			ctx->Text(bfr);
+			ctx->Pop();
+		}
+		ctx->Pop();
 	}
 	void OnSerialize(IDataSerializer& s) override
 	{
 		s << slots;
+		s << iids;
 	}
 
 	int slots[3] = { 5, 2, 0 };
+	int iids[4] = { 1, 2, 3, 4 };
 };
 
 

@@ -549,6 +549,15 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 }
 
 
+void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
+{
+	Property::Begin(ctx, label);
+	auto& ctrl = ctx->Text(text) + ui::Padding(5);
+	for (auto& mod : mods)
+		mod->Apply(&ctrl);
+	Property::End(ctx);
+}
+
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
 	Property::Begin(ctx, label);

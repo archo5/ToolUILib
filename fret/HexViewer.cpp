@@ -3,6 +3,9 @@
 #include "HexViewer.h"
 
 
+ui::DataCategoryTag DCT_HexViewerState[1];
+
+
 void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
 {
 	r.BeginDict(key);
@@ -205,13 +208,17 @@ void HexViewer::OnEvent(UIEvent& e)
 		{
 			state->mouseDown = true;
 			state->selectionStart = state->selectionEnd = state->hoverByte;
+			ui::Notify(DCT_HexViewerState, state);
 			RerenderNode();
 		}
 	}
 	else if (e.type == UIEventType::ButtonUp)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
+		{
 			state->mouseDown = false;
+			ui::Notify(DCT_HexViewerState, state);
+		}
 	}
 	else if (e.type == UIEventType::MouseMove)
 	{
@@ -240,12 +247,14 @@ void HexViewer::OnEvent(UIEvent& e)
 		{
 			state->selectionEnd = state->hoverByte;
 		}
+		ui::Notify(DCT_HexViewerState, state);
 		RerenderNode();
 	}
 	else if (e.type == UIEventType::MouseLeave)
 	{
 		state->hoverSection = -1;
 		state->hoverByte = UINT64_MAX;
+		ui::Notify(DCT_HexViewerState, state);
 		RerenderNode();
 	}
 	else if (e.type == UIEventType::MouseScroll)
@@ -256,6 +265,7 @@ void HexViewer::OnEvent(UIEvent& e)
 		else
 			state->basePos -= diff;
 		state->basePos = std::min(file->dataSource->GetSize() - 1, state->basePos);
+		ui::Notify(DCT_HexViewerState, state);
 		RerenderNode();
 	}
 }
