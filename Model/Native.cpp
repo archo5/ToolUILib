@@ -1089,7 +1089,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				case VK_END: evsys->OnKeyAction(UIKeyAction::End, numRepeats); break;
 				case VK_PRIOR: evsys->OnKeyAction(UIKeyAction::PageUp, numRepeats); break;
 				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, numRepeats); break;
-				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, numRepeats); break;
+				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, numRepeats); break;
 
 				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, numRepeats); break;
 				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Copy, numRepeats); break;

@@ -62,6 +62,7 @@ enum UIObjectFlags
 	UIObject_DragHovered = 1 << 10, // TODO reorder
 	UIObject_IsEdited = 1 << 11,
 	UIObject_IsChecked = 1 << 12,
+	UIObject_IsFocusable = 1 << 13,
 };
 
 enum class Direction
@@ -229,6 +230,10 @@ struct UIObject
 				return t;
 		return nullptr;
 	}
+	UIObject* GetPrevInOrder();
+	UIObject* GetNextInOrder();
+	UIObject* GetFirstInOrder();
+	UIObject* GetLastInOrder();
 	void RerenderNode();
 
 	bool IsHovered() const;

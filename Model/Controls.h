@@ -19,6 +19,7 @@ struct Button : UIElement
 
 struct CheckableBase : UIElement
 {
+	CheckableBase();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 

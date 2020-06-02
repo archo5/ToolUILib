@@ -17,6 +17,7 @@ Panel::Panel()
 Button::Button()
 {
 	styleProps = Theme::current->button;
+	SetFlag(UIObject_IsFocusable, true);
 }
 
 void Button::OnEvent(UIEvent& e)
@@ -32,6 +33,11 @@ void Button::OnEvent(UIEvent& e)
 	}
 }
 
+
+CheckableBase::CheckableBase()
+{
+	SetFlag(UIObject_IsFocusable, true);
+}
 
 void CheckableBase::OnPaint()
 {
@@ -1090,6 +1096,7 @@ void TabPanel::OnPaint()
 Textbox::Textbox()
 {
 	styleProps = Theme::current->textBoxBase;
+	SetFlag(UIObject_IsFocusable, true);
 }
 
 void Textbox::OnPaint()

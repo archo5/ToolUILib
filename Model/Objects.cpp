@@ -403,6 +403,42 @@ int UIObject::CountChildrenRecursive() const
 	return o;
 }
 
+UIObject* UIObject::GetPrevInOrder()
+{
+	if (UIObject* ret = prev)
+	{
+		while (ret->lastChild)
+			ret = ret->lastChild;
+		return ret;
+	}
+	return parent;
+}
+
+UIObject* UIObject::GetNextInOrder()
+{
+	if (firstChild)
+		return firstChild;
+	for (UIObject* it = this; it; it = it->parent)
+	{
+		if (it->next)
+			return it->next;
+	}
+	return nullptr;
+}
+
+UIObject* UIObject::GetFirstInOrder()
+{
+	return this;
+}
+
+UIObject* UIObject::GetLastInOrder()
+{
+	UIObject* ret = this;
+	while (ret->lastChild)
+		ret = ret->lastChild;
+	return ret;
+}
+
 void UIObject::RerenderNode()
 {
 	if (auto* n = FindParentOfType<ui::Node>())

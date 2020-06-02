@@ -136,6 +136,8 @@ void UIEventSystem::OnDestroy(UIObject* o)
 			clickObj[i] = nullptr;
 	if (focusObj == o)
 		focusObj = nullptr;
+	if (lastFocusObj == o)
+		lastFocusObj = nullptr;
 	for (size_t i = 0; i < pendingTimers.size(); i++)
 	{
 		if (pendingTimers[i].target == o)
@@ -179,6 +181,8 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 	}
 
 	focusObj = o;
+	if (o)
+		lastFocusObj = o;
 
 	if (focusObj)
 	{
@@ -464,26 +468,73 @@ void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numR
 
 void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats)
 {
+	UIEvent ev(this, focusObj, UIEventType::KeyAction);
 	if (focusObj)
 	{
-		UIEvent ev(this, focusObj, UIEventType::KeyAction);
 		ev.shortCode = uint8_t(act);
 		ev.numRepeats = numRepeats;
 		BubblingEvent(ev);
+	}
 
-		if (!ev.handled)
+	if (!ev.handled)
+	{
+		if (act == UIKeyAction::Inspect)
+			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
+		else if (act == UIKeyAction::Activate)
 		{
-			if (act == UIKeyAction::Inspect)
-				ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
-			else if (act == UIKeyAction::Activate)
-			{
-				ev.type = UIEventType::Activate;
+			ev.type = UIEventType::Activate;
+			if (focusObj)
 				BubblingEvent(ev, nullptr, true);
+		}
+		else if (act == UIKeyAction::FocusNext && lastFocusObj)
+		{
+			bool found = false;
+			for (UIObject* it = lastFocusObj->GetNextInOrder(); it; it = it->GetNextInOrder())
+			{
+				if (it->flags & UIObject_IsFocusable)
+				{
+					SetKeyboardFocus(it);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				for (UIObject* it = container->rootNode->GetFirstInOrder(); it && it != lastFocusObj; it = it->GetNextInOrder())
+				{
+					if (it->flags & UIObject_IsFocusable)
+					{
+						SetKeyboardFocus(it);
+						break;
+					}
+				}
+			}
+		}
+		else if (act == UIKeyAction::FocusPrev && lastFocusObj)
+		{
+			bool found = false;
+			for (UIObject* it = lastFocusObj->GetPrevInOrder(); it; it = it->GetPrevInOrder())
+			{
+				if (it->flags & UIObject_IsFocusable)
+				{
+					SetKeyboardFocus(it);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				for (UIObject* it = container->rootNode->GetLastInOrder(); it && it != lastFocusObj; it = it->GetPrevInOrder())
+				{
+					if (it->flags & UIObject_IsFocusable)
+					{
+						SetKeyboardFocus(it);
+						break;
+					}
+				}
 			}
 		}
 	}
-	else if (act == UIKeyAction::Inspect)
-		ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
 }
 
 void UIEventSystem::OnTextInput(uint32_t ch, uint16_t numRepeats)

@@ -183,6 +183,7 @@ struct UIEventSystem
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
 	UIObject* focusObj = nullptr;
+	UIObject* lastFocusObj = nullptr;
 	std::vector<UITimerData> pendingTimers;
 	float width = 100;
 	float height = 100;
