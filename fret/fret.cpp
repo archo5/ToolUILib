@@ -134,7 +134,7 @@ struct TabMarkers : ui::Node
 			ctx->Text("Marked items") + ui::Padding(5);
 			auto* tv = ctx->Make<ui::TableView>();
 			*tv + ui::Layout(style::layouts::EdgeSlice());
-			tv->SetDataSource(&f->markerData);
+			tv->SetDataSource(&f->mdSrc);
 			tv->CalculateColumnWidths();
 			tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
 			{
@@ -223,6 +223,7 @@ struct Workspace
 			if (path.size() < 2 || path[1] != ':')
 				path = "FRET_Plugins/" + path;
 			F->dataSource = new FileDataSource(path.c_str());
+			F->mdSrc.dataSource = F->dataSource;
 		}
 
 		r.BeginArray("openedFiles");

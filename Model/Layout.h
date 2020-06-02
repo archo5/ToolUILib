@@ -284,6 +284,7 @@ enum PaintInfoItemState
 	PS_Down = 1 << 1,
 	PS_Disabled = 1 << 2,
 	PS_Checked = 1 << 3,
+	PS_Focused = 1 << 4,
 };
 
 struct PaintInfo
@@ -298,6 +299,7 @@ struct PaintInfo
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
 	bool IsChecked() const { return (state & PS_Checked) != 0; }
+	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
 using PaintFunction = std::function<void(const PaintInfo&)>;

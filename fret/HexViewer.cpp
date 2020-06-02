@@ -20,7 +20,11 @@ void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
 	enableInt32 = r.ReadBool("enableInt32");
 	minInt32 = r.ReadInt("minInt32");
 	maxInt32 = r.ReadInt("maxInt32");
+	enableASCII = r.ReadBool("enableASCII", true);
 	minASCIIChars = r.ReadUInt("minASCIIChars");
+	enableNearFileSize32 = r.ReadBool("enableNearFileSize32", true);
+	enableNearFileSize64 = r.ReadBool("enableNearFileSize64", true);
+	nearFileSizePercent = r.ReadFloat("nearFileSizePercent", 99.0f);
 
 	r.EndDict();
 }
@@ -39,7 +43,11 @@ void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
 	w.WriteBool("enableInt32", enableInt32);
 	w.WriteInt("minInt32", minInt32);
 	w.WriteInt("maxInt32", maxInt32);
+	w.WriteBool("enableASCII", enableASCII);
 	w.WriteInt("minASCIIChars", minASCIIChars);
+	w.WriteBool("enableNearFileSize32", enableNearFileSize32);
+	w.WriteBool("enableNearFileSize64", enableNearFileSize64);
+	w.WriteFloat("nearFileSizePercent", nearFileSizePercent);
 
 	w.EndDict();
 }
@@ -67,7 +75,14 @@ void HighlightSettings::EditUI(UIContainer* ctx)
 	ui::Property::End(ctx);
 
 	ui::Property::Begin(ctx, "ASCII");
+	ui::imm::PropEditBool(ctx, nullptr, enableASCII);
 	ui::imm::PropEditInt(ctx, "\bMin chars", minASCIIChars, {}, 1, 1, 128);
+	ui::Property::End(ctx);
+
+	ui::Property::Begin(ctx, "Near file size");
+	ui::imm::PropEditBool(ctx, "\bu32", enableNearFileSize32);
+	ui::imm::PropEditBool(ctx, "\bu64", enableNearFileSize64);
+	ui::imm::PropEditFloat(ctx, "\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
 	ui::Property::End(ctx);
 }
 
@@ -117,7 +132,45 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 	}
 
 	// auto highlights
-	if (hs->enableFloat32 || hs->enableInt32)
+	if (hs->enableNearFileSize64)
+	{
+		for (size_t i = 0; i + 8 < numBytes; i++)
+		{
+			if (outColors[i].hexColor.a ||
+				outColors[i + 1].hexColor.a ||
+				outColors[i + 2].hexColor.a ||
+				outColors[i + 3].hexColor.a ||
+				outColors[i + 4].hexColor.a ||
+				outColors[i + 5].hexColor.a ||
+				outColors[i + 6].hexColor.a ||
+				outColors[i + 7].hexColor.a)
+				continue;
+			if (hs->excludeZeroes &&
+				bytes[i] == 0 &&
+				bytes[i + 1] == 0 &&
+				bytes[i + 2] == 0 &&
+				bytes[i + 3] == 0 &&
+				bytes[i + 4] == 0 &&
+				bytes[i + 5] == 0 &&
+				bytes[i + 6] == 0 &&
+				bytes[i + 7] == 0)
+				continue;
+
+			if (hs->enableNearFileSize64)
+			{
+				uint64_t v;
+				memcpy(&v, &bytes[i], 8);
+				auto fsz = file->dataSource->GetSize();
+				if (v >= fsz * (hs->nearFileSizePercent * 0.01f) && v <= fsz)
+				{
+					for (int j = 0; j < 8; j++)
+						outColors[i + j].hexColor.BlendOver(colorNearFileSize32);
+				}
+			}
+		}
+	}
+
+	if (hs->enableFloat32 || hs->enableInt32 || hs->enableNearFileSize32)
 	{
 		for (size_t i = 0; i + 4 < numBytes; i++)
 		{
@@ -137,6 +190,18 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 				{
 					for (int j = 0; j < 4; j++)
 						outColors[i + j].hexColor.BlendOver(colorFloat32);
+				}
+			}
+
+			if (hs->enableNearFileSize32)
+			{
+				uint32_t v;
+				memcpy(&v, &bytes[i], 4);
+				auto fsz = file->dataSource->GetSize();
+				if (v >= fsz * (hs->nearFileSizePercent * 0.01f) && v <= fsz)
+				{
+					for (int j = 0; j < 4; j++)
+						outColors[i + j].hexColor.BlendOver(colorNearFileSize32);
 				}
 			}
 
@@ -173,7 +238,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 		}
 	}
 
-	if (hs->minASCIIChars > 0)
+	if (hs->enableASCII && hs->minASCIIChars > 0)
 	{
 		size_t start = SIZE_MAX;
 		bool prev = false;

@@ -482,53 +482,67 @@ NamedTextSerializeReader::EntryRange NamedTextSerializeReader::GetCurrentRange()
 }
 
 static NamedTextSerializeReader::Entry defaultEntry = {};
-NamedTextSerializeReader::Entry* NamedTextSerializeReader::FindEntry(const char* key)
+NamedTextSerializeReader::Entry* NamedTextSerializeReader::FindEntry(const char* key, Entry* def)
 {
 	for (auto E : GetCurrentRange())
 		if (E->key == key)
 			return E;
-	return &defaultEntry;
+	return def;
 }
 
-std::string NamedTextSerializeReader::ReadString(const char* key)
+std::string NamedTextSerializeReader::ReadString(const char* key, const std::string& def)
 {
-	return FindEntry(key)->GetStringValue();
+	if (auto* v = FindEntry(key))
+		return v->GetStringValue();
+	return def;
 }
 
-bool NamedTextSerializeReader::ReadBool(const char* key)
+bool NamedTextSerializeReader::ReadBool(const char* key, bool def)
 {
-	return FindEntry(key)->GetBoolValue();
+	if (auto* v = FindEntry(key))
+		return v->GetBoolValue();
+	return def;
 }
 
-int NamedTextSerializeReader::ReadInt(const char* key)
+int NamedTextSerializeReader::ReadInt(const char* key, int def)
 {
-	return FindEntry(key)->GetIntValue();
+	if (auto* v = FindEntry(key))
+		return v->GetIntValue();
+	return def;
 }
 
-unsigned NamedTextSerializeReader::ReadUInt(const char* key)
+unsigned NamedTextSerializeReader::ReadUInt(const char* key, unsigned def)
 {
-	return FindEntry(key)->GetUIntValue();
+	if (auto* v = FindEntry(key))
+		return v->GetUIntValue();
+	return def;
 }
 
-int64_t NamedTextSerializeReader::ReadInt64(const char* key)
+int64_t NamedTextSerializeReader::ReadInt64(const char* key, int64_t def)
 {
-	return FindEntry(key)->GetInt64Value();
+	if (auto* v = FindEntry(key))
+		return v->GetInt64Value();
+	return def;
 }
 
-uint64_t NamedTextSerializeReader::ReadUInt64(const char* key)
+uint64_t NamedTextSerializeReader::ReadUInt64(const char* key, uint64_t def)
 {
-	return FindEntry(key)->GetUInt64Value();
+	if (auto* v = FindEntry(key))
+		return v->GetUInt64Value();
+	return def;
 }
 
-double NamedTextSerializeReader::ReadFloat(const char* key)
+double NamedTextSerializeReader::ReadFloat(const char* key, double def)
 {
-	return FindEntry(key)->GetFloatValue();
+	if (auto* v = FindEntry(key))
+		return v->GetFloatValue();
+	return def;
 }
 
 void NamedTextSerializeReader::BeginArray(const char* key)
 {
 	auto E = FindEntry(key);
-	if (E->ValueEquals("[]"))
+	if (E && E->ValueEquals("[]"))
 		stack.push_back({ E + 1, E + E->childSkip });
 	else
 		stack.push_back({ nullptr, nullptr });
@@ -542,7 +556,7 @@ void NamedTextSerializeReader::EndArray()
 void NamedTextSerializeReader::BeginDict(const char* key)
 {
 	auto E = FindEntry(key);
-	if (E->ValueEquals("{}"))
+	if (E && E->ValueEquals("{}"))
 		stack.push_back({ E + 1, E + E->childSkip });
 	else
 		stack.push_back({ nullptr, nullptr });

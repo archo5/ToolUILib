@@ -15,6 +15,8 @@ Color4f colorInt8{ 0.3f, 0.1f, 0.9f, 0.3f };
 Color4f colorInt16{ 0.2f, 0.2f, 0.9f, 0.3f };
 Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
 Color4f colorInt64{ 0.0f, 0.4f, 0.9f, 0.3f };
+Color4f colorNearFileSize32{ 0.1f, 0.3f, 0.7f, 0.3f };
+Color4f colorNearFileSize64{ 0.0f, 0.4f, 0.7f, 0.3f };
 Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
 Color4f colorInst{ 0.9f, 0.9f, 0.9f, 0.6f };
 Color4f colorCurInst{ 0.9f, 0.2f, 0.0f, 0.8f };
@@ -101,6 +103,69 @@ static AnalysisFunc* analysisFuncs[] =
 	AnalysisFuncImpl<float>,
 	AnalysisFuncImpl<double>,
 };
+
+static const char* markerReadCodes[] =
+{
+	"%c",
+	"%" PRId8,
+	"%" PRIu8,
+	"%" PRId16,
+	"%" PRIu16,
+	"%" PRId32,
+	"%" PRIu32,
+	"%" PRId64,
+	"%" PRIu64,
+	"%g",
+	"%g",
+};
+typedef void MarkerReadFunc(std::string& sb, IDataSource* ds, uint64_t off);
+template <class T, DataType ty> void MarkerReadFuncImpl(std::string& sb, IDataSource* ds, uint64_t off)
+{
+	T val;
+	ds->Read(off, sizeof(T), &val);
+	char bfr[128];
+	snprintf(bfr, 128, markerReadCodes[ty], val);
+	sb += bfr;
+}
+
+static MarkerReadFunc* markerReadFuncs[] =
+{
+	MarkerReadFuncImpl<char, DT_CHAR>,
+	MarkerReadFuncImpl<int8_t, DT_I8>,
+	MarkerReadFuncImpl<uint8_t, DT_U8>,
+	MarkerReadFuncImpl<int16_t, DT_I16>,
+	MarkerReadFuncImpl<uint16_t, DT_U16>,
+	MarkerReadFuncImpl<int32_t, DT_I32>,
+	MarkerReadFuncImpl<uint32_t, DT_U32>,
+	MarkerReadFuncImpl<int64_t, DT_I64>,
+	MarkerReadFuncImpl<uint64_t, DT_U64>,
+	MarkerReadFuncImpl<float, DT_F32>,
+	MarkerReadFuncImpl<double, DT_F64>,
+};
+std::string GetMarkerPreview(const Marker& marker, IDataSource* src, size_t maxLen)
+{
+	std::string text;
+	for (uint64_t i = 0; i < marker.repeats; i++)
+	{
+		if (i) text += '/';
+		//if (marker.repeats > 1) text += '[';
+		for (uint64_t j = 0; j < marker.count; j++)
+		{
+			if (j > 0 && marker.type != DT_CHAR)
+				text += ';';
+			markerReadFuncs[marker.type](text, src, marker.at + i * marker.stride + j * typeSizes[marker.type]);
+			if (text.size() > maxLen)
+			{
+				text.erase(text.begin() + 32, text.end());
+				text += "...";
+				return text;
+			}
+		}
+		//if (marker.repeats > 1) text += ']';
+	}
+	return text;
+}
+
 
 bool Marker::Contains(uint64_t pos) const
 {
@@ -228,6 +293,7 @@ void MarkerData::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndDict();
 }
 
+
 enum COLS_MD
 {
 	MD_COL_At,
@@ -236,21 +302,22 @@ enum COLS_MD
 	MD_COL_Repeats,
 	MD_COL_Stride,
 	MD_COL_Notes,
+	MD_COL_Preview,
 
 	MD_COL__COUNT,
 };
 
-size_t MarkerData::GetNumCols()
+size_t MarkerDataSource::GetNumCols()
 {
 	return MD_COL__COUNT;
 }
 
-std::string MarkerData::GetRowName(size_t row)
+std::string MarkerDataSource::GetRowName(size_t row)
 {
 	return std::to_string(row);
 }
 
-std::string MarkerData::GetColName(size_t col)
+std::string MarkerDataSource::GetColName(size_t col)
 {
 	switch (col)
 	{
@@ -260,12 +327,14 @@ std::string MarkerData::GetColName(size_t col)
 	case MD_COL_Repeats: return "Repeats";
 	case MD_COL_Stride: return "Stride";
 	case MD_COL_Notes: return "Notes";
+	case MD_COL_Preview: return "Preview";
 	default: return "";
 	}
 }
 
-std::string MarkerData::GetText(size_t row, size_t col)
+std::string MarkerDataSource::GetText(size_t row, size_t col)
 {
+	const auto& markers = data->markers;
 	switch (col)
 	{
 	case MD_COL_At: return std::to_string(markers[row].at);
@@ -274,6 +343,7 @@ std::string MarkerData::GetText(size_t row, size_t col)
 	case MD_COL_Repeats: return std::to_string(markers[row].repeats);
 	case MD_COL_Stride: return std::to_string(markers[row].stride);
 	case MD_COL_Notes: return markers[row].notes;
+	case MD_COL_Preview: return GetMarkerPreview(markers[row], dataSource, 32);
 	default: return "";
 	}
 }
@@ -1436,6 +1506,8 @@ DDFile* DataDesc::CreateNewFile()
 {
 	auto* F = new DDFile;
 	F->id = fileIDAlloc++;
+	F->mdSrc.data = &F->markerData;
+	F->mdSrc.dataSource = F->dataSource;
 	files.push_back(F);
 	return F;
 }

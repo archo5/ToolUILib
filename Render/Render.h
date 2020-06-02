@@ -45,6 +45,7 @@ enum EThemeElement
 	TE_Selector32,
 	TE_Selector16,
 	TE_Selector12,
+	TE_Outline,
 
 	TE_TabNormal,
 	TE_TabHover,

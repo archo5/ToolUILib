@@ -498,6 +498,15 @@ void theme_selector(RRect rr)
 	rasterize(onecolor{ hexcol("000000", 0) }, rectmask{ rr }, false);
 }
 
+void theme_outline(RRect rr)
+{
+	rasterize(onecolor{ hexcol("ffffff", 0) }, rectmask{ rr }, false);
+	rr.setcorner(2);
+	rasterize(onecolor{ hexcol("ffffff", 63) }, rectmask{ rr }, false);
+	rr.shrink(1);
+	rasterize(onecolor{ hexcol("ffffff", 0) }, rectmask{ rr }, false);
+}
+
 void theme_treetick(int x, int y, State state, bool open)
 {
 	auto bmask1 = diagflipmask(offsetmask(diagrectmask{ 8.5f, 13.5f, 14.f, 23.f }.hpo(), 2, -1), !open);
@@ -621,6 +630,9 @@ int main()
 	theme_selector(RRect{ x, y, x + 15, y + 15 }.shrink(1));
 	x += 16;
 	theme_selector(RRect{ x, y, x + 11, y + 11 }.shrink(1));
+	x -= 16;
+	y += 16;
+	theme_outline(RRect{ x, y, x + 15, y + 15 }.shrink(1));
 
 	x = 0;
 	y = 96;

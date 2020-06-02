@@ -8,6 +8,8 @@
 extern Color4f colorFloat32;
 extern Color4f colorInt16;
 extern Color4f colorInt32;
+extern Color4f colorNearFileSize32;
+extern Color4f colorNearFileSize64;
 extern Color4f colorASCII;
 extern Color4f colorInst;
 extern Color4f colorCurInst;
@@ -53,20 +55,26 @@ struct Marker
 
 extern ui::DataCategoryTag DCT_Marker[1];
 extern ui::DataCategoryTag DCT_MarkedItems[1];
-struct MarkerData : ui::TableDataSource
+struct MarkerData
 {
 	void AddMarker(DataType dt, uint64_t from, uint64_t to);
 
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);
 
-	size_t GetNumRows() override { return markers.size(); }
+	std::vector<Marker> markers;
+};
+
+struct MarkerDataSource : ui::TableDataSource
+{
+	size_t GetNumRows() override { return data->markers.size(); }
 	size_t GetNumCols() override;
 	std::string GetRowName(size_t row) override;
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
 
-	std::vector<Marker> markers;
+	IDataSource* dataSource;
+	MarkerData* data;
 };
 
 struct MarkedItemEditor : ui::Node
@@ -120,6 +128,7 @@ struct DDFile
 	std::string name;
 	IDataSource* dataSource = nullptr;
 	MarkerData markerData;
+	MarkerDataSource mdSrc;
 };
 struct DDParam
 {

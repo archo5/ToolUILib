@@ -295,6 +295,12 @@ void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
 
 void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 {
+	if (x != prevMouseX || y != prevMouseY)
+	{
+		for (int i = 0; i < 5; i++)
+			clickCounts[i] = 0;
+	}
+
 	if (clickObj[0] && !dragEventAttempted && (x != 0 || y != 0))
 	{
 		dragEventAttempted = true;
@@ -465,8 +471,16 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats)
 		ev.numRepeats = numRepeats;
 		BubblingEvent(ev);
 
-		if (!ev.handled && act == UIKeyAction::Inspect)
-			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
+		if (!ev.handled)
+		{
+			if (act == UIKeyAction::Inspect)
+				ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
+			else if (act == UIKeyAction::Activate)
+			{
+				ev.type = UIEventType::Activate;
+				BubblingEvent(ev, nullptr, true);
+			}
+		}
 	}
 	else if (act == UIKeyAction::Inspect)
 		ui::Application::OpenInspector(GetNativeWindow(), hoverObj);

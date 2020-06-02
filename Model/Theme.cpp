@@ -127,6 +127,8 @@ struct DefaultTheme : Theme
 				info.IsDisabled() ? TE_ButtonDisabled :
 				info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
 				info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+			if (info.IsFocused())
+				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
 		});
 		defaultTheme.button = a.block;
 	}
@@ -149,6 +151,8 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_CheckBgrHover : TE_CheckBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
 			if (info.IsChecked())
 				DrawThemeElement(info.IsDisabled() ? TE_CheckMarkDisabled : TE_CheckMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
+			if (info.IsFocused())
+				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
 		});
 		defaultTheme.checkbox = a.block;
 	}
@@ -174,6 +178,8 @@ struct DefaultTheme : Theme
 				info.IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
 			if (info.IsChecked())
 				DrawThemeElement(info.IsDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
+			if (info.IsFocused())
+				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
 		});
 		defaultTheme.radioButton = a.block;
 	}
@@ -205,6 +211,8 @@ struct DefaultTheme : Theme
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
+			if (info.IsFocused())
+				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
 		});
 		defaultTheme.textBoxBase = a.block;
 	}

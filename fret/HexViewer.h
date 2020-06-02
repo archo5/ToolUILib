@@ -17,7 +17,11 @@ struct HighlightSettings
 	bool enableInt32 = true;
 	int32_t minInt32 = -10000;
 	int32_t maxInt32 = 10000;
+	bool enableASCII = true;
 	unsigned minASCIIChars = 3;
+	bool enableNearFileSize32 = true;
+	bool enableNearFileSize64 = true;
+	float nearFileSizePercent = 99.0f;
 
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);

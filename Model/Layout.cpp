@@ -358,6 +358,8 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 		state |= PS_Down;
 	if (o->IsInputDisabled())
 		state |= PS_Disabled;
+	if (o->IsFocused())
+		state |= PS_Focused;
 }
 
 void IErrorCallback::OnError(const char* message, const char* at)

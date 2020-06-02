@@ -120,14 +120,14 @@ struct NamedTextSerializeReader
 	bool Parse(StringView all);
 
 	EntryRange GetCurrentRange();
-	Entry* FindEntry(const char* key);
-	std::string ReadString(const char* key);
-	bool ReadBool(const char* key);
-	int ReadInt(const char* key);
-	unsigned ReadUInt(const char* key);
-	int64_t ReadInt64(const char* key);
-	uint64_t ReadUInt64(const char* key);
-	double ReadFloat(const char* key);
+	Entry* FindEntry(const char* key, Entry* def = nullptr);
+	std::string ReadString(const char* key, const std::string& def = "");
+	bool ReadBool(const char* key, bool def = false);
+	int ReadInt(const char* key, int def = 0);
+	unsigned ReadUInt(const char* key, unsigned def = 0);
+	int64_t ReadInt64(const char* key, int64_t def = 0);
+	uint64_t ReadUInt64(const char* key, uint64_t def = 0);
+	double ReadFloat(const char* key, double def = 0);
 	void BeginArray(const char* key);
 	void EndArray();
 	void BeginDict(const char* key);
