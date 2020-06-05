@@ -125,11 +125,13 @@
     <ClCompile Include="Model\Docking.cpp" />
     <ClCompile Include="Model\Events.cpp" />
     <ClCompile Include="Model\Graphics.cpp" />
+    <ClCompile Include="Model\ImmediateMode.cpp" />
     <ClCompile Include="Model\Layout.cpp" />
     <ClCompile Include="Model\Menu.cpp" />
     <ClCompile Include="Model\Native.cpp" />
     <ClCompile Include="Model\Objects.cpp" />
     <ClCompile Include="Model\System.cpp" />
+    <ClCompile Include="Model\Tables.cpp" />
     <ClCompile Include="Model\Theme.cpp" />
     <ClCompile Include="Render\OpenGL.cpp" />
     <ClCompile Include="Render\Render.cpp" />
@@ -147,11 +149,13 @@
     <ClInclude Include="Model\Docking.h" />
     <ClInclude Include="Model\Events.h" />
     <ClInclude Include="Model\Graphics.h" />
+    <ClInclude Include="Model\ImmediateMode.h" />
     <ClInclude Include="Model\Layout.h" />
     <ClInclude Include="Model\Menu.h" />
     <ClInclude Include="Model\Native.h" />
     <ClInclude Include="Model\Objects.h" />
     <ClInclude Include="Model\System.h" />
+    <ClInclude Include="Model\Tables.h" />
     <ClInclude Include="Model\Theme.h" />
     <ClInclude Include="Render\OpenGL.h" />
     <ClInclude Include="Render\Render.h" />
