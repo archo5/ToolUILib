@@ -881,11 +881,11 @@ void MathExpr::Compile(const char* expr)
 {
 	delete _impl;
 
-	fprintf(stderr, "Parse: %s\n", expr);
+	//fprintf(stderr, "Parse: %s\n", expr);
 	Compiler c;
 	c.it = expr;
 	c.Parse();
-	c.Dump();
+	//c.Dump();
 	_impl = new CompiledMathExpr;
 	_impl->root = c.root;
 }

@@ -40,6 +40,7 @@ struct UIObjectDirtyStack
 		std::swap(size, o.size);
 	}
 	void Add(UIObject* n);
+	void OnDestroy(UIObject* n);
 	UIObject* Pop();
 	void RemoveChildren();
 
@@ -75,6 +76,7 @@ struct UIContainer
 	}
 	void AddToRenderStack(ui::Node* n)
 	{
+		DEBUG_FLOW(printf("add %p to render stack\n", n));
 		if (n->_lastRenderedFrameID != _lastRenderedFrameID)
 			nodeRenderStack.Add(n);
 		else

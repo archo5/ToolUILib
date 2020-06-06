@@ -447,3 +447,20 @@ void HexViewer::OnPaint()
 		DrawTextLine(x2 + xoff / 2, y + yoff, str + 1, 1, 1, 1);
 	}
 }
+
+UIRect HexViewer::GetByteRect(uint64_t pos)
+{
+	int64_t at = pos - GetBasePos();
+
+	int x = at % state->byteWidth;
+	if (x < 0)
+		x += state->byteWidth;
+
+	int y = at / state->byteWidth;
+
+	float fh = GetFontHeight() + 4;
+	float x0 = finalRectC.x0 + GetTextWidth("0") * 8 + x * 20;
+	float y0 = finalRectC.y0 + 4 + fh * (1 + y);
+
+	return { x0, y0, x0 + 16, y0 + fh };
+}

@@ -9,3 +9,8 @@
 #include <unordered_set>
 #include <sstream>
 #include "../GUI.h"
+
+enum GlobalEvents
+{
+	GlobalEvent_OpenImage,
+};

@@ -270,4 +270,14 @@ void BatchRenderer::Quad(float x0, float y0, float x1, float y1, float u0, float
 	glTexCoord2f(u0, v0); glVertex2f(x0, y0);
 }
 
+void DrawLine(float x0, float y0, float x1, float y1, float r, float g, float b, float a)
+{
+	SetTexture(0);
+	glBegin(GL_LINES);
+	glColor4f(r, g, b, a);
+	glVertex2f(x0, y0);
+	glVertex2f(x1, y1);
+	glEnd();
+}
+
 } // namespace GL

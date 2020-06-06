@@ -11,6 +11,22 @@ void UIObjectDirtyStack::Add(UIObject* n)
 	n->flags |= flag;
 }
 
+void UIObjectDirtyStack::OnDestroy(UIObject* n)
+{
+	if (!(n->flags & flag))
+		return;
+	for (int i = 0; i < size; i++)
+	{
+		if (stack[i] == n)
+		{
+			if (i + 1 < size)
+				stack[i] = stack[size - 1];
+			size--;
+			break;
+		}
+	}
+}
+
 UIObject* UIObjectDirtyStack::Pop()
 {
 	assert(size > 0);
@@ -21,9 +37,6 @@ UIObject* UIObjectDirtyStack::Pop()
 
 void UIObjectDirtyStack::RemoveChildren()
 {
-	if (size <= 1)
-		return;
-
 	for (int i = 0; i < size; i++)
 	{
 		auto* p = stack[i]->parent;
@@ -68,6 +81,8 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 
 		DEBUG_FLOW(printf("    deleting %p\n", cur));
 		cur->system->eventSystem.OnDestroy(cur);
+		nodeRenderStack.OnDestroy(cur);
+		nextFrameNodeRenderStack.OnDestroy(cur);
 		delete cur;
 	}
 }

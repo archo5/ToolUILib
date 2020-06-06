@@ -122,7 +122,7 @@ void TableView::OnPaint()
 	RC.x1 -= sbw;
 
 	size_t minR = floor(yOff / h);
-	size_t maxR = size_t(floor((yOff + sbrect.GetHeight()) / h));
+	size_t maxR = size_t(ceil((yOff + sbrect.GetHeight()) / h));
 	if (maxR > nr)
 		maxR = nr;
 
@@ -389,6 +389,44 @@ size_t TableView::GetRowAt(float y)
 	size_t row = y;
 	size_t numRows = _impl->dataSource->GetNumRows();
 	return row < numRows ? row : SIZE_MAX;
+}
+
+UIRect TableView::GetCellRect(size_t col, size_t row)
+{
+	size_t numCols = _impl->dataSource->GetNumCols();
+	if (col >= numCols && col != SIZE_MAX)
+		col = numCols ? numCols - 1 : 0;
+	size_t numRows = _impl->dataSource->GetNumRows();
+	if (row >= numRows)
+		row = numRows ? numRows - 1 : 0;
+
+	auto RC = GetContentRect();
+
+	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
+	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+
+	float rhw = 80 + padRH.x0 + padRH.x1;
+	float rhh = 20 + padRH.y0 + padRH.y1;
+	float chh = 20 + padCH.y0 + padCH.y1;
+	float cellh = 20 + padC.y0 + padC.y1;
+	float h = std::max(rhh, cellh);
+
+	float x0, x1;
+	if (col == SIZE_MAX)
+	{
+		x0 = RC.x0;
+		x1 = x0 + rhw;
+	}
+	else
+	{
+		x0 = RC.x0 + rhw + _impl->colEnds[col];
+		x1 = RC.x0 + rhw + _impl->colEnds[col + 1];
+	}
+	float y0 = RC.y0 + chh + h * row - yOff;
+	float y1 = y0 + h;
+
+	return { x0, y0, x1, y1 };
 }
 
 size_t TableView::GetHoverRow() const

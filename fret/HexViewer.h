@@ -65,6 +65,8 @@ struct HexViewer : UIElement
 	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
 
+	UIRect GetByteRect(uint64_t pos);
+
 	uint64_t GetBasePos()
 	{
 		return state->basePos;

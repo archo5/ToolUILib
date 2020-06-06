@@ -1097,6 +1097,9 @@ void DataDesc::EditInstance(UIContainer* ctx)
 					img.format = S.resource.image.format;
 					img.userCreated = false;
 					images.push_back(img);
+
+					curImage = images.size() - 1;
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
 				}
 			}
 		}

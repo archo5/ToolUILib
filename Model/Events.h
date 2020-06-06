@@ -49,7 +49,13 @@ enum class UIEventType
 	KeyAction,
 	TextInput,
 	SelectionChange,
+
+	User = 256,
 };
+inline UIEventType UserEvent(int id)
+{
+	return UIEventType(int(UIEventType::User) + id);
+}
 
 enum class UIMouseButton
 {
@@ -130,6 +136,7 @@ struct UIEvent
 	bool down = false;
 	bool handled = false;
 	uint16_t numRepeats = 0;
+	uintptr_t arg0 = 0, arg1 = 0;
 
 	UIEvent(UIEventSystem* ctx, UIObject* tgt, UIEventType ty) : context(ctx), target(tgt), current(tgt), type(ty) {}
 	ui::Node* GetTargetNode() const;
@@ -159,6 +166,7 @@ struct UIEventSystem
 	void OnCommit(UIObject* e);
 	void OnChange(UIObject* e);
 	void OnChange(ui::Node* n);
+	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o);
 	void SetTimer(UIElement* tgt, float t, int id = 0);
 	void SetDefaultCursor(ui::DefaultCursor cur);

@@ -34,6 +34,64 @@ struct OpenedFile
 	HighlightSettings highlightSettings;
 };
 
+struct ConnectOffset
+{
+	uint64_t off;
+	Point<float> tablePos;
+	bool sel;
+};
+
+struct TableWithOffsets
+{
+	int GetOffsets(int max, ConnectOffset* buf)
+	{
+		if (!curTable)
+			return 0;
+
+
+		auto* ds = curTable->GetDataSource();
+		size_t col = 0, nc = ds->GetNumCols();
+		for (col = 0; col < nc; col++)
+		{
+			if (ds->GetColName(col) == "Offset")
+				break;
+		}
+		if (col == nc)
+			return 0;
+
+		int ret = 0;
+#if 0
+		size_t nr = ds->GetNumRows();
+		for (size_t i = 0; i < nr && ret < max; i++)
+		{
+			TryAddRow(i, col, ret, max, buf);
+		}
+#else
+		auto hoverRow = curTable->GetHoverRow();
+		if (curTable->IsValidRow(hoverRow))
+			TryAddRow(hoverRow, col, ret, max, buf);
+		if (curTable->selection.AnySelected())
+			TryAddRow(curTable->selection.GetFirstSelection(), col, ret, max, buf);
+#endif
+		return ret;
+	}
+
+	void TryAddRow(size_t row, size_t col, int& ret, int max, ConnectOffset* buf)
+	{
+		auto* ds = curTable->GetDataSource();
+		auto tcr = curTable->GetContentRect();
+
+		auto offtext = ds->GetText(row, col);
+		auto off = std::stoull(offtext);
+		auto cr = curTable->GetCellRect(SIZE_MAX, row);
+		float y = (cr.y0 + cr.y1) * 0.5f;
+		if (tcr.Contains(cr.x0, y))
+			buf[ret++] = { off, { cr.x0, y }, curTable->selection.IsSelected(row) };
+	}
+
+	ui::TableView* curTable = nullptr;
+};
+
 struct TabInspect : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -122,18 +180,19 @@ struct TabHighlights : ui::Node
 	OpenedFile* of = nullptr;
 };
 
-struct TabMarkers : ui::Node
+struct TabMarkers : ui::Node, TableWithOffsets
 {
 	void Render(UIContainer* ctx) override
 	{
 		auto* f = of->ddFile;
 		auto& spmkr = *ctx->Push<ui::SplitPane>();
 		{
-			ctx->PushBox();
+			ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
 			ctx->Text("Marked items") + ui::Padding(5);
 			auto* tv = ctx->Make<ui::TableView>();
-			*tv + ui::Layout(style::layouts::EdgeSlice());
+			curTable = tv;
+			*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 			tv->SetDataSource(&f->mdSrc);
 			tv->CalculateColumnWidths();
 			tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
@@ -162,7 +221,7 @@ struct TabMarkers : ui::Node
 
 			ctx->Pop();
 
-			ctx->PushBox();
+			ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 			if (tv->selection.AnySelected())
 			{
 				size_t pos = tv->selection.GetFirstSelection();
@@ -289,13 +348,13 @@ struct Workspace
 	DataDesc::Image curImgDesc;
 };
 
-struct TabStructures : ui::Node
+struct TabStructures : ui::Node, TableWithOffsets
 {
 	void Render(UIContainer* ctx) override
 	{
 		auto& spstr = *ctx->Push<ui::SplitPane>();
 		{
-			ctx->PushBox();
+			ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
 			workspace->ddiSrc.Edit(ctx);
 
@@ -312,7 +371,8 @@ struct TabStructures : ui::Node
 			ui::Property::End(ctx);
 
 			auto* tv = ctx->Make<ui::TableView>();
-			*tv + ui::Layout(style::layouts::EdgeSlice());
+			curTable = tv;
+			*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 			tv->SetDataSource(&workspace->ddiSrc);
 			workspace->ddiSrc.refilter = true;
 			tv->CalculateColumnWidths();
@@ -369,7 +429,7 @@ struct TabStructures : ui::Node
 			ctx->Pop();
 		}
 		{
-			ctx->PushBox();
+			ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 			workspace->desc.EditStructuralItems(ctx);
 			ctx->Pop();
 		}
@@ -542,6 +602,7 @@ struct FileView : ui::Node
 		ctx->Pop(); // end tree stabilization box
 
 		auto* hv = ctx->Make<HexViewer>();
+		curHexViewer = hv;
 		hv->Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
 		hv->HandleEvent(UIEventType::Click) = [this, hv](UIEvent& e)
 		{
@@ -690,16 +751,18 @@ struct FileView : ui::Node
 
 	Workspace* workspace = nullptr;
 	OpenedFile* of = nullptr;
+
+	HexViewer* curHexViewer = nullptr;
 };
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 
-struct MainWindow : ui::NativeMainWindow
+struct MainWindowNode : ui::Node
 {
-	MainWindow()
+	void OnInit() override
 	{
-		SetTitle("Binary Data Analysis Tool");
-		SetSize(1200, 800);
+		GetNativeWindow()->SetTitle("Binary Data Analysis Tool");
+		GetNativeWindow()->SetSize(1200, 800);
 		FileDataSource fds(CUR_WORKSPACE);
 		std::string wsdata;
 		wsdata.resize(fds.GetSize());
@@ -710,8 +773,40 @@ struct MainWindow : ui::NativeMainWindow
 		//files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
 	}
-	void OnRender(UIContainer* ctx) override
+	void OnPaint() override
 	{
+		ui::Node::OnPaint();
+
+		if (curFileView && curFileView->curHexViewer && curTable)
+		{
+			auto hvcr = curFileView->curHexViewer->GetContentRect();
+			ConnectOffset cobuf[128];
+			int count = curTable->GetOffsets(128, cobuf);
+			for (int i = 0; i < count; i++)
+			{
+				auto co = cobuf[i];
+				if (co.off < curFileView->curHexViewer->GetBasePos())
+					continue;
+				auto br = curFileView->curHexViewer->GetByteRect(co.off);
+				if (!hvcr.Contains(br.x1, br.y1))
+					continue;
+				GL::DrawLine(br.x0, br.y0, br.x0, br.y1, 1, 0.5f, 0, 1);
+				GL::DrawLine(br.x0, br.y1, br.x1, br.y1, 1, 0.5f, 0, 1);
+				GL::DrawLine(br.x1, br.y1, co.tablePos.x, co.tablePos.y, 1, 0.5f, 0, 1);
+			}
+		}
+	}
+	void Render(UIContainer* ctx) override
+	{
+		curFileView = nullptr;
+		curTable = nullptr;
+
+		HandleEvent(UserEvent(GlobalEvent_OpenImage)) = [this](UIEvent& e)
+		{
+			workspace.curSubtab = SubtabType::Images;
+			Rerender();
+		};
+
 		ctx->Push<ui::MenuBarElement>();
 		ctx->Push<ui::MenuItemElement>()->SetText("Save").Func([&]()
 		{
@@ -759,6 +854,7 @@ struct MainWindow : ui::NativeMainWindow
 							auto* fv = ctx->Make<FileView>();
 							fv->workspace = &workspace;
 							fv->of = of;
+							curFileView = fv;
 
 							// right
 							*ctx->Push<ui::TabGroup>()
@@ -789,12 +885,16 @@ struct MainWindow : ui::NativeMainWindow
 
 								if (workspace.curSubtab == SubtabType::Markers)
 								{
-									ctx->Make<TabMarkers>()->of = of;
+									auto* tm = ctx->Make<TabMarkers>();
+									tm->of = of;
+									curTable = tm;
 								}
 
 								if (workspace.curSubtab == SubtabType::Structures)
 								{
-									ctx->Make<TabStructures>()->workspace = &workspace;
+									auto* ts = ctx->Make<TabStructures>();
+									ts->workspace = &workspace;
+									curTable = ts;
 								}
 
 								if (workspace.curSubtab == SubtabType::Images)
@@ -819,12 +919,24 @@ struct MainWindow : ui::NativeMainWindow
 	}
 
 	Workspace workspace;
+
+	FileView* curFileView = nullptr;
+	TableWithOffsets* curTable = nullptr;
+};
+
+template <class T>
+struct WindowT : ui::NativeMainWindow
+{
+	void OnRender(UIContainer* ctx) override
+	{
+		ctx->Make<T>();
+	}
 };
 
 int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
-	MainWindow mw;
+	WindowT<MainWindowNode> mw;
 	mw.SetVisible(true);
 	return app.Run();
 }

@@ -55,6 +55,11 @@ void UIObject::_DoEvent(UIEvent& e)
 		OnEvent(e);
 }
 
+void UIObject::SendUserEvent(int id, uintptr_t arg0, uintptr_t arg1)
+{
+	system->eventSystem.OnUserEvent(this, id, arg0, arg1);
+}
+
 ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
 {
 	auto eh = new ui::EventHandlerEntry;

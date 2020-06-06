@@ -169,6 +169,14 @@ void UIEventSystem::OnChange(ui::Node* n)
 	BubblingEvent(ev);
 }
 
+void UIEventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1)
+{
+	UIEvent ev(this, o, UserEvent(id));
+	ev.arg0 = arg0;
+	ev.arg1 = arg1;
+	BubblingEvent(ev);
+}
+
 void UIEventSystem::SetKeyboardFocus(UIObject* o)
 {
 	if (focusObj == o)

@@ -179,6 +179,7 @@ struct UIObject
 	virtual void OnEvent(UIEvent& e) {}
 	void _DoEvent(UIEvent& e);
 
+	void SendUserEvent(int id, uintptr_t arg0 = 0, uintptr_t arg1 = 0);
 	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
 	ui::EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
 	void ClearEventHandlers();
