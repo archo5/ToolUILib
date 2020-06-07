@@ -27,6 +27,9 @@ struct TableDataSource
 	virtual std::string GetRowName(size_t row) = 0;
 	virtual std::string GetColName(size_t col) = 0;
 	virtual std::string GetText(size_t row, size_t col) = 0;
+	// cache interface
+	virtual void OnBeginReadRows(size_t startRow, size_t endRow) {}
+	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
 };
 
 class TableView : public ui::Node

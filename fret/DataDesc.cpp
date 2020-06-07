@@ -464,20 +464,16 @@ void DDStructResource::Load(NamedTextSerializeReader& r)
 	if (rsrcType == "image")
 		type = DDStructResourceType::Image;
 
-	switch (type)
+	if (r.BeginDict("image"))
 	{
-	case DDStructResourceType::Image:
-		r.BeginDict("image");
-
-		image.format = r.ReadString("format");
-		image.imgOff.SetExpr(r.ReadString("imgOff"));
-		image.palOff.SetExpr(r.ReadString("palOff"));
-		image.width.SetExpr(r.ReadString("width"));
-		image.height.SetExpr(r.ReadString("height"));
-
-		r.EndDict();
-		break;
+		image = new DDRsrcImage;
+		image->format = r.ReadString("format");
+		image->imgOff.SetExpr(r.ReadString("imgOff"));
+		image->palOff.SetExpr(r.ReadString("palOff"));
+		image->width.SetExpr(r.ReadString("width"));
+		image->height.SetExpr(r.ReadString("height"));
 	}
+	r.EndDict();
 }
 
 void DDStructResource::Save(NamedTextSerializeWriter& w)
@@ -486,16 +482,20 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 	{
 	case DDStructResourceType::Image:
 		w.WriteString("type", "image");
+		break;
+	}
+
+	if (image)
+	{
 		w.BeginDict("image");
 
-		w.WriteString("format", image.format);
-		w.WriteString("imgOff", image.imgOff.expr);
-		w.WriteString("palOff", image.palOff.expr);
-		w.WriteString("width", image.width.expr);
-		w.WriteString("height", image.height.expr);
+		w.WriteString("format", image->format);
+		w.WriteString("imgOff", image->imgOff.expr);
+		w.WriteString("palOff", image->palOff.expr);
+		w.WriteString("width", image->width.expr);
+		w.WriteString("height", image->height.expr);
 
 		w.EndDict();
-		break;
 	}
 }
 
@@ -1081,22 +1081,9 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
-				if (ui::imm::Button(ctx, "Open image"))
+				if (ui::imm::Button(ctx, "Open image", { ui::Enable(!!S.resource.image) }))
 				{
-					VariableSource vs;
-					{
-						vs.desc = this;
-						vs.root = &SI;
-					}
-					Image img;
-					img.file = SI.file;
-					img.offImage = S.resource.image.imgOff.Evaluate(vs);
-					img.offPalette = S.resource.image.palOff.Evaluate(vs);
-					img.width = S.resource.image.width.Evaluate(vs);
-					img.height = S.resource.image.height.Evaluate(vs);
-					img.format = S.resource.image.format;
-					img.userCreated = false;
-					images.push_back(img);
+					images.push_back(GetInstanceImage(SI));
 
 					curImage = images.size() - 1;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
@@ -1284,11 +1271,17 @@ void DataDesc::EditStruct(UIContainer* ctx)
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
-				ui::imm::PropEditString(ctx, "Format", S.resource.image.format.c_str(), [&S](const char* v) { S.resource.image.format = v; });
-				ui::imm::PropEditString(ctx, "Image offset", S.resource.image.imgOff.expr.c_str(), [&S](const char* v) { S.resource.image.imgOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Palette offset", S.resource.image.palOff.expr.c_str(), [&S](const char* v) { S.resource.image.palOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Width", S.resource.image.width.expr.c_str(), [&S](const char* v) { S.resource.image.width.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Height", S.resource.image.height.expr.c_str(), [&S](const char* v) { S.resource.image.height.SetExpr(v); });
+				if (ui::imm::Button(ctx, "Edit image"))
+				{
+					if (!S.resource.image)
+						S.resource.image = new DDRsrcImage;
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
+				}
+				ui::imm::PropEditString(ctx, "Format", S.resource.image->format.c_str(), [&S](const char* v) { S.resource.image->format = v; });
+				ui::imm::PropEditString(ctx, "Image offset", S.resource.image->imgOff.expr.c_str(), [&S](const char* v) { S.resource.image->imgOff.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Palette offset", S.resource.image->palOff.expr.c_str(), [&S](const char* v) { S.resource.image->palOff.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Width", S.resource.image->width.expr.c_str(), [&S](const char* v) { S.resource.image->width.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Height", S.resource.image->height.expr.c_str(), [&S](const char* v) { S.resource.image->height.SetExpr(v); });
 			}
 		}
 		else
@@ -1482,6 +1475,24 @@ void DataDesc::DeleteAllInstances(DDFile* filterFile, DDStruct* filterStruct)
 			return false;
 		return true;
 	}), instances.end());
+}
+
+DataDesc::Image DataDesc::GetInstanceImage(const DDStructInst& SI)
+{
+	VariableSource vs;
+	{
+		vs.desc = this;
+		vs.root = &SI;
+	}
+	Image img;
+	img.file = SI.file;
+	img.offImage = SI.def->resource.image->imgOff.Evaluate(vs);
+	img.offPalette = SI.def->resource.image->palOff.Evaluate(vs);
+	img.width = SI.def->resource.image->width.Evaluate(vs);
+	img.height = SI.def->resource.image->height.Evaluate(vs);
+	img.format = SI.def->resource.image->format;
+	img.userCreated = false;
+	return img;
 }
 
 DataDesc::~DataDesc()
@@ -1810,15 +1821,27 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	case DDI_COL_File: return dataDesc->instances[_indices[row]].file->name;
 	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
 	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
-	default:
-		// TODO optimize to avoid reparsing for each col
+	default: return _rfsv[row - _startRow][col - DDI_COL_FirstField].preview;
+	}
+}
+
+void DataDescInstanceSource::OnBeginReadRows(size_t startRow, size_t endRow)
+{
+	_startRow = startRow;
+	if (filterStructEnable && filterStruct)
 	{
-		auto& inst = dataDesc->instances[_indices[row]];
-		_rfs.clear();
-		dataDesc->ReadStruct(inst, _rfs);
-		auto& rf = _rfs[col - DDI_COL_FirstField];
-		return rf.preview;
-	} break;
+		size_t count = endRow - startRow;
+		if (_rfsv.size() < count)
+			_rfsv.resize(count);
+
+		for (auto& rfs : _rfsv)
+			rfs.clear();
+
+		for (size_t row = startRow; row < endRow; row++)
+		{
+			auto& inst = dataDesc->instances[_indices[row]];
+			dataDesc->ReadStruct(inst, _rfsv[row - startRow]);
+		}
 	}
 }
 

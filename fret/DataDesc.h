@@ -171,19 +171,18 @@ enum class DDStructResourceType
 	None,
 	Image,
 };
+struct DDRsrcImage
+{
+	std::string format;
+	MathExprObj imgOff;
+	MathExprObj palOff;
+	MathExprObj width;
+	MathExprObj height;
+};
 struct DDStructResource
 {
 	DDStructResourceType type = DDStructResourceType::None;
-
-	struct Image
-	{
-		std::string format;
-		MathExprObj imgOff;
-		MathExprObj palOff;
-		MathExprObj width;
-		MathExprObj height;
-	}
-	image;
+	DDRsrcImage* image = nullptr;
 
 	void Load(NamedTextSerializeReader& r);
 	void Save(NamedTextSerializeWriter& w);
@@ -274,6 +273,7 @@ struct DataDesc
 	size_t CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
 	void ExpandAllInstances(DDFile* filterFile = nullptr);
 	void DeleteAllInstances(DDFile* filterFile = nullptr, DDStruct* filterStruct = nullptr);
+	DataDesc::Image GetInstanceImage(const DDStructInst& SI);
 
 	~DataDesc();
 	void Clear();
@@ -296,12 +296,15 @@ struct DataDescInstanceSource : ui::TableDataSource
 	std::string GetRowName(size_t row) override;
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
+	void OnBeginReadRows(size_t startRow, size_t endRow) override;
 
 	void Edit(UIContainer* ctx);
 
 	void _Refilter();
 
-	std::vector<DataDesc::ReadField> _rfs;
+	std::vector<std::vector<DataDesc::ReadField>> _rfsv;
+	size_t _startRow = 0;
+
 	std::vector<size_t> _indices;
 	bool refilter = true;
 

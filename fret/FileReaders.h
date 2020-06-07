@@ -130,7 +130,7 @@ struct NamedTextSerializeReader
 	double ReadFloat(const char* key, double def = 0);
 	void BeginArray(const char* key);
 	void EndArray();
-	void BeginDict(const char* key);
+	bool BeginDict(const char* key);
 	void EndDict();
 	void BeginEntry(Entry* E);
 	void EndEntry();

@@ -126,6 +126,8 @@ void TableView::OnPaint()
 	if (maxR > nr)
 		maxR = nr;
 
+	_impl->dataSource->OnBeginReadRows(minR, maxR);
+
 	// - row header
 	GL::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
 	// background:
@@ -226,6 +228,8 @@ void TableView::OnPaint()
 		}
 	}
 	GL::PopScissorRect();
+
+	_impl->dataSource->OnEndReadRows(minR, maxR);
 
 	scrollbarV.OnPaint({ this, sbrect, sbrect.GetHeight(), chh + nr * h, yOff });
 
@@ -351,6 +355,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 	for (size_t i = 0, n = _impl->dataSource->GetNumRows(); i < n; i++)
 	{
+		_impl->dataSource->OnBeginReadRows(i, i + 1);
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetText(i, c);
@@ -358,6 +363,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
+		_impl->dataSource->OnEndReadRows(i, i + 1);
 	}
 
 	for (size_t c = 0; c < nc; c++)

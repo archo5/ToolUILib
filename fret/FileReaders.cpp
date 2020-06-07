@@ -553,13 +553,19 @@ void NamedTextSerializeReader::EndArray()
 	stack.pop_back();
 }
 
-void NamedTextSerializeReader::BeginDict(const char* key)
+bool NamedTextSerializeReader::BeginDict(const char* key)
 {
 	auto E = FindEntry(key);
 	if (E && E->ValueEquals("{}"))
+	{
 		stack.push_back({ E + 1, E + E->childSkip });
+		return true;
+	}
 	else
+	{
 		stack.push_back({ nullptr, nullptr });
+		return false;
+	}
 }
 
 void NamedTextSerializeReader::EndDict()

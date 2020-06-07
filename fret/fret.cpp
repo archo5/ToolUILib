@@ -7,6 +7,16 @@
 #include "ImageParsers.h"
 
 
+template <class T>
+struct WindowT : ui::NativeMainWindow
+{
+	void OnRender(UIContainer* ctx) override
+	{
+		rootNode = ctx->Make<T>();
+	}
+	T* rootNode = nullptr;
+};
+
 struct OpenedFile
 {
 	void Load(NamedTextSerializeReader& r)
@@ -250,6 +260,37 @@ enum class SubtabType
 	Images = 4,
 };
 
+struct CachedImage
+{
+	~CachedImage()
+	{
+		delete curImg;
+	}
+	ui::Image* GetImage(const DataDesc::Image& imgDesc)
+	{
+		if (curImg)
+		{
+			if (imgDesc.file == curImgDesc.file &&
+				imgDesc.offImage == curImgDesc.offImage &&
+				imgDesc.offPalette == curImgDesc.offPalette &&
+				imgDesc.format == curImgDesc.format &&
+				imgDesc.width == curImgDesc.width &&
+				imgDesc.height == curImgDesc.height)
+			{
+				return curImg;
+			}
+		}
+
+		delete curImg;
+		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), { imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height });
+		curImgDesc = imgDesc;
+		return curImg;
+	}
+
+	ui::Image* curImg = nullptr;
+	DataDesc::Image curImgDesc;
+};
+
 struct Workspace
 {
 	Workspace()
@@ -315,26 +356,6 @@ struct Workspace
 
 		w.EndDict();
 	}
-	ui::Image* GetImage(const DataDesc::Image& imgDesc)
-	{
-		if (curImg)
-		{
-			if (imgDesc.file == curImgDesc.file &&
-				imgDesc.offImage == curImgDesc.offImage &&
-				imgDesc.offPalette == curImgDesc.offPalette &&
-				imgDesc.format == curImgDesc.format &&
-				imgDesc.width == curImgDesc.width &&
-				imgDesc.height == curImgDesc.height)
-			{
-				return curImg;
-			}
-		}
-
-		delete curImg;
-		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), { imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height });
-		curImgDesc = imgDesc;
-		return curImg;
-	}
 
 	std::vector<OpenedFile*> openedFiles;
 	int curOpenedFile = 0;
@@ -344,8 +365,7 @@ struct Workspace
 	DataDescImageSource ddimgSrc;
 
 	// runtime cache
-	ui::Image* curImg = nullptr;
-	DataDesc::Image curImgDesc;
+	CachedImage cachedImg;
 };
 
 struct TabStructures : ui::Node, TableWithOffsets
@@ -541,7 +561,7 @@ struct TabImages : ui::Node
 					br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 					br.End();
 				});
-				img->SetImage(workspace->GetImage(workspace->desc.images[workspace->desc.curImage]));
+				img->SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
 				img->SetScaleMode(ui::ScaleMode::Fit);
 				ctx->Pop();
 			}
@@ -757,6 +777,105 @@ struct FileView : ui::Node
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 
+struct ImageEditorWindowNode : ui::Node
+{
+	void OnInit() override
+	{
+		GetNativeWindow()->SetTitle("Image Resource Editor");
+		GetNativeWindow()->SetSize(1200, 800);
+	}
+	void Render(UIContainer* ctx) override
+	{
+		auto* sp1 = ctx->Push<ui::SplitPane>();
+		{
+			auto* sp2 = ctx->Push<ui::SplitPane>();
+			{
+				*ctx->Push<ui::Panel>()
+					+ ui::Width(style::Coord::Percent(100))
+					+ ui::Height(style::Coord::Percent(100));
+				if (ddiSrc.dataDesc && curInst < ddiSrc.dataDesc->instances.size())
+				{
+					auto* img = ctx->Make<ui::ImageElement>();
+					*img + ui::Width(style::Coord::Percent(100));
+					*img + ui::Height(style::Coord::Percent(100));
+					img->GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+					{
+						auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
+
+						GL::BatchRenderer br;
+						auto r = info.rect;
+
+						GL::SetTexture(bgr->_texture);
+						br.Begin();
+						br.SetColor(1, 1, 1, 1);
+						br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+						br.End();
+					});
+					img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(ddiSrc.dataDesc->instances[curInst])));
+					img->SetScaleMode(ui::ScaleMode::Fit);
+				}
+				ctx->Pop();
+
+				ctx->PushBox();
+				if (structDef)
+				{
+					ui::imm::PropEditString(ctx, "Format", image->format.c_str(), [this](const char* v) { image->format = v; });
+					ui::imm::PropEditString(ctx, "Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
+					ui::imm::PropEditString(ctx, "Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });
+					ui::imm::PropEditString(ctx, "Width", image->width.expr.c_str(), [this](const char* v) { image->width.SetExpr(v); });
+					ui::imm::PropEditString(ctx, "Height", image->height.expr.c_str(), [this](const char* v) { image->height.SetExpr(v); });
+				}
+				ctx->Pop();
+			}
+			ctx->Pop();
+			sp2->SetDirection(true);
+			sp2->SetSplits({ 0.6f });
+
+			ctx->PushBox();
+			if (ddiSrc.dataDesc)
+			{
+				auto* tv = ctx->Make<ui::TableView>();
+				*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+				tv->SetDataSource(&ddiSrc);
+				ddiSrc.refilter = true;
+				tv->CalculateColumnWidths();
+				tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
+				{
+					auto sel = tv->selection.GetFirstSelection();
+					if (tv->IsValidRow(sel))
+						curInst = ddiSrc._indices[sel];
+					e.current->RerenderNode();
+				};
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+		sp1->SetDirection(false);
+		sp1->SetSplits({ 0.6f });
+	}
+	void Setup(DataDesc* desc)
+	{
+		ddiSrc.dataDesc = desc;
+	}
+	void SetStruct(DDStruct* s)
+	{
+		ddiSrc.filterStruct = s;
+		structDef = s;
+		if (!s->resource.image)
+			s->resource.image = new DDRsrcImage;
+		image = s->resource.image;
+		GetNativeWindow()->SetTitle(("Image Resource Editor - " + s->name).c_str());
+	}
+
+	DDStruct* structDef = nullptr;
+	DDRsrcImage* image = nullptr;
+
+	size_t curInst = SIZE_MAX;
+
+	DataDescInstanceSource ddiSrc;
+	CachedImage cachedImg;
+};
+
 struct MainWindowNode : ui::Node
 {
 	void OnInit() override
@@ -805,6 +924,15 @@ struct MainWindowNode : ui::Node
 		{
 			workspace.curSubtab = SubtabType::Images;
 			Rerender();
+		};
+		HandleEvent(UserEvent(GlobalEvent_OpenImageRsrcEditor)) = [this](UIEvent& e)
+		{
+			if (!curImageEditor)
+				curImageEditor = new WindowT<ImageEditorWindowNode>();
+			curImageEditor->SetVisible(true);
+			curImageEditor->rootNode->Setup(&workspace.desc);
+			curImageEditor->rootNode->SetStruct((DDStruct*)e.arg0);
+			curImageEditor->rootNode->Rerender();
 		};
 
 		ctx->Push<ui::MenuBarElement>();
@@ -922,15 +1050,7 @@ struct MainWindowNode : ui::Node
 
 	FileView* curFileView = nullptr;
 	TableWithOffsets* curTable = nullptr;
-};
-
-template <class T>
-struct WindowT : ui::NativeMainWindow
-{
-	void OnRender(UIContainer* ctx) override
-	{
-		ctx->Make<T>();
-	}
+	WindowT<ImageEditorWindowNode>* curImageEditor = nullptr;
 };
 
 int uimain(int argc, char* argv[])

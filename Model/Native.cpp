@@ -416,6 +416,7 @@ struct NativeWindow_Impl
 		evsys.RecomputeLayout();
 
 		GL::SetActiveContext(renderCtx);
+		GL::SetViewport(0, 0, evsys.width, evsys.height);
 
 		//GL::Clear(20, 40, 80, 255);
 		GL::Clear(0x25, 0x25, 0x25, 255);

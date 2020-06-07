@@ -13,4 +13,5 @@
 enum GlobalEvents
 {
 	GlobalEvent_OpenImage,
+	GlobalEvent_OpenImageRsrcEditor,
 };
