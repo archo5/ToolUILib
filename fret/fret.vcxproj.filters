@@ -18,6 +18,14 @@
     <ClCompile Include="FileReaders.cpp" />
     <ClCompile Include="ImageParsers.cpp" />
     <ClCompile Include="MathExpr.cpp" />
+    <ClCompile Include="FileView.cpp" />
+    <ClCompile Include="Workspace.cpp" />
+    <ClCompile Include="ImageEditor.cpp" />
+    <ClCompile Include="TabInspect.cpp" />
+    <ClCompile Include="TabMarkers.cpp" />
+    <ClCompile Include="TabHighlights.cpp" />
+    <ClCompile Include="TabStructures.cpp" />
+    <ClCompile Include="TabImages.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -30,6 +38,15 @@
     <ClInclude Include="FileStructureViewer.h" />
     <ClInclude Include="ImageParsers.h" />
     <ClInclude Include="MathExpr.h" />
+    <ClInclude Include="FileView.h" />
+    <ClInclude Include="Workspace.h" />
+    <ClInclude Include="ImageEditor.h" />
+    <ClInclude Include="TabInspect.h" />
+    <ClInclude Include="TabMarkers.h" />
+    <ClInclude Include="TableWithOffsets.h" />
+    <ClInclude Include="TabHighlights.h" />
+    <ClInclude Include="TabStructures.h" />
+    <ClInclude Include="TabImages.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">

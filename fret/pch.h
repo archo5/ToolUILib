@@ -15,3 +15,13 @@ enum GlobalEvents
 	GlobalEvent_OpenImage,
 	GlobalEvent_OpenImageRsrcEditor,
 };
+
+template <class T>
+struct WindowT : ui::NativeMainWindow
+{
+	void OnRender(UIContainer* ctx) override
+	{
+		rootNode = ctx->Make<T>();
+	}
+	T* rootNode = nullptr;
+};

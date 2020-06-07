@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "FileReaders.h"
 #include "MathExpr.h"
+#include "ImageParsers.h"
 
 
 extern Color4f colorFloat32;
@@ -343,4 +344,35 @@ struct DataDescImageSource : ui::TableDataSource
 	DataDesc* dataDesc = nullptr;
 	DDFile* filterFile = nullptr;
 	bool filterUserCreated = false;
+};
+
+struct CachedImage
+{
+	~CachedImage()
+	{
+		delete curImg;
+	}
+	ui::Image* GetImage(const DataDesc::Image& imgDesc)
+	{
+		if (curImg)
+		{
+			if (imgDesc.file == curImgDesc.file &&
+				imgDesc.offImage == curImgDesc.offImage &&
+				imgDesc.offPalette == curImgDesc.offPalette &&
+				imgDesc.format == curImgDesc.format &&
+				imgDesc.width == curImgDesc.width &&
+				imgDesc.height == curImgDesc.height)
+			{
+				return curImg;
+			}
+		}
+
+		delete curImg;
+		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), { imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height });
+		curImgDesc = imgDesc;
+		return curImg;
+	}
+
+	ui::Image* curImg = nullptr;
+	DataDesc::Image curImgDesc;
 };

@@ -155,10 +155,19 @@
     <ClInclude Include="DataDesc.h" />
     <ClInclude Include="FileReaders.h" />
     <ClInclude Include="FileStructureViewer.h" />
+    <ClInclude Include="FileView.h" />
     <ClInclude Include="HexViewer.h" />
+    <ClInclude Include="ImageEditor.h" />
     <ClInclude Include="ImageParsers.h" />
     <ClInclude Include="MathExpr.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TabHighlights.h" />
+    <ClInclude Include="TabImages.h" />
+    <ClInclude Include="TabInspect.h" />
+    <ClInclude Include="TableWithOffsets.h" />
+    <ClInclude Include="TabMarkers.h" />
+    <ClInclude Include="TabStructures.h" />
+    <ClInclude Include="Workspace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\FRET_Plugins\runner.cpp">
@@ -182,8 +191,10 @@
     <ClCompile Include="DataDesc.cpp" />
     <ClCompile Include="FileReaders.cpp" />
     <ClCompile Include="FileStructureViewer.cpp" />
+    <ClCompile Include="FileView.cpp" />
     <ClCompile Include="fret.cpp" />
     <ClCompile Include="HexViewer.cpp" />
+    <ClCompile Include="ImageEditor.cpp" />
     <ClCompile Include="ImageParsers.cpp" />
     <ClCompile Include="MathExpr.cpp" />
     <ClCompile Include="pch.cpp">
@@ -192,6 +203,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TabHighlights.cpp" />
+    <ClCompile Include="TabImages.cpp" />
+    <ClCompile Include="TabInspect.cpp" />
+    <ClCompile Include="TabMarkers.cpp" />
+    <ClCompile Include="TabStructures.cpp" />
+    <ClCompile Include="Workspace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\gui.vcxproj">
