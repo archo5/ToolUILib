@@ -171,6 +171,7 @@ enum class DDStructResourceType
 	None,
 	Image,
 };
+bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format);
 struct DDRsrcImage
 {
 	std::string format;

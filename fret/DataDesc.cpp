@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "DataDesc.h"
 #include "FileReaders.h"
+#include "ImageParsers.h"
 
 
 ui::DataCategoryTag DCT_Marker[1];
@@ -457,6 +458,29 @@ static std::unordered_map<std::string, BuiltinTypeInfo> g_builtinTypes
 	{ "u32", { 4, true, [](const void* src) -> int64_t { return *(const uint32_t*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%" PRIu32, *(const uint32_t*)src); out += bfr; } } },
 	{ "f32", { 4, true, [](const void* src) -> int64_t { return *(const float*)src; }, [](const void* src, std::string& out) { char bfr[32]; snprintf(bfr, 32, "%g", *(const float*)src); out += bfr; } } },
 };
+
+bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format)
+{
+	if (ui::imm::PropButton(ctx, label, format.c_str()))
+	{
+		std::vector<ui::MenuItem> imgFormats;
+		StringView prevCat;
+		for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
+		{
+			StringView cat = GetImageFormatCategory(i);
+			if (cat != prevCat)
+			{
+				prevCat = cat;
+				imgFormats.push_back(ui::MenuItem(cat, {}, true));
+			}
+			StringView name = GetImageFormatName(i);
+			imgFormats.push_back(ui::MenuItem(name).Func([&format, name]() { format.assign(name.data(), name.size()); }));
+		}
+		ui::Menu(imgFormats).Show(ctx->GetCurrentNode());
+		return true;
+	}
+	return false;
+}
 
 void DDStructResource::Load(NamedTextSerializeReader& r)
 {
@@ -1277,7 +1301,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 						S.resource.image = new DDRsrcImage;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
 				}
-				ui::imm::PropEditString(ctx, "Format", S.resource.image->format.c_str(), [&S](const char* v) { S.resource.image->format = v; });
+				EditImageFormat(ctx, "Format", S.resource.image->format);
 				ui::imm::PropEditString(ctx, "Image offset", S.resource.image->imgOff.expr.c_str(), [&S](const char* v) { S.resource.image->imgOff.SetExpr(v); });
 				ui::imm::PropEditString(ctx, "Palette offset", S.resource.image->palOff.expr.c_str(), [&S](const char* v) { S.resource.image->palOff.SetExpr(v); });
 				ui::imm::PropEditString(ctx, "Width", S.resource.image->width.expr.c_str(), [&S](const char* v) { S.resource.image->width.SetExpr(v); });
@@ -1373,6 +1397,7 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 
 		bool chg = false;
 		chg |= ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+		chg |= EditImageFormat(ctx, "Format", I.format);
 		chg |= ui::imm::PropEditInt(ctx, "Image offset", I.offImage);
 		chg |= ui::imm::PropEditInt(ctx, "Palette offset", I.offPalette);
 		chg |= ui::imm::PropEditInt(ctx, "Width", I.width);

@@ -790,9 +790,7 @@ struct ImageEditorWindowNode : ui::Node
 		{
 			auto* sp2 = ctx->Push<ui::SplitPane>();
 			{
-				*ctx->Push<ui::Panel>()
-					+ ui::Width(style::Coord::Percent(100))
-					+ ui::Height(style::Coord::Percent(100));
+				ctx->Push<ui::Panel>();
 				if (ddiSrc.dataDesc && curInst < ddiSrc.dataDesc->instances.size())
 				{
 					auto* img = ctx->Make<ui::ImageElement>();
@@ -819,7 +817,7 @@ struct ImageEditorWindowNode : ui::Node
 				ctx->PushBox();
 				if (structDef)
 				{
-					ui::imm::PropEditString(ctx, "Format", image->format.c_str(), [this](const char* v) { image->format = v; });
+					EditImageFormat(ctx, "Format", image->format);
 					ui::imm::PropEditString(ctx, "Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
 					ui::imm::PropEditString(ctx, "Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });
 					ui::imm::PropEditString(ctx, "Width", image->width.expr.c_str(), [this](const char* v) { image->width.SetExpr(v); });
