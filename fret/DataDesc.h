@@ -217,6 +217,8 @@ struct DDStructInst
 	bool userCreated = true;
 	bool remainingCountIsSize = false;
 	int64_t remainingCount = 1;
+	bool sizeOverrideEnable = false;
+	int64_t sizeOverrideValue = 0;
 	std::vector<DDArg> args;
 };
 

@@ -123,6 +123,8 @@ void TableView::OnPaint()
 
 	size_t minR = floor(yOff / h);
 	size_t maxR = size_t(ceil((yOff + sbrect.GetHeight()) / h));
+	if (minR > nr)
+		minR = nr;
 	if (maxR > nr)
 		maxR = nr;
 

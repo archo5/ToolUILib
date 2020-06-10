@@ -999,6 +999,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			ui::imm::PropEditBool(ctx, "User created", SI.userCreated);
 			ui::imm::PropEditBool(ctx, "Use remaining size", SI.remainingCountIsSize);
 			ui::imm::PropEditInt(ctx, SI.remainingCountIsSize ? "Remaining size" : "Remaining count", SI.remainingCount);
+
+			ui::Property::Begin(ctx);
+			auto& lbl = ui::Property::Label(ctx, "Size override");
+			ui::imm::EditBool(ctx, SI.sizeOverrideEnable);
+			ui::imm::EditInt(ctx, &lbl, SI.sizeOverrideValue);
+			ui::Property::End(ctx);
 		}
 
 		ctx->Text("Arguments") + ui::Padding(5);
@@ -1060,15 +1066,15 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			{
 				size = GetStructSize(&S, SI, data.rfs);
 			}
-			auto remSizeSub = SI.remainingCountIsSize ? size : 1;
+			int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
 
 			char bfr[256];
 			snprintf(bfr, 256, "Next instance (@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64 ")",
 				SI.off + size,
-				size,
+				SI.sizeOverrideEnable ? SI.sizeOverrideValue : size,
 				SI.remainingCountIsSize ? "size" : "count",
 				SI.remainingCount - remSizeSub);
-			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr))
+			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr, { ui::Enable(SI.remainingCount - remSizeSub > 0) }))
 			{
 				curInst = CreateNextInstance(SI, size);
 			}
@@ -1301,11 +1307,6 @@ void DataDesc::EditStruct(UIContainer* ctx)
 						S.resource.image = new DDRsrcImage;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
 				}
-				EditImageFormat(ctx, "Format", S.resource.image->format);
-				ui::imm::PropEditString(ctx, "Image offset", S.resource.image->imgOff.expr.c_str(), [&S](const char* v) { S.resource.image->imgOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Palette offset", S.resource.image->palOff.expr.c_str(), [&S](const char* v) { S.resource.image->palOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Width", S.resource.image->width.expr.c_str(), [&S](const char* v) { S.resource.image->width.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Height", S.resource.image->height.expr.c_str(), [&S](const char* v) { S.resource.image->height.SetExpr(v); });
 			}
 		}
 		else
@@ -1431,12 +1432,14 @@ size_t DataDesc::AddInst(const DDStructInst& src)
 
 size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize)
 {
-	int64_t remSizeSub = SI.remainingCountIsSize ? structSize : 1;
+	int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : structSize) : 1;
 	assert(SI.remainingCount - remSizeSub);
 	{
 		auto SIcopy = SI;
-		SIcopy.off += structSize;
+		SIcopy.off += SI.sizeOverrideEnable ? SI.sizeOverrideValue : structSize;
 		SIcopy.remainingCount -= remSizeSub;
+		SIcopy.sizeOverrideEnable = false;
+		SIcopy.sizeOverrideValue = 0;
 		SIcopy.userCreated = false;
 		return AddInst(SIcopy);
 	}
@@ -1478,8 +1481,8 @@ void DataDesc::ExpandAllInstances(DDFile* filterFile)
 			size = GetStructSize(&S, SI, rfs);
 		}
 
-		auto remSizeSub = SI.remainingCountIsSize ? size : 1;
-		if (SI.remainingCount - remSizeSub)
+		int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
+		if (SI.remainingCount - remSizeSub > 0)
 			CreateNextInstance(instances[i], size);
 
 		for (size_t j = 0; j < S.fields.size(); j++)
@@ -1640,6 +1643,8 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		SI.userCreated = r.ReadBool("userCreated");
 		SI.remainingCountIsSize = r.ReadBool("remainingCountIsSize");
 		SI.remainingCount = r.ReadInt64("remainingCount");
+		SI.sizeOverrideEnable = r.ReadBool("sizeOverrideEnable");
+		SI.sizeOverrideValue = r.ReadInt64("sizeOverrideValue");
 
 		r.BeginArray("args");
 		for (auto E2 : r.GetCurrentRange())
@@ -1732,6 +1737,9 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.BeginArray("instances");
 	for (const DDStructInst& SI : instances)
 	{
+		if (!SI.userCreated)
+			continue;
+
 		w.BeginDict("");
 
 		w.WriteString("struct", SI.def->name);
@@ -1741,6 +1749,8 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteBool("userCreated", SI.userCreated);
 		w.WriteBool("remainingCountIsSize", SI.remainingCountIsSize);
 		w.WriteInt("remainingCount", SI.remainingCount);
+		w.WriteBool("sizeOverrideEnable", SI.sizeOverrideEnable);
+		w.WriteInt("sizeOverrideValue", SI.sizeOverrideValue);
 
 		w.BeginArray("args");
 		for (const DDArg& A : SI.args)
@@ -1944,6 +1954,7 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		}
 		ui::Menu(items).Show(ctx->GetCurrentNode());
 	}
+	ui::imm::PropEditBool(ctx, "\bFollow", filterFileFollow);
 	ui::Property::End(ctx);
 
 	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))

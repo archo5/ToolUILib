@@ -7,6 +7,9 @@
 
 void TabStructures::Render(UIContainer* ctx)
 {
+	if (workspace->ddiSrc.filterFileFollow && workspace->curOpenedFile < (int)workspace->openedFiles.size())
+		workspace->ddiSrc.filterFile = workspace->openedFiles[workspace->curOpenedFile]->ddFile;
+
 	auto& spstr = *ctx->Push<ui::SplitPane>();
 	{
 		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
