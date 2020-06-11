@@ -37,6 +37,44 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 			if (structDef)
 			{
 				EditImageFormat(ctx, "Format", image->format);
+				ctx->Text("Conditional format overrides") + ui::Padding(5);
+				ctx->Push<ui::Panel>();
+				for (auto& FO : image->formatOverrides)
+				{
+					EditImageFormat(ctx, "Format", FO.format);
+					ctx->Text("Conditions") + ui::Padding(5);
+					ctx->Push<ui::Panel>();
+					for (size_t i = 0; i < FO.conditions.size(); i++)
+					{
+						auto& C = FO.conditions[i];
+						ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+						ui::imm::PropEditBool(ctx, "\bExpr", C.useExpr);
+						if (C.useExpr)
+						{
+							ui::imm::EditString(ctx, C.expr.expr.c_str(), [&C](const char* v) { C.expr.SetExpr(v); });
+						}
+						else
+						{
+							ui::imm::PropEditString(ctx, "\bField", C.field.c_str(), [&C](const char* v) { C.field = v; });
+							ui::imm::PropEditString(ctx, "\bValue", C.value.c_str(), [&C](const char* v) { C.value = v; });
+						}
+						if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
+						{
+							FO.conditions.erase(FO.conditions.begin() + i);
+						}
+						ctx->Pop();
+					}
+					if (ui::imm::Button(ctx, "Add"))
+					{
+						FO.conditions.push_back({ "unnamed", "" });
+					}
+					ctx->Pop();
+				}
+				if (ui::imm::Button(ctx, "Add"))
+				{
+					image->formatOverrides.push_back({});
+				}
+				ctx->Pop();
 				ui::imm::PropEditString(ctx, "Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
 				ui::imm::PropEditString(ctx, "Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });
 				ui::imm::PropEditString(ctx, "Width", image->width.expr.c_str(), [this](const char* v) { image->width.SetExpr(v); });

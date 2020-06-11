@@ -503,6 +503,41 @@ void DDStructResource::Load(NamedTextSerializeReader& r)
 	{
 		image = new DDRsrcImage;
 		image->format = r.ReadString("format");
+
+		r.BeginArray("formatOverrides");
+		for (auto E2 : r.GetCurrentRange())
+		{
+			r.BeginEntry(E2);
+			r.BeginDict("");
+
+			DDRsrcImage::FormatOverride FO;
+			FO.format = r.ReadString("format");
+
+			r.BeginArray("conditions");
+			for (auto E3 : r.GetCurrentRange())
+			{
+				r.BeginEntry(E3);
+				r.BeginDict("");
+
+				DDConditionExt CE;
+				CE.field = r.ReadString("field");
+				CE.value = r.ReadString("value");
+				CE.useExpr = r.ReadBool("useExpr");
+				CE.expr.SetExpr(r.ReadString("expr"));
+				FO.conditions.push_back(CE);
+
+				r.EndDict();
+				r.EndEntry();
+			}
+			r.EndArray();
+
+			image->formatOverrides.push_back(FO);
+
+			r.EndDict();
+			r.EndEntry();
+		}
+		r.EndArray();
+
 		image->imgOff.SetExpr(r.ReadString("imgOff"));
 		image->palOff.SetExpr(r.ReadString("palOff"));
 		image->width.SetExpr(r.ReadString("width"));
@@ -525,6 +560,29 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 		w.BeginDict("image");
 
 		w.WriteString("format", image->format);
+
+		w.BeginArray("formatOverrides");
+		for (auto& FO : image->formatOverrides)
+		{
+			w.BeginDict("");
+			w.WriteString("format", FO.format);
+
+			w.BeginArray("conditions");
+			for (auto& CE : FO.conditions)
+			{
+				w.BeginDict("");
+				w.WriteString("field", CE.field);
+				w.WriteString("value", CE.value);
+				w.WriteBool("useExpr", CE.useExpr);
+				w.WriteString("expr", CE.expr.expr);
+				w.EndDict();
+			}
+			w.EndArray();
+
+			w.EndDict();
+		}
+		w.EndArray();
+
 		w.WriteString("imgOff", image->imgOff.expr);
 		w.WriteString("palOff", image->palOff.expr);
 		w.WriteString("width", image->width.expr);
@@ -1163,12 +1221,16 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
-				if (ui::imm::Button(ctx, "Open image", { ui::Enable(!!S.resource.image) }))
+				if (ui::imm::Button(ctx, "Open image in tab", { ui::Enable(!!S.resource.image) }))
 				{
 					images.push_back(GetInstanceImage(SI));
 
 					curImage = images.size() - 1;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
+				}
+				if (ui::imm::Button(ctx, "Open image in editor", { ui::Enable(!!S.resource.image) }))
+				{
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
 				}
 			}
 		}
@@ -1403,14 +1465,12 @@ void DataDesc::EditField(UIContainer* ctx)
 					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 					{
 						F.structArgs.erase(F.structArgs.begin() + i);
-						ctx->GetCurrentNode()->Rerender();
 					}
 					ctx->Pop();
 				}
 				if (ui::imm::Button(ctx, "Add"))
 				{
 					F.structArgs.push_back({ "unnamed", "", 0 });
-					ctx->GetCurrentNode()->Rerender();
 				}
 				ctx->Pop();
 
@@ -1425,14 +1485,12 @@ void DataDesc::EditField(UIContainer* ctx)
 					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 					{
 						F.conditions.erase(F.conditions.begin() + i);
-						ctx->GetCurrentNode()->Rerender();
 					}
 					ctx->Pop();
 				}
 				if (ui::imm::Button(ctx, "Add"))
 				{
 					F.conditions.push_back({ "unnamed", "" });
-					ctx->GetCurrentNode()->Rerender();
 				}
 				ctx->Pop();
 			}
@@ -1563,13 +1621,50 @@ DataDesc::Image DataDesc::GetInstanceImage(const DDStructInst& SI)
 		vs.desc = this;
 		vs.root = &SI;
 	}
+	auto& II = *SI.def->resource.image;
 	Image img;
 	img.file = SI.file;
-	img.offImage = SI.def->resource.image->imgOff.Evaluate(vs);
-	img.offPalette = SI.def->resource.image->palOff.Evaluate(vs);
-	img.width = SI.def->resource.image->width.Evaluate(vs);
-	img.height = SI.def->resource.image->height.Evaluate(vs);
-	img.format = SI.def->resource.image->format;
+	img.offImage = II.imgOff.Evaluate(vs);
+	img.offPalette = II.palOff.Evaluate(vs);
+	img.width = II.width.Evaluate(vs);
+	img.height = II.height.Evaluate(vs);
+	img.format = II.format;
+
+	std::vector<ReadField> rfs;
+	ReadStruct(SI, rfs);
+	for (auto& FO : II.formatOverrides)
+	{
+		bool any = false;
+		for (auto& C : FO.conditions)
+		{
+			if (C.useExpr == false)
+			{
+				for (size_t i = 0; i < rfs.size(); i++)
+				{
+					if (SI.def->fields[i].name == C.field && rfs[i].preview == C.value)
+					{
+						any = true;
+						break;
+					}
+				}
+				if (any)
+					break;
+			}
+			else
+			{
+				if (C.expr.Evaluate(vs))
+				{
+					any = true;
+					break;
+				}
+			}
+		}
+		if (any)
+		{
+			img.format = FO.format;
+			break;
+		}
+	}
 	img.userCreated = false;
 	return img;
 }

@@ -634,10 +634,15 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 
 	vsinfo.rect = GetThumbRect(info);
 	vsinfo.state = 0;
-	if (uiState.IsHovered(0))
-		vsinfo.state |= style::PS_Hover;
-	if (uiState.IsPressed(0))
-		vsinfo.state |= style::PS_Down;
+	if (info.contentSize <= info.viewportSize)
+		vsinfo.state |= style::PS_Disabled;
+	else
+	{
+		if (uiState.IsHovered(0))
+			vsinfo.state |= style::PS_Hover;
+		if (uiState.IsPressed(0))
+			vsinfo.state |= style::PS_Down;
+	}
 	thumbVStyle->paint_func(vsinfo);
 }
 
@@ -651,10 +656,20 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 	case ui::SubUIDragState::Start:
 		dragStartContentOff = info.contentOff;
 		dragStartCursorPos = e.y;
+		e.handled = true;
 		break;
 	case ui::SubUIDragState::Move:
 		info.contentOff = std::min(maxOff, std::max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
+		e.handled = true;
 		break;
+	case ui::SubUIDragState::Stop:
+		e.handled = true;
+		break;
+	}
+
+	if (e.type == UIEventType::MouseScroll)
+	{
+		info.contentOff = std::min(maxOff, std::max(0.0f, info.contentOff - e.dy));
 	}
 }
 

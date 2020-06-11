@@ -233,7 +233,7 @@ void TableView::OnPaint()
 
 	_impl->dataSource->OnEndReadRows(minR, maxR);
 
-	scrollbarV.OnPaint({ this, sbrect, sbrect.GetHeight(), chh + nr * h, yOff });
+	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), chh + nr * h, yOff });
 
 	PaintChildren();
 }
@@ -261,6 +261,9 @@ void TableView::OnEvent(UIEvent& e)
 	RC.x1 -= sbw;
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
+
+	if (e.handled)
+		return;
 
 	if (e.type == UIEventType::ButtonDown)
 	{

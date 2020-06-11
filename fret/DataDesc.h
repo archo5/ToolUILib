@@ -141,6 +141,13 @@ struct DDCondition
 	std::string field;
 	std::string value;
 };
+struct DDConditionExt
+{
+	std::string field;
+	std::string value;
+	MathExprObj expr;
+	bool useExpr = false;
+};
 struct DDCompArg
 {
 	std::string name;
@@ -175,7 +182,13 @@ enum class DDStructResourceType
 bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format);
 struct DDRsrcImage
 {
+	struct FormatOverride
+	{
+		std::string format;
+		std::vector<DDConditionExt> conditions;
+	};
 	std::string format;
+	std::vector<FormatOverride> formatOverrides;
 	MathExprObj imgOff;
 	MathExprObj palOff;
 	MathExprObj width;
