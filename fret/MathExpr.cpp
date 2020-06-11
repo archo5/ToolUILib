@@ -805,7 +805,7 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 		if (!rfs[fid].present)
 			continue;
 
-		size_t finst = desc->CreateFieldInstance(SI, rfs, fid);
+		size_t finst = desc->CreateFieldInstance(SI, rfs, fid, CreationReason::Query);
 		if (filter.returnNth)
 		{
 			for (int64_t i = 0; i <= filter.nth; )
@@ -826,7 +826,7 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 				if (ch->remainingCount - remSize <= 0)
 					break;
 
-				finst = desc->CreateNextInstance(*ch, size);
+				finst = desc->CreateNextInstance(*ch, size, CreationReason::Query);
 			}
 		}
 		else
@@ -843,7 +843,7 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 				if (ch->remainingCount - remSize <= 0)
 					break;
 
-				finst = desc->CreateNextInstance(*ch, size);
+				finst = desc->CreateNextInstance(*ch, size, CreationReason::Query);
 			}
 		}
 	}

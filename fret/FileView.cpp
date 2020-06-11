@@ -56,147 +56,170 @@ void FileView::Render(UIContainer* ctx)
 	auto* hv = ctx->Make<HexViewer>();
 	curHexViewer = hv;
 	hv->Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
-	hv->HandleEvent(UIEventType::Click) = [this, hv](UIEvent& e)
+	hv->HandleEvent(UIEventType::Click) = [this](UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Right)
 		{
-			auto* ds = of->ddFile->dataSource;
-			int64_t pos = of->hexViewerState.hoverByte;
-			auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-			auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-			if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
-				pos = selMin;
-
-			char txt_pos[64];
-			snprintf(txt_pos, 64, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
-
-			char txt_ascii[32];
-			ds->GetASCIIText(txt_ascii, 32, pos);
-
-			char txt_int8[32];
-			ds->GetInt8Text(txt_int8, 32, pos, true);
-			char txt_uint8[32];
-			ds->GetInt8Text(txt_uint8, 32, pos, false);
-			char txt_int16[32];
-			ds->GetInt16Text(txt_int16, 32, pos, true);
-			char txt_uint16[32];
-			ds->GetInt16Text(txt_uint16, 32, pos, false);
-			char txt_int32[32];
-			ds->GetInt32Text(txt_int32, 32, pos, true);
-			char txt_uint32[32];
-			ds->GetInt32Text(txt_uint32, 32, pos, false);
-			char txt_int64[32];
-			ds->GetInt64Text(txt_int64, 32, pos, true);
-			char txt_uint64[32];
-			ds->GetInt64Text(txt_uint64, 32, pos, false);
-			char txt_float32[32];
-			ds->GetFloat32Text(txt_float32, 32, pos);
-			char txt_float64[32];
-			ds->GetFloat64Text(txt_float64, 32, pos);
-
-			std::vector<ui::MenuItem> structs;
-			{
-				auto createBlank = [this, hv, pos]()
-				{
-					auto* ns = new DDStruct;
-					do
-					{
-						ns->name = "struct" + std::to_string(rand() % 10000);
-					} while (workspace->desc.structs.count(ns->name));
-					int64_t off = pos;
-					if (of->hexViewerState.selectionStart != UINT64_MAX && of->hexViewerState.selectionEnd != UINT64_MAX)
-					{
-						off = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-						ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
-					}
-					workspace->desc.structs[ns->name] = ns;
-					workspace->desc.curInst = workspace->desc.AddInst({ ns, of->ddFile, off, "", true });
-					return ns;
-				};
-				auto createBlankOpt = [createBlank]() { createBlank(); };
-				auto createFromMarkersOpt = [this, createBlank, hv]()
-				{
-					auto* ns = createBlank();
-					auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-					auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-					int at = 0;
-					for (Marker& M : of->ddFile->markerData.markers)
-					{
-						if (M.at < selMin || M.at > selMax)
-							continue;
-						for (DDField f;
-							f.type = GetDataTypeName(M.type),
-							f.name = f.type + "_" + std::to_string(at++),
-							f.off = M.at - selMin,
-							f.count = M.count,
-							ns->fields.push_back(f),
-							false;);
-					}
-				};
-				structs.push_back(ui::MenuItem("Create a new struct (blank)").Func(createBlankOpt));
-				structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
-					of->hexViewerState.selectionStart == UINT64_MAX || of->hexViewerState.selectionEnd == UINT64_MAX).Func(createFromMarkersOpt));
-				if (workspace->desc.structs.size())
-					structs.push_back(ui::MenuItem::Separator());
-			}
-			for (auto& s : workspace->desc.structs)
-			{
-				auto fn = [this, pos, s]()
-				{
-					workspace->desc.curInst = workspace->desc.AddInst({ s.second, of->ddFile, pos, "", true });
-				};
-				structs.push_back(ui::MenuItem(s.first).Func(fn));
-			}
-
-			std::vector<ui::MenuItem> images;
-			auto createImageOpt = [this, hv, pos](StringView fmt)
-			{
-				DataDesc::Image img;
-				img.userCreated = true;
-				img.width = 4;
-				img.height = 4;
-				img.offImage = pos;
-				img.format.assign(fmt.data(), fmt.size());
-				img.file = of->ddFile;
-				workspace->desc.curImage = workspace->desc.images.size();
-				workspace->desc.images.push_back(img);
-			};
-			StringView prevCat;
-			for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
-			{
-				StringView cat = GetImageFormatCategory(i);
-				if (cat != prevCat)
-				{
-					prevCat = cat;
-					images.push_back(ui::MenuItem(cat, {}, true));
-				}
-				StringView name = GetImageFormatName(i);
-				images.push_back(ui::MenuItem(name).Func([createImageOpt, name]() { createImageOpt(name); }));
-			}
-
-			auto& md = of->ddFile->markerData;
-			ui::MenuItem items[] =
-			{
-				ui::MenuItem(txt_pos, {}, true),
-				ui::MenuItem::Submenu("Place struct", structs),
-				ui::MenuItem::Submenu("Place image", images),
-				ui::MenuItem::Separator(),
-				ui::MenuItem("Mark ASCII", txt_ascii).Func([&md, pos]() { md.AddMarker(DT_CHAR, pos, pos + 1); }),
-				ui::MenuItem("Mark int8", txt_int8).Func([&md, pos]() { md.AddMarker(DT_I8, pos, pos + 1); }),
-				ui::MenuItem("Mark uint8", txt_uint8).Func([&md, pos]() { md.AddMarker(DT_U8, pos, pos + 1); }),
-				ui::MenuItem("Mark int16", txt_int16).Func([&md, pos]() { md.AddMarker(DT_I16, pos, pos + 2); }),
-				ui::MenuItem("Mark uint16", txt_uint16).Func([&md, pos]() { md.AddMarker(DT_U16, pos, pos + 2); }),
-				ui::MenuItem("Mark int32", txt_int32).Func([&md, pos]() { md.AddMarker(DT_I32, pos, pos + 4); }),
-				ui::MenuItem("Mark uint32", txt_uint32).Func([&md, pos]() { md.AddMarker(DT_U32, pos, pos + 4); }),
-				ui::MenuItem("Mark int64", txt_int64).Func([&md, pos]() { md.AddMarker(DT_I64, pos, pos + 8); }),
-				ui::MenuItem("Mark uint64", txt_uint64).Func([&md, pos]() { md.AddMarker(DT_U64, pos, pos + 8); }),
-				ui::MenuItem("Mark float32", txt_float32).Func([&md, pos]() { md.AddMarker(DT_F32, pos, pos + 4); }),
-				ui::MenuItem("Mark float64", txt_float64).Func([&md, pos]() { md.AddMarker(DT_F64, pos, pos + 8); }),
-			};
-			ui::Menu menu(items);
-			menu.Show(hv);
-			hv->RerenderNode();
+			HexViewer_OnRightClick();
 		}
 	};
 	ctx->Pop();
+}
+
+void FileView::HexViewer_OnRightClick()
+{
+	auto* ds = of->ddFile->dataSource;
+	int64_t pos = of->hexViewerState.hoverByte;
+	auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
+		pos = selMin;
+
+	char txt_pos[64];
+	snprintf(txt_pos, 64, "@ %" PRIu64 " (0x%" PRIX64 ")", pos, pos);
+
+	char txt_ascii[32];
+	ds->GetASCIIText(txt_ascii, 32, pos);
+
+	char txt_int8[32];
+	ds->GetInt8Text(txt_int8, 32, pos, true);
+	char txt_uint8[32];
+	ds->GetInt8Text(txt_uint8, 32, pos, false);
+	char txt_int16[32];
+	ds->GetInt16Text(txt_int16, 32, pos, true);
+	char txt_uint16[32];
+	ds->GetInt16Text(txt_uint16, 32, pos, false);
+	char txt_int32[32];
+	ds->GetInt32Text(txt_int32, 32, pos, true);
+	char txt_uint32[32];
+	ds->GetInt32Text(txt_uint32, 32, pos, false);
+	char txt_int64[32];
+	ds->GetInt64Text(txt_int64, 32, pos, true);
+	char txt_uint64[32];
+	ds->GetInt64Text(txt_uint64, 32, pos, false);
+	char txt_float32[32];
+	ds->GetFloat32Text(txt_float32, 32, pos);
+	char txt_float64[32];
+	ds->GetFloat64Text(txt_float64, 32, pos);
+
+	std::vector<ui::MenuItem> structs;
+	{
+		structs.push_back(ui::MenuItem("Create a new struct (blank)").Func([this, pos]() { CreateBlankStruct(pos); }));
+		structs.push_back(ui::MenuItem("Create a new struct (from markers)", {},
+			of->hexViewerState.selectionStart == UINT64_MAX || of->hexViewerState.selectionEnd == UINT64_MAX)
+			.Func([this, pos]() { CreateStructFromMarkers(pos); }));
+		if (workspace->desc.structs.size())
+			structs.push_back(ui::MenuItem::Separator());
+	}
+	for (auto& s : workspace->desc.structs)
+	{
+		auto fn = [this, pos, s]()
+		{
+			workspace->desc.curInst = workspace->desc.AddInst({ s.second, of->ddFile, pos, "", CreationReason::UserDefined });
+		};
+		structs.push_back(ui::MenuItem(s.first).Func(fn));
+	}
+
+	std::vector<ui::MenuItem> images;
+	StringView prevCat;
+	for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
+	{
+		StringView cat = GetImageFormatCategory(i);
+		if (cat != prevCat)
+		{
+			prevCat = cat;
+			images.push_back(ui::MenuItem(cat, {}, true));
+		}
+		StringView name = GetImageFormatName(i);
+		images.push_back(ui::MenuItem(name).Func([this, pos, name]() { CreateImage(pos, name); }));
+	}
+
+	auto& md = of->ddFile->markerData;
+	ui::MenuItem items[] =
+	{
+		ui::MenuItem(txt_pos, {}, true),
+		ui::MenuItem::Submenu("Place struct", structs),
+		ui::MenuItem::Submenu("Place image", images),
+		ui::MenuItem::Separator(),
+		ui::MenuItem("Go to offset (u32)", txt_uint32).Func([this, pos]() { GoToOffset(pos); }),
+		ui::MenuItem::Separator(),
+		ui::MenuItem("Mark ASCII", txt_ascii).Func([&md, pos]() { md.AddMarker(DT_CHAR, pos, pos + 1); }),
+		ui::MenuItem("Mark int8", txt_int8).Func([&md, pos]() { md.AddMarker(DT_I8, pos, pos + 1); }),
+		ui::MenuItem("Mark uint8", txt_uint8).Func([&md, pos]() { md.AddMarker(DT_U8, pos, pos + 1); }),
+		ui::MenuItem("Mark int16", txt_int16).Func([&md, pos]() { md.AddMarker(DT_I16, pos, pos + 2); }),
+		ui::MenuItem("Mark uint16", txt_uint16).Func([&md, pos]() { md.AddMarker(DT_U16, pos, pos + 2); }),
+		ui::MenuItem("Mark int32", txt_int32).Func([&md, pos]() { md.AddMarker(DT_I32, pos, pos + 4); }),
+		ui::MenuItem("Mark uint32", txt_uint32).Func([&md, pos]() { md.AddMarker(DT_U32, pos, pos + 4); }),
+		ui::MenuItem("Mark int64", txt_int64).Func([&md, pos]() { md.AddMarker(DT_I64, pos, pos + 8); }),
+		ui::MenuItem("Mark uint64", txt_uint64).Func([&md, pos]() { md.AddMarker(DT_U64, pos, pos + 8); }),
+		ui::MenuItem("Mark float32", txt_float32).Func([&md, pos]() { md.AddMarker(DT_F32, pos, pos + 4); }),
+		ui::MenuItem("Mark float64", txt_float64).Func([&md, pos]() { md.AddMarker(DT_F64, pos, pos + 8); }),
+	};
+	ui::Menu menu(items);
+	menu.Show(this);
+	Rerender();
+}
+
+DDStruct* FileView::CreateBlankStruct(int64_t pos)
+{
+	auto* ns = new DDStruct;
+	do
+	{
+		ns->name = "struct" + std::to_string(rand() % 10000);
+	} while (workspace->desc.structs.count(ns->name));
+	int64_t off = pos;
+	if (of->hexViewerState.selectionStart != UINT64_MAX && of->hexViewerState.selectionEnd != UINT64_MAX)
+	{
+		off = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+		ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
+	}
+	workspace->desc.structs[ns->name] = ns;
+	workspace->desc.curInst = workspace->desc.AddInst({ ns, of->ddFile, off, "", CreationReason::UserDefined });
+	return ns;
+}
+
+DDStruct* FileView::CreateStructFromMarkers(int64_t pos)
+{
+	auto* ns = CreateBlankStruct(pos);
+	auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	int at = 0;
+	for (Marker& M : of->ddFile->markerData.markers)
+	{
+		if (M.at < selMin || M.at > selMax)
+			continue;
+		for (DDField f;
+			f.type = GetDataTypeName(M.type),
+			f.name = f.type + "_" + std::to_string(at++),
+			f.off = M.at - selMin,
+			f.count = M.count,
+			ns->fields.push_back(f),
+			false;);
+	}
+	return ns;
+}
+
+void FileView::CreateImage(int64_t pos, StringView fmt)
+{
+	DataDesc::Image img;
+	img.userCreated = true;
+	img.width = 4;
+	img.height = 4;
+	img.offImage = pos;
+	img.format.assign(fmt.data(), fmt.size());
+	img.file = of->ddFile;
+	workspace->desc.curImage = workspace->desc.images.size();
+	workspace->desc.images.push_back(img);
+}
+
+void FileView::GoToOffset(int64_t pos)
+{
+	auto bw = of->hexViewerState.byteWidth;
+	uint32_t off = 0;
+	of->ddFile->dataSource->Read(pos, sizeof(off), &off);
+
+	of->hexViewerState.basePos = off > bw ? off - bw : 0;
+	of->hexViewerState.selectionStart = off;
+	of->hexViewerState.selectionEnd = off;
+	ui::Notify(DCT_HexViewerState, &of->hexViewerState);
 }

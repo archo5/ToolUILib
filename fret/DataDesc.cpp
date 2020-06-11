@@ -392,6 +392,17 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 			}
 		}
 	}
+	if (marker->type == DT_F32 && marker->count == 3 && marker->repeats > 1 && ui::imm::Button(ctx, "Export points to .obj"))
+	{
+		FILE* fp = fopen("positions.obj", "w");
+		for (uint64_t i = 0; i < marker->repeats; i++)
+		{
+			float vec[3];
+			dataSource->Read(marker->at + marker->stride * i, sizeof(vec), vec);
+			fprintf(fp, "v %g %g %g\n", vec[0], vec[1], vec[2]);
+		}
+		fclose(fp);
+	}
 	for (const auto& S : analysis)
 		ctx->Text(S.c_str());
 	ctx->Pop();
@@ -975,6 +986,47 @@ void DataDesc::EditStructuralItems(UIContainer* ctx)
 	ctx->Pop();
 }
 
+static const char* CreationReasonToString(CreationReason cr)
+{
+	switch (cr)
+	{
+	case CreationReason::UserDefined: return "user-defined";
+	case CreationReason::ManualExpand: return "manual expand";
+	case CreationReason::AutoExpand: return "auto expand";
+	case CreationReason::Query: return "query";
+	default: return "unknown";
+	}
+}
+
+static const char* CreationReasonToStringShort(CreationReason cr)
+{
+	switch (cr)
+	{
+	case CreationReason::UserDefined: return "U";
+	case CreationReason::ManualExpand: return "ME";
+	case CreationReason::AutoExpand: return "AE";
+	case CreationReason::Query: return "Q";
+	default: return "?";
+	}
+}
+
+static bool EditCreationReason(UIContainer* ctx, const char* label, CreationReason& cr)
+{
+	if (ui::imm::PropButton(ctx, label, CreationReasonToString(cr)))
+	{
+		ui::MenuItem items[] =
+		{
+			ui::MenuItem(CreationReasonToString(CreationReason::UserDefined)).Func([&cr]() { cr = CreationReason::UserDefined; }),
+			ui::MenuItem(CreationReasonToString(CreationReason::ManualExpand)).Func([&cr]() { cr = CreationReason::ManualExpand; }),
+			ui::MenuItem(CreationReasonToString(CreationReason::AutoExpand)).Func([&cr]() { cr = CreationReason::AutoExpand; }),
+			ui::MenuItem(CreationReasonToString(CreationReason::Query)).Func([&cr]() { cr = CreationReason::Query; }),
+		};
+		ui::Menu(items).Show(ctx->GetCurrentNode());
+		return true;
+	}
+	return false;
+}
+
 void DataDesc::EditInstance(UIContainer* ctx)
 {
 	if (curInst < instances.size())
@@ -996,7 +1048,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 		if (advancedAccess)
 		{
-			ui::imm::PropEditBool(ctx, "User created", SI.userCreated);
+			EditCreationReason(ctx, "Creation reason", SI.creationReason);
 			ui::imm::PropEditBool(ctx, "Use remaining size", SI.remainingCountIsSize);
 			ui::imm::PropEditInt(ctx, SI.remainingCountIsSize ? "Remaining size" : "Remaining count", SI.remainingCount);
 
@@ -1076,7 +1128,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				SI.remainingCount - remSizeSub);
 			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr, { ui::Enable(SI.remainingCount - remSizeSub > 0) }))
 			{
-				curInst = CreateNextInstance(SI, size);
+				curInst = CreateNextInstance(SI, size, CreationReason::ManualExpand);
 			}
 
 			snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
@@ -1101,7 +1153,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				{
 					if (ui::imm::Button(ctx, "View"))
 					{
-						curInst = CreateFieldInstance(SI, data.rfs, i);
+						curInst = CreateFieldInstance(SI, data.rfs, i, CreationReason::ManualExpand);
 					}
 				}
 				ctx->Pop();
@@ -1418,8 +1470,7 @@ size_t DataDesc::AddInst(const DDStructInst& src)
 		auto& I = instances[i];
 		if (I.off == src.off && I.def == src.def && I.file == src.file)
 		{
-			if (src.userCreated)
-				I.userCreated = true;
+			I.creationReason = std::min(I.creationReason, src.creationReason);
 			I.remainingCount = src.remainingCount;
 			I.remainingCountIsSize = src.remainingCountIsSize;
 			return i;
@@ -1430,7 +1481,7 @@ size_t DataDesc::AddInst(const DDStructInst& src)
 	return instances.size() - 1;
 }
 
-size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize)
+size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr)
 {
 	int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : structSize) : 1;
 	assert(SI.remainingCount - remSizeSub);
@@ -1440,16 +1491,16 @@ size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize)
 		SIcopy.remainingCount -= remSizeSub;
 		SIcopy.sizeOverrideEnable = false;
 		SIcopy.sizeOverrideValue = 0;
-		SIcopy.userCreated = false;
+		SIcopy.creationReason = cr;
 		return AddInst(SIcopy);
 	}
 }
 
-size_t DataDesc::CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID)
+size_t DataDesc::CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID, CreationReason cr)
 {
 	auto& F = SI.def->fields[fieldID];
 	auto SIcopy = SI;
-	DDStructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", false };
+	DDStructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", cr };
 	newSI.remainingCountIsSize = F.countIsMaxSize;
 	newSI.remainingCount = rfs[fieldID].count;
 	size_t prevSize = instances.size();
@@ -1483,11 +1534,11 @@ void DataDesc::ExpandAllInstances(DDFile* filterFile)
 
 		int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
 		if (SI.remainingCount - remSizeSub > 0)
-			CreateNextInstance(instances[i], size);
+			CreateNextInstance(instances[i], size, CreationReason::AutoExpand);
 
 		for (size_t j = 0; j < S.fields.size(); j++)
 			if (rfs[j].present && structs.count(S.fields[j].type))
-				CreateFieldInstance(SI, rfs, j);
+				CreateFieldInstance(SI, rfs, j, CreationReason::AutoExpand);
 	}
 }
 
@@ -1495,7 +1546,7 @@ void DataDesc::DeleteAllInstances(DDFile* filterFile, DDStruct* filterStruct)
 {
 	instances.erase(std::remove_if(instances.begin(), instances.end(), [filterFile, filterStruct](const DDStructInst& SI)
 	{
-		if (SI.userCreated)
+		if (SI.creationReason <= CreationReason::ManualExpand)
 			return false;
 		if (filterFile && SI.file != filterFile)
 			return false;
@@ -1640,7 +1691,8 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		SI.file = FindFileByID(r.ReadUInt64("file"));
 		SI.off = r.ReadInt64("off");
 		SI.notes = r.ReadString("notes");
-		SI.userCreated = r.ReadBool("userCreated");
+		SI.creationReason = (CreationReason)r.ReadInt("creationReason",
+			int(r.ReadBool("userCreated") ? CreationReason::UserDefined : CreationReason::AutoExpand));
 		SI.remainingCountIsSize = r.ReadBool("remainingCountIsSize");
 		SI.remainingCount = r.ReadInt64("remainingCount");
 		SI.sizeOverrideEnable = r.ReadBool("sizeOverrideEnable");
@@ -1737,7 +1789,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.BeginArray("instances");
 	for (const DDStructInst& SI : instances)
 	{
-		if (!SI.userCreated)
+		if (SI.creationReason >= CreationReason::AutoExpand)
 			continue;
 
 		w.BeginDict("");
@@ -1746,7 +1798,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteInt("file", SI.file->id);
 		w.WriteInt("off", SI.off);
 		w.WriteString("notes", SI.notes);
-		w.WriteBool("userCreated", SI.userCreated);
+		w.WriteInt("creationReason", int(SI.creationReason));
 		w.WriteBool("remainingCountIsSize", SI.remainingCountIsSize);
 		w.WriteInt("remainingCount", SI.remainingCount);
 		w.WriteBool("sizeOverrideEnable", SI.sizeOverrideEnable);
@@ -1796,7 +1848,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 enum COLS_DDI
 {
 	DDI_COL_ID,
-	DDI_COL_User,
+	DDI_COL_CR,
 	DDI_COL_File,
 	DDI_COL_Offset,
 	DDI_COL_Struct,
@@ -1835,7 +1887,7 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 	switch (col)
 	{
 	case DDI_COL_ID: return "ID";
-	case DDI_COL_User: return "User";
+	case DDI_COL_CR: return "CR";
 	case DDI_COL_File: return "File";
 	case DDI_COL_Offset: return "Offset";
 	case DDI_COL_Struct: return "Struct";
@@ -1852,7 +1904,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	switch (col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);
-	case DDI_COL_User: return dataDesc->instances[_indices[row]].userCreated ? "+" : "";
+	case DDI_COL_CR: return CreationReasonToStringShort(dataDesc->instances[_indices[row]].creationReason);
 	case DDI_COL_File: return dataDesc->instances[_indices[row]].file->name;
 	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
 	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
@@ -1957,7 +2009,7 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 	ui::imm::PropEditBool(ctx, "\bFollow", filterFileFollow);
 	ui::Property::End(ctx);
 
-	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
+	if (EditCreationReason(ctx, "Filter by creation reason", filterCreationReason))
 		refilter = true;
 }
 
@@ -1977,7 +2029,7 @@ void DataDescInstanceSource::_Refilter()
 			continue;
 		if (filterFileEnable && filterFile && filterFile != I.file)
 			continue;
-		if (filterUserCreated && !I.userCreated)
+		if (I.creationReason > filterCreationReason)
 			continue;
 		_indices.push_back(i);
 	}

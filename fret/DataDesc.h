@@ -208,13 +208,20 @@ struct DDArg
 	std::string name;
 	int64_t intVal;
 };
+enum class CreationReason : uint8_t
+{
+	UserDefined,
+	ManualExpand,
+	AutoExpand,
+	Query,
+};
 struct DDStructInst
 {
 	DDStruct* def = nullptr;
 	DDFile* file = nullptr;
 	int64_t off = 0;
 	std::string notes;
-	bool userCreated = true;
+	CreationReason creationReason = CreationReason::UserDefined;
 	bool remainingCountIsSize = false;
 	int64_t remainingCount = 1;
 	bool sizeOverrideEnable = false;
@@ -273,8 +280,8 @@ struct DataDesc
 	void EditImageItems(UIContainer* ctx);
 
 	size_t AddInst(const DDStructInst& src);
-	size_t CreateNextInstance(const DDStructInst& SI, int64_t structSize);
-	size_t CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID);
+	size_t CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr);
+	size_t CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID, CreationReason cr);
 	void ExpandAllInstances(DDFile* filterFile = nullptr);
 	void DeleteAllInstances(DDFile* filterFile = nullptr, DDStruct* filterStruct = nullptr);
 	DataDesc::Image GetInstanceImage(const DDStructInst& SI);
@@ -325,7 +332,7 @@ struct DataDescInstanceSource : ui::TableDataSource
 	bool filterFileFollow = true;
 	DDFile* filterFile = nullptr;
 
-	bool filterUserCreated = false;
+	CreationReason filterCreationReason = CreationReason::Query;
 };
 
 struct DataDescImageSource : ui::TableDataSource
