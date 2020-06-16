@@ -345,6 +345,8 @@ struct DataDescInstanceSource : ui::TableDataSource
 	bool filterFileFollow = true;
 	DDFile* filterFile = nullptr;
 
+	uint32_t showBytes = 0;
+
 	CreationReason filterCreationReason = CreationReason::Query;
 };
 

@@ -1947,6 +1947,7 @@ enum COLS_DDI
 	DDI_COL_File,
 	DDI_COL_Offset,
 	DDI_COL_Struct,
+	DDI_COL_Bytes,
 
 	DDI_COL_FirstField,
 	DDI_COL_HEADER_SIZE = DDI_COL_FirstField,
@@ -1965,6 +1966,8 @@ size_t DataDescInstanceSource::GetNumCols()
 		ncols--;
 	if (filterStructEnable && filterStruct)
 		ncols--;
+	if (showBytes == 0)
+		ncols--;
 	return ncols;
 }
 
@@ -1979,6 +1982,8 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 		col++;
 	if (filterStructEnable && filterStruct && col >= DDI_COL_Struct)
 		col++;
+	if (showBytes == 0 && col >= DDI_COL_Bytes)
+		col++;
 	switch (col)
 	{
 	case DDI_COL_ID: return "ID";
@@ -1986,6 +1991,7 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 	case DDI_COL_File: return "File";
 	case DDI_COL_Offset: return "Offset";
 	case DDI_COL_Struct: return "Struct";
+	case DDI_COL_Bytes: return "Bytes";
 	default: return filterStruct->fields[col - DDI_COL_FirstField].name;
 	}
 }
@@ -1996,6 +2002,8 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 		col++;
 	if (filterStructEnable && filterStruct && col >= DDI_COL_Struct)
 		col++;
+	if (showBytes == 0 && col >= DDI_COL_Bytes)
+		col++;
 	switch (col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);
@@ -2003,6 +2011,22 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	case DDI_COL_File: return dataDesc->instances[_indices[row]].file->name;
 	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
 	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
+	case DDI_COL_Bytes: {
+		uint32_t nbytes = std::min(showBytes, 128U);
+		uint8_t buf[128];
+		auto& inst = dataDesc->instances[_indices[row]];
+		inst.file->dataSource->Read(inst.off, nbytes, buf);
+		std::string text;
+		for (uint32_t i = 0; i < nbytes; i++)
+		{
+			if (i)
+				text += " ";
+			char tbf[32];
+			snprintf(tbf, 32, "%02X", buf[i]);
+			text += tbf;
+		}
+		return text;
+	} break;
 	default: return _rfsv[row - _startRow][col - DDI_COL_FirstField].preview;
 	}
 }
@@ -2043,6 +2067,7 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		}
 		ui::Menu(items).Show(ctx->GetCurrentNode());
 	}
+	ui::imm::PropEditInt(ctx, "\bBytes", showBytes, {}, 1, 0, 128);
 	ui::Property::End(ctx);
 
 	if (!filterStructEnable || !filterStruct)
