@@ -786,27 +786,24 @@ StructQueryResults VariableSource::GetInitialSet()
 StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter)
 {
 	StructQueryResults res;
-	for (auto* inst : src)
+	for (auto* SI : src)
 	{
-		auto& SI = *inst;
-		size_t fid = SI.def->FindFieldByName(field);
+		size_t fid = SI->def->FindFieldByName(field);
 		if (fid == SIZE_MAX)
 			continue;
 
-		auto* str = desc->FindStructByName(SI.def->fields[fid].type);
+		auto* str = desc->FindStructByName(SI->def->fields[fid].type);
 		if (!str)
 			continue;
 
-		if (!SI.IsFieldPresent(fid))
+		if (!SI->IsFieldPresent(fid))
 			continue;
 
-		size_t finst = SI.CreateFieldInstance(fid, CreationReason::Query);
+		const DDStructInst* ch = SI->CreateFieldInstance(fid, CreationReason::Query);
 		if (filter.returnNth)
 		{
 			for (int64_t i = 0; i <= filter.nth; )
 			{
-				auto* ch = &desc->instances[finst];
-
 				if (Matches(filter, desc, ch))
 				{
 					if (i++ == filter.nth)
@@ -816,29 +813,27 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 					}
 				}
 
-				int64_t size = 64 /* TODO */;
+				int64_t size = ch->GetSize();
 				int64_t remSize = ch->remainingCountIsSize ? size : 1;
 				if (ch->remainingCount - remSize <= 0)
 					break;
 
-				finst = desc->CreateNextInstance(*ch, size, CreationReason::Query);
+				ch = desc->CreateNextInstance(*ch, size, CreationReason::Query);
 			}
 		}
 		else
 		{
 			for (;;)
 			{
-				auto* ch = &desc->instances[finst];
-
 				if (Matches(filter, desc, ch))
 					res.push_back(ch);
 
-				int64_t size = 64 /* TODO */;
+				int64_t size = ch->GetSize();
 				int64_t remSize = ch->remainingCountIsSize ? size : 1;
 				if (ch->remainingCount - remSize <= 0)
 					break;
 
-				finst = desc->CreateNextInstance(*ch, size, CreationReason::Query);
+				ch = desc->CreateNextInstance(*ch, size, CreationReason::Query);
 			}
 		}
 	}
@@ -852,14 +847,14 @@ StructQueryResults VariableSource::RootQuery(const std::string& typeName, const 
 	auto* S = desc->FindStructByName(typeName);
 	if (!S)
 		return res;
-	for (auto& SI : desc->instances)
+	for (auto* SI : desc->instances)
 	{
-		if (SI.def != S || SI.file != F)
+		if (SI->def != S || SI->file != F)
 			continue;
-		if (!Matches(filter, desc, &SI))
+		if (!Matches(filter, desc, SI))
 			continue;
 
-		res.push_back(&SI);
+		res.push_back(SI);
 	}
 	if (filter.returnNth)
 		res = GetNth(res, filter.nth);

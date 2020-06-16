@@ -121,13 +121,13 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 		}
 	}
 
-	for (auto& SI : desc->instances)
+	for (auto* SI : desc->instances)
 	{
-		if (SI.file != file)
+		if (SI->file != file)
 			continue;
-		if (SI.off >= int64_t(basePos) && SI.off < int64_t(basePos + numBytes))
+		if (SI->off >= int64_t(basePos) && SI->off < int64_t(basePos + numBytes))
 		{
-			outColors[SI.off - basePos].leftBracketColor.BlendOver(&SI == &desc->instances[desc->curInst] ? colorCurInst : colorInst);
+			outColors[SI->off - basePos].leftBracketColor.BlendOver(SI == desc->curInst ? colorCurInst : colorInst);
 		}
 	}
 

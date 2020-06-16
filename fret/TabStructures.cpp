@@ -38,7 +38,7 @@ void TabStructures::Render(UIContainer* ctx)
 		{
 			auto sel = tv->selection.GetFirstSelection();
 			if (tv->IsValidRow(sel))
-				workspace->desc.curInst = workspace->ddiSrc._indices[sel];
+				workspace->desc.SetCurrentInstance(workspace->desc.instances[workspace->ddiSrc._indices[sel]]);
 			e.current->RerenderNode();
 		};
 		tv->HandleEvent(UIEventType::Click) = [this, tv](UIEvent& e)
@@ -47,14 +47,14 @@ void TabStructures::Render(UIContainer* ctx)
 			if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
 			{
 				auto idx = workspace->ddiSrc._indices[row];
-				auto& SI = workspace->desc.instances[idx];
+				auto* SI = workspace->desc.instances[idx];
 				// find tab showing this SI
 				OpenedFile* ofile = nullptr;
 				int ofid = -1;
 				for (auto* of : workspace->openedFiles)
 				{
 					ofid++;
-					if (of->ddFile != SI.file)
+					if (of->ddFile != SI->file)
 						continue;
 					ofile = of;
 					break;
@@ -63,7 +63,7 @@ void TabStructures::Render(UIContainer* ctx)
 				if (ofile)
 				{
 					workspace->curOpenedFile = ofid;
-					ofile->hexViewerState.basePos = SI.off;
+					ofile->hexViewerState.basePos = SI->off;
 					tv->RerenderNode();
 				}
 			}
@@ -75,9 +75,7 @@ void TabStructures::Render(UIContainer* ctx)
 				size_t pos = tv->selection.GetFirstSelection();
 				if (tv->IsValidRow(pos))
 				{
-					if (pos == workspace->desc.curInst)
-						workspace->desc.curInst = 0;
-					workspace->desc.instances.erase(workspace->desc.instances.begin() + pos);
+					workspace->desc.DeleteInstance(workspace->desc.instances[workspace->ddiSrc._indices[pos]]);
 					workspace->ddiSrc.refilter = true;
 					e.current->RerenderNode();
 				}

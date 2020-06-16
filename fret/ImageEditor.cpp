@@ -28,7 +28,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 					br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 					br.End();
 				});
-				img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(ddiSrc.dataDesc->instances[curInst])));
+				img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->instances[curInst])));
 				img->SetScaleMode(ui::ScaleMode::Fit);
 			}
 			ctx->Pop();
@@ -98,7 +98,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 			{
 				auto sel = tv->selection.GetFirstSelection();
 				if (tv->IsValidRow(sel))
-					curInst = ddiSrc._indices[sel];
+					ddiSrc.dataDesc->SetCurrentInstance(ddiSrc.dataDesc->instances[ddiSrc._indices[sel]]);
 				e.current->RerenderNode();
 			};
 		}

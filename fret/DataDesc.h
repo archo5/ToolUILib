@@ -258,6 +258,7 @@ struct DDReadField
 };
 struct DDStructInst
 {
+	int64_t id = -1;
 	DataDesc* desc = nullptr;
 	DDStruct* def = nullptr;
 	DDFile* file = nullptr;
@@ -294,7 +295,7 @@ struct DDStructInst
 	bool EvaluateCondition(const DDConditionExt& cond, size_t until = SIZE_MAX) const;
 	bool EvaluateConditions(const std::vector<DDConditionExt>& conds, size_t until = SIZE_MAX) const;
 	int64_t GetCompArgValue(const DDCompArg& arg) const;
-	size_t CreateFieldInstance(size_t i, CreationReason cr) const;
+	DDStructInst* CreateFieldInstance(size_t i, CreationReason cr) const;
 
 	void _CheckFieldCache() const;
 	void _EnumerateFields(size_t untilNum, bool lazy = false) const;
@@ -311,6 +312,7 @@ struct DDStructInst
 
 
 extern ui::DataCategoryTag DCT_Struct[1];
+extern ui::DataCategoryTag DCT_CurStructInst[1];
 struct DataDesc
 {
 	struct Image
@@ -328,15 +330,16 @@ struct DataDesc
 	// data
 	std::vector<DDFile*> files;
 	std::unordered_map<std::string, DDStruct*> structs;
-	std::vector<DDStructInst> instances;
+	std::vector<DDStructInst*> instances;
 	std::vector<Image> images;
 
 	// ID allocation
 	uint64_t fileIDAlloc = 0;
+	int64_t instIDAlloc = 0;
 
 	// ui state
 	int editMode = 0;
-	uint32_t curInst = 0;
+	DDStructInst* curInst = nullptr;
 	uint32_t curImage = 0;
 	uint32_t curField = 0;
 
@@ -349,8 +352,11 @@ struct DataDesc
 
 	void EditImageItems(UIContainer* ctx);
 
-	size_t AddInst(const DDStructInst& src);
-	size_t CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr);
+	DDStructInst* AddInstance(const DDStructInst& src);
+	void DeleteInstance(DDStructInst* inst);
+	void SetCurrentInstance(DDStructInst* inst);
+	void _OnDeleteInstance(DDStructInst* inst);
+	DDStructInst* CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr);
 	void ExpandAllInstances(DDFile* filterFile = nullptr);
 	void DeleteAllInstances(DDFile* filterFile = nullptr, DDStruct* filterStruct = nullptr);
 	DataDesc::Image GetInstanceImage(const DDStructInst& SI);
@@ -361,6 +367,7 @@ struct DataDesc
 	DDFile* FindFileByID(uint64_t id);
 	DDStruct* CreateNewStruct(const std::string& name);
 	DDStruct* FindStructByName(const std::string& name);
+	DDStructInst* FindInstanceByID(int64_t id);
 
 	void DeleteImage(size_t id);
 	size_t DuplicateImage(size_t id);

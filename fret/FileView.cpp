@@ -22,11 +22,10 @@ void FileView::Render(UIContainer* ctx)
 			int64_t selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 			int64_t len = selMax - selMin + 1;
 			int64_t ciOff = 0, ciSize = 0;
-			if (workspace->desc.curInst < workspace->desc.instances.size())
+			if (auto* SI = workspace->desc.curInst)
 			{
-				auto& SI = workspace->desc.instances[workspace->desc.curInst];
-				ciOff = SI.off;
-				ciSize = SI.def->size;
+				ciOff = SI->off;
+				ciSize = SI->def->size;
 			}
 			snprintf(buf, 256,
 				"Selection: %" PRIu64 " - %" PRIu64 " (%" PRIu64 ") rel: %" PRId64 " fit: %" PRId64 " rem: %" PRId64,
@@ -115,7 +114,7 @@ void FileView::HexViewer_OnRightClick()
 	{
 		auto fn = [this, pos, s]()
 		{
-			workspace->desc.curInst = workspace->desc.AddInst({ &workspace->desc, s.second, of->ddFile, pos, "", CreationReason::UserDefined });
+			workspace->desc.SetCurrentInstance(workspace->desc.AddInstance({ -1LL, &workspace->desc, s.second, of->ddFile, pos, "", CreationReason::UserDefined }));
 		};
 		structs.push_back(ui::MenuItem(s.first).Func(fn));
 	}
@@ -174,7 +173,7 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 		ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
 	}
 	workspace->desc.structs[ns->name] = ns;
-	workspace->desc.curInst = workspace->desc.AddInst({ &workspace->desc, ns, of->ddFile, off, "", CreationReason::UserDefined });
+	workspace->desc.SetCurrentInstance(workspace->desc.AddInstance({ -1LL, &workspace->desc, ns, of->ddFile, off, "", CreationReason::UserDefined }));
 	return ns;
 }
 

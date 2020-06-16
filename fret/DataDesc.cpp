@@ -8,6 +8,7 @@
 ui::DataCategoryTag DCT_Marker[1];
 ui::DataCategoryTag DCT_MarkedItems[1];
 ui::DataCategoryTag DCT_Struct[1];
+ui::DataCategoryTag DCT_CurStructInst[1];
 
 Color4f colorChar{ 0.3f, 0.9f, 0.1f, 0.3f };
 Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
@@ -951,15 +952,13 @@ int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
 			int64_t totalSize = 0;
 			if (0 < numElements)
 			{
-				size_t iid = CreateFieldInstance(i, CreationReason::Query);
-				auto* II = &desc->instances[iid];
+				DDStructInst* II = CreateFieldInstance(i, CreationReason::Query);
 				int64_t size = II->GetSize();
 				totalSize += size;
 				int64_t remSizeSub = II->remainingCountIsSize ? (II->sizeOverrideEnable ? II->sizeOverrideValue : size) : 1;
 				while (II->remainingCount - remSizeSub > 0)
 				{
-					iid = desc->CreateNextInstance(desc->instances[iid], size, CreationReason::Query);
-					II = &desc->instances[iid];
+					II = desc->CreateNextInstance(*II, size, CreationReason::Query);
 					size = II->GetSize();
 					totalSize += size;
 				}
@@ -1058,21 +1057,19 @@ int64_t DDStructInst::GetCompArgValue(const DDCompArg& arg) const
 	return 0;
 }
 
-size_t DDStructInst::CreateFieldInstance(size_t i, CreationReason cr) const
+DDStructInst* DDStructInst::CreateFieldInstance(size_t i, CreationReason cr) const
 {
 	auto& F = def->fields[i];
-	auto SIcopy = *this;
-	DDStructInst newSI = { desc, desc->structs.find(F.type)->second, SIcopy.file, GetFieldOffset(i), "", cr };
+	DDStructInst newSI = { -1, desc, desc->structs.find(F.type)->second, file, GetFieldOffset(i), "", cr };
 	newSI.remainingCountIsSize = F.countIsMaxSize;
 	newSI.remainingCount = GetFieldElementCount(i);
 	size_t prevSize = desc->instances.size();
-	auto newInst = desc->AddInst(newSI);
-	auto& CI = desc->instances[newInst];
+	DDStructInst* newInst = desc->AddInstance(newSI);
 	if (prevSize != desc->instances.size())
 	{
 		for (auto& SA : F.structArgs)
 		{
-			CI.args.push_back({ SA.name, SIcopy.GetCompArgValue(SA) });
+			newInst->args.push_back({ SA.name, GetCompArgValue(SA) });
 		}
 	}
 	return newInst;
@@ -1271,13 +1268,18 @@ void DataDesc::EditStructuralItems(UIContainer* ctx)
 			VariableSource vs;
 			{
 				vs.desc = this;
-				vs.root = &instances[curInst];
+				vs.root = curInst;
 			}
 			snprintf(bfr, 128, "Value: %" PRId64, testQuery.inst->Evaluate(&vs));
 			ctx->Text(bfr);
 		}
+
+		auto id = curInst ? curInst->id : -1LL;
+		ui::imm::PropEditInt(ctx, "Current instance ID", id, {}, 1);
+		if (!curInst || curInst->id != id)
+			SetCurrentInstance(FindInstanceByID(id));
 	}
-	ui::imm::PropEditInt(ctx, "Current instance ID", curInst, {}, 1, 0, instances.empty() ? 0 : instances.size() - 1);
+
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 	ctx->Text("Edit:") + ui::Padding(5);
 	BRB(ctx, "instance", editMode, 0);
@@ -1344,18 +1346,17 @@ static bool EditCreationReason(UIContainer* ctx, const char* label, CreationReas
 
 void DataDesc::EditInstance(UIContainer* ctx)
 {
-	if (curInst < instances.size())
+	if (auto* SI = curInst)
 	{
-		auto& SI = instances[curInst];
 		bool del = false;
 
 		if (ui::imm::Button(ctx, "Delete"))
 		{
 			del = true;
 		}
-		ui::imm::PropEditString(ctx, "Notes", SI.notes.c_str(), [&SI](const char* s) { SI.notes = s; });
-		ui::imm::PropEditInt(ctx, "Offset", SI.off);
-		if (ui::imm::PropButton(ctx, "Edit struct:", SI.def->name.c_str()))
+		ui::imm::PropEditString(ctx, "Notes", SI->notes.c_str(), [&SI](const char* s) { SI->notes = s; });
+		ui::imm::PropEditInt(ctx, "Offset", SI->off);
+		if (ui::imm::PropButton(ctx, "Edit struct:", SI->def->name.c_str()))
 		{
 			editMode = 1;
 			ctx->GetCurrentNode()->Rerender();
@@ -1363,42 +1364,42 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 		if (advancedAccess)
 		{
-			EditCreationReason(ctx, "Creation reason", SI.creationReason);
-			ui::imm::PropEditBool(ctx, "Use remaining size", SI.remainingCountIsSize);
-			ui::imm::PropEditInt(ctx, SI.remainingCountIsSize ? "Remaining size" : "Remaining count", SI.remainingCount);
+			EditCreationReason(ctx, "Creation reason", SI->creationReason);
+			ui::imm::PropEditBool(ctx, "Use remaining size", SI->remainingCountIsSize);
+			ui::imm::PropEditInt(ctx, SI->remainingCountIsSize ? "Remaining size" : "Remaining count", SI->remainingCount);
 
 			ui::Property::Begin(ctx);
 			auto& lbl = ui::Property::Label(ctx, "Size override");
-			ui::imm::EditBool(ctx, SI.sizeOverrideEnable);
-			ui::imm::EditInt(ctx, &lbl, SI.sizeOverrideValue);
+			ui::imm::EditBool(ctx, SI->sizeOverrideEnable);
+			ui::imm::EditInt(ctx, &lbl, SI->sizeOverrideValue);
 			ui::Property::End(ctx);
 		}
 
 		ctx->Text("Arguments") + ui::Padding(5);
 		ctx->Push<ui::Panel>();
-		for (size_t i = 0; i < SI.args.size(); i++)
+		for (size_t i = 0; i < SI->args.size(); i++)
 		{
-			auto& A = SI.args[i];
+			auto& A = SI->args[i];
 			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 			ui::imm::PropEditString(ctx, "\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
 			ui::imm::PropEditInt(ctx, "\bValue", A.intVal);
 			if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
 			{
-				SI.args.erase(SI.args.begin() + i);
+				SI->args.erase(SI->args.begin() + i);
 				ctx->GetCurrentNode()->Rerender();
 			}
 			ctx->Pop();
 		}
 		if (ui::imm::Button(ctx, "Add"))
 		{
-			SI.args.push_back({ "unnamed", 0 });
+			SI->args.push_back({ "unnamed", 0 });
 			ctx->GetCurrentNode()->Rerender();
 		}
 		ctx->Pop();
 
-		if (SI.def)
+		if (SI->def)
 		{
-			auto& S = *SI.def;
+			auto& S = *SI->def;
 			struct Data : ui::TableDataSource
 			{
 				size_t GetNumRows() override { return SI->def->GetFieldCount(); }
@@ -1425,19 +1426,19 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				DDStructInst* SI;
 			};
 			Data data;
-			data.SI = &SI;
-			auto size = SI.GetSize();
-			int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
+			data.SI = SI;
+			auto size = SI->GetSize();
+			int64_t remSizeSub = SI->remainingCountIsSize ? (SI->sizeOverrideEnable ? SI->sizeOverrideValue : size) : 1;
 
 			char bfr[256];
 			snprintf(bfr, 256, "Next instance (@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64 ")",
-				SI.off + size,
-				SI.sizeOverrideEnable ? SI.sizeOverrideValue : size,
-				SI.remainingCountIsSize ? "size" : "count",
-				SI.remainingCount - remSizeSub);
-			if (SI.remainingCount - remSizeSub && ui::imm::Button(ctx, bfr, { ui::Enable(SI.remainingCount - remSizeSub > 0) }))
+				SI->off + size,
+				SI->sizeOverrideEnable ? SI->sizeOverrideValue : size,
+				SI->remainingCountIsSize ? "size" : "count",
+				SI->remainingCount - remSizeSub);
+			if (SI->remainingCount - remSizeSub && ui::imm::Button(ctx, bfr, { ui::Enable(SI->remainingCount - remSizeSub > 0) }))
 			{
-				curInst = CreateNextInstance(SI, size, CreationReason::ManualExpand);
+				SetCurrentInstance(CreateNextInstance(*SI, size, CreationReason::ManualExpand));
 			}
 
 			snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
@@ -1446,15 +1447,15 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			bool incomplete = false;
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
-				auto desc = SI.GetFieldDescLazy(i, &incomplete);
+				auto desc = SI->GetFieldDescLazy(i, &incomplete);
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 				ctx->Text(desc) + ui::Padding(5);
 				
-				if (FindStructByName(S.fields[i].type) && SI.IsFieldPresent(i, true) == OptionalBool::True)
+				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
 				{
 					if (ui::imm::Button(ctx, "View"))
 					{
-						curInst = SI.CreateFieldInstance(i, CreationReason::ManualExpand);
+						SetCurrentInstance(SI->CreateFieldInstance(i, CreationReason::ManualExpand));
 					}
 				}
 				ctx->Pop();
@@ -1466,33 +1467,32 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			{
 				for (size_t i = 0; i < S.fields.size(); i++)
 				{
-					SI.GetFieldElementCount(i);
-					SI.GetFieldOffset(i);
-					SI.GetFieldPreview(i);
+					SI->GetFieldElementCount(i);
+					SI->GetFieldOffset(i);
+					SI->GetFieldPreview(i);
 				}
-				SI.GetSize();
+				SI->GetSize();
 			}
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
 				if (ui::imm::Button(ctx, "Open image in tab", { ui::Enable(!!S.resource.image) }))
 				{
-					images.push_back(GetInstanceImage(SI));
+					images.push_back(GetInstanceImage(*SI));
 
 					curImage = images.size() - 1;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
 				}
 				if (ui::imm::Button(ctx, "Open image in editor", { ui::Enable(!!S.resource.image) }))
 				{
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
 
 		if (del)
 		{
-			instances.erase(instances.begin() + curInst);
-			curInst = 0;
+			DeleteInstance(curInst);
 		}
 	}
 }
@@ -1540,20 +1540,18 @@ struct RenameDialog : ui::NativeDialogWindow
 
 void DataDesc::EditStruct(UIContainer* ctx)
 {
-	if (curInst < instances.size())
+	if (auto* SI = curInst)
 	{
-		auto& SI = instances[curInst];
-
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		ctx->Text("Struct:") + ui::Padding(5);
-		ctx->Text(SI.def->name) + ui::Padding(5);
+		ctx->Text(SI->def->name) + ui::Padding(5);
 		if (ui::imm::Button(ctx, "Rename"))
 		{
-			RenameDialog rd(SI.def->name);
+			RenameDialog rd(SI->def->name);
 			for (;;)
 			{
 				rd.Show();
-				if (rd.rename && rd.newName != SI.def->name)
+				if (rd.rename && rd.newName != SI->def->name)
 				{
 					if (rd.newName.empty())
 					{
@@ -1567,16 +1565,16 @@ void DataDesc::EditStruct(UIContainer* ctx)
 						puts("Name already used!");
 						continue;
 					}
-					structs[rd.newName] = SI.def;
-					structs.erase(SI.def->name);
-					SI.def->name = rd.newName;
+					structs[rd.newName] = SI->def;
+					structs.erase(SI->def->name);
+					SI->def->name = rd.newName;
 				}
 				break;
 			}
 		}
 		ctx->Pop();
 
-		auto it = structs.find(SI.def->name);
+		auto it = structs.find(SI->def->name);
 		if (it != structs.end())
 		{
 			auto& S = *it->second;
@@ -1673,7 +1671,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				{
 					if (!S.resource.image)
 						S.resource.image = new DDRsrcImage;
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI.def));
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
@@ -1686,11 +1684,9 @@ void DataDesc::EditStruct(UIContainer* ctx)
 
 void DataDesc::EditField(UIContainer* ctx)
 {
-	if (curInst < instances.size())
+	if (curInst)
 	{
-		auto& SI = instances[curInst];
-
-		auto it = structs.find(SI.def->name);
+		auto it = structs.find(curInst->def->name);
 		if (it != structs.end())
 		{
 			auto& S = *it->second;
@@ -1774,37 +1770,58 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 	}
 }
 
-size_t DataDesc::AddInst(const DDStructInst& src)
+DDStructInst* DataDesc::AddInstance(const DDStructInst& src)
 {
 	printf("trying to create %s @ %" PRId64 "\n", src.def->name.c_str(), src.off);
 	for (size_t i = 0, num = instances.size(); i < num; i++)
 	{
-		auto& I = instances[i];
-		if (I.off == src.off && I.def == src.def && I.file == src.file)
+		auto* I = instances[i];
+		if (I->off == src.off && I->def == src.def && I->file == src.file)
 		{
-			I.creationReason = std::min(I.creationReason, src.creationReason);
-			I.remainingCount = src.remainingCount;
-			I.remainingCountIsSize = src.remainingCountIsSize;
-			return i;
+			I->creationReason = std::min(I->creationReason, src.creationReason);
+			I->remainingCount = src.remainingCount;
+			I->remainingCountIsSize = src.remainingCountIsSize;
+			return I;
 		}
 	}
-	auto copy = src;
+	auto* copy = new DDStructInst(src);
+	copy->id = instIDAlloc++;
+	copy->OnEdit();
 	instances.push_back(copy);
-	return instances.size() - 1;
+	return copy;
 }
 
-size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr)
+void DataDesc::DeleteInstance(DDStructInst* inst)
+{
+	delete inst;
+	_OnDeleteInstance(inst);
+	instances.erase(std::remove_if(instances.begin(), instances.end(), [inst](DDStructInst* SI) { return inst == SI; }), instances.end());
+}
+
+void DataDesc::SetCurrentInstance(DDStructInst* inst)
+{
+	curInst = inst;
+	ui::Notify(DCT_CurStructInst, nullptr);
+}
+
+void DataDesc::_OnDeleteInstance(DDStructInst* inst)
+{
+	if (curInst == inst)
+		SetCurrentInstance(nullptr);
+}
+
+DDStructInst* DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr)
 {
 	int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : structSize) : 1;
 	assert(SI.remainingCount - remSizeSub);
 	{
-		auto SIcopy = SI;
+		DDStructInst SIcopy = SI;
 		SIcopy.off += SI.sizeOverrideEnable ? SI.sizeOverrideValue : structSize;
 		SIcopy.remainingCount -= remSizeSub;
 		SIcopy.sizeOverrideEnable = false;
 		SIcopy.sizeOverrideValue = 0;
 		SIcopy.creationReason = cr;
-		return AddInst(SIcopy);
+		return AddInstance(SIcopy);
 	}
 }
 
@@ -1812,32 +1829,34 @@ void DataDesc::ExpandAllInstances(DDFile* filterFile)
 {
 	for (size_t i = 0; i < instances.size(); i++)
 	{
-		if (filterFile && instances[i].file != filterFile)
+		if (filterFile && instances[i]->file != filterFile)
 			continue;
-		auto SI = instances[i];
-		auto& S = *SI.def;
-		auto size = SI.GetSize();
+		auto* SI = instances[i];
+		auto& S = *SI->def;
+		auto size = SI->GetSize();
 
-		int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
-		if (SI.remainingCount - remSizeSub > 0)
-			CreateNextInstance(instances[i], size, CreationReason::AutoExpand);
+		int64_t remSizeSub = SI->remainingCountIsSize ? (SI->sizeOverrideEnable ? SI->sizeOverrideValue : size) : 1;
+		if (SI->remainingCount - remSizeSub > 0)
+			CreateNextInstance(*instances[i], size, CreationReason::AutoExpand);
 
 		for (size_t j = 0, jn = S.fields.size(); j < jn; j++)
-			if (SI.IsFieldPresent(j) && structs.count(S.fields[j].type))
-				SI.CreateFieldInstance(j, CreationReason::AutoExpand);
+			if (SI->IsFieldPresent(j) && structs.count(S.fields[j].type))
+				SI->CreateFieldInstance(j, CreationReason::AutoExpand);
 	}
 }
 
 void DataDesc::DeleteAllInstances(DDFile* filterFile, DDStruct* filterStruct)
 {
-	instances.erase(std::remove_if(instances.begin(), instances.end(), [filterFile, filterStruct](const DDStructInst& SI)
+	instances.erase(std::remove_if(instances.begin(), instances.end(), [this, filterFile, filterStruct](DDStructInst* SI)
 	{
-		if (SI.creationReason <= CreationReason::ManualExpand)
+		if (SI->creationReason <= CreationReason::ManualExpand)
 			return false;
-		if (filterFile && SI.file != filterFile)
+		if (filterFile && SI->file != filterFile)
 			return false;
-		if (filterStruct && SI.def != filterStruct)
+		if (filterStruct && SI->def != filterStruct)
 			return false;
+		_OnDeleteInstance(SI);
+		delete SI;
 		return true;
 	}), instances.end());
 }
@@ -1926,6 +1945,14 @@ DDStruct* DataDesc::FindStructByName(const std::string& name)
 	return nullptr;
 }
 
+DDStructInst* DataDesc::FindInstanceByID(int64_t id)
+{
+	for (auto* SI : instances)
+		if (SI->id == id)
+			return SI;
+	return nullptr;
+}
+
 void DataDesc::DeleteImage(size_t id)
 {
 	images.erase(images.begin() + id);
@@ -1960,6 +1987,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 	r.EndArray();
 
 	fileIDAlloc = r.ReadUInt64("fileIDAlloc");
+	instIDAlloc = r.ReadUInt64("instIDAlloc");
 
 	r.BeginArray("structs");
 	for (auto E : r.GetCurrentRange())
@@ -1982,18 +2010,20 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		r.BeginEntry(E);
 		r.BeginDict("");
 
-		DDStructInst SI;
-		SI.desc = this;
-		SI.def = FindStructByName(r.ReadString("struct"));
-		SI.file = FindFileByID(r.ReadUInt64("file"));
-		SI.off = r.ReadInt64("off");
-		SI.notes = r.ReadString("notes");
-		SI.creationReason = (CreationReason)r.ReadInt("creationReason",
+		auto* SI = new DDStructInst;
+		auto id = r.ReadUInt64("id", UINT64_MAX);
+		SI->id = id == UINT64_MAX ? instIDAlloc++ : id;
+		SI->desc = this;
+		SI->def = FindStructByName(r.ReadString("struct"));
+		SI->file = FindFileByID(r.ReadUInt64("file"));
+		SI->off = r.ReadInt64("off");
+		SI->notes = r.ReadString("notes");
+		SI->creationReason = (CreationReason)r.ReadInt("creationReason",
 			int(r.ReadBool("userCreated") ? CreationReason::UserDefined : CreationReason::AutoExpand));
-		SI.remainingCountIsSize = r.ReadBool("remainingCountIsSize");
-		SI.remainingCount = r.ReadInt64("remainingCount");
-		SI.sizeOverrideEnable = r.ReadBool("sizeOverrideEnable");
-		SI.sizeOverrideValue = r.ReadInt64("sizeOverrideValue");
+		SI->remainingCountIsSize = r.ReadBool("remainingCountIsSize");
+		SI->remainingCount = r.ReadInt64("remainingCount");
+		SI->sizeOverrideEnable = r.ReadBool("sizeOverrideEnable");
+		SI->sizeOverrideValue = r.ReadInt64("sizeOverrideValue");
 
 		r.BeginArray("args");
 		for (auto E2 : r.GetCurrentRange())
@@ -2004,7 +2034,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 			DDArg A;
 			A.name = r.ReadString("name");
 			A.intVal = r.ReadInt64("intVal");
-			SI.args.push_back(A);
+			SI->args.push_back(A);
 
 			r.EndDict();
 			r.EndEntry();
@@ -2040,7 +2070,8 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 	r.EndArray();
 
 	editMode = r.ReadInt("editMode");
-	curInst = r.ReadUInt("curInst");
+	auto curInstID = r.ReadInt64("curInst", -1);
+	SetCurrentInstance(curInstID == -1 ? nullptr : FindInstanceByID(curInstID));
 	curImage = r.ReadUInt("curImage");
 	curField = r.ReadUInt("curField");
 
@@ -2065,6 +2096,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndArray();
 
 	w.WriteInt("fileIDAlloc", fileIDAlloc);
+	w.WriteInt("instIDAlloc", instIDAlloc);
 
 	w.BeginArray("structs");
 	std::vector<std::string> structNames;
@@ -2084,25 +2116,26 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndArray();
 
 	w.BeginArray("instances");
-	for (const DDStructInst& SI : instances)
+	for (const DDStructInst* SI : instances)
 	{
-		if (SI.creationReason >= CreationReason::AutoExpand)
+		if (SI->creationReason >= CreationReason::AutoExpand)
 			continue;
 
 		w.BeginDict("");
 
-		w.WriteString("struct", SI.def->name);
-		w.WriteInt("file", SI.file->id);
-		w.WriteInt("off", SI.off);
-		w.WriteString("notes", SI.notes);
-		w.WriteInt("creationReason", int(SI.creationReason));
-		w.WriteBool("remainingCountIsSize", SI.remainingCountIsSize);
-		w.WriteInt("remainingCount", SI.remainingCount);
-		w.WriteBool("sizeOverrideEnable", SI.sizeOverrideEnable);
-		w.WriteInt("sizeOverrideValue", SI.sizeOverrideValue);
+		w.WriteInt("id", SI->id);
+		w.WriteString("struct", SI->def->name);
+		w.WriteInt("file", SI->file->id);
+		w.WriteInt("off", SI->off);
+		w.WriteString("notes", SI->notes);
+		w.WriteInt("creationReason", int(SI->creationReason));
+		w.WriteBool("remainingCountIsSize", SI->remainingCountIsSize);
+		w.WriteInt("remainingCount", SI->remainingCount);
+		w.WriteBool("sizeOverrideEnable", SI->sizeOverrideEnable);
+		w.WriteInt("sizeOverrideValue", SI->sizeOverrideValue);
 
 		w.BeginArray("args");
-		for (const DDArg& A : SI.args)
+		for (const DDArg& A : SI->args)
 		{
 			w.BeginDict("");
 			w.WriteString("name", A.name);
@@ -2134,7 +2167,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndArray();
 
 	w.WriteInt("editMode", editMode);
-	w.WriteInt("curInst", curInst);
+	w.WriteInt("curInst", curInst ? curInst->id : -1LL);
 	w.WriteInt("curImage", curImage);
 	w.WriteInt("curField", curField);
 
@@ -2209,15 +2242,15 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	switch (col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);
-	case DDI_COL_CR: return CreationReasonToStringShort(dataDesc->instances[_indices[row]].creationReason);
-	case DDI_COL_File: return dataDesc->instances[_indices[row]].file->name;
-	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]].off);
-	case DDI_COL_Struct: return dataDesc->instances[_indices[row]].def->name;
+	case DDI_COL_CR: return CreationReasonToStringShort(dataDesc->instances[_indices[row]]->creationReason);
+	case DDI_COL_File: return dataDesc->instances[_indices[row]]->file->name;
+	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]]->off);
+	case DDI_COL_Struct: return dataDesc->instances[_indices[row]]->def->name;
 	case DDI_COL_Bytes: {
 		uint32_t nbytes = std::min(showBytes, 128U);
 		uint8_t buf[128];
-		auto& inst = dataDesc->instances[_indices[row]];
-		inst.file->dataSource->Read(inst.off, nbytes, buf);
+		auto* inst = dataDesc->instances[_indices[row]];
+		inst->file->dataSource->Read(inst->off, nbytes, buf);
 		std::string text;
 		for (uint32_t i = 0; i < nbytes; i++)
 		{
@@ -2229,7 +2262,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 		}
 		return text;
 	} break;
-	default: return dataDesc->instances[_indices[row]].GetFieldPreview(col - DDI_COL_FirstField);
+	default: return dataDesc->instances[_indices[row]]->GetFieldPreview(col - DDI_COL_FirstField);
 	}
 }
 
@@ -2324,14 +2357,14 @@ void DataDescInstanceSource::_Refilter()
 	_indices.reserve(dataDesc->instances.size());
 	for (size_t i = 0; i < dataDesc->instances.size(); i++)
 	{
-		auto& I = dataDesc->instances[i];
-		if (filterStructEnable && filterStruct && filterStruct != I.def)
+		auto* I = dataDesc->instances[i];
+		if (filterStructEnable && filterStruct && filterStruct != I->def)
 			continue;
-		else if (filterHideStructsEnable && filterHideStructs.count(I.def))
+		else if (filterHideStructsEnable && filterHideStructs.count(I->def))
 			continue;
-		if (filterFileEnable && filterFile && filterFile != I.file)
+		if (filterFileEnable && filterFile && filterFile != I->file)
 			continue;
-		if (I.creationReason > filterCreationReason)
+		if (I->creationReason > filterCreationReason)
 			continue;
 		_indices.push_back(i);
 	}
