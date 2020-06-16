@@ -744,14 +744,12 @@ static bool Matches(const StructQueryFilter& filter, DataDesc* desc, const DDStr
 {
 	if (filter.conditions.empty())
 		return true;
-	std::vector<DataDesc::ReadField> rfs;
-	desc->ReadStruct(*inst, rfs, false);
 	for (const auto& C : filter.conditions)
 	{
 		size_t fid = inst->def->FindFieldByName(C.field);
 		if (fid == SIZE_MAX)
 			return false;
-		if (rfs[fid].preview != C.value)
+		if (inst->GetFieldPreview(fid) != C.value)
 			return false;
 	}
 	return true;
@@ -768,13 +766,13 @@ static StructQueryResults GetNth(StructQueryResults& res, int64_t nth)
 
 bool VariableSource::GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal)
 {
-	std::vector<DataDesc::ReadField> rfs;
-	desc->ReadStruct(*inst, rfs, false);
-	for (size_t i = 0; i < rfs.size(); i++)
+	size_t fid = inst->def->FindFieldByName(field);
+	if (fid != SIZE_MAX)
 	{
-		if (inst->def->fields[i].name != field)
-			continue;
-		outVal = offset ? rfs[i].off : rfs[i].intVal;
+		if (offset)
+			outVal = inst->GetFieldOffset(fid);
+		else
+			outVal = inst->GetFieldIntValue(fid);
 		return true;
 	}
 	return false;
@@ -787,7 +785,6 @@ StructQueryResults VariableSource::GetInitialSet()
 
 StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter)
 {
-	std::vector<DataDesc::ReadField> rfs;
 	StructQueryResults res;
 	for (auto* inst : src)
 	{
@@ -800,12 +797,10 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 		if (!str)
 			continue;
 
-		rfs.clear();
-		desc->ReadStruct(SI, rfs, false);
-		if (!rfs[fid].present)
+		if (!SI.IsFieldPresent(fid))
 			continue;
 
-		size_t finst = desc->CreateFieldInstance(SI, rfs, fid, CreationReason::Query);
+		size_t finst = SI.CreateFieldInstance(fid, CreationReason::Query);
 		if (filter.returnNth)
 		{
 			for (int64_t i = 0; i <= filter.nth; )

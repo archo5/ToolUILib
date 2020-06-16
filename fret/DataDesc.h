@@ -19,6 +19,9 @@ extern Color4f colorCurInst;
 struct IDataSource;
 struct BuiltinTypeInfo;
 
+using CacheVersion = uint32_t;
+constexpr int64_t F_NO_VALUE = -1;
+
 
 enum DataType
 {
@@ -110,7 +113,7 @@ struct MathExprObj
 			inst->Compile(expr.c_str());
 		}
 	}
-	int64_t Evaluate(IVariableSource& vs)
+	int64_t Evaluate(IVariableSource& vs) const
 	{
 		return inst ? inst->Evaluate(&vs) : 0;
 	}
@@ -212,6 +215,9 @@ struct DDStruct
 	std::string sizeSrc;
 	DDStructResource resource;
 
+	CacheVersion editVersionS = 1;
+
+	size_t GetFieldCount() const { return fields.size(); }
 	size_t FindFieldByName(StringView name);
 	void Load(NamedTextSerializeReader& r);
 	void Save(NamedTextSerializeWriter& w);
@@ -228,8 +234,31 @@ enum class CreationReason : uint8_t
 	AutoExpand,
 	Query,
 };
+enum class OptionalBool : int8_t
+{
+	Unknown = -1,
+	False = 0,
+	True = 1,
+};
+struct DDReadFieldValue
+{
+	std::string preview;
+	int64_t off;
+	int64_t intVal;
+};
+struct DDReadField
+{
+	std::vector<DDReadFieldValue> values;
+	std::string preview;
+	int64_t off = F_NO_VALUE;
+	int64_t count = F_NO_VALUE;
+	int64_t totalSize = F_NO_VALUE;
+	int64_t readOff = F_NO_VALUE;
+	bool present;
+};
 struct DDStructInst
 {
+	DataDesc* desc = nullptr;
 	DDStruct* def = nullptr;
 	DDFile* file = nullptr;
 	int64_t off = 0;
@@ -240,6 +269,44 @@ struct DDStructInst
 	bool sizeOverrideEnable = false;
 	int64_t sizeOverrideValue = 0;
 	std::vector<DDArg> args;
+
+	CacheVersion editVersionSI = 1;
+	mutable CacheVersion cacheSizeVersionSI = 0;
+	mutable CacheVersion cacheSizeVersionS = 0;
+	mutable int64_t cachedSize = F_NO_VALUE;
+	mutable CacheVersion cacheFieldsVersionSI = 0;
+	mutable CacheVersion cacheFieldsVersionS = 0;
+	mutable int64_t cachedReadOff = F_NO_VALUE;
+	mutable std::vector<DDReadField> cachedFields;
+
+	std::string GetFieldDescLazy(size_t i, bool* incomplete = nullptr) const;
+	int64_t GetSize() const;
+	bool IsFieldPresent(size_t i) const;
+	OptionalBool IsFieldPresent(size_t i, bool lazy) const;
+	const std::string& GetFieldPreview(size_t i, bool lazy = false) const;
+	const std::string& GetFieldValuePreview(size_t i, size_t n = 0) const;
+	int64_t GetFieldIntValue(size_t i, size_t n = 0) const;
+	int64_t GetFieldOffset(size_t i, bool lazy = false) const;
+	int64_t GetFieldElementCount(size_t i, bool lazy = false) const;
+	int64_t GetFieldTotalSize(size_t i, bool lazy = false) const;
+	bool EvaluateCondition(const DDCondition& cond, size_t until = SIZE_MAX) const;
+	bool EvaluateConditions(const std::vector<DDCondition>& conds, size_t until = SIZE_MAX) const;
+	bool EvaluateCondition(const DDConditionExt& cond, size_t until = SIZE_MAX) const;
+	bool EvaluateConditions(const std::vector<DDConditionExt>& conds, size_t until = SIZE_MAX) const;
+	int64_t GetCompArgValue(const DDCompArg& arg) const;
+	size_t CreateFieldInstance(size_t i, CreationReason cr) const;
+
+	void _CheckFieldCache() const;
+	void _EnumerateFields(size_t untilNum, bool lazy = false) const;
+	int64_t _CalcSize() const;
+	int64_t _CalcFieldElementCount(size_t i) const;
+	bool _CanReadMoreFields(size_t i) const;
+	bool _ReadFieldValues(size_t i, size_t n) const;
+
+	void OnEdit()
+	{
+		editVersionSI++;
+	}
 };
 
 
@@ -273,17 +340,7 @@ struct DataDesc
 	uint32_t curImage = 0;
 	uint32_t curField = 0;
 
-	uint64_t GetFixedFieldSize(const DDField& field);
-
-	struct ReadField
-	{
-		std::string preview;
-		int64_t off;
-		int64_t count;
-		int64_t intVal;
-		bool present;
-	};
-	int64_t ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out, bool computed = true);
+	uint64_t GetFixedTypeSize(const std::string& type);
 
 	void EditStructuralItems(UIContainer* ctx);
 	void EditInstance(UIContainer* ctx);
@@ -294,7 +351,6 @@ struct DataDesc
 
 	size_t AddInst(const DDStructInst& src);
 	size_t CreateNextInstance(const DDStructInst& SI, int64_t structSize, CreationReason cr);
-	size_t CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID, CreationReason cr);
 	void ExpandAllInstances(DDFile* filterFile = nullptr);
 	void DeleteAllInstances(DDFile* filterFile = nullptr, DDStruct* filterStruct = nullptr);
 	DataDesc::Image GetInstanceImage(const DDStructInst& SI);
@@ -320,14 +376,10 @@ struct DataDescInstanceSource : ui::TableDataSource
 	std::string GetRowName(size_t row) override;
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
-	void OnBeginReadRows(size_t startRow, size_t endRow) override;
 
 	void Edit(UIContainer* ctx);
 
 	void _Refilter();
-
-	std::vector<std::vector<DataDesc::ReadField>> _rfsv;
-	size_t _startRow = 0;
 
 	std::vector<size_t> _indices;
 	bool refilter = true;

@@ -747,118 +747,309 @@ void DDStruct::Save(NamedTextSerializeWriter& w)
 	w.WriteString("sizeSrc", sizeSrc);
 }
 
-uint64_t DataDesc::GetFixedFieldSize(const DDField& field)
+
+std::string DDStructInst::GetFieldDescLazy(size_t i, bool* incomplete) const
 {
-	auto it = g_builtinTypes.find(field.type);
-	if (it != g_builtinTypes.end())
-		return it->second.size;
-	auto sit = structs.find(field.type);
-	if (sit != structs.end() && !sit->second->serialized)
-		return sit->second->size;
-	return UINT64_MAX;
+	_EnumerateFields(i + 1, true);
+
+	if (i >= cachedFields.size() && incomplete)
+		*incomplete = true;
+	
+	auto& F = def->fields[i];
+
+	std::string ret = F.name;
+	ret += ": ";
+	ret += F.type;
+
+	if (F.countIsMaxSize || F.countSrc.size() || F.count != 1)
+	{
+		ret += "[";
+		if (F.countIsMaxSize)
+			ret += "up to ";
+		int64_t elcount = GetFieldElementCount(i, true);
+		if (elcount != F_NO_VALUE)
+			ret += std::to_string(elcount);
+		else
+		{
+			ret += "?";
+			if (incomplete)
+				*incomplete = true;
+		}
+		ret += "]";
+	}
+
+	ret += "@";
+	int64_t off = GetFieldOffset(i, true);
+	if (off != F_NO_VALUE)
+		ret += std::to_string(off);
+	else
+	{
+		ret += "?";
+		if (incomplete)
+			*incomplete = true;
+	}
+
+	ret += "=";
+	ret += GetFieldPreview(i, true);
+
+	return ret;
 }
 
-static int64_t ReadBuiltinFieldPrimary(IDataSource* ds, const BuiltinTypeInfo& BTI, DataDesc::ReadField& rf, bool readUntil0)
+int64_t DDStructInst::GetSize() const
 {
-	__declspec(align(8)) char bfr[8];
-	int64_t off = rf.off;
-
-	int64_t retSize = rf.count * BTI.size;
-	int64_t readCount = rf.count;
-	if (!readUntil0 && readCount > 24LL)
-		readCount = 24LL;
-
-	bool previewAppend = true;
-	for (int64_t i = 0; i < readCount; i++)
+	if (cachedSize == -1 ||
+		cacheSizeVersionSI != editVersionSI ||
+		cacheSizeVersionS != def->editVersionS)
 	{
-		ds->Read(off, BTI.size, bfr);
-
-		if (rf.preview.size() <= 24)
-		{
-			if (BTI.separated && i > 0)
-				rf.preview += ", ";
-			BTI.append_to_str(bfr, rf.preview);
-		}
-
-		rf.intVal = BTI.get_int64(bfr);
-
-		off += BTI.size;
-
-		if (readUntil0 && rf.intVal == 0)
-		{
-			retSize = off - rf.off;
-			break;
-		}
+		cachedSize = _CalcSize();
+		cacheSizeVersionSI = editVersionSI;
+		cacheSizeVersionS = def->editVersionS;
 	}
-	if (rf.preview.size() > 24)
-	{
-		rf.preview += "...";
-	}
-
-	return retSize;
+	return cachedSize;
 }
 
-static int64_t GetFieldCount(const DDStructInst& SI, const DDField& F, const std::vector<DataDesc::ReadField>& rfs)
+bool DDStructInst::IsFieldPresent(size_t i) const
 {
-	if (F.countSrc.empty())
-		return F.count;
+	_EnumerateFields(i + 1);
+	return cachedFields[i].present;
+}
 
-	if (F.countSrc == ":file-size")
-		return SI.file->dataSource->GetSize() + F.count;
+OptionalBool DDStructInst::IsFieldPresent(size_t i, bool lazy) const
+{
+	_EnumerateFields(i + 1, lazy);
+	if (i < cachedFields.size())
+		return cachedFields[i].present ? OptionalBool::True : OptionalBool::False;
+	return OptionalBool::Unknown;
+}
 
-	// search previous fields
-	int at = 0;
-	for (auto& field : SI.def->fields)
+std::string g_emptyString;
+std::string g_notLoadedStr = "<?>";
+std::string g_notPresentStr = "<not present>";
+#define MAX_PREVIEW_LENGTH 24
+const std::string& DDStructInst::GetFieldPreview(size_t i, bool lazy) const
+{
+	_EnumerateFields(i + 1, lazy);
+	if (lazy && i >= cachedFields.size())
+		return g_notLoadedStr;
+	auto& CF = cachedFields[i];
+	if (!CF.present)
+		return g_notPresentStr;
+	if (CF.preview.empty())
 	{
-		if (&field == &F)
-			break;
-		if (F.countSrc == field.name)
-			return rfs[at].intVal + F.count;
-		at++;
-	}
+		// complex offset
+		if (GetFieldOffset(i, lazy) == F_NO_VALUE)
+			return g_notLoadedStr;
 
-	// search arguments
-	for (auto& ia : SI.args)
+		bool separated = true;
+		{
+			auto it = g_builtinTypes.find(def->fields[i].type);
+			if (it != g_builtinTypes.end())
+				separated = it->second.separated;
+		}
+		for (size_t n = 0; CF.preview.size() < MAX_PREVIEW_LENGTH; n++)
+		{
+			const auto& fvp = GetFieldValuePreview(i, n);
+			if (fvp.empty())
+				break;
+			if (n && separated)
+				CF.preview += ", ";
+			CF.preview += fvp;
+		}
+		if (CF.preview.size() > MAX_PREVIEW_LENGTH || CF.preview.empty())
+		{
+			CF.preview += "...";
+		}
+	}
+	return CF.preview;
+}
+
+const std::string& DDStructInst::GetFieldValuePreview(size_t i, size_t n) const
+{
+	if (_ReadFieldValues(i, n + 1))
 	{
-		if (F.countSrc == ia.name)
-			return ia.intVal + F.count;
+		return cachedFields[i].values[n].preview;
 	}
+	return g_emptyString;
+}
 
-	// search parameter default values
-	for (auto& P : SI.def->params)
+int64_t DDStructInst::GetFieldIntValue(size_t i, size_t n) const
+{
+	if (_ReadFieldValues(i, n + 1))
 	{
-		if (F.countSrc == P.name)
-			return P.intVal + F.count;
+		return cachedFields[i].values[n].intVal;
 	}
-
 	return 0;
 }
 
-static int64_t GetCompArgValue(const DDStructInst& SI, const DDField& F, const std::vector<DataDesc::ReadField>& rfs, const DDCompArg& arg)
+int64_t DDStructInst::GetFieldOffset(size_t i, bool lazy) const
+{
+	_EnumerateFields(i + 1, lazy);
+	if (lazy && i >= cachedFields.size())
+		return F_NO_VALUE;
+	auto& CF = cachedFields[i];
+	if (CF.off == F_NO_VALUE && !lazy)
+	{
+		auto& F = def->fields[i];
+		if (F.IsComputed())
+		{
+			if (F.offExpr.inst)
+			{
+				VariableSource vs;
+				{
+					vs.desc = desc;
+					vs.root = this;
+				}
+				CF.off = F.offExpr.inst->Evaluate(&vs);
+			}
+		}
+		else
+		{
+			CF.off = 0;
+			puts("invalid state, expected enumeration to provide offset");
+		}
+	}
+	return CF.off;
+}
+
+int64_t DDStructInst::GetFieldElementCount(size_t i, bool lazy) const
+{
+	_EnumerateFields(i + 1, lazy);
+	if (lazy && i >= cachedFields.size())
+		return F_NO_VALUE;
+	auto& CF = cachedFields[i];
+	if (CF.count == F_NO_VALUE)
+		CF.count = CF.present ? _CalcFieldElementCount(i) : 0;
+	return CF.count;
+}
+
+int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
+{
+	_EnumerateFields(i + 1);
+	if (lazy && i >= cachedFields.size())
+		return F_NO_VALUE;
+	auto& CF = cachedFields[i];
+	if (CF.totalSize == F_NO_VALUE)
+	{
+		auto& F = def->fields[i];
+		auto fs = desc->GetFixedTypeSize(F.type);
+		if (fs != UINT64_MAX)
+		{
+			int64_t numElements = GetFieldElementCount(i);
+			if (F.readUntil0)
+			{
+				_ReadFieldValues(i, numElements);
+				if (numElements > CF.values.size())
+					numElements = CF.values.size();
+			}
+			if (F.countIsMaxSize)
+				numElements /= fs;
+			CF.totalSize = fs * numElements;
+		}
+		else if (!lazy) // serialized struct, need to create instances
+		{
+			int64_t numElements = GetFieldElementCount(i);
+			int64_t totalSize = 0;
+			if (0 < numElements)
+			{
+				size_t iid = CreateFieldInstance(i, CreationReason::Query);
+				auto* II = &desc->instances[iid];
+				int64_t size = II->GetSize();
+				totalSize += size;
+				int64_t remSizeSub = II->remainingCountIsSize ? (II->sizeOverrideEnable ? II->sizeOverrideValue : size) : 1;
+				while (II->remainingCount - remSizeSub > 0)
+				{
+					iid = desc->CreateNextInstance(desc->instances[iid], size, CreationReason::Query);
+					II = &desc->instances[iid];
+					size = II->GetSize();
+					totalSize += size;
+				}
+			}
+			CF.totalSize = totalSize;
+		}
+	}
+	return CF.totalSize;
+}
+
+bool DDStructInst::EvaluateCondition(const DDCondition& cond, size_t until) const
+{
+	_EnumerateFields(until);
+
+	if (cond.field.empty())
+		return true;
+
+	size_t fid = def->FindFieldByName(cond.field);
+	if (fid != SIZE_MAX && GetFieldPreview(fid) == cond.value)
+		return true;
+
+	return false;
+}
+
+bool DDStructInst::EvaluateConditions(const std::vector<DDCondition>& conds, size_t until) const
+{
+	if (conds.empty())
+		return true;
+	for (auto& cond : conds)
+		if (EvaluateCondition(cond, until))
+			return true;
+	return false;
+}
+
+bool DDStructInst::EvaluateCondition(const DDConditionExt& cond, size_t until) const
+{
+	_EnumerateFields(until);
+
+	if (cond.useExpr)
+	{
+		VariableSource vs;
+		{
+			vs.desc = desc;
+			vs.root = this;
+		}
+		return cond.expr.Evaluate(vs);
+	}
+	else
+	{
+		if (cond.field.empty())
+			return true;
+
+		size_t fid = def->FindFieldByName(cond.field);
+		if (fid != SIZE_MAX && GetFieldPreview(fid) == cond.value)
+			return true;
+
+		return false;
+	}
+}
+
+bool DDStructInst::EvaluateConditions(const std::vector<DDConditionExt>& conds, size_t until) const
+{
+	if (conds.empty())
+		return true;
+	for (auto& cond : conds)
+		if (EvaluateCondition(cond, until))
+			return true;
+	return false;
+}
+
+int64_t DDStructInst::GetCompArgValue(const DDCompArg& arg) const
 {
 	if (arg.src.empty())
 		return arg.intVal;
 
-	// search previous fields
-	int at = 0;
-	for (auto& field : SI.def->fields)
-	{
-		if (&field == &F)
-			break;
-		if (arg.src == field.name)
-			return rfs[at].intVal + arg.intVal;
-		at++;
-	}
+	// search fields
+	// TODO: previous only?
+	size_t at = def->FindFieldByName(arg.src);
+	if (at != SIZE_MAX)
+		return GetFieldIntValue(at) + arg.intVal;
 
 	// search arguments
-	for (auto& ia : SI.args)
+	for (auto& ia : args)
 	{
 		if (arg.src == ia.name)
 			return ia.intVal + arg.intVal;
 	}
 
 	// search parameter default values
-	for (auto& P : SI.def->params)
+	for (auto& P : def->params)
 	{
 		if (arg.src == P.name)
 			return P.intVal + arg.intVal;
@@ -867,129 +1058,195 @@ static int64_t GetCompArgValue(const DDStructInst& SI, const DDField& F, const s
 	return 0;
 }
 
-static bool EvaluateCondition(const DDCondition& cnd, const DDStructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+size_t DDStructInst::CreateFieldInstance(size_t i, CreationReason cr) const
 {
-	if (cnd.field.empty())
-		return true;
-
-	for (size_t i = 0; i < rfs.size(); i++)
+	auto& F = def->fields[i];
+	auto SIcopy = *this;
+	DDStructInst newSI = { desc, desc->structs.find(F.type)->second, SIcopy.file, GetFieldOffset(i), "", cr };
+	newSI.remainingCountIsSize = F.countIsMaxSize;
+	newSI.remainingCount = GetFieldElementCount(i);
+	size_t prevSize = desc->instances.size();
+	auto newInst = desc->AddInst(newSI);
+	auto& CI = desc->instances[newInst];
+	if (prevSize != desc->instances.size())
 	{
-		if (SI.def->fields[i].name == cnd.field && rfs[i].preview == cnd.value)
-			return true;
+		for (auto& SA : F.structArgs)
+		{
+			CI.args.push_back({ SA.name, SIcopy.GetCompArgValue(SA) });
+		}
 	}
-
-	return false;
+	return newInst;
 }
 
-static bool EvaluateConditions(const DDField& F, const DDStructInst& SI, const std::vector<DataDesc::ReadField>& rfs)
+void DDStructInst::_CheckFieldCache() const
 {
-	if (F.conditions.empty())
-		return true;
-	for (auto& cnd : F.conditions)
-		if (EvaluateCondition(cnd, SI, rfs))
-			return true;
-	return false;
+	if (cacheFieldsVersionSI != editVersionSI ||
+		cacheFieldsVersionS != def->editVersionS)
+	{
+		cachedFields.clear();
+		cachedReadOff = off;
+		cacheFieldsVersionSI = editVersionSI;
+		cacheFieldsVersionS = def->editVersionS;
+	}
 }
 
-static int64_t DUMP(const std::string& txt, int64_t val)
+void DDStructInst::_EnumerateFields(size_t untilNum, bool lazy) const
 {
-	printf("%s: %" PRId64 "\n", txt.c_str(), val);
-	return val;
+	if (untilNum > def->fields.size())
+		untilNum = def->fields.size();
+
+	_CheckFieldCache();
+
+	while (cachedFields.size() < untilNum)
+	{
+		size_t i = cachedFields.size();
+		const auto& F = def->fields[i];
+
+		cachedFields.emplace_back();
+		DDReadField& rf = cachedFields.back();
+		rf.present = EvaluateConditions(F.conditions, i);
+
+		if (rf.present && !F.IsComputed())
+		{
+			rf.off = cachedReadOff;
+			if (def->serialized)
+			{
+				int64_t fts = GetFieldTotalSize(i, lazy);
+				if (lazy && fts == F_NO_VALUE)
+					break; // too complicated to do
+				cachedReadOff += fts;
+			}
+			else
+			{
+				rf.off += F.off;
+			}
+		}
+	}
 }
 
-static int64_t GetStructSize(const DDStruct* S, const DDStructInst& SI/*, const DDField& F*/, const std::vector<DataDesc::ReadField>& rfs)
+int64_t DDStructInst::_CalcSize() const
 {
-	if (S->sizeSrc.size())
+	if (def->sizeSrc.size())
 	{
 #if 0
 		for (auto& ca : F.structArgs)
-			if (ca.name == S->sizeSrc)
-				return DUMP(S->name + "|structArg", GetCompArgValue(SI, F, rfs, ca) + S->size);
+			if (ca.name == def->sizeSrc)
+				return GetCompArgValue(SI, F, rfs, ca) + def->size;
 #endif
 
-		for (size_t i = 0; i < rfs.size(); i++)
-			if (S->fields[i].name == S->sizeSrc)
-				return rfs[i].intVal + S->size;
+		for (size_t i = 0; i < def->fields.size(); i++)
+			if (def->fields[i].name == def->sizeSrc)
+				return GetFieldIntValue(i) + def->size;
 
 #if 1
-		for (auto& arg : SI.args)
-			if (arg.name == S->sizeSrc)
-				return DUMP(S->name + "|instArg", arg.intVal + S->size);
+		for (auto& arg : args)
+			if (arg.name == def->sizeSrc)
+				return arg.intVal + def->size;
 #endif
-	}
-	return DUMP(S->name + "|noSrc", S->size);
-}
 
-int64_t DataDesc::ReadStruct(const DDStructInst& SI, std::vector<ReadField>& out, bool computed)
-{
-	VariableSource vs;
-	{
-		vs.desc = this;
-		vs.root = &SI;
+		return def->size;
 	}
-	IDataSource* ds = SI.file->dataSource;
-	if (out.capacity() - out.size() < SI.def->fields.size())
+	else if (def->serialized)
 	{
-		out.reserve(out.size() + SI.def->fields.size());
-	}
-	if (SI.def->serialized)
-	{
-		int64_t off = SI.off;
-		for (const auto& F : SI.def->fields)
-		{
-			DataDesc::ReadField rf = { "", off, 0, 0, false };
-			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
-			{
-				if (F.offExpr.inst)
-					rf.off = F.offExpr.inst->Evaluate(&vs);
-				rf.present = true;
-				rf.count = GetFieldCount(SI, F, out);
-
-				auto it = g_builtinTypes.find(F.type);
-				if (it != g_builtinTypes.end())
-				{
-					if (F.countIsMaxSize)
-						rf.count /= it->second.size;
-					off += ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
-				}
-				else
-				{
-					auto sit = structs.find(F.type);
-					if (sit != structs.end() && sit->second->sizeSrc.empty())
-					{
-						// only add size if it's manually specified
-						off += sit->second->size;
-					}
-				}
-			}
-			out.push_back(std::move(rf));
-		}
-		return off - SI.off;
+		_EnumerateFields(def->fields.size());
+		return cachedReadOff - off;
 	}
 	else
-	{
-		for (const auto& F : SI.def->fields)
-		{
-			DataDesc::ReadField rf = { "", SI.off + F.off, 0, 0 };
-			if ((computed || !F.IsComputed()) && EvaluateConditions(F, SI, out))
-			{
-				if (F.offExpr.inst)
-					rf.off = F.offExpr.inst->Evaluate(&vs);
-				rf.present = true;
-				rf.count = GetFieldCount(SI, F, out);
+		return def->size;
+}
 
-				auto it = g_builtinTypes.find(F.type);
-				if (it != g_builtinTypes.end())
-				{
-					if (F.countIsMaxSize)
-						rf.count /= it->second.size;
-					ReadBuiltinFieldPrimary(ds, it->second, rf, F.readUntil0);
-				}
-			}
-			out.push_back(std::move(rf));
-		}
-		return SI.def->size;
+int64_t DDStructInst::_CalcFieldElementCount(size_t i) const
+{
+	auto& F = def->fields[i];
+
+	if (F.countSrc.empty())
+		return F.count;
+
+	if (F.countSrc == ":file-size")
+		return file->dataSource->GetSize() + F.count;
+
+	// search previous fields
+	for (size_t at = 0; at < i; at++)
+	{
+		auto& field = def->fields[at];
+		if (F.countSrc == field.name)
+			return GetFieldIntValue(at) + F.count;
 	}
+
+	// search arguments
+	for (auto& ia : args)
+	{
+		if (F.countSrc == ia.name)
+			return ia.intVal + F.count;
+	}
+
+	// search parameter default values
+	for (auto& P : def->params)
+	{
+		if (F.countSrc == P.name)
+			return P.intVal + F.count;
+	}
+
+	return 0;
+}
+
+bool DDStructInst::_CanReadMoreFields(size_t i) const
+{
+	auto& F = def->fields[i];
+	auto& CF = cachedFields[i];
+	if (F.countIsMaxSize)
+		return CF.count > CF.readOff - CF.off;
+	else
+		return CF.count > CF.values.size();
+}
+
+bool DDStructInst::_ReadFieldValues(size_t i, size_t n) const
+{
+	_EnumerateFields(i + 1);
+	auto& CF = cachedFields[i];
+	if (CF.values.size() >= n)
+		return true;
+
+	auto& F = def->fields[i];
+	auto it = g_builtinTypes.find(F.type);
+	if (it == g_builtinTypes.end())
+		return false;
+
+	if (CF.readOff == F_NO_VALUE)
+		CF.readOff = GetFieldOffset(i);
+
+	GetFieldElementCount(i);
+
+	auto& BTI = it->second;
+	while (CF.values.size() < n && _CanReadMoreFields(i))
+	{
+		if (F.readUntil0 && CF.values.size() && CF.values.back().intVal == 0)
+			break;
+
+		CF.values.emplace_back();
+		auto& CFV = CF.values.back();
+
+		CFV.off = CF.readOff;
+		__declspec(align(8)) char bfr[8];
+		file->dataSource->Read(CF.readOff, BTI.size, bfr);
+		CFV.intVal = BTI.get_int64(bfr);
+		BTI.append_to_str(bfr, CFV.preview);
+
+		CF.readOff += BTI.size;
+	}
+	return CF.values.size() >= n;
+}
+
+
+uint64_t DataDesc::GetFixedTypeSize(const std::string& type)
+{
+	auto it = g_builtinTypes.find(type);
+	if (it != g_builtinTypes.end())
+		return it->second.size;
+	auto sit = structs.find(type);
+	if (sit != structs.end() && !sit->second->serialized)
+		return sit->second->size;
+	return UINT64_MAX;
 }
 
 
@@ -1139,13 +1396,12 @@ void DataDesc::EditInstance(UIContainer* ctx)
 		}
 		ctx->Pop();
 
-		auto it = structs.find(SI.def->name);
-		if (it != structs.end())
+		if (SI.def)
 		{
-			auto& S = *it->second;
+			auto& S = *SI.def;
 			struct Data : ui::TableDataSource
 			{
-				size_t GetNumRows() override { return rfs.size(); }
+				size_t GetNumRows() override { return SI->def->GetFieldCount(); }
 				size_t GetNumCols() override { return 3; }
 				std::string GetRowName(size_t row) override { return std::to_string(row + 1); }
 				std::string GetColName(size_t col) override
@@ -1159,23 +1415,18 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				{
 					switch (col)
 					{
-					case 0: return S->fields[row].name;
-					case 1: return S->fields[row].type + "[" + std::to_string(S->fields[row].count) + "]";
-					case 2: return rfs[row].preview;
+					case 0: return SI->def->fields[row].name;
+					case 1: return SI->def->fields[row].type + "[" + std::to_string(SI->def->fields[row].count) + "]";
+					case 2: return SI->GetFieldPreview(row);
 					default: return "";
 					}
 				}
 
-				DDStruct* S;
-				std::vector<ReadField> rfs;
+				DDStructInst* SI;
 			};
 			Data data;
-			data.S = &S;
-			auto size = ReadStruct(SI, data.rfs);
-			if (S.sizeSrc.size())
-			{
-				size = GetStructSize(&S, SI, data.rfs);
-			}
+			data.SI = &SI;
+			auto size = SI.GetSize();
 			int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
 
 			char bfr[256];
@@ -1192,32 +1443,35 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
 			ctx->Text(bfr) + ui::Padding(5);
 
+			bool incomplete = false;
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
-				auto& F = S.fields[i];
-				char bfr[256];
-				snprintf(bfr, 256, "%s: %s[%s%" PRId64 "]@%" PRId64 "=%s",
-					F.name.c_str(),
-					F.type.c_str(),
-					F.countIsMaxSize ? "up to " : "",
-					data.rfs[i].count,
-					data.rfs[i].off,
-					data.rfs[i].present ? data.rfs[i].preview.c_str() : "<not present>");
+				auto desc = SI.GetFieldDescLazy(i, &incomplete);
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
-				ctx->Text(bfr) + ui::Padding(5);
-
-				auto strit = structs.find(F.type);
-				if (strit != structs.end() && data.rfs[i].present)
+				ctx->Text(desc) + ui::Padding(5);
+				
+				if (FindStructByName(S.fields[i].type) && SI.IsFieldPresent(i, true) == OptionalBool::True)
 				{
 					if (ui::imm::Button(ctx, "View"))
 					{
-						curInst = CreateFieldInstance(SI, data.rfs, i, CreationReason::ManualExpand);
+						curInst = SI.CreateFieldInstance(i, CreationReason::ManualExpand);
 					}
 				}
 				ctx->Pop();
 			}
 			/*auto* tv = ctx->Make<ui::TableView>();
 			tv->SetDataSource(&data); TODO */
+
+			if (incomplete && ui::imm::Button(ctx, "Load completely"))
+			{
+				for (size_t i = 0; i < S.fields.size(); i++)
+				{
+					SI.GetFieldElementCount(i);
+					SI.GetFieldOffset(i);
+					SI.GetFieldPreview(i);
+				}
+				SI.GetSize();
+			}
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
@@ -1523,7 +1777,7 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 size_t DataDesc::AddInst(const DDStructInst& src)
 {
 	printf("trying to create %s @ %" PRId64 "\n", src.def->name.c_str(), src.off);
-	for (size_t i = 0; i < instances.size(); i++)
+	for (size_t i = 0, num = instances.size(); i < num; i++)
 	{
 		auto& I = instances[i];
 		if (I.off == src.off && I.def == src.def && I.file == src.file)
@@ -1554,49 +1808,23 @@ size_t DataDesc::CreateNextInstance(const DDStructInst& SI, int64_t structSize, 
 	}
 }
 
-size_t DataDesc::CreateFieldInstance(const DDStructInst& SI, const std::vector<ReadField>& rfs, size_t fieldID, CreationReason cr)
-{
-	auto& F = SI.def->fields[fieldID];
-	auto SIcopy = SI;
-	DDStructInst newSI = { structs.find(F.type)->second, SIcopy.file, rfs[fieldID].off, "", cr };
-	newSI.remainingCountIsSize = F.countIsMaxSize;
-	newSI.remainingCount = rfs[fieldID].count;
-	size_t prevSize = instances.size();
-	auto newInst = AddInst(newSI);
-	auto& CI = instances[newInst];
-	if (prevSize != instances.size())
-	{
-		for (auto& SA : F.structArgs)
-		{
-			CI.args.push_back({ SA.name, GetCompArgValue(SIcopy, F, rfs, SA) });
-		}
-	}
-	return newInst;
-}
-
 void DataDesc::ExpandAllInstances(DDFile* filterFile)
 {
-	std::vector<ReadField> rfs;
 	for (size_t i = 0; i < instances.size(); i++)
 	{
 		if (filterFile && instances[i].file != filterFile)
 			continue;
 		auto SI = instances[i];
 		auto& S = *SI.def;
-		rfs.clear();
-		auto size = ReadStruct(SI, rfs);
-		if (S.sizeSrc.size())
-		{
-			size = GetStructSize(&S, SI, rfs);
-		}
+		auto size = SI.GetSize();
 
 		int64_t remSizeSub = SI.remainingCountIsSize ? (SI.sizeOverrideEnable ? SI.sizeOverrideValue : size) : 1;
 		if (SI.remainingCount - remSizeSub > 0)
 			CreateNextInstance(instances[i], size, CreationReason::AutoExpand);
 
-		for (size_t j = 0; j < S.fields.size(); j++)
-			if (rfs[j].present && structs.count(S.fields[j].type))
-				CreateFieldInstance(SI, rfs, j, CreationReason::AutoExpand);
+		for (size_t j = 0, jn = S.fields.size(); j < jn; j++)
+			if (SI.IsFieldPresent(j) && structs.count(S.fields[j].type))
+				SI.CreateFieldInstance(j, CreationReason::AutoExpand);
 	}
 }
 
@@ -1630,36 +1858,9 @@ DataDesc::Image DataDesc::GetInstanceImage(const DDStructInst& SI)
 	img.height = II.height.Evaluate(vs);
 	img.format = II.format;
 
-	std::vector<ReadField> rfs;
-	ReadStruct(SI, rfs);
 	for (auto& FO : II.formatOverrides)
 	{
-		bool any = false;
-		for (auto& C : FO.conditions)
-		{
-			if (C.useExpr == false)
-			{
-				for (size_t i = 0; i < rfs.size(); i++)
-				{
-					if (SI.def->fields[i].name == C.field && rfs[i].preview == C.value)
-					{
-						any = true;
-						break;
-					}
-				}
-				if (any)
-					break;
-			}
-			else
-			{
-				if (C.expr.Evaluate(vs))
-				{
-					any = true;
-					break;
-				}
-			}
-		}
-		if (any)
+		if (SI.EvaluateConditions(FO.conditions))
 		{
 			img.format = FO.format;
 			break;
@@ -1782,6 +1983,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		r.BeginDict("");
 
 		DDStructInst SI;
+		SI.desc = this;
 		SI.def = FindStructByName(r.ReadString("struct"));
 		SI.file = FindFileByID(r.ReadUInt64("file"));
 		SI.off = r.ReadInt64("off");
@@ -2027,27 +2229,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 		}
 		return text;
 	} break;
-	default: return _rfsv[row - _startRow][col - DDI_COL_FirstField].preview;
-	}
-}
-
-void DataDescInstanceSource::OnBeginReadRows(size_t startRow, size_t endRow)
-{
-	_startRow = startRow;
-	if (filterStructEnable && filterStruct)
-	{
-		size_t count = endRow - startRow;
-		if (_rfsv.size() < count)
-			_rfsv.resize(count);
-
-		for (auto& rfs : _rfsv)
-			rfs.clear();
-
-		for (size_t row = startRow; row < endRow; row++)
-		{
-			auto& inst = dataDesc->instances[_indices[row]];
-			dataDesc->ReadStruct(inst, _rfsv[row - startRow]);
-		}
+	default: return dataDesc->instances[_indices[row]].GetFieldPreview(col - DDI_COL_FirstField);
 	}
 }
 

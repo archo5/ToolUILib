@@ -115,7 +115,7 @@ void FileView::HexViewer_OnRightClick()
 	{
 		auto fn = [this, pos, s]()
 		{
-			workspace->desc.curInst = workspace->desc.AddInst({ s.second, of->ddFile, pos, "", CreationReason::UserDefined });
+			workspace->desc.curInst = workspace->desc.AddInst({ &workspace->desc, s.second, of->ddFile, pos, "", CreationReason::UserDefined });
 		};
 		structs.push_back(ui::MenuItem(s.first).Func(fn));
 	}
@@ -174,7 +174,7 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 		ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
 	}
 	workspace->desc.structs[ns->name] = ns;
-	workspace->desc.curInst = workspace->desc.AddInst({ ns, of->ddFile, off, "", CreationReason::UserDefined });
+	workspace->desc.curInst = workspace->desc.AddInst({ &workspace->desc, ns, of->ddFile, off, "", CreationReason::UserDefined });
 	return ns;
 }
 
