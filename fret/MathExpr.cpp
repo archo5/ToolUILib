@@ -4,23 +4,6 @@
 #include "DataDesc.h"
 
 
-enum class MEOperation : uint8_t
-{
-	Unknown,
-
-	Add,
-	Subtract,
-	Multiply,
-	Divide,
-	Modulo,
-
-	And,
-	Or,
-	Xor,
-	LShift,
-	RShift,
-};
-
 struct ValueNode
 {
 	virtual ~ValueNode() {}
@@ -156,6 +139,39 @@ struct RShiftNode : BinaryOpNode
 	const char* Name() const override { return ">>"; }
 };
 
+template <class T>
+struct ReadNodeBase : ValueNode
+{
+	~ReadNodeBase() { delete srcOff; }
+	int64_t Eval(IVariableSource* vs) const override
+	{
+		int64_t off = srcOff->Eval(vs);
+		T val = 0;
+		vs->ReadFile(off, sizeof(val), &val);
+		return int64_t(val);
+	}
+
+	virtual const char* Name() const = 0;
+	void Dump(int level) const override
+	{
+		DMPLEV(level);
+		fprintf(stderr, "read %s\n", Name());
+		srcOff->Dump(level + 1);
+	}
+
+	ValueNode* srcOff = nullptr;
+};
+#define DEFINE_READ_NODE(t, sn) struct ReadNode_##sn : ReadNodeBase<t> { const char* Name() const override { return #sn; } }
+DEFINE_READ_NODE(int8_t, i8);
+DEFINE_READ_NODE(int16_t, i16);
+DEFINE_READ_NODE(int32_t, i32);
+DEFINE_READ_NODE(int64_t, i64);
+DEFINE_READ_NODE(uint8_t, u8);
+DEFINE_READ_NODE(uint16_t, u16);
+DEFINE_READ_NODE(uint32_t, u32);
+DEFINE_READ_NODE(uint64_t, u64);
+#undef DEFINE_READ_NODE
+
 struct StructQueryNodeFilters
 {
 	virtual ~StructQueryNodeFilters() { delete which; }
@@ -276,6 +292,43 @@ struct StructOffsetNode : ValueNode
 	StructQueryNode* query = nullptr;
 };
 
+struct FieldPreviewEqualsStringNode : ValueNode
+{
+	virtual ~FieldPreviewEqualsStringNode() { delete query; }
+	int64_t Eval(IVariableSource* vs) const override
+	{
+		StructQueryResults insts = query ? query->Query(vs) : vs->GetInitialSet();
+		bool found = false;
+		for (auto* inst : insts)
+		{
+			if (!inst)
+				continue;
+			size_t fid = inst->def->FindFieldByName(fieldName);
+			if (fid == SIZE_MAX)
+				continue;
+			if (inst->GetFieldPreview(fid) == text)
+			{
+				found = true;
+				break;
+			}
+		}
+		return found ^ invert;
+	}
+	void Dump(int level) const override
+	{
+		DMPLEV(level);
+		fprintf(stderr, "field '%s' preview %sequals string '%s':\n", fieldName.c_str(), invert ? "NOT " : "", text.c_str());
+		if (query)
+			query->Dump(level + 1);
+	}
+
+	StructQueryNode* query;
+	std::string fieldName;
+	std::string text;
+	bool invert = false;
+};
+
+
 struct CompiledMathExpr
 {
 	~CompiledMathExpr()
@@ -314,7 +367,7 @@ enum METokenType
 	COMMA = ',',
 	OP_OFFSET = '@',
 	OP_MEMBER = '.',
-	OP_READ = '$',
+	OP_FNPFX = '$',
 	OP_EQUAL = '=',
 };
 
@@ -332,7 +385,7 @@ static StringView operatorStrings[] =
 };
 static METokenType operatorTypes[] =
 {
-	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, COMMA, OP_OFFSET, OP_MEMBER, OP_READ, OP_EQUAL,
+	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, COMMA, OP_OFFSET, OP_MEMBER, OP_FNPFX, OP_EQUAL,
 	OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
 	OP_AND, OP_OR, OP_XOR, OP_LSH, OP_RSH, OP_INV,
 };
@@ -351,6 +404,9 @@ struct Compiler
 	struct Range
 	{
 		size_t from, to;
+
+		bool Empty() const { return from == to; }
+		size_t Length() const { return to - from; }
 	};
 
 	Token ParseOne()
@@ -402,6 +458,57 @@ struct Compiler
 
 		puts("ERROR!");
 		return { END };
+	}
+
+	std::vector<Range> SplitArgs(Range r)
+	{
+		if (r.from + 2 <= r.to && tokens[r.from].type == PEXPR_START && tokens[r.to - 1].type == PEXPR_END)
+		{
+			r.from++;
+			r.to--;
+		}
+
+		std::vector<Range> ranges;
+		ranges.push_back(r);
+
+		size_t at = r.to;
+		constexpr int MAX = 32;
+		char exprStack[MAX] = {};
+		int level = 0;
+		for (size_t i = r.from; i < r.to; i++)
+		{
+			if (tokens[i].type == PEXPR_START || tokens[i].type == SEXPR_START)
+			{
+				if (level >= MAX)
+				{
+					puts("ERROR: TOO DEEP");
+					return {};
+				}
+				exprStack[level++] = tokens[i].type == PEXPR_START ? PEXPR_END : SEXPR_END;
+				continue;
+			}
+			if (tokens[i].type == PEXPR_END || tokens[i].type == SEXPR_END)
+			{
+				if (exprStack[--level] != tokens[i].type)
+				{
+					puts("ERROR: EXITS EXCEED ENTRIES");
+					return {};
+				}
+				continue;
+			}
+			if (level > 0)
+				continue;
+
+			if (tokens[i].type == COMMA)
+			{
+				auto rb = ranges.back();
+				ranges.back().to = i;
+				rb.from = i + 1;
+				ranges.push_back(rb);
+			}
+		}
+
+		return ranges;
 	}
 
 	int GetOpScore(size_t at, Range r)
@@ -480,6 +587,65 @@ struct Compiler
 		{
 			r.from++;
 			r.to--;
+		}
+
+		if (tokens[r.from].type == OP_FNPFX)
+		{
+			if (r.from + 1 == r.to)
+			{
+				puts("ERROR: NO FN");
+				return new ErrorNode;
+			}
+			if (tokens[r.from + 1].type != FIELD_NAME)
+			{
+				puts("ERROR: NO FN NAME");
+				return new ErrorNode;
+			}
+			auto name = tokens[r.from + 1].text;
+			auto args = SplitArgs({ r.from + 2, r.to });
+#define USE_READ_NODE(t) \
+			if (name == #t) \
+			{ \
+				if (args.size() != 1) \
+				{ \
+					printf("ERROR: %s EXPECTS 1 arg\n", #t); \
+					return new ErrorNode; \
+				} \
+				r.from += 2; \
+				auto* N = new ReadNode_##t; \
+				N->srcOff = ParseExpr(r); \
+				return N; \
+			}
+			USE_READ_NODE(i8);
+			USE_READ_NODE(i16);
+			USE_READ_NODE(i32);
+			USE_READ_NODE(i64);
+			USE_READ_NODE(u8);
+			USE_READ_NODE(u16);
+			USE_READ_NODE(u32);
+			USE_READ_NODE(u64);
+#undef USE_READ_NODE
+			if (name == "fpeqs" || name == "fpnes")
+			{
+				if (args.size() != 2 ||
+					args[0].Empty() ||
+					args[1].Length() != 1 ||
+					tokens[args[1].from].type != FIELD_NAME ||
+					tokens[args[0].to - 1].type != FIELD_NAME)
+				{
+					printf("ERROR: %s EXPECTS 2 args: f-query, name\n", name == "fpeqs" ? "fpeqs" : "fpnes");
+					return new ErrorNode;
+				}
+				auto* N = new FieldPreviewEqualsStringNode;
+				auto fieldName = tokens[args[0].to - 1].text;
+				N->fieldName.assign(fieldName.data(), fieldName.size());
+				args[0].to--;
+				N->query = ParseQuery(args[0]);
+				auto previewValue = tokens[args[1].from].text;
+				N->text.assign(previewValue.data(), previewValue.size());
+				N->invert = name != "fpeqs";
+				return N;
+			}
 		}
 
 		size_t lastWeakestOp = FindLastWeakestOp(r);
@@ -861,6 +1027,11 @@ StructQueryResults VariableSource::RootQuery(const std::string& typeName, const 
 	return res;
 }
 
+size_t VariableSource::ReadFile(int64_t off, size_t size, void* outbuf)
+{
+	return root->file->dataSource->Read(off, size, outbuf);
+}
+
 
 MathExpr::~MathExpr()
 {
@@ -921,21 +1092,41 @@ struct MathExprTest
 				printf("ROOT QUERY %s\n", typeName.c_str());
 				return { nullptr };
 			}
+			size_t ReadFile(int64_t off, size_t size, void* outbuf)
+			{
+				printf("READ FILE @ %" PRId64 "[%zu]\n", off, size);
+				memset(outbuf, 0, size);
+				return size;
+			}
 		} tvs;
 		MathExpr e;
-		e.Compile("15 + 3 * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + 3) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(@# + field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @field) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#\"potato\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato.\"field\") * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato.field.grain) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato[field=value]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato[#=3]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
-		e.Compile("(15 + @#potato[#=3+5, field=\"value\"]) * 2"); printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		auto TEST = [&e, &tvs](const char* name)
+		{
+			printf("--- %s\n", name);
+			e.Compile(name);
+			printf("= %" PRId64 "\n", e.Evaluate(&tvs));
+		};
+		puts("\n\n- BASIC EXPRS -");
+		TEST("15 + 3 * 2");
+		TEST("(15 + 3) * 2");
+		puts("\n\n- FIELD EXPRS -");
+		TEST("(15 + field) * 2");
+		TEST("(@# + field) * 2");
+		TEST("(15 + @field) * 2");
+		TEST("(15 + @\"field\") * 2");
+		TEST("(15 + @#potato) * 2");
+		TEST("(15 + @#\"potato\") * 2");
+		TEST("(15 + @#potato.\"field\") * 2");
+		TEST("(15 + @#potato.field.grain) * 2");
+		TEST("(15 + @#potato[field=value]) * 2");
+		TEST("(15 + @#potato[#=3]) * 2");
+		TEST("(15 + @#potato[#=3+5, field=\"value\"]) * 2");
+		puts("\n\n- FN EXPRS -");
+		TEST("$i32 4"); // read i32 at 4
+		TEST("$i32 @field"); // read i32 at field offset
+		TEST("$u8 #a[#=3].b");
+		TEST("$fpeqs field, name"); // compare field preview to name
+		TEST("$fpeqs(#struct.field, \"name\")");
 	}
 }
 gMathExprTest;

@@ -953,14 +953,14 @@ int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
 			if (0 < numElements)
 			{
 				DDStructInst* II = CreateFieldInstance(i, CreationReason::Query);
-				int64_t size = II->GetSize();
-				totalSize += size;
-				int64_t remSizeSub = II->remainingCountIsSize ? (II->sizeOverrideEnable ? II->sizeOverrideValue : size) : 1;
-				while (II->remainingCount - remSizeSub > 0)
+				for (;;)
 				{
-					II = desc->CreateNextInstance(*II, size, CreationReason::Query);
-					size = II->GetSize();
+					int64_t size = II->GetSize();
 					totalSize += size;
+					int64_t remSizeSub = II->remainingCountIsSize ? (II->sizeOverrideEnable ? II->sizeOverrideValue : size) : 1;
+					if (II->remainingCount - remSizeSub <= 0)
+						break;
+					II = desc->CreateNextInstance(*II, size, CreationReason::Query);
 				}
 			}
 			CF.totalSize = totalSize;
@@ -1103,9 +1103,11 @@ void DDStructInst::_EnumerateFields(size_t untilNum, bool lazy) const
 		DDReadField& rf = cachedFields.back();
 		rf.present = EvaluateConditions(F.conditions, i);
 
+		if (!F.IsComputed())
+			rf.off = cachedReadOff;
+
 		if (rf.present && !F.IsComputed())
 		{
-			rf.off = cachedReadOff;
 			if (def->serialized)
 			{
 				int64_t fts = GetFieldTotalSize(i, lazy);
