@@ -10,7 +10,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 		auto* sp2 = ctx->Push<ui::SplitPane>();
 		{
 			ctx->Push<ui::Panel>();
-			if (ddiSrc.dataDesc && curInst < ddiSrc.dataDesc->instances.size())
+			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto* img = ctx->Make<ui::ImageElement>();
 				*img + ui::Width(style::Coord::Percent(100));
@@ -28,7 +28,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 					br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 					br.End();
 				});
-				img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->instances[curInst])));
+				img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
 				img->SetScaleMode(ui::ScaleMode::Fit);
 			}
 			ctx->Pop();
@@ -42,33 +42,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 				for (auto& FO : image->formatOverrides)
 				{
 					EditImageFormat(ctx, "Format", FO.format);
-					ctx->Text("Conditions") + ui::Padding(5);
-					ctx->Push<ui::Panel>();
-					for (size_t i = 0; i < FO.conditions.size(); i++)
-					{
-						auto& C = FO.conditions[i];
-						ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
-						ui::imm::PropEditBool(ctx, "\bExpr", C.useExpr);
-						if (C.useExpr)
-						{
-							ui::imm::EditString(ctx, C.expr.expr.c_str(), [&C](const char* v) { C.expr.SetExpr(v); });
-						}
-						else
-						{
-							ui::imm::PropEditString(ctx, "\bField", C.field.c_str(), [&C](const char* v) { C.field = v; });
-							ui::imm::PropEditString(ctx, "\bValue", C.value.c_str(), [&C](const char* v) { C.value = v; });
-						}
-						if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
-						{
-							FO.conditions.erase(FO.conditions.begin() + i);
-						}
-						ctx->Pop();
-					}
-					if (ui::imm::Button(ctx, "Add"))
-					{
-						FO.conditions.push_back({ "unnamed", "" });
-					}
-					ctx->Pop();
+					ui::imm::PropEditString(ctx, "Condition", FO.condition.expr.c_str(), [&FO](const char* v) { FO.condition.SetExpr(v); });
 				}
 				if (ui::imm::Button(ctx, "Add"))
 				{

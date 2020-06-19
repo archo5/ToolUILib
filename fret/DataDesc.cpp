@@ -513,24 +513,7 @@ void DDStructResource::Load(NamedTextSerializeReader& r)
 
 			DDRsrcImage::FormatOverride FO;
 			FO.format = r.ReadString("format");
-
-			r.BeginArray("conditions");
-			for (auto E3 : r.GetCurrentRange())
-			{
-				r.BeginEntry(E3);
-				r.BeginDict("");
-
-				DDConditionExt CE;
-				CE.field = r.ReadString("field");
-				CE.value = r.ReadString("value");
-				CE.useExpr = r.ReadBool("useExpr");
-				CE.expr.SetExpr(r.ReadString("expr"));
-				FO.conditions.push_back(CE);
-
-				r.EndDict();
-				r.EndEntry();
-			}
-			r.EndArray();
+			FO.condition.SetExpr(r.ReadString("condition"));
 
 			image->formatOverrides.push_back(FO);
 
@@ -567,19 +550,7 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 		{
 			w.BeginDict("");
 			w.WriteString("format", FO.format);
-
-			w.BeginArray("conditions");
-			for (auto& CE : FO.conditions)
-			{
-				w.BeginDict("");
-				w.WriteString("field", CE.field);
-				w.WriteString("value", CE.value);
-				w.WriteBool("useExpr", CE.useExpr);
-				w.WriteString("expr", CE.expr.expr);
-				w.EndDict();
-			}
-			w.EndArray();
-
+			w.WriteString("condition", FO.condition.expr);
 			w.EndDict();
 		}
 		w.EndArray();
@@ -956,6 +927,11 @@ int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
 				for (;;)
 				{
 					int64_t size = II->GetSize();
+					if (size == 0)
+					{
+						puts("SIZE=0 - ABORTED");
+						break;
+					}
 					totalSize += size;
 					int64_t remSizeSub = II->remainingCountIsSize ? (II->sizeOverrideEnable ? II->sizeOverrideValue : size) : 1;
 					if (II->remainingCount - remSizeSub <= 0)
@@ -984,42 +960,6 @@ bool DDStructInst::EvaluateCondition(const DDCondition& cond, size_t until) cons
 }
 
 bool DDStructInst::EvaluateConditions(const std::vector<DDCondition>& conds, size_t until) const
-{
-	if (conds.empty())
-		return true;
-	for (auto& cond : conds)
-		if (EvaluateCondition(cond, until))
-			return true;
-	return false;
-}
-
-bool DDStructInst::EvaluateCondition(const DDConditionExt& cond, size_t until) const
-{
-	_EnumerateFields(until);
-
-	if (cond.useExpr)
-	{
-		VariableSource vs;
-		{
-			vs.desc = desc;
-			vs.root = this;
-		}
-		return cond.expr.Evaluate(vs);
-	}
-	else
-	{
-		if (cond.field.empty())
-			return true;
-
-		size_t fid = def->FindFieldByName(cond.field);
-		if (fid != SIZE_MAX && GetFieldPreview(fid) == cond.value)
-			return true;
-
-		return false;
-	}
-}
-
-bool DDStructInst::EvaluateConditions(const std::vector<DDConditionExt>& conds, size_t until) const
 {
 	if (conds.empty())
 		return true;
@@ -1881,7 +1821,7 @@ DataDesc::Image DataDesc::GetInstanceImage(const DDStructInst& SI)
 
 	for (auto& FO : II.formatOverrides)
 	{
-		if (SI.EvaluateConditions(FO.conditions))
+		if (FO.condition.Evaluate(vs))
 		{
 			img.format = FO.format;
 			break;

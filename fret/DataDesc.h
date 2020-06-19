@@ -144,13 +144,6 @@ struct DDCondition
 	std::string field;
 	std::string value;
 };
-struct DDConditionExt
-{
-	std::string field;
-	std::string value;
-	MathExprObj expr;
-	bool useExpr = false;
-};
 struct DDCompArg
 {
 	std::string name;
@@ -188,7 +181,7 @@ struct DDRsrcImage
 	struct FormatOverride
 	{
 		std::string format;
-		std::vector<DDConditionExt> conditions;
+		MathExprObj condition;
 	};
 	std::string format;
 	std::vector<FormatOverride> formatOverrides;
@@ -292,8 +285,6 @@ struct DDStructInst
 	int64_t GetFieldTotalSize(size_t i, bool lazy = false) const;
 	bool EvaluateCondition(const DDCondition& cond, size_t until = SIZE_MAX) const;
 	bool EvaluateConditions(const std::vector<DDCondition>& conds, size_t until = SIZE_MAX) const;
-	bool EvaluateCondition(const DDConditionExt& cond, size_t until = SIZE_MAX) const;
-	bool EvaluateConditions(const std::vector<DDConditionExt>& conds, size_t until = SIZE_MAX) const;
 	int64_t GetCompArgValue(const DDCompArg& arg) const;
 	DDStructInst* CreateFieldInstance(size_t i, CreationReason cr) const;
 

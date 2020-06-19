@@ -30,8 +30,6 @@ struct ImageEditorWindowNode : ui::Node
 	DDStruct* structDef = nullptr;
 	DDRsrcImage* image = nullptr;
 
-	size_t curInst = SIZE_MAX;
-
 	DataDescInstanceSource ddiSrc;
 	CachedImage cachedImg;
 };
