@@ -56,16 +56,22 @@ struct StructQueryResults : std::vector<const DDStructInst*>
 
 struct IVariableSource
 {
-	virtual bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) = 0;
+	virtual bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) = 0;
 	virtual StructQueryResults GetInitialSet() = 0;
 	virtual StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) = 0;
 	virtual StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) = 0;
 	virtual size_t ReadFile(int64_t off, size_t size, void* outbuf) = 0;
 };
 
+struct PredefinedConstant
+{
+	StringView name;
+	int64_t value;
+};
+
 struct VariableSource : IVariableSource
 {
-	bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) override;
+	bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) override;
 	StructQueryResults GetInitialSet() override;
 	StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override;
 	StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override;
@@ -73,11 +79,13 @@ struct VariableSource : IVariableSource
 
 	DataDesc* desc = nullptr;
 	const DDStructInst* root = nullptr;
+	const PredefinedConstant* constants = nullptr;
+	size_t constantCount = 0;
 };
 
 struct InParseVariableSource : IVariableSource
 {
-	bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) override;
+	bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) override;
 	StructQueryResults GetInitialSet() override;
 	StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override;
 	StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override;

@@ -288,8 +288,9 @@ struct MemberFieldNode : ValueNode
 	int64_t Eval(IVariableSource* vs) const override
 	{
 		StructQueryResults insts = query ? query->Query(vs) : vs->GetInitialSet();
+		int64_t idx = index ? index->Eval(vs) : 0;
 		int64_t ret = 0;
-		if (insts.size() > 0 && vs->GetVariable(insts[0], name, isOffset, ret))
+		if (insts.size() > 0 && vs->GetVariable(insts[0], name, idx, isOffset, ret))
 			return ret;
 		return 0;
 	}
@@ -302,6 +303,7 @@ struct MemberFieldNode : ValueNode
 	}
 
 	StructQueryNode* query = nullptr;
+	ValueNode* index = nullptr;
 	std::string name;
 	bool isOffset = false;
 };
@@ -696,6 +698,24 @@ struct Compiler
 				N->invert = name != "fpeqs";
 				return N;
 			}
+			if (name == "arr")
+			{
+				if (args.size() != 2 ||
+					args[0].Empty() ||
+					args[1].Empty() ||
+					tokens[args[0].to - 1].type != FIELD_NAME)
+				{
+					printf("ERROR: arr EXPECTS 2 args: f-query, int\n");
+					return new ErrorNode;
+				}
+				auto* N = new MemberFieldNode;
+				auto fieldName = tokens[args[0].to - 1].text;
+				N->name.assign(fieldName.data(), fieldName.size());
+				args[0].to--;
+				N->query = ParseQuery(args[0]);
+				N->index = ParseExpr(args[1]);
+				return N;
+			}
 		}
 
 		size_t lastWeakestOp = FindLastWeakestOp(r);
@@ -987,15 +1007,27 @@ static StructQueryResults GetNth(StructQueryResults& res, int64_t nth)
 	return { res[nth] };
 }
 
-bool VariableSource::GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal)
+bool VariableSource::GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal)
 {
+	if (pos < 0)
+		return false;
+
+	for (size_t i = 0; i < constantCount; i++)
+	{
+		if (constants[i].name == field)
+		{
+			outVal = offset ? 0 : constants[i].value;
+			return true;
+		}
+	}
+
 	size_t fid = inst->def->FindFieldByName(field);
 	if (fid != SIZE_MAX)
 	{
 		if (offset)
-			outVal = inst->GetFieldOffset(fid);
+			outVal = inst->GetFieldValueOffset(fid, pos);
 		else
-			outVal = inst->GetFieldIntValue(fid);
+			outVal = inst->GetFieldIntValue(fid, pos);
 		return true;
 	}
 	return false;
@@ -1022,43 +1054,26 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 		if (!SI->IsFieldPresent(fid))
 			continue;
 
-		const DDStructInst* ch = SI->CreateFieldInstance(fid, CreationReason::Query);
-		if (filter.returnNth)
+		int64_t i = 0;
+		SI->CreateFieldInstances(fid, SIZE_MAX, CreationReason::Query, [&](DDStructInst* ch)
 		{
-			for (int64_t i = 0; i <= filter.nth; )
+			if (Matches(filter, desc, ch))
 			{
-				if (Matches(filter, desc, ch))
+				if (filter.returnNth)
 				{
 					if (i++ == filter.nth)
 					{
 						res.push_back(ch);
-						break;
+						return false;
 					}
 				}
-
-				int64_t size = ch->GetSize();
-				int64_t remSize = ch->remainingCountIsSize ? size : 1;
-				if (ch->remainingCount - remSize <= 0)
-					break;
-
-				ch = desc->CreateNextInstance(*ch, size, CreationReason::Query);
-			}
-		}
-		else
-		{
-			for (;;)
-			{
-				if (Matches(filter, desc, ch))
+				else
+				{
 					res.push_back(ch);
-
-				int64_t size = ch->GetSize();
-				int64_t remSize = ch->remainingCountIsSize ? size : 1;
-				if (ch->remainingCount - remSize <= 0)
-					break;
-
-				ch = desc->CreateNextInstance(*ch, size, CreationReason::Query);
+				}
 			}
-		}
+			return true;
+		});
 	}
 	return res;
 }
@@ -1090,15 +1105,17 @@ size_t VariableSource::ReadFile(int64_t off, size_t size, void* outbuf)
 }
 
 
-bool InParseVariableSource::GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal)
+bool InParseVariableSource::GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal)
 {
+	if (pos < 0)
+		return false;
 	size_t fid = inst->def->FindFieldByName(field);
 	if (fid < untilField)
 	{
 		if (offset)
-			outVal = inst->GetFieldOffset(fid);
+			outVal = inst->GetFieldValueOffset(fid, pos);
 		else
-			outVal = inst->GetFieldIntValue(fid);
+			outVal = inst->GetFieldIntValue(fid, pos);
 		return true;
 	}
 	return false;
@@ -1163,10 +1180,12 @@ struct MathExprTest
 	{
 		struct TVS : IVariableSource
 		{
-			bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) override
+			bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) override
 			{
-				printf("GET VARIABLE%s %s\n", offset ? " OFFSET" : "", field.c_str());
-				outVal = 42;
+				printf("GET VARIABLE%s %s[%" PRId64 "]\n", offset ? " OFFSET" : "", field.c_str(), pos);
+				if (pos < 0)
+					return false;
+				outVal = 42 + pos;
 				return true;
 			}
 			StructQueryResults GetInitialSet() override
@@ -1219,6 +1238,7 @@ struct MathExprTest
 		TEST("$u8 #a[#=3].b");
 		TEST("$fpeqs field, name"); // compare field preview to name
 		TEST("$fpeqs(#struct.field, \"name\")");
+		TEST("$arr(#struct.field, 3 + 5)"); // read array at 3+5
 	}
 }
 gMathExprTest;
