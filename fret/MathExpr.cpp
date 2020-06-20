@@ -139,6 +139,42 @@ struct RShiftNode : BinaryOpNode
 	const char* Name() const override { return ">>"; }
 };
 
+struct EqualNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a == b; }
+	const char* Name() const override { return "=="; }
+};
+
+struct NotEqualNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a != b; }
+	const char* Name() const override { return "!="; }
+};
+
+struct LessThanNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a < b; }
+	const char* Name() const override { return "<"; }
+};
+
+struct LessEqualNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a <= b; }
+	const char* Name() const override { return "<="; }
+};
+
+struct GreaterThanNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a > b; }
+	const char* Name() const override { return ">"; }
+};
+
+struct GreaterEqualNode : BinaryOpNode
+{
+	int64_t Do(int64_t a, int64_t b) const override { return a >= b; }
+	const char* Name() const override { return ">="; }
+};
+
 template <class T>
 struct ReadNodeBase : ValueNode
 {
@@ -360,6 +396,13 @@ enum METokenType
 	OP_RSH,
 	OP_INV,
 
+	OP_EQ,
+	OP_NE,
+	OP_LT,
+	OP_LE,
+	OP_GT,
+	OP_GE,
+
 	PEXPR_START = '(',
 	PEXPR_END = ')',
 	SEXPR_START = '[',
@@ -368,7 +411,7 @@ enum METokenType
 	OP_OFFSET = '@',
 	OP_MEMBER = '.',
 	OP_FNPFX = '$',
-	OP_EQUAL = '=',
+	OP_ASSIGN = '=',
 };
 
 struct Token
@@ -379,16 +422,19 @@ struct Token
 
 static StringView operatorStrings[] =
 {
-	"(", ")", "[", "]", ",", "@", ".", "$", "=",
+	"(", ")", "[", "]", ",", "@", ".", "$",
 	"+", "-", "*", "/", "%",
 	"&", "|", "^", "<<", ">>", "~",
+	"==", "!=", "<=", ">=", "<", ">", "=",
 };
 static METokenType operatorTypes[] =
 {
-	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, COMMA, OP_OFFSET, OP_MEMBER, OP_FNPFX, OP_EQUAL,
+	PEXPR_START, PEXPR_END, SEXPR_START, SEXPR_END, COMMA, OP_OFFSET, OP_MEMBER, OP_FNPFX,
 	OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
 	OP_AND, OP_OR, OP_XOR, OP_LSH, OP_RSH, OP_INV,
+	OP_EQ, OP_NE, OP_LE, OP_GE, OP_LT, OP_GT, OP_ASSIGN,
 };
+static_assert(sizeof(operatorStrings) / sizeof(operatorStrings[0]) == sizeof(operatorTypes) / sizeof(operatorTypes[0]), "operator arrays not equal");
 
 static bool IsNameChar(char c)
 {
@@ -415,7 +461,7 @@ struct Compiler
 		if (it.empty())
 			return { END, it };
 
-		for (int i = 0; i < 12; i++)
+		for (int i = 0; i < sizeof(operatorStrings) / sizeof(operatorStrings[0]); i++)
 		{
 			if (it.starts_with(operatorStrings[i]))
 			{
@@ -517,8 +563,12 @@ struct Compiler
 		if (T.type == OP_OR) return 4;
 		if (T.type == OP_XOR) return 6;
 		if (T.type == OP_AND) return 8;
-		if (T.type == OP_LSH || T.type == OP_RSH)
+		if (T.type == OP_EQ || T.type == OP_NE)
 			return 10;
+		if (T.type == OP_LT || T.type == OP_LE || T.type == OP_GT || T.type == OP_GE)
+			return 12;
+		if (T.type == OP_LSH || T.type == OP_RSH)
+			return 14;
 		if (T.type == OP_ADD || T.type == OP_SUB)
 			return 20;
 		if (T.type == OP_MUL || T.type == OP_DIV || T.type == OP_MOD)
@@ -693,6 +743,13 @@ struct Compiler
 		case OP_XOR: N = new XorNode; break;
 		case OP_LSH: N = new LShiftNode; break;
 		case OP_RSH: N = new RShiftNode; break;
+
+		case OP_EQ: N = new EqualNode; break;
+		case OP_NE: N = new NotEqualNode; break;
+		case OP_LT: N = new LessThanNode; break;
+		case OP_LE: N = new LessEqualNode; break;
+		case OP_GT: N = new GreaterThanNode; break;
+		case OP_GE: N = new GreaterEqualNode; break;
 		}
 		N->srcA = A;
 		N->srcB = B;
@@ -733,7 +790,7 @@ struct Compiler
 
 		if (tokens[r.from].type == FIELD_NAME)
 		{
-			if (r.from + 3 == comma && tokens[r.from + 1].type == OP_EQUAL && tokens[r.from + 2].type == FIELD_NAME)
+			if (r.from + 3 == comma && tokens[r.from + 1].type == OP_ASSIGN && tokens[r.from + 2].type == FIELD_NAME)
 			{
 				DDCondition C;
 				C.field.assign(tokens[r.from].text.data(), tokens[r.from].text.size());
@@ -747,7 +804,7 @@ struct Compiler
 		}
 		else if (tokens[r.from].type == STRUCT_NAME && tokens[r.from].text == "")
 		{
-			if (r.from + 3 <= comma && tokens[r.from + 1].type == OP_EQUAL)
+			if (r.from + 3 <= comma && tokens[r.from + 1].type == OP_ASSIGN)
 			{
 				qnfs.which = ParseExpr({ r.from + 2, comma });
 			}
@@ -1028,6 +1085,41 @@ StructQueryResults VariableSource::RootQuery(const std::string& typeName, const 
 }
 
 size_t VariableSource::ReadFile(int64_t off, size_t size, void* outbuf)
+{
+	return root->file->dataSource->Read(off, size, outbuf);
+}
+
+
+bool InParseVariableSource::GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal)
+{
+	size_t fid = inst->def->FindFieldByName(field);
+	if (fid < untilField)
+	{
+		if (offset)
+			outVal = inst->GetFieldOffset(fid);
+		else
+			outVal = inst->GetFieldIntValue(fid);
+		return true;
+	}
+	return false;
+}
+
+StructQueryResults InParseVariableSource::GetInitialSet()
+{
+	return { root };
+}
+
+StructQueryResults InParseVariableSource::Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter)
+{
+	return {};
+}
+
+StructQueryResults InParseVariableSource::RootQuery(const std::string& typeName, const StructQueryFilter& filter)
+{
+	return {};
+}
+
+size_t InParseVariableSource::ReadFile(int64_t off, size_t size, void* outbuf)
 {
 	return root->file->dataSource->Read(off, size, outbuf);
 }

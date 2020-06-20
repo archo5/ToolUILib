@@ -75,6 +75,18 @@ struct VariableSource : IVariableSource
 	const DDStructInst* root = nullptr;
 };
 
+struct InParseVariableSource : IVariableSource
+{
+	bool GetVariable(const DDStructInst* inst, const std::string& field, bool offset, int64_t& outVal) override;
+	StructQueryResults GetInitialSet() override;
+	StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override;
+	StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override;
+	size_t ReadFile(int64_t off, size_t size, void* outbuf) override;
+
+	const DDStructInst* root = nullptr;
+	size_t untilField = 0;
+};
+
 struct MathExpr
 {
 	MathExpr() {}

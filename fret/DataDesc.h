@@ -163,7 +163,7 @@ struct DDField
 	bool countIsMaxSize = false;
 	bool readUntil0 = false;
 	std::vector<DDCompArg> structArgs;
-	std::vector<DDCondition> conditions;
+	MathExprObj condition;
 
 	bool IsComputed() const
 	{
@@ -283,8 +283,6 @@ struct DDStructInst
 	int64_t GetFieldOffset(size_t i, bool lazy = false) const;
 	int64_t GetFieldElementCount(size_t i, bool lazy = false) const;
 	int64_t GetFieldTotalSize(size_t i, bool lazy = false) const;
-	bool EvaluateCondition(const DDCondition& cond, size_t until = SIZE_MAX) const;
-	bool EvaluateConditions(const std::vector<DDCondition>& conds, size_t until = SIZE_MAX) const;
 	int64_t GetCompArgValue(const DDCompArg& arg) const;
 	DDStructInst* CreateFieldInstance(size_t i, CreationReason cr) const;
 

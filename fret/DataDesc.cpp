@@ -625,21 +625,8 @@ void DDStruct::Load(NamedTextSerializeReader& r)
 		}
 		r.EndArray();
 
-		r.BeginArray("conditions");
-		for (auto E3 : r.GetCurrentRange())
-		{
-			r.BeginEntry(E3);
-			r.BeginDict("");
+		F.condition.SetExpr(r.ReadString("condition"));
 
-			DDCondition C;
-			C.field = r.ReadString("field");
-			C.value = r.ReadString("value");
-			F.conditions.push_back(C);
-
-			r.EndDict();
-			r.EndEntry();
-		}
-		r.EndArray();
 		fields.push_back(F);
 
 		r.EndDict();
@@ -694,15 +681,7 @@ void DDStruct::Save(NamedTextSerializeWriter& w)
 		}
 		w.EndArray();
 
-		w.BeginArray("conditions");
-		for (const DDCondition& C : F.conditions)
-		{
-			w.BeginDict("");
-			w.WriteString("field", C.field);
-			w.WriteString("value", C.value);
-			w.EndDict();
-		}
-		w.EndArray();
+		w.WriteString("condition", F.condition.expr);
 
 		w.EndDict();
 	}
@@ -945,30 +924,6 @@ int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
 	return CF.totalSize;
 }
 
-bool DDStructInst::EvaluateCondition(const DDCondition& cond, size_t until) const
-{
-	_EnumerateFields(until);
-
-	if (cond.field.empty())
-		return true;
-
-	size_t fid = def->FindFieldByName(cond.field);
-	if (fid != SIZE_MAX && GetFieldPreview(fid) == cond.value)
-		return true;
-
-	return false;
-}
-
-bool DDStructInst::EvaluateConditions(const std::vector<DDCondition>& conds, size_t until) const
-{
-	if (conds.empty())
-		return true;
-	for (auto& cond : conds)
-		if (EvaluateCondition(cond, until))
-			return true;
-	return false;
-}
-
 int64_t DDStructInst::GetCompArgValue(const DDCompArg& arg) const
 {
 	if (arg.src.empty())
@@ -1041,7 +996,12 @@ void DDStructInst::_EnumerateFields(size_t untilNum, bool lazy) const
 
 		cachedFields.emplace_back();
 		DDReadField& rf = cachedFields.back();
-		rf.present = EvaluateConditions(F.conditions, i);
+		InParseVariableSource vs;
+		{
+			vs.root = this;
+			vs.untilField = i;
+		};
+		rf.present = F.condition.expr.empty() || F.condition.Evaluate(vs) != 0;
 
 		if (!F.IsComputed())
 			rf.off = cachedReadOff;
@@ -1666,25 +1626,7 @@ void DataDesc::EditField(UIContainer* ctx)
 				}
 				ctx->Pop();
 
-				ctx->Text("Conditions") + ui::Padding(5);
-				ctx->Push<ui::Panel>();
-				for (size_t i = 0; i < F.conditions.size(); i++)
-				{
-					auto& C = F.conditions[i];
-					ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
-					ui::imm::PropEditString(ctx, "\bField", C.field.c_str(), [&C](const char* v) { C.field = v; });
-					ui::imm::PropEditString(ctx, "\bValue", C.value.c_str(), [&C](const char* v) { C.value = v; });
-					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
-					{
-						F.conditions.erase(F.conditions.begin() + i);
-					}
-					ctx->Pop();
-				}
-				if (ui::imm::Button(ctx, "Add"))
-				{
-					F.conditions.push_back({ "unnamed", "" });
-				}
-				ctx->Pop();
+				ui::imm::PropEditString(ctx, "Condition", F.condition.expr.c_str(), [&F](const char* v) { F.condition.SetExpr(v); });
 			}
 		}
 	}
