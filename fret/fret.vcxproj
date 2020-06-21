@@ -153,12 +153,14 @@
   <ItemGroup>
     <ClInclude Include="..\FRET_Plugins\plugin.hpp" />
     <ClInclude Include="DataDesc.h" />
+    <ClInclude Include="DataDescStruct.h" />
     <ClInclude Include="FileReaders.h" />
     <ClInclude Include="FileStructureViewer.h" />
     <ClInclude Include="FileView.h" />
     <ClInclude Include="HexViewer.h" />
     <ClInclude Include="ImageEditor.h" />
     <ClInclude Include="ImageParsers.h" />
+    <ClInclude Include="Markers.h" />
     <ClInclude Include="MathExpr.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="TabHighlights.h" />
@@ -189,6 +191,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="DataDesc.cpp" />
+    <ClCompile Include="DataDescStruct.cpp" />
     <ClCompile Include="FileReaders.cpp" />
     <ClCompile Include="FileStructureViewer.cpp" />
     <ClCompile Include="FileView.cpp" />
@@ -196,6 +199,7 @@
     <ClCompile Include="HexViewer.cpp" />
     <ClCompile Include="ImageEditor.cpp" />
     <ClCompile Include="ImageParsers.cpp" />
+    <ClCompile Include="Markers.cpp" />
     <ClCompile Include="MathExpr.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -26,6 +26,8 @@
     <ClCompile Include="TabHighlights.cpp" />
     <ClCompile Include="TabStructures.cpp" />
     <ClCompile Include="TabImages.cpp" />
+    <ClCompile Include="DataDescStruct.cpp" />
+    <ClCompile Include="Markers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -47,6 +49,8 @@
     <ClInclude Include="TabHighlights.h" />
     <ClInclude Include="TabStructures.h" />
     <ClInclude Include="TabImages.h" />
+    <ClInclude Include="DataDescStruct.h" />
+    <ClInclude Include="Markers.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">

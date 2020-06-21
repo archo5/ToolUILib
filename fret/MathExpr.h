@@ -106,3 +106,31 @@ struct MathExpr
 
 	struct CompiledMathExpr* _impl = nullptr;
 };
+
+struct MathExprObj
+{
+	std::string expr;
+	MathExpr* inst = nullptr;
+
+	void Recompile()
+	{
+		delete inst;
+		inst = nullptr;
+		if (expr.size())
+		{
+			inst = new MathExpr;
+			inst->Compile(expr.c_str());
+		}
+	}
+	int64_t Evaluate(IVariableSource& vs) const
+	{
+		return inst ? inst->Evaluate(&vs) : 0;
+	}
+	void SetExpr(const std::string& ne)
+	{
+		if (expr == ne)
+			return;
+		expr = ne;
+		Recompile();
+	}
+};
