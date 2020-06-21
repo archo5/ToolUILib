@@ -542,7 +542,17 @@ DDStructInst* DDStructInst::CreateFieldInstances(size_t i, size_t upToN, Creatio
 			newSI.off = F.offExpr.Evaluate(vs);
 			if (newSI.off >= file->dataSource->GetSize())
 				continue;
+
+			size_t prevSize = desc->instances.size();
 			newInst = desc->AddInstance(newSI);
+			if (prevSize != desc->instances.size())
+			{
+				for (auto& SA : F.structArgs)
+				{
+					newInst->args.push_back({ SA.name, GetCompArgValue(SA) });
+				}
+			}
+
 			if (oneach && !oneach(newInst))
 				return newInst;
 			if (n == upToN)

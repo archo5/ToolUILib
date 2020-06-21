@@ -635,12 +635,6 @@ struct Compiler
 			}
 		}
 
-		if (tokens[r.from].type == PEXPR_START && tokens[r.to - 1].type == PEXPR_END)
-		{
-			r.from++;
-			r.to--;
-		}
-
 		if (tokens[r.from].type == OP_FNPFX)
 		{
 			if (r.from + 1 == r.to)
@@ -721,6 +715,13 @@ struct Compiler
 		size_t lastWeakestOp = FindLastWeakestOp(r);
 		if (lastWeakestOp == r.to)
 		{
+			if (tokens[r.from].type == PEXPR_START && tokens[r.to - 1].type == PEXPR_END)
+			{
+				r.from++;
+				r.to--;
+				return ParseExpr(r);
+			}
+
 			if (tokens[r.to - 1].type == FIELD_NAME)
 			{
 				auto* N = new MemberFieldNode;
@@ -1021,6 +1022,15 @@ bool VariableSource::GetVariable(const DDStructInst* inst, const std::string& fi
 		}
 	}
 
+	for (const auto& arg : inst->args)
+	{
+		if (arg.name == field)
+		{
+			outVal = offset ? 0 : arg.intVal;
+			return true;
+		}
+	}
+
 	size_t fid = inst->def->FindFieldByName(field);
 	if (fid != SIZE_MAX)
 	{
@@ -1109,6 +1119,16 @@ bool InParseVariableSource::GetVariable(const DDStructInst* inst, const std::str
 {
 	if (pos < 0)
 		return false;
+
+	for (const auto& arg : inst->args)
+	{
+		if (arg.name == field)
+		{
+			outVal = offset ? 0 : arg.intVal;
+			return true;
+		}
+	}
+
 	size_t fid = inst->def->FindFieldByName(field);
 	if (fid < untilField)
 	{
@@ -1220,6 +1240,7 @@ struct MathExprTest
 		puts("\n\n- BASIC EXPRS -");
 		TEST("15 + 3 * 2");
 		TEST("(15 + 3) * 2");
+		TEST("(1<2)|(3>4)");
 		puts("\n\n- FIELD EXPRS -");
 		TEST("(15 + field) * 2");
 		TEST("(@# + field) * 2");
