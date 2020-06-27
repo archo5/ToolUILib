@@ -31,6 +31,8 @@ struct DDField
 	std::string type;
 	std::string name;
 
+	MathExprObj valueExpr;
+
 	int64_t off = 0;
 	MathExprObj offExpr;
 
@@ -41,10 +43,11 @@ struct DDField
 	bool readUntil0 = false;
 	std::vector<DDCompArg> structArgs;
 	MathExprObj condition;
+	MathExprObj elementCondition;
 
 	bool IsComputed() const
 	{
-		return !offExpr.expr.empty();
+		return !valueExpr.expr.empty() || !offExpr.expr.empty();
 	}
 };
 enum class DDStructResourceType
@@ -87,6 +90,10 @@ struct DDStruct
 
 	CacheVersion editVersionS = 1;
 
+	void OnEdit()
+	{
+		editVersionS++;
+	}
 	size_t GetFieldCount() const { return fields.size(); }
 	size_t FindFieldByName(StringView name);
 	void Load(NamedTextSerializeReader& r);

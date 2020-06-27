@@ -46,17 +46,36 @@ float modulus(float a, float b) { return fmodf(a, b); }
 double modulus(double a, double b) { return fmod(a, b); }
 template <class T> T greatest_common_divisor(T a, T b)
 {
-	if (b == 0)
+	if (b != b || b == 0)
 		return a;
 	return greatest_common_divisor(b, modulus(a, b));
 }
 
-typedef std::string AnalysisFunc(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count);
-template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count)
+template<class T> struct get_signed : std::make_signed<T> {};
+template<> struct get_signed<float> { using type = float; };
+template<> struct get_signed<double> { using type = double; };
+template<> struct get_signed<bool> { using type = bool; };
+
+template<class T> void ApplyEndBit(T& r, int eb)
 {
+	if (eb >= 64)
+		return;
+	uint64_t mask = (1ULL << eb) - 1ULL;
+	r = (r & mask) | (r < 0 ? ~mask : 0);
+}
+void ApplyEndBit(float& r, int eb) {}
+void ApplyEndBit(double& r, int eb) {}
+
+typedef std::string AnalysisFunc(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t eb);
+template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t eb)
+{
+	using ST = typename get_signed<T>::type;
 	T min = std::numeric_limits<T>::max();
 	T max = std::numeric_limits<T>::min();
 	T gcd = 0;
+	ST dmin = std::numeric_limits<ST>::max();
+	ST dmax = std::numeric_limits<ST>::min();
+	ST dgcd = 0;
 	T prev = 0;
 	bool eq = count > 1;
 	bool asc = count > 1;
@@ -65,11 +84,16 @@ template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, u
 	{
 		T val;
 		ds->Read(off + stride * i, sizeof(val), &val);
+		ApplyEndBit(val, eb);
 		min = std::min(min, val);
 		max = std::max(max, val);
 		gcd = greatest_common_divisor(gcd, val);
 		if (i > 0)
 		{
+			ST d = ST(val) - ST(prev);
+			dmin = std::min(dmin, d);
+			dmax = std::max(dmax, d);
+			dgcd = greatest_common_divisor<ST>(dgcd, d);
 			if (val != prev)
 				eq = false;
 			if (val <= prev)
@@ -80,6 +104,8 @@ template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, u
 		prev = val;
 	}
 	auto ret = "min=" + std::to_string(min) + " max=" + std::to_string(max) + " gcd=" + std::to_string(gcd);
+	if (count > 1)
+		ret += " dmin=" + std::to_string(dmin) + " dmax=" + std::to_string(dmax) + " dgcd=" + std::to_string(dgcd);
 	if (eq)
 		ret += " eq";
 	else if (asc)
@@ -117,11 +143,12 @@ static const char* markerReadCodes[] =
 	"%g",
 	"%g",
 };
-typedef void MarkerReadFunc(std::string& sb, IDataSource* ds, uint64_t off);
-template <class T, DataType ty> void MarkerReadFuncImpl(std::string& sb, IDataSource* ds, uint64_t off)
+typedef void MarkerReadFunc(std::string& sb, IDataSource* ds, uint64_t off, uint8_t eb);
+template <class T, DataType ty> void MarkerReadFuncImpl(std::string& sb, IDataSource* ds, uint64_t off, uint8_t eb)
 {
 	T val;
 	ds->Read(off, sizeof(T), &val);
+	ApplyEndBit(val, eb);
 	char bfr[128];
 	snprintf(bfr, 128, markerReadCodes[ty], val);
 	sb += bfr;
@@ -152,7 +179,7 @@ std::string GetMarkerPreview(const Marker& marker, IDataSource* src, size_t maxL
 		{
 			if (j > 0 && marker.type != DT_CHAR)
 				text += ';';
-			markerReadFuncs[marker.type](text, src, marker.at + i * marker.stride + j * typeSizes[marker.type]);
+			markerReadFuncs[marker.type](text, src, marker.at + i * marker.stride + j * typeSizes[marker.type], marker.bitend);
 			if (text.size() > maxLen)
 			{
 				text.erase(text.begin() + 32, text.end());
@@ -232,7 +259,7 @@ Color4f Marker::GetColor() const
 
 void MarkerData::AddMarker(DataType dt, uint64_t from, uint64_t to)
 {
-	markers.push_back({ dt, from, (to - from) / typeSizes[dt], 1, 0 });
+	markers.push_back({ dt, 64U, from, (to - from) / typeSizes[dt], 1, 0 });
 	ui::Notify(DCT_MarkedItems, this);
 }
 
@@ -258,6 +285,7 @@ void MarkerData::Load(const char* key, NamedTextSerializeReader& r)
 		M.count = r.ReadUInt64("count");
 		M.repeats = r.ReadUInt64("repeats");
 		M.stride = r.ReadUInt64("stride");
+		M.bitend = r.ReadUInt("bitend", 64);
 		M.notes = r.ReadString("notes");
 		markers.push_back(M);
 
@@ -283,6 +311,7 @@ void MarkerData::Save(const char* key, NamedTextSerializeWriter& w)
 		w.WriteInt("count", M.count);
 		w.WriteInt("repeats", M.repeats);
 		w.WriteInt("stride", M.stride);
+		w.WriteInt("bitend", M.bitend);
 		w.WriteString("notes", M.notes);
 
 		w.EndDict();
@@ -369,6 +398,9 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	ui::imm::PropEditInt(ctx, "Count", marker->count);
 	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
 	ui::imm::PropEditInt(ctx, "Stride", marker->stride);
+	unsigned be = marker->bitend;
+	if (ui::imm::PropEditInt(ctx, "End bit", be, {}, 1U, 0U, 64U))
+		marker->bitend = be;
 	ui::imm::PropEditString(ctx, "Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
 	ctx->Pop();
 
@@ -379,14 +411,14 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 		if (marker->repeats <= 1)
 		{
 			// analyze a single array
-			analysis.push_back("array: " + analysisFuncs[marker->type](dataSource, marker->at, typeSizes[marker->type], marker->count));
+			analysis.push_back("array: " + analysisFuncs[marker->type](dataSource, marker->at, typeSizes[marker->type], marker->count, marker->bitend));
 		}
 		else
 		{
 			// analyze each array element separately
 			for (uint64_t i = 0; i < marker->count; i++)
 			{
-				analysis.push_back(std::to_string(i) + ": " + analysisFuncs[marker->type](dataSource, marker->at + i * typeSizes[marker->type], marker->stride, marker->repeats));
+				analysis.push_back(std::to_string(i) + ": " + analysisFuncs[marker->type](dataSource, marker->at + i * typeSizes[marker->type], marker->stride, marker->repeats, marker->bitend));
 			}
 		}
 	}

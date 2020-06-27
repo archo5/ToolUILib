@@ -37,8 +37,7 @@ struct TableWithOffsets
 		}
 #else
 		auto hoverRow = curTable->GetHoverRow();
-		if (curTable->IsValidRow(hoverRow))
-			TryAddRow(hoverRow, col, ret, max, buf);
+		TryAddRow(hoverRow, col, ret, max, buf);
 		if (curTable->selection.AnySelected())
 			TryAddRow(curTable->selection.GetFirstSelection(), col, ret, max, buf);
 #endif
@@ -47,6 +46,9 @@ struct TableWithOffsets
 
 	void TryAddRow(size_t row, size_t col, int& ret, int max, ConnectOffset* buf)
 	{
+		if (!curTable->IsValidRow(row))
+			return;
+
 		auto* ds = curTable->GetDataSource();
 		auto tcr = curTable->GetContentRect();
 

@@ -477,6 +477,12 @@ struct Compiler
 		if (it.first_char_is(IsDigit))
 		{
 			StringView num = it.take_while(IsDigit);
+			if (it.first_char_is([](char c) { return c == 'x'; }))
+			{
+				it.take_char();
+				StringView num2 = it.take_while(IsHexDigit);
+				num = StringView(num.data(), num2.end() - num.data());
+			}
 			return { CONSTANT, num };
 		}
 
@@ -628,8 +634,18 @@ struct Compiler
 			{
 				auto* N = new ConstantNode;
 				int64_t val = 0;
-				for (char c : tokens[r.from].text)
-					val = val * 10 + (c - '0');
+				StringView it = tokens[r.from].text;
+				if (it.starts_with("0x"))
+				{
+					it = it.substr(2);
+					for (char c : it)
+						val = val * 16 + gethex(c);
+				}
+				else
+				{
+					for (char c : it)
+						val = val * 10 + (c - '0');
+				}
 				N->value = val;
 				return N;
 			}

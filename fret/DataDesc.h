@@ -22,6 +22,7 @@ struct DDFile
 {
 	uint64_t id = UINT64_MAX;
 	std::string name;
+	std::string path;
 	struct IDataSource* dataSource = nullptr;
 	MarkerData markerData;
 	MarkerDataSource mdSrc;

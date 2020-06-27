@@ -59,6 +59,27 @@ void DataDesc::EditStructuralItems(UIContainer* ctx)
 		ui::imm::PropEditInt(ctx, "Current instance ID", id, {}, 1);
 		if (!curInst || curInst->id != id)
 			SetCurrentInstance(FindInstanceByID(id));
+
+		if (curInst)
+		{
+			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			if (ui::imm::Button(ctx, "Drop cache"))
+			{
+				curInst->cachedFields.clear();
+				curInst->cachedReadOff = curInst->off;
+				curInst->cachedSize = F_NO_VALUE;
+			}
+			if (ui::imm::Button(ctx, "Edit inst"))
+			{
+				curInst->OnEdit();
+			}
+			if (ui::imm::Button(ctx, "Edit struct"))
+			{
+				if (curInst->def)
+					curInst->def->OnEdit();
+			}
+			ctx->Pop();
+		}
 	}
 
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
@@ -493,6 +514,7 @@ void DataDesc::EditField(UIContainer* ctx)
 			if (curField < S.fields.size())
 			{
 				auto& F = S.fields[curField];
+				ui::imm::PropEditString(ctx, "Value expr.", F.valueExpr.expr.c_str(), [&F](const char* v) { F.valueExpr.SetExpr(v); });
 				if (!S.serialized)
 					ui::imm::PropEditInt(ctx, "Offset", F.off);
 				ui::imm::PropEditString(ctx, "Off.expr.", F.offExpr.expr.c_str(), [&F](const char* v) { F.offExpr.SetExpr(v); });
@@ -526,6 +548,10 @@ void DataDesc::EditField(UIContainer* ctx)
 				ctx->Pop();
 
 				ui::imm::PropEditString(ctx, "Condition", F.condition.expr.c_str(), [&F](const char* v) { F.condition.SetExpr(v); });
+				ui::imm::PropEditString(ctx, "Elem.cond.",
+					F.elementCondition.expr.c_str(),
+					[&F](const char* v) { F.elementCondition.SetExpr(v); },
+					{ ui::Enable(F.individualComputedOffsets) });
 			}
 		}
 	}
@@ -747,6 +773,7 @@ void DataDesc::Load(const char* key, NamedTextSerializeReader& r)
 		auto* F = CreateNewFile();
 		F->id = r.ReadUInt64("id");
 		F->name = r.ReadString("name");
+		F->path = r.ReadString("path");
 		F->markerData.Load("markerData", r);
 
 		r.EndDict();
@@ -858,6 +885,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 
 		w.WriteInt("id", F->id);
 		w.WriteString("name", F->name);
+		w.WriteString("path", F->path);
 		F->markerData.Save("markerData", w);
 
 		w.EndDict();

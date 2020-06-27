@@ -448,6 +448,9 @@ struct Padding : Modifier
 {
 	style::Coord _l, _r, _t, _b;
 	Padding(const style::Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
+	Padding(const style::Coord& v, const style::Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
+	Padding(const style::Coord& t, const style::Coord& lr, const style::Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
+	Padding(const style::Coord& t, const style::Coord& r, const style::Coord& b, const style::Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
 };
 

@@ -31,7 +31,7 @@ void Workspace::Load(NamedTextSerializeReader& r)
 	desc.Load("desc", r);
 	for (auto* F : desc.files)
 	{
-		std::string path = F->name;
+		std::string path = F->path;
 		if (path.size() < 2 || path[1] != ':')
 			path = "FRET_Plugins/" + path;
 		F->dataSource = new FileDataSource(path.c_str());

@@ -186,25 +186,29 @@ struct DXT1Block
 	uint16_t c0, c1;
 	uint32_t pixels;
 
+	void GenerateColors(uint32_t c[4])
+	{
+		uint8_t r0 = (c[0] >> 0) & 0xff;
+		uint8_t g0 = (c[0] >> 8) & 0xff;
+		uint8_t b0 = (c[0] >> 16) & 0xff;
+		uint8_t r1 = (c[1] >> 0) & 0xff;
+		uint8_t g1 = (c[1] >> 8) & 0xff;
+		uint8_t b1 = (c[1] >> 16) & 0xff;
+		uint8_t r2 = r0 * 2 / 3 + r1 / 3;
+		uint8_t g2 = g0 * 2 / 3 + g1 / 3;
+		uint8_t b2 = b0 * 2 / 3 + b1 / 3;
+		uint8_t r3 = r0 / 3 + r1 * 2 / 3;
+		uint8_t g3 = g0 / 3 + g1 * 2 / 3;
+		uint8_t b3 = b0 / 3 + b1 * 2 / 3;
+		c[2] = r2 | (g2 << 8) | (b2 << 16) | 0xff000000UL;
+		c[3] = r3 | (g3 << 8) | (b3 << 16) | 0xff000000UL;
+	}
 	uint32_t GetColor(int x, int y)
 	{
 		uint32_t c[4] = { RGB565_to_RGBA8(c0), RGB565_to_RGBA8(c1) };
 		if (c0 > c1)
 		{
-			uint8_t r0 = (c[0] >> 0) & 0xff;
-			uint8_t g0 = (c[0] >> 8) & 0xff;
-			uint8_t b0 = (c[0] >> 16) & 0xff;
-			uint8_t r1 = (c[1] >> 0) & 0xff;
-			uint8_t g1 = (c[1] >> 8) & 0xff;
-			uint8_t b1 = (c[1] >> 16) & 0xff;
-			uint8_t r2 = r0 * 2 / 3 + r1 / 3;
-			uint8_t g2 = g0 * 2 / 3 + g1 / 3;
-			uint8_t b2 = b0 * 2 / 3 + b1 / 3;
-			uint8_t r3 = r0 / 3 + r1 * 2 / 3;
-			uint8_t g3 = g0 / 3 + g1 * 2 / 3;
-			uint8_t b3 = b0 / 3 + b1 * 2 / 3;
-			c[2] = r2 | (g2 << 8) | (b2 << 16) | 0xff000000UL;
-			c[3] = r3 | (g3 << 8) | (b3 << 16) | 0xff000000UL;
+			GenerateColors(c);
 		}
 		else
 		{
@@ -216,12 +220,59 @@ struct DXT1Block
 		int idx = (pixels >> (at * 2)) & 0x3;
 		return c[idx];
 	}
+	uint32_t GetColorDXT3(int x, int y, uint8_t alpha)
+	{
+		uint32_t c[4] = { RGB565_to_RGBA8(c0), RGB565_to_RGBA8(c1) };
+		GenerateColors(c);
+
+		int at = y * 4 + x;
+		int idx = (pixels >> (at * 2)) & 0x3;
+		auto cc = c[idx];
+		return (cc & 0xffffff) | (uint32_t(alpha) << 24);
+	}
 };
+
+static const uint8_t g_DXT3AlphaTable[16] =
+{
+	255 * 0 / 15,
+	255 * 1 / 15,
+	255 * 2 / 15,
+	255 * 3 / 15,
+	255 * 4 / 15,
+	255 * 5 / 15,
+	255 * 6 / 15,
+	255 * 7 / 15,
+	255 * 8 / 15,
+	255 * 9 / 15,
+	255 * 10 / 15,
+	255 * 11 / 15,
+	255 * 12 / 15,
+	255 * 13 / 15,
+	255 * 14 / 15,
+	255 * 15 / 15,
+};
+
+struct DXT3AlphaBlock
+{
+	uint64_t pixels;
+
+	uint8_t GetAlpha(int x, int y)
+	{
+		int at = y * 4 + x;
+		int idx = (pixels >> (at * 4)) & 0xf;
+		return g_DXT3AlphaTable[idx];
+	}
+};
+
+static uint32_t divup(uint32_t x, uint32_t d)
+{
+	return (x + d - 1) / d;
+}
 
 static void ReadImage_DXT1(ReadImageIO& io, const ImageInfo& info)
 {
-	uint32_t nbx = info.width / 4;
-	uint32_t nby = info.height / 4;
+	uint32_t nbx = divup(info.width, 4);
+	uint32_t nby = divup(info.height, 4);
 
 	uint64_t at = info.offImg;
 	for (uint32_t by = 0; by < nby; by++)
@@ -243,6 +294,35 @@ static void ReadImage_DXT1(ReadImageIO& io, const ImageInfo& info)
 	}
 }
 
+static void ReadImage_DXT3(ReadImageIO& io, const ImageInfo& info)
+{
+	uint32_t nbx = divup(info.width, 4);
+	uint32_t nby = divup(info.height, 4);
+
+	uint64_t at = info.offImg;
+	for (uint32_t by = 0; by < nby; by++)
+	{
+		for (uint32_t bx = 0; bx < nbx; bx++)
+		{
+			DXT1Block block;
+			DXT3AlphaBlock ablock;
+			io.ds->Read(at, sizeof(ablock), &ablock);
+			at += sizeof(ablock);
+			io.ds->Read(at, sizeof(block), &block);
+			at += sizeof(block);
+
+			for (uint32_t y = by * 4; y < std::min((by + 1) * 4, info.height); y++)
+			{
+				for (uint32_t x = bx * 4; x < std::min((bx + 1) * 4, info.width); x++)
+				{
+					uint8_t alpha = ablock.GetAlpha(x - bx * 4, y - by * 4);
+					io.pixels[x + info.width * y] = block.GetColorDXT3(x - bx * 4, y - by * 4, alpha);
+				}
+			}
+		}
+	}
+}
+
 
 static const ImageFormat g_imageFormats[] =
 {
@@ -255,6 +335,7 @@ static const ImageFormat g_imageFormats[] =
 	{ "PSX", "4BPP_RGB5A1", ReadImage_4BPP_RGB5A1 },
 	{ "PSX", "4BPP_RGBo8", ReadImage_4BPP_RGBo8 },
 	{ "S3TC", "DXT1", ReadImage_DXT1 },
+	{ "S3TC", "DXT3", ReadImage_DXT3 },
 };
 
 
@@ -294,5 +375,5 @@ ui::Image* CreateImageFrom(IDataSource* ds, StringView fmt, const ImageInfo& inf
 	if (!done)
 		return nullptr;
 
-	return new ui::Image(c);
+	return new ui::Image(c, false);
 }

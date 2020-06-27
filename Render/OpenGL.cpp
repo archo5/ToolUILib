@@ -212,13 +212,14 @@ TexID CreateTextureA8(const void* data, unsigned width, unsigned height)
 	return tex;
 }
 
-TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height)
+TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering)
 {
 	GLuint tex;
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering ? GL_LINEAR : GL_NEAREST);
 	glEnable(GL_TEXTURE_2D);
 
 	return tex;

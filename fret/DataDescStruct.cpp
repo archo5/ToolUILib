@@ -146,6 +146,7 @@ void DDStruct::Load(NamedTextSerializeReader& r)
 		DDField F;
 		F.type = r.ReadString("type");
 		F.name = r.ReadString("name");
+		F.valueExpr.SetExpr(r.ReadString("valueExpr"));
 		F.off = r.ReadInt64("off");
 		F.offExpr.SetExpr(r.ReadString("offExpr"));
 		F.count = r.ReadInt64("count");
@@ -172,6 +173,7 @@ void DDStruct::Load(NamedTextSerializeReader& r)
 		r.EndArray();
 
 		F.condition.SetExpr(r.ReadString("condition"));
+		F.elementCondition.SetExpr(r.ReadString("elementCondition"));
 
 		fields.push_back(F);
 
@@ -209,6 +211,7 @@ void DDStruct::Save(NamedTextSerializeWriter& w)
 		w.BeginDict("");
 		w.WriteString("type", F.type);
 		w.WriteString("name", F.name);
+		w.WriteString("valueExpr", F.valueExpr.expr);
 		w.WriteInt("off", F.off);
 		w.WriteString("offExpr", F.offExpr.expr);
 		w.WriteInt("count", F.count);
@@ -229,6 +232,7 @@ void DDStruct::Save(NamedTextSerializeWriter& w)
 		w.EndArray();
 
 		w.WriteString("condition", F.condition.expr);
+		w.WriteString("elementCondition", F.elementCondition.expr);
 
 		w.EndDict();
 	}
@@ -390,7 +394,7 @@ int64_t DDStructInst::GetFieldOffset(size_t i, bool lazy) const
 		auto& F = def->fields[i];
 		if (F.IsComputed())
 		{
-			if (F.offExpr.inst)
+			if (F.valueExpr.expr.empty() && F.offExpr.inst)
 			{
 				PredefinedConstant constants[] =
 				{
@@ -460,6 +464,8 @@ int64_t DDStructInst::GetFieldTotalSize(size_t i, bool lazy) const
 	if (CF.totalSize == F_NO_VALUE)
 	{
 		auto& F = def->fields[i];
+		if (!F.valueExpr.expr.empty())
+			return CF.totalSize = 0;
 		auto fs = GetFixedTypeSize(desc, F.type);
 		if (fs != UINT64_MAX)
 		{
@@ -519,6 +525,10 @@ int64_t DDStructInst::GetCompArgValue(const DDCompArg& arg) const
 DDStructInst* DDStructInst::CreateFieldInstances(size_t i, size_t upToN, CreationReason cr, std::function<bool(DDStructInst*)> oneach) const
 {
 	auto& F = def->fields[i];
+
+	if (!F.valueExpr.expr.empty())
+		return nullptr;
+
 	int64_t numElements = GetFieldElementCount(i);
 	if (F.IsComputed() && F.individualComputedOffsets)
 	{
@@ -527,21 +537,43 @@ DDStructInst* DDStructInst::CreateFieldInstances(size_t i, size_t upToN, Creatio
 		DDStructInst newSI = { -1, desc, desc->structs.find(F.type)->second, file, 0, "", cr };
 		for (size_t n = 0; n < numElements; n++)
 		{
-			PredefinedConstant constants[] =
+			// compute the offset
 			{
-				{ "i", n },
-				{ "orig", cachedFields[i].origOff },
-			};
-			VariableSource vs;
-			{
-				vs.desc = desc;
-				vs.root = this;
-				vs.constants = constants;
-				vs.constantCount = sizeof(constants) / sizeof(constants[0]);
+				PredefinedConstant constants[] =
+				{
+					{ "i", n },
+					{ "orig", cachedFields[i].origOff },
+				};
+				VariableSource vs;
+				{
+					vs.desc = desc;
+					vs.root = this;
+					vs.constants = constants;
+					vs.constantCount = sizeof(constants) / sizeof(constants[0]);
+				}
+				newSI.off = F.offExpr.Evaluate(vs);
+				if (newSI.off >= file->dataSource->GetSize())
+					continue;
 			}
-			newSI.off = F.offExpr.Evaluate(vs);
-			if (newSI.off >= file->dataSource->GetSize())
-				continue;
+
+			if (F.elementCondition.inst)
+			{
+				PredefinedConstant constants[] =
+				{
+					{ "i", n },
+					{ "off", newSI.off },
+					{ "orig", cachedFields[i].origOff },
+				};
+				VariableSource vs;
+				{
+					vs.desc = desc;
+					vs.root = this;
+					vs.constants = constants;
+					vs.constantCount = sizeof(constants) / sizeof(constants[0]);
+				}
+				if (!F.elementCondition.Evaluate(vs))
+					continue;
+			}
 
 			size_t prevSize = desc->instances.size();
 			newInst = desc->AddInstance(newSI);
@@ -671,6 +703,12 @@ void DDStructInst::_EnumerateFields(size_t untilNum, bool lazy) const
 		};
 		rf.present = F.condition.expr.empty() || F.condition.Evaluate(vs) != 0;
 		rf.origOff = cachedReadOff;
+		if (!F.valueExpr.expr.empty())
+		{
+			rf.off = 0;
+			rf.totalSize = 0;
+			rf.count = 1;
+		}
 
 		if (!F.IsComputed())
 			rf.off = cachedReadOff;
@@ -731,6 +769,9 @@ int64_t DDStructInst::_CalcFieldElementCount(size_t i) const
 {
 	auto& F = def->fields[i];
 
+	if (!F.valueExpr.expr.empty())
+		return 1;
+
 	if (F.countSrc.empty())
 		return F.count;
 
@@ -780,6 +821,31 @@ bool DDStructInst::_ReadFieldValues(size_t i, size_t n) const
 		return true;
 
 	auto& F = def->fields[i];
+	if (!F.valueExpr.expr.empty())
+	{
+		if (CF.values.empty())
+		{
+			PredefinedConstant constants[] =
+			{
+				{ "orig", CF.origOff },
+			};
+			VariableSource vs;
+			{
+				vs.desc = desc;
+				vs.root = this;
+				vs.constants = constants;
+				vs.constantCount = sizeof(constants) / sizeof(constants[0]);
+			}
+			int64_t value = F.valueExpr.Evaluate(vs);
+			CF.values.emplace_back();
+			auto& CFV = CF.values.back();
+			CFV.intVal = value;
+			CFV.off = 0;
+			CFV.preview = std::to_string(value);
+		}
+		return CF.values.size() >= n;
+	}
+
 	auto it = g_builtinTypes.find(F.type);
 	if (it == g_builtinTypes.end())
 		return false;

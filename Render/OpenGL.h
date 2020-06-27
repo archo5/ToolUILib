@@ -19,7 +19,7 @@ void Clear(int r, int g, int b, int a);
 void Present(RenderContext* RC);
 
 TexID CreateTextureA8(const void* data, unsigned width, unsigned height);
-TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height);
+TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering = true);
 void DestroyTexture(TexID tex);
 void SetTexture(TexID tex);
 

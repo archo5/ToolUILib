@@ -180,8 +180,14 @@ struct Canvas
 struct Image
 {
 	Image() {}
-	Image(uint32_t w, uint32_t h, const void* d) : _width(w), _height(h) { _texture = GL::CreateTextureRGBA8(d, w, h); }
-	Image(const Canvas& c) : _width(c.GetWidth()), _height(c.GetHeight()) { _texture = GL::CreateTextureRGBA8(c.GetBytes(), c.GetWidth(), c.GetHeight()); }
+	Image(uint32_t w, uint32_t h, const void* d, bool filtering = true) : _width(w), _height(h)
+	{
+		_texture = GL::CreateTextureRGBA8(d, w, h, filtering);
+	}
+	Image(const Canvas& c, bool filtering = true) : _width(c.GetWidth()), _height(c.GetHeight())
+	{
+		_texture = GL::CreateTextureRGBA8(c.GetBytes(), c.GetWidth(), c.GetHeight(), filtering);
+	}
 	Image(const Image& img) = delete;
 	Image(Image&& img) : _width(img._width), _height(img._height), _texture(img._texture) { img._texture = 0; }
 	~Image() { Destroy(); }
