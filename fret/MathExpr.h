@@ -103,6 +103,7 @@ struct MathExpr
 
 	void Compile(const char* expr);
 	int64_t Evaluate(IVariableSource* vsrc);
+	std::string GenPyScript();
 
 	struct CompiledMathExpr* _impl = nullptr;
 };
@@ -132,5 +133,9 @@ struct MathExprObj
 			return;
 		expr = ne;
 		Recompile();
+	}
+	std::string GenPyScript() const
+	{
+		return inst ? inst->GenPyScript() : "0";
 	}
 };

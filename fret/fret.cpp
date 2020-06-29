@@ -3,6 +3,7 @@
 #include "FileReaders.h"
 #include "FileStructureViewer.h"
 #include "DataDesc.h"
+#include "ExportScript.h"
 #include "HexViewer.h"
 #include "ImageParsers.h"
 #include "Workspace.h"
@@ -79,7 +80,7 @@ struct MainWindowNode : ui::Node
 		};
 
 		ctx->Push<ui::MenuBarElement>();
-		ctx->Push<ui::MenuItemElement>()->SetText("Save").Func([&]()
+		ctx->Make<ui::MenuItemElement>()->SetText("Save").Func([&]()
 		{
 			NamedTextSerializeWriter ntsw;
 			workspace.Save(ntsw);
@@ -88,7 +89,18 @@ struct MainWindowNode : ui::Node
 				fclose(f),
 				false;);
 		});
-		ctx->Pop();
+		ctx->Make<ui::MenuItemElement>()->SetText("Export script").Func([&]()
+		{
+			char bfr[256];
+			strcpy(bfr, CUR_WORKSPACE);
+			*strrchr(bfr, '.') = '\0';
+			strcat(bfr, ".py");
+			auto scr = ExportPythonScript(&workspace.desc);
+			for (FILE* f = fopen(bfr, "w");
+				fwrite(scr.data(), scr.size(), 1, f),
+				fclose(f),
+				false;);
+		});
 		ctx->Pop();
 
 		*ctx->Push<ui::TabGroup>()

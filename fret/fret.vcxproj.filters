@@ -28,6 +28,7 @@
     <ClCompile Include="TabImages.cpp" />
     <ClCompile Include="DataDescStruct.cpp" />
     <ClCompile Include="Markers.cpp" />
+    <ClCompile Include="ExportScript.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -51,6 +52,7 @@
     <ClInclude Include="TabImages.h" />
     <ClInclude Include="DataDescStruct.h" />
     <ClInclude Include="Markers.h" />
+    <ClInclude Include="ExportScript.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">

@@ -49,6 +49,7 @@ struct DDField
 	{
 		return !valueExpr.expr.empty() || !offExpr.expr.empty();
 	}
+	bool IsOne() const { return count == 1 && countSrc.empty(); }
 };
 enum class DDStructResourceType
 {

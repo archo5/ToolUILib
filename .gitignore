@@ -15,6 +15,7 @@
 *.tlog
 *.lib
 *.dll
+__pycache__
 
 # generated data
 *.tga

@@ -84,32 +84,38 @@ void TabImages::Render(UIContainer* ctx)
 		ctx->Pop();
 	}
 	{
-		ctx->PushBox();
-		if (workspace->desc.curImage < workspace->desc.images.size())
+		auto& spvert = *ctx->Push<ui::SplitPane>();
 		{
-			ctx->Push<ui::Panel>();
-			auto* img = ctx->Make<ui::ImageElement>();
-			*img + ui::Width(style::Coord::Percent(100));
-			*img + ui::Height(200);
-			img->GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+			if (workspace->desc.curImage < workspace->desc.images.size())
 			{
-				auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
+				ctx->Push<ui::Panel>();
+				auto* img = ctx->Make<ui::ImageElement>();
+				*img + ui::Width(style::Coord::Percent(100));
+				*img + ui::Height(style::Coord::Percent(100));
+				img->GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+				{
+					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 
-				GL::BatchRenderer br;
-				auto r = info.rect;
+					GL::BatchRenderer br;
+					auto r = info.rect;
 
-				GL::SetTexture(bgr->_texture);
-				br.Begin();
-				br.SetColor(1, 1, 1, 1);
-				br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
-				br.End();
-			});
-			img->SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
-			img->SetScaleMode(ui::ScaleMode::Fit);
+					GL::SetTexture(bgr->_texture);
+					br.Begin();
+					br.SetColor(1, 1, 1, 1);
+					br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+					br.End();
+				});
+				img->SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
+				img->SetScaleMode(ui::ScaleMode::Fit);
+				ctx->Pop();
+			}
+			ctx->PushBox();
+			workspace->desc.EditImageItems(ctx);
 			ctx->Pop();
 		}
-		workspace->desc.EditImageItems(ctx);
 		ctx->Pop();
+		spvert.SetDirection(true);
+		spvert.SetSplits({ 0.5f });
 	}
 	ctx->Pop();
 	spstr.SetSplits({ 0.5f });

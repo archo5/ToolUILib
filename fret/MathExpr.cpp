@@ -9,6 +9,7 @@ struct ValueNode
 	virtual ~ValueNode() {}
 	virtual int64_t Eval(IVariableSource*) const = 0;
 	virtual void Dump(int level) const = 0;
+	virtual std::string GenPyScript() const = 0;
 };
 
 static void DMPLEV(int level)
@@ -21,12 +22,14 @@ struct ErrorNode : ValueNode
 {
 	int64_t Eval(IVariableSource*) const override { return 0; }
 	void Dump(int level) const override { DMPLEV(level); fprintf(stderr, "ERROR\n"); }
+	std::string GenPyScript() const override { return "ERROR"; }
 };
 
 struct ConstantNode : ValueNode
 {
 	int64_t Eval(IVariableSource*) const override { return value; }
 	void Dump(int level) const override { DMPLEV(level); fprintf(stderr, "value = %" PRId64 "\n", value); }
+	std::string GenPyScript() const override { return "(" + std::to_string(value) + ")"; }
 
 	int64_t value = 0;
 };
@@ -52,12 +55,14 @@ struct NegateNode : UnaryOpNode
 {
 	int64_t Do(int64_t a) const override { return -a; }
 	const char* Name() const override { return "negate"; }
+	std::string GenPyScript() const override { return "(-" + src->GenPyScript() + ")"; }
 };
 
 struct BitwiseInvertNode : UnaryOpNode
 {
 	int64_t Do(int64_t a) const override { return ~a; }
 	const char* Name() const override { return "invert"; }
+	std::string GenPyScript() const override { return "(~" + src->GenPyScript() + ")"; }
 };
 
 struct BinaryOpNode : ValueNode
@@ -65,6 +70,7 @@ struct BinaryOpNode : ValueNode
 	~BinaryOpNode() { delete srcA; delete srcB; }
 	virtual int64_t Do(int64_t a, int64_t b) const = 0;
 	int64_t Eval(IVariableSource* vs) const override { return Do(srcA->Eval(vs), srcB->Eval(vs)); }
+	std::string GenPyScript() const override { return "(" + srcA->GenPyScript() + Name() + srcB->GenPyScript() + ")"; }
 
 	virtual const char* Name() const = 0;
 	void Dump(int level) const override
@@ -194,6 +200,7 @@ struct ReadNodeBase : ValueNode
 		fprintf(stderr, "read %s\n", Name());
 		srcOff->Dump(level + 1);
 	}
+	std::string GenPyScript() const override { return std::string("vs.read_file(\"") + Name() + "\", " + srcOff->GenPyScript() + ")"; }
 
 	ValueNode* srcOff = nullptr;
 };
@@ -225,6 +232,24 @@ struct StructQueryNodeFilters
 		else
 			fprintf(stderr, "\n");
 	}
+	std::string GenPyScript() const
+	{
+		std::string ret = "{";
+		for (auto& C : conditions)
+		{
+			ret += '"';
+			ret += C.field;
+			ret += "\":\"";
+			ret += C.value;
+			ret += "\",";
+		}
+		if (which)
+		{
+			ret += "\"#\":" + which->GenPyScript();
+		}
+		ret += '}';
+		return ret;
+	}
 
 	std::vector<DDCondition> conditions;
 	ValueNode* which = nullptr;
@@ -234,6 +259,7 @@ struct StructQueryNode
 {
 	virtual StructQueryResults Query(IVariableSource* vs) = 0;
 	virtual void Dump(int level) const = 0;
+	virtual std::string GenPyScript() const = 0;
 
 	StructQueryNodeFilters filters;
 };
@@ -242,6 +268,7 @@ struct ErrorQueryNode : StructQueryNode
 {
 	StructQueryResults Query(IVariableSource* vs) override { return {}; }
 	void Dump(int level) const override { DMPLEV(level); fprintf(stderr, "ERROR\n"); }
+	virtual std::string GenPyScript() const override { return "ERROR"; }
 };
 
 struct RootQueryNode : StructQueryNode
@@ -257,6 +284,7 @@ struct RootQueryNode : StructQueryNode
 		fprintf(stderr, "root (struct) query \"%s\"", typeName.c_str());
 		filters.Dump(level);
 	}
+	virtual std::string GenPyScript() const override { return "vs.root_query(\"" + typeName + "\", " + filters.GenPyScript() + ")"; }
 
 	std::string typeName;
 };
@@ -276,6 +304,10 @@ struct SubQueryNode : StructQueryNode
 		filters.Dump(level);
 		if (query)
 			query->Dump(level + 1);
+	}
+	virtual std::string GenPyScript() const override
+	{
+		return "vs.subquery(" + (query ? query->GenPyScript() : "[self]") + ", \"" + name + "\", " + filters.GenPyScript() + ")";
 	}
 
 	StructQueryNode* query = nullptr;
@@ -300,6 +332,14 @@ struct MemberFieldNode : ValueNode
 		fprintf(stderr, "member field%s \"%s\"%s\n", isOffset ? " offset" : "", name.c_str(), query ? " with query:" : "");
 		if (query)
 			query->Dump(level + 1);
+	}
+	std::string GenPyScript() const override
+	{
+		return "vs.get_variable("
+			+ (query ? query->GenPyScript() : "[self]")
+			+ ", \"" + name
+			+ "\", " + (index ? index->GenPyScript() : "0")
+			+ ", " + (isOffset ? "True" : "False") + ")";
 	}
 
 	StructQueryNode* query = nullptr;
@@ -326,6 +366,7 @@ struct StructOffsetNode : ValueNode
 		if (query)
 			query->Dump(level + 1);
 	}
+	std::string GenPyScript() const override { return "bdat.me_structoff(vs, " + (query ? query->GenPyScript() : "[self]") + ")"; }
 
 	StructQueryNode* query = nullptr;
 };
@@ -344,13 +385,13 @@ struct FieldPreviewEqualsStringNode : ValueNode
 			size_t fid = inst->def->FindFieldByName(fieldName);
 			if (fid == SIZE_MAX)
 				continue;
-			if (inst->GetFieldPreview(fid) == text)
+			if ((inst->GetFieldPreview(fid) == text) ^ invert)
 			{
 				found = true;
 				break;
 			}
 		}
-		return found ^ invert;
+		return found;
 	}
 	void Dump(int level) const override
 	{
@@ -358,6 +399,10 @@ struct FieldPreviewEqualsStringNode : ValueNode
 		fprintf(stderr, "field '%s' preview %sequals string '%s':\n", fieldName.c_str(), invert ? "NOT " : "", text.c_str());
 		if (query)
 			query->Dump(level + 1);
+	}
+	std::string GenPyScript() const override
+	{
+		return "bdat.me_fpeqs(vs, " + (query ? query->GenPyScript() : "[self]") + ", \"" + fieldName + "\", b\"" + text + "\"" + (invert ? "True" : "False") + ")";
 	}
 
 	StructQueryNode* query;
@@ -1201,6 +1246,13 @@ int64_t MathExpr::Evaluate(IVariableSource* vsrc)
 	if (!_impl || !_impl->root)
 		return 0;
 	return _impl->root->Eval(vsrc);
+}
+
+std::string MathExpr::GenPyScript()
+{
+	if (!_impl || !_impl->root)
+		return "0";
+	return _impl->root->GenPyScript();
 }
 
 

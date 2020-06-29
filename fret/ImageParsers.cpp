@@ -3,6 +3,12 @@
 #include "ImageParsers.h"
 
 
+static uint32_t divup(uint32_t x, uint32_t d)
+{
+	return (x + d - 1) / d;
+}
+
+
 static uint32_t RGB5A1_to_RGBA8(uint16_t v)
 {
 	uint32_t r = ((v >> 0) & 0x1f) << 3;
@@ -76,6 +82,27 @@ static void ReadImage_G8(ReadImageIO& io, const ImageInfo& info)
 		io.ds->Read(info.offImg + y * info.width, info.width, tmp);
 		for (uint32_t x = 0; x < info.width; x++)
 			io.pixels[y * info.width + x] = tmp[x] | (tmp[x] << 8) | (tmp[x] << 16) | 0xff000000UL;
+	}
+}
+
+static void ReadImage_G1(ReadImageIO& io, const ImageInfo& info)
+{
+	if (info.width > 4096)
+	{
+		io.error = true;
+		return;
+	}
+
+	int w = divup(info.width, 8);
+	uint8_t tmp[4096 / 8];
+	for (uint32_t y = 0; y < info.height; y++)
+	{
+		io.ds->Read(info.offImg + y * w, w, tmp);
+		for (uint32_t x = 0; x < info.width; x++)
+		{
+			bool set = (tmp[x / 8] & (1 << (x % 8))) != 0;
+			io.pixels[y * info.width + x] = set ? 0xffffffffUL : 0xff000000UL;
+		}
 	}
 }
 
@@ -264,11 +291,6 @@ struct DXT3AlphaBlock
 	}
 };
 
-static uint32_t divup(uint32_t x, uint32_t d)
-{
-	return (x + d - 1) / d;
-}
-
 static void ReadImage_DXT1(ReadImageIO& io, const ImageInfo& info)
 {
 	uint32_t nbx = divup(info.width, 4);
@@ -330,6 +352,7 @@ static const ImageFormat g_imageFormats[] =
 	{ "Basic", "RGBX8", ReadImage_RGBX8 },
 	{ "Basic", "RGBo8", ReadImage_RGBo8 },
 	{ "Basic", "G8", ReadImage_G8 },
+	{ "Basic", "G1", ReadImage_G1 },
 	{ "Basic", "8BPP_RGBA8", ReadImage_8BPP_RGBA8 },
 	{ "PSX", "RGB5A1", ReadImage_RGB5A1 },
 	{ "PSX", "4BPP_RGB5A1", ReadImage_4BPP_RGB5A1 },

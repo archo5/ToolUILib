@@ -154,6 +154,7 @@
     <ClInclude Include="..\FRET_Plugins\plugin.hpp" />
     <ClInclude Include="DataDesc.h" />
     <ClInclude Include="DataDescStruct.h" />
+    <ClInclude Include="ExportScript.h" />
     <ClInclude Include="FileReaders.h" />
     <ClInclude Include="FileStructureViewer.h" />
     <ClInclude Include="FileView.h" />
@@ -192,6 +193,7 @@
     </ClCompile>
     <ClCompile Include="DataDesc.cpp" />
     <ClCompile Include="DataDescStruct.cpp" />
+    <ClCompile Include="ExportScript.cpp" />
     <ClCompile Include="FileReaders.cpp" />
     <ClCompile Include="FileStructureViewer.cpp" />
     <ClCompile Include="FileView.cpp" />
