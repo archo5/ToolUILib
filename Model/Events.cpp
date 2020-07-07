@@ -94,8 +94,9 @@ void UIEventSystem::RecomputeLayout()
 		container->rootNode->OnLayout({ 0, 0, width, height }, { width, height });
 }
 
-void UIEventSystem::ProcessTimers(float dt)
+float UIEventSystem::ProcessTimers(float dt)
 {
+	float minTime = FLT_MAX;
 	size_t endOfInitialTimers = pendingTimers.size();
 	for (size_t i = 0; i < endOfInitialTimers; i++)
 	{
@@ -117,7 +118,10 @@ void UIEventSystem::ProcessTimers(float dt)
 				endOfInitialTimers--;
 			}
 		}
+		else if (minTime > T.timeLeft)
+			minTime = T.timeLeft;
 	}
+	return minTime;
 }
 
 void UIEventSystem::Repaint(UIElement* e)
@@ -199,7 +203,7 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 	}
 }
 
-void UIEventSystem::SetTimer(UIElement* tgt, float t, int id)
+void UIEventSystem::SetTimer(UIObject* tgt, float t, int id)
 {
 	pendingTimers.push_back({ tgt, t, id });
 }

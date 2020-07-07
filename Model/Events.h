@@ -159,7 +159,7 @@ struct UIEventSystem
 	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr, bool stopOnDisabled = false);
 
 	void RecomputeLayout();
-	void ProcessTimers(float dt);
+	float ProcessTimers(float dt);
 
 	void Repaint(UIElement* e);
 	void OnDestroy(UIObject* o);
@@ -168,7 +168,7 @@ struct UIEventSystem
 	void OnChange(ui::Node* n);
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o);
-	void SetTimer(UIElement* tgt, float t, int id = 0);
+	void SetTimer(UIObject* tgt, float t, int id = 0);
 	void SetDefaultCursor(ui::DefaultCursor cur);
 
 	UIObject* FindObjectAtPosition(float x, float y);

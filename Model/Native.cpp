@@ -337,6 +337,7 @@ struct ProxyEventSystem
 
 struct NativeWindow_Impl;
 static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
+static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
 
 struct NativeWindow_Impl
 {
@@ -383,6 +384,15 @@ struct NativeWindow_Impl
 		DestroyWindow(window);
 	}
 
+	bool AddToInvalidationList()
+	{
+		if (invalidated)
+			return false;
+		invalidated = true;
+		g_windowRepaintList->push_back(this);
+		return true;
+	}
+
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
 	{
 		auto& cont = GetContainer();
@@ -406,7 +416,11 @@ struct NativeWindow_Impl
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
 
-		evsys.ProcessTimers(float(t - prevTime));
+		float minTime = evsys.ProcessTimers(float(t - prevTime));
+		if (minTime < FLT_MAX)
+			SetTimer(window, 1, minTime * 1000, nullptr);
+		else
+			KillTimer(window, 1);
 		prevTime = t;
 
 		cont.ProcessNodeRenderStack();
@@ -741,10 +755,9 @@ void NativeWindowBase::SetDebugDrawEnabled(bool enabled)
 
 void NativeWindowBase::InvalidateAll()
 {
-	if (_impl->invalidated)
+	if (!_impl->AddToInvalidationList())
 		return;
-	_impl->invalidated = true;
-	g_windowRepaintList->push_back(_impl);
+	PostMessage(_impl->window, WM_USER + 2, 0, 0);
 }
 
 void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
@@ -895,6 +908,7 @@ Application::Application(int argc, char* argv[])
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
 	g_windowRepaintList = new std::vector<NativeWindow_Impl*>;
+	g_curWindowRepaintList = new std::vector<NativeWindow_Impl*>;
 
 	LoadDefaultCursors();
 	SubscriptionTable_Init();
@@ -911,6 +925,8 @@ Application::~Application()
 
 	delete g_windowRepaintList;
 	g_windowRepaintList = nullptr;
+	delete g_curWindowRepaintList;
+	g_curWindowRepaintList = nullptr;
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
 
@@ -955,14 +971,20 @@ int Application::Run()
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
-				window->GetOwner()->InvalidateAll();
+				window->GetOwner()->_impl->AddToInvalidationList();
 		}
 
-		for (auto* win : *g_windowRepaintList)
-			win->Redraw();
-		for (auto* win : *g_windowRepaintList)
+		assert(g_curWindowRepaintList->empty());
+
+		std::swap(g_windowRepaintList, g_curWindowRepaintList);
+		for (auto* win : *g_curWindowRepaintList)
 			win->invalidated = false;
-		g_windowRepaintList->clear();
+
+		for (auto* win : *g_curWindowRepaintList)
+			win->Redraw();
+		g_curWindowRepaintList->clear();
+
+		assert(g_curWindowRepaintList->empty());
 	}
 	return g_appExitCode;
 }
