@@ -49,6 +49,8 @@ struct HexViewerState
 	uint64_t selectionStart = UINT64_MAX;
 	uint64_t selectionEnd = UINT64_MAX;
 	bool mouseDown = false;
+
+	void GoToPos(int64_t pos);
 };
 extern ui::DataCategoryTag DCT_HexViewerState[1];
 

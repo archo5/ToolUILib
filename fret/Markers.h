@@ -26,7 +26,9 @@ const char* GetDataTypeName(DataType t);
 struct Marker
 {
 	DataType type;
+	uint8_t bitstart = 0;
 	uint8_t bitend = 64;
+	bool excludeZeroes = false;
 	uint64_t at;
 	uint64_t count;
 	uint64_t repeats;

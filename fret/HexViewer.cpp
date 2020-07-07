@@ -3,6 +3,14 @@
 #include "HexViewer.h"
 
 
+void HexViewerState::GoToPos(int64_t pos)
+{
+	basePos = std::max(0LL, pos - byteWidth);
+	selectionStart = std::max(0LL, pos);
+	selectionEnd = std::max(0LL, pos);
+	ui::Notify(DCT_HexViewerState, this);
+}
+
 ui::DataCategoryTag DCT_HexViewerState[1];
 
 

@@ -213,12 +213,8 @@ void FileView::CreateImage(int64_t pos, StringView fmt)
 
 void FileView::GoToOffset(int64_t pos)
 {
-	auto bw = of->hexViewerState.byteWidth;
 	uint32_t off = 0;
 	of->ddFile->dataSource->Read(pos, sizeof(off), &off);
 
-	of->hexViewerState.basePos = off > bw ? off - bw : 0;
-	of->hexViewerState.selectionStart = off;
-	of->hexViewerState.selectionEnd = off;
-	ui::Notify(DCT_HexViewerState, &of->hexViewerState);
+	of->hexViewerState.GoToPos(off);
 }
