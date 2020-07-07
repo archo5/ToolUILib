@@ -6,6 +6,9 @@
 namespace ui {
 namespace imm {
 
+constexpr float UNITS_PER_PX = 0.1f;
+constexpr float DEFAULT_SPEED = 1.0f;
+
 bool Button(UIContainer* ctx, const char* text, ModInitList mods = {});
 bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods = {});
 bool EditBool(UIContainer* ctx, bool& val, ModInitList mods = {});
@@ -31,22 +34,25 @@ template <class T> bool RadioButton(UIContainer* ctx, T& val, T cur, const char*
 	}
 	return false;
 }
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods = {}, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
-bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods = {}, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods = {}, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
-bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods = {}, uint64_t speed = 1, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
-bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods = {}, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
+bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
+bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
+bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
 
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods = {});
-bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods = {}, int speed = 1, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
-bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods = {}, unsigned speed = 1, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
-bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods = {}, int64_t speed = 1, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
-bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods = {}, uint64_t speed = 1, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
-bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods = {}, float speed = 1, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
+bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, int vmin = INT_MIN, int vmax = INT_MAX, const char* fmt = "%d");
+bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, unsigned vmin = 0, unsigned vmax = UINT_MAX, const char* fmt = "%u");
+bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX, const char* fmt = "%" PRId64);
+bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
+bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
+
+// length of `val` = length of `axes`
+bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 
 } // imm
 } // ui

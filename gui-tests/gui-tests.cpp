@@ -1409,6 +1409,10 @@ struct IMGUITest : ui::Node
 			ctx->Text("float: " + std::to_string(floatVal)) + ui::Padding(5);
 			ui::Property::End(ctx);
 		}
+		{
+			ui::imm::PropEditFloatVec(ctx, "float3", float4val, "XYZ");
+			ui::imm::PropEditFloatVec(ctx, "float4", float4val, "RGBA");
+		}
 	}
 
 	bool boolVal = true;
@@ -1418,6 +1422,7 @@ struct IMGUITest : ui::Node
 	unsigned uintVal = 1;
 	uint64_t uint64Val = 2;
 	float floatVal = 3.14f;
+	float float4val[4] = { 1, 2, 3, 4 };
 };
 
 

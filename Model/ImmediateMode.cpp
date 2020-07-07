@@ -103,7 +103,7 @@ template <> struct MakeSigned<int64_t> { using type = int64_t; };
 template <> struct MakeSigned<uint64_t> { using type = int64_t; };
 template <> struct MakeSigned<float> { using type = float; };
 
-template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, ModInitList mods, TNum speed, TNum vmin, TNum vmax, const char* fmt)
+template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, ModInitList mods, float speed, TNum vmin, TNum vmax, const char* fmt)
 {
 	auto* tb = ctx->Make<Textbox>();
 	for (auto& mod : mods)
@@ -142,8 +142,16 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 			{
 				if (tb->IsFocused())
 					e.context->SetKeyboardFocus(nullptr);
-				typename MakeSigned<TNum>::type diff = e.dx * speed;
-				TNum nv = val + diff;
+
+				float diff = e.dx * speed * UNITS_PER_PX;
+				tb->accumulator += diff;
+				TNum nv = val;
+				if (fabsf(tb->accumulator) >= speed)
+				{
+					nv += trunc(tb->accumulator / speed);
+					tb->accumulator = fmodf(tb->accumulator, speed);
+				}
+
 				if (nv > vmax || (diff > 0 && nv < val))
 					nv = vmax;
 				if (nv < vmin || (diff < 0 && nv > val))
@@ -173,22 +181,22 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	return edited;
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods, int speed, int vmin, int vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
 	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
 }
@@ -247,7 +255,7 @@ bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mo
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, int speed, int vmin, int vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -256,7 +264,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods, unsigned speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -265,7 +273,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods, int64_t speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -274,7 +282,7 @@ bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList 
 	return ret;
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods, uint64_t speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
 	Property::Begin(ctx);
 	auto* lbl = label ? &Property::Label(ctx, label) : nullptr;
@@ -298,6 +306,20 @@ bool PropEditString(UIContainer* ctx, const char* label, const char* text, const
 	bool ret = EditString(ctx, text, retfn, mods);
 	Property::End(ctx);
 	return ret;
+}
+
+bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+{
+	Property::Begin(ctx, label);
+	bool any = false;
+	char axisLabel[3] = "\b\0";
+	while (*axes)
+	{
+		axisLabel[1] = *axes++;
+		any |= PropEditFloat(ctx, axisLabel, *val++, mods, speed, vmin, vmax, fmt);
+	}
+	Property::End(ctx);
+	return any;
 }
 
 } // imm

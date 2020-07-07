@@ -960,7 +960,7 @@ void Textbox::OnEvent(UIEvent& e)
 
 void Textbox::OnSerialize(IDataSerializer& s)
 {
-	s << startCursor << endCursor << showCaretState;
+	s << startCursor << endCursor << showCaretState << accumulator;
 
 	uint32_t len = _text.size();
 	s << len;

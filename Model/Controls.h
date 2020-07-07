@@ -390,6 +390,7 @@ struct Textbox : UIElement
 	int startCursor = 0;
 	int endCursor = 0;
 	bool showCaretState = false;
+	float accumulator = 0;
 };
 
 struct CollapsibleTreeNode : UIElement
