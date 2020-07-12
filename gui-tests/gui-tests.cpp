@@ -1295,6 +1295,54 @@ struct HighElementCountTest : ui::Node
 	int styleMode;
 };
 
+struct ZeroRerenderTest : ui::Node
+{
+	bool first = true;
+	void Render(UIContainer* ctx) override
+	{
+		if (first)
+			first = false;
+		else
+			puts("Should not happen!");
+
+		ui::Property::Begin(ctx, "Show?");
+		cbShow = ctx->Make<ui::CheckboxBoolState>()->SetChecked(show);
+		ui::Property::End(ctx);
+
+		*cbShow + ui::EventHandler(UIEventType::Change, [this](UIEvent& e) { show = cbShow->GetChecked(); OnShowChange(); });
+		*ctx->MakeWithText<ui::Button>("Show")
+			+ ui::EventHandler(UIEventType::Activate, [this](UIEvent& e) { show = true; OnShowChange(); });
+		*ctx->MakeWithText<ui::Button>("Hide")
+			+ ui::EventHandler(UIEventType::Activate, [this](UIEvent& e) { show = false; OnShowChange(); });
+
+		showable = ctx->Push<ui::Panel>();
+		contentLabel = &ctx->Text("Contents: " + text);
+		tbText = &ctx->Make<ui::Textbox>()->SetText(text);
+		*tbText + ui::EventHandler(UIEventType::Change, [this](UIEvent& e)
+		{
+			text = tbText->GetText();
+			contentLabel->SetText("Contents: " + text);
+		});
+		ctx->Pop();
+
+		OnShowChange();
+	}
+
+	void OnShowChange()
+	{
+		cbShow->SetChecked(show);
+		showable->GetStyle().SetHeight(show ? style::Coord::Undefined() : style::Coord(0));
+	}
+
+	ui::CheckboxBoolState* cbShow;
+	UIObject* showable;
+	ui::TextElement* contentLabel;
+	ui::Textbox* tbText;
+
+	bool show = false;
+	std::string text;
+};
+
 struct ElementResetTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -2099,6 +2147,7 @@ static TestEntry testEntries[] =
 	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
 	{ "High element count", [](UIContainer* ctx) { ctx->Make<HighElementCountTest>(); } },
+	{ "Zero-rerender", [](UIContainer* ctx) { ctx->Make<ZeroRerenderTest>(); } },
 	{},
 	{ "- Advanced/compound UI -" },
 	{ "Sliders", [](UIContainer* ctx) { ctx->Make<SlidersTest>(); } },
