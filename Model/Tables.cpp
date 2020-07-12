@@ -262,7 +262,7 @@ void TableView::OnEvent(UIEvent& e)
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
 
-	if (e.handled)
+	if (e.IsPropagationStopped())
 		return;
 
 	if (e.type == UIEventType::ButtonDown)
@@ -288,7 +288,7 @@ void TableView::OnEvent(UIEvent& e)
 			size_t at = GetRowAt(e.y);
 			if (at < SIZE_MAX)
 				selection.SetSelected(at, true);
-			e.handled = true;
+			e.StopPropagation();
 
 			UIEvent selev(e.context, this, UIEventType::SelectionChange);
 			e.context->BubblingEvent(selev);

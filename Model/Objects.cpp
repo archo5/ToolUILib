@@ -41,9 +41,15 @@ void UIObject::_SerializePersistent(IDataSerializer& s)
 	OnSerialize(s);
 }
 
+void UIObject::_Reset()
+{
+	OnReset();
+}
+
 void UIObject::_DoEvent(UIEvent& e)
 {
-	for (auto* n = _firstEH; n && !e.handled; n = n->next)
+	e.current = this;
+	for (auto* n = _firstEH; n && !e.IsPropagationStopped(); n = n->next)
 	{
 		if (n->type != UIEventType::Any && n->type != e.type)
 			continue;
@@ -51,8 +57,19 @@ void UIObject::_DoEvent(UIEvent& e)
 			continue;
 		n->func(e);
 	}
-	if (!e.handled)
+
+	if (!e.IsPropagationStopped())
 		OnEvent(e);
+
+	if (!e.IsPropagationStopped())
+	{
+		// default behaviors
+		if ((flags & UIObject_DB_IMEdit) && e.target == this && !IsInputDisabled() && e.type == UIEventType::Activate)
+		{
+			flags |= UIObject_IsEdited;
+			RerenderNode();
+		}
+	}
 }
 
 void UIObject::SendUserEvent(int id, uintptr_t arg0, uintptr_t arg1)
@@ -453,6 +470,11 @@ void UIObject::RerenderNode()
 bool UIObject::IsHovered() const
 {
 	return !!(flags & UIObject_IsHovered);
+}
+
+bool UIObject::IsPressed() const
+{
+	return !!(flags & UIObject_IsPressedAny);
 }
 
 bool UIObject::IsClicked(int button) const

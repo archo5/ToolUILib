@@ -2,6 +2,7 @@
 #include "Controls.h"
 #include "Layout.h"
 #include "System.h"
+#include "Native.h"
 #include "Theme.h"
 
 
@@ -19,17 +20,64 @@ Button::Button()
 	SetFlag(UIObject_IsFocusable, true);
 }
 
-void Button::OnEvent(UIEvent& e)
+static bool ButtonEvent(UIObject* o, UIEvent& e)
 {
+	bool ret = false;
 	if (e.type == UIEventType::ButtonDown)
 	{
-		e.context->SetKeyboardFocus(this);
-		e.handled = true;
+		e.context->SetKeyboardFocus(o);
+		if (e.GetButton() == UIMouseButton::Left)
+		{
+			e.context->CaptureMouse(o);
+			o->flags |= UIObject_IsPressedMouse;
+		}
+		e.StopPropagation();
 	}
-	if (e.type == UIEventType::Activate)
+	if (e.type == UIEventType::ButtonUp)
 	{
-		e.handled = true;
+		if (e.GetButton() == UIMouseButton::Left && e.context->GetMouseCapture() == o)
+		{
+			if (o->flags & UIObject_IsPressedMouse)
+				ret = true;
+			e.context->ReleaseMouse();
+			e.StopPropagation();
+		}
 	}
+	if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateDown)
+	{
+		e.context->CaptureMouse(o);
+		o->flags |= UIObject_IsPressedOther;
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateUp)
+	{
+		if (o->flags & UIObject_IsPressedOther)
+		{
+			ret = true;
+			o->flags &= ~UIObject_IsPressedOther;
+		}
+		if (!(o->flags & UIObject_IsPressedMouse))
+			e.context->ReleaseMouse();
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::MouseMove)
+	{
+		if (e.context->GetMouseCapture() == o)
+			o->SetFlag(UIObject_IsPressedMouse, o->finalRectCPB.Contains(e.x, e.y));
+		//e.StopPropagation();
+	}
+	if (e.type == UIEventType::MouseCaptureChanged)
+	{
+		o->flags &= ~UIObject_IsPressedMouse;
+		e.StopPropagation();
+	}
+	return ret;
+}
+
+void Button::OnEvent(UIEvent& e)
+{
+	if (ButtonEvent(this, e))
+		e.context->OnActivate(this);
 }
 
 
@@ -50,11 +98,7 @@ void CheckableBase::OnPaint()
 
 void CheckableBase::OnEvent(UIEvent& e)
 {
-	if (e.type == UIEventType::ButtonDown)
-	{
-		e.context->SetKeyboardFocus(this);
-	}
-	if (e.type == UIEventType::Activate)
+	if (ButtonEvent(this, e) && !IsInputDisabled())
 	{
 		OnSelect();
 		e.context->OnChange(this);
@@ -69,9 +113,21 @@ CheckboxBase::CheckboxBase()
 }
 
 
+void Checkbox::OnSelect()
+{
+	system->eventSystem.OnActivate(this);
+}
+
+
 RadioButtonBase::RadioButtonBase()
 {
 	styleProps = Theme::current->radioButton;
+}
+
+
+void RadioButton::OnSelect()
+{
+	system->eventSystem.OnActivate(this);
 }
 
 
@@ -88,7 +144,8 @@ void SelectableBase::OnPaint()
 
 void SelectableBase::OnEvent(UIEvent& e)
 {
-	UIElement::OnEvent(e);
+	if (ButtonEvent(this, e))
+		OnSelect(true);
 }
 
 
@@ -155,8 +212,13 @@ void Slider::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 	{
+		e.context->CaptureMouse(this);
 		_mxoff = 0;
 		// TODO if inside, calc offset
+	}
+	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	{
+		e.context->ReleaseMouse();
 	}
 	if (e.type == UIEventType::MouseMove && IsClicked())
 	{
@@ -256,7 +318,7 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 		if (e.type == UIEventType::SetCursor)
 		{
 			e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
-			e.handled = true;
+			e.StopPropagation();
 		}
 	};
 	char buf[64];
@@ -298,7 +360,7 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 				if (e.type == UIEventType::SetCursor)
 				{
 					e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
-					e.handled = true;
+					e.StopPropagation();
 				}
 			};
 
@@ -501,7 +563,7 @@ void SplitPane::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::SetCursor && _splitUI.IsAnyHovered())
 	{
 		e.context->SetDefaultCursor(_verticalSplit ? ui::DefaultCursor::ResizeRow : ui::DefaultCursor::ResizeCol);
-		e.handled = true;
+		e.StopPropagation();
 	}
 }
 
@@ -656,14 +718,14 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 	case ui::SubUIDragState::Start:
 		dragStartContentOff = info.contentOff;
 		dragStartCursorPos = e.y;
-		e.handled = true;
+		e.StopPropagation();
 		break;
 	case ui::SubUIDragState::Move:
 		info.contentOff = std::min(maxOff, std::max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
-		e.handled = true;
+		e.StopPropagation();
 		break;
 	case ui::SubUIDragState::Stop:
-		e.handled = true;
+		e.StopPropagation();
 		break;
 	}
 
@@ -782,12 +844,13 @@ void TabButtonBase::OnPaint()
 
 void TabButtonBase::OnEvent(UIEvent& e)
 {
-	if ((e.type == UIEventType::Activate || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
+	if ((ButtonEvent(this, e) || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
 	{
 		OnSelect();
+		e.context->OnActivate(this);
 		e.context->OnChange(this);
 		e.context->OnCommit(this);
-		e.handled = true;
+		e.StopPropagation();
 	}
 }
 
@@ -857,6 +920,124 @@ void Textbox::OnPaint()
 	PaintChildren();
 }
 
+static size_t PrevChar(StringView str, size_t pos)
+{
+	if (pos == 0)
+		return 0;
+	pos--;
+	while (pos > 0 && (str[pos] & 0xC0) == 0x80)
+		pos--;
+	return pos;
+}
+
+static size_t NextChar(StringView str, size_t pos)
+{
+	if (pos == str.size())
+		return pos;
+	pos++;
+	while (pos < str.size() && (str[pos] & 0xC0) == 0x80)
+		pos++;
+	return pos;
+}
+
+static uint32_t GetUTF8(StringView str, size_t pos)
+{
+	if (pos >= str.size())
+		return UINT32_MAX;
+
+	char c0 = str[pos];
+	if (!(c0 & 0x80))
+		return c0;
+
+	if (pos + 1 >= str.size())
+		return UINT32_MAX;
+	char c1 = str[pos + 1];
+	if ((c1 & 0xC0) != 0x80)
+		return UINT32_MAX;
+
+	if ((c0 & 0xE0) == 0xC0)
+		return (c0 & ~0xE0) | ((c1 & ~0xC0) << 5);
+
+	if (pos + 2 >= str.size())
+		return UINT32_MAX;
+	char c2 = str[pos + 2];
+	if ((c2 & 0xC0) != 0x80)
+		return UINT32_MAX;
+
+	if ((c0 & 0xF0) == 0xE0)
+		return (c0 & ~0xF0) | ((c1 & ~0xC0) << 4) | ((c2 & ~0xC0) << 10);
+
+	if (pos + 3 >= str.size())
+		return UINT32_MAX;
+	char c3 = str[pos + 3];
+	if ((c3 & 0xC0) != 0x80)
+		return UINT32_MAX;
+
+	if ((c0 & 0xF8) == 0xF0)
+		return (c0 & ~0xF0) | ((c1 & ~0xC0) << 3) | ((c2 & ~0xC0) << 9) | ((c2 & ~0xC0) << 15);
+
+	return UINT32_MAX;
+}
+
+static int GetCharClass(StringView str, size_t pos)
+{
+	uint32_t c = GetUTF8(str, pos);
+	// TODO full unicode
+	if (IsSpace(c)) // (ASCII)
+		return 0;
+	// punctuation (ASCII)
+	if ((c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126))
+		return 2;
+	// anything else is considered to be a word
+	return 1;
+}
+
+static bool IsWordBreak(int cca, int ccb)
+{
+	if (cca == ccb) // same class - ignore
+		return false;
+	if (ccb == 0) // trailing space - ignore
+		return false;
+	return true;
+}
+
+static size_t PrevWord(StringView str, size_t pos)
+{
+	if (pos == 0)
+		return 0;
+
+	pos = PrevChar(str, pos);
+	auto pcc = GetCharClass(str, pos);
+	while (pos > 0)
+	{
+		size_t npp = PrevChar(str, pos);
+		auto ncc = GetCharClass(str, npp);
+		if (IsWordBreak(ncc, pcc))
+			break;
+		pcc = ncc;
+		pos = npp;
+	}
+	return pos;
+}
+
+static size_t NextWord(StringView str, size_t pos)
+{
+	if (pos == str.size())
+		return pos;
+
+	auto pcc = GetCharClass(str, pos);
+	pos = NextChar(str, pos);
+	while (pos < str.size())
+	{
+		auto ncc = GetCharClass(str, pos);
+		if (IsWordBreak(pcc, ncc))
+			break;
+		pcc = ncc;
+		pos = NextChar(str, pos);
+	}
+	return pos;
+}
+
 void Textbox::OnEvent(UIEvent& e)
 {
 	if (e.type == UIEventType::ButtonDown)
@@ -879,7 +1060,7 @@ void Textbox::OnEvent(UIEvent& e)
 	else if (e.type == UIEventType::SetCursor)
 	{
 		e.context->SetDefaultCursor(DefaultCursor::Text);
-		e.handled = true;
+		e.StopPropagation();
 	}
 	else if (e.type == UIEventType::Timer)
 	{
@@ -903,48 +1084,116 @@ void Textbox::OnEvent(UIEvent& e)
 		case UIKeyAction::Enter:
 			e.context->SetKeyboardFocus(nullptr);
 			break;
-		case UIKeyAction::Backspace:
-			if (IsInputDisabled())
-				break;
-			if (IsLongSelection())
-				EraseSelection();
-			else if (endCursor > 0)
-				_text.erase(startCursor = --endCursor, 1); // TODO unicode
-			e.context->OnChange(this);
-			break;
-		case UIKeyAction::Delete:
-			if (IsInputDisabled())
-				break;
-			if (IsLongSelection())
-				EraseSelection();
-			else if (endCursor + 1 < _text.size())
-				_text.erase(endCursor, 1); // TODO unicode
-			e.context->OnChange(this);
-			break;
 
-		case UIKeyAction::Left:
-			if (IsLongSelection())
+		case UIKeyAction::PrevLetter:
+			if (IsLongSelection() && !e.GetKeyActionModifier())
+			{
 				startCursor = endCursor = startCursor < endCursor ? startCursor : endCursor;
-			else if (endCursor > 0)
-				startCursor = --endCursor;
+			}
+			else
+			{
+				endCursor = PrevChar(_text, endCursor);
+				if (!e.GetKeyActionModifier())
+					startCursor = endCursor;
+			}
 			break;
-		case UIKeyAction::Right:
-			if (IsLongSelection())
+		case UIKeyAction::NextLetter:
+			if (IsLongSelection() && !e.GetKeyActionModifier())
+			{
 				startCursor = endCursor = startCursor > endCursor ? startCursor : endCursor;
-			else if (endCursor < _text.size())
-				startCursor = ++endCursor;
-			break;
-		case UIKeyAction::Home:
-			startCursor = endCursor = 0;
-			break;
-		case UIKeyAction::End:
-			startCursor = endCursor = _text.size();
+			}
+			else
+			{
+				endCursor = NextChar(_text, endCursor);
+				if (!e.GetKeyActionModifier())
+					startCursor = endCursor;
+			}
 			break;
 
+		case UIKeyAction::PrevWord:
+			endCursor = PrevWord(_text, endCursor);
+			if (!e.GetKeyActionModifier())
+				startCursor = endCursor;
+			break;
+		case UIKeyAction::NextWord:
+			endCursor = NextWord(_text, endCursor);
+			if (!e.GetKeyActionModifier())
+				startCursor = endCursor;
+			break;
+
+		case UIKeyAction::GoToLineStart:
+		case UIKeyAction::GoToStart:
+			endCursor = 0;
+			if (!e.GetKeyActionModifier())
+				startCursor = endCursor;
+			break;
+		case UIKeyAction::GoToLineEnd:
+		case UIKeyAction::GoToEnd:
+			endCursor = _text.size();
+			if (!e.GetKeyActionModifier())
+				startCursor = endCursor;
+			break;
+
+		case UIKeyAction::Cut:
+			Clipboard::SetText(GetSelectedText());
+			if (!IsInputDisabled())
+			{
+				EraseSelection();
+				e.context->OnChange(this);
+			}
+			break;
+		case UIKeyAction::Copy:
+			Clipboard::SetText(GetSelectedText());
+			break;
 		case UIKeyAction::SelectAll:
 			startCursor = 0;
 			endCursor = _text.size();
 			break;
+		}
+
+		if (!IsInputDisabled())
+		{
+			switch (e.GetKeyAction())
+			{
+			case UIKeyAction::DelPrevLetter:
+			case UIKeyAction::DelNextLetter:
+			case UIKeyAction::DelPrevWord:
+			case UIKeyAction::DelNextWord:
+				if (IsLongSelection())
+				{
+					EraseSelection();
+				}
+				else
+				{
+					size_t to;
+					switch (e.GetKeyAction())
+					{
+					case UIKeyAction::DelPrevLetter:
+						to = PrevChar(_text, endCursor);
+						_text.erase(to, endCursor - to);
+						startCursor = endCursor = to;
+						break;
+					case UIKeyAction::DelNextLetter:
+						to = NextChar(_text, endCursor);
+						_text.erase(endCursor, to - endCursor);
+						break;
+					case UIKeyAction::DelPrevWord:
+						to = PrevWord(_text, endCursor);
+						_text.erase(to, endCursor - to);
+						startCursor = endCursor = to;
+						break;
+					case UIKeyAction::DelNextWord:
+						to = NextWord(_text, endCursor);
+						_text.erase(endCursor, to - endCursor);
+						break;
+					}
+				}
+				e.context->OnChange(this);
+				break;
+			case UIKeyAction::Paste:
+				EnterText(Clipboard::GetText().c_str());
+				break;
+			}
 		}
 	}
 	else if (e.type == UIEventType::TextInput)
@@ -952,7 +1201,7 @@ void Textbox::OnEvent(UIEvent& e)
 		if (!IsInputDisabled())
 		{
 			char ch[5];
-			if (e.GetUTF32Char() >= 32 && e.GetUTF8Text(ch))
+			if (e.GetUTF32Char() >= 32 && e.GetUTF32Char() != 127 && e.GetUTF8Text(ch))
 				EnterText(ch);
 		}
 	}
@@ -967,6 +1216,13 @@ void Textbox::OnSerialize(IDataSerializer& s)
 	_text.resize(len);
 	if (len)
 		s.Process(&_text[0], len);
+}
+
+StringView Textbox::GetSelectedText() const
+{
+	int min = startCursor < endCursor ? startCursor : endCursor;
+	int max = startCursor > endCursor ? startCursor : endCursor;
+	return StringView(_text.data() + min, max - min);
 }
 
 void Textbox::EnterText(const char* str)

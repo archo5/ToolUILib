@@ -196,6 +196,45 @@ BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
 }
 
 
+static std::string WCHARToUTF8(const WCHAR* str)
+{
+	int size = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
+	std::string ret;
+	if (size <= 0)
+		return ret;
+	ret.resize(size);
+	size = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, &ret[0], size, nullptr, nullptr);
+	if (size <= 0)
+		return {};
+	ret.resize(size);
+	return ret;
+}
+
+static HGLOBAL UTF8ToWCHARGlobal(StringView str)
+{
+	int size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
+	if (size < 0)
+		return INVALID_HANDLE_VALUE;
+	HGLOBAL hglb = ::GlobalAlloc(GMEM_MOVEABLE, (size + 1) * sizeof(WCHAR));
+	WCHAR* dest = (WCHAR*)::GlobalLock(hglb);
+	size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), dest, size);
+	if (size < 0)
+	{
+		::GlobalUnlock(hglb);
+		::GlobalFree(hglb);
+		return INVALID_HANDLE_VALUE;
+	}
+	dest[size + 1] = 0;
+	::GlobalUnlock(hglb);
+	return hglb;
+}
+
+static HGLOBAL UTF8ToWCHARGlobal(const char* str)
+{
+	return UTF8ToWCHARGlobal(StringView(str, SIZE_MAX));
+}
+
+
 namespace ui {
 
 
@@ -212,6 +251,48 @@ uint32_t GetDoubleClickTime()
 }
 
 } // platform
+
+
+bool Clipboard::HasText()
+{
+	return ::IsClipboardFormatAvailable(CF_UNICODETEXT);
+}
+
+std::string Clipboard::GetText()
+{
+	std::string ret;
+	if (HasText())
+	{
+		if (!::OpenClipboard(nullptr))
+			return ret;
+		HANDLE hcbd = ::GetClipboardData(CF_UNICODETEXT);
+		WCHAR* mem = (WCHAR*)::GlobalLock(hcbd);
+		if (mem)
+		{
+			ret = WCHARToUTF8(mem);
+			::GlobalUnlock(hcbd);
+		}
+		::CloseClipboard();
+		return ret;
+	}
+	return ret;
+}
+
+void Clipboard::SetText(const char* text)
+{
+	if (!::OpenClipboard(nullptr))
+		return;
+	::SetClipboardData(CF_UNICODETEXT, UTF8ToWCHARGlobal(text));
+	::CloseClipboard();
+}
+
+void Clipboard::SetText(StringView text)
+{
+	if (!::OpenClipboard(nullptr))
+		return;
+	::SetClipboardData(CF_UNICODETEXT, UTF8ToWCHARGlobal(text));
+	::CloseClipboard();
+}
 
 
 DataCategoryTag DCT_ResizeWindow[1];
@@ -319,11 +400,11 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnKeyInput(down, vk, pk, numRepeats);
 	}
-	void OnKeyAction(UIKeyAction act, uint16_t numRepeats)
+	void OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier = false)
 	{
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnKeyAction(act, numRepeats);
+		mainTarget.target->OnKeyAction(act, numRepeats, modifier);
 	}
 	void OnTextInput(uint32_t ch, uint16_t numRepeats)
 	{
@@ -757,7 +838,8 @@ void NativeWindowBase::InvalidateAll()
 {
 	if (!_impl->AddToInvalidationList())
 		return;
-	PostMessage(_impl->window, WM_USER + 2, 0, 0);
+	::SetTimer(_impl->window, 1, 0, nullptr);
+	//PostMessage(_impl->window, WM_USER + 2, 0, 0);
 }
 
 void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
@@ -1099,19 +1181,49 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			{
 				switch (wParam)
 				{
-				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::Activate, numRepeats); break;
+				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateDown, numRepeats); break;
 				case VK_RETURN: evsys->OnKeyAction(UIKeyAction::Enter, numRepeats); break;
-				case VK_BACK: evsys->OnKeyAction(UIKeyAction::Backspace, numRepeats); break;
-				case VK_DELETE: evsys->OnKeyAction(UIKeyAction::Delete, numRepeats); break;
 
-				case VK_LEFT: evsys->OnKeyAction(UIKeyAction::Left, numRepeats); break;
-				case VK_RIGHT: evsys->OnKeyAction(UIKeyAction::Right, numRepeats); break;
-				case VK_UP: evsys->OnKeyAction(UIKeyAction::Up, numRepeats); break;
-				case VK_DOWN: evsys->OnKeyAction(UIKeyAction::Down, numRepeats); break;
-				case VK_HOME: evsys->OnKeyAction(UIKeyAction::Home, numRepeats); break;
-				case VK_END: evsys->OnKeyAction(UIKeyAction::End, numRepeats); break;
+				case VK_BACK:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelPrevWord : UIKeyAction::DelPrevLetter,
+						numRepeats);
+					break;
+				case VK_DELETE:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelNextWord : UIKeyAction::DelNextLetter,
+						numRepeats);
+					evsys->OnKeyAction(UIKeyAction::Delete, numRepeats);
+					break;
+
+				case VK_LEFT:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::PrevWord : UIKeyAction::PrevLetter,
+						numRepeats,
+						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
+				case VK_RIGHT:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::NextWord : UIKeyAction::NextLetter,
+						numRepeats,
+						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
+				case VK_HOME:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToStart : UIKeyAction::GoToLineStart,
+						numRepeats,
+						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
+				case VK_END:
+					evsys->OnKeyAction(
+						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToEnd : UIKeyAction::GoToLineEnd,
+						numRepeats,
+						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
+
 				case VK_PRIOR: evsys->OnKeyAction(UIKeyAction::PageUp, numRepeats); break;
 				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, numRepeats); break;
+
 				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, numRepeats); break;
 
 				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, numRepeats); break;
@@ -1120,6 +1232,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::SelectAll, numRepeats); break;
 
 				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, numRepeats); break;
+				}
+			}
+			else
+			{
+				switch (wParam)
+				{
+				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateUp, numRepeats); break;
 				}
 			}
 		}

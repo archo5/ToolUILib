@@ -63,6 +63,12 @@ enum UIObjectFlags
 	UIObject_IsEdited = 1 << 11,
 	UIObject_IsChecked = 1 << 12,
 	UIObject_IsFocusable = 1 << 13,
+	UIObject_IsPressedMouse = 1 << 14,
+	UIObject_IsPressedOther = 1 << 15,
+	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
+	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and RerenderNode upon activation
+
+	UIObject_DB__Defaults = 0,
 };
 
 enum class Direction
@@ -167,6 +173,8 @@ struct DataReadSerializer : IDataSerializer
 
 struct UIObject
 {
+	static constexpr bool Persistent = false;
+
 	UIObject();
 	virtual ~UIObject();
 	virtual void OnInit() {}
@@ -175,6 +183,9 @@ struct UIObject
 
 	virtual void OnSerialize(IDataSerializer&) {}
 	void _SerializePersistent(IDataSerializer& s);
+
+	virtual void OnReset() {}
+	void _Reset();
 
 	virtual void OnEvent(UIEvent& e) {}
 	void _DoEvent(UIEvent& e);
@@ -238,6 +249,7 @@ struct UIObject
 	void RerenderNode();
 
 	bool IsHovered() const;
+	bool IsPressed() const;
 	bool IsClicked(int button = 0) const;
 	bool IsFocused() const;
 
@@ -262,7 +274,7 @@ struct UIObject
 
 	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
 
-	uint32_t flags = 0;
+	uint32_t flags = UIObject_DB__Defaults;
 	UIObject* parent = nullptr;
 	UIObject* firstChild = nullptr;
 	UIObject* lastChild = nullptr;

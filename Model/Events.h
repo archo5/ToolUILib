@@ -32,6 +32,7 @@ enum class UIEventType
 	MouseLeave,
 	MouseMove,
 	MouseScroll,
+	MouseCaptureChanged,
 	SetCursor,
 	ButtonDown,
 	ButtonUp,
@@ -68,19 +69,32 @@ enum class UIMouseButton
 
 enum class UIKeyAction
 {
-	Activate,
+	ActivateDown,
+	ActivateUp,
 	Enter,
-	Backspace,
-	Delete,
 
-	Left,
-	Right,
-	Up,
-	Down,
-	Home,
-	End,
+	Delete,
+	DelPrevLetter,
+	DelNextLetter,
+	DelPrevWord,
+	DelNextWord,
+
+	// mod: keep start of selection
+	// {
+	PrevLetter,
+	NextLetter,
+	PrevWord,
+	NextWord,
+
+	GoToLineStart,
+	GoToLineEnd,
+	GoToStart,
+	GoToEnd,
+
 	PageUp,
 	PageDown,
+	// }
+
 	FocusNext,
 	FocusPrev,
 
@@ -134,7 +148,7 @@ struct UIEvent
 	uint32_t longCode = 0;
 	uint8_t shortCode = 0;
 	bool down = false;
-	bool handled = false;
+	bool _stopPropagation = false;
 	uint16_t numRepeats = 0;
 	uintptr_t arg0 = 0, arg1 = 0;
 
@@ -142,8 +156,12 @@ struct UIEvent
 	ui::Node* GetTargetNode() const;
 	UIMouseButton GetButton() const;
 	UIKeyAction GetKeyAction() const;
+	bool GetKeyActionModifier() const;
 	uint32_t GetUTF32Char() const;
 	bool GetUTF8Text(char out[5]) const;
+
+	bool IsPropagationStopped() const { return _stopPropagation; }
+	void StopPropagation() { _stopPropagation = true; }
 };
 
 struct UITimerData
@@ -161,24 +179,32 @@ struct UIEventSystem
 	void RecomputeLayout();
 	float ProcessTimers(float dt);
 
-	void Repaint(UIElement* e);
+	void Repaint(UIObject* o);
 	void OnDestroy(UIObject* o);
-	void OnCommit(UIObject* e);
-	void OnChange(UIObject* e);
-	void OnChange(ui::Node* n);
+	void OnActivate(UIObject* o);
+	void OnCommit(UIObject* o);
+	void OnChange(UIObject* o);
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o);
+
+	bool DragCheck(UIEvent& e, UIMouseButton btn);
+
+	void CaptureMouse(UIObject* o);
+	bool ReleaseMouse();
+	UIObject* GetMouseCapture();
+
 	void SetTimer(UIObject* tgt, float t, int id = 0);
 	void SetDefaultCursor(ui::DefaultCursor cur);
 
 	UIObject* FindObjectAtPosition(float x, float y);
+	void MoveClickTo(UIObject* obj, UIMouseButton btn = UIMouseButton::Left);
 	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats);
-	void OnKeyAction(UIKeyAction act, uint16_t numRepeats);
+	void OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier);
 	void OnTextInput(uint32_t ch, uint16_t numRepeats);
 
 	ui::NativeWindowBase* GetNativeWindow() const;
@@ -187,9 +213,11 @@ struct UIEventSystem
 
 	UIObject* hoverObj = nullptr;
 	UIObject* dragHoverObj = nullptr;
+	UIObject* mouseCaptureObj = nullptr;
 	UIObject* clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
+	Point<float> clickStartPositions[5] = {};
 	UIObject* focusObj = nullptr;
 	UIObject* lastFocusObj = nullptr;
 	std::vector<UITimerData> pendingTimers;

@@ -57,22 +57,30 @@ struct DragDropTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
+		ctx->Text("Transfer countables");
+
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < 3; i++)
 		{
 			auto* btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
+			if (btn->flags & UIObject_DragHovered)
+			{
+				*btn + ui::Padding(4, 4, 10, 4);
+			}
 			btn->SetInputDisabled(slots[i] == 0);
-			HandleEvent(btn) = [this, i, btn](UIEvent& e)
+			btn->HandleEvent() = [this, i, btn](UIEvent& e)
 			{
 				struct Data : ui::DragDropData
 				{
 					Data(int f) : ui::DragDropData("slot item"), from(f) {}
 					int from;
 				};
-				if (e.type == UIEventType::DragStart)
+				if (e.context->DragCheck(e, UIMouseButton::Left))
 				{
 					if (slots[i] > 0)
+					{
 						ui::DragDrop::SetData(new Data(i));
+					}
 				}
 				else if (e.type == UIEventType::DragDrop)
 				{
@@ -80,36 +88,38 @@ struct DragDropTest : ui::Node
 					{
 						slots[i]++;
 						slots[ddd->from]--;
-						e.handled = true;
+						e.StopPropagation();
 						Rerender();
 					}
 				}
 				else if (e.type == UIEventType::DragEnter)
 				{
-					btn->GetStyle().SetPaddingBottom(10);
+					Rerender();
 				}
 				else if (e.type == UIEventType::DragLeave)
 				{
-					btn->GetStyle().SetPaddingBottom(4);
+					Rerender();
 				}
 			};
 		}
 		ctx->Pop();
 
+		ctx->Text("Slide-reorder (instant)");
+
 		ctx->Push<ui::ListBox>();
 		for (int i = 0; i < 4; i++)
 		{
+			struct Data : ui::DragDropData
+			{
+				Data(int f) : ui::DragDropData("current location"), at(f) {}
+				int at;
+			};
 			ctx->Push<ui::Selectable>()->HandleEvent() = [this, i](UIEvent& e)
 			{
-				struct Data : ui::DragDropData
+				if (e.context->DragCheck(e, UIMouseButton::Left))
 				{
-					Data(int f) : ui::DragDropData("current location"), at(f) {}
-					int at;
-				};
-				if (e.type == UIEventType::DragStart)
-				{
-					e.target->FindParentOfType<ui::Selectable>();
 					ui::DragDrop::SetData(new Data(i));
+					e.context->ReleaseMouse();
 				}
 				else if (e.type == UIEventType::DragEnter)
 				{
@@ -117,7 +127,9 @@ struct DragDropTest : ui::Node
 					{
 						// TODO transfer click state to current object
 						if (ddd->at != i)
-							Rerender();
+						{
+							e.context->MoveClickTo(e.current);
+						}
 						while (ddd->at < i)
 						{
 							int pos = ddd->at++;
@@ -129,10 +141,18 @@ struct DragDropTest : ui::Node
 							std::swap(iids[pos], iids[pos - 1]);
 						}
 					}
+					Rerender();
+				}
+				else if (e.type == UIEventType::DragLeave)
+				{
+					Rerender();
 				}
 			};
 			char bfr[32];
 			snprintf(bfr, 32, "item %d", iids[i]);
+			if (auto* dd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
+				if (dd->at == i)
+					strcat(bfr, " [dragging]");
 			ctx->Text(bfr);
 			ctx->Pop();
 		}
@@ -398,7 +418,7 @@ void CompactNodeEditTest::NodeUI(UIContainer* ctx, ExprNode*& node)
 	auto& b = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock());
 	if (node)
 	{
-		b.HandleEvent(UIEventType::Click) = [&node](UIEvent& e)
+		b.HandleEvent(UIEventType::ButtonUp) = [&node](UIEvent& e)
 		{
 			if (e.GetButton() == UIMouseButton::Right)
 			{
@@ -408,7 +428,7 @@ void CompactNodeEditTest::NodeUI(UIContainer* ctx, ExprNode*& node)
 				};
 				ui::Menu menu(items);
 				menu.Show(e.target);
-				e.handled = true;
+				e.StopPropagation();
 			}
 		};
 		node->UI(ctx);
@@ -1673,6 +1693,76 @@ struct SlidingHighlightAnim : ui::Node
 };
 
 
+struct SubUIBenchmark : ui::Node
+{
+	SubUIBenchmark()
+	{
+		for (int y = 0; y < 60; y++)
+		{
+			for (int x = 0; x < 60; x++)
+			{
+				points.push_back({ x * 12.f + 10.f, y * 12.f + 10.f });
+			}
+		}
+	}
+	void OnPaint() override
+	{
+		style::PaintInfo info(this);
+		ui::Theme::current->textBoxBase->paint_func(info);
+		auto r = finalRectC;
+
+		GL::BatchRenderer br;
+
+		GL::SetTexture(0);
+		br.Begin();
+
+		for (uint16_t pid = 0; pid < points.size(); pid++)
+		{
+			auto ddr = UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4);
+			if (subui.IsPressed(pid))
+				br.SetColor(1, 0, 1, 0.5f);
+			else if (subui.IsHovered(pid))
+				br.SetColor(1, 1, 0, 0.5f);
+			else
+				br.SetColor(0, 1, 1, 0.5f);
+			br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
+		}
+
+		br.End();
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		auto r = finalRectC;
+
+		subui.InitOnEvent(e);
+		for (uint16_t pid = 0; pid < points.size(); pid++)
+		{
+			switch (subui.DragOnEvent(pid, UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4), e))
+			{
+			case ui::SubUIDragState::Start:
+				dox = points[pid].x - e.x;
+				doy = points[pid].y - e.y;
+				break;
+			case ui::SubUIDragState::Move:
+				points[pid].x = e.x + dox;
+				points[pid].y = e.y + doy;
+				break;
+			}
+		}
+	}
+	void Render(UIContainer* ctx) override
+	{
+		GetStyle().SetPadding(3);
+		GetStyle().SetWidth(820);
+		GetStyle().SetHeight(820);
+	}
+
+	ui::SubUI<uint16_t> subui;
+	std::vector<Point<float>> points;
+	float dox = 0, doy = 0;
+};
+
+
 ui::DataCategoryTag DCT_ItemSelection[1];
 struct DataEditor : ui::Node
 {
@@ -1734,7 +1824,7 @@ struct DataEditor : ui::Node
 				ui::Menu menu(m);
 				int ret = menu.Show(this);
 				printf("%d\n", ret);
-				e.handled = true;
+				e.StopPropagation();
 			}
 		}
 		void Init(const char* txt, const std::function<void()> cb)
@@ -2002,24 +2092,32 @@ struct TestEntry
 static TestEntry testEntries[] =
 {
 	{ "Off", [](UIContainer* ctx) {} },
+	{},
+	{ "- Basic logic -" },
 	{ "Open/Close", [](UIContainer* ctx) { ctx->Make<OpenClose>(); } },
-	{ "Edge slice", [](UIContainer* ctx) { ctx->Make<EdgeSliceTest>(); } },
+	{ "Element reset", [](UIContainer* ctx) { ctx->Make<ElementResetTest>(); } },
 	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
+	{ "High element count", [](UIContainer* ctx) { ctx->Make<HighElementCountTest>(); } },
+	{},
+	{ "- Advanced/compound UI -" },
+	{ "Sliders", [](UIContainer* ctx) { ctx->Make<SlidersTest>(); } },
 	{ "Split pane", [](UIContainer* ctx) { ctx->Make<SplitPaneTest>(); } },
 	{ "Tabs", [](UIContainer* ctx) { ctx->Make<TabTest>(); } },
+	{ "Scrollbars", [](UIContainer* ctx) { ctx->Make<ScrollbarTest>(); } },
+	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
+	{ "Color picker", [](UIContainer* ctx) { ctx->Make<ColorPickerTest>(); } },
+	{ "IMGUI test", [](UIContainer* ctx) { ctx->Make<IMGUITest>(); } },
+	{},
+	{ "- Layout -" },
+	{ "Edge slice", [](UIContainer* ctx) { ctx->Make<EdgeSliceTest>(); } },
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
 	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },
-	{ "Scrollbars", [](UIContainer* ctx) { ctx->Make<ScrollbarTest>(); } },
-	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
-	{ "Thread worker test", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
-	{ "Threaded image rendering test", [](UIContainer* ctx) { ctx->Make<ThreadedImageRenderingTest>(); } },
-	{ "Sliders", [](UIContainer* ctx) { ctx->Make<SlidersTest>(); } },
-	{ "Color picker", [](UIContainer* ctx) { ctx->Make<ColorPickerTest>(); } },
-	{ "High element count test", [](UIContainer* ctx) { ctx->Make<HighElementCountTest>(); } },
-	{ "Element reset test", [](UIContainer* ctx) { ctx->Make<ElementResetTest>(); } },
-	{ "IMGUI test", [](UIContainer* ctx) { ctx->Make<IMGUITest>(); } },
+	{},
+	{ "- Threading -" },
+	{ "Thread worker", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
+	{ "Threaded image rendering", [](UIContainer* ctx) { ctx->Make<ThreadedImageRenderingTest>(); } },
 };
 static TestEntry demoEntries[] =
 {
@@ -2027,6 +2125,7 @@ static TestEntry demoEntries[] =
 	{ "Node editing", [](UIContainer* ctx) { ctx->Make<NodeEditTest>(); } },
 	{ "Compact node editing", [](UIContainer* ctx) { ctx->Make<CompactNodeEditTest>(); } },
 	{ "Sliding highlight anim", [](UIContainer* ctx) { ctx->Make<SlidingHighlightAnim>(); } },
+	{ "SubUI benchmark", [](UIContainer* ctx) { ctx->Make<SubUIBenchmark>(); } },
 };
 static bool rerenderAlways;
 struct TEST : ui::Node
@@ -2038,6 +2137,15 @@ struct TEST : ui::Node
 		ctx->Push<ui::MenuItemElement>()->SetText("Test");
 		for (auto& entry : testEntries)
 		{
+			if (!entry.func)
+			{
+				if (entry.name)
+					ctx->Make<ui::MenuItemElement>()->SetText(entry.name).SetDisabled(true);
+				else
+					ctx->Make<ui::MenuSeparatorElement>();
+				continue;
+			}
+
 			auto fn = [this, &entry]()
 			{
 				curTest = &entry;

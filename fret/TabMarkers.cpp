@@ -26,6 +26,10 @@ void TabMarkers::Render(UIContainer* ctx)
 				Marker& M = f->markerData.markers[row];
 				of->hexViewerState.GoToPos(M.at);
 			}
+		};
+		tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
+		{
+			size_t row = tv->GetHoverRow();
 			if (e.GetButton() == UIMouseButton::Right && row != SIZE_MAX)
 			{
 				Marker& M = f->markerData.markers[row];

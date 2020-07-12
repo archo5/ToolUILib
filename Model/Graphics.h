@@ -238,6 +238,8 @@ struct ImageElement : UIElement
 
 struct HueSatPicker : UIElement
 {
+	static constexpr bool Persistent = true;
+
 	HueSatPicker();
 	~HueSatPicker();
 	void OnEvent(UIEvent& e) override;

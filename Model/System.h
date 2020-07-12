@@ -61,13 +61,20 @@ struct UIContainer
 		if (obj && typeid(*obj) == typeid(T))
 		{
 			auto* t = static_cast<T*>(obj);
-			char buf[512];
-			DataWriteSerializer dws(buf);
-			t->_SerializePersistent(dws);
-			t->~T();
-			new (t) T();
-			DataReadSerializer drs(buf);
-			t->_SerializePersistent(drs);
+			if (T::Persistent)
+			{
+				t->_Reset();
+			}
+			else
+			{
+				char buf[512];
+				DataWriteSerializer dws(buf);
+				t->_SerializePersistent(dws);
+				t->~T();
+				new (t) T();
+				DataReadSerializer drs(buf);
+				t->_SerializePersistent(drs);
+			}
 			return t;
 		}
 		auto* p = new T();

@@ -354,7 +354,7 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 	rect = o->GetPaddingRect();
 	if (o->IsHovered())
 		state |= PS_Hover;
-	if (o->IsClicked())
+	if (o->IsPressed())
 		state |= PS_Down;
 	if (o->IsInputDisabled())
 		state |= PS_Disabled;

@@ -21,6 +21,15 @@ uint32_t GetDoubleClickTime();
 } // platform
 
 
+struct Clipboard
+{
+	static bool HasText();
+	static std::string GetText();
+	static void SetText(const char* text);
+	static void SetText(StringView text);
+};
+
+
 extern DataCategoryTag DCT_ResizeWindow[1];
 
 

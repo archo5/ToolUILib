@@ -55,7 +55,7 @@ void FileView::Render(UIContainer* ctx)
 	auto* hv = ctx->Make<HexViewer>();
 	curHexViewer = hv;
 	hv->Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
-	hv->HandleEvent(UIEventType::Click) = [this](UIEvent& e)
+	hv->HandleEvent(UIEventType::ButtonUp) = [this](UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Right)
 		{

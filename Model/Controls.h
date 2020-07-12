@@ -39,6 +39,7 @@ struct Checkbox : CheckboxBase
 		SetFlag(UIObject_IsChecked, checked);
 		return this;
 	}
+	void OnSelect() override;
 	// implement Activate event to flip source state
 };
 
@@ -95,6 +96,7 @@ struct RadioButton : RadioButtonBase
 		SetFlag(UIObject_IsChecked, selected);
 		return this;
 	}
+	void OnSelect() override;
 	// implement Activate event to set source state
 };
 
@@ -364,6 +366,7 @@ struct Textbox : UIElement
 	void OnSerialize(IDataSerializer& s) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
+	StringView GetSelectedText() const;
 	void EnterText(const char* str);
 	void EraseSelection();
 

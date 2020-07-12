@@ -30,6 +30,7 @@ struct StringView
 	const char* end() const { return _data + _size; }
 	bool operator == (const StringView& o) const { return _size == o._size && memcmp(_data, o._data, _size) == 0; }
 	bool operator != (const StringView& o) const { return !(*this == o); }
+	char operator [] (size_t pos) const { return _data[pos]; }
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{

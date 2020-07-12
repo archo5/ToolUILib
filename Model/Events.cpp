@@ -28,6 +28,11 @@ UIKeyAction UIEvent::GetKeyAction() const
 	return static_cast<UIKeyAction>(shortCode);
 }
 
+bool UIEvent::GetKeyActionModifier() const
+{
+	return arg0 != 0;
+}
+
 uint32_t UIEvent::GetUTF32Char() const
 {
 	return longCode;
@@ -77,11 +82,10 @@ UIEventSystem::UIEventSystem()
 void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt, bool stopOnDisabled)
 {
 	UIObject* obj = e.target;
-	while (obj != tgt && !e.handled)
+	while (obj != tgt && !e.IsPropagationStopped())
 	{
 		if (stopOnDisabled && obj->IsInputDisabled())
 			break;
-		e.current = obj;
 		obj->_DoEvent(e);
 		obj = obj->parent;
 	}
@@ -124,7 +128,7 @@ float UIEventSystem::ProcessTimers(float dt)
 	return minTime;
 }
 
-void UIEventSystem::Repaint(UIElement* e)
+void UIEventSystem::Repaint(UIObject* o)
 {
 	// TODO
 }
@@ -135,6 +139,8 @@ void UIEventSystem::OnDestroy(UIObject* o)
 		hoverObj = nullptr;
 	if (dragHoverObj == o)
 		dragHoverObj = nullptr;
+	if (mouseCaptureObj == o)
+		mouseCaptureObj = nullptr;
 	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
 		if (clickObj[i] == o)
 			clickObj[i] = nullptr;
@@ -154,22 +160,21 @@ void UIEventSystem::OnDestroy(UIObject* o)
 	}
 }
 
-void UIEventSystem::OnCommit(UIObject* e)
+void UIEventSystem::OnActivate(UIObject* o)
 {
-	UIEvent ev(this, e, UIEventType::Commit);
+	UIEvent ev(this, o, UIEventType::Activate);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnChange(UIObject* e)
+void UIEventSystem::OnCommit(UIObject* o)
 {
-	UIEvent ev(this, e, UIEventType::Change);
+	UIEvent ev(this, o, UIEventType::Commit);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnChange(ui::Node* n)
+void UIEventSystem::OnChange(UIObject* o)
 {
-	n->Rerender();
-	UIEvent ev(this, n, UIEventType::Change);
+	UIEvent ev(this, o, UIEventType::Change);
 	BubblingEvent(ev);
 }
 
@@ -201,6 +206,39 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 		UIEvent ev(this, focusObj, UIEventType::GotFocus);
 		focusObj->_DoEvent(ev);
 	}
+}
+
+bool UIEventSystem::DragCheck(UIEvent& e, UIMouseButton btn)
+{
+	int at = (int)btn;
+	return e.type == UIEventType::MouseMove
+		&& (e.current->flags & UIObject_IsPressedMouse)
+		&& (fabsf(e.x - clickStartPositions[at].x) >= 3.0f
+			|| fabsf(e.y - clickStartPositions[at].y) >= 3.0f);
+}
+
+void UIEventSystem::CaptureMouse(UIObject* o)
+{
+	ReleaseMouse();
+	mouseCaptureObj = o;
+}
+
+bool UIEventSystem::ReleaseMouse()
+{
+	if (mouseCaptureObj)
+	{
+		UIEvent ev(this, mouseCaptureObj, UIEventType::MouseCaptureChanged);
+		BubblingEvent(ev);
+
+		mouseCaptureObj = nullptr;
+		return true;
+	}
+	return false;
+}
+
+UIObject* UIEventSystem::GetMouseCapture()
+{
+	return mouseCaptureObj;
 }
 
 void UIEventSystem::SetTimer(UIObject* tgt, float t, int id)
@@ -236,8 +274,41 @@ UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
 	return o;
 }
 
+void UIEventSystem::MoveClickTo(UIObject* obj, UIMouseButton btn)
+{
+	int at = (int)btn;
+	if (auto* old = clickObj[at])
+	{
+		if (hoverObj == old)
+		{
+			hoverObj->flags &= ~UIObject_IsHovered;
+			hoverObj = obj;
+			hoverObj->flags |= UIObject_IsHovered;
+		}
+		old->flags &= ~(_UIObject_IsClicked_First << at);
+		clickObj[at] = obj;
+		obj->flags |= _UIObject_IsClicked_First << at;
+	}
+}
+
+static void _HoverEnterEvent(UIObject* o, UIObject* end, UIEvent& e, uint32_t fl)
+{
+	if (o == end)
+		return;
+	_HoverEnterEvent(o->parent, end, e, fl);
+
+	o->flags |= fl;
+	e.target = o;
+	e._stopPropagation = false;
+	o->_DoEvent(e);
+}
+
 void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents)
 {
+	auto* tgt = dragEvents ?
+		ui::DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(x, y) :
+		mouseCaptureObj ? mouseCaptureObj : FindObjectAtPosition(x, y);
+
 	UIEvent ev(this, curHoverObj, dragEvents ? UIEventType::DragLeave : UIEventType::MouseLeave);
 	ev.x = x;
 	ev.y = y;
@@ -245,10 +316,10 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
 
 	auto* o = curHoverObj;
-	while (o && !o->Contains(x, y))
+	while (o && (!tgt || !tgt->IsChildOrSame(o)))
 	{
 		o->flags &= ~hoverFlag;
-		ev.current = o;
+		ev._stopPropagation = false;
 		o->_DoEvent(ev);
 		o = o->parent;
 	}
@@ -256,54 +327,31 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	ev.type = dragEvents ? UIEventType::DragMove : UIEventType::MouseMove;
 	ev.dx = x - prevMouseX;
 	ev.dy = y - prevMouseY;
-	for (auto* p = o; p; p = p->parent)
+	ev.target = tgt;
+	ev._stopPropagation = false;
+	BubblingEvent(ev);
+#if 0
+	for (auto* p = tgt; p; p = p->parent)
 	{
-		ev.current = p;
+		printf("UHO type=%d ptr=%p\n", ev.type, p);
 		p->_DoEvent(ev);
 	}
+#endif
 
 	ev.type = dragEvents ? UIEventType::DragEnter : UIEventType::MouseEnter;
 	ev.dx = 0;
 	ev.dy = 0;
-	if (!o && container->rootNode && container->rootNode->Contains(x, y))
-	{
-		o = container->rootNode;
-		o->flags |= hoverFlag;
-		ev.current = o;
-		ev.target = o;
-		o->_DoEvent(ev);
-	}
 
-	if (o)
-	{
-		bool found = true;
-		while (found)
-		{
-			found = false;
-			for (auto* ch = o->lastChild; ch; ch = ch->prev)
-			{
-				if (ch->Contains(x, y))
-				{
-					o = ch;
-					o->flags |= hoverFlag;
-					ev.current = o;
-					ev.target = o;
-					o->_DoEvent(ev);
-					found = true;
-					break;
-				}
-			}
-		}
-	}
+	_HoverEnterEvent(tgt, o, ev, hoverFlag);
 
-	curHoverObj = o;
+	curHoverObj = tgt;
 }
 
 void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
 {
 	UIEvent ev(this, hoverObj, UIEventType::SetCursor);
 	BubblingEvent(ev);
-	if (!ev.handled)
+	if (!ev.IsPropagationStopped())
 	{
 		SetDefaultCursor(ui::DefaultCursor::Default);
 	}
@@ -317,19 +365,20 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 			clickCounts[i] = 0;
 	}
 
-	if (clickObj[0] && !dragEventAttempted && (x != 0 || y != 0))
+#if 0
+	if (clickObj[0] && !dragEventAttempted && (x != prevMouseX || y != prevMouseY))
 	{
 		dragEventAttempted = true;
 		if (clickObj[0])
 		{
 			UIEvent ev(this, clickObj[0], UIEventType::DragStart);
-			ev.x = x;
-			ev.y = y;
+			ev.x = prevMouseX;
+			ev.y = prevMouseY;
 			dragEventInProgress = false;
 			for (auto* p = clickObj[0]; p; p = p->parent)
 			{
 				p->_DoEvent(ev);
-				if (ev.handled || ui::DragDrop::GetData())
+				if (ev.IsPropagationStopped() || ui::DragDrop::GetData())
 				{
 					dragEventInProgress = ui::DragDrop::GetData() != nullptr;
 					if (dragEventInProgress)
@@ -339,37 +388,12 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 			}
 		}
 	}
+#endif
 
-	bool anyClicked = false;
-	for (int i = 0; i < 5; i++)
-	{
-		if (clickObj[i])
-		{
-			anyClicked = true;
-			break;
-		}
-	}
+	_UpdateHoverObj(hoverObj, x, y, false);
+	_UpdateCursor(hoverObj);
 
-	if (anyClicked)
-	{
-		UIEvent ev(this, hoverObj, UIEventType::MouseMove);
-		ev.x = x;
-		ev.y = y;
-		ev.dx = x - prevMouseX;
-		ev.dy = y - prevMouseY;
-		for (auto* p = hoverObj; p; p = p->parent)
-		{
-			ev.current = p;
-			p->_DoEvent(ev);
-		}
-	}
-	else
-	{
-		_UpdateHoverObj(hoverObj, x, y, false);
-		_UpdateCursor(hoverObj);
-	}
-	if (dragEventInProgress)
-		_UpdateHoverObj(dragHoverObj, x, y, true);
+	_UpdateHoverObj(dragHoverObj, x, y, true);
 
 	prevMouseX = x;
 	prevMouseY = y;
@@ -390,6 +414,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			p->flags |= _UIObject_IsClicked_First << id;
 
 		clickObj[id] = hoverObj;
+		clickStartPositions[id] = { x, y };
 		BubblingEvent(ev);
 	}
 	else
@@ -406,50 +431,45 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 
 			ev.type = UIEventType::Click;
 			ev.numRepeats = clickCount;
-			ev.handled = false;
+			ev._stopPropagation = false;
 			BubblingEvent(ev);
-			ev.numRepeats = 0;
-			if (which == UIMouseButton::Left)
-			{
-				ev.type = UIEventType::Activate;
-				ev.handled = false;
-				BubblingEvent(ev, nullptr, true);
-			}
 		}
 
 		if (which == UIMouseButton::Left)
 		{
-			if (dragEventInProgress)
+			if (ui::DragDrop::GetData())
 			{
 				ev.type = UIEventType::DragDrop;
-				ev.target = ev.current = dragHoverObj;
-				ev.handled = false;
+				ev.target = dragHoverObj;
+				ev._stopPropagation = false;
 				BubblingEvent(ev);
 
+#if 0
 				ev.type = UIEventType::DragLeave;
 				ev.target = dragHoverObj;
-				ev.handled = false;
+				ev._stopPropagation = false;
 				for (auto* p = dragHoverObj; p; p = p->parent)
 				{
-					ev.current = p;
 					p->_DoEvent(ev);
 				}
+#endif
 
 				ev.type = UIEventType::DragEnd;
-				ev.target = ev.current = clickObj[id];
-				ev.handled = false;
+				ev.target = clickObj[id];
+				ev._stopPropagation = false;
 				BubblingEvent(ev);
 
 				ui::DragDrop::SetData(nullptr);
-				dragHoverObj = nullptr;
+				_UpdateHoverObj(dragHoverObj, x, y, true);
+				//dragHoverObj = nullptr;
 				dragEventInProgress = false;
 			}
 			dragEventAttempted = false;
 		}
 
 		ev.type = UIEventType::ButtonUp;
-		ev.handled = false;
-		ev.target = ev.current = clickObj[id];
+		ev._stopPropagation = false;
+		ev.target = clickObj[id];
 		clickObj[id] = nullptr;
 		BubblingEvent(ev);
 	}
@@ -478,26 +498,21 @@ void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numR
 	}
 }
 
-void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats)
+void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier)
 {
 	UIEvent ev(this, focusObj, UIEventType::KeyAction);
 	if (focusObj)
 	{
 		ev.shortCode = uint8_t(act);
 		ev.numRepeats = numRepeats;
+		ev.arg0 = modifier;
 		BubblingEvent(ev);
 	}
 
-	if (!ev.handled)
+	if (!ev.IsPropagationStopped())
 	{
 		if (act == UIKeyAction::Inspect)
 			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
-		else if (act == UIKeyAction::Activate)
-		{
-			ev.type = UIEventType::Activate;
-			if (focusObj)
-				BubblingEvent(ev, nullptr, true);
-		}
 		else if (act == UIKeyAction::FocusNext && lastFocusObj)
 		{
 			bool found = false;

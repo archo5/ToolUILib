@@ -51,6 +51,10 @@ void TabImages::Render(UIContainer* ctx)
 					tv->RerenderNode();
 				}
 			}
+		};
+		tv->HandleEvent(tv, UIEventType::ButtonUp) = [this, tv](UIEvent& e)
+		{
+			size_t row = tv->GetHoverRow();
 			if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Right)
 			{
 				auto idx = workspace->ddimgSrc._indices[row];
@@ -62,7 +66,7 @@ void TabImages::Render(UIContainer* ctx)
 				};
 				ui::Menu menu(items);
 				menu.Show(e.current);
-				e.handled = true;
+				e.StopPropagation();
 			}
 		};
 		tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)

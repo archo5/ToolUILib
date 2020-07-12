@@ -10,13 +10,9 @@ namespace imm {
 bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 {
 	auto* btn = ctx->MakeWithText<ui::Button>(text);
+	btn->flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(btn);
-	btn->HandleEvent(UIEventType::Activate) = [btn](UIEvent&)
-	{
-		btn->flags |= UIObject_IsEdited;
-		btn->RerenderNode();
-	};
 	bool clicked = false;
 	if (btn->flags & UIObject_IsEdited)
 	{
@@ -30,6 +26,7 @@ bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 {
 	auto* cb = ctx->Make<ui::Checkbox>();
+	cb->flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(cb);
 	bool edited = false;
@@ -39,11 +36,6 @@ bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 		edited = true;
 		cb->RerenderNode();
 	}
-	cb->HandleEvent(UIEventType::Activate) = [cb](UIEvent&)
-	{
-		cb->flags |= UIObject_IsEdited;
-		cb->RerenderNode();
-	};
 	cb->Init(val);
 	return edited;
 }
@@ -61,6 +53,7 @@ bool EditBool(UIContainer* ctx, bool& val, ModInitList mods)
 bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods)
 {
 	auto* rb = text ? ctx->MakeWithText<ui::RadioButton>(text) : ctx->Make<ui::RadioButton>();
+	rb->flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(rb);
 	bool edited = false;
@@ -70,11 +63,6 @@ bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mo
 		edited = true;
 		rb->RerenderNode();
 	}
-	rb->HandleEvent(UIEventType::Activate) = [rb](UIEvent&)
-	{
-		rb->flags |= UIObject_IsEdited;
-		rb->RerenderNode();
-	};
 	rb->Init(val);
 	return edited;
 }
@@ -138,7 +126,17 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 		{
 			if (tb->IsInputDisabled())
 				return;
-			if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			{
+				e.context->CaptureMouse(e.current);
+				e.current->flags |= UIObject_IsPressedMouse;
+			}
+			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+			{
+				e.current->flags &= ~UIObject_IsPressedMouse;
+				e.context->ReleaseMouse();
+			}
+			if (e.type == UIEventType::MouseMove && e.target->IsPressed() && e.dx != 0)
 			{
 				if (tb->IsFocused())
 					e.context->SetKeyboardFocus(nullptr);
@@ -168,7 +166,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 			if (e.type == UIEventType::SetCursor)
 			{
 				e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
-				e.handled = true;
+				e.StopPropagation();
 			}
 		};
 	}
