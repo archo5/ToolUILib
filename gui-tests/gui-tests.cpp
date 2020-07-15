@@ -157,6 +157,29 @@ struct DragDropTest : ui::Node
 			ctx->Pop();
 		}
 		ctx->Pop();
+
+		ctx->Text("File receiver");
+
+		ctx->Push<ui::ListBox>()->HandleEvent(UIEventType::DragDrop) = [this](UIEvent& e)
+		{
+			if (auto* ddd = static_cast<ui::DragDropFiles*>(ui::DragDrop::GetData(ui::DragDropFiles::NAME)))
+			{
+				filePaths = ddd->paths;
+				Rerender();
+			}
+		};
+		if (filePaths.empty())
+		{
+			ctx->Text("Drop files here");
+		}
+		else
+		{
+			for (const auto& path : filePaths)
+			{
+				ctx->Text(path);
+			}
+		}
+		ctx->Pop();
 	}
 	void OnSerialize(IDataSerializer& s) override
 	{
@@ -166,6 +189,7 @@ struct DragDropTest : ui::Node
 
 	int slots[3] = { 5, 2, 0 };
 	int iids[4] = { 1, 2, 3, 4 };
+	std::vector<std::string> filePaths;
 };
 
 

@@ -305,9 +305,8 @@ template <class T> struct SubUI
 	T _pressed = NoValue;
 };
 
-class DragDropData
+struct DragDropData
 {
-public:
 	DragDropData() {}
 	DragDropData(const std::string& t) : type(t) {}
 	virtual ~DragDropData() {}
@@ -315,18 +314,24 @@ public:
 	std::string type;
 };
 
-class DragDropText : public DragDropData
+struct DragDropText : DragDropData
 {
-public:
 	DragDropText();
 	DragDropText(const std::string& ty, const std::string& txt) : DragDropData(ty), text(txt) {}
 
 	std::string text;
 };
 
-class DragDrop
+struct DragDropFiles : DragDropData
 {
-public:
+	static constexpr const char* NAME = "files";
+	DragDropFiles() : DragDropData(NAME) {}
+
+	std::vector<std::string> paths;
+};
+
+struct DragDrop
+{
 	static void SetData(DragDropData* data);
 	static DragDropData* GetData(const char* type = nullptr);
 };

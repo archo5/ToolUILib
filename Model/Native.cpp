@@ -427,6 +427,7 @@ struct NativeWindow_Impl
 		system.nativeWindow = owner;
 
 		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
+		DragAcceptFiles(window, TRUE);
 		renderCtx = GL::CreateRenderContext(window);
 
 		//UpdateVisibilityState();
@@ -1309,6 +1310,40 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				window->menu->CallActivationFunction(LOWORD(wParam) - 1);
 				return TRUE;
 			}
+		}
+		break;
+	case WM_DROPFILES:
+		if (auto* window = GetNativeWindow(hWnd))
+		{
+			auto hdrop = (HDROP)wParam;
+			POINT pt;
+			if (!DragQueryPoint(hdrop, &pt))
+				goto error;
+			UINT numFiles = DragQueryFileW(hdrop, 0xffffffff, nullptr, 0);
+			DragDropFiles* files = new DragDropFiles;
+			files->paths.reserve(numFiles);
+			for (UINT i = 0; i < numFiles; i++)
+			{
+				WCHAR path[MAX_PATH + 1];
+				UINT len = DragQueryFileW(hdrop, i, path, MAX_PATH);
+				path[len] = 0;
+				char bfr[MAX_PATH * 3 + 1];
+				int len2 = WideCharToMultiByte(CP_UTF8, 0, path, len, bfr, MAX_PATH * 3, nullptr, nullptr);
+				bfr[len2] = 0;
+				files->paths.push_back(bfr);
+			}
+
+			DragDrop::SetData(files);
+			{
+				auto* tgt = window->GetEventSys().FindObjectAtPosition(pt.x, pt.y);
+				UIEvent ev(&window->GetEventSys(), tgt, UIEventType::DragDrop);
+				window->GetEventSys().BubblingEvent(ev);
+			}
+			DragDrop::SetData(nullptr);
+
+		error:
+			DragFinish(hdrop);
+			return 0;
 		}
 		break;
 	}
