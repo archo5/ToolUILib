@@ -654,14 +654,16 @@ struct Subscription
 		if (nextInNode)
 			nextInNode->prevInNode = this;
 		else
-			node->_firstSub = node->_lastSub = this;
+			node->_lastSub = this;
+		node->_firstSub = this;
 
 		prevInTable = nullptr;
 		nextInTable = tableEntry->_firstSub;
 		if (nextInTable)
 			nextInTable->prevInTable = this;
 		else
-			tableEntry->_firstSub = tableEntry->_lastSub = this;
+			tableEntry->_lastSub = this;
+		tableEntry->_firstSub = this;
 	}
 	void Unlink()
 	{
@@ -777,6 +779,25 @@ bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 		}
 	}
 	return true;
+}
+
+
+AddTooltip::AddTooltip(const std::string& s)
+{
+	_evfn = [s](UIContainer* ctx)
+	{
+		ctx->Text(s);
+	};
+}
+
+void AddTooltip::Apply(UIObject* obj) const
+{
+	auto fn = _evfn;
+	obj->HandleEvent(UIEventType::Tooltip) = [fn{ std::move(fn) }](UIEvent& e)
+	{
+		ui::Tooltip::Set(fn);
+		e.StopPropagation();
+	};
 }
 
 } // ui

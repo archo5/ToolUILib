@@ -180,6 +180,8 @@ struct DragDropTest : ui::Node
 			}
 		}
 		ctx->Pop();
+
+		ctx->Make<ui::DefaultOverlayRenderer>();
 	}
 	void OnSerialize(IDataSerializer& s) override
 	{
@@ -635,12 +637,22 @@ struct TabTest : ui::Node
 		{
 			ctx->Push<ui::TabButtonList>();
 			{
-				ctx->MakeWithText<ui::TabButtonT<int>>("First tab")->Init(tab1, 0);
-				ctx->MakeWithText<ui::TabButton>("Second tab")->Init(tab1 == 1)->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+				ctx->Push<ui::TabButtonT<int>>()->Init(tab1, 0);
+				ctx->Text("First tab") + ui::Padding(5);
+				ctx->MakeWithText<ui::Button>("button");
+				ctx->Pop();
+
+				ctx->Push<ui::TabButton>()->Init(tab1 == 1)->HandleEvent(UIEventType::Activate) = [this](UIEvent& e)
 				{
-					tab1 = 1;
-					Rerender();
+					if (e.target == e.current)
+					{
+						tab1 = 1;
+						Rerender();
+					}
 				};
+				ctx->Text("Second tab") + ui::Padding(5);
+				ctx->MakeWithText<ui::Button>("button");
+				ctx->Pop();
 			}
 			ctx->Pop();
 
@@ -662,12 +674,22 @@ struct TabTest : ui::Node
 		{
 			ctx->Push<ui::TabButtonList>();
 			{
-				ctx->MakeWithText<ui::TabButton>("First tab")->Init(tab2 == 0)->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+				ctx->Push<ui::TabButton>()->Init(tab2 == 0)->HandleEvent(UIEventType::Activate) = [this](UIEvent& e)
 				{
-					tab2 = 0;
-					Rerender();
+					if (e.target == e.current)
+					{
+						tab2 = 0;
+						Rerender();
+					}
 				};
-				ctx->MakeWithText<ui::TabButtonT<int>>("Second tab")->Init(tab2, 1);
+				ctx->Text("First tab") + ui::Padding(5);
+				ctx->MakeWithText<ui::Button>("button");
+				ctx->Pop();
+
+				ctx->Push<ui::TabButtonT<int>>()->Init(tab2, 1);
+				ctx->Text("Second tab") + ui::Padding(5);
+				ctx->MakeWithText<ui::Button>("button");
+				ctx->Pop();
 			}
 			ctx->Pop();
 
@@ -1367,6 +1389,67 @@ struct ZeroRerenderTest : ui::Node
 	std::string text;
 };
 
+struct GlobalEventsTest : ui::Node
+{
+	struct EventTest : ui::Node
+	{
+		static constexpr bool Persistent = true;
+		void Render(UIContainer* ctx) override
+		{
+			Subscribe(dct);
+			ctx->Push<ui::Panel>();
+			count++;
+			char bfr[64];
+			snprintf(bfr, 64, "%s: %d", name, count);
+			ctx->Text(bfr);
+			infofn(bfr);
+			ctx->Text(bfr);
+			ctx->Pop();
+		}
+		const char* name;
+		ui::DataCategoryTag* dct;
+		std::function<void(char*)> infofn;
+		int count = -1;
+	};
+
+	void Render(UIContainer* ctx) override
+	{
+		for (auto* e = ctx->Make<EventTest>();
+			e->name = "Mouse moved",
+			e->dct = ui::DCT_MouseMoved,
+			e->infofn = [this](char* bfr) { snprintf(bfr, 64, "mouse pos: %g; %g", system->eventSystem.prevMouseX, system->eventSystem.prevMouseY); },
+			0;);
+		
+		for (auto* e = ctx->Make<EventTest>();
+			e->name = "Resize window",
+			e->dct = ui::DCT_ResizeWindow,
+			e->infofn = [this](char* bfr) { auto ws = GetNativeWindow()->GetSize(); snprintf(bfr, 64, "window size: %dx%d", ws.x, ws.y); },
+			0;);
+
+		for (auto* e = ctx->Make<EventTest>();
+			e->name = "Drag/drop data changed",
+			e->dct = ui::DCT_DragDropDataChanged,
+			e->infofn = [this](char* bfr) { auto* ddd = ui::DragDrop::GetData(); snprintf(bfr, 64, "drag data: %s", !ddd ? "<none>" : ddd->type.c_str()); },
+			0;);
+
+		for (auto* e = ctx->Make<EventTest>();
+			e->name = "Tooltip changed",
+			e->dct = ui::DCT_TooltipChanged,
+			e->infofn = [this](char* bfr) { snprintf(bfr, 64, "tooltip: %s", ui::Tooltip::IsSet() ? "set" : "<none>"); },
+			0;);
+
+		ctx->MakeWithText<ui::Button>("Draggable")->HandleEvent() = [](UIEvent& e)
+		{
+			if (e.context->DragCheck(e, UIMouseButton::Left))
+			{
+				ui::DragDrop::SetData(new ui::DragDropText("test", "text"));
+			}
+		};
+		*ctx->MakeWithText<ui::Button>("Tooltip") + ui::AddTooltip("Tooltip");
+		ctx->Make<ui::DefaultOverlayRenderer>();
+	}
+};
+
 struct ElementResetTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -1515,6 +1598,22 @@ struct IMGUITest : ui::Node
 	uint64_t uint64Val = 2;
 	float floatVal = 3.14f;
 	float float4val[4] = { 1, 2, 3, 4 };
+};
+
+struct TooltipTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		*ctx->MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
+		*ctx->MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([](UIContainer* ctx)
+		{
+			bool t = true, f = false;
+			ui::imm::PropEditBool(ctx, "Done", t, { ui::Enable(false) });
+			ui::imm::PropEditBool(ctx, "Not done", f, { ui::Enable(false) });
+		});
+
+		ctx->Make<ui::DefaultOverlayRenderer>();
+	}
 };
 
 
@@ -2172,6 +2271,7 @@ static TestEntry testEntries[] =
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },
 	{ "High element count", [](UIContainer* ctx) { ctx->Make<HighElementCountTest>(); } },
 	{ "Zero-rerender", [](UIContainer* ctx) { ctx->Make<ZeroRerenderTest>(); } },
+	{ "Global events", [](UIContainer* ctx) { ctx->Make<GlobalEventsTest>(); } },
 	{},
 	{ "- Advanced/compound UI -" },
 	{ "Sliders", [](UIContainer* ctx) { ctx->Make<SlidersTest>(); } },
@@ -2181,6 +2281,7 @@ static TestEntry testEntries[] =
 	{ "Image", [](UIContainer* ctx) { ctx->Make<ImageTest>(); } },
 	{ "Color picker", [](UIContainer* ctx) { ctx->Make<ColorPickerTest>(); } },
 	{ "IMGUI test", [](UIContainer* ctx) { ctx->Make<IMGUITest>(); } },
+	{ "Tooltip", [](UIContainer* ctx) { ctx->Make<TooltipTest>(); } },
 	{},
 	{ "- Layout -" },
 	{ "Edge slice", [](UIContainer* ctx) { ctx->Make<EdgeSliceTest>(); } },

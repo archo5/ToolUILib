@@ -407,4 +407,27 @@ struct CollapsibleTreeNode : UIElement
 	bool _hovered = false;
 };
 
+struct OverlayInfoFrame : UIElement
+{
+	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+};
+
+struct TooltipFrame : OverlayInfoFrame
+{
+	TooltipFrame();
+};
+
+struct DragDropDataFrame : OverlayInfoFrame
+{
+	DragDropDataFrame();
+};
+
+struct DefaultOverlayRenderer : Node
+{
+	void Render(UIContainer* ctx) override;
+
+	bool drawTooltip = true;
+	bool drawDragDrop = true;
+};
+
 } // ui

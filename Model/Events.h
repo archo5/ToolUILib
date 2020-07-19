@@ -1,12 +1,14 @@
 
 #pragma once
 #include <vector>
+#include <functional>
 #include "../Core/Math.h"
 
 
 namespace ui {
 struct NativeWindowBase;
 struct Node;
+extern struct DataCategoryTag DCT_MouseMoved[1];
 } // ui
 
 using UIRect = AABB<float>;
@@ -27,6 +29,7 @@ enum class UIEventType
 	Commit,
 	Paint,
 	Timer,
+	Tooltip,
 
 	MouseEnter,
 	MouseLeave,
@@ -200,6 +203,7 @@ struct UIEventSystem
 	void MoveClickTo(UIObject* obj, UIMouseButton btn = UIMouseButton::Left);
 	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
+	void _UpdateTooltip();
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
@@ -214,6 +218,7 @@ struct UIEventSystem
 	UIObject* hoverObj = nullptr;
 	UIObject* dragHoverObj = nullptr;
 	UIObject* mouseCaptureObj = nullptr;
+	UIObject* tooltipObj = nullptr;
 	UIObject* clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
@@ -310,13 +315,13 @@ struct DragDropData
 	DragDropData() {}
 	DragDropData(const std::string& t) : type(t) {}
 	virtual ~DragDropData() {}
+	virtual void Render(UIContainer* ctx);
 
 	std::string type;
 };
 
 struct DragDropText : DragDropData
 {
-	DragDropText();
 	DragDropText(const std::string& ty, const std::string& txt) : DragDropData(ty), text(txt) {}
 
 	std::string text;
@@ -330,10 +335,22 @@ struct DragDropFiles : DragDropData
 	std::vector<std::string> paths;
 };
 
+extern struct DataCategoryTag DCT_DragDropDataChanged[1];
 struct DragDrop
 {
 	static void SetData(DragDropData* data);
 	static DragDropData* GetData(const char* type = nullptr);
+};
+
+extern struct DataCategoryTag DCT_TooltipChanged[1];
+struct Tooltip
+{
+	using RenderFunc = std::function<void(UIContainer*)>;
+
+	static void Set(const RenderFunc& f);
+	static void Unset();
+	static bool IsSet();
+	static void Render(UIContainer* ctx);
 };
 
 } // ui

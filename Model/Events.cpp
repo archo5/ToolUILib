@@ -7,6 +7,7 @@
 
 namespace ui {
 uint32_t g_curLayoutFrame = 0;
+DataCategoryTag DCT_MouseMoved[1];
 } // ui
 
 
@@ -59,9 +60,9 @@ bool UIEvent::GetUTF8Text(char out[5]) const
 		out[2] = 0x80 | ((utf32char >> 10) & 0x3f);
 		out[3] = 0;
 	}
-	else if (utf32char <= 0xffff)
+	else if (utf32char <= 0x10ffff)
 	{
-		out[0] = 0xf0 | (utf32char & 0xe);
+		out[0] = 0xf0 | (utf32char & 0x7);
 		out[1] = 0x80 | ((utf32char >> 3) & 0x3f);
 		out[2] = 0x80 | ((utf32char >> 9) & 0x3f);
 		out[3] = 0x80 | ((utf32char >> 15) & 0x3f);
@@ -141,6 +142,12 @@ void UIEventSystem::OnDestroy(UIObject* o)
 		dragHoverObj = nullptr;
 	if (mouseCaptureObj == o)
 		mouseCaptureObj = nullptr;
+	if (tooltipObj == o)
+	{
+		tooltipObj = nullptr;
+		ui::Tooltip::Unset();
+		ui::Notify(ui::DCT_TooltipChanged);
+	}
 	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
 		if (clickObj[i] == o)
 			clickObj[i] = nullptr;
@@ -211,6 +218,8 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 bool UIEventSystem::DragCheck(UIEvent& e, UIMouseButton btn)
 {
 	int at = (int)btn;
+	if (ui::DragDrop::GetData())
+		return false;
 	return e.type == UIEventType::MouseMove
 		&& (e.current->flags & UIObject_IsPressedMouse)
 		&& (fabsf(e.x - clickStartPositions[at].x) >= 3.0f
@@ -357,9 +366,30 @@ void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
 	}
 }
 
+void UIEventSystem::_UpdateTooltip()
+{
+	if (ui::Tooltip::IsSet())
+		return;
+
+	UIEvent ev(this, hoverObj, UIEventType::Tooltip);
+	UIObject* obj = ev.target;
+	while (obj && !ev.IsPropagationStopped())
+	{
+		obj->_DoEvent(ev);
+		if (ui::Tooltip::IsSet())
+		{
+			tooltipObj = obj;
+			ui::Notify(ui::DCT_TooltipChanged);
+			break;
+		}
+		obj = obj->parent;
+	}
+}
+
 void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 {
-	if (x != prevMouseX || y != prevMouseY)
+	bool moved = x != prevMouseX || y != prevMouseY;
+	if (moved)
 	{
 		for (int i = 0; i < 5; i++)
 			clickCounts[i] = 0;
@@ -392,11 +422,23 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 
 	_UpdateHoverObj(hoverObj, x, y, false);
 	_UpdateCursor(hoverObj);
-
 	_UpdateHoverObj(dragHoverObj, x, y, true);
+
+	if (moved)
+	{
+		if (ui::Tooltip::IsSet() && tooltipObj && (!hoverObj || !hoverObj->IsChildOrSame(tooltipObj)))
+		{
+			ui::Tooltip::Unset();
+			ui::Notify(ui::DCT_TooltipChanged);
+		}
+	}
+	_UpdateTooltip();
 
 	prevMouseX = x;
 	prevMouseY = y;
+
+	if (moved)
+		ui::Notify(ui::DCT_MouseMoved, GetNativeWindow());
 }
 
 void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
@@ -583,12 +625,23 @@ ui::NativeWindowBase* UIEventSystem::GetNativeWindow() const
 
 namespace ui {
 
+void DragDropData::Render(UIContainer* ctx)
+{
+	ctx->Text(type);
+}
+
+DataCategoryTag DCT_DragDropDataChanged[1];
 static DragDropData* g_curDragDropData = nullptr;
 
 void DragDrop::SetData(DragDropData* data)
 {
+	auto* pd = g_curDragDropData;
 	delete g_curDragDropData;
 	g_curDragDropData = data;
+	if (pd != data)
+	{
+		Notify(DCT_DragDropDataChanged);
+	}
 }
 
 DragDropData* DragDrop::GetData(const char* type)
@@ -596,6 +649,31 @@ DragDropData* DragDrop::GetData(const char* type)
 	if (type && g_curDragDropData && g_curDragDropData->type != type)
 		return nullptr;
 	return g_curDragDropData;
+}
+
+
+static Tooltip::RenderFunc g_curTooltipRenderFn;
+
+DataCategoryTag DCT_TooltipChanged[1];
+
+void Tooltip::Set(const RenderFunc& f)
+{
+	g_curTooltipRenderFn = f;
+}
+
+void Tooltip::Unset()
+{
+	g_curTooltipRenderFn = {};
+}
+
+bool Tooltip::IsSet()
+{
+	return !!g_curTooltipRenderFn;
+}
+
+void Tooltip::Render(UIContainer* ctx)
+{
+	g_curTooltipRenderFn(ctx);
 }
 
 } // ui

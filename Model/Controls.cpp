@@ -1327,4 +1327,92 @@ void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
 }
 
 
+void OverlayInfoFrame::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+{
+	auto contSize = GetNativeWindow()->GetSize();
+
+	// do not let container size exceed window size
+	auto minContSize = containerSize;
+	if (minContSize.x > contSize.x)
+		minContSize.x = contSize.x;
+	if (minContSize.y > contSize.y)
+		minContSize.y = contSize.y;
+
+	UIElement::OnLayout(rect, minContSize);
+
+	auto& R = finalRectCPB;
+	float w = R.GetWidth();
+	float h = R.GetHeight();
+
+	UIRect avoidRect = UIRect::FromCenterExtents(system->eventSystem.prevMouseX, system->eventSystem.prevMouseY, 16);
+
+	float freeL = avoidRect.x0;
+	float freeR = contSize.x - avoidRect.x1;
+	float freeT = avoidRect.y0;
+	float freeB = contSize.y - avoidRect.y1;
+
+	int dirX = 1;
+	int dirY = 1;
+	if (w > freeR && freeL > freeR)
+		dirX = -1;
+	if (h > freeB && freeT > freeB)
+		dirY = -1;
+
+	// anchor
+	float px = dirX < 0 ? avoidRect.x0 - w : avoidRect.x1;
+	float py = dirY < 0 ? avoidRect.y0 - h : avoidRect.y1;
+	px = std::min(std::max(px, 0.0f), float(contSize.x));
+	py = std::min(std::max(py, 0.0f), float(contSize.y));
+	float dx = px - R.x0;
+	float dy = py - R.y0;
+
+	finalRectC = finalRectC.MoveBy(dx, dy);
+	finalRectCP = finalRectCP.MoveBy(dx, dy);
+	finalRectCPB = finalRectCPB.MoveBy(dx, dy);
+}
+
+
+TooltipFrame::TooltipFrame()
+{
+	styleProps = Theme::current->panel;
+	GetStyle().SetLayout(style::layouts::InlineBlock());
+}
+
+
+DragDropDataFrame::DragDropDataFrame()
+{
+	styleProps = Theme::current->panel;
+	GetStyle().SetLayout(style::layouts::InlineBlock());
+}
+
+
+void DefaultOverlayRenderer::Render(UIContainer* ctx)
+{
+	if (drawTooltip || drawDragDrop)
+		Subscribe(DCT_MouseMoved);
+
+	if (drawTooltip)
+	{
+		Subscribe(DCT_TooltipChanged);
+		if (ui::Tooltip::IsSet())
+		{
+			ctx->Push<ui::TooltipFrame>();
+			ui::Tooltip::Render(ctx);
+			ctx->Pop();
+		}
+	}
+
+	if (drawDragDrop)
+	{
+		Subscribe(DCT_DragDropDataChanged);
+		if (auto* ddd = ui::DragDrop::GetData())
+		{
+			ctx->Push<ui::DragDropDataFrame>();
+			ddd->Render(ctx);
+			ctx->Pop();
+		}
+	}
+}
+
+
 } // ui

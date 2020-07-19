@@ -163,6 +163,7 @@ void UIContainer::_Push(UIObject* obj, bool isCurNode)
 
 void UIContainer::_Destroy(UIObject* obj)
 {
+	DEBUG_FLOW(printf("    destroy %p\n", obj));
 	obj->_livenessToken.SetAlive(false);
 	obj->OnDestroy();
 	for (auto* ch = obj->firstChild; ch; ch = ch->next)

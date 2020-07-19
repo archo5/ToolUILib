@@ -476,4 +476,13 @@ struct EventHandler : Modifier
 	void Apply(UIObject* obj) const override { obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
 };
 
+struct AddTooltip : Modifier
+{
+	ui::Tooltip::RenderFunc _evfn;
+
+	AddTooltip(ui::Tooltip::RenderFunc&& fn) : _evfn(std::move(fn)) {}
+	AddTooltip(const std::string& s);
+	void Apply(UIObject* obj) const override;
+};
+
 } // ui

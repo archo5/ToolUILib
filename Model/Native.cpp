@@ -1099,7 +1099,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
-		return TRUE;
+		{
+			TRACKMOUSEEVENT tme = {};
+			tme.cbSize = sizeof(tme);
+			tme.dwFlags = TME_LEAVE;
+			tme.hwndTrack = hWnd;
+			TrackMouseEvent(&tme);
+		}
+		return 0;
+	case WM_MOUSELEAVE:
+		if (auto* evsys = GetEventSys(hWnd))
+			evsys->OnMouseMove(-1, -1);
+		return 0;
 	case WM_SETCURSOR:
 		if (LOWORD(lParam) == HTCLIENT)
 		{
