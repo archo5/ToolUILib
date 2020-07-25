@@ -122,20 +122,11 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 
 	if (dragObj)
 	{
+		dragObj->SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 		dragObj->HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
 		{
 			if (tb->IsInputDisabled())
 				return;
-			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
-			{
-				e.context->CaptureMouse(e.current);
-				e.current->flags |= UIObject_IsPressedMouse;
-			}
-			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
-			{
-				e.current->flags &= ~UIObject_IsPressedMouse;
-				e.context->ReleaseMouse();
-			}
 			if (e.type == UIEventType::MouseMove && e.target->IsPressed() && e.dx != 0)
 			{
 				if (tb->IsFocused())

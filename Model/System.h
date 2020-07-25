@@ -2,6 +2,7 @@
 #pragma once
 
 #include <functional>
+#include <unordered_map> // TODO?
 
 #include "Objects.h"
 
@@ -61,13 +62,14 @@ struct UIContainer
 		if (obj && typeid(*obj) == typeid(T))
 		{
 			auto* t = static_cast<T*>(obj);
+			t->UnregisterAsOverlay();
 			if (T::Persistent)
 			{
 				t->_Reset();
 			}
 			else
 			{
-				char buf[512];
+				char buf[1024];
 				DataWriteSerializer dws(buf);
 				t->_SerializePersistent(dws);
 				t->~T();
@@ -212,9 +214,13 @@ public:
 	std::function<void(UIContainer*)> renderFunc;
 };
 
-class FrameContents
+struct FrameContents
 {
-public:
+	struct OverlayInfo
+	{
+		float depth;
+	};
+
 	FrameContents()
 	{
 		container.owner = this;
@@ -224,6 +230,7 @@ public:
 	UIContainer container;
 	UIEventSystem eventSystem;
 	ui::NativeWindowBase* nativeWindow = nullptr;
+	std::unordered_map<UIObject*, OverlayInfo> overlays;
 };
 
 class InlineFrameNode : public Node

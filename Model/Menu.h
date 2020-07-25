@@ -118,19 +118,19 @@ class MenuSeparatorElement : public UIElement
 class MenuElement : public UIElement
 {
 public:
+	static constexpr bool Persistent = true;
+
 	virtual bool IsTopBar() { return false; }
-	void OnSerialize(IDataSerializer& s) override
-	{
-		s << _menu;
-	}
 	void OnDestroy() override;
 	void OnCompleteStructure() override;
 
 private:
 	ArrayView<MenuItem> _AppendElements(UIObject* o);
+	std::string _GenerateItemUID();
 
 	Menu* _menu = nullptr;
 	std::vector<MenuItem> _items;
+	std::string _uid;
 };
 
 class MenuBarElement : public MenuElement

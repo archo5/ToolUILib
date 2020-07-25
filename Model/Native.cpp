@@ -518,6 +518,8 @@ struct NativeWindow_Impl
 		GL::Clear(0x25, 0x25, 0x25, 255);
 		if (cont.rootNode)
 			cont.rootNode->OnPaint();
+		for (const auto& kvp : system.overlays)
+			kvp.first->OnPaint();
 		//GL::SetTexture(g_themeTexture);
 		//GL::BatchRenderer br;
 		//br.Begin();
@@ -702,6 +704,7 @@ void NativeWindowBase::SetMenu(Menu* m)
 {
 	_impl->menu = m;
 	::SetMenu(_impl->window, m ? (HMENU)m->GetNativeHandle() : nullptr);
+	// TODO is there a way to prevent partial redrawing results from showing up?
 }
 
 Point<int> NativeWindowBase::GetPosition()

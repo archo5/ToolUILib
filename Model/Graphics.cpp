@@ -207,6 +207,15 @@ void HueSatPicker::_RegenerateBackground(int w)
 }
 
 
+void ColorDragDropData::Render(UIContainer* ctx)
+{
+	ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+	ctx->Make<ColorBlock>()->SetColor({ color.r, color.g, color.b, 1 }) + Width(10) + Height(20) + Padding(0);
+	ctx->Make<ColorBlock>()->SetColor(color) + Width(10) + Height(20) + Padding(0);
+	ctx->Pop();
+}
+
+
 ColorCompPicker2D::ColorCompPicker2D()
 {
 	styleProps = Theme::current->selectorContainer;
@@ -499,7 +508,7 @@ void ColorPicker::Render(UIContainer* ctx)
 				*ctx->Push<Panel>()
 					+ StackingDirection(style::StackingDirection::LeftToRight)
 					+ Padding(3)
-					+ EventHandler(UIEventType::DragStart, [this](UIEvent&) { ui::DragDrop::SetData(new ColorDragDropData(_rgba)); })
+					+ MakeDraggable([this](UIEvent& e) { ui::DragDrop::SetData(new ColorDragDropData(_rgba)); })
 					+ EventHandler(UIEventType::DragDrop, [this](UIEvent&)
 				{
 					if (auto* cddd = static_cast<ColorDragDropData*>(ui::DragDrop::GetData("color")))
@@ -535,7 +544,7 @@ void ColorPicker::Render(UIContainer* ctx)
 		for (int i = 0; i < 16; i++)
 		{
 			ctx->Make<ColorBlock>()->SetColor(sc.colors[i])
-				+ EventHandler(UIEventType::DragStart, [i](UIEvent&) { ui::DragDrop::SetData(new ColorDragDropData(GetSavedColors().colors[i])); })
+				+ MakeDraggable([this, i]() { ui::DragDrop::SetData(new ColorDragDropData(GetSavedColors().colors[i])); })
 				+ EventHandler(UIEventType::DragDrop, [this, i](UIEvent&)
 			{
 				if (auto* cddd = static_cast<ColorDragDropData*>(ui::DragDrop::GetData("color")))

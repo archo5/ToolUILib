@@ -27,6 +27,7 @@ UIObject::UIObject()
 UIObject::~UIObject()
 {
 	ClearEventHandlers();
+	UnregisterAsOverlay();
 }
 
 void UIObject::_SerializePersistent(IDataSerializer& s)
@@ -64,10 +65,88 @@ void UIObject::_DoEvent(UIEvent& e)
 	if (!e.IsPropagationStopped())
 	{
 		// default behaviors
-		if ((flags & UIObject_DB_IMEdit) && e.target == this && !IsInputDisabled() && e.type == UIEventType::Activate)
+		_PerformDefaultBehaviors(e);
+	}
+}
+
+void UIObject::_PerformDefaultBehaviors(UIEvent& e)
+{
+	if (!IsInputDisabled())
+	{
+		if (HasFlags(UIObject_DB_IMEdit) && e.target == this && e.type == UIEventType::Activate)
 		{
 			flags |= UIObject_IsEdited;
 			RerenderNode();
+		}
+
+		if (HasFlags(UIObject_DB_Button))
+		{
+			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left && e.context->GetMouseCapture() == this)
+			{
+				e.context->OnActivate(this);
+			}
+			if (e.type == UIEventType::MouseMove)
+			{
+				if (e.context->GetMouseCapture() == this) // TODO separate flag for this!
+					SetFlag(UIObject_IsPressedMouse, finalRectCPB.Contains(e.x, e.y));
+				//e.StopPropagation();
+			}
+			if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateDown)
+			{
+				e.context->CaptureMouse(this);
+				flags |= UIObject_IsPressedOther;
+				e.StopPropagation();
+			}
+			if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateUp)
+			{
+				if (flags & UIObject_IsPressedOther)
+				{
+					e.context->OnActivate(this);
+					flags &= ~UIObject_IsPressedOther;
+				}
+				if (!(flags & UIObject_IsPressedMouse))
+					e.context->ReleaseMouse();
+				e.StopPropagation();
+			}
+		}
+
+		if (HasFlags(UIObject_DB_Draggable))
+		{
+			if (e.context->DragCheck(e, UIMouseButton::Left))
+			{
+				UIEvent e(&system->eventSystem, this, UIEventType::DragStart);
+				e.context->BubblingEvent(e);
+			}
+		}
+
+		if (HasFlags(UIObject_DB_FocusOnLeftClick))
+		{
+			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			{
+				e.context->SetKeyboardFocus(this);
+				e.StopPropagation();
+			}
+		}
+
+		if (HasFlags(UIObject_DB_CaptureMouseOnLeftClick))
+		{
+			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			{
+				e.context->CaptureMouse(e.current);
+				e.current->flags |= UIObject_IsPressedMouse;
+				e.StopPropagation();
+			}
+			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+			{
+				if (e.context->GetMouseCapture() == this)
+					e.context->ReleaseMouse();
+				e.StopPropagation();
+			}
+			if (e.type == UIEventType::MouseCaptureChanged)
+			{
+				flags &= ~UIObject_IsPressedMouse;
+				e.StopPropagation();
+			}
 		}
 	}
 }
@@ -124,6 +203,21 @@ void UIObject::ClearEventHandlers()
 	_lastEH = nullptr;
 }
 
+void UIObject::RegisterAsOverlay(float depth)
+{
+	system->overlays[this] = { depth };
+	flags |= UIObject_IsOverlay;
+}
+
+void UIObject::UnregisterAsOverlay()
+{
+	if (flags & UIObject_IsOverlay)
+	{
+		system->overlays.erase(this);
+		flags &= ~UIObject_IsOverlay;
+	}
+}
+
 void UIObject::OnPaint()
 {
 	styleProps->paint_func(this);
@@ -134,6 +228,14 @@ void UIObject::Paint()
 {
 	if (_CanPaint())
 		OnPaint();
+}
+
+void UIObject::PaintChildren()
+{
+	GL::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->Paint();
+	GL::PopScissorRect();
 }
 
 float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)

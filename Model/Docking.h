@@ -5,7 +5,7 @@
 
 namespace ui {
 
-class FrameContents;
+struct FrameContents;
 class Dockable;
 
 class DockingArea : public UIElement

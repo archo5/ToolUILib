@@ -315,6 +315,7 @@ struct DragDropData
 	DragDropData() {}
 	DragDropData(const std::string& t) : type(t) {}
 	virtual ~DragDropData() {}
+	virtual bool ShouldRender() { return true; }
 	virtual void Render(UIContainer* ctx);
 
 	std::string type;

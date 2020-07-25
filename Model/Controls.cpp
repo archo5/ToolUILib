@@ -17,73 +17,13 @@ Panel::Panel()
 Button::Button()
 {
 	styleProps = Theme::current->button;
-	SetFlag(UIObject_IsFocusable, true);
-}
-
-static bool ButtonEvent(UIObject* o, UIEvent& e)
-{
-	bool ret = false;
-	if (e.type == UIEventType::ButtonDown)
-	{
-		e.context->SetKeyboardFocus(o);
-		if (e.GetButton() == UIMouseButton::Left)
-		{
-			e.context->CaptureMouse(o);
-			o->flags |= UIObject_IsPressedMouse;
-		}
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::ButtonUp)
-	{
-		if (e.GetButton() == UIMouseButton::Left && e.context->GetMouseCapture() == o)
-		{
-			if (o->flags & UIObject_IsPressedMouse)
-				ret = true;
-			e.context->ReleaseMouse();
-			e.StopPropagation();
-		}
-	}
-	if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateDown)
-	{
-		e.context->CaptureMouse(o);
-		o->flags |= UIObject_IsPressedOther;
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateUp)
-	{
-		if (o->flags & UIObject_IsPressedOther)
-		{
-			ret = true;
-			o->flags &= ~UIObject_IsPressedOther;
-		}
-		if (!(o->flags & UIObject_IsPressedMouse))
-			e.context->ReleaseMouse();
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::MouseMove)
-	{
-		if (e.context->GetMouseCapture() == o)
-			o->SetFlag(UIObject_IsPressedMouse, o->finalRectCPB.Contains(e.x, e.y));
-		//e.StopPropagation();
-	}
-	if (e.type == UIEventType::MouseCaptureChanged)
-	{
-		o->flags &= ~UIObject_IsPressedMouse;
-		e.StopPropagation();
-	}
-	return ret;
-}
-
-void Button::OnEvent(UIEvent& e)
-{
-	if (ButtonEvent(this, e))
-		e.context->OnActivate(this);
+	SetFlag(UIObject_DB_Button, true);
 }
 
 
 CheckableBase::CheckableBase()
 {
-	SetFlag(UIObject_IsFocusable, true);
+	SetFlag(UIObject_DB_Button, true);
 }
 
 void CheckableBase::OnPaint()
@@ -98,9 +38,9 @@ void CheckableBase::OnPaint()
 
 void CheckableBase::OnEvent(UIEvent& e)
 {
-	if (ButtonEvent(this, e) && !IsInputDisabled())
+	if (e.type == UIEventType::Activate)
 	{
-		OnSelect();
+		OnSelect(e);
 		e.context->OnChange(this);
 		e.context->OnCommit(this);
 	}
@@ -113,21 +53,9 @@ CheckboxBase::CheckboxBase()
 }
 
 
-void Checkbox::OnSelect()
-{
-	system->eventSystem.OnActivate(this);
-}
-
-
 RadioButtonBase::RadioButtonBase()
 {
 	styleProps = Theme::current->radioButton;
-}
-
-
-void RadioButton::OnSelect()
-{
-	system->eventSystem.OnActivate(this);
 }
 
 
@@ -137,6 +65,11 @@ ListBox::ListBox()
 }
 
 
+SelectableBase::SelectableBase()
+{
+	SetFlag(UIObject_DB_Button, true);
+}
+
 void SelectableBase::OnPaint()
 {
 	UIElement::OnPaint();
@@ -144,8 +77,11 @@ void SelectableBase::OnPaint()
 
 void SelectableBase::OnEvent(UIEvent& e)
 {
-	if (ButtonEvent(this, e))
+	if (e.type == UIEventType::Activate)
+	{
 		OnSelect(true);
+		e.StopPropagation();
+	}
 }
 
 
@@ -824,6 +760,7 @@ void TabButtonList::OnPaint()
 TabButtonBase::TabButtonBase()
 {
 	styleProps = Theme::current->tabButton;
+	SetFlag(UIObject_DB_Button, true);
 }
 
 void TabButtonBase::OnDestroy()
@@ -844,7 +781,7 @@ void TabButtonBase::OnPaint()
 
 void TabButtonBase::OnEvent(UIEvent& e)
 {
-	if ((ButtonEvent(this, e) || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
+	if ((e.type == UIEventType::Activate || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
 	{
 		OnSelect();
 		e.context->OnActivate(this);
@@ -875,7 +812,7 @@ void TabPanel::OnPaint()
 Textbox::Textbox()
 {
 	styleProps = Theme::current->textBoxBase;
-	SetFlag(UIObject_IsFocusable, true);
+	SetFlag(UIObjectFlags(UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick), true);
 }
 
 void Textbox::OnPaint()
@@ -1044,8 +981,6 @@ void Textbox::OnEvent(UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
 			startCursor = endCursor = _FindCursorPos(e.x);
-		if (!IsInputDisabled())
-			e.context->SetKeyboardFocus(this);
 	}
 	else if (e.type == UIEventType::ButtonUp)
 	{
@@ -1338,11 +1273,8 @@ void OverlayInfoFrame::OnLayout(const UIRect& rect, const Size<float>& container
 	if (minContSize.y > contSize.y)
 		minContSize.y = contSize.y;
 
-	UIElement::OnLayout(rect, minContSize);
-
-	auto& R = finalRectCPB;
-	float w = R.GetWidth();
-	float h = R.GetHeight();
+	float w = GetFullEstimatedWidth(minContSize, style::EstSizeType::Expanding).min;
+	float h = GetFullEstimatedHeight(minContSize, style::EstSizeType::Expanding).min;
 
 	UIRect avoidRect = UIRect::FromCenterExtents(system->eventSystem.prevMouseX, system->eventSystem.prevMouseY, 16);
 
@@ -1363,26 +1295,21 @@ void OverlayInfoFrame::OnLayout(const UIRect& rect, const Size<float>& container
 	float py = dirY < 0 ? avoidRect.y0 - h : avoidRect.y1;
 	px = std::min(std::max(px, 0.0f), float(contSize.x));
 	py = std::min(std::max(py, 0.0f), float(contSize.y));
-	float dx = px - R.x0;
-	float dy = py - R.y0;
 
-	finalRectC = finalRectC.MoveBy(dx, dy);
-	finalRectCP = finalRectCP.MoveBy(dx, dy);
-	finalRectCPB = finalRectCPB.MoveBy(dx, dy);
+	UIRect R = { px, py, px + w, py + h };
+	UIElement::OnLayout(R, minContSize);
 }
 
 
 TooltipFrame::TooltipFrame()
 {
-	styleProps = Theme::current->panel;
-	GetStyle().SetLayout(style::layouts::InlineBlock());
+	styleProps = Theme::current->listBox;
 }
 
 
 DragDropDataFrame::DragDropDataFrame()
 {
-	styleProps = Theme::current->panel;
-	GetStyle().SetLayout(style::layouts::InlineBlock());
+	styleProps = Theme::current->listBox;
 }
 
 
@@ -1396,7 +1323,7 @@ void DefaultOverlayRenderer::Render(UIContainer* ctx)
 		Subscribe(DCT_TooltipChanged);
 		if (ui::Tooltip::IsSet())
 		{
-			ctx->Push<ui::TooltipFrame>();
+			ctx->Push<ui::TooltipFrame>()->RegisterAsOverlay();
 			ui::Tooltip::Render(ctx);
 			ctx->Pop();
 		}
@@ -1407,9 +1334,12 @@ void DefaultOverlayRenderer::Render(UIContainer* ctx)
 		Subscribe(DCT_DragDropDataChanged);
 		if (auto* ddd = ui::DragDrop::GetData())
 		{
-			ctx->Push<ui::DragDropDataFrame>();
-			ddd->Render(ctx);
-			ctx->Pop();
+			if (ddd->ShouldRender())
+			{
+				ctx->Push<ui::DragDropDataFrame>()->RegisterAsOverlay();
+				ddd->Render(ctx);
+				ctx->Pop();
+			}
 		}
 	}
 }

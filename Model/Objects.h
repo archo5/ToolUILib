@@ -36,7 +36,7 @@ struct Block;
 
 namespace ui {
 struct NativeWindowBase;
-class FrameContents;
+struct FrameContents;
 struct EventHandlerEntry;
 struct Node; // logical item
 
@@ -67,6 +67,11 @@ enum UIObjectFlags
 	UIObject_IsPressedOther = 1 << 15,
 	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
 	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and RerenderNode upon activation
+	UIObject_IsOverlay = 1 << 17,
+	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
+	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
+	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
+	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
 
 	UIObject_DB__Defaults = 0,
 };
@@ -189,6 +194,7 @@ struct UIObject
 
 	virtual void OnEvent(UIEvent& e) {}
 	void _DoEvent(UIEvent& e);
+	void _PerformDefaultBehaviors(UIEvent& e);
 
 	void SendUserEvent(int id, uintptr_t arg0 = 0, uintptr_t arg1 = 0);
 	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
@@ -196,15 +202,12 @@ struct UIObject
 	void ClearEventHandlers();
 	void ClearLocalEventHandlers();
 
+	void RegisterAsOverlay(float depth = 0);
+	void UnregisterAsOverlay();
+
 	virtual void OnPaint();
 	void Paint();
-	void PaintChildren()
-	{
-		GL::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			ch->Paint();
-		GL::PopScissorRect();
-	}
+	void PaintChildren();
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
@@ -220,8 +223,9 @@ struct UIObject
 	}
 
 	void SetFlag(UIObjectFlags flag, bool set);
+	bool HasFlags(UIObjectFlags f) const { return (flags & f) == f; }
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
-	bool _CanPaint() const { return !(flags & UIObject_IsHidden); }
+	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 
 	bool IsChildOf(UIObject* obj) const;
@@ -483,6 +487,17 @@ struct AddTooltip : Modifier
 	AddTooltip(ui::Tooltip::RenderFunc&& fn) : _evfn(std::move(fn)) {}
 	AddTooltip(const std::string& s);
 	void Apply(UIObject* obj) const override;
+};
+
+struct MakeDraggable : EventHandler
+{
+	MakeDraggable(std::function<void(UIEvent&)>&& fn) : EventHandler(UIEventType::DragStart, std::move(fn)) {}
+	MakeDraggable(std::function<void()>&& fn) : EventHandler(UIEventType::DragStart, [fn{ std::move(fn) }](UIEvent&){ fn(); }) {}
+	void Apply(UIObject* obj) const override
+	{
+		EventHandler::Apply(obj);
+		obj->SetFlag(UIObjectFlags::UIObject_DB_Draggable, true);
+	}
 };
 
 } // ui

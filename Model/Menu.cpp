@@ -150,12 +150,17 @@ void MenuElement::OnCompleteStructure()
 	_items.clear();
 	_items.reserve(CountChildrenRecursive());
 	auto list = _AppendElements(this);
+	std::string uid = _GenerateItemUID();
 
-	auto oldmenu = _menu;
-	_menu = new Menu(list, IsTopBar());
-	if (IsTopBar())
-		GetNativeWindow()->SetMenu(_menu);
-	delete oldmenu; // deleted at the end, in case it was top bar, to avoid momentary disappearance
+	if (_menu == nullptr || uid != _uid)
+	{
+		auto oldmenu = _menu;
+		_menu = new Menu(list, IsTopBar());
+		if (IsTopBar())
+			GetNativeWindow()->SetMenu(_menu);
+		delete oldmenu; // deleted at the end, in case it was top bar, to avoid momentary disappearance
+	}
+	std::swap(_uid, uid);
 }
 
 ArrayView<MenuItem> MenuElement::_AppendElements(UIObject* o)
@@ -187,6 +192,34 @@ ArrayView<MenuItem> MenuElement::_AppendElements(UIObject* o)
 	}
 
 	return { &_items[start], count };
+}
+
+std::string MenuElement::_GenerateItemUID()
+{
+	std::string ret;
+	for (const MenuItem& item : _items)
+	{
+		if (item.isSeparator)
+		{
+			ret.push_back('S');
+			continue;
+		}
+		ret.push_back('I');
+		ret.push_back((item.isChecked << 0) | (item.isDisabled << 1));
+
+		uint32_t len = item.text.size();
+		ret.append((const char*)&len, sizeof(len));
+		ret.append(item.text);
+
+		len = item.submenu.size();
+		ret.append((const char*)&len, sizeof(len));
+		if (len)
+		{
+			len = item.submenu.data() - _items.data();
+			ret.append((const char*)&len, sizeof(len));
+		}
+	}
+	return ret;
 }
 
 

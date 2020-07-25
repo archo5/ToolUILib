@@ -16,14 +16,14 @@ struct InlineBlockLayout : Layout
 	{
 		float size = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
+			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 		return size;
 	}
 	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
 	{
 		float size = GetFontHeight();
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
+			size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 		return size;
 	}
 	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
@@ -34,8 +34,8 @@ struct InlineBlockLayout : Layout
 		float maxH = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 		{
-			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Exact).min;
-			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Exact).min;
+			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
+			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
 			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
 			p += w;
 			maxH = std::max(maxH, h);

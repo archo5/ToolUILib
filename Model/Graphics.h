@@ -306,6 +306,7 @@ struct ColorCompPicker2DSettings
 struct ColorDragDropData : DragDropData
 {
 	ColorDragDropData(const Color4f& c) : DragDropData("color"), color(c) {}
+	void Render(UIContainer* ctx) override;
 	Color4f color;
 };
 

@@ -1294,6 +1294,8 @@ struct ColorPickerTest : ui::Node
 		{
 			colorPickerTestCol = cp.GetColor();
 		};
+
+		ctx->Make<ui::DefaultOverlayRenderer>();
 	}
 };
 
@@ -1438,13 +1440,10 @@ struct GlobalEventsTest : ui::Node
 			e->infofn = [this](char* bfr) { snprintf(bfr, 64, "tooltip: %s", ui::Tooltip::IsSet() ? "set" : "<none>"); },
 			0;);
 
-		ctx->MakeWithText<ui::Button>("Draggable")->HandleEvent() = [](UIEvent& e)
+		*ctx->MakeWithText<ui::Button>("Draggable") + ui::MakeDraggable([]()
 		{
-			if (e.context->DragCheck(e, UIMouseButton::Left))
-			{
-				ui::DragDrop::SetData(new ui::DragDropText("test", "text"));
-			}
-		};
+			ui::DragDrop::SetData(new ui::DragDropText("test", "text"));
+		});
 		*ctx->MakeWithText<ui::Button>("Tooltip") + ui::AddTooltip("Tooltip");
 		ctx->Make<ui::DefaultOverlayRenderer>();
 	}

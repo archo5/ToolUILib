@@ -14,7 +14,6 @@ struct Panel : UIElement
 struct Button : UIElement
 {
 	Button();
-	void OnEvent(UIEvent& e) override;
 };
 
 struct CheckableBase : UIElement
@@ -23,7 +22,7 @@ struct CheckableBase : UIElement
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
-	virtual void OnSelect() {}
+	virtual void OnSelect(UIEvent&) {}
 	virtual bool IsSelected() const { return !!(flags & UIObject_IsChecked); }
 };
 
@@ -39,7 +38,6 @@ struct Checkbox : CheckboxBase
 		SetFlag(UIObject_IsChecked, checked);
 		return this;
 	}
-	void OnSelect() override;
 	// implement Activate event to flip source state
 };
 
@@ -53,7 +51,7 @@ struct CheckboxBoolState : CheckboxBase
 	}
 	void OnSerialize(IDataSerializer& s) override { s << _value; }
 
-	virtual void OnSelect() override { _value ^= true; }
+	virtual void OnSelect(UIEvent& e) override { _value ^= true; e.StopPropagation(); }
 	virtual bool IsSelected() const override { return _value; }
 
 	bool _value;
@@ -69,7 +67,7 @@ struct CheckboxFlagT : CheckboxBase
 		return this;
 	}
 
-	void OnSelect() override
+	void OnSelect(UIEvent& e) override
 	{
 		if (!_iptr)
 			return;
@@ -77,6 +75,7 @@ struct CheckboxFlagT : CheckboxBase
 			*_iptr |= _value;
 		else
 			*_iptr &= ~_value;
+		e.StopPropagation();
 	}
 	bool IsSelected() const override { return _iptr && (*_iptr & _value) == _value; }
 
@@ -96,7 +95,6 @@ struct RadioButton : RadioButtonBase
 		SetFlag(UIObject_IsChecked, selected);
 		return this;
 	}
-	void OnSelect() override;
 	// implement Activate event to set source state
 };
 
@@ -110,7 +108,7 @@ struct RadioButtonT : RadioButtonBase
 		return this;
 	}
 
-	void OnSelect() override { if (_iptr) *_iptr = _value; }
+	void OnSelect(UIEvent& e) override { if (_iptr) *_iptr = _value; e.StopPropagation(); }
 	bool IsSelected() const override { return _iptr && *_iptr == _value; }
 
 	T* _iptr = nullptr;
@@ -124,6 +122,7 @@ struct ListBox : UIElement
 
 struct SelectableBase : UIElement
 {
+	SelectableBase();
 	void OnPaint() override;
 	void OnEvent(UIEvent& e) override;
 
