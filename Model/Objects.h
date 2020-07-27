@@ -72,6 +72,7 @@ enum UIObjectFlags
 	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
 	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
 	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
+	UIObject_DB_Selectable = 1 << 22,
 
 	UIObject_DB__Defaults = 0,
 };
@@ -477,7 +478,7 @@ struct EventHandler : Modifier
 	UIObject* _tgt = nullptr;
 	EventHandler(std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)) {}
 	EventHandler(UIEventType t, std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
-	void Apply(UIObject* obj) const override { obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
+	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
 };
 
 struct AddTooltip : Modifier
@@ -491,6 +492,7 @@ struct AddTooltip : Modifier
 
 struct MakeDraggable : EventHandler
 {
+	MakeDraggable() : EventHandler({}) {}
 	MakeDraggable(std::function<void(UIEvent&)>&& fn) : EventHandler(UIEventType::DragStart, std::move(fn)) {}
 	MakeDraggable(std::function<void()>&& fn) : EventHandler(UIEventType::DragStart, [fn{ std::move(fn) }](UIEvent&){ fn(); }) {}
 	void Apply(UIObject* obj) const override

@@ -15,6 +15,7 @@ struct DefaultTheme : Theme
 	style::Block dtButton;
 	style::Block dtCheckbox;
 	style::Block dtRadioButton;
+	style::Block dtSelectable;
 	style::Block dtCollapsibleTreeNode;
 	style::Block dtTextBoxBase;
 	style::Block dtListBox;
@@ -47,6 +48,7 @@ struct DefaultTheme : Theme
 		CreateButton();
 		CreateCheckbox();
 		CreateRadioButton();
+		CreateSelectable();
 		CreateCollapsibleTreeNode();
 		CreateTextBoxBase();
 		CreateListBox();
@@ -182,6 +184,36 @@ struct DefaultTheme : Theme
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
 		});
 		defaultTheme.radioButton = a.block;
+	}
+	void CreateSelectable()
+	{
+		style::Accessor a(&dtSelectable);
+		PreventHeapDelete(a);
+		a.SetLayout(style::layouts::Stack());
+		a.SetStackingDirection(style::StackingDirection::LeftToRight);
+		a.SetWidth(style::Coord::Fraction(1));
+		a.SetPadding(5);
+		a.SetPaintFunc([](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			if (info.IsChecked() || info.IsDown() || info.IsHovered())
+			{
+				GL::SetTexture(0);
+				GL::BatchRenderer br;
+				br.Begin();
+				if (info.IsChecked())
+					br.SetColor(0.6f, 0.04f, 0.0f);
+				else if (info.IsDown())
+					br.SetColor(0, 0, 0, 0.5f);
+				else if (info.IsHovered())
+					br.SetColor(1, 1, 1, 0.2f);
+				br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
+				br.End();
+			}
+			if (info.IsFocused())
+				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+		});
+		defaultTheme.selectable = a.block;
 	}
 	void CreateCollapsibleTreeNode()
 	{

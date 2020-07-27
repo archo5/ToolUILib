@@ -23,6 +23,7 @@ struct Theme
 	style::BlockRef button;
 	style::BlockRef checkbox;
 	style::BlockRef radioButton;
+	style::BlockRef selectable;
 	style::BlockRef collapsibleTreeNode;
 	style::BlockRef textBoxBase;
 	style::BlockRef listBox;

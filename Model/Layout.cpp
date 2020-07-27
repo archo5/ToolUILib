@@ -360,6 +360,8 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 		state |= PS_Disabled;
 	if (o->IsFocused())
 		state |= PS_Focused;
+	if (o->flags & UIObject_IsChecked)
+		state |= PS_Checked;
 }
 
 void IErrorCallback::OnError(const char* message, const char* at)

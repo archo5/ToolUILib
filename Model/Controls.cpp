@@ -65,29 +65,10 @@ ListBox::ListBox()
 }
 
 
-SelectableBase::SelectableBase()
-{
-	SetFlag(UIObject_DB_Button, true);
-}
-
-void SelectableBase::OnPaint()
-{
-	UIElement::OnPaint();
-}
-
-void SelectableBase::OnEvent(UIEvent& e)
-{
-	if (e.type == UIEventType::Activate)
-	{
-		OnSelect(true);
-		e.StopPropagation();
-	}
-}
-
-
 Selectable::Selectable()
 {
-	styleProps = Theme::current->button;
+	styleProps = Theme::current->selectable;
+	SetFlag(UIObject_DB_Selectable, true);
 }
 
 

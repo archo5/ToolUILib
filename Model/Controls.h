@@ -120,32 +120,14 @@ struct ListBox : UIElement
 	ListBox();
 };
 
-struct SelectableBase : UIElement
-{
-	SelectableBase();
-	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
-
-	virtual void OnSelect(bool) = 0;
-	virtual bool IsSelected() = 0;
-
-	std::function<void()> onChange;
-};
-
-struct Selectable : SelectableBase
+struct Selectable : UIElement
 {
 	Selectable();
-	Selectable* Init(bool& bref)
+	Selectable* Init(bool selected)
 	{
-		_bptr = &bref;
+		SetFlag(UIObject_IsChecked, selected);
 		return this;
 	}
-
-	virtual void OnSelect(bool v) override { if (_bptr) *_bptr = v; }
-	virtual bool IsSelected() override { return _bptr && *_bptr; }
-
-private:
-	bool* _bptr = nullptr;
 };
 
 struct ProgressBar : UIElement

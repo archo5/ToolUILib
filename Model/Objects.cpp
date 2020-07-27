@@ -119,6 +119,15 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e)
 			}
 		}
 
+		if (HasFlags(UIObject_DB_Selectable))
+		{
+			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			{
+				e.context->OnActivate(this);
+				e.StopPropagation();
+			}
+		}
+
 		if (HasFlags(UIObject_DB_FocusOnLeftClick))
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)

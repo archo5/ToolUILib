@@ -55,8 +55,97 @@ struct EdgeSliceTest : ui::Node
 
 struct DragDropTest : ui::Node
 {
+	static constexpr bool Persistent = true;
+
+	struct Node
+	{
+		~Node()
+		{
+			for (Node* ch : children)
+				delete ch;
+		}
+		std::string name;
+		bool open = true;
+		Node* parent = nullptr;
+		std::vector<Node*> children;
+	};
+	struct DragDropNodeData : ui::DragDropData
+	{
+		struct Entry
+		{
+			Node* node;
+			size_t childNum;
+		};
+		DragDropNodeData() : ui::DragDropData("node")
+		{
+		}
+		void Render(UIContainer* ctx) override
+		{
+			if (entries.size() == 1)
+			{
+				ctx->Text(entries[0].node->name);
+			}
+			else
+			{
+				char bfr[32];
+				snprintf(bfr, 32, "%zu items", entries.size());
+				ctx->Text(bfr);
+			}
+		}
+		std::vector<Entry> entries;
+	};
+
+	DragDropTest()
+	{
+		Node* first = new Node();
+		first->name = "first [1]";
+
+		Node* second = new Node();
+		second->name = "second [2]";
+
+		Node* third = new Node();
+		third->name = "third [3]";
+
+		Node* fourth = new Node();
+		fourth->name = "fourth [4]";
+
+		rootNodes.push_back(first);
+		first->children.push_back(second);
+		second->parent = first;
+		second->children.push_back(third);
+		third->parent = second;
+		rootNodes.push_back(fourth);
+	}
+	~DragDropTest()
+	{
+		for (Node* ch : rootNodes)
+			delete ch;
+	}
 	void Render(UIContainer* ctx) override
 	{
+		ctx->Text("File receiver");
+
+		ctx->Push<ui::ListBox>()->HandleEvent(UIEventType::DragDrop) = [this](UIEvent& e)
+		{
+			if (auto* ddd = static_cast<ui::DragDropFiles*>(ui::DragDrop::GetData(ui::DragDropFiles::NAME)))
+			{
+				filePaths = ddd->paths;
+				Rerender();
+			}
+		};
+		if (filePaths.empty())
+		{
+			ctx->Text("Drop files here");
+		}
+		else
+		{
+			for (const auto& path : filePaths)
+			{
+				ctx->Text(path);
+			}
+		}
+		ctx->Pop();
+
 		ctx->Text("Transfer countables");
 
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
@@ -114,7 +203,13 @@ struct DragDropTest : ui::Node
 				Data(int f) : ui::DragDropData("current location"), at(f) {}
 				int at;
 			};
-			ctx->Push<ui::Selectable>()->HandleEvent() = [this, i](UIEvent& e)
+			bool dragging = false;
+			if (auto* dd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
+				if (dd->at == i)
+					dragging = true;
+			auto* sel = ctx->Push<ui::Selectable>()->Init(dragging);
+			sel->SetFlag(UIObject_DB_Draggable, true);
+			sel->HandleEvent() = [this, i](UIEvent& e)
 			{
 				if (e.context->DragCheck(e, UIMouseButton::Left))
 				{
@@ -125,7 +220,6 @@ struct DragDropTest : ui::Node
 				{
 					if (auto* ddd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
 					{
-						// TODO transfer click state to current object
 						if (ddd->at != i)
 						{
 							e.context->MoveClickTo(e.current);
@@ -143,55 +237,229 @@ struct DragDropTest : ui::Node
 					}
 					Rerender();
 				}
-				else if (e.type == UIEventType::DragLeave)
+				else if (e.type == UIEventType::DragLeave || e.type == UIEventType::DragEnd)
 				{
 					Rerender();
 				}
 			};
 			char bfr[32];
 			snprintf(bfr, 32, "item %d", iids[i]);
-			if (auto* dd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
-				if (dd->at == i)
-					strcat(bfr, " [dragging]");
+			if (dragging)
+				strcat(bfr, " [dragging]");
 			ctx->Text(bfr);
 			ctx->Pop();
 		}
 		ctx->Pop();
 
-		ctx->Text("File receiver");
+		ctx->Text("Tree node reorder with preview");
 
-		ctx->Push<ui::ListBox>()->HandleEvent(UIEventType::DragDrop) = [this](UIEvent& e)
-		{
-			if (auto* ddd = static_cast<ui::DragDropFiles*>(ui::DragDrop::GetData(ui::DragDropFiles::NAME)))
-			{
-				filePaths = ddd->paths;
-				Rerender();
-			}
-		};
-		if (filePaths.empty())
-		{
-			ctx->Text("Drop files here");
-		}
-		else
-		{
-			for (const auto& path : filePaths)
-			{
-				ctx->Text(path);
-			}
-		}
+		ctx->Push<ui::ListBox>();
+		RenderNodeList(ctx, nullptr, rootNodes, 0);
 		ctx->Pop();
 
 		ctx->Make<ui::DefaultOverlayRenderer>();
 	}
-	void OnSerialize(IDataSerializer& s) override
+	void RenderNodeList(UIContainer* ctx, Node* cont, std::vector<Node*>& nodes, int level)
 	{
-		s << slots;
-		s << iids;
+		for (size_t i = 0; i < nodes.size(); i++)
+		{
+			Node* N = nodes[i];
+			ctx->PushBox();
+
+			*ctx->Push<ui::Selectable>()->Init(selectedNodes.count(N))
+				+ ui::MakeDraggable()
+				+ ui::EventHandler([this, cont, N, i, &nodes, level](UIEvent& e)
+			{
+				if (e.type == UIEventType::DragStart)
+				{
+					if (selectedNodes.size())
+					{
+						auto* ddd = new DragDropNodeData();
+						ddd->entries.push_back({ N, i });
+						ui::DragDrop::SetData(ddd);
+					}
+				}
+				if (e.type == UIEventType::DragMove)
+				{
+					hasDragTarget = true;
+					UIRect& R = e.current->finalRectCPB;
+					if (e.y < lerp(R.y0, R.y1, 0.25f))
+					{
+						// above
+						dragTargetLine = UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(UIRect::UniformBorder(1));
+						dragTargetArr = &nodes;
+						dragTargetCont = cont;
+						dragTargetInsertBefore = i;
+					}
+					else if (e.y > lerp(R.y0, R.y1, 0.75f))
+					{
+						// below
+						dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(UIRect::UniformBorder(1));
+						if (N->open && N->children.size())
+						{
+							// first child
+							dragTargetArr = &N->children;
+							dragTargetCont = N;
+							dragTargetInsertBefore = 0;
+							dragTargetLine.x0 += (level + 1) * 12;
+						}
+						else
+						{
+							int ll = level - 1;
+							auto* PP = N;
+							auto* P = N->parent;
+							bool foundplace = false;
+							for (; P; P = P->parent, ll--)
+							{
+								for (size_t i = 0; i < P->children.size(); i++)
+								{
+									if (P->children[i] == PP && i + 1 < P->children.size())
+									{
+										dragTargetArr = &P->children;
+										dragTargetCont = P;
+										dragTargetInsertBefore = i + 1;
+										dragTargetLine.x0 += ll * 12;
+										foundplace = true;
+										break;
+									}
+								}
+								if (foundplace)
+									break;
+								PP = P;
+							}
+							if (!foundplace)
+							{
+								for (size_t i = 0; i < rootNodes.size(); i++)
+								{
+									if (rootNodes[i] == PP)
+									{
+										dragTargetArr = &rootNodes;
+										dragTargetCont = nullptr;
+										dragTargetInsertBefore = i + 1;
+										foundplace = true;
+										break;
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						// in
+						dragTargetLine = UIRect{ R.x0 + level * 12, lerp(R.y0, R.y1, 0.25f), R.x1, lerp(R.y0, R.y1, 0.75f) };
+						dragTargetArr = &N->children;
+						dragTargetCont = N;
+						dragTargetInsertBefore = N->children.size();
+					}
+				}
+				if (e.type == UIEventType::DragDrop)
+				{
+					if (auto* ddd = static_cast<DragDropNodeData*>(ui::DragDrop::GetData("node")))
+					{
+						printf("target cont=%p name=%s ins.before=%zu\n", dragTargetCont, dragTargetCont ? dragTargetCont->name.c_str() : "-", dragTargetInsertBefore);
+						
+						// validate
+						bool canDrop = true;
+						for (auto* P = dragTargetCont; P; P = P->parent)
+						{
+							bool found = false;
+							for (auto& E : ddd->entries)
+							{
+								if (E.node == P)
+								{
+									found = true;
+									break;
+								}
+							}
+							if (found)
+							{
+								canDrop = false;
+								break;
+							}
+						}
+						printf("can drop: %c\n", "NY"[canDrop]);
+
+						if (canDrop)
+						{
+							// unlink from parents
+							for (auto& E : ddd->entries)
+							{
+								auto& arr = E.node->parent ? E.node->parent->children : rootNodes;
+								auto it = std::find_first_of(arr.begin(), arr.end(), &E.node, &E.node + 1);
+								if (E.node->parent == dragTargetCont && (it - arr.begin()) < dragTargetInsertBefore)
+								{
+									dragTargetInsertBefore--;
+								}
+								arr.erase(it);
+							}
+
+							// reparent
+							for (auto& E : ddd->entries)
+							{
+								E.node->parent = dragTargetCont;
+								dragTargetArr->insert(dragTargetArr->begin() + dragTargetInsertBefore, E.node);
+							}
+
+							Rerender();
+						}
+					}
+				}
+				if (e.type == UIEventType::DragLeave)
+				{
+					hasDragTarget = false;
+				}
+				if (e.type == UIEventType::Activate)
+				{
+					selectedNodes.clear();
+					selectedNodes.insert(N);
+					Rerender();
+				}
+			});
+
+			ctx->PushBox() + ui::Width(level * 12);
+			ctx->Pop();
+
+			ctx->Make<ui::CollapsibleTreeNode>();
+			ctx->Text(N->name);
+			ctx->Pop();
+
+			if (N->open)
+			{
+				ctx->PushBox();
+				RenderNodeList(ctx, N, N->children, level + 1);
+				ctx->Pop();
+			}
+			ctx->Pop();
+		}
+	}
+	void OnPaint() override
+	{
+		ui::Node::OnPaint();
+
+		if (hasDragTarget)
+		{
+			GL::SetTexture(0);
+			GL::BatchRenderer br;
+			br.Begin();
+			br.SetColor(0.1f, 0.7f, 0.9f, 0.6f);
+			auto r = dragTargetLine;
+			br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
+			br.End();
+		}
 	}
 
 	int slots[3] = { 5, 2, 0 };
 	int iids[4] = { 1, 2, 3, 4 };
 	std::vector<std::string> filePaths;
+
+	std::vector<Node*> rootNodes;
+	std::unordered_set<Node*> selectedNodes;
+
+	bool hasDragTarget = false;
+	UIRect dragTargetLine = {};
+	size_t dragTargetInsertBefore = 0;
+	Node* dragTargetCont = nullptr;
+	std::vector<Node*>* dragTargetArr = nullptr;
 };
 
 
@@ -1933,6 +2201,123 @@ struct SubUIBenchmark : ui::Node
 };
 
 
+struct TrackEditorDemo : ui::Node
+{
+	struct TrackEditor : UIElement
+	{
+		static constexpr float TRACK_HEIGHT = 40;
+		struct Item
+		{
+			float x0, x1, size;
+			int track;
+		};
+
+		TrackEditor()
+		{
+			SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+			items.push_back({ 100, 150, 50, 0 });
+			items.push_back({ 200, 350, 150, 0 });
+			items.push_back({ 120, 320, 200, 1 });
+			GetStyle().SetHeight(160);
+		}
+		void OnPaint() override
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				style::PaintInfo info(this);
+				info.rect.y0 += i * TRACK_HEIGHT;
+				info.rect.y1 = info.rect.y0 + TRACK_HEIGHT;
+				ui::Theme::current->listBox->paint_func(info);
+			}
+
+			uint32_t id = 0;
+			for (Item& item : items)
+			{
+				style::PaintInfo info(this);
+				info.rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
+				info.state = 0;
+				if (subui.IsHovered(id))
+					info.state |= style::PS_Hover;
+				if (subui.IsPressed(id))
+					info.state |= style::PS_Down;
+				ui::Theme::current->button->paint_func(info);
+				id++;
+			}
+		}
+		void OnEvent(UIEvent& e) override
+		{
+			subui.InitOnEvent(e);
+			uint32_t id = 0;
+			for (Item& item : items)
+			{
+				UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
+				switch (subui.DragOnEvent(id, rect, e))
+				{
+				case ui::SubUIDragState::Start:
+					dx = e.x - item.x0;
+					dy = e.y - item.track * TRACK_HEIGHT;
+					break;
+				case ui::SubUIDragState::Move:
+					item.x0 = e.x - dx;
+					item.x1 = item.x0 + item.size;
+					item.track = round((e.y - dy) / TRACK_HEIGHT);
+					item.track = std::min(std::max(item.track, 0), 3);
+					break;
+				}
+
+				UIRect rectL = rect;
+				rectL.x1 = rectL.x0 + 8;
+				switch (subui.DragOnEvent(id | (1 << 30), rectL, e))
+				{
+				case ui::SubUIDragState::Start:
+					dx = e.x - item.x0;
+					break;
+				case ui::SubUIDragState::Move:
+					item.x0 = e.x - dx;
+					if (item.x0 > item.x1)
+						item.x0 = item.x1;
+					item.size = item.x1 - item.x0;
+					break;
+				}
+
+				UIRect rectR = rect;
+				rectR.x0 = rectR.x1 - 8;
+				switch (subui.DragOnEvent(id | (1 << 31), rectR, e))
+				{
+				case ui::SubUIDragState::Start:
+					dx = e.x - item.x1;
+					break;
+				case ui::SubUIDragState::Move:
+					item.x1 = e.x - dx;
+					if (item.x1 < item.x0)
+						item.x1 = item.x0;
+					item.size = item.x1 - item.x0;
+					break;
+				}
+
+				id++;
+			}
+			if (e.type == UIEventType::SetCursor)
+			{
+				if (subui.IsAnyHovered() && subui._hovered >= 0x40000000)
+				{
+					e.context->SetDefaultCursor(ui::DefaultCursor::ResizeHorizontal);
+					e.StopPropagation();
+				}
+			}
+		}
+
+		std::vector<Item> items;
+		ui::SubUI<uint32_t> subui;
+		float dx, dy;
+	};
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Make<TrackEditor>();
+	}
+};
+
+
 ui::DataCategoryTag DCT_ItemSelection[1];
 struct DataEditor : ui::Node
 {
@@ -2299,6 +2684,7 @@ static TestEntry demoEntries[] =
 	{ "Compact node editing", [](UIContainer* ctx) { ctx->Make<CompactNodeEditTest>(); } },
 	{ "Sliding highlight anim", [](UIContainer* ctx) { ctx->Make<SlidingHighlightAnim>(); } },
 	{ "SubUI benchmark", [](UIContainer* ctx) { ctx->Make<SubUIBenchmark>(); } },
+	{ "Track editor demo", [](UIContainer* ctx) { ctx->Make<TrackEditorDemo>(); } },
 };
 static bool rerenderAlways;
 struct TEST : ui::Node
