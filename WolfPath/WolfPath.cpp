@@ -287,9 +287,8 @@ struct RenderView : ui::Node
 		if (tag == DCT_CameraEdited)
 			UpdateImage(true);
 	}
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override
+	void OnLayoutChanged() override
 	{
-		ui::Node::OnLayout(rect, containerSize);
 		UpdateImage();
 	}
 	void UpdateImage(bool force = false)

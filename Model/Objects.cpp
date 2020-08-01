@@ -214,7 +214,7 @@ void UIObject::ClearEventHandlers()
 
 void UIObject::RegisterAsOverlay(float depth)
 {
-	system->overlays[this] = { depth };
+	system->overlays.Register(this, depth);
 	flags |= UIObject_IsOverlay;
 }
 
@@ -222,7 +222,7 @@ void UIObject::UnregisterAsOverlay()
 {
 	if (flags & UIObject_IsOverlay)
 	{
-		system->overlays.erase(this);
+		system->overlays.Unregister(this);
 		flags &= ~UIObject_IsOverlay;
 	}
 }
@@ -344,9 +344,9 @@ Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize, styl
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
+Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
 {
-	if (!_NeedsLayout())
+	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
 	if (ui::g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
@@ -368,9 +368,9 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 	return s;
 }
 
-Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
+Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
 {
-	if (!_NeedsLayout())
+	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
 	if (ui::g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
@@ -394,11 +394,23 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 
 void UIObject::PerformLayout(const UIRect& rect, const Size<float>& containerSize)
 {
-	if (_NeedsLayout())
+	if (_IsPartOfParentLayout())
+	{
 		OnLayout(rect, containerSize);
+		OnLayoutChanged();
+	}
 }
 
-void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void UIObject::_PerformPlacement(const UIRect& rect, const Size<float>& containerSize)
+{
+	if (_NeedsLayout() && GetStyle().GetPlacement())
+	{
+		OnLayout(rect, containerSize);
+		OnLayoutChanged();
+	}
+}
+
+void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 {
 	using namespace style;
 
@@ -407,6 +419,11 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	auto swidth = style::Coord::Undefined();
 	auto sheight = style::Coord::Undefined();
 	GetSize(swidth, sheight);
+
+	UIRect rect = inRect;
+	auto placement = style.GetPlacement();
+	if (placement)
+		placement->OnApplyPlacement(this, rect);
 
 	auto width = style.GetWidth();
 	if (width.unit == style::CoordTypeUnit::Fraction)
@@ -497,6 +514,9 @@ void UIObject::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 	finalRectC = state.finalContentRect;
 	finalRectCP = state.finalContentRect.ExtendBy(Prect);
 	finalRectCPB = finalRectCP; // no border yet
+
+	for (UIObject* ch = firstChild; ch; ch = ch->next)
+		ch->_PerformPlacement(finalRectC, finalRectC.GetSize());
 }
 
 void UIObject::SetFlag(UIObjectFlags flag, bool set)
@@ -834,6 +854,7 @@ Node::~Node()
 		s->Unlink();
 		delete s;
 	}
+	_PerformDestructions();
 }
 
 void Node::Rerender()

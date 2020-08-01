@@ -535,12 +535,12 @@ void SplitPane::OnSerialize(IDataSerializer& s)
 		s << v;
 }
 
-Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
+Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
+Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.y, containerSize.y };
 }
@@ -1243,21 +1243,25 @@ void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
 }
 
 
-void OverlayInfoFrame::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
-	auto contSize = GetNativeWindow()->GetSize();
+	auto contSize = curObj->GetNativeWindow()->GetSize();
 
+#if 1
+	Size<float> minContSize = { float(contSize.x), float(contSize.y) };
+#else
 	// do not let container size exceed window size
 	auto minContSize = containerSize;
 	if (minContSize.x > contSize.x)
 		minContSize.x = contSize.x;
 	if (minContSize.y > contSize.y)
 		minContSize.y = contSize.y;
+#endif
 
-	float w = GetFullEstimatedWidth(minContSize, style::EstSizeType::Expanding).min;
-	float h = GetFullEstimatedHeight(minContSize, style::EstSizeType::Expanding).min;
+	float w = curObj->GetFullEstimatedWidth(minContSize, style::EstSizeType::Expanding, false).min;
+	float h = curObj->GetFullEstimatedHeight(minContSize, style::EstSizeType::Expanding, false).min;
 
-	UIRect avoidRect = UIRect::FromCenterExtents(system->eventSystem.prevMouseX, system->eventSystem.prevMouseY, 16);
+	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMouseX, curObj->system->eventSystem.prevMouseY, 16);
 
 	float freeL = avoidRect.x0;
 	float freeR = contSize.x - avoidRect.x1;
@@ -1278,19 +1282,26 @@ void OverlayInfoFrame::OnLayout(const UIRect& rect, const Size<float>& container
 	py = std::min(std::max(py, 0.0f), float(contSize.y));
 
 	UIRect R = { px, py, px + w, py + h };
-	UIElement::OnLayout(R, minContSize);
+	outRect = R;
+}
+
+
+OverlayInfoFrame::OverlayInfoFrame()
+{
 }
 
 
 TooltipFrame::TooltipFrame()
 {
 	styleProps = Theme::current->listBox;
+	GetStyle().SetPlacement(&placement);
 }
 
 
 DragDropDataFrame::DragDropDataFrame()
 {
 	styleProps = Theme::current->listBox;
+	GetStyle().SetPlacement(&placement);
 }
 
 

@@ -126,6 +126,7 @@ void UIContainer::ProcessNodeRenderStack()
 		_curNode = currentNode;
 		currentNode->_lastRenderedFrameID = _lastRenderedFrameID;
 		currentNode->ClearLocalEventHandlers();
+		currentNode->_PerformDestructions();
 		currentNode->Render(this);
 		_curNode = nullptr;
 
@@ -190,6 +191,31 @@ ui::NativeWindowBase* UIContainer::GetNativeWindow() const
 
 namespace ui {
 
+void Overlays::Register(UIObject* obj, float depth)
+{
+	mapped[obj] = { depth };
+	sortedOutdated = true;
+}
+
+void Overlays::Unregister(UIObject* obj)
+{
+	mapped.erase(obj);
+	sortedOutdated = true;
+}
+
+void Overlays::UpdateSorted()
+{
+	if (!sortedOutdated)
+		return;
+
+	sorted.clear();
+	sorted.reserve(mapped.size());
+	for (const auto& kvp : mapped)
+		sorted.push_back({ kvp.first, kvp.second.depth });
+	std::sort(sorted.begin(), sorted.end(), [](const Sorted& a, const Sorted& b) { return a.depth < b.depth; });
+	sortedOutdated = false;
+}
+
 void InlineFrameNode::OnDestroy()
 {
 	if (ownsContents && frameContents)
@@ -235,12 +261,11 @@ float InlineFrameNode::CalcEstimatedHeight(const Size<float>& containerSize, sty
 	return 100; // default height
 }
 
-void InlineFrameNode::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void InlineFrameNode::OnLayoutChanged()
 {
-	Node::OnLayout(rect, containerSize);
 	if (frameContents &&
 		frameContents->container.rootNode)
-		frameContents->container.rootNode->OnLayout(finalRectC, containerSize);
+		frameContents->container.rootNode->OnLayout(finalRectC, finalRectC.GetSize());
 }
 
 void InlineFrameNode::SetFrameContents(FrameContents* contents)

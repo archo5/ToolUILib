@@ -1,11 +1,36 @@
 
 #include <vector>
 
+#include "Native.h"
 #include "Layout.h"
 #include "Objects.h"
 
 
 namespace style {
+
+
+void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
+{
+	UIRect parentRect;
+	Size<float> contSize;
+	if (curObj->parent)
+	{
+		parentRect = curObj->parent->GetContentRect();
+		contSize = parentRect.GetSize();
+	}
+	else
+	{
+		contSize.x = curObj->system->eventSystem.width;
+		contSize.y = curObj->system->eventSystem.height;
+		parentRect = { 0, 0, contSize.x, contSize.y };
+	}
+	float w = curObj->GetFullEstimatedWidth(contSize, style::EstSizeType::Expanding, false).min;
+	float h = curObj->GetFullEstimatedHeight(contSize, style::EstSizeType::Expanding, false).min;
+
+	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
+	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
+	outRect = { x, y, x + w, y + h };
+}
 
 
 namespace layouts {
@@ -882,6 +907,16 @@ Layout* Accessor::GetLayout() const
 void Accessor::SetLayout(Layout* v)
 {
 	AccSet(*this, offsetof(Block, layout), v);
+}
+
+Placement* Accessor::GetPlacement() const
+{
+	return block->placement;
+}
+
+void Accessor::SetPlacement(Placement* v)
+{
+	AccSet(*this, offsetof(Block, placement), v);
 }
 
 StackingDirection Accessor::GetStackingDirection() const

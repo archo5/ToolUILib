@@ -215,8 +215,8 @@ struct SplitPane : UIElement
 	void OnEvent(UIEvent& e) override;
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
-	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
-	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
+	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override;
+	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override;
 
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
@@ -388,9 +388,15 @@ struct CollapsibleTreeNode : UIElement
 	bool _hovered = false;
 };
 
+struct OverlayInfoPlacement : style::Placement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+};
+
 struct OverlayInfoFrame : UIElement
 {
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	OverlayInfoFrame();
+	OverlayInfoPlacement placement;
 };
 
 struct TooltipFrame : OverlayInfoFrame

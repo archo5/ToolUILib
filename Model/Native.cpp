@@ -518,8 +518,10 @@ struct NativeWindow_Impl
 		GL::Clear(0x25, 0x25, 0x25, 255);
 		if (cont.rootNode)
 			cont.rootNode->OnPaint();
-		for (const auto& kvp : system.overlays)
-			kvp.first->OnPaint();
+
+		system.overlays.UpdateSorted();
+		for (auto& ovr : system.overlays.sorted)
+			ovr.obj->OnPaint();
 		//GL::SetTexture(g_themeTexture);
 		//GL::BatchRenderer br;
 		//br.Begin();
@@ -738,7 +740,7 @@ void NativeWindowBase::ProcessEventsExclusive()
 	_impl->ExitExclusiveMode();
 }
 
-Point<int> NativeWindowBase::GetSize()
+Size<int> NativeWindowBase::GetSize()
 {
 	RECT r = {};
 	GetWindowRect(_impl->window, &r);

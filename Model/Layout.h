@@ -77,6 +77,26 @@ struct Layout
 	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
 };
 
+struct Placement
+{
+	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) = 0;
+};
+
+struct PointAnchoredPlacement : Placement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+
+	void SetAnchorAndPivot(Point<float> p)
+	{
+		anchor = p;
+		pivot = p;
+	}
+
+	Point<float> anchor = { 0, 0 };
+	Point<float> pivot = { 0, 0 };
+	Point<float> bias = { 0, 0 };
+};
+
 namespace layouts {
 
 Layout* InlineBlock();
@@ -381,6 +401,7 @@ struct Block
 
 	Presence presence = Presence::Undefined;
 	Layout* layout = nullptr;
+	Placement* placement = nullptr;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;
 	BoxSizing box_sizing = BoxSizing::Undefined;
@@ -520,6 +541,9 @@ public:
 
 	Layout* GetLayout() const;
 	void SetLayout(Layout* v);
+
+	Placement* GetPlacement() const;
+	void SetPlacement(Placement* v);
 
 	StackingDirection GetStackingDirection() const;
 	void SetStackingDirection(StackingDirection v);

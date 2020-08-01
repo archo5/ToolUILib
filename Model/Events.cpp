@@ -262,8 +262,20 @@ void UIEventSystem::SetDefaultCursor(ui::DefaultCursor cur)
 
 UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
 {
-	UIObject* o = container->rootNode;
-	if (o && !o->Contains(x, y))
+	overlays->UpdateSorted();
+	for (size_t i = overlays->sorted.size(); i > 0; )
+	{
+		i--;
+		if (auto* o = _FindObjectAtPosition(overlays->sorted[i].obj, x, y))
+			return o;
+	}
+	return _FindObjectAtPosition(container->rootNode, x, y);
+}
+
+UIObject* UIEventSystem::_FindObjectAtPosition(UIObject* root, float x, float y)
+{
+	UIObject* o = root;
+	if (!o || !o->Contains(x, y))
 		return nullptr;
 
 	bool found = true;

@@ -214,9 +214,11 @@ struct UIObject
 	virtual float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
 	Range<float> GetEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
 	Range<float> GetEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
-	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
-	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
+	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout = true);
+	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size<float>& containerSize);
+	void _PerformPlacement(const UIRect& rect, const Size<float>& containerSize);
+	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size<float>& containerSize);
 	virtual bool Contains(float x, float y) const
 	{
@@ -228,6 +230,7 @@ struct UIObject
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
+	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && !GetStyle().GetPlacement(); }
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
@@ -378,9 +381,29 @@ struct Node : UIObject
 		return Unsubscribe(tag, reinterpret_cast<uintptr_t>(ptr));
 	}
 
+	void Defer(std::function<void()>&& fn)
+	{
+		_deferredDestructors.push_back(std::move(fn));
+	}
+	void _PerformDestructions()
+	{
+		while (_deferredDestructors.size())
+		{
+			_deferredDestructors.back()();
+			_deferredDestructors.pop_back();
+		}
+	}
+	template <class T, class... Args> T* Allocate(Args... args)
+	{
+		T* obj = new T(args...);
+		Defer([obj]() { delete obj; });
+		return obj;
+	}
+
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
 	uint64_t _lastRenderedFrameID = 0;
+	std::vector<std::function<void()>> _deferredDestructors;
 };
 
 struct Modifier
@@ -488,6 +511,22 @@ struct AddTooltip : Modifier
 	AddTooltip(ui::Tooltip::RenderFunc&& fn) : _evfn(std::move(fn)) {}
 	AddTooltip(const std::string& s);
 	void Apply(UIObject* obj) const override;
+};
+
+struct MakeOverlay : Modifier
+{
+	MakeOverlay(float depth = 0.0f) : _enable(true), _depth(depth) {}
+	MakeOverlay(bool enable, float depth = 0.0f) : _enable(enable), _depth(depth) {}
+	void Apply(UIObject* obj) const override
+	{
+		if (_enable)
+			obj->RegisterAsOverlay(_depth);
+		else
+			obj->UnregisterAsOverlay();
+	}
+
+	bool _enable;
+	float _depth;
 };
 
 struct MakeDraggable : EventHandler

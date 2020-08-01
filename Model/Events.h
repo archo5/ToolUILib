@@ -8,6 +8,7 @@
 namespace ui {
 struct NativeWindowBase;
 struct Node;
+struct Overlays;
 extern struct DataCategoryTag DCT_MouseMoved[1];
 } // ui
 
@@ -200,6 +201,7 @@ struct UIEventSystem
 	void SetDefaultCursor(ui::DefaultCursor cur);
 
 	UIObject* FindObjectAtPosition(float x, float y);
+	static UIObject* _FindObjectAtPosition(UIObject* root, float x, float y);
 	void MoveClickTo(UIObject* obj, UIMouseButton btn = UIMouseButton::Left);
 	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
@@ -214,6 +216,7 @@ struct UIEventSystem
 	ui::NativeWindowBase* GetNativeWindow() const;
 
 	UIContainer* container;
+	ui::Overlays* overlays;
 
 	UIObject* hoverObj = nullptr;
 	UIObject* dragHoverObj = nullptr;

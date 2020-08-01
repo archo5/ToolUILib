@@ -214,23 +214,40 @@ public:
 	std::function<void(UIContainer*)> renderFunc;
 };
 
-struct FrameContents
+struct Overlays
 {
-	struct OverlayInfo
+	struct Info
 	{
 		float depth;
 	};
+	struct Sorted
+	{
+		UIObject* obj;
+		float depth;
+	};
 
+	void Register(UIObject* obj, float depth);
+	void Unregister(UIObject* obj);
+	void UpdateSorted();
+
+	std::unordered_map<UIObject*, Info> mapped;
+	std::vector<Sorted> sorted;
+	bool sortedOutdated = false;
+};
+
+struct FrameContents
+{
 	FrameContents()
 	{
 		container.owner = this;
 		eventSystem.container = &container;
+		eventSystem.overlays = &overlays;
 	}
 
 	UIContainer container;
 	UIEventSystem eventSystem;
 	ui::NativeWindowBase* nativeWindow = nullptr;
-	std::unordered_map<UIObject*, OverlayInfo> overlays;
+	Overlays overlays;
 };
 
 class InlineFrameNode : public Node
@@ -242,7 +259,7 @@ public:
 	void OnPaint() override;
 	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
 	float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	void OnLayoutChanged() override;
 	void Render(UIContainer* ctx) override;
 
 	void SetFrameContents(FrameContents* contents);

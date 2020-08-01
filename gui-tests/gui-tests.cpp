@@ -6,8 +6,18 @@
 
 struct OpenClose : ui::Node
 {
+	struct AllocTest
+	{
+		AllocTest(int v) : val(v) { printf("alloc #=%d\n", v); }
+		~AllocTest() { printf("free #=%d\n", val); }
+		int val;
+	};
+
 	void Render(UIContainer* ctx) override
 	{
+		static int counter = 0;
+		Allocate<AllocTest>(++counter);
+
 		ctx->Push<ui::Panel>();
 
 		auto* cb = ctx->Make<ui::Checkbox>()->Init(open);
@@ -1322,6 +1332,43 @@ struct SizeTest : ui::Node
 	std::vector<Test> tests;
 };
 
+struct PlacementTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		*this + ui::Padding(20);
+
+		ctx->PushBox();
+
+		ui::imm::EditBool(ctx, open, { ui::MakeOverlay(open, 1.0f) });
+
+		if (open)
+		{
+			auto* lb = ctx->Push<ui::ListBox>();
+			lb->RegisterAsOverlay();
+			auto* pap = Allocate<style::PointAnchoredPlacement>();
+			pap->SetAnchorAndPivot({ 0, 0 });
+			pap->bias = { -5, -5 };
+			lb->GetStyle().SetPlacement(pap);
+
+			// room for checkbox
+			*ctx->Make<ui::BoxElement>() + ui::Width(25) + ui::Height(25);
+
+			ctx->Text("opened");
+			ui::imm::PropEditBool(ctx, "One", one);
+			ui::imm::PropEditInt(ctx, "Two", two);
+
+			ctx->Pop();
+		}
+
+		ctx->Pop();
+	}
+
+	bool open = false;
+	bool one = true;
+	int two = 3;
+};
+
 struct ScrollbarTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -2052,10 +2099,8 @@ struct SlidingHighlightAnim : ui::Node
 			ctx->Pop();
 		}
 	}
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override
+	void OnLayoutChanged() override
 	{
-		ui::Node::OnLayout(rect, containerSize);
-
 		UIRect tr = GetTargetRect();
 		if (memcmp(&targetLayout, &tr, sizeof(tr)) != 0)
 		{
@@ -2672,6 +2717,7 @@ static TestEntry testEntries[] =
 	{ "Layout", [](UIContainer* ctx) { ctx->Make<LayoutTest>(); } },
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
 	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },
+	{ "Placement", [](UIContainer* ctx) { ctx->Make<PlacementTest>(); } },
 	{},
 	{ "- Threading -" },
 	{ "Thread worker", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },

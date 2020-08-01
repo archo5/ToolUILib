@@ -87,9 +87,9 @@ struct NativeWindowBase
 	void SetPosition(int x, int y);
 	void SetPosition(Point<int> p) { SetPosition(p.x, p.y); }
 
-	Point<int> GetSize();
+	Size<int> GetSize();
 	void SetSize(int x, int y, bool inner = true);
-	void SetSize(Point<int> p, bool inner = true) { SetSize(p.x, p.y, inner); }
+	void SetSize(Size<int> p, bool inner = true) { SetSize(p.x, p.y, inner); }
 
 	WindowState GetState();
 	void SetState(WindowState ws);
@@ -149,8 +149,8 @@ class NativeWindowNode : public Node
 public:
 	void Render(UIContainer* ctx) override {}
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
-	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override { return {}; }
-	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override { return {}; }
+	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
+	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
 
 	NativeWindowRenderFunc* GetWindow() { return &_window; }
 

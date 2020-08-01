@@ -7,11 +7,15 @@
 template <class T> struct Point
 {
 	T x, y;
+
+	template <class U> Point<U> Cast() const { return { U(x), U(y) }; }
 };
 
 template <class T> struct Size
 {
 	T x, y;
+
+	template <class U> Size<U> Cast() const { return { U(x), U(y) }; }
 };
 
 template <class T> struct Range
