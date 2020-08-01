@@ -97,6 +97,14 @@ struct PointAnchoredPlacement : Placement
 	Point<float> bias = { 0, 0 };
 };
 
+struct RectAnchoredPlacement : Placement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+
+	UIRect anchor = { 0, 0, 1, 1 };
+	UIRect bias = { 0, 0, 0, 0 };
+};
+
 namespace layouts {
 
 Layout* InlineBlock();

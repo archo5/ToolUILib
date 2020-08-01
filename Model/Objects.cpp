@@ -466,6 +466,9 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 	LayoutState state = { inrect, { inrect.x0, inrect.y0 } };
 	layout->OnLayout(this, inrect, state);
 
+	if (placement)
+		state.finalContentRect = inrect;
+
 	if (width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
 	{
 		float orig = state.finalContentRect.GetWidth();

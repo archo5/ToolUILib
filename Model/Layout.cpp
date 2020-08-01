@@ -32,6 +32,28 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	outRect = { x, y, x + w, y + h };
 }
 
+void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
+{
+	UIRect parentRect;
+	Size<float> contSize;
+	if (curObj->parent)
+	{
+		parentRect = curObj->parent->GetContentRect();
+		//contSize = parentRect.GetSize();
+	}
+	else
+	{
+		contSize.x = curObj->system->eventSystem.width;
+		contSize.y = curObj->system->eventSystem.height;
+		parentRect = { 0, 0, contSize.x, contSize.y };
+	}
+
+	outRect.x0 = lerp(parentRect.x0, parentRect.x1, anchor.x0) + bias.x0;
+	outRect.x1 = lerp(parentRect.x0, parentRect.x1, anchor.x1) + bias.x1;
+	outRect.y0 = lerp(parentRect.y0, parentRect.y1, anchor.y0) + bias.y0;
+	outRect.y1 = lerp(parentRect.y0, parentRect.y1, anchor.y1) + bias.y1;
+}
+
 
 namespace layouts {
 

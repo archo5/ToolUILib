@@ -449,6 +449,13 @@ struct Layout : Modifier
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetLayout(_layout); }
 };
 
+struct SetPlacement : Modifier
+{
+	style::Placement* _placement;
+	SetPlacement(style::Placement* placement) : _placement(placement) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetPlacement(_placement); }
+};
+
 struct StackingDirection : Modifier
 {
 	style::StackingDirection _dir;

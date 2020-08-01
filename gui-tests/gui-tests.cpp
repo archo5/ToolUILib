@@ -1931,53 +1931,90 @@ struct TooltipTest : ui::Node
 };
 
 
-static const char* numberNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." };
-static const char* opNames[] = { "+", "-", "*", "/" };
+static const char* calcOpNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "+", "-", "*", "/" };
+static UIRect CalcBoxButton(int x, int y, int w = 1, int h = 1)
+{
+	return { x / 4.f, y / 5.f, (x + w) / 4.f, (y + h) / 5.f };
+}
+static UIRect calcOpAnchors[] =
+{
+	// numbers
+	CalcBoxButton(0, 4),
+	CalcBoxButton(0, 3),
+	CalcBoxButton(1, 3),
+	CalcBoxButton(2, 3),
+	CalcBoxButton(0, 2),
+	CalcBoxButton(1, 2),
+	CalcBoxButton(2, 2),
+	CalcBoxButton(0, 1),
+	CalcBoxButton(1, 1),
+	CalcBoxButton(2, 1),
+
+	CalcBoxButton(1, 4),
+
+	CalcBoxButton(3, 3, 1, 2),
+	CalcBoxButton(3, 2),
+	CalcBoxButton(3, 1),
+	CalcBoxButton(3, 0),
+};
 struct Calculator : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-		{
-			ctx->Make<ui::Textbox>()->SetText(operation);
+		*this + ui::Width(style::Coord::Percent(100));
+		*this + ui::Height(style::Coord::Percent(100));
 
-			if (ui::imm::Button(ctx, "<"))
+		auto& inputs = ctx->Make<ui::Textbox>()->SetText(operation);
+		//auto& inputs = ctx->PushBox();
+		inputs + ui::MakeOverlay();
+		auto* rap_inputs = Allocate<style::RectAnchoredPlacement>();
+		rap_inputs->anchor = { 0, 0, 1, 0.1f };
+		inputs + ui::SetPlacement(rap_inputs);
+		//ctx->Pop();
+
+		auto* rap_result = Allocate<style::RectAnchoredPlacement>();
+		rap_result->anchor = { 0, 0.1f, 1, 0.2f };
+		*ctx->Push<ui::Panel>() + ui::MakeOverlay() + ui::SetPlacement(rap_result);
+		ctx->Text("=" + ToString(Calculate()));
+		ctx->Pop();
+
+		auto& buttons = ctx->PushBox();
+		buttons + ui::MakeOverlay();
+		auto* rap_buttons = Allocate<style::RectAnchoredPlacement>();
+		rap_buttons->anchor = { 0, 0.2f, 1, 1 };
+		buttons.GetStyle().SetPlacement(rap_buttons);
+
+		for (int i = 0; i < 15; i++)
+		{
+			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			rap->anchor = calcOpAnchors[i];
+			if (ui::imm::Button(ctx, calcOpNames[i], { ui::SetPlacement(rap) }))
+			{
+				AddChar(calcOpNames[i][0]);
+			}
+		}
+
+		// =
+		{
+			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			rap->anchor = CalcBoxButton(2, 4);
+			if (ui::imm::Button(ctx, "=", { ui::SetPlacement(rap) }))
+			{
+				operation = ToString(Calculate());
+			}
+		}
+
+		// backspace
+		{
+			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			rap->anchor = CalcBoxButton(2, 0);
+			if (ui::imm::Button(ctx, "<", { ui::SetPlacement(rap) }))
 			{
 				if (!operation.empty())
 					operation.pop_back();
 			}
 		}
-		ctx->Pop();
 
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-		for (int i = 0; i < 11; i++)
-		{
-			if (ui::imm::Button(ctx, numberNames[i]))
-			{
-				AddChar(numberNames[i][0]);
-			}
-		}
-		ctx->Pop();
-
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-		{
-			for (int i = 0; i < 4; i++)
-			{
-				if (ui::imm::Button(ctx, opNames[i]))
-				{
-					AddChar(opNames[i][0]);
-				}
-			}
-
-			if (ui::imm::Button(ctx, "="))
-			{
-				operation = ToString(Calculate());
-			}
-		}
-		ctx->Pop();
-
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
-		ctx->Text("=" + ToString(Calculate()));
 		ctx->Pop();
 	}
 
