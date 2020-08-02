@@ -61,6 +61,23 @@ enum EThemeElement
 };
 
 
+namespace GL {
+
+struct BatchRenderer
+{
+	void Begin();
+	void End();
+
+	void SetColor(float r, float g, float b, float a = 1);
+	void Pos(float x, float y);
+	void Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
+	void Line(float x0, float y0, float x1, float y1, float w = 1);
+
+	GL::Col8b col;
+};
+
+} // GL
+
 void InitFont();
 float GetTextWidth(const char* text, size_t num = SIZE_MAX);
 float GetFontHeight();

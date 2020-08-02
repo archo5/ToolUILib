@@ -8,6 +8,79 @@
 #include "Render.h"
 
 
+namespace GL {
+
+static GL::Vertex brverts[1024 * 32];
+static size_t brnumverts = 0;
+
+void BatchRenderer::Begin()
+{
+	brnumverts = 0;
+}
+
+void BatchRenderer::End()
+{
+	GL::DrawTriangles(brverts, brnumverts);
+}
+
+void BatchRenderer::SetColor(float r, float g, float b, float a)
+{
+	col =
+	{
+		unsigned char(r * 255),
+		unsigned char(g * 255),
+		unsigned char(b * 255),
+		unsigned char(a * 255),
+	};
+}
+
+void BatchRenderer::Pos(float x, float y)
+{
+	auto& v = brverts[brnumverts++];
+	v.col = col;
+	v.u = 0;
+	v.v = 0;
+	v.x = x;
+	v.y = y;
+}
+
+void BatchRenderer::Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1)
+{
+	brverts[brnumverts++] = { x0, y0, u0, v0, col };
+	brverts[brnumverts++] = { x1, y0, u1, v0, col };
+	brverts[brnumverts++] = { x1, y1, u1, v1, col };
+
+	brverts[brnumverts++] = { x1, y1, u1, v1, col };
+	brverts[brnumverts++] = { x0, y1, u0, v1, col };
+	brverts[brnumverts++] = { x0, y0, u0, v0, col };
+}
+
+void BatchRenderer::Line(float x0, float y0, float x1, float y1, float w)
+{
+	if (x0 == x1 && y0 == y1)
+		return;
+
+	float dx = x1 - x0;
+	float dy = y1 - y0;
+	float lensq = dx * dx + dy * dy;
+	float invlen = 1.0f / sqrtf(lensq);
+	dx *= invlen;
+	dy *= invlen;
+	float tx = -dy * 0.5f * w;
+	float ty = dx * 0.5f * w;
+
+	brverts[brnumverts++] = { x0 + tx, y0 + ty, 0, 0, col };
+	brverts[brnumverts++] = { x1 + tx, y1 + ty, 0, 0, col };
+	brverts[brnumverts++] = { x1 - tx, y1 - ty, 0, 0, col };
+
+	brverts[brnumverts++] = { x1 - tx, y1 - ty, 0, 0, col };
+	brverts[brnumverts++] = { x0 - tx, y0 - ty, 0, 0, col };
+	brverts[brnumverts++] = { x0 + tx, y0 + ty, 0, 0, col };
+}
+
+} // GL
+
+
 unsigned char ttf_buffer[1 << 20];
 unsigned char temp_bitmap[512 * 512];
 

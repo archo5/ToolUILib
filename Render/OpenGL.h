@@ -36,17 +36,4 @@ void DestroyTexture(Texture2D* tex);
 void SetTexture(Texture2D* tex);
 void DrawTriangles(Vertex* verts, size_t num_verts);
 
-struct BatchRenderer
-{
-	void Begin();
-	void End();
-
-	void SetColor(float r, float g, float b, float a = 1);
-	void Pos(float x, float y);
-	void Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
-	void Line(float x0, float y0, float x1, float y1, float w = 1);
-
-	Col8b col;
-};
-
 } // namespace GL
