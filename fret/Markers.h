@@ -38,7 +38,7 @@ struct Marker
 	bool Contains(uint64_t pos) const;
 	unsigned ContainInfo(uint64_t pos) const; // 1 - overlap, 2 - left edge, 4 - right edge
 	uint64_t GetEnd() const;
-	Color4f GetColor() const;
+	ui::Color4f GetColor() const;
 };
 
 extern ui::DataCategoryTag DCT_Marker[1];

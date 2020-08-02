@@ -8,11 +8,7 @@ struct RenderingPrimitives : ui::Node
 {
 	void OnPaint() override
 	{
-		GL::SetTexture(0);
-		GL::BatchRenderer br;
-		br.Begin();
-
-		br.SetColor(1, 0.5f, 0);
+		ui::Color4b col = ui::Color4f(1, 0.5f, 0);
 
 		for (int t = 0; t <= 5; t++)
 		{
@@ -24,19 +20,17 @@ struct RenderingPrimitives : ui::Node
 			float x3 = 60 + xo;
 			for (int i = 0; i < 8; i++)
 			{
-				br.Line(x0, 10 + i * 4, x1, 10 + i * 5, w);
-				br.Line(x2, 10 + i * 5, x3, 10 + i * 4, w);
+				ui::draw::LineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, col);
+				ui::draw::LineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, col);
 			}
 			for (int i = 4; i < 12; i++)
 			{
-				br.Line(x0, 10 + i * 8, x1, 10 + i * 10, w);
-				br.Line(x2, 10 + i * 10, x3, 10 + i * 8, w);
+				ui::draw::LineCol(x0, 10 + i * 8, x1, 10 + i * 10, w, col);
+				ui::draw::LineCol(x2, 10 + i * 10, x3, 10 + i * 8, w, col);
 			}
 		}
 
-		br.Quad(30, 10, 40, 20, 0, 0, 1, 1);
-
-		br.End();
+		ui::draw::RectCol(30, 10, 40, 20, col);
 	}
 	void Render(UIContainer* ctx) override
 	{
@@ -489,13 +483,8 @@ struct DragDropTest : ui::Node
 
 		if (hasDragTarget)
 		{
-			GL::SetTexture(0);
-			GL::BatchRenderer br;
-			br.Begin();
-			br.SetColor(0.1f, 0.7f, 0.9f, 0.6f);
 			auto r = dragTargetLine;
-			br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
-			br.End();
+			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 		}
 	}
 
@@ -801,63 +790,33 @@ void CompactNodeEditTest::NodeUI(UIContainer* ctx, ExprNode*& node)
 
 struct SubUITest : ui::Node
 {
+	ui::Color4b PickColor(uint8_t id, ui::Color4f normal, ui::Color4f hovered, ui::Color4f pressed)
+	{
+		if (subui.IsPressed(id))
+			return pressed;
+		if (subui.IsHovered(id))
+			return hovered;
+		return normal;
+	}
 	void OnPaint() override
 	{
 		style::PaintInfo info(this);
 		ui::Theme::current->textBoxBase->paint_func(info);
 		auto r = finalRectC;
 
-		GL::BatchRenderer br;
-
-		GL::SetTexture(0);
-		br.Begin();
-		if (subui.IsPressed(0))
-			br.SetColor(1, 0, 0, 0.5f);
-		else if (subui.IsHovered(0))
-			br.SetColor(0, 1, 0, 0.5f);
-		else
-			br.SetColor(0, 0, 1, 0.5f);
-		br.Quad(r.x0, r.y0, r.x0 + 50, r.y0 + 50, 0, 0, 1, 1);
-		br.End();
+		ui::draw::RectCol(r.x0, r.y0, r.x0 + 50, r.y0 + 50, PickColor(0, { 0, 0, 1, 0.5f }, { 0, 1, 0, 0.5f }, { 1, 0, 0, 0.5f }));
 		DrawTextLine(r.x0 + 25 - GetTextWidth("Button") / 2, r.y0 + 25 + GetFontHeight() / 2, "Button", 1, 1, 1);
 
-		GL::SetTexture(0);
-		br.Begin();
 		auto ddr = UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + draggableY, 10);
-		if (subui.IsPressed(1))
-			br.SetColor(1, 0, 1, 0.5f);
-		else if (subui.IsHovered(1))
-			br.SetColor(1, 1, 0, 0.5f);
-		else
-			br.SetColor(0, 1, 1, 0.5f);
-		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
-		br.End();
+		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(1, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
 		DrawTextLine(r.x0 + draggableX - GetTextWidth("D&D") / 2, r.y0 + draggableY + GetFontHeight() / 2, "D&D", 1, 1, 1);
 
-		GL::SetTexture(0);
-		br.Begin();
 		ddr = UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + 5, 10, 5);
-		if (subui.IsPressed(2))
-			br.SetColor(1, 0, 1, 0.5f);
-		else if (subui.IsHovered(2))
-			br.SetColor(1, 1, 0, 0.5f);
-		else
-			br.SetColor(0, 1, 1, 0.5f);
-		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
-		br.End();
+		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(2, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
 		DrawTextLine(r.x0 + draggableX - GetTextWidth("x") / 2, r.y0 + 5 + GetFontHeight() / 2, "x", 1, 1, 1);
 
-		GL::SetTexture(0);
-		br.Begin();
 		ddr = UIRect::FromCenterExtents(r.x0 + 5, r.y0 + draggableY, 5, 10);
-		if (subui.IsPressed(3))
-			br.SetColor(1, 0, 1, 0.5f);
-		else if (subui.IsHovered(3))
-			br.SetColor(1, 1, 0, 0.5f);
-		else
-			br.SetColor(0, 1, 1, 0.5f);
-		br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
-		br.End();
+		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(3, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
 		DrawTextLine(r.x0 + 5 - GetTextWidth("y") / 2, r.y0 + draggableY + GetFontHeight() / 2, "y", 1, 1, 1);
 	}
 	void OnEvent(UIEvent& e) override
@@ -1602,19 +1561,7 @@ struct SlidersTest : ui::Node
 			{
 				fn(info);
 				auto r = info.rect;
-				GL::SetTexture(0);
-				GL::BatchRenderer br;
-				br.Begin();
-				br.SetColor(0, 0, 0);
-				br.Pos(r.x0, r.y1);
-				br.Pos(r.x0, r.y0);
-				br.SetColor(1, 0, 0);
-				br.Pos(r.x1, r.y0);
-				br.Pos(r.x1, r.y0);
-				br.Pos(r.x1, r.y1);
-				br.SetColor(0, 0, 0);
-				br.Pos(r.x0, r.y1);
-				br.End();
+				ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
 			});
 			style::Accessor(s.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
 		}
@@ -1640,7 +1587,7 @@ struct SlidersTest : ui::Node
 	}
 };
 
-static Color4f colorPickerTestCol;
+static ui::Color4f colorPickerTestCol;
 struct ColorPickerTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -1661,13 +1608,8 @@ struct HighElementCountTest : ui::Node
 	{
 		void OnPaint() override
 		{
-			GL::SetTexture(0);
-			GL::BatchRenderer br;
-			br.Begin();
-			br.SetColor(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f);
 			auto r = GetContentRect();
-			br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
-			br.End();
+			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));
 		}
 		void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
 		{
@@ -2197,15 +2139,11 @@ struct SlidingHighlightAnim : ui::Node
 		auto r = GetCurrentRect();
 		r = r.ShrinkBy(UIRect::UniformBorder(1));
 
-		GL::SetTexture(0);
-		GL::BatchRenderer br;
-		br.Begin();
-		br.SetColor(1, 0, 0);
-		br.Line(r.x0, r.y0, r.x1, r.y0);
-		br.Line(r.x0, r.y1, r.x1, r.y1);
-		br.Line(r.x0, r.y0, r.x0, r.y1);
-		br.Line(r.x1, r.y0, r.x1, r.y1);
-		br.End();
+		ui::Color4f colLine(1, 0, 0);		
+		ui::draw::LineCol(r.x0, r.y0, r.x1, r.y0, 1, colLine);
+		ui::draw::LineCol(r.x0, r.y1, r.x1, r.y1, 1, colLine);
+		ui::draw::LineCol(r.x0, r.y0, r.x0, r.y1, 1, colLine);
+		ui::draw::LineCol(r.x1, r.y0, r.x1, r.y1, 1, colLine);
 	}
 	void OnEvent(UIEvent& e) override
 	{
@@ -2278,24 +2216,19 @@ struct SubUIBenchmark : ui::Node
 		ui::Theme::current->textBoxBase->paint_func(info);
 		auto r = finalRectC;
 
-		GL::BatchRenderer br;
-
-		GL::SetTexture(0);
-		br.Begin();
-
 		for (uint16_t pid = 0; pid < points.size(); pid++)
 		{
 			auto ddr = UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4);
-			if (subui.IsPressed(pid))
-				br.SetColor(1, 0, 1, 0.5f);
-			else if (subui.IsHovered(pid))
-				br.SetColor(1, 1, 0, 0.5f);
-			else
-				br.SetColor(0, 1, 1, 0.5f);
-			br.Quad(ddr.x0, ddr.y0, ddr.x1, ddr.y1, 0, 0, 1, 1);
-		}
 
-		br.End();
+			ui::Color4f col;
+			if (subui.IsPressed(pid))
+				col = { 1, 0, 1, 0.5f };
+			else if (subui.IsHovered(pid))
+				col = { 1, 1, 0, 0.5f };
+			else
+				col = { 0, 1, 1, 0.5f };
+			ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, col);
+		}
 	}
 	void OnEvent(UIEvent& e) override
 	{

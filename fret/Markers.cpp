@@ -7,18 +7,18 @@ ui::DataCategoryTag DCT_Marker[1];
 ui::DataCategoryTag DCT_MarkedItems[1];
 
 
-Color4f colorChar{ 0.3f, 0.9f, 0.1f, 0.3f };
-Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
-Color4f colorFloat64{ 0.9f, 0.2f, 0.0f, 0.3f };
-Color4f colorInt8{ 0.3f, 0.1f, 0.9f, 0.3f };
-Color4f colorInt16{ 0.2f, 0.2f, 0.9f, 0.3f };
-Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
-Color4f colorInt64{ 0.0f, 0.4f, 0.9f, 0.3f };
-Color4f colorNearFileSize32{ 0.1f, 0.3f, 0.7f, 0.3f };
-Color4f colorNearFileSize64{ 0.0f, 0.4f, 0.7f, 0.3f };
-Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
-Color4f colorInst{ 0.9f, 0.9f, 0.9f, 0.6f };
-Color4f colorCurInst{ 0.9f, 0.2f, 0.0f, 0.8f };
+ui::Color4f colorChar{ 0.3f, 0.9f, 0.1f, 0.3f };
+ui::Color4f colorFloat32{ 0.9f, 0.1f, 0.0f, 0.3f };
+ui::Color4f colorFloat64{ 0.9f, 0.2f, 0.0f, 0.3f };
+ui::Color4f colorInt8{ 0.3f, 0.1f, 0.9f, 0.3f };
+ui::Color4f colorInt16{ 0.2f, 0.2f, 0.9f, 0.3f };
+ui::Color4f colorInt32{ 0.1f, 0.3f, 0.9f, 0.3f };
+ui::Color4f colorInt64{ 0.0f, 0.4f, 0.9f, 0.3f };
+ui::Color4f colorNearFileSize32{ 0.1f, 0.3f, 0.7f, 0.3f };
+ui::Color4f colorNearFileSize64{ 0.0f, 0.4f, 0.7f, 0.3f };
+ui::Color4f colorASCII{ 0.1f, 0.9f, 0.0f, 0.3f };
+ui::Color4f colorInst{ 0.9f, 0.9f, 0.9f, 0.6f };
+ui::Color4f colorCurInst{ 0.9f, 0.2f, 0.0f, 0.8f };
 
 
 static uint8_t typeSizes[] = { 1, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8 };
@@ -248,7 +248,7 @@ uint64_t Marker::GetEnd() const
 	return at + count * typeSizes[type] + stride * (repeats ? repeats - 1 : 0);
 }
 
-Color4f Marker::GetColor() const
+ui::Color4f Marker::GetColor() const
 {
 	switch (type)
 	{

@@ -684,7 +684,7 @@ struct Compiler
 				{
 					it = it.substr(2);
 					for (char c : it)
-						val = val * 16 + gethex(c);
+						val = val * 16 + ui::gethex(c);
 				}
 				else
 				{

@@ -1,19 +1,16 @@
 
 #pragma once
+#include "../Core/Image.h"
 
 
-namespace GL {
-
-struct Col8b
-{
-	unsigned char r, g, b, a;
-};
+namespace ui {
+namespace rhi {
 
 struct Vertex
 {
 	float x, y;
 	float u, v;
-	Col8b col;
+	Color4b col;
 };
 
 struct Texture2D;
@@ -36,4 +33,5 @@ void DestroyTexture(Texture2D* tex);
 void SetTexture(Texture2D* tex);
 void DrawTriangles(Vertex* verts, size_t num_verts);
 
-} // namespace GL
+} // rhi
+} // ui

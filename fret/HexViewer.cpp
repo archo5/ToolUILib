@@ -120,7 +120,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 				auto& oc = outColors[i];
 				oc.asciiColor.BlendOver(mc);
 				oc.hexColor.BlendOver(mc);
-				Color4f mc2 = { sqrtf(mc.r), sqrtf(mc.g), sqrtf(mc.b), sqrtf(mc.a) };
+				ui::Color4f mc2 = { sqrtf(mc.r), sqrtf(mc.g), sqrtf(mc.b), sqrtf(mc.a) };
 				if (flags & 2)
 					oc.leftBracketColor.BlendOver(mc2);
 				if (flags & 4)
@@ -362,15 +362,12 @@ void HexViewer::OnPaint()
 
 	Highlight(highlightSettings, dataDesc, file, state->basePos, &bcol[0], buf, sz);
 
-	GL::SetTexture(0);
-	GL::BatchRenderer br;
-	br.Begin();
 	for (size_t i = 0; i < sz; i++)
 	{
 		uint8_t v = buf[i];
 		auto pos = GetBasePos() + i;
 
-		Color4f col = bcol[i].hexColor;// highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
+		ui::Color4f col = bcol[i].hexColor;// highlighter->GetByteTypeBin(GetBasePos(), buf, i, sz);
 		if (pos >= minSel && pos <= maxSel)
 			col.BlendOver(state->colorSelect);
 		if (state->hoverByte == pos)
@@ -379,8 +376,7 @@ void HexViewer::OnPaint()
 		{
 			float xoff = (i % W) * 20;
 			float yoff = (i / W) * fh;
-			br.SetColor(col.r, col.g, col.b, col.a);
-			br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
+			ui::draw::RectCol(x + xoff - 2, y + yoff - fh + 4, x + xoff + 18, y + yoff + 3, col);
 		}
 
 		col = bcol[i].asciiColor;// highlighter->GetByteTypeASCII(GetBasePos(), buf, i, sz);
@@ -392,8 +388,7 @@ void HexViewer::OnPaint()
 		{
 			float xoff = (i % W) * 10;
 			float yoff = (i / W) * fh;
-			br.SetColor(col.r, col.g, col.b, col.a);
-			br.Quad(x2 + xoff - 2, y + yoff - fh + 4, x2 + xoff + 8, y + yoff + 3, 0, 0, 1, 1);
+			ui::draw::RectCol(x2 + xoff - 2, y + yoff - fh + 4, x2 + xoff + 8, y + yoff + 3, col);
 		}
 
 		col = bcol[i].leftBracketColor;
@@ -401,10 +396,9 @@ void HexViewer::OnPaint()
 		{
 			float xoff = (i % W) * 20;
 			float yoff = (i / W) * fh;
-			br.SetColor(col.r, col.g, col.b, col.a);
-			br.Quad(x + xoff - 2, y + yoff - fh + 5, x + xoff - 1, y + yoff + 2, 0, 0, 1, 1);
-			br.Quad(x + xoff - 2, y + yoff - fh + 4, x + xoff + 4, y + yoff - fh + 5, 0, 0, 1, 1);
-			br.Quad(x + xoff - 2, y + yoff + 2, x + xoff + 4, y + yoff + 3, 0, 0, 1, 1);
+			ui::draw::RectCol(x + xoff - 2, y + yoff - fh + 5, x + xoff - 1, y + yoff + 2, col);
+			ui::draw::RectCol(x + xoff - 2, y + yoff - fh + 4, x + xoff + 4, y + yoff - fh + 5, col);
+			ui::draw::RectCol(x + xoff - 2, y + yoff + 2, x + xoff + 4, y + yoff + 3, col);
 		}
 
 		col = bcol[i].rightBracketColor;
@@ -412,13 +406,11 @@ void HexViewer::OnPaint()
 		{
 			float xoff = (i % W) * 20;
 			float yoff = (i / W) * fh;
-			br.SetColor(col.r, col.g, col.b, col.a);
-			br.Quad(x + xoff + 17, y + yoff - fh + 5, x + xoff + 18, y + yoff + 2, 0, 0, 1, 1);
-			br.Quad(x + xoff + 12, y + yoff - fh + 4, x + xoff + 18, y + yoff - fh + 5, 0, 0, 1, 1);
-			br.Quad(x + xoff + 12, y + yoff + 2, x + xoff + 18, y + yoff + 3, 0, 0, 1, 1);
+			ui::draw::RectCol(x + xoff + 17, y + yoff - fh + 5, x + xoff + 18, y + yoff + 2, col);
+			ui::draw::RectCol(x + xoff + 12, y + yoff - fh + 4, x + xoff + 18, y + yoff - fh + 5, col);
+			ui::draw::RectCol(x + xoff + 12, y + yoff + 2, x + xoff + 18, y + yoff + 3, col);
 		}
 	}
-	br.End();
 
 	auto size = file->dataSource->GetSize();
 	for (int i = 0; i < 64; i++)

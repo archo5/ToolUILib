@@ -303,7 +303,7 @@ static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 void DebugDrawSelf(UIObject* o)
 {
-	GL::SetTexture(0);
+	rhi::SetTexture(0);
 
 	float a = 0.2f;
 
@@ -428,7 +428,7 @@ struct NativeWindow_Impl
 
 		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
 		DragAcceptFiles(window, TRUE);
-		renderCtx = GL::CreateRenderContext(window);
+		renderCtx = rhi::CreateRenderContext(window);
 
 		//UpdateVisibilityState();
 
@@ -462,7 +462,7 @@ struct NativeWindow_Impl
 	{
 		if (invalidated)
 			g_windowRepaintList->erase(std::remove(g_windowRepaintList->begin(), g_windowRepaintList->end(), this), g_windowRepaintList->end());
-		GL::FreeRenderContext(renderCtx);
+		rhi::FreeRenderContext(renderCtx);
 		DestroyWindow(window);
 	}
 
@@ -493,7 +493,7 @@ struct NativeWindow_Impl
 
 		double t = hqtime();
 
-		GL::SetActiveContext(renderCtx);
+		rhi::SetActiveContext(renderCtx);
 
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
@@ -511,11 +511,11 @@ struct NativeWindow_Impl
 		cont.ProcessNodeRenderStack();
 		evsys.RecomputeLayout();
 
-		GL::SetActiveContext(renderCtx);
-		GL::SetViewport(0, 0, evsys.width, evsys.height);
+		rhi::SetActiveContext(renderCtx);
+		rhi::SetViewport(0, 0, evsys.width, evsys.height);
 
 		//GL::Clear(20, 40, 80, 255);
-		GL::Clear(0x25, 0x25, 0x25, 255);
+		rhi::Clear(0x25, 0x25, 0x25, 255);
 		if (cont.rootNode)
 			cont.rootNode->OnPaint();
 
@@ -538,7 +538,7 @@ struct NativeWindow_Impl
 				DebugDraw(cont.rootNode);
 		}
 
-		GL::Present(renderCtx);
+		rhi::Present(renderCtx);
 	}
 
 	void UpdateVisibilityState()
@@ -586,7 +586,7 @@ struct NativeWindow_Impl
 
 	HWND window;
 	HCURSOR cursor;
-	GL::RenderContext* renderCtx;
+	rhi::RenderContext* renderCtx;
 
 	Menu* menu;
 
@@ -919,12 +919,7 @@ struct Inspector : ui::NativeDialogWindow
 
 			if (obj == insp->selObj)
 			{
-				GL::SetTexture(0);
-				GL::BatchRenderer br;
-				br.Begin();
-				br.SetColor(0.5f, 0, 0);
-				br.Quad(0, y, 400, y + h, 0, 0, 0, 0);
-				br.End();
+				draw::RectCol(0, y, 400, y + h, Color4f(0.5f, 0, 0));
 			}
 
 			y += h;
@@ -1269,7 +1264,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_SIZE:
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
-			GL::SetViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
+			rhi::SetViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
 			if (auto* window = GetNativeWindow(hWnd))
 			{
 				auto& evsys = window->GetEventSys();
@@ -1306,7 +1301,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			GetClientRect(hWnd, &r);
 			auto w = r.right - r.left;
 			auto h = r.bottom - r.top;
-			GL::SetViewport(0, 0, w, h);
+			rhi::SetViewport(0, 0, w, h);
 			auto& evsys = window->GetEventSys();
 			if (w != evsys.width || h != evsys.height)
 			{

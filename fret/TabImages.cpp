@@ -100,14 +100,9 @@ void TabImages::Render(UIContainer* ctx)
 				{
 					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 
-					GL::BatchRenderer br;
 					auto r = info.rect;
 
-					GL::SetTexture(bgr->_texture);
-					br.Begin();
-					br.SetColor(1, 1, 1, 1);
-					br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
-					br.End();
+					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr->_texture, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 				});
 				img->SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
 				img->SetScaleMode(ui::ScaleMode::Fit);

@@ -18,23 +18,14 @@ void ColorBlock::OnPaint()
 {
 	styleProps->paint_func(this);
 
-	GL::BatchRenderer br;
 	auto r = GetContentRect();
 
 	if (_color.a != 1)
 	{
-		GL::SetTexture(_bgImage->_texture);
-		br.Begin();
-		br.SetColor(1, 1, 1, 1);
-		br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
-		br.End();
+		ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage->_texture, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
 	}
 	
-	GL::SetTexture(0);
-	br.Begin();
-	br.SetColor(_color.r, _color.g, _color.b, _color.a);
-	br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
-	br.End();
+	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
 
 	PaintChildren();
 }
@@ -52,14 +43,10 @@ void ImageElement::OnPaint()
 	auto c = GetContentRect();
 	if (_image && _image->GetWidth() && _image->GetHeight() && c.GetWidth() && c.GetHeight())
 	{
-		GL::SetTexture(_image->_texture);
-		GL::BatchRenderer br;
-		br.Begin();
-		br.SetColor(1, 1, 1);
 		switch (_scaleMode)
 		{
 		case ScaleMode::Stretch:
-			br.Quad(c.x0, c.y0, c.x1, c.y1, 0, 0, 1, 1);
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture);
 			break;
 		case ScaleMode::Fit: {
 			float iasp = _image->GetWidth() / (float)_image->GetHeight();
@@ -71,7 +58,7 @@ void ImageElement::OnPaint()
 				w = h * iasp;
 			float x = c.x0 + (c.GetWidth() - w) * (_anchorX + 1) * 0.5f;
 			float y = c.y0 + (c.GetHeight() - h) * (_anchorY + 1) * 0.5f;
-			br.Quad(x, y, x + w, y + h, 0, 0, 1, 1);
+			draw::RectTex(x, y, x + w, y + h, _image->_texture);
 			break; }
 		case ScaleMode::Fill: {
 			float iasp = _image->GetWidth() / (float)_image->GetHeight();
@@ -83,14 +70,13 @@ void ImageElement::OnPaint()
 				w = h * iasp;
 			float x = c.x0 + (c.GetWidth() - w) * (_anchorX + 1) * 0.5f;
 			float y = c.y0 + (c.GetHeight() - h) * (_anchorY + 1) * 0.5f;
-			br.Quad(c.x0, c.y0, c.x1, c.y1,
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture,
 				(c.x0 - x) / w,
 				(c.y0 - y) / h,
 				(c.x1 - x) / w,
 				(c.y1 - y) / h);
 			break; }
 		}
-		br.End();
 	}
 
 	PaintChildren();
@@ -159,12 +145,7 @@ void HueSatPicker::OnPaint()
 	if (!_bgImage || _bgImage->GetWidth() != tgtw)
 		_RegenerateBackground(tgtw);
 
-	GL::SetTexture(_bgImage->_texture);
-	GL::BatchRenderer br;
-	br.Begin();
-	br.SetColor(1, 1, 1, 1);
-	br.Quad(cr.x0, cr.y0, cr.x0 + tgtw, cr.y0 + tgtw, 0, 0, 1, 1);
-	br.End();
+	draw::RectTex(cr.x0, cr.y0, cr.x0 + tgtw, cr.y0 + tgtw, _bgImage->_texture);
 
 	float hw = tgtw / 2.0f;
 	float cx = cr.x0 + hw;
@@ -250,11 +231,7 @@ void ColorCompPicker2D::OnPaint()
 	if (!_bgImage || _bgImage->GetWidth() != tgtw || _bgImage->GetHeight() != tgth || _settings != _curImgSettings)
 		_RegenerateBackground(tgtw, tgth);
 
-	GL::SetTexture(_bgImage->_texture);
-	GL::BatchRenderer br;
-	br.Begin();
-	br.Quad(cr.x0, cr.y0, cr.x1, cr.y1, 0, 0, 1, 1);
-	br.End();
+	draw::RectTex(cr.x0, cr.y0, cr.x1, cr.y1, _bgImage->_texture);
 
 	float sx = lerp(cr.x0, cr.x1, _settings._invx ? 1 - _x : _x);
 	float sy = lerp(cr.y0, cr.y1, _settings._invy ? 1 - _y : _y);
@@ -337,19 +314,7 @@ static std::string gstr(float f)
 
 static void DrawHGradQuad(UIRect r, Color4f a, Color4f b)
 {
-	GL::SetTexture(0);
-	GL::BatchRenderer br;
-	br.Begin();
-	br.SetColor(a.r, a.g, a.b, a.a);
-	br.Pos(r.x0, r.y1);
-	br.Pos(r.x0, r.y0);
-	br.SetColor(b.r, b.g, b.b, b.a);
-	br.Pos(r.x1, r.y0);
-	br.Pos(r.x1, r.y0);
-	br.Pos(r.x1, r.y1);
-	br.SetColor(a.r, a.g, a.b, a.a);
-	br.Pos(r.x0, r.y1);
-	br.End();
+	ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, a, b);
 }
 
 static UIRect RectHSlice(UIRect r, float i, float n)

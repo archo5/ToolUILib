@@ -10,7 +10,7 @@
 
 namespace GL {
 
-static GL::Vertex brverts[1024 * 32];
+static ui::rhi::Vertex brverts[1024 * 32];
 static size_t brnumverts = 0;
 
 void BatchRenderer::Begin()
@@ -20,7 +20,7 @@ void BatchRenderer::Begin()
 
 void BatchRenderer::End()
 {
-	GL::DrawTriangles(brverts, brnumverts);
+	ui::rhi::DrawTriangles(brverts, brnumverts);
 }
 
 void BatchRenderer::SetColor(float r, float g, float b, float a)
@@ -32,6 +32,11 @@ void BatchRenderer::SetColor(float r, float g, float b, float a)
 		unsigned char(b * 255),
 		unsigned char(a * 255),
 	};
+}
+
+void BatchRenderer::SetColor(ui::Color4b c)
+{
+	col = c;
 }
 
 void BatchRenderer::Pos(float x, float y)
@@ -81,17 +86,79 @@ void BatchRenderer::Line(float x0, float y0, float x1, float y1, float w)
 } // GL
 
 
+namespace ui {
+namespace draw {
+
+void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
+{
+	rhi::SetTexture(0);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.SetColor(col);
+	br.Line(x0, y0, x1, y1, w);
+	br.End();
+}
+
+void RectCol(float x0, float y0, float x1, float y1, Color4b col)
+{
+	rhi::SetTexture(0);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.SetColor(col);
+	br.Quad(x0, y0, x1, y1, 0, 0, 1, 1);
+	br.End();
+}
+
+void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
+{
+	rhi::SetTexture(0);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.SetColor(a);
+	br.Pos(x0, y1);
+	br.Pos(x0, y0);
+	br.SetColor(b);
+	br.Pos(x1, y0);
+	br.Pos(x1, y0);
+	br.Pos(x1, y1);
+	br.SetColor(a);
+	br.Pos(x0, y1);
+	br.End();
+}
+
+void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex)
+{
+	rhi::SetTexture(tex);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.Quad(x0, y0, x1, y1, 0, 0, 1, 1);
+	br.End();
+}
+
+void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex, float u0, float v0, float u1, float v1)
+{
+	rhi::SetTexture(tex);
+	GL::BatchRenderer br;
+	br.Begin();
+	br.Quad(x0, y0, x1, y1, u0, v0, u1, v1);
+	br.End();
+}
+
+} // draw
+} // ui
+
+
 unsigned char ttf_buffer[1 << 20];
 unsigned char temp_bitmap[512 * 512];
 
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
-GL::Texture2D* g_fontTexture;
+ui::rhi::Texture2D* g_fontTexture;
 
 void InitFont()
 {
 	fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/segoeui.ttf", "rb"));
 	stbtt_BakeFontBitmap(ttf_buffer, 0, -12.0f, temp_bitmap, 512, 512, 32, 96, cdata); // no guarantee this fits!
-	g_fontTexture = GL::CreateTextureA8(temp_bitmap, 512, 512);
+	g_fontTexture = ui::rhi::CreateTextureA8(temp_bitmap, 512, 512);
 }
 
 float GetTextWidth(const char* text, size_t num)
@@ -114,7 +181,7 @@ float GetFontHeight()
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
 {
 	// assume orthographic projection with units = screen pixels, origin at top left
-	GL::SetTexture(g_fontTexture);
+	ui::rhi::SetTexture(g_fontTexture);
 	GL::BatchRenderer br;
 	br.Begin();
 	br.SetColor(r, g, b, a);
@@ -235,14 +302,14 @@ Sprite g_themeSprites[TE__COUNT] =
 #endif
 };
 
-GL::Texture2D* g_themeTexture;
+ui::rhi::Texture2D* g_themeTexture;
 int g_themeWidth, g_themeHeight;
 
 void InitTheme()
 {
 	int size[2];
 	auto* data = LoadTGA("gui-theme2.tga", size);
-	g_themeTexture = GL::CreateTextureRGBA8(data, size[0], size[1]);
+	g_themeTexture = ui::rhi::CreateTextureRGBA8(data, size[0], size[1]);
 	g_themeWidth = size[0];
 	g_themeHeight = size[1];
 	delete[] data;
@@ -280,7 +347,7 @@ AABB<float> GetThemeElementBorderWidths(EThemeElement e)
 
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 {
-	GL::SetTexture(g_themeTexture);
+	ui::rhi::SetTexture(g_themeTexture);
 	GL::BatchRenderer br;
 	br.Begin();
 	br.SetColor(1, 1, 1);

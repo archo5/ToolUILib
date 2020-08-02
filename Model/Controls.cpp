@@ -814,23 +814,13 @@ void Textbox::OnPaint()
 				float x0 = GetTextWidth(_text.c_str(), minpos);
 				float x1 = GetTextWidth(_text.c_str(), maxpos);
 
-				GL::SetTexture(0);
-				GL::BatchRenderer br;
-				br.Begin();
-				br.SetColor(0.5f, 0.7f, 0.9f, 0.4f);
-				br.Quad(r.x0 + x0, r.y0, r.x0 + x1, r.y1, 0, 0, 1, 1);
-				br.End();
+				draw::RectCol(r.x0 + x0, r.y0, r.x0 + x1, r.y1, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
 			}
 
 			if (showCaretState)
 			{
 				float x = GetTextWidth(_text.c_str(), endCursor);
-				GL::SetTexture(0);
-				GL::BatchRenderer br;
-				br.Begin();
-				br.SetColor(1, 1, 1);
-				br.Quad(r.x0 + x, r.y0, r.x0 + x + 1, r.y1, 0, 0, 1, 1);
-				br.End();
+				draw::RectCol(r.x0 + x, r.y0, r.x0 + x + 1, r.y1, Color4b::White());
 			}
 		}
 	}

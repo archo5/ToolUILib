@@ -198,17 +198,14 @@ struct DefaultTheme : Theme
 			auto r = info.rect;
 			if (info.IsChecked() || info.IsDown() || info.IsHovered())
 			{
-				GL::SetTexture(0);
-				GL::BatchRenderer br;
-				br.Begin();
+				Color4b col;
 				if (info.IsChecked())
-					br.SetColor(0.6f, 0.04f, 0.0f);
+					col = Color4f(0.6f, 0.04f, 0.0f);
 				else if (info.IsDown())
-					br.SetColor(0, 0, 0, 0.5f);
+					col = Color4f(0, 0, 0, 0.5f);
 				else if (info.IsHovered())
-					br.SetColor(1, 1, 1, 0.2f);
-				br.Quad(r.x0, r.y0, r.x1, r.y1, 0, 0, 1, 1);
-				br.End();
+					col = Color4f(1, 1, 1, 0.2f);
+				draw::RectCol(r.x0, r.y0, r.x1, r.y1, col);
 			}
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
@@ -447,27 +444,26 @@ struct DefaultTheme : Theme
 		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-			GL::BatchRenderer br;
-			GL::SetTexture(0);
-			br.Begin();
+			Color4f colContents;
 			if (info.IsChecked())
-				br.SetColor(0.45f, 0.05f, 0.0f);
+				colContents = { 0.45f, 0.05f, 0.0f };
 			else if (info.IsHovered())
-				br.SetColor(0.25f, 0.05f, 0.0f);
+				colContents = { 0.25f, 0.05f, 0.0f };
 			else
-				br.SetColor(0.05f, 0.05f, 0.05f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
+				colContents = { 0.05f, 0.05f, 0.05f };
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, colContents);
+
+			Color4f colEdge;
 			if (info.IsChecked())
-				br.SetColor(0.45f, 0.1f, 0.0f);
+				colEdge = { 0.45f, 0.1f, 0.0f };
 			else if (info.IsHovered())
-				br.SetColor(0.25f, 0.1f, 0.05f);
+				colEdge = { 0.25f, 0.1f, 0.05f };
 			else
-				br.SetColor(0.15f, 0.15f, 0.15f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.End();
+				colEdge = { 0.15f, 0.15f, 0.15f };
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
 		});
 		defaultTheme.tableCell = a.block;
 	}
@@ -478,17 +474,12 @@ struct DefaultTheme : Theme
 		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-			GL::BatchRenderer br;
-			GL::SetTexture(0);
-			br.Begin();
-			br.SetColor(0.1f, 0.1f, 0.1f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.SetColor(0.2f, 0.2f, 0.2f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.End();
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
+			Color4f colEdge(0.2f, 0.2f, 0.2f);
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
 		});
 		defaultTheme.tableRowHeader = a.block;
 	}
@@ -499,17 +490,12 @@ struct DefaultTheme : Theme
 		a.SetPadding(1, 2);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
-			GL::BatchRenderer br;
-			GL::SetTexture(0);
-			br.Begin();
-			br.SetColor(0.1f, 0.1f, 0.1f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.SetColor(0.2f, 0.2f, 0.2f);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.Quad(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, 0, 0, 1, 1);
-			br.End();
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
+			Color4f colEdge(0.2f, 0.2f, 0.2f);
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
+			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
 		});
 		defaultTheme.tableColHeader = a.block;
 	}

@@ -8,14 +8,14 @@
 #include "DataDescStruct.h"
 
 
-extern Color4f colorFloat32;
-extern Color4f colorInt16;
-extern Color4f colorInt32;
-extern Color4f colorNearFileSize32;
-extern Color4f colorNearFileSize64;
-extern Color4f colorASCII;
-extern Color4f colorInst;
-extern Color4f colorCurInst;
+extern ui::Color4f colorFloat32;
+extern ui::Color4f colorInt16;
+extern ui::Color4f colorInt32;
+extern ui::Color4f colorNearFileSize32;
+extern ui::Color4f colorNearFileSize64;
+extern ui::Color4f colorASCII;
+extern ui::Color4f colorInst;
+extern ui::Color4f colorCurInst;
 
 
 struct DDFile

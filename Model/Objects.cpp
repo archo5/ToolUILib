@@ -241,10 +241,10 @@ void UIObject::Paint()
 
 void UIObject::PaintChildren()
 {
-	GL::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+	ui::rhi::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		ch->Paint();
-	GL::PopScissorRect();
+	ui::rhi::PopScissorRect();
 }
 
 float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)

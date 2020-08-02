@@ -122,6 +122,9 @@
     <ClInclude Include="Model\ImmediateMode.h">
       <Filter>Model</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Image.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

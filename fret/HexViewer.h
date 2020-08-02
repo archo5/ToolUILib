@@ -31,10 +31,10 @@ struct HighlightSettings
 
 struct ByteColors
 {
-	Color4f hexColor = { 0, 0 };
-	Color4f asciiColor = { 0, 0 };
-	Color4f leftBracketColor = { 0, 0 };
-	Color4f rightBracketColor = { 0, 0 };
+	ui::Color4f hexColor = { 0, 0 };
+	ui::Color4f asciiColor = { 0, 0 };
+	ui::Color4f leftBracketColor = { 0, 0 };
+	ui::Color4f rightBracketColor = { 0, 0 };
 };
 
 struct HexViewerState
@@ -42,8 +42,8 @@ struct HexViewerState
 	uint64_t basePos = 0;
 	uint32_t byteWidth = 8;
 
-	Color4f colorHover{ 1, 1, 1, 0.3f };
-	Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };
+	ui::Color4f colorHover{ 1, 1, 1, 0.3f };
+	ui::Color4f colorSelect{ 1, 0.7f, 0.65f, 0.5f };
 	uint64_t hoverByte = UINT64_MAX;
 	int hoverSection = -1;
 	uint64_t selectionStart = UINT64_MAX;

@@ -14,10 +14,11 @@
 #include <gl/GL.h>
 
 
-namespace GL {
+namespace ui {
+namespace rhi {
 
 
-#define GLCHK(x) do { x; ::GL::_Check(#x, __FILE__, __LINE__); } while (0)
+#define GLCHK(x) do { x; _Check(#x, __FILE__, __LINE__); } while (0)
 void _Check(const char* code, const char* file, int line)
 {
 	auto err = glGetError();
@@ -252,4 +253,5 @@ void DrawTriangles(Vertex* verts, size_t num_verts)
 	glEnd();
 }
 
-} // namespace GL
+} // rhi
+} // ui

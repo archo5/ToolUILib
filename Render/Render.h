@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "../Core/Math.h"
+#include "../Core/Image.h"
 #include "OpenGL.h"
 
 
@@ -69,21 +70,36 @@ struct BatchRenderer
 	void End();
 
 	void SetColor(float r, float g, float b, float a = 1);
+	void SetColor(ui::Color4b c);
 	void Pos(float x, float y);
 	void Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
 	void Line(float x0, float y0, float x1, float y1, float w = 1);
 
-	GL::Col8b col;
+	ui::Color4b col;
 };
 
 } // GL
+
+
+namespace ui {
+namespace draw {
+
+void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col);
+void RectCol(float x0, float y0, float x1, float y1, Color4b col);
+void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
+void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex);
+void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex, float u0, float v0, float u1, float v1);
+
+} // draw
+} // ui
+
 
 void InitFont();
 float GetTextWidth(const char* text, size_t num = SIZE_MAX);
 float GetFontHeight();
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a = 1);
 
-extern GL::Texture2D* g_themeTexture;
+extern ui::rhi::Texture2D* g_themeTexture;
 void InitTheme();
 AABB<float> GetThemeElementBorderWidths(EThemeElement e);
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);
