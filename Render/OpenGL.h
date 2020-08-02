@@ -4,16 +4,16 @@
 
 namespace GL {
 
-struct Col32f
+struct Col8b
 {
-	float r, g, b, a;
+	unsigned char r, g, b, a;
 };
 
 struct Vertex
 {
 	float x, y;
 	float u, v;
-	Col32f col;
+	Col8b col;
 };
 
 struct Texture2D;
@@ -46,7 +46,7 @@ struct BatchRenderer
 	void Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
 	void Line(float x0, float y0, float x1, float y1, float w = 1);
 
-	Col32f col;
+	Col8b col;
 };
 
 } // namespace GL

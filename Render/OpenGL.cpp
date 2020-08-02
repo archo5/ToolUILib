@@ -241,10 +241,11 @@ void SetTexture(Texture2D* tex)
 
 void DrawTriangles(Vertex* verts, size_t num_verts)
 {
+	constexpr float s = 1.0f / 255.0f;
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < num_verts; i++)
 	{
-		glColor4f(verts[i].col.r, verts[i].col.g, verts[i].col.b, verts[i].col.a);
+		glColor4f(verts[i].col.r * s, verts[i].col.g * s, verts[i].col.b * s, verts[i].col.a * s);
 		glTexCoord2f(verts[i].u, verts[i].v);
 		glVertex2f(verts[i].x, verts[i].y);
 	}
@@ -267,7 +268,13 @@ void BatchRenderer::End()
 
 void BatchRenderer::SetColor(float r, float g, float b, float a)
 {
-	col = { r, g, b, a };
+	col =
+	{
+		unsigned char(r * 255),
+		unsigned char(g * 255),
+		unsigned char(b * 255),
+		unsigned char(a * 255),
+	};
 }
 
 void BatchRenderer::Pos(float x, float y)
