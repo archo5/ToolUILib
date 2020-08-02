@@ -66,7 +66,7 @@ float GetTextWidth(const char* text, size_t num = SIZE_MAX);
 float GetFontHeight();
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a = 1);
 
-extern GL::TexID g_themeTexture;
+extern GL::Texture2D* g_themeTexture;
 void InitTheme();
 AABB<float> GetThemeElementBorderWidths(EThemeElement e);
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);

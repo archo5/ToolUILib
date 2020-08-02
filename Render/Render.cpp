@@ -12,7 +12,7 @@ unsigned char ttf_buffer[1 << 20];
 unsigned char temp_bitmap[512 * 512];
 
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
-GL::TexID g_fontTexture;
+GL::Texture2D* g_fontTexture;
 
 void InitFont()
 {
@@ -162,7 +162,7 @@ Sprite g_themeSprites[TE__COUNT] =
 #endif
 };
 
-GL::TexID g_themeTexture;
+GL::Texture2D* g_themeTexture;
 int g_themeWidth, g_themeHeight;
 
 void InitTheme()

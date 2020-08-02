@@ -198,7 +198,7 @@ struct Image
 
 	uint32_t _width = 0;
 	uint32_t _height = 0;
-	GL::TexID _texture = 0;
+	GL::Texture2D* _texture = 0;
 };
 
 enum class ScaleMode

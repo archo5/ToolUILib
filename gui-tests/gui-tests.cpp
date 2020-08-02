@@ -4,6 +4,47 @@
 #include "../GUI.h"
 
 
+struct RenderingPrimitives : ui::Node
+{
+	void OnPaint() override
+	{
+		GL::SetTexture(0);
+		GL::BatchRenderer br;
+		br.Begin();
+
+		br.SetColor(1, 0.5f, 0);
+
+		for (int t = 0; t <= 5; t++)
+		{
+			float w = powf(3.0f, t * 0.2f);
+			float xo = t * 70;
+			float x0 = 10 + xo;
+			float x1 = 25 + xo;
+			float x2 = 45 + xo;
+			float x3 = 60 + xo;
+			for (int i = 0; i < 8; i++)
+			{
+				br.Line(x0, 10 + i * 4, x1, 10 + i * 5, w);
+				br.Line(x2, 10 + i * 5, x3, 10 + i * 4, w);
+			}
+			for (int i = 4; i < 12; i++)
+			{
+				br.Line(x0, 10 + i * 8, x1, 10 + i * 10, w);
+				br.Line(x2, 10 + i * 10, x3, 10 + i * 8, w);
+			}
+		}
+
+		br.Quad(30, 10, 40, 20, 0, 0, 1, 1);
+
+		br.End();
+	}
+	void Render(UIContainer* ctx) override
+	{
+		*this + ui::Width(1000);
+		*this + ui::Height(1000);
+	}
+};
+
 struct OpenClose : ui::Node
 {
 	struct AllocTest
@@ -2155,10 +2196,16 @@ struct SlidingHighlightAnim : ui::Node
 
 		auto r = GetCurrentRect();
 		r = r.ShrinkBy(UIRect::UniformBorder(1));
-		GL::DrawLine(r.x0, r.y0, r.x1, r.y0, 1, 0, 0);
-		GL::DrawLine(r.x0, r.y1, r.x1, r.y1, 1, 0, 0);
-		GL::DrawLine(r.x0, r.y0, r.x0, r.y1, 1, 0, 0);
-		GL::DrawLine(r.x1, r.y0, r.x1, r.y1, 1, 0, 0);
+
+		GL::SetTexture(0);
+		GL::BatchRenderer br;
+		br.Begin();
+		br.SetColor(1, 0, 0);
+		br.Line(r.x0, r.y0, r.x1, r.y0);
+		br.Line(r.x0, r.y1, r.x1, r.y1);
+		br.Line(r.x0, r.y0, r.x0, r.y1);
+		br.Line(r.x1, r.y0, r.x1, r.y1);
+		br.End();
 	}
 	void OnEvent(UIEvent& e) override
 	{
@@ -2729,6 +2776,9 @@ struct TestEntry
 static TestEntry testEntries[] =
 {
 	{ "Off", [](UIContainer* ctx) {} },
+	{},
+	{ "- Rendering -" },
+	{ "Primitives", [](UIContainer* ctx) { ctx->Make<RenderingPrimitives>(); } },
 	{},
 	{ "- Basic logic -" },
 	{ "Open/Close", [](UIContainer* ctx) { ctx->Make<OpenClose>(); } },

@@ -32,9 +32,8 @@ void _Check(const char* code, const char* file, int line)
 	}
 }
 
-class RenderContext
+struct RenderContext
 {
-public:
 	void AddToList()
 	{
 		if (!first)
@@ -200,7 +199,7 @@ void Present(RenderContext* RC)
 	SwapBuffers(RC->dc);
 }
 
-TexID CreateTextureA8(const void* data, unsigned width, unsigned height)
+Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height)
 {
 	GLuint tex;
 	glGenTextures(1, &tex);
@@ -209,10 +208,10 @@ TexID CreateTextureA8(const void* data, unsigned width, unsigned height)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glEnable(GL_TEXTURE_2D);
 
-	return tex;
+	return (Texture2D*) tex;
 }
 
-TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering)
+Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering)
 {
 	GLuint tex;
 	glGenTextures(1, &tex);
@@ -222,63 +221,97 @@ TexID CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering ? GL_LINEAR : GL_NEAREST);
 	glEnable(GL_TEXTURE_2D);
 
-	return tex;
+	return (Texture2D*) tex;
 }
 
-void DestroyTexture(TexID tex)
+void DestroyTexture(Texture2D* tex)
 {
-	glDeleteTextures(1, &tex);
+	GLuint texid = (GLuint)tex;
+	glDeleteTextures(1, &texid);
 }
 
-void SetTexture(TexID tex)
+void SetTexture(Texture2D* tex)
 {
-	glBindTexture(GL_TEXTURE_2D, tex);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)tex);
 	if (tex != 0)
 		glEnable(GL_TEXTURE_2D);
 	else
 		glDisable(GL_TEXTURE_2D);
 }
 
+void DrawTriangles(Vertex* verts, size_t num_verts)
+{
+	glBegin(GL_TRIANGLES);
+	for (size_t i = 0; i < num_verts; i++)
+	{
+		glColor4f(verts[i].col.r, verts[i].col.g, verts[i].col.b, verts[i].col.a);
+		glTexCoord2f(verts[i].u, verts[i].v);
+		glVertex2f(verts[i].x, verts[i].y);
+	}
+	glEnd();
+}
+
+
+static Vertex brverts[1024 * 32];
+static size_t brnumverts = 0;
 
 void BatchRenderer::Begin()
 {
-	glBegin(GL_TRIANGLES);
+	brnumverts = 0;
 }
 
 void BatchRenderer::End()
 {
-	glEnd();
+	DrawTriangles(brverts, brnumverts);
 }
 
 void BatchRenderer::SetColor(float r, float g, float b, float a)
 {
-	glColor4f(r, g, b, a);
+	col = { r, g, b, a };
 }
 
 void BatchRenderer::Pos(float x, float y)
 {
-	glVertex2f(x, y);
+	auto& v = brverts[brnumverts++];
+	v.col = col;
+	v.u = 0;
+	v.v = 0;
+	v.x = x;
+	v.y = y;
 }
 
 void BatchRenderer::Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1)
 {
-	glTexCoord2f(u0, v0); glVertex2f(x0, y0);
-	glTexCoord2f(u1, v0); glVertex2f(x1, y0);
-	glTexCoord2f(u1, v1); glVertex2f(x1, y1);
+	brverts[brnumverts++] = { x0, y0, u0, v0, col };
+	brverts[brnumverts++] = { x1, y0, u1, v0, col };
+	brverts[brnumverts++] = { x1, y1, u1, v1, col };
 
-	glTexCoord2f(u1, v1); glVertex2f(x1, y1);
-	glTexCoord2f(u0, v1); glVertex2f(x0, y1);
-	glTexCoord2f(u0, v0); glVertex2f(x0, y0);
+	brverts[brnumverts++] = { x1, y1, u1, v1, col };
+	brverts[brnumverts++] = { x0, y1, u0, v1, col };
+	brverts[brnumverts++] = { x0, y0, u0, v0, col };
 }
 
-void DrawLine(float x0, float y0, float x1, float y1, float r, float g, float b, float a)
+void BatchRenderer::Line(float x0, float y0, float x1, float y1, float w)
 {
-	SetTexture(0);
-	glBegin(GL_LINES);
-	glColor4f(r, g, b, a);
-	glVertex2f(x0, y0);
-	glVertex2f(x1, y1);
-	glEnd();
+	if (x0 == x1 && y0 == y1)
+		return;
+
+	float dx = x1 - x0;
+	float dy = y1 - y0;
+	float lensq = dx * dx + dy * dy;
+	float invlen = 1.0f / sqrtf(lensq);
+	dx *= invlen;
+	dy *= invlen;
+	float tx = -dy * 0.5f * w;
+	float ty = dx * 0.5f * w;
+
+	brverts[brnumverts++] = { x0 + tx, y0 + ty, 0, 0, col };
+	brverts[brnumverts++] = { x1 + tx, y1 + ty, 0, 0, col };
+	brverts[brnumverts++] = { x1 - tx, y1 - ty, 0, 0, col };
+
+	brverts[brnumverts++] = { x1 - tx, y1 - ty, 0, 0, col };
+	brverts[brnumverts++] = { x0 - tx, y0 - ty, 0, 0, col };
+	brverts[brnumverts++] = { x0 + tx, y0 + ty, 0, 0, col };
 }
 
 } // namespace GL

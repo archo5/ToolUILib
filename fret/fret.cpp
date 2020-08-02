@@ -53,9 +53,14 @@ struct MainWindowNode : ui::Node
 				auto br = curFileView->curHexViewer->GetByteRect(co.off);
 				if (!hvcr.Contains(br.x1, br.y1))
 					continue;
-				GL::DrawLine(br.x0, br.y0, br.x0, br.y1, 1, 0.5f, 0, 1);
-				GL::DrawLine(br.x0, br.y1, br.x1, br.y1, 1, 0.5f, 0, 1);
-				GL::DrawLine(br.x1, br.y1, co.tablePos.x, co.tablePos.y, 1, 0.5f, 0, 1);
+				GL::SetTexture(0);
+				GL::BatchRenderer brnd;
+				brnd.Begin();
+				brnd.SetColor(1, 0.5f, 0);
+				brnd.Line(br.x0, br.y0, br.x0, br.y1);
+				brnd.Line(br.x0, br.y1, br.x1, br.y1);
+				brnd.Line(br.x1, br.y1, co.tablePos.x, co.tablePos.y);
+				brnd.End();
 			}
 		}
 	}
