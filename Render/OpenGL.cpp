@@ -102,9 +102,13 @@ RenderContext* CreateRenderContext(void* window)
 	((BOOL(__stdcall *)(int))wglGetProcAddress("wglSwapIntervalEXT"))(0);
 
 	GLCHK(glDisable(GL_CULL_FACE));
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	GLCHK(glDisable(GL_DEPTH_TEST));
+	GLCHK(glEnable(GL_BLEND));
+	GLCHK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+	GLCHK(glEnableClientState(GL_VERTEX_ARRAY));
+	GLCHK(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+	GLCHK(glEnableClientState(GL_COLOR_ARRAY));
+	GLCHK(glEnable(GL_SCISSOR_TEST));
 
 	RC->AddToList();
 	return RC;
@@ -123,8 +127,12 @@ void SetActiveContext(RenderContext* RC)
 	wglMakeCurrent(RC->dc, RC->rc);
 }
 
-RECT scissorStack[100];
-int scissorCount = 1;
+static int curRTTHeight;
+
+void SetScissorRect(int x0, int y0, int x1, int y1)
+{
+	GLCHK(glScissor(x0, curRTTHeight - y1, std::max(x1 - x0, 0), std::max(y1 - y0, 0)));
+}
 
 void SetViewport(int x0, int y0, int x1, int y1)
 {
@@ -132,37 +140,7 @@ void SetViewport(int x0, int y0, int x1, int y1)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	GLCHK(glOrtho(x0, x1, y1, y0, -1, 1));
-	scissorStack[0] = { x0, y0, x1, y1 };
-	scissorCount = 1;
-}
-
-void ApplyScissor()
-{
-	RECT r = scissorStack[scissorCount - 1];
-	GLCHK(glScissor(r.left, scissorStack[0].bottom - r.bottom, std::max(r.right - r.left, 0L), std::max(r.bottom - r.top, 0L)));
-}
-
-void PushScissorRect(int x0, int y0, int x1, int y1)
-{
-	int i = scissorCount++;
-	RECT r = scissorStack[i - 1];
-	if (r.left < x0) r.left = x0;
-	if (r.right > x1) r.right = x1;
-	if (r.top < y0) r.top = y0;
-	if (r.bottom > y1) r.bottom = y1;
-	scissorStack[i] = r;
-	ApplyScissor();
-	GLCHK(glEnable(GL_SCISSOR_TEST));
-}
-
-void PopScissorRect()
-{
-	scissorCount--;
-	ApplyScissor();
-	if (scissorCount <= 1)
-	{
-		GLCHK(glDisable(GL_SCISSOR_TEST));
-	}
+	curRTTHeight = y1; // TODO fix
 }
 
 void Clear(int r, int g, int b, int a)
@@ -242,15 +220,18 @@ void SetTexture(Texture2D* tex)
 
 void DrawTriangles(Vertex* verts, size_t num_verts)
 {
-	constexpr float s = 1.0f / 255.0f;
-	glBegin(GL_TRIANGLES);
-	for (size_t i = 0; i < num_verts; i++)
-	{
-		glColor4f(verts[i].col.r * s, verts[i].col.g * s, verts[i].col.b * s, verts[i].col.a * s);
-		glTexCoord2f(verts[i].u, verts[i].v);
-		glVertex2f(verts[i].x, verts[i].y);
-	}
-	glEnd();
+	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);
+	glDrawArrays(GL_TRIANGLES, 0, num_verts);
+}
+
+void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
+{
+	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, indices);
 }
 
 } // rhi

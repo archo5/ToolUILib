@@ -316,41 +316,14 @@ void DebugDrawSelf(UIObject* o)
 	float bl = 1, br = 1, bt = 1, bb = 1;
 	auto r = o->GetBorderRect();
 
-	GL::BatchRenderer B;
-	B.Begin();
 	// padding
-	B.SetColor(0.5f, 0.6f, 0.9f, a);
-	B.Pos(r.x0, r.y0); B.Pos(r.x1, r.y0); B.Pos(r.x1 - pr, r.y0 + pt);
-	B.Pos(r.x1 - pr, r.y0 + pt); B.Pos(r.x0 + pl, r.y0 + pt); B.Pos(r.x0, r.y0);
-	B.Pos(r.x1, r.y0); B.Pos(r.x1, r.y1); B.Pos(r.x1 - pr, r.y1 - pb);
-	B.Pos(r.x1 - pr, r.y1 - pb); B.Pos(r.x1 - pr, r.y0 + pt); B.Pos(r.x1, r.y0);
-	B.Pos(r.x1, r.y1); B.Pos(r.x0, r.y1); B.Pos(r.x0 + pl, r.y1 - pb);
-	B.Pos(r.x0 + pl, r.y1 - pb); B.Pos(r.x1 - pr, r.y1 - pb); B.Pos(r.x1, r.y1);
-	B.Pos(r.x0, r.y1); B.Pos(r.x0, r.y0); B.Pos(r.x0 + pl, r.y0 + pt);
-	B.Pos(r.x0 + pl, r.y0 + pt); B.Pos(r.x0 + pl, r.y1 - pb); B.Pos(r.x0, r.y1);
-#if 1
+	draw::RectCutoutCol(r, o->GetPaddingRect(), Color4f(0.5f, 0.6f, 0.9f, a));
 	// border
-	B.SetColor(0.5f, 0.9f, 0.6f, a);
-	B.Pos(r.x0, r.y0); B.Pos(r.x1, r.y0); B.Pos(r.x1 + br, r.y0 - bt);
-	B.Pos(r.x1 + br, r.y0 - bt); B.Pos(r.x0 - bl, r.y0 - bt); B.Pos(r.x0, r.y0);
-	B.Pos(r.x1, r.y0); B.Pos(r.x1, r.y1); B.Pos(r.x1 + br, r.y1 + bb);
-	B.Pos(r.x1 + br, r.y1 + bb); B.Pos(r.x1 + br, r.y0 - bt); B.Pos(r.x1, r.y0);
-	B.Pos(r.x1, r.y1); B.Pos(r.x0, r.y1); B.Pos(r.x0 - bl, r.y1 + bb);
-	B.Pos(r.x0 - bl, r.y1 + bb); B.Pos(r.x1 + br, r.y1 + bb); B.Pos(r.x1, r.y1);
-	B.Pos(r.x0, r.y1); B.Pos(r.x0, r.y0); B.Pos(r.x0 - bl, r.y0 - bt);
-	B.Pos(r.x0 - bl, r.y0 - bt); B.Pos(r.x0 - bl, r.y1 + bb); B.Pos(r.x0, r.y1);
+#if 1
+	draw::RectCutoutCol(r, r.ExtendBy(UIRect::UniformBorder(-1)), Color4f(0.5f, 0.9f, 0.6f, a));
 #endif
 	// margin
-	B.SetColor(0.9f, 0.6f, 0.5f, a);
-	B.Pos(r.x0, r.y0); B.Pos(r.x1, r.y0); B.Pos(r.x1 + mr, r.y0 - mt);
-	B.Pos(r.x1 + mr, r.y0 - mt); B.Pos(r.x0 - ml, r.y0 - mt); B.Pos(r.x0, r.y0);
-	B.Pos(r.x1, r.y0); B.Pos(r.x1, r.y1); B.Pos(r.x1 + mr, r.y1 + mb);
-	B.Pos(r.x1 + mr, r.y1 + mb); B.Pos(r.x1 + mr, r.y0 - mt); B.Pos(r.x1, r.y0);
-	B.Pos(r.x1, r.y1); B.Pos(r.x0, r.y1); B.Pos(r.x0 - ml, r.y1 + mb);
-	B.Pos(r.x0 - ml, r.y1 + mb); B.Pos(r.x1 + mr, r.y1 + mb); B.Pos(r.x1, r.y1);
-	B.Pos(r.x0, r.y1); B.Pos(r.x0, r.y0); B.Pos(r.x0 - ml, r.y0 - mt);
-	B.Pos(r.x0 - ml, r.y0 - mt); B.Pos(r.x0 - ml, r.y1 + mb); B.Pos(r.x0, r.y1);
-	B.End();
+	draw::RectCutoutCol(r, r.ExtendBy({ ml, mt, mr, mb }), Color4f(0.9f, 0.6f, 0.5f, a));
 }
 
 void DebugDraw(UIObject* o)
@@ -513,6 +486,7 @@ struct NativeWindow_Impl
 
 		rhi::SetActiveContext(renderCtx);
 		rhi::SetViewport(0, 0, evsys.width, evsys.height);
+		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
 
 		//GL::Clear(20, 40, 80, 255);
 		rhi::Clear(0x25, 0x25, 0x25, 255);
@@ -522,15 +496,15 @@ struct NativeWindow_Impl
 		system.overlays.UpdateSorted();
 		for (auto& ovr : system.overlays.sorted)
 			ovr.obj->OnPaint();
-		//GL::SetTexture(g_themeTexture);
-		//GL::BatchRenderer br;
-		//br.Begin();
-		//br.Quad(20, 120, 256+20, 256+120, 0, 0, 1, 1);
-		//br.End();
-		//DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
-		//DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
-		//DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
-		//DrawTextLine(32, 32, "Test text", 1, 1, 1);
+
+#if 0
+		draw::RectTex(20, 120, 256 + 20, 128 + 120, g_themeTexture);
+		DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
+		DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
+		DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
+		DrawTextLine(32, 32, "Test text", 1, 1, 1);
+#endif
+
 		if (debugDrawEnabled)
 		{
 			// debug draw
@@ -1265,6 +1239,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
 			rhi::SetViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
+			draw::_ResetScissorRectStack(0, 0, LOWORD(lParam), HIWORD(lParam));
 			if (auto* window = GetNativeWindow(hWnd))
 			{
 				auto& evsys = window->GetEventSys();
@@ -1302,6 +1277,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			auto w = r.right - r.left;
 			auto h = r.bottom - r.top;
 			rhi::SetViewport(0, 0, w, h);
+			draw::_ResetScissorRectStack(0, 0, w, h);
 			auto& evsys = window->GetEventSys();
 			if (w != evsys.width || h != evsys.height)
 			{

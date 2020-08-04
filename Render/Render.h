@@ -62,25 +62,6 @@ enum EThemeElement
 };
 
 
-namespace GL {
-
-struct BatchRenderer
-{
-	void Begin();
-	void End();
-
-	void SetColor(float r, float g, float b, float a = 1);
-	void SetColor(ui::Color4b c);
-	void Pos(float x, float y);
-	void Quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
-	void Line(float x0, float y0, float x1, float y1, float w = 1);
-
-	ui::Color4b col;
-};
-
-} // GL
-
-
 namespace ui {
 namespace draw {
 
@@ -89,6 +70,14 @@ void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
 void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex);
 void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex, float u0, float v0, float u1, float v1);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex, float u0, float v0, float u1, float v1);
+void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, rhi::Texture2D* tex, const AABB<float>& texouter, const AABB<float>& texinner);
+void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col);
+
+void PushScissorRect(int x0, int y0, int x1, int y1);
+void PopScissorRect();
+void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
 
 } // draw
 } // ui

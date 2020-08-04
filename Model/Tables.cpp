@@ -131,7 +131,7 @@ void TableView::OnPaint()
 	_impl->dataSource->OnBeginReadRows(minR, maxR);
 
 	// - row header
-	rhi::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
+	draw::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
 	// background:
 	for (size_t r = minR; r < maxR; r++)
 	{
@@ -157,10 +157,10 @@ void TableView::OnPaint()
 		rect = rect.ShrinkBy(padRH);
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
 	}
-	rhi::PopScissorRect();
+	draw::PopScissorRect();
 
 	// - column header
-	rhi::PushScissorRect(RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh);
+	draw::PushScissorRect(RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh);
 	// background:
 	for (size_t c = 0; c < nc; c++)
 	{
@@ -186,10 +186,10 @@ void TableView::OnPaint()
 		rect = rect.ShrinkBy(padCH);
 		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
 	}
-	rhi::PopScissorRect();
+	draw::PopScissorRect();
 
 	// - cells
-	rhi::PushScissorRect(RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1);
+	draw::PushScissorRect(RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1);
 	// background:
 	for (size_t r = minR; r < maxR; r++)
 	{
@@ -229,7 +229,7 @@ void TableView::OnPaint()
 			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(r, c).c_str(), 1, 1, 1);
 		}
 	}
-	rhi::PopScissorRect();
+	draw::PopScissorRect();
 
 	_impl->dataSource->OnEndReadRows(minR, maxR);
 
