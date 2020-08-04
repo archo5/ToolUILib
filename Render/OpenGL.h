@@ -6,6 +6,17 @@
 namespace ui {
 namespace rhi {
 
+struct Stats
+{
+	uint64_t num_SetTexture;
+	uint64_t num_DrawTriangles;
+	uint64_t num_DrawIndexedTriangles;
+
+	Stats operator - (const Stats& o) const;
+
+	static Stats Get();
+};
+
 struct Vertex
 {
 	float x, y;

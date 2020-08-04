@@ -11,10 +11,52 @@
 namespace ui {
 namespace draw {
 
-void IndexedTriangles(rhi::Texture2D* tex, rhi::Vertex* verts, uint16_t* indices, size_t num_indices)
+constexpr int MAX_VERTICES = 4096;
+constexpr int MAX_INDICES = 16384;
+static rhi::Vertex g_bufVertices[MAX_VERTICES];
+static uint16_t g_bufIndices[MAX_INDICES];
+static constexpr size_t sizeOfBuffers = sizeof(g_bufVertices) + sizeof(g_bufIndices);
+static int g_numVertices;
+static int g_numIndices;
+static rhi::Texture2D* g_curTex;
+
+void _Flush()
 {
+	if (!g_numIndices)
+		return;
+	rhi::SetTexture(g_curTex);
+	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
+	g_numVertices = 0;
+	g_numIndices = 0;
+}
+
+void IndexedTriangles(rhi::Texture2D* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
+{
+#if 1
+	if (g_curTex != tex || g_numVertices + num_vertices > MAX_VERTICES || g_numIndices + num_indices > MAX_INDICES)
+	{
+		_Flush();
+	}
+	if (num_vertices > MAX_VERTICES || num_indices > MAX_INDICES)
+	{
+		_Flush();
+		rhi::SetTexture(tex);
+		g_curTex = tex;
+		rhi::DrawIndexedTriangles(verts, indices, num_indices);
+		return;
+	}
+
+	g_curTex = tex;
+	memcpy(&g_bufVertices[g_numVertices], verts, sizeof(*verts) * num_vertices);
+	uint16_t baseVertex = g_numVertices;
+	for (size_t i = 0; i < num_indices; i++)
+		g_bufIndices[g_numIndices + i] = indices[i] + baseVertex;
+	g_numVertices += num_vertices;
+	g_numIndices += num_indices;
+#else // for comparing performance
 	rhi::SetTexture(tex);
 	rhi::DrawIndexedTriangles(verts, indices, num_indices);
+#endif
 }
 
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
@@ -40,7 +82,7 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	IndexedTriangles(0, verts, indices, 6);
+	IndexedTriangles(0, verts, 4, indices, 6);
 }
 
 void RectCol(float x0, float y0, float x1, float y1, Color4b col)
@@ -59,7 +101,7 @@ void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	IndexedTriangles(0, verts, indices, 6);
+	IndexedTriangles(0, verts, 4, indices, 6);
 }
 
 void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex)
@@ -88,7 +130,7 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Textur
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	IndexedTriangles(tex, verts, indices, 6);
+	IndexedTriangles(tex, verts, 4, indices, 6);
 }
 
 void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, rhi::Texture2D* tex, const AABB<float>& texouter, const AABB<float>& texinner)
@@ -136,7 +178,7 @@ void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4
 		10, 11, 15,  15, 14, 10,
 	};
 
-	IndexedTriangles(tex, verts, indices, 6 * 9);
+	IndexedTriangles(tex, verts, 16, indices, 6 * 9);
 }
 
 void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col)
@@ -163,7 +205,7 @@ void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b c
 		3, 0, 4,  4, 7, 3, // left
 	};
 
-	IndexedTriangles(nullptr, verts, indices, 24);
+	IndexedTriangles(nullptr, verts, 8, indices, 24);
 }
 
 static AABB<int> scissorStack[100];
@@ -171,6 +213,7 @@ static int scissorCount = 1;
 
 void ApplyScissor()
 {
+	_Flush();
 	AABB<int> r = scissorStack[scissorCount - 1];
 	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }

@@ -18,6 +18,23 @@ namespace ui {
 namespace rhi {
 
 
+static Stats g_stats;
+
+Stats Stats::operator - (const Stats& o) const
+{
+	Stats r;
+	r.num_SetTexture = num_SetTexture - o.num_SetTexture;
+	r.num_DrawTriangles = num_DrawTriangles - o.num_DrawTriangles;
+	r.num_DrawIndexedTriangles = num_DrawIndexedTriangles - o.num_DrawIndexedTriangles;
+	return r;
+}
+
+Stats Stats::Get()
+{
+	return g_stats;
+}
+
+
 #define GLCHK(x) do { x; _Check(#x, __FILE__, __LINE__); } while (0)
 void _Check(const char* code, const char* file, int line)
 {
@@ -211,6 +228,7 @@ void DestroyTexture(Texture2D* tex)
 
 void SetTexture(Texture2D* tex)
 {
+	g_stats.num_SetTexture++;
 	glBindTexture(GL_TEXTURE_2D, (GLuint)tex);
 	if (tex != 0)
 		glEnable(GL_TEXTURE_2D);
@@ -220,6 +238,7 @@ void SetTexture(Texture2D* tex)
 
 void DrawTriangles(Vertex* verts, size_t num_verts)
 {
+	g_stats.num_DrawTriangles++;
 	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
 	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
 	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);
@@ -228,6 +247,7 @@ void DrawTriangles(Vertex* verts, size_t num_verts)
 
 void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
 {
+	g_stats.num_DrawIndexedTriangles++;
 	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
 	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
 	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);

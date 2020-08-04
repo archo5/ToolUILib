@@ -484,6 +484,11 @@ struct NativeWindow_Impl
 		cont.ProcessNodeRenderStack();
 		evsys.RecomputeLayout();
 
+#if DRAW_STATS
+		double t0 = hqtime();
+		auto stats0 = rhi::Stats::Get();
+#endif
+
 		rhi::SetActiveContext(renderCtx);
 		rhi::SetViewport(0, 0, evsys.width, evsys.height);
 		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
@@ -511,6 +516,18 @@ struct NativeWindow_Impl
 			if (cont.rootNode)
 				DebugDraw(cont.rootNode);
 		}
+
+		draw::_Flush();
+
+#if DRAW_STATS
+		double t1 = hqtime();
+		auto stats1 = rhi::Stats::Get();
+		auto statsdiff = stats1 - stats0;
+		printf("render time: %g ms\n", (t1 - t0) * 1000);
+		printf("# SetTexture: %u\n", unsigned(statsdiff.num_SetTexture));
+		printf("# DrawTriangles: %u\n", unsigned(statsdiff.num_DrawTriangles));
+		printf("# DrawIndexedTriangles: %u\n", unsigned(statsdiff.num_DrawIndexedTriangles));
+#endif
 
 		rhi::Present(renderCtx);
 	}

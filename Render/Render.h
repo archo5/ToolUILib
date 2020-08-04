@@ -65,6 +65,7 @@ enum EThemeElement
 namespace ui {
 namespace draw {
 
+void _Flush();
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
