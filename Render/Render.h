@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "../Core/Math.h"
 #include "../Core/Image.h"
-#include "OpenGL.h"
 
 
 struct Sprite
@@ -65,15 +64,23 @@ enum EThemeElement
 namespace ui {
 namespace draw {
 
+constexpr bool DEFAULT_FILTERING = true;
+
+struct Texture;
+Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
+Texture* TextureCreateA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
+void TextureAddRef(Texture* tex);
+void TextureRelease(Texture* tex);
+
 void _Flush();
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
-void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex);
-void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex, float u0, float v0, float u1, float v1);
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex);
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex, float u0, float v0, float u1, float v1);
-void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, rhi::Texture2D* tex, const AABB<float>& texouter, const AABB<float>& texinner);
+void RectTex(float x0, float y0, float x1, float y1, Texture* tex);
+void RectTex(float x0, float y0, float x1, float y1, Texture* tex, float u0, float v0, float u1, float v1);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex, float u0, float v0, float u1, float v1);
+void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, Texture* tex, const AABB<float>& texouter, const AABB<float>& texinner);
 void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col);
 
 void PushScissorRect(int x0, int y0, int x1, int y1);
@@ -89,7 +96,7 @@ float GetTextWidth(const char* text, size_t num = SIZE_MAX);
 float GetFontHeight();
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a = 1);
 
-extern ui::rhi::Texture2D* g_themeTexture;
+extern ui::draw::Texture* g_themeTexture;
 void InitTheme();
 AABB<float> GetThemeElementBorderWidths(EThemeElement e);
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);

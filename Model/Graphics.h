@@ -9,25 +9,25 @@ namespace ui {
 struct Image
 {
 	Image() {}
-	Image(uint32_t w, uint32_t h, const void* d, bool filtering = true) : _width(w), _height(h)
+	Image(uint32_t w, uint32_t h, const void* d, bool filtering = draw::DEFAULT_FILTERING) : _width(w), _height(h)
 	{
-		_texture = rhi::CreateTextureRGBA8(d, w, h, filtering);
+		_texture = draw::TextureCreateRGBA8(w, h, d, filtering);
 	}
-	Image(const Canvas& c, bool filtering = true) : _width(c.GetWidth()), _height(c.GetHeight())
+	Image(const Canvas& c, bool filtering = draw::DEFAULT_FILTERING) : _width(c.GetWidth()), _height(c.GetHeight())
 	{
-		_texture = rhi::CreateTextureRGBA8(c.GetBytes(), c.GetWidth(), c.GetHeight(), filtering);
+		_texture = draw::TextureCreateRGBA8(c.GetWidth(), c.GetHeight(), c.GetBytes(), filtering);
 	}
 	Image(const Image& img) = delete;
-	Image(Image&& img) : _width(img._width), _height(img._height), _texture(img._texture) { img._texture = 0; }
+	Image(Image&& img) : _width(img._width), _height(img._height), _texture(img._texture) { img._texture = nullptr; }
 	~Image() { Destroy(); }
 
-	void Destroy() { if (_texture) rhi::DestroyTexture(_texture); _texture = 0; }
+	void Destroy() { if (_texture) draw::TextureRelease(_texture); _texture = nullptr; }
 	uint32_t GetWidth() const { return _width; }
 	uint32_t GetHeight() const { return _height; }
 
 	uint32_t _width = 0;
 	uint32_t _height = 0;
-	rhi::Texture2D* _texture = 0;
+	draw::Texture* _texture = nullptr;
 };
 
 enum class ScaleMode

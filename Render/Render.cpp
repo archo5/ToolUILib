@@ -11,6 +11,57 @@
 namespace ui {
 namespace draw {
 
+
+struct Texture
+{
+	Texture(int w, int h, const void* d, bool a8, bool flt) :
+		width(w), height(h), isAlpha8(a8), isFilteringEnabled(flt)
+	{
+		int bytes_pp = a8 ? 1 : 4;
+		data = new char[w * h * bytes_pp];
+		memcpy(data, d, w * h * bytes_pp);
+		rhiTex = a8 ? rhi::CreateTextureA8(d, w, h) : rhi::CreateTextureRGBA8(d, w, h, flt);
+	}
+	~Texture()
+	{
+		rhi::DestroyTexture(rhiTex);
+		delete[] data;
+	}
+
+	int refcount = 1;
+	int width;
+	int height;
+	char* data;
+	bool isAlpha8;
+	bool isFilteringEnabled;
+	rhi::Texture2D* rhiTex = nullptr;
+};
+
+
+Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering)
+{
+	return new Texture(w, h, data, false, filtering);
+}
+
+Texture* TextureCreateA8(int w, int h, const void* data, bool filtering)
+{
+	return new Texture(w, h, data, true, filtering);
+}
+
+void TextureAddRef(Texture* tex)
+{
+	tex->refcount++;
+}
+
+void TextureRelease(Texture* tex)
+{
+	if (--tex->refcount == 0)
+	{
+		delete tex;
+	}
+}
+
+
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
 static rhi::Vertex g_bufVertices[MAX_VERTICES];
@@ -18,19 +69,19 @@ static uint16_t g_bufIndices[MAX_INDICES];
 static constexpr size_t sizeOfBuffers = sizeof(g_bufVertices) + sizeof(g_bufIndices);
 static int g_numVertices;
 static int g_numIndices;
-static rhi::Texture2D* g_curTex;
+static Texture* g_curTex;
 
 void _Flush()
 {
 	if (!g_numIndices)
 		return;
-	rhi::SetTexture(g_curTex);
+	rhi::SetTexture(g_curTex ? g_curTex->rhiTex : nullptr);
 	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
 }
 
-void IndexedTriangles(rhi::Texture2D* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
+void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
 #if 1
 	if (g_curTex != tex || g_numVertices + num_vertices > MAX_VERTICES || g_numIndices + num_indices > MAX_INDICES)
@@ -40,8 +91,8 @@ void IndexedTriangles(rhi::Texture2D* tex, rhi::Vertex* verts, size_t num_vertic
 	if (num_vertices > MAX_VERTICES || num_indices > MAX_INDICES)
 	{
 		_Flush();
-		rhi::SetTexture(tex);
 		g_curTex = tex;
+		rhi::SetTexture(g_curTex ? g_curTex->rhiTex : nullptr);
 		rhi::DrawIndexedTriangles(verts, indices, num_indices);
 		return;
 	}
@@ -104,22 +155,22 @@ void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 	IndexedTriangles(0, verts, 4, indices, 6);
 }
 
-void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex)
+void RectTex(float x0, float y0, float x1, float y1, Texture* tex)
 {
 	RectColTex(x0, y0, x1, y1, Color4b::White(), tex, 0, 0, 1, 1);
 }
 
-void RectTex(float x0, float y0, float x1, float y1, rhi::Texture2D* tex, float u0, float v0, float u1, float v1)
+void RectTex(float x0, float y0, float x1, float y1, Texture* tex, float u0, float v0, float u1, float v1)
 {
 	RectColTex(x0, y0, x1, y1, Color4b::White(), tex, u0, v0, u1, v1);
 }
 
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex)
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex)
 {
 	RectColTex(x0, y0, x1, y1, col, tex, 0, 0, 1, 1);
 }
 
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Texture2D* tex, float u0, float v0, float u1, float v1)
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex, float u0, float v0, float u1, float v1)
 {
 	rhi::Vertex verts[4] =
 	{
@@ -133,7 +184,7 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, rhi::Textur
 	IndexedTriangles(tex, verts, 4, indices, 6);
 }
 
-void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, rhi::Texture2D* tex, const AABB<float>& texouter, const AABB<float>& texinner)
+void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, Texture* tex, const AABB<float>& texouter, const AABB<float>& texinner)
 {
 	//  0  1  2  3
 	//  4  5  6  7
@@ -251,13 +302,13 @@ unsigned char ttf_buffer[1 << 20];
 unsigned char temp_bitmap[512 * 512];
 
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
-ui::rhi::Texture2D* g_fontTexture;
+ui::draw::Texture* g_fontTexture;
 
 void InitFont()
 {
 	fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/segoeui.ttf", "rb"));
 	stbtt_BakeFontBitmap(ttf_buffer, 0, -12.0f, temp_bitmap, 512, 512, 32, 96, cdata); // no guarantee this fits!
-	g_fontTexture = ui::rhi::CreateTextureA8(temp_bitmap, 512, 512);
+	g_fontTexture = ui::draw::TextureCreateA8(512, 512, temp_bitmap);
 }
 
 float GetTextWidth(const char* text, size_t num)
@@ -397,14 +448,14 @@ Sprite g_themeSprites[TE__COUNT] =
 #endif
 };
 
-ui::rhi::Texture2D* g_themeTexture;
+ui::draw::Texture* g_themeTexture;
 int g_themeWidth, g_themeHeight;
 
 void InitTheme()
 {
 	int size[2];
 	auto* data = LoadTGA("gui-theme2.tga", size);
-	g_themeTexture = ui::rhi::CreateTextureRGBA8(data, size[0], size[1]);
+	g_themeTexture = ui::draw::TextureCreateRGBA8(size[0], size[1], data);
 	g_themeWidth = size[0];
 	g_themeHeight = size[1];
 	delete[] data;
