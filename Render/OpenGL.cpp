@@ -198,11 +198,11 @@ void Present(RenderContext* RC)
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height)
 {
 	GLuint tex;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glEnable(GL_TEXTURE_2D);
+	GLCHK(glGenTextures(1, &tex));
+	GLCHK(glBindTexture(GL_TEXTURE_2D, tex));
+	GLCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	GLCHK(glEnable(GL_TEXTURE_2D));
 
 	return (Texture2D*) tex;
 }
@@ -210,12 +210,12 @@ Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height)
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering)
 {
 	GLuint tex;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering ? GL_LINEAR : GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering ? GL_LINEAR : GL_NEAREST);
-	glEnable(GL_TEXTURE_2D);
+	GLCHK(glGenTextures(1, &tex));
+	GLCHK(glBindTexture(GL_TEXTURE_2D, tex));
+	GLCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering ? GL_LINEAR : GL_NEAREST));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering ? GL_LINEAR : GL_NEAREST));
+	GLCHK(glEnable(GL_TEXTURE_2D));
 
 	return (Texture2D*) tex;
 }
@@ -223,7 +223,24 @@ Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height,
 void DestroyTexture(Texture2D* tex)
 {
 	GLuint texid = (GLuint)tex;
-	glDeleteTextures(1, &texid);
+	GLCHK(glDeleteTextures(1, &texid));
+}
+
+MapData MapTexture(Texture2D* tex)
+{
+	// no-op
+	return {};
+}
+
+void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const void* data, bool a8)
+{
+	GLCHK(glBindTexture(GL_TEXTURE_2D, (GLuint)tex));
+	GLCHK(glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, a8 ? GL_ALPHA : GL_RGBA, GL_UNSIGNED_BYTE, data));
+}
+
+void UnmapTexture(Texture2D* tex)
+{
+	// no-op
 }
 
 void SetTexture(Texture2D* tex)

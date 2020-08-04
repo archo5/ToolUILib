@@ -40,6 +40,16 @@ void Present(RenderContext* RC);
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height);
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering = true);
 void DestroyTexture(Texture2D* tex);
+
+struct MapData
+{
+	void* data;
+	uint32_t pitch;
+};
+MapData MapTexture(Texture2D* tex);
+void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const void* data, bool a8);
+void UnmapTexture(Texture2D* tex);
+
 void SetTexture(Texture2D* tex);
 void DrawTriangles(Vertex* verts, size_t num_verts);
 void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices);

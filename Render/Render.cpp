@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "../stb_rect_pack.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../stb_truetype.h"
 
@@ -12,29 +14,205 @@ namespace ui {
 namespace draw {
 
 
+static constexpr unsigned TEXTURE_PAGE_WIDTH = 1024;
+static constexpr unsigned TEXTURE_PAGE_HEIGHT = 1024;
+static constexpr unsigned MAX_TEXTURE_PAGES = 32;
+static constexpr unsigned MAX_TEXTURE_PAGE_NODES = 2048;
+static constexpr unsigned MAX_PENDING_ALLOCS = 1024;
+
+struct TextureNode
+{
+	int page = -1;
+	uint16_t x = 0;
+	uint16_t y = 0;
+	uint16_t w = 0;
+	uint16_t h = 0;
+	const void* srcData = nullptr;
+	TextureNode* nextInPage = nullptr;
+	bool srcAlpha8 = false;
+};
+
+struct TexturePage
+{
+	TexturePage()
+	{
+		stbrp_init_target(&rectPackContext, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, rectPackNodes, MAX_TEXTURE_PAGE_NODES);
+		rhiTex = rhi::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, DEFAULT_FILTERING);
+	}
+	~TexturePage()
+	{
+		rhi::DestroyTexture(rhiTex);
+	}
+
+	rhi::Texture2D* rhiTex = nullptr;
+	unsigned pixelsUsed = 0;
+	unsigned pixelsAllocated = 0;
+	stbrp_context rectPackContext;
+	stbrp_node rectPackNodes[MAX_TEXTURE_PAGE_NODES];
+};
+
+struct TextureStorage
+{
+	TextureNode* AllocNode(int w, int h, const void* d, bool a8)
+	{
+		if (w > TEXTURE_PAGE_WIDTH / 2 || h > TEXTURE_PAGE_HEIGHT / 2)
+			return nullptr;
+
+		auto* N = new TextureNode;
+		N->w = w;
+		N->h = h;
+		N->srcData = d;
+		N->srcAlpha8 = a8;
+		pendingAllocs[numPendingAllocs++] = N;
+		if (numPendingAllocs == MAX_PENDING_ALLOCS)
+		{
+			FlushPendingAllocs();
+		}
+		return N;
+	}
+	void FlushPendingAllocs()
+	{
+		if (!numPendingAllocs)
+			return;
+
+		stbrp_rect rectsToPack[MAX_TEXTURE_PAGE_NODES] = {};
+		for (int i = 0; i < numPendingAllocs; i++)
+		{
+			auto& R = rectsToPack[i];
+			R.id = i;
+			R.w = pendingAllocs[i]->w;
+			R.h = pendingAllocs[i]->h;
+		}
+		int numRemainingRects = numPendingAllocs;
+
+		for (int page_num = 0; page_num < MAX_TEXTURE_PAGES; page_num++)
+		{
+			auto* P = pages[page_num];
+
+			if (!P)
+			{
+				pages[page_num] = P = new TexturePage;
+			}
+
+			stbrp_pack_rects(&P->rectPackContext, rectsToPack, numRemainingRects);
+
+			// update packed nodes & add them to page
+			bool anyPacked = false;
+			for (int i = 0; i < numRemainingRects; i++)
+			{
+				const auto& R = rectsToPack[i];
+				if (R.was_packed)
+				{
+					anyPacked = true;
+					auto* N = pendingAllocs[R.id];
+					N->x = R.x;
+					N->y = R.y;
+					N->page = page_num;
+					P->pixelsAllocated += N->w * N->h;
+					P->pixelsUsed += N->w * N->h;
+				}
+			}
+
+			if (anyPacked)
+			{
+				// upload packed rects
+				rhi::MapData md = rhi::MapTexture(P->rhiTex);
+				for (int i = 0; i < numRemainingRects; i++)
+				{
+					const auto& R = rectsToPack[i];
+					if (R.was_packed)
+					{
+						rhi::CopyToMappedTextureRect(P->rhiTex, md, R.x, R.y, R.w, R.h, pendingAllocs[R.id]->srcData, pendingAllocs[R.id]->srcAlpha8);
+					}
+				}
+				rhi::UnmapTexture(P->rhiTex);
+			}
+
+			// removed packed rects from array
+			int outIdx = 0;
+			for (int i = 0; i < numRemainingRects; i++)
+			{
+				if (!rectsToPack[i].was_packed)
+				{
+					if (outIdx != i)
+						rectsToPack[outIdx] = rectsToPack[i];
+					outIdx++;
+				}
+			}
+			numRemainingRects = outIdx;
+
+			if (numRemainingRects == 0)
+				break;
+		}
+
+		numPendingAllocs = 0;
+	}
+	static void RemapUVs(rhi::Vertex* verts, size_t num_verts, TextureNode* node)
+	{
+		if (!node || node->page < 0)
+			return;
+		float xs = float(node->w) / float(TEXTURE_PAGE_WIDTH);
+		float ys = float(node->h) / float(TEXTURE_PAGE_HEIGHT);
+		float xo = float(node->x) / float(TEXTURE_PAGE_WIDTH);
+		float yo = float(node->y) / float(TEXTURE_PAGE_HEIGHT);
+		for (size_t i = 0; i < num_verts; i++)
+		{
+			verts[i].u = verts[i].u * xs + xo;
+			verts[i].v = verts[i].v * ys + yo;
+		}
+	}
+
+	TexturePage* pages[MAX_TEXTURE_PAGES] = {};
+	int numPages = 0;
+	TextureNode* pendingAllocs[MAX_PENDING_ALLOCS] = {};
+	int numPendingAllocs = 0;
+}
+g_textureStorage;
+
+
 struct Texture
 {
 	Texture(int w, int h, const void* d, bool a8, bool flt) :
-		width(w), height(h), isAlpha8(a8), isFilteringEnabled(flt)
+		width(w), height(h), isFilteringEnabled(flt)
 	{
-		int bytes_pp = a8 ? 1 : 4;
-		data = new char[w * h * bytes_pp];
-		memcpy(data, d, w * h * bytes_pp);
-		rhiTex = a8 ? rhi::CreateTextureA8(d, w, h) : rhi::CreateTextureRGBA8(d, w, h, flt);
+		data = new uint8_t[w * h * 4];
+		if (!a8)
+			memcpy(data, d, w * h * 4);
+		else
+		{
+			for (int y = 0; y < h; y++)
+			{
+				for (int x = 0; x < w; x++)
+				{
+					data[(x + y * w) * 4 + 0] = 255;
+					data[(x + y * w) * 4 + 1] = 255;
+					data[(x + y * w) * 4 + 2] = 255;
+					data[(x + y * w) * 4 + 3] = ((const char*)d)[x + y * w];
+				}
+			}
+		}
+		if (auto* n = g_textureStorage.AllocNode(w, h, data, false))
+			atlasNode = n;
+		else
+			rhiTex = a8 ? rhi::CreateTextureA8(d, w, h) : rhi::CreateTextureRGBA8(d, w, h, flt);
 	}
 	~Texture()
 	{
 		rhi::DestroyTexture(rhiTex);
 		delete[] data;
 	}
+	rhi::Texture2D* GetRHITex() const
+	{
+		return rhiTex ? rhiTex : atlasNode && atlasNode->page >= 0 ? g_textureStorage.pages[atlasNode->page]->rhiTex : nullptr;
+	}
 
 	int refcount = 1;
-	int width;
-	int height;
-	char* data;
-	bool isAlpha8;
+	uint16_t width;
+	uint16_t height;
+	uint8_t* data;
 	bool isFilteringEnabled;
 	rhi::Texture2D* rhiTex = nullptr;
+	TextureNode* atlasNode = nullptr;
 };
 
 
@@ -62,6 +240,11 @@ void TextureRelease(Texture* tex)
 }
 
 
+void _TextureInitStorage()
+{
+}
+
+
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
 static rhi::Vertex g_bufVertices[MAX_VERTICES];
@@ -75,7 +258,9 @@ void _Flush()
 {
 	if (!g_numIndices)
 		return;
-	rhi::SetTexture(g_curTex ? g_curTex->rhiTex : nullptr);
+	if (g_curTex)
+		TextureStorage::RemapUVs(g_bufVertices, g_numVertices, g_curTex->atlasNode);
+	rhi::SetTexture(g_curTex ? g_curTex->GetRHITex() : nullptr);
 	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
@@ -83,6 +268,7 @@ void _Flush()
 
 void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
+	g_textureStorage.FlushPendingAllocs();
 #if 1
 	if (g_curTex != tex || g_numVertices + num_vertices > MAX_VERTICES || g_numIndices + num_indices > MAX_INDICES)
 	{
@@ -92,7 +278,7 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 	{
 		_Flush();
 		g_curTex = tex;
-		rhi::SetTexture(g_curTex ? g_curTex->rhiTex : nullptr);
+		rhi::SetTexture(g_curTex ? g_curTex->GetRHITex() : nullptr);
 		rhi::DrawIndexedTriangles(verts, indices, num_indices);
 		return;
 	}

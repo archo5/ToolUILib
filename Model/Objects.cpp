@@ -241,6 +241,8 @@ void UIObject::Paint()
 
 void UIObject::PaintChildren()
 {
+	if (!firstChild)
+		return;
 	ui::draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		ch->Paint();
