@@ -254,13 +254,16 @@ static int g_numVertices;
 static int g_numIndices;
 static Texture* g_curTex;
 
+static rhi::Texture2D* GetRHITex(Texture* tex)
+{
+	return tex ? tex->GetRHITex() : nullptr;
+}
+
 void _Flush()
 {
 	if (!g_numIndices)
 		return;
-	if (g_curTex)
-		TextureStorage::RemapUVs(g_bufVertices, g_numVertices, g_curTex->atlasNode);
-	rhi::SetTexture(g_curTex ? g_curTex->GetRHITex() : nullptr);
+	rhi::SetTexture(GetRHITex(g_curTex));
 	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
@@ -268,9 +271,10 @@ void _Flush()
 
 void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
+	// TODO limit this for faster JIT glyph uploads
 	g_textureStorage.FlushPendingAllocs();
 #if 1
-	if (g_curTex != tex || g_numVertices + num_vertices > MAX_VERTICES || g_numIndices + num_indices > MAX_INDICES)
+	if (GetRHITex(g_curTex) != GetRHITex(tex) || g_numVertices + num_vertices > MAX_VERTICES || g_numIndices + num_indices > MAX_INDICES)
 	{
 		_Flush();
 	}
@@ -278,13 +282,15 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 	{
 		_Flush();
 		g_curTex = tex;
-		rhi::SetTexture(g_curTex ? g_curTex->GetRHITex() : nullptr);
+		rhi::SetTexture(GetRHITex(g_curTex));
 		rhi::DrawIndexedTriangles(verts, indices, num_indices);
 		return;
 	}
 
 	g_curTex = tex;
 	memcpy(&g_bufVertices[g_numVertices], verts, sizeof(*verts) * num_vertices);
+	if (g_curTex)
+		TextureStorage::RemapUVs(&g_bufVertices[g_numVertices], num_vertices, g_curTex->atlasNode);
 	uint16_t baseVertex = g_numVertices;
 	for (size_t i = 0; i < num_indices; i++)
 		g_bufIndices[g_numIndices + i] = indices[i] + baseVertex;
@@ -487,14 +493,15 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 unsigned char ttf_buffer[1 << 20];
 unsigned char temp_bitmap[512 * 512];
 
+stbtt_fontinfo g_fontInfo;
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
-ui::draw::Texture* g_fontTexture;
+ui::draw::Texture* g_fontGlyphTextures[96];
 
 void InitFont()
 {
 	fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/segoeui.ttf", "rb"));
+	stbtt_InitFont(&g_fontInfo, ttf_buffer, 0);
 	stbtt_BakeFontBitmap(ttf_buffer, 0, -12.0f, temp_bitmap, 512, 512, 32, 96, cdata); // no guarantee this fits!
-	g_fontTexture = ui::draw::TextureCreateA8(512, 512, temp_bitmap);
 }
 
 float GetTextWidth(const char* text, size_t num)
@@ -516,15 +523,28 @@ float GetFontHeight()
 
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
 {
+	float scale = stbtt_ScaleForMappingEmToPixels(&g_fontInfo, 12.0f);
 	// assume orthographic projection with units = screen pixels, origin at top left
 	ui::Color4b col = ui::Color4f(r, g, b, a);
 	while (*text)
 	{
 		if (*text >= 32 && *text < 128)
 		{
+			ui::draw::Texture*& GT = g_fontGlyphTextures[*text - 32];
+			if (!GT)
+			{
+				int gid = stbtt_FindGlyphIndex(&g_fontInfo, *text);
+				if (gid != 0)
+				{
+					int x, y, w, h;
+					auto* bitmap = stbtt_GetGlyphBitmap(&g_fontInfo, scale, scale, gid, &w, &h, &x, &y);
+					GT = ui::draw::TextureCreateA8(w, h, bitmap);
+					stbtt_FreeBitmap(bitmap, nullptr);
+				}
+			}
 			stbtt_aligned_quad q;
 			stbtt_GetBakedQuad(cdata, 512, 512, *text - 32, &x, &y, &q, 1);//1=opengl & d3d10+,0=d3d9
-			ui::draw::RectColTex(q.x0, q.y0, q.x1, q.y1, col, g_fontTexture, q.s0, q.t0, q.s1, q.t1);
+			ui::draw::RectColTex(q.x0, q.y0, q.x1, q.y1, col, GT);
 		}
 		++text;
 	}
