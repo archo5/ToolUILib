@@ -93,6 +93,7 @@ struct TextureStorage
 			if (!P)
 			{
 				pages[page_num] = P = new TexturePage;
+				numPages++;
 			}
 
 			stbrp_pack_rects(&P->rectPackContext, rectsToPack, numRemainingRects);
@@ -171,14 +172,39 @@ struct TextureStorage
 g_textureStorage;
 
 
+namespace debug {
+
+int GetAtlasTextureCount()
+{
+	return g_textureStorage.numPages;
+}
+
+rhi::Texture2D* GetAtlasTexture(int n, int size[2])
+{
+	if (size)
+	{
+		size[0] = TEXTURE_PAGE_WIDTH;
+		size[1] = TEXTURE_PAGE_HEIGHT;
+	}
+	return g_textureStorage.pages[n]->rhiTex;
+}
+
+} // debug
+
+
 struct Texture
 {
-	Texture(int w, int h, const void* d, bool a8, bool flt) :
+	Texture(int w, int h, int pitch, const void* d, bool a8, bool flt) :
 		width(w), height(h), isFilteringEnabled(flt)
 	{
 		data = new uint8_t[w * h * 4];
 		if (!a8)
-			memcpy(data, d, w * h * 4);
+		{
+			for (int y = 0; y < h; y++)
+			{
+				memcpy(&data[y * w * 4], &((const char*)d)[y * pitch], w * 4);
+			}
+		}
 		else
 		{
 			for (int y = 0; y < h; y++)
@@ -188,7 +214,7 @@ struct Texture
 					data[(x + y * w) * 4 + 0] = 255;
 					data[(x + y * w) * 4 + 1] = 255;
 					data[(x + y * w) * 4 + 2] = 255;
-					data[(x + y * w) * 4 + 3] = ((const char*)d)[x + y * w];
+					data[(x + y * w) * 4 + 3] = ((const char*)d)[x + y * pitch];
 				}
 			}
 		}
@@ -219,12 +245,17 @@ struct Texture
 
 Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering)
 {
-	return new Texture(w, h, data, false, filtering);
+	return new Texture(w, h, w * 4, data, false, filtering);
+}
+
+Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, bool filtering)
+{
+	return new Texture(w, h, pitch, data, false, filtering);
 }
 
 Texture* TextureCreateA8(int w, int h, const void* data, bool filtering)
 {
-	return new Texture(w, h, data, true, filtering);
+	return new Texture(w, h, w, data, true, filtering);
 }
 
 void TextureAddRef(Texture* tex)
@@ -253,25 +284,61 @@ static uint16_t g_bufIndices[MAX_INDICES];
 static constexpr size_t sizeOfBuffers = sizeof(g_bufVertices) + sizeof(g_bufIndices);
 static int g_numVertices;
 static int g_numIndices;
+static Texture* g_whiteTex;
 static Texture* g_curTex;
+static rhi::Texture2D* g_appliedTex;
+
+static Texture* GetWhiteTex()
+{
+	if (!g_whiteTex)
+	{
+		static uint8_t white[] = { 255, 255, 255, 255 };
+		g_whiteTex = TextureCreateRGBA8(1, 1, white);
+	}
+	return g_whiteTex;
+}
 
 static rhi::Texture2D* GetRHITex(Texture* tex)
 {
 	return tex ? tex->GetRHITex() : nullptr;
 }
 
+static void ApplyRHITex(rhi::Texture2D* tex)
+{
+	if (g_appliedTex == tex)
+		return;
+	rhi::SetTexture(tex);
+	g_appliedTex = tex;
+}
+
 void _Flush()
 {
 	if (!g_numIndices)
 		return;
-	rhi::SetTexture(GetRHITex(g_curTex));
+	ApplyRHITex(GetRHITex(g_curTex));
 	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
 }
 
+namespace internals {
+
+void OnBeginDrawFrame()
+{
+	g_appliedTex = nullptr;
+}
+
+void OnEndDrawFrame()
+{
+	_Flush();
+}
+
+} // internals
+
 void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
+	if (!tex)
+		tex = GetWhiteTex();
 	// TODO limit this for faster JIT glyph uploads
 	g_textureStorage.FlushPendingAllocs();
 #if 1
@@ -283,7 +350,7 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 	{
 		_Flush();
 		g_curTex = tex;
-		rhi::SetTexture(GetRHITex(g_curTex));
+		ApplyRHITex(GetRHITex(g_curTex));
 		rhi::DrawIndexedTriangles(verts, indices, num_indices);
 		return;
 	}
@@ -319,10 +386,10 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
 
 	rhi::Vertex verts[4] =
 	{
-		{ x0 + tx, y0 + ty, 0, 0, col },
-		{ x1 + tx, y1 + ty, 0, 0, col },
-		{ x1 - tx, y1 - ty, 0, 0, col },
-		{ x0 - tx, y0 - ty, 0, 0, col },
+		{ x0 + tx, y0 + ty, 0.5f, 0.5f, col },
+		{ x1 + tx, y1 + ty, 0.5f, 0.5f, col },
+		{ x1 - tx, y1 - ty, 0.5f, 0.5f, col },
+		{ x0 - tx, y0 - ty, 0.5f, 0.5f, col },
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
@@ -331,17 +398,17 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
 
 void RectCol(float x0, float y0, float x1, float y1, Color4b col)
 {
-	RectColTex(x0, y0, x1, y1, col, nullptr, 0, 0, 1, 1);
+	RectColTex(x0, y0, x1, y1, col, nullptr, 0.5f, 0.5f, 0.5f, 0.5f);
 }
 
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 {
 	rhi::Vertex verts[4] =
 	{
-		{ x0, y0, 0, 0, a },
-		{ x1, y0, 0, 0, b },
-		{ x1, y1, 0, 0, b },
-		{ x0, y1, 0, 0, a },
+		{ x0, y0, 0.5f, 0.5f, a },
+		{ x1, y0, 0.5f, 0.5f, b },
+		{ x1, y1, 0.5f, 0.5f, b },
+		{ x0, y1, 0.5f, 0.5f, a },
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
@@ -430,15 +497,15 @@ void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b c
 	auto& cutr = cutout;
 	rhi::Vertex verts[8] =
 	{
-		{ rect.x0, rect.y0, 0, 0, col },
-		{ rect.x1, rect.y0, 0, 0, col },
-		{ rect.x1, rect.y1, 0, 0, col },
-		{ rect.x0, rect.y1, 0, 0, col },
+		{ rect.x0, rect.y0, 0.5f, 0.5f, col },
+		{ rect.x1, rect.y0, 0.5f, 0.5f, col },
+		{ rect.x1, rect.y1, 0.5f, 0.5f, col },
+		{ rect.x0, rect.y1, 0.5f, 0.5f, col },
 
-		{ cutr.x0, cutr.y0, 0, 0, col },
-		{ cutr.x1, cutr.y0, 0, 0, col },
-		{ cutr.x1, cutr.y1, 0, 0, col },
-		{ cutr.x0, cutr.y1, 0, 0, col },
+		{ cutr.x0, cutr.y0, 0.5f, 0.5f, col },
+		{ cutr.x1, cutr.y0, 0.5f, 0.5f, col },
+		{ cutr.x1, cutr.y1, 0.5f, 0.5f, col },
+		{ cutr.x0, cutr.y1, 0.5f, 0.5f, col },
 	};
 
 	uint16_t indices[24] =
@@ -686,16 +753,17 @@ Sprite g_themeSprites[TE__COUNT] =
 #endif
 };
 
-ui::draw::Texture* g_themeTexture;
-int g_themeWidth, g_themeHeight;
+ui::draw::Texture* g_themeTextures[TE__COUNT];
 
 void InitTheme()
 {
 	int size[2];
 	auto* data = LoadTGA("gui-theme2.tga", size);
-	g_themeTexture = ui::draw::TextureCreateRGBA8(size[0], size[1], data);
-	g_themeWidth = size[0];
-	g_themeHeight = size[1];
+	for (int i = 0; i < TE__COUNT; i++)
+	{
+		auto& s = g_themeSprites[i];
+		g_themeTextures[i] = ui::draw::TextureCreateRGBA8(s.ox1 - s.ox0, s.oy1 - s.oy0, size[0] * 4, &data[(s.ox0 + s.oy0 * size[0]) * 4]);
+	}
 	delete[] data;
 }
 
@@ -710,9 +778,8 @@ void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 	const Sprite& s = g_themeSprites[e];
 	AABB<float> outer = { x0, y0, x1, y1 };
 	AABB<float> inner = outer.ShrinkBy({ float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) });
-	float ifw = 1.0f / g_themeWidth, ifh = 1.0f / g_themeHeight;
-	int s_ix0 = s.ox0 + s.bx0, s_iy0 = s.oy0 + s.by0, s_ix1 = s.ox1 - s.bx1, s_iy1 = s.oy1 - s.by1;
-	AABB<float> texouter = { s.ox0 * ifw, s.oy0 * ifh, s.ox1 * ifw, s.oy1 * ifh };
+	float ifw = 1.0f / (s.ox1 - s.ox0), ifh = 1.0f / (s.oy1 - s.oy0);
+	int s_ix0 = s.bx0, s_iy0 = s.by0, s_ix1 = (s.ox1 - s.ox0) - s.bx1, s_iy1 = (s.oy1 - s.oy0) - s.by1;
 	AABB<float> texinner = { s_ix0 * ifw, s_iy0 * ifh, s_ix1 * ifw, s_iy1 * ifh };
-	ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), g_themeTexture, texouter, texinner);
+	ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), g_themeTextures[e], { 0, 0, 1, 1 }, texinner);
 }

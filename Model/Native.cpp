@@ -492,6 +492,7 @@ struct NativeWindow_Impl
 		rhi::SetActiveContext(renderCtx);
 		rhi::SetViewport(0, 0, evsys.width, evsys.height);
 		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
+		draw::internals::OnBeginDrawFrame();
 
 		//GL::Clear(20, 40, 80, 255);
 		rhi::Clear(0x25, 0x25, 0x25, 255);
@@ -517,7 +518,7 @@ struct NativeWindow_Impl
 				DebugDraw(cont.rootNode);
 		}
 
-		draw::_Flush();
+		draw::internals::OnEndDrawFrame();
 
 #if DRAW_STATS
 		double t1 = hqtime();
@@ -527,6 +528,23 @@ struct NativeWindow_Impl
 		printf("# SetTexture: %u\n", unsigned(statsdiff.num_SetTexture));
 		printf("# DrawTriangles: %u\n", unsigned(statsdiff.num_DrawTriangles));
 		printf("# DrawIndexedTriangles: %u\n", unsigned(statsdiff.num_DrawIndexedTriangles));
+#endif
+
+#if DEBUG_DRAW_ATLAS
+		if (draw::debug::GetAtlasTextureCount())
+		{
+			rhi::SetTexture(draw::debug::GetAtlasTexture(0, nullptr));
+			int D = 4;
+			rhi::Vertex verts[4] =
+			{
+				{ evsys.width / D, evsys.height / D, 0, 0, Color4b::White() },
+				{ evsys.width, evsys.height / D, 1, 0, Color4b::White() },
+				{ evsys.width, evsys.height, 1, 1, Color4b::White() },
+				{ evsys.width / D, evsys.height, 0, 1, Color4b::White() },
+			};
+			uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
+			rhi::DrawIndexedTriangles(verts, indices, 6);
+		}
 #endif
 
 		rhi::Present(renderCtx);

@@ -62,17 +62,36 @@ enum EThemeElement
 
 
 namespace ui {
+namespace rhi {
+
+struct Texture2D;
+
+} // rhi
 namespace draw {
 
 constexpr bool DEFAULT_FILTERING = true;
 
+namespace debug {
+
+int GetAtlasTextureCount();
+rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
+
+} // debug
+
 struct Texture;
 Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
+Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, bool filtering = DEFAULT_FILTERING);
 Texture* TextureCreateA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
 void TextureAddRef(Texture* tex);
 void TextureRelease(Texture* tex);
 
-void _Flush();
+namespace internals {
+
+void OnBeginDrawFrame();
+void OnEndDrawFrame();
+
+} // internals
+
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
