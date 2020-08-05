@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <unordered_map>
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../stb_rect_pack.h"
@@ -490,18 +491,64 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 } // ui
 
 
+struct GlyphValue
+{
+	ui::draw::Texture* tex = nullptr;
+	uint16_t w;
+	uint16_t h;
+	float xoff;
+	float yoff;
+	float xadv;
+};
+
+
 unsigned char ttf_buffer[1 << 20];
-unsigned char temp_bitmap[512 * 512];
 
 stbtt_fontinfo g_fontInfo;
-stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
+std::unordered_map<uint32_t, GlyphValue> g_glyphMap;
 ui::draw::Texture* g_fontGlyphTextures[96];
+
+static GlyphValue FindGlyph(uint32_t codepoint, bool needTex)
+{
+	auto it = g_glyphMap.find(codepoint);
+	if (it != g_glyphMap.end() && it->second.tex)
+		return it->second;
+
+	int glyphID = stbtt_FindGlyphIndex(&g_fontInfo, codepoint);
+	float scale = stbtt_ScaleForMappingEmToPixels(&g_fontInfo, 12.0f);
+
+	GlyphValue* gv = nullptr;
+	if (it == g_glyphMap.end())
+	{
+		int xadv = 0, lsb = 0, x0, y0, x1, y1;
+		stbtt_GetGlyphHMetrics(&g_fontInfo, glyphID, &xadv, &lsb);
+		stbtt_GetGlyphBitmapBox(&g_fontInfo, glyphID, scale, scale, &x0, &y0, &x1, &y1);
+
+		gv = &g_glyphMap[codepoint];
+		gv->xadv = xadv * scale;
+		gv->xoff = x0;
+		gv->yoff = y0;
+		gv->w = x1 - x0;
+		gv->h = y1 - y0;
+	}
+	else
+		gv = &it->second;
+
+	if (needTex && !gv->tex)
+	{
+		int x, y, w, h;
+		auto* bitmap = stbtt_GetGlyphBitmap(&g_fontInfo, scale, scale, glyphID, &w, &h, &x, &y);
+		gv->tex = ui::draw::TextureCreateA8(w, h, bitmap);
+		stbtt_FreeBitmap(bitmap, nullptr);
+	}
+
+	return *gv;
+}
 
 void InitFont()
 {
 	fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/segoeui.ttf", "rb"));
 	stbtt_InitFont(&g_fontInfo, ttf_buffer, 0);
-	stbtt_BakeFontBitmap(ttf_buffer, 0, -12.0f, temp_bitmap, 512, 512, 32, 96, cdata); // no guarantee this fits!
 }
 
 float GetTextWidth(const char* text, size_t num)
@@ -509,8 +556,7 @@ float GetTextWidth(const char* text, size_t num)
 	float out = 0;
 	for (size_t i = 0; num != SIZE_MAX ? i < num : *text; i++)
 	{
-		if (*text >= 32 && *text < 128)
-			out += cdata[*text - 32].xadvance;
+		out += FindGlyph((uint8_t)*text, false).xadv;
 		text++;
 	}
 	return out;
@@ -523,29 +569,15 @@ float GetFontHeight()
 
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
 {
-	float scale = stbtt_ScaleForMappingEmToPixels(&g_fontInfo, 12.0f);
 	// assume orthographic projection with units = screen pixels, origin at top left
 	ui::Color4b col = ui::Color4f(r, g, b, a);
 	while (*text)
 	{
-		if (*text >= 32 && *text < 128)
-		{
-			ui::draw::Texture*& GT = g_fontGlyphTextures[*text - 32];
-			if (!GT)
-			{
-				int gid = stbtt_FindGlyphIndex(&g_fontInfo, *text);
-				if (gid != 0)
-				{
-					int x, y, w, h;
-					auto* bitmap = stbtt_GetGlyphBitmap(&g_fontInfo, scale, scale, gid, &w, &h, &x, &y);
-					GT = ui::draw::TextureCreateA8(w, h, bitmap);
-					stbtt_FreeBitmap(bitmap, nullptr);
-				}
-			}
-			stbtt_aligned_quad q;
-			stbtt_GetBakedQuad(cdata, 512, 512, *text - 32, &x, &y, &q, 1);//1=opengl & d3d10+,0=d3d9
-			ui::draw::RectColTex(q.x0, q.y0, q.x1, q.y1, col, GT);
-		}
+		GlyphValue gv = FindGlyph((uint8_t)*text, true);
+		gv.xoff = roundf(gv.xoff + x);
+		gv.yoff = roundf(gv.yoff + y);
+		ui::draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, col, gv.tex);
+		x += gv.xadv;
 		++text;
 	}
 }
