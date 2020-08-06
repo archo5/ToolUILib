@@ -1363,6 +1363,7 @@ struct PlacementTest : ui::Node
 	{
 		*this + ui::Padding(20);
 
+		ctx->Text("Expandable menu example:");
 		ctx->PushBox();
 
 		ui::imm::EditBool(ctx, open, { ui::MakeOverlay(open, 1.0f) });
@@ -1387,11 +1388,88 @@ struct PlacementTest : ui::Node
 		}
 
 		ctx->Pop();
+
+		ctx->Text("Autocomplete example:");
+		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
+		ctx->PushBox();
+		ui::imm::EditString(ctx, text.c_str(),
+			[this](const char* v) { text = v; }, {
+			ui::EventHandler(UIEventType::GotFocus, [this](UIEvent&) { showDropdown = true; curSelection = 0; Rerender(); }),
+			ui::EventHandler(UIEventType::LostFocus, [this](UIEvent&) { showDropdown = false; Rerender(); }),
+			ui::EventHandler(UIEventType::KeyAction, [this](UIEvent& e)
+			{
+				switch (e.GetKeyAction())
+				{
+				case UIKeyAction::Down:
+					curSelection++;
+					if (curSelection >= curOptionCount)
+						curSelection = 0;
+					Rerender();
+					break;
+				case UIKeyAction::Up:
+					curSelection--;
+					if (curSelection < 0)
+						curSelection = std::max(curOptionCount - 1, 0);
+					Rerender();
+					break;
+				case UIKeyAction::Enter:
+					if (text.size())
+					{
+						for (int num = 0, i = 0; i < 7; i++)
+						{
+							if (strstr(suggestions[i], text.c_str()))
+							{
+								if (num == curSelection)
+								{
+									text = suggestions[i];
+									break;
+								}
+								num++;
+							}
+						}
+						e.context->SetKeyboardFocus(nullptr);
+						e.StopPropagation();
+						Rerender();
+					}
+					break;
+				}
+			}),
+		});
+		if (showDropdown)
+		{
+			auto* lb = ctx->Push<ui::ListBox>();
+			lb->RegisterAsOverlay();
+			auto* pap = Allocate<style::PointAnchoredPlacement>();
+			pap->anchor = { 0, 1 };
+			lb->GetStyle().SetPlacement(pap);
+
+			int num = 0;
+			for (int i = 0; i < 7; i++)
+			{
+				if (strstr(suggestions[i], text.c_str()))
+				{
+					*ctx->MakeWithText<ui::Selectable>(suggestions[i])->Init(curSelection == num)
+						+ ui::EventHandler(UIEventType::Activate, [this, i](UIEvent& e) { text = suggestions[i]; e.context->SetKeyboardFocus(nullptr); });
+					num++;
+				}
+			}
+			curOptionCount = num;
+			if (curSelection >= curOptionCount)
+				curSelection = 0;
+
+			ctx->Pop();
+		}
+		ctx->Pop();
 	}
 
 	bool open = false;
 	bool one = true;
 	int two = 3;
+
+	std::string text;
+	bool showDropdown = false;
+	int curSelection = 0;
+	int curOptionCount = 0;
 };
 
 struct ScrollbarTest : ui::Node

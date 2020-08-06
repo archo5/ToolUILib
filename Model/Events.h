@@ -97,6 +97,9 @@ enum class UIKeyAction
 
 	PageUp,
 	PageDown,
+
+	Up,
+	Down,
 	// }
 
 	FocusNext,

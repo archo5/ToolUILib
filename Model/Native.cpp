@@ -1229,6 +1229,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
+				case VK_UP:
+					evsys->OnKeyAction(UIKeyAction::Up, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
+				case VK_DOWN:
+					evsys->OnKeyAction(UIKeyAction::Down, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					break;
 				case VK_HOME:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToStart : UIKeyAction::GoToLineStart,
