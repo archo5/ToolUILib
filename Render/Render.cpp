@@ -335,8 +335,26 @@ void OnEndDrawFrame()
 
 } // internals
 
+static void DebugOffScale(rhi::Vertex* verts, size_t count, float x, float y, float s)
+{
+	for (size_t i = 0; i < count; i++)
+	{
+		verts[i].x = (verts[i].x - x) * s;
+		verts[i].y = (verts[i].y - y) * s;
+	}
+}
+
+#if DEBUG_SUBPIXEL
+float XOFF = 0;
+float YOFF = 0;
+float SCALE = 4;
+#endif
+
 void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
+#if DEBUG_SUBPIXEL
+	DebugOffScale(verts, num_vertices, XOFF, YOFF, SCALE);//10, 200, 4);
+#endif
 	if (!tex)
 		tex = GetWhiteTex();
 	// TODO limit this for faster JIT glyph uploads
@@ -370,7 +388,7 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 #endif
 }
 
-void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
+void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel)
 {
 	if (x0 == x1 && y0 == y1)
 		return;
@@ -378,11 +396,33 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
 	float dx = x1 - x0;
 	float dy = y1 - y0;
 	float lensq = dx * dx + dy * dy;
-	float invlen = 1.0f / sqrtf(lensq);
-	dx *= invlen;
-	dy *= invlen;
-	float tx = -dy * 0.5f * w;
-	float ty = dx * 0.5f * w;
+	float hinvlen = 0.5f / sqrtf(lensq);
+	dx *= hinvlen;
+	dy *= hinvlen;
+	float tx = -dy * w;
+	float ty = dx * w;
+
+	if (midpixel)
+	{
+		x0 += 0.5f;
+		y0 += 0.5f;
+		x1 += 0.5f;
+		y1 += 0.5f;
+		if (dx + dy >= 0)
+		{
+			x0 -= dx;
+			y0 -= dy;
+			x1 -= dx;
+			y1 -= dy;
+		}
+		else
+		{
+			x0 += dx;
+			y0 += dy;
+			x1 += dx;
+			y1 += dy;
+		}
+	}
 
 	rhi::Vertex verts[4] =
 	{
@@ -393,7 +433,107 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col)
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	IndexedTriangles(0, verts, 4, indices, 6);
+	IndexedTriangles(nullptr, verts, 4, indices, 6);
+}
+
+void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel)
+{
+	if (x0 == x1 && y0 == y1)
+		return;
+
+	float dx = x1 - x0;
+	float dy = y1 - y0;
+	float lensq = dx * dx + dy * dy;
+	float hinvlen = 0.5f / sqrtf(lensq);
+	dx *= hinvlen;
+	dy *= hinvlen;
+	float tx = dy;
+	float ty = -dx;
+
+	if (midpixel)
+	{
+		x0 += 0.5f;
+		y0 += 0.5f;
+		x1 += 0.5f;
+		y1 += 0.5f;
+		if (dx + dy >= 0)
+		{
+			x0 -= dx;
+			y0 -= dy;
+			x1 -= dx;
+			y1 -= dy;
+		}
+		else
+		{
+			x0 += dx;
+			y0 += dy;
+			x1 += dx;
+			y1 += dy;
+		}
+	}
+
+	Color4b colA0 = col;
+	colA0.a = 0;
+
+	if (w <= 1)
+	{
+		tx *= w * 2;
+		ty *= w * 2;
+
+		Color4b colM = col;
+		colM.a = colM.a * w;
+
+		rhi::Vertex verts[6] =
+		{
+			// + side
+			{ x0 + tx - dx, y0 + ty - dy, 0.5f, 0.5f, colA0 },
+			{ x1 + tx + dx, y1 + ty + dy, 0.5f, 0.5f, colA0 },
+			// middle
+			{ x0 + dx, y0 + dy, 0.5f, 0.5f, colM },
+			{ x1 - dx, y1 - dy, 0.5f, 0.5f, colM },
+			// - side
+			{ x0 - tx - dx, y0 - ty - dy, 0.5f, 0.5f, colA0 },
+			{ x1 - tx + dx, y1 - ty + dy, 0.5f, 0.5f, colA0 },
+		};
+		uint16_t indices[6 * 3] =
+		{
+			0, 1, 3,  3, 2, 0,
+			5, 4, 2,  2, 3, 5,
+			0, 2, 4,
+			5, 3, 1,
+		};
+		IndexedTriangles(nullptr, verts, 6, indices, 6 * 3);
+	}
+	else
+	{
+		float twx = tx * w;
+		float twy = ty * w;
+
+		rhi::Vertex verts[8] =
+		{
+			// + side
+			{ x0 + twx + tx - dx, y0 + twy + ty - dy, 0.5f, 0.5f, colA0 },
+			{ x1 + twx + tx + dx, y1 + twy + ty + dy, 0.5f, 0.5f, colA0 },
+			// + middle
+			{ x0 + twx - tx + dx, y0 + twy - ty + dy, 0.5f, 0.5f, col },
+			{ x1 + twx - tx - dx, y1 + twy - ty - dy, 0.5f, 0.5f, col },
+			// - middle
+			{ x0 - twx + tx + dx, y0 - twy + ty + dy, 0.5f, 0.5f, col },
+			{ x1 - twx + tx - dx, y1 - twy + ty - dy, 0.5f, 0.5f, col },
+			// - side
+			{ x0 - twx - tx - dx, y0 - twy - ty - dy, 0.5f, 0.5f, colA0 },
+			{ x1 - twx - tx + dx, y1 - twy - ty + dy, 0.5f, 0.5f, colA0 },
+		};
+		uint16_t indices[10 * 3] =
+		{
+			0, 1, 3,  3, 2, 0,
+			2, 3, 5,  5, 4, 2,
+			4, 5, 7,  7, 6, 4,
+			0, 2, 4,  4, 6, 0,
+			7, 5, 3,  3, 1, 7,
+		};
+		IndexedTriangles(nullptr, verts, 8, indices, 10 * 3);
+	}
 }
 
 void RectCol(float x0, float y0, float x1, float y1, Color4b col)
@@ -412,7 +552,7 @@ void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	IndexedTriangles(0, verts, 4, indices, 6);
+	IndexedTriangles(nullptr, verts, 4, indices, 6);
 }
 
 void RectTex(float x0, float y0, float x1, float y1, Texture* tex)

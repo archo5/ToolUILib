@@ -9,11 +9,12 @@ struct RenderingPrimitives : ui::Node
 	void OnPaint() override
 	{
 		ui::Color4b col = ui::Color4f(1, 0.5f, 0);
+		ui::Color4b colO = ui::Color4f(0, 1, 0.5f, 0.5f);
 
 		for (int t = 0; t <= 5; t++)
 		{
 			float w = powf(3.0f, t * 0.2f);
-			float xo = t * 70;
+			float xo = t * 70 + 20;
 			float x0 = 10 + xo;
 			float x1 = 25 + xo;
 			float x2 = 45 + xo;
@@ -21,16 +22,40 @@ struct RenderingPrimitives : ui::Node
 			for (int i = 0; i < 8; i++)
 			{
 				ui::draw::LineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, col);
+				ui::draw::AALineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, colO);
+				ui::draw::AALineCol(x0, 210 + i * 4, x1, 210 + i * 5, w, col);
+
 				ui::draw::LineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, col);
+				ui::draw::AALineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, colO);
+				ui::draw::AALineCol(x2, 210 + i * 5, x3, 210 + i * 4, w, col);
 			}
 			for (int i = 4; i < 12; i++)
 			{
 				ui::draw::LineCol(x0, 10 + i * 8, x1, 10 + i * 10, w, col);
+				ui::draw::AALineCol(x0, 10 + i * 8, x1, 10 + i * 10, w, colO);
+				ui::draw::AALineCol(x0, 210 + i * 8, x1, 210 + i * 10, w, col);
+
 				ui::draw::LineCol(x2, 10 + i * 10, x3, 10 + i * 8, w, col);
+				ui::draw::AALineCol(x2, 10 + i * 10, x3, 10 + i * 8, w, colO);
+				ui::draw::AALineCol(x2, 210 + i * 10, x3, 210 + i * 8, w, col);
+			}
+			for (int i = 0; i < 4; i++)
+			{
+				float x = (x1 + x2) / 2;
+				float y = 42 + i * 22;
+				float y2 = y + 200;
+				float angle = 60 + i * 10;
+				float c = cosf(angle / 180 * 3.14159f);
+				float s = sinf(angle / 180 * 3.14159f);
+				float r = 10;
+
+				ui::draw::LineCol(x - c * r, y - s * r, x + c * r, y + s * r, w, col);
+				ui::draw::AALineCol(x - c * r, y - s * r, x + c * r, y + s * r, w, colO);
+				ui::draw::AALineCol(x - c * r, y2 - s * r, x + c * r, y2 + s * r, w, col);
 			}
 		}
 
-		ui::draw::RectCol(30, 10, 40, 20, col);
+		ui::draw::RectCol(50, 10, 60, 20, col);
 	}
 	void Render(UIContainer* ctx) override
 	{

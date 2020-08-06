@@ -92,7 +92,8 @@ void OnEndDrawFrame();
 
 } // internals
 
-void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col);
+void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel = true);
+void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel = true);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
 void RectTex(float x0, float y0, float x1, float y1, Texture* tex);
