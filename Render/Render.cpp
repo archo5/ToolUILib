@@ -4,8 +4,6 @@
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../stb_rect_pack.h"
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "../stb_truetype.h"
 
 #include "OpenGL.h"
 #include "Render.h"
@@ -696,98 +694,6 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 
 } // draw
 } // ui
-
-
-struct GlyphValue
-{
-	ui::draw::Texture* tex = nullptr;
-	uint16_t w;
-	uint16_t h;
-	float xoff;
-	float yoff;
-	float xadv;
-};
-
-
-unsigned char ttf_buffer[1 << 20];
-
-stbtt_fontinfo g_fontInfo;
-std::unordered_map<uint32_t, GlyphValue> g_glyphMap;
-ui::draw::Texture* g_fontGlyphTextures[96];
-
-static GlyphValue FindGlyph(uint32_t codepoint, bool needTex)
-{
-	auto it = g_glyphMap.find(codepoint);
-	if (it != g_glyphMap.end() && it->second.tex)
-		return it->second;
-
-	int glyphID = stbtt_FindGlyphIndex(&g_fontInfo, codepoint);
-	float scale = stbtt_ScaleForMappingEmToPixels(&g_fontInfo, 12.0f);
-
-	GlyphValue* gv = nullptr;
-	if (it == g_glyphMap.end())
-	{
-		int xadv = 0, lsb = 0, x0, y0, x1, y1;
-		stbtt_GetGlyphHMetrics(&g_fontInfo, glyphID, &xadv, &lsb);
-		stbtt_GetGlyphBitmapBox(&g_fontInfo, glyphID, scale, scale, &x0, &y0, &x1, &y1);
-
-		gv = &g_glyphMap[codepoint];
-		gv->xadv = xadv * scale;
-		gv->xoff = x0;
-		gv->yoff = y0;
-		gv->w = x1 - x0;
-		gv->h = y1 - y0;
-	}
-	else
-		gv = &it->second;
-
-	if (needTex && !gv->tex)
-	{
-		int x, y, w, h;
-		auto* bitmap = stbtt_GetGlyphBitmap(&g_fontInfo, scale, scale, glyphID, &w, &h, &x, &y);
-		gv->tex = ui::draw::TextureCreateA8(w, h, bitmap);
-		stbtt_FreeBitmap(bitmap, nullptr);
-	}
-
-	return *gv;
-}
-
-void InitFont()
-{
-	fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/segoeui.ttf", "rb"));
-	stbtt_InitFont(&g_fontInfo, ttf_buffer, 0);
-}
-
-float GetTextWidth(const char* text, size_t num)
-{
-	float out = 0;
-	for (size_t i = 0; num != SIZE_MAX ? i < num : *text; i++)
-	{
-		out += FindGlyph((uint8_t)*text, false).xadv;
-		text++;
-	}
-	return out;
-}
-
-float GetFontHeight()
-{
-	return 12;
-}
-
-void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
-{
-	// assume orthographic projection with units = screen pixels, origin at top left
-	ui::Color4b col = ui::Color4f(r, g, b, a);
-	while (*text)
-	{
-		GlyphValue gv = FindGlyph((uint8_t)*text, true);
-		gv.xoff = roundf(gv.xoff + x);
-		gv.yoff = roundf(gv.yoff + y);
-		ui::draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, col, gv.tex);
-		x += gv.xadv;
-		++text;
-	}
-}
 
 
 unsigned char* LoadTGA(const char* img, int size[2])

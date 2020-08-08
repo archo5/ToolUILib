@@ -111,11 +111,6 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
 } // ui
 
 
-void InitFont();
-float GetTextWidth(const char* text, size_t num = SIZE_MAX);
-float GetFontHeight();
-void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a = 1);
-
 extern ui::draw::Texture* g_themeTexture;
 void InitTheme();
 AABB<float> GetThemeElementBorderWidths(EThemeElement e);

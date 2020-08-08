@@ -12,6 +12,7 @@
 #include "../Core/Math.h"
 #include "../Core/Serialization.h"
 #include "../Core/String.h"
+#include "../Core/Font.h"
 
 #include "../Render/Render.h"
 

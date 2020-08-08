@@ -118,6 +118,7 @@
     <ClCompile />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Core\Font.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
@@ -138,6 +139,7 @@
     <ClCompile Include="UniParser\UPScript.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\Image.h" />
     <ClInclude Include="Core\Math.h" />
     <ClInclude Include="Core\Memory.h" />
