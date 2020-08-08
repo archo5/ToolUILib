@@ -700,6 +700,62 @@ UIRect UIObject::GetPaddingRect(style::Block* style, float ref)
 	};
 }
 
+float UIObject::GetFontSize(style::Block* styleOverride)
+{
+	style::Coord c;
+	if (styleOverride)
+		c = styleOverride->font_size;
+	for (auto* p = this; p && (c.unit == style::CoordTypeUnit::Undefined || c.unit == style::CoordTypeUnit::Inherit); p = p->parent)
+	{
+		c = p->GetStyle().GetFontSize();
+	}
+	if (!c.IsDefined() || c.unit == style::CoordTypeUnit::Inherit)
+		c = 12;
+	return ResolveUnits(c, GetContentRect().GetWidth());
+}
+
+int UIObject::GetFontWeight(style::Block* styleOverride)
+{
+	auto w = style::FontWeight::Undefined;
+	if (styleOverride)
+		w = styleOverride->font_weight;
+	for (auto* p = this; p && (w == style::FontWeight::Undefined || w == style::FontWeight::Inherit); p = p->parent)
+	{
+		w = p->GetStyle().GetFontWeight();
+	}
+	if (w == style::FontWeight::Undefined || w == style::FontWeight::Inherit)
+		w = style::FontWeight::Normal;
+	return int(w);
+}
+
+bool UIObject::GetFontIsItalic(style::Block* styleOverride)
+{
+	auto s = style::FontStyle::Undefined;
+	if (styleOverride)
+		s = styleOverride->font_style;
+	for (auto* p = this; p && (s == style::FontStyle::Undefined || s == style::FontStyle::Inherit); p = p->parent)
+	{
+		s = p->GetStyle().GetFontStyle();
+	}
+	if (s == style::FontStyle::Undefined || s == style::FontStyle::Inherit)
+		s = style::FontStyle::Normal;
+	return s == style::FontStyle::Italic;
+}
+
+ui::Color4b UIObject::GetTextColor(style::Block* styleOverride)
+{
+	style::Color c;
+	if (styleOverride)
+		c = styleOverride->text_color;
+	for (auto* p = this; p && c.inherit; p = p->parent)
+	{
+		c = p->GetStyle().GetTextColor();
+	}
+	if (c.inherit)
+		c = ui::Color4b::White();
+	return c.color;
+}
+
 ui::NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
@@ -715,16 +771,29 @@ TextElement::TextElement()
 
 void TextElement::GetSize(style::Coord& outWidth, style::Coord& outHeight)
 {
-	outWidth = ceilf(GetTextWidth(text.c_str()));
-	outHeight = GetFontHeight();
+	int size = int(GetFontSize());
+	int weight = GetFontWeight();
+	bool italic = GetFontIsItalic();
+
+	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	outWidth = ceilf(GetTextWidth(font, size, text));
+	outHeight = size;
 }
 
 void TextElement::OnPaint()
 {
+	int size = int(GetFontSize());
+	int weight = GetFontWeight();
+	bool italic = GetFontIsItalic();
+	Color4b color = GetTextColor();
+
+	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
 	styleProps->paint_func(this);
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text.c_str(), 1, 1, 1);
+	ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
 	PaintChildren();
 }
 

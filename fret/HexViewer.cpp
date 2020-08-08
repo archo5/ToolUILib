@@ -412,6 +412,10 @@ void HexViewer::OnPaint()
 		}
 	}
 
+	ui::Font* font = ui::GetFontByFamily(ui::FONT_FAMILY_MONOSPACE);
+	ui::Color4b colHalfTransparentWhite(255, 127);
+	ui::Color4b colWhite = ui::Color4b::White();
+
 	auto size = file->dataSource->GetSize();
 	for (int i = 0; i < 64; i++)
 	{
@@ -420,7 +424,7 @@ void HexViewer::OnPaint()
 		char str[16];
 		snprintf(str, 16, "%" PRIX64, GetBasePos() + i * W);
 		float w = GetTextWidth(str);
-		DrawTextLine(x - w - 10, y + i * fh, str, 1, 1, 1, 0.5f);
+		ui::draw::TextLine(font, 12, x - w - 10, y + i * fh, str, colHalfTransparentWhite);
 	}
 
 	for (int i = 0; i < W; i++)
@@ -430,7 +434,7 @@ void HexViewer::OnPaint()
 		str[1] = "0123456789ABCDEF"[i & 0xf];
 		str[2] = 0;
 		float xoff = (i % W) * 20;
-		DrawTextLine(x + xoff, y - fh, str, 1, 1, 1, 0.5f);
+		ui::draw::TextLine(font, 12, x + xoff, y - fh, str, colHalfTransparentWhite);
 	}
 
 	for (size_t i = 0; i < sz; i++)
@@ -442,9 +446,9 @@ void HexViewer::OnPaint()
 		str[2] = 0;
 		float xoff = (i % W) * 20;
 		float yoff = (i / W) * fh;
-		DrawTextLine(x + xoff, y + yoff, str, 1, 1, 1);
+		ui::draw::TextLine(font, 12, x + xoff, y + yoff, str, colWhite);
 		str[1] = IsASCII(v) ? v : '.';
-		DrawTextLine(x2 + xoff / 2, y + yoff, str + 1, 1, 1, 1);
+		ui::draw::TextLine(font, 12, x2 + xoff / 2, y + yoff, str + 1, colWhite);
 	}
 }
 

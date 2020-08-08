@@ -95,6 +95,11 @@ struct OpenClose : ui::Node
 		{
 			ctx->Push<ui::Panel>();
 			ctx->Text("It is open!");
+			auto s = ctx->MakeWithText<ui::BoxElement>("Different text")->GetStyle();
+			s.SetFontSize(16);
+			s.SetFontWeight(style::FontWeight::Bold);
+			s.SetFontStyle(style::FontStyle::Italic);
+			s.SetTextColor(ui::Color4f(1.0f, 0.1f, 0.0f));
 			ctx->Pop();
 		}
 

@@ -17,6 +17,7 @@ struct StringView
 {
 	StringView() : _data(nullptr), _size(0) {}
 	StringView(const char* s) : _data(s), _size(strlen(s)) {}
+	StringView(char* s) : _data(s), _size(strlen(s)) {}
 	StringView(const char* ptr, size_t sz) : _data(ptr), _size(sz) {}
 	template <class T>
 	StringView(const T& o) : _data(o.data()), _size(o.size()) {}

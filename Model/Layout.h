@@ -156,6 +156,31 @@ enum class HAlign : uint8_t
 	Justify,
 };
 
+enum class FontWeight : int16_t
+{
+	Undefined = 0,
+	Inherit = -1,
+
+	Thin = 100,
+	ExtraLight = 200,
+	Light = 300,
+	Normal = 400,
+	Medium = 500,
+	Semibold = 600,
+	Bold = 700,
+	ExtraBold = 800,
+	Black = 900,
+};
+
+enum class FontStyle : uint8_t
+{
+	Undefined,
+	Inherit,
+
+	Normal,
+	Italic,
+};
+
 enum class Display
 {
 	Undefined,
@@ -288,6 +313,20 @@ enum class CoordTypeUnit
 	Fraction,
 };
 
+struct Color
+{
+	ui::Color4b color;
+	bool inherit = true;
+
+	Color() {}
+	Color(ui::Color4b col) : color(col), inherit(false) {}
+	Color(ui::Color4f col) : color(col), inherit(false) {}
+	bool operator == (const Color& o) const
+	{
+		return inherit == o.inherit && (inherit || color == o.color);
+	}
+};
+
 struct Coord
 {
 	float value;
@@ -416,6 +455,11 @@ struct Block
 	HAlign h_align = HAlign::Undefined;
 	PaintFunction paint_func;
 
+	FontWeight font_weight = FontWeight::Inherit;
+	FontStyle font_style = FontStyle::Inherit;
+	Coord font_size;
+	Color text_color;
+
 	Coord width;
 	Coord height;
 	Coord min_width;
@@ -438,7 +482,7 @@ struct Block
 
 	InstanceCounter<g_numBlocks> _ic;
 };
-static_assert(sizeof(Block) < 256, "style block getting too big?");
+static_assert(sizeof(Block) < 268, "style block getting too big?");
 
 class Selector
 {
@@ -567,6 +611,19 @@ public:
 
 	PaintFunction GetPaintFunc() const;
 	void SetPaintFunc(const PaintFunction& f);
+
+
+	FontWeight GetFontWeight() const;
+	void SetFontWeight(FontWeight v);
+
+	FontStyle GetFontStyle() const;
+	void SetFontStyle(FontStyle v);
+
+	Coord GetFontSize() const;
+	void SetFontSize(Coord v);
+
+	Color GetTextColor() const;
+	void SetTextColor(Color v);
 
 
 	Coord GetWidth() const;

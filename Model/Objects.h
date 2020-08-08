@@ -278,6 +278,11 @@ struct UIObject
 	UIRect GetPaddingRect() const { return finalRectCP; }
 	UIRect GetBorderRect() const { return finalRectCPB; }
 
+	float GetFontSize(style::Block* styleOverride = nullptr);
+	int GetFontWeight(style::Block* styleOverride = nullptr);
+	bool GetFontIsItalic(style::Block* styleOverride = nullptr);
+	ui::Color4b GetTextColor(style::Block* styleOverride = nullptr);
+
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 

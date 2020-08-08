@@ -991,6 +991,48 @@ void Accessor::SetPaintFunc(const PaintFunction& f)
 	AccSet(*this, offsetof(Block, paint_func), f);
 }
 
+
+FontWeight Accessor::GetFontWeight() const
+{
+	return block->font_weight;
+}
+
+void Accessor::SetFontWeight(FontWeight v)
+{
+	AccSet(*this, offsetof(Block, font_weight), v);
+}
+
+FontStyle Accessor::GetFontStyle() const
+{
+	return block->font_style;
+}
+
+void Accessor::SetFontStyle(FontStyle v)
+{
+	AccSet(*this, offsetof(Block, font_style), v);
+}
+
+Coord Accessor::GetFontSize() const
+{
+	return block->font_size;
+}
+
+void Accessor::SetFontSize(Coord v)
+{
+	AccSet(*this, offsetof(Block, font_size), v);
+}
+
+Color Accessor::GetTextColor() const
+{
+	return block->text_color;
+}
+
+void Accessor::SetTextColor(Color v)
+{
+	AccSet(*this, offsetof(Block, text_color), v);
+}
+
+
 Coord Accessor::GetWidth() const
 {
 	return block->width;
