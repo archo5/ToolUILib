@@ -2,8 +2,8 @@
 #pragma once
 
 #include <functional>
-#include <unordered_map> // TODO?
 
+#include "../Core/HashTable.h"
 #include "Objects.h"
 
 
@@ -230,7 +230,7 @@ struct Overlays
 	void Unregister(UIObject* obj);
 	void UpdateSorted();
 
-	std::unordered_map<UIObject*, Info> mapped;
+	HashMap<UIObject*, Info> mapped;
 	std::vector<Sorted> sorted;
 	bool sortedOutdated = false;
 };

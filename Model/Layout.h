@@ -482,7 +482,7 @@ struct Block
 
 	InstanceCounter<g_numBlocks> _ic;
 };
-static_assert(sizeof(Block) < 268, "style block getting too big?");
+static_assert(sizeof(Block) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
 
 class Selector
 {

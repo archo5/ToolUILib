@@ -1,5 +1,5 @@
 
-#include <unordered_map>
+#include "../Core/HashTable.h"
 #include "Objects.h"
 #include "Native.h"
 #include "System.h"
@@ -832,7 +832,7 @@ struct SubscrTableValue
 	Subscription* _lastSub = nullptr;
 };
 
-using SubscrTable = std::unordered_map<SubscrTableKey, SubscrTableValue*>;
+using SubscrTable = HashMap<SubscrTableKey, SubscrTableValue*>;
 static SubscrTable* g_subscrTable;
 
 void SubscriptionTable_Init()
@@ -844,7 +844,7 @@ void SubscriptionTable_Free()
 {
 	//assert(g_subscrTable->empty());
 	for (auto& p : *g_subscrTable)
-		delete p.second;
+		delete p.value;
 	delete g_subscrTable;
 	g_subscrTable = nullptr;
 }
@@ -906,9 +906,9 @@ struct Subscription
 static void _Notify(DataCategoryTag* tag, uintptr_t at)
 {
 	auto it = g_subscrTable->find({ tag, at });
-	if (it != g_subscrTable->end())
+	if (it.is_valid())
 	{
-		for (auto* s = it->second->_firstSub; s; s = s->nextInTable)
+		for (auto* s = it->value->_firstSub; s; s = s->nextInTable)
 			s->node->OnNotify(tag, at);
 	}
 }
@@ -946,9 +946,9 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 {
 	SubscrTableValue* lst;
 	auto it = g_subscrTable->find({ tag, at });
-	if (it != g_subscrTable->end())
+	if (it.is_valid())
 	{
-		lst = it->second;
+		lst = it->value;
 		// TODO compare list sizes to decide which is the shorter one to iterate
 		for (auto* s = _firstSub; s; s = s->nextInNode)
 			if (s->tag == tag && s->at == at)
@@ -958,7 +958,7 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 		//		return false;
 	}
 	else
-		g_subscrTable->insert({ SubscrTableKey{ tag, at }, lst = new SubscrTableValue });
+		g_subscrTable->insert(SubscrTableKey{ tag, at }, lst = new SubscrTableValue);
 
 	auto* s = new Subscription;
 	s->node = this;
@@ -972,7 +972,7 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 {
 	auto it = g_subscrTable->find({ tag, at });
-	if (it == g_subscrTable->end())
+	if (it.is_valid())
 		return false;
 
 	// TODO compare list sizes to decide which is the shorter one to iterate

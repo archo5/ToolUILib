@@ -211,7 +211,7 @@ void Overlays::UpdateSorted()
 	sorted.clear();
 	sorted.reserve(mapped.size());
 	for (const auto& kvp : mapped)
-		sorted.push_back({ kvp.first, kvp.second.depth });
+		sorted.push_back({ kvp.key, kvp.value.depth });
 	std::sort(sorted.begin(), sorted.end(), [](const Sorted& a, const Sorted& b) { return a.depth < b.depth; });
 	sortedOutdated = false;
 }

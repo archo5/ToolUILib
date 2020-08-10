@@ -58,6 +58,9 @@
     <ClCompile Include="Core\Font.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\ContainerTests.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -129,6 +132,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\Font.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\HashTable.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

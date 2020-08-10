@@ -122,6 +122,7 @@
     <ClCompile />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Core\ContainerTests.cpp" />
     <ClCompile Include="Core\Font.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
@@ -144,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Font.h" />
+    <ClInclude Include="Core\HashTable.h" />
     <ClInclude Include="Core\Image.h" />
     <ClInclude Include="Core\Math.h" />
     <ClInclude Include="Core\Memory.h" />

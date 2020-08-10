@@ -1,5 +1,5 @@
 
-#include <unordered_map>
+#include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -10,6 +10,7 @@
 
 #include "Font.h"
 #include "../Render/Render.h"
+#include "HashTable.h"
 
 namespace ui {
 
@@ -36,7 +37,7 @@ struct FontKey
 		}
 	};
 };
-static std::unordered_map<FontKey, Font*, FontKey::Hasher> g_loadedFonts;
+static HashMap<FontKey, Font*, FontKey::Hasher> g_loadedFonts;
 
 struct GlyphValue
 {
@@ -53,7 +54,7 @@ struct Font
 	struct SizeContext
 	{
 		int size = 0;
-		std::unordered_map<uint32_t, GlyphValue> glyphMap;
+		HashMap<uint32_t, GlyphValue> glyphMap;
 	};
 
 	~Font()
@@ -68,7 +69,7 @@ struct Font
 		{
 			return false;
 		}
-		
+
 		fseek(f, 0, SEEK_END);
 		size_t len = ftell(f);
 		data.resize(len);
@@ -99,8 +100,8 @@ struct Font
 	GlyphValue FindGlyph(SizeContext& sctx, uint32_t codepoint, bool needTex)
 	{
 		auto it = sctx.glyphMap.find(codepoint);
-		if (it != sctx.glyphMap.end() && it->second.tex)
-			return it->second;
+		if (it != sctx.glyphMap.end() && (!needTex || it->value.tex))
+			return it->value;
 
 		int glyphID = stbtt_FindGlyphIndex(&info, codepoint);
 		float scale = stbtt_ScaleForMappingEmToPixels(&info, sctx.size);
@@ -120,7 +121,7 @@ struct Font
 			gv->h = y1 - y0;
 		}
 		else
-			gv = &it->second;
+			gv = &it->value;
 
 		if (needTex && !gv->tex)
 		{
@@ -136,7 +137,7 @@ struct Font
 	FontKey key;
 	std::vector<uint8_t> data;
 	stbtt_fontinfo info;
-	std::unordered_map<int, SizeContext> sizes;
+	HashMap<int, SizeContext> sizes;
 };
 
 
@@ -185,7 +186,7 @@ static Font* FindExistingFont(const FontKey& key)
 {
 	auto it = g_loadedFonts.find(key);
 	if (it != g_loadedFonts.end())
-		return it->second;
+		return it->value;
 	return nullptr;
 }
 

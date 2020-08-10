@@ -1439,9 +1439,11 @@ void dumpallocinfo()
 
 
 int uimain(int argc, char* argv[]);
+void IncludeContainerTests();
 
 int RealMain()
 {
+	IncludeContainerTests();
 #define DEFER(f) struct _defer_##__LINE__ { ~_defer_##__LINE__() { f; } } _defer_inst_##__LINE__
 	DEFER(dumpallocinfo());
 
