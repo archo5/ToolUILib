@@ -897,6 +897,42 @@ void NativeWindowNode::OnLayout(const UIRect& rect, const Size<float>& container
 }
 
 
+static HashMap<AnimationRequester*, bool> g_animRequesters;
+static UINT_PTR g_animReqTimerID;
+
+static void CALLBACK AnimTimerProc(HWND, UINT, UINT, DWORD)
+{
+	for (auto& kvp : g_animRequesters)
+	{
+		kvp.key->OnAnimationFrame();
+	}
+}
+
+void AnimationRequester::BeginAnimation()
+{
+	if (_animating)
+		return;
+	if (g_animRequesters.size() == 0)
+	{
+		g_animReqTimerID = ::SetTimer(nullptr, 0, 16, AnimTimerProc);
+	}
+	g_animRequesters.insert(this, true);
+	_animating = true;
+}
+
+void AnimationRequester::EndAnimation()
+{
+	if (!_animating)
+		return;
+	g_animRequesters.erase(this);
+	if (g_animRequesters.size() == 0)
+	{
+		::KillTimer(nullptr, g_animReqTimerID);
+	}
+	_animating = false;
+}
+
+
 struct Inspector : ui::NativeDialogWindow
 {
 	Inspector()

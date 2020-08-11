@@ -113,6 +113,40 @@ struct OpenClose : ui::Node
 	bool open = false;
 };
 
+struct AnimationRequestTest : ui::Node
+{
+	AnimationRequestTest()
+	{
+		animReq.callback = [this]() { OnAnimation(); };
+	}
+	void OnAnimation()
+	{
+		GetNativeWindow()->InvalidateAll();
+	}
+	void Render(UIContainer* ctx) override
+	{
+		*this + ui::Width(200);
+		*this + ui::Height(200);
+		auto* cb = ctx->Make<ui::Checkbox>()->Init(animReq.IsAnimating());
+		cb->HandleEvent(UIEventType::Change) = [this, cb](UIEvent&) { animReq.SetAnimating(!animReq.IsAnimating()); Rerender(); };
+	}
+	void OnPaint() override
+	{
+		ui::Node::OnPaint();
+
+		static uint32_t start = ui::platform::GetTimeMs();
+		float cx = 100;
+		float cy = 100;
+		float rad = 50;
+		float t = (ui::platform::GetTimeMs() - start) * 0.001f;
+		float c = cos(t);
+		float s = sin(t);
+		ui::draw::AALineCol(cx - rad * c, cy - rad * s, cx + rad * c, cy + rad * s, 2, ui::Color4f(0.6f, 0.7f, 0.9f));
+	}
+
+	ui::AnimationCallbackRequester animReq;
+};
+
 struct EdgeSliceTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -2827,6 +2861,7 @@ static TestEntry testEntries[] =
 	{},
 	{ "- Basic logic -" },
 	{ "Open/Close", [](UIContainer* ctx) { ctx->Make<OpenClose>(); } },
+	{ "Animation requests", [](UIContainer* ctx) { ctx->Make<AnimationRequestTest>(); } },
 	{ "Element reset", [](UIContainer* ctx) { ctx->Make<ElementResetTest>(); } },
 	{ "Drag and drop", [](UIContainer* ctx) { ctx->Make<DragDropTest>(); } },
 	{ "SubUI", [](UIContainer* ctx) { ctx->Make<SubUITest>(); } },

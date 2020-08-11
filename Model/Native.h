@@ -158,6 +158,31 @@ private:
 	NativeWindowRenderFunc _window;
 };
 
+struct AnimationRequester
+{
+	AnimationRequester(bool initial = false) { if (initial) BeginAnimation(); }
+	~AnimationRequester() { EndAnimation(); }
+	void BeginAnimation();
+	void EndAnimation();
+	void SetAnimating(bool v) { if (v) BeginAnimation(); else EndAnimation(); }
+	bool IsAnimating() const { return _animating; }
+
+	virtual void OnAnimationFrame() = 0;
+
+	bool _animating = false;
+};
+
+struct AnimationCallbackRequester : AnimationRequester
+{
+	void OnAnimationFrame() override
+	{
+		if (callback)
+			callback();
+	}
+
+	std::function<void()> callback;
+};
+
 struct Inspector;
 
 class Application
