@@ -61,6 +61,9 @@
     <ClCompile Include="Core\ContainerTests.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Animation.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -136,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="Core\HashTable.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Animation.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

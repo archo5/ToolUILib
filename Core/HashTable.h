@@ -249,6 +249,11 @@ struct HashMap
 	{
 		return { this, _find_pos(key, _count) };
 	}
+	__forceinline const V& get(const K& key, const V& def = {}) const
+	{
+		auto pos = _find_pos(key, SIZE_MAX);
+		return pos != SIZE_MAX ? _values[pos] : def;
+	}
 	__forceinline bool contains(const K& key) const
 	{
 		return _find_pos(key, SIZE_MAX) != SIZE_MAX;

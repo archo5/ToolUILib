@@ -1587,6 +1587,33 @@ struct ImageTest : ui::Node
 	ui::Image* img;
 };
 
+struct BasicEasingAnimTest : ui::Node
+{
+	BasicEasingAnimTest()
+	{
+		animPlayer.onAnimUpdate = [this]() { Rerender(); };
+		anim = std::make_shared<ui::EasingAnimLinear>("test", 123, 1);
+	}
+	void Render(UIContainer* ctx) override
+	{
+		ui::Property::Begin(ctx, "Control");
+		if (ui::imm::Button(ctx, "Play"))
+		{
+			animPlayer.SetVariable("test", 0);
+			animPlayer.PlayAnim(anim);
+		}
+		if (ui::imm::Button(ctx, "Stop"))
+		{
+			animPlayer.StopAnim(anim);
+		}
+		ctx->MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
+		ui::Property::End(ctx);
+	}
+
+	ui::AnimPlayer animPlayer;
+	ui::AnimPtr anim;
+};
+
 struct ThreadWorkerTest : ui::Node
 {
 	void Render(UIContainer* ctx) override
@@ -2885,6 +2912,9 @@ static TestEntry testEntries[] =
 	{ "Layout 2", [](UIContainer* ctx) { ctx->Make<LayoutTest2>(); } },
 	{ "Sizing", [](UIContainer* ctx) { ctx->Make<SizeTest>(); } },
 	{ "Placement", [](UIContainer* ctx) { ctx->Make<PlacementTest>(); } },
+	{},
+	{ "- Animation -" },
+	{ "Basic easing", [](UIContainer* ctx) { ctx->Make<BasicEasingAnimTest>(); } },
 	{},
 	{ "- Threading -" },
 	{ "Thread worker", [](UIContainer* ctx) { ctx->Make<ThreadWorkerTest>(); } },
