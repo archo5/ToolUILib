@@ -1402,6 +1402,11 @@ struct SizeTest : ui::Node
 
 struct PlacementTest : ui::Node
 {
+	PlacementTest()
+	{
+		buttonPlacement.bias = { 3, -2, -2, -2 };
+		buttonPlacement.applyOnLayout = true;
+	}
 	void Render(UIContainer* ctx) override
 	{
 		*this + ui::Padding(20);
@@ -1503,6 +1508,11 @@ struct PlacementTest : ui::Node
 			ctx->Pop();
 		}
 		ctx->Pop();
+
+		ctx->Text("Self-based placement example:");
+		ctx->MakeWithText<ui::Button>("This should not cover the entire parent")->GetStyle().SetPlacement(&buttonPlacement);
+		ui::imm::PropEditFloatVec(ctx, "Anchor", &buttonPlacement.anchor.x0, "LTRB", {}, 0.01f);
+		ui::imm::PropEditFloatVec(ctx, "Bias", &buttonPlacement.bias.x0, "LTRB");
 	}
 
 	bool open = false;
@@ -1513,6 +1523,7 @@ struct PlacementTest : ui::Node
 	bool showDropdown = false;
 	int curSelection = 0;
 	int curOptionCount = 0;
+	style::RectAnchoredPlacement buttonPlacement;
 };
 
 struct ScrollbarTest : ui::Node
@@ -1608,10 +1619,13 @@ struct BasicEasingAnimTest : ui::Node
 		}
 		ctx->MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
 		ui::Property::End(ctx);
+		sliderVal = animPlayer.GetVariable("test");
+		ctx->Make<ui::Slider>()->Init(sliderVal, { 0, 123, 0 });
 	}
 
 	ui::AnimPlayer animPlayer;
 	ui::AnimPtr anim;
+	float sliderVal = 0;
 };
 
 struct ThreadWorkerTest : ui::Node

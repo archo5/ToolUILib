@@ -7,6 +7,8 @@
 #undef min
 #undef max
 
+#pragma comment(lib, "winmm.lib")
+
 #include "Native.h"
 #include "System.h"
 #include "Menu.h"
@@ -242,7 +244,8 @@ namespace platform {
 
 uint32_t GetTimeMs()
 {
-	return ::GetTickCount();
+	//return ::GetTickCount();
+	return timeGetTime();
 }
 
 uint32_t GetDoubleClickTime()
@@ -915,6 +918,7 @@ void AnimationRequester::BeginAnimation()
 	if (g_animRequesters.size() == 0)
 	{
 		g_animReqTimerID = ::SetTimer(nullptr, 0, 16, AnimTimerProc);
+		timeBeginPeriod(1);
 	}
 	g_animRequesters.insert(this, true);
 	_animating = true;
@@ -928,6 +932,7 @@ void AnimationRequester::EndAnimation()
 	if (g_animRequesters.size() == 0)
 	{
 		::KillTimer(nullptr, g_animReqTimerID);
+		timeEndPeriod(1);
 	}
 	_animating = false;
 }

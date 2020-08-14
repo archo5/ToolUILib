@@ -137,7 +137,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 				TNum nv = val;
 				if (fabsf(tb->accumulator) >= speed)
 				{
-					nv += trunc(tb->accumulator / speed);
+					nv += trunc(tb->accumulator / speed) * speed;
 					tb->accumulator = fmodf(tb->accumulator, speed);
 				}
 

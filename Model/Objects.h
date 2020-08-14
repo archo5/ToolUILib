@@ -231,7 +231,7 @@ struct UIObject
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
-	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && !GetStyle().GetPlacement(); }
+	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && (!GetStyle().GetPlacement() || GetStyle().GetPlacement()->applyOnLayout); }
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;

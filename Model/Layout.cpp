@@ -11,19 +11,9 @@ namespace style {
 
 void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
-	UIRect parentRect;
-	Size<float> contSize;
-	if (curObj->parent)
-	{
-		parentRect = curObj->parent->GetContentRect();
-		contSize = parentRect.GetSize();
-	}
-	else
-	{
-		contSize.x = curObj->system->eventSystem.width;
-		contSize.y = curObj->system->eventSystem.height;
-		parentRect = { 0, 0, contSize.x, contSize.y };
-	}
+	UIRect parentRect = outRect;
+	Size<float> contSize = parentRect.GetSize();
+
 	float w = curObj->GetFullEstimatedWidth(contSize, style::EstSizeType::Expanding, false).min;
 	float h = curObj->GetFullEstimatedHeight(contSize, style::EstSizeType::Expanding, false).min;
 
@@ -34,19 +24,7 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 
 void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
-	UIRect parentRect;
-	Size<float> contSize;
-	if (curObj->parent)
-	{
-		parentRect = curObj->parent->GetContentRect();
-		//contSize = parentRect.GetSize();
-	}
-	else
-	{
-		contSize.x = curObj->system->eventSystem.width;
-		contSize.y = curObj->system->eventSystem.height;
-		parentRect = { 0, 0, contSize.x, contSize.y };
-	}
+	UIRect parentRect = outRect;
 
 	outRect.x0 = lerp(parentRect.x0, parentRect.x1, anchor.x0) + bias.x0;
 	outRect.x1 = lerp(parentRect.x0, parentRect.x1, anchor.x1) + bias.x1;

@@ -405,7 +405,7 @@ void UIObject::PerformLayout(const UIRect& rect, const Size<float>& containerSiz
 
 void UIObject::_PerformPlacement(const UIRect& rect, const Size<float>& containerSize)
 {
-	if (_NeedsLayout() && GetStyle().GetPlacement())
+	if (_NeedsLayout() && GetStyle().GetPlacement() && !GetStyle().GetPlacement()->applyOnLayout)
 	{
 		OnLayout(rect, containerSize);
 		OnLayoutChanged();
@@ -422,10 +422,19 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 	auto sheight = style::Coord::Undefined();
 	GetSize(swidth, sheight);
 
-	UIRect rect = inRect;
 	auto placement = style.GetPlacement();
+	UIRect rect = inRect;
 	if (placement)
+	{
+		if (!placement->applyOnLayout)
+		{
+			if (parent)
+				rect = parent->GetContentRect();
+			else
+				rect = { 0, 0, system->eventSystem.width, system->eventSystem.height };
+		}
 		placement->OnApplyPlacement(this, rect);
+	}
 
 	auto width = style.GetWidth();
 	if (width.unit == style::CoordTypeUnit::Fraction)
