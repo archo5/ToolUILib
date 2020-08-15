@@ -338,6 +338,7 @@ struct HighElementCountTest : ui::Node
 };
 void Test_HighElementCount(UIContainer* ctx)
 {
+	ctx->Make<HighElementCountTest>();
 }
 
 

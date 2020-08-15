@@ -7,7 +7,7 @@ struct BasicEasingAnimTest : ui::Node
 	BasicEasingAnimTest()
 	{
 		animPlayer.onAnimUpdate = [this]() { Rerender(); };
-		anim = std::make_shared<ui::EasingAnimLinear>("test", 123, 1);
+		anim = std::make_shared<ui::AnimEaseLinear>("test", 123, 1);
 	}
 	void Render(UIContainer* ctx) override
 	{

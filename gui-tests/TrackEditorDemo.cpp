@@ -11,14 +11,15 @@ struct TrackEditorDemo : ui::Node
 		{
 			float x0, x1, size;
 			int track;
+			const char* name;
 		};
 
 		TrackEditor()
 		{
 			SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-			items.push_back({ 100, 150, 50, 0 });
-			items.push_back({ 200, 350, 150, 0 });
-			items.push_back({ 120, 320, 200, 1 });
+			items.push_back({ 100, 150, 50, 0, "Animation one" });
+			items.push_back({ 200, 350, 150, 0, "Sound effect two" });
+			items.push_back({ 120, 320, 200, 1, "Camera track" });
 			GetStyle().SetHeight(160);
 		}
 		void OnPaint() override
@@ -43,6 +44,13 @@ struct TrackEditorDemo : ui::Node
 					info.state |= style::PS_Down;
 				ui::Theme::current->button->paint_func(info);
 				id++;
+			}
+
+			for (Item& item : items)
+			{
+				UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
+				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3 + 1, rect.y1 - 4 + 1, item.name, ui::Color4f(0.0f, 0.5f));
+				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3, rect.y1 - 4, item.name, ui::Color4f(0.9f, 1));
 			}
 		}
 		void OnEvent(UIEvent& e) override

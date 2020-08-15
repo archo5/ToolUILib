@@ -36,7 +36,7 @@ void AnimPlayer::StopAllAnims()
 	EndAnimation();
 }
 
-float AnimPlayer::GetVariable(const std::string& name, float def)
+float AnimPlayer::GetVariable(const std::string& name, float def) const
 {
 	return _variables.get(name, def);
 }

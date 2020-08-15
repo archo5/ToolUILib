@@ -357,8 +357,9 @@ void Benchmark_SubUI(UIContainer* ctx);
 void Demo_Calculator(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
 void Demo_CompactTreeNodeEdit(UIContainer* ctx);
-void Demo_SlidingHighlightAnim(UIContainer* ctx);
 void Demo_TrackEditor(UIContainer* ctx);
+void Demo_SlidingHighlightAnim(UIContainer* ctx);
+void Demo_ButtonPressHighlight(UIContainer* ctx);
 
 
 struct TestEntry
@@ -420,11 +421,19 @@ static const TestEntry benchmarkEntries[] =
 };
 static const TestEntry demoEntries[] =
 {
-	{ "Calculator", Demo_Calculator },
+	{ "- Layout -" },
+	{ "Calculator (grid layout)", Demo_Calculator },
+	{},
+	{ "- Editors -" },
 	{ "Node editing", Demo_BasicTreeNodeEdit },
 	{ "Compact node editing", Demo_CompactTreeNodeEdit },
-	{ "Sliding highlight anim", Demo_SlidingHighlightAnim },
 	{ "Track editor demo", Demo_TrackEditor },
+	{},
+	{ "- Animations -" },
+	{ "Sliding highlight anim", Demo_SlidingHighlightAnim },
+	{ "Button press highlight", Demo_ButtonPressHighlight },
+	// TODO fix/redistribute
+	//{ "Data editor", [](UIContainer* ctx) { ctx->Make<DataEditor>(); } },
 };
 
 struct ExampleGroup
@@ -572,20 +581,16 @@ struct MainWindow : ui::NativeMainWindow
 {
 	void OnRender(UIContainer* ctx)
 	{
-		//ctx->Make<DataEditor>();
 		ctx->Make<TEST>();
 	}
 };
 
 int uimain(int argc, char* argv[])
 {
-	EarlyTest();
+	//EarlyTest();
 
 	ui::Application app(argc, argv);
 	MainWindow mw;
 	mw.SetVisible(true);
 	return app.Run();
-
-	//uisys.Build<TEST>();
-	//uisys.Build<FileStructureViewer>();
 }
