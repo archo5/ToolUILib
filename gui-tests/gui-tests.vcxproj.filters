@@ -3,6 +3,16 @@
   <ItemGroup>
     <ClCompile Include="gui-tests.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="CoreTests.cpp" />
+    <ClCompile Include="CompoundTests.cpp" />
+    <ClCompile Include="LayoutTests.cpp" />
+    <ClCompile Include="DragDropTests.cpp" />
+    <ClCompile Include="CalculatorDemo.cpp" />
+    <ClCompile Include="UtilityTests.cpp" />
+    <ClCompile Include="TrackEditorDemo.cpp" />
+    <ClCompile Include="TreeEditDemos.cpp" />
+    <ClCompile Include="Benchmarks.cpp" />
+    <ClCompile Include="AnimDemos.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

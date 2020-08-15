@@ -158,13 +158,23 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AnimDemos.cpp" />
+    <ClCompile Include="Benchmarks.cpp" />
+    <ClCompile Include="CalculatorDemo.cpp" />
+    <ClCompile Include="CompoundTests.cpp" />
+    <ClCompile Include="CoreTests.cpp" />
+    <ClCompile Include="DragDropTests.cpp" />
     <ClCompile Include="gui-tests.cpp" />
+    <ClCompile Include="LayoutTests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TrackEditorDemo.cpp" />
+    <ClCompile Include="TreeEditDemos.cpp" />
+    <ClCompile Include="UtilityTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\gui.vcxproj">
