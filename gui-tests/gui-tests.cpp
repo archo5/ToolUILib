@@ -561,19 +561,8 @@ struct TEST : ui::Node
 
 
 
-struct CSSBuildCallback : style::IErrorCallback
-{
-	void OnError(const char* msg, int line, int pos) override
-	{
-		printf("CSS BUILD ERROR [%d:%d]: %s\n", line, pos, msg);
-	}
-};
-
 void EarlyTest()
 {
-	style::Sheet sh;
-	CSSBuildCallback cb;
-	sh.Compile("a#foo.bar:first-child, b:hover:active { display: inline; }", &cb);
 	puts("done");
 }
 

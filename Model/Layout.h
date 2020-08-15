@@ -378,15 +378,6 @@ inline bool operator == (const PaintFunction& a, const PaintFunction& b)
 	return false;
 }
 
-struct IErrorCallback
-{
-	virtual void OnError(const char* message, int line, int ch) = 0;
-	void OnError(const char* message, const char* at);
-
-	StringView fullText;
-	bool hadError = false;
-};
-
 struct PropChange
 {
 	int which;
@@ -426,7 +417,6 @@ struct PropFuncs
 struct Block
 {
 	~Block();
-	void Compile(StringView& text, IErrorCallback* err);
 	void MergeDirect(const Block& o);
 	void MergeParent(const Block& o);
 	void _Release();
@@ -484,56 +474,6 @@ struct Block
 	InstanceCounter<g_numBlocks> _ic;
 };
 static_assert(sizeof(Block) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
-
-class Selector
-{
-public:
-	struct Element
-	{
-		bool IsDirectMatch(UIObject* obj) const;
-
-		StringView element;
-		std::vector<StringView> classes;
-		std::vector<StringView> ids;
-		bool immParent = false;
-		bool prevSibling = false;
-		bool firstChild = false;
-		bool hover = false;
-		bool active = false;
-	};
-
-	void Compile(StringView& text, IErrorCallback* err);
-	bool Check(UIObject* obj) const;
-	bool _CheckOne(UIObject* obj, size_t el) const;
-
-	std::vector<Element> elements;
-};
-
-class Definition
-{
-public:
-	void Compile(StringView& text, IErrorCallback* err);
-	bool Check(UIObject* obj) const;
-
-	std::vector<Selector> selectors;
-	Block block;
-};
-
-class Sheet
-{
-public:
-	void Compile(StringView text, IErrorCallback* err);
-	void _Preprocess(StringView text, IErrorCallback* err);
-
-	std::vector<Definition> definitions;
-	std::string fullText;
-};
-
-class Engine
-{
-public:
-	std::vector<Sheet> sheets;
-};
 
 class BlockRef
 {
