@@ -64,6 +64,9 @@
     <ClCompile Include="Model\Animation.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Model\DataStructureEditors.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -141,6 +144,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Model\Animation.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\DataStructureEditors.h">
       <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>

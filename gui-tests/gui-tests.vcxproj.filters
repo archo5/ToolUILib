@@ -13,6 +13,7 @@
     <ClCompile Include="TreeEditDemos.cpp" />
     <ClCompile Include="Benchmarks.cpp" />
     <ClCompile Include="AnimDemos.cpp" />
+    <ClCompile Include="DataStructureEditorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

@@ -399,9 +399,9 @@ struct Node : UIObject
 			_deferredDestructors.pop_back();
 		}
 	}
-	template <class T, class... Args> T* Allocate(Args... args)
+	template <class T, class... Args> T* Allocate(Args&&... args)
 	{
-		T* obj = new T(args...);
+		T* obj = new T(std::forward<Args>(args)...);
 		Defer([obj]() { delete obj; });
 		return obj;
 	}

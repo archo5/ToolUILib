@@ -163,6 +163,7 @@
     <ClCompile Include="CalculatorDemo.cpp" />
     <ClCompile Include="CompoundTests.cpp" />
     <ClCompile Include="CoreTests.cpp" />
+    <ClCompile Include="DataStructureEditorTests.cpp" />
     <ClCompile Include="DragDropTests.cpp" />
     <ClCompile Include="gui-tests.cpp" />
     <ClCompile Include="LayoutTests.cpp" />

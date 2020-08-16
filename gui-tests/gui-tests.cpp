@@ -352,6 +352,8 @@ void Test_BasicEasingAnim(UIContainer* ctx);
 void Test_ThreadWorker(UIContainer* ctx);
 void Test_ThreadedImageRendering(UIContainer* ctx);
 
+void Test_SequenceEditors(UIContainer* ctx);
+
 void Benchmark_SubUI(UIContainer* ctx);
 
 void Demo_Calculator(UIContainer* ctx);
@@ -415,6 +417,10 @@ static const TestEntry utilityTestEntries[] =
 	{ "Thread worker", Test_ThreadWorker },
 	{ "Threaded image rendering", Test_ThreadedImageRendering },
 };
+static const TestEntry dseditTestEntries[] =
+{
+	{ "Sequence editors", Test_SequenceEditors },
+};
 static const TestEntry benchmarkEntries[] =
 {
 	{ "SubUI benchmark", Benchmark_SubUI },
@@ -447,6 +453,7 @@ static ExampleGroup exampleGroups[] =
 	{ "Layout", layoutTestEntries },
 	{ "Compound", compoundTestEntries },
 	{ "Utility", utilityTestEntries },
+	{ "DS Edit", dseditTestEntries },
 	{ "Benchmark", benchmarkEntries },
 	{ "Demo", demoEntries },
 };
