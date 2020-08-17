@@ -36,7 +36,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 				{
 					e.context->MoveClickTo(e.current);
 				}
-				seqEd->sequence->MoveElementTo(ddd->at, num);
+				seqEd->GetSequence()->MoveElementTo(ddd->at, num);
 				ddd->at = num;
 			}
 		}
@@ -54,8 +54,8 @@ void SequenceItemElement::ContextMenu()
 	bool canInsertOne = seq->GetCurrentSize() < seq->GetSizeLimit();
 	MenuItem items[] =
 	{
-		ui::MenuItem("Duplicate", {}, !canInsertOne).Func([this]() { seqEd->sequence->Duplicate(num); RerenderNode(); }),
-		ui::MenuItem("Remove").Func([this]() { seqEd->sequence->Remove(num); RerenderNode(); }),
+		ui::MenuItem("Duplicate", {}, !canInsertOne).Func([this]() { seqEd->GetSequence()->Duplicate(num); RerenderNode(); }),
+		ui::MenuItem("Remove").Func([this]() { seqEd->GetSequence()->Remove(num); RerenderNode(); }),
 	};
 	ui::Menu menu(items);
 	menu.Show(this);
@@ -79,9 +79,9 @@ void SequenceEditor::Render(UIContainer* ctx)
 {
 	ctx->Push<ListBox>();
 
-	for (std::unique_ptr<ISequenceIterator> it(sequence->GetIterator()); !sequence->AtEnd(it.get()); sequence->Advance(it.get()))
+	for (std::unique_ptr<ISequenceIterator> it(_sequence->GetIterator()); !_sequence->AtEnd(it.get()); _sequence->Advance(it.get()))
 	{
-		size_t num = sequence->GetOffset(it.get());
+		size_t num = _sequence->GetOffset(it.get());
 
 		ctx->Push<SequenceItemElement>()->Init(this, num);
 
@@ -111,7 +111,7 @@ void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, ISequenceIterator* it
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
 {
-	sequence = s;
+	_sequence = s;
 	return *this;
 }
 

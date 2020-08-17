@@ -233,11 +233,12 @@ struct SequenceEditor : Node
 	virtual void OnBuildItem(UIContainer* ctx, ISequenceIterator* it);
 	virtual void OnBuildDeleteButton(UIContainer* ctx, ISequenceIterator* it);
 
-	ISequence* GetSequence() const { return sequence; }
+	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
 
-	ISequence* sequence;
 	std::function<void(UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)> itemUICallback;
+
+	ISequence* _sequence;
 };
 
 } // ui

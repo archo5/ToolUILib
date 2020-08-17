@@ -180,19 +180,18 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 		ctx->Text("Arguments") + ui::Padding(5);
 		ctx->Push<ui::Panel>();
-		for (size_t i = 0; i < SI->args.size(); i++)
+
+		auto* argSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
+		auto* argEditor = ctx->Make<ui::SequenceEditor>();
+		argEditor->SetSequence(argSeq);
+		argEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
 		{
-			auto& A = SI->args[i];
-			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			auto& A = ed->GetSequence()->GetValue<DDArg>(it);
+
 			ui::imm::PropEditString(ctx, "\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
 			ui::imm::PropEditInt(ctx, "\bValue", A.intVal);
-			if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
-			{
-				SI->args.erase(SI->args.begin() + i);
-				ctx->GetCurrentNode()->Rerender();
-			}
-			ctx->Pop();
-		}
+		};
+
 		if (ui::imm::Button(ctx, "Add"))
 		{
 			SI->args.push_back({ "unnamed", 0 });
@@ -406,19 +405,18 @@ void DataDesc::EditStruct(UIContainer* ctx)
 
 			ctx->Text("Parameters") + ui::Padding(5);
 			ctx->Push<ui::Panel>();
-			for (size_t i = 0; i < S.params.size(); i++)
+
+			auto* paramSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
+			auto* paramEditor = ctx->Make<ui::SequenceEditor>();
+			paramEditor->SetSequence(paramSeq);
+			paramEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
 			{
-				auto& P = S.params[i];
-				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+				auto& P = ed->GetSequence()->GetValue<DDParam>(it);
+
 				ui::imm::PropEditString(ctx, "\bName", P.name.c_str(), [&P](const char* v) { P.name = v; });
 				ui::imm::PropEditInt(ctx, "\bValue", P.intVal);
-				if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
-				{
-					S.params.erase(S.params.begin() + i);
-					ctx->GetCurrentNode()->Rerender();
-				}
-				ctx->Pop();
-			}
+			};
+
 			if (ui::imm::Button(ctx, "Add"))
 			{
 				S.params.push_back({ "unnamed", 0 });
@@ -428,13 +426,15 @@ void DataDesc::EditStruct(UIContainer* ctx)
 
 			ctx->Text("Fields") + ui::Padding(5);
 			ctx->Push<ui::Panel>();
-			for (size_t i = 0; i < S.fields.size(); i++)
+
+			auto* fieldSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(S.fields)>>(S.fields);
+			auto* fieldEditor = ctx->Make<ui::SequenceEditor>();
+			fieldEditor->SetSequence(fieldSeq);
+			auto* N = ctx->GetCurrentNode(); // TODO remove workaround
+			fieldEditor->itemUICallback = [this, &S, N](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
 			{
-				auto& F = S.fields[i];
-				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
-				//ctx->Text(F.name.c_str());
-				//ctx->Text(F.type.c_str());
-				//ui::imm::EditInt(ctx, "\bCount", F.count);
+				auto& F = ed->GetSequence()->GetValue<DDField>(it);
+
 				char info[128];
 				int cc = snprintf(info, 128, "%s: %s[%s%s%s%" PRId64 "]",
 					F.name.c_str(),
@@ -446,30 +446,15 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				if (!S.serialized)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
 				*ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
-				//ctx->MakeWithText<ui::Button>("Edit");
-				if (ui::imm::Button(ctx, "<", { ui::Width(20), ui::Enable(i > 0) }))
-				{
-					std::swap(S.fields[i - 1], S.fields[i]);
-					ctx->GetCurrentNode()->Rerender();
-				}
-				if (ui::imm::Button(ctx, ">", { ui::Width(20), ui::Enable(i + 1 < S.fields.size()) }))
-				{
-					std::swap(S.fields[i + 1], S.fields[i]);
-					ctx->GetCurrentNode()->Rerender();
-				}
+
 				if (ui::imm::Button(ctx, "Edit", { ui::Width(50) }))
 				{
 					editMode = 2;
-					curField = i;
-					ctx->GetCurrentNode()->Rerender();
+					curField = ed->GetSequence()->GetOffset(it);
+					N->Rerender();
 				}
-				if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
-				{
-					S.fields.erase(S.fields.begin() + i);
-					ctx->GetCurrentNode()->Rerender();
-				}
-				ctx->Pop();
-			}
+			};
+
 			if (ui::imm::Button(ctx, "Add"))
 			{
 				S.fields.push_back({ "i32", "unnamed" });
