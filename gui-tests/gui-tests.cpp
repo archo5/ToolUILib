@@ -355,6 +355,7 @@ void Test_ThreadedImageRendering(UIContainer* ctx);
 void Test_SequenceEditors(UIContainer* ctx);
 
 void Benchmark_SubUI(UIContainer* ctx);
+void Benchmark_TableView(UIContainer* ctx);
 
 void Demo_Calculator(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
@@ -424,6 +425,7 @@ static const TestEntry dseditTestEntries[] =
 static const TestEntry benchmarkEntries[] =
 {
 	{ "SubUI benchmark", Benchmark_SubUI },
+	{ "TableView benchmark", Benchmark_TableView },
 };
 static const TestEntry demoEntries[] =
 {

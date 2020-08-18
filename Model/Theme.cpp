@@ -362,6 +362,7 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtScrollVThumb);
 		PreventHeapDelete(a);
+		a.SetMinHeight(16);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;

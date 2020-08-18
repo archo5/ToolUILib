@@ -127,7 +127,7 @@ void TableView::OnPaint()
 	RC.x1 -= sbw;
 
 	size_t minR = floor(yOff / h);
-	size_t maxR = size_t(ceil((yOff + sbrect.GetHeight()) / h));
+	size_t maxR = size_t(ceil((yOff + std::max(0.0f, sbrect.GetHeight())) / h));
 	if (minR > nr)
 		minR = nr;
 	if (maxR > nr)

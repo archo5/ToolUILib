@@ -48,3 +48,6 @@ template <class T> AABB<T> operator * (T f, const AABB<T>& o) { return o * f; }
 
 inline float lerp(float a, float b, float s) { return a + (b - a) * s; }
 inline float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
+__forceinline float min(float a, float b) { return a < b ? a : b; }
+__forceinline float max(float a, float b) { return a > b ? a : b; }
+__forceinline float clamp(float x, float vmin, float vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }

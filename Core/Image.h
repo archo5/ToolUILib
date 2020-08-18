@@ -80,27 +80,27 @@ struct Color4f
 	}
 	float GetHue()
 	{
-		float max = GetValue();
-		float min = std::min(r, std::min(g, b));
-		float c = max - min;
+		float maxv = GetValue();
+		float minv = min(r, min(g, b));
+		float c = maxv - minv;
 		if (c == 0)
 			return 0;
-		if (max == r)
+		if (maxv == r)
 			return fmodf(((g - b) / c) / 6 + 1, 1);
-		if (max == g)
+		if (maxv == g)
 			return (2 + (b - r) / c) / 6;
 		return (4 + (r - g) / c) / 6;
 	}
 	float GetSaturation()
 	{
-		float max = GetValue();
-		float min = std::min(r, std::min(g, b));
-		float c = max - min;
-		return max == 0 ? 0 : c / max;
+		float maxv = GetValue();
+		float minv = min(r, min(g, b));
+		float c = maxv - minv;
+		return maxv == 0 ? 0 : c / maxv;
 	}
 	float GetValue()
 	{
-		return std::max(r, std::max(g, b));
+		return max(r, max(g, b));
 	}
 
 	Color4f() : r(1), g(1), b(1), a(1) {}
@@ -121,10 +121,10 @@ struct Color4f
 
 	operator Color4b() const { return { GetRed8(), GetGreen8(), GetBlue8(), GetAlpha8() }; }
 
-	uint8_t GetRed8() const { return uint8_t(std::max(0.0f, std::min(1.0f, r)) * 255); }
-	uint8_t GetGreen8() const { return uint8_t(std::max(0.0f, std::min(1.0f, g)) * 255); }
-	uint8_t GetBlue8() const { return uint8_t(std::max(0.0f, std::min(1.0f, b)) * 255); }
-	uint8_t GetAlpha8() const { return uint8_t(std::max(0.0f, std::min(1.0f, a)) * 255); }
+	__forceinline uint8_t GetRed8() const { return uint8_t(clamp(r, 0.0f, 1.0f) * 255); }
+	__forceinline uint8_t GetGreen8() const { return uint8_t(clamp(g, 0.0f, 1.0f) * 255); }
+	__forceinline uint8_t GetBlue8() const { return uint8_t(clamp(b, 0.0f, 1.0f) * 255); }
+	__forceinline uint8_t GetAlpha8() const { return uint8_t(clamp(a, 0.0f, 1.0f) * 255); }
 	uint32_t GetColor32()
 	{
 		auto rb = GetRed8();

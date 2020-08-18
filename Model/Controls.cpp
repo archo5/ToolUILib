@@ -594,14 +594,28 @@ style::Coord ScrollbarV::GetWidth()
 	return trackVStyle->width;
 }
 
+static UIRect sbv_GetTrackRect(const ScrollbarData& info, style::Block* trackVStyle)
+{
+	return info.rect.ShrinkBy(info.owner->GetPaddingRect(trackVStyle, info.rect.GetWidth()));
+}
+
 UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
 {
-	UIRect rect = info.rect.ShrinkBy(info.owner->GetPaddingRect(trackVStyle, info.rect.GetWidth()));
-	float viewportSize = std::max(info.viewportSize, 1.0f);
-	float contentSize = std::max(info.contentSize, viewportSize);
-	float localMin = std::min(1.0f, std::max(0.0f, info.contentOff / contentSize));
-	float localMax = std::min(1.0f, std::max(0.0f, (info.contentOff + viewportSize) / contentSize));
-	return { rect.x0, round(lerp(rect.y0, rect.y1, localMin)), rect.x1, round(lerp(rect.y0, rect.y1, localMax)) };
+	float viewportSize = max(info.viewportSize, 1.0f);
+	float contentSize = max(info.contentSize, viewportSize);
+
+	float scrollFactor = contentSize == viewportSize ? 0 : info.contentOff / (contentSize - viewportSize);
+	float thumbSizeFactor = viewportSize / contentSize;
+
+	UIRect trackRect = sbv_GetTrackRect(info, trackVStyle);
+
+	float thumbSize = thumbSizeFactor * trackRect.GetHeight();
+	float minH = info.owner->ResolveUnits(thumbVStyle->min_height, info.rect.GetWidth());
+	thumbSize = max(thumbSize, minH);
+
+	float pos = (trackRect.GetHeight() - thumbSize) * scrollFactor;
+
+	return { trackRect.x0, trackRect.y0 + pos, trackRect.x1, trackRect.y0 + pos + thumbSize };
 }
 
 void ScrollbarV::OnPaint(const ScrollbarData& info)
@@ -628,8 +642,12 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 {
 	uiState.InitOnEvent(e);
-	float dragSpeed = std::max(1.0f, info.contentSize / std::max(info.viewportSize, 1.0f));
-	float maxOff = std::max(info.contentSize - info.viewportSize, 0.0f);
+
+	float viewportSize = max(info.viewportSize, 1.0f);
+	float contentSize = max(info.contentSize, viewportSize);
+
+	float maxOff = max(contentSize - viewportSize, 0.0f);
+
 	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
 	{
 	case ui::SubUIDragState::Start:
@@ -637,10 +655,21 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 		dragStartCursorPos = e.y;
 		e.StopPropagation();
 		break;
-	case ui::SubUIDragState::Move:
-		info.contentOff = std::min(maxOff, std::max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
+	case ui::SubUIDragState::Move: {
+		float thumbSizeFactor = viewportSize / contentSize;
+
+		UIRect trackRect = sbv_GetTrackRect(info, trackVStyle);
+
+		float thumbSize = thumbSizeFactor * trackRect.GetHeight();
+		float minH = info.owner->ResolveUnits(thumbVStyle->min_height, info.rect.GetWidth());
+		thumbSize = max(thumbSize, minH);
+
+		float trackRange = trackRect.GetHeight() - thumbSize;
+
+		float dragSpeed = (contentSize - viewportSize) / trackRange;
+		info.contentOff = min(maxOff, max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
 		e.StopPropagation();
-		break;
+		break; }
 	case ui::SubUIDragState::Stop:
 		e.StopPropagation();
 		break;
@@ -648,7 +677,7 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 
 	if (e.type == UIEventType::MouseScroll)
 	{
-		info.contentOff = std::min(maxOff, std::max(0.0f, info.contentOff - e.dy));
+		info.contentOff = min(maxOff, max(0.0f, info.contentOff - e.dy));
 	}
 }
 
