@@ -105,12 +105,17 @@ void TableView::OnPaint()
 
 	auto RC = GetContentRect();
 
-	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
 	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
 	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
 
-	float rhw = 80 + padRH.x0 + padRH.x1;
-	float rhh = 20 + padRH.y0 + padRH.y1;
+	UIRect padRH = {};
+	float rhw = 0, rhh = 0;
+	if (enableRowHeader)
+	{
+		padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		rhw = 80 + padRH.x0 + padRH.x1;
+		rhh = 20 + padRH.y0 + padRH.y1;
+	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);
@@ -130,34 +135,37 @@ void TableView::OnPaint()
 
 	_impl->dataSource->OnBeginReadRows(minR, maxR);
 
+	if (enableRowHeader)
+	{
 	// - row header
-	draw::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
-	// background:
-	for (size_t r = minR; r < maxR; r++)
-	{
-		info.rect =
+		draw::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
+		// background:
+		for (size_t r = minR; r < maxR; r++)
 		{
-			RC.x0,
-			RC.y0 + chh - yOff + h * r,
-			RC.x0 + rhw,
-			RC.y0 + chh - yOff + h * (r + 1),
-		};
-		rowHeaderStyle->paint_func(info);
-	}
-	// text:
-	for (size_t r = minR; r < maxR; r++)
-	{
-		UIRect rect =
+			info.rect =
+			{
+				RC.x0,
+				RC.y0 + chh - yOff + h * r,
+				RC.x0 + rhw,
+				RC.y0 + chh - yOff + h * (r + 1),
+			};
+			rowHeaderStyle->paint_func(info);
+		}
+		// text:
+		for (size_t r = minR; r < maxR; r++)
 		{
-			RC.x0,
-			RC.y0 + chh - yOff + h * r,
-			RC.x0 + rhw,
-			RC.y0 + chh - yOff + h * (r + 1),
-		};
-		rect = rect.ShrinkBy(padRH);
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
+			UIRect rect =
+			{
+				RC.x0,
+				RC.y0 + chh - yOff + h * r,
+				RC.x0 + rhw,
+				RC.y0 + chh - yOff + h * (r + 1),
+			};
+			rect = rect.ShrinkBy(padRH);
+			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
+		}
+		draw::PopScissorRect();
 	}
-	draw::PopScissorRect();
 
 	// - column header
 	draw::PushScissorRect(RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh);
@@ -244,12 +252,16 @@ void TableView::OnEvent(UIEvent& e)
 
 	auto RC = GetContentRect();
 
-	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
 	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
 	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
 
-	float rhw = 80 + padRH.x0 + padRH.x1;
-	float rhh = 20 + padRH.y0 + padRH.y1;
+	float rhw = 0, rhh = 0;
+	if (enableRowHeader)
+	{
+		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		rhw = 80 + padRH.x0 + padRH.x1;
+		rhh = 20 + padRH.y0 + padRH.y1;
+	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);
@@ -384,11 +396,15 @@ size_t TableView::GetRowAt(float y)
 {
 	auto RC = GetContentRect();
 
-	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
 	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
 	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
 
-	float rhh = 20 + padRH.y0 + padRH.y1;
+	float rhh = 0;
+	if (enableRowHeader)
+	{
+		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		rhh = 20 + padRH.y0 + padRH.y1;
+	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);
@@ -413,12 +429,16 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 
 	auto RC = GetContentRect();
 
-	auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
 	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
 	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
 
-	float rhw = 80 + padRH.x0 + padRH.x1;
-	float rhh = 20 + padRH.y0 + padRH.y1;
+	float rhw = 0, rhh = 0;
+	if (enableRowHeader)
+	{
+		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		rhw = 80 + padRH.x0 + padRH.x1;
+		rhh = 20 + padRH.y0 + padRH.y1;
+	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = std::max(rhh, cellh);

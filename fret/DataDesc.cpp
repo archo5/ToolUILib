@@ -204,31 +204,43 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			auto& S = *SI->def;
 			struct Data : ui::TableDataSource
 			{
+				enum Columns
+				{
+					COL_Name,
+					COL_Type,
+					COL_Offset,
+					COL_Preview,
+
+					COL__COUNT,
+				};
+
 				size_t GetNumRows() override { return SI->def->GetFieldCount(); }
-				size_t GetNumCols() override { return 3; }
+				size_t GetNumCols() override { return COL__COUNT; }
 				std::string GetRowName(size_t row) override { return std::to_string(row + 1); }
 				std::string GetColName(size_t col) override
 				{
-					if (col == 0) return "Name";
-					if (col == 1) return "Type";
-					if (col == 2) return "Preview";
+					if (col == COL_Name) return "Name";
+					if (col == COL_Type) return "Type";
+					if (col == COL_Offset) return "Offset";
+					if (col == COL_Preview) return "Preview";
 					return "";
 				}
 				std::string GetText(size_t row, size_t col) override
 				{
 					switch (col)
 					{
-					case 0: return SI->def->fields[row].name;
-					case 1: return SI->def->fields[row].type + "[" + std::to_string(SI->def->fields[row].count) + "]";
-					case 2: return SI->GetFieldPreview(row);
+					case COL_Name: return SI->def->fields[row].name;
+					case COL_Type: return SI->def->fields[row].type + "[" + std::to_string(SI->def->fields[row].count) + "]";
+					case COL_Offset: return std::to_string(SI->GetFieldOffset(row, true));
+					case COL_Preview: return SI->GetFieldPreview(row, true);
 					default: return "";
 					}
 				}
 
 				DDStructInst* SI;
 			};
-			Data data;
-			data.SI = SI;
+			auto* data = ctx->GetCurrentNode()->Allocate<Data>();
+			data->SI = SI;
 
 			char bfr[256];
 			auto size = SI->GetSize(true);
@@ -280,8 +292,11 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				}
 				ctx->Pop();
 			}
-			/*auto* tv = ctx->Make<ui::TableView>();
-			tv->SetDataSource(&data); TODO */
+			auto* tv = ctx->Make<ui::TableView>();
+			*tv + ui::Height(200);
+			tv->enableRowHeader = false;
+			tv->SetDataSource(data);
+			tv->CalculateColumnWidths();
 
 			if (incomplete && ui::imm::Button(ctx, "Load completely"))
 			{

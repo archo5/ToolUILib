@@ -51,6 +51,7 @@ public:
 	UIRect GetCellRect(size_t col, size_t row);
 	size_t GetHoverRow() const;
 
+	bool enableRowHeader = true;
 	style::BlockRef cellStyle;
 	style::BlockRef rowHeaderStyle;
 	style::BlockRef colHeaderStyle;
