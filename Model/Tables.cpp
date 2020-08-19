@@ -87,6 +87,9 @@ TableView::TableView()
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
 	colHeaderStyle = Theme::current->tableColHeader;
+	// TODO find a way to make these behaviors work
+	//SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+	//SetFlag(UIObject_DB_FocusOnLeftClick, true);
 }
 
 TableView::~TableView()
@@ -274,13 +277,33 @@ void TableView::OnEvent(UIEvent& e)
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
 
+	// TODO this is copied from default behaviors, find a way to merge it back together
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	{
+		e.context->SetKeyboardFocus(this);
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	{
+		e.context->CaptureMouse(e.current);
+		e.current->flags |= UIObject_IsPressedMouse;
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	{
+		if (e.context->GetMouseCapture() == this)
+			e.context->ReleaseMouse();
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::MouseCaptureChanged)
+	{
+		flags &= ~UIObject_IsPressedMouse;
+		e.StopPropagation();
+	}
+
 	if (e.IsPropagationStopped())
 		return;
 
-	if (e.type == UIEventType::ButtonDown)
-	{
-		e.context->SetKeyboardFocus(this);
-	}
 	if (e.type == UIEventType::MouseMove)
 	{
 		if (e.x < RC.x1 && e.y > RC.y0 + chh)

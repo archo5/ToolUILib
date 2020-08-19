@@ -304,6 +304,11 @@ template <class T> struct SubUI
 			_pressed = NoValue;
 			return SubUIDragState::Stop;
 		}
+		else if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left)
+		{
+			if (_pressed != NoValue)
+				e.StopPropagation(); // eat invalid event
+		}
 		return SubUIDragState::None;
 	}
 
