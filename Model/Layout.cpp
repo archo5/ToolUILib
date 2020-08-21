@@ -516,11 +516,11 @@ Block* Block::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const
 }
 
 
-Accessor::Accessor(Block* b) : block(b), blkref(nullptr)
+Accessor::Accessor(Block* b) : block(b), blkref(nullptr), owner(nullptr)
 {
 }
 
-Accessor::Accessor(BlockRef& r, bool unique) : block(r), blkref(unique ? &r : nullptr)
+Accessor::Accessor(BlockRef& r, UIObject* o) : block(r), blkref(o ? &r : nullptr), owner(o)
 {
 }
 
@@ -555,10 +555,14 @@ template <class T> void AccSet(Accessor& a, int off, T v)
 		if (auto* it = a.block->GetWithChange(off, v))
 		{
 			*a.blkref = a.block = it;
+			if (a.owner)
+				a.owner->_OnChangeStyle();
 			return;
 		}
 	}
 	PropFuncs<T>::Copy(reinterpret_cast<char*>(a.block) + off, &v);
+	if (a.owner)
+		a.owner->_OnChangeStyle();
 }
 
 Layout* Accessor::GetLayout() const

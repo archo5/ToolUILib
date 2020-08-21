@@ -395,6 +395,7 @@ struct ProxyEventSystem
 struct NativeWindow_Impl;
 static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
+extern FrameContents* g_curSystem;
 
 struct NativeWindow_Impl
 {
@@ -456,6 +457,7 @@ struct NativeWindow_Impl
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
 
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, cont.owner);
 		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
 		N->renderFunc = renderFunc;
 		cont._BuildUsing(N);
@@ -482,10 +484,10 @@ struct NativeWindow_Impl
 		prevTime = t;
 
 		cont.ProcessNodeRenderStack();
-		evsys.RecomputeLayout();
+		cont.ProcessLayoutStack();
 		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
 		cont.ProcessNodeRenderStack();
-		evsys.RecomputeLayout();
+		cont.ProcessLayoutStack();
 
 #if DRAW_STATS
 		double t0 = hqtime();
@@ -702,6 +704,7 @@ void NativeWindowBase::SetVisible(bool v)
 		auto& cont = _impl->GetContainer();
 		auto& evsys = _impl->GetEventSys();
 
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, cont.owner);
 		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
 		N->renderFunc = [this](UIContainer* ctx) { OnRender(ctx); };
 		cont._BuildUsing(N);
@@ -1333,6 +1336,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				}
 				evsys.width = w;
 				evsys.height = h;
+				evsys.RecomputeLayout();
 				window->GetOwner()->InvalidateAll();
 			}
 		}
@@ -1367,6 +1371,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			}
 			evsys.width = w;
 			evsys.height = h;
+			evsys.RecomputeLayout();
 			window->GetOwner()->InvalidateAll();
 			window->Redraw();
 		}

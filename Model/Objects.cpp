@@ -8,6 +8,7 @@
 
 namespace ui {
 extern uint32_t g_curLayoutFrame;
+extern FrameContents* g_curSystem;
 
 struct EventHandlerEntry
 {
@@ -21,7 +22,7 @@ struct EventHandlerEntry
 
 UIObject::UIObject()
 {
-	styleProps = ui::Theme::current->object;
+	SetStyle(ui::Theme::current->object);
 }
 
 UIObject::~UIObject()
@@ -416,6 +417,9 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 {
 	using namespace style;
 
+	lastLayoutInputRect = inRect;
+	lastLayoutInputCSize = containerSize;
+
 	auto style = GetStyle();
 
 	auto swidth = style::Coord::Undefined();
@@ -661,12 +665,18 @@ void UIObject::SetInputDisabled(bool v)
 
 style::Accessor UIObject::GetStyle()
 {
-	return style::Accessor(styleProps, true);
+	return style::Accessor(styleProps, this);
 }
 
 void UIObject::SetStyle(style::Block* style)
 {
 	styleProps = style;
+	_OnChangeStyle();
+}
+
+void UIObject::_OnChangeStyle()
+{
+	ui::g_curSystem->container.layoutStack.Add(parent ? parent : this);
 }
 
 float UIObject::ResolveUnits(style::Coord coord, float ref)

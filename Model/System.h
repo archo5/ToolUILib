@@ -10,6 +10,22 @@
 #define DEBUG_FLOW(x) //x
 
 
+template <class T>
+struct TmpEdit
+{
+	TmpEdit(T& dst, T src) : dest(dst), backup(dst)
+	{
+		dst = src;
+	}
+	~TmpEdit()
+	{
+		dest = backup;
+	}
+	T& dest;
+	T backup;
+};
+
+
 template<class T> void Node_AddChild(T* node, T* ch)
 {
 	assert(ch->parent == nullptr);
@@ -29,26 +45,22 @@ template<class T> void Node_AddChild(T* node, T* ch)
 struct UIObjectDirtyStack
 {
 	UIObjectDirtyStack(uint32_t f) : flag(f) {}
-	bool ContainsAny() const { return size != 0; }
+	bool ContainsAny() const { return stack.size() != 0; }
 	void ClearWithoutFlags()
 	{
-		size = 0;
+		stack.clear();
 	}
 	void Swap(UIObjectDirtyStack& o)
 	{
 		assert(flag == o.flag);
 		std::swap(stack, o.stack);
-		std::swap(size, o.size);
 	}
 	void Add(UIObject* n);
 	void OnDestroy(UIObject* n);
 	UIObject* Pop();
 	void RemoveChildren();
 
-	size_t debugpad1 = 0;
-	UIObject* stack[128];
-	size_t debugpad2 = 0;
-	int size = 0;
+	std::vector<UIObject*> stack;
 	uint32_t flag;
 };
 
@@ -77,10 +89,12 @@ struct UIContainer
 				DataReadSerializer drs(buf);
 				t->_SerializePersistent(drs);
 			}
+			t->_OnChangeStyle();
 			return t;
 		}
 		auto* p = new T();
 		p->system = owner;
+		p->_OnChangeStyle();
 		return p;
 	}
 	void AddToRenderStack(ui::Node* n)
@@ -92,6 +106,7 @@ struct UIContainer
 			nextFrameNodeRenderStack.Add(n);
 	}
 	void ProcessNodeRenderStack();
+	void ProcessLayoutStack();
 
 	void _BuildUsing(ui::Node* n);
 
@@ -190,8 +205,8 @@ struct UIContainer
 
 	UIObjectDirtyStack nodeRenderStack{ UIObject_IsInRenderStack };
 	UIObjectDirtyStack nextFrameNodeRenderStack{ UIObject_IsInRenderStack };
+	UIObjectDirtyStack layoutStack{ UIObject_IsInLayoutStack };
 
-	bool isLayoutDirty = false;
 	bool lastIsNew = false;
 };
 

@@ -2,12 +2,17 @@
 #include "System.h"
 
 
+namespace ui {
+extern uint32_t g_curLayoutFrame;
+FrameContents* g_curSystem;
+} // ui
+
+
 void UIObjectDirtyStack::Add(UIObject* n)
 {
 	if (n->flags & flag)
 		return;
-	stack[size++] = n;
-	assert(size < 128);
+	stack.push_back(n);
 	n->flags |= flag;
 }
 
@@ -15,13 +20,13 @@ void UIObjectDirtyStack::OnDestroy(UIObject* n)
 {
 	if (!(n->flags & flag))
 		return;
-	for (int i = 0; i < size; i++)
+	for (auto it = stack.begin(); it != stack.end(); it++)
 	{
-		if (stack[i] == n)
+		if (*it == n)
 		{
-			if (i + 1 < size)
-				stack[i] = stack[size - 1];
-			size--;
+			if (it + 1 != stack.end())
+				*it = stack.back();
+			stack.pop_back();
 			break;
 		}
 	}
@@ -29,15 +34,16 @@ void UIObjectDirtyStack::OnDestroy(UIObject* n)
 
 UIObject* UIObjectDirtyStack::Pop()
 {
-	assert(size > 0);
-	auto* n = stack[--size];
+	assert(stack.size() > 0);
+	UIObject* n = stack.back();
+	stack.pop_back();
 	n->flags &= ~flag;
 	return n;
 }
 
 void UIObjectDirtyStack::RemoveChildren()
 {
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < stack.size(); i++)
 	{
 		auto* p = stack[i]->parent;
 		while (p)
@@ -49,9 +55,9 @@ void UIObjectDirtyStack::RemoveChildren()
 		if (p)
 		{
 			stack[i]->flags &= ~flag;
-			if (i + 1 < size)
-				stack[i] = stack[size - 1];
-			size--;
+			if (i + 1 < stack.size())
+				stack[i] = stack.back();
+			stack.pop_back();
 			i--;
 		}
 	}
@@ -83,6 +89,7 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 		cur->system->eventSystem.OnDestroy(cur);
 		nodeRenderStack.OnDestroy(cur);
 		nextFrameNodeRenderStack.OnDestroy(cur);
+		layoutStack.OnDestroy(cur);
 		delete cur;
 	}
 }
@@ -112,6 +119,8 @@ void UIContainer::ProcessNodeRenderStack()
 	}
 	else
 		return;
+
+	TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, owner);
 
 	nodeRenderStack.RemoveChildren();
 
@@ -146,6 +155,52 @@ void UIContainer::ProcessNodeRenderStack()
 	_lastRenderedFrameID++;
 }
 
+void UIContainer::ProcessLayoutStack()
+{
+	if (layoutStack.ContainsAny())
+	{
+		DEBUG_FLOW(printf(" ---- processing node LAYOUT stack (%zu items) ----\n", layoutStack.stack.size()));
+	}
+	else
+		return;
+
+	TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, owner);
+
+	// TODO check if the styles are actually different and if not, remove element from the stack
+
+	layoutStack.RemoveChildren();
+
+	// TODO change elements to their parents if parent/self layout combo indicates that parent will be affected
+	for (UIObject*& obj : layoutStack.stack)
+	{
+		auto* p = obj;
+		while (p->parent)
+			p = p->parent;
+		if (p != obj)
+		{
+			obj->flags &= ~UIObject_IsInLayoutStack;
+			p->flags |= UIObject_IsInLayoutStack;
+			obj = p;
+		}
+	}
+
+	layoutStack.RemoveChildren();
+
+	assert(!layoutStack.stack.empty());
+	ui::g_curLayoutFrame++;
+
+	// single pass
+	for (UIObject* obj : layoutStack.stack)
+	{
+		// TODO how to restart layout?
+		printf("relayout %s @ %p\n", typeid(*obj).name(), obj);
+		obj->OnLayout(obj->lastLayoutInputRect, obj->lastLayoutInputCSize);
+		obj->OnLayoutChanged();
+	}
+	while (layoutStack.ContainsAny())
+		layoutStack.Pop();
+}
+
 void UIContainer::_BuildUsing(ui::Node* n)
 {
 	rootNode = n;
@@ -153,6 +208,7 @@ void UIContainer::_BuildUsing(ui::Node* n)
 	nodeRenderStack.ClearWithoutFlags(); // TODO: is this needed?
 	AddToRenderStack(rootNode);
 	ProcessNodeRenderStack();
+	ProcessLayoutStack();
 }
 
 void UIContainer::_Push(UIObject* obj, bool isCurNode)

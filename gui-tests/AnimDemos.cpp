@@ -4,6 +4,10 @@
 
 struct SlidingHighlightAnimDemo : ui::Node
 {
+	SlidingHighlightAnimDemo()
+	{
+		animReq.callback = [this]() { GetNativeWindow()->InvalidateAll(); };
+	}
 	void Render(UIContainer* ctx) override
 	{
 		ui::imm::RadioButton(ctx, layout, 0, "No button", { ui::Style(ui::Theme::current->button) });
@@ -27,8 +31,8 @@ struct SlidingHighlightAnimDemo : ui::Node
 			targetLayout = tr;
 			startTime = ui::platform::GetTimeMs();
 			endTime = startTime + 1000;
-			//puts("START ANIM");
-			this->system->eventSystem.SetTimer(this, 1.0f / 60.0f);
+
+			animReq.BeginAnimation();
 		}
 	}
 	void OnPaint() override
@@ -43,21 +47,9 @@ struct SlidingHighlightAnimDemo : ui::Node
 		ui::draw::LineCol(r.x0, r.y1, r.x1, r.y1, 1, colLine);
 		ui::draw::LineCol(r.x0, r.y0, r.x0, r.y1, 1, colLine);
 		ui::draw::LineCol(r.x1, r.y0, r.x1, r.y1, 1, colLine);
-	}
-	void OnEvent(UIEvent& e) override
-	{
-		ui::Node::OnEvent(e);
 
-		if (e.type == UIEventType::Timer)
-		{
-			//puts("TIMER");
-			if (ui::platform::GetTimeMs() - startTime < endTime - startTime)
-			{
-				//puts("INVRESET");
-				GetNativeWindow()->InvalidateAll();
-				this->system->eventSystem.SetTimer(this, 1.0f / 60.0f);
-			}
-		}
+		if (ui::platform::GetTimeMs() - startTime > endTime - startTime)
+			animReq.EndAnimation();
 	}
 
 	UIRect GetCurrentRect()
@@ -94,6 +86,8 @@ struct SlidingHighlightAnimDemo : ui::Node
 	UIRect targetLayout = {};
 	uint32_t startTime = 0;
 	uint32_t endTime = 0;
+
+	ui::AnimationCallbackRequester animReq;
 };
 void Demo_SlidingHighlightAnim(UIContainer* ctx)
 {

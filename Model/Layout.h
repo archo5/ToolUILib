@@ -522,7 +522,7 @@ class Accessor
 public:
 
 	explicit Accessor(Block* b);
-	explicit Accessor(BlockRef& r, bool unique = true);
+	explicit Accessor(BlockRef& r, UIObject* o);
 
 #if 0
 	Display GetDisplay() const;
@@ -637,6 +637,7 @@ public:
 
 	Block* block;
 	BlockRef* blkref;
+	UIObject* owner;
 };
 
 void FlexLayout(UIObject* obj);

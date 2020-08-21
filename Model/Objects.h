@@ -270,6 +270,8 @@ struct UIObject
 
 	style::Accessor GetStyle();
 	void SetStyle(style::Block* style);
+	void _OnChangeStyle();
+
 	float ResolveUnits(style::Coord coord, float ref);
 	UIRect GetMarginRect(style::Block* style, float ref);
 	UIRect GetPaddingRect(style::Block* style, float ref);
@@ -306,6 +308,10 @@ struct UIObject
 	UIRect finalRectC = {};
 	UIRect finalRectCP = {};
 	UIRect finalRectCPB = {};
+
+	// previous layout input argument cache
+	UIRect lastLayoutInputRect = {};
+	Size<float> lastLayoutInputCSize = {};
 
 	// size cache
 	uint32_t _cacheFrameWidth = {};
