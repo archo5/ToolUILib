@@ -74,6 +74,7 @@ enum UIObjectFlags
 	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
 	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
 	UIObject_DB_Selectable = 1 << 22,
+	UIObject_DisableCulling = 1 << 23,
 
 	UIObject_DB__Defaults = 0,
 };

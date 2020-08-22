@@ -106,6 +106,7 @@ void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b c
 void PushScissorRect(int x0, int y0, int x1, int y1);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
+AABB<float> GetCurrentScissorRectF();
 
 } // draw
 } // ui

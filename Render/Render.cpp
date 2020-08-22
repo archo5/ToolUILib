@@ -691,6 +691,11 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 	ApplyScissor();
 }
 
+AABB<float> GetCurrentScissorRectF()
+{
+	return scissorStack[scissorCount - 1].Cast<float>();
+}
+
 } // draw
 } // ui
 

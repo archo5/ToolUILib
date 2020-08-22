@@ -236,8 +236,13 @@ void UIObject::OnPaint()
 
 void UIObject::Paint()
 {
-	if (_CanPaint())
-		OnPaint();
+	if (!_CanPaint())
+		return;
+
+	if (!((flags & UIObject_DisableCulling) || ui::draw::GetCurrentScissorRectF().Intersects(finalRectCPB)))
+		return;
+
+	OnPaint();
 }
 
 void UIObject::PaintChildren()
