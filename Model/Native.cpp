@@ -344,6 +344,8 @@ double hqtime()
 	return double(cnt.QuadPart) / double(freq.QuadPart);
 }
 
+extern FrameContents* g_curSystem;
+
 struct ProxyEventSystem
 {
 	struct Target
@@ -354,6 +356,7 @@ struct ProxyEventSystem
 
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0);
@@ -395,7 +398,6 @@ struct ProxyEventSystem
 struct NativeWindow_Impl;
 static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
-extern FrameContents* g_curSystem;
 
 struct NativeWindow_Impl
 {
@@ -475,6 +477,8 @@ struct NativeWindow_Impl
 
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
+
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, cont.owner);
 
 		float minTime = evsys.ProcessTimers(float(t - prevTime));
 		if (minTime < FLT_MAX)

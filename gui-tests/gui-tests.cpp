@@ -360,6 +360,7 @@ void Benchmark_TableView(UIContainer* ctx);
 void Demo_Calculator(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
 void Demo_CompactTreeNodeEdit(UIContainer* ctx);
+void Demo_NodeGraphEditor(UIContainer* ctx);
 void Demo_TrackEditor(UIContainer* ctx);
 void Demo_SlidingHighlightAnim(UIContainer* ctx);
 void Demo_ButtonPressHighlight(UIContainer* ctx);
@@ -433,8 +434,9 @@ static const TestEntry demoEntries[] =
 	{ "Calculator (grid layout)", Demo_Calculator },
 	{},
 	{ "- Editors -" },
-	{ "Node editing", Demo_BasicTreeNodeEdit },
-	{ "Compact node editing", Demo_CompactTreeNodeEdit },
+	{ "Tree", Demo_BasicTreeNodeEdit },
+	{ "Inline tree", Demo_CompactTreeNodeEdit },
+	{ "Node graph", Demo_NodeGraphEditor },
 	{ "Track editor demo", Demo_TrackEditor },
 	{},
 	{ "- Animations -" },
