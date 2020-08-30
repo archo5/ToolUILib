@@ -352,6 +352,9 @@ struct DragDrop
 {
 	static void SetData(DragDropData* data);
 	static DragDropData* GetData(const char* type = nullptr);
+
+	template <class T>
+	static T* GetData() { return static_cast<T*>(GetData(T::NAME)); }
 };
 
 extern struct DataCategoryTag DCT_TooltipChanged[1];

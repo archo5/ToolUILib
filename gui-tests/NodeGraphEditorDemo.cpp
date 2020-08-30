@@ -2,6 +2,8 @@
 #include "pch.h"
 
 
+namespace ui {
+
 struct IProcGraph
 {
 	using Node = void;
@@ -45,31 +47,60 @@ struct IProcGraph
 
 	//virtual int GetSupportedFeatures() = 0;
 
+	// global lists
 	virtual void GetNodes(std::vector<Node*>& outNodes) = 0;
 	virtual void GetLinks(std::vector<Link>& outLinks) = 0;
 
-	virtual StringView GetNodeName(Node*) = 0;
+	// basic node info
+	virtual std::string GetNodeName(Node*) = 0;
 	virtual uintptr_t GetNodeInputCount(Node*) = 0;
 	virtual uintptr_t GetNodeOutputCount(Node*) = 0;
 
-	virtual const char* GetPinName(const Pin&) = 0;
-	virtual bool IsPinLinked(const Pin&) = 0;
-	virtual void UnlinkPin(const Pin& pin) = 0;
+	// basic pin info
+	virtual std::string GetPinName(const Pin&) = 0;
 	virtual void InputPinEditorUI(const Pin& pin, UIContainer*) {}
 
+	// pin linkage info (with default suboptimal implementations)
+	virtual bool IsPinLinked(const Pin& pin)
+	{
+		std::vector<Link> allLinks;
+		GetLinks(allLinks);
+		for (const auto& link : allLinks)
+		{
+			if ((pin.isOutput ? link.output : link.input) == pin.end)
+				return true;
+		}
+		return false;
+	}
+	virtual void GetPinLinks(const Pin& pin, std::vector<Link>& outLinks)
+	{
+		std::vector<Link> allLinks;
+		GetLinks(allLinks);
+		for (const auto& link : allLinks)
+		{
+			if ((pin.isOutput ? link.output : link.input) == pin.end)
+				outLinks.push_back(link);
+		}
+	}
+	virtual void UnlinkPin(const Pin& pin) = 0;
+
+	// link info & editing
 	virtual bool LinkExists(const Link&) = 0;
-	virtual bool CanLink(const Link&) = 0;
+	virtual bool CanLink(const Link&) { return true; } // does not have to evaluate all preconditions, used only for highlighting
 	virtual bool TryLink(const Link&) = 0;
 	virtual bool Unlink(const Link&) = 0;
 
+	// node position state
 	virtual Point<float> GetNodePosition(Node*) = 0;
 	virtual void SetNodePosition(Node*, const Point<float>&) = 0;
 
+	// node preview
 	virtual bool HasPreview(Node*) { return false; }
 	virtual bool IsPreviewEnabled(Node*) { return false; }
 	virtual void SetPreviewEnabled(Node*, bool) {}
 	virtual void PreviewUI(Node*, UIContainer*) {}
 
+	// node editing
 	virtual bool CanDeleteNode(Node*) { return false; }
 	virtual void DeleteNode(Node*) {}
 
@@ -78,10 +109,11 @@ struct IProcGraph
 };
 
 
-struct LinkDragDropData : ui::DragDropData
+struct ProcGraphLinkDragDropData : DragDropData
 {
-	LinkDragDropData(IProcGraph* graph, const IProcGraph::Pin& pin) :
-		DragDropData("link"),
+	static constexpr const char* NAME = "ProcGraphLinkDragDropData";
+	ProcGraphLinkDragDropData(IProcGraph* graph, const IProcGraph::Pin& pin) :
+		DragDropData(NAME),
 		_graph(graph),
 		_pin(pin)
 	{}
@@ -90,22 +122,24 @@ struct LinkDragDropData : ui::DragDropData
 	IProcGraph::Pin _pin;
 };
 
-struct GraphNodePinUI : ui::Node
+DataCategoryTag DCT_EditProcGraphNode[1];
+
+struct ProcGraphEditor_NodePin : Node
 {
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override
 	{
-		_sel = ctx->Push<ui::Selectable>();
-		*_sel + ui::MakeDraggable();
-		*_sel + ui::StackingDirection(!_info.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
+		_sel = ctx->Push<Selectable>();
+		*_sel + MakeDraggable();
+		*_sel + StackingDirection(!_info.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
 
 		ctx->Text(_graph->GetPinName(_info));
 
 		if (!_info.isOutput && !_graph->IsPinLinked(_info))
 		{
 			// TODO not implemented right->left
-			*_sel + ui::Layout(style::layouts::StackExpand());
+			*_sel + Layout(style::layouts::StackExpand());
 
 			_graph->InputPinEditorUI(_info, ctx);
 		}
@@ -118,7 +152,7 @@ struct GraphNodePinUI : ui::Node
 		{
 			_dragged = true;
 			_sel->Init(_dragged || _dragHL);
-			ui::DragDrop::SetData(new LinkDragDropData(_graph, _info));
+			DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _info));
 		}
 		if (e.type == UIEventType::DragEnd)
 		{
@@ -127,7 +161,16 @@ struct GraphNodePinUI : ui::Node
 		}
 		if (e.type == UIEventType::DragEnter)
 		{
-			_dragHL = true;
+			if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
+			{
+				if (_info.end.node != ddd->_pin.end.node &&
+					_info.isOutput != ddd->_pin.isOutput)
+				{
+					_dragHL = _info.isOutput
+						? _graph->CanLink({ _info.end, ddd->_pin.end })
+						: _graph->CanLink({ ddd->_pin.end, _info.end });
+				}
+			}
 			_sel->Init(_dragged || _dragHL);
 		}
 		if (e.type == UIEventType::DragLeave)
@@ -137,69 +180,109 @@ struct GraphNodePinUI : ui::Node
 		}
 		if (e.type == UIEventType::DragDrop)
 		{
-			if (auto* ddd = static_cast<LinkDragDropData*>(ui::DragDrop::GetData("link")))
+			if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
 			{
 				if (_graph == ddd->_graph && _info.isOutput != ddd->_pin.isOutput)
-				{
-					if (_info.isOutput)
-						_graph->TryLink({ _info.end, ddd->_pin.end });
-					else
-						_graph->TryLink({ ddd->_pin.end, _info.end });
-				}
+					_TryLink(ddd->_pin);
 			}
 		}
 
 		if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Right)
 		{
-			ui::MenuItem items[] =
+			MenuItem items[] =
 			{
-				ui::MenuItem("Unlink").Func([this]() { _graph->UnlinkPin(_info); }),
+				MenuItem("Unlink").Func([this]() { _UnlinkPin(); }),
 			};
-			ui::Menu menu(items);
+			Menu menu(items);
 			menu.Show(this);
 		}
 	}
 	void OnDestroy() override
 	{
-		UnregisterPin();
+		_UnregisterPin();
 	}
 	void Init(IProcGraph* graph, IProcGraph::Node* node, uintptr_t pin, bool isOutput)
 	{
 		_graph = graph;
 		_info = { node, pin, isOutput };
-		RegisterPin();
+		_RegisterPin();
 	}
-	void RegisterPin();
-	void UnregisterPin();
+
+	void _RegisterPin();
+	void _UnregisterPin();
+
+	void _TryLink(const IProcGraph::Pin& pin)
+	{
+		bool success = _info.isOutput
+			? _graph->TryLink({ _info.end, pin.end })
+			: _graph->TryLink({ pin.end, _info.end });
+		if (success)
+		{
+			Notify(DCT_EditProcGraphNode, _info.end.node);
+			Notify(DCT_EditProcGraphNode, pin.end.node);
+		}
+	}
+	void _UnlinkPin()
+	{
+		std::vector<IProcGraph::Link> links;
+		_graph->GetPinLinks(_info, links);
+
+		_graph->UnlinkPin(_info);
+
+		Notify(DCT_EditProcGraphNode, _info.end.node);
+		for (const auto& link : links)
+		{
+			Notify(DCT_EditProcGraphNode, (_info.isOutput ? link.input : link.output).node);
+		}
+	}
 
 	IProcGraph* _graph = nullptr;
 	IProcGraph::Pin _info = {};
 
 	bool _dragged = false;
 	bool _dragHL = false;
-	ui::Selectable* _sel = nullptr;
+	Selectable* _sel = nullptr;
 };
 
-using PinUIMap = HashMap<IProcGraph::Pin, GraphNodePinUI*, IProcGraph::PinHash>;
+using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::PinHash>;
 
-struct GraphNodeUI : ui::Node
+struct ProcGraphEditor_Node : Node
 {
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override
 	{
+		Subscribe(DCT_EditProcGraphNode, _node);
+
 		auto s = GetStyle(); // for style only
 		s.SetWidth(style::Coord::Undefined());
 		s.SetMinWidth(100);
+
+		*ctx->Push<TabPanel>() + Width(style::Coord::Undefined());
+
+		OnBuildTitleBar(ctx);
+		OnBuildOutputPins(ctx);
+		OnBuildPreview(ctx);
+		OnBuildInputPins(ctx);
+
+		ctx->Pop();
+	}
+	void Init(IProcGraph* graph, IProcGraph::Node* node)
+	{
+		_graph = graph;
+		_node = node;
+	}
+
+	virtual void OnBuildTitleBar(UIContainer* ctx)
+	{
 		auto* placement = Allocate<style::PointAnchoredPlacement>();
 		placement->bias = _graph->GetNodePosition(_node);
-		s.SetPlacement(placement);
+		GetStyle().SetPlacement(placement);
 
-		*ctx->Push<ui::TabPanel>() + ui::Width(style::Coord::Undefined());
-		*ctx->Push<ui::Selectable>()->Init(_isDragging)
-			+ ui::Padding(0)
-			+ ui::MakeDraggable()
-			+ ui::EventHandler([this, placement](UIEvent& e)
+		*ctx->Push<Selectable>()->Init(_isDragging)
+			+ Padding(0)
+			+ MakeDraggable()
+			+ EventHandler([this, placement](UIEvent& e)
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 			{
@@ -225,35 +308,37 @@ struct GraphNodeUI : ui::Node
 		});
 
 		bool hasPreview = _graph->HasPreview(_node);
-		bool showPreview = false;
 		if (hasPreview)
 		{
-			showPreview = _graph->IsPreviewEnabled(_node);
-			ui::imm::EditBool(ctx, showPreview);
+			bool showPreview = _graph->IsPreviewEnabled(_node);
+			imm::EditBool(ctx, showPreview);
 			_graph->SetPreviewEnabled(_node, showPreview);
 		}
-		ctx->Text(_graph->GetNodeName(_node)) + ui::Padding(5, hasPreview ? 0 : 5, 5, 5);
+		ctx->Text(_graph->GetNodeName(_node)) + Padding(5, hasPreview ? 0 : 5, 5, 5);
 		ctx->Pop();
+	}
 
+	virtual void OnBuildInputPins(UIContainer* ctx)
+	{
+		uintptr_t count = _graph->GetNodeInputCount(_node);
+		for (uintptr_t i = 0; i < count; i++)
+			ctx->Make<ProcGraphEditor_NodePin>()->Init(_graph, _node, i, false);
+	}
+
+	virtual void OnBuildOutputPins(UIContainer* ctx)
+	{
 		uintptr_t count = _graph->GetNodeOutputCount(_node);
 		for (uintptr_t i = 0; i < count; i++)
-			ctx->Make<GraphNodePinUI>()->Init(_graph, _node, i, true);
+			ctx->Make<ProcGraphEditor_NodePin>()->Init(_graph, _node, i, true);
+	}
 
+	virtual void OnBuildPreview(UIContainer* ctx)
+	{
+		bool showPreview = _graph->HasPreview(_node) && _graph->IsPreviewEnabled(_node);
 		if (showPreview)
 		{
 			_graph->PreviewUI(_node, ctx);
 		}
-
-		count = _graph->GetNodeInputCount(_node);
-		for (uintptr_t i = 0; i < count; i++)
-			ctx->Make<GraphNodePinUI>()->Init(_graph, _node, i, false);
-
-		ctx->Pop();
-	}
-	void Init(IProcGraph* graph, IProcGraph::Node* node)
-	{
-		_graph = graph;
-		_node = node;
 	}
 
 	IProcGraph* _graph = nullptr;
@@ -263,66 +348,118 @@ struct GraphNodeUI : ui::Node
 	Point<float> _dragStartMouse = {};
 };
 
-struct GraphUI : ui::Node
+struct ProcGraphEditor : Node
 {
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override
 	{
-		*this + ui::Height(style::Coord::Percent(100));
-		*ctx->Push<ui::ListBox>() + ui::Height(style::Coord::Percent(100));
+		*this + Height(style::Coord::Percent(100));
+		//*ctx->Push<ListBox>() + Height(style::Coord::Percent(100));
 
-		std::vector<IProcGraph::Node*> nodes;
-		_graph->GetNodes(nodes);
-		for (auto* N : nodes)
-		{
-			ctx->Make<GraphNodeUI>()->Init(_graph, N);
-		}
+		OnBuildNodes(ctx);
 
-		ctx->Pop();
+		//ctx->Pop();
 	}
 	void OnPaint() override
 	{
-		Node::OnPaint();
+		styleProps->paint_func(this);
 
-		std::vector<IProcGraph::Link> links;
-		_graph->GetLinks(links);
-		for (const auto& link : links)
-		{
-			auto A = link.output;
-			auto B = link.input;
-			if (auto* LA = pinUIMap.get({ A, true }))
-			{
-				if (auto* LB = pinUIMap.get({ B, false }))
-				{
-					auto PA = GetPinPos(LA);
-					auto PB = GetPinPos(LB);
-					ui::draw::AALineCol(
-						PA.x, PA.y,
-						PB.x, PB.y,
-						1, ui::Color4f(0.2f, 0.8f, 0.9f));
-				}
-			}
-		}
+		if (!drawCurrentLinksOnTop)
+			OnDrawCurrentLinks();
+		if (!drawPendingLinksOnTop)
+			OnDrawPendingLinks();
 
-		if (auto* ddd = static_cast<LinkDragDropData*>(ui::DragDrop::GetData("link")))
-		{
-			if (auto* pin = pinUIMap.get(ddd->_pin))
-			{
-				auto pos = GetPinPos(pin);
-				ui::draw::AALineCol(
-					pos.x, pos.y,
-					system->eventSystem.prevMouseX, system->eventSystem.prevMouseY,
-					1, ui::Color4f(0.9f, 0.8f, 0.2f));
-			}
-		}
+		PaintChildren();
+
+		if (drawCurrentLinksOnTop)
+			OnDrawCurrentLinks();
+		if (drawPendingLinksOnTop)
+			OnDrawPendingLinks();
 	}
 	void Init(IProcGraph* graph)
 	{
 		_graph = graph;
 	}
 
-	Point<float> GetPinPos(GraphNodePinUI* P)
+	virtual void OnBuildNodes(UIContainer* ctx)
+	{
+		std::vector<IProcGraph::Node*> nodes;
+		_graph->GetNodes(nodes);
+		for (auto* N : nodes)
+		{
+			ctx->Make<ProcGraphEditor_Node>()->Init(_graph, N);
+		}
+	}
+
+	virtual void OnDrawCurrentLinks()
+	{
+		std::vector<IProcGraph::Link> links;
+		_graph->GetLinks(links);
+
+		std::vector<Point<float>> points;
+		for (const auto& link : links)
+		{
+			points.clear();
+			GetLinkPoints(link, points);
+			OnDrawSingleLink(points, 0, 1, Color4f(0.2f, 0.8f, 0.9f));
+		}
+	}
+
+	virtual void OnDrawPendingLinks()
+	{
+		if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
+		{
+			if (ddd->_graph == _graph)
+			{
+				std::vector<Point<float>> points;
+				GetConnectingLinkPoints(ddd->_pin, points);
+				OnDrawSingleLink(points, ddd->_pin.isOutput ? 1 : -1, 1, Color4f(0.9f, 0.8f, 0.2f));
+			}
+		}
+	}
+
+	virtual void GetLinkPoints(const IProcGraph::Link& link, std::vector<Point<float>>& outPoints)
+	{
+		auto A = link.output;
+		auto B = link.input;
+		if (auto* LA = pinUIMap.get({ A, true }))
+		{
+			if (auto* LB = pinUIMap.get({ B, false }))
+			{
+				auto PA = GetPinPos(LA);
+				auto PB = GetPinPos(LB);
+				GetLinkPointsRaw(PA, PB, 0, outPoints);
+			}
+		}
+	}
+
+	virtual void GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::vector<Point<float>>& outPoints)
+	{
+		if (auto* P = pinUIMap.get(pin))
+		{
+			auto p0 = GetPinPos(P);
+			Point<float> p1 = { system->eventSystem.prevMouseX, system->eventSystem.prevMouseY };
+			if (!pin.isOutput)
+				std::swap(p0, p1);
+			GetLinkPointsRaw(p0, p1, pin.isOutput ? 1 : -1, outPoints);
+		}
+	}
+
+	// connecting = 0 (not), 1 (output-*), -1 (*-input)
+	virtual void GetLinkPointsRaw(const Point<float>& p0, const Point<float>& p1, int connecting, std::vector<Point<float>>& outPoints)
+	{
+		// TODO bezier w/ extensions
+		outPoints.push_back(p0);
+		if (linkExtension)
+		{
+			outPoints.push_back({ p0.x + linkExtension, p0.y });
+			outPoints.push_back({ p1.x - linkExtension, p1.y });
+		}
+		outPoints.push_back(p1);
+	}
+
+	virtual Point<float> GetPinPos(ProcGraphEditor_NodePin* P)
 	{
 		return
 		{
@@ -331,25 +468,45 @@ struct GraphUI : ui::Node
 		};
 	}
 
+	virtual void OnDrawSingleLink(const std::vector<Point<float>>& points, int connecting, float width, Color4b color)
+	{
+		// TODO polyline
+		for (size_t i = 0; i + 1 < points.size(); i++)
+		{
+			const auto& PA = points[i];
+			const auto& PB = points[i + 1];
+			draw::AALineCol(
+				PA.x, PA.y,
+				PB.x, PB.y,
+				width, color);
+		}
+	}
+
 	IProcGraph* _graph = nullptr;
 	PinUIMap pinUIMap;
+
+	bool drawCurrentLinksOnTop = false;
+	bool drawPendingLinksOnTop = true;
+	float linkExtension = 8.0f;
 };
 
-void GraphNodePinUI::RegisterPin()
+void ProcGraphEditor_NodePin::_RegisterPin()
 {
-	if (auto* p = FindParentOfType<GraphUI>())
+	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
 		p->pinUIMap.insert(_info, this);
 	}
 }
 
-void GraphNodePinUI::UnregisterPin()
+void ProcGraphEditor_NodePin::_UnregisterPin()
 {
-	if (auto* p = FindParentOfType<GraphUI>())
+	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
 		p->pinUIMap.erase(_info);
 	}
 }
+
+} // ui
 
 
 struct Graph
@@ -424,23 +581,22 @@ struct Graph
 		links.push_back(new Link{ output, input });
 	}
 
-	bool TryLink(const LinkEnd& A, const LinkEnd& B)
+	bool CanLink(const LinkEnd& eout, const LinkEnd& ein)
 	{
-		if (A.isOutput == B.isOutput || A.node == B.node)
+		assert(eout.isOutput && !ein.isOutput);
+		if (eout.node == ein.node)
 			return false;
-		auto typeA = A.isOutput ? A.node->GetOutputType(A.pin) : A.node->GetInputType(A.pin);
-		auto typeB = B.isOutput ? B.node->GetOutputType(B.pin) : B.node->GetInputType(B.pin);
-		if (typeA != typeB)
+		auto typeout = eout.node->GetOutputType(eout.pin);
+		auto typein = ein.node->GetInputType(ein.pin);
+		if (typeout != typein)
 			return false;
-
-		if (B.isOutput)
-		{
-			AddLink(B, A);
-		}
-		else
-		{
-			AddLink(A, B);
-		}
+		return true;
+	}
+	bool TryLink(const LinkEnd& eout, const LinkEnd& ein)
+	{
+		if (!CanLink(eout, ein))
+			return false;
+		AddLink(eout, ein);
 		return true;
 	}
 
@@ -464,6 +620,23 @@ struct MakeVec : Graph::Node
 	float defInputs[3] = {};
 };
 
+struct ScaleVec : Graph::Node
+{
+	Node* Clone() override { return new ScaleVec(*this); }
+	const char* GetName() override { return "Scale vector"; }
+	int GetNumInputs() override { return 2; }
+	int GetNumOutputs() override { return 1; }
+	const char* GetInputName(int which) override { return which == 0 ? "Vector" : "Scale"; }
+	const char* GetOutputName(int which) override { return "Vector"; }
+	Graph::Type GetInputType(int which) override { return which == 0 ? Graph::Type::Vector : Graph::Type::Scalar; }
+	Graph::Type GetOutputType(int) override { return Graph::Type::Vector; }
+	float* GetInputDefaultValuePtr(int which) override { return which == 0 ? defInputV : &defInputS; }
+	bool HasPreview() override { return false; }
+
+	float defInputV[3] = {};
+	float defInputS = 1;
+};
+
 struct DotProduct : Graph::Node
 {
 	Node* Clone() override { return new DotProduct(*this); }
@@ -481,7 +654,7 @@ struct DotProduct : Graph::Node
 };
 
 
-struct GraphImpl : IProcGraph
+struct GraphImpl : ui::IProcGraph
 {
 	void GetNodes(std::vector<Node*>& outNodes) override
 	{
@@ -502,7 +675,7 @@ struct GraphImpl : IProcGraph
 		}
 	}
 
-	StringView GetNodeName(Node* node) override
+	std::string GetNodeName(Node* node) override
 	{
 		return static_cast<Graph::Node*>(node)->GetName();
 	}
@@ -515,15 +688,10 @@ struct GraphImpl : IProcGraph
 		return static_cast<Graph::Node*>(node)->GetNumOutputs();
 	}
 
-	const char* GetPinName(const Pin& pin) override
+	std::string GetPinName(const Pin& pin) override
 	{
 		auto* node = static_cast<Graph::Node*>(pin.end.node);
 		return pin.isOutput ? node->GetOutputName(pin.end.num) : node->GetInputName(pin.end.num);
-	}
-	bool IsPinLinked(const Pin& pin) override
-	{
-		Graph::LinkEnd gle = { static_cast<Graph::Node*>(pin.end.node), int(pin.end.num), pin.isOutput };
-		return graph->IsLinked(gle);
 	}
 	void UnlinkPin(const Pin& pin) override
 	{
@@ -550,9 +718,12 @@ struct GraphImpl : IProcGraph
 	{
 		return true;
 	}
-	bool CanLink(const Link&) override
+	bool CanLink(const Link& link) override
 	{
-		return true;
+		return graph->CanLink(
+			{ static_cast<Graph::Node*>(link.output.node), int(link.output.num), true },
+			{ static_cast<Graph::Node*>(link.input.node), int(link.input.num), false }
+		);
 	}
 	bool TryLink(const Link& link) override
 	{
@@ -608,17 +779,24 @@ struct NodeGraphEditorDemo : ui::Node
 	{
 		Graph::Node* makeVec1 = new MakeVec();
 		Graph::Node* dotProd = new DotProduct();
-		makeVec1->position = { 100, 100 };
-		dotProd->position = { 300, 100 };
+		Graph::Node* scaleVec = new ScaleVec();
+
+		makeVec1->position = { 50, 50 };
+		dotProd->position = { 200, 50 };
+		scaleVec->position = { 200, 150 };
+
 		graph.nodes.push_back(makeVec1);
 		graph.nodes.push_back(dotProd);
+		graph.nodes.push_back(scaleVec);
+
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 0 } });
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 1 } });
+		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { scaleVec, 0 } });
 	}
 	void Render(UIContainer* ctx) override
 	{
 		*this + ui::Height(style::Coord::Percent(100));
-		ctx->Make<GraphUI>()->Init(Allocate<GraphImpl>(&graph));
+		ctx->Make<ui::ProcGraphEditor>()->Init(Allocate<GraphImpl>(&graph));
 	}
 
 	Graph graph;
