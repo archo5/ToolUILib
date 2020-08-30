@@ -449,14 +449,50 @@ struct ProcGraphEditor : Node
 	// connecting = 0 (not), 1 (output-*), -1 (*-input)
 	virtual void GetLinkPointsRaw(const Point<float>& p0, const Point<float>& p1, int connecting, std::vector<Point<float>>& outPoints)
 	{
-		// TODO bezier w/ extensions
-		outPoints.push_back(p0);
 		if (linkExtension)
 		{
-			outPoints.push_back({ p0.x + linkExtension, p0.y });
-			outPoints.push_back({ p1.x - linkExtension, p1.y });
+			outPoints.push_back(p0);
+			Point<float> b0 = { p0.x + linkExtension, p0.y };
+			Point<float> b3 = { p1.x - linkExtension, p1.y };
+			GetLinkPointsRawInner(b0, b3, outPoints);
+			outPoints.push_back(p1);
 		}
-		outPoints.push_back(p1);
+		else
+			GetLinkPointsRawInner(p0, p1, outPoints);
+	}
+	virtual void GetTangents(const Point<float>& b0, const Point<float>& b3, Point<float>& b1, Point<float>& b2)
+	{
+		float tanLen = fabsf(b0.x - b3.x) * 0.5f;
+		if (tanLen < 4)
+			tanLen = 4;
+		b1 = { b0.x + tanLen, b0.y };
+		b2 = { b3.x - tanLen, b3.y };
+	}
+	virtual void GetLinkPointsRawInner(const Point<float>& b0, const Point<float>& b3, std::vector<Point<float>>& outPoints)
+	{
+		Point<float> b1, b2;
+		GetTangents(b0, b3, b1, b2);
+
+		// TODO adaptive
+		for (int i = 0; i < 30; i++)
+		{
+			float q = i / 29.f;
+			outPoints.push_back(BezierPoint(b0, b1, b2, b3, q));
+		}
+	}
+
+	static Point<float> Lerp(const Point<float>& a, const Point<float>& b, float q)
+	{
+		return { lerp(a.x, b.x, q), lerp(a.y, b.y, q) };
+	}
+	static Point<float> BezierPoint(const Point<float>& b0, const Point<float>& b1, const Point<float>& b2, const Point<float>& b3, float q)
+	{
+		auto b01 = Lerp(b0, b1, q);
+		auto b12 = Lerp(b1, b2, q);
+		auto b23 = Lerp(b2, b3, q);
+		auto b012 = Lerp(b01, b12, q);
+		auto b123 = Lerp(b12, b23, q);
+		return Lerp(b012, b123, q);
 	}
 
 	virtual Point<float> GetPinPos(ProcGraphEditor_NodePin* P)
@@ -471,6 +507,15 @@ struct ProcGraphEditor : Node
 	virtual void OnDrawSingleLink(const std::vector<Point<float>>& points, int connecting, float width, Color4b color)
 	{
 		// TODO polyline
+		for (size_t i = 0; i + 1 < points.size(); i++)
+		{
+			const auto& PA = points[i];
+			const auto& PB = points[i + 1];
+			draw::AALineCol(
+				PA.x, PA.y,
+				PB.x, PB.y,
+				width + 2, Color4b::Black());
+		}
 		for (size_t i = 0; i + 1 < points.size(); i++)
 		{
 			const auto& PA = points[i];

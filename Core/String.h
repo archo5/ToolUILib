@@ -104,6 +104,17 @@ struct StringView
 		return at < SIZE_MAX ? substr(at + sub._size) : StringView();
 	}
 
+	StringView after_last(StringView sub) const
+	{
+		size_t at = find_last_at(sub, SIZE_MAX, 0);
+		return substr(at + sub._size);
+	}
+	StringView until_last(StringView sub) const
+	{
+		size_t at = find_last_at(sub, SIZE_MAX, 0);
+		return substr(0, at);
+	}
+
 	void skip_c_whitespace(bool single_line_comments = true, bool multiline_comments = true)
 	{
 		bool found = true;

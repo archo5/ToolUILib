@@ -6,6 +6,7 @@
 #include <functional>
 #include "../Core/Memory.h"
 #include "../Core/String.h"
+#include "../Core/HashTable.h"
 #include "Objects.h"
 
 
@@ -54,6 +55,99 @@ struct MenuItem
 	bool isChecked = false;
 	bool isDisabled = false;
 	std::function<void(Menu*, int)> onActivate;
+};
+
+
+// text can be separated with "/", submenus are not supported
+struct MenuItemCollection
+{
+	static constexpr const char* SEPARATOR = "/";
+
+	struct Entry
+	{
+		std::string name;
+		int priority = 100;
+		bool checked = false;
+		bool disabled = false;
+		std::function<void()> function;
+
+		HashMap<std::string, Entry*> children;
+
+		std::vector<MenuItem> _finalizedChildItems;
+
+		~Entry()
+		{
+			for (const auto& ch : children)
+				delete ch.value;
+		}
+		void Finalize()
+		{
+			std::vector<Entry*> sortedChildren;
+			for (const auto& ch : children)
+				sortedChildren.push_back(ch.value);
+
+			std::sort(sortedChildren.begin(), sortedChildren.end(), [](const Entry* a, const Entry* b)
+			{
+				if (a->priority != b->priority)
+					return a->priority < b->priority;
+				return a->name < b->name;
+			});
+
+			_finalizedChildItems.clear();
+			for (Entry* ch : sortedChildren)
+			{
+				ch->Finalize();
+				_finalizedChildItems.push_back(
+					MenuItem(
+						ch->name,
+						{},
+						ch->disabled,
+						ch->checked,
+						ch->_finalizedChildItems
+					).Func(ch->function)
+				);
+			}
+		}
+	};
+
+	Entry* CreateEntry(StringView path)
+	{
+		if (path.empty())
+			return &root;
+
+		size_t sep = path.find_last_at(SEPARATOR, SIZE_MAX, 0);
+		auto parentPath = path.substr(0, sep);
+		auto name = path.substr(sep + 1);
+
+		auto* parent = CreateEntry(parentPath);
+
+		Entry* E = new Entry;
+		E->name.assign(name.data(), name.size());
+		parent->children.insert(E->name, E);
+
+		return E;
+	}
+	std::function<void()>& Add(StringView path, int priority = 100, bool checked = false, bool disabled = false)
+	{
+		Entry* E = CreateEntry(path);
+		E->priority = priority;
+		E->checked = checked;
+		E->disabled = disabled;
+		return E->function;
+	}
+	void Clear()
+	{
+		root.~Entry();
+		new (&root) Entry;
+	}
+
+	ArrayView<MenuItem> Finalize()
+	{
+		root.Finalize();
+		return root._finalizedChildItems;
+	}
+
+	Entry root;
 };
 
 
