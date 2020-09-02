@@ -26,6 +26,7 @@ enum class UIEventType
 
 	Click,
 	Activate, // left click or space with focus (except input)
+	ContextMenu,
 	Change,
 	Commit,
 	Paint,
@@ -366,6 +367,11 @@ struct Tooltip
 	static void Unset();
 	static bool IsSet();
 	static void Render(UIContainer* ctx);
+};
+
+struct ContextMenu
+{
+	static struct MenuItemCollection& Get();
 };
 
 } // ui

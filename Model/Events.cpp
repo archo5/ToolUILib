@@ -1,6 +1,7 @@
 
 #include "Events.h"
 #include "Objects.h"
+#include "Menu.h"
 #include "Native.h"
 #include "System.h"
 
@@ -487,6 +488,29 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			ev.numRepeats = clickCount;
 			ev._stopPropagation = false;
 			BubblingEvent(ev);
+
+			if (which == UIMouseButton::Right && !ev._stopPropagation)
+			{
+				ui::ContextMenu::Get().Clear();
+
+				ev.type = UIEventType::ContextMenu;
+				{
+					UIObject* obj = ev.target;
+					while (obj != nullptr && !ev.IsPropagationStopped())
+					{
+						obj->_DoEvent(ev);
+						obj = obj->parent;
+						ui::ContextMenu::Get().basePriority += ui::MenuItemCollection::BASE_ADVANCE;
+					}
+				}
+
+				if (ui::ContextMenu::Get().HasAny())
+				{
+					ui::Menu menu(ui::ContextMenu::Get().Finalize());
+					menu.Show(container->rootNode);
+					ui::ContextMenu::Get().Clear();
+				}
+			}
 		}
 
 		if (which == UIMouseButton::Left)
@@ -686,6 +710,14 @@ bool Tooltip::IsSet()
 void Tooltip::Render(UIContainer* ctx)
 {
 	g_curTooltipRenderFn(ctx);
+}
+
+
+static MenuItemCollection g_menuItemCollection;
+
+MenuItemCollection& ContextMenu::Get()
+{
+	return g_menuItemCollection;
 }
 
 } // ui

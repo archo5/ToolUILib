@@ -122,6 +122,7 @@ struct ProcGraphLinkDragDropData : DragDropData
 	IProcGraph::Pin _pin;
 };
 
+DataCategoryTag DCT_EditProcGraph[1];
 DataCategoryTag DCT_EditProcGraphNode[1];
 
 struct ProcGraphEditor_NodePin : Node
@@ -187,14 +188,11 @@ struct ProcGraphEditor_NodePin : Node
 			}
 		}
 
-		if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Right)
+		if (e.type == UIEventType::ContextMenu)
 		{
-			MenuItem items[] =
-			{
-				MenuItem("Unlink").Func([this]() { _UnlinkPin(); }),
-			};
-			Menu menu(items);
-			menu.Show(this);
+			auto& CM = ui::ContextMenu::Get();
+			CM.Add("Unlink pin") = [this]() { _UnlinkPin(); };
+			CM.Add("Link pin to...") = [this]() { DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _info)); };
 		}
 	}
 	void OnDestroy() override
@@ -271,6 +269,27 @@ struct ProcGraphEditor_Node : Node
 	{
 		_graph = graph;
 		_node = node;
+	}
+
+	void OnEvent(UIEvent& e) override
+	{
+		Node::OnEvent(e);
+		if (e.type == UIEventType::ContextMenu)
+		{
+			ContextMenu::Get().Add("Delete node", !_graph->CanDeleteNode(_node)) = [this]()
+			{
+				_graph->DeleteNode(_node);
+				Notify(DCT_EditProcGraph, _graph);
+			};
+			if (_graph->HasPreview(_node))
+			{
+				ContextMenu::Get().Add("Show preview", false, _graph->IsPreviewEnabled(_node)) = [this]()
+				{
+					_graph->SetPreviewEnabled(_node, !_graph->IsPreviewEnabled(_node));
+					Notify(DCT_EditProcGraphNode, _node);
+				};
+			}
+		}
 	}
 
 	virtual void OnBuildTitleBar(UIContainer* ctx)
@@ -354,6 +373,8 @@ struct ProcGraphEditor : Node
 
 	void Render(UIContainer* ctx) override
 	{
+		Subscribe(DCT_EditProcGraph, _graph);
+
 		*this + Height(style::Coord::Percent(100));
 		//*ctx->Push<ListBox>() + Height(style::Coord::Percent(100));
 
@@ -676,7 +697,7 @@ struct ScaleVec : Graph::Node
 	Graph::Type GetInputType(int which) override { return which == 0 ? Graph::Type::Vector : Graph::Type::Scalar; }
 	Graph::Type GetOutputType(int) override { return Graph::Type::Vector; }
 	float* GetInputDefaultValuePtr(int which) override { return which == 0 ? defInputV : &defInputS; }
-	bool HasPreview() override { return false; }
+	bool HasPreview() override { return true; }
 
 	float defInputV[3] = {};
 	float defInputS = 1;
@@ -789,6 +810,23 @@ struct GraphImpl : ui::IProcGraph
 	void SetNodePosition(Node* node, const Point<float>& pos) override
 	{
 		static_cast<Graph::Node*>(node)->position = pos;
+	}
+
+	bool HasPreview(Node* node)
+	{
+		return static_cast<Graph::Node*>(node)->HasPreview();
+	}
+	bool IsPreviewEnabled(Node* node)
+	{
+		return static_cast<Graph::Node*>(node)->showPreview;
+	}
+	void SetPreviewEnabled(Node* node, bool enabled)
+	{
+		static_cast<Graph::Node*>(node)->showPreview = enabled;
+	}
+	void PreviewUI(Node*, UIContainer* ctx)
+	{
+		ctx->MakeWithText<ui::Panel>("Preview");
 	}
 
 	bool CanDeleteNode(Node*) override { return true; }

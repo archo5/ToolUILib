@@ -62,11 +62,16 @@ struct MenuItem
 struct MenuItemCollection
 {
 	static constexpr const char* SEPARATOR = "/";
+	static constexpr int SEPARATOR_THRESHOLD = 100;
+	static constexpr int BASE_ADVANCE = 10000;
+	static constexpr int MIN_SAFE_PRIORITY = -4950;
+	static constexpr int MAX_SAFE_PRIORITY = 4950;
 
 	struct Entry
 	{
 		std::string name;
-		int priority = 100;
+		int minPriority = 0;
+		int maxPriority = 0;
 		bool checked = false;
 		bool disabled = false;
 		std::function<void()> function;
@@ -82,20 +87,30 @@ struct MenuItemCollection
 		}
 		void Finalize()
 		{
+			if (children.size() == 0)
+				return;
+
 			std::vector<Entry*> sortedChildren;
 			for (const auto& ch : children)
 				sortedChildren.push_back(ch.value);
 
 			std::sort(sortedChildren.begin(), sortedChildren.end(), [](const Entry* a, const Entry* b)
 			{
-				if (a->priority != b->priority)
-					return a->priority < b->priority;
+				if (a->maxPriority != b->minPriority)
+					return a->maxPriority < b->minPriority;
 				return a->name < b->name;
 			});
 
 			_finalizedChildItems.clear();
+			int prevPrio = sortedChildren[0]->minPriority;
 			for (Entry* ch : sortedChildren)
 			{
+				if (ch->minPriority - prevPrio >= SEPARATOR_THRESHOLD)
+				{
+					_finalizedChildItems.push_back(MenuItem::Separator());
+				}
+				prevPrio = ch->maxPriority;
+
 				ch->Finalize();
 				_finalizedChildItems.push_back(
 					MenuItem(
@@ -110,27 +125,40 @@ struct MenuItemCollection
 		}
 	};
 
-	Entry* CreateEntry(StringView path)
+	Entry* CreateEntry(StringView path, int priority)
 	{
 		if (path.empty())
 			return &root;
 
-		size_t sep = path.find_last_at(SEPARATOR, SIZE_MAX, 0);
-		auto parentPath = path.substr(0, sep);
-		auto name = path.substr(sep + 1);
+		size_t sep = path.find_last_at(SEPARATOR);
+		auto parentPath = path.substr(0, sep == SIZE_MAX ? 0 : sep);
+		auto name = path.substr(sep == SIZE_MAX ? 0 : sep + strlen(SEPARATOR));
+		std::string nameStr(name.data(), name.size());
 
-		auto* parent = CreateEntry(parentPath);
+		auto* parent = CreateEntry(parentPath, priority);
 
-		Entry* E = new Entry;
-		E->name.assign(name.data(), name.size());
-		parent->children.insert(E->name, E);
+		auto it = parent->children.find(nameStr);
+		if (it.is_valid())
+		{
+			Entry* E = it->value;
+			E->minPriority = std::min(E->minPriority, priority);
+			E->maxPriority = std::max(E->maxPriority, priority);
+			return E;
+		}
+		else
+		{
+			Entry* E = new Entry;
+			E->name = nameStr;
+			E->minPriority = priority;
+			E->maxPriority = priority;
+			parent->children.insert(E->name, E);
 
-		return E;
+			return E;
+		}
 	}
-	std::function<void()>& Add(StringView path, int priority = 100, bool checked = false, bool disabled = false)
+	std::function<void()>& Add(StringView path, bool disabled = false, bool checked = false, int priority = 0)
 	{
-		Entry* E = CreateEntry(path);
-		E->priority = priority;
+		Entry* E = CreateEntry(path, basePriority + priority);
 		E->checked = checked;
 		E->disabled = disabled;
 		return E->function;
@@ -139,6 +167,11 @@ struct MenuItemCollection
 	{
 		root.~Entry();
 		new (&root) Entry;
+		basePriority = 0;
+	}
+	bool HasAny() const
+	{
+		return root.children.size() != 0;
 	}
 
 	ArrayView<MenuItem> Finalize()
@@ -148,6 +181,7 @@ struct MenuItemCollection
 	}
 
 	Entry root;
+	int basePriority = 0;
 };
 
 
