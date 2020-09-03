@@ -107,6 +107,7 @@ struct Color4f
 	Color4f(float f) : r(f), g(f), b(f), a(f) {}
 	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
+	Color4f(const Color4b& c) : r(c.r / 255.f), g(c.g / 255.f), b(c.b / 255.f), a(c.a / 255.f) {}
 
 	bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 

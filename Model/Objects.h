@@ -363,6 +363,11 @@ struct BoxElement : UIElement
 {
 };
 
+struct Placeholder : UIElement
+{
+	void OnPaint() override;
+};
+
 struct Subscription;
 struct DataCategoryTag {};
 

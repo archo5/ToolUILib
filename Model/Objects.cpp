@@ -361,9 +361,15 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 	auto style = GetStyle();
 	auto s = GetEstimatedWidth(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
+	auto width = style.GetWidth();
+	if (!width.IsDefined())
+	{
+		auto height = style::Coord::Undefined();
+		GetSize(width, height);
+	}
 
 	float w_add = ResolveUnits(style.GetMarginLeft(), containerSize.x) + ResolveUnits(style.GetMarginRight(), containerSize.x);
-	if (box_sizing == style::BoxSizing::ContentBox || !style.GetWidth().IsDefined())
+	if (box_sizing == style::BoxSizing::ContentBox || !width.IsDefined())
 	{
 		w_add += ResolveUnits(style.GetPaddingLeft(), containerSize.x) + ResolveUnits(style.GetPaddingRight(), containerSize.x);
 	}
@@ -385,9 +391,15 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 	auto style = GetStyle();
 	auto s = GetEstimatedHeight(containerSize, type);
 	auto box_sizing = style.GetBoxSizing();
+	auto height = style.GetHeight();
+	if (!height.IsDefined())
+	{
+		auto width = style::Coord::Undefined();
+		GetSize(width, height);
+	}
 
 	float h_add = ResolveUnits(style.GetMarginTop(), containerSize.y) + ResolveUnits(style.GetMarginBottom(), containerSize.y);
-	if (box_sizing == style::BoxSizing::ContentBox || !style.GetHeight().IsDefined())
+	if (box_sizing == style::BoxSizing::ContentBox || !height.IsDefined())
 	{
 		h_add += ResolveUnits(style.GetPaddingTop(), containerSize.y) + ResolveUnits(style.GetPaddingBottom(), containerSize.y);
 	}
@@ -818,6 +830,31 @@ void TextElement::OnPaint()
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+	PaintChildren();
+}
+
+void Placeholder::OnPaint()
+{
+	draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, Color4b(0, 127));
+	draw::RectCutoutCol(finalRectCPB, finalRectCPB.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
+
+	char text[32];
+	snprintf(text, sizeof(text), "%gx%g", finalRectCPB.GetWidth(), finalRectCPB.GetHeight());
+
+	int size = int(GetFontSize());
+	int weight = GetFontWeight();
+	bool italic = GetFontIsItalic();
+	Color4b color = GetTextColor();
+
+	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	styleProps->paint_func(this);
+
+	auto r = GetContentRect();
+	float w = r.x1 - r.x0;
+	float tw = GetTextWidth(font, size, text);
+	draw::TextLine(font, size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+
 	PaintChildren();
 }
 

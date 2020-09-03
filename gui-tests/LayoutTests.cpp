@@ -219,6 +219,16 @@ void Test_StackingLayoutVariations(UIContainer* ctx)
 
 struct SizeTest : ui::Node
 {
+	struct SizedBox : ui::Placeholder
+	{
+		void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
+		{
+			outWidth = w;
+			outHeight = h;
+		}
+		int w = 40;
+		int h = 40;
+	};
 	struct Test
 	{
 		UIObject* obj;
@@ -250,7 +260,7 @@ struct SizeTest : ui::Node
 			auto& txt1 = ctx->Text("Text size + padding") + ui::Padding(5);
 			TestContentSize(txt1, ceilf(GetTextWidth("Text size + padding")), GetFontHeight());
 			TestFullSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
-			TestEstSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
+			TestFullEstSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
 		}
 
 		{
@@ -302,6 +312,39 @@ struct SizeTest : ui::Node
 			TestContentSize(box, 140, GetFontHeight());
 			TestFullSize(box, 140 + 10, GetFontHeight() + 10);
 		}
+
+		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		{
+			auto& box = *ctx->Make<SizedBox>();
+			TestContentSize(box, 40, 40);
+			TestFullSize(box, 40, 40);
+			TestFullEstSize(box, 40, 40);
+		}
+		{
+			auto& box = *ctx->Make<SizedBox>() + ui::Width(50);
+			TestContentSize(box, 50, 40);
+			TestFullSize(box, 50, 40);
+			TestFullEstSize(box, 50, 40);
+		}
+		{
+			auto& box = *ctx->Make<SizedBox>() + ui::Width(50) + ui::Padding(2, 7, 8, 3);
+			TestContentSize(box, 40, 30);
+			TestFullSize(box, 50, 40);
+			TestFullEstSize(box, 50, 40);
+		}
+		{
+			auto& box = *ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Width(50) + ui::Padding(2, 7, 8, 3);
+			TestContentSize(box, 40, 30);
+			TestFullSize(box, 50, 40);
+			TestFullEstSize(box, 50, 40);
+		}
+		{
+			auto& box = *ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::ContentBox) + ui::Height(30) + ui::Padding(2, 7, 8, 3);
+			TestContentSize(box, 40, 30);
+			TestFullSize(box, 50, 40);
+			TestFullEstSize(box, 50, 40);
+		}
+		ctx->Pop();
 	}
 
 	static std::string TestSize(UIRect& r, float w, float h)
@@ -349,7 +392,7 @@ struct SizeTest : ui::Node
 		tests.push_back({ &obj, fn });
 	}
 
-	void TestEstSize(UIObject& obj, float w, float h)
+	void TestFullEstSize(UIObject& obj, float w, float h)
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{

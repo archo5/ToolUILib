@@ -96,6 +96,7 @@ struct PointAnchoredPlacement : Placement
 	Point<float> anchor = { 0, 0 };
 	Point<float> pivot = { 0, 0 };
 	Point<float> bias = { 0, 0 };
+	bool useContentBox = false;
 };
 
 struct RectAnchoredPlacement : Placement

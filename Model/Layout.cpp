@@ -17,8 +17,18 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	float w = curObj->GetFullEstimatedWidth(contSize, style::EstSizeType::Expanding, false).min;
 	float h = curObj->GetFullEstimatedHeight(contSize, style::EstSizeType::Expanding, false).min;
 
-	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
-	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
+	float xo = 0, yo = 0;
+	if (useContentBox)
+	{
+		auto pr = curObj->GetPaddingRect(curObj->styleProps, contSize.x);
+		xo = pr.x0;
+		yo = pr.y0;
+		w -= pr.x0 + pr.x1;
+		h -= pr.y0 + pr.y1;
+	}
+
+	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x - xo + bias.x;
+	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y - yo + bias.y;
 	outRect = { x, y, x + w, y + h };
 }
 

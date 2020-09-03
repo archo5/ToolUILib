@@ -58,6 +58,7 @@ struct IProcGraph
 
 	// basic pin info
 	virtual std::string GetPinName(const Pin&) = 0;
+	virtual ui::Color4b GetPinColor(const Pin& pin) { return ui::Color4b(255, 0); }
 	virtual void InputPinEditorUI(const Pin& pin, UIContainer*) {}
 
 	// pin linkage info (with default suboptimal implementations)
@@ -89,6 +90,11 @@ struct IProcGraph
 	virtual bool CanLink(const Link&) { return true; } // does not have to evaluate all preconditions, used only for highlighting
 	virtual bool TryLink(const Link&) = 0;
 	virtual bool Unlink(const Link&) = 0;
+	virtual Color4b GetLinkColor(const Link&, bool selected, bool hovered)
+	{
+		return Color4f(0.2f, 0.8f, 0.9f);
+	}
+	virtual Color4b GetNewLinkColor(const Pin&) { return Color4f(0.9f, 0.8f, 0.2f); }
 
 	// node position state
 	virtual Point<float> GetNodePosition(Node*) = 0;
@@ -132,20 +138,30 @@ struct ProcGraphEditor_NodePin : Node
 	void Render(UIContainer* ctx) override
 	{
 		_sel = ctx->Push<Selectable>();
+		*this + MakeDraggable();
 		*_sel + MakeDraggable();
-		*_sel + StackingDirection(!_info.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
+		*_sel + StackingDirection(!_pin.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
 
-		ctx->Text(_graph->GetPinName(_info));
+		ctx->Text(_graph->GetPinName(_pin));
 
-		if (!_info.isOutput && !_graph->IsPinLinked(_info))
+		if (!_pin.isOutput && !_graph->IsPinLinked(_pin))
 		{
 			// TODO not implemented right->left
 			*_sel + Layout(style::layouts::StackExpand());
 
-			_graph->InputPinEditorUI(_info, ctx);
+			_graph->InputPinEditorUI(_pin, ctx);
 		}
 
 		ctx->Pop();
+
+		auto& cb = *ctx->Make<ColorBlock>();
+		cb.SetColor(_graph->GetPinColor(_pin));
+		cb + MakeOverlay() + ui::BoxSizing(style::BoxSizing::ContentBox) + Width(4) + Height(6);
+		auto* pap = Allocate<style::PointAnchoredPlacement>();
+		pap->pivot = { _pin.isOutput ? 0.f : 1.f, 0.5f };
+		pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
+		pap->useContentBox = true;
+		cb.GetStyle().SetPlacement(pap);
 	}
 	void OnEvent(UIEvent& e) override
 	{
@@ -153,7 +169,7 @@ struct ProcGraphEditor_NodePin : Node
 		{
 			_dragged = true;
 			_sel->Init(_dragged || _dragHL);
-			DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _info));
+			DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _pin));
 		}
 		if (e.type == UIEventType::DragEnd)
 		{
@@ -164,12 +180,12 @@ struct ProcGraphEditor_NodePin : Node
 		{
 			if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
 			{
-				if (_info.end.node != ddd->_pin.end.node &&
-					_info.isOutput != ddd->_pin.isOutput)
+				if (_pin.end.node != ddd->_pin.end.node &&
+					_pin.isOutput != ddd->_pin.isOutput)
 				{
-					_dragHL = _info.isOutput
-						? _graph->CanLink({ _info.end, ddd->_pin.end })
-						: _graph->CanLink({ ddd->_pin.end, _info.end });
+					_dragHL = _pin.isOutput
+						? _graph->CanLink({ _pin.end, ddd->_pin.end })
+						: _graph->CanLink({ ddd->_pin.end, _pin.end });
 				}
 			}
 			_sel->Init(_dragged || _dragHL);
@@ -183,7 +199,7 @@ struct ProcGraphEditor_NodePin : Node
 		{
 			if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
 			{
-				if (_graph == ddd->_graph && _info.isOutput != ddd->_pin.isOutput)
+				if (_graph == ddd->_graph && _pin.isOutput != ddd->_pin.isOutput)
 					_TryLink(ddd->_pin);
 			}
 		}
@@ -192,9 +208,21 @@ struct ProcGraphEditor_NodePin : Node
 		{
 			auto& CM = ui::ContextMenu::Get();
 			CM.Add("Unlink pin") = [this]() { _UnlinkPin(); };
-			CM.Add("Link pin to...") = [this]() { DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _info)); };
+			CM.Add("Link pin to...") = [this]() { DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _pin)); };
 		}
 	}
+#if 0
+	void OnPaint() override
+	{
+		Node::OnPaint();
+
+		auto c = _graph->GetPinColor(_pin);
+		if (_pin.isOutput)
+			draw::RectCol(finalRectCPB.x1 - 2, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, c);
+		else
+			draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x0 + 2, finalRectCPB.y1, c);
+	}
+#endif
 	void OnDestroy() override
 	{
 		_UnregisterPin();
@@ -202,7 +230,7 @@ struct ProcGraphEditor_NodePin : Node
 	void Init(IProcGraph* graph, IProcGraph::Node* node, uintptr_t pin, bool isOutput)
 	{
 		_graph = graph;
-		_info = { node, pin, isOutput };
+		_pin = { node, pin, isOutput };
 		_RegisterPin();
 	}
 
@@ -211,31 +239,31 @@ struct ProcGraphEditor_NodePin : Node
 
 	void _TryLink(const IProcGraph::Pin& pin)
 	{
-		bool success = _info.isOutput
-			? _graph->TryLink({ _info.end, pin.end })
-			: _graph->TryLink({ pin.end, _info.end });
+		bool success = _pin.isOutput
+			? _graph->TryLink({ _pin.end, pin.end })
+			: _graph->TryLink({ pin.end, _pin.end });
 		if (success)
 		{
-			Notify(DCT_EditProcGraphNode, _info.end.node);
+			Notify(DCT_EditProcGraphNode, _pin.end.node);
 			Notify(DCT_EditProcGraphNode, pin.end.node);
 		}
 	}
 	void _UnlinkPin()
 	{
 		std::vector<IProcGraph::Link> links;
-		_graph->GetPinLinks(_info, links);
+		_graph->GetPinLinks(_pin, links);
 
-		_graph->UnlinkPin(_info);
+		_graph->UnlinkPin(_pin);
 
-		Notify(DCT_EditProcGraphNode, _info.end.node);
+		Notify(DCT_EditProcGraphNode, _pin.end.node);
 		for (const auto& link : links)
 		{
-			Notify(DCT_EditProcGraphNode, (_info.isOutput ? link.input : link.output).node);
+			Notify(DCT_EditProcGraphNode, (_pin.isOutput ? link.input : link.output).node);
 		}
 	}
 
 	IProcGraph* _graph = nullptr;
-	IProcGraph::Pin _info = {};
+	IProcGraph::Pin _pin = {};
 
 	bool _dragged = false;
 	bool _dragHL = false;
@@ -423,7 +451,7 @@ struct ProcGraphEditor : Node
 		{
 			points.clear();
 			GetLinkPoints(link, points);
-			OnDrawSingleLink(points, 0, 1, Color4f(0.2f, 0.8f, 0.9f));
+			OnDrawSingleLink(points, 0, 1, _graph->GetLinkColor(link, false, false));
 		}
 	}
 
@@ -435,7 +463,7 @@ struct ProcGraphEditor : Node
 			{
 				std::vector<Point<float>> points;
 				GetConnectingLinkPoints(ddd->_pin, points);
-				OnDrawSingleLink(points, ddd->_pin.isOutput ? 1 : -1, 1, Color4f(0.9f, 0.8f, 0.2f));
+				OnDrawSingleLink(points, ddd->_pin.isOutput ? 1 : -1, 1, _graph->GetNewLinkColor(ddd->_pin));
 			}
 		}
 	}
@@ -520,7 +548,7 @@ struct ProcGraphEditor : Node
 	{
 		return
 		{
-			!P->_info.isOutput ? P->finalRectCPB.x0 : P->finalRectCPB.x1,
+			!P->_pin.isOutput ? P->finalRectCPB.x0 : P->finalRectCPB.x1,
 			(P->finalRectCPB.y0 + P->finalRectCPB.y1) * 0.5f,
 		};
 	}
@@ -560,7 +588,7 @@ void ProcGraphEditor_NodePin::_RegisterPin()
 {
 	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
-		p->pinUIMap.insert(_info, this);
+		p->pinUIMap.insert(_pin, this);
 	}
 }
 
@@ -568,7 +596,7 @@ void ProcGraphEditor_NodePin::_UnregisterPin()
 {
 	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
-		p->pinUIMap.erase(_info);
+		p->pinUIMap.erase(_pin);
 	}
 }
 
@@ -665,6 +693,10 @@ struct Graph
 		AddLink(eout, ein);
 		return true;
 	}
+	Type GetPinType(const LinkEnd& e)
+	{
+		return e.isOutput ? e.node->GetOutputType(e.pin) : e.node->GetInputType(e.pin);
+	}
 
 	std::vector<Node*> nodes;
 	std::vector<Link*> links;
@@ -710,7 +742,7 @@ struct DotProduct : Graph::Node
 	int GetNumInputs() override { return 2; }
 	int GetNumOutputs() override { return 1; }
 	const char* GetInputName(int which) override { return which == 0 ? "A" : "B"; }
-	const char* GetOutputName(int which) override { return "Dot product"; }
+	const char* GetOutputName(int which) override { return "Output"; }
 	Graph::Type GetInputType(int) override { return Graph::Type::Vector; }
 	Graph::Type GetOutputType(int) override { return Graph::Type::Scalar; }
 	float* GetInputDefaultValuePtr(int which) override { return defInputs[which]; }
@@ -719,6 +751,12 @@ struct DotProduct : Graph::Node
 	float defInputs[2][3] = {};
 };
 
+
+static ui::Color4b g_graphColors[] = 
+{
+	ui::Color4f(0.9f, 0.1f, 0),
+	ui::Color4f(0.3f, 0.6f, 0.9f),
+};
 
 struct GraphImpl : ui::IProcGraph
 {
@@ -758,6 +796,10 @@ struct GraphImpl : ui::IProcGraph
 	{
 		auto* node = static_cast<Graph::Node*>(pin.end.node);
 		return pin.isOutput ? node->GetOutputName(pin.end.num) : node->GetInputName(pin.end.num);
+	}
+	ui::Color4b GetPinColor(const Pin& pin) override
+	{
+		return g_graphColors[int(graph->GetPinType({ static_cast<Graph::Node*>(pin.end.node), int(pin.end.num), pin.isOutput }))];
 	}
 	void UnlinkPin(const Pin& pin) override
 	{
@@ -802,6 +844,14 @@ struct GraphImpl : ui::IProcGraph
 	{
 		return false;
 	}
+	ui::Color4b GetLinkColor(const Link& link, bool selected, bool hovered) override
+	{
+		return GetPinColor({ link.output, true });
+	}
+	virtual ui::Color4b GetNewLinkColor(const Pin& pin)
+	{
+		return GetPinColor(pin);
+	}
 
 	Point<float> GetNodePosition(Node* node) override
 	{
@@ -832,6 +882,16 @@ struct GraphImpl : ui::IProcGraph
 	bool CanDeleteNode(Node*) override { return true; }
 	void DeleteNode(Node* node) override
 	{
+		for (auto it = graph->links.begin(), itend = graph->links.end(); it != itend; )
+		{
+			if ((*it)->input.node == node || (*it)->output.node == node)
+			{
+				delete *it;
+				it = graph->links.erase(it);
+			}
+			else
+				it++;
+		}
 		for (auto it = graph->nodes.begin(), itend = graph->nodes.end(); it != itend; it++)
 		{
 			if (*it == node)
