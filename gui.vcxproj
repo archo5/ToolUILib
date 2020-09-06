@@ -134,9 +134,9 @@
     <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Editors\ProcGraphEditor.cpp" />
+    <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
-    <ClCompile Include="Model\DataStructureEditors.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
     <ClCompile Include="Model\Events.cpp" />
     <ClCompile Include="Model\Graphics.cpp" />
@@ -163,10 +163,10 @@
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
     <ClInclude Include="Editors\ProcGraphEditor.h" />
+    <ClInclude Include="Editors\SequenceEditor.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Animation.h" />
     <ClInclude Include="Model\Controls.h" />
-    <ClInclude Include="Model\DataStructureEditors.h" />
     <ClInclude Include="Model\Docking.h" />
     <ClInclude Include="Model\Events.h" />
     <ClInclude Include="Model\Graphics.h" />

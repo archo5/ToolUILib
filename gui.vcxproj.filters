@@ -64,10 +64,10 @@
     <ClCompile Include="Model\Animation.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="Model\DataStructureEditors.cpp">
-      <Filter>Model</Filter>
-    </ClCompile>
     <ClCompile Include="Editors\ProcGraphEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
+    <ClCompile Include="Editors\SequenceEditor.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
   </ItemGroup>
@@ -149,10 +149,10 @@
     <ClInclude Include="Model\Animation.h">
       <Filter>Model</Filter>
     </ClInclude>
-    <ClInclude Include="Model\DataStructureEditors.h">
-      <Filter>Model</Filter>
-    </ClInclude>
     <ClInclude Include="Editors\ProcGraphEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\SequenceEditor.h">
       <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,5 @@
 
-#include "DataStructureEditors.h"
+#include "SequenceEditor.h"
 
 #include "Menu.h"
 
