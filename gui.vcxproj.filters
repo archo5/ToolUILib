@@ -67,6 +67,9 @@
     <ClCompile Include="Model\DataStructureEditors.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Editors\ProcGraphEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -149,6 +152,9 @@
     <ClInclude Include="Model\DataStructureEditors.h">
       <Filter>Model</Filter>
     </ClInclude>
+    <ClInclude Include="Editors\ProcGraphEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -162,6 +168,9 @@
     </Filter>
     <Filter Include="UniParser">
       <UniqueIdentifier>{c5b8e5a1-15a6-49f6-9d17-6dc4d05e4d1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editors">
+      <UniqueIdentifier>{c1dfc1e9-aafa-430e-ada8-74558a8962f7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

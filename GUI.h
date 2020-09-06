@@ -16,3 +16,5 @@
 #include "Model/Graphics.h"
 #include "Model/ImmediateMode.h"
 #include "Model/Animation.h"
+
+#include "Editors/ProcGraphEditor.h"
