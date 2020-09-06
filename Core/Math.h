@@ -9,6 +9,8 @@ template <class T> struct Point
 {
 	T x, y;
 
+	Point<T> operator + (const Point<T>& o) const { return { x + o.x, y + o.y }; }
+	Point<T> operator - (const Point<T>& o) const { return { x - o.x, y - o.y }; }
 	template <class U> Point<U> Cast() const { return { U(x), U(y) }; }
 };
 

@@ -51,6 +51,16 @@ struct IProcGraph
 	virtual void GetNodes(std::vector<Node*>& outNodes) = 0;
 	virtual void GetLinks(std::vector<Link>& outLinks) = 0;
 
+	// node types to add
+	typedef Node* NodeCreationFunc(IProcGraph*, const char* path, uintptr_t id);
+	struct NodeTypeEntry
+	{
+		const char* path;
+		uintptr_t id;
+		NodeCreationFunc* func;
+	};
+	virtual void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) = 0;
+
 	// basic node info
 	virtual std::string GetNodeName(Node*) = 0;
 	virtual uintptr_t GetNodeInputCount(Node*) = 0;
@@ -280,6 +290,7 @@ struct ProcGraphEditor_Node : Node
 	{
 		Subscribe(DCT_EditProcGraphNode, _node);
 
+		SetStyle(Theme::current->object); // TODO fix reset
 		auto s = GetStyle(); // for style only
 		s.SetWidth(style::Coord::Undefined());
 		s.SetMinWidth(100);
@@ -293,10 +304,11 @@ struct ProcGraphEditor_Node : Node
 
 		ctx->Pop();
 	}
-	void Init(IProcGraph* graph, IProcGraph::Node* node)
+	void Init(IProcGraph* graph, IProcGraph::Node* node, Point<float> vOff)
 	{
 		_graph = graph;
 		_node = node;
+		_viewOffset = vOff;
 	}
 
 	void OnEvent(UIEvent& e) override
@@ -323,7 +335,7 @@ struct ProcGraphEditor_Node : Node
 	virtual void OnBuildTitleBar(UIContainer* ctx)
 	{
 		auto* placement = Allocate<style::PointAnchoredPlacement>();
-		placement->bias = _graph->GetNodePosition(_node);
+		placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
 		GetStyle().SetPlacement(placement);
 
 		*ctx->Push<Selectable>()->Init(_isDragging)
@@ -393,6 +405,7 @@ struct ProcGraphEditor_Node : Node
 	bool _isDragging = false;
 	Point<float> _dragStartPos = {};
 	Point<float> _dragStartMouse = {};
+	Point<float> _viewOffset = {};
 };
 
 struct ProcGraphEditor : Node
@@ -403,12 +416,35 @@ struct ProcGraphEditor : Node
 	{
 		Subscribe(DCT_EditProcGraph, _graph);
 
+		SetStyle(Theme::current->object); // TODO fix reset
 		*this + Height(style::Coord::Percent(100));
 		//*ctx->Push<ListBox>() + Height(style::Coord::Percent(100));
 
 		OnBuildNodes(ctx);
 
 		//ctx->Pop();
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		Node::OnEvent(e);
+
+		if (e.type == UIEventType::ContextMenu)
+		{
+			if (!ContextMenu::Get().HasAny())
+				OnMakeCreationMenu(ContextMenu::Get());
+		}
+
+		if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Middle)
+		{
+			origMPos = { e.x, e.y };
+			origVPos = viewOffset;
+		}
+		if (e.type == UIEventType::MouseMove && HasFlags(UIObject_IsClickedM))
+		{
+			Point<float> mpos = { e.x, e.y };
+			viewOffset = origVPos + mpos - origMPos;
+			Rerender();
+		}
 	}
 	void OnPaint() override
 	{
@@ -437,7 +473,26 @@ struct ProcGraphEditor : Node
 		_graph->GetNodes(nodes);
 		for (auto* N : nodes)
 		{
-			ctx->Make<ProcGraphEditor_Node>()->Init(_graph, N);
+			ctx->Make<ProcGraphEditor_Node>()->Init(_graph, N, viewOffset);
+		}
+	}
+
+	virtual void OnMakeCreationMenu(ui::MenuItemCollection& menu)
+	{
+		ContextMenu::Get().Add("- Create a new node -", true, false, MenuItemCollection::MIN_SAFE_PRIORITY);
+
+		std::vector<IProcGraph::NodeTypeEntry> nodes;
+		_graph->GetAvailableNodeTypes(nodes);
+
+		auto& CM = ContextMenu::Get();
+		for (auto& e : nodes)
+		{
+			CM.Add(e.path) = [this, graph{ _graph }, e{ e }]()
+			{
+				auto* node = e.func(graph, e.path, e.id);
+				graph->SetNodePosition(node, system->eventSystem.clickStartPositions[1]);
+				Notify(DCT_EditProcGraph, graph);
+			};
 		}
 	}
 
@@ -578,6 +633,11 @@ struct ProcGraphEditor : Node
 
 	IProcGraph* _graph = nullptr;
 	PinUIMap pinUIMap;
+
+	Point<float> viewOffset = {};
+
+	Point<float> origMPos = {};
+	Point<float> origVPos = {};
 
 	bool drawCurrentLinksOnTop = false;
 	bool drawPendingLinksOnTop = true;
@@ -777,6 +837,20 @@ struct GraphImpl : ui::IProcGraph
 				uintptr_t(l->input.pin),
 			});
 		}
+	}
+	static Node* AddNode(IProcGraph* graph, Graph::Node* node)
+	{
+		static_cast<GraphImpl*>(graph)->graph->nodes.push_back(node);
+		return node;
+	}
+	void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) override
+	{
+		outEntries.push_back({ "Vector/Make", 0,
+			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new MakeVec); } });
+		outEntries.push_back({ "Vector/Scale", 0,
+			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new ScaleVec); } });
+		outEntries.push_back({ "Vector/Dot product", 0,
+			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new DotProduct); } });
 	}
 
 	std::string GetNodeName(Node* node) override
