@@ -1,7 +1,7 @@
 
 #include "SequenceEditor.h"
 
-#include "Menu.h"
+#include "../Model/Menu.h"
 
 
 namespace ui {

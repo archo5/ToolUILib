@@ -8,7 +8,6 @@
 #include "Model/Events.h"
 #include "Model/Controls.h"
 #include "Model/Tables.h"
-#include "Model/DataStructureEditors.h"
 #include "Model/Native.h"
 #include "Model/System.h"
 #include "Model/Menu.h"
@@ -17,4 +16,5 @@
 #include "Model/ImmediateMode.h"
 #include "Model/Animation.h"
 
+#include "Editors/SequenceEditor.h"
 #include "Editors/ProcGraphEditor.h"

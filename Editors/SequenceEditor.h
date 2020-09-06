@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "Objects.h"
-#include "Controls.h"
-#include "System.h"
+#include "../Model/Objects.h"
+#include "../Model/Controls.h"
+#include "../Model/System.h"
 
 
 namespace ui {
