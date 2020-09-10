@@ -193,6 +193,22 @@ struct Slider : UIElement
 
 struct Property : UIElement
 {
+	struct Scope
+	{
+		Scope(UIContainer* c, const char* lblstr = nullptr) : ctx(c)
+		{
+			Begin(ctx);
+			label = lblstr ? &Label(ctx, lblstr) : nullptr;
+		}
+		~Scope()
+		{
+			End(ctx);
+		}
+
+		UIContainer* ctx;
+		UIObject* label;
+	};
+
 	Property();
 	static void Begin(UIContainer* ctx, const char* label = nullptr);
 	static void End(UIContainer* ctx);

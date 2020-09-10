@@ -18,6 +18,8 @@ class Menu;
 namespace platform {
 uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
+Point<int> GetCursorScreenPos();
+Color4b GetColorAtScreenPos(Point<int> pos);
 } // platform
 
 

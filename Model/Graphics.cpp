@@ -603,22 +603,44 @@ void ColorPicker::Render(UIContainer* ctx)
 					+ StackingDirection(style::StackingDirection::LeftToRight)
 					+ Padding(3)
 					+ MakeDraggable([this](UIEvent& e) { ui::DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
-					+ EventHandler(UIEventType::DragDrop, [this](UIEvent&)
+					+ EventHandler(UIEventType::DragDrop, [this](UIEvent& e)
 				{
 					if (auto* cddd = ui::DragDrop::GetData<ColorDragDropData>())
 					{
 						_color.SetRGBA(cddd->color);
-						Rerender();
+						e.context->OnChange(this);
 					}
 				});
 				ctx->Make<ColorBlock>()->SetColor(_color.GetRGBA().GetOpaque()) + Width(50) + Height(60) + Padding(0);
 				ctx->Make<ColorBlock>()->SetColor(_color.GetRGBA()) + Width(50) + Height(60) + Padding(0);
 				ctx->Pop();
 
-				//ctx->PushBox() + Layout(style::layouts::StackExpand()) + StackingDirection(style::StackingDirection::LeftToRight) + Height(22);
-				ctx->Text("Hex:") + Width(30) + Height(22);
+				ctx->PushBox();
+
+				ctx->PushBox() + Layout(style::layouts::StackExpand()) + StackingDirection(style::StackingDirection::LeftToRight) + Height(22);
+				*ctx->Make<BoxElement>() + Width(style::Coord::Fraction(1));
+				ctx->Text("Hex:") + Height(22);
 				ctx->Make<Textbox>()->Init(_color.hex) + Width(50) + EventHandler(UIEventType::Change, [this](UIEvent&) { _color._UpdateHex(); });
-				//ctx->Pop();
+				ctx->Pop();
+
+				auto& pick = *ctx->MakeWithText<Button>("Pick");
+				pick.HandleEvent() = [this](UIEvent& e)
+				{
+					if (e.type == UIEventType::SetCursor)
+					{
+						// TODO is it possible to set the cursor between click/capture?
+						e.context->SetDefaultCursor(DefaultCursor::Crosshair);
+						e.StopPropagation();
+					}
+					if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+					{
+						auto col = platform::GetColorAtScreenPos(platform::GetCursorScreenPos());
+						_color.SetRGBA(col);
+						e.context->OnChange(this);
+					}
+				};
+
+				ctx->Pop();
 			}
 			Property::End(ctx);
 

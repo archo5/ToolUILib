@@ -253,6 +253,29 @@ uint32_t GetDoubleClickTime()
 	return ::GetDoubleClickTime();
 }
 
+Point<int> GetCursorScreenPos()
+{
+	POINT p;
+	if (::GetCursorPos(&p))
+		return { p.x, p.y };
+	return { -1, -1 };
+}
+
+Color4b GetColorAtScreenPos(Point<int> pos)
+{
+	Color4b col(0);
+	if (auto dc = ::GetDC(nullptr))
+	{
+		auto cr = ::GetPixel(dc, pos.x, pos.y);
+		if (cr != CLR_INVALID)
+		{
+			col = Color4b(GetRValue(cr), GetGValue(cr), GetBValue(cr));
+		}
+		::ReleaseDC(nullptr, dc);
+	}
+	return col;
+}
+
 } // platform
 
 

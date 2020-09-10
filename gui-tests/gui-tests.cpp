@@ -353,6 +353,7 @@ void Test_Tooltip(UIContainer* ctx);
 void Test_BasicEasingAnim(UIContainer* ctx);
 void Test_ThreadWorker(UIContainer* ctx);
 void Test_ThreadedImageRendering(UIContainer* ctx);
+void Test_OSCommunication(UIContainer* ctx);
 
 void Test_SequenceEditors(UIContainer* ctx);
 
@@ -426,6 +427,8 @@ static const TestEntry utilityTestEntries[] =
 	{ "- Threading -" },
 	{ "Thread worker", Test_ThreadWorker },
 	{ "Threaded image rendering", Test_ThreadedImageRendering },
+	{},
+	{ "OS Communication", Test_OSCommunication },
 };
 static const TestEntry dseditTestEntries[] =
 {
