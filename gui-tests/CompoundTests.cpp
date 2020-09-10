@@ -337,7 +337,7 @@ struct ColorPickerTest : ui::Node
 		auto& cp = ctx->Make<ui::ColorPicker>()->SetColor(colorPickerTestCol);
 		cp.HandleEvent(UIEventType::Change) = [&cp](UIEvent& e)
 		{
-			colorPickerTestCol = cp.GetColor();
+			colorPickerTestCol = cp.GetColor().GetRGBA();
 		};
 
 		ctx->Make<ui::DefaultOverlayRenderer>();
@@ -454,6 +454,10 @@ struct IMGUITest : ui::Node
 			ui::imm::PropEditFloatVec(ctx, "float3", float4val, "XYZ");
 			ui::imm::PropEditFloatVec(ctx, "float4", float4val, "RGBA");
 		}
+		{
+			ui::imm::PropEditColor(ctx, "color B", colorValB);
+			ui::imm::PropEditColor(ctx, "color F", colorValF);
+		}
 	}
 
 	bool boolVal = true;
@@ -464,6 +468,8 @@ struct IMGUITest : ui::Node
 	uint64_t uint64Val = 2;
 	float floatVal = 3.14f;
 	float float4val[4] = { 1, 2, 3, 4 };
+	ui::Color4b colorValB = { 180, 200, 220, 255 };
+	ui::Color4f colorValF = { 0.9f, 0.7f, 0.5f, 0.8f };
 };
 void Test_IMGUI(UIContainer* ctx)
 {

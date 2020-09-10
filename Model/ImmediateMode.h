@@ -1,6 +1,7 @@
 
 #pragma once
 #include "Objects.h"
+#include "../Core/Image.h"
 
 
 namespace ui {
@@ -40,6 +41,8 @@ bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods
 bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
 bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
+bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods = {});
+bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods = {});
 
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
@@ -50,6 +53,8 @@ bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList 
 bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, uint64_t vmin = 0, uint64_t vmax = UINT64_MAX, const char* fmt = "%" PRIu64);
 bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
 bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
+bool PropEditColor(UIContainer* ctx, const char* label, Color4f& val, ModInitList mods = {});
+bool PropEditColor(UIContainer* ctx, const char* label, Color4b& val, ModInitList mods = {});
 
 // length of `val` = length of `axes`
 bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");

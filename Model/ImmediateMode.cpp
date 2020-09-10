@@ -1,6 +1,7 @@
 
 #include "ImmediateMode.h"
 #include "Controls.h"
+#include "Graphics.h"
 #include "System.h"
 
 
@@ -218,6 +219,41 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 	return changed;
 }
 
+bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
+{
+	auto* ced = ctx->Make<ColorEdit>();
+	for (auto& mod : mods)
+		mod->Apply(ced);
+	bool changed = false;
+	if (ced->flags & UIObject_IsEdited)
+	{
+		val = ced->GetColor().GetRGBA();
+		ctx->GetCurrentNode()->Rerender();
+		changed = true;
+	}
+	else
+		ced->SetColor(val);
+	ced->HandleEvent(UIEventType::Change) = [ced](UIEvent&)
+	{
+		ced->flags |= UIObject_IsEdited;
+		// TODO
+		if (ced->parent)
+			ced->parent->RerenderNode();
+	};
+	return changed;
+}
+
+bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods)
+{
+	Color4f tmp = val;
+	if (EditColor(ctx, tmp, mods))
+	{
+		val = tmp;
+		return true;
+	}
+	return false;
+}
+
 
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
@@ -293,6 +329,22 @@ bool PropEditString(UIContainer* ctx, const char* label, const char* text, const
 {
 	Property::Begin(ctx, label);
 	bool ret = EditString(ctx, text, retfn, mods);
+	Property::End(ctx);
+	return ret;
+}
+
+bool PropEditColor(UIContainer* ctx, const char* label, Color4f& val, ModInitList mods)
+{
+	Property::Begin(ctx, label);
+	bool ret = EditColor(ctx, val, mods);
+	Property::End(ctx);
+	return ret;
+}
+
+bool PropEditColor(UIContainer* ctx, const char* label, Color4b& val, ModInitList mods)
+{
+	Property::Begin(ctx, label);
+	bool ret = EditColor(ctx, val, mods);
 	Property::End(ctx);
 	return ret;
 }

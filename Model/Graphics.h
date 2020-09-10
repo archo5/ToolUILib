@@ -1,6 +1,7 @@
 
 #pragma once
 #include "Objects.h"
+#include "Native.h"
 #include "../Core/Image.h"
 
 
@@ -187,56 +188,28 @@ struct ColorCompPicker2D : UIElement
 	Image* _bgImage = nullptr;
 };
 
-struct ColorPicker : Node
+struct MultiFormatColor
 {
-	void Render(UIContainer* ctx) override;
+	MultiFormatColor() {}
+	MultiFormatColor(const Color4f& c);
+	MultiFormatColor(Color4b c);
+	MultiFormatColor(float h, float s, float v, float a = 1);
 
-	Color4f GetColor() const { return _rgba; }
-	ColorPicker& SetColor(const Color4f& c)
-	{
-		_rgba = c;
-		_UpdateRGB();
-		return *this;
-	}
-	ColorPicker& SetColor(float h, float s, float v, float a = 1)
-	{
-		_hue = h;
-		_sat = s;
-		_val = v;
-		_rgba.a = a;
-		_UpdateHSV();
-		return *this;
-	}
+	float GetAlpha() const;
+	Color4f GetRGBA() const;
+	Color4b GetRGBA8() const;
+	void GetHSV(float& h, float& s, float& v) const;
 
-	void _UpdateRGB()
-	{
-		_RGB2HSV();
-		_rgba.GetHex(hex);
-	}
-	void _RGB2HSV()
-	{
-		_hue = _rgba.GetHue();
-		_sat = _rgba.GetSaturation();
-		_val = _rgba.GetValue();
-	}
-	void _UpdateHSV()
-	{
-		_rgba = Color4f::HSV(_hue, _sat, _val, _rgba.a);
-		_rgba.GetHex(hex);
-	}
-	void _UpdateHex()
-	{
-		_rgba = Color4f::Hex(hex, _rgba.a);
-		_RGB2HSV();
-	}
+	void SetAlpha(float a);
+	void SetRGBA(const Color4f& c);
+	void SetRGBA8(Color4b c);
+	void SetHSV(float h, float s, float v);
+	void SetHSVA(float h, float s, float v, float a = 1);
 
-	struct SavedColors
-	{
-		SavedColors();
-
-		Color4f colors[16];
-	};
-	static SavedColors& GetSavedColors();
+	void _UpdateRGB();
+	void _RGB2HSV();
+	void _UpdateHSV();
+	void _UpdateHex();
 
 	Color4f _rgba = Color4f::White();
 	float _hue = 0;
@@ -245,15 +218,57 @@ struct ColorPicker : Node
 	char hex[7] = "FFFFFF";
 };
 
-struct ColorEdit : Node
+struct ColorPicker : Node
 {
+	static constexpr bool Persistent = true;
+
 	void Render(UIContainer* ctx) override;
 
-	Color4f GetColor() const { return _rgba; }
-	void SetColor(Color4f c);
+	const MultiFormatColor& GetColor() const { return _color; }
+	ColorPicker& SetColor(const MultiFormatColor& c)
+	{
+		_color = c;
+		return *this;
+	}
 
-	Color4f _rgba = Color4f::White();
-	bool _editorOpened = false;
+	struct SavedColors
+	{
+		static constexpr int COUNT = 16;
+
+		SavedColors();
+
+		Color4f colors[COUNT];
+	};
+	static SavedColors& GetSavedColors();
+
+	MultiFormatColor _color;
+};
+
+struct ColorPickerWindow : NativeDialogWindow
+{
+	ColorPickerWindow();
+	void OnRender(UIContainer* ctx) override;
+
+	const MultiFormatColor& GetColor() const { return _color; }
+	void SetColor(const MultiFormatColor& c) { _color = c; }
+
+	MultiFormatColor _color;
+};
+
+struct ColorEdit : Node
+{
+	static constexpr bool Persistent = true;
+
+	void Render(UIContainer* ctx) override;
+
+	const MultiFormatColor& GetColor() const { return _color; }
+	ColorEdit& SetColor(const MultiFormatColor& c)
+	{
+		_color = c;
+		return *this;
+	}
+
+	MultiFormatColor _color;
 };
 
 } // ui
