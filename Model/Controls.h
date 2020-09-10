@@ -177,6 +177,10 @@ struct Slider : UIElement
 		return *this;
 	}
 
+	style::Accessor GetTrackStyle() { return style::Accessor(trackStyle, this); }
+	style::Accessor GetTrackFillStyle() { return style::Accessor(trackFillStyle, this); }
+	style::Accessor GetThumbStyle() { return style::Accessor(thumbStyle, this); }
+
 	double _value = 0;
 	FloatLimits _limits = { 0, 1, 0 };
 

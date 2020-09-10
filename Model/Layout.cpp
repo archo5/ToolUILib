@@ -530,7 +530,7 @@ Accessor::Accessor(Block* b) : block(b), blkref(nullptr), owner(nullptr)
 {
 }
 
-Accessor::Accessor(BlockRef& r, UIObject* o) : block(r), blkref(o ? &r : nullptr), owner(o)
+Accessor::Accessor(BlockRef& r, UIObject* o) : block(r), blkref(&r), owner(o)
 {
 }
 

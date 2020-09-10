@@ -457,3 +457,47 @@ void Test_GlobalEvents(UIContainer* ctx)
 	ctx->Make<GlobalEventsTest>();
 }
 
+
+struct DialogWindowTest : ui::Node
+{
+	struct BasicDialog : ui::NativeDialogWindow
+	{
+		BasicDialog()
+		{
+			SetTitle("Basic dialog window");
+			SetSize(200, 100);
+		}
+		void OnRender(UIContainer* ctx) override
+		{
+			ctx->Text("This is a basic dialog window");
+			ctx->MakeWithText<ui::RadioButtonT<int>>("option 0")->Init(choice, 0);
+			ctx->MakeWithText<ui::RadioButtonT<int>>("option 1")->Init(choice, 1);
+			ctx->MakeWithText<ui::Button>("Close")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+			{
+				OnClose();
+			};
+		}
+		void OnClose() override
+		{
+			puts("closing basic dialog window");
+			ui::NativeDialogWindow::OnClose();
+		}
+		int choice = -1;
+	};
+	void Render(UIContainer* ctx) override
+	{
+		*ctx->MakeWithText<ui::Button>("Open dialog")
+			+ ui::EventHandler(UIEventType::Activate, [this](UIEvent&)
+		{
+			puts("start showing window");
+			BasicDialog bdw;
+			bdw.Show();
+			printf("done showing window, choice: %d\n", bdw.choice);
+		});
+	}
+};
+void Test_DialogWindow(UIContainer* ctx)
+{
+	ctx->Make<DialogWindowTest>();
+}
+

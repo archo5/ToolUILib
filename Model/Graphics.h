@@ -41,13 +41,26 @@ struct ColorBlock : UIElement
 {
 	void OnInit() override;
 	void OnPaint() override;
-	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override { outWidth = 20; outHeight = 20; }
 
-	Color4f GetColor() const { return _color; }
-	ColorBlock& SetColor(const Color4f& col) { _color = col; return *this; }
+	Color4b GetColor() const { return _color; }
+	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
 
-	Color4f _color = Color4f::Black();
+	Color4b _color = Color4b::Black();
 	std::shared_ptr<Image> _bgImage;
+};
+
+struct ColorInspectBlock : UIElement
+{
+	void OnInit() override;
+	void OnPaint() override;
+
+	Color4b GetColor() const { return _color; }
+	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
+
+	Color4b _color = Color4b::Black();
+	std::shared_ptr<Image> _bgImage;
+
+	style::Coord alphaBarHeight = 2;
 };
 
 struct ImageElement : UIElement
@@ -134,7 +147,8 @@ struct ColorCompPicker2DSettings
 
 struct ColorDragDropData : DragDropData
 {
-	ColorDragDropData(const Color4f& c) : DragDropData("color"), color(c) {}
+	static constexpr const char* NAME = "color";
+	ColorDragDropData(const Color4f& c) : DragDropData(NAME), color(c) {}
 	void Render(UIContainer* ctx) override;
 	Color4f color;
 };
@@ -229,6 +243,17 @@ struct ColorPicker : Node
 	float _sat = 0;
 	float _val = 1;
 	char hex[7] = "FFFFFF";
+};
+
+struct ColorEdit : Node
+{
+	void Render(UIContainer* ctx) override;
+
+	Color4f GetColor() const { return _rgba; }
+	void SetColor(Color4f c);
+
+	Color4f _rgba = Color4f::White();
+	bool _editorOpened = false;
 };
 
 } // ui

@@ -331,6 +331,7 @@ void Test_SubUI(UIContainer* ctx);
 void Test_HighElementCount(UIContainer* ctx);
 void Test_ZeroRerender(UIContainer* ctx);
 void Test_GlobalEvents(UIContainer* ctx);
+void Test_DialogWindow(UIContainer* ctx);
 
 void Test_EdgeSlice(UIContainer* ctx);
 void Test_LayoutNestCombo(UIContainer* ctx);
@@ -343,6 +344,7 @@ void Test_Sliders(UIContainer* ctx);
 void Test_SplitPane(UIContainer* ctx);
 void Test_Tabs(UIContainer* ctx);
 void Test_Scrollbars(UIContainer* ctx);
+void Test_ColorBlock(UIContainer* ctx);
 void Test_Image(UIContainer* ctx);
 void Test_ColorPicker(UIContainer* ctx);
 void Test_IMGUI(UIContainer* ctx);
@@ -386,6 +388,9 @@ static const TestEntry coreTestEntries[] =
 	{ "High element count", Test_HighElementCount },
 	{ "Zero-rerender", Test_ZeroRerender },
 	{ "Global events", Test_GlobalEvents },
+	{},
+	{ "- Windows -" },
+	{ "Dialog window", Test_DialogWindow },
 };
 static const TestEntry layoutTestEntries[] =
 {
@@ -405,10 +410,13 @@ static const TestEntry compoundTestEntries[] =
 	{ "Split pane", Test_SplitPane },
 	{ "Tabs", Test_Tabs },
 	{ "Scrollbars", Test_Scrollbars },
+	{ "Tooltip", Test_Tooltip },
+	{},
+	{ "Color block", Test_ColorBlock },
 	{ "Image", Test_Image },
 	{ "Color picker", Test_ColorPicker },
+	{},
 	{ "IMGUI test", Test_IMGUI },
-	{ "Tooltip", Test_Tooltip },
 };
 static const TestEntry utilityTestEntries[] =
 {

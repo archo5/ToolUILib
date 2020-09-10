@@ -39,6 +39,9 @@ struct Color4b
 
 	bool operator == (const Color4b& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
+	bool IsOpaque() const { return a == 255; }
+	Color4b GetOpaque() const { return { r, g, b, 255 }; }
+
 	uint8_t r, g, b, a;
 };
 
@@ -119,6 +122,8 @@ struct Color4f
 		b = lerp(b, c.b, ca);
 		a = lerp(a, 1, c.a);
 	}
+	bool IsOpaque() const { return fabsf(a - 1) < 0.0001f; }
+	Color4f GetOpaque() const { return { r, g, b, 1 }; }
 
 	operator Color4b() const { return { GetRed8(), GetGreen8(), GetBlue8(), GetAlpha8() }; }
 

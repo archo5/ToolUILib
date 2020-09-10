@@ -23,14 +23,14 @@ struct SlidersTest : ui::Node
 		static float sldval3 = 0.63f;
 		{
 			auto& s = ctx->Make<ui::Slider>()->Init(sldval3, { 0, 1 });
-			style::Accessor a(s.trackStyle);
+			style::Accessor a = s.GetTrackStyle();
 			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const style::PaintInfo& info)
 			{
 				fn(info);
 				auto r = info.rect;
 				ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
 			});
-			style::Accessor(s.trackFillStyle).SetPaintFunc([](const style::PaintInfo& info) {});
+			s.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
 		}
 		ui::Property::End(ctx);
 
@@ -202,6 +202,67 @@ void Test_Scrollbars(UIContainer* ctx)
 }
 
 
+struct ColorBlockTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Text("Default color block");
+		ctx->Make<ui::ColorBlock>()->SetColor(colorA);
+		ctx->Make<ui::ColorBlock>()->SetColor(colorB);
+
+		ctx->Text("Without edge");
+		ctx->Make<ui::ColorBlock>()->SetColor(colorA) + ui::Padding(0);
+		ctx->Make<ui::ColorBlock>()->SetColor(colorB) + ui::Padding(0);
+
+		ctx->Text("Custom size");
+		ctx->Make<ui::ColorBlock>()->SetColor(colorA) + ui::Width(200) + ui::Height(40);
+		ctx->Make<ui::ColorBlock>()->SetColor(colorB) + ui::Width(200) + ui::Height(40);
+
+		ctx->Text("Color inspect block");
+		ctx->Make<ui::ColorInspectBlock>()->SetColor(colorA);
+		ctx->Make<ui::ColorInspectBlock>()->SetColor(colorB);
+
+		ctx->Text("Assembled");
+		auto C = colorB;
+		*ctx->Push<ui::Panel>()
+			+ ui::Padding(3);
+		{
+			ctx->PushBox()
+				+ ui::Layout(style::layouts::StackExpand())
+				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
+			{
+				ctx->Make<ui::ColorBlock>()->SetColor(C.GetOpaque())
+					+ ui::Padding(0)
+					+ ui::Width(style::Coord::Percent(50));
+				ctx->Make<ui::ColorBlock>()->SetColor(C)
+					+ ui::Padding(0)
+					+ ui::Width(style::Coord::Percent(50));
+			}
+			ctx->Pop();
+			ctx->Push<ui::ColorBlock>()->SetColor(ui::Color4b::Black())
+				+ ui::Padding(0)
+				+ ui::Width(style::Coord::Percent(100))
+				+ ui::Height(4);
+			{
+				ctx->Make<ui::ColorBlock>()->SetColor(ui::Color4b::White())
+					+ ui::Padding(0)
+					+ ui::Width(style::Coord::Percent(100.f * C.a / 255.f))
+					+ ui::Height(4);
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+	}
+
+	ui::Color4b colorA = { 240, 180, 120, 255 };
+	ui::Color4b colorB = { 120, 180, 240, 120 };
+};
+void Test_ColorBlock(UIContainer* ctx)
+{
+	ctx->Make<ColorBlockTest>();
+}
+
+
 struct ImageTest : ui::Node
 {
 	ImageTest()
@@ -221,17 +282,17 @@ struct ImageTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		style::BlockRef pbr = ui::Theme::current->panel;
-		style::Accessor pa(pbr);
+		style::Accessor pa(pbr, nullptr);
 		pa.SetLayout(style::layouts::InlineBlock());
 		pa.SetPadding(4);
 		pa.SetMargin(0);
 
 		style::BlockRef ibr = ui::Theme::current->image;
-		style::Accessor ia(ibr);
+		style::Accessor ia(ibr, nullptr);
 		ia.SetHeight(25);
 
 		style::BlockRef ibr2 = ui::Theme::current->image;
-		style::Accessor ia2(ibr2);
+		style::Accessor ia2(ibr2, nullptr);
 		ia2.SetWidth(25);
 
 		ui::ScaleMode scaleModes[3] = { ui::ScaleMode::Stretch, ui::ScaleMode::Fit, ui::ScaleMode::Fill };

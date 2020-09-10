@@ -44,6 +44,7 @@ struct Theme
 	style::BlockRef tableRowHeader;
 	style::BlockRef tableColHeader;
 	style::BlockRef colorBlock;
+	style::BlockRef colorInspectBlock;
 	style::BlockRef image;
 	style::BlockRef selectorContainer;
 	style::BlockRef selector;

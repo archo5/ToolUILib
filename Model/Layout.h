@@ -523,6 +523,7 @@ class Accessor
 public:
 
 	explicit Accessor(Block* b);
+	explicit Accessor(BlockRef& r) = delete;
 	explicit Accessor(BlockRef& r, UIObject* o);
 
 #if 0

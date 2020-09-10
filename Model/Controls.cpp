@@ -320,9 +320,9 @@ SplitPane::SplitPane()
 {
 	// TODO
 	vertSepStyle = Theme::current->button;
-	style::Accessor(vertSepStyle).SetWidth(8);
+	style::Accessor(vertSepStyle, this).SetWidth(8);
 	horSepStyle = Theme::current->button;
-	style::Accessor(horSepStyle).SetHeight(8);
+	style::Accessor(horSepStyle, this).SetHeight(8);
 }
 
 static float SplitQToX(SplitPane* sp, float split)

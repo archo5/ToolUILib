@@ -36,6 +36,7 @@ struct DefaultTheme : Theme
 	style::Block dtTableRowHeader;
 	style::Block dtTableColHeader;
 	style::Block dtColorBlock;
+	style::Block dtColorInspectBlock;
 	style::Block dtImage;
 	style::Block dtSelectorContainer;
 	style::Block dtSelector;
@@ -69,6 +70,7 @@ struct DefaultTheme : Theme
 		CreateTableRowHeader();
 		CreateTableColHeader();
 		CreateColorBlock();
+		CreateColorInspectBlock();
 		CreateImage();
 		CreateSelectorContainer();
 		CreateSelector();
@@ -504,6 +506,8 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtColorBlock);
 		PreventHeapDelete(a);
+		a.SetWidth(20);
+		a.SetHeight(20);
 		a.SetLayout(style::layouts::InlineBlock());
 		a.SetPadding(3);
 		a.SetPaintFunc([](const style::PaintInfo& info)
@@ -512,6 +516,21 @@ struct DefaultTheme : Theme
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
 		});
 		defaultTheme.colorBlock = a.block;
+	}
+	void CreateColorInspectBlock()
+	{
+		style::Accessor a(&dtColorInspectBlock);
+		PreventHeapDelete(a);
+		a.SetWidth(style::Coord::Fraction(1));
+		a.SetHeight(20);
+		a.SetLayout(style::layouts::InlineBlock());
+		a.SetPadding(3);
+		a.SetPaintFunc([](const style::PaintInfo& info)
+		{
+			auto r = info.rect;
+			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
+		});
+		defaultTheme.colorInspectBlock = a.block;
 	}
 	void CreateImage()
 	{
