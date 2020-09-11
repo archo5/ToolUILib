@@ -433,6 +433,7 @@ static const TestEntry utilityTestEntries[] =
 static const TestEntry dseditTestEntries[] =
 {
 	{ "Sequence editors", Test_SequenceEditors },
+	{ "Node graph", Demo_NodeGraphEditor },
 };
 static const TestEntry benchmarkEntries[] =
 {
@@ -447,7 +448,6 @@ static const TestEntry demoEntries[] =
 	{ "- Editors -" },
 	{ "Tree", Demo_BasicTreeNodeEdit },
 	{ "Inline tree", Demo_CompactTreeNodeEdit },
-	{ "Node graph", Demo_NodeGraphEditor },
 	{ "Track editor demo", Demo_TrackEditor },
 	{},
 	{ "- Animations -" },

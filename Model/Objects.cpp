@@ -45,6 +45,8 @@ void UIObject::_SerializePersistent(IDataSerializer& s)
 
 void UIObject::_Reset()
 {
+	ClearEventHandlers();
+	UnregisterAsOverlay();
 	OnReset();
 }
 

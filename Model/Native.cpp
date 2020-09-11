@@ -489,7 +489,7 @@ struct NativeWindow_Impl
 		evsys.RecomputeLayout();
 	}
 
-	void Redraw()
+	void Redraw(bool canRebuild)
 	{
 		if (!innerUIEnabled)
 			return;
@@ -510,10 +510,12 @@ struct NativeWindow_Impl
 			KillTimer(window, 1);
 		prevTime = t;
 
-		cont.ProcessNodeRenderStack();
+		if (canRebuild)
+			cont.ProcessNodeRenderStack();
 		cont.ProcessLayoutStack();
 		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
-		cont.ProcessNodeRenderStack();
+		if (canRebuild)
+			cont.ProcessNodeRenderStack();
 		cont.ProcessLayoutStack();
 
 #if DRAW_STATS
@@ -775,7 +777,7 @@ void NativeWindowBase::ProcessEventsExclusive()
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
-				window->Redraw();
+				window->Redraw(window == _impl);
 		}
 	}
 
@@ -1144,7 +1146,7 @@ int Application::Run()
 			win->invalidated = false;
 
 		for (auto* win : *g_curWindowRepaintList)
-			win->Redraw();
+			win->Redraw(true);
 		g_curWindowRepaintList->clear();
 
 		assert(g_curWindowRepaintList->empty());
@@ -1400,7 +1402,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			evsys.height = h;
 			evsys.RecomputeLayout();
 			window->GetOwner()->InvalidateAll();
-			window->Redraw();
+			window->Redraw(true);
 		}
 		break;
 	case WM_COMMAND:

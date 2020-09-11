@@ -351,6 +351,8 @@ void Test_ColorPicker(UIContainer* ctx)
 
 struct IMGUITest : ui::Node
 {
+	static constexpr bool Persistent = true;
+
 	void Render(UIContainer* ctx) override
 	{
 		ui::Property::Begin(ctx, "buttons");

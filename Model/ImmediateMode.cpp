@@ -228,6 +228,7 @@ bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
 	if (ced->flags & UIObject_IsEdited)
 	{
 		val = ced->GetColor().GetRGBA();
+		ced->flags &= ~UIObject_IsEdited;
 		ctx->GetCurrentNode()->Rerender();
 		changed = true;
 	}
