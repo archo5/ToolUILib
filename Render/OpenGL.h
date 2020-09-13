@@ -1,6 +1,7 @@
 
 #pragma once
 #include "../Core/Image.h"
+#include "../Core/3DMath.h"
 
 
 namespace ui {
@@ -53,6 +54,51 @@ void UnmapTexture(Texture2D* tex);
 void SetTexture(Texture2D* tex);
 void DrawTriangles(Vertex* verts, size_t num_verts);
 void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices);
+
+
+void Begin3DMode(int x0, int y0, int x1, int y1);
+void End3DMode();
+void SetViewMatrix(const Mat4f& m);
+void SetPerspectiveMatrix(const Mat4f& m);
+void SetAmbientLight(const Color4f& col);
+void SetLightOff(int n);
+void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col);
+enum DrawFlags
+{
+	DF_Lit          = 1 << 2,
+	DF_AlphaBlended = 1 << 3,
+	DF_ZTestOff     = 1 << 4,
+	DF_ZWriteOff    = 1 << 5,
+	DF_Cull         = 1 << 6,
+};
+void SetRenderState(unsigned drawFlags);
+enum PrimitiveType
+{
+	PT_Lines,
+	PT_Triangles,
+	PT_TriangleStrip,
+};
+enum VertexFormat         // position:   float3
+{
+	VF_Normal   = 1 << 0, // + normal:   float3
+	VF_Texcoord = 1 << 1, // + texcoord: float2
+	VF_Color    = 1 << 2, // + color:    ubyte4
+};
+void Draw(
+	const Mat4f& xf,
+	PrimitiveType primType,
+	unsigned vertexFormat,
+	const void* vertices,
+	size_t numVertices);
+void DrawIndexed(
+	const Mat4f& xf,
+	PrimitiveType primType,
+	unsigned vertexFormat,
+	const void* vertices,
+	size_t numVertices,
+	const uint16_t* indices,
+	size_t numIndices);
+
 
 } // rhi
 } // ui

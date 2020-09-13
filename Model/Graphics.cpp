@@ -3,6 +3,7 @@
 #include "Theme.h"
 #include "Controls.h"
 #include "System.h"
+#include "../Render/OpenGL.h"
 
 
 namespace ui {
@@ -705,6 +706,88 @@ void ColorEdit::Render(UIContainer* ctx)
 			e.context->OnChange(this);
 		}
 	});
+}
+
+
+void View3D::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	auto r = finalRectC;
+	draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1);
+	rhi::Begin3DMode(r.x0, r.y0, r.x1, r.y1);
+
+	if (onRender)
+		onRender();
+
+	rhi::End3DMode();
+	draw::PopScissorRect();
+
+	PaintChildren();
+}
+
+
+void OrbitCamera::OnEvent(UIEvent& e)
+{
+	if (e.type == UIEventType::ButtonDown)
+	{
+		if (e.GetButton() == rotateButton)
+		{
+			rotating = true;
+		}
+		else if (e.GetButton() == panButton)
+		{
+			panning = true;
+		}
+	}
+	if (e.type == UIEventType::ButtonUp)
+	{
+		if (e.GetButton() == rotateButton)
+		{
+			rotating = false;
+		}
+		else if (e.GetButton() == panButton)
+		{
+			panning = false;
+		}
+	}
+	if (e.type == UIEventType::MouseMove)
+	{
+		if (rotating)
+			Rotate(e.dx * rotationSpeed, e.dy * rotationSpeed);
+		if (panning)
+			Pan(e.dx, e.dy);
+	}
+	if (e.type == UIEventType::MouseScroll)
+	{
+		Zoom(e.dy == 0 ? 0 : e.dy < 0 ? 1 : -1);
+	}
+}
+
+void OrbitCamera::Rotate(float dx, float dy)
+{
+	yaw += dx;
+	pitch += dy;
+	pitch = clamp(pitch, minPitch, maxPitch);
+}
+
+void OrbitCamera::Pan(float dx, float dy)
+{
+}
+
+void OrbitCamera::Zoom(float delta)
+{
+	distance *= powf(distanceScale, delta);
+}
+
+Mat4f OrbitCamera::GetViewMatrix()
+{
+	float cp = cosf(pitch * DEG2RAD);
+	float sp = sinf(pitch * DEG2RAD);
+	float cy = cosf(yaw * DEG2RAD);
+	float sy = sinf(yaw * DEG2RAD);
+	Vec3f dir = { cy * cp, sy * cp, sp };
+	return Mat4f::LookAtLH(pivot + dir * distance, pivot, { 0, 0, 1 });
 }
 
 } // ui

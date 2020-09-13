@@ -1,5 +1,7 @@
 
 #include "pch.h"
+#include "../Core/3DMath.h"
+#include "../Render/OpenGL.h"
 
 
 struct SlidersTest : ui::Node
@@ -346,6 +348,66 @@ struct ColorPickerTest : ui::Node
 void Test_ColorPicker(UIContainer* ctx)
 {
 	ctx->Make<ColorPickerTest>();
+}
+
+
+struct The3DViewTest : ui::Node
+{
+	static constexpr bool Persistent = true;
+
+	struct VertPC
+	{
+		float x, y, z;
+		ui::Color4b col;
+	};
+	void Render(UIContainer* ctx) override
+	{
+		*ctx->Push<ui::Panel>()
+			+ ui::Margin(0)
+			+ ui::Height(style::Coord::Percent(100));
+		{
+			auto& v = *ctx->Push<ui::View3D>();
+			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+			v.HandleEvent() = [this](UIEvent& e) { camera.OnEvent(e); };
+			v.onRender = [this, &v]() { Render3DView(v.GetContentRect().GetWidth(), v.GetContentRect().GetHeight()); };
+			v + ui::Height(style::Coord::Percent(100));
+			{
+				ctx->Text("Overlay text");
+				ctx->Make<ui::ColorBlock>()->SetColor({ 100, 0, 200, 255 });
+				*ctx->MakeWithText<ui::Button>("Reset")
+					+ ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { camera = {}; })
+					+ ui::Width(40)
+					+ ui::Layout(style::layouts::InlineBlock()); // TODO FIX
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+	}
+	void Render3DView(float w, float h)
+	{
+		using namespace ui::rhi;
+
+		Clear(16, 15, 14, 255);
+		SetPerspectiveMatrix(Mat4f::PerspectiveFOVLH(90, w / h, 0.01f, 1000));
+		SetViewMatrix(camera.GetViewMatrix());
+		VertPC verts[] =
+		{
+			{ -1, -1, 0, { 100, 150, 200, 255 } },
+			{ 1, -1, 0, { 100, 0, 200, 255 } },
+			{ -1, 1, 0, { 200, 150, 0, 255 } },
+			{ 1, 1, 0, { 150, 50, 0, 255 } },
+		};
+		uint16_t indices[] = { 0, 1, 2, 1, 3, 2 };
+		DrawIndexed(Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+	}
+
+	ui::OrbitCamera camera;
+};
+void Test_3DView(UIContainer* ctx)
+{
+	ctx->Make<The3DViewTest>();
 }
 
 

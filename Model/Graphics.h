@@ -3,6 +3,7 @@
 #include "Objects.h"
 #include "Native.h"
 #include "../Core/Image.h"
+#include "../Core/3DMath.h"
 
 
 namespace ui {
@@ -269,6 +270,42 @@ struct ColorEdit : Node
 	}
 
 	MultiFormatColor _color;
+};
+
+struct View3D : UIElement
+{
+	void OnPaint() override;
+
+	std::function<void()> onRender;
+};
+
+struct OrbitCamera
+{
+	void OnEvent(UIEvent& e);
+
+	void Rotate(float dx, float dy);
+	void Pan(float dx, float dy);
+	void Zoom(float delta);
+
+	Mat4f GetViewMatrix();
+
+	// state/settings
+	Vec3f pivot = {};
+	float yaw = 45;
+	float pitch = 45;
+	float distance = 1;
+
+	// settings
+	float minPitch = -85;
+	float maxPitch = 85;
+	float rotationSpeed = 0.5f; // degrees per pixel
+	float distanceScale = 1.2f; // scale per scroll
+	UIMouseButton rotateButton = UIMouseButton::Left;
+	UIMouseButton panButton = UIMouseButton::Middle;
+
+	// state
+	bool rotating = false;
+	bool panning = false;
 };
 
 } // ui

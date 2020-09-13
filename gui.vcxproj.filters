@@ -70,6 +70,9 @@
     <ClCompile Include="Editors\SequenceEditor.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Core\3DMath.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -154,6 +157,9 @@
     </ClInclude>
     <ClInclude Include="Editors\SequenceEditor.h">
       <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\3DMath.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

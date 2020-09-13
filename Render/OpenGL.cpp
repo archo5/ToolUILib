@@ -151,11 +151,13 @@ void SetScissorRect(int x0, int y0, int x1, int y1)
 	GLCHK(glScissor(x0, curRTTHeight - y1, std::max(x1 - x0, 0), std::max(y1 - y0, 0)));
 }
 
+RECT g_viewport;
 void SetViewport(int x0, int y0, int x1, int y1)
 {
-	glViewport(x0, y0, x1 - x0, y1 - y0);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	g_viewport = { x0, y0, x1, y1 };
+	GLCHK(glViewport(x0, y0, x1 - x0, y1 - y0));
+	GLCHK(glMatrixMode(GL_PROJECTION));
+	GLCHK(glLoadIdentity());
 	GLCHK(glOrtho(x0, x1, y1, y0, -1, 1));
 	curRTTHeight = y1; // TODO fix
 }
@@ -246,29 +248,209 @@ void UnmapTexture(Texture2D* tex)
 void SetTexture(Texture2D* tex)
 {
 	g_stats.num_SetTexture++;
-	glBindTexture(GL_TEXTURE_2D, (GLuint)tex);
+	GLCHK(glBindTexture(GL_TEXTURE_2D, (GLuint)tex));
 	if (tex != 0)
-		glEnable(GL_TEXTURE_2D);
+		GLCHK(glEnable(GL_TEXTURE_2D));
 	else
-		glDisable(GL_TEXTURE_2D);
+		GLCHK(glDisable(GL_TEXTURE_2D));
 }
 
 void DrawTriangles(Vertex* verts, size_t num_verts)
 {
 	g_stats.num_DrawTriangles++;
-	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
-	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);
-	glDrawArrays(GL_TRIANGLES, 0, num_verts);
+	GLCHK(glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x));
+	GLCHK(glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u));
+	GLCHK(glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col));
+	GLCHK(glDrawArrays(GL_TRIANGLES, 0, num_verts));
 }
 
 void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
 {
 	g_stats.num_DrawIndexedTriangles++;
-	glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x);
-	glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col);
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, indices);
+	GLCHK(glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x));
+	GLCHK(glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u));
+	GLCHK(glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), &verts[0].col));
+	GLCHK(glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, indices));
+}
+
+
+void SetRenderState(unsigned drawFlags)
+{
+	if (drawFlags & DF_Lit)
+		GLCHK(glEnable(GL_LIGHTING));
+	else
+		GLCHK(glDisable(GL_LIGHTING));
+
+	if (drawFlags & DF_AlphaBlended)
+		GLCHK(glEnable(GL_BLEND));
+	else
+		GLCHK(glDisable(GL_BLEND));
+
+	if (drawFlags & DF_ZTestOff)
+		GLCHK(glDisable(GL_DEPTH_TEST));
+	else
+		GLCHK(glEnable(GL_DEPTH_TEST));
+
+	GLCHK(glDepthMask(drawFlags & DF_ZWriteOff ? GL_FALSE : GL_TRUE));
+
+	if (drawFlags & DF_Cull)
+		GLCHK(glEnable(GL_CULL_FACE));
+	else
+		GLCHK(glDisable(GL_CULL_FACE));
+}
+
+static Mat4f g_viewMatrix = Mat4f::Identity();
+void SetViewMatrix(const Mat4f& m)
+{
+	g_viewMatrix = m;
+}
+
+static Mat4f g_perspAdjust = Mat4f::Translate(0, 0, -0.5f) * Mat4f::Scale(1, 1, 2);
+void SetPerspectiveMatrix(const Mat4f& m)
+{
+	auto fm = m * g_perspAdjust;
+	GLCHK(glMatrixMode(GL_PROJECTION));
+	GLCHK(glLoadMatrixf(m.a));
+	GLCHK(glMatrixMode(GL_MODELVIEW));
+}
+
+static GLint g_prevTex;
+void Begin3DMode(int x0, int y0, int x1, int y1)
+{
+	GLCHK(glGetIntegerv(GL_TEXTURE_BINDING_2D, &g_prevTex));
+
+	GLCHK(glViewport(x0, y0, x1 - x0, y1 - y0));
+
+	SetRenderState(0);
+	SetPerspectiveMatrix(Mat4f::Identity());
+	SetAmbientLight(Color4f::White());
+	for (int i = 0; i < 8; i++)
+		SetLightOff(i);
+
+	SetTexture(nullptr);
+}
+
+void End3DMode()
+{
+	GLCHK(glDisableClientState(GL_NORMAL_ARRAY));
+	GLCHK(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+	GLCHK(glEnableClientState(GL_COLOR_ARRAY));
+
+	SetRenderState(DF_AlphaBlended | DF_ZTestOff | DF_ZWriteOff);
+
+	auto r = g_viewport;
+	int x0 = r.left, x1 = r.right, y0 = r.top, y1 = r.bottom;
+	GLCHK(glViewport(x0, y0, x1 - x0, y1 - y0));
+
+	GLCHK(glMatrixMode(GL_MODELVIEW));
+	GLCHK(glLoadIdentity());
+	GLCHK(glMatrixMode(GL_PROJECTION));
+	GLCHK(glLoadIdentity());
+	GLCHK(glOrtho(x0, x1, y1, y0, -1, 1));
+
+	GLCHK(glBindTexture(GL_TEXTURE_2D, g_prevTex));
+	if (g_prevTex != 0)
+		GLCHK(glEnable(GL_TEXTURE_2D));
+	else
+		GLCHK(glDisable(GL_TEXTURE_2D));
+}
+
+void SetAmbientLight(const Color4f& col)
+{
+	GLCHK(glLightModelfv(GL_LIGHT_MODEL_AMBIENT, &col.r));
+}
+
+void SetLightOff(int n)
+{
+	GLCHK(glDisable(GL_LIGHT0 + n));
+}
+
+void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col)
+{
+	GLCHK(glEnable(GL_LIGHT0 + n));
+	GLCHK(glLightfv(GL_LIGHT0 + n, GL_DIFFUSE, &col.r));
+	float dir[4] = { x, y, z, 0 };
+	GLCHK(glLightfv(GL_LIGHT0 + n, GL_POSITION, dir));
+}
+
+static void ApplyVertexData(unsigned vertexFormat, const void* vertices)
+{
+	auto v = (const char*)vertices;
+
+	GLsizei stride = sizeof(float) * 3;
+	if (vertexFormat & VF_Normal)
+		stride += sizeof(float) * 3;
+	if (vertexFormat & VF_Texcoord)
+		stride += sizeof(float) * 2;
+	if (vertexFormat & VF_Color)
+		stride += 4;
+
+	GLCHK(glVertexPointer(3, GL_FLOAT, stride, v));
+	v += sizeof(float) * 3;
+
+	if (vertexFormat & VF_Normal)
+	{
+		GLCHK(glNormalPointer(GL_FLOAT, stride, v));
+		GLCHK(glEnableClientState(GL_NORMAL_ARRAY));
+		v += sizeof(float) * 3;
+	}
+	else
+		GLCHK(glDisableClientState(GL_NORMAL_ARRAY));
+
+	if (vertexFormat & VF_Texcoord)
+	{
+		GLCHK(glTexCoordPointer(2, GL_FLOAT, stride, v));
+		GLCHK(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+		v += sizeof(float) * 2;
+	}
+	else
+		GLCHK(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
+
+	if (vertexFormat & VF_Color)
+	{
+		GLCHK(glColorPointer(4, GL_UNSIGNED_BYTE, stride, v));
+		GLCHK(glEnableClientState(GL_COLOR_ARRAY));
+		v += 4;
+	}
+	else
+		GLCHK(glDisableClientState(GL_COLOR_ARRAY));
+}
+
+static GLenum ConvertPrimitiveType(PrimitiveType t)
+{
+	switch (t)
+	{
+	case PT_Lines: return GL_LINES;
+	case PT_Triangles: return GL_TRIANGLES;
+	case PT_TriangleStrip: return GL_TRIANGLE_STRIP;
+	default: return GL_TRIANGLES;
+	}
+}
+
+void Draw(
+	const Mat4f& xf,
+	PrimitiveType primType,
+	unsigned vertexFormat,
+	const void* vertices,
+	size_t numVertices)
+{
+	GLCHK(glLoadMatrixf((xf * g_viewMatrix).a));
+	ApplyVertexData(vertexFormat, vertices);
+	GLCHK(glDrawArrays(ConvertPrimitiveType(primType), 0, numVertices));
+}
+
+void DrawIndexed(
+	const Mat4f& xf,
+	PrimitiveType primType,
+	unsigned vertexFormat,
+	const void* vertices,
+	size_t numVertices,
+	const uint16_t* indices,
+	size_t numIndices)
+{
+	GLCHK(glLoadMatrixf((xf * g_viewMatrix).a));
+	ApplyVertexData(vertexFormat, vertices);
+	GLCHK(glDrawElements(ConvertPrimitiveType(primType), numIndices, GL_UNSIGNED_SHORT, indices));
 }
 
 } // rhi
