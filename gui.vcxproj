@@ -136,6 +136,7 @@
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Editors\ProcGraphEditor.cpp" />
     <ClCompile Include="Editors\SequenceEditor.cpp" />
+    <ClCompile Include="Editors\TreeEditor.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Core\Threading.h" />
     <ClInclude Include="Editors\ProcGraphEditor.h" />
     <ClInclude Include="Editors\SequenceEditor.h" />
+    <ClInclude Include="Editors\TreeEditor.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Animation.h" />
     <ClInclude Include="Model\Controls.h" />

@@ -75,6 +75,7 @@ enum UIObjectFlags
 	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
 	UIObject_DB_Selectable = 1 << 22,
 	UIObject_DisableCulling = 1 << 23,
+	UIObject_NoPaint = 1 << 24,
 
 	UIObject_DB__Defaults = 0,
 };
@@ -230,7 +231,7 @@ struct UIObject
 	void SetFlag(UIObjectFlags flag, bool set);
 	bool HasFlags(UIObjectFlags f) const { return (flags & f) == f; }
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
-	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay)); }
+	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && (!GetStyle().GetPlacement() || GetStyle().GetPlacement()->applyOnLayout); }
 

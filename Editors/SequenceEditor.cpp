@@ -6,6 +6,21 @@
 
 namespace ui {
 
+void SequenceDragData::Render(UIContainer* ctx)
+{
+	if (scope->itemUICallback)
+	{
+		auto* seq = scope->GetSequence();
+		std::unique_ptr<ISequenceIterator> it{ seq->GetIterator(at) };
+		scope->itemUICallback(ctx, scope, it.get());
+	}
+	else
+	{
+		ctx->Text("item");
+	}
+}
+
+
 SequenceItemElement::SequenceItemElement()
 {
 	SetFlag(UIObject_DB_Draggable, true);
@@ -18,7 +33,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 {
 	Selectable::OnEvent(e);
 
-	if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Right)
+	if (e.type == UIEventType::ContextMenu)
 		ContextMenu();
 
 	if (e.context->DragCheck(e, UIMouseButton::Left))
@@ -28,7 +43,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 	}
 	else if (e.type == UIEventType::DragEnter)
 	{
-		if (auto* ddd = static_cast<SequenceDragData*>(ui::DragDrop::GetData(SequenceDragData::Name)))
+		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
 		{
 			if (ddd->scope == seqEd)
 			{
@@ -52,13 +67,10 @@ void SequenceItemElement::ContextMenu()
 {
 	auto* seq = seqEd->GetSequence();
 	bool canInsertOne = seq->GetCurrentSize() < seq->GetSizeLimit();
-	MenuItem items[] =
-	{
-		ui::MenuItem("Duplicate", {}, !canInsertOne).Func([this]() { seqEd->GetSequence()->Duplicate(num); RerenderNode(); }),
-		ui::MenuItem("Remove").Func([this]() { seqEd->GetSequence()->Remove(num); RerenderNode(); }),
-	};
-	ui::Menu menu(items);
-	menu.Show(this);
+
+	auto& CM = ContextMenu::Get();
+	CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); RerenderNode(); };
+	CM.Add("Remove") = [this]() { seqEd->GetSequence()->Remove(num); RerenderNode(); };
 }
 
 void SequenceItemElement::Init(SequenceEditor* se, size_t n)
@@ -67,11 +79,12 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 	num = n;
 
 	bool dragging = false;
-	if (auto* dd = static_cast<SequenceDragData*>(ui::DragDrop::GetData(SequenceDragData::Name)))
+	if (auto* dd = ui::DragDrop::GetData<SequenceDragData>())
 		if (dd->at == n && dd->scope == se)
 			dragging = true;
 
 	Selectable::Init(dragging);
+	SetFlag(UIObject_NoPaint, dragging);
 }
 
 
@@ -87,7 +100,8 @@ void SequenceEditor::Render(UIContainer* ctx)
 
 		OnBuildItem(ctx, it.get());
 
-		OnBuildDeleteButton(ctx, it.get());
+		if (showDeleteButton)
+			OnBuildDeleteButton(ctx, it.get());
 
 		ctx->Pop();
 	}

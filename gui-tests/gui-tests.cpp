@@ -357,6 +357,7 @@ void Test_ThreadedImageRendering(UIContainer* ctx);
 void Test_OSCommunication(UIContainer* ctx);
 
 void Test_SequenceEditors(UIContainer* ctx);
+void Test_TreeEditors(UIContainer* ctx);
 
 void Benchmark_SubUI(UIContainer* ctx);
 void Benchmark_TableView(UIContainer* ctx);
@@ -435,6 +436,7 @@ static const TestEntry utilityTestEntries[] =
 static const TestEntry dseditTestEntries[] =
 {
 	{ "Sequence editors", Test_SequenceEditors },
+	{ "Tree editors", Test_TreeEditors },
 	{ "Node graph", Demo_NodeGraphEditor },
 };
 static const TestEntry benchmarkEntries[] =

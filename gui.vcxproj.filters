@@ -73,6 +73,9 @@
     <ClCompile Include="Core\3DMath.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Editors\TreeEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_truetype.h" />
@@ -160,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="Core\3DMath.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\TreeEditor.h">
+      <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

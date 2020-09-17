@@ -204,9 +204,10 @@ struct BufferSequence : ISequence
 struct SequenceEditor;
 struct SequenceDragData : DragDropData
 {
-	static constexpr const char* Name = "SequenceDragData";
+	static constexpr const char* NAME = "SequenceDragData";
 
-	SequenceDragData(SequenceEditor* s, size_t f) : ui::DragDropData(Name), scope(s), at(f) {}
+	SequenceDragData(SequenceEditor* s, size_t f) : ui::DragDropData(NAME), scope(s), at(f) {}
+	void Render(UIContainer* ctx) override;
 
 	SequenceEditor* scope;
 	size_t at;
@@ -237,6 +238,8 @@ struct SequenceEditor : Node
 	SequenceEditor& SetSequence(ISequence* s);
 
 	std::function<void(UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)> itemUICallback;
+
+	bool showDeleteButton = true;
 
 	ISequence* _sequence;
 };
