@@ -148,7 +148,7 @@ static int curRTTHeight;
 
 void SetScissorRect(int x0, int y0, int x1, int y1)
 {
-	GLCHK(glScissor(x0, curRTTHeight - y1, std::max(x1 - x0, 0), std::max(y1 - y0, 0)));
+	GLCHK(glScissor(x0, curRTTHeight - y1, max(x1 - x0, 0), max(y1 - y0, 0)));
 }
 
 RECT g_viewport;

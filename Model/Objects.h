@@ -6,12 +6,12 @@
 #include <assert.h>
 #include <string.h>
 #include <typeinfo>
-#include <atomic>
 #include <new>
 
 #include "../Core/Math.h"
 #include "../Core/Serialization.h"
 #include "../Core/String.h"
+#include "../Core/Threading.h"
 #include "../Core/Font.h"
 
 #include "../Render/Render.h"
@@ -90,8 +90,8 @@ struct LivenessToken
 {
 	struct Data
 	{
-		std::atomic<int32_t> ref;
-		std::atomic_bool alive;
+		AtomicInt32 ref;
+		AtomicBool alive;
 	};
 
 	Data* _data;

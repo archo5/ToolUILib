@@ -383,7 +383,7 @@ struct Textbox : UIElement
 		HandleEvent(UIEventType::Change) = [this, &val](UIEvent&)
 		{
 			auto& t = GetText();
-			size_t s = std::min(t.size(), N - 1);
+			size_t s = min(t.size(), N - 1);
 			memcpy(val, t.c_str(), s);
 			val[s] = 0;
 		};

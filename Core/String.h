@@ -2,6 +2,8 @@
 #pragma once
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
+#include <functional>
 
 #include "Math.h"
 
@@ -36,7 +38,7 @@ struct StringView
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{
 		assert(at <= _size);
-		return StringView(_data + at, std::min(_size - at, size));
+		return StringView(_data + at, min(_size - at, size));
 	}
 	StringView ltrim() const
 	{
@@ -87,7 +89,7 @@ struct StringView
 	}
 	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const
 	{
-		for (size_t i = std::min(_size - sub._size - 1, from); i < _size; i--)
+		for (size_t i = min(_size - sub._size - 1, from); i < _size; i--)
 			if (memcmp(&_data[i], sub._data, sub._size) == 0)
 				return i;
 		return def;

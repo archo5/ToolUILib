@@ -8,6 +8,54 @@
 #include "Threading.h"
 
 
+static_assert(sizeof(std::atomic<bool>) <= sizeof(int32_t), "unexpected atomic bool size");
+
+AtomicBool::AtomicBool(bool v)
+{
+	reinterpret_cast<std::atomic_bool*>(&_mem)->store(v);
+}
+
+bool AtomicBool::Load() const
+{
+	return reinterpret_cast<const std::atomic_bool*>(&_mem)->load();
+}
+
+void AtomicBool::Store(bool v)
+{
+	reinterpret_cast<std::atomic_bool*>(&_mem)->store(v);
+}
+
+
+static_assert(sizeof(std::atomic<int32_t>) == sizeof(int32_t), "unexpected atomic int32 size");
+
+AtomicInt32::AtomicInt32(int32_t v)
+{
+	reinterpret_cast<std::atomic<int32_t>*>(&_mem)->store(v);
+}
+
+int32_t AtomicInt32::Load() const
+{
+	return reinterpret_cast<const std::atomic<int32_t>*>(&_mem)->load();
+}
+
+void AtomicInt32::Store(int32_t v)
+{
+	reinterpret_cast<std::atomic<int32_t>*>(&_mem)->store(v);
+}
+
+AtomicInt32& AtomicInt32::operator ++ ()
+{
+	(*reinterpret_cast<std::atomic<int32_t>*>(&_mem))++;
+	return *this;
+}
+
+AtomicInt32& AtomicInt32::operator -- ()
+{
+	(*reinterpret_cast<std::atomic<int32_t>*>(&_mem))--;
+	return *this;
+}
+
+
 struct EventQueueImpl
 {
 	std::queue<EventQueue::Entry*> q;

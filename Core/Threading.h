@@ -2,6 +2,49 @@
 #pragma once
 #include <type_traits>
 
+struct AtomicBool
+{
+	AtomicBool(bool v);
+	bool Load() const;
+	void Store(bool v);
+
+	operator bool () { return Load(); }
+
+private:
+	int32_t _mem;
+};
+
+struct AtomicInt32
+{
+	AtomicInt32(int32_t v);
+	int32_t Load() const;
+	void Store(int32_t v);
+	AtomicInt32& operator ++ ();
+	AtomicInt32& operator -- ();
+
+	operator int32_t () const { return Load(); }
+	AtomicInt32& operator = (const AtomicInt32& o)
+	{
+		Store(o);
+		return *this;
+	}
+	AtomicInt32 operator ++ (int)
+	{
+		auto copy = *this;
+		++*this;
+		return copy;
+	}
+	AtomicInt32 operator -- (int)
+	{
+		auto copy = *this;
+		--*this;
+		return copy;
+	}
+
+private:
+	int32_t _mem;
+};
+
 struct EventQueue
 {
 	struct Entry

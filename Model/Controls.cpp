@@ -151,7 +151,7 @@ double Slider::PosToQ(double x)
 	rect = rect.ShrinkBy(GetMarginRect(trackStyle, w));
 	rect = rect.ShrinkBy(GetPaddingRect(trackStyle, w));
 	float fw = rect.GetWidth();
-	return std::max(0.0, std::min(1.0, fw ? (x - rect.x0) / fw : 0));
+	return clamp(fw ? float(x - rect.x0) / fw : 0, 0.0f, 1.0f);
 }
 
 double Slider::QToValue(double q)
@@ -178,7 +178,7 @@ double Slider::QToValue(double q)
 double Slider::ValueToQ(double v)
 {
 	double diff = _limits.max - _limits.min;
-	return std::max(0.0, std::min(1.0, diff ? ((v - _limits.min) / diff) : 0.0));
+	return clamp(diff ? ((v - _limits.min) / diff) : 0.0, 0.0, 1.0);
 }
 
 
@@ -372,14 +372,14 @@ static float SplitWidthAsQ(SplitPane* sp)
 		if (sp->finalRectC.GetWidth() == 0)
 			return 0;
 		float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
-		return w / std::max(w, sp->finalRectC.GetWidth() - w);
+		return w / max(w, sp->finalRectC.GetWidth() - w);
 	}
 	else
 	{
 		if (sp->finalRectC.GetHeight() == 0)
 			return 0;
 		float w = sp->ResolveUnits(sp->vertSepStyle->height, sp->finalRectC.GetWidth());
-		return w / std::max(w, sp->finalRectC.GetHeight() - w);
+		return w / max(w, sp->finalRectC.GetHeight() - w);
 	}
 }
 
@@ -710,7 +710,7 @@ void ScrollArea::OnEvent(UIEvent& e)
 	if (e.type == UIEventType::MouseScroll)
 	{
 		yoff -= e.dy / 4;
-		yoff = std::min(std::max(info.contentSize - info.viewportSize, 0.0f), std::max(0.0f, yoff));
+		yoff = min(max(info.contentSize - info.viewportSize, 0.0f), max(0.0f, yoff));
 	}
 	sbv.OnEvent(info, e);
 }
@@ -1297,8 +1297,8 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	// anchor
 	float px = dirX < 0 ? avoidRect.x0 - w : avoidRect.x1;
 	float py = dirY < 0 ? avoidRect.y0 - h : avoidRect.y1;
-	px = std::min(std::max(px, 0.0f), float(contSize.x));
-	py = std::min(std::max(py, 0.0f), float(contSize.y));
+	px = clamp(px, 0.0f, float(contSize.x));
+	py = clamp(py, 0.0f, float(contSize.y));
 
 	UIRect R = { px, py, px + w, py + h };
 	outRect = R;

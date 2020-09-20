@@ -5,6 +5,7 @@
 #define NOMINMAX
 #include <winsock2.h>
 #include <vector>
+#include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
 #include <sstream>

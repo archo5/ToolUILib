@@ -121,7 +121,7 @@ void TableView::OnPaint()
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
-	float h = std::max(rhh, cellh);
+	float h = max(rhh, cellh);
 
 	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
 	auto sbrect = RC;
@@ -130,7 +130,7 @@ void TableView::OnPaint()
 	RC.x1 -= sbw;
 
 	size_t minR = floor(yOff / h);
-	size_t maxR = size_t(ceil((yOff + std::max(0.0f, sbrect.GetHeight())) / h));
+	size_t maxR = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / h));
 	if (minR > nr)
 		minR = nr;
 	if (maxR > nr)
@@ -267,7 +267,7 @@ void TableView::OnEvent(UIEvent& e)
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
-	float h = std::max(rhh, cellh);
+	float h = max(rhh, cellh);
 
 	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
 	auto sbrect = RC;
@@ -430,7 +430,7 @@ size_t TableView::GetRowAt(float y)
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
-	float h = std::max(rhh, cellh);
+	float h = max(rhh, cellh);
 
 	y += yOff;
 	y -= RC.y0;
@@ -464,7 +464,7 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
 	float cellh = 20 + padC.y0 + padC.y1;
-	float h = std::max(rhh, cellh);
+	float h = max(rhh, cellh);
 
 	float x0, x1;
 	if (col == SIZE_MAX)

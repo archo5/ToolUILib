@@ -104,7 +104,7 @@ struct Font
 			return it->value;
 
 		int glyphID = stbtt_FindGlyphIndex(&info, codepoint);
-		float scale = stbtt_ScaleForMappingEmToPixels(&info, sctx.size);
+		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(sctx.size));
 
 		GlyphValue* gv = nullptr;
 		if (it == sctx.glyphMap.end())
@@ -115,8 +115,8 @@ struct Font
 
 			gv = &sctx.glyphMap[codepoint];
 			gv->xadv = xadv * scale;
-			gv->xoff = x0;
-			gv->yoff = y0;
+			gv->xoff = float(x0);
+			gv->yoff = float(y0);
 			gv->w = x1 - x0;
 			gv->h = y1 - y0;
 		}

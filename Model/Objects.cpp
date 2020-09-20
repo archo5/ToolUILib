@@ -300,15 +300,15 @@ Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize, style
 	if (min_width.IsDefined())
 	{
 		float w = ResolveUnits(min_width, containerSize.x);
-		size = std::max(size, w);
-		maxsize = std::max(maxsize, w);
+		size = max(size, w);
+		maxsize = max(maxsize, w);
 	}
 
 	auto max_width = style.GetMaxWidth();
 	if (max_width.IsDefined())
 	{
 		maxsize = ResolveUnits(max_width, containerSize.x);
-		size = std::min(size, maxsize);
+		size = min(size, maxsize);
 	}
 
 	return { size, maxsize };
@@ -340,15 +340,15 @@ Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize, styl
 	if (min_height.IsDefined())
 	{
 		float h = ResolveUnits(min_height, containerSize.y);
-		size = std::max(size, h);
-		maxsize = std::max(maxsize, h);
+		size = max(size, h);
+		maxsize = max(maxsize, h);
 	}
 
 	auto max_height = style.GetMaxHeight();
 	if (max_height.IsDefined())
 	{
 		maxsize = ResolveUnits(max_height, containerSize.y);
-		size = std::min(size, maxsize);
+		size = min(size, maxsize);
 	}
 
 	return { size, maxsize };
@@ -508,9 +508,9 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 		float orig = state.finalContentRect.GetWidth();
 		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) : orig;
 		if (min_width.IsDefined())
-			tgt = std::max(tgt, ResolveUnits(min_width, containerSize.x));
+			tgt = max(tgt, ResolveUnits(min_width, containerSize.x));
 		if (max_width.IsDefined())
-			tgt = std::min(tgt, ResolveUnits(max_width, containerSize.x));
+			tgt = min(tgt, ResolveUnits(max_width, containerSize.x));
 		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.x0 + Prect.x1;
 		if (tgt != orig)
@@ -530,9 +530,9 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 		float orig = state.finalContentRect.GetHeight();
 		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) : orig;
 		if (min_height.IsDefined())
-			tgt = std::max(tgt, ResolveUnits(min_height, containerSize.y));
+			tgt = max(tgt, ResolveUnits(min_height, containerSize.y));
 		if (max_height.IsDefined())
-			tgt = std::min(tgt, ResolveUnits(max_height, containerSize.y));
+			tgt = min(tgt, ResolveUnits(max_height, containerSize.y));
 		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.y0 + Prect.y1;
 		if (tgt != orig)

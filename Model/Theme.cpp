@@ -148,7 +148,7 @@ struct DefaultTheme : Theme
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
-			float w = std::min(r.GetWidth(), r.GetHeight());
+			float w = min(r.GetWidth(), r.GetHeight());
 			DrawThemeElement(
 				info.IsDisabled() ? TE_CheckBgrDisabled :
 				info.IsDown() ? TE_CheckBgrPressed :
@@ -175,7 +175,7 @@ struct DefaultTheme : Theme
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
-			float w = std::min(r.GetWidth(), r.GetHeight());
+			float w = min(r.GetWidth(), r.GetHeight());
 			DrawThemeElement(
 				info.IsDisabled() ? TE_RadioBgrDisabled :
 				info.IsDown() ? TE_RadioBgrPressed :

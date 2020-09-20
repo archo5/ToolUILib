@@ -2,7 +2,6 @@
 #pragma once
 
 #include <math.h>
-#include <algorithm>
 
 
 template <class T> struct Point
@@ -11,6 +10,10 @@ template <class T> struct Point
 
 	Point<T> operator + (const Point<T>& o) const { return { x + o.x, y + o.y }; }
 	Point<T> operator - (const Point<T>& o) const { return { x - o.x, y - o.y }; }
+	Point<T>& operator += (const Point<T>& o) { x += o.x; y += o.y; return *this; }
+	Point<T>& operator -= (const Point<T>& o) { x -= o.x; y -= o.y; return *this; }
+	Point<T>& operator *= (float f) { x *= f; y *= f; return *this; }
+
 	template <class U> Point<U> Cast() const { return { U(x), U(y) }; }
 };
 
@@ -53,6 +56,6 @@ template <class T> AABB<T> operator * (T f, const AABB<T>& o) { return o * f; }
 
 inline float lerp(float a, float b, float s) { return a + (b - a) * s; }
 inline float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
-__forceinline float min(float a, float b) { return a < b ? a : b; }
-__forceinline float max(float a, float b) { return a > b ? a : b; }
-__forceinline float clamp(float x, float vmin, float vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }
+template <class T> __forceinline T min(T a, T b) { return a < b ? a : b; }
+template <class T> __forceinline T max(T a, T b) { return a > b ? a : b; }
+template <class T> __forceinline T clamp(T x, T vmin, T vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }

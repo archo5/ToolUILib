@@ -18,8 +18,8 @@ void FileView::Render(UIContainer* ctx)
 		char buf[256];
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
 		{
-			int64_t selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-			int64_t selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+			int64_t selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+			int64_t selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 			int64_t len = selMax - selMin + 1;
 			int64_t ciOff = 0, ciSize = 0;
 			if (auto* SI = workspace->desc.curInst)
@@ -69,8 +69,8 @@ void FileView::HexViewer_OnRightClick()
 {
 	auto* ds = of->ddFile->dataSource;
 	int64_t pos = of->hexViewerState.hoverByte;
-	auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-	auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 	if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
 		pos = selMin;
 
@@ -169,7 +169,7 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 	int64_t off = pos;
 	if (of->hexViewerState.selectionStart != UINT64_MAX && of->hexViewerState.selectionEnd != UINT64_MAX)
 	{
-		off = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+		off = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 		ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
 	}
 	workspace->desc.structs[ns->name] = ns;
@@ -180,8 +180,8 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 DDStruct* FileView::CreateStructFromMarkers(int64_t pos)
 {
 	auto* ns = CreateBlankStruct(pos);
-	auto selMin = std::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-	auto selMax = std::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 	int at = 0;
 	for (Marker& M : of->ddFile->markerData.markers)
 	{

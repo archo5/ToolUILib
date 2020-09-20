@@ -588,7 +588,7 @@ DDStructInst* DataDesc::AddInstance(const DDStructInst& src)
 		auto* I = instances[i];
 		if (I->off == src.off && I->def == src.def && I->file == src.file)
 		{
-			I->creationReason = std::min(I->creationReason, src.creationReason);
+			I->creationReason = min(I->creationReason, src.creationReason);
 			I->remainingCount = src.remainingCount;
 			I->remainingCountIsSize = src.remainingCountIsSize;
 			return I;

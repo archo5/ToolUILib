@@ -80,82 +80,11 @@ struct MenuItemCollection
 
 		std::vector<MenuItem> _finalizedChildItems;
 
-		~Entry()
-		{
-			for (const auto& ch : children)
-				delete ch.value;
-		}
-		void Finalize()
-		{
-			if (children.size() == 0)
-				return;
-
-			std::vector<Entry*> sortedChildren;
-			for (const auto& ch : children)
-				sortedChildren.push_back(ch.value);
-
-			std::sort(sortedChildren.begin(), sortedChildren.end(), [](const Entry* a, const Entry* b)
-			{
-				if (a->maxPriority != b->minPriority)
-					return a->maxPriority < b->minPriority;
-				return a->name < b->name;
-			});
-
-			_finalizedChildItems.clear();
-			int prevPrio = sortedChildren[0]->minPriority;
-			for (Entry* ch : sortedChildren)
-			{
-				if (ch->minPriority - prevPrio >= SEPARATOR_THRESHOLD)
-				{
-					_finalizedChildItems.push_back(MenuItem::Separator());
-				}
-				prevPrio = ch->maxPriority;
-
-				ch->Finalize();
-				_finalizedChildItems.push_back(
-					MenuItem(
-						ch->name,
-						{},
-						ch->disabled,
-						ch->checked,
-						ch->_finalizedChildItems
-					).Func(ch->function)
-				);
-			}
-		}
+		~Entry();
+		void Finalize();
 	};
 
-	Entry* CreateEntry(StringView path, int priority)
-	{
-		if (path.empty())
-			return &root;
-
-		size_t sep = path.find_last_at(SEPARATOR);
-		auto parentPath = path.substr(0, sep == SIZE_MAX ? 0 : sep);
-		auto name = path.substr(sep == SIZE_MAX ? 0 : sep + strlen(SEPARATOR));
-		std::string nameStr(name.data(), name.size());
-
-		auto* parent = CreateEntry(parentPath, priority);
-
-		auto it = parent->children.find(nameStr);
-		if (it.is_valid())
-		{
-			Entry* E = it->value;
-			E->minPriority = std::min(E->minPriority, priority);
-			E->maxPriority = std::max(E->maxPriority, priority);
-			return E;
-		}
-		else
-		{
-			Entry* E = new Entry;
-			E->name = nameStr;
-			E->minPriority = priority;
-			E->maxPriority = priority;
-			parent->children.insert(E->name, E);
-
-			return E;
-		}
-	}
+	Entry* CreateEntry(StringView path, int priority);
 	std::function<void()>& Add(StringView path, bool disabled = false, bool checked = false, int priority = 0)
 	{
 		Entry* E = CreateEntry(path, basePriority + priority);

@@ -1,6 +1,8 @@
 
 #include "System.h"
 
+#include <algorithm>
+
 
 namespace ui {
 extern uint32_t g_curLayoutFrame;

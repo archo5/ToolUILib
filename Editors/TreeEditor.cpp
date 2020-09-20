@@ -3,6 +3,8 @@
 
 #include "../Model/Menu.h"
 
+#include <algorithm>
+
 
 namespace ui {
 

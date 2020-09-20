@@ -170,7 +170,7 @@ void HueSatPicker::OnEvent(UIEvent& e)
 		float rx = (e.x - (cr.x0 + hw)) / hw;
 		float ry = (e.y - (cr.y0 + hw)) / hw;
 		_hue = fmodf(atan2(rx, -ry) / (3.14159f * 2) + 1.0f, 1.0f);
-		_sat = std::max(0.0f, std::min(1.0f, sqrtf(rx * rx + ry * ry)));
+		_sat = clamp(sqrtf(rx * rx + ry * ry), 0.0f, 1.0f);
 		e.context->OnChange(this);
 	}
 }
@@ -178,7 +178,7 @@ void HueSatPicker::OnEvent(UIEvent& e)
 void HueSatPicker::OnPaint()
 {
 	auto cr = GetContentRect();
-	int tgtw = int(std::min(cr.GetWidth(), cr.GetHeight()));
+	int tgtw = int(min(cr.GetWidth(), cr.GetHeight()));
 	cr.x1 = cr.x0 + tgtw;
 	cr.y1 = cr.y0 + tgtw;
 	if (!_bgImage || _bgImage->GetWidth() != tgtw)
@@ -215,7 +215,7 @@ void HueSatPicker::_RegenerateBackground(int w)
 		for (int x = 0; x < w; x++)
 		{
 			float d = sqrtf((x - cx) * (x - cx) + (y - cy) * (y - cy));
-			float alpha = std::max(0.0f, std::min(1.0f, (d - dmax) * -1));
+			float alpha = clamp((d - dmax) * -1, 0.0f, 1.0f);
 			float angle = fmodf(atan2(x - cx, cy - y) / (3.14159f * 2) + 1.0f, 1.0f);
 			Color4f col = Color4f::HSV(angle, d / dmax, 1.0f, alpha);
 			px[x + y * w] = col.GetColor32();
@@ -250,8 +250,8 @@ void ColorCompPicker2D::OnEvent(UIEvent& e)
 		(e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left))
 	{
 		auto cr = GetContentRect();
-		_x = std::max(0.0f, std::min(1.0f, (e.x - cr.x0) / cr.GetWidth()));
-		_y = std::max(0.0f, std::min(1.0f, (e.y - cr.y0) / cr.GetHeight()));
+		_x = clamp((e.x - cr.x0) / cr.GetWidth(), 0.0f, 1.0f);
+		_y = clamp((e.y - cr.y0) / cr.GetHeight(), 0.0f, 1.0f);
 		if (_settings._invx) _x = 1 - _x;
 		if (_settings._invy) _y = 1 - _y;
 		e.context->OnChange(this);
