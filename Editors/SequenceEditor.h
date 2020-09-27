@@ -94,8 +94,8 @@ struct StdSequence : ISequence
 	}
 	void MoveElementTo(size_t off, size_t to) override
 	{
-		auto imin = std::min(off, to);
-		auto imax = std::max(off, to);
+		auto imin = min(off, to);
+		auto imax = max(off, to);
 		auto minit = cont.begin();
 		std::advance(minit, imin);
 		auto maxit = minit;

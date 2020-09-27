@@ -44,6 +44,9 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods = {});
 bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods = {});
 
+// length of `val` = length of `axes`
+bool EditFloatVec(UIContainer* ctx, float* val, const char* axes = "XYZ", ModInitList mods = {}, float speed = DEFAULT_SPEED, float vmin = -FLT_MAX, float vmax = FLT_MAX, const char* fmt = "%g");
+
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods = {});
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods = {});

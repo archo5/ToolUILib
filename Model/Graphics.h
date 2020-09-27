@@ -11,13 +11,13 @@ namespace ui {
 struct Image
 {
 	Image() {}
-	Image(uint32_t w, uint32_t h, const void* d, bool filtering = draw::DEFAULT_FILTERING) : _width(w), _height(h)
+	Image(uint32_t w, uint32_t h, const void* d, draw::TexFlags flags = draw::TexFlags::None) : _width(w), _height(h)
 	{
-		_texture = draw::TextureCreateRGBA8(w, h, d, filtering);
+		_texture = draw::TextureCreateRGBA8(w, h, d, flags);
 	}
-	Image(const Canvas& c, bool filtering = draw::DEFAULT_FILTERING) : _width(c.GetWidth()), _height(c.GetHeight())
+	Image(const Canvas& c, draw::TexFlags flags = draw::TexFlags::None) : _width(c.GetWidth()), _height(c.GetHeight())
 	{
-		_texture = draw::TextureCreateRGBA8(c.GetWidth(), c.GetHeight(), c.GetBytes(), filtering);
+		_texture = draw::TextureCreateRGBA8(c.GetWidth(), c.GetHeight(), c.GetBytes(), flags);
 	}
 	Image(const Image& img) = delete;
 	Image(Image&& img) : _width(img._width), _height(img._height), _texture(img._texture) { img._texture = nullptr; }
@@ -73,11 +73,14 @@ struct ImageElement : UIElement
 
 	ImageElement* SetImage(Image* img);
 	ImageElement* SetScaleMode(ScaleMode sm, float ax = 0, float ay = 0);
+	ImageElement* SetAlphaBackgroundEnabled(bool enabled);
 
 	Image* _image = nullptr;
 	ScaleMode _scaleMode = ScaleMode::Fit;
 	float _anchorX = 0;
 	float _anchorY = 0;
+
+	std::shared_ptr<Image> _bgImage;
 };
 
 struct HueSatPicker : UIElement

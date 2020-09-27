@@ -71,11 +71,14 @@ struct IProcGraph
 	virtual std::string GetNodeName(Node*) = 0;
 	virtual uintptr_t GetNodeInputCount(Node*) = 0;
 	virtual uintptr_t GetNodeOutputCount(Node*) = 0;
+	virtual void NodePropertyEditorUI(Node*, UIContainer*) {}
+	virtual void OnNodeContextMenu(Node*, struct MenuItemCollection&) {}
 
 	// basic pin info
 	virtual std::string GetPinName(const Pin&) = 0;
-	virtual Color4b GetPinColor(const Pin& pin) { return Color4b(255, 0); }
-	virtual void InputPinEditorUI(const Pin& pin, UIContainer*) {}
+	virtual Color4b GetPinColor(const Pin&) { return Color4b(255, 0); }
+	virtual void OnPinContextMenu(const Pin&, struct MenuItemCollection&) {}
+	virtual void InputPinEditorUI(const Pin&, UIContainer*) {}
 
 	// pin linkage info (with default suboptimal implementations)
 	virtual bool IsPinLinked(const Pin& pin)
@@ -182,6 +185,7 @@ struct ProcGraphEditor_Node : Node
 	void Init(IProcGraph* graph, IProcGraph::Node* node, Point<float> vOff);
 
 	virtual void OnBuildTitleBar(UIContainer* ctx);
+	virtual void OnBuildEditor(UIContainer* ctx);
 	virtual void OnBuildInputPins(UIContainer* ctx);
 	virtual void OnBuildOutputPins(UIContainer* ctx);
 	virtual void OnBuildPreview(UIContainer* ctx);

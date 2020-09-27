@@ -80,6 +80,10 @@ void ImageElement::OnPaint()
 	styleProps->paint_func(this);
 
 	auto c = GetContentRect();
+	if (_bgImage)
+	{
+		ui::draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage->_texture, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
+	}
 	if (_image && _image->GetWidth() && _image->GetHeight() && c.GetWidth() && c.GetHeight())
 	{
 		switch (_scaleMode)
@@ -95,8 +99,8 @@ void ImageElement::OnPaint()
 				h = w / iasp;
 			else
 				w = h * iasp;
-			float x = c.x0 + (c.GetWidth() - w) * (_anchorX + 1) * 0.5f;
-			float y = c.y0 + (c.GetHeight() - h) * (_anchorY + 1) * 0.5f;
+			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
+			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
 			draw::RectTex(x, y, x + w, y + h, _image->_texture);
 			break; }
 		case ScaleMode::Fill: {
@@ -141,6 +145,12 @@ ImageElement* ImageElement::SetScaleMode(ScaleMode sm, float ax, float ay)
 	_scaleMode = sm;
 	_anchorX = ax;
 	_anchorY = ay;
+	return this;
+}
+
+ImageElement* ImageElement::SetAlphaBackgroundEnabled(bool enabled)
+{
+	_bgImage = enabled ? Theme::current->GetImage(ThemeImage::CheckerboardBackground) : nullptr;
 	return this;
 }
 
@@ -694,8 +704,9 @@ void ColorPickerWindow::OnRender(UIContainer* ctx)
 
 void ColorEdit::Render(UIContainer* ctx)
 {
-	ctx->Make<ColorInspectBlock>()->SetColor(_color.GetRGBA())
-		+ EventHandler(UIEventType::Click, [this](UIEvent& e)
+	auto& cib = ctx->Make<ColorInspectBlock>()->SetColor(_color.GetRGBA());
+	cib.SetFlag(UIObject_DB_Button, true);
+	cib + EventHandler(UIEventType::Click, [this](UIEvent& e)
 	{
 		if (e.GetButton() == UIMouseButton::Left)
 		{
@@ -704,6 +715,7 @@ void ColorEdit::Render(UIContainer* ctx)
 			cpw.Show();
 			_color = cpw.GetColor();
 			e.context->OnChange(this);
+			e.context->OnCommit(this);
 		}
 	});
 }

@@ -89,6 +89,8 @@ void ProcGraphEditor_NodePin::OnEvent(UIEvent& e)
 		auto& CM = ContextMenu::Get();
 		CM.Add("Unlink pin") = [this]() { _UnlinkPin(); };
 		CM.Add("Link pin to...") = [this]() { DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _pin)); };
+
+		_graph->OnPinContextMenu(_pin, CM);
 	}
 }
 
@@ -169,11 +171,12 @@ void ProcGraphEditor_Node::Render(UIContainer* ctx)
 	s.SetWidth(style::Coord::Undefined());
 	s.SetMinWidth(100);
 
-	*ctx->Push<TabPanel>() + Width(style::Coord::Undefined());
+	*ctx->Push<TabPanel>() + Width(style::Coord::Undefined()) + Margin(0);
 
 	OnBuildTitleBar(ctx);
 	OnBuildOutputPins(ctx);
 	OnBuildPreview(ctx);
+	OnBuildEditor(ctx);
 	OnBuildInputPins(ctx);
 
 	ctx->Pop();
@@ -197,6 +200,8 @@ void ProcGraphEditor_Node::OnEvent(UIEvent& e)
 				Notify(DCT_EditProcGraphNode, _node);
 			};
 		}
+
+		_graph->OnNodeContextMenu(_node, ContextMenu::Get());
 	}
 }
 
@@ -213,7 +218,10 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 	placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
 	GetStyle().SetPlacement(placement);
 
-	*ctx->Push<Selectable>()->Init(_isDragging)
+	auto* sel = ctx->Push<Selectable>()->Init(_isDragging);
+	sel->GetStyle().SetFontWeight(style::FontWeight::Bold);
+	sel->GetStyle().SetFontStyle(style::FontStyle::Italic);
+	*sel
 		+ Padding(0)
 		+ MakeDraggable()
 		+ EventHandler([this, placement](UIEvent& e)
@@ -250,6 +258,11 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 	}
 	ctx->Text(_graph->GetNodeName(_node)) + Padding(5, hasPreview ? 0 : 5, 5, 5);
 	ctx->Pop();
+}
+
+void ProcGraphEditor_Node::OnBuildEditor(UIContainer* ctx)
+{
+	_graph->NodePropertyEditorUI(_node, ctx);
 }
 
 void ProcGraphEditor_Node::OnBuildInputPins(UIContainer* ctx)
@@ -346,8 +359,6 @@ void ProcGraphEditor::OnBuildNodes(UIContainer* ctx)
 
 void ProcGraphEditor::OnMakeCreationMenu(MenuItemCollection& menu)
 {
-	ContextMenu::Get().Add("- Create a new node -", true, false, MenuItemCollection::MIN_SAFE_PRIORITY);
-
 	std::vector<IProcGraph::NodeTypeEntry> nodes;
 	_graph->GetAvailableNodeTypes(nodes);
 
@@ -360,6 +371,11 @@ void ProcGraphEditor::OnMakeCreationMenu(MenuItemCollection& menu)
 			graph->SetNodePosition(node, system->eventSystem.clickStartPositions[1]);
 			Notify(DCT_EditProcGraph, graph);
 		};
+	}
+
+	if (menu.HasAny())
+	{
+		ContextMenu::Get().Add("- Create a new node -", true, false, MenuItemCollection::MIN_SAFE_PRIORITY);
 	}
 }
 

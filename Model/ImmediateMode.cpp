@@ -255,6 +255,18 @@ bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods)
 	return false;
 }
 
+bool EditFloatVec(UIContainer* ctx, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+{
+	bool any = false;
+	char axisLabel[3] = "\b\0";
+	while (*axes)
+	{
+		axisLabel[1] = *axes++;
+		any |= PropEditFloat(ctx, axisLabel, *val++, mods, speed, vmin, vmax, fmt);
+	}
+	return any;
+}
+
 
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
@@ -327,14 +339,7 @@ bool PropEditColor(UIContainer* ctx, const char* label, Color4b& val, ModInitLis
 bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
 	Property::Scope ps(ctx, label);
-	bool any = false;
-	char axisLabel[3] = "\b\0";
-	while (*axes)
-	{
-		axisLabel[1] = *axes++;
-		any |= PropEditFloat(ctx, axisLabel, *val++, mods, speed, vmin, vmax, fmt);
-	}
-	return any;
+	return EditFloatVec(ctx, val, axes, mods, speed, vmin, vmax, fmt);
 }
 
 } // imm

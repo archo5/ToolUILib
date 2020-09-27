@@ -35,7 +35,7 @@ struct TexturePage
 	TexturePage()
 	{
 		stbrp_init_target(&rectPackContext, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, rectPackNodes, MAX_TEXTURE_PAGE_NODES);
-		rhiTex = rhi::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, DEFAULT_FILTERING);
+		rhiTex = rhi::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, 0);
 	}
 	~TexturePage()
 	{
@@ -51,8 +51,12 @@ struct TexturePage
 
 struct TextureStorage
 {
-	TextureNode* AllocNode(int w, int h, const void* d, bool a8)
+	TextureNode* AllocNode(int w, int h, const void* d, bool a8, TexFlags flg)
 	{
+		if ((flg & TexFlags::Repeat) != TexFlags::None)
+			return nullptr;
+		if ((flg & TexFlags::Filter) != TexFlags::None) // TODO add 1px border?
+			return nullptr;
 		if (w > TEXTURE_PAGE_WIDTH / 2 || h > TEXTURE_PAGE_HEIGHT / 2)
 			return nullptr;
 
@@ -191,8 +195,8 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2])
 
 struct Texture
 {
-	Texture(int w, int h, int pitch, const void* d, bool a8, bool flt) :
-		width(w), height(h), isFilteringEnabled(flt)
+	Texture(int w, int h, int pitch, const void* d, bool a8, TexFlags flg) :
+		width(w), height(h), flags(flg)
 	{
 		data = new uint8_t[w * h * 4];
 		if (!a8)
@@ -215,10 +219,10 @@ struct Texture
 				}
 			}
 		}
-		if (auto* n = g_textureStorage.AllocNode(w, h, data, false))
+		if (auto* n = g_textureStorage.AllocNode(w, h, data, false, flg))
 			atlasNode = n;
 		else
-			rhiTex = a8 ? rhi::CreateTextureA8(d, w, h) : rhi::CreateTextureRGBA8(d, w, h, flt);
+			rhiTex = a8 ? rhi::CreateTextureA8(d, w, h, uint8_t(flg)) : rhi::CreateTextureRGBA8(d, w, h, uint8_t(flg));
 	}
 	~Texture()
 	{
@@ -234,25 +238,25 @@ struct Texture
 	uint16_t width;
 	uint16_t height;
 	uint8_t* data;
-	bool isFilteringEnabled;
+	TexFlags flags;
 	rhi::Texture2D* rhiTex = nullptr;
 	TextureNode* atlasNode = nullptr;
 };
 
 
-Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering)
+Texture* TextureCreateRGBA8(int w, int h, const void* data, TexFlags flags)
 {
-	return new Texture(w, h, w * 4, data, false, filtering);
+	return new Texture(w, h, w * 4, data, false, flags);
 }
 
-Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, bool filtering)
+Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags)
 {
-	return new Texture(w, h, pitch, data, false, filtering);
+	return new Texture(w, h, pitch, data, false, flags);
 }
 
-Texture* TextureCreateA8(int w, int h, const void* data, bool filtering)
+Texture* TextureCreateA8(int w, int h, const void* data, TexFlags flags)
 {
-	return new Texture(w, h, w, data, true, filtering);
+	return new Texture(w, h, w, data, true, flags);
 }
 
 void TextureAddRef(Texture* tex)

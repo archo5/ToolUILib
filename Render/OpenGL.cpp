@@ -197,26 +197,33 @@ void Present(RenderContext* RC)
 	SwapBuffers(RC->dc);
 }
 
-Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height)
+static void ApplyFlags(uint8_t flags)
+{
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, flags & TF_FILTER ? GL_LINEAR : GL_NEAREST));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, flags & TF_FILTER ? GL_LINEAR : GL_NEAREST));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, flags & TF_REPEAT ? GL_REPEAT : GL_CLAMP));
+	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, flags & TF_REPEAT ? GL_REPEAT : GL_CLAMP));
+}
+
+Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags)
 {
 	GLuint tex;
 	GLCHK(glGenTextures(1, &tex));
 	GLCHK(glBindTexture(GL_TEXTURE_2D, tex));
 	GLCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data));
-	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	ApplyFlags(flags);
 	GLCHK(glEnable(GL_TEXTURE_2D));
 
 	return (Texture2D*) tex;
 }
 
-Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering)
+Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags)
 {
 	GLuint tex;
 	GLCHK(glGenTextures(1, &tex));
 	GLCHK(glBindTexture(GL_TEXTURE_2D, tex));
 	GLCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data));
-	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering ? GL_LINEAR : GL_NEAREST));
-	GLCHK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering ? GL_LINEAR : GL_NEAREST));
+	ApplyFlags(flags);
 	GLCHK(glEnable(GL_TEXTURE_2D));
 
 	return (Texture2D*) tex;

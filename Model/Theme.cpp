@@ -582,7 +582,7 @@ struct DefaultTheme : Theme
 			for (int y = 0; y < 16; y++)
 				for (int x = 0; x < 16; x++)
 					c.GetPixels()[x + y * 16] = ((x < 8) ^ (y < 8) ? Color4f(0.2f, 1) : Color4f(0.4f, 1)).GetColor32();
-			return std::make_shared<Image>(c); }
+			return std::make_shared<Image>(c, draw::TF_Repeat); }
 		default:
 			return nullptr;
 		}

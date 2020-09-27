@@ -69,7 +69,24 @@ struct Texture2D;
 } // rhi
 namespace draw {
 
-constexpr bool DEFAULT_FILTERING = true;
+// texture flags
+enum class TexFlags : uint8_t
+{
+	None = 0,
+	Filter = 1 << 0,
+	Repeat = 1 << 1,
+};
+constexpr TexFlags TF_None = TexFlags::None;
+constexpr TexFlags TF_Filter = TexFlags::Filter;
+constexpr TexFlags TF_Repeat = TexFlags::Repeat;
+inline TexFlags operator | (TexFlags a, TexFlags b)
+{
+	return TexFlags(int(a) | int(b));
+}
+inline TexFlags operator & (TexFlags a, TexFlags b)
+{
+	return TexFlags(int(a) & int(b));
+}
 
 namespace debug {
 
@@ -79,9 +96,9 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
 } // debug
 
 struct Texture;
-Texture* TextureCreateRGBA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
-Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, bool filtering = DEFAULT_FILTERING);
-Texture* TextureCreateA8(int w, int h, const void* data, bool filtering = DEFAULT_FILTERING);
+Texture* TextureCreateRGBA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
+Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
+Texture* TextureCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 void TextureAddRef(Texture* tex);
 void TextureRelease(Texture* tex);
 

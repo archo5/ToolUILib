@@ -398,5 +398,5 @@ ui::Image* CreateImageFrom(IDataSource* ds, StringView fmt, const ImageInfo& inf
 	if (!done)
 		return nullptr;
 
-	return new ui::Image(c, false);
+	return new ui::Image(c, ui::draw::TF_None);
 }

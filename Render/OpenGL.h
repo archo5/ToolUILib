@@ -38,8 +38,10 @@ void SetScissorRect(int x0, int y0, int x1, int y1);
 void Clear(int r, int g, int b, int a);
 void Present(RenderContext* RC);
 
-Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height);
-Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, bool filtering = true);
+constexpr uint8_t TF_FILTER = 1 << 0;
+constexpr uint8_t TF_REPEAT = 1 << 1;
+Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags);
+Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags);
 void DestroyTexture(Texture2D* tex);
 
 struct MapData
