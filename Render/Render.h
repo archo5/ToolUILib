@@ -129,7 +129,6 @@ AABB<float> GetCurrentScissorRectF();
 } // ui
 
 
-extern ui::draw::Texture* g_themeTexture;
 void InitTheme();
 AABB<float> GetThemeElementBorderWidths(EThemeElement e);
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);

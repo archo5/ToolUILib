@@ -79,11 +79,7 @@ void StateToggleVisualBase::OnPaint()
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	style::PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
-	{
 		info.checkState = st->GetState();
-		if (info.checkState) // TODO?
-			info.state |= style::PS_Checked;
-	}
 	styleProps->paint_func(info);
 
 	PaintChildren();
@@ -839,7 +835,7 @@ void TabButtonBase::OnPaint()
 {
 	style::PaintInfo info(this);
 	if (IsSelected())
-		info.state |= style::PS_Checked;
+		info.checkState = 1;
 	styleProps->paint_func(info);
 	PaintChildren();
 }
@@ -1287,7 +1283,7 @@ void CollapsibleTreeNode::OnPaint()
 	if (_hovered)
 		info.state |= style::PS_Hover;
 	if (open)
-		info.state |= style::PS_Checked;
+		info.checkState = 1;
 	styleProps->paint_func(info);
 	PaintChildren();
 }

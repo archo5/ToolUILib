@@ -213,10 +213,7 @@ void TableView::OnPaint()
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			if (selection.IsSelected(r))
-				info.state |= style::PS_Checked;
-			else
-				info.state &= ~style::PS_Checked;
+			info.checkState = selection.IsSelected(r);
 			if (_impl->hoverRow == r)
 				info.state |= style::PS_Hover;
 			else

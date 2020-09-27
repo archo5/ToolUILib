@@ -152,7 +152,6 @@
     <ClCompile Include="Model\Theme.cpp" />
     <ClCompile Include="Render\OpenGL.cpp" />
     <ClCompile Include="Render\Render.cpp" />
-    <ClCompile Include="UniParser\UPScript.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
@@ -185,7 +184,6 @@
     <ClInclude Include="Render\OpenGL.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="stb_truetype.h" />
-    <ClInclude Include="UniParser\UPScript.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="layout-design.txt" />

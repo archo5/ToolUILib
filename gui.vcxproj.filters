@@ -22,9 +22,6 @@
     <ClCompile Include="Model\Layout.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="UniParser\UPScript.cpp">
-      <Filter>UniParser</Filter>
-    </ClCompile>
     <ClCompile Include="Model\Native.cpp">
       <Filter>Model</Filter>
     </ClCompile>
@@ -106,9 +103,6 @@
     <ClInclude Include="Core\String.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="UniParser\UPScript.h">
-      <Filter>UniParser</Filter>
-    </ClInclude>
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Native.h">
       <Filter>Model</Filter>
@@ -177,9 +171,6 @@
     </Filter>
     <Filter Include="Model">
       <UniqueIdentifier>{e83e766c-1405-4304-9bc3-1bfff95fe9b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="UniParser">
-      <UniqueIdentifier>{c5b8e5a1-15a6-49f6-9d17-6dc4d05e4d1d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Editors">
       <UniqueIdentifier>{c1dfc1e9-aafa-430e-ada8-74558a8962f7}</UniqueIdentifier>

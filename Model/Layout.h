@@ -352,8 +352,7 @@ enum PaintInfoItemState
 	PS_Hover = 1 << 0,
 	PS_Down = 1 << 1,
 	PS_Disabled = 1 << 2,
-	PS_Checked = 1 << 3,
-	PS_Focused = 1 << 4,
+	PS_Focused = 1 << 3,
 };
 
 struct PaintInfo
@@ -368,7 +367,7 @@ struct PaintInfo
 	bool IsHovered() const { return (state & PS_Hover) != 0; }
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
-	bool IsChecked() const { return (state & PS_Checked) != 0; }
+	bool IsChecked() const { return checkState != 0; }
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 

@@ -1,5 +1,6 @@
 
 #include <vector>
+#include <algorithm>
 
 #include "Native.h"
 #include "Layout.h"
@@ -58,7 +59,7 @@ struct InlineBlockLayout : Layout
 	{
 		float size = GetFontHeight();
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 		return size;
 	}
 	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
@@ -73,7 +74,7 @@ struct InlineBlockLayout : Layout
 			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
 			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
 			p += w;
-			maxH = std::max(maxH, h);
+			maxH = max(maxH, h);
 		}
 		state.finalContentRect = { inrect.x0, inrect.y0, p, y0 + maxH };
 	}
@@ -95,7 +96,7 @@ struct StackLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
+				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
@@ -122,7 +123,7 @@ struct StackLayout : Layout
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 			break;
 		}
 		return size;
@@ -225,7 +226,7 @@ struct StackExpandLayout : Layout
 		case style::StackingDirection::TopDown:
 		case style::StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
+				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
 			break;
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
@@ -262,7 +263,7 @@ struct StackExpandLayout : Layout
 		case style::StackingDirection::LeftToRight:
 		case style::StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = std::max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
+				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
 			break;
 		}
 		return size;
@@ -304,7 +305,7 @@ struct StackExpandLayout : Layout
 				const auto& b = items[ib];
 				return (a.maxw - a.minw) < (b.maxw - b.minw);
 			});
-			float leftover = std::max(inrect.GetWidth() - sum, 0.0f);
+			float leftover = max(inrect.GetWidth() - sum, 0.0f);
 			for (auto idx : sorted)
 			{
 				auto& item = items[idx];
@@ -322,7 +323,7 @@ struct StackExpandLayout : Layout
 				item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
 				p += item.w;
 			}
-			state.finalContentRect = { inrect.x0, inrect.y0, std::max(inrect.x1, p), inrect.y1 };
+			state.finalContentRect = { inrect.x0, inrect.y0, max(inrect.x1, p), inrect.y1 };
 			break; }
 		}
 	}
@@ -396,7 +397,7 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 	if (o->IsFocused())
 		state |= PS_Focused;
 	if (o->flags & UIObject_IsChecked)
-		state |= PS_Checked;
+		checkState = 1;
 }
 
 
