@@ -21,41 +21,96 @@ Button::Button()
 }
 
 
-CheckableBase::CheckableBase()
+StateButtonBase::StateButtonBase()
 {
 	SetFlag(UIObject_DB_Button, true);
+	GetStyle().SetLayout(style::layouts::InlineBlock());
 }
 
-void CheckableBase::OnPaint()
-{
-	style::PaintInfo info(this);
-	if (IsSelected())
-		info.state |= style::PS_Checked;
-	styleProps->paint_func(info);
 
-	PaintChildren();
-}
-
-void CheckableBase::OnEvent(UIEvent& e)
+void StateToggleBase::OnEvent(UIEvent& e)
 {
-	if (e.type == UIEventType::Activate)
+	StateButtonBase::OnEvent(e);
+	if (e.type == UIEventType::Activate && OnActivate())
 	{
-		OnSelect(e);
+		e.StopPropagation();
 		e.context->OnChange(this);
 		e.context->OnCommit(this);
 	}
 }
 
 
-CheckboxBase::CheckboxBase()
+StateToggle* StateToggle::InitReadOnly(uint8_t state)
 {
-	styleProps = Theme::current->checkbox;
+	_state = state;
+	_maxNumStates = 0;
+	return this;
+}
+
+StateToggle* StateToggle::InitEditable(uint8_t state, uint8_t maxNumStates)
+{
+	_state = state;
+	_maxNumStates = maxNumStates;
+	return this;
+}
+
+void StateToggle::OnSerialize(IDataSerializer& s)
+{
+	s << _state << _maxNumStates;
+}
+
+StateToggle* StateToggle::SetState(uint8_t state)
+{
+	_state = state;
+	return this;
+}
+
+bool StateToggle::OnActivate()
+{
+	if (!_maxNumStates)
+		return false;
+	_state = (_state + 1) % _maxNumStates;
+	return true;
 }
 
 
-RadioButtonBase::RadioButtonBase()
+void StateToggleVisualBase::OnPaint()
 {
-	styleProps = Theme::current->radioButton;
+	StateButtonBase* st = FindParentOfType<StateButtonBase>();
+	style::PaintInfo info(st ? static_cast<UIObject*>(st) : this);
+	if (st)
+	{
+		info.checkState = st->GetState();
+		if (info.checkState) // TODO?
+			info.state |= style::PS_Checked;
+	}
+	styleProps->paint_func(info);
+
+	PaintChildren();
+}
+
+
+CheckboxIcon::CheckboxIcon()
+{
+	styleProps = ui::Theme::current->checkbox;
+}
+
+
+RadioButtonIcon::RadioButtonIcon()
+{
+	styleProps = ui::Theme::current->radioButton;
+}
+
+
+TreeExpandIcon::TreeExpandIcon()
+{
+	styleProps = ui::Theme::current->collapsibleTreeNode;
+}
+
+
+StateButtonSkin::StateButtonSkin()
+{
+	styleProps = ui::Theme::current->button;
 }
 
 

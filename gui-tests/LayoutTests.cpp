@@ -80,9 +80,7 @@ struct LayoutNestComboTest : ui::Node
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(layout, i);
-			rb->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-			rb->SetStyle(ui::Theme::current->button);
+			BasicRadioButton2(ctx, layoutShortNames[i], layout, i)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 		}
 		ctx->Text(layoutLongNames[layout]);
 		ctx->Pop();
@@ -161,9 +159,7 @@ struct StackingLayoutVariationsTest : ui::Node
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			auto* rb = ctx->MakeWithText<ui::RadioButtonT<int>>(layoutShortNames[i])->Init(mode, i);
-			rb->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-			rb->SetStyle(ui::Theme::current->button);
+			BasicRadioButton2(ctx, layoutShortNames[i], mode, i)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 		}
 		ctx->Text(layoutLongNames[mode]);
 		ctx->Pop();

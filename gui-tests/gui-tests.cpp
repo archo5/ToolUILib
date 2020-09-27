@@ -220,15 +220,9 @@ struct DataEditor : ui::Node
 			ctx->Push<ui::Panel>();
 			ctx->MakeWithText<ui::Button>("In-frame button");
 			static int cur = 1;
-			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 0);
-			ctx->Text("Zero");
-			ctx->Pop();
-			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 1)->SetStyle(ui::Theme::current->button);
-			ctx->Text("One");
-			ctx->Pop();
-			ctx->Push<ui::RadioButtonT<int>>()->Init(cur, 2)->SetStyle(ui::Theme::current->button);
-			ctx->Text("Two");
-			ctx->Pop();
+			BasicRadioButton(ctx, "Zero", cur, 0);
+			BasicRadioButton2(ctx, "One", cur, 1);
+			BasicRadioButton2(ctx, "Two", cur, 2);
 			ctx->Pop();
 		};
 		frm->CreateFrameContents(frf);

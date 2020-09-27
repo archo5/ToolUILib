@@ -4,175 +4,6 @@
 #include "../Render/OpenGL.h"
 
 
-struct StateButtonBase : UIElement
-{
-	StateButtonBase()
-	{
-		SetFlag(UIObject_DB_Button, true);
-		GetStyle().SetLayout(style::layouts::InlineBlock());
-	}
-
-	virtual uint8_t GetState() const = 0;
-};
-
-struct StateToggleBase : StateButtonBase
-{
-	void OnEvent(UIEvent& e) override
-	{
-		StateButtonBase::OnEvent(e);
-		if (e.type == UIEventType::Activate && OnActivate())
-		{
-			e.StopPropagation();
-			e.context->OnChange(this);
-			e.context->OnCommit(this);
-		}
-	}
-
-	virtual bool OnActivate() = 0;
-};
-
-struct StateToggle : StateToggleBase
-{
-	StateToggle* InitReadOnly(uint8_t state)
-	{
-		_state = state;
-		_maxNumStates = 0;
-		return this;
-	}
-	StateToggle* InitEditable(uint8_t state, uint8_t maxNumStates)
-	{
-		_state = state;
-		_maxNumStates = maxNumStates;
-		return this;
-	}
-
-	void OnSerialize(IDataSerializer& s) override { s << _state << _maxNumStates; }
-
-	uint8_t GetState() const override { return _state; }
-	bool OnActivate() override
-	{
-		if (!_maxNumStates)
-			return false;
-		_state = (_state + 1) % _maxNumStates;
-		return true;
-	}
-
-	uint8_t _state = 0;
-	uint8_t _maxNumStates = 0;
-};
-
-template <class T>
-struct CheckboxFlagT : StateToggleBase
-{
-	CheckboxFlagT* Init(T& iref, T value)
-	{
-		_iptr = &iref;
-		_value = value;
-		return this;
-	}
-
-	uint8_t GetState() const override { return _iptr && (*_iptr & _value) == _value; }
-	bool OnActivate() override
-	{
-		if (!_iptr)
-			return false;
-		if (!GetState())
-			*_iptr |= _value;
-		else
-			*_iptr &= T(~_value);
-		return true;
-	}
-
-	T* _iptr = nullptr;
-	T _value = {};
-};
-
-template <>
-struct CheckboxFlagT<bool> : StateToggleBase
-{
-	CheckboxFlagT* Init(bool& bref)
-	{
-		_bptr = &bref;
-		return this;
-	}
-
-	bool OnActivate() override
-	{
-		if (!_bptr)
-			return false;
-		*_bptr ^= true;
-		return true;
-	}
-	uint8_t GetState() const override { return _bptr && *_bptr; }
-
-	bool* _bptr = nullptr;
-};
-
-template <class T>
-struct RadioButtonT : StateToggleBase
-{
-	RadioButtonT* Init(T& iref, T value)
-	{
-		_iptr = &iref;
-		_value = value;
-		return this;
-	}
-
-	uint8_t GetState() const override { return _iptr && *_iptr == _value; }
-	bool OnActivate() override
-	{
-		if (!_iptr)
-			return false;
-		*_iptr = _value;
-		return true;
-	}
-
-	T* _iptr = nullptr;
-	T _value = {};
-};
-
-struct StateToggleVisualBase : UIElement
-{
-	void OnPaint() override
-	{
-		StateButtonBase* st = FindParentOfType<StateButtonBase>();
-		style::PaintInfo info(st ? static_cast<UIObject*>(st) : this);
-		if (st)
-		{
-			info.checkState = st->GetState();
-			if (info.checkState) // TODO?
-				info.state |= style::PS_Checked;
-		}
-		styleProps->paint_func(info);
-
-		PaintChildren();
-	}
-};
-
-struct CheckboxIcon : StateToggleVisualBase
-{
-	CheckboxIcon()
-	{
-		styleProps = ui::Theme::current->checkbox;
-	}
-};
-
-struct RadioButtonIcon : StateToggleVisualBase
-{
-	RadioButtonIcon()
-	{
-		styleProps = ui::Theme::current->radioButton;
-	}
-};
-
-struct StateButtonVisual : StateToggleVisualBase
-{
-	StateButtonVisual()
-	{
-		styleProps = ui::Theme::current->button;
-	}
-};
-
 struct StateButtonsTest : ui::Node
 {
 	void MakeContents(UIContainer* ctx, const char* text, int row)
@@ -180,22 +11,20 @@ struct StateButtonsTest : ui::Node
 		switch (row)
 		{
 		case 0:
-			ctx->Make<CheckboxIcon>();
+			ctx->Make<ui::CheckboxIcon>();
 			ctx->Text(text) + ui::Padding(4); // TODO consistent padding from theme?
 			break;
 		case 1:
-			ctx->Make<RadioButtonIcon>();
+			ctx->Make<ui::RadioButtonIcon>();
 			ctx->Text(text) + ui::Padding(4);
 			break;
 		case 2:
-			ctx->MakeWithText<StateButtonVisual>(text);
+			ctx->Make<ui::TreeExpandIcon>();
+			ctx->Text(text) + ui::Padding(4);
 			break;
-		case 3: {
-			auto s = ctx->Text(text).GetStyle();
-			s.SetPadding(5);
-			s.SetTextColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
-			s.SetFontWeight(stb->GetState() ? style::FontWeight::Bold : style::FontWeight::Normal);
-			break; }
+		case 3:
+			ctx->MakeWithText<ui::StateButtonSkin>(text);
+			break;
 		case 4:
 			ctx->Text(std::string(stb->GetState() ? "[x]" : "[ ]") + text) + ui::Padding(5);
 			break;
@@ -208,12 +37,18 @@ struct StateButtonsTest : ui::Node
 				->SetColor(stb->GetState() ? ui::Color4f(0.1f, 0.5f, 0) : ui::Color4f(0.5f, 0.02f, 0))
 				+ ui::Width(style::Coord::Undefined());
 			break;
+		case 7: {
+			auto s = ctx->Text(text).GetStyle();
+			s.SetPadding(5);
+			s.SetTextColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
+			s.SetFontWeight(stb->GetState() ? style::FontWeight::Bold : style::FontWeight::Normal);
+			break; }
 		}
 	}
 
 	void Render(UIContainer* ctx) override
 	{
-		constexpr int NUM_STYLES = 7;
+		constexpr int NUM_STYLES = 8;
 
 		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 
@@ -223,7 +58,7 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = ctx->Push<StateToggle>()->InitReadOnly(cb1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { cb1 = !cb1; Rerender(); };
+				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(cb1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { cb1 = !cb1; Rerender(); };
 				MakeContents(ctx, "one", i);
 				ctx->Pop();
 			}
@@ -236,7 +71,7 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto* cbbs = ctx->Push<StateToggle>()->InitEditable(cb1, 2);
+				auto* cbbs = ctx->Push<ui::StateToggle>()->InitEditable(cb1, 2);
 				(stb = cbbs)->HandleEvent(UIEventType::Change) = [this, cbbs](UIEvent&) { cb1 = cbbs->GetState(); Rerender(); };
 				MakeContents(ctx, "two", i);
 				ctx->Pop();
@@ -250,7 +85,7 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = ctx->Push<CheckboxFlagT<bool>>()->Init(cb1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				(stb = ctx->Push<ui::CheckboxFlagT<bool>>()->Init(cb1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 				MakeContents(ctx, "three", i);
 				ctx->Pop();
 			}
@@ -265,11 +100,11 @@ struct StateButtonsTest : ui::Node
 			{
 				ui::Property::Scope ps(ctx);
 
-				(stb = ctx->Push<StateToggle>()->InitReadOnly(rb1 == 0))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 0; Rerender(); };
+				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 0))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 0; Rerender(); };
 				MakeContents(ctx, "4a", i);
 				ctx->Pop();
 
-				(stb = ctx->Push<StateToggle>()->InitReadOnly(rb1 == 1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 1; Rerender(); };
+				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 1; Rerender(); };
 				MakeContents(ctx, "4b", i);
 				ctx->Pop();
 			}
@@ -284,11 +119,11 @@ struct StateButtonsTest : ui::Node
 			{
 				ui::Property::Scope ps(ctx);
 
-				(stb = ctx->Push<RadioButtonT<int>>()->Init(rb1, 0))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 0))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 				MakeContents(ctx, "5a", i);
 				ctx->Pop();
 
-				(stb = ctx->Push<RadioButtonT<int>>()->Init(rb1, 1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 				MakeContents(ctx, "5b", i);
 				ctx->Pop();
 			}
@@ -296,7 +131,7 @@ struct StateButtonsTest : ui::Node
 		ctx->Pop();
 	}
 
-	StateToggleBase* stb = nullptr;
+	ui::StateToggleBase* stb = nullptr;
 	bool cb1 = false;
 	int rb1 = 0;
 };
@@ -741,22 +576,22 @@ struct IMGUITest : ui::Node
 		{
 			ui::Property::Begin(ctx, "int format: %d");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(ctx, tmp, 0, "\bworking"))
+			if (ui::imm::RadioButton(ctx, tmp, 0, "working"))
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, " "))
 				intFmt = 0;
-			if (ui::imm::RadioButton(ctx, tmp, 0, "\bdisabled", { ui::Enable(false) }))
+			if (ui::imm::RadioButton(ctx, tmp, 0, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
 		}
 		{
 			ui::Property::Begin(ctx, "int format: %x");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(ctx, tmp, 1, "\bworking"))
+			if (ui::imm::RadioButton(ctx, tmp, 1, "working"))
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, " "))
 				intFmt = 1;
-			if (ui::imm::RadioButton(ctx, tmp, 1, "\bdisabled", { ui::Enable(false) }))
+			if (ui::imm::RadioButton(ctx, tmp, 1, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
 			ui::Property::End(ctx);
 		}

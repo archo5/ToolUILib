@@ -16,49 +16,38 @@ struct Button : UIElement
 	Button();
 };
 
-struct CheckableBase : UIElement
+
+struct StateButtonBase : UIElement
 {
-	CheckableBase();
-	void OnPaint() override;
+	StateButtonBase();
+
+	virtual uint8_t GetState() const = 0;
+};
+
+struct StateToggleBase : StateButtonBase
+{
 	void OnEvent(UIEvent& e) override;
 
-	virtual void OnSelect(UIEvent&) {}
-	virtual bool IsSelected() const { return !!(flags & UIObject_IsChecked); }
+	virtual bool OnActivate() = 0;
 };
 
-struct CheckboxBase : CheckableBase
+struct StateToggle : StateToggleBase
 {
-	CheckboxBase();
-};
+	StateToggle* InitReadOnly(uint8_t state);
+	StateToggle* InitEditable(uint8_t state, uint8_t maxNumStates = 2);
 
-struct Checkbox : CheckboxBase
-{
-	Checkbox* Init(bool checked)
-	{
-		SetFlag(UIObject_IsChecked, checked);
-		return this;
-	}
-	// implement Activate event to flip source state
-};
+	void OnSerialize(IDataSerializer& s) override;
 
-struct CheckboxBoolState : CheckboxBase
-{
-	bool GetChecked() const { return _value; }
-	CheckboxBoolState* SetChecked(bool val)
-	{
-		_value = val;
-		return this;
-	}
-	void OnSerialize(IDataSerializer& s) override { s << _value; }
+	uint8_t GetState() const override { return _state; }
+	StateToggle* SetState(uint8_t state);
+	bool OnActivate() override;
 
-	virtual void OnSelect(UIEvent& e) override { _value ^= true; e.StopPropagation(); }
-	virtual bool IsSelected() const override { return _value; }
-
-	bool _value;
+	uint8_t _state = 0;
+	uint8_t _maxNumStates = 0;
 };
 
 template <class T>
-struct CheckboxFlagT : CheckboxBase
+struct CheckboxFlagT : StateToggleBase
 {
 	CheckboxFlagT* Init(T& iref, T value)
 	{
@@ -67,39 +56,45 @@ struct CheckboxFlagT : CheckboxBase
 		return this;
 	}
 
-	void OnSelect(UIEvent& e) override
+	uint8_t GetState() const override { return _iptr && (*_iptr & _value) == _value; }
+	bool OnActivate() override
 	{
 		if (!_iptr)
-			return;
-		if (!IsSelected())
+			return false;
+		if (!GetState())
 			*_iptr |= _value;
 		else
-			*_iptr &= ~_value;
-		e.StopPropagation();
+			*_iptr &= T(~_value);
+		return true;
 	}
-	bool IsSelected() const override { return _iptr && (*_iptr & _value) == _value; }
 
 	T* _iptr = nullptr;
 	T _value = {};
 };
 
-struct RadioButtonBase : CheckableBase
+template <>
+struct CheckboxFlagT<bool> : StateToggleBase
 {
-	RadioButtonBase();
-};
-
-struct RadioButton : RadioButtonBase
-{
-	RadioButton* Init(bool selected)
+	CheckboxFlagT* Init(bool& bref)
 	{
-		SetFlag(UIObject_IsChecked, selected);
+		_bptr = &bref;
 		return this;
 	}
-	// implement Activate event to set source state
+
+	bool OnActivate() override
+	{
+		if (!_bptr)
+			return false;
+		*_bptr ^= true;
+		return true;
+	}
+	uint8_t GetState() const override { return _bptr && *_bptr; }
+
+	bool* _bptr = nullptr;
 };
 
 template <class T>
-struct RadioButtonT : RadioButtonBase
+struct RadioButtonT : StateToggleBase
 {
 	RadioButtonT* Init(T& iref, T value)
 	{
@@ -108,12 +103,44 @@ struct RadioButtonT : RadioButtonBase
 		return this;
 	}
 
-	void OnSelect(UIEvent& e) override { if (_iptr) *_iptr = _value; e.StopPropagation(); }
-	bool IsSelected() const override { return _iptr && *_iptr == _value; }
+	uint8_t GetState() const override { return _iptr && *_iptr == _value; }
+	bool OnActivate() override
+	{
+		if (!_iptr)
+			return false;
+		*_iptr = _value;
+		return true;
+	}
 
 	T* _iptr = nullptr;
 	T _value = {};
 };
+
+struct StateToggleVisualBase : UIElement
+{
+	void OnPaint() override;
+};
+
+struct CheckboxIcon : StateToggleVisualBase
+{
+	CheckboxIcon();
+};
+
+struct RadioButtonIcon : StateToggleVisualBase
+{
+	RadioButtonIcon();
+};
+
+struct TreeExpandIcon : StateToggleVisualBase
+{
+	TreeExpandIcon();
+};
+
+struct StateButtonSkin : StateToggleVisualBase
+{
+	StateButtonSkin();
+};
+
 
 struct ListBox : UIElement
 {

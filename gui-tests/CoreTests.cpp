@@ -87,8 +87,10 @@ struct OpenCloseTest : ui::Node
 
 		ctx->Push<ui::Panel>();
 
-		auto* cb = ctx->Make<ui::Checkbox>()->Init(open);
-		cb->HandleEvent(UIEventType::Change) = [this, cb](UIEvent&) { open = !open; Rerender(); };
+		auto* cb = ctx->Push<ui::StateToggle>()->InitReadOnly(open);
+		ctx->Make<ui::CheckboxIcon>();
+		ctx->Pop();
+		cb->HandleEvent(UIEventType::Activate) = [this, cb](UIEvent&) { open = !open; Rerender(); };
 
 		ctx->MakeWithText<ui::Button>("Open")->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { open = true; Rerender(); };
 
@@ -135,8 +137,10 @@ struct AnimationRequestTest : ui::Node
 	{
 		*this + ui::Width(200);
 		*this + ui::Height(200);
-		auto* cb = ctx->Make<ui::Checkbox>()->Init(animReq.IsAnimating());
-		cb->HandleEvent(UIEventType::Change) = [this, cb](UIEvent&) { animReq.SetAnimating(!animReq.IsAnimating()); Rerender(); };
+		auto* cb = ctx->Push<ui::StateToggle>()->InitReadOnly(animReq.IsAnimating());
+		ctx->Make<ui::CheckboxIcon>();
+		ctx->Pop();
+		cb->HandleEvent(UIEventType::Activate) = [this, cb](UIEvent&) { animReq.SetAnimating(!animReq.IsAnimating()); Rerender(); };
 	}
 	void OnPaint() override
 	{
@@ -316,9 +320,9 @@ struct HighElementCountTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		ctx->PushBox();// + ui::StackingDirection(style::StackingDirection::LeftToRight); TODO FIX
-		ctx->MakeWithText<ui::RadioButtonT<int>>("no styles")->Init(styleMode, 0)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-		ctx->MakeWithText<ui::RadioButtonT<int>>("same style")->Init(styleMode, 1)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-		ctx->MakeWithText<ui::RadioButtonT<int>>("different styles")->Init(styleMode, 2)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		BasicRadioButton(ctx, "no styles", styleMode, 0)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		BasicRadioButton(ctx, "same style", styleMode, 1)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		BasicRadioButton(ctx, "different styles", styleMode, 2)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
 		ctx->Pop();
 
 		for (int i = 0; i < 1000; i++)
@@ -353,10 +357,12 @@ struct ZeroRerenderTest : ui::Node
 			puts("Should not happen!");
 
 		ui::Property::Begin(ctx, "Show?");
-		cbShow = ctx->Make<ui::CheckboxBoolState>()->SetChecked(show);
+		cbShow = ctx->Push<ui::StateToggle>()->InitEditable(show);
+		ctx->Make<ui::CheckboxIcon>();
+		ctx->Pop();
 		ui::Property::End(ctx);
 
-		*cbShow + ui::EventHandler(UIEventType::Change, [this](UIEvent& e) { show = cbShow->GetChecked(); OnShowChange(); });
+		*cbShow + ui::EventHandler(UIEventType::Change, [this](UIEvent& e) { show = cbShow->GetState(); OnShowChange(); });
 		*ctx->MakeWithText<ui::Button>("Show")
 			+ ui::EventHandler(UIEventType::Activate, [this](UIEvent& e) { show = true; OnShowChange(); });
 		*ctx->MakeWithText<ui::Button>("Hide")
@@ -377,11 +383,11 @@ struct ZeroRerenderTest : ui::Node
 
 	void OnShowChange()
 	{
-		cbShow->SetChecked(show);
+		cbShow->SetState(show);
 		showable->GetStyle().SetHeight(show ? style::Coord::Undefined() : style::Coord(0));
 	}
 
-	ui::CheckboxBoolState* cbShow;
+	ui::StateToggle* cbShow;
 	UIObject* showable;
 	ui::TextElement* contentLabel;
 	ui::Textbox* tbText;
@@ -470,8 +476,8 @@ struct DialogWindowTest : ui::Node
 		void OnRender(UIContainer* ctx) override
 		{
 			ctx->Text("This is a basic dialog window");
-			ctx->MakeWithText<ui::RadioButtonT<int>>("option 0")->Init(choice, 0);
-			ctx->MakeWithText<ui::RadioButtonT<int>>("option 1")->Init(choice, 1);
+			BasicRadioButton(ctx, "option 0", choice, 0);
+			BasicRadioButton(ctx, "option 1", choice, 1);
 			ctx->MakeWithText<ui::Button>("Close")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
 			{
 				OnClose();

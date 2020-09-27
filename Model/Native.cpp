@@ -4,6 +4,7 @@
 #include <shellapi.h>
 
 #include <codecvt>
+#include <algorithm>
 #undef min
 #undef max
 
@@ -386,6 +387,7 @@ struct ProxyEventSystem
 	}
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0);

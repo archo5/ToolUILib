@@ -26,7 +26,10 @@ bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 
 bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 {
-	auto* cb = ctx->Make<ui::Checkbox>();
+	auto* cb = ctx->Push<StateToggle>();
+	ctx->Make<CheckboxIcon>();
+	ctx->Pop();
+
 	cb->flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(cb);
@@ -37,7 +40,7 @@ bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 		edited = true;
 		cb->RerenderNode();
 	}
-	cb->Init(val);
+	cb->InitReadOnly(val);
 	return edited;
 }
 
@@ -53,7 +56,12 @@ bool EditBool(UIContainer* ctx, bool& val, ModInitList mods)
 
 bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods)
 {
-	auto* rb = text ? ctx->MakeWithText<ui::RadioButton>(text) : ctx->Make<ui::RadioButton>();
+	auto* rb = ctx->Push<StateToggle>();
+	ctx->Make<RadioButtonIcon>();
+	if (text)
+		ctx->Text(text) + Padding(4);
+	ctx->Pop();
+
 	rb->flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(rb);
@@ -64,7 +72,7 @@ bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mo
 		edited = true;
 		rb->RerenderNode();
 	}
-	rb->Init(val);
+	rb->InitReadOnly(val);
 	return edited;
 }
 
