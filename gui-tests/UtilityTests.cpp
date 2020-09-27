@@ -153,7 +153,7 @@ struct OSCommunicationTest : ui::Node
 		{
 			ui::Property::Scope ps(ctx, "\bClipboard");
 			bool hasText = ui::Clipboard::HasText();
-			ui::imm::EditBool(ctx, hasText, { ui::Enable(false) });
+			ui::imm::EditBool(ctx, hasText, nullptr, { ui::Enable(false) });
 			ui::imm::EditString(ctx, clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
 			if (ui::imm::Button(ctx, "Read", { ui::Width(style::Coord::Fraction(0.1f)) }))
 				clipboardData = ui::Clipboard::GetText();

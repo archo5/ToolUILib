@@ -47,6 +47,7 @@ void UIObject::_Reset()
 {
 	ClearEventHandlers();
 	UnregisterAsOverlay();
+	SetStyle(ui::Theme::current->object);
 	OnReset();
 }
 
@@ -79,6 +80,12 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e)
 		if (HasFlags(UIObject_DB_IMEdit) && e.target == this && e.type == UIEventType::Activate)
 		{
 			flags |= UIObject_IsEdited;
+			RerenderNode();
+		}
+
+		if (HasFlags(UIObject_DB_RerenderOnChange) &&
+			(e.type == UIEventType::Change || e.type == UIEventType::Commit))
+		{
 			RerenderNode();
 		}
 

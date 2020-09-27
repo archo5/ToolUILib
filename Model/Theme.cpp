@@ -153,8 +153,10 @@ struct DefaultTheme : Theme
 				info.IsDisabled() ? TE_CheckBgrDisabled :
 				info.IsDown() ? TE_CheckBgrPressed :
 				info.IsHovered() ? TE_CheckBgrHover : TE_CheckBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			if (info.IsChecked())
+			if (info.checkState == 1)
 				DrawThemeElement(info.IsDisabled() ? TE_CheckMarkDisabled : TE_CheckMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
+			else if (info.checkState)
+				DrawThemeElement(info.IsDisabled() ? TE_CheckIndDisabled : TE_CheckInd, r.x0, r.y0, r.x0 + w, r.y0 + w);
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
 		});
@@ -218,15 +220,19 @@ struct DefaultTheme : Theme
 	{
 		style::Accessor a(&dtCollapsibleTreeNode);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::Stack());
+		//a.SetLayout(style::layouts::Stack());
 		//a.SetPadding(1);
-		a.SetPaddingLeft(GetFontHeight());
+		//a.SetPaddingLeft(GetFontHeight());
+		a.SetLayout(style::layouts::InlineBlock());
+		a.SetWidth(GetFontHeight() + 5 + 5);
+		a.SetHeight(GetFontHeight() + 5 + 5);
 		a.SetPaintFunc([](const style::PaintInfo& info)
 		{
 			auto r = info.rect;
+			float w = min(r.GetWidth(), r.GetHeight());
 			DrawThemeElement(info.IsHovered() ?
 				info.IsChecked() ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
-				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + GetFontHeight(), r.y0 + GetFontHeight());
+				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
 		});
 		defaultTheme.collapsibleTreeNode = a.block;
 	}

@@ -1,6 +1,7 @@
 
 #pragma once
 #include "Objects.h"
+#include "Controls.h"
 #include "../Core/Image.h"
 
 
@@ -10,12 +11,29 @@ namespace imm {
 constexpr float UNITS_PER_PX = 0.1f;
 constexpr float DEFAULT_SPEED = 1.0f;
 
-bool Button(UIContainer* ctx, const char* text, ModInitList mods = {});
-bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods = {});
-bool EditBool(UIContainer* ctx, bool& val, ModInitList mods = {});
-template <class T> bool EditFlag(UIContainer* ctx, T& val, T cur, ModInitList mods = {})
+struct IStateToggleSkin
 {
-	if (CheckboxRaw(ctx, (val & cur) == cur, mods))
+	virtual void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const = 0;
+};
+struct CheckboxStateToggleSkin : IStateToggleSkin
+{
+	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+};
+struct RadioButtonStateToggleSkin : IStateToggleSkin
+{
+	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+};
+struct ButtonStateToggleSkin : IStateToggleSkin
+{
+	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+};
+
+bool Button(UIContainer* ctx, const char* text, ModInitList mods = {});
+bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+bool EditBool(UIContainer* ctx, bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> bool EditFlag(UIContainer* ctx, T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+{
+	if (CheckboxRaw(ctx, (val & cur) == cur, text, mods, skin))
 	{
 		if ((val & cur) != cur)
 			val |= cur;
@@ -25,10 +43,10 @@ template <class T> bool EditFlag(UIContainer* ctx, T& val, T cur, ModInitList mo
 	}
 	return false;
 }
-bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods = {});
-template <class T> bool RadioButton(UIContainer* ctx, T& val, T cur, const char* text, ModInitList mods = {})
+bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> bool RadioButton(UIContainer* ctx, T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	if (RadioButtonRaw(ctx, val == cur, text, mods))
+	if (RadioButtonRaw(ctx, val == cur, text, mods, skin))
 	{
 		val = cur;
 		return true;

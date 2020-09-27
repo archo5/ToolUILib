@@ -149,7 +149,7 @@ struct ListBox : UIElement
 
 struct Selectable : UIElement
 {
-	Selectable();
+	void OnInit() override;
 	Selectable* Init(bool selected)
 	{
 		SetFlag(UIObject_IsChecked, selected);

@@ -166,7 +166,6 @@ void ProcGraphEditor_Node::Render(UIContainer* ctx)
 {
 	Subscribe(DCT_EditProcGraphNode, _node);
 
-	SetStyle(Theme::current->object); // TODO fix reset
 	auto s = GetStyle(); // for style only
 	s.SetWidth(style::Coord::Undefined());
 	s.SetMinWidth(100);
@@ -253,7 +252,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 	if (hasPreview)
 	{
 		bool showPreview = _graph->IsPreviewEnabled(_node);
-		imm::EditBool(ctx, showPreview);
+		imm::EditBool(ctx, showPreview, nullptr);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
 	ctx->Text(_graph->GetNodeName(_node)) + Padding(5, hasPreview ? 0 : 5, 5, 5);
@@ -293,7 +292,6 @@ void ProcGraphEditor::Render(UIContainer* ctx)
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
-	SetStyle(Theme::current->object); // TODO fix reset
 	*this + Height(style::Coord::Percent(100));
 	//*ctx->Push<ListBox>() + Height(style::Coord::Percent(100));
 

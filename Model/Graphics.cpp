@@ -155,15 +155,16 @@ ImageElement* ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
-HueSatPicker::HueSatPicker()
-{
-	styleProps = Theme::current->selectorContainer;
-	selectorStyle = Theme::current->selector;
-}
-
 HueSatPicker::~HueSatPicker()
 {
 	delete _bgImage;
+}
+
+void HueSatPicker::OnInit()
+{
+	styleProps = Theme::current->selectorContainer;
+	selectorStyle = Theme::current->selector;
+	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 }
 
 void HueSatPicker::OnEvent(UIEvent& e)
@@ -479,7 +480,8 @@ ColorPicker::SavedColors& ColorPicker::GetSavedColors()
 
 void ColorPicker::Render(UIContainer* ctx)
 {
-	HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+	*this + RerenderOnChange();
+
 	ctx->PushBox()
 		+ Layout(style::layouts::StackExpand())
 		+ StackingDirection(style::StackingDirection::LeftToRight);

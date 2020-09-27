@@ -320,9 +320,9 @@ struct HighElementCountTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		ctx->PushBox();// + ui::StackingDirection(style::StackingDirection::LeftToRight); TODO FIX
-		BasicRadioButton(ctx, "no styles", styleMode, 0)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-		BasicRadioButton(ctx, "same style", styleMode, 1)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-		BasicRadioButton(ctx, "different styles", styleMode, 2)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+		*BasicRadioButton(ctx, "no styles", styleMode, 0) + ui::RerenderOnChange();
+		*BasicRadioButton(ctx, "same style", styleMode, 1) + ui::RerenderOnChange();
+		*BasicRadioButton(ctx, "different styles", styleMode, 2) + ui::RerenderOnChange();
 		ctx->Pop();
 
 		for (int i = 0; i < 1000; i++)

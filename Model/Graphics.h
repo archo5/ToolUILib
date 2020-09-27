@@ -87,8 +87,8 @@ struct HueSatPicker : UIElement
 {
 	static constexpr bool Persistent = true;
 
-	HueSatPicker();
 	~HueSatPicker();
+	void OnInit() override;
 	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
 

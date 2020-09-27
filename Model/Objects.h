@@ -76,6 +76,7 @@ enum UIObjectFlags
 	UIObject_DB_Selectable = 1 << 22,
 	UIObject_DisableCulling = 1 << 23,
 	UIObject_NoPaint = 1 << 24,
+	UIObject_DB_RerenderOnChange = 1 << 25,
 
 	UIObject_DB__Defaults = 0,
 };
@@ -538,6 +539,11 @@ struct EventHandler : Modifier
 	EventHandler(std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)) {}
 	EventHandler(UIEventType t, std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
+};
+
+struct RerenderOnChange : Modifier
+{
+	void Apply(UIObject* obj) const override { obj->SetFlag(UIObject_DB_RerenderOnChange, true); }
 };
 
 struct AddTooltip : Modifier

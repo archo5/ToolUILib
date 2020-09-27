@@ -6,6 +6,34 @@
 
 struct StateButtonsTest : ui::Node
 {
+	static std::string GetStateText(uint8_t s)
+	{
+		switch (s)
+		{
+		case 0: return "[ ]";
+		case 1: return "[x]";
+		default: return "[?]";
+		}
+	}
+	static ui::Color4f GetStateColor(uint8_t s)
+	{
+		switch (s)
+		{
+		case 0: return ui::Color4f(1, 0.1f, 0);
+		case 1: return ui::Color4f(0.3f, 1, 0);
+		default: return ui::Color4f(0.9f, 0.8f, 0.1f);
+		}
+	}
+	static ui::Color4f GetStateColorDark(uint8_t s)
+	{
+		switch (s)
+		{
+		case 0: return ui::Color4f(0.5f, 0.02f, 0);
+		case 1: return ui::Color4f(0.1f, 0.5f, 0);
+		default: return ui::Color4f(0.45f, 0.4f, 0.05f);
+		}
+	}
+
 	void MakeContents(UIContainer* ctx, const char* text, int row)
 	{
 		switch (row)
@@ -26,22 +54,23 @@ struct StateButtonsTest : ui::Node
 			ctx->MakeWithText<ui::StateButtonSkin>(text);
 			break;
 		case 4:
-			ctx->Text(std::string(stb->GetState() ? "[x]" : "[ ]") + text) + ui::Padding(5);
+			ctx->Text(GetStateText(stb->GetState()) + text) + ui::Padding(5);
 			break;
 		case 5:
-			ctx->Make<ui::ColorBlock>()->SetColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
+			ctx->Make<ui::ColorBlock>()->SetColor(GetStateColor(stb->GetState()));
 			ctx->Text(text) + ui::Padding(4);
 			break;
 		case 6:
 			ctx->MakeWithText<ui::ColorBlock>(text)
-				->SetColor(stb->GetState() ? ui::Color4f(0.1f, 0.5f, 0) : ui::Color4f(0.5f, 0.02f, 0))
+				->SetColor(GetStateColorDark(stb->GetState()))
 				+ ui::Width(style::Coord::Undefined());
 			break;
 		case 7: {
 			auto s = ctx->Text(text).GetStyle();
 			s.SetPadding(5);
-			s.SetTextColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
-			s.SetFontWeight(stb->GetState() ? style::FontWeight::Bold : style::FontWeight::Normal);
+			s.SetTextColor(GetStateColor(stb->GetState()));
+			s.SetFontWeight(stb->GetState() == 1 ? style::FontWeight::Bold : style::FontWeight::Normal);
+			s.SetFontStyle(stb->GetState() > 1 ? style::FontStyle::Italic : style::FontStyle::Normal);
 			break; }
 		}
 	}
@@ -52,7 +81,7 @@ struct StateButtonsTest : ui::Node
 
 		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
 		{
 			ctx->Text("CB activate");
 
@@ -65,7 +94,7 @@ struct StateButtonsTest : ui::Node
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
 		{
 			ctx->Text("CB int.state");
 
@@ -79,14 +108,28 @@ struct StateButtonsTest : ui::Node
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
 		{
 			ctx->Text("CB ext.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = ctx->Push<ui::CheckboxFlagT<bool>>()->Init(cb1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				*(stb = ctx->Push<ui::CheckboxFlagT<bool>>()->Init(cb1)) + ui::RerenderOnChange();
 				MakeContents(ctx, "three", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
+		{
+			ctx->Text("CB int.3-state");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				auto* cbbs = ctx->Push<ui::StateToggle>()->InitEditable(cb3state, 3);
+				(stb = cbbs)->HandleEvent(UIEventType::Change) = [this, cbbs](UIEvent&) { cb3state = cbbs->GetState(); Rerender(); };
+				MakeContents(ctx, "four", i);
 				ctx->Pop();
 			}
 		}
@@ -101,11 +144,11 @@ struct StateButtonsTest : ui::Node
 				ui::Property::Scope ps(ctx);
 
 				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 0))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 0; Rerender(); };
-				MakeContents(ctx, "4a", i);
+				MakeContents(ctx, "r1a", i);
 				ctx->Pop();
 
 				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 1; Rerender(); };
-				MakeContents(ctx, "4b", i);
+				MakeContents(ctx, "r1b", i);
 				ctx->Pop();
 			}
 		}
@@ -119,12 +162,12 @@ struct StateButtonsTest : ui::Node
 			{
 				ui::Property::Scope ps(ctx);
 
-				(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 0))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-				MakeContents(ctx, "5a", i);
+				*(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 0)) + ui::RerenderOnChange();
+				MakeContents(ctx, "r2a", i);
 				ctx->Pop();
 
-				(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
-				MakeContents(ctx, "5b", i);
+				*(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 1)) + ui::RerenderOnChange();
+				MakeContents(ctx, "r2b", i);
 				ctx->Pop();
 			}
 		}
@@ -133,6 +176,7 @@ struct StateButtonsTest : ui::Node
 
 	ui::StateToggleBase* stb = nullptr;
 	bool cb1 = false;
+	int cb3state = 0;
 	int rb1 = 0;
 };
 void Test_StateButtons(UIContainer* ctx)
@@ -564,12 +608,14 @@ struct IMGUITest : ui::Node
 		{
 			ui::Property::Begin(ctx, "bool");
 			auto tmp = boolVal;
-			if (ui::imm::PropEditBool(ctx, "\bworking", tmp))
+			if (ui::imm::EditBool(ctx, tmp, "working"))
 				boolVal = tmp;
-			if (ui::imm::CheckboxRaw(ctx, tmp))
+			if (ui::imm::CheckboxRaw(ctx, tmp, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			if (ui::imm::PropEditBool(ctx, "\bdisabled", tmp, { ui::Enable(false) }))
+			if (ui::imm::EditBool(ctx, tmp, "disabled", { ui::Enable(false) }))
 				boolVal = tmp;
+			if (ui::imm::CheckboxRaw(ctx, tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+				boolVal = !tmp;
 			ui::Property::End(ctx);
 		}
 
@@ -578,10 +624,12 @@ struct IMGUITest : ui::Node
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 0, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, " "))
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
 			if (ui::imm::RadioButton(ctx, tmp, 0, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+				intFmt = 0;
 			ui::Property::End(ctx);
 		}
 		{
@@ -589,10 +637,12 @@ struct IMGUITest : ui::Node
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 1, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, " "))
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
 			if (ui::imm::RadioButton(ctx, tmp, 1, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
+			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+				intFmt = 1;
 			ui::Property::End(ctx);
 		}
 

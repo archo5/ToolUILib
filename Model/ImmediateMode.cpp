@@ -8,6 +8,25 @@
 namespace ui {
 namespace imm {
 
+void CheckboxStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+{
+	ctx->Make<CheckboxIcon>();
+	if (!text.empty())
+		ctx->Text(text) + Padding(4);
+}
+
+void RadioButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+{
+	ctx->Make<RadioButtonIcon>();
+	if (!text.empty())
+		ctx->Text(text) + Padding(4);
+}
+
+void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+{
+	ctx->MakeWithText<StateButtonSkin>(text);
+}
+
 bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 {
 	auto* btn = ctx->MakeWithText<ui::Button>(text);
@@ -24,10 +43,10 @@ bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 	return clicked;
 }
 
-bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
+bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	auto* cb = ctx->Push<StateToggle>();
-	ctx->Make<CheckboxIcon>();
+	skin.BuildContents(ctx, cb, text ? text : StringView(), val);
 	ctx->Pop();
 
 	cb->flags |= UIObject_DB_IMEdit;
@@ -44,9 +63,9 @@ bool CheckboxRaw(UIContainer* ctx, bool val, ModInitList mods)
 	return edited;
 }
 
-bool EditBool(UIContainer* ctx, bool& val, ModInitList mods)
+bool EditBool(UIContainer* ctx, bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	if (CheckboxRaw(ctx, val, mods))
+	if (CheckboxRaw(ctx, val, text, mods, skin))
 	{
 		val = !val;
 		return true;
@@ -54,12 +73,10 @@ bool EditBool(UIContainer* ctx, bool& val, ModInitList mods)
 	return false;
 }
 
-bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods)
+bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	auto* rb = ctx->Push<StateToggle>();
-	ctx->Make<RadioButtonIcon>();
-	if (text)
-		ctx->Text(text) + Padding(4);
+	skin.BuildContents(ctx, rb, text ? text : StringView(), val);
 	ctx->Pop();
 
 	rb->flags |= UIObject_DB_IMEdit;
@@ -293,7 +310,7 @@ bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitLi
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods)
 {
 	Property::Scope ps(ctx, label);
-	return EditBool(ctx, val, mods);
+	return EditBool(ctx, val, nullptr, mods);
 }
 
 bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)

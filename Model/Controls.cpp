@@ -116,9 +116,9 @@ ListBox::ListBox()
 }
 
 
-Selectable::Selectable()
+void Selectable::OnInit()
 {
-	styleProps = Theme::current->selectable;
+	SetStyle(Theme::current->selectable);
 	SetFlag(UIObject_DB_Selectable, true);
 }
 

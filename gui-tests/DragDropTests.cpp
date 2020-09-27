@@ -283,7 +283,10 @@ struct TreeNodeReorderTest : ui::Node
 			ctx->PushBox() + ui::Width(level * 12);
 			ctx->Pop();
 
-			ctx->Make<ui::CollapsibleTreeNode>();
+			*ctx->Push<ui::CheckboxFlagT<bool>>()->Init(N->open) + ui::RerenderOnChange();
+			ctx->Make<ui::TreeExpandIcon>();
+			ctx->Pop();
+
 			ctx->Text(N->name);
 			ctx->Pop();
 
@@ -455,12 +458,13 @@ struct DragElementTest : ui::Node
 
 		*ctx->Push<ui::ListBox>() + ui::Height(100);
 
-		auto s = ctx->Push<ui::TabPanel>()->GetStyle(); // for style only
+		auto* tp = ctx->Push<ui::TabPanel>();
+		auto s = tp->GetStyle(); // for style only
 		s.SetWidth(style::Coord::Undefined());
 		drelPlacement = Allocate<style::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
 		s.SetPlacement(drelPlacement);
-		*ctx->MakeWithText<ui::Selectable>("draggable area")->Init(drelIsDragging) + ui::MakeDraggable() + ui::EventHandler([this](UIEvent& e)
+		*ctx->MakeWithText<ui::Selectable>("draggable area")->Init(drelIsDragging) + ui::MakeDraggable() + ui::EventHandler([this, tp](UIEvent& e)
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 			{
@@ -477,6 +481,7 @@ struct DragElementTest : ui::Node
 				drelPos.x = drelDragStartPos.x + curMousePos.x - drelDragStartMouse.x;
 				drelPos.y = drelDragStartPos.y + curMousePos.y - drelDragStartMouse.y;
 				drelPlacement->bias = drelPos;
+				tp->_OnChangeStyle(); // TODO?
 			}
 		});
 		ctx->Text("the other part") + ui::Padding(5);

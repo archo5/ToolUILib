@@ -342,7 +342,7 @@ struct TE_BlendLayer : TE_LayerNode
 	void SetInputPinValue(int pin, TE_Node* value) override { layers[pin].layer = dynamic_cast<TE_LayerNode*>(value); }
 	void InputPinUI(int pin, UIContainer* ctx) override
 	{
-		imm::EditBool(ctx, layers[pin].enabled);
+		imm::EditBool(ctx, layers[pin].enabled, nullptr);
 		imm::PropEditFloat(ctx, "\bO", layers[pin].opacity);
 	}
 	void PropertyUI(UIContainer* ctx) override

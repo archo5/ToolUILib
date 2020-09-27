@@ -80,7 +80,7 @@ struct LayoutNestComboTest : ui::Node
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			BasicRadioButton2(ctx, layoutShortNames[i], layout, i)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+			*BasicRadioButton2(ctx, layoutShortNames[i], layout, i) + ui::RerenderOnChange();
 		}
 		ctx->Text(layoutLongNames[layout]);
 		ctx->Pop();
@@ -159,7 +159,7 @@ struct StackingLayoutVariationsTest : ui::Node
 		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			BasicRadioButton2(ctx, layoutShortNames[i], mode, i)->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+			*BasicRadioButton2(ctx, layoutShortNames[i], mode, i) + ui::RerenderOnChange();
 		}
 		ctx->Text(layoutLongNames[mode]);
 		ctx->Pop();
@@ -426,7 +426,7 @@ struct PlacementTest : ui::Node
 		ctx->Text("Expandable menu example:");
 		ctx->PushBox();
 
-		ui::imm::EditBool(ctx, open, { ui::MakeOverlay(open, 1.0f) });
+		ui::imm::EditBool(ctx, open, nullptr, { ui::MakeOverlay(open, 1.0f) });
 
 		if (open)
 		{

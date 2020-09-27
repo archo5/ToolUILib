@@ -173,7 +173,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 			ui::Property::Begin(ctx);
 			auto& lbl = ui::Property::Label(ctx, "Size override");
-			ui::imm::EditBool(ctx, SI->sizeOverrideEnable);
+			ui::imm::EditBool(ctx, SI->sizeOverrideEnable, nullptr);
 			ui::imm::EditInt(ctx, &lbl, SI->sizeOverrideValue);
 			ui::Property::End(ctx);
 		}
@@ -1067,7 +1067,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 void DataDescInstanceSource::Edit(UIContainer* ctx)
 {
 	ui::Property::Begin(ctx, "Filter by struct");
-	if (ui::imm::EditBool(ctx, filterStructEnable))
+	if (ui::imm::EditBool(ctx, filterStructEnable, nullptr))
 		refilter = true;
 	if (ui::imm::Button(ctx, filterStruct ? filterStruct->name.c_str() : "<none>"))
 	{
@@ -1086,7 +1086,7 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 	if (!filterStructEnable || !filterStruct)
 	{
 		ui::Property::Begin(ctx, "Hide structs");
-		if (ui::imm::EditBool(ctx, filterHideStructsEnable))
+		if (ui::imm::EditBool(ctx, filterHideStructsEnable, nullptr))
 			refilter = true;
 
 		std::vector<DDStruct*> structs(filterHideStructs.begin(), filterHideStructs.end());
@@ -1127,7 +1127,7 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 	}
 
 	ui::Property::Begin(ctx, "Filter by file");
-	if (ui::imm::EditBool(ctx, filterFileEnable))
+	if (ui::imm::EditBool(ctx, filterFileEnable, nullptr))
 		refilter = true;
 	if (ui::imm::Button(ctx, filterFile ? filterFile->name.c_str() : "<none>"))
 	{
