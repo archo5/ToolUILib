@@ -24,6 +24,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WolfPath", "WolfPath\WolfPa
 		{E98C0101-91A1-491A-8AEA-5A6CEB47FC36} = {E98C0101-91A1-491A-8AEA-5A6CEB47FC36}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "theme-editor", "theme-editor\theme-editor.vcxproj", "{3C26408B-4D43-422A-95CA-EDBEBA82442C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E98C0101-91A1-491A-8AEA-5A6CEB47FC36} = {E98C0101-91A1-491A-8AEA-5A6CEB47FC36}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -80,6 +85,14 @@ Global
 		{9B1B944F-2E95-4370-92CF-B8160D3E829C}.Release|x64.Build.0 = Release|x64
 		{9B1B944F-2E95-4370-92CF-B8160D3E829C}.Release|x86.ActiveCfg = Release|Win32
 		{9B1B944F-2E95-4370-92CF-B8160D3E829C}.Release|x86.Build.0 = Release|Win32
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x64.ActiveCfg = Debug|x64
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x64.Build.0 = Debug|x64
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x86.ActiveCfg = Debug|Win32
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x86.Build.0 = Debug|Win32
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Release|x64.ActiveCfg = Release|x64
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Release|x64.Build.0 = Release|x64
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Release|x86.ActiveCfg = Release|Win32
+		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
