@@ -4,6 +4,308 @@
 #include "../Render/OpenGL.h"
 
 
+struct StateButtonBase : UIElement
+{
+	StateButtonBase()
+	{
+		SetFlag(UIObject_DB_Button, true);
+		GetStyle().SetLayout(style::layouts::InlineBlock());
+	}
+
+	virtual uint8_t GetState() const = 0;
+};
+
+struct StateToggleBase : StateButtonBase
+{
+	void OnEvent(UIEvent& e) override
+	{
+		StateButtonBase::OnEvent(e);
+		if (e.type == UIEventType::Activate && OnActivate())
+		{
+			e.StopPropagation();
+			e.context->OnChange(this);
+			e.context->OnCommit(this);
+		}
+	}
+
+	virtual bool OnActivate() = 0;
+};
+
+struct StateToggle : StateToggleBase
+{
+	StateToggle* InitReadOnly(uint8_t state)
+	{
+		_state = state;
+		_maxNumStates = 0;
+		return this;
+	}
+	StateToggle* InitEditable(uint8_t state, uint8_t maxNumStates)
+	{
+		_state = state;
+		_maxNumStates = maxNumStates;
+		return this;
+	}
+
+	void OnSerialize(IDataSerializer& s) override { s << _state << _maxNumStates; }
+
+	uint8_t GetState() const override { return _state; }
+	bool OnActivate() override
+	{
+		if (!_maxNumStates)
+			return false;
+		_state = (_state + 1) % _maxNumStates;
+		return true;
+	}
+
+	uint8_t _state = 0;
+	uint8_t _maxNumStates = 0;
+};
+
+template <class T>
+struct CheckboxFlagT : StateToggleBase
+{
+	CheckboxFlagT* Init(T& iref, T value)
+	{
+		_iptr = &iref;
+		_value = value;
+		return this;
+	}
+
+	uint8_t GetState() const override { return _iptr && (*_iptr & _value) == _value; }
+	bool OnActivate() override
+	{
+		if (!_iptr)
+			return false;
+		if (!GetState())
+			*_iptr |= _value;
+		else
+			*_iptr &= T(~_value);
+		return true;
+	}
+
+	T* _iptr = nullptr;
+	T _value = {};
+};
+
+template <>
+struct CheckboxFlagT<bool> : StateToggleBase
+{
+	CheckboxFlagT* Init(bool& bref)
+	{
+		_bptr = &bref;
+		return this;
+	}
+
+	bool OnActivate() override
+	{
+		if (!_bptr)
+			return false;
+		*_bptr ^= true;
+		return true;
+	}
+	uint8_t GetState() const override { return _bptr && *_bptr; }
+
+	bool* _bptr = nullptr;
+};
+
+template <class T>
+struct RadioButtonT : StateToggleBase
+{
+	RadioButtonT* Init(T& iref, T value)
+	{
+		_iptr = &iref;
+		_value = value;
+		return this;
+	}
+
+	uint8_t GetState() const override { return _iptr && *_iptr == _value; }
+	bool OnActivate() override
+	{
+		if (!_iptr)
+			return false;
+		*_iptr = _value;
+		return true;
+	}
+
+	T* _iptr = nullptr;
+	T _value = {};
+};
+
+struct StateToggleVisualBase : UIElement
+{
+	void OnPaint() override
+	{
+		StateButtonBase* st = FindParentOfType<StateButtonBase>();
+		style::PaintInfo info(st ? static_cast<UIObject*>(st) : this);
+		if (st)
+		{
+			info.checkState = st->GetState();
+			if (info.checkState) // TODO?
+				info.state |= style::PS_Checked;
+		}
+		styleProps->paint_func(info);
+
+		PaintChildren();
+	}
+};
+
+struct CheckboxIcon : StateToggleVisualBase
+{
+	CheckboxIcon()
+	{
+		styleProps = ui::Theme::current->checkbox;
+	}
+};
+
+struct RadioButtonIcon : StateToggleVisualBase
+{
+	RadioButtonIcon()
+	{
+		styleProps = ui::Theme::current->radioButton;
+	}
+};
+
+struct StateButtonVisual : StateToggleVisualBase
+{
+	StateButtonVisual()
+	{
+		styleProps = ui::Theme::current->button;
+	}
+};
+
+struct StateButtonsTest : ui::Node
+{
+	void MakeContents(UIContainer* ctx, const char* text, int row)
+	{
+		switch (row)
+		{
+		case 0:
+			ctx->Make<CheckboxIcon>();
+			ctx->Text(text) + ui::Padding(4); // TODO consistent padding from theme?
+			break;
+		case 1:
+			ctx->Make<RadioButtonIcon>();
+			ctx->Text(text) + ui::Padding(4);
+			break;
+		case 2:
+			ctx->MakeWithText<StateButtonVisual>(text);
+			break;
+		case 3: {
+			auto s = ctx->Text(text).GetStyle();
+			s.SetPadding(5);
+			s.SetTextColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
+			s.SetFontWeight(stb->GetState() ? style::FontWeight::Bold : style::FontWeight::Normal);
+			break; }
+		case 4:
+			ctx->Text(std::string(stb->GetState() ? "[x]" : "[ ]") + text) + ui::Padding(5);
+			break;
+		case 5:
+			ctx->Make<ui::ColorBlock>()->SetColor(stb->GetState() ? ui::Color4f(0.3f, 1, 0) : ui::Color4f(1, 0.1f, 0));
+			ctx->Text(text) + ui::Padding(4);
+			break;
+		case 6:
+			ctx->MakeWithText<ui::ColorBlock>(text)
+				->SetColor(stb->GetState() ? ui::Color4f(0.1f, 0.5f, 0) : ui::Color4f(0.5f, 0.02f, 0))
+				+ ui::Width(style::Coord::Undefined());
+			break;
+		}
+	}
+
+	void Render(UIContainer* ctx) override
+	{
+		constexpr int NUM_STYLES = 7;
+
+		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		{
+			ctx->Text("CB activate");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				(stb = ctx->Push<StateToggle>()->InitReadOnly(cb1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { cb1 = !cb1; Rerender(); };
+				MakeContents(ctx, "one", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		{
+			ctx->Text("CB int.state");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				auto* cbbs = ctx->Push<StateToggle>()->InitEditable(cb1, 2);
+				(stb = cbbs)->HandleEvent(UIEventType::Change) = [this, cbbs](UIEvent&) { cb1 = cbbs->GetState(); Rerender(); };
+				MakeContents(ctx, "two", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		{
+			ctx->Text("CB ext.state");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				(stb = ctx->Push<CheckboxFlagT<bool>>()->Init(cb1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				MakeContents(ctx, "three", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		{
+			ctx->Text("RB activate");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				ui::Property::Scope ps(ctx);
+
+				(stb = ctx->Push<StateToggle>()->InitReadOnly(rb1 == 0))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 0; Rerender(); };
+				MakeContents(ctx, "4a", i);
+				ctx->Pop();
+
+				(stb = ctx->Push<StateToggle>()->InitReadOnly(rb1 == 1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 1; Rerender(); };
+				MakeContents(ctx, "4b", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		{
+			ctx->Text("RB ext.state");
+
+			for (int i = 0; i < NUM_STYLES; i++)
+			{
+				ui::Property::Scope ps(ctx);
+
+				(stb = ctx->Push<RadioButtonT<int>>()->Init(rb1, 0))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				MakeContents(ctx, "5a", i);
+				ctx->Pop();
+
+				(stb = ctx->Push<RadioButtonT<int>>()->Init(rb1, 1))->HandleEvent(UIEventType::Change) = [this](UIEvent&) { Rerender(); };
+				MakeContents(ctx, "5b", i);
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+	}
+
+	StateToggleBase* stb = nullptr;
+	bool cb1 = false;
+	int rb1 = 0;
+};
+void Test_StateButtons(UIContainer* ctx)
+{
+	ctx->Make<StateButtonsTest>();
+}
+
+
 struct SlidersTest : ui::Node
 {
 	void Render(UIContainer* ctx) override

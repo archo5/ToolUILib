@@ -360,7 +360,8 @@ struct PaintInfo
 {
 	UIRect rect;
 	const UIObject* obj;
-	uint32_t state = 0;
+	uint8_t state = 0;
+	uint8_t checkState = 0;
 
 	PaintInfo() {}
 	PaintInfo(const UIObject* o);
