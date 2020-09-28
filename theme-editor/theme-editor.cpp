@@ -378,7 +378,7 @@ struct TE_ImageNode : TE_Node
 			node->Render(canvas);
 			*ctx->Make<ImageElement>()
 				->SetImage(ctx->GetCurrentNode()->Allocate<Image>(canvas))
-				->SetScaleMode(ScaleMode::Fit, 0.5f, 0.5f)
+				->SetScaleMode(ScaleMode::Fit)
 				->SetAlphaBackgroundEnabled(true)
 				//+ Width(style::Coord::Percent(100)) -- TODO fix
 				+ Width(134)

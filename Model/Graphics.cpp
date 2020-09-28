@@ -111,8 +111,8 @@ void ImageElement::OnPaint()
 				h = w / iasp;
 			else
 				w = h * iasp;
-			float x = c.x0 + (c.GetWidth() - w) * (_anchorX + 1) * 0.5f;
-			float y = c.y0 + (c.GetHeight() - h) * (_anchorY + 1) * 0.5f;
+			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
+			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
 			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture,
 				(c.x0 - x) / w,
 				(c.y0 - y) / h,

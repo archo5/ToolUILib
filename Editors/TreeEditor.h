@@ -59,7 +59,7 @@ struct TreeDragData : DragDropData
 
 struct TreeItemElement : Selectable
 {
-	TreeItemElement();
+	void OnInit() override;
 	void OnEvent(UIEvent& e) override;
 	virtual void ContextMenu();
 

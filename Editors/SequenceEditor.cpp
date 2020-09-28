@@ -21,8 +21,9 @@ void SequenceDragData::Render(UIContainer* ctx)
 }
 
 
-SequenceItemElement::SequenceItemElement()
+void SequenceItemElement::OnInit()
 {
+	Selectable::OnInit();
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
 	s.SetLayout(style::layouts::StackExpand());

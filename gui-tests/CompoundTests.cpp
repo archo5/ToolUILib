@@ -492,7 +492,7 @@ struct ImageTest : ui::Node
 					ctx->Push<ui::Panel>()->SetStyle(pbr);
 					ctx->Make<ui::ImageElement>()
 						->SetImage(img)
-						->SetScaleMode(scaleModes[mode % 3], x, y)
+						->SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
 						->SetStyle(mode / 3 ? ibr2 : ibr);
 					ctx->Pop();
 				}

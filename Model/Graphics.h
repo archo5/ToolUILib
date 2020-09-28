@@ -72,13 +72,14 @@ struct ImageElement : UIElement
 	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
 
 	ImageElement* SetImage(Image* img);
-	ImageElement* SetScaleMode(ScaleMode sm, float ax = 0, float ay = 0);
+	// range: 0-1 (0.5 = middle)
+	ImageElement* SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
 	ImageElement* SetAlphaBackgroundEnabled(bool enabled);
 
 	Image* _image = nullptr;
 	ScaleMode _scaleMode = ScaleMode::Fit;
-	float _anchorX = 0;
-	float _anchorY = 0;
+	float _anchorX = 0.5f;
+	float _anchorY = 0.5f;
 
 	std::shared_ptr<Image> _bgImage;
 };

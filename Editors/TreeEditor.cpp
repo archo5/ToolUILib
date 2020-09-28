@@ -90,8 +90,9 @@ void ITree::DuplicateAll(NodeLoc* nodes, size_t count)
 }
 
 
-TreeItemElement::TreeItemElement()
+void TreeItemElement::OnInit()
 {
+	Selectable::OnInit();
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
 	s.SetLayout(style::layouts::StackExpand());

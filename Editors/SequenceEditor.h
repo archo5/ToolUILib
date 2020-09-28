@@ -215,7 +215,7 @@ struct SequenceDragData : DragDropData
 
 struct SequenceItemElement : Selectable
 {
-	SequenceItemElement();
+	void OnInit() override;
 	void OnEvent(UIEvent& e) override;
 	virtual void ContextMenu();
 
