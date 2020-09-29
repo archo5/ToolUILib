@@ -44,25 +44,42 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 		ui::DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->ReleaseMouse();
 	}
-	else if (e.type == UIEventType::DragEnter)
+	else if (e.type == UIEventType::DragMove)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
 		{
 			if (ddd->scope == seqEd)
 			{
-				if (ddd->at != num)
+				if (auto* p = FindParentOfType<SequenceEditor>())
 				{
-					e.context->MoveClickTo(e.current);
+					auto r = GetBorderRect();
+					bool after = e.y > (r.y0 + r.y1) * 0.5f;
+					p->_dragTargetPos = num + after;
+					float y = after ? r.y1 : r.y0;
+					p->_dragTargetLine = UIRect{ r.x0, y, r.x1, y }.ExtendBy(UIRect::UniformBorder(1));
 				}
-				seqEd->GetSequence()->MoveElementTo(ddd->at, num);
-				ddd->at = num;
 			}
 		}
-		RerenderNode();
 	}
-	else if (e.type == UIEventType::DragLeave || e.type == UIEventType::DragEnd)
+	if (e.type == UIEventType::DragDrop)
 	{
-		RerenderNode();
+		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
+		{
+			if (ddd->scope == seqEd)
+			{
+				if (auto* p = FindParentOfType<SequenceEditor>())
+				{
+					size_t tgt = p->_dragTargetPos - (p->_dragTargetPos > ddd->at);
+					seqEd->GetSequence()->MoveElementTo(ddd->at, tgt);
+					RerenderNode();
+				}
+			}
+		}
+	}
+	else if (e.type == UIEventType::DragLeave)
+	{
+		if (auto* p = FindParentOfType<SequenceEditor>())
+			p->_dragTargetPos = SIZE_MAX;
 	}
 }
 
@@ -110,6 +127,17 @@ void SequenceEditor::Render(UIContainer* ctx)
 	}
 
 	ctx->Pop();
+}
+
+void SequenceEditor::OnPaint()
+{
+	Node::OnPaint();
+
+	if (_dragTargetPos < SIZE_MAX)
+	{
+		auto r = _dragTargetLine;
+		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
+	}
 }
 
 void SequenceEditor::OnBuildItem(UIContainer* ctx, ISequenceIterator* it)

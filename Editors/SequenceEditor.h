@@ -236,6 +236,7 @@ struct SequenceEditor : Node
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override;
+	void OnPaint() override;
 
 	virtual void OnBuildItem(UIContainer* ctx, ISequenceIterator* it);
 	virtual void OnBuildDeleteButton(UIContainer* ctx, ISequenceIterator* it);
@@ -248,6 +249,9 @@ struct SequenceEditor : Node
 	bool showDeleteButton = true;
 
 	ISequence* _sequence;
+
+	size_t _dragTargetPos = SIZE_MAX;
+	UIRect _dragTargetLine = {};
 };
 
 } // ui
