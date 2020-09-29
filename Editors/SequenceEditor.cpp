@@ -12,7 +12,9 @@ void SequenceDragData::Render(UIContainer* ctx)
 	{
 		auto* seq = scope->GetSequence();
 		std::unique_ptr<ISequenceIterator> it{ seq->GetIterator(at) };
+		ctx->PushBox() + Width(width);
 		scope->itemUICallback(ctx, scope, it.get());
+		ctx->Pop();
 	}
 	else
 	{
@@ -39,7 +41,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 
 	if (e.context->DragCheck(e, UIMouseButton::Left))
 	{
-		ui::DragDrop::SetData(new SequenceDragData(seqEd, num));
+		ui::DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->ReleaseMouse();
 	}
 	else if (e.type == UIEventType::DragEnter)

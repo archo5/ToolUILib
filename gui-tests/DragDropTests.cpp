@@ -40,6 +40,13 @@ struct TransferCountablesTest : ui::Node
 {
 	static constexpr bool Persistent = true;
 
+	struct Data : ui::DragDropData
+	{
+		static constexpr const char* NAME = "slot item";
+		Data(int f) : ui::DragDropData(NAME), from(f) {}
+		int from;
+	};
+
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Text("Transfer countables");
@@ -55,11 +62,6 @@ struct TransferCountablesTest : ui::Node
 			btn->SetInputDisabled(slots[i] == 0);
 			btn->HandleEvent() = [this, i, btn](UIEvent& e)
 			{
-				struct Data : ui::DragDropData
-				{
-					Data(int f) : ui::DragDropData("slot item"), from(f) {}
-					int from;
-				};
 				if (e.context->DragCheck(e, UIMouseButton::Left))
 				{
 					if (slots[i] > 0)
@@ -69,7 +71,7 @@ struct TransferCountablesTest : ui::Node
 				}
 				else if (e.type == UIEventType::DragDrop)
 				{
-					if (auto* ddd = static_cast<Data*>(ui::DragDrop::GetData("slot item")))
+					if (auto* ddd = ui::DragDrop::GetData<Data>())
 					{
 						slots[i]++;
 						slots[ddd->from]--;
@@ -98,6 +100,13 @@ struct SlideReorderTest : ui::Node
 {
 	static constexpr bool Persistent = true;
 
+	struct Data : ui::DragDropData
+	{
+		static constexpr const char* NAME = "current location";
+		Data(int f) : ui::DragDropData(NAME), at(f) {}
+		int at;
+	};
+
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Text("Slide-reorder (instant)");
@@ -105,13 +114,8 @@ struct SlideReorderTest : ui::Node
 		ctx->Push<ui::ListBox>();
 		for (int i = 0; i < 4; i++)
 		{
-			struct Data : ui::DragDropData
-			{
-				Data(int f) : ui::DragDropData("current location"), at(f) {}
-				int at;
-			};
 			bool dragging = false;
-			if (auto* dd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
+			if (auto* dd = ui::DragDrop::GetData<Data>())
 				if (dd->at == i)
 					dragging = true;
 			auto* sel = ctx->Push<ui::Selectable>()->Init(dragging);
@@ -125,7 +129,7 @@ struct SlideReorderTest : ui::Node
 				}
 				else if (e.type == UIEventType::DragEnter)
 				{
-					if (auto* ddd = static_cast<Data*>(ui::DragDrop::GetData("current location")))
+					if (auto* ddd = ui::DragDrop::GetData<Data>())
 					{
 						if (ddd->at != i)
 						{
@@ -181,12 +185,13 @@ struct TreeNodeReorderTest : ui::Node
 	};
 	struct DragDropNodeData : ui::DragDropData
 	{
+		static constexpr const char* NAME = "node";
 		struct Entry
 		{
 			Node* node;
 			size_t childNum;
 		};
-		DragDropNodeData() : ui::DragDropData("node")
+		DragDropNodeData() : ui::DragDropData(NAME)
 		{
 		}
 		void Render(UIContainer* ctx) override
@@ -376,7 +381,7 @@ struct TreeNodeReorderTest : ui::Node
 	}
 	void Tree_OnDragDrop()
 	{
-		if (auto* ddd = static_cast<DragDropNodeData*>(ui::DragDrop::GetData("node")))
+		if (auto* ddd = ui::DragDrop::GetData<DragDropNodeData>())
 		{
 			printf("target cont=%p name=%s ins.before=%zu\n", dragTargetCont, dragTargetCont ? dragTargetCont->name.c_str() : "-", dragTargetInsertBefore);
 
@@ -511,7 +516,8 @@ struct DragConnectTest : ui::Node
 
 	struct LinkDragDropData : ui::DragDropData
 	{
-		LinkDragDropData(int linkID) : DragDropData("link"), _linkID(linkID) {}
+		static constexpr const char* NAME = "link";
+		LinkDragDropData(int linkID) : DragDropData(NAME), _linkID(linkID) {}
 		bool ShouldRender() override { return false; }
 		int _linkID;
 	};
@@ -556,7 +562,7 @@ struct DragConnectTest : ui::Node
 			}
 			if (e.type == UIEventType::DragDrop)
 			{
-				if (auto* ddd = static_cast<LinkDragDropData*>(ui::DragDrop::GetData("link")))
+				if (auto* ddd = ui::DragDrop::GetData<LinkDragDropData>())
 				{
 					if (auto* p = FindParentOfType<DragConnectTest>())
 					{
@@ -660,7 +666,7 @@ struct DragConnectTest : ui::Node
 			}
 		}
 
-		if (auto* ddd = static_cast<LinkDragDropData*>(ui::DragDrop::GetData("link")))
+		if (auto* ddd = ui::DragDrop::GetData<LinkDragDropData>())
 		{
 			if (auto* linkable = linkables.get(ddd->_linkID))
 			{

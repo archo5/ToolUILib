@@ -206,10 +206,16 @@ struct SequenceDragData : DragDropData
 {
 	static constexpr const char* NAME = "SequenceDragData";
 
-	SequenceDragData(SequenceEditor* s, size_t f) : ui::DragDropData(NAME), scope(s), at(f) {}
+	SequenceDragData(SequenceEditor* s, float w, size_t f) :
+		ui::DragDropData(NAME),
+		scope(s),
+		width(w),
+		at(f)
+	{}
 	void Render(UIContainer* ctx) override;
 
 	SequenceEditor* scope;
+	float width;
 	size_t at;
 };
 
