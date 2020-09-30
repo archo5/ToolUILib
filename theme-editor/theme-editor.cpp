@@ -725,7 +725,9 @@ struct TE_PageEditorNode : Node
 			page->curNode = (TE_ImageNode*)e.arg0;
 			Rerender();
 		}
-		if (e.type == UIEventType::Change || e.type == UIEventType::Commit)
+		if (e.type == UIEventType::Change ||
+			e.type == UIEventType::Commit ||
+			e.type == UIEventType::IMChange)
 		{
 			Notify(DCT_NodeEdited);
 		}

@@ -66,6 +66,7 @@ struct TransferCountablesTest : ui::Node
 				{
 					if (slots[i] > 0)
 					{
+						e.context->SetKeyboardFocus(nullptr);
 						ui::DragDrop::SetData(new Data(i));
 					}
 				}
@@ -125,6 +126,7 @@ struct SlideReorderTest : ui::Node
 				if (e.context->DragCheck(e, UIMouseButton::Left))
 				{
 					ui::DragDrop::SetData(new Data(i));
+					e.context->SetKeyboardFocus(nullptr);
 					e.context->ReleaseMouse();
 				}
 				else if (e.type == UIEventType::DragEnter)

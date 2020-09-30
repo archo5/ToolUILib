@@ -353,6 +353,7 @@ void Test_OSCommunication(UIContainer* ctx);
 
 void Test_SequenceEditors(UIContainer* ctx);
 void Test_TreeEditors(UIContainer* ctx);
+void Test_MessageLogView(UIContainer* ctx);
 
 void Benchmark_SubUI(UIContainer* ctx);
 void Benchmark_TableView(UIContainer* ctx);
@@ -431,9 +432,15 @@ static const TestEntry utilityTestEntries[] =
 };
 static const TestEntry dseditTestEntries[] =
 {
+	{ "- Non-virtualized -" },
 	{ "Sequence editors", Test_SequenceEditors },
 	{ "Tree editors", Test_TreeEditors },
+	{},
+	{ "- Partially virtualized (real UI, visible items only) -" },
 	{ "Node graph", Demo_NodeGraphEditor },
+	{},
+	{ "- Fully virtualized (single UI element for all items) -" },
+	{ "Message log view", Test_MessageLogView },
 };
 static const TestEntry benchmarkEntries[] =
 {

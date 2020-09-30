@@ -186,6 +186,12 @@ void UIEventSystem::OnChange(UIObject* o)
 	BubblingEvent(ev);
 }
 
+void UIEventSystem::OnIMChange(UIObject* o)
+{
+	UIEvent ev(this, o, UIEventType::IMChange);
+	BubblingEvent(ev);
+}
+
 void UIEventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1)
 {
 	UIEvent ev(this, o, UserEvent(id));

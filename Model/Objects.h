@@ -199,7 +199,7 @@ struct UIObject
 
 	virtual void OnEvent(UIEvent& e) {}
 	void _DoEvent(UIEvent& e);
-	void _PerformDefaultBehaviors(UIEvent& e);
+	void _PerformDefaultBehaviors(UIEvent& e, uint32_t f);
 
 	void SendUserEvent(int id, uintptr_t arg0 = 0, uintptr_t arg1 = 0);
 	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
@@ -230,6 +230,7 @@ struct UIObject
 	}
 
 	void SetFlag(UIObjectFlags flag, bool set);
+	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
 	bool HasFlags(UIObjectFlags f) const { return (flags & f) == f; }
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
@@ -258,7 +259,10 @@ struct UIObject
 	UIObject* GetNextInOrder();
 	UIObject* GetFirstInOrder();
 	UIObject* GetLastInOrder();
+
 	void RerenderNode();
+	void RerenderContainerNode();
+	void _OnIMChange();
 
 	bool IsHovered() const;
 	bool IsPressed() const;
@@ -404,14 +408,6 @@ struct Node : UIObject
 	void Defer(std::function<void()>&& fn)
 	{
 		_deferredDestructors.push_back(std::move(fn));
-	}
-	void _PerformDestructions()
-	{
-		while (_deferredDestructors.size())
-		{
-			_deferredDestructors.back()();
-			_deferredDestructors.pop_back();
-		}
 	}
 	template <class T, class... Args> T* Allocate(Args&&... args)
 	{

@@ -38,7 +38,7 @@ bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 	{
 		clicked = true;
 		btn->flags &= ~UIObject_IsEdited;
-		btn->RerenderNode();
+		btn->_OnIMChange();
 	}
 	return clicked;
 }
@@ -57,7 +57,7 @@ bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods,
 	{
 		cb->flags &= ~UIObject_IsEdited;
 		edited = true;
-		cb->RerenderNode();
+		cb->_OnIMChange();
 	}
 	cb->InitReadOnly(val);
 	return edited;
@@ -87,7 +87,7 @@ bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mo
 	{
 		rb->flags &= ~UIObject_IsEdited;
 		edited = true;
-		rb->RerenderNode();
+		rb->_OnIMChange();
 	}
 	rb->InitReadOnly(val);
 	return edited;
@@ -139,7 +139,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 		val = tmp;
 		tb->flags &= ~UIObject_IsEdited;
 		edited = true;
-		tb->RerenderNode();
+		tb->_OnIMChange();
 	}
 
 	char buf[1024];
@@ -178,7 +178,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 				tb->flags |= UIObject_IsEdited;
 
 				e.context->OnCommit(e.target);
-				e.target->RerenderNode();
+				e.target->RerenderContainerNode();
 			}
 			if (e.type == UIEventType::SetCursor)
 			{
@@ -190,7 +190,7 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	tb->HandleEvent(UIEventType::Commit) = [tb](UIEvent& e)
 	{
 		tb->flags |= UIObject_IsEdited;
-		e.target->RerenderNode();
+		e.target->RerenderContainerNode();
 	};
 
 	return edited;
@@ -231,7 +231,7 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 	{
 		retfn(tb->GetText().c_str());
 		tb->flags &= ~UIObject_IsEdited;
-		tb->RerenderNode();
+		tb->_OnIMChange();
 		changed = true;
 	}
 	else // text can be invalidated if retfn is called
@@ -239,7 +239,7 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 	tb->HandleEvent(UIEventType::Change) = [tb](UIEvent&)
 	{
 		tb->flags |= UIObject_IsEdited;
-		tb->RerenderNode();
+		tb->RerenderContainerNode();
 	};
 	return changed;
 }
@@ -254,7 +254,7 @@ bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
 	{
 		val = ced->GetColor().GetRGBA();
 		ced->flags &= ~UIObject_IsEdited;
-		ctx->GetCurrentNode()->Rerender();
+		ced->_OnIMChange();
 		changed = true;
 	}
 	else
@@ -262,9 +262,7 @@ bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
 	ced->HandleEvent(UIEventType::Change) = [ced](UIEvent&)
 	{
 		ced->flags |= UIObject_IsEdited;
-		// TODO
-		if (ced->parent)
-			ced->parent->RerenderNode();
+		ced->RerenderContainerNode();
 	};
 	return changed;
 }

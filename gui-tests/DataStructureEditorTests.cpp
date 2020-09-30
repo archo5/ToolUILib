@@ -1,6 +1,7 @@
 
 #include "pch.h"
 
+#include <time.h>
 #include <deque>
 #include "../Editors/TreeEditor.h"
 
@@ -278,4 +279,175 @@ struct TreeEditorsTest : ui::Node
 void Test_TreeEditors(UIContainer* ctx)
 {
 	ctx->Make<TreeEditorsTest>();
+}
+
+
+struct MessageLogViewTest : ui::Node
+{
+	struct Message
+	{
+		time_t time;
+		std::string text;
+		std::string location;
+	};
+
+	struct MLV_Common : ui::MessageLogDataSource
+	{
+		size_t GetNumMessages() override { return msgs->size(); }
+		std::string GetMessage(size_t msg, size_t line)
+		{
+			auto& M = (*msgs)[msg];
+			if (line == 0)
+			{
+				auto* t = localtime(&M.time);
+				char msg[1024];
+				snprintf(msg, sizeof(msg), "[%02d:%02d:%02d] %s", t->tm_hour, t->tm_min, t->tm_sec, M.text.c_str());
+				return msg;
+			}
+			else return M.location;
+		}
+
+		std::vector<Message>* msgs;
+	};
+	struct MLV_R : MLV_Common {};
+	struct MLV_I : MLV_Common
+	{
+		size_t GetNumLines() override { return 2; }
+		float GetMessageWidth(UIObject* context, size_t msg) override
+		{
+			return MLV_Common::GetMessageWidth(context, msg) + GetMessageHeight(context);
+		}
+		void OnDrawMessage(UIObject* context, size_t msg, UIRect area) override
+		{
+			float h = area.GetHeight();
+			ui::draw::RectCol(area.x0 + 4, area.y0 + 4, area.x0 + h - 4, area.y1 - 4, ui::Color4b(200, 200, 200));
+			area.x0 += h;
+			MLV_Common::OnDrawMessage(context, msg, area);
+		}
+	};
+
+	static constexpr bool Persistent = true;
+
+	MessageLogViewTest()
+	{
+		AddMessages(2345);
+	}
+
+	void AddMessages(int n)
+	{
+		bool isAtEndR = mlvRtoken.IsAlive() && mlvR->IsAtEnd();
+		bool isAtEndI = mlvItoken.IsAlive() && mlvI->IsAtEnd();
+
+		static const char* words[10] =
+		{
+			"user", "interface", "library", "for", "editors",
+			"designed", "with", "extensibility", "in", "mind",
+		};
+		auto T = time(nullptr);
+		for (int i = 0; i < n; i++)
+		{
+			Message msg;
+			msg.time = T + i;
+
+			int nwords = rand() % 10 + 5;
+			for (int j = 0; j < nwords; j++)
+			{
+				if (j)
+					msg.text += " ";
+				msg.text += words[((i + j) * nwords) % 10];
+			}
+
+			char bfr[128];
+			snprintf(bfr, sizeof(bfr), "/random/generated/word/seq/%d/num/%d", i, nwords);
+			msg.location = bfr;
+
+			messages.push_back(msg);
+		}
+
+		if (isAtEndR)
+			mlvR->ScrollToEnd();
+		if (isAtEndI)
+			mlvI->ScrollToEnd();
+	}
+
+	void Render(UIContainer* ctx) override
+	{
+		{
+			ui::Property::Scope ps(ctx);
+			if (ui::imm::Button(ctx, "Clear"))
+				messages.clear();
+			if (ui::imm::Button(ctx, "Add 1 line"))
+				AddMessages(1);
+			if (ui::imm::Button(ctx, "Add 10"))
+				AddMessages(10);
+			if (ui::imm::Button(ctx, "Add 100"))
+				AddMessages(100);
+			if (ui::imm::Button(ctx, "Add 1K"))
+				AddMessages(1000);
+			if (ui::imm::Button(ctx, "Add 10K"))
+				AddMessages(10000);
+		};
+		ctx->PushBox()
+			+ ui::StackingDirection(style::StackingDirection::LeftToRight)
+			//+ ui::Height(style::Coord::Percent(50));
+			+ ui::Height(200);
+		{
+			ctx->PushBox()
+				+ ui::Layout(style::layouts::EdgeSlice())
+				+ ui::Width(style::Coord::Percent(50))
+				+ ui::Height(style::Coord::Percent(100));
+			{
+				ctx->Text("single line");
+				*ctx->Push<ui::ListBox>()
+					;// +ui::Height(style::Coord::Percent(100));
+				{
+					auto* rds = Allocate<MLV_R>();
+					rds->msgs = &messages;
+					auto* mlv = ctx->Make<ui::MessageLogView>();
+					*mlv + ui::Height(style::Coord::Percent(100));
+					mlv->GetLivenessToken();
+					mlv->SetDataSource(rds);
+
+					mlvR = mlv;
+					mlvRtoken = mlv->GetLivenessToken();
+				}
+				ctx->Pop();
+			}
+			ctx->Pop();
+
+			ctx->PushBox()
+				+ ui::Layout(style::layouts::EdgeSlice())
+				+ ui::Width(style::Coord::Percent(50))
+				+ ui::Height(style::Coord::Percent(100));
+			{
+				ctx->Text("two lines, custom drawing");
+				*ctx->Push<ui::ListBox>()
+					;// +ui::Height(style::Coord::Percent(100));
+				{
+					auto* rds = Allocate<MLV_I>();
+					rds->msgs = &messages;
+					auto* mlv = ctx->Make<ui::MessageLogView>();
+					*mlv + ui::Height(style::Coord::Percent(100));
+					mlv->SetDataSource(rds);
+
+					mlvI = mlv;
+					mlvItoken = mlv->GetLivenessToken();
+				}
+				ctx->Pop();
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+	}
+
+	std::vector<Message> messages;
+
+	LivenessToken mlvRtoken;
+	ui::MessageLogView* mlvR;
+	LivenessToken mlvItoken;
+	ui::MessageLogView* mlvI;
+};
+void Test_MessageLogView(UIContainer* ctx)
+{
+	ctx->Make<MessageLogViewTest>();
 }

@@ -10,7 +10,7 @@
 
 static_assert(sizeof(std::atomic<bool>) <= sizeof(int32_t), "unexpected atomic bool size");
 
-AtomicBool::AtomicBool(bool v)
+AtomicBool::AtomicBool(bool v) : _mem(0)
 {
 	reinterpret_cast<std::atomic_bool*>(&_mem)->store(v);
 }

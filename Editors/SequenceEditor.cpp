@@ -42,6 +42,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 	if (e.context->DragCheck(e, UIMouseButton::Left))
 	{
 		ui::DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
+		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
 	else if (e.type == UIEventType::DragMove)

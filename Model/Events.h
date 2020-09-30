@@ -29,6 +29,7 @@ enum class UIEventType
 	ContextMenu,
 	Change,
 	Commit,
+	IMChange,
 	Paint,
 	Timer,
 	Tooltip,
@@ -192,6 +193,7 @@ struct UIEventSystem
 	void OnActivate(UIObject* o);
 	void OnCommit(UIObject* o);
 	void OnChange(UIObject* o);
+	void OnIMChange(UIObject* o);
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o);
 

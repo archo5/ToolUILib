@@ -20,6 +20,40 @@ struct Selection1D
 	struct Selection1DImpl* _impl;
 };
 
+
+struct MessageLogDataSource
+{
+	virtual size_t GetNumMessages() = 0;
+	virtual std::string GetMessage(size_t msg, size_t line) = 0;
+
+	// customizable parts with default implementations
+	virtual size_t GetNumLines() { return 1; }
+	virtual float GetMessageHeight(UIObject* context);
+	virtual float GetMessageWidth(UIObject* context, size_t msg);
+	virtual void OnDrawMessage(UIObject* context, size_t msg, UIRect area);
+};
+
+struct MessageLogView : Node
+{
+	void OnPaint() override;
+	void OnEvent(UIEvent& e) override;
+	void OnSerialize(IDataSerializer& s) override;
+	void Render(UIContainer* ctx) override;
+
+	MessageLogDataSource* GetDataSource() const;
+	void SetDataSource(MessageLogDataSource* src);
+
+	bool IsAtEnd();
+	void ScrollToStart();
+	void ScrollToEnd();
+
+	ScrollbarV scrollbarV;
+	float yOff = 0;
+
+	MessageLogDataSource* _dataSource;
+};
+
+
 struct TableDataSource
 {
 	virtual size_t GetNumRows() = 0;
@@ -32,9 +66,8 @@ struct TableDataSource
 	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
 };
 
-class TableView : public ui::Node
+struct TableView : Node
 {
-public:
 	TableView();
 	~TableView();
 	void OnPaint() override;
@@ -63,9 +96,9 @@ private:
 	struct TableViewImpl* _impl;
 };
 
-class TreeDataSource
+
+struct TreeDataSource
 {
-public:
 	static constexpr uintptr_t ROOT = uintptr_t(-1);
 
 	virtual size_t GetNumCols() = 0;
@@ -75,9 +108,8 @@ public:
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
 };
 
-class TreeView : public ui::Node
+struct TreeView : Node
 {
-public:
 	struct PaintState;
 
 	TreeView();

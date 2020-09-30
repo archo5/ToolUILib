@@ -69,27 +69,27 @@ void UIObject::_DoEvent(UIEvent& e)
 	if (!e.IsPropagationStopped())
 	{
 		// default behaviors
-		_PerformDefaultBehaviors(e);
+		_PerformDefaultBehaviors(e, flags);
 	}
 }
 
-void UIObject::_PerformDefaultBehaviors(UIEvent& e)
+void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
 {
 	if (!IsInputDisabled())
 	{
-		if (HasFlags(UIObject_DB_IMEdit) && e.target == this && e.type == UIEventType::Activate)
+		if (HasFlags(f, UIObject_DB_IMEdit) && e.target == this && e.type == UIEventType::Activate)
 		{
 			flags |= UIObject_IsEdited;
 			RerenderNode();
 		}
 
-		if (HasFlags(UIObject_DB_RerenderOnChange) &&
+		if (HasFlags(f, UIObject_DB_RerenderOnChange) &&
 			(e.type == UIEventType::Change || e.type == UIEventType::Commit))
 		{
 			RerenderNode();
 		}
 
-		if (HasFlags(UIObject_DB_Button))
+		if (HasFlags(f, UIObject_DB_Button))
 		{
 			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left && e.context->GetMouseCapture() == this)
 			{
@@ -120,16 +120,17 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e)
 			}
 		}
 
-		if (HasFlags(UIObject_DB_Draggable))
+		if (HasFlags(f, UIObject_DB_Draggable))
 		{
 			if (e.context->DragCheck(e, UIMouseButton::Left))
 			{
+				e.context->SetKeyboardFocus(nullptr);
 				UIEvent e(&system->eventSystem, this, UIEventType::DragStart);
 				e.context->BubblingEvent(e);
 			}
 		}
 
-		if (HasFlags(UIObject_DB_Selectable))
+		if (HasFlags(f, UIObject_DB_Selectable))
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 			{
@@ -138,7 +139,7 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e)
 			}
 		}
 
-		if (HasFlags(UIObject_DB_FocusOnLeftClick))
+		if (HasFlags(f, UIObject_DB_FocusOnLeftClick))
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 			{
@@ -147,7 +148,7 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e)
 			}
 		}
 
-		if (HasFlags(UIObject_DB_CaptureMouseOnLeftClick))
+		if (HasFlags(f, UIObject_DB_CaptureMouseOnLeftClick))
 		{
 			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 			{
@@ -642,6 +643,18 @@ void UIObject::RerenderNode()
 		n->Rerender();
 }
 
+void UIObject::RerenderContainerNode()
+{
+	if (auto* n = (parent ? parent : this)->FindParentOfType<ui::Node>())
+		n->Rerender();
+}
+
+void UIObject::_OnIMChange()
+{
+	system->eventSystem.OnIMChange(this);
+	RerenderContainerNode();
+}
+
 bool UIObject::IsHovered() const
 {
 	return !!(flags & UIObject_IsHovered);
@@ -998,7 +1011,11 @@ Node::~Node()
 		s->Unlink();
 		delete s;
 	}
-	_PerformDestructions();
+	while (_deferredDestructors.size())
+	{
+		_deferredDestructors.back()();
+		_deferredDestructors.pop_back();
+	}
 }
 
 void Node::Rerender()

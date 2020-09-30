@@ -72,6 +72,142 @@ void Selection1D::SetSelected(uintptr_t id, bool sel)
 }
 
 
+float MessageLogDataSource::GetMessageHeight(UIObject* context)
+{
+	int size = int(context->GetFontSize());
+	return size * GetNumLines();
+}
+
+float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
+{
+	float maxW = 0;
+	size_t numLines = GetNumLines();
+	for (size_t i = 0; i < numLines; i++)
+	{
+		auto msgLine = GetMessage(msg, i);
+		float w = GetTextWidth(msgLine.c_str(), msgLine.size());
+		maxW = max(maxW, w);
+	}
+	return maxW;
+}
+
+void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect area)
+{
+	int size = int(context->GetFontSize());
+	int weight = context->GetFontWeight();
+	bool italic = context->GetFontIsItalic();
+	Color4b color = context->GetTextColor();
+	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	size_t numLines = GetNumLines();
+	for (size_t i = 0; i < numLines; i++)
+	{
+		auto msgLine = GetMessage(msg, i);
+		draw::TextLine(font, size, area.x0, area.y0 + (i + 1) * size, msgLine, color);
+	}
+}
+
+
+void MessageLogView::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	size_t numMsgs = _dataSource->GetNumMessages();
+	float htMsg = _dataSource->GetMessageHeight(this);
+
+	auto RC = GetContentRect();
+
+	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
+	auto sbrect = RC;
+	sbrect.x0 = sbrect.x1 - sbw;
+	RC.x1 -= sbw;
+
+	size_t minMsg = floor(yOff / htMsg);
+	size_t maxMsg = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / htMsg));
+	if (minMsg > numMsgs)
+		minMsg = numMsgs;
+	if (maxMsg > numMsgs)
+		maxMsg = numMsgs;
+
+	draw::PushScissorRect(RC.x0, RC.y0, RC.x1, RC.y1);
+	for (size_t msgIdx = minMsg; msgIdx < maxMsg; msgIdx++)
+	{
+		UIRect rect =
+		{
+			RC.x0,
+			RC.y0 - yOff + htMsg * msgIdx,
+			RC.x1,
+			RC.y0 - yOff + htMsg * (msgIdx + 1),
+		};
+		_dataSource->OnDrawMessage(this, msgIdx, rect);
+	}
+	draw::PopScissorRect();
+
+	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), numMsgs * htMsg, yOff });
+
+	PaintChildren();
+}
+
+void MessageLogView::OnEvent(UIEvent& e)
+{
+	size_t numMsgs = _dataSource->GetNumMessages();
+	float htMsg = _dataSource->GetMessageHeight(this);
+
+	auto RC = GetContentRect();
+
+	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
+	auto sbrect = RC;
+	sbrect.x0 = sbrect.x1 - sbw;
+	RC.x1 -= sbw;
+
+	scrollbarV.OnEvent({ this, sbrect, RC.GetHeight(), numMsgs * htMsg, yOff }, e);
+
+	if (e.IsPropagationStopped())
+		return;
+}
+
+void MessageLogView::OnSerialize(IDataSerializer& s)
+{
+	s << yOff;
+	//selection.OnSerialize(s);
+}
+
+void MessageLogView::Render(UIContainer* ctx)
+{
+}
+
+MessageLogDataSource* MessageLogView::GetDataSource() const
+{
+	return _dataSource;
+}
+
+void MessageLogView::SetDataSource(MessageLogDataSource* src)
+{
+	_dataSource = src;
+}
+
+bool MessageLogView::IsAtEnd()
+{
+	size_t numMsgs = _dataSource->GetNumMessages();
+	float htMsg = _dataSource->GetMessageHeight(this);
+	auto RC = GetContentRect();
+	return yOff >= numMsgs * htMsg - RC.GetHeight();
+}
+
+void MessageLogView::ScrollToStart()
+{
+	yOff = 0;
+}
+
+void MessageLogView::ScrollToEnd()
+{
+	size_t numMsgs = _dataSource->GetNumMessages();
+	float htMsg = _dataSource->GetMessageHeight(this);
+	auto RC = GetContentRect();
+	yOff = numMsgs * htMsg - RC.GetHeight();
+}
+
+
 struct TableViewImpl
 {
 	TableDataSource* dataSource = nullptr;
@@ -87,9 +223,6 @@ TableView::TableView()
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
 	colHeaderStyle = Theme::current->tableColHeader;
-	// TODO find a way to make these behaviors work
-	//SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-	//SetFlag(UIObject_DB_FocusOnLeftClick, true);
 }
 
 TableView::~TableView()
@@ -274,29 +407,7 @@ void TableView::OnEvent(UIEvent& e)
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
 
-	// TODO this is copied from default behaviors, find a way to merge it back together
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
-	{
-		e.context->SetKeyboardFocus(this);
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
-	{
-		e.context->CaptureMouse(e.current);
-		e.current->flags |= UIObject_IsPressedMouse;
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
-	{
-		if (e.context->GetMouseCapture() == this)
-			e.context->ReleaseMouse();
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::MouseCaptureChanged)
-	{
-		flags &= ~UIObject_IsPressedMouse;
-		e.StopPropagation();
-	}
+	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick);
 
 	if (e.IsPropagationStopped())
 		return;

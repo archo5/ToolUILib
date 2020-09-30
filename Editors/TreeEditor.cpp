@@ -109,6 +109,7 @@ void TreeItemElement::OnEvent(UIEvent& e)
 	if (e.context->DragCheck(e, UIMouseButton::Left))
 	{
 		ui::DragDrop::SetData(new TreeDragData(treeEd, { node }));
+		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
 }

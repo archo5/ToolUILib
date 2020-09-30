@@ -136,9 +136,22 @@ void UIContainer::ProcessNodeRenderStack()
 		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
 		_curNode = currentNode;
 		currentNode->_lastRenderedFrameID = _lastRenderedFrameID;
+
 		currentNode->ClearLocalEventHandlers();
-		currentNode->_PerformDestructions();
+
+		// do not run old dtors before render (so that mid-render all data is still valid)
+		// but have the space cleaned out for the new dtors
+		decltype(ui::Node::_deferredDestructors) oldDDs;
+		std::swap(oldDDs, currentNode->_deferredDestructors);
+
 		currentNode->Render(this);
+
+		while (oldDDs.size())
+		{
+			oldDDs.back()();
+			oldDDs.pop_back();
+		}
+
 		_curNode = nullptr;
 
 		if (objectStackSize > 1)
