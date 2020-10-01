@@ -12,12 +12,68 @@ enum UserEvents
 static DataCategoryTag DCT_NodeEdited[1];
 
 
+static void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
+{
+	nts.BeginDict(key);
+	col.r = nts.ReadInt("r");
+	col.g = nts.ReadInt("g");
+	col.b = nts.ReadInt("b");
+	col.a = nts.ReadInt("a");
+	nts.EndDict();
+}
+
+static void Color4bSave(const char* key, Color4b& col, NamedTextSerializeWriter& nts)
+{
+	nts.BeginDict(key);
+	nts.WriteInt("r", col.r);
+	nts.WriteInt("g", col.g);
+	nts.WriteInt("b", col.b);
+	nts.WriteInt("a", col.a);
+	nts.EndDict();
+}
+
+static void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader& nts)
+{
+	nts.BeginDict(key);
+	rect.x0 = nts.ReadFloat("x0");
+	rect.y0 = nts.ReadFloat("y0");
+	rect.x1 = nts.ReadFloat("x1");
+	rect.y1 = nts.ReadFloat("y1");
+	nts.EndDict();
+}
+
+static void AABBFloatSave(const char* key, AABB<float>& rect, NamedTextSerializeWriter& nts)
+{
+	nts.BeginDict(key);
+	nts.WriteFloat("x0", rect.x0);
+	nts.WriteFloat("y0", rect.y0);
+	nts.WriteFloat("x1", rect.x1);
+	nts.WriteFloat("y1", rect.y1);
+	nts.EndDict();
+}
+
+
 using AbsRect = AABB<float>;
 
 struct SubRect
 {
 	AABB<float> anchors = {};
 	AABB<float> offsets = {};
+
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		AABBFloatLoad("anchors", anchors, nts);
+		AABBFloatLoad("offsets", offsets, nts);
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		AABBFloatSave("anchors", anchors, nts);
+		AABBFloatSave("offsets", offsets, nts);
+		nts.EndDict();
+	}
 };
 
 struct SubPos
@@ -30,13 +86,97 @@ struct TE_NamedColor
 {
 	std::string name;
 	Color4b color;
+
+	TE_NamedColor(const std::string& n, Color4b c) : name(n), color(c)
+	{
+	}
+	void Load(NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict("NamedColor");
+		name = nts.ReadString("name");
+		Color4bLoad("color", color, nts);
+		nts.EndDict();
+	}
+	void Save(NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict("NamedColor");
+		nts.WriteString("name", name);
+		Color4bSave("color", color, nts);
+		nts.EndDict();
+	}
 };
 
+static std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 struct TE_ColorRef
 {
-	// if name is empty, color is used instead
-	std::string name;
+	bool useRef = true;
+	std::weak_ptr<TE_NamedColor> ncref;
 	Color4b color;
+
+	Color4b Get()
+	{
+		if (useRef)
+			if (auto ptr = ncref.lock())
+				return ptr->color;
+		return color;
+	}
+	void Set(std::weak_ptr<TE_NamedColor> ncr)
+	{
+		useRef = true;
+		ncref = ncr;
+	}
+	void Set(Color4b c)
+	{
+		useRef = false;
+		color = c;
+	}
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		useRef = nts.ReadBool("useRef", true);
+		auto name = nts.ReadString("name");
+		ncref = {};
+		for (auto& nc : *g_namedColors)
+		{
+			if (nc->name == name)
+				ncref = nc;
+		}
+		Color4bLoad("color", color, nts);
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		nts.WriteBool("useRef", useRef);
+		auto r = ncref.lock();
+		nts.WriteString("name", r ? r->name : "");
+		Color4bSave("color", color, nts);
+		nts.EndDict();
+	}
+	void UI(UIContainer* ctx)
+	{
+		Property::Scope ps(ctx, "\bColor");
+		imm::EditBool(ctx, useRef, useRef ? "N" : "C", {}, imm::ButtonStateToggleSkin());
+		if (useRef)
+		{
+			// TODO internal selection with color previews
+			auto ncr = ncref.lock();
+			if (imm::Button(ctx, ncr ? ncr->name.c_str() : "<none>"))
+			{
+				MenuItemCollection mic;
+				mic.Add("<none>", false, false, -1) = [this]() { ncref = {}; };
+				for (const auto& nc : *g_namedColors)
+				{
+					mic.Add(nc->name) = [this, &nc]() { ncref = nc; };
+				}
+				Menu(mic.Finalize()).Show(ctx->GetCurrentNode());
+			}
+		}
+		else
+		{
+			imm::EditColor(ctx, color);
+		}
+	}
 };
 
 struct CornerRadiuses
@@ -47,17 +187,34 @@ struct CornerRadiuses
 			return { uniform, r, r, r, r, r };
 		return *this;
 	}
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		uniform = nts.ReadBool("uniform", true);
+		r = nts.ReadFloat("r");
+		r00 = nts.ReadFloat("r00");
+		r10 = nts.ReadFloat("r10");
+		r01 = nts.ReadFloat("r01");
+		r11 = nts.ReadFloat("r11");
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		nts.WriteBool("uniform", uniform);
+		nts.WriteFloat("r", r);
+		nts.WriteFloat("r00", r00);
+		nts.WriteFloat("r10", r10);
+		nts.WriteFloat("r01", r01);
+		nts.WriteFloat("r11", r11);
+		nts.EndDict();
+	}
 
 	bool uniform = true;
 	float r = 0;
 	float r00 = 0, r10 = 0, r01 = 0, r11 = 0;
 };
 
-
-float Clamp(float x, float xmin, float xmax)
-{
-	return x < xmin ? xmin : x > xmax ? xmax : x;
-}
 
 float Clamp01(float x)
 {
@@ -77,7 +234,7 @@ float AACircle(float x, float y, float cx, float cy, float radius)
 	float r2 = radius * radius;
 	float d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
 	float q = radius - sqrtf(d2) + 0.5f;
-	return Clamp(q, 0, 1);
+	return Clamp01(q);
 }
 
 AbsRect ResolveRect(const SubRect& rect, const AbsRect& frame)
@@ -98,6 +255,8 @@ enum TE_NodeType
 	TENT_Mask,
 	TENT_Layer,
 	TENT_Image,
+
+	TENT__COUNT,
 };
 
 static Color4b g_nodeTypeColors[] =
@@ -116,6 +275,7 @@ struct TE_Node
 {
 	virtual ~TE_Node() {}
 	virtual const char* GetName() = 0;
+	virtual const char* GetSysName() = 0;
 	virtual TE_NodeType GetType() = 0;
 	virtual int GetInputPinCount() = 0;
 	virtual std::string GetInputPinName(int pin) = 0;
@@ -125,10 +285,41 @@ struct TE_Node
 	virtual void InputPinUI(int pin, UIContainer* ctx) = 0;
 	virtual void PropertyUI(UIContainer* ctx) = 0;
 	virtual void PreviewUI(UIContainer* ctx) = 0;
+	virtual void Load(NamedTextSerializeReader& nts) = 0;
+	virtual void Save(NamedTextSerializeWriter& nts) = 0;
 
+	void _LoadBase(NamedTextSerializeReader& nts)
+	{
+		id = nts.ReadUInt("id");
+		position.x = nts.ReadFloat("x");
+		position.y = nts.ReadFloat("y");
+		isPreviewEnabled = nts.ReadBool("isPreviewEnabled");
+	}
+	void _SaveBase(NamedTextSerializeWriter& nts)
+	{
+		nts.WriteInt("id", id);
+		nts.WriteFloat("x", position.x);
+		nts.WriteFloat("y", position.y);
+		nts.WriteBool("isPreviewEnabled", isPreviewEnabled);
+	}
+
+	uint32_t id = 0;
 	Point<float> position = {};
 	bool isPreviewEnabled = true;
 };
+
+static HashMap<uint32_t, TE_Node*> g_nodeRefMap;
+template <class T>
+static void NodeRefLoad(const char* key, T*& node, NamedTextSerializeReader& nts)
+{
+	uint32_t id = nts.ReadInt(key);
+	auto it = id != 0 ? g_nodeRefMap.find(id) : g_nodeRefMap.end();
+	node = it.is_valid() ? static_cast<T*>(it->value) : nullptr;
+}
+static void NodeRefSave(const char* key, TE_Node* node, NamedTextSerializeWriter& nts)
+{
+	nts.WriteInt(key, node ? node->id : 0);
+}
 
 struct TE_MaskNode : TE_Node
 {
@@ -161,6 +352,8 @@ static float EvalAARoundedRectMask(float x, float y, const AbsRect& rr, const Co
 struct TE_RectMask : TE_MaskNode
 {
 	const char* GetName() override { return "Rectangle mask"; }
+	static constexpr const char* NAME = "RECT_MASK";
+	const char* GetSysName() override { return NAME; }
 	int GetInputPinCount() override { return 0; }
 	std::string GetInputPinName(int pin) override { return nullptr; }
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Unknown; }
@@ -194,6 +387,16 @@ struct TE_RectMask : TE_MaskNode
 				imm::PropEditFloat(ctx, "\bR(bottom-right)", crad.r11);
 			}
 		}
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		rect.Load("rect", nts);
+		crad.Load("crad", nts);
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		rect.Save("rect", nts);
+		crad.Save("crad", nts);
 	}
 
 	float Eval(float x, float y, const AbsRect& frame) override
@@ -232,6 +435,23 @@ struct TE_MaskRef
 		imm::PropEditInt(ctx, "\bRadius", radius, { MinWidth(20) });
 		ctx->Pop();
 	}
+
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		NodeRefLoad("mask", mask, nts);
+		border = nts.ReadUInt("border");
+		radius = nts.ReadUInt("radius");
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		NodeRefSave("mask", mask, nts);
+		nts.WriteInt("border", border);
+		nts.WriteInt("radius", radius);
+		nts.EndDict();
+	}
 };
 
 enum TE_MaskCombineMode
@@ -247,6 +467,8 @@ enum TE_MaskCombineMode
 struct TE_CombineMask : TE_MaskNode
 {
 	const char* GetName() override { return "Combine mask"; }
+	static constexpr const char* NAME = "COMBINE_MASK";
+	const char* GetSysName() override { return NAME; }
 	int GetInputPinCount() override { return 2; }
 	std::string GetInputPinName(int pin) override { return pin == 0 ? "Mask A" : "Mask B"; }
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
@@ -261,6 +483,18 @@ struct TE_CombineMask : TE_MaskNode
 		imm::RadioButton(ctx, mode, TEMCM_HardDifference, "Difference (hard)");
 		imm::RadioButton(ctx, mode, TEMCM_AMinusB, "A-B");
 		imm::RadioButton(ctx, mode, TEMCM_BMinusA, "B-A");
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		masks[0].Load("mask0", nts);
+		masks[1].Load("mask1", nts);
+		mode = (TE_MaskCombineMode)nts.ReadInt("mode", TEMCM_Intersect);
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		masks[0].Save("mask0", nts);
+		masks[1].Save("mask1", nts);
+		nts.WriteInt("mode", mode);
 	}
 
 	float Eval(float x, float y, const AbsRect& frame) override
@@ -301,6 +535,8 @@ struct TE_LayerNode : TE_Node
 struct TE_SolidColorLayer : TE_LayerNode
 {
 	const char* GetName() override { return "Solid color layer"; }
+	static constexpr const char* NAME = "SOLID_COLOR_LAYER";
+	const char* GetSysName() override { return NAME; }
 	int GetInputPinCount() override { return 1; }
 	std::string GetInputPinName(int pin) override { return "Mask"; }
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
@@ -309,19 +545,28 @@ struct TE_SolidColorLayer : TE_LayerNode
 	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
 	void PropertyUI(UIContainer* ctx) override
 	{
-		imm::PropEditColor(ctx, "\bColor", color);
+		color.UI(ctx);
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		color.Load("color", nts);
+		mask.Load("mask", nts);
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		color.Save("color", nts);
+		mask.Save("mask", nts);
 	}
 
 	Color4f Eval(float x, float y, const AbsRect& frame)
 	{
-		float a = opacity * mask.Eval(x, y, frame);
-		auto cc = color;
+		float a = mask.Eval(x, y, frame);
+		Color4f cc = color.Get();
 		cc.a *= a;
 		return cc;
 	}
 
-	Color4f color = Color4f::White();
-	float opacity = 1;
+	TE_ColorRef color;
 	TE_MaskRef mask;
 };
 
@@ -330,11 +575,30 @@ struct TE_LayerBlendRef
 	TE_LayerNode* layer = nullptr;
 	bool enabled = true;
 	float opacity = 1;
+
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		NodeRefLoad("layer", layer, nts);
+		enabled = nts.ReadBool("enabled", true);
+		opacity = nts.ReadFloat("opacity", 1);
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		NodeRefSave("layer", layer, nts);
+		nts.WriteBool("enabled", enabled);
+		nts.WriteFloat("opacity", opacity);
+		nts.EndDict();
+	}
 };
 
 struct TE_BlendLayer : TE_LayerNode
 {
 	const char* GetName() override { return "Blend layer"; }
+	static constexpr const char* NAME = "BLEND_LAYER";
+	const char* GetSysName() override { return NAME; }
 	int GetInputPinCount() override { return layers.size(); }
 	std::string GetInputPinName(int pin) override { return "Layer " + std::to_string(pin); }
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Layer; }
@@ -349,6 +613,26 @@ struct TE_BlendLayer : TE_LayerNode
 	{
 		if (imm::Button(ctx, "Add pin"))
 			layers.push_back({});
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		nts.BeginArray("layers");
+		for (auto ch : nts.GetCurrentRange())
+		{
+			nts.BeginEntry(ch);
+			TE_LayerBlendRef lbr;
+			lbr.Load("", nts);
+			layers.push_back(lbr);
+			nts.EndEntry();
+		}
+		nts.EndArray();
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		nts.BeginArray("layers");
+		for (auto& lbr : layers)
+			lbr.Save("", nts);
+		nts.EndArray();
 	}
 
 	Color4f Eval(float x, float y, const AbsRect& frame)
@@ -388,6 +672,8 @@ struct TE_ImageNode : TE_Node
 	};
 
 	const char* GetName() override { return "Image"; }
+	static constexpr const char* NAME = "IMAGE";
+	const char* GetSysName() override { return NAME; }
 	TE_NodeType GetType() override { return TENT_Image; }
 	int GetInputPinCount() override { return 1; }
 	std::string GetInputPinName(int pin) override { return "Layer"; }
@@ -406,10 +692,34 @@ struct TE_ImageNode : TE_Node
 			imm::PropEditInt(ctx, "\bW", w, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 			imm::PropEditInt(ctx, "\bH", h, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 		}
+		imm::PropEditInt(ctx, "\bLeft", l, {}, imm::DEFAULT_SPEED, 0, 1024);
+		imm::PropEditInt(ctx, "\bRight", r, {}, imm::DEFAULT_SPEED, 0, 1024);
+		imm::PropEditInt(ctx, "\bTop", t, {}, imm::DEFAULT_SPEED, 0, 1024);
+		imm::PropEditInt(ctx, "\bBtm.", b, {}, imm::DEFAULT_SPEED, 0, 1024);
 	}
 	void PreviewUI(UIContainer* ctx)
 	{
 		ctx->Make<Preview>()->node = this;
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		w = nts.ReadInt("w");
+		h = nts.ReadInt("h");
+		l = nts.ReadInt("l");
+		t = nts.ReadInt("t");
+		r = nts.ReadInt("r");
+		b = nts.ReadInt("b");
+		NodeRefLoad("layer", layer, nts);
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		nts.WriteInt("w", w);
+		nts.WriteInt("h", h);
+		nts.WriteInt("l", l);
+		nts.WriteInt("t", t);
+		nts.WriteInt("r", r);
+		nts.WriteInt("b", b);
+		NodeRefSave("layer", layer, nts);
 	}
 
 	void Render(Canvas& outCanvas)
@@ -422,15 +732,6 @@ struct TE_ImageNode : TE_Node
 			for (int x = 0; x < w; x++)
 			{
 				Color4f col = Color4f::Zero();
-#if 0
-				for (TE_LayerNode* layer : rootLayers)
-				{
-					if (!layer->enabled)
-						continue;
-					auto cc = layer->Eval(x + 0.5f, y + 0.5f, frame);
-					col.BlendOver(cc);
-				}
-#endif
 				if (layer)
 					col = layer->Eval(x + 0.5f, y + 0.5f, frame);
 				pixels[x + y * w] = col.GetColor32();
@@ -447,8 +748,84 @@ struct TE_Page : ui::IProcGraph
 {
 	~TE_Page()
 	{
+		Clear();
+	}
+
+	void Clear()
+	{
 		for (TE_Node* node : nodes)
 			delete node;
+		nodes.clear();
+	}
+
+	TE_Node* CreateNodeFromTypeName(StringView type)
+	{
+		if (type == TE_RectMask::NAME) return new TE_RectMask;
+		if (type == TE_CombineMask::NAME) return new TE_CombineMask;
+		if (type == TE_SolidColorLayer::NAME) return new TE_SolidColorLayer;
+		if (type == TE_BlendLayer::NAME) return new TE_BlendLayer;
+		if (type == TE_ImageNode::NAME) return new TE_ImageNode;
+		return nullptr;
+	}
+	struct EntryPair
+	{
+		NamedTextSerializeReader::Entry* entry;
+		TE_Node* node;
+	};
+	void Load(NamedTextSerializeReader& nts)
+	{
+		Clear();
+		nts.BeginDict("page");
+
+		name = nts.ReadString("name");
+
+		nts.BeginArray("nodes");
+		// read node base data (at least type, id), create the node placeholders
+		std::vector<EntryPair> entryPairs;
+		for (auto ch : nts.GetCurrentRange())
+		{
+			nts.BeginEntry(ch);
+			auto type = nts.ReadString("__type");
+			auto* N = CreateNodeFromTypeName(type);
+			if (N)
+			{
+				N->_LoadBase(nts);
+				entryPairs.push_back({ ch, N });
+				nodes.push_back(N);
+				g_nodeRefMap[N->id] = N;
+			}
+			nts.EndEntry();
+		}
+		// load node data
+		for (auto ch : entryPairs)
+		{
+			nts.BeginEntry(ch.entry);
+			ch.node->Load(nts);
+			nts.EndEntry();
+		}
+		g_nodeRefMap.clear();
+		nts.EndArray();
+
+		nts.EndDict();
+	}
+	void Save(NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict("page");
+
+		nts.WriteString("name", name);
+
+		nts.BeginArray("nodes");
+		for (auto* N : nodes)
+		{
+			nts.BeginDict("node");
+			nts.WriteString("__type", N->GetSysName());
+			N->_SaveBase(nts);
+			N->Save(nts);
+			nts.EndDict();
+		}
+		nts.EndArray();
+
+		nts.EndDict();
 	}
 
 	void GetNodes(std::vector<Node*>& outNodes) override
@@ -596,6 +973,7 @@ struct TE_Theme
 {
 	TE_Theme()
 	{
+		g_namedColors = &colors;
 		CreateSampleTheme();
 	}
 	~TE_Theme()
@@ -609,12 +987,35 @@ struct TE_Theme
 			delete page;
 		pages.clear();
 	}
+	void Load(NamedTextSerializeReader& nts)
+	{
+		Clear();
+		nts.BeginDict("theme");
+
+		nts.BeginArray("colors");
+		nts.EndArray();
+
+		nts.EndDict();
+	}
+	void Save(NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict("theme");
+
+		nts.BeginArray("colors");
+		for (const auto& color : colors)
+		{
+			color->Save(nts);
+		}
+		nts.EndArray();
+
+		nts.EndDict();
+	}
 	void CreateSampleTheme()
 	{
 		Clear();
 
-		colors.push_back({ "border", Color4f(0.6f, 0.8f, 0.9f) });
-		colors.push_back({ "middle", Color4f(0.1f, 0.15f, 0.2f) });
+		colors.push_back(std::make_shared<TE_NamedColor>("border", Color4f(0.6f, 0.8f, 0.9f)));
+		colors.push_back(std::make_shared<TE_NamedColor>("middle", Color4f(0.1f, 0.15f, 0.2f)));
 
 		TE_Page* page = new TE_Page;
 		page->name = "Frame";
@@ -627,7 +1028,7 @@ struct TE_Theme
 
 		auto* l1 = new TE_SolidColorLayer;
 		l1->position = { 300, 100 };
-		l1->color = Color4f(0.6f, 0.8f, 0.9f);
+		l1->color.Set(colors[0]);
 		//l1->mask.mask = mr;
 		l1->mask.border = 1;
 		l1->mask.radius = 15;
@@ -635,7 +1036,7 @@ struct TE_Theme
 
 		auto* l2 = new TE_SolidColorLayer;
 		l2->position = { 300, 300 };
-		l2->color = Color4f(0.1f, 0.15f, 0.2f);
+		l2->color.Set(colors[1]);
 		//l2->mask.mask = mr;
 		l2->mask.border = 2;
 		l2->mask.radius = 14;
@@ -656,7 +1057,7 @@ struct TE_Theme
 		pages.push_back(page);
 	}
 
-	std::vector<TE_NamedColor> colors;
+	std::vector<std::shared_ptr<TE_NamedColor>> colors;
 	std::vector<TE_Page*> pages;
 
 	// editing state
@@ -664,11 +1065,135 @@ struct TE_Theme
 }
 g_Theme;
 
+enum TE_PreviewMode
+{
+	TEPM_Original,
+	TEPM_Sliced,
+};
+static TE_PreviewMode g_previewMode = TEPM_Original;
+static ScaleMode g_previewScaleMode = ScaleMode::None;
+static unsigned g_previewZoomPercent = 100;
+static unsigned g_previewSlicedWidth = 32;
+static unsigned g_previewSlicedHeight = 32;
+
+struct TE_SlicedImageElement : UIElement
+{
+	void OnPaint() override
+	{
+		UIRect r = GetContentRect();
+		float iw = _image->GetWidth();
+		float ih = _image->GetHeight();
+		float x0 = roundf((r.x0 + r.x1 - _width) * 0.5f);
+		float y0 = roundf((r.y0 + r.y1 - _height) * 0.5f);
+		UIRect outer = { x0, y0, x0 + _width, y0 + _height };
+		UIRect inner = outer.ShrinkBy({ float(_left), float(_top), float(_right), float(_bottom) });
+		UIRect texinner = { invlerp(0, iw, _left), invlerp(0, ih, _top), invlerp(iw, 0, _right), invlerp(ih, 0, _bottom) };
+		draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), _image->_texture, { 0, 0, 1, 1 }, texinner);
+	}
+	TE_SlicedImageElement* SetImage(Image* img)
+	{
+		_image = img;
+		return this;
+	}
+	TE_SlicedImageElement* SetTargetSize(int w, int h)
+	{
+		_width = w;
+		_height = h;
+		return this;
+	}
+	TE_SlicedImageElement* SetBorderSizes(int l, int t, int r, int b)
+	{
+		_left = l;
+		_top = t;
+		_right = r;
+		_bottom = b;
+		return this;
+	}
+
+	Image* _image = nullptr;
+	int _width = 0;
+	int _height = 0;
+	int _left = 0;
+	int _top = 0;
+	int _right = 0;
+	int _bottom = 0;
+};
+
+struct TE_MainPreviewNode : Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		Subscribe(DCT_NodeEdited);
+
+		ctx->Text("Preview") + Padding(5);
+
+		if (page->curNode)
+		{
+			ctx->PushBox() + Layout(style::layouts::EdgeSlice());
+			{
+				ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+				{
+					imm::RadioButton(ctx, g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
+					imm::RadioButton(ctx, g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
+				}
+				ctx->Pop();
+				if (g_previewMode == TEPM_Original)
+				{
+					ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+					{
+						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
+						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
+					}
+					ctx->Pop();
+				}
+				if (g_previewMode == TEPM_Sliced)
+				{
+					ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+					{
+						imm::PropEditInt(ctx, "\bWidth", g_previewSlicedWidth, { MinWidth(20) });
+						imm::PropEditInt(ctx, "\bHeight", g_previewSlicedHeight, { MinWidth(20) });
+					}
+					ctx->Pop();
+				}
+
+				*ctx->Push<ListBox>() + Height(style::Coord::Percent(95)); // TODO
+
+				auto* imgNode = static_cast<TE_ImageNode*>(page->curNode);
+				Canvas canvas;
+				imgNode->Render(canvas);
+				auto* img = Allocate<Image>(canvas);
+				if (g_previewMode == TEPM_Original)
+				{
+					*ctx->Make<ImageElement>()
+						->SetImage(img)
+						->SetScaleMode(g_previewScaleMode)
+						+ ui::Width(style::Coord::Percent(100))
+						+ ui::Height(style::Coord::Percent(100));
+				}
+				if (g_previewMode == TEPM_Sliced)
+				{
+					*ctx->Make<TE_SlicedImageElement>()
+						->SetImage(img)
+						->SetTargetSize(g_previewSlicedWidth, g_previewSlicedHeight)
+						->SetBorderSizes(imgNode->l, imgNode->t, imgNode->r, imgNode->b)
+						+ ui::Width(style::Coord::Percent(100))
+						+ ui::Height(style::Coord::Percent(100));
+				}
+
+				ctx->Pop();
+			}
+			ctx->Pop();
+		}
+	}
+
+	TE_Page* page;
+};
+
 struct TE_PageEditorNode : Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		auto* hsp = ctx->Push<ui::SplitPane>();
+		auto* hsp = ctx->Push<SplitPane>();
 		{
 			ctx->Push<ListBox>();
 			{
@@ -680,30 +1205,21 @@ struct TE_PageEditorNode : Node
 
 			ctx->PushBox();
 			{
-				auto* vsp = ctx->Push<ui::SplitPane>();
+				auto* vsp = ctx->Push<SplitPane>();
 				{
-					ctx->PushBox();
-					{
-						ctx->Text("Preview") + ui::Padding(5);
-
-						if (page->curNode)
-						{
-							ctx->Text(page->curNode->GetName());
-						}
-					}
-					ctx->Pop();
+					ctx->Make<TE_MainPreviewNode>()->page = page;
 
 					ctx->PushBox();
 					{
-						ctx->Text("Colors") + ui::Padding(5);
+						ctx->Text("Colors") + Padding(5);
 						auto* ced = ctx->Make<SequenceEditor>();
 						*ced + Height(style::Coord::Percent(100));
 						ced->SetSequence(Allocate<StdSequence<decltype(theme->colors)>>(theme->colors));
 						ced->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
 						{
-							auto& NC = se->GetSequence()->GetValue<TE_NamedColor>(it);
-							imm::EditColor(ctx, NC.color);
-							imm::EditString(ctx, NC.name.c_str(), [&NC](const char* v) { NC.name = v; });
+							auto& NC = se->GetSequence()->GetValue<std::shared_ptr<TE_NamedColor>>(it);
+							imm::EditColor(ctx, NC->color);
+							imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
 						};
 					}
 					ctx->Pop();

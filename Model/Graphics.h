@@ -34,6 +34,7 @@ struct Image
 
 enum class ScaleMode
 {
+	None, // do not scale the image
 	Stretch, // the whole rectangle is covered by the whole image, aspect may not be preserved
 	Fit, // the whole image fits in the rectangle, aspect is preserved
 	Fill, // the whole rectangle is covered by some part of the image, aspect is preserved

@@ -26,3 +26,6 @@ struct WindowT : ui::NativeMainWindow
 	}
 	T* rootNode = nullptr;
 };
+
+using NamedTextSerializeReader = ui::NamedTextSerializeReader;
+using NamedTextSerializeWriter = ui::NamedTextSerializeWriter;

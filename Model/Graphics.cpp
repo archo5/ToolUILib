@@ -88,6 +88,12 @@ void ImageElement::OnPaint()
 	{
 		switch (_scaleMode)
 		{
+		case ScaleMode::None: {
+			float w = _image->GetWidth(), h = _image->GetHeight();
+			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
+			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
+			draw::RectTex(x, y, x + w, y + h, _image->_texture);
+			break; }
 		case ScaleMode::Stretch:
 			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture);
 			break;
