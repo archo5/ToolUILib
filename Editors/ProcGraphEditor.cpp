@@ -191,6 +191,11 @@ void ProcGraphEditor_Node::OnEvent(UIEvent& e)
 			_graph->DeleteNode(_node);
 			Notify(DCT_EditProcGraph, _graph);
 		};
+		ContextMenu::Get().Add("Duplicate node", !_graph->CanDuplicateNode(_node)) = [this]()
+		{
+			_graph->DuplicateNode(_node);
+			Notify(DCT_EditProcGraph, _graph);
+		};
 		if (_graph->HasPreview(_node))
 		{
 			ContextMenu::Get().Add("Show preview", false, _graph->IsPreviewEnabled(_node)) = [this]()
@@ -236,13 +241,12 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 		if (e.type == UIEventType::MouseMove && _isDragging)
 		{
 			Point<float> curMousePos = { e.x, e.y };
-			//_node->position = _dragStartPos + curMousePos - _dragStartMouse;
 			Point<float> newPos =
 			{
 				_dragStartPos.x + curMousePos.x - _dragStartMouse.x,
 				_dragStartPos.y + curMousePos.y - _dragStartMouse.y,
 			};
-			placement->bias = newPos;
+			placement->bias = newPos + _viewOffset;
 			_graph->SetNodePosition(_node, newPos);
 			_OnChangeStyle();
 		}
