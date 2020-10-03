@@ -9,7 +9,7 @@ enum UserEvents
 	TEUE_ImageMadeCurrent,
 };
 
-static DataCategoryTag DCT_NodeEdited[1];
+static DataCategoryTag DCT_NodePreviewInvalidated[1];
 
 
 static void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
@@ -80,6 +80,14 @@ struct SubPos
 {
 	Point<float> anchor = {};
 	Point<float> offset = {};
+};
+
+struct TE_RenderContext
+{
+	unsigned width;
+	unsigned height;
+	AbsRect frame;
+	bool gamma;
 };
 
 struct TE_NamedColor
@@ -274,7 +282,29 @@ static Color4b g_nodeTypeColors[] =
 
 struct TE_Node
 {
-	virtual ~TE_Node() {}
+	struct Preview : Node
+	{
+		void Render(UIContainer* ctx) override
+		{
+			Subscribe(DCT_NodePreviewInvalidated);
+			Subscribe(DCT_EditProcGraph);
+			Subscribe(DCT_EditProcGraphNode);
+
+			*ctx->Make<ImageElement>()
+				->SetImage(node->GetImage())
+				->SetScaleMode(ScaleMode::Fit)
+				->SetAlphaBackgroundEnabled(true)
+				//+ Width(style::Coord::Percent(100)) -- TODO fix
+				+ Width(134)
+				;
+		}
+		TE_Node* node;
+	};
+
+	virtual ~TE_Node()
+	{
+		delete _image;
+	}
 	virtual const char* GetName() = 0;
 	virtual const char* GetSysName() = 0;
 	virtual TE_NodeType GetType() = 0;
@@ -286,9 +316,14 @@ struct TE_Node
 	virtual void SetInputPinValue(int pin, TE_Node* value) = 0;
 	virtual void InputPinUI(int pin, UIContainer* ctx) = 0;
 	virtual void PropertyUI(UIContainer* ctx) = 0;
-	virtual void PreviewUI(UIContainer* ctx) = 0;
 	virtual void Load(NamedTextSerializeReader& nts) = 0;
 	virtual void Save(NamedTextSerializeWriter& nts) = 0;
+	virtual void Render(Canvas& canvas) = 0;
+
+	void PreviewUI(UIContainer* ctx)
+	{
+		ctx->Make<Preview>()->node = this;
+	}
 
 	void _LoadBase(NamedTextSerializeReader& nts)
 	{
@@ -305,9 +340,44 @@ struct TE_Node
 		nts.WriteBool("__isPreviewEnabled", isPreviewEnabled);
 	}
 
+	Image* GetImage()
+	{
+		if (!_image)
+		{
+			Canvas canvas;
+			Render(canvas);
+#if 0
+			// show when the image is regenerated
+			*canvas.GetPixels() = Color4f(Color4b(rand() % 256, 255)).GetColor32();
+#endif
+			_image = new Image(canvas);
+		}
+		return _image;
+	}
+	void SetDirty()
+	{
+		delete _image;
+		_image = nullptr;
+	}
+	bool IsDirty()
+	{
+		return !_image;
+	}
+	template <class F>
+	void IterateDependentNodes(F&& cb)
+	{
+		for (int i = 0, c = GetInputPinCount(); i < c; i++)
+		{
+			if (auto* d = GetInputPinValue(i))
+				cb(this, d);
+		}
+	}
+
 	uint32_t id = 0;
 	Point<float> position = {};
 	bool isPreviewEnabled = true;
+	uint8_t _topoState = 0;
+	Image* _image = nullptr;
 };
 
 static HashMap<uint32_t, TE_Node*> g_nodeRefMap;
@@ -326,12 +396,29 @@ static void NodeRefSave(const char* key, TE_Node* node, NamedTextSerializeWriter
 struct TE_MaskNode : TE_Node
 {
 	TE_NodeType GetType() override { return TENT_Mask; }
-	void PreviewUI(UIContainer* ctx)
+
+	void Render(Canvas& canvas) override
 	{
-		// TODO
+		unsigned w = 64, h = 64;
+		TE_RenderContext rc;
+		{
+			rc.width = w;
+			rc.height = h;
+			rc.frame = { 0, 0, float(w), float(h) };
+			rc.gamma = true;
+		}
+		canvas.SetSize(w, h);
+		auto* pixels = canvas.GetPixels();
+		for (unsigned y = 0; y < h; y++)
+		{
+			for (unsigned x = 0; x < w; x++)
+			{
+				pixels[x + y * w] = Color4f(Eval(x + 0.5f, y + 0.5f, rc), 1).GetColor32();
+			}
+		}
 	}
 
-	virtual float Eval(float x, float y, const AbsRect& frame) = 0;
+	virtual float Eval(float x, float y, const TE_RenderContext& rc) = 0;
 };
 
 static float EvalAARoundedRectMask(float x, float y, const AbsRect& rr, const CornerRadiuses& cr)
@@ -402,9 +489,9 @@ struct TE_RectMask : TE_MaskNode
 		crad.Save("crad", nts);
 	}
 
-	float Eval(float x, float y, const AbsRect& frame) override
+	float Eval(float x, float y, const TE_RenderContext& rc) override
 	{
-		AbsRect rr = ResolveRect(rect, frame);
+		AbsRect rr = ResolveRect(rect, rc.frame);
 		auto cr = crad.Eval();
 		return EvalAARoundedRectMask(x, y, rr, cr);
 	}
@@ -419,14 +506,14 @@ struct TE_MaskRef
 	unsigned border = 0;
 	unsigned radius = 0;
 
-	float Eval(float x, float y, const AbsRect& frame)
+	float Eval(float x, float y, const TE_RenderContext& rc)
 	{
 		if (mask)
-			return mask->Eval(x, y, frame);
+			return mask->Eval(x, y, rc);
 		CornerRadiuses cr;
 		cr.r = radius;
 		cr = cr.Eval();
-		auto rr = frame.ShrinkBy(UIRect::UniformBorder(border));
+		auto rr = rc.frame.ShrinkBy(UIRect::UniformBorder(border));
 		return EvalAARoundedRectMask(x, y, rr, cr);
 	}
 	void UI(UIContainer* ctx)
@@ -501,10 +588,10 @@ struct TE_CombineMask : TE_MaskNode
 		nts.WriteInt("mode", mode);
 	}
 
-	float Eval(float x, float y, const AbsRect& frame) override
+	float Eval(float x, float y, const TE_RenderContext& rc) override
 	{
-		float a = masks[0].Eval(x, y, frame);
-		float b = masks[1].Eval(x, y, frame);
+		float a = masks[0].Eval(x, y, rc);
+		float b = masks[1].Eval(x, y, rc);
 		return Combine(a, b);
 	}
 	float Combine(float a, float b)
@@ -527,13 +614,33 @@ struct TE_CombineMask : TE_MaskNode
 
 struct TE_LayerNode : TE_Node
 {
-	TE_NodeType GetType() override { return TENT_Layer; }
-	void PreviewUI(UIContainer* ctx)
+	void Render(Canvas& canvas)
 	{
-		// TODO
+		unsigned w = 64, h = 64;
+		TE_RenderContext rc;
+		{
+			rc.width = w;
+			rc.height = h;
+			rc.frame = { 0, 0, float(w), float(h) };
+			rc.gamma = true;
+		}
+		canvas.SetSize(w, h);
+		auto* pixels = canvas.GetPixels();
+		for (unsigned y = 0; y < h; y++)
+		{
+			for (unsigned x = 0; x < w; x++)
+			{
+				Color4f c = Eval(x + 0.5f, y + 0.5f, rc);
+				if (rc.gamma)
+					c = c.Power(1.0f / 2.2f);
+				pixels[x + y * w] = c.GetColor32();
+			}
+		}
 	}
 
-	virtual Color4f Eval(float x, float y, const AbsRect& frame) = 0;
+	TE_NodeType GetType() override { return TENT_Layer; }
+
+	virtual Color4f Eval(float x, float y, const TE_RenderContext& rc) = 0;
 };
 
 struct TE_SolidColorLayer : TE_LayerNode
@@ -563,10 +670,12 @@ struct TE_SolidColorLayer : TE_LayerNode
 		mask.Save("mask", nts);
 	}
 
-	Color4f Eval(float x, float y, const AbsRect& frame)
+	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
-		float a = mask.Eval(x, y, frame);
+		float a = mask.Eval(x, y, rc);
 		Color4f cc = color.Get();
+		if (rc.gamma)
+			cc = cc.Power(2.2f);
 		cc.a *= a;
 		return cc;
 	}
@@ -641,14 +750,14 @@ struct TE_BlendLayer : TE_LayerNode
 		nts.EndArray();
 	}
 
-	Color4f Eval(float x, float y, const AbsRect& frame)
+	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
 		Color4f ret = Color4f::Zero();
 		for (const auto& layer : layers)
 		{
 			if (layer.layer && layer.enabled)
 			{
-				ret.BlendOver(layer.layer->Eval(x, y, frame));
+				ret.BlendOver(layer.layer->Eval(x, y, rc));
 			}
 		}
 		return ret;
@@ -659,24 +768,6 @@ struct TE_BlendLayer : TE_LayerNode
 
 struct TE_ImageNode : TE_Node
 {
-	struct Preview : Node
-	{
-		void Render(UIContainer* ctx) override
-		{
-			Subscribe(DCT_NodeEdited);
-			Canvas canvas;
-			node->Render(canvas);
-			*ctx->Make<ImageElement>()
-				->SetImage(ctx->GetCurrentNode()->Allocate<Image>(canvas))
-				->SetScaleMode(ScaleMode::Fit)
-				->SetAlphaBackgroundEnabled(true)
-				//+ Width(style::Coord::Percent(100)) -- TODO fix
-				+ Width(134)
-				;
-		}
-		TE_ImageNode* node;
-	};
-
 	const char* GetName() override { return "Image"; }
 	static constexpr const char* NAME = "IMAGE";
 	const char* GetSysName() override { return NAME; }
@@ -703,10 +794,7 @@ struct TE_ImageNode : TE_Node
 		imm::PropEditInt(ctx, "\bRight", r, {}, imm::DEFAULT_SPEED, 0, 1024);
 		imm::PropEditInt(ctx, "\bTop", t, {}, imm::DEFAULT_SPEED, 0, 1024);
 		imm::PropEditInt(ctx, "\bBtm.", b, {}, imm::DEFAULT_SPEED, 0, 1024);
-	}
-	void PreviewUI(UIContainer* ctx)
-	{
-		ctx->Make<Preview>()->node = this;
+		imm::PropEditBool(ctx, "\bGamma", gamma);
 	}
 	void Load(NamedTextSerializeReader& nts) override
 	{
@@ -716,6 +804,7 @@ struct TE_ImageNode : TE_Node
 		t = nts.ReadInt("t");
 		r = nts.ReadInt("r");
 		b = nts.ReadInt("b");
+		gamma = nts.ReadBool("gamma");
 		NodeRefLoad("layer", layer, nts);
 	}
 	void Save(NamedTextSerializeWriter& nts) override
@@ -726,21 +815,30 @@ struct TE_ImageNode : TE_Node
 		nts.WriteInt("t", t);
 		nts.WriteInt("r", r);
 		nts.WriteInt("b", b);
+		nts.WriteBool("gamma", gamma);
 		NodeRefSave("layer", layer, nts);
 	}
 
-	void Render(Canvas& outCanvas)
+	void Render(Canvas& canvas) override
 	{
-		outCanvas.SetSize(w, h);
-		auto* pixels = outCanvas.GetPixels();
-		AbsRect frame = { 0, 0, w, h };
+		canvas.SetSize(w, h);
+		auto* pixels = canvas.GetPixels();
+		TE_RenderContext rc;
+		{
+			rc.width = w;
+			rc.height = h;
+			rc.frame = { 0, 0, float(w), float(h) };
+			rc.gamma = gamma;
+		}
 		for (int y = 0; y < h; y++)
 		{
 			for (int x = 0; x < w; x++)
 			{
 				Color4f col = Color4f::Zero();
 				if (layer)
-					col = layer->Eval(x + 0.5f, y + 0.5f, frame);
+					col = layer->Eval(x + 0.5f, y + 0.5f, rc);
+				if (rc.gamma)
+					col = col.Power(1.0f / 2.2f);
 				pixels[x + y * w] = col.GetColor32();
 			}
 		}
@@ -748,6 +846,7 @@ struct TE_ImageNode : TE_Node
 
 	int w = 64, h = 64;
 	int l = 0, t = 0, r = 0, b = 0;
+	bool gamma = false;
 	TE_LayerNode* layer = nullptr;
 };
 
@@ -946,6 +1045,7 @@ struct TE_Page : ui::IProcGraph
 		if (inNode->GetInputPinType(link.input.num) != outNode->GetType())
 			return false;
 		inNode->SetInputPinValue(link.input.num, outNode);
+		topoSortedNodes.clear();
 		return true;
 	}
 	bool Unlink(const Link& link) override
@@ -967,14 +1067,45 @@ struct TE_Page : ui::IProcGraph
 	void SetPreviewEnabled(Node* node, bool v) override { static_cast<TE_Node*>(node)->isPreviewEnabled = v; }
 	void PreviewUI(Node* node, UIContainer* ctx) override { static_cast<TE_Node*>(node)->PreviewUI(ctx); }
 
+	void OnEditNode(UIEvent& e, Node* node) override
+	{
+		UpdateTopoSortedNodes();
+
+		static_cast<TE_Node*>(node)->SetDirty();
+		Notify(DCT_NodePreviewInvalidated, node);
+
+		for (size_t i = topoSortedNodes.size(); i > 0; )
+		{
+			i--;
+			topoSortedNodes[i]->IterateDependentNodes([this](TE_Node* n, TE_Node* d)
+			{
+				if (d->IsDirty())
+				{
+					n->SetDirty();
+					Notify(DCT_NodePreviewInvalidated, n);
+				}
+			});
+		}
+	}
+
 	bool CanDeleteNode(Node*) override { return true; }
 	void DeleteNode(Node* node) override
 	{
 		UnlinkPin({ { node, 0 }, true });
+
 		auto* N = static_cast<TE_Node*>(node);
+
+		if (curNode == N)
+			curNode = nullptr;
+
 		for (size_t i = 0; i < nodes.size(); i++)
 			if (nodes[i] == N)
 				nodes.erase(nodes.begin() + i);
+
+		for (size_t i = 0; i < topoSortedNodes.size(); i++)
+			if (topoSortedNodes[i] == N)
+				topoSortedNodes.erase(topoSortedNodes.begin() + i);
+
 		delete N;
 	}
 
@@ -985,10 +1116,54 @@ struct TE_Page : ui::IProcGraph
 		n->id = ++nodeIDAlloc;
 		n->position += { 5, 5 };
 		nodes.push_back(n);
+		topoSortedNodes.clear();
 		return n;
 	}
 
+	void UpdateTopoSortedNodes()
+	{
+		if (!topoSortedNodes.empty())
+			return;
+
+		struct TopoSortUtil
+		{
+			enum
+			{
+				Unset = 0,
+				Temp,
+				Perm,
+			};
+			void Visit(TE_Node* n)
+			{
+				if (n->_topoState == Perm)
+					return;
+				assert(n->_topoState != Temp);
+
+				n->_topoState = Temp;
+
+				n->IterateDependentNodes([this](TE_Node*, TE_Node* dep)
+				{
+					Visit(dep);
+				});
+
+				n->_topoState = Perm;
+				topoSortedNodes.push_back(n);
+			}
+
+			std::vector<TE_Node*> topoSortedNodes;
+		};
+
+		TopoSortUtil tsu;
+		for (TE_Node* n : nodes)
+			n->_topoState = TopoSortUtil::Unset;
+		for (TE_Node* n : nodes)
+			if (n->_topoState == TopoSortUtil::Unset)
+				tsu.Visit(n);
+		topoSortedNodes = std::move(tsu.topoSortedNodes);
+	}
+
 	std::vector<TE_Node*> nodes;
+	std::vector<TE_Node*> topoSortedNodes;
 	uint32_t nodeIDAlloc = 0;
 	std::string name;
 	TE_Node* curNode = nullptr;
@@ -1160,8 +1335,7 @@ struct TE_Theme
 
 	// editing state
 	TE_Page* curPage = nullptr;
-}
-g_Theme;
+};
 
 enum TE_PreviewMode
 {
@@ -1221,7 +1395,9 @@ struct TE_MainPreviewNode : Node
 {
 	void Render(UIContainer* ctx) override
 	{
-		Subscribe(DCT_NodeEdited);
+		Subscribe(DCT_NodePreviewInvalidated);
+		Subscribe(DCT_EditProcGraph);
+		Subscribe(DCT_EditProcGraphNode);
 
 		ctx->Text("Preview") + Padding(5);
 
@@ -1339,12 +1515,6 @@ struct TE_PageEditorNode : Node
 			page->curNode = (TE_ImageNode*)e.arg0;
 			Rerender();
 		}
-		if (e.type == UIEventType::Change ||
-			e.type == UIEventType::Commit ||
-			e.type == UIEventType::IMChange)
-		{
-			Notify(DCT_NodeEdited);
-		}
 	}
 
 	TE_Theme* theme;
@@ -1353,15 +1523,17 @@ struct TE_PageEditorNode : Node
 
 struct TE_ThemeEditorNode : Node
 {
+	static constexpr bool Persistent = true;
+
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Push<MenuBarElement>();
 		{
 			ctx->Push<MenuItemElement>()->SetText("File");
 			{
-				ctx->Make<MenuItemElement>()->SetText("New").Func([this]() { g_Theme.Clear(); Rerender(); });
-				ctx->Make<MenuItemElement>()->SetText("Load").Func([this]() { g_Theme.LoadFromFile("sample.ths"); Rerender(); });
-				ctx->Make<MenuItemElement>()->SetText("Save").Func([this]() { g_Theme.SaveToFile("sample.ths"); Rerender(); });
+				ctx->Make<MenuItemElement>()->SetText("New").Func([this]() { theme->Clear(); Rerender(); });
+				ctx->Make<MenuItemElement>()->SetText("Load").Func([this]() { theme->LoadFromFile("sample.ths"); Rerender(); });
+				ctx->Make<MenuItemElement>()->SetText("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rerender(); });
 			}
 			ctx->Pop();
 		}
@@ -1374,9 +1546,41 @@ struct TE_ThemeEditorNode : Node
 				for (TE_Page* page : theme->pages)
 				{
 					ctx->Push<TabButtonT<TE_Page*>>()->Init(theme->curPage, page);
-					ctx->Text(page->name);
+					if (editNamePage != page)
+					{
+						ctx->Text(page->name).HandleEvent(UIEventType::Click) = [this, page](UIEvent& e)
+						{
+							if (e.numRepeats == 2)
+							{
+								editNamePage = page;
+								Rerender();
+							}
+						};
+					}
+					else
+					{
+						auto efn = [this](UIEvent& e)
+						{
+							if (e.type == UIEventType::LostFocus)
+							{
+								editNamePage = nullptr;
+								Rerender();
+							}
+						};
+						imm::EditString(
+							ctx,
+							page->name.c_str(),
+							[page](const char* v) { page->name = v; },
+							{ Width(100), EventHandler(efn) });
+					}
 					ctx->Pop();
 				}
+			}
+			if (imm::Button(ctx, "+"))
+			{
+				auto* p = new TE_Page;
+				p->name = "<name>";
+				theme->pages.push_back(p);
 			}
 			ctx->Pop();
 
@@ -1396,6 +1600,7 @@ struct TE_ThemeEditorNode : Node
 	}
 
 	TE_Theme* theme;
+	TE_Page* editNamePage = nullptr;
 };
 
 struct ThemeEditorMainWindow : NativeMainWindow
@@ -1409,10 +1614,12 @@ struct ThemeEditorMainWindow : NativeMainWindow
 	{
 		auto* ten = ctx->Make<TE_ThemeEditorNode>();
 		*ten + Height(style::Coord::Percent(100));
-		ten->theme = &g_Theme;
+		ten->theme = &theme;
 
 		ctx->Make<DefaultOverlayRenderer>();
 	}
+
+	TE_Theme theme;
 };
 
 int uimain(int argc, char* argv[])

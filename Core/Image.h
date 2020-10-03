@@ -122,6 +122,10 @@ struct Color4f
 		b = lerp(b, c.b, ca);
 		a = lerp(a, 1, c.a);
 	}
+	Color4f Power(float p) const
+	{
+		return { powf(r, p), powf(g, p), powf(b, p), a };
+	}
 	bool IsOpaque() const { return fabsf(a - 1) < 0.0001f; }
 	Color4f GetOpaque() const { return { r, g, b, 1 }; }
 

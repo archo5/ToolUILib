@@ -207,6 +207,12 @@ void ProcGraphEditor_Node::OnEvent(UIEvent& e)
 
 		_graph->OnNodeContextMenu(_node, ContextMenu::Get());
 	}
+	if (e.type == UIEventType::Change ||
+		e.type == UIEventType::Commit ||
+		e.type == UIEventType::IMChange)
+	{
+		_graph->OnEditNode(e, _node);
+	}
 }
 
 void ProcGraphEditor_Node::Init(IProcGraph* graph, IProcGraph::Node* node, Point<float> vOff)

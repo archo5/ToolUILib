@@ -126,6 +126,8 @@ struct IProcGraph
 	virtual void PreviewUI(Node*, UIContainer*) {}
 
 	// node editing
+	virtual void OnEditNode(UIEvent&, Node*) {}
+
 	virtual bool CanDeleteNode(Node*) { return false; }
 	virtual void DeleteNode(Node*) {}
 
