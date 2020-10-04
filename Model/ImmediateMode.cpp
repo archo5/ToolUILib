@@ -27,6 +27,13 @@ void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* par
 	ctx->MakeWithText<StateButtonSkin>(text);
 }
 
+void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+{
+	ctx->Make<TreeExpandIcon>();
+	if (!text.empty())
+		ctx->Text(text) + Padding(4);
+}
+
 bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 {
 	auto* btn = ctx->MakeWithText<ui::Button>(text);

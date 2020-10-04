@@ -27,6 +27,10 @@ struct ButtonStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
 };
+struct TreeStateToggleSkin : IStateToggleSkin
+{
+	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+};
 
 bool Button(UIContainer* ctx, const char* text, ModInitList mods = {});
 bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());

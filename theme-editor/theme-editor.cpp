@@ -117,6 +117,22 @@ struct TE_NamedColor
 };
 
 static std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
+static void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
+{
+	// TODO internal selection with color previews
+	auto ncr = ncref.lock();
+	if (imm::Button(ctx, ncr ? ncr->name.c_str() : "<none>"))
+	{
+		MenuItemCollection mic;
+		mic.Add("<none>", false, false, -1) = [&ncref]() { ncref = {}; };
+		for (const auto& nc : *g_namedColors)
+		{
+			mic.Add(nc->name) = [&ncref, &nc]() { ncref = nc; };
+		}
+		Menu(mic.Finalize()).Show(ctx->GetCurrentNode());
+	}
+}
+
 struct TE_ColorRef
 {
 	bool useRef = true;
@@ -169,18 +185,7 @@ struct TE_ColorRef
 		imm::EditBool(ctx, useRef, useRef ? "N" : "C", {}, imm::ButtonStateToggleSkin());
 		if (useRef)
 		{
-			// TODO internal selection with color previews
-			auto ncr = ncref.lock();
-			if (imm::Button(ctx, ncr ? ncr->name.c_str() : "<none>"))
-			{
-				MenuItemCollection mic;
-				mic.Add("<none>", false, false, -1) = [this]() { ncref = {}; };
-				for (const auto& nc : *g_namedColors)
-				{
-					mic.Add(nc->name) = [this, &nc]() { ncref = nc; };
-				}
-				Menu(mic.Finalize()).Show(ctx->GetCurrentNode());
-			}
+			EditNCRef(ctx, ncref);
 		}
 		else
 		{
@@ -1218,6 +1223,29 @@ struct TE_Template : ui::IProcGraph
 	std::vector<TE_Node*> topoSortedNodes;
 };
 
+struct TE_Variation
+{
+	std::string name;
+};
+
+struct TE_ColorOverride
+{
+	std::weak_ptr<TE_NamedColor> ncref;
+	Color4b color;
+};
+
+struct TE_Overrides
+{
+	std::vector<TE_ColorOverride> colorOverrides;
+};
+
+struct TE_Image
+{
+	bool expanded = true;
+	std::string name;
+	HashMap<TE_Variation*, std::shared_ptr<TE_Overrides>> overrides;
+};
+
 struct TE_Theme
 {
 	TE_Theme()
@@ -1340,17 +1368,17 @@ struct TE_Theme
 		l2->mask.border = 1;
 		l2->mask.radius = 1;
 
-		auto* l3 = tmpl->CreateNode<TE_SolidColorLayer>(300, 400);
+		auto* l3 = tmpl->CreateNode<TE_SolidColorLayer>(300, 300);
 		l3->color.Set(tmpl->colors[2]);
 		l3->mask.border = 2;
 		l3->mask.radius = 1;
 
-		auto* bl = tmpl->CreateNode<TE_BlendLayer>(500, 100);
+		auto* bl = tmpl->CreateNode<TE_BlendLayer>(300, 100);
 		bl->layers.push_back({ l1, true, 1 });
 		bl->layers.push_back({ l2, true, 1 });
 		bl->layers.push_back({ l3, true, 1 });
 
-		auto* img = tmpl->CreateNode<TE_ImageNode>(700, 100);
+		auto* img = tmpl->CreateNode<TE_ImageNode>(500, 100);
 		img->layer = bl;
 		img->w = 10;
 		img->h = 20;
@@ -1363,14 +1391,30 @@ struct TE_Theme
 		curTemplate = tmpl;
 		g_namedColors = &tmpl->colors;
 
-		SaveToFile("sample.ths");
-		LoadFromFile("sample.ths");
+		auto variation = std::make_shared<TE_Variation>();
+		variations.push_back(variation);
+		curVariation = variation.get();
+
+		auto overrides = std::make_shared<TE_Overrides>();
+		overrides->colorOverrides.push_back({ tmpl->colors[0], Color4b(0x1a, 0xff) });
+		overrides->colorOverrides.push_back({ tmpl->colors[1], Color4b(0x4d, 0xff) });
+		overrides->colorOverrides.push_back({ tmpl->colors[2], Color4b(0x34, 0xff) });
+		overrides->colorOverrides.push_back({ tmpl->colors[3], Color4b(0x27, 0xff) });
+
+		auto image = std::make_shared<TE_Image>();
+		image->name = "TE_ButtonNormal";
+		image->overrides[variation.get()] = overrides;
+		images.push_back(image);
+
+		//SaveToFile("sample.ths");
+		//LoadFromFile("sample.ths");
 	}
 
 	std::vector<TE_Template*> templates;
-
-	// editing state
+	std::vector<std::shared_ptr<TE_Variation>> variations;
+	std::vector<std::shared_ptr<TE_Image>> images;
 	TE_Template* curTemplate = nullptr;
+	TE_Variation* curVariation = nullptr;
 };
 
 enum TE_PreviewMode
@@ -1557,6 +1601,69 @@ struct TE_TemplateEditorNode : Node
 	TE_Template* tmpl;
 };
 
+struct TE_ImageEditorNode : Node
+{
+	static constexpr bool Persistent = true;
+
+	TE_Theme* theme;
+
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Text("Images") + Padding(5);
+
+		auto* imged = ctx->Make<SequenceEditor>();
+		*imged + Height(style::Coord::Percent(100));
+		imged->showDeleteButton = false;
+		imged->SetSequence(Allocate<StdSequence<decltype(theme->images)>>(theme->images));
+		imged->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
+		{
+			EditImage(ctx, se->GetSequence()->GetValue<std::shared_ptr<TE_Image>>(it).get(), se, it);
+		};
+	}
+
+	void EditImage(UIContainer* ctx, TE_Image* img, SequenceEditor* se, ISequenceIterator* it)
+	{
+		ctx->PushBox();
+		{
+			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			{
+				imm::EditBool(ctx, img->expanded, nullptr, { Width(style::Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
+				imm::EditString(ctx, img->name.c_str(), [&img](const char* v) { img->name = v; });
+				se->OnBuildDeleteButton(ctx, it);
+			}
+			ctx->Pop();
+
+			if (img->expanded)
+			{
+				ctx->Push<Panel>();
+				{
+					auto& ovr = img->overrides[theme->curVariation];
+					if (!ovr)
+						ovr = std::make_shared<TE_Overrides>();
+
+					auto* coed = ctx->Make<SequenceEditor>();
+					coed->SetSequence(Allocate<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
+					coed->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
+					{
+						auto& co = se->GetSequence()->GetValue<TE_ColorOverride>(it);
+						if (auto ncr = co.ncref.lock())
+							*ctx->MakeWithText<BoxElement>(ncr->name) + Padding(5);
+						else
+							EditNCRef(ctx, co.ncref);
+						imm::EditColor(ctx, co.color, { Width(40) });
+					};
+
+					if (imm::Button(ctx, "Add override"))
+					{
+					}
+				}
+				ctx->Pop();
+			}
+		}
+		ctx->Pop();
+	}
+};
+
 struct TE_ThemeEditorNode : Node
 {
 	static constexpr bool Persistent = true;
@@ -1575,64 +1682,71 @@ struct TE_ThemeEditorNode : Node
 		}
 		ctx->Pop();
 
-		*ctx->Push<TabGroup>() + Height(style::Coord::Percent(100)) + Layout(style::layouts::EdgeSlice());
+		auto* hsp = ctx->Push<SplitPane>();
 		{
-			ctx->Push<TabButtonList>();
+			ctx->Make<TE_ImageEditorNode>()->theme = theme;
+
+			*ctx->Push<TabGroup>() + Height(style::Coord::Percent(100)) + Layout(style::layouts::EdgeSlice());
 			{
-				for (TE_Template* tmpl : theme->templates)
+				ctx->Push<TabButtonList>();
 				{
-					ctx->Push<TabButtonT<TE_Template*>>()->Init(theme->curTemplate, tmpl);
-					if (editNameTemplate != tmpl)
+					for (TE_Template* tmpl : theme->templates)
 					{
-						ctx->Text(tmpl->name).HandleEvent(UIEventType::Click) = [this, tmpl](UIEvent& e)
+						ctx->Push<TabButtonT<TE_Template*>>()->Init(theme->curTemplate, tmpl);
+						if (editNameTemplate != tmpl)
 						{
-							if (e.numRepeats == 2)
+							ctx->Text(tmpl->name).HandleEvent(UIEventType::Click) = [this, tmpl](UIEvent& e)
 							{
-								editNameTemplate = tmpl;
-								Rerender();
-							}
-						};
+								if (e.numRepeats == 2)
+								{
+									editNameTemplate = tmpl;
+									Rerender();
+								}
+							};
+						}
+						else
+						{
+							auto efn = [this](UIEvent& e)
+							{
+								if (e.type == UIEventType::LostFocus)
+								{
+									editNameTemplate = nullptr;
+									Rerender();
+								}
+							};
+							imm::EditString(
+								ctx,
+								tmpl->name.c_str(),
+								[tmpl](const char* v) { tmpl->name = v; },
+								{ Width(100), EventHandler(efn) });
+						}
+						ctx->Pop();
 					}
-					else
+				}
+				if (imm::Button(ctx, "+"))
+				{
+					auto* p = new TE_Template;
+					p->name = "<name>";
+					theme->templates.push_back(p);
+				}
+				ctx->Pop();
+
+				if (theme->curTemplate)
+				{
+					*ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
 					{
-						auto efn = [this](UIEvent& e)
-						{
-							if (e.type == UIEventType::LostFocus)
-							{
-								editNameTemplate = nullptr;
-								Rerender();
-							}
-						};
-						imm::EditString(
-							ctx,
-							tmpl->name.c_str(),
-							[tmpl](const char* v) { tmpl->name = v; },
-							{ Width(100), EventHandler(efn) });
+						auto* pen = ctx->Make<TE_TemplateEditorNode>();
+						*pen + Height(style::Coord::Percent(100));
+						pen->theme = theme;
+						pen->tmpl = theme->curTemplate;
 					}
 					ctx->Pop();
 				}
 			}
-			if (imm::Button(ctx, "+"))
-			{
-				auto* p = new TE_Template;
-				p->name = "<name>";
-				theme->templates.push_back(p);
-			}
 			ctx->Pop();
-
-			if (theme->curTemplate)
-			{
-				*ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
-				{
-					auto* pen = ctx->Make<TE_TemplateEditorNode>();
-					*pen + Height(style::Coord::Percent(100));
-					pen->theme = theme;
-					pen->tmpl = theme->curTemplate;
-				}
-				ctx->Pop();
-			}
 		}
 		ctx->Pop();
+		hsp->SetSplits({ 0.2f });
 	}
 
 	TE_Theme* theme;
