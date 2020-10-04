@@ -841,9 +841,9 @@ struct TE_ImageNode : TE_Node
 	TE_LayerNode* layer = nullptr;
 };
 
-struct TE_Page : ui::IProcGraph
+struct TE_Template : ui::IProcGraph
 {
-	~TE_Page()
+	~TE_Template()
 	{
 		Clear();
 	}
@@ -878,6 +878,20 @@ struct TE_Page : ui::IProcGraph
 		name = nts.ReadString("name");
 		nodeIDAlloc = nts.ReadUInt("nodeIDAlloc");
 
+		nts.BeginArray("colors");
+		for (auto ch : nts.GetCurrentRange())
+		{
+			nts.BeginEntry(ch);
+			auto color = std::make_shared<TE_NamedColor>();
+			color->Load(nts);
+			colors.push_back(color);
+			nts.EndEntry();
+		}
+		nts.EndArray();
+
+		auto* oldcol = g_namedColors;
+		g_namedColors = &colors;
+
 		nts.BeginArray("nodes");
 		// read node base data (at least type, id), create the node placeholders
 		std::vector<EntryPair> entryPairs;
@@ -908,6 +922,8 @@ struct TE_Page : ui::IProcGraph
 		}
 		nts.EndArray();
 
+		g_namedColors = oldcol;
+
 		NodeRefLoad("curNode", curNode, nts);
 		g_nodeRefMap.clear();
 
@@ -919,6 +935,13 @@ struct TE_Page : ui::IProcGraph
 
 		nts.WriteString("name", name);
 		nts.WriteInt("nodeIDAlloc", nodeIDAlloc);
+
+		nts.BeginArray("colors");
+		for (const auto& color : colors)
+		{
+			color->Save(nts);
+		}
+		nts.EndArray();
 
 		nts.BeginArray("nodes");
 		for (auto* N : nodes)
@@ -964,7 +987,7 @@ struct TE_Page : ui::IProcGraph
 	}
 	template<class T> static Node* CreateNode(IProcGraph* pg)
 	{
-		return (TE_Node*)static_cast<TE_Page*>(pg)->CreateNode<T>(0, 0);
+		return (TE_Node*)static_cast<TE_Template*>(pg)->CreateNode<T>(0, 0);
 	}
 	void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) override
 	{
@@ -1186,17 +1209,19 @@ struct TE_Page : ui::IProcGraph
 	}
 
 	std::vector<TE_Node*> nodes;
-	std::vector<TE_Node*> topoSortedNodes;
+	std::vector<std::shared_ptr<TE_NamedColor>> colors;
 	uint32_t nodeIDAlloc = 0;
 	std::string name;
 	TE_Node* curNode = nullptr;
+
+	// edit-only
+	std::vector<TE_Node*> topoSortedNodes;
 };
 
 struct TE_Theme
 {
 	TE_Theme()
 	{
-		g_namedColors = &colors;
 		CreateSampleTheme();
 	}
 	~TE_Theme()
@@ -1205,41 +1230,31 @@ struct TE_Theme
 	}
 	void Clear()
 	{
-		colors.clear();
-		for (TE_Page* page : pages)
-			delete page;
-		pages.clear();
-		curPage = nullptr;
+		for (TE_Template* tmpl : templates)
+			delete tmpl;
+		templates.clear();
+		curTemplate = nullptr;
+		g_namedColors = nullptr;
 	}
 	void Load(NamedTextSerializeReader& nts)
 	{
 		Clear();
 		nts.BeginDict("theme");
 
-		nts.BeginArray("colors");
+		nts.BeginArray("templates");
 		for (auto ch : nts.GetCurrentRange())
 		{
 			nts.BeginEntry(ch);
-			auto color = std::make_shared<TE_NamedColor>();
-			color->Load(nts);
-			colors.push_back(color);
-			nts.EndEntry();
-		}
-		nts.EndArray();
-
-		nts.BeginArray("pages");
-		for (auto ch : nts.GetCurrentRange())
-		{
-			nts.BeginEntry(ch);
-			auto* page = new TE_Page;
+			auto* page = new TE_Template;
 			page->Load(nts);
-			pages.push_back(page);
+			templates.push_back(page);
 			nts.EndEntry();
 		}
 		nts.EndArray();
 
-		int curPageNum = nts.ReadInt("curPage", -1);
-		curPage = curPageNum >= 0 && curPageNum < pages.size() ? pages[curPageNum] : nullptr;
+		int curTemplateNum = nts.ReadInt("curTemplate", -1);
+		curTemplate = curTemplateNum >= 0 && curTemplateNum < templates.size() ? templates[curTemplateNum] : nullptr;
+		g_namedColors = curTemplate ? &curTemplate->colors : nullptr;
 
 		nts.EndDict();
 	}
@@ -1247,33 +1262,26 @@ struct TE_Theme
 	{
 		nts.BeginDict("theme");
 
-		nts.BeginArray("colors");
-		for (const auto& color : colors)
+		nts.BeginArray("templates");
+		for (const auto& tmpl : templates)
 		{
-			color->Save(nts);
+			tmpl->Save(nts);
 		}
 		nts.EndArray();
 
-		nts.BeginArray("pages");
-		for (const auto& page : pages)
+		int curTemplateNum = -1;
+		if (curTemplate)
 		{
-			page->Save(nts);
-		}
-		nts.EndArray();
-
-		int curPageNum = -1;
-		if (curPage)
-		{
-			for (size_t i = 0; i < pages.size(); i++)
+			for (size_t i = 0; i < templates.size(); i++)
 			{
-				if (pages[i] == curPage)
+				if (templates[i] == curTemplate)
 				{
-					curPageNum = i;
+					curTemplateNum = i;
 					break;
 				}
 			}
 		}
-		nts.WriteInt("curPage", curPageNum);
+		nts.WriteInt("curTemplate", curTemplateNum);
 
 		nts.EndDict();
 	}
@@ -1310,60 +1318,59 @@ struct TE_Theme
 	{
 		Clear();
 
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-dkedge", Color4b(0x1a, 0xff)));
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-nrm", Color4b(0x4d, 0xff)));
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-dn", Color4b(0x30, 0xff)));
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-dis", Color4b(0x20, 0xff)));
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-grdtop-nrm", Color4b(0x34, 0xff)));
-		colors.push_back(std::make_shared<TE_NamedColor>("btn-grdbtm-nrm", Color4b(0x27, 0xff)));
+		TE_Template* tmpl = new TE_Template;
+		tmpl->name = "Button";
 
-		TE_Page* page = new TE_Page;
-		page->name = "Button";
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x1a, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("ltedge", Color4b(0x4d, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdtop", Color4b(0x34, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdbtm", Color4b(0x27, 0xff)));
 #if 0
-		auto* mr = page->CreateNode<TE_RectMask>(100, 100);
+		auto* mr = tmpl->CreateNode<TE_RectMask>(100, 100);
 		mr->rect = { { 0, 0, 1, 1 }, { 1, 1, -1, -1 } };
 		mr->crad.r = 16;
 #endif
-		auto* l1 = page->CreateNode<TE_SolidColorLayer>(300, 100);
-		l1->color.Set(colors[0]);
+		auto* l1 = tmpl->CreateNode<TE_SolidColorLayer>(100, 100);
+		l1->color.Set(tmpl->colors[0]);
 		l1->mask.border = 0;
 		l1->mask.radius = 1;
 
-		auto* l2 = page->CreateNode<TE_SolidColorLayer>(300, 300);
-		l2->color.Set(colors[1]);
+		auto* l2 = tmpl->CreateNode<TE_SolidColorLayer>(100, 300);
+		l2->color.Set(tmpl->colors[1]);
 		l2->mask.border = 1;
 		l2->mask.radius = 1;
 
-		auto* l3 = page->CreateNode<TE_SolidColorLayer>(300, 500);
-		l3->color.Set(colors[4]);
+		auto* l3 = tmpl->CreateNode<TE_SolidColorLayer>(300, 400);
+		l3->color.Set(tmpl->colors[2]);
 		l3->mask.border = 2;
 		l3->mask.radius = 1;
 
-		auto* bl = page->CreateNode<TE_BlendLayer>(500, 100);
+		auto* bl = tmpl->CreateNode<TE_BlendLayer>(500, 100);
 		bl->layers.push_back({ l1, true, 1 });
 		bl->layers.push_back({ l2, true, 1 });
 		bl->layers.push_back({ l3, true, 1 });
 
-		auto* img = page->CreateNode<TE_ImageNode>(700, 100);
+		auto* img = tmpl->CreateNode<TE_ImageNode>(700, 100);
 		img->layer = bl;
 		img->w = 10;
 		img->h = 20;
 		img->l = img->r = img->t = img->b = 5;
 
-		page->SetCurrentImageNode(img);
+		tmpl->SetCurrentImageNode(img);
 
-		curPage = page;
-		pages.push_back(page);
+		templates.push_back(tmpl);
+
+		curTemplate = tmpl;
+		g_namedColors = &tmpl->colors;
 
 		SaveToFile("sample.ths");
 		LoadFromFile("sample.ths");
 	}
 
-	std::vector<std::shared_ptr<TE_NamedColor>> colors;
-	std::vector<TE_Page*> pages;
+	std::vector<TE_Template*> templates;
 
 	// editing state
-	TE_Page* curPage = nullptr;
+	TE_Template* curTemplate = nullptr;
 };
 
 enum TE_PreviewMode
@@ -1430,7 +1437,7 @@ struct TE_MainPreviewNode : Node
 
 		ctx->Text("Preview") + Padding(5);
 
-		if (page->curNode)
+		if (tmpl->curNode)
 		{
 			ctx->PushBox() + Layout(style::layouts::EdgeSlice());
 			{
@@ -1461,7 +1468,7 @@ struct TE_MainPreviewNode : Node
 
 				*ctx->Push<ListBox>() + Height(style::Coord::Percent(95)); // TODO
 
-				auto* imgNode = static_cast<TE_ImageNode*>(page->curNode);
+				auto* imgNode = static_cast<TE_ImageNode*>(tmpl->curNode);
 				Canvas canvas;
 				imgNode->Render(canvas);
 				auto* img = Allocate<Image>(canvas);
@@ -1489,10 +1496,10 @@ struct TE_MainPreviewNode : Node
 		}
 	}
 
-	TE_Page* page;
+	TE_Template* tmpl;
 };
 
-struct TE_PageEditorNode : Node
+struct TE_TemplateEditorNode : Node
 {
 	void Render(UIContainer* ctx) override
 	{
@@ -1502,7 +1509,7 @@ struct TE_PageEditorNode : Node
 			{
 				auto* pge = ctx->Make<ProcGraphEditor>();
 				*pge + Height(style::Coord::Percent(100));
-				pge->Init(page);
+				pge->Init(tmpl);
 			}
 			ctx->Pop();
 
@@ -1510,14 +1517,14 @@ struct TE_PageEditorNode : Node
 			{
 				auto* vsp = ctx->Push<SplitPane>();
 				{
-					ctx->Make<TE_MainPreviewNode>()->page = page;
+					ctx->Make<TE_MainPreviewNode>()->tmpl = tmpl;
 
 					ctx->PushBox();
 					{
 						ctx->Text("Colors") + Padding(5);
 						auto* ced = ctx->Make<SequenceEditor>();
 						*ced + Height(style::Coord::Percent(100));
-						ced->SetSequence(Allocate<StdSequence<decltype(theme->colors)>>(theme->colors));
+						ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
 						ced->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
 						{
 							auto& NC = se->GetSequence()->GetValue<std::shared_ptr<TE_NamedColor>>(it);
@@ -1541,13 +1548,13 @@ struct TE_PageEditorNode : Node
 		Node::OnEvent(e);
 		if (e.type == UserEvent(TEUE_ImageMadeCurrent))
 		{
-			page->SetCurrentImageNode(reinterpret_cast<TE_ImageNode*>(e.arg0));
+			tmpl->SetCurrentImageNode(reinterpret_cast<TE_ImageNode*>(e.arg0));
 			Rerender();
 		}
 	}
 
 	TE_Theme* theme;
-	TE_Page* page;
+	TE_Template* tmpl;
 };
 
 struct TE_ThemeEditorNode : Node
@@ -1572,16 +1579,16 @@ struct TE_ThemeEditorNode : Node
 		{
 			ctx->Push<TabButtonList>();
 			{
-				for (TE_Page* page : theme->pages)
+				for (TE_Template* tmpl : theme->templates)
 				{
-					ctx->Push<TabButtonT<TE_Page*>>()->Init(theme->curPage, page);
-					if (editNamePage != page)
+					ctx->Push<TabButtonT<TE_Template*>>()->Init(theme->curTemplate, tmpl);
+					if (editNameTemplate != tmpl)
 					{
-						ctx->Text(page->name).HandleEvent(UIEventType::Click) = [this, page](UIEvent& e)
+						ctx->Text(tmpl->name).HandleEvent(UIEventType::Click) = [this, tmpl](UIEvent& e)
 						{
 							if (e.numRepeats == 2)
 							{
-								editNamePage = page;
+								editNameTemplate = tmpl;
 								Rerender();
 							}
 						};
@@ -1592,14 +1599,14 @@ struct TE_ThemeEditorNode : Node
 						{
 							if (e.type == UIEventType::LostFocus)
 							{
-								editNamePage = nullptr;
+								editNameTemplate = nullptr;
 								Rerender();
 							}
 						};
 						imm::EditString(
 							ctx,
-							page->name.c_str(),
-							[page](const char* v) { page->name = v; },
+							tmpl->name.c_str(),
+							[tmpl](const char* v) { tmpl->name = v; },
 							{ Width(100), EventHandler(efn) });
 					}
 					ctx->Pop();
@@ -1607,20 +1614,20 @@ struct TE_ThemeEditorNode : Node
 			}
 			if (imm::Button(ctx, "+"))
 			{
-				auto* p = new TE_Page;
+				auto* p = new TE_Template;
 				p->name = "<name>";
-				theme->pages.push_back(p);
+				theme->templates.push_back(p);
 			}
 			ctx->Pop();
 
-			if (theme->curPage)
+			if (theme->curTemplate)
 			{
 				*ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
 				{
-					auto* pen = ctx->Make<TE_PageEditorNode>();
+					auto* pen = ctx->Make<TE_TemplateEditorNode>();
 					*pen + Height(style::Coord::Percent(100));
 					pen->theme = theme;
-					pen->page = theme->curPage;
+					pen->tmpl = theme->curTemplate;
 				}
 				ctx->Pop();
 			}
@@ -1629,7 +1636,7 @@ struct TE_ThemeEditorNode : Node
 	}
 
 	TE_Theme* theme;
-	TE_Page* editNamePage = nullptr;
+	TE_Template* editNameTemplate = nullptr;
 };
 
 struct ThemeEditorMainWindow : NativeMainWindow
