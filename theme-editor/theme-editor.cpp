@@ -89,6 +89,7 @@ struct TE_RenderContext
 	AbsRect frame;
 	bool gamma;
 };
+static TE_RenderContext g_curImageCtx = { 8, 8, { 0, 0, 8.f, 8.f }, false };
 
 struct TE_NamedColor
 {
@@ -399,21 +400,14 @@ struct TE_MaskNode : TE_Node
 
 	void Render(Canvas& canvas) override
 	{
-		unsigned w = 64, h = 64;
-		TE_RenderContext rc;
-		{
-			rc.width = w;
-			rc.height = h;
-			rc.frame = { 0, 0, float(w), float(h) };
-			rc.gamma = true;
-		}
-		canvas.SetSize(w, h);
+		TE_RenderContext rc = g_curImageCtx;
+		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
-		for (unsigned y = 0; y < h; y++)
+		for (unsigned y = 0; y < rc.height; y++)
 		{
-			for (unsigned x = 0; x < w; x++)
+			for (unsigned x = 0; x < rc.width; x++)
 			{
-				pixels[x + y * w] = Color4f(Eval(x + 0.5f, y + 0.5f, rc), 1).GetColor32();
+				pixels[x + y * rc.width] = Color4f(Eval(x + 0.5f, y + 0.5f, rc), 1).GetColor32();
 			}
 		}
 	}
@@ -616,24 +610,17 @@ struct TE_LayerNode : TE_Node
 {
 	void Render(Canvas& canvas)
 	{
-		unsigned w = 64, h = 64;
-		TE_RenderContext rc;
-		{
-			rc.width = w;
-			rc.height = h;
-			rc.frame = { 0, 0, float(w), float(h) };
-			rc.gamma = true;
-		}
-		canvas.SetSize(w, h);
+		TE_RenderContext rc = g_curImageCtx;
+		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
-		for (unsigned y = 0; y < h; y++)
+		for (unsigned y = 0; y < rc.height; y++)
 		{
-			for (unsigned x = 0; x < w; x++)
+			for (unsigned x = 0; x < rc.width; x++)
 			{
 				Color4f c = Eval(x + 0.5f, y + 0.5f, rc);
 				if (rc.gamma)
 					c = c.Power(1.0f / 2.2f);
-				pixels[x + y * w] = c.GetColor32();
+				pixels[x + y * rc.width] = c.GetColor32();
 			}
 		}
 	}
@@ -798,12 +785,12 @@ struct TE_ImageNode : TE_Node
 	}
 	void Load(NamedTextSerializeReader& nts) override
 	{
-		w = nts.ReadInt("w");
-		h = nts.ReadInt("h");
-		l = nts.ReadInt("l");
-		t = nts.ReadInt("t");
-		r = nts.ReadInt("r");
-		b = nts.ReadInt("b");
+		w = nts.ReadUInt("w");
+		h = nts.ReadUInt("h");
+		l = nts.ReadUInt("l");
+		t = nts.ReadUInt("t");
+		r = nts.ReadUInt("r");
+		b = nts.ReadUInt("b");
 		gamma = nts.ReadBool("gamma");
 		NodeRefLoad("layer", layer, nts);
 	}
@@ -819,33 +806,37 @@ struct TE_ImageNode : TE_Node
 		NodeRefSave("layer", layer, nts);
 	}
 
+	TE_RenderContext MakeRenderContext() const
+	{
+		return
+		{
+			w,
+			h,
+			{ 0, 0, float(w), float(h) },
+			gamma,
+		};
+	}
 	void Render(Canvas& canvas) override
 	{
-		canvas.SetSize(w, h);
+		TE_RenderContext rc = MakeRenderContext();
+		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
-		TE_RenderContext rc;
+		for (int y = 0; y < rc.height; y++)
 		{
-			rc.width = w;
-			rc.height = h;
-			rc.frame = { 0, 0, float(w), float(h) };
-			rc.gamma = gamma;
-		}
-		for (int y = 0; y < h; y++)
-		{
-			for (int x = 0; x < w; x++)
+			for (int x = 0; x < rc.width; x++)
 			{
 				Color4f col = Color4f::Zero();
 				if (layer)
 					col = layer->Eval(x + 0.5f, y + 0.5f, rc);
 				if (rc.gamma)
 					col = col.Power(1.0f / 2.2f);
-				pixels[x + y * w] = col.GetColor32();
+				pixels[x + y * rc.width] = col.GetColor32();
 			}
 		}
 	}
 
-	int w = 64, h = 64;
-	int l = 0, t = 0, r = 0, b = 0;
+	unsigned w = 64, h = 64;
+	unsigned l = 0, t = 0, r = 0, b = 0;
 	bool gamma = false;
 	TE_LayerNode* layer = nullptr;
 };
@@ -944,10 +935,11 @@ struct TE_Page : ui::IProcGraph
 
 		nts.EndDict();
 	}
-	template <class T> T* CreateNode()
+	template <class T> T* CreateNode(float x, float y)
 	{
 		T* node = new T;
 		node->id = ++nodeIDAlloc;
+		node->position = { x, y };
 		nodes.push_back(node);
 		return node;
 	}
@@ -972,7 +964,7 @@ struct TE_Page : ui::IProcGraph
 	}
 	template<class T> static Node* CreateNode(IProcGraph* pg)
 	{
-		return (TE_Node*)static_cast<TE_Page*>(pg)->CreateNode<T>();
+		return (TE_Node*)static_cast<TE_Page*>(pg)->CreateNode<T>(0, 0);
 	}
 	void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) override
 	{
@@ -1020,12 +1012,19 @@ struct TE_Page : ui::IProcGraph
 				{
 					TE_Node* outNode = inNode->GetInputPinValue(i);
 					if (outNode == pin.end.node)
+					{
 						inNode->SetInputPinValue(i, nullptr);
+						InvalidateNode(inNode);
+					}
 				}
 			}
 		}
 		else
-			static_cast<TE_Node*>(pin.end.node)->SetInputPinValue(pin.end.num, nullptr);
+		{
+			auto* n = static_cast<TE_Node*>(pin.end.node);
+			n->SetInputPinValue(pin.end.num, nullptr);
+			InvalidateNode(n);
+		}
 	}
 
 	bool LinkExists(const Link& link) override
@@ -1046,11 +1045,13 @@ struct TE_Page : ui::IProcGraph
 			return false;
 		inNode->SetInputPinValue(link.input.num, outNode);
 		topoSortedNodes.clear();
+		InvalidateNode(inNode);
 		return true;
 	}
 	bool Unlink(const Link& link) override
 	{
 		static_cast<TE_Node*>(link.input.node)->SetInputPinValue(link.input.num, nullptr);
+		InvalidateNode(static_cast<TE_Node*>(link.input.node));
 		return true;
 	}
 	Color4b GetLinkColor(const Link& link, bool selected, bool hovered)
@@ -1069,10 +1070,17 @@ struct TE_Page : ui::IProcGraph
 
 	void OnEditNode(UIEvent& e, Node* node) override
 	{
+		auto* N = static_cast<TE_Node*>(node);
+		if (curNode == N)
+		{
+			g_curImageCtx = static_cast<TE_ImageNode*>(N)->MakeRenderContext();
+			InvalidateAllNodes();
+			return;
+		}
+
 		UpdateTopoSortedNodes();
 
-		static_cast<TE_Node*>(node)->SetDirty();
-		Notify(DCT_NodePreviewInvalidated, node);
+		InvalidateNode(N);
 
 		for (size_t i = topoSortedNodes.size(); i > 0; )
 		{
@@ -1080,12 +1088,26 @@ struct TE_Page : ui::IProcGraph
 			topoSortedNodes[i]->IterateDependentNodes([this](TE_Node* n, TE_Node* d)
 			{
 				if (d->IsDirty())
-				{
-					n->SetDirty();
-					Notify(DCT_NodePreviewInvalidated, n);
-				}
+					InvalidateNode(n);
 			});
 		}
+	}
+
+	void InvalidateNode(TE_Node* n)
+	{
+		n->SetDirty();
+		Notify(DCT_NodePreviewInvalidated, n);
+	}
+	void InvalidateAllNodes()
+	{
+		for (auto* n : nodes)
+			InvalidateNode(n);
+	}
+	void SetCurrentImageNode(TE_ImageNode* img)
+	{
+		g_curImageCtx = img->MakeRenderContext();
+		curNode = img;
+		InvalidateAllNodes();
 	}
 
 	bool CanDeleteNode(Node*) override { return true; }
@@ -1113,6 +1135,7 @@ struct TE_Page : ui::IProcGraph
 	Node* DuplicateNode(Node* node) override
 	{
 		auto* n = static_cast<TE_Node*>(node)->Clone();
+		n->_image = nullptr;
 		n->id = ++nodeIDAlloc;
 		n->position += { 5, 5 };
 		nodes.push_back(n);
@@ -1287,41 +1310,47 @@ struct TE_Theme
 	{
 		Clear();
 
-		colors.push_back(std::make_shared<TE_NamedColor>("border", Color4f(0.6f, 0.8f, 0.9f)));
-		colors.push_back(std::make_shared<TE_NamedColor>("middle", Color4f(0.1f, 0.15f, 0.2f)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-dkedge", Color4b(0x1a, 0xff)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-nrm", Color4b(0x4d, 0xff)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-dn", Color4b(0x30, 0xff)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-ltedge-dis", Color4b(0x20, 0xff)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-grdtop-nrm", Color4b(0x34, 0xff)));
+		colors.push_back(std::make_shared<TE_NamedColor>("btn-grdbtm-nrm", Color4b(0x27, 0xff)));
 
 		TE_Page* page = new TE_Page;
-		page->name = "Frame";
-
-		auto* mr = page->CreateNode<TE_RectMask>();
-		mr->position = { 100, 100 };
+		page->name = "Button";
+#if 0
+		auto* mr = page->CreateNode<TE_RectMask>(100, 100);
 		mr->rect = { { 0, 0, 1, 1 }, { 1, 1, -1, -1 } };
 		mr->crad.r = 16;
-
-		auto* l1 = page->CreateNode<TE_SolidColorLayer>();
-		l1->position = { 300, 100 };
+#endif
+		auto* l1 = page->CreateNode<TE_SolidColorLayer>(300, 100);
 		l1->color.Set(colors[0]);
-		//l1->mask.mask = mr;
-		l1->mask.border = 1;
-		l1->mask.radius = 15;
+		l1->mask.border = 0;
+		l1->mask.radius = 1;
 
-		auto* l2 = page->CreateNode<TE_SolidColorLayer>();
-		l2->position = { 300, 300 };
+		auto* l2 = page->CreateNode<TE_SolidColorLayer>(300, 300);
 		l2->color.Set(colors[1]);
-		//l2->mask.mask = mr;
-		l2->mask.border = 2;
-		l2->mask.radius = 14;
+		l2->mask.border = 1;
+		l2->mask.radius = 1;
 
-		auto* bl = page->CreateNode<TE_BlendLayer>();
-		bl->position = { 500, 100 };
+		auto* l3 = page->CreateNode<TE_SolidColorLayer>(300, 500);
+		l3->color.Set(colors[4]);
+		l3->mask.border = 2;
+		l3->mask.radius = 1;
+
+		auto* bl = page->CreateNode<TE_BlendLayer>(500, 100);
 		bl->layers.push_back({ l1, true, 1 });
 		bl->layers.push_back({ l2, true, 1 });
+		bl->layers.push_back({ l3, true, 1 });
 
-		auto* img = page->CreateNode<TE_ImageNode>();
-		img->position = { 700, 100 };
+		auto* img = page->CreateNode<TE_ImageNode>(700, 100);
 		img->layer = bl;
+		img->w = 10;
+		img->h = 20;
+		img->l = img->r = img->t = img->b = 5;
 
-		page->curNode = img;
+		page->SetCurrentImageNode(img);
 
 		curPage = page;
 		pages.push_back(page);
@@ -1345,7 +1374,7 @@ enum TE_PreviewMode
 static TE_PreviewMode g_previewMode = TEPM_Original;
 static ScaleMode g_previewScaleMode = ScaleMode::None;
 static unsigned g_previewZoomPercent = 100;
-static unsigned g_previewSlicedWidth = 32;
+static unsigned g_previewSlicedWidth = 128;
 static unsigned g_previewSlicedHeight = 32;
 
 struct TE_SlicedImageElement : UIElement
@@ -1512,7 +1541,7 @@ struct TE_PageEditorNode : Node
 		Node::OnEvent(e);
 		if (e.type == UserEvent(TEUE_ImageMadeCurrent))
 		{
-			page->curNode = (TE_ImageNode*)e.arg0;
+			page->SetCurrentImageNode(reinterpret_cast<TE_ImageNode*>(e.arg0));
 			Rerender();
 		}
 	}
@@ -1532,7 +1561,7 @@ struct TE_ThemeEditorNode : Node
 			ctx->Push<MenuItemElement>()->SetText("File");
 			{
 				ctx->Make<MenuItemElement>()->SetText("New").Func([this]() { theme->Clear(); Rerender(); });
-				ctx->Make<MenuItemElement>()->SetText("Load").Func([this]() { theme->LoadFromFile("sample.ths"); Rerender(); });
+				ctx->Make<MenuItemElement>()->SetText("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rerender(); });
 				ctx->Make<MenuItemElement>()->SetText("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rerender(); });
 			}
 			ctx->Pop();
