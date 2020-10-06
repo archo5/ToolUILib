@@ -29,18 +29,25 @@ struct TableWithOffsets
 			return 0;
 
 		int ret = 0;
-#if 0
-		size_t nr = ds->GetNumRows();
-		for (size_t i = 0; i < nr && ret < max; i++)
-		{
-			TryAddRow(i, col, ret, max, buf);
-		}
-#else
+
 		auto hoverRow = curTable->GetHoverRow();
 		TryAddRow(hoverRow, col, ret, max, buf);
-		if (curTable->selection.AnySelected())
-			TryAddRow(curTable->selection.GetFirstSelection(), col, ret, max, buf);
-#endif
+
+		// TODO get visible range API
+		auto numrows = ds->GetNumRows();
+		auto rmin = curTable->GetRowAt(curTable->GetContentRect().y0);
+		if (rmin >= numrows)
+			rmin = 0;
+		auto rmax = curTable->GetRowAt(curTable->GetContentRect().y1) + 1;
+		if (rmax > numrows)
+			rmax = numrows;
+
+		for (auto row = rmin; row < rmax; row++)
+		{
+			if (ds->GetSelectionState(row))
+				TryAddRow(row, col, ret, max, buf);
+		}
+
 		return ret;
 	}
 
@@ -57,7 +64,7 @@ struct TableWithOffsets
 		auto cr = curTable->GetCellRect(SIZE_MAX, row);
 		float y = (cr.y0 + cr.y1) * 0.5f;
 		if (tcr.Contains(cr.x0, y))
-			buf[ret++] = { off, { cr.x0, y }, curTable->selection.IsSelected(row) };
+			buf[ret++] = { off, { cr.x0, y }, ds->GetSelectionState(row) };
 	}
 
 	ui::TableView* curTable = nullptr;

@@ -99,6 +99,10 @@ struct DataDescInstanceSource : ui::TableDataSource
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
 
+	void ClearSelection() override;
+	bool GetSelectionState(size_t row) override;
+	void SetSelectionState(size_t row, bool sel) override;
+
 	void Edit(UIContainer* ctx);
 
 	void _Refilter();
@@ -131,6 +135,10 @@ struct DataDescImageSource : ui::TableDataSource
 	std::string GetRowName(size_t row) override;
 	std::string GetColName(size_t col) override;
 	std::string GetText(size_t row, size_t col) override;
+
+	void ClearSelection() override;
+	bool GetSelectionState(size_t row) override;
+	void SetSelectionState(size_t row, bool sel) override;
 
 	void Edit(UIContainer* ctx);
 

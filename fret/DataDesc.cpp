@@ -84,9 +84,9 @@ void DataDesc::EditStructuralItems(UIContainer* ctx)
 
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 	ctx->Text("Edit:") + ui::Padding(5);
-	ui::imm::RadioButton(ctx, editMode, 0, "instance", { ui::Style(ui::Theme::current->button) });
-	ui::imm::RadioButton(ctx, editMode, 1, "struct", { ui::Style(ui::Theme::current->button) });
-	ui::imm::RadioButton(ctx, editMode, 2, "field", { ui::Style(ui::Theme::current->button) });
+	ui::imm::RadioButton(ctx, editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
+	ui::imm::RadioButton(ctx, editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
+	ui::imm::RadioButton(ctx, editMode, 2, "field", {}, ui::imm::ButtonStateToggleSkin());
 	ctx->Pop();
 
 	if (editMode == 0)
@@ -482,8 +482,8 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			ctx->Text("Resource") + ui::Padding(5);
 			ui::Property::Begin(ctx);
 			ctx->Text("Type:") + ui::Padding(5);
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", { ui::Style(ui::Theme::current->button) });
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", { ui::Style(ui::Theme::current->button) });
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
 			ui::Property::End(ctx);
 
 			if (S.resource.type == DDStructResourceType::Image)
@@ -1064,6 +1064,24 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	}
 }
 
+void DataDescInstanceSource::ClearSelection()
+{
+	dataDesc->SetCurrentInstance(nullptr);
+}
+
+bool DataDescInstanceSource::GetSelectionState(size_t row)
+{
+	return dataDesc->curInst == dataDesc->instances[_indices[row]];
+}
+
+void DataDescInstanceSource::SetSelectionState(size_t row, bool sel)
+{
+	if (sel)
+		dataDesc->SetCurrentInstance(dataDesc->instances[_indices[row]]);
+	else if (GetSelectionState(row))
+		dataDesc->SetCurrentInstance(nullptr);
+}
+
 void DataDescInstanceSource::Edit(UIContainer* ctx)
 {
 	ui::Property::Begin(ctx, "Filter by struct");
@@ -1238,6 +1256,24 @@ std::string DataDescImageSource::GetText(size_t row, size_t col)
 	case DDIMG_COL_Height: return std::to_string(dataDesc->images[_indices[row]].height);
 	default: return "???";
 	}
+}
+
+void DataDescImageSource::ClearSelection()
+{
+	dataDesc->curImage = UINT32_MAX;
+}
+
+bool DataDescImageSource::GetSelectionState(size_t row)
+{
+	return dataDesc->curImage == _indices[row];
+}
+
+void DataDescImageSource::SetSelectionState(size_t row, bool sel)
+{
+	if (sel)
+		dataDesc->curImage = _indices[row];
+	else if (GetSelectionState(row))
+		dataDesc->curImage = UINT32_MAX;
 }
 
 void DataDescImageSource::Edit(UIContainer* ctx)

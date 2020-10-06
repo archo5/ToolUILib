@@ -32,15 +32,10 @@ void TabStructures::Render(UIContainer* ctx)
 		curTable = tv;
 		*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 		tv->SetDataSource(&workspace->ddiSrc);
+		tv->SetSelectionMode(ui::SelectionMode::Single);
 		workspace->ddiSrc.refilter = true;
 		tv->CalculateColumnWidths();
-		tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
-		{
-			auto sel = tv->selection.GetFirstSelection();
-			if (tv->IsValidRow(sel))
-				workspace->desc.SetCurrentInstance(workspace->desc.instances[workspace->ddiSrc._indices[sel]]);
-			e.current->RerenderNode();
-		};
+		tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
 		tv->HandleEvent(UIEventType::Click) = [this, tv](UIEvent& e)
 		{
 			size_t row = tv->GetHoverRow();
@@ -70,12 +65,11 @@ void TabStructures::Render(UIContainer* ctx)
 		};
 		tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)
 		{
-			if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+			if (e.GetKeyAction() == UIKeyAction::Delete)
 			{
-				size_t pos = tv->selection.GetFirstSelection();
-				if (tv->IsValidRow(pos))
+				if (workspace->desc.curInst)
 				{
-					workspace->desc.DeleteInstance(workspace->desc.instances[workspace->ddiSrc._indices[pos]]);
+					workspace->desc.DeleteInstance(workspace->desc.curInst);
 					workspace->ddiSrc.refilter = true;
 					e.current->RerenderNode();
 				}

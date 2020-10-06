@@ -70,33 +70,3 @@ void Benchmark_SubUI(UIContainer* ctx)
 	ctx->Make<SubUIBenchmark>();
 }
 
-
-struct RandomNumberDataSource : ui::TableDataSource
-{
-	size_t GetNumRows() override { return 1000000; }
-	size_t GetNumCols() override { return 5; }
-	std::string GetRowName(size_t row) override { return std::to_string(row + 1); }
-	std::string GetColName(size_t col) override { return std::to_string(col + 1); }
-	std::string GetText(size_t row, size_t col) override
-	{
-		return std::to_string(((unsigned(row) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
-	}
-}
-g_randomNumbers;
-
-struct TableViewBenchmark : ui::Node
-{
-	void Render(UIContainer* ctx) override
-	{
-		GetStyle().SetLayout(style::layouts::EdgeSlice());
-
-		auto* tv = ctx->Make<ui::TableView>();
-		*tv + ui::Height(style::Coord::Percent(100));
-		tv->SetDataSource(&g_randomNumbers);
-	}
-};
-void Benchmark_TableView(UIContainer* ctx)
-{
-	ctx->Make<TableViewBenchmark>();
-}
-

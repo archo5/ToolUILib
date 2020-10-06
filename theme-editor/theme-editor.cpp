@@ -878,7 +878,7 @@ struct TE_Template : ui::IProcGraph
 	void Load(NamedTextSerializeReader& nts)
 	{
 		Clear();
-		nts.BeginDict("page");
+		nts.BeginDict("template");
 
 		name = nts.ReadString("name");
 		nodeIDAlloc = nts.ReadUInt("nodeIDAlloc");
@@ -936,7 +936,7 @@ struct TE_Template : ui::IProcGraph
 	}
 	void Save(NamedTextSerializeWriter& nts)
 	{
-		nts.BeginDict("page");
+		nts.BeginDict("template");
 
 		nts.WriteString("name", name);
 		nts.WriteInt("nodeIDAlloc", nodeIDAlloc);
@@ -1273,9 +1273,9 @@ struct TE_Theme
 		for (auto ch : nts.GetCurrentRange())
 		{
 			nts.BeginEntry(ch);
-			auto* page = new TE_Template;
-			page->Load(nts);
-			templates.push_back(page);
+			auto* tmpl = new TE_Template;
+			tmpl->Load(nts);
+			templates.push_back(tmpl);
 			nts.EndEntry();
 		}
 		nts.EndArray();

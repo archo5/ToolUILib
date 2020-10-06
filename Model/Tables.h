@@ -20,6 +20,32 @@ struct Selection1D
 	struct Selection1DImpl* _impl;
 };
 
+enum class SelectionMode : uint8_t
+{
+	None,
+	Single,
+	Multiple,
+	MultipleToggle,
+};
+
+struct ISelection
+{
+	virtual void ClearSelection() {}
+	virtual bool GetSelectionState(size_t row) { return false; }
+	virtual void SetSelectionState(size_t row, bool sel) {}
+};
+
+struct SelectionImplementation
+{
+	bool OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering);
+	void OnSerialize(IDataSerializer& s);
+
+	SelectionMode selectionMode = SelectionMode::None;
+	bool isClicked = false;
+	size_t _selStart = 0;
+	size_t _selEnd = 0;
+};
+
 
 struct MessageLogDataSource
 {
@@ -54,7 +80,7 @@ struct MessageLogView : Node
 };
 
 
-struct TableDataSource
+struct TableDataSource : ISelection
 {
 	virtual size_t GetNumRows() = 0;
 	virtual size_t GetNumCols() = 0;
@@ -77,6 +103,7 @@ struct TableView : Node
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
+	void SetSelectionMode(SelectionMode mode);
 	void CalculateColumnWidths(bool includeHeader = true, bool firstTimeOnly = true);
 
 	bool IsValidRow(uintptr_t pos);
@@ -88,7 +115,6 @@ struct TableView : Node
 	style::BlockRef cellStyle;
 	style::BlockRef rowHeaderStyle;
 	style::BlockRef colHeaderStyle;
-	Selection1D selection;
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 

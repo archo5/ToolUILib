@@ -16,15 +16,10 @@ void TabImages::Render(UIContainer* ctx)
 		auto* tv = ctx->Make<ui::TableView>();
 		*tv + ui::Layout(style::layouts::EdgeSlice());
 		tv->SetDataSource(&workspace->ddimgSrc);
+		tv->SetSelectionMode(ui::SelectionMode::Single);
 		workspace->ddimgSrc.refilter = true;
 		tv->CalculateColumnWidths();
-		tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
-		{
-			auto sel = tv->selection.GetFirstSelection();
-			if (tv->IsValidRow(sel))
-				workspace->desc.curImage = workspace->ddimgSrc._indices[sel];
-			e.current->RerenderNode();
-		};
+		tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
 		tv->HandleEvent(tv, UIEventType::Click) = [this, tv](UIEvent& e)
 		{
 			size_t row = tv->GetHoverRow();
@@ -71,14 +66,12 @@ void TabImages::Render(UIContainer* ctx)
 		};
 		tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)
 		{
-			if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+			if (e.GetKeyAction() == UIKeyAction::Delete)
 			{
-				size_t pos = tv->selection.GetFirstSelection();
-				if (tv->IsValidRow(pos))
+				if (workspace->desc.curImage < workspace->desc.images.size())
 				{
-					if (pos == workspace->desc.curImage)
-						workspace->desc.curImage = 0;
-					workspace->desc.images.erase(workspace->desc.images.begin() + pos);
+					workspace->desc.images.erase(workspace->desc.images.begin() + workspace->desc.curImage);
+					workspace->desc.curImage = UINT32_MAX;
 					workspace->ddimgSrc.refilter = true;
 					e.current->RerenderNode();
 				}

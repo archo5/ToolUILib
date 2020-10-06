@@ -17,6 +17,7 @@ void TabMarkers::Render(UIContainer* ctx)
 		curTable = tv;
 		*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 		tv->SetDataSource(&f->mdSrc);
+		tv->SetSelectionMode(ui::SelectionMode::Single);
 		tv->CalculateColumnWidths();
 		tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
 		{
@@ -45,12 +46,12 @@ void TabMarkers::Render(UIContainer* ctx)
 		tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
 		tv->HandleEvent(tv, UIEventType::KeyAction) = [tv, f](UIEvent& e)
 		{
-			if (e.GetKeyAction() == UIKeyAction::Delete && tv->selection.AnySelected())
+			if (e.GetKeyAction() == UIKeyAction::Delete)
 			{
-				size_t pos = tv->selection.GetFirstSelection();
-				if (tv->IsValidRow(pos))
+				if (f->mdSrc.selected < f->markerData.markers.size())
 				{
-					f->markerData.markers.erase(f->markerData.markers.begin() + pos);
+					f->markerData.markers.erase(f->markerData.markers.begin() + f->mdSrc.selected);
+					f->mdSrc.selected = SIZE_MAX;
 					e.current->RerenderNode();
 				}
 			}
@@ -59,15 +60,11 @@ void TabMarkers::Render(UIContainer* ctx)
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
-		if (tv->selection.AnySelected())
+		if (f->mdSrc.selected < f->markerData.markers.size())
 		{
-			size_t pos = tv->selection.GetFirstSelection();
-			if (tv->IsValidRow(pos))
-			{
-				auto* MIE = ctx->Make<MarkedItemEditor>();
-				MIE->dataSource = f->dataSource;
-				MIE->marker = &f->markerData.markers[pos];
-			}
+			auto* MIE = ctx->Make<MarkedItemEditor>();
+			MIE->dataSource = f->dataSource;
+			MIE->marker = &f->markerData.markers[f->mdSrc.selected];
 		}
 		ctx->Pop();
 	}

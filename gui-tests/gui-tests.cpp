@@ -356,7 +356,7 @@ void Test_TreeEditors(UIContainer* ctx);
 void Test_MessageLogView(UIContainer* ctx);
 
 void Benchmark_SubUI(UIContainer* ctx);
-void Benchmark_TableView(UIContainer* ctx);
+void Test_TableView(UIContainer* ctx);
 
 void Demo_Calculator(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
@@ -440,12 +440,12 @@ static const TestEntry dseditTestEntries[] =
 	{ "Node graph", Demo_NodeGraphEditor },
 	{},
 	{ "- Fully virtualized (single UI element for all items) -" },
+	{ "Table view", Test_TableView },
 	{ "Message log view", Test_MessageLogView },
 };
 static const TestEntry benchmarkEntries[] =
 {
 	{ "SubUI benchmark", Benchmark_SubUI },
-	{ "TableView benchmark", Benchmark_TableView },
 };
 static const TestEntry demoEntries[] =
 {

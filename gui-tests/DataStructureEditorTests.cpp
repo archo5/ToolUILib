@@ -282,6 +282,61 @@ void Test_TreeEditors(UIContainer* ctx)
 }
 
 
+struct RandomNumberDataSource : ui::TableDataSource
+{
+	size_t GetNumRows() override { return 1000000; }
+	size_t GetNumCols() override { return 5; }
+	std::string GetRowName(size_t row) override { return std::to_string(row + 1); }
+	std::string GetColName(size_t col) override { return std::to_string(col + 1); }
+	std::string GetText(size_t row, size_t col) override
+	{
+		return std::to_string(((unsigned(row) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
+	}
+
+	virtual void ClearSelection() { selRows.clear(); }
+	virtual bool GetSelectionState(size_t row) { return selRows.count(row); }
+	virtual void SetSelectionState(size_t row, bool sel)
+	{
+		if (sel)
+			selRows.insert(row);
+		else
+			selRows.erase(row);
+	}
+
+	std::unordered_set<size_t> selRows;
+}
+g_randomNumbers;
+
+struct TableViewTest : ui::Node
+{
+	static constexpr bool Persistent = true;
+
+	void Render(UIContainer* ctx) override
+	{
+		GetStyle().SetLayout(style::layouts::EdgeSlice());
+
+		{
+			ui::Property::Scope ps(ctx, "\bSelection type:");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::None, "None");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Single, "Single");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
+		}
+
+		auto* tv = ctx->Make<ui::TableView>();
+		*tv + ui::Height(style::Coord::Percent(100));
+		tv->SetSelectionMode(selectionType);
+		tv->SetDataSource(&g_randomNumbers);
+	}
+
+	ui::SelectionMode selectionType = ui::SelectionMode::Single;
+};
+void Test_TableView(UIContainer* ctx)
+{
+	ctx->Make<TableViewTest>();
+}
+
+
 struct MessageLogViewTest : ui::Node
 {
 	struct Message

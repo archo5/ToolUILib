@@ -402,6 +402,24 @@ std::string MarkerDataSource::GetText(size_t row, size_t col)
 	}
 }
 
+void MarkerDataSource::ClearSelection()
+{
+	selected = SIZE_MAX;
+}
+
+bool MarkerDataSource::GetSelectionState(size_t row)
+{
+	return selected == row;
+}
+
+void MarkerDataSource::SetSelectionState(size_t row, bool sel)
+{
+	if (sel)
+		selected = row;
+	else if (GetSelectionState(row))
+		selected = SIZE_MAX;
+}
+
 
 void MarkedItemEditor::Render(UIContainer* ctx)
 {

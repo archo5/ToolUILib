@@ -72,6 +72,68 @@ void Selection1D::SetSelected(uintptr_t id, bool sel)
 }
 
 
+bool SelectionImplementation::OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering)
+{
+	if (selectionMode == SelectionMode::None)
+		return false;
+
+	bool selChanged = false;
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && hoverRow < SIZE_MAX && hovering)
+	{
+		// TODO modifiers
+		//e.GetKeyActionModifier();
+		if (selectionMode != SelectionMode::MultipleToggle)
+			sel->ClearSelection();
+
+		sel->SetSelectionState(hoverRow, !sel->GetSelectionState(hoverRow));
+		_selStart = hoverRow;
+		_selEnd = hoverRow;
+		isClicked = true;
+		selChanged = true;
+		e.StopPropagation();
+	}
+	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	{
+		isClicked = false;
+	}
+	if (e.type == UIEventType::MouseMove)
+	{
+		if (isClicked && hoverRow < SIZE_MAX && hovering)
+		{
+			while (_selEnd != hoverRow)
+			{
+				if (selectionMode == SelectionMode::Single)
+					sel->ClearSelection();
+
+				bool increasing = selectionMode == SelectionMode::Single ||
+					(_selStart < _selEnd
+						? hoverRow < _selStart || hoverRow > _selEnd
+						: hoverRow < _selEnd || hoverRow > _selStart);
+
+				if (!increasing)
+					sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));
+
+				if (_selEnd < hoverRow)
+					_selEnd++;
+				else
+					_selEnd--;
+
+				if (increasing)
+					sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));
+
+				selChanged = true;
+			}
+		}
+	}
+	return selChanged;
+}
+
+void SelectionImplementation::OnSerialize(IDataSerializer& s)
+{
+	s << isClicked << _selStart << _selEnd;
+}
+
+
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
 	int size = int(context->GetFontSize());
@@ -214,6 +276,7 @@ struct TableViewImpl
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
 	size_t hoverRow = SIZE_MAX;
+	SelectionImplementation sel;
 };
 
 TableView::TableView()
@@ -346,7 +409,7 @@ void TableView::OnPaint()
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			info.checkState = selection.IsSelected(r);
+			info.checkState = _impl->dataSource->GetSelectionState(r);
 			if (_impl->hoverRow == r)
 				info.state |= style::PS_Hover;
 			else
@@ -409,9 +472,6 @@ void TableView::OnEvent(UIEvent& e)
 
 	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick);
 
-	if (e.IsPropagationStopped())
-		return;
-
 	if (e.type == UIEventType::MouseMove)
 	{
 		if (e.x < RC.x1 && e.y > RC.y0 + chh)
@@ -423,19 +483,10 @@ void TableView::OnEvent(UIEvent& e)
 	{
 		_impl->hoverRow = SIZE_MAX;
 	}
-	if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left)
+	if (_impl->sel.OnEvent(e, _impl->dataSource, _impl->hoverRow, e.x < RC.x1 && e.y > RC.y0 + chh))
 	{
-		if (e.x < RC.x1 && e.y > RC.y0 + chh)
-		{
-			selection.Clear();
-			size_t at = GetRowAt(e.y);
-			if (at < SIZE_MAX)
-				selection.SetSelected(at, true);
-			e.StopPropagation();
-
-			UIEvent selev(e.context, this, UIEventType::SelectionChange);
-			e.context->BubblingEvent(selev);
-		}
+		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		e.context->BubblingEvent(selev);
 	}
 }
 
@@ -448,7 +499,7 @@ void TableView::OnSerialize(IDataSerializer& s)
 	for (auto& v : _impl->colEnds)
 		s << v;
 	s << yOff;
-	selection.OnSerialize(s);
+	_impl->sel.OnSerialize(s);
 }
 
 void TableView::Render(UIContainer* ctx)
@@ -473,6 +524,11 @@ void TableView::SetDataSource(TableDataSource* src)
 		_impl->colEnds.pop_back();
 
 	Rerender();
+}
+
+void TableView::SetSelectionMode(SelectionMode mode)
+{
+	_impl->sel.selectionMode = mode;
 }
 
 void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)

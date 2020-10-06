@@ -61,15 +61,10 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 			auto* tv = ctx->Make<ui::TableView>();
 			*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 			tv->SetDataSource(&ddiSrc);
+			tv->SetSelectionMode(ui::SelectionMode::Single);
 			ddiSrc.refilter = true;
 			tv->CalculateColumnWidths();
-			tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e)
-			{
-				auto sel = tv->selection.GetFirstSelection();
-				if (tv->IsValidRow(sel))
-					ddiSrc.dataDesc->SetCurrentInstance(ddiSrc.dataDesc->instances[ddiSrc._indices[sel]]);
-				e.current->RerenderNode();
-			};
+			tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
 		}
 		ctx->Pop();
 	}
