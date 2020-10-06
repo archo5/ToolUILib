@@ -58,9 +58,9 @@ struct SequenceEditorsTest : ui::Node
 
 	void SeqEdit(UIContainer* ctx, ui::ISequence* seq)
 	{
-		ctx->Make<ui::SequenceEditor>()->SetSequence(seq).itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, ui::ISequenceIterator* it)
+		ctx->Make<ui::SequenceEditor>()->SetSequence(seq).itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
-			ui::imm::PropEditInt(ctx, "\bvalue", se->GetSequence()->GetValue<int>(it));
+			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(ptr));
 		};
 	}
 

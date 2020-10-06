@@ -8,22 +8,13 @@
 
 namespace ui {
 
-struct ISequenceIterator
-{
-	virtual ~ISequenceIterator() {}
-};
-
 struct ISequence
 {
 	virtual size_t GetSizeLimit() = 0;
 	virtual size_t GetCurrentSize() = 0;
-	virtual ISequenceIterator* GetIterator(size_t off = 0) = 0;
-	virtual bool AtEnd(ISequenceIterator*) = 0;
-	virtual void Advance(ISequenceIterator*) = 0;
-	virtual void* GetValuePtr(ISequenceIterator*) = 0;
-	virtual size_t GetOffset(ISequenceIterator*) = 0;
 
-	template <class T> T& GetValue(ISequenceIterator* it) { return *static_cast<T*>(GetValuePtr(it)); }
+	using IterationFunc = std::function<bool(size_t idx, void* ptr)>;
+	virtual void IterateElements(size_t from, IterationFunc&& fn) = 0;
 
 	virtual void Remove(size_t off) {}
 	// insert a copy from [off] at [off + 1]
@@ -35,16 +26,6 @@ struct ISequence
 template <class Cont>
 struct StdSequence : ISequence
 {
-	using std_iterator = typename Cont::iterator;
-
-	struct Iterator : ISequenceIterator
-	{
-		Iterator(std_iterator&& i, size_t o) : it(i), off(o) {}
-
-		std_iterator it;
-		size_t off;
-	};
-
 	size_t GetSizeLimit() override
 	{
 		return sizeLimit;
@@ -53,29 +34,14 @@ struct StdSequence : ISequence
 	{
 		return cont.size();
 	}
-	ISequenceIterator* GetIterator(size_t off = 0) override
+
+	void IterateElements(size_t from, IterationFunc&& fn) override
 	{
 		auto it = cont.begin();
-		std::advance(it, off);
-		return new Iterator(std::move(it), off);
-	}
-	bool AtEnd(ISequenceIterator* it) override
-	{
-		return static_cast<Iterator*>(it)->it == cont.end();
-	}
-	void Advance(ISequenceIterator* it) override
-	{
-		auto* iit = static_cast<Iterator*>(it);
-		++iit->it;
-		++iit->off;
-	}
-	void* GetValuePtr(ISequenceIterator* it) override
-	{
-		return &*static_cast<Iterator*>(it)->it;
-	}
-	size_t GetOffset(ISequenceIterator* it) override
-	{
-		return static_cast<Iterator*>(it)->off;
+		std::advance(it, from);
+		for (size_t idx = from; it != cont.end(); it++, idx++)
+			if (!fn(idx, &*it))
+				break;
 	}
 
 	void Remove(size_t off) override
@@ -124,13 +90,6 @@ struct StdSequence : ISequence
 template <class Type, class Size>
 struct BufferSequence : ISequence
 {
-	struct Iterator : ISequenceIterator
-	{
-		Iterator(size_t o) : off(o) {}
-
-		size_t off;
-	};
-
 	size_t GetSizeLimit() override
 	{
 		return limit;
@@ -139,25 +98,12 @@ struct BufferSequence : ISequence
 	{
 		return size;
 	}
-	ISequenceIterator* GetIterator(size_t off = 0) override
+
+	void IterateElements(size_t from, IterationFunc&& fn) override
 	{
-		return new Iterator(off);
-	}
-	bool AtEnd(ISequenceIterator* it) override
-	{
-		return static_cast<Iterator*>(it)->off == size;
-	}
-	void Advance(ISequenceIterator* it) override
-	{
-		static_cast<Iterator*>(it)->off++;
-	}
-	void* GetValuePtr(ISequenceIterator* it) override
-	{
-		return &data[static_cast<Iterator*>(it)->off];
-	}
-	size_t GetOffset(ISequenceIterator* it) override
-	{
-		return static_cast<Iterator*>(it)->off;
+		for (size_t i = from; i < size; i++)
+			if (!fn(i, &data[i]))
+				break;
 	}
 
 	void Remove(size_t off) override
@@ -238,13 +184,13 @@ struct SequenceEditor : Node
 	void Render(UIContainer* ctx) override;
 	void OnPaint() override;
 
-	virtual void OnBuildItem(UIContainer* ctx, ISequenceIterator* it);
-	virtual void OnBuildDeleteButton(UIContainer* ctx, ISequenceIterator* it);
+	virtual void OnBuildItem(UIContainer* ctx, size_t idx, void* ptr);
+	virtual void OnBuildDeleteButton(UIContainer* ctx, size_t idx);
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
 
-	std::function<void(UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)> itemUICallback;
+	std::function<void(UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 
 	bool showDeleteButton = true;
 

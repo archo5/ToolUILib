@@ -1569,9 +1569,9 @@ struct TE_TemplateEditorNode : Node
 						auto* ced = ctx->Make<SequenceEditor>();
 						*ced + Height(style::Coord::Percent(100));
 						ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
-						ced->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
+						ced->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 						{
-							auto& NC = se->GetSequence()->GetValue<std::shared_ptr<TE_NamedColor>>(it);
+							auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
 							imm::EditColor(ctx, NC->color);
 							imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
 						};
@@ -1615,13 +1615,13 @@ struct TE_ImageEditorNode : Node
 		*imged + Height(style::Coord::Percent(100));
 		imged->showDeleteButton = false;
 		imged->SetSequence(Allocate<StdSequence<decltype(theme->images)>>(theme->images));
-		imged->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
+		imged->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 		{
-			EditImage(ctx, se->GetSequence()->GetValue<std::shared_ptr<TE_Image>>(it).get(), se, it);
+			EditImage(ctx, static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
 		};
 	}
 
-	void EditImage(UIContainer* ctx, TE_Image* img, SequenceEditor* se, ISequenceIterator* it)
+	void EditImage(UIContainer* ctx, TE_Image* img, SequenceEditor* se, size_t idx, void* ptr)
 	{
 		ctx->PushBox();
 		{
@@ -1629,7 +1629,7 @@ struct TE_ImageEditorNode : Node
 			{
 				imm::EditBool(ctx, img->expanded, nullptr, { Width(style::Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
 				imm::EditString(ctx, img->name.c_str(), [&img](const char* v) { img->name = v; });
-				se->OnBuildDeleteButton(ctx, it);
+				se->OnBuildDeleteButton(ctx, idx);
 			}
 			ctx->Pop();
 
@@ -1643,9 +1643,9 @@ struct TE_ImageEditorNode : Node
 
 					auto* coed = ctx->Make<SequenceEditor>();
 					coed->SetSequence(Allocate<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
-					coed->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, ISequenceIterator* it)
+					coed->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 					{
-						auto& co = se->GetSequence()->GetValue<TE_ColorOverride>(it);
+						auto& co = *static_cast<TE_ColorOverride*>(ptr);
 						if (auto ncr = co.ncref.lock())
 							*ctx->MakeWithText<BoxElement>(ncr->name) + Padding(5);
 						else

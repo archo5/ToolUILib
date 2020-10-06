@@ -10,10 +10,12 @@ void SequenceDragData::Render(UIContainer* ctx)
 {
 	if (scope->itemUICallback)
 	{
-		auto* seq = scope->GetSequence();
-		std::unique_ptr<ISequenceIterator> it{ seq->GetIterator(at) };
 		ctx->PushBox() + Width(width);
-		scope->itemUICallback(ctx, scope, it.get());
+		scope->GetSequence()->IterateElements(at, [this, ctx](size_t idx, void* ptr)
+		{
+			scope->itemUICallback(ctx, scope, idx, ptr);
+			return false;
+		});
 		ctx->Pop();
 	}
 	else
@@ -113,19 +115,18 @@ void SequenceEditor::Render(UIContainer* ctx)
 {
 	ctx->Push<ListBox>();
 
-	for (std::unique_ptr<ISequenceIterator> it(_sequence->GetIterator()); !_sequence->AtEnd(it.get()); _sequence->Advance(it.get()))
+	_sequence->IterateElements(0, [this, ctx](size_t idx, void* ptr)
 	{
-		size_t num = _sequence->GetOffset(it.get());
+		ctx->Push<SequenceItemElement>()->Init(this, idx);
 
-		ctx->Push<SequenceItemElement>()->Init(this, num);
-
-		OnBuildItem(ctx, it.get());
+		OnBuildItem(ctx, idx, ptr);
 
 		if (showDeleteButton)
-			OnBuildDeleteButton(ctx, it.get());
+			OnBuildDeleteButton(ctx, idx);
 
 		ctx->Pop();
-	}
+		return true;
+	});
 
 	ctx->Pop();
 }
@@ -141,18 +142,17 @@ void SequenceEditor::OnPaint()
 	}
 }
 
-void SequenceEditor::OnBuildItem(UIContainer* ctx, ISequenceIterator* it)
+void SequenceEditor::OnBuildItem(UIContainer* ctx, size_t idx, void* ptr)
 {
 	if (itemUICallback)
-		itemUICallback(ctx, this, it);
+		itemUICallback(ctx, this, idx, ptr);
 }
 
-void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, ISequenceIterator* it)
+void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 {
-	size_t num = GetSequence()->GetOffset(it);
 	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, num](UIEvent&) { GetSequence()->Remove(num); Rerender(); });
+	delBtn + ui::EventHandler(UIEventType::Activate, [this, idx](UIEvent&) { GetSequence()->Remove(idx); Rerender(); });
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)

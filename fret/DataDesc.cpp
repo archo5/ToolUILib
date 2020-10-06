@@ -184,9 +184,9 @@ void DataDesc::EditInstance(UIContainer* ctx)
 		auto* argSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
 		auto* argEditor = ctx->Make<ui::SequenceEditor>();
 		argEditor->SetSequence(argSeq);
-		argEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
+		argEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 		{
-			auto& A = ed->GetSequence()->GetValue<DDArg>(it);
+			auto& A = *static_cast<DDArg*>(ptr);
 
 			ui::imm::PropEditString(ctx, "\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
 			ui::imm::PropEditInt(ctx, "\bValue", A.intVal);
@@ -424,9 +424,9 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			auto* paramSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
 			auto* paramEditor = ctx->Make<ui::SequenceEditor>();
 			paramEditor->SetSequence(paramSeq);
-			paramEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
+			paramEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
-				auto& P = ed->GetSequence()->GetValue<DDParam>(it);
+				auto& P = *static_cast<DDParam*>(ptr);
 
 				ui::imm::PropEditString(ctx, "\bName", P.name.c_str(), [&P](const char* v) { P.name = v; });
 				ui::imm::PropEditInt(ctx, "\bValue", P.intVal);
@@ -446,9 +446,9 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			auto* fieldEditor = ctx->Make<ui::SequenceEditor>();
 			fieldEditor->SetSequence(fieldSeq);
 			auto* N = ctx->GetCurrentNode(); // TODO remove workaround
-			fieldEditor->itemUICallback = [this, &S, N](UIContainer* ctx, ui::SequenceEditor* ed, ui::ISequenceIterator* it)
+			fieldEditor->itemUICallback = [this, &S, N](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
-				auto& F = ed->GetSequence()->GetValue<DDField>(it);
+				auto& F = *static_cast<DDField*>(ptr);
 
 				char info[128];
 				int cc = snprintf(info, 128, "%s: %s[%s%s%s%" PRId64 "]",
@@ -465,7 +465,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				if (ui::imm::Button(ctx, "Edit", { ui::Width(50) }))
 				{
 					editMode = 2;
-					curField = ed->GetSequence()->GetOffset(it);
+					curField = idx;
 					N->Rerender();
 				}
 			};
