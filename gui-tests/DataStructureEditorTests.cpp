@@ -29,26 +29,34 @@ struct SequenceEditorsTest : ui::Node
 
 		ctx->Pop();
 
+		{
+			ui::Property::Scope ps(ctx, "\bSelection type:");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::None, "None");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Single, "Single");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
+		}
+
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::vector<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata, &vectorsel));
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::list<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata, &listsel));
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::deque<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata, &dequesel));
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("int[5]:");
-		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen));
+		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen, &bufsel));
 		ctx->Pop();
 
 		ctx->Pop();
@@ -58,7 +66,10 @@ struct SequenceEditorsTest : ui::Node
 
 	void SeqEdit(UIContainer* ctx, ui::ISequence* seq)
 	{
-		ctx->Make<ui::SequenceEditor>()->SetSequence(seq).itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+		ctx->Make<ui::SequenceEditor>()
+			->SetSequence(seq)
+			.SetSelectionMode(selectionType)
+			.itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(ptr));
 		};
@@ -83,6 +94,13 @@ struct SequenceEditorsTest : ui::Node
 	std::deque<int> dequedata{ 1, 2, 3, 4 };
 	int bufdata[5] = { 1, 2, 3, 4, 9999 };
 	uint8_t buflen = 4;
+
+	ui::BasicSelection vectorsel;
+	ui::BasicSelection listsel;
+	ui::BasicSelection dequesel;
+	ui::BasicSelection bufsel;
+
+	ui::SelectionMode selectionType = ui::SelectionMode::Single;
 };
 void Test_SequenceEditors(UIContainer* ctx)
 {

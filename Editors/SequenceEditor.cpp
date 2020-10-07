@@ -84,6 +84,13 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 		if (auto* p = FindParentOfType<SequenceEditor>())
 			p->_dragTargetPos = SIZE_MAX;
 	}
+
+	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSequence(), num, true, true))
+	{
+		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		e.context->BubblingEvent(selev);
+		RerenderNode();
+	}
 }
 
 void SequenceItemElement::ContextMenu()
@@ -106,7 +113,7 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 		if (dd->at == n && dd->scope == se)
 			dragging = true;
 
-	Selectable::Init(dragging);
+	Selectable::Init(se->GetSequence()->GetSelectionState(n) || dragging);
 	SetFlag(UIObject_NoPaint, dragging);
 }
 
@@ -142,6 +149,11 @@ void SequenceEditor::OnPaint()
 	}
 }
 
+void SequenceEditor::OnSerialize(IDataSerializer& s)
+{
+	_selImpl.OnSerialize(s);
+}
+
 void SequenceEditor::OnBuildItem(UIContainer* ctx, size_t idx, void* ptr)
 {
 	if (itemUICallback)
@@ -158,6 +170,12 @@ void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
 {
 	_sequence = s;
+	return *this;
+}
+
+SequenceEditor& SequenceEditor::SetSelectionMode(SelectionMode mode)
+{
+	_selImpl.selectionMode = mode;
 	return *this;
 }
 

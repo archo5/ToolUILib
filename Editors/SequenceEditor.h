@@ -8,7 +8,7 @@
 
 namespace ui {
 
-struct ISequence
+struct ISequence : ISelection
 {
 	virtual size_t GetSizeLimit() = 0;
 	virtual size_t GetCurrentSize() = 0;
@@ -26,6 +26,10 @@ struct ISequence
 template <class Cont>
 struct StdSequence : ISequence
 {
+	void ClearSelection() override { if (selection) selection->ClearSelection(); }
+	bool GetSelectionState(size_t row) override { return selection ? selection->GetSelectionState(row) : false; }
+	void SetSelectionState(size_t row, bool sel) override { if (selection) selection->SetSelectionState(row, sel); }
+
 	size_t GetSizeLimit() override
 	{
 		return sizeLimit;
@@ -80,16 +84,21 @@ struct StdSequence : ISequence
 		}
 	}
 
-	StdSequence(Cont& c) : cont(c) {}
+	StdSequence(Cont& c, ISelection* s = nullptr) : cont(c), selection(s) {}
 
 	Cont& cont;
 	size_t sizeLimit = SIZE_MAX;
+	ISelection* selection;
 };
 
 
 template <class Type, class Size>
 struct BufferSequence : ISequence
 {
+	void ClearSelection() override { if (selection) selection->ClearSelection(); }
+	bool GetSelectionState(size_t row) override { return selection ? selection->GetSelectionState(row) : false; }
+	void SetSelectionState(size_t row, bool sel) override { if (selection) selection->SetSelectionState(row, sel); }
+
 	size_t GetSizeLimit() override
 	{
 		return limit;
@@ -137,13 +146,14 @@ struct BufferSequence : ISequence
 		}
 	}
 
-	BufferSequence(Type* d, Size& sz, size_t lim) : data(d), size(sz), limit(lim) {}
+	BufferSequence(Type* d, Size& sz, size_t lim, ISelection* s = nullptr) : data(d), size(sz), limit(lim), selection(s) {}
 	template <size_t N>
-	BufferSequence(Type(&d)[N], Size& sz) : data(d), size(sz), limit(N) {}
+	BufferSequence(Type(&d)[N], Size& sz, ISelection* s = nullptr) : data(d), size(sz), limit(N), selection(s) {}
 
 	Type* data;
 	Size& size;
 	size_t limit;
+	ISelection* selection;
 };
 
 
@@ -183,12 +193,14 @@ struct SequenceEditor : Node
 
 	void Render(UIContainer* ctx) override;
 	void OnPaint() override;
+	void OnSerialize(IDataSerializer& s) override;
 
 	virtual void OnBuildItem(UIContainer* ctx, size_t idx, void* ptr);
 	virtual void OnBuildDeleteButton(UIContainer* ctx, size_t idx);
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
+	SequenceEditor& SetSelectionMode(SelectionMode mode);
 
 	std::function<void(UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 
@@ -198,6 +210,7 @@ struct SequenceEditor : Node
 
 	size_t _dragTargetPos = SIZE_MAX;
 	UIRect _dragTargetLine = {};
+	SelectionImplementation _selImpl;
 };
 
 } // ui

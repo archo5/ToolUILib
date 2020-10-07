@@ -72,68 +72,6 @@ void Selection1D::SetSelected(uintptr_t id, bool sel)
 }
 
 
-bool SelectionImplementation::OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering)
-{
-	if (selectionMode == SelectionMode::None)
-		return false;
-
-	bool selChanged = false;
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && hoverRow < SIZE_MAX && hovering)
-	{
-		// TODO modifiers
-		//e.GetKeyActionModifier();
-		if (selectionMode != SelectionMode::MultipleToggle)
-			sel->ClearSelection();
-
-		sel->SetSelectionState(hoverRow, !sel->GetSelectionState(hoverRow));
-		_selStart = hoverRow;
-		_selEnd = hoverRow;
-		isClicked = true;
-		selChanged = true;
-		e.StopPropagation();
-	}
-	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
-	{
-		isClicked = false;
-	}
-	if (e.type == UIEventType::MouseMove)
-	{
-		if (isClicked && hoverRow < SIZE_MAX && hovering)
-		{
-			while (_selEnd != hoverRow)
-			{
-				if (selectionMode == SelectionMode::Single)
-					sel->ClearSelection();
-
-				bool increasing = selectionMode == SelectionMode::Single ||
-					(_selStart < _selEnd
-						? hoverRow < _selStart || hoverRow > _selEnd
-						: hoverRow < _selEnd || hoverRow > _selStart);
-
-				if (!increasing)
-					sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));
-
-				if (_selEnd < hoverRow)
-					_selEnd++;
-				else
-					_selEnd--;
-
-				if (increasing)
-					sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));
-
-				selChanged = true;
-			}
-		}
-	}
-	return selChanged;
-}
-
-void SelectionImplementation::OnSerialize(IDataSerializer& s)
-{
-	s << isClicked << _selStart << _selEnd;
-}
-
-
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
 	int size = int(context->GetFontSize());

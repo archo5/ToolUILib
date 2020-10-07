@@ -20,32 +20,6 @@ struct Selection1D
 	struct Selection1DImpl* _impl;
 };
 
-enum class SelectionMode : uint8_t
-{
-	None,
-	Single,
-	Multiple,
-	MultipleToggle,
-};
-
-struct ISelection
-{
-	virtual void ClearSelection() {}
-	virtual bool GetSelectionState(size_t row) { return false; }
-	virtual void SetSelectionState(size_t row, bool sel) {}
-};
-
-struct SelectionImplementation
-{
-	bool OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering);
-	void OnSerialize(IDataSerializer& s);
-
-	SelectionMode selectionMode = SelectionMode::None;
-	bool isClicked = false;
-	size_t _selStart = 0;
-	size_t _selEnd = 0;
-};
-
 
 struct MessageLogDataSource
 {
