@@ -85,7 +85,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 			p->_dragTargetPos = SIZE_MAX;
 	}
 
-	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSequence(), num, true, true))
+	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSelectionStorage(), num, true, true))
 	{
 		UIEvent selev(e.context, this, UIEventType::SelectionChange);
 		e.context->BubblingEvent(selev);
@@ -113,7 +113,11 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 		if (dd->at == n && dd->scope == se)
 			dragging = true;
 
-	Selectable::Init(se->GetSequence()->GetSelectionState(n) || dragging);
+	bool isSel = false;
+	if (auto* sel = se->GetSelectionStorage())
+		isSel = sel->GetSelectionState(n);
+
+	Selectable::Init(isSel || dragging);
 	SetFlag(UIObject_NoPaint, dragging);
 }
 
@@ -170,6 +174,12 @@ void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
 {
 	_sequence = s;
+	return *this;
+}
+
+SequenceEditor& SequenceEditor::SetSelectionStorage(ISelectionStorage* s)
+{
+	_selStorage = s;
 	return *this;
 }
 

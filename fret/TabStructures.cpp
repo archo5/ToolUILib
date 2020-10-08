@@ -32,6 +32,7 @@ void TabStructures::Render(UIContainer* ctx)
 		curTable = tv;
 		*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 		tv->SetDataSource(&workspace->ddiSrc);
+		tv->SetSelectionStorage(&workspace->ddiSrc);
 		tv->SetSelectionMode(ui::SelectionMode::Single);
 		workspace->ddiSrc.refilter = true;
 		tv->CalculateColumnWidths();

@@ -16,6 +16,7 @@ void TabImages::Render(UIContainer* ctx)
 		auto* tv = ctx->Make<ui::TableView>();
 		*tv + ui::Layout(style::layouts::EdgeSlice());
 		tv->SetDataSource(&workspace->ddimgSrc);
+		tv->SetSelectionStorage(&workspace->ddimgSrc);
 		tv->SetSelectionMode(ui::SelectionMode::Single);
 		workspace->ddimgSrc.refilter = true;
 		tv->CalculateColumnWidths();

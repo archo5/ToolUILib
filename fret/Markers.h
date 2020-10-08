@@ -53,7 +53,7 @@ struct MarkerData
 	std::vector<Marker> markers;
 };
 
-struct MarkerDataSource : ui::TableDataSource
+struct MarkerDataSource : ui::TableDataSource, ui::ISelectionStorage
 {
 	size_t GetNumRows() override { return data->markers.size(); }
 	size_t GetNumCols() override;

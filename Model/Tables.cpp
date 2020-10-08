@@ -211,6 +211,7 @@ void MessageLogView::ScrollToEnd()
 struct TableViewImpl
 {
 	TableDataSource* dataSource = nullptr;
+	ISelectionStorage* selStorage = nullptr;
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
 	size_t hoverRow = SIZE_MAX;
@@ -347,7 +348,7 @@ void TableView::OnPaint()
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			info.checkState = _impl->dataSource->GetSelectionState(r);
+			info.checkState = _impl->selStorage->GetSelectionState(r);
 			if (_impl->hoverRow == r)
 				info.state |= style::PS_Hover;
 			else
@@ -421,7 +422,7 @@ void TableView::OnEvent(UIEvent& e)
 	{
 		_impl->hoverRow = SIZE_MAX;
 	}
-	if (_impl->sel.OnEvent(e, _impl->dataSource, _impl->hoverRow, e.x < RC.x1 && e.y > RC.y0 + chh))
+	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverRow, e.x < RC.x1 && e.y > RC.y0 + chh))
 	{
 		UIEvent selev(e.context, this, UIEventType::SelectionChange);
 		e.context->BubblingEvent(selev);
@@ -462,6 +463,16 @@ void TableView::SetDataSource(TableDataSource* src)
 		_impl->colEnds.pop_back();
 
 	Rerender();
+}
+
+ISelectionStorage* TableView::GetSelectionStorage() const
+{
+	return _impl->selStorage;
+}
+
+void TableView::SetSelectionStorage(ISelectionStorage* src)
+{
+	_impl->selStorage = src;
 }
 
 void TableView::SetSelectionMode(SelectionMode mode)

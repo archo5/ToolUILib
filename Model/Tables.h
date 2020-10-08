@@ -54,7 +54,7 @@ struct MessageLogView : Node
 };
 
 
-struct TableDataSource : ISelection
+struct TableDataSource
 {
 	virtual size_t GetNumRows() = 0;
 	virtual size_t GetNumCols() = 0;
@@ -77,6 +77,8 @@ struct TableView : Node
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
+	ISelectionStorage* GetSelectionStorage() const;
+	void SetSelectionStorage(ISelectionStorage* src);
 	void SetSelectionMode(SelectionMode mode);
 	void CalculateColumnWidths(bool includeHeader = true, bool firstTimeOnly = true);
 

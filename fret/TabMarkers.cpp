@@ -17,6 +17,7 @@ void TabMarkers::Render(UIContainer* ctx)
 		curTable = tv;
 		*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 		tv->SetDataSource(&f->mdSrc);
+		tv->SetSelectionStorage(&f->mdSrc);
 		tv->SetSelectionMode(ui::SelectionMode::Single);
 		tv->CalculateColumnWidths();
 		tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)

@@ -431,14 +431,14 @@ enum class SelectionMode : uint8_t
 	MultipleToggle,
 };
 
-struct ISelection
+struct ISelectionStorage
 {
 	virtual void ClearSelection() {}
 	virtual bool GetSelectionState(size_t row) { return false; }
 	virtual void SetSelectionState(size_t row, bool sel) {}
 };
 
-struct BasicSelection : ISelection
+struct BasicSelection : ISelectionStorage
 {
 	BasicSelection();
 	~BasicSelection();
@@ -452,7 +452,7 @@ struct BasicSelection : ISelection
 
 struct SelectionImplementation
 {
-	bool OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering, bool onclick = false);
+	bool OnEvent(UIEvent& e, ISelectionStorage* sel, size_t hoverRow, bool hovering, bool onclick = false);
 	void OnSerialize(IDataSerializer& s);
 
 	SelectionMode selectionMode = SelectionMode::None;

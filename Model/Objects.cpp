@@ -1111,9 +1111,9 @@ void BasicSelection::SetSelectionState(size_t row, bool sel)
 }
 
 
-bool SelectionImplementation::OnEvent(UIEvent& e, ISelection* sel, size_t hoverRow, bool hovering, bool onclick)
+bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, size_t hoverRow, bool hovering, bool onclick)
 {
-	if (selectionMode == SelectionMode::None)
+	if (selectionMode == SelectionMode::None || !sel)
 		return false;
 
 	if (DragDrop::GetData())

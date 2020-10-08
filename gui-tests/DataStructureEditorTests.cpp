@@ -41,22 +41,22 @@ struct SequenceEditorsTest : ui::Node
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::vector<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata, &vectorsel));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::list<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata, &listsel));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("std::deque<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata, &dequesel));
+		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
 		ctx->Text("int[5]:");
-		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen, &bufsel));
+		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
 		ctx->Pop();
 
 		ctx->Pop();
@@ -64,10 +64,11 @@ struct SequenceEditorsTest : ui::Node
 		ctx->Make<ui::DefaultOverlayRenderer>();
 	}
 
-	void SeqEdit(UIContainer* ctx, ui::ISequence* seq)
+	void SeqEdit(UIContainer* ctx, ui::ISequence* seq, ui::ISelectionStorage* sel)
 	{
 		ctx->Make<ui::SequenceEditor>()
 			->SetSequence(seq)
+			.SetSelectionStorage(sel)
 			.SetSelectionMode(selectionType)
 			.itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
@@ -300,7 +301,7 @@ void Test_TreeEditors(UIContainer* ctx)
 }
 
 
-struct RandomNumberDataSource : ui::TableDataSource
+struct RandomNumberDataSource : ui::TableDataSource, ui::ISelectionStorage
 {
 	size_t GetNumRows() override { return 1000000; }
 	size_t GetNumCols() override { return 5; }
@@ -344,6 +345,7 @@ struct TableViewTest : ui::Node
 		auto* tv = ctx->Make<ui::TableView>();
 		*tv + ui::Height(style::Coord::Percent(100));
 		tv->SetSelectionMode(selectionType);
+		tv->SetSelectionStorage(&g_randomNumbers);
 		tv->SetDataSource(&g_randomNumbers);
 	}
 

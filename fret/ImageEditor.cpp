@@ -61,6 +61,7 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 			auto* tv = ctx->Make<ui::TableView>();
 			*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 			tv->SetDataSource(&ddiSrc);
+			tv->SetSelectionStorage(&ddiSrc);
 			tv->SetSelectionMode(ui::SelectionMode::Single);
 			ddiSrc.refilter = true;
 			tv->CalculateColumnWidths();

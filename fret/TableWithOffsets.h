@@ -44,7 +44,7 @@ struct TableWithOffsets
 
 		for (auto row = rmin; row < rmax; row++)
 		{
-			if (ds->GetSelectionState(row))
+			if (curTable->GetSelectionStorage()->GetSelectionState(row))
 				TryAddRow(row, col, ret, max, buf);
 		}
 
@@ -64,7 +64,7 @@ struct TableWithOffsets
 		auto cr = curTable->GetCellRect(SIZE_MAX, row);
 		float y = (cr.y0 + cr.y1) * 0.5f;
 		if (tcr.Contains(cr.x0, y))
-			buf[ret++] = { off, { cr.x0, y }, ds->GetSelectionState(row) };
+			buf[ret++] = { off, { cr.x0, y }, curTable->GetSelectionStorage()->GetSelectionState(row) };
 	}
 
 	ui::TableView* curTable = nullptr;

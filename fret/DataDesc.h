@@ -91,7 +91,7 @@ struct DataDesc
 	void Save(const char* key, NamedTextSerializeWriter& w);
 };
 
-struct DataDescInstanceSource : ui::TableDataSource
+struct DataDescInstanceSource : ui::TableDataSource, ui::ISelectionStorage
 {
 	size_t GetNumRows() override;
 	size_t GetNumCols() override;
@@ -128,7 +128,7 @@ struct DataDescInstanceSource : ui::TableDataSource
 	CreationReason filterCreationReason = CreationReason::Query;
 };
 
-struct DataDescImageSource : ui::TableDataSource
+struct DataDescImageSource : ui::TableDataSource, ui::ISelectionStorage
 {
 	size_t GetNumRows() override;
 	size_t GetNumCols() override;
