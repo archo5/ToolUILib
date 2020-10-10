@@ -10,6 +10,7 @@ enum UserEvents
 };
 
 static DataCategoryTag DCT_NodePreviewInvalidated[1];
+static DataCategoryTag DCT_ChangeActiveImage[1];
 
 
 static void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
@@ -82,15 +83,6 @@ struct SubPos
 	Point<float> offset = {};
 };
 
-struct TE_RenderContext
-{
-	unsigned width;
-	unsigned height;
-	AbsRect frame;
-	bool gamma;
-};
-static TE_RenderContext g_curImageCtx = { 8, 8, { 0, 0, 8.f, 8.f }, false };
-
 struct TE_NamedColor
 {
 	std::string name;
@@ -116,6 +108,18 @@ struct TE_NamedColor
 	}
 };
 
+struct TE_ColorOverride
+{
+	std::weak_ptr<TE_NamedColor> ncref;
+	Color4b color;
+};
+
+struct TE_Overrides
+{
+	std::vector<TE_ColorOverride> colorOverrides;
+};
+static TE_Overrides g_emptyOverrides[1];
+
 static std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 static void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
 {
@@ -138,13 +142,33 @@ struct TE_ColorRef
 	bool useRef = true;
 	std::weak_ptr<TE_NamedColor> ncref;
 	Color4b color;
+	Color4b resolvedColor;
 
-	Color4b Get()
+	void Resolve(const TE_Overrides* ovr)
 	{
 		if (useRef)
+		{
 			if (auto ptr = ncref.lock())
-				return ptr->color;
-		return color;
+			{
+				if (ovr)
+				{
+					for (auto& oc : ovr->colorOverrides)
+					{
+						if (auto ptr2 = oc.ncref.lock())
+						{
+							if (ptr == ptr2)
+							{
+								resolvedColor = oc.color;
+								return;
+							}
+						}
+					}
+				}
+				resolvedColor = ptr->color;
+				return;
+			}
+		}
+		resolvedColor = color;
 	}
 	void Set(std::weak_ptr<TE_NamedColor> ncr)
 	{
@@ -264,6 +288,20 @@ AbsRect ResolveRect(const SubRect& rect, const AbsRect& frame)
 }
 
 
+struct TE_RenderContext
+{
+	unsigned width;
+	unsigned height;
+	AbsRect frame;
+	bool gamma;
+};
+
+struct TE_IRenderContextProvider
+{
+	virtual const TE_RenderContext& GetRenderContext() = 0;
+};
+
+
 enum TE_NodeType
 {
 	TENT_Unknown = 0,
@@ -297,7 +335,7 @@ struct TE_Node
 			Subscribe(DCT_EditProcGraphNode);
 
 			*ctx->Make<ImageElement>()
-				->SetImage(node->GetImage())
+				->SetImage(node->GetImage(rcp))
 				->SetScaleMode(ScaleMode::Fit)
 				->SetAlphaBackgroundEnabled(true)
 				//+ Width(style::Coord::Percent(100)) -- TODO fix
@@ -305,6 +343,7 @@ struct TE_Node
 				;
 		}
 		TE_Node* node;
+		TE_IRenderContextProvider* rcp;
 	};
 
 	virtual ~TE_Node()
@@ -324,11 +363,14 @@ struct TE_Node
 	virtual void PropertyUI(UIContainer* ctx) = 0;
 	virtual void Load(NamedTextSerializeReader& nts) = 0;
 	virtual void Save(NamedTextSerializeWriter& nts) = 0;
-	virtual void Render(Canvas& canvas) = 0;
+	virtual void Render(Canvas& canvas, const TE_RenderContext& rc) = 0;
+	virtual void ResolveParameters(const TE_Overrides* ovr) = 0;
 
-	void PreviewUI(UIContainer* ctx)
+	void PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp)
 	{
-		ctx->Make<Preview>()->node = this;
+		auto* preview = ctx->Make<Preview>();
+		preview->node = this;
+		preview->rcp = rcp;
 	}
 
 	void _LoadBase(NamedTextSerializeReader& nts)
@@ -346,12 +388,12 @@ struct TE_Node
 		nts.WriteBool("__isPreviewEnabled", isPreviewEnabled);
 	}
 
-	Image* GetImage()
+	Image* GetImage(TE_IRenderContextProvider* rcp)
 	{
 		if (!_image)
 		{
 			Canvas canvas;
-			Render(canvas);
+			Render(canvas, rcp->GetRenderContext());
 #if 0
 			// show when the image is regenerated
 			*canvas.GetPixels() = Color4f(Color4b(rand() % 256, 255)).GetColor32();
@@ -403,9 +445,8 @@ struct TE_MaskNode : TE_Node
 {
 	TE_NodeType GetType() override { return TENT_Mask; }
 
-	void Render(Canvas& canvas) override
+	void Render(Canvas& canvas, const TE_RenderContext& rc) override
 	{
-		TE_RenderContext rc = g_curImageCtx;
 		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
 		for (unsigned y = 0; y < rc.height; y++)
@@ -416,6 +457,7 @@ struct TE_MaskNode : TE_Node
 			}
 		}
 	}
+	void ResolveParameters(const TE_Overrides* ovr) override {}
 
 	virtual float Eval(float x, float y, const TE_RenderContext& rc) = 0;
 };
@@ -613,9 +655,8 @@ struct TE_CombineMask : TE_MaskNode
 
 struct TE_LayerNode : TE_Node
 {
-	void Render(Canvas& canvas)
+	void Render(Canvas& canvas, const TE_RenderContext& rc)
 	{
-		TE_RenderContext rc = g_curImageCtx;
 		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
 		for (unsigned y = 0; y < rc.height; y++)
@@ -661,11 +702,15 @@ struct TE_SolidColorLayer : TE_LayerNode
 		color.Save("color", nts);
 		mask.Save("mask", nts);
 	}
+	void ResolveParameters(const TE_Overrides* ovr) override
+	{
+		color.Resolve(ovr);
+	}
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
 		float a = mask.Eval(x, y, rc);
-		Color4f cc = color.Get();
+		Color4f cc = color.resolvedColor;
 		if (rc.gamma)
 			cc = cc.Power(2.2f);
 		cc.a *= a;
@@ -741,6 +786,7 @@ struct TE_BlendLayer : TE_LayerNode
 			lbr.Save("", nts);
 		nts.EndArray();
 	}
+	void ResolveParameters(const TE_Overrides* ovr) override {}
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
@@ -821,9 +867,8 @@ struct TE_ImageNode : TE_Node
 			gamma,
 		};
 	}
-	void Render(Canvas& canvas) override
+	void Render(Canvas& canvas, const TE_RenderContext& rc) override
 	{
-		TE_RenderContext rc = MakeRenderContext();
 		canvas.SetSize(rc.width, rc.height);
 		auto* pixels = canvas.GetPixels();
 		for (int y = 0; y < rc.height; y++)
@@ -839,6 +884,7 @@ struct TE_ImageNode : TE_Node
 			}
 		}
 	}
+	void ResolveParameters(const TE_Overrides* ovr) override {}
 
 	unsigned w = 64, h = 64;
 	unsigned l = 0, t = 0, r = 0, b = 0;
@@ -846,7 +892,12 @@ struct TE_ImageNode : TE_Node
 	TE_LayerNode* layer = nullptr;
 };
 
-struct TE_Template : ui::IProcGraph
+struct TE_IOverrideProvider
+{
+	virtual const TE_Overrides* GetOverrides() = 0;
+};
+
+struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 {
 	~TE_Template()
 	{
@@ -1094,14 +1145,13 @@ struct TE_Template : ui::IProcGraph
 	bool HasPreview(Node*) override { return true; }
 	bool IsPreviewEnabled(Node* node) override { return static_cast<TE_Node*>(node)->isPreviewEnabled; }
 	void SetPreviewEnabled(Node* node, bool v) override { static_cast<TE_Node*>(node)->isPreviewEnabled = v; }
-	void PreviewUI(Node* node, UIContainer* ctx) override { static_cast<TE_Node*>(node)->PreviewUI(ctx); }
+	void PreviewUI(Node* node, UIContainer* ctx) override { static_cast<TE_Node*>(node)->PreviewUI(ctx, this); }
 
 	void OnEditNode(UIEvent& e, Node* node) override
 	{
 		auto* N = static_cast<TE_Node*>(node);
 		if (curNode == N)
 		{
-			g_curImageCtx = static_cast<TE_ImageNode*>(N)->MakeRenderContext();
 			InvalidateAllNodes();
 			return;
 		}
@@ -1131,9 +1181,14 @@ struct TE_Template : ui::IProcGraph
 		for (auto* n : nodes)
 			InvalidateNode(n);
 	}
+	void ResolveAllParameters(const TE_Overrides* ovr)
+	{
+		for (auto* n : nodes)
+			if (n->IsDirty())
+				n->ResolveParameters(ovr);
+	}
 	void SetCurrentImageNode(TE_ImageNode* img)
 	{
-		g_curImageCtx = img->MakeRenderContext();
 		curNode = img;
 		InvalidateAllNodes();
 	}
@@ -1213,6 +1268,14 @@ struct TE_Template : ui::IProcGraph
 		topoSortedNodes = std::move(tsu.topoSortedNodes);
 	}
 
+	const TE_RenderContext& GetRenderContext() override
+	{
+		static TE_RenderContext rc;
+		rc = static_cast<TE_ImageNode*>(curNode)->MakeRenderContext();
+		ResolveAllParameters(ovrProv->GetOverrides());
+		return rc;
+	}
+
 	std::vector<TE_Node*> nodes;
 	std::vector<std::shared_ptr<TE_NamedColor>> colors;
 	uint32_t nodeIDAlloc = 0;
@@ -1221,22 +1284,12 @@ struct TE_Template : ui::IProcGraph
 
 	// edit-only
 	std::vector<TE_Node*> topoSortedNodes;
+	TE_IOverrideProvider* ovrProv = nullptr;
 };
 
 struct TE_Variation
 {
 	std::string name;
-};
-
-struct TE_ColorOverride
-{
-	std::weak_ptr<TE_NamedColor> ncref;
-	Color4b color;
-};
-
-struct TE_Overrides
-{
-	std::vector<TE_ColorOverride> colorOverrides;
 };
 
 struct TE_Image
@@ -1246,7 +1299,7 @@ struct TE_Image
 	HashMap<TE_Variation*, std::shared_ptr<TE_Overrides>> overrides;
 };
 
-struct TE_Theme
+struct TE_Theme : TE_IOverrideProvider
 {
 	TE_Theme()
 	{
@@ -1274,6 +1327,7 @@ struct TE_Theme
 		{
 			nts.BeginEntry(ch);
 			auto* tmpl = new TE_Template;
+			tmpl->ovrProv = this;
 			tmpl->Load(nts);
 			templates.push_back(tmpl);
 			nts.EndEntry();
@@ -1347,12 +1401,13 @@ struct TE_Theme
 		Clear();
 
 		TE_Template* tmpl = new TE_Template;
+		tmpl->ovrProv = this;
 		tmpl->name = "Button";
 
-		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x1a, 0xff)));
-		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("ltedge", Color4b(0x4d, 0xff)));
-		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdtop", Color4b(0x34, 0xff)));
-		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdbtm", Color4b(0x27, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x00, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("ltedge", Color4b(0xcd, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdtop", Color4b(0x94, 0xff)));
+		tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdbtm", Color4b(0x47, 0xff)));
 #if 0
 		auto* mr = tmpl->CreateNode<TE_RectMask>(100, 100);
 		mr->rect = { { 0, 0, 1, 1 }, { 1, 1, -1, -1 } };
@@ -1406,8 +1461,24 @@ struct TE_Theme
 		image->overrides[variation.get()] = overrides;
 		images.push_back(image);
 
+		SetCurPreviewImage(image.get());
+
 		//SaveToFile("sample.ths");
 		//LoadFromFile("sample.ths");
+	}
+
+	const TE_Overrides* GetOverrides()
+	{
+		if (!curPreviewImage)
+			return nullptr;
+		return curPreviewImage->overrides[curVariation].get();
+	}
+
+	void SetCurPreviewImage(TE_Image* cpi)
+	{
+		curTemplate->InvalidateAllNodes();
+		curPreviewImage = cpi;
+		Notify(DCT_ChangeActiveImage);
 	}
 
 	std::vector<TE_Template*> templates;
@@ -1415,6 +1486,7 @@ struct TE_Theme
 	std::vector<std::shared_ptr<TE_Image>> images;
 	TE_Template* curTemplate = nullptr;
 	TE_Variation* curVariation = nullptr;
+	TE_Image* curPreviewImage = nullptr;
 };
 
 enum TE_PreviewMode
@@ -1479,7 +1551,15 @@ struct TE_MainPreviewNode : Node
 		Subscribe(DCT_EditProcGraph);
 		Subscribe(DCT_EditProcGraphNode);
 
-		ctx->Text("Preview") + Padding(5);
+		ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+		{
+			ctx->Text("Preview") + Padding(5);
+			if (theme->curPreviewImage && imm::Button(ctx, "Reset to template"))
+			{
+				theme->SetCurPreviewImage(nullptr);
+			}
+		}
+		ctx->Pop();
 
 		if (tmpl->curNode)
 		{
@@ -1514,7 +1594,12 @@ struct TE_MainPreviewNode : Node
 
 				auto* imgNode = static_cast<TE_ImageNode*>(tmpl->curNode);
 				Canvas canvas;
-				imgNode->Render(canvas);
+#if 0
+				auto rc = imgNode->MakeRenderContext();
+				if (auto* prevImg = theme->curPreviewImage)
+					rc.overrides = prevImg->overrides[theme->curVariation].get();
+#endif
+				imgNode->Render(canvas, tmpl->GetRenderContext());
 				auto* img = Allocate<Image>(canvas);
 				if (g_previewMode == TEPM_Original)
 				{
@@ -1540,6 +1625,7 @@ struct TE_MainPreviewNode : Node
 		}
 	}
 
+	TE_Theme* theme;
 	TE_Template* tmpl;
 };
 
@@ -1561,7 +1647,9 @@ struct TE_TemplateEditorNode : Node
 			{
 				auto* vsp = ctx->Push<SplitPane>();
 				{
-					ctx->Make<TE_MainPreviewNode>()->tmpl = tmpl;
+					auto* preview = ctx->Make<TE_MainPreviewNode>();
+					preview->theme = theme;
+					preview->tmpl = tmpl;
 
 					ctx->PushBox();
 					{
@@ -1569,11 +1657,14 @@ struct TE_TemplateEditorNode : Node
 						auto* ced = ctx->Make<SequenceEditor>();
 						*ced + Height(style::Coord::Percent(100));
 						ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
-						ced->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+						ced->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 						{
 							auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
-							imm::EditColor(ctx, NC->color);
-							imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+							bool edited = false;
+							edited |= imm::EditColor(ctx, NC->color);
+							edited |= imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+							if (edited)
+								tmpl->InvalidateAllNodes();
 						};
 					}
 					ctx->Pop();
@@ -1609,7 +1700,20 @@ struct TE_ImageEditorNode : Node
 
 	void Render(UIContainer* ctx) override
 	{
-		ctx->Text("Images") + Padding(5);
+		Subscribe(DCT_ChangeActiveImage);
+
+		ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+		{
+			ctx->Text("Images") + Padding(5);
+			if (imm::Button(ctx, "Add"))
+			{
+				auto img = std::make_shared<TE_Image>();
+				img->name = "<unnamed>";
+				theme->images.insert(theme->images.begin(), img);
+				Rerender();
+			}
+		}
+		ctx->Pop();
 
 		auto* imged = ctx->Make<SequenceEditor>();
 		*imged + Height(style::Coord::Percent(100));
@@ -1628,6 +1732,10 @@ struct TE_ImageEditorNode : Node
 			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 			{
 				imm::EditBool(ctx, img->expanded, nullptr, { Width(style::Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
+				if (imm::RadioButtonRaw(ctx, theme->curPreviewImage == img, "P", { Width(style::Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
+				{
+					theme->SetCurPreviewImage(img);
+				}
 				imm::EditString(ctx, img->name.c_str(), [&img](const char* v) { img->name = v; });
 				se->OnBuildDeleteButton(ctx, idx);
 			}
@@ -1635,14 +1743,19 @@ struct TE_ImageEditorNode : Node
 
 			if (img->expanded)
 			{
-				ctx->Push<Panel>();
+				ctx->Push<Panel>()->HandleEvent() = [this](UIEvent& e)
+				{
+					if (e.type == UIEventType::Change || e.type == UIEventType::Commit || e.type == UIEventType::IMChange)
+						theme->curTemplate->InvalidateAllNodes();
+				};
 				{
 					auto& ovr = img->overrides[theme->curVariation];
 					if (!ovr)
 						ovr = std::make_shared<TE_Overrides>();
 
 					auto* coed = ctx->Make<SequenceEditor>();
-					coed->SetSequence(Allocate<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
+					// TODO making Allocate automatically work in the current node would avoid this bug (Allocate instead of ctx->GetCurrentNode()->)
+					coed->SetSequence(ctx->GetCurrentNode()->Allocate<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
 					coed->itemUICallback = [](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);
@@ -1655,6 +1768,26 @@ struct TE_ImageEditorNode : Node
 
 					if (imm::Button(ctx, "Add override"))
 					{
+						std::vector<MenuItem> items;
+						for (auto& col : theme->curTemplate->colors)
+						{
+							bool added = false;
+							for (auto& acol : ovr->colorOverrides)
+							{
+								if (col == acol.ncref.lock())
+								{
+									added = true;
+									break;
+								}
+							}
+							if (!added)
+							{
+								items.push_back(MenuItem(col->name).Func([ovr, col]() { ovr->colorOverrides.push_back({ col, col->color }); }));
+							}
+						}
+						if (items.empty())
+							items.push_back(MenuItem("- no overrides left to add -", {}, true));
+						Menu(items).Show(this);
 					}
 				}
 				ctx->Pop();

@@ -193,6 +193,7 @@ struct SequenceEditor : Node
 	ISelectionStorage* GetSelectionStorage() const { return _selStorage; }
 	SequenceEditor& SetSelectionStorage(ISelectionStorage* src);
 	SequenceEditor& SetSelectionMode(SelectionMode mode);
+	void _OnEdit(UIObject* who);
 
 	std::function<void(UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 

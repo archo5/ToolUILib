@@ -35,6 +35,7 @@ struct SequenceEditorsTest : ui::Node
 			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Single, "Single");
 			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
 			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::imm::EditBool(ctx, setSelectionStorage, "Storage");
 		}
 
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
@@ -68,7 +69,7 @@ struct SequenceEditorsTest : ui::Node
 	{
 		ctx->Make<ui::SequenceEditor>()
 			->SetSequence(seq)
-			.SetSelectionStorage(sel)
+			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
 			.itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
@@ -102,6 +103,7 @@ struct SequenceEditorsTest : ui::Node
 	ui::BasicSelection bufsel;
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
+	bool setSelectionStorage = true;
 };
 void Test_SequenceEditors(UIContainer* ctx)
 {

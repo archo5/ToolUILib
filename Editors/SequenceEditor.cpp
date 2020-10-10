@@ -74,7 +74,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 				{
 					size_t tgt = p->_dragTargetPos - (p->_dragTargetPos > ddd->at);
 					seqEd->GetSequence()->MoveElementTo(ddd->at, tgt);
-					RerenderNode();
+					seqEd->_OnEdit(this);
 				}
 			}
 		}
@@ -99,8 +99,8 @@ void SequenceItemElement::ContextMenu()
 	bool canInsertOne = seq->GetCurrentSize() < seq->GetSizeLimit();
 
 	auto& CM = ContextMenu::Get();
-	CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); RerenderNode(); };
-	CM.Add("Remove") = [this]() { seqEd->GetSequence()->Remove(num); RerenderNode(); };
+	CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
+	CM.Add("Remove") = [this]() { seqEd->GetSequence()->Remove(num); seqEd->_OnEdit(this); };
 }
 
 void SequenceItemElement::Init(SequenceEditor* se, size_t n)
@@ -168,7 +168,7 @@ void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 {
 	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, idx](UIEvent&) { GetSequence()->Remove(idx); Rerender(); });
+	delBtn + ui::EventHandler(UIEventType::Activate, [this, idx](UIEvent& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
@@ -187,6 +187,13 @@ SequenceEditor& SequenceEditor::SetSelectionMode(SelectionMode mode)
 {
 	_selImpl.selectionMode = mode;
 	return *this;
+}
+
+void SequenceEditor::_OnEdit(UIObject* who)
+{
+	system->eventSystem.OnChange(who);
+	system->eventSystem.OnCommit(who);
+	who->RerenderNode();
 }
 
 } // ui
