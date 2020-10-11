@@ -2,6 +2,45 @@
 #include "TETheme.h"
 
 
+void TE_TmplSettings::UI(UIContainer* ctx)
+{
+	{
+		Property::Scope ps(ctx, "\bSize");
+		imm::PropEditInt(ctx, "\bW", w, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		imm::PropEditInt(ctx, "\bH", h, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+	}
+	imm::PropEditInt(ctx, "\bLeft", l, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "\bRight", r, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "\bTop", t, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "\bBtm.", b, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditBool(ctx, "\bGamma", gamma);
+}
+
+void TE_TmplSettings::Load(NamedTextSerializeReader& nts)
+{
+	w = nts.ReadUInt("w");
+	h = nts.ReadUInt("h");
+	l = nts.ReadUInt("l");
+	t = nts.ReadUInt("t");
+	r = nts.ReadUInt("r");
+	b = nts.ReadUInt("b");
+	gamma = nts.ReadBool("gamma");
+	NodeRefLoad("layer", layer, nts);
+}
+
+void TE_TmplSettings::Save(NamedTextSerializeWriter& nts)
+{
+	nts.WriteInt("w", w);
+	nts.WriteInt("h", h);
+	nts.WriteInt("l", l);
+	nts.WriteInt("t", t);
+	nts.WriteInt("r", r);
+	nts.WriteInt("b", b);
+	nts.WriteBool("gamma", gamma);
+	NodeRefSave("layer", layer, nts);
+}
+
+
 TE_Template::~TE_Template()
 {
 	Clear();
@@ -22,7 +61,6 @@ TE_Node* TE_Template::CreateNodeFromTypeName(StringView type)
 	if (type == TE_SolidColorLayer::NAME) return new TE_SolidColorLayer;
 	if (type == TE_2ColorLinearGradientColorLayer::NAME) return new TE_2ColorLinearGradientColorLayer;
 	if (type == TE_BlendLayer::NAME) return new TE_BlendLayer;
-	if (type == TE_ImageNode::NAME) return new TE_ImageNode;
 	return nullptr;
 }
 
@@ -84,9 +122,11 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	}
 	nts.EndArray();
 
-	g_namedColors = oldcol;
+	nts.BeginDict("renderSettings");
+	renderSettings.Load(nts);
+	nts.EndDict();
 
-	NodeRefLoad("curNode", curNode, nts);
+	g_namedColors = oldcol;
 	g_nodeRefMap.clear();
 
 	nts.EndDict();
@@ -117,7 +157,9 @@ void TE_Template::Save(NamedTextSerializeWriter& nts)
 	}
 	nts.EndArray();
 
-	NodeRefSave("curNode", curNode, nts);
+	nts.BeginDict("renderSettings");
+	renderSettings.Save(nts);
+	nts.EndDict();
 
 	nts.EndDict();
 }
@@ -150,7 +192,6 @@ void TE_Template::GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries)
 	outEntries.push_back({ "Layers/2 color linear gradient", 0,
 		[](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_2ColorLinearGradientColorLayer>(pg); } });
 	outEntries.push_back({ "Layers/Blend", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_BlendLayer>(pg); } });
-	outEntries.push_back({ "Image", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_ImageNode>(pg); } });
 }
 
 std::string TE_Template::GetPinName(const Pin& pin)
@@ -168,8 +209,6 @@ static Color4b g_nodeTypeColors[] =
 	Color4b(120, 120, 120),
 	// layer
 	Color4b(240, 180, 100),
-	// image
-	Color4b(120, 180, 240),
 };
 
 static Color4b GetColorByType(TE_NodeType t)
@@ -252,7 +291,7 @@ bool TE_Template::Unlink(const Link& link)
 void TE_Template::OnEditNode(UIEvent& e, Node* node)
 {
 	auto* N = static_cast<TE_Node*>(node);
-	if (curNode == N)
+	if (renderSettings.layer == N)
 	{
 		InvalidateAllNodes();
 		return;
@@ -292,9 +331,9 @@ void TE_Template::ResolveAllParameters(const TE_RenderContext& rc, const TE_Over
 			n->ResolveParameters(rc, ovr);
 }
 
-void TE_Template::SetCurrentImageNode(TE_ImageNode* img)
+void TE_Template::SetCurrentLayerNode(TE_LayerNode* img)
 {
-	curNode = img;
+	renderSettings.layer = img;
 	InvalidateAllNodes();
 }
 
@@ -304,8 +343,8 @@ void TE_Template::DeleteNode(Node* node)
 
 	auto* N = static_cast<TE_Node*>(node);
 
-	if (curNode == N)
-		curNode = nullptr;
+	if (renderSettings.layer == N)
+		renderSettings.layer = nullptr;
 
 	for (size_t i = 0; i < nodes.size(); i++)
 		if (nodes[i] == N)
@@ -374,7 +413,7 @@ void TE_Template::UpdateTopoSortedNodes()
 const TE_RenderContext& TE_Template::GetRenderContext()
 {
 	static TE_RenderContext rc;
-	rc = static_cast<TE_ImageNode*>(curNode)->MakeRenderContext();
+	rc = renderSettings.MakeRenderContext();
 	ResolveAllParameters(rc, ovrProv->GetOverrides());
 	return rc;
 }
@@ -517,18 +556,16 @@ void TE_Theme::CreateSampleTheme()
 	l3->mask.border = 2;
 	l3->mask.radius = 1;
 
-	auto* bl = tmpl->CreateNode<TE_BlendLayer>(300, 100);
+	auto* bl = tmpl->CreateNode<TE_BlendLayer>(600, 100);
 	bl->layers.push_back({ l1, true, 1 });
 	bl->layers.push_back({ l2, true, 1 });
 	bl->layers.push_back({ l3, true, 1 });
 
-	auto* img = tmpl->CreateNode<TE_ImageNode>(500, 100);
-	img->layer = bl;
-	img->w = 10;
-	img->h = 20;
-	img->l = img->r = img->t = img->b = 5;
-
-	tmpl->SetCurrentImageNode(img);
+	auto& rs = tmpl->renderSettings;
+	rs.w = 10;
+	rs.h = 32;
+	rs.l = rs.r = rs.t = rs.b = 5;
+	tmpl->SetCurrentLayerNode(bl);
 
 	templates.push_back(tmpl);
 

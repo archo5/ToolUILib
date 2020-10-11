@@ -8,7 +8,6 @@ enum TE_NodeType
 	TENT_Unknown = 0,
 	TENT_Mask,
 	TENT_Layer,
-	TENT_Image,
 
 	TENT__COUNT,
 };
@@ -275,94 +274,4 @@ struct TE_BlendLayer : TE_LayerNode
 	Color4f Eval(float x, float y, const TE_RenderContext& rc) override;
 
 	std::vector<TE_LayerBlendRef> layers;
-};
-
-
-// TODO REMOVE
-struct TE_ImageNode : TE_Node
-{
-	const char* GetName() override { return "Image"; }
-	static constexpr const char* NAME = "IMAGE";
-	const char* GetSysName() override { return NAME; }
-	TE_NodeType GetType() override { return TENT_Image; }
-	TE_Node* Clone() override { return new TE_ImageNode(*this); }
-	int GetInputPinCount() override { return 1; }
-	std::string GetInputPinName(int pin) override { return "Layer"; }
-	TE_NodeType GetInputPinType(int pin) override { return TENT_Layer; }
-	TE_Node* GetInputPinValue(int pin) override { return layer; }
-	void SetInputPinValue(int pin, TE_Node* value) override { layer = dynamic_cast<TE_LayerNode*>(value); }
-	void InputPinUI(int pin, UIContainer* ctx) override {}
-	void PropertyUI(UIContainer* ctx) override
-	{
-		if (imm::Button(ctx, "Make current"))
-		{
-			ctx->GetCurrentNode()->SendUserEvent(TEUE_ImageMadeCurrent, uintptr_t(this));
-		}
-		{
-			Property::Scope ps(ctx, "\bSize");
-			imm::PropEditInt(ctx, "\bW", w, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
-			imm::PropEditInt(ctx, "\bH", h, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
-		}
-		imm::PropEditInt(ctx, "\bLeft", l, {}, imm::DEFAULT_SPEED, 0, 1024);
-		imm::PropEditInt(ctx, "\bRight", r, {}, imm::DEFAULT_SPEED, 0, 1024);
-		imm::PropEditInt(ctx, "\bTop", t, {}, imm::DEFAULT_SPEED, 0, 1024);
-		imm::PropEditInt(ctx, "\bBtm.", b, {}, imm::DEFAULT_SPEED, 0, 1024);
-		imm::PropEditBool(ctx, "\bGamma", gamma);
-	}
-	void Load(NamedTextSerializeReader& nts) override
-	{
-		w = nts.ReadUInt("w");
-		h = nts.ReadUInt("h");
-		l = nts.ReadUInt("l");
-		t = nts.ReadUInt("t");
-		r = nts.ReadUInt("r");
-		b = nts.ReadUInt("b");
-		gamma = nts.ReadBool("gamma");
-		NodeRefLoad("layer", layer, nts);
-	}
-	void Save(NamedTextSerializeWriter& nts) override
-	{
-		nts.WriteInt("w", w);
-		nts.WriteInt("h", h);
-		nts.WriteInt("l", l);
-		nts.WriteInt("t", t);
-		nts.WriteInt("r", r);
-		nts.WriteInt("b", b);
-		nts.WriteBool("gamma", gamma);
-		NodeRefSave("layer", layer, nts);
-	}
-
-	TE_RenderContext MakeRenderContext() const
-	{
-		return
-		{
-			w,
-			h,
-			{ 0, 0, float(w), float(h) },
-			gamma,
-		};
-	}
-	void Render(Canvas& canvas, const TE_RenderContext& rc) override
-	{
-		canvas.SetSize(rc.width, rc.height);
-		auto* pixels = canvas.GetPixels();
-		for (unsigned y = 0; y < rc.height; y++)
-		{
-			for (unsigned x = 0; x < rc.width; x++)
-			{
-				Color4f col = Color4f::Zero();
-				if (layer)
-					col = layer->Eval(x + 0.5f, y + 0.5f, rc);
-				if (rc.gamma)
-					col = col.Power(1.0f / 2.2f);
-				pixels[x + y * rc.width] = col.GetColor32();
-			}
-		}
-	}
-	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
-
-	unsigned w = 64, h = 64;
-	unsigned l = 0, t = 0, r = 0, b = 0;
-	bool gamma = false;
-	TE_LayerNode* layer = nullptr;
 };

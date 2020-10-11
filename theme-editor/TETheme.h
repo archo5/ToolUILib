@@ -9,6 +9,29 @@ struct TE_IOverrideProvider
 };
 
 
+struct TE_TmplSettings
+{
+	unsigned w = 64, h = 64;
+	unsigned l = 0, t = 0, r = 0, b = 0;
+	bool gamma = false;
+	TE_LayerNode* layer = nullptr;
+
+	TE_RenderContext MakeRenderContext() const
+	{
+		return
+		{
+			w,
+			h,
+			{ 0, 0, float(w), float(h) },
+			gamma,
+		};
+	}
+	void UI(UIContainer* ctx);
+	void Load(NamedTextSerializeReader& nts);
+	void Save(NamedTextSerializeWriter& nts);
+};
+
+
 struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 {
 	~TE_Template();
@@ -38,7 +61,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 
 	std::string GetNodeName(Node* node) override { return static_cast<TE_Node*>(node)->GetName(); }
 	uintptr_t GetNodeInputCount(Node* node) override { return static_cast<TE_Node*>(node)->GetInputPinCount(); }
-	uintptr_t GetNodeOutputCount(Node* node) override { return static_cast<TE_Node*>(node)->GetType() == TENT_Image ? 0 : 1; }
+	uintptr_t GetNodeOutputCount(Node* node) override { return 1; }
 	void NodePropertyEditorUI(Node* node, UIContainer* ctx) { static_cast<TE_Node*>(node)->PropertyUI(ctx); }
 
 	std::string GetPinName(const Pin& pin) override;
@@ -70,7 +93,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	void InvalidateNode(TE_Node* n);
 	void InvalidateAllNodes();
 	void ResolveAllParameters(const TE_RenderContext& rc, const TE_Overrides* ovr);
-	void SetCurrentImageNode(TE_ImageNode* img);
+	void SetCurrentLayerNode(TE_LayerNode* img);
 
 	bool CanDeleteNode(Node*) override { return true; }
 	void DeleteNode(Node* node) override;
@@ -86,7 +109,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	std::vector<std::shared_ptr<TE_NamedColor>> colors;
 	uint32_t nodeIDAlloc = 0;
 	std::string name;
-	TE_Node* curNode = nullptr;
+	TE_TmplSettings renderSettings;
 
 	// edit-only
 	std::vector<TE_Node*> topoSortedNodes;

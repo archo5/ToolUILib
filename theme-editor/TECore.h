@@ -6,11 +6,6 @@
 using namespace ui;
 
 
-enum UserEvents
-{
-	TEUE_ImageMadeCurrent,
-};
-
 extern DataCategoryTag DCT_NodePreviewInvalidated[1];
 extern DataCategoryTag DCT_ChangeActiveImage[1];
 

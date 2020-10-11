@@ -1,6 +1,7 @@
 
 #include "TECore.h"
-#include "TEData.h"
+#include "TENodes.h"
+#include "TETheme.h"
 
 
 enum TE_PreviewMode
@@ -75,7 +76,7 @@ struct TE_MainPreviewNode : Node
 		}
 		ctx->Pop();
 
-		if (tmpl->curNode)
+		if (tmpl->renderSettings.layer)
 		{
 			ctx->PushBox() + Layout(style::layouts::EdgeSlice());
 			{
@@ -106,14 +107,14 @@ struct TE_MainPreviewNode : Node
 
 				*ctx->Push<ListBox>() + Height(style::Coord::Percent(95)); // TODO
 
-				auto* imgNode = static_cast<TE_ImageNode*>(tmpl->curNode);
 				Canvas canvas;
 #if 0
 				auto rc = imgNode->MakeRenderContext();
 				if (auto* prevImg = theme->curPreviewImage)
 					rc.overrides = prevImg->overrides[theme->curVariation].get();
 #endif
-				imgNode->Render(canvas, tmpl->GetRenderContext());
+				auto& rs = tmpl->renderSettings;
+				rs.layer->Render(canvas, tmpl->GetRenderContext());
 				auto* img = Allocate<Image>(canvas);
 				if (g_previewMode == TEPM_Original)
 				{
@@ -128,7 +129,7 @@ struct TE_MainPreviewNode : Node
 					*ctx->Make<TE_SlicedImageElement>()
 						->SetImage(img)
 						->SetTargetSize(g_previewSlicedWidth, g_previewSlicedHeight)
-						->SetBorderSizes(imgNode->l, imgNode->t, imgNode->r, imgNode->b)
+						->SetBorderSizes(rs.l, rs.t, rs.r, rs.b)
 						+ ui::Width(style::Coord::Percent(100))
 						+ ui::Height(style::Coord::Percent(100));
 				}
@@ -143,6 +144,8 @@ struct TE_MainPreviewNode : Node
 	TE_Template* tmpl;
 };
 
+static bool showRenderSettings = true;
+static bool showColors = true;
 struct TE_TemplateEditorNode : Node
 {
 	void Render(UIContainer* ctx) override
@@ -165,21 +168,28 @@ struct TE_TemplateEditorNode : Node
 					preview->theme = theme;
 					preview->tmpl = tmpl;
 
-					ctx->PushBox();
+					ctx->PushBox()
+						+ EventHandler(UIEventType::IMChange, [this](UIEvent&) { tmpl->InvalidateAllNodes(); });
 					{
-						ctx->Text("Colors") + Padding(5);
-						auto* ced = ctx->Make<SequenceEditor>();
-						*ced + Height(style::Coord::Percent(100));
-						ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
-						ced->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
+						if (showRenderSettings)
 						{
-							auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
-							bool edited = false;
-							edited |= imm::EditColor(ctx, NC->color);
-							edited |= imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
-							if (edited)
-								tmpl->InvalidateAllNodes();
-						};
+							tmpl->renderSettings.UI(ctx);
+						}
+
+						imm::EditBool(ctx, showColors, "Colors", {}, imm::TreeStateToggleSkin());
+						if (showColors)
+						{
+							auto* ced = ctx->Make<SequenceEditor>();
+							*ced + Height(style::Coord::Percent(100));
+							ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
+							ced->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+							{
+								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
+								imm::EditColor(ctx, NC->color);
+								imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+							};
+						}
 					}
 					ctx->Pop();
 				}
@@ -191,15 +201,6 @@ struct TE_TemplateEditorNode : Node
 		}
 		ctx->Pop();
 		hsp->SetSplits({ 0.8f });
-	}
-	void OnEvent(UIEvent& e) override
-	{
-		Node::OnEvent(e);
-		if (e.type == UserEvent(TEUE_ImageMadeCurrent))
-		{
-			tmpl->SetCurrentImageNode(reinterpret_cast<TE_ImageNode*>(e.arg0));
-			Rerender();
-		}
 	}
 
 	TE_Theme* theme;
