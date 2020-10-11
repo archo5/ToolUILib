@@ -3,10 +3,12 @@
   <ItemGroup>
     <ClCompile Include="theme-editor.cpp" />
     <ClCompile Include="TECore.cpp" />
-    <ClCompile Include="TEData.cpp" />
+    <ClCompile Include="TENodes.cpp" />
+    <ClCompile Include="TETheme.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TECore.h" />
-    <ClInclude Include="TEData.h" />
+    <ClInclude Include="TENodes.h" />
+    <ClInclude Include="TETheme.h" />
   </ItemGroup>
 </Project>

@@ -148,7 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="TECore.cpp" />
-    <ClCompile Include="TEData.cpp" />
+    <ClCompile Include="TENodes.cpp" />
+    <ClCompile Include="TETheme.cpp" />
     <ClCompile Include="theme-editor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,7 +159,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TECore.h" />
-    <ClInclude Include="TEData.h" />
+    <ClInclude Include="TENodes.h" />
+    <ClInclude Include="TETheme.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
