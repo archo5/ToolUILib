@@ -2,5 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="theme-editor.cpp" />
+    <ClCompile Include="TECore.cpp" />
+    <ClCompile Include="TEData.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TECore.h" />
+    <ClInclude Include="TEData.h" />
   </ItemGroup>
 </Project>

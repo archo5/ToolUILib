@@ -147,12 +147,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="TECore.cpp" />
+    <ClCompile Include="TEData.cpp" />
     <ClCompile Include="theme-editor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\gui.vcxproj">
       <Project>{e98c0101-91a1-491a-8aea-5a6ceb47fc36}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TECore.h" />
+    <ClInclude Include="TEData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
