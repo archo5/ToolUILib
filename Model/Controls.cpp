@@ -403,17 +403,19 @@ static float SplitYToQ(SplitPane* sp, float c)
 static UIRect GetSplitRectH(SplitPane* sp, int which)
 {
 	float split = sp->_splits[which];
-	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
-	float x = roundf(lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split));
-	return { x - hw, sp->finalRectC.y0, x + hw, sp->finalRectC.y1 };
+	float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
+	float hw = w / 2;
+	float x = roundf(lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split) - hw);
+	return { x, sp->finalRectC.y0, x + roundf(w), sp->finalRectC.y1 };
 }
 
 static UIRect GetSplitRectV(SplitPane* sp, int which)
 {
 	float split = sp->_splits[which];
-	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
-	float y = roundf(lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split));
-	return { sp->finalRectC.x0, y - hh, sp->finalRectC.x1, y + hh };
+	float h = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth());
+	float hh = h / 2;
+	float y = roundf(lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split) - hh);
+	return { sp->finalRectC.x0, y, sp->finalRectC.x1, y + roundf(h) };
 }
 
 static float SplitWidthAsQ(SplitPane* sp)
@@ -512,6 +514,7 @@ void SplitPane::OnEvent(UIEvent& e)
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitXToQ(this, e.x + _dragOff);
+				_OnChangeStyle();
 				break;
 			}
 		}
@@ -524,6 +527,7 @@ void SplitPane::OnEvent(UIEvent& e)
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitYToQ(this, e.y + _dragOff);
+				_OnChangeStyle();
 				break;
 			}
 		}

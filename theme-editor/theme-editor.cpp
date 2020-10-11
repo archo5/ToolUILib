@@ -33,6 +33,22 @@ static void Color4bSave(const char* key, Color4b& col, NamedTextSerializeWriter&
 	nts.EndDict();
 }
 
+static void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader& nts)
+{
+	nts.BeginDict(key);
+	pt.x = nts.ReadFloat("x");
+	pt.y = nts.ReadFloat("y");
+	nts.EndDict();
+}
+
+static void PointFloatSave(const char* key, Point<float>& pt, NamedTextSerializeWriter& nts)
+{
+	nts.BeginDict(key);
+	nts.WriteFloat("x", pt.x);
+	nts.WriteFloat("y", pt.y);
+	nts.EndDict();
+}
+
 static void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader& nts)
 {
 	nts.BeginDict(key);
@@ -81,6 +97,21 @@ struct SubPos
 {
 	Point<float> anchor = {};
 	Point<float> offset = {};
+
+	void Load(const char* key, NamedTextSerializeReader& nts)
+	{
+		nts.BeginDict(key);
+		PointFloatLoad("anchor", anchor, nts);
+		PointFloatLoad("offset", offset, nts);
+		nts.EndDict();
+	}
+	void Save(const char* key, NamedTextSerializeWriter& nts)
+	{
+		nts.BeginDict(key);
+		PointFloatSave("anchor", anchor, nts);
+		PointFloatSave("offset", offset, nts);
+		nts.EndDict();
+	}
 };
 
 struct TE_NamedColor
@@ -108,6 +139,7 @@ struct TE_NamedColor
 	}
 };
 
+
 struct TE_ColorOverride
 {
 	std::weak_ptr<TE_NamedColor> ncref;
@@ -118,7 +150,21 @@ struct TE_Overrides
 {
 	std::vector<TE_ColorOverride> colorOverrides;
 };
-static TE_Overrides g_emptyOverrides[1];
+
+
+struct TE_RenderContext
+{
+	unsigned width;
+	unsigned height;
+	AbsRect frame;
+	bool gamma;
+};
+
+struct TE_IRenderContextProvider
+{
+	virtual const TE_RenderContext& GetRenderContext() = 0;
+};
+
 
 static std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 static void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
@@ -142,9 +188,9 @@ struct TE_ColorRef
 	bool useRef = true;
 	std::weak_ptr<TE_NamedColor> ncref;
 	Color4b color;
-	Color4b resolvedColor;
+	Color4f resolvedColor;
 
-	void Resolve(const TE_Overrides* ovr)
+	Color4b _GetOrigResolvedColor(const TE_Overrides* ovr)
 	{
 		if (useRef)
 		{
@@ -155,20 +201,20 @@ struct TE_ColorRef
 					for (auto& oc : ovr->colorOverrides)
 					{
 						if (auto ptr2 = oc.ncref.lock())
-						{
 							if (ptr == ptr2)
-							{
-								resolvedColor = oc.color;
-								return;
-							}
-						}
+								return oc.color;
 					}
 				}
-				resolvedColor = ptr->color;
-				return;
+				return ptr->color;
 			}
 		}
-		resolvedColor = color;
+		return color;
+	}
+	void Resolve(const TE_RenderContext& rc, const TE_Overrides* ovr)
+	{
+		resolvedColor = _GetOrigResolvedColor(ovr);
+		if (rc.gamma)
+			resolvedColor = resolvedColor.Power(2.2f);
 	}
 	void Set(std::weak_ptr<TE_NamedColor> ncr)
 	{
@@ -287,19 +333,14 @@ AbsRect ResolveRect(const SubRect& rect, const AbsRect& frame)
 	};
 }
 
-
-struct TE_RenderContext
+Point<float> ResolvePos(const SubPos& pos, const AbsRect& frame)
 {
-	unsigned width;
-	unsigned height;
-	AbsRect frame;
-	bool gamma;
-};
-
-struct TE_IRenderContextProvider
-{
-	virtual const TE_RenderContext& GetRenderContext() = 0;
-};
+	return
+	{
+		lerp(frame.x0, frame.x1, pos.anchor.x) + pos.offset.x,
+		lerp(frame.y0, frame.y1, pos.anchor.y) + pos.offset.y,
+	};
+}
 
 
 enum TE_NodeType
@@ -364,7 +405,7 @@ struct TE_Node
 	virtual void Load(NamedTextSerializeReader& nts) = 0;
 	virtual void Save(NamedTextSerializeWriter& nts) = 0;
 	virtual void Render(Canvas& canvas, const TE_RenderContext& rc) = 0;
-	virtual void ResolveParameters(const TE_Overrides* ovr) = 0;
+	virtual void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) = 0;
 
 	void PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp)
 	{
@@ -457,7 +498,7 @@ struct TE_MaskNode : TE_Node
 			}
 		}
 	}
-	void ResolveParameters(const TE_Overrides* ovr) override {}
+	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 
 	virtual float Eval(float x, float y, const TE_RenderContext& rc) = 0;
 };
@@ -500,8 +541,8 @@ struct TE_RectMask : TE_MaskNode
 		}
 		{
 			ctx->Text("Offsets");
-			imm::PropEditFloatVec(ctx, "\bMin", &rect.offsets.x0, "XY", { MinWidth(20) });
-			imm::PropEditFloatVec(ctx, "\bMax", &rect.offsets.x1, "XY", { MinWidth(20) });
+			imm::PropEditFloatVec(ctx, "\bMin", &rect.offsets.x0, "XY", { MinWidth(20) }, 0.5f);
+			imm::PropEditFloatVec(ctx, "\bMax", &rect.offsets.x1, "XY", { MinWidth(20) }, 0.5f);
 		}
 		{
 			ctx->Text("Radius");
@@ -546,6 +587,7 @@ struct TE_MaskRef
 	TE_MaskNode* mask = nullptr;
 	unsigned border = 0;
 	unsigned radius = 0;
+	int vbias = 0;
 
 	float Eval(float x, float y, const TE_RenderContext& rc)
 	{
@@ -555,6 +597,10 @@ struct TE_MaskRef
 		cr.r = radius;
 		cr = cr.Eval();
 		auto rr = rc.frame.ShrinkBy(UIRect::UniformBorder(border));
+		if (vbias < 0)
+			rr.y1 += vbias;
+		else
+			rr.y0 += vbias;
 		return EvalAARoundedRectMask(x, y, rr, cr);
 	}
 	void UI(UIContainer* ctx)
@@ -564,6 +610,7 @@ struct TE_MaskRef
 		ctx->PushBox();
 		imm::PropEditInt(ctx, "\bBorder", border, { MinWidth(20) });
 		imm::PropEditInt(ctx, "\bRadius", radius, { MinWidth(20) });
+		imm::PropEditInt(ctx, "\bV.bias", vbias, { MinWidth(20) });
 		ctx->Pop();
 	}
 
@@ -573,6 +620,7 @@ struct TE_MaskRef
 		NodeRefLoad("mask", mask, nts);
 		border = nts.ReadUInt("border");
 		radius = nts.ReadUInt("radius");
+		vbias = nts.ReadUInt("vbias");
 		nts.EndDict();
 	}
 	void Save(const char* key, NamedTextSerializeWriter& nts)
@@ -581,6 +629,7 @@ struct TE_MaskRef
 		NodeRefSave("mask", mask, nts);
 		nts.WriteInt("border", border);
 		nts.WriteInt("radius", radius);
+		nts.WriteInt("vbias", vbias);
 		nts.EndDict();
 	}
 };
@@ -702,22 +751,91 @@ struct TE_SolidColorLayer : TE_LayerNode
 		color.Save("color", nts);
 		mask.Save("mask", nts);
 	}
-	void ResolveParameters(const TE_Overrides* ovr) override
+	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override
 	{
-		color.Resolve(ovr);
+		color.Resolve(rc, ovr);
 	}
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
 		float a = mask.Eval(x, y, rc);
 		Color4f cc = color.resolvedColor;
-		if (rc.gamma)
-			cc = cc.Power(2.2f);
 		cc.a *= a;
 		return cc;
 	}
 
 	TE_ColorRef color;
+	TE_MaskRef mask;
+};
+
+struct TE_2ColorLinearGradientColorLayer : TE_LayerNode
+{
+	const char* GetName() override { return "2-color linear gradient layer"; }
+	static constexpr const char* NAME = "2COL_LINEAR_GRAD_COLOR_LAYER";
+	const char* GetSysName() override { return NAME; }
+	TE_Node* Clone() override { return new TE_2ColorLinearGradientColorLayer(*this); }
+	int GetInputPinCount() override { return 1; }
+	std::string GetInputPinName(int pin) override { return "Mask"; }
+	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
+	TE_Node* GetInputPinValue(int pin) override { return mask.mask; }
+	void SetInputPinValue(int pin, TE_Node* value) override { mask.mask = dynamic_cast<TE_MaskNode*>(value); }
+	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
+	void PropertyUI(UIContainer* ctx) override
+	{
+		color0.UI(ctx);
+		color1.UI(ctx);
+		{
+			ctx->Text("Start pos.");
+			imm::PropEditFloatVec(ctx, "\bAnchor", &pos0.anchor.x, "XY", { MinWidth(20) }, 0.01f);
+			imm::PropEditFloatVec(ctx, "\bOffset", &pos0.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		}
+		{
+			ctx->Text("End pos.");
+			imm::PropEditFloatVec(ctx, "\bAnchor", &pos1.anchor.x, "XY", { MinWidth(20) }, 0.01f);
+			imm::PropEditFloatVec(ctx, "\bOffset", &pos1.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		}
+	}
+	void Load(NamedTextSerializeReader& nts) override
+	{
+		color0.Load("color0", nts);
+		color1.Load("color1", nts);
+		pos0.Load("pos0", nts);
+		pos1.Load("pos1", nts);
+		mask.Load("mask", nts);
+	}
+	void Save(NamedTextSerializeWriter& nts) override
+	{
+		color0.Save("color0", nts);
+		color1.Save("color1", nts);
+		pos0.Save("pos0", nts);
+		pos1.Save("pos1", nts);
+		mask.Save("mask", nts);
+	}
+	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override
+	{
+		color0.Resolve(rc, ovr);
+		color1.Resolve(rc, ovr);
+	}
+
+	Color4f Eval(float x, float y, const TE_RenderContext& rc)
+	{
+		float a = mask.Eval(x, y, rc);
+		auto p0 = ResolvePos(pos0, rc.frame);
+		auto p1 = ResolvePos(pos1, rc.frame);
+		auto dir = p1 - p0;
+		float dc = x * dir.x + y * dir.y;
+		float d0 = p0.x * dir.y + p0.y * dir.y;
+		float d1 = p1.x * dir.y + p1.y * dir.y;
+		float q = invlerp(d0, d1, dc);
+		Color4f cc = Color4fLerp(color0.resolvedColor, color1.resolvedColor, Clamp01(q));
+		cc.a *= a;
+		return cc;
+	}
+
+	TE_ColorRef color0;
+	TE_ColorRef color1;
+	SubPos pos0 = {};
+	SubPos pos1 = { { 0, 1 }, { 0, 0 } };
 	TE_MaskRef mask;
 };
 
@@ -786,7 +904,7 @@ struct TE_BlendLayer : TE_LayerNode
 			lbr.Save("", nts);
 		nts.EndArray();
 	}
-	void ResolveParameters(const TE_Overrides* ovr) override {}
+	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc)
 	{
@@ -884,7 +1002,7 @@ struct TE_ImageNode : TE_Node
 			}
 		}
 	}
-	void ResolveParameters(const TE_Overrides* ovr) override {}
+	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 
 	unsigned w = 64, h = 64;
 	unsigned l = 0, t = 0, r = 0, b = 0;
@@ -917,6 +1035,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 		if (type == TE_RectMask::NAME) return new TE_RectMask;
 		if (type == TE_CombineMask::NAME) return new TE_CombineMask;
 		if (type == TE_SolidColorLayer::NAME) return new TE_SolidColorLayer;
+		if (type == TE_2ColorLinearGradientColorLayer::NAME) return new TE_2ColorLinearGradientColorLayer;
 		if (type == TE_BlendLayer::NAME) return new TE_BlendLayer;
 		if (type == TE_ImageNode::NAME) return new TE_ImageNode;
 		return nullptr;
@@ -1050,6 +1169,8 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 		outEntries.push_back({ "Masks/Rectangle", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_RectMask>(pg); } });
 		outEntries.push_back({ "Masks/Combine", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_CombineMask>(pg); } });
 		outEntries.push_back({ "Layers/Solid color", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_SolidColorLayer>(pg); } });
+		outEntries.push_back({ "Layers/2 color linear gradient", 0,
+			[](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_2ColorLinearGradientColorLayer>(pg); } });
 		outEntries.push_back({ "Layers/Blend", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_BlendLayer>(pg); } });
 		outEntries.push_back({ "Image", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_ImageNode>(pg); } });
 	}
@@ -1181,11 +1302,11 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 		for (auto* n : nodes)
 			InvalidateNode(n);
 	}
-	void ResolveAllParameters(const TE_Overrides* ovr)
+	void ResolveAllParameters(const TE_RenderContext& rc, const TE_Overrides* ovr)
 	{
 		for (auto* n : nodes)
 			if (n->IsDirty())
-				n->ResolveParameters(ovr);
+				n->ResolveParameters(rc, ovr);
 	}
 	void SetCurrentImageNode(TE_ImageNode* img)
 	{
@@ -1272,7 +1393,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	{
 		static TE_RenderContext rc;
 		rc = static_cast<TE_ImageNode*>(curNode)->MakeRenderContext();
-		ResolveAllParameters(ovrProv->GetOverrides());
+		ResolveAllParameters(rc, ovrProv->GetOverrides());
 		return rc;
 	}
 
@@ -1423,8 +1544,11 @@ struct TE_Theme : TE_IOverrideProvider
 		l2->mask.border = 1;
 		l2->mask.radius = 1;
 
-		auto* l3 = tmpl->CreateNode<TE_SolidColorLayer>(300, 300);
-		l3->color.Set(tmpl->colors[2]);
+		auto* l3 = tmpl->CreateNode<TE_2ColorLinearGradientColorLayer>(300, 300);
+		l3->color0.Set(tmpl->colors[2]);
+		l3->color1.Set(tmpl->colors[3]);
+		l3->pos0.offset = { 0, 2.5f };
+		l3->pos1.offset = { 0, -2.5f };
 		l3->mask.border = 2;
 		l3->mask.radius = 1;
 

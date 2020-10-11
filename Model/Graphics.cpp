@@ -90,8 +90,8 @@ void ImageElement::OnPaint()
 		{
 		case ScaleMode::None: {
 			float w = _image->GetWidth(), h = _image->GetHeight();
-			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
-			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
+			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
 			draw::RectTex(x, y, x + w, y + h, _image->_texture);
 			break; }
 		case ScaleMode::Stretch:
@@ -105,8 +105,8 @@ void ImageElement::OnPaint()
 				h = w / iasp;
 			else
 				w = h * iasp;
-			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
-			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
+			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
 			draw::RectTex(x, y, x + w, y + h, _image->_texture);
 			break; }
 		case ScaleMode::Fill: {
@@ -117,8 +117,8 @@ void ImageElement::OnPaint()
 				h = w / iasp;
 			else
 				w = h * iasp;
-			float x = c.x0 + (c.GetWidth() - w) * _anchorX;
-			float y = c.y0 + (c.GetHeight() - h) * _anchorY;
+			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
 			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture,
 				(c.x0 - x) / w,
 				(c.y0 - y) / h,

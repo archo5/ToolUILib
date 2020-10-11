@@ -146,6 +146,16 @@ struct Color4f
 
 	float r, g, b, a;
 };
+inline Color4f Color4fLerp(const Color4f& a, const Color4f& b, const Color4f& s)
+{
+	return
+	{
+		lerp(a.r, b.r, s.r),
+		lerp(a.g, b.g, s.g),
+		lerp(a.b, b.b, s.b),
+		lerp(a.a, b.a, s.a),
+	};
+}
 
 
 struct Canvas
