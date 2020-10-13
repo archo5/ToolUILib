@@ -46,9 +46,6 @@
     <ClCompile Include="Core\Threading.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Model\Tables.cpp">
-      <Filter>Model</Filter>
-    </ClCompile>
     <ClCompile Include="Model\ImmediateMode.cpp">
       <Filter>Model</Filter>
     </ClCompile>
@@ -71,6 +68,12 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Editors\TreeEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
+    <ClCompile Include="Editors\Tables.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
+    <ClCompile Include="Editors\EditCommon.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,9 +134,6 @@
     <ClInclude Include="Core\Threading.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Model\Tables.h">
-      <Filter>Model</Filter>
-    </ClInclude>
     <ClInclude Include="Model\ImmediateMode.h">
       <Filter>Model</Filter>
     </ClInclude>
@@ -159,6 +159,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Editors\TreeEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\Tables.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\EditCommon.h">
       <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,8 @@
 
 #pragma once
-#include "Objects.h"
-#include "Controls.h"
+#include "EditCommon.h"
+#include "../Model/Objects.h"
+#include "../Model/Controls.h"
 
 
 namespace ui {

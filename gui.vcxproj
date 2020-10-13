@@ -134,8 +134,10 @@
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
+    <ClCompile Include="Editors\EditCommon.cpp" />
     <ClCompile Include="Editors\ProcGraphEditor.cpp" />
     <ClCompile Include="Editors\SequenceEditor.cpp" />
+    <ClCompile Include="Editors\Tables.cpp" />
     <ClCompile Include="Editors\TreeEditor.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
@@ -148,7 +150,6 @@
     <ClCompile Include="Model\Native.cpp" />
     <ClCompile Include="Model\Objects.cpp" />
     <ClCompile Include="Model\System.cpp" />
-    <ClCompile Include="Model\Tables.cpp" />
     <ClCompile Include="Model\Theme.cpp" />
     <ClCompile Include="Render\OpenGL.cpp" />
     <ClCompile Include="Render\Render.cpp" />
@@ -164,8 +165,10 @@
     <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
+    <ClInclude Include="Editors\EditCommon.h" />
     <ClInclude Include="Editors\ProcGraphEditor.h" />
     <ClInclude Include="Editors\SequenceEditor.h" />
+    <ClInclude Include="Editors\Tables.h" />
     <ClInclude Include="Editors\TreeEditor.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Animation.h" />
@@ -179,7 +182,6 @@
     <ClInclude Include="Model\Native.h" />
     <ClInclude Include="Model\Objects.h" />
     <ClInclude Include="Model\System.h" />
-    <ClInclude Include="Model\Tables.h" />
     <ClInclude Include="Model\Theme.h" />
     <ClInclude Include="Render\OpenGL.h" />
     <ClInclude Include="Render\Render.h" />

@@ -1,5 +1,6 @@
 
 #pragma once
+#include "EditCommon.h"
 
 #include "../Model/Objects.h"
 #include "../Model/Controls.h"
