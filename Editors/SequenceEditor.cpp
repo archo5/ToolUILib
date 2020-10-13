@@ -101,6 +101,8 @@ void SequenceItemElement::ContextMenu()
 	auto& CM = ContextMenu::Get();
 	CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
 	CM.Add("Remove") = [this]() { seqEd->GetSequence()->Remove(num); seqEd->_OnEdit(this); };
+	if (auto* cms = seqEd->GetContextMenuSource())
+		cms->FillItemContextMenu(CM, num, 0);
 }
 
 void SequenceItemElement::Init(SequenceEditor* se, size_t n)
@@ -142,6 +144,17 @@ void SequenceEditor::Render(UIContainer* ctx)
 	ctx->Pop();
 }
 
+void SequenceEditor::OnEvent(UIEvent& e)
+{
+	Node::OnEvent(e);
+
+	if (e.type == UIEventType::ContextMenu)
+	{
+		if (auto* cms = GetContextMenuSource())
+			cms->FillListContextMenu(ContextMenu::Get());
+	}
+}
+
 void SequenceEditor::OnPaint()
 {
 	Node::OnPaint();
@@ -180,6 +193,12 @@ SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
 SequenceEditor& SequenceEditor::SetSelectionStorage(ISelectionStorage* s)
 {
 	_selStorage = s;
+	return *this;
+}
+
+SequenceEditor& SequenceEditor::SetContextMenuSource(IListContextMenuSource* src)
+{
+	_ctxMenuSrc = src;
 	return *this;
 }
 

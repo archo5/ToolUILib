@@ -183,6 +183,7 @@ struct SequenceEditor : Node
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override;
+	void OnEvent(UIEvent& e) override;
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
@@ -194,6 +195,9 @@ struct SequenceEditor : Node
 	ISelectionStorage* GetSelectionStorage() const { return _selStorage; }
 	SequenceEditor& SetSelectionStorage(ISelectionStorage* src);
 	SequenceEditor& SetSelectionMode(SelectionMode mode);
+	IListContextMenuSource* GetContextMenuSource() const { return _ctxMenuSrc; }
+	SequenceEditor& SetContextMenuSource(IListContextMenuSource* src);
+
 	void _OnEdit(UIObject* who);
 
 	std::function<void(UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
@@ -202,6 +206,7 @@ struct SequenceEditor : Node
 
 	ISequence* _sequence = nullptr;
 	ISelectionStorage* _selStorage = nullptr;
+	IListContextMenuSource* _ctxMenuSrc = nullptr;
 
 	size_t _dragTargetPos = SIZE_MAX;
 	UIRect _dragTargetLine = {};

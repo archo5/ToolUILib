@@ -497,7 +497,8 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 
 			if (which == UIMouseButton::Right && !ev._stopPropagation)
 			{
-				ui::ContextMenu::Get().Clear();
+				auto& CM = ui::ContextMenu::Get();
+				CM.StartNew();
 
 				ev.type = UIEventType::ContextMenu;
 				{
@@ -506,15 +507,15 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 					{
 						obj->_DoEvent(ev);
 						obj = obj->parent;
-						ui::ContextMenu::Get().basePriority += ui::MenuItemCollection::BASE_ADVANCE;
+						CM.basePriority += ui::MenuItemCollection::BASE_ADVANCE;
 					}
 				}
 
-				if (ui::ContextMenu::Get().HasAny())
+				if (CM.HasAny())
 				{
-					ui::Menu menu(ui::ContextMenu::Get().Finalize());
+					ui::Menu menu(CM.Finalize());
 					menu.Show(container->rootNode);
-					ui::ContextMenu::Get().Clear();
+					CM.Clear();
 				}
 			}
 		}

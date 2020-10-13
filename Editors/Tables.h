@@ -7,21 +7,6 @@
 
 namespace ui {
 
-struct Selection1D
-{
-	Selection1D();
-	~Selection1D();
-	void OnSerialize(IDataSerializer& s);
-	void Clear();
-	bool AnySelected();
-	uintptr_t GetFirstSelection();
-	bool IsSelected(uintptr_t id);
-	void SetSelected(uintptr_t id, bool sel);
-
-	struct Selection1DImpl* _impl;
-};
-
-
 struct MessageLogDataSource
 {
 	virtual size_t GetNumMessages() = 0;
@@ -81,6 +66,9 @@ struct TableView : Node
 	ISelectionStorage* GetSelectionStorage() const;
 	void SetSelectionStorage(ISelectionStorage* src);
 	void SetSelectionMode(SelectionMode mode);
+	IListContextMenuSource* GetContextMenuSource() const;
+	void SetContextMenuSource(IListContextMenuSource* src);
+
 	void CalculateColumnWidths(bool includeHeader = true, bool firstTimeOnly = true);
 
 	bool IsValidRow(uintptr_t pos);

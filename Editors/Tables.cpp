@@ -6,72 +6,6 @@
 
 namespace ui {
 
-struct Selection1DImpl
-{
-	std::unordered_set<uintptr_t> sel;
-};
-
-Selection1D::Selection1D()
-{
-	_impl = new Selection1DImpl;
-}
-
-Selection1D::~Selection1D()
-{
-	delete _impl;
-}
-
-void Selection1D::OnSerialize(IDataSerializer& s)
-{
-	auto size = _impl->sel.size();
-	s << size;
-	if (s.IsWriter())
-	{
-		for (auto v : _impl->sel)
-			s << v;
-	}
-	else
-	{
-		for (size_t i = 0; i < size; i++)
-		{
-			uintptr_t v;
-			s << v;
-			_impl->sel.insert(v);
-		}
-	}
-}
-
-void Selection1D::Clear()
-{
-	_impl->sel.clear();
-}
-
-bool Selection1D::AnySelected()
-{
-	return _impl->sel.size() > 0;
-}
-
-uintptr_t Selection1D::GetFirstSelection()
-{
-	for (auto v : _impl->sel)
-		return v;
-	return UINTPTR_MAX;
-}
-
-bool Selection1D::IsSelected(uintptr_t id)
-{
-	return _impl->sel.find(id) != _impl->sel.end();
-}
-
-void Selection1D::SetSelected(uintptr_t id, bool sel)
-{
-	if (sel)
-		_impl->sel.insert(id);
-	else
-		_impl->sel.erase(id);
-}
-
-
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
 	int size = int(context->GetFontSize());
@@ -212,6 +146,7 @@ struct TableViewImpl
 {
 	TableDataSource* dataSource = nullptr;
 	ISelectionStorage* selStorage = nullptr;
+	IListContextMenuSource* ctxMenuSrc = nullptr;
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
 	size_t hoverRow = SIZE_MAX;
@@ -411,6 +346,16 @@ void TableView::OnEvent(UIEvent& e)
 
 	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick);
 
+	if (e.type == UIEventType::ContextMenu)
+	{
+		auto& CM = ContextMenu::Get();
+		if (_impl->hoverRow != SIZE_MAX)
+		{
+			_impl->ctxMenuSrc->FillItemContextMenu(CM, _impl->hoverRow, 0); // todo col
+		}
+		_impl->ctxMenuSrc->FillListContextMenu(CM);
+	}
+
 	if (e.type == UIEventType::MouseMove)
 	{
 		if (e.x < RC.x1 && e.y > RC.y0 + chh)
@@ -478,6 +423,16 @@ void TableView::SetSelectionStorage(ISelectionStorage* src)
 void TableView::SetSelectionMode(SelectionMode mode)
 {
 	_impl->sel.selectionMode = mode;
+}
+
+IListContextMenuSource* TableView::GetContextMenuSource() const
+{
+	return _impl->ctxMenuSrc;
+}
+
+void TableView::SetContextMenuSource(IListContextMenuSource* src)
+{
+	_impl->ctxMenuSrc = src;
 }
 
 void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)

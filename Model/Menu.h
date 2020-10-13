@@ -98,10 +98,16 @@ struct MenuItemCollection
 		new (&root) Entry;
 		basePriority = 0;
 	}
+	void StartNew()
+	{
+		Clear();
+		_version++;
+	}
 	bool HasAny() const
 	{
 		return root.children.size() != 0;
 	}
+	uint32_t GetVersion() const { return _version; }
 
 	ArrayView<MenuItem> Finalize()
 	{
@@ -111,6 +117,7 @@ struct MenuItemCollection
 
 	Entry root;
 	int basePriority = 0;
+	uint32_t _version = 0;
 };
 
 

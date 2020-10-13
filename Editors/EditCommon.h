@@ -5,6 +5,14 @@
 
 namespace ui {
 
+struct MenuItemCollection;
+
+struct IListContextMenuSource
+{
+	virtual void FillItemContextMenu(MenuItemCollection& mic, size_t row, size_t col) = 0;
+	virtual void FillListContextMenu(MenuItemCollection& mic) = 0;
+};
+
 enum class SelectionMode : uint8_t
 {
 	None,
@@ -15,9 +23,9 @@ enum class SelectionMode : uint8_t
 
 struct ISelectionStorage
 {
-	virtual void ClearSelection() {}
-	virtual bool GetSelectionState(size_t row) { return false; }
-	virtual void SetSelectionState(size_t row, bool sel) {}
+	virtual void ClearSelection() = 0;
+	virtual bool GetSelectionState(size_t row) = 0;
+	virtual void SetSelectionState(size_t row, bool sel) = 0;
 };
 
 struct BasicSelection : ISelectionStorage

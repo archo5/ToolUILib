@@ -6,6 +6,24 @@
 #include "../Editors/TreeEditor.h"
 
 
+struct InfoDumpContextMenuSource : ui::IListContextMenuSource
+{
+	void FillItemContextMenu(ui::MenuItemCollection& mic, size_t row, size_t col)
+	{
+		char bfr[128];
+		snprintf(bfr, 128, "Info [item]: row=%zu col=%zu", row, col);
+		mic.Add(bfr, true);
+	}
+	void FillListContextMenu(ui::MenuItemCollection& mic)
+	{
+		char bfr[128];
+		snprintf(bfr, 128, "Info [list]: version=%u", unsigned(mic.GetVersion()));
+		mic.Add(bfr, true);
+	}
+}
+g_infoDumpCMS;
+
+
 struct SequenceEditorsTest : ui::Node
 {
 	static constexpr bool Persistent = true;
@@ -71,6 +89,7 @@ struct SequenceEditorsTest : ui::Node
 			->SetSequence(seq)
 			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
+			.SetContextMenuSource(&g_infoDumpCMS)
 			.itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(ptr));
@@ -288,7 +307,9 @@ struct TreeEditorsTest : ui::Node
 
 	void TreeEdit(UIContainer* ctx, ui::ITree* itree)
 	{
-		ctx->Make<ui::TreeEditor>()->SetTree(itree).itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::ITree::NodeLoc node)
+		ctx->Make<ui::TreeEditor>()
+			->SetTree(itree)
+			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::ITree::NodeLoc node)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", te->GetTree()->GetValue<int>(node));
 		};
@@ -349,6 +370,7 @@ struct TableViewTest : ui::Node
 		tv->SetSelectionMode(selectionType);
 		tv->SetSelectionStorage(&g_randomNumbers);
 		tv->SetDataSource(&g_randomNumbers);
+		tv->SetContextMenuSource(&g_infoDumpCMS);
 	}
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
