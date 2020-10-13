@@ -62,8 +62,8 @@ struct MarkerDataSource : ui::TableDataSource, ui::ISelectionStorage
 	std::string GetText(size_t row, size_t col) override;
 
 	void ClearSelection() override;
-	bool GetSelectionState(size_t row) override;
-	void SetSelectionState(size_t row, bool sel) override;
+	bool GetSelectionState(ui::ItemLoc item) override;
+	void SetSelectionState(ui::ItemLoc item, bool sel) override;
 
 	IDataSource* dataSource;
 	MarkerData* data;

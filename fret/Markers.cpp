@@ -407,16 +407,16 @@ void MarkerDataSource::ClearSelection()
 	selected = SIZE_MAX;
 }
 
-bool MarkerDataSource::GetSelectionState(size_t row)
+bool MarkerDataSource::GetSelectionState(ui::ItemLoc item)
 {
-	return selected == row;
+	return selected == item.index;
 }
 
-void MarkerDataSource::SetSelectionState(size_t row, bool sel)
+void MarkerDataSource::SetSelectionState(ui::ItemLoc item, bool sel)
 {
 	if (sel)
-		selected = row;
-	else if (GetSelectionState(row))
+		selected = item.index;
+	else if (GetSelectionState(item.index))
 		selected = SIZE_MAX;
 }
 

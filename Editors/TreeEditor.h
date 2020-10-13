@@ -17,33 +17,24 @@ struct ITree
 		HasChildArray = 1 << 1,
 	};
 
-	struct NodeLoc
-	{
-		uintptr_t node; // pointer to node or offset to entry in node container
-		void* cont; // pointer to node container or nothing
-
-		bool operator == (const NodeLoc& o) const { return node == o.node && cont == o.cont; }
-		bool operator != (const NodeLoc& o) const { return node != o.node || cont != o.cont; }
-	};
-
 	virtual unsigned GetFeatureFlags() = 0;
-	virtual NodeLoc GetFirstRoot() = 0;
-	virtual NodeLoc GetFirstChild(NodeLoc node) = 0;
-	virtual NodeLoc GetNext(NodeLoc node) = 0;
-	virtual NodeLoc GetParent(NodeLoc node) { return node; } // implement for CanGetParent
-	virtual bool AtEnd(NodeLoc node) = 0;
-	virtual void* GetValuePtr(NodeLoc node) = 0;
+	virtual ItemLoc GetFirstRoot() = 0;
+	virtual ItemLoc GetFirstChild(ItemLoc node) = 0;
+	virtual ItemLoc GetNext(ItemLoc node) = 0;
+	virtual ItemLoc GetParent(ItemLoc node) { return node; } // implement for CanGetParent
+	virtual bool AtEnd(ItemLoc node) = 0;
+	virtual void* GetValuePtr(ItemLoc node) = 0;
 
-	template <class T> T& GetValue(NodeLoc node) { return *static_cast<T*>(GetValuePtr(node)); }
+	template <class T> T& GetValue(ItemLoc node) { return *static_cast<T*>(GetValuePtr(node)); }
 
-	virtual void RemoveChildrenFromList(NodeLoc* nodes, size_t count);
-	virtual void IndexSort(NodeLoc* nodes, size_t count);
-	virtual void RemoveAll(NodeLoc* nodes, size_t count);
-	virtual void DuplicateAll(NodeLoc* nodes, size_t count);
+	virtual void RemoveChildrenFromList(ItemLoc* nodes, size_t count);
+	virtual void IndexSort(ItemLoc* nodes, size_t count);
+	virtual void RemoveAll(ItemLoc* nodes, size_t count);
+	virtual void DuplicateAll(ItemLoc* nodes, size_t count);
 
-	virtual void Remove(NodeLoc node) {}
-	virtual void Duplicate(NodeLoc node) {}
-	virtual void MoveTo(const NodeLoc* nodes, size_t count, NodeLoc dest, bool insertAtEnd) {}
+	virtual void Remove(ItemLoc node) {}
+	virtual void Duplicate(ItemLoc node) {}
+	virtual void MoveTo(const ItemLoc* nodes, size_t count, ItemLoc dest, bool insertAtEnd) {}
 };
 
 
@@ -52,10 +43,10 @@ struct TreeDragData : DragDropData
 {
 	static constexpr const char* NAME = "TreeDragData";
 
-	TreeDragData(TreeEditor* s, const std::vector<ITree::NodeLoc>& nv) : ui::DragDropData(NAME), scope(s), nodes(nv) {}
+	TreeDragData(TreeEditor* s, const std::vector<ItemLoc>& nv) : ui::DragDropData(NAME), scope(s), nodes(nv) {}
 
 	TreeEditor* scope;
-	std::vector<ITree::NodeLoc> nodes;
+	std::vector<ItemLoc> nodes;
 };
 
 struct TreeItemElement : Selectable
@@ -64,10 +55,10 @@ struct TreeItemElement : Selectable
 	void OnEvent(UIEvent& e) override;
 	virtual void ContextMenu();
 
-	void Init(TreeEditor* te, ITree::NodeLoc n);
+	void Init(TreeEditor* te, ItemLoc n);
 
 	TreeEditor* treeEd = nullptr;
-	ITree::NodeLoc node = {};
+	ItemLoc node = {};
 };
 
 struct TreeEditor : Node
@@ -75,20 +66,24 @@ struct TreeEditor : Node
 	static constexpr bool Persistent = true;
 
 	void Render(UIContainer* ctx) override;
+	void OnEvent(UIEvent& e) override;
 
-	virtual void OnBuildChildList(UIContainer* ctx, ITree::NodeLoc firstNode);
-	virtual void OnBuildList(UIContainer* ctx, ITree::NodeLoc firstNode);
-	virtual void OnBuildItem(UIContainer* ctx, ITree::NodeLoc node);
-	virtual void OnBuildDeleteButton(UIContainer* ctx, ITree::NodeLoc node);
+	virtual void OnBuildChildList(UIContainer* ctx, ItemLoc firstNode);
+	virtual void OnBuildList(UIContainer* ctx, ItemLoc firstNode);
+	virtual void OnBuildItem(UIContainer* ctx, ItemLoc node);
+	virtual void OnBuildDeleteButton(UIContainer* ctx, ItemLoc node);
 
 	ITree* GetTree() const { return _tree; }
 	TreeEditor& SetTree(ITree* t);
+	IListContextMenuSource* GetContextMenuSource() const { return _ctxMenuSrc; }
+	TreeEditor& SetContextMenuSource(IListContextMenuSource* src);
 
-	std::function<void(UIContainer* ctx, TreeEditor* te, ITree::NodeLoc node)> itemUICallback;
+	std::function<void(UIContainer* ctx, TreeEditor* te, ItemLoc node)> itemUICallback;
 
 	bool showDeleteButton = true;
 
 	ITree* _tree;
+	IListContextMenuSource* _ctxMenuSrc = nullptr;
 };
 
 } // ui

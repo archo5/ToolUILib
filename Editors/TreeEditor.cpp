@@ -8,7 +8,7 @@
 
 namespace ui {
 
-static void _RemoveChildrenFromListRecursive(ITree* tree, ITree::NodeLoc* nodes, size_t count, ITree::NodeLoc parent)
+static void _RemoveChildrenFromListRecursive(ITree* tree, ItemLoc* nodes, size_t count, ItemLoc parent)
 {
 	for (auto ch = tree->GetFirstChild(parent); !tree->AtEnd(ch); ch = tree->GetNext(ch))
 	{
@@ -24,18 +24,18 @@ static void _RemoveChildrenFromListRecursive(ITree* tree, ITree::NodeLoc* nodes,
 	}
 }
 
-void ITree::IndexSort(NodeLoc* nodes, size_t count)
+void ITree::IndexSort(ItemLoc* nodes, size_t count)
 {
 	if (GetFeatureFlags() & HasChildArray)
 	{
-		std::sort(nodes, nodes + count, [](const NodeLoc& a, const NodeLoc& b)
+		std::sort(nodes, nodes + count, [](const ItemLoc& a, const ItemLoc& b)
 		{
-			return a.node < b.node;
+			return a.index < b.index;
 		});
 	}
 }
 
-void ITree::RemoveChildrenFromList(NodeLoc* nodes, size_t count)
+void ITree::RemoveChildrenFromList(ItemLoc* nodes, size_t count)
 {
 	if (GetFeatureFlags() & CanGetParent)
 	{
@@ -69,7 +69,7 @@ void ITree::RemoveChildrenFromList(NodeLoc* nodes, size_t count)
 	}
 }
 
-void ITree::RemoveAll(NodeLoc* nodes, size_t count)
+void ITree::RemoveAll(ItemLoc* nodes, size_t count)
 {
 	RemoveChildrenFromList(nodes, count);
 	IndexSort(nodes, count);
@@ -79,7 +79,7 @@ void ITree::RemoveAll(NodeLoc* nodes, size_t count)
 	}
 }
 
-void ITree::DuplicateAll(NodeLoc* nodes, size_t count)
+void ITree::DuplicateAll(ItemLoc* nodes, size_t count)
 {
 	RemoveChildrenFromList(nodes, count);
 	IndexSort(nodes, count);
@@ -119,9 +119,11 @@ void TreeItemElement::ContextMenu()
 	auto& CM = ContextMenu::Get();
 	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(node); RerenderNode(); };
 	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(node); RerenderNode(); };
+	if (auto* cms = treeEd->GetContextMenuSource())
+		cms->FillItemContextMenu(CM, node, 0);
 }
 
-void TreeItemElement::Init(TreeEditor* te, ITree::NodeLoc n)
+void TreeItemElement::Init(TreeEditor* te, ItemLoc n)
 {
 	treeEd = te;
 	node = n;
@@ -146,7 +148,18 @@ void TreeEditor::Render(UIContainer* ctx)
 	ctx->Pop();
 }
 
-void TreeEditor::OnBuildChildList(UIContainer* ctx, ITree::NodeLoc firstChild)
+void TreeEditor::OnEvent(UIEvent& e)
+{
+	Node::OnEvent(e);
+
+	if (e.type == UIEventType::ContextMenu)
+	{
+		if (auto* cms = GetContextMenuSource())
+			cms->FillListContextMenu(ContextMenu::Get());
+	}
+}
+
+void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild)
 {
 	ctx->PushBox().GetStyle().SetPaddingLeft(8);
 
@@ -155,7 +168,7 @@ void TreeEditor::OnBuildChildList(UIContainer* ctx, ITree::NodeLoc firstChild)
 	ctx->Pop();
 }
 
-void TreeEditor::OnBuildList(UIContainer* ctx, ITree::NodeLoc firstNode)
+void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode)
 {
 	for (auto node = firstNode; !_tree->AtEnd(node); node = _tree->GetNext(node))
 	{
@@ -176,13 +189,13 @@ void TreeEditor::OnBuildList(UIContainer* ctx, ITree::NodeLoc firstNode)
 	}
 }
 
-void TreeEditor::OnBuildItem(UIContainer* ctx, ITree::NodeLoc node)
+void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node)
 {
 	if (itemUICallback)
 		itemUICallback(ctx, this, node);
 }
 
-void TreeEditor::OnBuildDeleteButton(UIContainer* ctx, ITree::NodeLoc node)
+void TreeEditor::OnBuildDeleteButton(UIContainer* ctx, ItemLoc node)
 {
 	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
@@ -192,6 +205,12 @@ void TreeEditor::OnBuildDeleteButton(UIContainer* ctx, ITree::NodeLoc node)
 TreeEditor& TreeEditor::SetTree(ITree* t)
 {
 	_tree = t;
+	return *this;
+}
+
+TreeEditor& TreeEditor::SetContextMenuSource(IListContextMenuSource* src)
+{
+	_ctxMenuSrc = src;
 	return *this;
 }
 
