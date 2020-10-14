@@ -2,12 +2,22 @@
 #pragma once
 #include "EditCommon.h"
 
+#include "../Core/Memory.h"
+
 #include "../Model/Objects.h"
 #include "../Model/Controls.h"
 #include "../Model/System.h"
 
 
 namespace ui {
+
+using TreePathRef = ArrayView<uintptr_t>;
+
+struct ITreeContextMenuSource
+{
+	virtual void FillItemContextMenu(MenuItemCollection& mic, TreePathRef path, size_t col) = 0;
+	virtual void FillListContextMenu(MenuItemCollection& mic) = 0;
+};
 
 enum class TreeInsertMode : uint8_t
 {
@@ -37,11 +47,11 @@ struct ITree
 	virtual void RemoveChildrenFromList(ItemLoc* nodes, size_t& count);
 	virtual void RemoveChildrenFromListOf(ItemLoc* nodes, size_t& count, ItemLoc parent);
 	virtual void IndexSort(ItemLoc* nodes, size_t count);
-	virtual void RemoveAll(ItemLoc* nodes, size_t count);
-	virtual void DuplicateAll(ItemLoc* nodes, size_t count);
+	virtual void RemoveAll(TreePathRef* paths, size_t count);
+	virtual void DuplicateAll(TreePathRef* paths, size_t count);
 
-	virtual void Remove(ItemLoc node) {}
-	virtual void Duplicate(ItemLoc node) {}
+	virtual void Remove(TreePathRef path) {}
+	virtual void Duplicate(TreePathRef path) {}
 	// remove node from the old location, then add to the new one
 	// dest is pre-adjusted to assume that the node has already been removed
 	virtual void MoveTo(ui::ItemLoc node, ItemLoc dest, TreeInsertMode insDir) {}
@@ -65,10 +75,11 @@ struct TreeItemElement : Selectable
 	void OnEvent(UIEvent& e) override;
 	virtual void ContextMenu();
 
-	void Init(TreeEditor* te, ItemLoc n);
+	void Init(TreeEditor* te, ItemLoc n, const std::vector<uintptr_t>& path);
 
 	TreeEditor* treeEd = nullptr;
 	ItemLoc node = {};
+	std::vector<uintptr_t> path;
 };
 
 struct TreeEditor : Node
@@ -80,15 +91,15 @@ struct TreeEditor : Node
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	virtual void OnBuildChildList(UIContainer* ctx, ItemLoc firstNode);
-	virtual void OnBuildList(UIContainer* ctx, ItemLoc firstNode);
-	virtual void OnBuildItem(UIContainer* ctx, ItemLoc node);
-	virtual void OnBuildDeleteButton(UIContainer* ctx, ItemLoc node);
+	virtual void OnBuildChildList(UIContainer* ctx, ItemLoc firstNode, std::vector<uintptr_t>& path);
+	virtual void OnBuildList(UIContainer* ctx, ItemLoc firstNode, std::vector<uintptr_t>& path);
+	virtual void OnBuildItem(UIContainer* ctx, ItemLoc node, std::vector<uintptr_t>& path);
+	virtual void OnBuildDeleteButton(UIContainer* ctx);
 
 	ITree* GetTree() const { return _tree; }
 	TreeEditor& SetTree(ITree* t);
-	IListContextMenuSource* GetContextMenuSource() const { return _ctxMenuSrc; }
-	TreeEditor& SetContextMenuSource(IListContextMenuSource* src);
+	ITreeContextMenuSource* GetContextMenuSource() const { return _ctxMenuSrc; }
+	TreeEditor& SetContextMenuSource(ITreeContextMenuSource* src);
 
 	void _OnEdit(UIObject* who);
 	void _OnDragMove(TreeDragData* tdd, ItemLoc item, const UIRect& rect, UIEvent& e);
@@ -99,7 +110,7 @@ struct TreeEditor : Node
 	bool showDeleteButton = true;
 
 	ITree* _tree;
-	IListContextMenuSource* _ctxMenuSrc = nullptr;
+	ITreeContextMenuSource* _ctxMenuSrc = nullptr;
 
 	ItemLoc _dragTargetLoc;
 	TreeInsertMode _dragTargetInsDir = TreeInsertMode::Before;

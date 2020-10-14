@@ -26,21 +26,21 @@ void BasicSelection::ClearSelection()
 	_impl->sel.clear();
 }
 
-bool BasicSelection::GetSelectionState(ItemLoc item)
+bool BasicSelection::GetSelectionState(uintptr_t item)
 {
-	return _impl->sel.count(item.index);
+	return _impl->sel.count(item);
 }
 
-void BasicSelection::SetSelectionState(ItemLoc item, bool sel)
+void BasicSelection::SetSelectionState(uintptr_t item, bool sel)
 {
 	if (sel)
-		_impl->sel.insert(item.index);
+		_impl->sel.insert(item);
 	else
-		_impl->sel.erase(item.index);
+		_impl->sel.erase(item);
 }
 
 
-bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, ItemLoc hoverItem, bool hovering, bool onclick)
+bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, uintptr_t hoverItem, bool hovering, bool onclick)
 {
 	if (selectionMode == SelectionMode::None || !sel)
 		return false;
@@ -54,7 +54,7 @@ bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, ItemLo
 	bool selChanged = false;
 	if (onclick)
 	{
-		if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left && hoverItem.IsValid() && hovering)
+		if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left && hoverItem < UINTPTR_MAX && hovering)
 		{
 			if (selectionMode != SelectionMode::MultipleToggle ||
 				selectionMode == SelectionMode::Single) // TODO modifiers
@@ -66,7 +66,7 @@ bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, ItemLo
 		return selChanged;
 	}
 
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && hoverItem.IsValid() && hovering)
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && hoverItem < UINTPTR_MAX && hovering)
 	{
 		// TODO modifiers
 		//e.GetKeyActionModifier();
@@ -86,32 +86,28 @@ bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, ItemLo
 	}
 	if (e.type == UIEventType::MouseMove)
 	{
-		if (isClicked && hoverItem.IsValid() && hovering)
+		if (isClicked && hoverItem < UINTPTR_MAX && hovering)
 		{
 			if (selectionMode == SelectionMode::Single)
 			{
 				sel->ClearSelection();
 				sel->SetSelectionState(hoverItem, !sel->GetSelectionState(hoverItem));
 			}
-			else if (_selEnd.cont == hoverItem.cont)
+			else
 			{
 				while (_selEnd != hoverItem)
 				{
-					if (selectionMode == SelectionMode::Single)
-						sel->ClearSelection();
-
-					bool increasing = selectionMode == SelectionMode::Single ||
-						(_selStart.index < _selEnd.index
-							? hoverItem.index < _selStart.index || hoverItem.index > _selEnd.index
-							: hoverItem.index < _selEnd.index || hoverItem.index > _selStart.index);
+					bool increasing = (_selStart < _selEnd
+							? hoverItem < _selStart || hoverItem > _selEnd
+							: hoverItem < _selEnd || hoverItem > _selStart);
 
 					if (!increasing)
 						sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));
 
-					if (_selEnd.index < hoverItem.index)
-						_selEnd.index++;
+					if (_selEnd < hoverItem)
+						_selEnd++;
 					else
-						_selEnd.index--;
+						_selEnd--;
 
 					if (increasing)
 						sel->SetSelectionState(_selEnd, !sel->GetSelectionState(_selEnd));

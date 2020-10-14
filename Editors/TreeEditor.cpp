@@ -95,23 +95,25 @@ void ITree::RemoveChildrenFromListOf(ItemLoc* nodes, size_t& count, ItemLoc pare
 	}
 }
 
-void ITree::RemoveAll(ItemLoc* nodes, size_t count)
+void ITree::RemoveAll(TreePathRef* paths, size_t count)
 {
-	RemoveChildrenFromList(nodes, count);
-	IndexSort(nodes, count);
+	// TODO
+	//RemoveChildrenFromList(paths, count);
+	//IndexSort(paths, count);
 	for (size_t i = count; i < count; )
 	{
-		Remove(nodes[--i]);
+		Remove(paths[--i]);
 	}
 }
 
-void ITree::DuplicateAll(ItemLoc* nodes, size_t count)
+void ITree::DuplicateAll(TreePathRef* paths, size_t count)
 {
-	RemoveChildrenFromList(nodes, count);
-	IndexSort(nodes, count);
+	// TODO
+	//RemoveChildrenFromList(paths, count);
+	//IndexSort(paths, count);
 	for (size_t i = 0; i < count; i++)
 	{
-		Duplicate(nodes[i]);
+		Duplicate(paths[i]);
 	}
 }
 
@@ -161,16 +163,17 @@ void TreeItemElement::OnEvent(UIEvent& e)
 void TreeItemElement::ContextMenu()
 {
 	auto& CM = ContextMenu::Get();
-	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(node); treeEd->_OnEdit(this); };
-	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(node); treeEd->_OnEdit(this); };
+	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(path); treeEd->_OnEdit(this); };
+	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(path); treeEd->_OnEdit(this); };
 	if (auto* cms = treeEd->GetContextMenuSource())
-		cms->FillItemContextMenu(CM, node, 0);
+		cms->FillItemContextMenu(CM, path, 0);
 }
 
-void TreeItemElement::Init(TreeEditor* te, ItemLoc n)
+void TreeItemElement::Init(TreeEditor* te, ItemLoc n, const std::vector<uintptr_t>& p)
 {
 	treeEd = te;
 	node = n;
+	path = p;
 
 	bool dragging = false;
 	if (auto* dd = ui::DragDrop::GetData<TreeDragData>())
@@ -187,7 +190,8 @@ void TreeEditor::Render(UIContainer* ctx)
 	s.SetMinHeight(22);
 	s.SetBoxSizing(style::BoxSizing::ContentBox);
 
-	OnBuildList(ctx, _tree->GetFirstRoot());
+	std::vector<uintptr_t> path;
+	OnBuildList(ctx, _tree->GetFirstRoot(), path);
 
 	ctx->Pop();
 }
@@ -218,47 +222,55 @@ void TreeEditor::OnSerialize(IDataSerializer& s)
 {
 }
 
-void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild)
+void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild, std::vector<uintptr_t>& path)
 {
 	ctx->PushBox().GetStyle().SetPaddingLeft(8);
 
-	OnBuildList(ctx, firstChild);
+	OnBuildList(ctx, firstChild, path);
 
 	ctx->Pop();
 }
 
-void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode)
+void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode, std::vector<uintptr_t>& path)
 {
 	for (auto node = firstNode; !_tree->AtEnd(node); node = _tree->GetNext(node))
 	{
-		ctx->Push<TreeItemElement>()->Init(this, node);
+		path.push_back(node.index);
 
-		OnBuildItem(ctx, node);
+		ctx->Push<TreeItemElement>()->Init(this, node, path);
+
+		OnBuildItem(ctx, node, path);
 
 		if (showDeleteButton)
-			OnBuildDeleteButton(ctx, node);
+			OnBuildDeleteButton(ctx);
 
 		ctx->Pop();
 
 		auto firstChild = _tree->GetFirstChild(node);
 		if (!_tree->AtEnd(firstChild))
 		{
-			OnBuildChildList(ctx, firstChild);
+			OnBuildChildList(ctx, firstChild, path);
 		}
+
+		path.pop_back();
 	}
 }
 
-void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node)
+void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node, std::vector<uintptr_t>& path)
 {
 	if (itemUICallback)
 		itemUICallback(ctx, this, node);
 }
 
-void TreeEditor::OnBuildDeleteButton(UIContainer* ctx, ItemLoc node)
+void TreeEditor::OnBuildDeleteButton(UIContainer* ctx)
 {
 	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, node](UIEvent&) { GetTree()->Remove(node); _OnEdit(this); });
+	delBtn + ui::EventHandler(UIEventType::Activate, [this, &delBtn](UIEvent&)
+	{
+		GetTree()->Remove(delBtn.FindParentOfType<TreeItemElement>()->path);
+		_OnEdit(this);
+	});
 }
 
 TreeEditor& TreeEditor::SetTree(ITree* t)
@@ -267,7 +279,7 @@ TreeEditor& TreeEditor::SetTree(ITree* t)
 	return *this;
 }
 
-TreeEditor& TreeEditor::SetContextMenuSource(IListContextMenuSource* src)
+TreeEditor& TreeEditor::SetContextMenuSource(ITreeContextMenuSource* src)
 {
 	_ctxMenuSrc = src;
 	return *this;

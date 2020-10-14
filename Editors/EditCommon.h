@@ -23,7 +23,7 @@ struct MenuItemCollection;
 
 struct IListContextMenuSource
 {
-	virtual void FillItemContextMenu(MenuItemCollection& mic, ItemLoc item, size_t col) = 0;
+	virtual void FillItemContextMenu(MenuItemCollection& mic, uintptr_t item, size_t col) = 0;
 	virtual void FillListContextMenu(MenuItemCollection& mic) = 0;
 };
 
@@ -38,8 +38,8 @@ enum class SelectionMode : uint8_t
 struct ISelectionStorage
 {
 	virtual void ClearSelection() = 0;
-	virtual bool GetSelectionState(ItemLoc item) = 0;
-	virtual void SetSelectionState(ItemLoc item, bool sel) = 0;
+	virtual bool GetSelectionState(uintptr_t item) = 0;
+	virtual void SetSelectionState(uintptr_t item, bool sel) = 0;
 };
 
 struct BasicSelection : ISelectionStorage
@@ -48,21 +48,21 @@ struct BasicSelection : ISelectionStorage
 	~BasicSelection();
 
 	void ClearSelection() override;
-	bool GetSelectionState(ItemLoc item) override;
-	void SetSelectionState(ItemLoc item, bool sel) override;
+	bool GetSelectionState(uintptr_t item) override;
+	void SetSelectionState(uintptr_t item, bool sel) override;
 
 	struct BasicSelectionImpl* _impl;
 };
 
 struct SelectionImplementation
 {
-	bool OnEvent(UIEvent& e, ISelectionStorage* sel, ItemLoc hoverItem, bool hovering, bool onclick = false);
+	bool OnEvent(UIEvent& e, ISelectionStorage* sel, uintptr_t hoverItem, bool hovering, bool onclick = false);
 	void OnSerialize(IDataSerializer& s);
 
 	SelectionMode selectionMode = SelectionMode::None;
 	bool isClicked = false;
-	ItemLoc _selStart = ItemLoc::Null();
-	ItemLoc _selEnd = ItemLoc::Null();
+	uintptr_t _selStart = UINTPTR_MAX;
+	uintptr_t _selEnd = UINTPTR_MAX;
 };
 
 } // ui

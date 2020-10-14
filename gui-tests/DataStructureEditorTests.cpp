@@ -8,10 +8,10 @@
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
 {
-	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::ItemLoc item, size_t col)
+	void FillItemContextMenu(ui::MenuItemCollection& mic, uintptr_t item, size_t col)
 	{
 		char bfr[128];
-		snprintf(bfr, 128, "Info [item]: cont=%p index=%zu col=%zu", item.cont, item.index, col);
+		snprintf(bfr, 128, "Info [item]: item=%" PRIuPTR " col=%zu", item, col);
 		mic.Add(bfr, true);
 	}
 	void FillListContextMenu(ui::MenuItemCollection& mic)
@@ -22,6 +22,30 @@ struct InfoDumpContextMenuSource : ui::IListContextMenuSource
 	}
 }
 g_infoDumpCMS;
+
+struct TreeInfoDumpContextMenuSource : ui::ITreeContextMenuSource
+{
+	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path, size_t col)
+	{
+		std::string tmp = "Info [item]: path=[";
+		for (auto pe : path)
+		{
+			if (tmp.back() != '[')
+				tmp += ",";
+			tmp += std::to_string(pe);
+		}
+		tmp += "] col=";
+		tmp += std::to_string(col);
+		mic.Add(tmp, true);
+	}
+	void FillListContextMenu(ui::MenuItemCollection& mic)
+	{
+		char bfr[128];
+		snprintf(bfr, 128, "Info [list]: version=%u", unsigned(mic.GetVersion()));
+		mic.Add(bfr, true);
+	}
+}
+g_treeInfoDumpCMS;
 
 
 struct SequenceEditorsTest : ui::Node
@@ -178,6 +202,22 @@ struct Tree : ui::ITree
 			delete r;
 	}
 
+	struct NodeLoc
+	{
+		std::vector<Node*>* arr;
+		size_t idx;
+	};
+	NodeLoc FindNode(ui::TreePathRef path)
+	{
+		if (path.size() == 1)
+			return { &roots, path.last() };
+		else
+		{
+			auto parent = FindNode(path.without_last());
+			return { &(*parent.arr)[parent.idx]->children, path.last() };
+		}
+	}
+
 	unsigned GetFeatureFlags() override { return HasChildArray; }
 	ui::ItemLoc GetFirstRoot() override { return { 0, &roots }; }
 	ui::ItemLoc GetFirstChild(ui::ItemLoc node) override
@@ -188,16 +228,16 @@ struct Tree : ui::ITree
 	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
 	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
-	void Remove(ui::ItemLoc node) override
+	void Remove(ui::TreePathRef path) override
 	{
-		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
-		delete C[node.index];
-		C.erase(C.begin() + node.index);
+		auto loc = FindNode(path);
+		delete loc.arr->at(loc.idx);
+		loc.arr->erase(loc.arr->begin() + loc.idx);
 	}
-	void Duplicate(ui::ItemLoc node) override
+	void Duplicate(ui::TreePathRef path) override
 	{
-		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
-		C.push_back(C[node.index]->Clone());
+		auto loc = FindNode(path);
+		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
 	}
 	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
 	{
@@ -278,6 +318,22 @@ struct Tree : ui::ITree
 			delete r;
 	}
 
+	struct NodeLoc
+	{
+		std::vector<Node*>* arr;
+		size_t idx;
+	};
+	NodeLoc FindNode(ui::TreePathRef path)
+	{
+		if (path.size() == 1)
+			return { &roots, path.last() };
+		else
+		{
+			auto parent = FindNode(path.without_last());
+			return { &(*parent.arr)[parent.idx]->children, path.last() };
+		}
+	}
+
 	unsigned GetFeatureFlags() override { return HasChildArray | CanGetParent; }
 	ui::ItemLoc GetFirstRoot() override { return { 0, &roots }; }
 	ui::ItemLoc GetFirstChild(ui::ItemLoc node) override
@@ -298,16 +354,16 @@ struct Tree : ui::ITree
 	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
 	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
-	void Remove(ui::ItemLoc node) override
+	void Remove(ui::TreePathRef path) override
 	{
-		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
-		delete C[node.index];
-		C.erase(C.begin() + node.index);
+		auto loc = FindNode(path);
+		delete loc.arr->at(loc.idx);
+		loc.arr->erase(loc.arr->begin() + loc.idx);
 	}
-	void Duplicate(ui::ItemLoc node) override
+	void Duplicate(ui::TreePathRef path) override
 	{
-		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
-		C.push_back(C[node.index]->Clone());
+		auto loc = FindNode(path);
+		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
 	}
 	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
 	{
@@ -362,7 +418,7 @@ struct TreeEditorsTest : ui::Node
 	{
 		ctx->Make<ui::TreeEditor>()
 			->SetTree(itree)
-			.SetContextMenuSource(&g_infoDumpCMS)
+			.SetContextMenuSource(&g_treeInfoDumpCMS)
 			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::ItemLoc node)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", te->GetTree()->GetValue<int>(node));
@@ -390,13 +446,13 @@ struct RandomNumberDataSource : ui::TableDataSource, ui::ISelectionStorage
 	}
 
 	virtual void ClearSelection() { selRows.clear(); }
-	virtual bool GetSelectionState(ui::ItemLoc item) { return selRows.count(item.index); }
-	virtual void SetSelectionState(ui::ItemLoc item, bool sel)
+	virtual bool GetSelectionState(uintptr_t item) { return selRows.count(item); }
+	virtual void SetSelectionState(uintptr_t item, bool sel)
 	{
 		if (sel)
-			selRows.insert(item.index);
+			selRows.insert(item);
 		else
-			selRows.erase(item.index);
+			selRows.erase(item);
 	}
 
 	std::unordered_set<size_t> selRows;

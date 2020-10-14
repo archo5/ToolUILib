@@ -22,6 +22,16 @@ struct ArrayView
 		assert(i < _size);
 		return _data[i];
 	}
+	const T& last() const
+	{
+		assert(_size);
+		return _data[_size - 1];
+	}
+	ArrayView without_last() const
+	{
+		assert(_size);
+		return { _data, _size - 1 };
+	}
 
 	const T* _data;
 	size_t _size;

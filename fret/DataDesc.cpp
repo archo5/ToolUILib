@@ -1069,15 +1069,15 @@ void DataDescInstanceSource::ClearSelection()
 	dataDesc->SetCurrentInstance(nullptr);
 }
 
-bool DataDescInstanceSource::GetSelectionState(ui::ItemLoc item)
+bool DataDescInstanceSource::GetSelectionState(uintptr_t item)
 {
-	return dataDesc->curInst == dataDesc->instances[_indices[item.index]];
+	return dataDesc->curInst == dataDesc->instances[_indices[item]];
 }
 
-void DataDescInstanceSource::SetSelectionState(ui::ItemLoc item, bool sel)
+void DataDescInstanceSource::SetSelectionState(uintptr_t item, bool sel)
 {
 	if (sel)
-		dataDesc->SetCurrentInstance(dataDesc->instances[_indices[item.index]]);
+		dataDesc->SetCurrentInstance(dataDesc->instances[_indices[item]]);
 	else if (GetSelectionState(item))
 		dataDesc->SetCurrentInstance(nullptr);
 }
@@ -1263,15 +1263,15 @@ void DataDescImageSource::ClearSelection()
 	dataDesc->curImage = UINT32_MAX;
 }
 
-bool DataDescImageSource::GetSelectionState(ui::ItemLoc item)
+bool DataDescImageSource::GetSelectionState(uintptr_t item)
 {
-	return dataDesc->curImage == _indices[item.index];
+	return dataDesc->curImage == _indices[item];
 }
 
-void DataDescImageSource::SetSelectionState(ui::ItemLoc item, bool sel)
+void DataDescImageSource::SetSelectionState(uintptr_t item, bool sel)
 {
 	if (sel)
-		dataDesc->curImage = _indices[item.index];
+		dataDesc->curImage = _indices[item];
 	else if (GetSelectionState(item))
 		dataDesc->curImage = UINT32_MAX;
 }

@@ -100,8 +100,8 @@ struct DataDescInstanceSource : ui::TableDataSource, ui::ISelectionStorage
 	std::string GetText(size_t row, size_t col) override;
 
 	void ClearSelection() override;
-	bool GetSelectionState(ui::ItemLoc item) override;
-	void SetSelectionState(ui::ItemLoc item, bool sel) override;
+	bool GetSelectionState(uintptr_t item) override;
+	void SetSelectionState(uintptr_t item, bool sel) override;
 
 	void Edit(UIContainer* ctx);
 
@@ -137,8 +137,8 @@ struct DataDescImageSource : ui::TableDataSource, ui::ISelectionStorage
 	std::string GetText(size_t row, size_t col) override;
 
 	void ClearSelection() override;
-	bool GetSelectionState(ui::ItemLoc item) override;
-	void SetSelectionState(ui::ItemLoc item, bool sel) override;
+	bool GetSelectionState(uintptr_t item) override;
+	void SetSelectionState(uintptr_t item, bool sel) override;
 
 	void Edit(UIContainer* ctx);
 
