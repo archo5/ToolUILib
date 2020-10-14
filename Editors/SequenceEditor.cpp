@@ -53,14 +53,11 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 		{
 			if (ddd->scope == seqEd)
 			{
-				if (auto* p = FindParentOfType<SequenceEditor>())
-				{
-					auto r = GetBorderRect();
-					bool after = e.y > (r.y0 + r.y1) * 0.5f;
-					p->_dragTargetPos = num + after;
-					float y = after ? r.y1 : r.y0;
-					p->_dragTargetLine = UIRect{ r.x0, y, r.x1, y }.ExtendBy(UIRect::UniformBorder(1));
-				}
+				auto r = GetBorderRect();
+				bool after = e.y > (r.y0 + r.y1) * 0.5f;
+				seqEd->_dragTargetPos = num + after;
+				float y = after ? r.y1 : r.y0;
+				seqEd->_dragTargetLine = UIRect{ r.x0, y, r.x1, y };
 			}
 		}
 	}
@@ -70,12 +67,9 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 		{
 			if (ddd->scope == seqEd)
 			{
-				if (auto* p = FindParentOfType<SequenceEditor>())
-				{
-					size_t tgt = p->_dragTargetPos - (p->_dragTargetPos > ddd->at);
-					seqEd->GetSequence()->MoveElementTo(ddd->at, tgt);
-					seqEd->_OnEdit(this);
-				}
+				size_t tgt = seqEd->_dragTargetPos - (seqEd->_dragTargetPos > ddd->at);
+				seqEd->GetSequence()->MoveElementTo(ddd->at, tgt);
+				seqEd->_OnEdit(this);
 			}
 		}
 	}
@@ -161,7 +155,7 @@ void SequenceEditor::OnPaint()
 
 	if (_dragTargetPos < SIZE_MAX)
 	{
-		auto r = _dragTargetLine;
+		auto r = _dragTargetLine.ExtendBy(UIRect::UniformBorder(1));
 		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 	}
 }

@@ -8,19 +8,19 @@
 
 namespace ui {
 
-static void _RemoveChildrenFromListRecursive(ITree* tree, ItemLoc* nodes, size_t count, ItemLoc parent)
+static void _RemoveChildrenFromListRecursive(ITree* tree, ItemLoc* nodes, size_t& count, ItemLoc parent)
 {
 	for (auto ch = tree->GetFirstChild(parent); !tree->AtEnd(ch); ch = tree->GetNext(ch))
 	{
-		bool found = false;
 		for (size_t j = 0; j < count; j++)
 		{
 			if (ch == nodes[j])
 			{
-				found = true;
+				nodes[j] = nodes[--count];
 				break;
 			}
 		}
+		_RemoveChildrenFromListRecursive(tree, nodes, count, ch);
 	}
 }
 
@@ -35,7 +35,7 @@ void ITree::IndexSort(ItemLoc* nodes, size_t count)
 	}
 }
 
-void ITree::RemoveChildrenFromList(ItemLoc* nodes, size_t count)
+void ITree::RemoveChildrenFromList(ItemLoc* nodes, size_t& count)
 {
 	if (GetFeatureFlags() & CanGetParent)
 	{
@@ -66,6 +66,32 @@ void ITree::RemoveChildrenFromList(ItemLoc* nodes, size_t count)
 		{
 			_RemoveChildrenFromListRecursive(this, nodes, count, nodes[i]);
 		}
+	}
+}
+
+void ITree::RemoveChildrenFromListOf(ItemLoc* nodes, size_t& count, ItemLoc parent)
+{
+	if (GetFeatureFlags() & CanGetParent)
+	{
+		for (size_t i = 0; i < count; i++)
+		{
+			bool found = false;
+			for (auto n = GetParent(nodes[i]); !AtEnd(n); n = GetParent(n))
+			{
+				if (n == parent)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				nodes[i--] = nodes[--count];
+		}
+	}
+	else
+	{
+		_RemoveChildrenFromListRecursive(this, nodes, count, parent);
 	}
 }
 
@@ -112,13 +138,31 @@ void TreeItemElement::OnEvent(UIEvent& e)
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
+	else if (e.type == UIEventType::DragMove)
+	{
+		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+			if (ddd->scope == treeEd)
+				treeEd->_OnDragMove(ddd, node, GetBorderRect(), e);
+	}
+	if (e.type == UIEventType::DragDrop)
+	{
+		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+			if (ddd->scope == treeEd)
+				treeEd->_OnDragDrop(ddd);
+	}
+	else if (e.type == UIEventType::DragLeave)
+	{
+		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+			if (ddd->scope == treeEd)
+				treeEd->_dragTargetLoc = {};
+	}
 }
 
 void TreeItemElement::ContextMenu()
 {
 	auto& CM = ContextMenu::Get();
-	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(node); RerenderNode(); };
-	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(node); RerenderNode(); };
+	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(node); treeEd->_OnEdit(this); };
+	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(node); treeEd->_OnEdit(this); };
 	if (auto* cms = treeEd->GetContextMenuSource())
 		cms->FillItemContextMenu(CM, node, 0);
 }
@@ -157,6 +201,21 @@ void TreeEditor::OnEvent(UIEvent& e)
 		if (auto* cms = GetContextMenuSource())
 			cms->FillListContextMenu(ContextMenu::Get());
 	}
+}
+
+void TreeEditor::OnPaint()
+{
+	Node::OnPaint();
+
+	if (_dragTargetLoc.IsValid())
+	{
+		auto r = _dragTargetLine;
+		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
+	}
+}
+
+void TreeEditor::OnSerialize(IDataSerializer& s)
+{
 }
 
 void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild)
@@ -199,7 +258,7 @@ void TreeEditor::OnBuildDeleteButton(UIContainer* ctx, ItemLoc node)
 {
 	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, node](UIEvent&) { GetTree()->Remove(node); Rerender(); });
+	delBtn + ui::EventHandler(UIEventType::Activate, [this, node](UIEvent&) { GetTree()->Remove(node); _OnEdit(this); });
 }
 
 TreeEditor& TreeEditor::SetTree(ITree* t)
@@ -212,6 +271,115 @@ TreeEditor& TreeEditor::SetContextMenuSource(IListContextMenuSource* src)
 {
 	_ctxMenuSrc = src;
 	return *this;
+}
+
+void TreeEditor::_OnEdit(UIObject* who)
+{
+	system->eventSystem.OnChange(who);
+	system->eventSystem.OnCommit(who);
+	who->RerenderNode();
+}
+
+void TreeEditor::_OnDragMove(TreeDragData* tdd, ItemLoc item, const UIRect& rect, UIEvent& e)
+{
+	int level = 0; // TODO?
+	auto& R = rect;
+	if (e.y < lerp(R.y0, R.y1, 0.25f))
+	{
+		// above
+		_dragTargetLine = UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(UIRect::UniformBorder(1));
+		_dragTargetLoc = item;
+		_dragTargetInsDir = TreeInsertMode::Before;
+	}
+	else if (e.y > lerp(R.y0, R.y1, 0.75f))
+	{
+		// below
+		_dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(UIRect::UniformBorder(1));
+		auto firstChild = GetTree()->GetFirstChild(item);
+		if (true && firstChild.IsValid()) // TODO if expanded
+		{
+			// first child
+			_dragTargetLoc = firstChild;
+			_dragTargetInsDir = TreeInsertMode::Before;
+			//_dragTargetLine.x0 += (level + 1) * 12;
+		}
+		else
+		{
+#if 0
+			int ll = level - 1;
+			auto* PP = N;
+			auto* P = N->parent;
+			bool foundplace = false;
+			for (; P; P = P->parent, ll--)
+			{
+				for (size_t i = 0; i < P->children.size(); i++)
+				{
+					if (P->children[i] == PP && i + 1 < P->children.size())
+					{
+						dragTargetArr = &P->children;
+						dragTargetCont = P;
+						dragTargetInsertBefore = i + 1;
+						_dragTargetLine.x0 += ll * 12;
+						foundplace = true;
+						break;
+					}
+				}
+				if (foundplace)
+					break;
+				PP = P;
+			}
+			if (!foundplace)
+			{
+				for (size_t i = 0; i < rootNodes.size(); i++)
+				{
+					if (rootNodes[i] == PP)
+					{
+						dragTargetArr = &rootNodes;
+						dragTargetCont = nullptr;
+						dragTargetInsertBefore = i + 1;
+						foundplace = true;
+						break;
+					}
+				}
+			}
+#endif
+		}
+	}
+	else
+	{
+		// in
+		_dragTargetLine = UIRect{ R.x0 + level * 12, lerp(R.y0, R.y1, 0.25f), R.x1, lerp(R.y0, R.y1, 0.75f) };
+		_dragTargetLoc = item;
+		_dragTargetInsDir = TreeInsertMode::Inside;
+	}
+}
+
+void TreeEditor::_OnDragDrop(TreeDragData* tdd)
+{
+	assert(tdd->nodes.size() == 1);
+	auto dest = _dragTargetLoc;
+
+	size_t count = tdd->nodes.size();
+	GetTree()->RemoveChildrenFromListOf(tdd->nodes.data(), count, dest);
+	if (count == 0)
+	{
+		_dragTargetLoc = {};
+		return;
+	}
+
+	auto src = tdd->nodes[0];
+	auto insDir = _dragTargetInsDir;
+	if ((GetTree()->GetFeatureFlags() & ITree::HasChildArray) &&
+		src.cont == dest.cont)
+	{
+		size_t realDest = dest.index + (insDir == TreeInsertMode::After ? 1 : 0);
+		if (realDest > src.index)
+			dest.index--;
+	}
+	GetTree()->MoveTo(src, dest, insDir);
+
+	_dragTargetLoc = {};
+	_OnEdit(this);
 }
 
 } // ui

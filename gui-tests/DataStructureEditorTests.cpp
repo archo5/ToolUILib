@@ -199,10 +199,30 @@ struct Tree : ui::ITree
 		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
 		C.push_back(C[node.index]->Clone());
 	}
+	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
+	{
+		auto& srcC = *static_cast<std::vector<Node*>*>(node.cont);
+		auto* srcNode = srcC[node.index];
+		srcC.erase(srcC.begin() + node.index);
+
+		auto& destC = *static_cast<std::vector<Node*>*>(dest.cont);
+		switch (insDir)
+		{
+		case ui::TreeInsertMode::Before:
+			destC.insert(destC.begin() + dest.index, srcNode);
+			break;
+		case ui::TreeInsertMode::After:
+			destC.insert(destC.begin() + dest.index + 1, srcNode);
+			break;
+		case ui::TreeInsertMode::Inside:
+			destC[dest.index]->children.push_back(srcNode);
+			break;
+		}
+	}
 };
 } // npca
 
-namespace wpca { // no parent, child array
+namespace wpca { // with parent, child array
 struct Node
 {
 	int num = 0;
@@ -265,6 +285,16 @@ struct Tree : ui::ITree
 		return { 0, &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->children };
 	}
 	ui::ItemLoc GetNext(ui::ItemLoc node) override { return { node.index + 1, node.cont }; }
+#if 0
+	ui::ItemLoc GetParent(ui::ItemLoc node)
+	{
+		auto* N = (*static_cast<std::vector<Node*>*>(node.cont))[node.index];
+		if (!N->parent)
+			return {};
+		if (!N->parent->parent)
+			return { &N->parent->parent->children };
+	}
+#endif
 	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
 	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
@@ -278,6 +308,29 @@ struct Tree : ui::ITree
 	{
 		auto& C = *static_cast<std::vector<Node*>*>(node.cont);
 		C.push_back(C[node.index]->Clone());
+	}
+	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
+	{
+		auto& srcC = *static_cast<std::vector<Node*>*>(node.cont);
+		auto* srcNode = srcC[node.index];
+		srcC.erase(srcC.begin() + node.index);
+
+		auto& destC = *static_cast<std::vector<Node*>*>(dest.cont);
+		switch (insDir)
+		{
+		case ui::TreeInsertMode::Before:
+			srcNode->parent = destC[dest.index]->parent;
+			destC.insert(destC.begin() + dest.index, srcNode);
+			break;
+		case ui::TreeInsertMode::After:
+			srcNode->parent = destC[dest.index]->parent;
+			destC.insert(destC.begin() + dest.index + 1, srcNode);
+			break;
+		case ui::TreeInsertMode::Inside:
+			srcNode->parent = destC[dest.index];
+			destC[dest.index]->children.push_back(srcNode);
+			break;
+		}
 	}
 };
 } // wpca
