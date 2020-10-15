@@ -22,28 +22,10 @@ struct ITreeContextMenuSource
 
 struct ITree
 {
-	enum FeatureFlags
-	{
-		HasChildArray = 1 << 1,
-	};
-
-	virtual unsigned GetFeatureFlags() = 0;
-	virtual ItemLoc GetFirstRoot() = 0;
-	virtual ItemLoc GetFirstChild(ItemLoc node) = 0;
-	virtual ItemLoc GetNext(ItemLoc node) = 0;
-	virtual bool AtEnd(ItemLoc node) = 0;
+	using IterationFunc = std::function<void(void* ptr)>;
+	virtual void IterateChildren(TreePathRef path, IterationFunc&& fn) = 0;
+	virtual bool HasChildren(TreePathRef path) = 0;
 	virtual size_t GetChildCount(TreePathRef path) = 0;
-	virtual void* GetValuePtr(ItemLoc node) = 0;
-
-	template <class T> T& GetValue(ItemLoc node) { return *static_cast<T*>(GetValuePtr(node)); }
-
-#if 0
-	virtual void RemoveChildrenFromList(ItemLoc* nodes, size_t& count);
-	virtual void RemoveChildrenFromListOf(ItemLoc* nodes, size_t& count, ItemLoc parent);
-	virtual void IndexSort(ItemLoc* nodes, size_t count);
-	virtual void RemoveAll(TreePathRef* paths, size_t count);
-	virtual void DuplicateAll(TreePathRef* paths, size_t count);
-#endif
 
 	virtual void Remove(TreePathRef path) {}
 	virtual void Duplicate(TreePathRef path) {}
@@ -85,9 +67,9 @@ struct TreeEditor : Node
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	virtual void OnBuildChildList(UIContainer* ctx, ItemLoc firstNode, TreePath& path);
-	virtual void OnBuildList(UIContainer* ctx, ItemLoc firstNode, TreePath& path);
-	virtual void OnBuildItem(UIContainer* ctx, ItemLoc node, TreePath& path);
+	virtual void OnBuildChildList(UIContainer* ctx, TreePath& path);
+	virtual void OnBuildList(UIContainer* ctx, TreePath& path);
+	virtual void OnBuildItem(UIContainer* ctx, TreePathRef path, void* data);
 	virtual void OnBuildDeleteButton(UIContainer* ctx);
 
 	ITree* GetTree() const { return _tree; }
@@ -99,7 +81,7 @@ struct TreeEditor : Node
 	void _OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, UIEvent& e);
 	void _OnDragDrop(TreeDragData* tdd);
 
-	std::function<void(UIContainer* ctx, TreeEditor* te, ItemLoc node)> itemUICallback;
+	std::function<void(UIContainer* ctx, TreeEditor* te, TreePathRef path, void* data)> itemUICallback;
 
 	bool showDeleteButton = true;
 

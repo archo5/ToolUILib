@@ -154,7 +154,7 @@ void Test_SequenceEditors(UIContainer* ctx)
 }
 
 
-namespace npca { // no parent, child array
+namespace cpa { // child pointer array
 struct Node
 {
 	int num = 0;
@@ -180,6 +180,22 @@ struct Tree : ui::ITree
 
 	Tree()
 	{
+		SetDefault();
+	}
+	~Tree()
+	{
+		Clear();
+	}
+
+	void Clear()
+	{
+		for (Node* r : roots)
+			delete r;
+		roots.clear();
+	}
+	void SetDefault()
+	{
+		Clear();
 		roots =
 		{
 			new Node(1,
@@ -196,10 +212,22 @@ struct Tree : ui::ITree
 			new Node(8, {}),
 		};
 	}
-	~Tree()
+	void SetFlat(int count)
 	{
-		for (Node* r : roots)
-			delete r;
+		Clear();
+		for (int i = 0; i < count; i++)
+			roots.push_back(new Node(i, {}));
+	}
+	void SetBranchy(int levels)
+	{
+		Clear();
+		roots = { new Node(1, {}), new Node(2, {}) };
+		for (int i = 0; i < levels; i++)
+		{
+			auto* a = new Node(i * 2 + 3, { roots[0]->Clone(), roots[1]->Clone() });
+			auto* b = new Node(i * 2 + 4, { roots[0]->Clone(), roots[1]->Clone() });
+			roots = { a, b };
+		}
 	}
 
 	struct NodeLoc
@@ -218,14 +246,24 @@ struct Tree : ui::ITree
 		}
 	}
 
-	unsigned GetFeatureFlags() override { return HasChildArray; }
-	ui::ItemLoc GetFirstRoot() override { return { 0, &roots }; }
-	ui::ItemLoc GetFirstChild(ui::ItemLoc node) override
+	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
 	{
-		return { 0, &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->children };
+		if (path.empty())
+		{
+			for (auto* node : roots)
+				fn(&node->num);
+		}
+		else
+		{
+			auto loc = FindNode(path);
+			for (auto* node : loc.arr->at(loc.idx)->children)
+				fn(&node->num);
+		}
 	}
-	ui::ItemLoc GetNext(ui::ItemLoc node) override { return { node.index + 1, node.cont }; }
-	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
+	bool HasChildren(ui::TreePathRef path) override
+	{
+		return GetChildCount(path) != 0;
+	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
 		if (path.empty())
@@ -233,7 +271,6 @@ struct Tree : ui::ITree
 		auto loc = FindNode(path);
 		return loc.arr->at(loc.idx)->children.size();
 	}
-	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
 	void Remove(ui::TreePathRef path) override
 	{
@@ -256,67 +293,61 @@ struct Tree : ui::ITree
 		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
 	}
 };
-} // npca
+} // cpa
 
-namespace wpca { // with parent, child array
+namespace cva { // child value array
 struct Node
 {
 	int num = 0;
-	std::vector<Node*> children;
-	Node* parent = nullptr;
+	std::vector<Node> children;
 
-	Node(int n, const std::vector<Node*>& ch) : num(n), children(ch)
-	{
-		for (Node* n : children)
-			n->parent = this;
-	}
-	~Node()
-	{
-		for (Node* n : children)
-			delete n;
-	}
-	Node* Clone()
-	{
-		Node* tmp = new Node(*this);
-		for (Node*& n : tmp->children)
-		{
-			n = n->Clone();
-			n->parent = this;
-		}
-		return tmp;
-	}
+	Node(int n, const std::vector<Node>& ch) : num(n), children(ch) {}
 };
 struct Tree : ui::ITree
 {
-	std::vector<Node*> roots;
+	std::vector<Node> roots;
 
 	Tree()
 	{
+		SetDefault();
+	}
+
+	void SetDefault()
+	{
 		roots =
 		{
-			new Node(1,
+			Node(1,
 			{
-				new Node(2,
+				Node(2,
 				{
-					new Node(3,
+					Node(3,
 					{
-						new Node(5, {}),
+						Node(5, {}),
 					}),
-					new Node(4, {}),
+					Node(4, {}),
 				}),
 			}),
-			new Node(8, {}),
+			Node(8, {}),
 		};
 	}
-	~Tree()
+	void SetFlat(int count)
 	{
-		for (Node* r : roots)
-			delete r;
+		roots.clear();
+		for (int i = 0; i < count; i++)
+			roots.push_back(Node(i, {}));
+	}
+	void SetBranchy(int levels)
+	{
+		roots = { Node(1, {}), Node(2, {}) };
+		for (int i = 0; i < levels; i++)
+		{
+			roots = { Node(i * 2 + 3, roots), Node(i * 2 + 4, roots) };
+		}
 	}
 
 	struct NodeLoc
 	{
-		std::vector<Node*>* arr;
+		std::vector<Node>* arr;
 		size_t idx;
 	};
 	NodeLoc FindNode(ui::TreePathRef path)
@@ -326,49 +357,57 @@ struct Tree : ui::ITree
 		else
 		{
 			auto parent = FindNode(path.without_last());
-			return { &(*parent.arr)[parent.idx]->children, path.last() };
+			return { &(*parent.arr)[parent.idx].children, path.last() };
 		}
 	}
 
-	unsigned GetFeatureFlags() override { return HasChildArray; }
-	ui::ItemLoc GetFirstRoot() override { return { 0, &roots }; }
-	ui::ItemLoc GetFirstChild(ui::ItemLoc node) override
+	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
 	{
-		return { 0, &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->children };
+		if (path.empty())
+		{
+			for (auto& node : roots)
+				fn(&node.num);
+		}
+		else
+		{
+			auto loc = FindNode(path);
+			for (auto& node : loc.arr->at(loc.idx).children)
+				fn(&node.num);
+		}
 	}
-	ui::ItemLoc GetNext(ui::ItemLoc node) override { return { node.index + 1, node.cont }; }
-	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
+	bool HasChildren(ui::TreePathRef path) override
+	{
+		return GetChildCount(path) != 0;
+	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
 		if (path.empty())
 			return roots.size();
 		auto loc = FindNode(path);
-		return loc.arr->at(loc.idx)->children.size();
+		return loc.arr->at(loc.idx).children.size();
 	}
-	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
 	void Remove(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		delete loc.arr->at(loc.idx);
 		loc.arr->erase(loc.arr->begin() + loc.idx);
 	}
 	void Duplicate(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
+		loc.arr->push_back(loc.arr->at(loc.idx));
 	}
 	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
 		auto srcLoc = FindNode(node);
-		auto* srcNode = srcLoc.arr->at(srcLoc.idx);
+		auto srcNode = std::move(srcLoc.arr->at(srcLoc.idx));
 		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
 
 		auto destLoc = FindNode(dest);
-		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
+		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, std::move(srcNode));
 	}
 };
-} // wpca
+} // cva
 
 struct TreeEditorsTest : ui::Node
 {
@@ -376,16 +415,55 @@ struct TreeEditorsTest : ui::Node
 
 	void Render(UIContainer* ctx) override
 	{
+		{
+			ui::Property::Scope ps(ctx);
+			if (ui::imm::Button(ctx, "Default"))
+			{
+				cpaTree.SetDefault();
+				cvaTree.SetDefault();
+			}
+			if (ui::imm::Button(ctx, "Flat 10"))
+			{
+				cpaTree.SetFlat(10);
+				cvaTree.SetFlat(10);
+			}
+			if (ui::imm::Button(ctx, "Flat 100"))
+			{
+				cpaTree.SetFlat(100);
+				cvaTree.SetFlat(100);
+			}
+			if (ui::imm::Button(ctx, "Flat 1K"))
+			{
+				cpaTree.SetFlat(1000);
+				cvaTree.SetFlat(1000);
+			}
+			if (ui::imm::Button(ctx, "Branchy 2"))
+			{
+				cpaTree.SetBranchy(2);
+				cvaTree.SetBranchy(2);
+			}
+			if (ui::imm::Button(ctx, "Branchy 4"))
+			{
+				cpaTree.SetBranchy(4);
+				cvaTree.SetBranchy(4);
+			}
+			if (ui::imm::Button(ctx, "Branchy 8"))
+			{
+				cpaTree.SetBranchy(8);
+				cvaTree.SetBranchy(8);
+			}
+		};
+
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
-		ctx->Text("no parent, child array:");
-		TreeEdit(ctx, &npcaTree);
+		ctx->Text("child pointer array:");
+		TreeEdit(ctx, &cpaTree);
 		ctx->Pop();
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
-		ctx->Text("with parent, child array:");
-		//TreeEdit(ctx, &wpcaTree);
+		ctx->Text("child value array:");
+		TreeEdit(ctx, &cvaTree);
 		ctx->Pop();
 
 		ctx->Pop();
@@ -398,14 +476,14 @@ struct TreeEditorsTest : ui::Node
 		ctx->Make<ui::TreeEditor>()
 			->SetTree(itree)
 			.SetContextMenuSource(&g_treeInfoDumpCMS)
-			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::ItemLoc node)
+			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
-			ui::imm::PropEditInt(ctx, "\bvalue", te->GetTree()->GetValue<int>(node));
+			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(data));
 		};
 	}
 
-	npca::Tree npcaTree;
-	wpca::Tree wpcaTree;
+	cpa::Tree cpaTree;
+	cva::Tree cvaTree;
 };
 void Test_TreeEditors(UIContainer* ctx)
 {

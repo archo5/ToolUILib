@@ -8,118 +8,6 @@
 
 namespace ui {
 
-#if 0
-static void _RemoveChildrenFromListRecursive(ITree* tree, ItemLoc* nodes, size_t& count, ItemLoc parent)
-{
-	for (auto ch = tree->GetFirstChild(parent); !tree->AtEnd(ch); ch = tree->GetNext(ch))
-	{
-		for (size_t j = 0; j < count; j++)
-		{
-			if (ch == nodes[j])
-			{
-				nodes[j] = nodes[--count];
-				break;
-			}
-		}
-		_RemoveChildrenFromListRecursive(tree, nodes, count, ch);
-	}
-}
-
-void ITree::IndexSort(ItemLoc* nodes, size_t count)
-{
-	if (GetFeatureFlags() & HasChildArray)
-	{
-		std::sort(nodes, nodes + count, [](const ItemLoc& a, const ItemLoc& b)
-		{
-			return a.index < b.index;
-		});
-	}
-}
-
-void ITree::RemoveChildrenFromList(ItemLoc* nodes, size_t& count)
-{
-	if (GetFeatureFlags() & CanGetParent)
-	{
-		for (size_t i = 0; i < count; i++)
-		{
-			bool found = false;
-			for (auto n = GetParent(nodes[i]); !AtEnd(n); n = GetParent(n))
-			{
-				for (size_t j = 0; j < count; j++)
-				{
-					if (n == nodes[j])
-					{
-						found = true;
-						break;
-					}
-				}
-				if (found)
-					break;
-			}
-
-			if (found)
-				nodes[i--] = nodes[--count];
-		}
-	}
-	else
-	{
-		for (size_t i = 0; i < count; i++)
-		{
-			_RemoveChildrenFromListRecursive(this, nodes, count, nodes[i]);
-		}
-	}
-}
-
-void ITree::RemoveChildrenFromListOf(ItemLoc* nodes, size_t& count, ItemLoc parent)
-{
-	if (GetFeatureFlags() & CanGetParent)
-	{
-		for (size_t i = 0; i < count; i++)
-		{
-			bool found = false;
-			for (auto n = GetParent(nodes[i]); !AtEnd(n); n = GetParent(n))
-			{
-				if (n == parent)
-				{
-					found = true;
-					break;
-				}
-			}
-
-			if (found)
-				nodes[i--] = nodes[--count];
-		}
-	}
-	else
-	{
-		_RemoveChildrenFromListRecursive(this, nodes, count, parent);
-	}
-}
-
-void ITree::RemoveAll(TreePathRef* paths, size_t count)
-{
-	// TODO
-	//RemoveChildrenFromList(paths, count);
-	//IndexSort(paths, count);
-	for (size_t i = count; i < count; )
-	{
-		Remove(paths[--i]);
-	}
-}
-
-void ITree::DuplicateAll(TreePathRef* paths, size_t count)
-{
-	// TODO
-	//RemoveChildrenFromList(paths, count);
-	//IndexSort(paths, count);
-	for (size_t i = 0; i < count; i++)
-	{
-		Duplicate(paths[i]);
-	}
-}
-#endif
-
-
 void TreeItemElement::OnInit()
 {
 	Selectable::OnInit();
@@ -192,7 +80,7 @@ void TreeEditor::Render(UIContainer* ctx)
 	s.SetBoxSizing(style::BoxSizing::ContentBox);
 
 	TreePath path;
-	OnBuildList(ctx, _tree->GetFirstRoot(), path);
+	OnBuildList(ctx, path);
 
 	ctx->Pop();
 }
@@ -223,44 +111,45 @@ void TreeEditor::OnSerialize(IDataSerializer& s)
 {
 }
 
-void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild, TreePath& path)
+void TreeEditor::OnBuildChildList(UIContainer* ctx, TreePath& path)
 {
 	ctx->PushBox().GetStyle().SetPaddingLeft(8);
 
-	OnBuildList(ctx, firstChild, path);
+	OnBuildList(ctx, path);
 
 	ctx->Pop();
 }
 
-void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode, TreePath& path)
+void TreeEditor::OnBuildList(UIContainer* ctx, TreePath& path)
 {
-	for (auto node = firstNode; !_tree->AtEnd(node); node = _tree->GetNext(node))
+	size_t index = 0;
+	_tree->IterateChildren(path, [this, ctx, &index, &path](void* data)
 	{
-		path.push_back(node.index);
+		path.push_back(index);
 
 		ctx->Push<TreeItemElement>()->Init(this, path);
 
-		OnBuildItem(ctx, node, path);
+		OnBuildItem(ctx, path, data);
 
 		if (showDeleteButton)
 			OnBuildDeleteButton(ctx);
 
 		ctx->Pop();
 
-		auto firstChild = _tree->GetFirstChild(node);
-		if (!_tree->AtEnd(firstChild))
+		if (_tree->HasChildren(path))
 		{
-			OnBuildChildList(ctx, firstChild, path);
+			OnBuildChildList(ctx, path);
 		}
 
 		path.pop_back();
-	}
+		index++;
+	});
 }
 
-void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node, TreePath& path)
+void TreeEditor::OnBuildItem(UIContainer* ctx, TreePathRef path, void* data)
 {
 	if (itemUICallback)
-		itemUICallback(ctx, this, node);
+		itemUICallback(ctx, this, path, data);
 }
 
 void TreeEditor::OnBuildDeleteButton(UIContainer* ctx)
@@ -307,7 +196,7 @@ void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIR
 		// below
 		_dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 };
 		_dragTargetLoc.assign(hoverPath.begin(), hoverPath.end());
-		if (true && GetTree()->GetChildCount(hoverPath)) // TODO if expanded
+		if (true && GetTree()->HasChildren(hoverPath)) // TODO if expanded
 		{
 			// first child
 			_dragTargetLoc.push_back(0);
@@ -317,7 +206,7 @@ void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIR
 			auto PP = hoverPath;
 			auto P = hoverPath.without_last();
 			bool foundplace = false;
-			for (; !P.empty(); PP = P, P = P.without_last())
+			for (;;)
 			{
 				if (PP.last() + 1 < GetTree()->GetChildCount(P))
 				{
@@ -326,6 +215,10 @@ void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIR
 					foundplace = true;
 					break;
 				}
+				if (P.empty())
+					break;
+				PP = P;
+				P = P.without_last();
 			}
 			if (!foundplace)
 			{

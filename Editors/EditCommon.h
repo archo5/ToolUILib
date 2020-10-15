@@ -5,20 +5,6 @@
 
 namespace ui {
 
-struct ItemLoc
-{
-	uintptr_t index; // pointer to node or offset to entry in node container
-	void* cont; // pointer to node container or nothing
-
-	ItemLoc() : index(UINTPTR_MAX), cont(nullptr) {}
-	ItemLoc(uintptr_t n, void* c = nullptr) : index(n), cont(c) {}
-	static ItemLoc Null() { return { UINTPTR_MAX, nullptr }; }
-	bool IsValid() const { return *this != Null(); }
-	bool IsNull() const { return *this == Null(); }
-	bool operator == (ItemLoc o) const { return index == o.index && cont == o.cont; }
-	bool operator != (ItemLoc o) const { return index != o.index || cont != o.cont; }
-};
-
 struct MenuItemCollection;
 
 struct IListContextMenuSource
