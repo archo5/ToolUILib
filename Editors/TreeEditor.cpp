@@ -8,6 +8,7 @@
 
 namespace ui {
 
+#if 0
 static void _RemoveChildrenFromListRecursive(ITree* tree, ItemLoc* nodes, size_t& count, ItemLoc parent)
 {
 	for (auto ch = tree->GetFirstChild(parent); !tree->AtEnd(ch); ch = tree->GetNext(ch))
@@ -116,6 +117,7 @@ void ITree::DuplicateAll(TreePathRef* paths, size_t count)
 		Duplicate(paths[i]);
 	}
 }
+#endif
 
 
 void TreeItemElement::OnInit()
@@ -136,7 +138,7 @@ void TreeItemElement::OnEvent(UIEvent& e)
 
 	if (e.context->DragCheck(e, UIMouseButton::Left))
 	{
-		ui::DragDrop::SetData(new TreeDragData(treeEd, { node }));
+		ui::DragDrop::SetData(new TreeDragData(treeEd, { path }));
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
@@ -144,7 +146,7 @@ void TreeItemElement::OnEvent(UIEvent& e)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
-				treeEd->_OnDragMove(ddd, node, GetBorderRect(), e);
+				treeEd->_OnDragMove(ddd, path, GetBorderRect(), e);
 	}
 	if (e.type == UIEventType::DragDrop)
 	{
@@ -169,15 +171,14 @@ void TreeItemElement::ContextMenu()
 		cms->FillItemContextMenu(CM, path, 0);
 }
 
-void TreeItemElement::Init(TreeEditor* te, ItemLoc n, const std::vector<uintptr_t>& p)
+void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 {
 	treeEd = te;
-	node = n;
 	path = p;
 
 	bool dragging = false;
 	if (auto* dd = ui::DragDrop::GetData<TreeDragData>())
-		if (dd->nodes.size() == 1 && dd->nodes[0] == n && dd->scope == te)
+		if (dd->paths.size() == 1 && dd->paths[0] == p && dd->scope == te)
 			dragging = true;
 
 	Selectable::Init(dragging);
@@ -190,7 +191,7 @@ void TreeEditor::Render(UIContainer* ctx)
 	s.SetMinHeight(22);
 	s.SetBoxSizing(style::BoxSizing::ContentBox);
 
-	std::vector<uintptr_t> path;
+	TreePath path;
 	OnBuildList(ctx, _tree->GetFirstRoot(), path);
 
 	ctx->Pop();
@@ -211,9 +212,9 @@ void TreeEditor::OnPaint()
 {
 	Node::OnPaint();
 
-	if (_dragTargetLoc.IsValid())
+	if (!_dragTargetLoc.empty())
 	{
-		auto r = _dragTargetLine;
+		auto r = _dragTargetLine.ExtendBy(UIRect::UniformBorder(1));
 		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 	}
 }
@@ -222,7 +223,7 @@ void TreeEditor::OnSerialize(IDataSerializer& s)
 {
 }
 
-void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild, std::vector<uintptr_t>& path)
+void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild, TreePath& path)
 {
 	ctx->PushBox().GetStyle().SetPaddingLeft(8);
 
@@ -231,13 +232,13 @@ void TreeEditor::OnBuildChildList(UIContainer* ctx, ItemLoc firstChild, std::vec
 	ctx->Pop();
 }
 
-void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode, std::vector<uintptr_t>& path)
+void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode, TreePath& path)
 {
 	for (auto node = firstNode; !_tree->AtEnd(node); node = _tree->GetNext(node))
 	{
 		path.push_back(node.index);
 
-		ctx->Push<TreeItemElement>()->Init(this, node, path);
+		ctx->Push<TreeItemElement>()->Init(this, path);
 
 		OnBuildItem(ctx, node, path);
 
@@ -256,7 +257,7 @@ void TreeEditor::OnBuildList(UIContainer* ctx, ItemLoc firstNode, std::vector<ui
 	}
 }
 
-void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node, std::vector<uintptr_t>& path)
+void TreeEditor::OnBuildItem(UIContainer* ctx, ItemLoc node, TreePath& path)
 {
 	if (itemUICallback)
 		itemUICallback(ctx, this, node);
@@ -292,103 +293,103 @@ void TreeEditor::_OnEdit(UIObject* who)
 	who->RerenderNode();
 }
 
-void TreeEditor::_OnDragMove(TreeDragData* tdd, ItemLoc item, const UIRect& rect, UIEvent& e)
+void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, UIEvent& e)
 {
-	int level = 0; // TODO?
 	auto& R = rect;
 	if (e.y < lerp(R.y0, R.y1, 0.25f))
 	{
 		// above
-		_dragTargetLine = UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(UIRect::UniformBorder(1));
-		_dragTargetLoc = item;
-		_dragTargetInsDir = TreeInsertMode::Before;
+		_dragTargetLine = UIRect{ R.x0, R.y0, R.x1, R.y0 };
+		_dragTargetLoc.assign(hoverPath.begin(), hoverPath.end());
 	}
 	else if (e.y > lerp(R.y0, R.y1, 0.75f))
 	{
 		// below
-		_dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(UIRect::UniformBorder(1));
-		auto firstChild = GetTree()->GetFirstChild(item);
-		if (true && firstChild.IsValid()) // TODO if expanded
+		_dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 };
+		_dragTargetLoc.assign(hoverPath.begin(), hoverPath.end());
+		if (true && GetTree()->GetChildCount(hoverPath)) // TODO if expanded
 		{
 			// first child
-			_dragTargetLoc = firstChild;
-			_dragTargetInsDir = TreeInsertMode::Before;
-			//_dragTargetLine.x0 += (level + 1) * 12;
+			_dragTargetLoc.push_back(0);
 		}
 		else
 		{
-#if 0
-			int ll = level - 1;
-			auto* PP = N;
-			auto* P = N->parent;
+			auto PP = hoverPath;
+			auto P = hoverPath.without_last();
 			bool foundplace = false;
-			for (; P; P = P->parent, ll--)
+			for (; !P.empty(); PP = P, P = P.without_last())
 			{
-				for (size_t i = 0; i < P->children.size(); i++)
+				if (PP.last() + 1 < GetTree()->GetChildCount(P))
 				{
-					if (P->children[i] == PP && i + 1 < P->children.size())
-					{
-						dragTargetArr = &P->children;
-						dragTargetCont = P;
-						dragTargetInsertBefore = i + 1;
-						_dragTargetLine.x0 += ll * 12;
-						foundplace = true;
-						break;
-					}
-				}
-				if (foundplace)
+					_dragTargetLoc.assign(P.begin(), P.end());
+					_dragTargetLoc.push_back(PP.last() + 1);
+					foundplace = true;
 					break;
-				PP = P;
+				}
 			}
 			if (!foundplace)
 			{
-				for (size_t i = 0; i < rootNodes.size(); i++)
-				{
-					if (rootNodes[i] == PP)
-					{
-						dragTargetArr = &rootNodes;
-						dragTargetCont = nullptr;
-						dragTargetInsertBefore = i + 1;
-						foundplace = true;
-						break;
-					}
-				}
+				_dragTargetLoc = { GetTree()->GetChildCount({}) };
 			}
-#endif
 		}
 	}
 	else
 	{
 		// in
-		_dragTargetLine = UIRect{ R.x0 + level * 12, lerp(R.y0, R.y1, 0.25f), R.x1, lerp(R.y0, R.y1, 0.75f) };
-		_dragTargetLoc = item;
-		_dragTargetInsDir = TreeInsertMode::Inside;
+		_dragTargetLine = UIRect{ R.x0, lerp(R.y0, R.y1, 0.25f), R.x1, lerp(R.y0, R.y1, 0.75f) };
+		_dragTargetLoc.assign(hoverPath.begin(), hoverPath.end());
+		_dragTargetLoc.push_back(GetTree()->GetChildCount(hoverPath));
+	}
+}
+
+static bool PathMatchesPrefix(TreePathRef path, TreePathRef prefix)
+{
+	if (path.size() < prefix.size())
+		return false;
+	for (size_t i = 0; i < prefix.size(); i++)
+	{
+		if (path[i] != prefix[i])
+			return false;
+	}
+	return true;
+}
+
+static void RemoveUsingPrefix(std::vector<TreePathRef>& paths, TreePathRef prefix)
+{
+	for (size_t i = 0; i < paths.size(); i++)
+	{
+		if (PathMatchesPrefix(paths[i], prefix))
+		{
+			paths[i--] = paths.back();
+			paths.pop_back();
+		}
 	}
 }
 
 void TreeEditor::_OnDragDrop(TreeDragData* tdd)
 {
-	assert(tdd->nodes.size() == 1);
+	assert(tdd->paths.size() == 1);
 	auto dest = _dragTargetLoc;
 
-	size_t count = tdd->nodes.size();
-	GetTree()->RemoveChildrenFromListOf(tdd->nodes.data(), count, dest);
-	if (count == 0)
+	std::vector<TreePathRef> refs;
+	refs.reserve(tdd->paths.size());
+	for (auto& path : tdd->paths)
 	{
-		_dragTargetLoc = {};
-		return;
+		if (PathMatchesPrefix(dest, path))
+		{
+			// destination is inside one of the selected items
+			_dragTargetLoc = {};
+			return;
+		}
+		refs.push_back(path);
 	}
 
-	auto src = tdd->nodes[0];
-	auto insDir = _dragTargetInsDir;
-	if ((GetTree()->GetFeatureFlags() & ITree::HasChildArray) &&
-		src.cont == dest.cont)
-	{
-		size_t realDest = dest.index + (insDir == TreeInsertMode::After ? 1 : 0);
-		if (realDest > src.index)
-			dest.index--;
-	}
-	GetTree()->MoveTo(src, dest, insDir);
+	auto src = tdd->paths[0];
+	if (dest.size() >= src.size() &&
+		PathMatchesPrefix(dest, TreePathRef(src).without_last()) &&
+		dest[src.size() - 1] > src[src.size() - 1])
+		dest[src.size() - 1]--;
+	GetTree()->MoveTo(src, dest);
 
 	_dragTargetLoc = {};
 	_OnEdit(this);

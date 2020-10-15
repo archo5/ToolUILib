@@ -226,6 +226,13 @@ struct Tree : ui::ITree
 	}
 	ui::ItemLoc GetNext(ui::ItemLoc node) override { return { node.index + 1, node.cont }; }
 	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
+	size_t GetChildCount(ui::TreePathRef path) override
+	{
+		if (path.empty())
+			return roots.size();
+		auto loc = FindNode(path);
+		return loc.arr->at(loc.idx)->children.size();
+	}
 	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
 	void Remove(ui::TreePathRef path) override
@@ -239,25 +246,14 @@ struct Tree : ui::ITree
 		auto loc = FindNode(path);
 		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
 	}
-	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
+	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
-		auto& srcC = *static_cast<std::vector<Node*>*>(node.cont);
-		auto* srcNode = srcC[node.index];
-		srcC.erase(srcC.begin() + node.index);
+		auto srcLoc = FindNode(node);
+		auto* srcNode = srcLoc.arr->at(srcLoc.idx);
+		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
 
-		auto& destC = *static_cast<std::vector<Node*>*>(dest.cont);
-		switch (insDir)
-		{
-		case ui::TreeInsertMode::Before:
-			destC.insert(destC.begin() + dest.index, srcNode);
-			break;
-		case ui::TreeInsertMode::After:
-			destC.insert(destC.begin() + dest.index + 1, srcNode);
-			break;
-		case ui::TreeInsertMode::Inside:
-			destC[dest.index]->children.push_back(srcNode);
-			break;
-		}
+		auto destLoc = FindNode(dest);
+		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
 	}
 };
 } // npca
@@ -334,24 +330,21 @@ struct Tree : ui::ITree
 		}
 	}
 
-	unsigned GetFeatureFlags() override { return HasChildArray | CanGetParent; }
+	unsigned GetFeatureFlags() override { return HasChildArray; }
 	ui::ItemLoc GetFirstRoot() override { return { 0, &roots }; }
 	ui::ItemLoc GetFirstChild(ui::ItemLoc node) override
 	{
 		return { 0, &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->children };
 	}
 	ui::ItemLoc GetNext(ui::ItemLoc node) override { return { node.index + 1, node.cont }; }
-#if 0
-	ui::ItemLoc GetParent(ui::ItemLoc node)
-	{
-		auto* N = (*static_cast<std::vector<Node*>*>(node.cont))[node.index];
-		if (!N->parent)
-			return {};
-		if (!N->parent->parent)
-			return { &N->parent->parent->children };
-	}
-#endif
 	bool AtEnd(ui::ItemLoc node) override { return node.index >= static_cast<std::vector<Node*>*>(node.cont)->size(); }
+	size_t GetChildCount(ui::TreePathRef path) override
+	{
+		if (path.empty())
+			return roots.size();
+		auto loc = FindNode(path);
+		return loc.arr->at(loc.idx)->children.size();
+	}
 	void* GetValuePtr(ui::ItemLoc node) override { return &(*static_cast<std::vector<Node*>*>(node.cont))[node.index]->num; }
 
 	void Remove(ui::TreePathRef path) override
@@ -365,28 +358,14 @@ struct Tree : ui::ITree
 		auto loc = FindNode(path);
 		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
 	}
-	void MoveTo(ui::ItemLoc node, ui::ItemLoc dest, ui::TreeInsertMode insDir)
+	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
-		auto& srcC = *static_cast<std::vector<Node*>*>(node.cont);
-		auto* srcNode = srcC[node.index];
-		srcC.erase(srcC.begin() + node.index);
+		auto srcLoc = FindNode(node);
+		auto* srcNode = srcLoc.arr->at(srcLoc.idx);
+		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
 
-		auto& destC = *static_cast<std::vector<Node*>*>(dest.cont);
-		switch (insDir)
-		{
-		case ui::TreeInsertMode::Before:
-			srcNode->parent = destC[dest.index]->parent;
-			destC.insert(destC.begin() + dest.index, srcNode);
-			break;
-		case ui::TreeInsertMode::After:
-			srcNode->parent = destC[dest.index]->parent;
-			destC.insert(destC.begin() + dest.index + 1, srcNode);
-			break;
-		case ui::TreeInsertMode::Inside:
-			srcNode->parent = destC[dest.index];
-			destC[dest.index]->children.push_back(srcNode);
-			break;
-		}
+		auto destLoc = FindNode(dest);
+		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
 	}
 };
 } // wpca
@@ -406,7 +385,7 @@ struct TreeEditorsTest : ui::Node
 
 		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
 		ctx->Text("with parent, child array:");
-		TreeEdit(ctx, &wpcaTree);
+		//TreeEdit(ctx, &wpcaTree);
 		ctx->Pop();
 
 		ctx->Pop();
