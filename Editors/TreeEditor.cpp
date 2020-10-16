@@ -48,6 +48,24 @@ void TreeItemElement::OnEvent(UIEvent& e)
 			if (ddd->scope == treeEd)
 				treeEd->_dragTargetLoc = {};
 	}
+
+#if 1 // TODO
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	{
+		treeEd->GetTree()->ClearSelection();
+		treeEd->GetTree()->SetSelectionState(path, true);
+		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		e.context->BubblingEvent(selev);
+		RerenderNode();
+	}
+#else
+	if (treeEd->_selImpl.OnEvent(e, treeEd->GetSelectionStorage(), num, true, true))
+	{
+		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		e.context->BubblingEvent(selev);
+		RerenderNode();
+	}
+#endif
 }
 
 void TreeItemElement::ContextMenu()
@@ -55,8 +73,7 @@ void TreeItemElement::ContextMenu()
 	auto& CM = ContextMenu::Get();
 	CM.Add("Duplicate") = [this]() { treeEd->GetTree()->Duplicate(path); treeEd->_OnEdit(this); };
 	CM.Add("Remove") = [this]() { treeEd->GetTree()->Remove(path); treeEd->_OnEdit(this); };
-	if (auto* cms = treeEd->GetContextMenuSource())
-		cms->FillItemContextMenu(CM, path, 0);
+	treeEd->GetTree()->FillItemContextMenu(CM, path);
 }
 
 void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
@@ -69,7 +86,7 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 		if (dd->paths.size() == 1 && dd->paths[0] == p && dd->scope == te)
 			dragging = true;
 
-	Selectable::Init(dragging);
+	Selectable::Init(dragging || te->GetTree()->GetSelectionState(path));
 }
 
 
@@ -91,8 +108,7 @@ void TreeEditor::OnEvent(UIEvent& e)
 
 	if (e.type == UIEventType::ContextMenu)
 	{
-		if (auto* cms = GetContextMenuSource())
-			cms->FillListContextMenu(ContextMenu::Get());
+		GetTree()->FillListContextMenu(ContextMenu::Get());
 	}
 }
 
@@ -109,6 +125,7 @@ void TreeEditor::OnPaint()
 
 void TreeEditor::OnSerialize(IDataSerializer& s)
 {
+	_selImpl.OnSerialize(s);
 }
 
 void TreeEditor::OnBuildChildList(UIContainer* ctx, TreePath& path)
@@ -169,9 +186,9 @@ TreeEditor& TreeEditor::SetTree(ITree* t)
 	return *this;
 }
 
-TreeEditor& TreeEditor::SetContextMenuSource(ITreeContextMenuSource* src)
+TreeEditor& TreeEditor::SetSelectionMode(SelectionMode mode)
 {
-	_ctxMenuSrc = src;
+	_selImpl.selectionMode = mode;
 	return *this;
 }
 

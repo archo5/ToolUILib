@@ -361,6 +361,7 @@ void Test_TableView(UIContainer* ctx);
 void Demo_Calculator(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
 void Demo_CompactTreeNodeEdit(UIContainer* ctx);
+void Demo_ScriptTree(UIContainer* ctx);
 void Demo_NodeGraphEditor(UIContainer* ctx);
 void Demo_TrackEditor(UIContainer* ctx);
 void Demo_SlidingHighlightAnim(UIContainer* ctx);
@@ -455,6 +456,7 @@ static const TestEntry demoEntries[] =
 	{ "- Editors -" },
 	{ "Tree", Demo_BasicTreeNodeEdit },
 	{ "Inline tree", Demo_CompactTreeNodeEdit },
+	{ "Script tree", Demo_ScriptTree },
 	{ "Track editor demo", Demo_TrackEditor },
 	{},
 	{ "- Animations -" },

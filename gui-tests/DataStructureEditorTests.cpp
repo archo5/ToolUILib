@@ -23,29 +23,25 @@ struct InfoDumpContextMenuSource : ui::IListContextMenuSource
 }
 g_infoDumpCMS;
 
-struct TreeInfoDumpContextMenuSource : ui::ITreeContextMenuSource
+static void TreeFillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path)
 {
-	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path, size_t col)
+	std::string tmp = "Info [item]: path=[";
+	for (auto pe : path)
 	{
-		std::string tmp = "Info [item]: path=[";
-		for (auto pe : path)
-		{
-			if (tmp.back() != '[')
-				tmp += ",";
-			tmp += std::to_string(pe);
-		}
-		tmp += "] col=";
-		tmp += std::to_string(col);
-		mic.Add(tmp, true);
+		if (tmp.back() != '[')
+			tmp += ",";
+		tmp += std::to_string(pe);
 	}
-	void FillListContextMenu(ui::MenuItemCollection& mic)
-	{
-		char bfr[128];
-		snprintf(bfr, 128, "Info [list]: version=%u", unsigned(mic.GetVersion()));
-		mic.Add(bfr, true);
-	}
+	tmp += "]";
+	mic.Add(tmp, true);
 }
-g_treeInfoDumpCMS;
+
+static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
+{
+	char bfr[128];
+	snprintf(bfr, 128, "Info [list]: version=%u", unsigned(mic.GetVersion()));
+	mic.Add(bfr, true);
+}
 
 
 struct SequenceEditorsTest : ui::Node
@@ -158,6 +154,7 @@ namespace cpa { // child pointer array
 struct Node
 {
 	int num = 0;
+	bool sel = false;
 	std::vector<Node*> children;
 
 	Node(int n, const std::vector<Node*>& ch) : num(n), children(ch) {}
@@ -172,6 +169,12 @@ struct Node
 		for (Node*& n : tmp->children)
 			n = n->Clone();
 		return tmp;
+	}
+	void ClearSelection()
+	{
+		sel = false;
+		for (Node* n : children)
+			n->ClearSelection();
 	}
 };
 struct Tree : ui::ITree
@@ -272,6 +275,25 @@ struct Tree : ui::ITree
 		return loc.arr->at(loc.idx)->children.size();
 	}
 
+	void ClearSelection() override
+	{
+		for (auto* node : roots)
+			node->ClearSelection();
+	}
+	bool GetSelectionState(ui::TreePathRef path) override
+	{
+		auto loc = FindNode(path);
+		return loc.arr->at(loc.idx)->sel;
+	}
+	void SetSelectionState(ui::TreePathRef path, bool sel) override
+	{
+		auto loc = FindNode(path);
+		loc.arr->at(loc.idx)->sel = sel;
+	}
+
+	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path) override { TreeFillItemContextMenu(mic, path); }
+	void FillListContextMenu(ui::MenuItemCollection& mic) override { TreeFillListContextMenu(mic); }
+
 	void Remove(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
@@ -299,9 +321,16 @@ namespace cva { // child value array
 struct Node
 {
 	int num = 0;
+	bool sel = false;
 	std::vector<Node> children;
 
 	Node(int n, const std::vector<Node>& ch) : num(n), children(ch) {}
+	void ClearSelection()
+	{
+		sel = false;
+		for (Node& n : children)
+			n.ClearSelection();
+	}
 };
 struct Tree : ui::ITree
 {
@@ -386,6 +415,25 @@ struct Tree : ui::ITree
 		auto loc = FindNode(path);
 		return loc.arr->at(loc.idx).children.size();
 	}
+
+	void ClearSelection() override
+	{
+		for (auto& node : roots)
+			node.ClearSelection();
+	}
+	bool GetSelectionState(ui::TreePathRef path) override
+	{
+		auto loc = FindNode(path);
+		return loc.arr->at(loc.idx).sel;
+	}
+	void SetSelectionState(ui::TreePathRef path, bool sel) override
+	{
+		auto loc = FindNode(path);
+		loc.arr->at(loc.idx).sel = sel;
+	}
+
+	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path) override { TreeFillItemContextMenu(mic, path); }
+	void FillListContextMenu(ui::MenuItemCollection& mic) override { TreeFillListContextMenu(mic); }
 
 	void Remove(ui::TreePathRef path) override
 	{
@@ -475,7 +523,6 @@ struct TreeEditorsTest : ui::Node
 	{
 		ctx->Make<ui::TreeEditor>()
 			->SetTree(itree)
-			.SetContextMenuSource(&g_treeInfoDumpCMS)
 			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(data));

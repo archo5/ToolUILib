@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../Editors/TreeEditor.h"
+
 
 static ui::DataCategoryTag DCT_Node[1];
 struct BasicTreeNodeEditDemo : ui::Node
@@ -294,3 +296,249 @@ void Demo_CompactTreeNodeEdit(UIContainer* ctx)
 	ctx->Make<CompactTreeNodeEditDemo>();
 }
 
+
+namespace script_tree {
+static ui::DataCategoryTag DCT_TreeChanged[1];
+struct Node
+{
+	std::vector<Node*> children;
+
+	~Node()
+	{
+		for (Node* n : children)
+			delete n;
+	}
+	virtual Node* CloneBase() = 0;
+	Node* Clone()
+	{
+		Node* tmp = CloneBase();
+		for (Node*& n : tmp->children)
+			n = n->Clone();
+		return tmp;
+	}
+
+	virtual void ItemUI(UIContainer* ctx)
+	{
+		ctx->Text("Item");
+	}
+	void DoSubnodes()
+	{
+		for (auto* ch : children)
+			ch->Do();
+	}
+	virtual void Do() = 0;
+};
+
+struct RepeatNode : Node
+{
+	int times = 5;
+	Node* CloneBase() override { return new RepeatNode(*this); }
+	virtual void ItemUI(UIContainer* ctx)
+	{
+		ui::imm::PropEditInt(ctx, "\bRepeat #", times);
+	}
+	void Do() override
+	{
+		for (int i = 0; i < times; i++)
+		{
+			DoSubnodes();
+		}
+	}
+};
+
+struct PrintNode : Node
+{
+	std::string text;
+	Node* CloneBase() override { return new PrintNode(*this); }
+	virtual void ItemUI(UIContainer* ctx)
+	{
+		ui::imm::PropEditString(ctx, "\bPrint text:", text.c_str(), [this](const char* v) { text = v; });
+	}
+	void Do() override
+	{
+		printf("PRINT: %s\n", text.c_str());
+	}
+};
+
+struct Tree : ui::ITree
+{
+	std::vector<Node*> roots;
+
+	~Tree()
+	{
+		Clear();
+	}
+
+	void Clear()
+	{
+		for (Node* r : roots)
+			delete r;
+		roots.clear();
+	}
+	void RunScript()
+	{
+		for (Node* r : roots)
+			r->Do();
+	}
+
+	struct NodeLoc
+	{
+		std::vector<Node*>* arr;
+		size_t idx;
+
+		Node* Get() const { return arr->at(idx); }
+	};
+	NodeLoc FindNode(ui::TreePathRef path)
+	{
+		if (path.size() == 1)
+			return { &roots, path.last() };
+		else
+		{
+			auto parent = FindNode(path.without_last());
+			return { &(*parent.arr)[parent.idx]->children, path.last() };
+		}
+	}
+
+	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
+	{
+		if (path.empty())
+		{
+			for (auto* node : roots)
+				fn(node);
+		}
+		else
+		{
+			auto loc = FindNode(path);
+			for (auto* node : loc.Get()->children)
+				fn(node);
+		}
+	}
+	bool HasChildren(ui::TreePathRef path) override
+	{
+		return GetChildCount(path) != 0;
+	}
+	size_t GetChildCount(ui::TreePathRef path) override
+	{
+		if (path.empty())
+			return roots.size();
+		auto loc = FindNode(path);
+		return loc.Get()->children.size();
+	}
+
+	void ClearSelection() override
+	{
+		selected = nullptr;
+	}
+	bool GetSelectionState(ui::TreePathRef path) override
+	{
+		auto loc = FindNode(path);
+		return loc.Get() == selected;
+	}
+	void SetSelectionState(ui::TreePathRef path, bool sel) override
+	{
+		auto loc = FindNode(path);
+		if (sel)
+			selected = loc.Get();
+	}
+
+	uint32_t lastVer = ui::ContextMenu::Get().GetVersion();
+	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path) override
+	{
+		lastVer = mic.GetVersion();
+		GenerateInsertMenu(mic, path);
+	}
+	void FillListContextMenu(ui::MenuItemCollection& mic) override
+	{
+		if (lastVer != mic.GetVersion())
+			GenerateInsertMenu(mic, {});
+		mic.basePriority += ui::MenuItemCollection::BASE_ADVANCE;
+		mic.Add("Run script") = [this]() { RunScript(); };
+	}
+	void GenerateInsertMenu(ui::MenuItemCollection& mic, ui::TreePathRef path)
+	{
+		mic.basePriority += ui::MenuItemCollection::BASE_ADVANCE;
+		mic.Add("Repeat") = [this, path]() { Insert(path, new RepeatNode); };
+		mic.Add("Print") = [this, path]() { Insert(path, new PrintNode); };
+	}
+	void Insert(ui::TreePathRef path, Node* node)
+	{
+		if (path.empty())
+			roots.push_back(node);
+		else
+			FindNode(path).Get()->children.push_back(node);
+		ui::Notify(DCT_TreeChanged);
+	}
+
+	void Remove(ui::TreePathRef path) override
+	{
+		auto loc = FindNode(path);
+		delete loc.Get();
+		if (selected == loc.Get())
+			selected = nullptr;
+		loc.arr->erase(loc.arr->begin() + loc.idx);
+	}
+	void Duplicate(ui::TreePathRef path) override
+	{
+		auto loc = FindNode(path);
+		loc.arr->push_back(loc.Get()->Clone());
+	}
+	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
+	{
+		auto srcLoc = FindNode(node);
+		auto* srcNode = srcLoc.Get();
+		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
+
+		auto destLoc = FindNode(dest);
+		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
+	}
+
+	Node* selected = nullptr;
+};
+} // script_tree
+struct ScriptTreeDemo : ui::Node
+{
+	static constexpr bool Persistent = true;
+
+	void Render(UIContainer* ctx) override
+	{
+		Subscribe(script_tree::DCT_TreeChanged);
+		auto* sp = ctx->Push<ui::SplitPane>();
+		{
+			auto* te = ctx->Make<ui::TreeEditor>();
+			te->SetTree(&tree);
+			te->itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
+			{
+				static_cast<script_tree::Node*>(data)->ItemUI(ctx);
+			};
+			te->HandleEvent(UIEventType::SelectionChange) = [this](UIEvent&) { Rerender(); };
+
+			ctx->PushBox();
+			{
+				if (tree.selected)
+				{
+					ctx->Text(typeid(*tree.selected).name()) + ui::Padding(5);
+					tree.selected->ItemUI(ctx);
+				}
+				else
+				{
+					ctx->Text("No node selected...") + ui::Padding(5);
+				}
+			}
+			ctx->Pop();
+		}
+		sp->SetDirection(false);
+		sp->SetSplits({ 0.5f });
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		Node::OnEvent(e);
+		if (e.type == UIEventType::IMChange)
+			Rerender();
+	}
+
+	script_tree::Tree tree;
+};
+void Demo_ScriptTree(UIContainer* ctx)
+{
+	ctx->Make<ScriptTreeDemo>();
+}

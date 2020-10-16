@@ -14,18 +14,19 @@ namespace ui {
 using TreePath = std::vector<uintptr_t>;
 using TreePathRef = ArrayView<uintptr_t>;
 
-struct ITreeContextMenuSource
-{
-	virtual void FillItemContextMenu(MenuItemCollection& mic, TreePathRef path, size_t col) = 0;
-	virtual void FillListContextMenu(MenuItemCollection& mic) = 0;
-};
-
 struct ITree
 {
 	using IterationFunc = std::function<void(void* ptr)>;
 	virtual void IterateChildren(TreePathRef path, IterationFunc&& fn) = 0;
 	virtual bool HasChildren(TreePathRef path) = 0;
 	virtual size_t GetChildCount(TreePathRef path) = 0;
+
+	virtual void ClearSelection() {}
+	virtual bool GetSelectionState(TreePathRef path) { return false; }
+	virtual void SetSelectionState(TreePathRef path, bool sel) {}
+
+	virtual void FillItemContextMenu(MenuItemCollection& mic, TreePathRef path) {}
+	virtual void FillListContextMenu(MenuItemCollection& mic) {}
 
 	virtual void Remove(TreePathRef path) {}
 	virtual void Duplicate(TreePathRef path) {}
@@ -74,8 +75,7 @@ struct TreeEditor : Node
 
 	ITree* GetTree() const { return _tree; }
 	TreeEditor& SetTree(ITree* t);
-	ITreeContextMenuSource* GetContextMenuSource() const { return _ctxMenuSrc; }
-	TreeEditor& SetContextMenuSource(ITreeContextMenuSource* src);
+	TreeEditor& SetSelectionMode(SelectionMode mode);
 
 	void _OnEdit(UIObject* who);
 	void _OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, UIEvent& e);
@@ -86,10 +86,10 @@ struct TreeEditor : Node
 	bool showDeleteButton = true;
 
 	ITree* _tree;
-	ITreeContextMenuSource* _ctxMenuSrc = nullptr;
 
 	TreePath _dragTargetLoc;
 	UIRect _dragTargetLine = {};
+	SelectionImplementation _selImpl;
 };
 
 } // ui
