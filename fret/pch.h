@@ -15,6 +15,7 @@ enum GlobalEvents
 {
 	GlobalEvent_OpenImage,
 	GlobalEvent_OpenImageRsrcEditor,
+	GlobalEvent_OpenMeshRsrcEditor,
 };
 
 template <class T>

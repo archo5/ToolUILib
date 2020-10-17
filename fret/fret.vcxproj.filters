@@ -29,6 +29,8 @@
     <ClCompile Include="DataDescStruct.cpp" />
     <ClCompile Include="Markers.cpp" />
     <ClCompile Include="ExportScript.cpp" />
+    <ClCompile Include="MeshScript.cpp" />
+    <ClCompile Include="MeshEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -53,6 +55,8 @@
     <ClInclude Include="DataDescStruct.h" />
     <ClInclude Include="Markers.h" />
     <ClInclude Include="ExportScript.h" />
+    <ClInclude Include="MeshScript.h" />
+    <ClInclude Include="MeshEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="plugins">

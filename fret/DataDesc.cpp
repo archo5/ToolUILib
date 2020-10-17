@@ -484,6 +484,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			ctx->Text("Type:") + ui::Padding(5);
 			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Mesh, "Mesh", {}, ui::imm::ButtonStateToggleSkin());
 			ui::Property::End(ctx);
 
 			if (S.resource.type == DDStructResourceType::Image)
@@ -493,6 +494,15 @@ void DataDesc::EditStruct(UIContainer* ctx)
 					if (!S.resource.image)
 						S.resource.image = new DDRsrcImage;
 					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
+				}
+			}
+			if (S.resource.type == DDStructResourceType::Mesh)
+			{
+				if (ui::imm::Button(ctx, "Edit mesh"))
+				{
+					if (!S.resource.mesh)
+						S.resource.mesh = new DDRsrcMesh;
+					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenMeshRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}

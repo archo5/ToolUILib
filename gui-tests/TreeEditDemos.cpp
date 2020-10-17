@@ -363,6 +363,7 @@ struct PrintNode : Node
 struct Tree : ui::ITree
 {
 	std::vector<Node*> roots;
+	Node* selected = nullptr;
 
 	~Tree()
 	{
@@ -491,8 +492,6 @@ struct Tree : ui::ITree
 		auto destLoc = FindNode(dest);
 		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
 	}
-
-	Node* selected = nullptr;
 };
 } // script_tree
 struct ScriptTreeDemo : ui::Node

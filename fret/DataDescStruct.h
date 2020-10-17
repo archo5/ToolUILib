@@ -4,6 +4,7 @@
 
 #include "FileReaders.h"
 #include "MathExpr.h"
+#include "MeshScript.h"
 
 
 using CacheVersion = uint32_t;
@@ -55,6 +56,7 @@ enum class DDStructResourceType
 {
 	None,
 	Image,
+	Mesh,
 };
 bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format);
 struct DDRsrcImage
@@ -71,10 +73,15 @@ struct DDRsrcImage
 	MathExprObj width;
 	MathExprObj height;
 };
+struct DDRsrcMesh
+{
+	MeshScript script;
+};
 struct DDStructResource
 {
 	DDStructResourceType type = DDStructResourceType::None;
 	DDRsrcImage* image = nullptr;
+	DDRsrcMesh* mesh = nullptr;
 
 	void Load(NamedTextSerializeReader& r);
 	void Save(NamedTextSerializeWriter& w);

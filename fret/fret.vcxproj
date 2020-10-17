@@ -163,6 +163,8 @@
     <ClInclude Include="ImageParsers.h" />
     <ClInclude Include="Markers.h" />
     <ClInclude Include="MathExpr.h" />
+    <ClInclude Include="MeshEditor.h" />
+    <ClInclude Include="MeshScript.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="TabHighlights.h" />
     <ClInclude Include="TabImages.h" />
@@ -203,6 +205,8 @@
     <ClCompile Include="ImageParsers.cpp" />
     <ClCompile Include="Markers.cpp" />
     <ClCompile Include="MathExpr.cpp" />
+    <ClCompile Include="MeshEditor.cpp" />
+    <ClCompile Include="MeshScript.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

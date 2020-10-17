@@ -169,6 +169,12 @@ void Clear(int r, int g, int b, int a)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void ClearDepthOnly()
+{
+	glClearDepth(1);
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
+
 void Present(RenderContext* RC)
 {
 #if 0
@@ -326,7 +332,7 @@ void Begin3DMode(int x0, int y0, int x1, int y1)
 {
 	GLCHK(glGetIntegerv(GL_TEXTURE_BINDING_2D, &g_prevTex));
 
-	GLCHK(glViewport(x0, y0, x1 - x0, y1 - y0));
+	GLCHK(glViewport(x0, curRTTHeight - y1, max(x1 - x0, 0), max(y1 - y0, 0)));
 
 	SetRenderState(0);
 	SetPerspectiveMatrix(Mat4f::Identity());

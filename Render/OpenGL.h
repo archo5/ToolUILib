@@ -36,6 +36,7 @@ void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);
 
 void Clear(int r, int g, int b, int a);
+void ClearDepthOnly();
 void Present(RenderContext* RC);
 
 constexpr uint8_t TF_FILTER = 1 << 0;

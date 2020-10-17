@@ -9,6 +9,7 @@
 #include "Workspace.h"
 #include "FileView.h"
 #include "ImageEditor.h"
+#include "MeshEditor.h"
 
 #include "TableWithOffsets.h"
 #include "TabInspect.h"
@@ -79,6 +80,15 @@ struct MainWindowNode : ui::Node
 			curImageEditor->rootNode->Setup(&workspace.desc);
 			curImageEditor->rootNode->SetStruct((DDStruct*)e.arg0);
 			curImageEditor->rootNode->Rerender();
+		};
+		HandleEvent(UserEvent(GlobalEvent_OpenMeshRsrcEditor)) = [this](UIEvent& e)
+		{
+			if (!curMeshEditor)
+				curMeshEditor = new WindowT<MeshEditorWindowNode>();
+			curMeshEditor->SetVisible(true);
+			curMeshEditor->rootNode->Setup(&workspace.desc);
+			curMeshEditor->rootNode->SetStruct((DDStruct*)e.arg0);
+			curMeshEditor->rootNode->Rerender();
 		};
 
 		ctx->Push<ui::MenuBarElement>();
@@ -208,6 +218,7 @@ struct MainWindowNode : ui::Node
 	FileView* curFileView = nullptr;
 	TableWithOffsets* curTable = nullptr;
 	WindowT<ImageEditorWindowNode>* curImageEditor = nullptr;
+	WindowT<MeshEditorWindowNode>* curMeshEditor = nullptr;
 };
 
 int uimain(int argc, char* argv[])
