@@ -68,7 +68,7 @@ struct MSPrimitive
 	std::vector<uint32_t> indices;
 	std::vector<MSVert> convVerts;
 	MSPrimType type;
-	int64_t texInstID = -1;
+	int64_t texInstID = 0;
 };
 
 struct MSData

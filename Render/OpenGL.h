@@ -63,6 +63,7 @@ void Begin3DMode(int x0, int y0, int x1, int y1);
 void End3DMode();
 void SetViewMatrix(const Mat4f& m);
 void SetPerspectiveMatrix(const Mat4f& m);
+void SetForcedColor(const Color4b& col);
 void SetAmbientLight(const Color4f& col);
 void SetLightOff(int n);
 void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col);
@@ -73,6 +74,8 @@ enum DrawFlags
 	DF_ZTestOff     = 1 << 4,
 	DF_ZWriteOff    = 1 << 5,
 	DF_Cull         = 1 << 6,
+	DF_Wireframe    = 1 << 7,
+	DF_ForceColor   = 1 << 8,
 };
 void SetRenderState(unsigned drawFlags);
 enum PrimitiveType

@@ -215,14 +215,66 @@ DEFINE_READ_NODE(uint32_t, u32);
 DEFINE_READ_NODE(uint64_t, u64);
 #undef DEFINE_READ_NODE
 
+struct ExprCondition
+{
+	std::string field;
+	ValueNode* expected = nullptr;
+
+	virtual ~ExprCondition() { delete expected; }
+	ExprCondition() {}
+	ExprCondition(ExprCondition&& o) : field(std::move(o.field)), expected(o.expected)
+	{
+		o.expected = nullptr;
+	}
+	ExprCondition& operator = (ExprCondition&& o)
+	{
+		if (this != &o)
+		{
+			field = std::move(o.field);
+			expected = o.expected;
+			o.expected = nullptr;
+		}
+		return *this;
+	}
+	ExprCondition(const ExprCondition& o) = delete;
+	ExprCondition& operator = (const ExprCondition& o) = delete;
+};
+
 struct StructQueryNodeFilters
 {
 	virtual ~StructQueryNodeFilters() { delete which; }
+	StructQueryNodeFilters() {}
+	StructQueryNodeFilters(StructQueryNodeFilters&& o) :
+		conditions(std::move(o.conditions)),
+		exprConds(std::move(o.exprConds)),
+		which(o.which)
+	{
+		o.which = nullptr;
+	}
+	StructQueryNodeFilters& operator = (StructQueryNodeFilters&& o)
+	{
+		if (this != &o)
+		{
+			conditions = std::move(o.conditions);
+			exprConds = std::move(o.exprConds);
+			which = o.which;
+			o.which = nullptr;
+		}
+		return *this;
+	}
+	StructQueryNodeFilters(const StructQueryNodeFilters& o) = delete;
+	StructQueryNodeFilters& operator = (const StructQueryNodeFilters& o) = delete;
+
 	void Dump(int level) const
 	{
 		for (auto& C : conditions)
 		{
 			fprintf(stderr, " ?\"%s\"=\"%s\"", C.field.c_str(), C.value.c_str());
+		}
+		for (auto& C : exprConds)
+		{
+			fprintf(stderr, " #\"%s\"=\n", C.field.c_str());
+			C.expected->Dump(level + 1);
 		}
 		if (which)
 		{
@@ -243,15 +295,39 @@ struct StructQueryNodeFilters
 			ret += C.value;
 			ret += "\",";
 		}
+		for (auto& C : exprConds)
+		{
+			ret += "\"#";
+			ret += C.field;
+			ret += "\":";
+			ret += C.expected->GenPyScript();
+		}
 		if (which)
 		{
-			ret += "\"#\":" + which->GenPyScript();
+			ret += "\"#\":";
+			ret += which->GenPyScript();
 		}
 		ret += '}';
 		return ret;
 	}
 
+	StructQueryFilter Eval(IVariableSource* vs)
+	{
+		StructQueryFilter sqf = { conditions };
+		sqf.returnNth = !!which;
+		sqf.nth = which ? which->Eval(vs) : 0;
+		sqf.intConds.reserve(exprConds.size());
+		for (auto& C : exprConds)
+		{
+			if (!C.expected)
+				continue;
+			sqf.intConds.push_back({ C.field, C.expected->Eval(vs) });
+		}
+		return sqf;
+	}
+
 	std::vector<DDCondition> conditions;
+	std::vector<ExprCondition> exprConds;
 	ValueNode* which = nullptr;
 };
 
@@ -275,8 +351,7 @@ struct RootQueryNode : StructQueryNode
 {
 	StructQueryResults Query(IVariableSource* vs) override
 	{
-		int64_t nth = filters.which ? filters.which->Eval(vs) : 0;
-		return typeName == "" ? vs->GetInitialSet() : vs->RootQuery(typeName, { filters.conditions, !!filters.which, nth });
+		return typeName == "" ? vs->GetInitialSet() : vs->RootQuery(typeName, global, filters.Eval(vs));
 	}
 	void Dump(int level) const override
 	{
@@ -287,6 +362,7 @@ struct RootQueryNode : StructQueryNode
 	virtual std::string GenPyScript() const override { return "vs.root_query(\"" + typeName + "\", " + filters.GenPyScript() + ")"; }
 
 	std::string typeName;
+	bool global = false;
 };
 
 struct SubQueryNode : StructQueryNode
@@ -294,8 +370,7 @@ struct SubQueryNode : StructQueryNode
 	virtual ~SubQueryNode() { delete query; }
 	StructQueryResults Query(IVariableSource* vs) override
 	{
-		int64_t nth = filters.which ? filters.which->Eval(vs) : 0;
-		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, { filters.conditions, !!filters.which, nth });
+		return vs->Subquery(query ? query->Query(vs) : vs->GetInitialSet(), name, filters.Eval(vs));
 	}
 	void Dump(int level) const override
 	{
@@ -510,7 +585,7 @@ static_assert(sizeof(operatorStrings) / sizeof(operatorStrings[0]) == sizeof(ope
 
 static bool IsNameChar(char c)
 {
-	return IsAlphaNum(c) || c == '_';
+	return IsAlphaNum(c) || c == '_' || c == '#';
 }
 static bool IsFirstNameChar(char c)
 {
@@ -561,7 +636,7 @@ struct Compiler
 			bool isStruct = it.first() == '#';
 			if (isStruct)
 				it.take_char();
-			if (it.first_char_is(IsFirstNameChar) && it.first() != '#')
+			if (it.first_char_is(IsFirstNameChar))// && it.first() != '#')
 			{
 				bool isQuoted = it.first() == '"';
 				if (isQuoted)
@@ -921,11 +996,21 @@ struct Compiler
 				puts("ERROR: BAD COND");
 			}
 		}
-		else if (tokens[r.from].type == STRUCT_NAME && tokens[r.from].text == "")
+		else if (tokens[r.from].type == STRUCT_NAME)
 		{
 			if (r.from + 3 <= comma && tokens[r.from + 1].type == OP_ASSIGN)
 			{
-				qnfs.which = ParseExpr({ r.from + 2, comma });
+				if (tokens[r.from].text == "")
+				{
+					qnfs.which = ParseExpr({ r.from + 2, comma });
+				}
+				else
+				{
+					ExprCondition C;
+					C.field.assign(tokens[r.from].text.data(), tokens[r.from].text.size());
+					C.expected = ParseExpr({ r.from + 2, comma });
+					qnfs.exprConds.push_back(std::move(C));
+				}
 			}
 			else
 			{
@@ -1024,8 +1109,7 @@ struct Compiler
 			N->name.assign(name.data(), name.size());
 			r.to--;
 			N->query = ParseQuery(r);
-			N->filters = qnfs;
-			qnfs.which = nullptr;
+			N->filters = std::move(qnfs);
 			return N;
 		}
 
@@ -1039,9 +1123,13 @@ struct Compiler
 
 			auto* N = new RootQueryNode;
 			auto name = tokens[r.to - 1].text;
+			if (name.starts_with("#"))
+			{
+				N->global = true;
+				name = name.substr(1);
+			}
 			N->typeName.assign(name.data(), name.size());
-			N->filters = qnfs;
-			qnfs.which = nullptr;
+			N->filters = std::move(qnfs);
 			return N;
 		}
 
@@ -1084,7 +1172,7 @@ struct Compiler
 
 static bool Matches(const StructQueryFilter& filter, DataDesc* desc, const DDStructInst* inst)
 {
-	if (filter.conditions.empty())
+	if (filter.conditions.empty() && filter.intConds.empty())
 		return true;
 	for (const auto& C : filter.conditions)
 	{
@@ -1092,6 +1180,14 @@ static bool Matches(const StructQueryFilter& filter, DataDesc* desc, const DDStr
 		if (fid == SIZE_MAX)
 			return false;
 		if (inst->GetFieldPreview(fid) != C.value)
+			return false;
+	}
+	for (const auto& C : filter.intConds)
+	{
+		size_t fid = inst->def->FindFieldByName(C.field);
+		if (fid == SIZE_MAX)
+			return false;
+		if (inst->GetFieldIntValue(fid) != C.value)
 			return false;
 	}
 	return true;
@@ -1186,7 +1282,7 @@ StructQueryResults VariableSource::Subquery(const StructQueryResults& src, const
 	return res;
 }
 
-StructQueryResults VariableSource::RootQuery(const std::string& typeName, const StructQueryFilter& filter)
+StructQueryResults VariableSource::RootQuery(const std::string& typeName, bool global, const StructQueryFilter& filter)
 {
 	StructQueryResults res;
 	auto* F = root->file;
@@ -1195,7 +1291,7 @@ StructQueryResults VariableSource::RootQuery(const std::string& typeName, const 
 		return res;
 	for (auto* SI : desc->instances)
 	{
-		if (SI->def != S || SI->file != F)
+		if (SI->def != S || (!global && SI->file != F))
 			continue;
 		if (!Matches(filter, desc, SI))
 			continue;
@@ -1249,7 +1345,7 @@ StructQueryResults InParseVariableSource::Subquery(const StructQueryResults& src
 	return {};
 }
 
-StructQueryResults InParseVariableSource::RootQuery(const std::string& typeName, const StructQueryFilter& filter)
+StructQueryResults InParseVariableSource::RootQuery(const std::string& typeName, bool global, const StructQueryFilter& filter)
 {
 	return {};
 }

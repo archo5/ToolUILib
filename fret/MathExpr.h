@@ -42,9 +42,16 @@ struct ICompileErrorOutput
 	virtual void WriteError(const char* str, ...) = 0;
 };
 
+struct IntCondition
+{
+	std::string field;
+	int64_t value = 0;
+};
+
 struct StructQueryFilter
 {
 	std::vector<DDCondition>& conditions;
+	std::vector<IntCondition> intConds;
 	bool returnNth = false;
 	int64_t nth = 0;
 };
@@ -59,7 +66,7 @@ struct IVariableSource
 	virtual bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) = 0;
 	virtual StructQueryResults GetInitialSet() = 0;
 	virtual StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) = 0;
-	virtual StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) = 0;
+	virtual StructQueryResults RootQuery(const std::string& typeName, bool global, const StructQueryFilter& filter) = 0;
 	virtual size_t ReadFile(int64_t off, size_t size, void* outbuf) = 0;
 };
 
@@ -74,7 +81,7 @@ struct VariableSource : IVariableSource
 	bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) override;
 	StructQueryResults GetInitialSet() override;
 	StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override;
-	StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override;
+	StructQueryResults RootQuery(const std::string& typeName, bool global, const StructQueryFilter& filter) override;
 	size_t ReadFile(int64_t off, size_t size, void* outbuf) override;
 
 	DataDesc* desc = nullptr;
@@ -88,7 +95,7 @@ struct InParseVariableSource : IVariableSource
 	bool GetVariable(const DDStructInst* inst, const std::string& field, int64_t pos, bool offset, int64_t& outVal) override;
 	StructQueryResults GetInitialSet() override;
 	StructQueryResults Subquery(const StructQueryResults& src, const std::string& field, const StructQueryFilter& filter) override;
-	StructQueryResults RootQuery(const std::string& typeName, const StructQueryFilter& filter) override;
+	StructQueryResults RootQuery(const std::string& typeName, bool global, const StructQueryFilter& filter) override;
 	size_t ReadFile(int64_t off, size_t size, void* outbuf) override;
 
 	const DDStructInst* root = nullptr;

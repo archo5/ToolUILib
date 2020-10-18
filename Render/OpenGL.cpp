@@ -287,6 +287,7 @@ void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
 }
 
 
+static unsigned g_drawFlags;
 void SetRenderState(unsigned drawFlags)
 {
 	if (drawFlags & DF_Lit)
@@ -310,6 +311,20 @@ void SetRenderState(unsigned drawFlags)
 		GLCHK(glEnable(GL_CULL_FACE));
 	else
 		GLCHK(glDisable(GL_CULL_FACE));
+
+	GLCHK(glPolygonMode(GL_FRONT_AND_BACK, drawFlags & DF_Wireframe ? GL_LINE : GL_FILL));
+	if (drawFlags & DF_Wireframe)
+	{
+		glEnable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(0, -2);
+	}
+	else
+	{
+		glDisable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(0, 0);
+	}
+
+	g_drawFlags = drawFlags;
 }
 
 static Mat4f g_viewMatrix = Mat4f::Identity();
@@ -327,6 +342,12 @@ void SetPerspectiveMatrix(const Mat4f& m)
 	GLCHK(glMatrixMode(GL_MODELVIEW));
 }
 
+static Color4b g_forcedColor;
+void SetForcedColor(const Color4b& col)
+{
+	g_forcedColor = col;
+}
+
 static GLint g_prevTex;
 void Begin3DMode(int x0, int y0, int x1, int y1)
 {
@@ -339,6 +360,8 @@ void Begin3DMode(int x0, int y0, int x1, int y1)
 	SetAmbientLight(Color4f::White());
 	for (int i = 0; i < 8; i++)
 		SetLightOff(i);
+
+	g_forcedColor = { 255, 0, 255 };
 
 	SetTexture(nullptr);
 }
@@ -419,7 +442,7 @@ static void ApplyVertexData(unsigned vertexFormat, const void* vertices)
 	else
 		GLCHK(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
 
-	if (vertexFormat & VF_Color)
+	if ((vertexFormat & VF_Color) && !(g_drawFlags & DF_ForceColor))
 	{
 		GLCHK(glColorPointer(4, GL_UNSIGNED_BYTE, stride, v));
 		GLCHK(glEnableClientState(GL_COLOR_ARRAY));
@@ -427,6 +450,11 @@ static void ApplyVertexData(unsigned vertexFormat, const void* vertices)
 	}
 	else
 		GLCHK(glDisableClientState(GL_COLOR_ARRAY));
+	if (g_drawFlags & DF_ForceColor)
+	{
+		Color4f fc = g_forcedColor;
+		glColor4f(fc.r, fc.g, fc.b, fc.a);
+	}
 }
 
 static GLenum ConvertPrimitiveType(PrimitiveType t)

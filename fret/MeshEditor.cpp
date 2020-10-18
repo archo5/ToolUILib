@@ -17,6 +17,7 @@ void MeshEditorWindowNode::Render(UIContainer* ctx)
 				auto* view3d = ctx->Push<ui::View3D>();
 				*view3d + ui::Width(style::Coord::Percent(100));
 				*view3d + ui::Height(style::Coord::Percent(100));
+				*view3d + ui::Layout(style::layouts::EdgeSlice());
 				auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 				view3d->GetStyle().SetPaintFunc([bgr](const style::PaintInfo& info)
 				{
@@ -27,13 +28,28 @@ void MeshEditorWindowNode::Render(UIContainer* ctx)
 				view3d->HandleEvent() = [this](UIEvent& e) { orbitCamera.OnEvent(e); };
 				view3d->onRender = [this, view3d]() { OnRender3D(view3d->GetContentRect()); };
 				{
-					if (ui::imm::Button(ctx, "Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
+					auto s = ctx->Push<ui::ListBox>()->GetStyle();
+					s.SetEdge(style::Edge::Left);
+					s.SetWidth(200);
 					{
-						VariableSource vs;
-						vs.desc = ddiSrc.dataDesc;
-						vs.root = ddiSrc.dataDesc->curInst;
-						lastMesh = mesh->script.RunScript(ddiSrc.dataDesc->curInst->file->dataSource, &vs);
+						ui::imm::PropEditBool(ctx, "Alpha blend", alphaBlend);
+						ui::imm::PropEditBool(ctx, "Cull", cull);
+						ui::imm::PropEditBool(ctx, "Use texture", useTexture);
+						ui::imm::PropEditBool(ctx, "Draw wireframe", drawWireframe);
+						ui::imm::PropEditColor(ctx, "Wire color", wireColor);
 					}
+					ctx->Pop();
+
+					s = ctx->PushBox().GetStyle();
+					s.SetEdge(style::Edge::Right);
+					s.SetWidth(200);
+					{
+						if (ui::imm::Button(ctx, "Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
+						{
+							ReloadMesh();
+						}
+					}
+					ctx->Pop();
 				}
 				ctx->Pop();
 			}
@@ -61,12 +77,25 @@ void MeshEditorWindowNode::Render(UIContainer* ctx)
 			ddiSrc.refilter = true;
 			tv->CalculateColumnWidths();
 			tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
+			tv->HandleEvent(UIEventType::Click) = [this, tv](UIEvent& e)
+			{
+				if (e.numRepeats == 2 && tv->GetHoverRow() != SIZE_MAX && ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
+					ReloadMesh();
+			};
 		}
 		ctx->Pop();
 	}
 	ctx->Pop();
 	sp1->SetDirection(false);
 	sp1->SetSplits({ 0.6f });
+}
+
+void MeshEditorWindowNode::ReloadMesh()
+{
+	VariableSource vs;
+	vs.desc = ddiSrc.dataDesc;
+	vs.root = ddiSrc.dataDesc->curInst;
+	lastMesh = mesh->script.RunScript(ddiSrc.dataDesc->curInst->file->dataSource, &vs);
 }
 
 static ui::rhi::PrimitiveType ConvPrimitiveType(MSPrimType type)
@@ -113,7 +142,7 @@ void MeshEditorWindowNode::OnRender3D(UIRect rect)
 	{
 		auto& CI = cachedImgs[&P - lastMesh.primitives.data()];
 		Texture2D* tex = nullptr;
-		if (P.texInstID >= 0 && ddiSrc.dataDesc)
+		if (useTexture && P.texInstID > 0 && ddiSrc.dataDesc)
 		{
 			auto* SI = ddiSrc.dataDesc->FindInstanceByID(P.texInstID);
 			if (SI && SI->def->resource.type == DDStructResourceType::Image)
@@ -123,27 +152,47 @@ void MeshEditorWindowNode::OnRender3D(UIRect rect)
 			}
 		}
 		SetTexture(tex);
+		unsigned flags = 0;
+		if (cull)
+			flags |= DF_Cull;
+		if (alphaBlend)
+			flags |= DF_AlphaBlended;
+		SetRenderState(flags);
+		RenderMesh(P);
+	}
+	if (drawWireframe)
+	{
+		SetTexture(nullptr);
+		SetRenderState(DF_Wireframe | DF_ForceColor | DF_AlphaBlended);
+		SetForcedColor(wireColor);
+		for (auto& P : lastMesh.primitives)
+			RenderMesh(P);
+	}
+}
 
-		if (P.indices.empty())
-		{
-			Draw(
-				Mat4f::Identity(),
-				ConvPrimitiveType(P.type),
-				VF_Normal | VF_Texcoord | VF_Color,
-				P.convVerts.data(),
-				P.convVerts.size());
-		}
-		else
-		{
-			DrawIndexed(
-				Mat4f::Identity(),
-				ConvPrimitiveType(P.type),
-				VF_Normal | VF_Texcoord | VF_Color,
-				P.convVerts.data(),
-				P.convVerts.size(),
-				P.indices.data(),
-				P.indices.size(),
-				true);
-		}
+void MeshEditorWindowNode::RenderMesh(MSPrimitive& P)
+{
+	using namespace ui::rhi;
+
+	if (P.indices.empty())
+	{
+		Draw(
+			Mat4f::Identity(),
+			ConvPrimitiveType(P.type),
+			VF_Normal | VF_Texcoord | VF_Color,
+			P.convVerts.data(),
+			P.convVerts.size());
+	}
+	else
+	{
+		DrawIndexed(
+			Mat4f::Identity(),
+			ConvPrimitiveType(P.type),
+			VF_Normal | VF_Texcoord | VF_Color,
+			P.convVerts.data(),
+			P.convVerts.size(),
+			P.indices.data(),
+			P.indices.size(),
+			true);
 	}
 }

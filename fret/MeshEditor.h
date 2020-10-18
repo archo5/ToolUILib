@@ -27,7 +27,9 @@ struct MeshEditorWindowNode : ui::Node
 		GetNativeWindow()->SetTitle(("Mesh Resource Editor - " + s->name).c_str());
 	}
 
+	void ReloadMesh();
 	void OnRender3D(UIRect rect);
+	void RenderMesh(MSPrimitive& P);
 
 	DDStruct* structDef = nullptr;
 	DDRsrcMesh* mesh = nullptr;
@@ -37,4 +39,10 @@ struct MeshEditorWindowNode : ui::Node
 
 	MSData lastMesh;
 	ui::OrbitCamera orbitCamera;
+
+	bool alphaBlend = false;
+	bool cull = false;
+	bool useTexture = true;
+	bool drawWireframe = false;
+	ui::Color4b wireColor = { 0, 255, 0 };
 };
