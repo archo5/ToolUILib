@@ -351,9 +351,11 @@ void TableView::OnEvent(UIEvent& e)
 		auto& CM = ContextMenu::Get();
 		if (_impl->hoverRow != SIZE_MAX)
 		{
-			_impl->ctxMenuSrc->FillItemContextMenu(CM, _impl->hoverRow, 0); // todo col
+			if (_impl->ctxMenuSrc)
+				_impl->ctxMenuSrc->FillItemContextMenu(CM, _impl->hoverRow, 0); // todo col
 		}
-		_impl->ctxMenuSrc->FillListContextMenu(CM);
+		if (_impl->ctxMenuSrc)
+			_impl->ctxMenuSrc->FillListContextMenu(CM);
 	}
 
 	if (e.type == UIEventType::MouseMove)

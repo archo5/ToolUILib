@@ -101,6 +101,7 @@ Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags 
 Texture* TextureCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 void TextureAddRef(Texture* tex);
 void TextureRelease(Texture* tex);
+rhi::Texture2D* TextureGetInternal(Texture* tex);
 
 namespace internals {
 

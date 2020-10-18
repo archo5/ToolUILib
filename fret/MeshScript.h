@@ -68,6 +68,7 @@ struct MSPrimitive
 	std::vector<uint32_t> indices;
 	std::vector<MSVert> convVerts;
 	MSPrimType type;
+	int64_t texInstID = -1;
 };
 
 struct MSData
@@ -169,13 +170,16 @@ struct MSN_NewPrimitive : MSNode
 	void LoadProps(NamedTextSerializeReader& nts) override
 	{
 		type = MSPrimType(nts.ReadInt("type", int(MSPrimType::Points)));
+		texInst.SetExpr(nts.ReadString("texInst"));
 	}
 	void SaveProps(NamedTextSerializeWriter& nts) override
 	{
 		nts.WriteInt("type", int(type));
+		nts.WriteString("texInst", texInst.expr);
 	}
 
 	MSPrimType type = MSPrimType::Points;
+	MathExprObj texInst;
 };
 
 struct MSN_VertexData : MSNode

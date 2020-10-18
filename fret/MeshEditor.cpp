@@ -108,8 +108,22 @@ void MeshEditorWindowNode::OnRender3D(UIRect rect)
 	DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 	DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 
+	cachedImgs.resize(lastMesh.primitives.size());
 	for (auto& P : lastMesh.primitives)
 	{
+		auto& CI = cachedImgs[&P - lastMesh.primitives.data()];
+		Texture2D* tex = nullptr;
+		if (P.texInstID >= 0 && ddiSrc.dataDesc)
+		{
+			auto* SI = ddiSrc.dataDesc->FindInstanceByID(P.texInstID);
+			if (SI && SI->def->resource.type == DDStructResourceType::Image)
+			{
+				auto ii = ddiSrc.dataDesc->GetInstanceImage(*SI);
+				tex = ui::draw::TextureGetInternal(CI.GetImage(ii)->_texture);
+			}
+		}
+		SetTexture(tex);
+
 		if (P.indices.empty())
 		{
 			Draw(

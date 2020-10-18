@@ -272,6 +272,13 @@ void TextureRelease(Texture* tex)
 	}
 }
 
+rhi::Texture2D* TextureGetInternal(Texture* tex)
+{
+	if (tex && tex->rhiTex)
+		return tex->rhiTex;
+	return nullptr;
+}
+
 
 void _TextureInitStorage()
 {

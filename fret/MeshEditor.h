@@ -33,7 +33,7 @@ struct MeshEditorWindowNode : ui::Node
 	DDRsrcMesh* mesh = nullptr;
 
 	DataDescInstanceSource ddiSrc;
-	CachedImage cachedImg;
+	std::vector<CachedImage> cachedImgs;
 
 	MSData lastMesh;
 	ui::OrbitCamera orbitCamera;

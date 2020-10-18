@@ -360,6 +360,7 @@ void MSN_NewPrimitive::Do(MSContext& C)
 {
 	MSPrimitive P;
 	P.type = type;
+	P.texInstID = texInst.Evaluate(*C.vs);
 	C.data->primitives.push_back(P);
 }
 
@@ -391,6 +392,8 @@ void MSN_NewPrimitive::FullEditUI(UIContainer* ctx)
 		if (ret >= 0)
 			type = MSPrimType(ret);
 	}
+
+	ui::imm::PropEditString(ctx, "Tex.inst.", texInst.expr.c_str(), [this](const char* v) { texInst.SetExpr(v); });
 }
 
 

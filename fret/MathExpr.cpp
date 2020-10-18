@@ -411,6 +411,31 @@ struct FieldPreviewEqualsStringNode : ValueNode
 	bool invert = false;
 };
 
+struct InstanceIDNode : ValueNode
+{
+	virtual ~InstanceIDNode() { delete query; }
+	int64_t Eval(IVariableSource* vs) const override
+	{
+		StructQueryResults insts = query ? query->Query(vs) : vs->GetInitialSet();
+		if (insts.empty())
+			return 0;
+		return insts[0]->id;
+	}
+	void Dump(int level) const override
+	{
+		DMPLEV(level);
+		fprintf(stderr, "instance id:\n");
+		if (query)
+			query->Dump(level + 1);
+	}
+	std::string GenPyScript() const override
+	{
+		return "TODO";
+	}
+
+	StructQueryNode* query;
+};
+
 
 struct CompiledMathExpr
 {
@@ -769,6 +794,18 @@ struct Compiler
 				args[0].to--;
 				N->query = ParseQuery(args[0]);
 				N->index = ParseExpr(args[1]);
+				return N;
+			}
+			if (name == "iid")
+			{
+				if (args.size() != 1 ||
+					args[0].Empty())
+				{
+					printf("ERROR: iid EXPECTS 1 arg: i-query\n");
+					return new ErrorNode;
+				}
+				auto* N = new InstanceIDNode;
+				N->query = ParseQuery(args[0], true);
 				return N;
 			}
 		}

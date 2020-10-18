@@ -986,6 +986,7 @@ void DataDesc::Save(const char* key, NamedTextSerializeWriter& w)
 enum COLS_DDI
 {
 	DDI_COL_ID,
+	DDI_COL_IID,
 	DDI_COL_CR,
 	DDI_COL_File,
 	DDI_COL_Offset,
@@ -1030,6 +1031,7 @@ std::string DataDescInstanceSource::GetColName(size_t col)
 	switch (col)
 	{
 	case DDI_COL_ID: return "ID";
+	case DDI_COL_IID: return "IID";
 	case DDI_COL_CR: return "CR";
 	case DDI_COL_File: return "File";
 	case DDI_COL_Offset: return "Offset";
@@ -1050,6 +1052,7 @@ std::string DataDescInstanceSource::GetText(size_t row, size_t col)
 	switch (col)
 	{
 	case DDI_COL_ID: return std::to_string(_indices[row]);
+	case DDI_COL_IID: return std::to_string(dataDesc->instances[_indices[row]]->id);
 	case DDI_COL_CR: return CreationReasonToStringShort(dataDesc->instances[_indices[row]]->creationReason);
 	case DDI_COL_File: return dataDesc->instances[_indices[row]]->file->name;
 	case DDI_COL_Offset: return std::to_string(dataDesc->instances[_indices[row]]->off);
