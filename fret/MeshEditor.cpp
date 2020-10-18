@@ -69,12 +69,26 @@ void MeshEditorWindowNode::Render(UIContainer* ctx)
 	sp1->SetSplits({ 0.6f });
 }
 
+static ui::rhi::PrimitiveType ConvPrimitiveType(MSPrimType type)
+{
+	using namespace ui::rhi;
+	switch (type)
+	{
+	default:
+	case MSPrimType::Points: return PT_Points;
+	case MSPrimType::Lines: return PT_Lines;
+	case MSPrimType::LineStrip: return PT_LineStrip;
+	case MSPrimType::Triangles: return PT_Triangles;
+	case MSPrimType::TriangleStrip: return PT_TriangleStrip;
+	}
+}
+
 void MeshEditorWindowNode::OnRender3D(UIRect rect)
 {
 	using namespace ui::rhi;
 
 	ClearDepthOnly();
-	SetPerspectiveMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetWidth() / rect.GetHeight(), 0.01f, 1000));
+	SetPerspectiveMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetWidth() / rect.GetHeight(), 0.01f, 100000));
 	SetViewMatrix(orbitCamera.GetViewMatrix());
 
 	struct VertPC
@@ -96,6 +110,26 @@ void MeshEditorWindowNode::OnRender3D(UIRect rect)
 
 	for (auto& P : lastMesh.primitives)
 	{
-		Draw(Mat4f::Identity(), PT_Triangles, 0, P.positions.data(), P.positions.size());
+		if (P.indices.empty())
+		{
+			Draw(
+				Mat4f::Identity(),
+				ConvPrimitiveType(P.type),
+				VF_Normal | VF_Texcoord | VF_Color,
+				P.convVerts.data(),
+				P.convVerts.size());
+		}
+		else
+		{
+			DrawIndexed(
+				Mat4f::Identity(),
+				ConvPrimitiveType(P.type),
+				VF_Normal | VF_Texcoord | VF_Color,
+				P.convVerts.data(),
+				P.convVerts.size(),
+				P.indices.data(),
+				P.indices.size(),
+				true);
+		}
 	}
 }

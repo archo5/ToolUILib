@@ -77,7 +77,9 @@ enum DrawFlags
 void SetRenderState(unsigned drawFlags);
 enum PrimitiveType
 {
+	PT_Points,
 	PT_Lines,
+	PT_LineStrip,
 	PT_Triangles,
 	PT_TriangleStrip,
 };
@@ -99,8 +101,9 @@ void DrawIndexed(
 	unsigned vertexFormat,
 	const void* vertices,
 	size_t numVertices,
-	const uint16_t* indices,
-	size_t numIndices);
+	const void* indices,
+	size_t numIndices,
+	bool i32 = false);
 
 
 } // rhi

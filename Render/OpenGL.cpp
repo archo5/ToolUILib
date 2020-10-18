@@ -433,7 +433,9 @@ static GLenum ConvertPrimitiveType(PrimitiveType t)
 {
 	switch (t)
 	{
+	case PT_Points: return GL_POINTS;
 	case PT_Lines: return GL_LINES;
+	case PT_LineStrip: return GL_LINE_STRIP;
 	case PT_Triangles: return GL_TRIANGLES;
 	case PT_TriangleStrip: return GL_TRIANGLE_STRIP;
 	default: return GL_TRIANGLES;
@@ -458,12 +460,13 @@ void DrawIndexed(
 	unsigned vertexFormat,
 	const void* vertices,
 	size_t numVertices,
-	const uint16_t* indices,
-	size_t numIndices)
+	const void* indices,
+	size_t numIndices,
+	bool i32)
 {
 	GLCHK(glLoadMatrixf((xf * g_viewMatrix).a));
 	ApplyVertexData(vertexFormat, vertices);
-	GLCHK(glDrawElements(ConvertPrimitiveType(primType), numIndices, GL_UNSIGNED_SHORT, indices));
+	GLCHK(glDrawElements(ConvertPrimitiveType(primType), numIndices, i32 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, indices));
 }
 
 } // rhi

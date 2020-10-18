@@ -16,7 +16,9 @@ enum class MSPrimType : uint8_t
 {
 	Points,
 	Lines,
+	LineStrip,
 	Triangles,
+	TriangleStrip,
 	Quads,
 };
 
@@ -42,6 +44,21 @@ enum class MSVDType : uint8_t
 	F64,
 };
 
+enum class MSIDType : uint8_t
+{
+	U8,
+	U16,
+	U32,
+};
+
+struct MSVert
+{
+	Vec3f pos;
+	Vec3f nrm;
+	Vec2f tex;
+	ui::Color4b col;
+};
+
 struct MSPrimitive
 {
 	std::vector<Vec3f> positions;
@@ -49,6 +66,7 @@ struct MSPrimitive
 	std::vector<Vec2f> texcoords;
 	std::vector<ui::Color4f> colors;
 	std::vector<uint32_t> indices;
+	std::vector<MSVert> convVerts;
 	MSPrimType type;
 };
 
@@ -72,10 +90,7 @@ struct MSContext
 	std::weak_ptr<struct MSNode> curNode;
 	std::vector<MSError> errors;
 
-	void Error(std::string&& text)
-	{
-		errors.push_back({ curNode, std::move(text) });
-	}
+	void Error(std::string&& text);
 };
 
 struct MSNode
@@ -92,6 +107,8 @@ struct MSNode
 	virtual MSNode* CloneBase() = 0;
 	virtual void InlineEditUI(UIContainer* ctx) = 0;
 	virtual void FullEditUI(UIContainer* ctx) = 0;
+	virtual void LoadProps(NamedTextSerializeReader& nts) = 0;
+	virtual void SaveProps(NamedTextSerializeWriter& nts) = 0;
 };
 
 #define MSN_NODE(name) \
@@ -100,11 +117,17 @@ struct MSNode
 
 struct MeshScript : ui::ITree
 {
-	std::vector<MSNode::Ptr> roots;
+	std::vector<MSNode::Ptr> rootNodes;
 	std::weak_ptr<MSNode> selected;
 
 	~MeshScript();
 	void Clear();
+	void Load(NamedTextSerializeReader& nts);
+	void Save(NamedTextSerializeWriter& nts);
+	MSNode::Ptr LoadNode(NamedTextSerializeReader& nts);
+	void SaveNode(const MSNode::Ptr& src, NamedTextSerializeWriter& nts);
+	void LoadNodeArr(const char* key, std::vector<MSNode::Ptr>& arr, NamedTextSerializeReader& nts);
+	void SaveNodeArr(const char* key, std::vector<MSNode::Ptr>& arr, NamedTextSerializeWriter& nts);
 	MSData RunScript(IDataSource* src, IVariableSource* instCtx);
 	void EditUI(UIContainer* ctx);
 
@@ -143,6 +166,14 @@ struct MSN_NewPrimitive : MSNode
 	void Do(MSContext& C) override;
 	void InlineEditUI(UIContainer* ctx) override;
 	void FullEditUI(UIContainer* ctx) override;
+	void LoadProps(NamedTextSerializeReader& nts) override
+	{
+		type = MSPrimType(nts.ReadInt("type", int(MSPrimType::Points)));
+	}
+	void SaveProps(NamedTextSerializeWriter& nts) override
+	{
+		nts.WriteInt("type", int(type));
+	}
 
 	MSPrimType type = MSPrimType::Points;
 };
@@ -154,11 +185,54 @@ struct MSN_VertexData : MSNode
 	void Do(MSContext& C) override;
 	void InlineEditUI(UIContainer* ctx) override;
 	void FullEditUI(UIContainer* ctx) override;
+	void LoadProps(NamedTextSerializeReader& nts) override
+	{
+		dest = MSVDDest(nts.ReadInt("dest", int(MSVDDest::Position)));
+		type = MSVDType(nts.ReadInt("type", int(MSVDType::F32)));
+		ncomp = nts.ReadInt("ncomp", 3);
+		count.SetExpr(nts.ReadString("count"));
+		stride.SetExpr(nts.ReadString("stride"));
+		attrOff.SetExpr(nts.ReadString("attrOff"));
+	}
+	void SaveProps(NamedTextSerializeWriter& nts) override
+	{
+		nts.WriteInt("dest", int(dest));
+		nts.WriteInt("type", int(type));
+		nts.WriteInt("ncomp", ncomp);
+		nts.WriteString("count", count.expr);
+		nts.WriteString("stride", stride.expr);
+		nts.WriteString("attrOff", attrOff.expr);
+	}
 
 	MSVDDest dest = MSVDDest::Position;
 	MSVDType type = MSVDType::F32;
 	int ncomp = 3;
 	MathExprObj count;
 	MathExprObj stride;
+	MathExprObj attrOff;
+};
+
+struct MSN_IndexData : MSNode
+{
+	MSN_NODE(IndexData);
+
+	void Do(MSContext& C) override;
+	void InlineEditUI(UIContainer* ctx) override;
+	void FullEditUI(UIContainer* ctx) override;
+	void LoadProps(NamedTextSerializeReader& nts) override
+	{
+		type = MSIDType(nts.ReadInt("type", int(MSIDType::U16)));
+		count.SetExpr(nts.ReadString("count"));
+		attrOff.SetExpr(nts.ReadString("attrOff"));
+	}
+	void SaveProps(NamedTextSerializeWriter& nts) override
+	{
+		nts.WriteInt("type", int(type));
+		nts.WriteString("count", count.expr);
+		nts.WriteString("attrOff", attrOff.expr);
+	}
+
+	MSIDType type = MSIDType::U16;
+	MathExprObj count;
 	MathExprObj attrOff;
 };

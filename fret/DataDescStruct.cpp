@@ -44,6 +44,8 @@ void DDStructResource::Load(NamedTextSerializeReader& r)
 	auto rsrcType = r.ReadString("type");
 	if (rsrcType == "image")
 		type = DDStructResourceType::Image;
+	if (rsrcType == "mesh")
+		type = DDStructResourceType::Mesh;
 
 	if (r.BeginDict("image"))
 	{
@@ -73,6 +75,13 @@ void DDStructResource::Load(NamedTextSerializeReader& r)
 		image->height.SetExpr(r.ReadString("height"));
 	}
 	r.EndDict();
+
+	if (r.BeginDict("mesh"))
+	{
+		mesh = new DDRsrcMesh;
+		mesh->script.Load(r);
+	}
+	r.EndDict();
 }
 
 void DDStructResource::Save(NamedTextSerializeWriter& w)
@@ -81,6 +90,9 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 	{
 	case DDStructResourceType::Image:
 		w.WriteString("type", "image");
+		break;
+	case DDStructResourceType::Mesh:
+		w.WriteString("type", "mesh");
 		break;
 	}
 
@@ -105,6 +117,13 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 		w.WriteString("width", image->width.expr);
 		w.WriteString("height", image->height.expr);
 
+		w.EndDict();
+	}
+
+	if (mesh)
+	{
+		w.BeginDict("mesh");
+		mesh->script.Save(w);
 		w.EndDict();
 	}
 }
