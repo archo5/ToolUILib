@@ -50,6 +50,7 @@ struct UIObjectDirtyStack
 	{
 		stack.clear();
 	}
+	void Clear();
 	void Swap(UIObjectDirtyStack& o)
 	{
 		assert(flag == o.flag);
@@ -59,6 +60,8 @@ struct UIObjectDirtyStack
 	void OnDestroy(UIObject* n);
 	UIObject* Pop();
 	void RemoveChildren();
+	size_t Size() const { return stack.size(); }
+	void RemoveNth(size_t n);
 
 	std::vector<UIObject*> stack;
 	uint32_t flag;
@@ -86,8 +89,11 @@ struct UIContainer
 				t->_SerializePersistent(dws);
 				t->~T();
 				new (t) T();
+				auto origFlags = t->flags;
 				DataReadSerializer drs(buf);
 				t->_SerializePersistent(drs);
+				// in case these flags have been set by ctor
+				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInRenderStack);
 			}
 			t->_OnChangeStyle();
 			return t;

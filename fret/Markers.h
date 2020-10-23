@@ -23,6 +23,39 @@ enum DataType
 
 const char* GetDataTypeName(DataType t);
 
+struct AnalysisResult
+{
+	enum Flags
+	{
+		Equal = 1 << 0,
+		Asc = 1 << 1,
+		AscEq = 1 << 2,
+	};
+
+	uint64_t count = 0;
+	uint64_t unique = 0;
+	uint32_t flags = 0;
+	// values
+	std::string vmin;
+	std::string vmax;
+	std::string vgcd;
+	// deltas
+	std::string dmin;
+	std::string dmax;
+	std::string dgcd;
+};
+
+struct AnalysisData : ui::TableDataSource
+{
+	std::vector<AnalysisResult> results;
+
+	size_t GetNumRows() override { return results.size(); }
+	size_t GetNumCols() override;
+	std::string GetRowName(size_t row) override;
+	std::string GetColName(size_t col) override;
+	std::string GetText(size_t row, size_t col) override;
+};
+
 struct Marker
 {
 	DataType type;
@@ -76,7 +109,7 @@ struct MarkedItemEditor : ui::Node
 
 	IDataSource* dataSource;
 	Marker* marker;
-	std::vector<std::string> analysis;
+	AnalysisData analysisData;
 };
 
 struct MarkedItemsList : ui::Node

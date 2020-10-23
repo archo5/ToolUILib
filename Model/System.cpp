@@ -10,8 +10,33 @@ FrameContents* g_curSystem;
 } // ui
 
 
+#if 0
+#define CHECK_NOT_IN_DIRTY_STACK_SINCE(n, start) for (size_t __i = start; __i < stack.size(); __i++) if (stack[__i] == n) __debugbreak();
+#else
+#define CHECK_NOT_IN_DIRTY_STACK_SINCE(n, start)
+#endif
+#define CHECK_NOT_IN_DIRTY_STACK(n) CHECK_NOT_IN_DIRTY_STACK_SINCE(n, 0)
+
+void UIObjectDirtyStack::Clear()
+{
+	for (auto* obj : stack)
+		obj->flags &= ~flag;
+	stack.clear();
+}
+
 void UIObjectDirtyStack::Add(UIObject* n)
 {
+#if 0
+	{
+		int count = 0;
+		for (auto* o : stack)
+			if (o == n)
+				count++;
+		if (count && !(n->flags & flag))
+			__debugbreak();
+		printf("INSERTED %p already %d times, flag=%d\n", n, count, n->flags & flag);
+	}
+#endif
 	if (n->flags & flag)
 		return;
 	stack.push_back(n);
@@ -21,7 +46,10 @@ void UIObjectDirtyStack::Add(UIObject* n)
 void UIObjectDirtyStack::OnDestroy(UIObject* n)
 {
 	if (!(n->flags & flag))
+	{
+		CHECK_NOT_IN_DIRTY_STACK(n);
 		return;
+	}
 	for (auto it = stack.begin(); it != stack.end(); it++)
 	{
 		if (*it == n)
@@ -32,6 +60,7 @@ void UIObjectDirtyStack::OnDestroy(UIObject* n)
 			break;
 		}
 	}
+	CHECK_NOT_IN_DIRTY_STACK(n);
 }
 
 UIObject* UIObjectDirtyStack::Pop()
@@ -40,6 +69,7 @@ UIObject* UIObjectDirtyStack::Pop()
 	UIObject* n = stack.back();
 	stack.pop_back();
 	n->flags &= ~flag;
+	CHECK_NOT_IN_DIRTY_STACK(n);
 	return n;
 }
 
@@ -47,6 +77,7 @@ void UIObjectDirtyStack::RemoveChildren()
 {
 	for (size_t i = 0; i < stack.size(); i++)
 	{
+		CHECK_NOT_IN_DIRTY_STACK_SINCE(stack[i], i + 1);
 		auto* p = stack[i]->parent;
 		while (p)
 		{
@@ -55,14 +86,20 @@ void UIObjectDirtyStack::RemoveChildren()
 			p = p->parent;
 		}
 		if (p)
-		{
-			stack[i]->flags &= ~flag;
-			if (i + 1 < stack.size())
-				stack[i] = stack.back();
-			stack.pop_back();
-			i--;
-		}
+			RemoveNth(i--);
 	}
+}
+
+void UIObjectDirtyStack::RemoveNth(size_t n)
+{
+	auto* src = stack[n];
+
+	src->flags &= ~flag;
+	if (n + 1 < stack.size())
+		stack[n] = stack.back();
+	stack.pop_back();
+
+	CHECK_NOT_IN_DIRTY_STACK(src);
 }
 
 
@@ -186,16 +223,16 @@ void UIContainer::ProcessLayoutStack()
 	layoutStack.RemoveChildren();
 
 	// TODO change elements to their parents if parent/self layout combo indicates that parent will be affected
-	for (UIObject*& obj : layoutStack.stack)
+	for (size_t i = 0; i < layoutStack.stack.size(); i++)
 	{
+		auto* obj = layoutStack.stack[i];
 		auto* p = obj;
 		while (p->parent)
 			p = p->parent;
 		if (p != obj)
 		{
-			obj->flags &= ~UIObject_IsInLayoutStack;
-			p->flags |= UIObject_IsInLayoutStack;
-			obj = p;
+			layoutStack.Add(p);
+			layoutStack.RemoveNth(i--);
 		}
 	}
 
@@ -212,8 +249,7 @@ void UIContainer::ProcessLayoutStack()
 		obj->OnLayout(obj->lastLayoutInputRect, obj->lastLayoutInputCSize);
 		obj->OnLayoutChanged();
 	}
-	while (layoutStack.ContainsAny())
-		layoutStack.Pop();
+	layoutStack.Clear();
 }
 
 void UIContainer::_BuildUsing(ui::Node* n)

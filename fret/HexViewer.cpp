@@ -14,6 +14,14 @@ void HexViewerState::GoToPos(int64_t pos)
 ui::DataCategoryTag DCT_HexViewerState[1];
 
 
+void HighlightSettings::AddCustomInt32(int32_t v)
+{
+	Int32Highlight h;
+	h.range = false;
+	h.vspec = v;
+	customInt32.push_back(h);
+}
+
 void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
 {
 	r.BeginDict(key);
@@ -33,6 +41,29 @@ void HighlightSettings::Load(const char* key, NamedTextSerializeReader& r)
 	enableNearFileSize32 = r.ReadBool("enableNearFileSize32", true);
 	enableNearFileSize64 = r.ReadBool("enableNearFileSize64", true);
 	nearFileSizePercent = r.ReadFloat("nearFileSizePercent", 99.0f);
+
+	r.BeginArray("customInt32");
+	for (auto* e : r.GetCurrentRange())
+	{
+		r.BeginEntry(e);
+		r.BeginDict("");
+
+		Int32Highlight h;
+		h.color.r = r.ReadUInt("color.r");
+		h.color.g = r.ReadUInt("color.g");
+		h.color.b = r.ReadUInt("color.b");
+		h.color.a = r.ReadUInt("color.a");
+		h.vmin = r.ReadInt("vmin");
+		h.vmax = r.ReadInt("vmax");
+		h.vspec = r.ReadInt("vspec");
+		h.enabled = r.ReadBool("enabled");
+		h.range = r.ReadBool("range");
+		customInt32.push_back(h);
+
+		r.EndDict();
+		r.EndEntry();
+	}
+	r.EndArray();
 
 	r.EndDict();
 }
@@ -56,6 +87,23 @@ void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
 	w.WriteBool("enableNearFileSize32", enableNearFileSize32);
 	w.WriteBool("enableNearFileSize64", enableNearFileSize64);
 	w.WriteFloat("nearFileSizePercent", nearFileSizePercent);
+
+	w.BeginArray("customInt32");
+	for (auto& h : customInt32)
+	{
+		w.BeginDict("");
+		w.WriteInt("color.r", h.color.r);
+		w.WriteInt("color.g", h.color.g);
+		w.WriteInt("color.b", h.color.b);
+		w.WriteInt("color.a", h.color.a);
+		w.WriteInt("vmin", h.vmin);
+		w.WriteInt("vmax", h.vmax);
+		w.WriteInt("vspec", h.vspec);
+		w.WriteBool("enabled", h.enabled);
+		w.WriteBool("range", h.range);
+		w.EndDict();
+	}
+	w.EndArray();
 
 	w.EndDict();
 }
@@ -92,6 +140,28 @@ void HighlightSettings::EditUI(UIContainer* ctx)
 	ui::imm::PropEditBool(ctx, "\bu64", enableNearFileSize64);
 	ui::imm::PropEditFloat(ctx, "\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
 	ui::Property::End(ctx);
+
+	ctx->Text("Custom int32") + ui::Padding(25, 5, 5);
+
+	auto* seqEd = ctx->Make<ui::SequenceEditor>();
+	seqEd->SetSequence(ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(customInt32)>>(customInt32));
+	seqEd->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+	{
+		auto& h = *static_cast<Int32Highlight*>(ptr);
+		ui::imm::EditBool(ctx, h.enabled, nullptr);
+		ui::imm::EditColor(ctx, h.color);
+		if (h.range)
+			ui::imm::PropEditInt(ctx, "\bMin", h.vmin);
+		else
+			ui::imm::PropEditInt(ctx, "\bValue", h.vspec);
+		ui::imm::EditBool(ctx, h.range, nullptr);
+		if (h.range)
+			ui::imm::PropEditInt(ctx, "\bMax", h.vmax);
+	};
+	if (ui::imm::Button(ctx, "Add"))
+	{
+		customInt32.push_back({});
+	}
 }
 
 
@@ -178,7 +248,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 		}
 	}
 
-	if (hs->enableFloat32 || hs->enableInt32 || hs->enableNearFileSize32)
+	if (hs->enableFloat32 || hs->enableInt32 || hs->enableNearFileSize32 || !hs->customInt32.empty())
 	{
 		for (size_t i = 0; i + 4 < numBytes; i++)
 		{
@@ -188,6 +258,31 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 				outColors[i + 3].hexColor.a)
 				continue;
 			if (hs->excludeZeroes && bytes[i] == 0 && bytes[i + 1] == 0 && bytes[i + 2] == 0 && bytes[i + 3] == 0)
+				continue;
+
+			bool detected = false;
+
+			int32_t i32v;
+			memcpy(&i32v, &bytes[i], 4);
+
+			if (!hs->customInt32.empty())
+			{
+				for (const auto& h : hs->customInt32)
+				{
+					if (!h.enabled)
+						continue;
+					if (!h.range ? h.vspec == i32v :
+						h.vmin <= i32v && i32v <= h.vmax)
+					{
+						for (int j = 0; j < 4; j++)
+							outColors[i + j].hexColor.BlendOver(h.color);
+						detected = true;
+						break;
+					}
+				}
+			}
+
+			if (detected)
 				continue;
 
 			if (hs->enableFloat32)
@@ -215,9 +310,7 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 
 			if (hs->enableInt32)
 			{
-				int32_t v;
-				memcpy(&v, &bytes[i], 4);
-				if (v >= hs->minInt32 && v <= hs->maxInt32)
+				if (i32v >= hs->minInt32 && i32v <= hs->maxInt32)
 				{
 					for (int j = 0; j < 4; j++)
 						outColors[i + j].hexColor.BlendOver(colorInt32);

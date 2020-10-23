@@ -5,6 +5,16 @@
 #include "DataDesc.h"
 
 
+struct Int32Highlight
+{
+	ui::Color4b color = { 255, 225, 0, 127 };
+	int32_t vmin = 0;
+	int32_t vmax = 0;
+	int32_t vspec = 0;
+	bool enabled = true;
+	bool range = true;
+};
+
 struct HighlightSettings
 {
 	bool excludeZeroes = true;
@@ -22,6 +32,10 @@ struct HighlightSettings
 	bool enableNearFileSize32 = true;
 	bool enableNearFileSize64 = true;
 	float nearFileSizePercent = 99.0f;
+
+	std::vector<Int32Highlight> customInt32;
+
+	void AddCustomInt32(int32_t v);
 
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);

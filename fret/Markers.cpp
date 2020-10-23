@@ -41,6 +41,79 @@ const char* GetDataTypeName(DataType t)
 	return typeNames[t];
 }
 
+
+enum AnalysisDataColumns
+{
+	ADC_Count,
+	ADC_Unique,
+	ADC_Features,
+	ADC_VMin,
+	ADC_VMax,
+	ADC_VGCD,
+	ADC_DMin,
+	ADC_DMax,
+	ADC_DGCD,
+
+	ADC__COUNT,
+};
+
+const char* g_analysisDataColNames[] =
+{
+	"Count",
+	"Unique",
+	"Features",
+	"Min",
+	"Max",
+	"GCD",
+	"dMin",
+	"dMax",
+	"dGCD",
+};
+
+size_t AnalysisData::GetNumCols()
+{
+	return ADC__COUNT;
+}
+
+std::string AnalysisData::GetRowName(size_t row)
+{
+	return std::to_string(row);
+}
+
+std::string AnalysisData::GetColName(size_t col)
+{
+	return g_analysisDataColNames[col];
+}
+
+std::string AnalysisData::GetText(size_t row, size_t col)
+{
+	const auto& R = results[row];
+	switch (col)
+	{
+	case ADC_Count: return std::to_string(R.count);
+	case ADC_Unique: return std::to_string(R.unique);
+	case ADC_Features: {
+		std::string ret;
+		if (R.flags & AnalysisResult::Equal)
+			ret += "eq ";
+		if (R.flags & AnalysisResult::Asc)
+			ret += "asc ";
+		if (R.flags & AnalysisResult::AscEq)
+			ret += "asceq ";
+		if (!ret.empty())
+			ret.pop_back();
+		return ret; }
+	case ADC_VMin: return R.vmin;
+	case ADC_VMax: return R.vmax;
+	case ADC_VGCD: return R.vgcd;
+	case ADC_DMin: return R.dmin;
+	case ADC_DMax: return R.dmax;
+	case ADC_DGCD: return R.dgcd;
+	default: return "";
+	}
+}
+
+
 template <class T> T modulus(T a, T b) { return a % b; }
 float modulus(float a, float b) { return fmodf(a, b); }
 double modulus(double a, double b) { return fmod(a, b); }
@@ -69,8 +142,8 @@ template<class T> void ApplyStartEndBits(T& r, int sb, int eb)
 void ApplyStartEndBits(float& r, int sb, int eb) {}
 void ApplyStartEndBits(double& r, int sb, int eb) {}
 
-typedef std::string AnalysisFunc(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t sb, uint8_t eb, bool excl0);
-template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t sb, uint8_t eb, bool excl0)
+typedef AnalysisResult AnalysisFunc(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t sb, uint8_t eb, bool excl0);
+template <class T> AnalysisResult AnalysisFuncImpl(IDataSource* ds, uint64_t off, uint64_t stride, uint64_t count, uint8_t sb, uint8_t eb, bool excl0)
 {
 	using ST = typename get_signed<T>::type;
 	T min = std::numeric_limits<T>::max();
@@ -112,18 +185,27 @@ template <class T> std::string AnalysisFuncImpl(IDataSource* ds, uint64_t off, u
 		prev = val;
 		numfound++;
 	}
-	auto ret = "#=" + std::to_string(numfound) + " min=" + std::to_string(min) + " max=" + std::to_string(max) + " gcd=" + std::to_string(gcd);
-	if (numfound > 1)
+	AnalysisResult r;
 	{
-		if (eq)
-			ret += " eq";
-		else if (asc)
-			ret += " asc";
-		else if (asceq)
-			ret += " asceq";
-		ret += "\nuniq=" + std::to_string(counts.size()) + " dmin=" + std::to_string(dmin) + " dmax=" + std::to_string(dmax) + " dgcd=" + std::to_string(dgcd);
+		r.count = numfound;
+		r.unique = counts.size();
+		if (r.count > 1)
+		{
+			if (eq)
+				r.flags |= AnalysisResult::Equal;
+			else if (asc)
+				r.flags |= AnalysisResult::Asc;
+			else if (asceq)
+				r.flags |= AnalysisResult::AscEq;
+		}
+		r.vmin = std::to_string(min);
+		r.vmax = std::to_string(max);
+		r.vgcd = std::to_string(gcd);
+		r.dmin = std::to_string(dmin);
+		r.dmax = std::to_string(dmax);
+		r.dgcd = std::to_string(dgcd);
 	}
-	return ret;
+	return r;
 }
 static AnalysisFunc* analysisFuncs[] =
 {
@@ -202,6 +284,40 @@ std::string GetMarkerPreview(const Marker& marker, IDataSource* src, size_t maxL
 	}
 	return text;
 }
+std::string GetMarkerSingleLine(const Marker& marker, IDataSource* src, size_t which)
+{
+	std::string text;
+	for (uint64_t j = 0; j < marker.count; j++)
+	{
+		if (j > 0 && marker.type != DT_CHAR)
+			text += ',';
+		markerReadFuncs[marker.type](text, src, marker.at + which * marker.stride + j * typeSizes[marker.type], marker.bitstart, marker.bitend);
+	}
+	return text;
+}
+
+typedef int64_t Int64ReadFunc(IDataSource* ds, uint64_t off, uint8_t sb, uint8_t eb);
+template <class T> int64_t Int64ReadFuncImpl(IDataSource* ds, uint64_t off, uint8_t sb, uint8_t eb)
+{
+	T v;
+	ds->Read(off, sizeof(v), &v);
+	ApplyStartEndBits(v, sb, eb);
+	return int64_t(v);
+}
+static Int64ReadFunc* int64ReadFuncs[] =
+{
+	Int64ReadFuncImpl<char>,
+	Int64ReadFuncImpl<int8_t>,
+	Int64ReadFuncImpl<uint8_t>,
+	Int64ReadFuncImpl<int16_t>,
+	Int64ReadFuncImpl<uint16_t>,
+	Int64ReadFuncImpl<int32_t>,
+	Int64ReadFuncImpl<uint32_t>,
+	Int64ReadFuncImpl<int64_t>,
+	Int64ReadFuncImpl<uint64_t>,
+	Int64ReadFuncImpl<float>,
+	Int64ReadFuncImpl<double>,
+};
 
 
 bool Marker::Contains(uint64_t pos) const
@@ -455,20 +571,20 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	ctx->Push<ui::Panel>();
 	if (ui::imm::Button(ctx, "Analyze"))
 	{
-		analysis.clear();
+		analysisData.results.clear();
 		if (marker->repeats <= 1)
 		{
 			// analyze a single array
-			analysis.push_back("array: " + analysisFuncs[marker->type](dataSource, marker->at, typeSizes[marker->type], marker->count,
-				marker->bitstart, marker->bitend, marker->excludeZeroes));
+			analysisData.results.push_back(analysisFuncs[marker->type](dataSource, marker->at, typeSizes[marker->type],
+				marker->count, marker->bitstart, marker->bitend, marker->excludeZeroes));
 		}
 		else
 		{
 			// analyze each array element separately
 			for (uint64_t i = 0; i < marker->count; i++)
 			{
-				analysis.push_back(std::to_string(i) + ": " + analysisFuncs[marker->type](dataSource, marker->at + i * typeSizes[marker->type], marker->stride, marker->repeats,
-					marker->bitstart, marker->bitend, marker->excludeZeroes));
+				analysisData.results.push_back(analysisFuncs[marker->type](dataSource, marker->at + i * typeSizes[marker->type],
+					marker->stride, marker->repeats, marker->bitstart, marker->bitend, marker->excludeZeroes));
 			}
 		}
 	}
@@ -483,8 +599,45 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 		}
 		fclose(fp);
 	}
-	for (const auto& S : analysis)
-		ctx->Text(S.c_str());
+	if (marker->type >= DT_I8 && marker->type <= DT_U64 && marker->count == 2 && marker->repeats > 1 && ui::imm::Button(ctx, "Export links to .dot"))
+	{
+		FILE* fp = fopen("graph.dot", "w");
+		fprintf(fp, "graph exported {\n");
+		for (uint64_t i = 0; i < marker->repeats; i++)
+		{
+			int64_t A = int64ReadFuncs[marker->type](
+				dataSource,
+				marker->at + marker->stride * i,
+				marker->bitstart,
+				marker->bitend);
+			int64_t B = int64ReadFuncs[marker->type](
+				dataSource,
+				marker->at + marker->stride * i + typeSizes[marker->type],
+				marker->bitstart,
+				marker->bitend);
+			fprintf(fp, "\t%" PRId64 " -- %" PRId64 "\n", A, B);
+		}
+		fprintf(fp, "}\n");
+		fclose(fp);
+	}
+	if (ui::imm::Button(ctx, "Export data to CSV"))
+	{
+		FILE* fp = fopen("marker.csv", "w");
+		for (size_t i = 0; i < marker->repeats; i++)
+		{
+			auto line = GetMarkerSingleLine(*marker, dataSource, i);
+			fwrite(line.data(), 1, line.size(), fp);
+			fputc('\n', fp);
+		}
+		fclose(fp);
+	}
+	if (analysisData.results.size())
+	{
+		auto* tbl = ctx->Make<ui::TableView>();
+		tbl->GetStyle().SetHeight(analysisData.results.size() * 24 + 32);
+		tbl->SetDataSource(&analysisData);
+		tbl->CalculateColumnWidths();
+	}
 	ctx->Pop();
 }
 

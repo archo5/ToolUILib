@@ -101,6 +101,9 @@ void FileView::HexViewer_OnRightClick()
 	char txt_float64[32];
 	ds->GetFloat64Text(txt_float64, 32, pos);
 
+	int32_t val_int32;
+	ds->Read(pos, sizeof(val_int32), &val_int32);
+
 	std::vector<ui::MenuItem> structs;
 	{
 		structs.push_back(ui::MenuItem("Create a new struct (blank)").Func([this, pos]() { CreateBlankStruct(pos); }));
@@ -153,6 +156,8 @@ void FileView::HexViewer_OnRightClick()
 		ui::MenuItem("Mark uint64", txt_uint64).Func([&md, pos]() { md.AddMarker(DT_U64, pos, pos + 8); }),
 		ui::MenuItem("Mark float32", txt_float32).Func([&md, pos]() { md.AddMarker(DT_F32, pos, pos + 4); }),
 		ui::MenuItem("Mark float64", txt_float64).Func([&md, pos]() { md.AddMarker(DT_F64, pos, pos + 8); }),
+		ui::MenuItem::Separator(),
+		ui::MenuItem("Highlight all int32", txt_int32).Func([this, val_int32]() { of->highlightSettings.AddCustomInt32(val_int32); }),
 	};
 	ui::Menu menu(items);
 	menu.Show(this);
