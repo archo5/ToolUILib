@@ -345,6 +345,7 @@ void Test_ColorPicker(UIContainer* ctx);
 void Test_3DView(UIContainer* ctx);
 void Test_IMGUI(UIContainer* ctx);
 void Test_Tooltip(UIContainer* ctx);
+void Test_Dropdown(UIContainer* ctx);
 
 void Test_BasicEasingAnim(UIContainer* ctx);
 void Test_ThreadWorker(UIContainer* ctx);
@@ -412,6 +413,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Tabs", Test_Tabs },
 	{ "Scrollbars", Test_Scrollbars },
 	{ "Tooltip", Test_Tooltip },
+	{ "Dropdown", Test_Dropdown },
 	{},
 	{ "Color block", Test_ColorBlock },
 	{ "Image", Test_Image },

@@ -77,6 +77,7 @@ enum UIObjectFlags
 	UIObject_DisableCulling = 1 << 23,
 	UIObject_NoPaint = 1 << 24,
 	UIObject_DB_RerenderOnChange = 1 << 25,
+	UIObject_ClipChildren = 1 << 26,
 
 	UIObject_DB__Defaults = 0,
 };

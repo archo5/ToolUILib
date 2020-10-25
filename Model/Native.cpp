@@ -330,8 +330,6 @@ static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 void DebugDrawSelf(UIObject* o)
 {
-	rhi::SetTexture(0);
-
 	float a = 0.2f;
 
 	auto s = o->GetStyle();
@@ -553,6 +551,21 @@ struct NativeWindow_Impl
 			if (cont.rootNode)
 				DebugDraw(cont.rootNode);
 		}
+
+#if 0
+		for (auto* o = evsys.hoverObj; o; o = o->parent)
+		{
+			auto r = o->GetContentRect();
+			auto r2 = r.ExtendBy(UIRect::UniformBorder(1));
+			draw::RectCutoutCol(r2, r, Color4f(0.9f, 0.1f, 0.1f, 0.5f));
+		}
+		for (auto* o = evsys.dragHoverObj; o; o = o->parent)
+		{
+			auto r = o->GetContentRect();
+			auto r2 = r.ExtendBy(UIRect::UniformBorder(1));
+			draw::RectCutoutCol(r2, r, Color4f(0.9f, 0.9f, 0.1f, 0.5f));
+		}
+#endif
 
 		draw::internals::OnEndDrawFrame();
 

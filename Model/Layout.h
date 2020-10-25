@@ -81,6 +81,7 @@ struct Placement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) = 0;
 	bool applyOnLayout = false;
+	bool fullScreenRelative = false;
 };
 
 struct PointAnchoredPlacement : Placement

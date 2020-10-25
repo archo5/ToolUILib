@@ -748,3 +748,353 @@ void Test_Tooltip(UIContainer* ctx)
 	ctx->Make<TooltipTest>();
 }
 
+
+namespace ui {
+
+struct ClosingBackgroundBlocker : UIElement
+{
+	void OnInit() override
+	{
+		_fullScreenPlacement.fullScreenRelative = true;
+		RegisterAsOverlay(199.f);
+		GetStyle().SetPlacement(&_fullScreenPlacement);
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		UIElement::OnEvent(e);
+		if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			OnButton();
+		if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+		{
+			if (HasFlags(UIObject_IsChecked))
+				OnButton();
+			SetFlag(UIObject_IsChecked, true);
+		}
+	}
+	void OnButton()
+	{
+		// TODO use an event instead
+		target->SetFlag(UIObject_IsChecked, false);
+		target->RerenderNode();
+	}
+
+	style::RectAnchoredPlacement _fullScreenPlacement;
+
+	UIObject* target;
+};
+
+struct DropdownMenu : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		OnBuildButton(ctx);
+
+		if (HasFlags(UIObject_IsChecked))
+		{
+			ctx->Make<ClosingBackgroundBlocker>()->target = this;
+			OnBuildMenuWithLayout(ctx);
+		}
+	}
+
+	virtual void OnBuildButton(UIContainer* ctx)
+	{
+		auto& btn = ctx->PushBox();
+		btn + ui::Style(ui::Theme::current->button);
+		btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
+		btn.HandleEvent(UIEventType::ButtonDown) = [this](UIEvent& e)
+		{
+			if (e.GetButton() != UIMouseButton::Left)
+				return;
+			SetFlag(UIObject_IsChecked, true);
+			Rerender();
+		};
+
+		OnBuildButtonContents(ctx);
+
+		ctx->Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + ui::Margin(0, 0, 0, 5);
+		ctx->Pop();
+	}
+
+	virtual void OnBuildMenuWithLayout(UIContainer* ctx)
+	{
+		auto& list = OnBuildMenu(ctx);
+		auto* topLeftPlacement = Allocate<style::PointAnchoredPlacement>();
+		topLeftPlacement->anchor = { 0, 1 };
+		list + ui::SetPlacement(topLeftPlacement);
+		list + ui::MakeOverlay(200.f);
+		list + ui::MinWidth(style::Coord::Percent(100));
+	}
+
+	virtual UIObject& OnBuildMenu(UIContainer* ctx)
+	{
+		auto& ret = *ctx->Push<ui::ListBox>();
+
+		OnBuildMenuContents(ctx);
+
+		ctx->Pop();
+		return ret;
+	}
+
+	virtual void OnBuildButtonContents(UIContainer* ctx) = 0;
+	virtual void OnBuildMenuContents(UIContainer* ctx) = 0;
+};
+
+struct OptionList
+{
+	typedef void ElementFunc(const void* ptr, uintptr_t id);
+	virtual void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) = 0;
+	virtual void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) = 0;
+};
+
+struct CStrOptionList : OptionList
+{
+	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	{
+		ctx->Text(static_cast<const char*>(ptr));
+	}
+};
+
+struct ZeroSepCStrOptionList : CStrOptionList
+{
+	const char* str = nullptr;
+	size_t size = SIZE_MAX;
+
+	ZeroSepCStrOptionList(const char* s) : str(s) {}
+	ZeroSepCStrOptionList(size_t sz, const char* s) : str(s), size(sz) {}
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+	{
+		const char* s = str;
+		for (size_t i = 0; i < from && i < size && *s; i++, s = Next(s));
+		for (size_t i = 0; i < count && i + from < size && *s; i++, s = Next(s))
+			fn(s, i + from);
+	}
+
+	static const char* Next(const char* v)
+	{
+		return v + strlen(v) + 1;
+	}
+};
+
+struct CStrArrayOptionList : CStrOptionList
+{
+	const char** arr = nullptr;
+	size_t size = SIZE_MAX;
+
+	CStrArrayOptionList(const char** a) : arr(a) {}
+	CStrArrayOptionList(size_t sz, const char** a) : arr(a), size(sz) {}
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+	{
+		const char** a = arr;
+		for (size_t i = 0; i < from && i < size && *a; i++, a++);
+		for (size_t i = 0; i < count && i + from < size && *a; i++, a++)
+			fn(*a, i + from);
+	}
+};
+
+struct DropdownMenuList : DropdownMenu
+{
+	static constexpr bool Persistent = false;
+
+	void OnSerialize(IDataSerializer& s) override
+	{
+		DropdownMenu::OnSerialize(s);
+		s << selected;
+	}
+
+	void OnBuildButtonContents(UIContainer* ctx) override
+	{
+		bool found = false;
+		options->IterateElements(0, SIZE_MAX, [this, ctx, &found](const void* ptr, uintptr_t id)
+		{
+			if (id == selected && !found)
+			{
+				options->BuildElement(ctx, ptr, id, false);
+				found = true;
+			}
+		});
+		if (!found)
+			OnBuildEmptyButtonContents(ctx);
+	}
+
+	void OnBuildMenuContents(UIContainer* ctx) override
+	{
+		options->IterateElements(0, SIZE_MAX, [this, ctx](const void* ptr, uintptr_t id)
+		{
+			OnBuildMenuElement(ctx, ptr, id);
+		});
+	}
+
+	virtual void OnBuildEmptyButtonContents(UIContainer* ctx)
+	{
+		//ctx->Text("");
+	}
+
+	virtual void OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
+	{
+		auto& opt = *ctx->Push<ui::Selectable>();
+		opt.Init(selected == id);
+
+		options->BuildElement(ctx, ptr, id, true);
+
+		ctx->Pop();
+
+		opt + ui::EventHandler(UIEventType::ButtonUp, [this, id](UIEvent& e)
+		{
+			if (e.GetButton() != UIMouseButton::Left)
+				return;
+			selected = id;
+			UIEvent sce(e.context, e.target, UIEventType::SelectionChange);
+			sce.arg0 = id;
+			e.context->BubblingEvent(sce);
+			SetFlag(UIObject_IsChecked, false);
+			e.context->OnChange(this);
+			e.context->OnCommit(this);
+			Rerender();
+		});
+	}
+
+	//std::vector<std::string> options;
+	//size_t selected = 0;
+	OptionList* options;
+	uintptr_t selected = UINTPTR_MAX;
+};
+
+namespace imm {
+template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+{
+	auto* ddml = ctx->Make<DropdownMenuList>();
+	ddml->options = ol;
+	for (auto& mod : mods)
+		mod->Apply(ddml);
+
+	bool edited = false;
+	if (ddml->flags & UIObject_IsEdited)
+	{
+		val = T(ddml->selected);
+		ddml->flags &= ~UIObject_IsEdited;
+		ddml->_OnIMChange();
+		edited = true;
+	}
+	else
+		ddml->selected = uintptr_t(val);
+
+	ddml->HandleEvent(UIEventType::SelectionChange) = [](UIEvent& e)
+	{
+		e.current->flags |= UIObject_IsEdited;
+		e.current->RerenderContainerNode();
+	};
+
+	return edited;
+}
+template <class T> bool DropdownMenuList(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+{
+	return DropdownMenuListCustom<ui::DropdownMenu>(ctx, val, ol, mods);
+}
+} // imm
+} // ui
+
+struct DropdownTest : ui::Node
+{
+	static constexpr bool Persistent = true;
+
+	uintptr_t sel3opts = 1;
+	uintptr_t selPtr = uintptr_t(&typeid(ui::Node));
+	const type_info* selPtrReal = &typeid(ui::Node);
+
+	void Render(UIContainer* ctx) override
+	{
+		*this + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		{
+			ctx->Make<SpecificDropdownMenu>();
+
+			ctx->Text("[zssl] unlimited options");
+			MenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
+			ctx->Text("[zssl] limited options");
+			MenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>(2, "First\0Second"));
+
+			static const char* options[] = { "First", "Second", "Third", nullptr };
+
+			ctx->Text("[sa] unlimited options");
+			MenuList(ctx, sel3opts, Allocate<ui::CStrArrayOptionList>(options));
+			ctx->Text("[sa] limited options");
+			MenuList(ctx, sel3opts, Allocate<ui::CStrArrayOptionList>(2, options));
+
+			ctx->Text("custom pointer options");
+			MenuList(ctx, selPtr, Allocate<TypeInfoOptions>());
+		}
+		ctx->Pop();
+
+		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		{
+			ctx->Text("immediate mode");
+			ui::imm::DropdownMenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
+			ui::imm::DropdownMenuList(ctx, selPtrReal, Allocate<TypeInfoOptions>());
+		}
+		ctx->Pop();
+	}
+
+	void MenuList(UIContainer* ctx, uintptr_t& sel, ui::OptionList* list)
+	{
+		auto* ddml = ctx->Make<ui::DropdownMenuList>();
+		ddml->selected = sel;
+		ddml->options = list;
+		ddml->HandleEvent(UIEventType::SelectionChange) = [this, ddml, &sel](UIEvent& e)
+		{
+			sel = ddml->selected;
+			Rerender();
+		};
+	}
+
+	struct SpecificDropdownMenu : ui::DropdownMenu
+	{
+		void OnBuildButtonContents(UIContainer* ctx) override
+		{
+			ctx->Text("Menu");
+		}
+		void OnBuildMenuContents(UIContainer* ctx) override
+		{
+			static bool flag1, flag2;
+
+			ctx->Push<ui::CheckboxFlagT<bool>>()->Init(flag1);
+			ctx->Make<ui::CheckboxIcon>();
+			ctx->Text("Option 1") + ui::Padding(5);
+			ctx->Pop();
+
+			ctx->Push<ui::CheckboxFlagT<bool>>()->Init(flag2);
+			ctx->Make<ui::CheckboxIcon>();
+			ctx->Text("Option 2") + ui::Padding(5);
+			ctx->Pop();
+		}
+	};
+
+	struct TypeInfoOptions : ui::OptionList
+	{
+		void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
+		{
+			static const type_info* types[] =
+			{
+				nullptr,
+				&typeid(UIObject),
+				&typeid(UIElement),
+				&typeid(ui::Node),
+				&typeid(ui::BoxElement),
+				&typeid(ui::TextElement),
+			};
+			for (size_t i = 0; i < count && i + from < sizeof(types) / sizeof(types[0]); i++)
+			{
+				fn(types[i], uintptr_t(types[i]));
+			}
+		}
+		void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
+		{
+			ctx->Text(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
+		}
+	};
+};
+void Test_Dropdown(UIContainer* ctx)
+{
+	ctx->Make<DropdownTest>();
+}
+

@@ -554,7 +554,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 
 		ev.type = UIEventType::ButtonUp;
 		ev._stopPropagation = false;
-		ev.target = clickObj[id];
+		ev.target = hoverObj;
 		clickObj[id] = nullptr;
 		BubblingEvent(ev);
 	}

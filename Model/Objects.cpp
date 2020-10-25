@@ -91,7 +91,10 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
 
 		if (HasFlags(f, UIObject_DB_Button))
 		{
-			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left && e.context->GetMouseCapture() == this)
+			if (e.type == UIEventType::ButtonUp &&
+				e.GetButton() == UIMouseButton::Left &&
+				e.context->GetMouseCapture() == this &&
+				HasFlags(UIObject_IsPressedMouse))
 			{
 				e.context->OnActivate(this);
 			}
@@ -259,10 +262,16 @@ void UIObject::PaintChildren()
 {
 	if (!firstChild)
 		return;
-	ui::draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+
+	bool clipChildren = !!(flags & UIObject_ClipChildren);
+	if (clipChildren)
+		ui::draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		ch->Paint();
-	ui::draw::PopScissorRect();
+
+	if (clipChildren)
+		ui::draw::PopScissorRect();
 }
 
 float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
@@ -459,7 +468,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 	{
 		if (!placement->applyOnLayout)
 		{
-			if (parent)
+			if (parent && !placement->fullScreenRelative)
 				rect = parent->GetContentRect();
 			else
 				rect = { 0, 0, system->eventSystem.width, system->eventSystem.height };
