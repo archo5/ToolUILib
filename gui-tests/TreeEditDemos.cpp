@@ -257,18 +257,10 @@ void CompactTreeNodeEditDemo::NodeUI(UIContainer* ctx, ExprNode*& node)
 	auto& b = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock());
 	if (node)
 	{
-		b.HandleEvent(UIEventType::ButtonUp) = [&node](UIEvent& e)
+		b.HandleEvent(UIEventType::ContextMenu) = [&node](UIEvent& e)
 		{
-			if (e.GetButton() == UIMouseButton::Right)
-			{
-				ui::MenuItem items[] =
-				{
-					ui::MenuItem("Delete").Func([&node, &e]() { delete node; node = nullptr; e.target->RerenderNode(); }),
-				};
-				ui::Menu menu(items);
-				menu.Show(e.target);
-				e.StopPropagation();
-			}
+			ui::ContextMenu::Get().Add("Delete") = [&node, &e]() { delete node; node = nullptr; e.target->RerenderNode(); };
+			e.StopPropagation();
 		};
 		node->UI(ctx);
 	}

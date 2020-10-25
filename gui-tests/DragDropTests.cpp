@@ -579,14 +579,9 @@ struct DragConnectTest : ui::Node
 				}
 			}
 
-			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Right)
+			if (e.type == UIEventType::ContextMenu)
 			{
-				ui::MenuItem items[] =
-				{
-					ui::MenuItem("Unlink").Func([this]() { UnlinkAll(); }),
-				};
-				ui::Menu menu(items);
-				menu.Show(this);
+				ui::ContextMenu::Get().Add("Unlink") = [this]() { UnlinkAll(); };
 			}
 		}
 		void OnDestroy() override

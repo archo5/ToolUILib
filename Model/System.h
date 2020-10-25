@@ -78,6 +78,13 @@ struct UIContainer
 		{
 			auto* t = static_cast<T*>(obj);
 			t->UnregisterAsOverlay();
+
+			// TODO is there a way to optimize this?
+			auto* node = dynamic_cast<ui::Node*>(obj);
+			decltype(node->_deferredDestructors) ddList;
+			if (node)
+				std::swap(node->_deferredDestructors, ddList);
+
 			if (T::Persistent)
 			{
 				t->_Reset();
@@ -95,6 +102,10 @@ struct UIContainer
 				// in case these flags have been set by ctor
 				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInRenderStack);
 			}
+
+			if (node)
+				std::swap(node->_deferredDestructors, ddList);
+
 			t->_OnChangeStyle();
 			return t;
 		}

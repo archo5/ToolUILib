@@ -1132,6 +1132,43 @@ struct FileOptions : ui::OptionList
 	}
 };
 
+struct StructsDropdownMenu : ui::DropdownMenu
+{
+	DataDesc* dataDesc = nullptr;
+	std::unordered_set<DDStruct*>* structSet = nullptr;
+
+	void OnBuildButtonContents(UIContainer* ctx) override
+	{
+		if (structSet->empty())
+			ctx->Text("<none>");
+		else if (structSet->size() == dataDesc->structs.size())
+			ctx->Text("<all>");
+		else if (structSet->size() == 1)
+			ctx->Text((*structSet->begin())->name);
+		else
+			ctx->Text("<many>");
+	}
+
+	void OnBuildMenuContents(UIContainer* ctx) override
+	{
+		std::vector<DDStruct*> structs;
+		for (auto& kvp : dataDesc->structs)
+			structs.push_back(kvp.second);
+		std::sort(structs.begin(), structs.end(), [](const DDStruct* A, const DDStruct* B) { return A->name < B->name; });
+
+		for (DDStruct* S : structs)
+		{
+			if (ui::imm::CheckboxRaw(ctx, structSet->count(S) > 0, S->name.c_str()))
+			{
+				if (structSet->count(S))
+					structSet->erase(S);
+				else
+					structSet->insert(S);
+			}
+		}
+	}
+};
+
 void DataDescInstanceSource::Edit(UIContainer* ctx)
 {
 	ui::Property::Begin(ctx, "Filter by struct");
@@ -1144,45 +1181,17 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 
 	if (!filterStructEnable || !filterStruct)
 	{
-		ui::Property::Begin(ctx, "Hide structs");
+		ui::Property::Scope ps(ctx, "Hide structs");
 		if (ui::imm::EditBool(ctx, filterHideStructsEnable, nullptr))
 			refilter = true;
-
-		std::vector<DDStruct*> structs(filterHideStructs.begin(), filterHideStructs.end());
-		std::sort(structs.begin(), structs.end(), [](const DDStruct* A, const DDStruct* B) { return A->name < B->name; });
-
-		std::string buttonName;
-		for (auto* S : structs)
+		auto* ddm = ctx->Make<StructsDropdownMenu>();
+		ddm->dataDesc = dataDesc;
+		ddm->structSet = &filterHideStructs;
+		ddm->HandleEvent(UIEventType::IMChange) = [this](UIEvent& e)
 		{
-			if (buttonName.size())
-				buttonName += ", ";
-			buttonName += S->name;
-		}
-		if (ui::imm::Button(ctx, structs.empty() ? "<none>" : buttonName.c_str()))
-		{
-			structs.clear();
-			for (auto& kvp : dataDesc->structs)
-				structs.push_back(kvp.second);
-			std::sort(structs.begin(), structs.end(), [](const DDStruct* A, const DDStruct* B) { return A->name < B->name; });
-
-			std::vector<ui::MenuItem> items;
-			items.push_back(ui::MenuItem("<none>").Func([this]() { filterHideStructs.clear(); refilter = true; }));
-			items.push_back(ui::MenuItem("<all>").Func([this, &structs]() { filterHideStructs.insert(structs.begin(), structs.end()); refilter = true; }));
-			items.push_back(ui::MenuItem::Separator());
-			for (auto* S : structs)
-			{
-				items.push_back(ui::MenuItem(S->name, {}, false, filterHideStructs.count(S)).Func([this, S]()
-				{
-					if (filterHideStructs.count(S))
-						filterHideStructs.erase(S);
-					else
-						filterHideStructs.insert(S);
-					refilter = true;
-				}));
-			}
-			ui::Menu(items).Show(ctx->GetCurrentNode());
-		}
-		ui::Property::End(ctx);
+			refilter = true;
+			e.current->RerenderContainerNode();
+		};
 	}
 
 	ui::Property::Begin(ctx, "Filter by file");

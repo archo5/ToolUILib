@@ -29,19 +29,16 @@ void TabMarkers::Render(UIContainer* ctx)
 				of->hexViewerState.GoToPos(M.at);
 			}
 		};
-		tv->HandleEvent(tv, UIEventType::Click) = [this, f, tv](UIEvent& e)
+		tv->HandleEvent(tv, UIEventType::ContextMenu) = [this, f, tv](UIEvent& e)
 		{
 			size_t row = tv->GetHoverRow();
-			if (e.GetButton() == UIMouseButton::Right && row != SIZE_MAX)
+			if (row != SIZE_MAX)
 			{
 				Marker& M = f->markerData.markers[row];
 
-				ui::MenuItem items[] =
-				{
-					ui::MenuItem("Go to start").Func([this, &M]() { of->hexViewerState.GoToPos(M.at); }),
-					ui::MenuItem("Go to end").Func([this, &M]() { of->hexViewerState.GoToPos(M.GetEnd()); }),
-				};
-				ui::Menu(items).Show(this);
+				auto& CM = ui::ContextMenu::Get();
+				CM.Add("Go to start", false, false, 0) = [this, &M]() { of->hexViewerState.GoToPos(M.at); };
+				CM.Add("Go to end", false, false, 1) = [this, &M]() { of->hexViewerState.GoToPos(M.GetEnd()); };
 			}
 		};
 		tv->HandleEvent(tv, UIEventType::SelectionChange) = [](UIEvent& e) { e.current->RerenderNode(); };
