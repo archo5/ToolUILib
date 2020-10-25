@@ -383,16 +383,7 @@ void MSN_NewPrimitive::InlineEditUI(UIContainer* ctx)
 
 void MSN_NewPrimitive::FullEditUI(UIContainer* ctx)
 {
-	if (ui::imm::PropButton(ctx, "Type", g_primTypeNames[int(type)]))
-	{
-		ui::MenuItem items[6];
-		for (int i = 0; i < 6; i++)
-			items[i].text = g_primTypeNames[i];
-		int ret = ui::Menu(items).Show(ctx->GetCurrentNode());
-		if (ret >= 0)
-			type = MSPrimType(ret);
-	}
-
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_primTypeNames));
 	ui::imm::PropEditString(ctx, "Tex.inst.", texInst.expr.c_str(), [this](const char* v) { texInst.SetExpr(v); });
 }
 
@@ -522,26 +513,8 @@ void MSN_VertexData::InlineEditUI(UIContainer* ctx)
 
 void MSN_VertexData::FullEditUI(UIContainer* ctx)
 {
-	if (ui::imm::PropButton(ctx, "Destination", g_dests[int(dest)]))
-	{
-		ui::MenuItem items[4];
-		for (int i = 0; i < 4; i++)
-			items[i].text = g_dests[i];
-		int ret = ui::Menu(items).Show(ctx->GetCurrentNode());
-		if (ret >= 0)
-			dest = MSVDDest(ret);
-	}
-
-	if (ui::imm::PropButton(ctx, "Type", g_types[int(type)]))
-	{
-		ui::MenuItem items[10];
-		for (int i = 0; i < 10; i++)
-			items[i].text = g_types[i];
-		int ret = ui::Menu(items).Show(ctx->GetCurrentNode());
-		if (ret >= 0)
-			type = MSVDType(ret);
-	}
-
+	ui::imm::PropDropdownMenuList(ctx, "Destination", dest, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_dests));
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_types));
 	ui::imm::PropEditInt(ctx, "# components", ncomp, {}, 1.0f, 1, 4);
 	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
 	ui::imm::PropEditString(ctx, "Stride", stride.expr.c_str(), [this](const char* v) { stride.SetExpr(v); });
@@ -595,16 +568,7 @@ void MSN_IndexData::InlineEditUI(UIContainer* ctx)
 
 void MSN_IndexData::FullEditUI(UIContainer* ctx)
 {
-	if (ui::imm::PropButton(ctx, "Type", g_idxtypes[int(type)]))
-	{
-		ui::MenuItem items[3];
-		for (int i = 0; i < 3; i++)
-			items[i].text = g_idxtypes[i];
-		int ret = ui::Menu(items).Show(ctx->GetCurrentNode());
-		if (ret >= 0)
-			type = MSIDType(ret);
-	}
-
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_idxtypes));
 	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
 	ui::imm::PropEditString(ctx, "Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
 }

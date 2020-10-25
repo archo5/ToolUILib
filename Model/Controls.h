@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Objects.h"
+#include "System.h"
 
 
 namespace ui {
@@ -434,6 +435,139 @@ struct CollapsibleTreeNode : UIElement
 	bool open = false;
 	bool _hovered = false;
 };
+
+
+struct BackgroundBlocker : UIElement
+{
+	void OnInit() override;
+	void OnEvent(UIEvent& e) override;
+	void OnButton();
+
+	style::RectAnchoredPlacement _fullScreenPlacement;
+};
+
+
+struct DropdownMenu : ui::Node
+{
+	void Render(UIContainer* ctx) override;
+	void OnEvent(UIEvent& e) override;
+
+	virtual void OnBuildButton(UIContainer* ctx);
+	virtual void OnBuildMenuWithLayout(UIContainer* ctx);
+	virtual UIObject& OnBuildMenu(UIContainer* ctx);
+
+	virtual void OnBuildButtonContents(UIContainer* ctx) = 0;
+	virtual void OnBuildMenuContents(UIContainer* ctx) = 0;
+};
+
+
+struct OptionList
+{
+	typedef void ElementFunc(const void* ptr, uintptr_t id);
+
+	virtual void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) = 0;
+	virtual void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) = 0;
+};
+
+struct CStrOptionList : OptionList
+{
+	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override;
+};
+
+struct ZeroSepCStrOptionList : CStrOptionList
+{
+	const char* str = nullptr;
+	size_t size = SIZE_MAX;
+
+	ZeroSepCStrOptionList(const char* s) : str(s) {}
+	ZeroSepCStrOptionList(size_t sz, const char* s) : str(s), size(sz) {}
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+};
+
+struct NullTerminated {};
+
+struct CStrArrayOptionList : CStrOptionList
+{
+	const char** arr = nullptr;
+	size_t size = SIZE_MAX;
+
+	CStrArrayOptionList(const char** a, NullTerminated) : arr(a) {}
+	template <size_t N>
+	CStrArrayOptionList(const char* (&a)[N]) : arr(a), size(N) {}
+	CStrArrayOptionList(size_t sz, const char** a) : arr(a), size(sz) {}
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+};
+
+
+struct DropdownMenuList : DropdownMenu
+{
+	static constexpr bool Persistent = false;
+
+	OptionList* _options = nullptr;
+	uintptr_t _selected = UINTPTR_MAX;
+
+	DropdownMenuList& SetOptions(OptionList* o) { _options = o; return *this; }
+	DropdownMenuList& SetSelected(uintptr_t s) { _selected = s; return *this; }
+	uintptr_t GetSelected() { return _selected; }
+
+	void OnSerialize(IDataSerializer& s) override;
+	void OnBuildButtonContents(UIContainer* ctx) override;
+	void OnBuildMenuContents(UIContainer* ctx) override;
+
+	virtual void OnBuildEmptyButtonContents(UIContainer* ctx);
+	virtual void OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id);
+};
+
+namespace imm {
+
+template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+{
+	auto* ddml = ctx->Make<MT>();
+	ddml->SetOptions(ol);
+	for (auto& mod : mods)
+		mod->Apply(ddml);
+
+	bool edited = false;
+	if (ddml->flags & UIObject_IsEdited)
+	{
+		val = T(ddml->GetSelected());
+		ddml->flags &= ~UIObject_IsEdited;
+		ddml->_OnIMChange();
+		edited = true;
+	}
+	else
+		ddml->SetSelected(uintptr_t(val));
+
+	ddml->HandleEvent(UIEventType::Commit) = [ddml](UIEvent& e)
+	{
+		if (e.target != ddml)
+			return;
+		e.current->flags |= UIObject_IsEdited;
+		e.current->RerenderContainerNode();
+	};
+
+	return edited;
+}
+template <class T> bool DropdownMenuList(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+{
+	return DropdownMenuListCustom<ui::DropdownMenuList>(ctx, val, ol, mods);
+}
+
+template <class MT, class T> bool PropDropdownMenuListCustom(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
+{
+	Property::Scope ps(ctx, label);
+	return DropdownMenuListCustom<MT, T>(ctx, val, ol, mods);
+}
+template <class T> bool PropDropdownMenuList(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
+{
+	Property::Scope ps(ctx, label);
+	return DropdownMenuList<T>(ctx, val, ol, mods);
+}
+
+} // imm
+
 
 struct OverlayInfoPlacement : style::Placement
 {

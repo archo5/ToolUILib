@@ -543,17 +543,7 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	ctx->Text("Marker");
 
 	ctx->Push<ui::Panel>();
-	if (ui::imm::PropButton(ctx, "Type", typeNames[marker->type]))
-	{
-		std::vector<ui::MenuItem> items;
-		int at = 0;
-		for (auto* type : typeNames)
-			items.push_back(ui::MenuItem(type, {}, false, at++ == marker->type));
-		ui::Menu menu(items);
-		int pos = menu.Show(this);
-		if (pos >= 0)
-			marker->type = (DataType)pos;
-	}
+	ui::imm::DropdownMenuList(ctx, marker->type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(typeNames));
 	ui::imm::PropEditInt(ctx, "Offset", marker->at);
 	ui::imm::PropEditInt(ctx, "Count", marker->count);
 	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
@@ -649,17 +639,7 @@ void MarkedItemsList::Render(UIContainer* ctx)
 	for (auto& m : markerData->markers)
 	{
 		ctx->Push<ui::Panel>();
-		if (ui::imm::PropButton(ctx, "Type", typeNames[m.type]))
-		{
-			std::vector<ui::MenuItem> items;
-			int at = 0;
-			for (auto* type : typeNames)
-				items.push_back(ui::MenuItem(type, {}, false, at++ == m.type));
-			ui::Menu menu(items);
-			int pos = menu.Show(this);
-			if (pos >= 0)
-				m.type = (DataType)pos;
-		}
+		ui::imm::PropDropdownMenuList(ctx, "Type", m.type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(typeNames));
 		ui::imm::PropEditInt(ctx, "Offset", m.at);
 		ui::imm::PropEditInt(ctx, "Count", m.count);
 		ui::imm::PropEditInt(ctx, "Repeats", m.repeats);

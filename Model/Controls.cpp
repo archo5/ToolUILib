@@ -1317,6 +1317,177 @@ void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
 }
 
 
+void BackgroundBlocker::OnInit()
+{
+	_fullScreenPlacement.fullScreenRelative = true;
+	RegisterAsOverlay(199.f);
+	GetStyle().SetPlacement(&_fullScreenPlacement);
+}
+
+void BackgroundBlocker::OnEvent(UIEvent& e)
+{
+	UIElement::OnEvent(e);
+	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+		OnButton();
+	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	{
+		if (HasFlags(UIObject_IsChecked))
+			OnButton();
+		SetFlag(UIObject_IsChecked, true);
+	}
+}
+
+void BackgroundBlocker::OnButton()
+{
+	UIEvent e(&system->eventSystem, this, UIEventType::BackgroundClick);
+	system->eventSystem.BubblingEvent(e);
+}
+
+
+void DropdownMenu::Render(UIContainer* ctx)
+{
+	OnBuildButton(ctx);
+
+	if (HasFlags(UIObject_IsChecked))
+	{
+		ctx->Make<BackgroundBlocker>();
+		OnBuildMenuWithLayout(ctx);
+	}
+}
+
+void DropdownMenu::OnEvent(UIEvent& e)
+{
+	Node::OnEvent(e);
+	if (e.type == UIEventType::BackgroundClick)
+	{
+		SetFlag(UIObject_IsChecked, false);
+		Rerender();
+		e.StopPropagation();
+	}
+}
+
+void DropdownMenu::OnBuildButton(UIContainer* ctx)
+{
+	auto& btn = ctx->PushBox();
+	btn + ui::Style(ui::Theme::current->button);
+	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
+	btn.HandleEvent(UIEventType::ButtonDown) = [this](UIEvent& e)
+	{
+		if (e.GetButton() != UIMouseButton::Left)
+			return;
+		SetFlag(UIObject_IsChecked, true);
+		Rerender();
+	};
+
+	OnBuildButtonContents(ctx);
+
+	ctx->Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + ui::Margin(0, 0, 0, 5);
+	ctx->Pop();
+}
+
+void DropdownMenu::OnBuildMenuWithLayout(UIContainer* ctx)
+{
+	auto& list = OnBuildMenu(ctx);
+	auto* topLeftPlacement = Allocate<style::PointAnchoredPlacement>();
+	topLeftPlacement->anchor = { 0, 1 };
+	list + ui::SetPlacement(topLeftPlacement);
+	list + ui::MakeOverlay(200.f);
+	list + ui::MinWidth(style::Coord::Percent(100));
+}
+
+UIObject& DropdownMenu::OnBuildMenu(UIContainer* ctx)
+{
+	auto& ret = *ctx->Push<ui::ListBox>();
+
+	OnBuildMenuContents(ctx);
+
+	ctx->Pop();
+	return ret;
+}
+
+
+void CStrOptionList::BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
+{
+	ctx->Text(static_cast<const char*>(ptr));
+}
+
+static const char* Next(const char* v)
+{
+	return v + strlen(v) + 1;
+}
+
+void ZeroSepCStrOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
+{
+	const char* s = str;
+	for (size_t i = 0; i < from && i < size && *s; i++, s = Next(s));
+	for (size_t i = 0; i < count && i + from < size && *s; i++, s = Next(s))
+		fn(s, i + from);
+}
+
+void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
+{
+	const char** a = arr;
+	for (size_t i = 0; i < from && i < size && *a; i++, a++);
+	for (size_t i = 0; i < count && i + from < size && *a; i++, a++)
+		fn(*a, i + from);
+}
+
+
+void DropdownMenuList::OnSerialize(IDataSerializer& s)
+{
+	DropdownMenu::OnSerialize(s);
+	s << _selected;
+}
+
+void DropdownMenuList::OnBuildButtonContents(UIContainer* ctx)
+{
+	bool found = false;
+	_options->IterateElements(0, SIZE_MAX, [this, ctx, &found](const void* ptr, uintptr_t id)
+	{
+		if (id == _selected && !found)
+		{
+			_options->BuildElement(ctx, ptr, id, false);
+			found = true;
+		}
+	});
+	if (!found)
+		OnBuildEmptyButtonContents(ctx);
+}
+
+void DropdownMenuList::OnBuildMenuContents(UIContainer* ctx)
+{
+	_options->IterateElements(0, SIZE_MAX, [this, ctx](const void* ptr, uintptr_t id)
+	{
+		OnBuildMenuElement(ctx, ptr, id);
+	});
+}
+
+void DropdownMenuList::OnBuildEmptyButtonContents(UIContainer* ctx)
+{
+}
+
+void DropdownMenuList::OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
+{
+	auto& opt = *ctx->Push<ui::Selectable>();
+	opt.Init(_selected == id);
+
+	_options->BuildElement(ctx, ptr, id, true);
+
+	ctx->Pop();
+
+	opt + ui::EventHandler(UIEventType::ButtonUp, [this, id](UIEvent& e)
+	{
+		if (e.GetButton() != UIMouseButton::Left)
+			return;
+		_selected = id;
+		SetFlag(UIObject_IsChecked, false);
+		e.context->OnChange(this);
+		e.context->OnCommit(this);
+		Rerender();
+	});
+}
+
+
 void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
 	auto contSize = curObj->GetNativeWindow()->GetSize();

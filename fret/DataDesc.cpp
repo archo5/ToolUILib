@@ -131,19 +131,9 @@ static const char* CreationReasonToStringShort(CreationReason cr)
 
 static bool EditCreationReason(UIContainer* ctx, const char* label, CreationReason& cr)
 {
-	if (ui::imm::PropButton(ctx, label, CreationReasonToString(cr)))
-	{
-		ui::MenuItem items[] =
-		{
-			ui::MenuItem(CreationReasonToString(CreationReason::UserDefined)).Func([&cr]() { cr = CreationReason::UserDefined; }),
-			ui::MenuItem(CreationReasonToString(CreationReason::ManualExpand)).Func([&cr]() { cr = CreationReason::ManualExpand; }),
-			ui::MenuItem(CreationReasonToString(CreationReason::AutoExpand)).Func([&cr]() { cr = CreationReason::AutoExpand; }),
-			ui::MenuItem(CreationReasonToString(CreationReason::Query)).Func([&cr]() { cr = CreationReason::Query; }),
-		};
-		ui::Menu(items).Show(ctx->GetCurrentNode());
-		return true;
-	}
-	return false;
+	return ui::imm::PropDropdownMenuList(ctx, label, cr,
+		ctx->GetCurrentNode()->Allocate<ui::ZeroSepCStrOptionList>(
+			"user-defined\0manual expand\0auto expand\0query\0"));
 }
 
 void DataDesc::EditInstance(UIContainer* ctx)
@@ -1095,22 +1085,60 @@ void DataDescInstanceSource::SetSelectionState(uintptr_t item, bool sel)
 		dataDesc->SetCurrentInstance(nullptr);
 }
 
+struct StructOptions : ui::OptionList
+{
+	DataDesc* desc;
+
+	StructOptions(DataDesc* d) : desc(d) {}
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+	{
+		std::vector<DDStruct*> structs;
+		structs.reserve(desc->structs.size() + 1);
+		structs.push_back(nullptr);
+		for (auto& kvp : desc->structs)
+			structs.push_back(kvp.second);
+		std::sort(structs.begin() + 1, structs.end(), [](const DDStruct* a, const DDStruct* b) { return a->name < b->name; });
+		
+		for (size_t i = from; i < from + count && i < structs.size(); i++)
+			fn(structs[i], uintptr_t(structs[i]));
+	}
+	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	{
+		auto* s = static_cast<const DDStruct*>(ptr);
+		ctx->Text(s ? s->name : "<none>");
+	}
+};
+
+struct FileOptions : ui::OptionList
+{
+	DataDesc* desc;
+
+	FileOptions(DataDesc* d) : desc(d) {}
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+	{
+		std::vector<DDFile*> files = desc->files;
+		std::sort(files.begin(), files.end(), [](const DDFile* a, const DDFile* b) { return a->name < b->name; });
+		files.insert(files.begin(), nullptr);
+
+		for (size_t i = from; i < from + count && i < files.size(); i++)
+			fn(files[i], uintptr_t(files[i]));
+	}
+	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	{
+		auto* s = static_cast<const DDFile*>(ptr);
+		ctx->Text(s ? s->name : "<none>");
+	}
+};
+
 void DataDescInstanceSource::Edit(UIContainer* ctx)
 {
 	ui::Property::Begin(ctx, "Filter by struct");
 	if (ui::imm::EditBool(ctx, filterStructEnable, nullptr))
 		refilter = true;
-	if (ui::imm::Button(ctx, filterStruct ? filterStruct->name.c_str() : "<none>"))
-	{
-		std::vector<ui::MenuItem> items;
-		items.push_back(ui::MenuItem("<none>").Func([this]() { filterStruct = nullptr; refilter = true; }));
-		for (auto& sp : dataDesc->structs)
-		{
-			auto* S = sp.second;
-			items.push_back(ui::MenuItem(sp.first).Func([this, S]() { filterStruct = S; refilter = true; }));
-		}
-		ui::Menu(items).Show(ctx->GetCurrentNode());
-	}
+	if (ui::imm::DropdownMenuList(ctx, filterStruct, ctx->GetCurrentNode()->Allocate<StructOptions>(dataDesc)))
+		refilter = true;
 	ui::imm::PropEditInt(ctx, "\bBytes", showBytes, {}, 1, 0, 128);
 	ui::Property::End(ctx);
 
@@ -1160,16 +1188,8 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 	ui::Property::Begin(ctx, "Filter by file");
 	if (ui::imm::EditBool(ctx, filterFileEnable, nullptr))
 		refilter = true;
-	if (ui::imm::Button(ctx, filterFile ? filterFile->name.c_str() : "<none>"))
-	{
-		std::vector<ui::MenuItem> items;
-		items.push_back(ui::MenuItem("<none>").Func([this]() { filterFile = nullptr; refilter = true; }));
-		for (auto* F : dataDesc->files)
-		{
-			items.push_back(ui::MenuItem(F->name).Func([this, F]() { filterFile = F; refilter = true; }));
-		}
-		ui::Menu(items).Show(ctx->GetCurrentNode());
-	}
+	if (ui::imm::DropdownMenuList(ctx, filterFile, ctx->GetCurrentNode()->Allocate<FileOptions>(dataDesc)))
+		refilter = true;
 	ui::imm::PropEditBool(ctx, "\bFollow", filterFileFollow);
 	ui::Property::End(ctx);
 
@@ -1291,16 +1311,8 @@ void DataDescImageSource::SetSelectionState(uintptr_t item, bool sel)
 
 void DataDescImageSource::Edit(UIContainer* ctx)
 {
-	if (ui::imm::PropButton(ctx, "Filter by file", filterFile ? filterFile->name.c_str() : "<none>"))
-	{
-		std::vector<ui::MenuItem> items;
-		items.push_back(ui::MenuItem("<none>").Func([this]() { filterFile = nullptr; refilter = true; }));
-		for (auto* F : dataDesc->files)
-		{
-			items.push_back(ui::MenuItem(F->name).Func([this, F]() { filterFile = F; refilter = true; }));
-		}
-		ui::Menu(items).Show(ctx->GetCurrentNode());
-	}
+	if (ui::imm::PropDropdownMenuList(ctx, "Filter by file", filterFile, ctx->GetCurrentNode()->Allocate<FileOptions>(dataDesc)))
+		refilter = true;
 	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
 		refilter = true;
 }
