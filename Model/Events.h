@@ -30,6 +30,7 @@ enum class UIEventType
 	Change,
 	Commit,
 	IMChange,
+	BackgroundClick,
 	Paint,
 	Timer,
 	Tooltip,

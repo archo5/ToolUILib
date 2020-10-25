@@ -773,14 +773,11 @@ struct ClosingBackgroundBlocker : UIElement
 	}
 	void OnButton()
 	{
-		// TODO use an event instead
-		target->SetFlag(UIObject_IsChecked, false);
-		target->RerenderNode();
+		UIEvent e(&system->eventSystem, this, UIEventType::BackgroundClick);
+		system->eventSystem.BubblingEvent(e);
 	}
 
 	style::RectAnchoredPlacement _fullScreenPlacement;
-
-	UIObject* target;
 };
 
 struct DropdownMenu : ui::Node
@@ -791,8 +788,19 @@ struct DropdownMenu : ui::Node
 
 		if (HasFlags(UIObject_IsChecked))
 		{
-			ctx->Make<ClosingBackgroundBlocker>()->target = this;
+			ctx->Make<ClosingBackgroundBlocker>();
 			OnBuildMenuWithLayout(ctx);
+		}
+	}
+
+	void OnEvent(UIEvent& e)
+	{
+		Node::OnEvent(e);
+		if (e.type == UIEventType::BackgroundClick)
+		{
+			SetFlag(UIObject_IsChecked, false);
+			Rerender();
+			e.StopPropagation();
 		}
 	}
 
@@ -927,7 +935,6 @@ struct DropdownMenuList : DropdownMenu
 
 	virtual void OnBuildEmptyButtonContents(UIContainer* ctx)
 	{
-		//ctx->Text("");
 	}
 
 	virtual void OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
@@ -944,9 +951,6 @@ struct DropdownMenuList : DropdownMenu
 			if (e.GetButton() != UIMouseButton::Left)
 				return;
 			selected = id;
-			UIEvent sce(e.context, e.target, UIEventType::SelectionChange);
-			sce.arg0 = id;
-			e.context->BubblingEvent(sce);
 			SetFlag(UIObject_IsChecked, false);
 			e.context->OnChange(this);
 			e.context->OnCommit(this);
@@ -979,8 +983,10 @@ template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& va
 	else
 		ddml->selected = uintptr_t(val);
 
-	ddml->HandleEvent(UIEventType::SelectionChange) = [](UIEvent& e)
+	ddml->HandleEvent(UIEventType::Commit) = [ddml](UIEvent& e)
 	{
+		if (e.target != ddml)
+			return;
 		e.current->flags |= UIObject_IsEdited;
 		e.current->RerenderContainerNode();
 	};
@@ -1040,8 +1046,10 @@ struct DropdownTest : ui::Node
 		auto* ddml = ctx->Make<ui::DropdownMenuList>();
 		ddml->selected = sel;
 		ddml->options = list;
-		ddml->HandleEvent(UIEventType::SelectionChange) = [this, ddml, &sel](UIEvent& e)
+		ddml->HandleEvent(UIEventType::Commit) = [this, ddml, &sel](UIEvent& e)
 		{
+			if (e.target != ddml)
+				return;
 			sel = ddml->selected;
 			Rerender();
 		};
