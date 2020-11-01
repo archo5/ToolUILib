@@ -113,6 +113,7 @@ StateButtonSkin::StateButtonSkin()
 ListBox::ListBox()
 {
 	styleProps = Theme::current->listBox;
+	SetFlag(UIObject_ClipChildren, true);
 }
 
 

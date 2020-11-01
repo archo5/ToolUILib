@@ -122,6 +122,7 @@ RenderContext* CreateRenderContext(void* window)
 	GLCHK(glDisable(GL_DEPTH_TEST));
 	GLCHK(glEnable(GL_BLEND));
 	GLCHK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+	GLCHK(glDepthFunc(GL_LEQUAL));
 	GLCHK(glEnableClientState(GL_VERTEX_ARRAY));
 	GLCHK(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
 	GLCHK(glEnableClientState(GL_COLOR_ARRAY));
@@ -290,6 +291,14 @@ void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
 static unsigned g_drawFlags;
 void SetRenderState(unsigned drawFlags)
 {
+	if (drawFlags & DF_AlphaTest)
+	{
+		GLCHK(glEnable(GL_ALPHA_TEST));
+		GLCHK(glAlphaFunc(GL_GREATER, 0.5f));
+	}
+	else
+		GLCHK(glDisable(GL_ALPHA_TEST));
+
 	if (drawFlags & DF_Lit)
 		GLCHK(glEnable(GL_LIGHTING));
 	else
@@ -316,7 +325,7 @@ void SetRenderState(unsigned drawFlags)
 	if (drawFlags & DF_Wireframe)
 	{
 		glEnable(GL_POLYGON_OFFSET_LINE);
-		glPolygonOffset(0, -2);
+		glPolygonOffset(-2, -2);
 	}
 	else
 	{

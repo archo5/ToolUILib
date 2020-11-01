@@ -198,6 +198,7 @@ struct StackLayout : Layout
 					break; }
 				}
 			}
+			p = floorf(p);
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
 				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
@@ -313,6 +314,7 @@ struct StackExpandLayout : Layout
 				float w = item.minw + mylo;
 				if (w > item.maxw)
 					w = item.maxw;
+				w = roundf(w);
 				float actual_lo = w - item.minw;
 				leftover -= actual_lo;
 				frsum -= item.fr;

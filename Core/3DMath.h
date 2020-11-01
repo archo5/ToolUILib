@@ -1,6 +1,7 @@
 
 #pragma once
 #include <math.h>
+#include "Math.h"
 
 
 constexpr float DEG2RAD = 3.14159f / 180;
@@ -26,6 +27,8 @@ struct Vec3f
 	Vec3f operator + () const { return *this; }
 	Vec3f operator - () const { return { -x, -y, -z }; }
 
+	bool operator == (const Vec3f& o) const { return x == o.x && y == o.y && z == o.z; }
+
 	float LengthSq() const { return x * x + y * y + z * z; }
 	float Length() const { return sqrtf(LengthSq()); }
 	Vec3f Normalized() const
@@ -38,6 +41,7 @@ struct Vec3f
 	}
 };
 
+inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
 inline float Vec3Dot(const Vec3f& a, const Vec3f& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
 {

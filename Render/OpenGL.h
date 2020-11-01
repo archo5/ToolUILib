@@ -69,6 +69,7 @@ void SetLightOff(int n);
 void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col);
 enum DrawFlags
 {
+	DF_AlphaTest    = 1 << 1,
 	DF_Lit          = 1 << 2,
 	DF_AlphaBlended = 1 << 3,
 	DF_ZTestOff     = 1 << 4,

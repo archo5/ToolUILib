@@ -35,7 +35,7 @@ void ProcGraphEditor_NodePin::Render(UIContainer* ctx)
 
 	auto& cb = *ctx->Make<ColorBlock>();
 	cb.SetColor(_graph->GetPinColor(_pin));
-	cb + MakeOverlay() + BoxSizing(style::BoxSizing::ContentBox) + Width(4) + Height(6);
+	cb + BoxSizing(style::BoxSizing::ContentBox) + Width(4) + Height(6);
 	auto* pap = Allocate<style::PointAnchoredPlacement>();
 	pap->pivot = { _pin.isOutput ? 0.f : 1.f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
