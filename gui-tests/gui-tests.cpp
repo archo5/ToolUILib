@@ -351,6 +351,7 @@ void Test_BasicEasingAnim(UIContainer* ctx);
 void Test_ThreadWorker(UIContainer* ctx);
 void Test_ThreadedImageRendering(UIContainer* ctx);
 void Test_OSCommunication(UIContainer* ctx);
+void Test_FileSelectionWindow(UIContainer* ctx);
 
 void Test_SequenceEditors(UIContainer* ctx);
 void Test_TreeEditors(UIContainer* ctx);
@@ -431,7 +432,8 @@ static const TestEntry utilityTestEntries[] =
 	{ "Thread worker", Test_ThreadWorker },
 	{ "Threaded image rendering", Test_ThreadedImageRendering },
 	{},
-	{ "OS Communication", Test_OSCommunication },
+	{ "OS communication", Test_OSCommunication },
+	{ "File selection window", Test_FileSelectionWindow },
 };
 static const TestEntry dseditTestEntries[] =
 {

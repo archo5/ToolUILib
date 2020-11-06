@@ -9,6 +9,7 @@
 #undef max
 
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "Comdlg32.lib")
 
 #include "Native.h"
 #include "System.h"
@@ -19,6 +20,40 @@
 
 
 #define WINDOW_CLASS_NAME L"UIWindow"
+
+
+static std::wstring UTF8toWCHAR(StringView sv)
+{
+	std::wstring ret;
+	int size = MultiByteToWideChar(CP_UTF8, 0, sv.data(), sv.size(), nullptr, 0);
+	if (size > 0)
+	{
+		ret.resize(size);
+		if (MultiByteToWideChar(CP_UTF8, 0, sv.data(), sv.size(), &ret[0], ret.size()) == size)
+			return ret;
+	}
+	return {};
+}
+
+static std::string WCHARtoUTF8(const WCHAR* buf, size_t size = SIZE_MAX)
+{
+	if (size == SIZE_MAX)
+		size = wcslen(buf);
+	std::string ret;
+	int mbsize = WideCharToMultiByte(CP_UTF8, 0, buf, size, nullptr, 0, nullptr, nullptr);
+	if (mbsize > 0)
+	{
+		ret.resize(mbsize);
+		if (WideCharToMultiByte(CP_UTF8, 0, buf, size, &ret[0], ret.size(), nullptr, nullptr) == mbsize)
+			return ret;
+	}
+	return {};
+}
+
+static std::string WCHARtoUTF8s(const std::wstring& s)
+{
+	return WCHARtoUTF8(s.c_str(), s.size());
+}
 
 
 enum MoveSizeStateType
@@ -199,20 +234,6 @@ BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
 }
 
 
-static std::string WCHARToUTF8(const WCHAR* str)
-{
-	int size = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
-	std::string ret;
-	if (size <= 0)
-		return ret;
-	ret.resize(size);
-	size = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, &ret[0], size, nullptr, nullptr);
-	if (size <= 0)
-		return {};
-	ret.resize(size);
-	return ret;
-}
-
 static HGLOBAL UTF8ToWCHARGlobal(StringView str)
 {
 	int size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
@@ -234,7 +255,7 @@ static HGLOBAL UTF8ToWCHARGlobal(StringView str)
 
 static HGLOBAL UTF8ToWCHARGlobal(const char* str)
 {
-	return UTF8ToWCHARGlobal(StringView(str, SIZE_MAX));
+	return UTF8ToWCHARGlobal(StringView(str, strlen(str)));
 }
 
 
@@ -277,6 +298,28 @@ Color4b GetColorAtScreenPos(Point<int> pos)
 	return col;
 }
 
+std::string GetWorkingDirectory()
+{
+	DWORD len = ::GetCurrentDirectoryW(0, nullptr);
+	if (len > 0)
+	{
+		std::wstring ret;
+		ret.resize(len);
+		DWORD len2 = ::GetCurrentDirectoryW(ret.size(), &ret[0]);
+		if (len2 > 0)
+		{
+			ret.resize(len2);
+			return WCHARtoUTF8s(ret);
+		}
+	}
+	return {};
+}
+
+bool SetWorkingDirectory(StringView sv)
+{
+	return ::SetCurrentDirectoryW(UTF8toWCHAR(sv).c_str()) != FALSE;
+}
+
 } // platform
 
 
@@ -296,7 +339,7 @@ std::string Clipboard::GetText()
 		WCHAR* mem = (WCHAR*)::GlobalLock(hcbd);
 		if (mem)
 		{
-			ret = WCHARToUTF8(mem);
+			ret = WCHARtoUTF8(mem);
 			::GlobalUnlock(hcbd);
 		}
 		::CloseClipboard();
@@ -319,6 +362,95 @@ void Clipboard::SetText(StringView text)
 		return;
 	::SetClipboardData(CF_UNICODETEXT, UTF8ToWCHARGlobal(text));
 	::CloseClipboard();
+}
+
+
+bool FileSelectionWindow::Show(bool save)
+{
+	OPENFILENAMEW ofn;
+	memset(&ofn, 0, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+
+	ofn.Flags |= OFN_EXPLORER | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+	if (!save)
+		ofn.Flags |= OFN_FILEMUSTEXIST;
+	if (flags & MultiSelect)
+		ofn.Flags |= OFN_ALLOWMULTISELECT;
+	if (flags & CreatePrompt)
+		ofn.Flags |= OFN_CREATEPROMPT;
+
+	std::wstring filtersW;
+	if (!filters.empty())
+	{
+		std::string fltmerge;
+		for (const auto& F : filters)
+		{
+			fltmerge += F.name;
+			fltmerge.push_back(0);
+			fltmerge += F.exts;
+			fltmerge.push_back(0);
+		}
+		filtersW = UTF8toWCHAR(fltmerge);
+		ofn.lpstrFilter = filtersW.c_str();
+	}
+
+	std::wstring defExtW;
+	if (!defaultExt.empty())
+	{
+		defExtW = UTF8toWCHAR(defaultExt);
+		ofn.lpstrDefExt = defExtW.c_str();
+	}
+
+	std::wstring titleW;
+	if (!title.empty())
+	{
+		titleW = UTF8toWCHAR(title);
+		ofn.lpstrTitle = titleW.c_str();
+	}
+
+	std::wstring curDirW;
+	if (!currentDir.empty())
+	{
+		curDirW = UTF8toWCHAR(currentDir);
+		ofn.lpstrInitialDir = curDirW.c_str();
+	}
+
+	std::wstring fileBufW;
+	for (auto& f : selectedFiles)
+	{
+		if (!currentDir.empty())
+		{
+			fileBufW.append(UTF8toWCHAR(currentDir));
+			fileBufW.push_back('\\');
+		}
+		fileBufW.append(UTF8toWCHAR(f));
+		fileBufW.push_back(0);
+		break;
+	}
+	fileBufW.resize(maxFileNameBuffer, 0);
+	fileBufW.back() = 0;
+	ofn.lpstrFile = &fileBufW[0];
+	ofn.nMaxFile = maxFileNameBuffer;
+
+	auto cwd = platform::GetWorkingDirectory();
+	
+	BOOL ret = save
+		? GetSaveFileNameW(&ofn)
+		: GetOpenFileNameW(&ofn);
+
+	if (ret)
+	{
+		currentDir = WCHARtoUTF8(fileBufW.c_str(), ofn.nFileOffset - 1);
+		selectedFiles.clear();
+		for (size_t i = ofn.nFileOffset; i < fileBufW.size() && fileBufW[i]; i += wcslen(fileBufW.c_str() + i) + 1)
+		{
+			selectedFiles.push_back(WCHARtoUTF8(fileBufW.c_str() + i));
+		}
+	}
+
+	platform::SetWorkingDirectory(cwd);
+
+	return ret != 0;
 }
 
 
@@ -707,17 +839,15 @@ void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFun
 
 std::string NativeWindowBase::GetTitle()
 {
-	std::string title;
-	// TODO unicode
-	title.resize(GetWindowTextLengthA(_impl->window));
-	GetWindowTextA(_impl->window, &title[0], title.size());
-	return title;
+	std::wstring titleW;
+	titleW.resize(GetWindowTextLengthW(_impl->window));
+	GetWindowTextW(_impl->window, &titleW[0], titleW.size());
+	return WCHARtoUTF8s(titleW);
 }
 
 void NativeWindowBase::SetTitle(const char* title)
 {
-	// TODO unicode
-	SetWindowTextA(_impl->window, title);
+	SetWindowTextW(_impl->window, UTF8toWCHAR(title).c_str());
 }
 
 WindowStyle NativeWindowBase::GetStyle()

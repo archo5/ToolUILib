@@ -20,6 +20,8 @@ uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
 Point<int> GetCursorScreenPos();
 Color4b GetColorAtScreenPos(Point<int> pos);
+std::string GetWorkingDirectory();
+bool SetWorkingDirectory(StringView sv);
 } // platform
 
 
@@ -29,6 +31,32 @@ struct Clipboard
 	static std::string GetText();
 	static void SetText(const char* text);
 	static void SetText(StringView text);
+};
+
+
+struct FileSelectionWindow
+{
+	struct Filter
+	{
+		std::string name;
+		std::string exts;
+	};
+
+	enum Flags
+	{
+		MultiSelect = 1 << 0,
+		CreatePrompt = 1 << 1,
+	};
+
+	bool Show(bool save);
+
+	std::vector<Filter> filters;
+	std::string defaultExt;
+	std::string title;
+	std::string currentDir;
+	std::vector<std::string> selectedFiles;
+	size_t maxFileNameBuffer = 65536;
+	unsigned flags = 0;
 };
 
 
