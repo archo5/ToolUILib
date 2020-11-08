@@ -344,7 +344,7 @@ void InlineFrameNode::OnEvent(UIEvent& ev)
 	{
 		// pass events
 		if (ev.type == UIEventType::ButtonDown || ev.type == UIEventType::ButtonUp)
-			frameContents->eventSystem.OnMouseButton(ev.type == UIEventType::ButtonDown, ev.GetButton(), ev.x, ev.y);
+			frameContents->eventSystem.OnMouseButton(ev.type == UIEventType::ButtonDown, ev.GetButton(), ev.x, ev.y, ev.modifiers);
 		if (ev.type == UIEventType::MouseMove)
 			frameContents->eventSystem.OnMouseMove(ev.x, ev.y);
 	}

@@ -343,7 +343,7 @@ void SetViewMatrix(const Mat4f& m)
 }
 
 static Mat4f g_perspAdjust = Mat4f::Translate(0, 0, -0.5f) * Mat4f::Scale(1, 1, 2);
-void SetPerspectiveMatrix(const Mat4f& m)
+void SetProjectionMatrix(const Mat4f& m)
 {
 	auto fm = m * g_perspAdjust;
 	GLCHK(glMatrixMode(GL_PROJECTION));
@@ -365,7 +365,7 @@ void Begin3DMode(int x0, int y0, int x1, int y1)
 	GLCHK(glViewport(x0, curRTTHeight - y1, max(x1 - x0, 0), max(y1 - y0, 0)));
 
 	SetRenderState(0);
-	SetPerspectiveMatrix(Mat4f::Identity());
+	SetProjectionMatrix(Mat4f::Identity());
 	SetAmbientLight(Color4f::White());
 	for (int i = 0; i < 8; i++)
 		SetLightOff(i);

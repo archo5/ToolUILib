@@ -10,6 +10,24 @@ struct NativeWindowBase;
 struct Node;
 struct Overlays;
 extern struct DataCategoryTag DCT_MouseMoved[1];
+
+enum ModifierKeyFlags
+{
+	MK_LeftCtrl = 1 << 0,
+	MK_LeftShift = 1 << 1,
+	MK_LeftAlt = 1 << 2,
+	MK_LeftWin = 1 << 3,
+
+	MK_RightCtrl = 1 << 4,
+	MK_RightShift = 1 << 5,
+	MK_RightAlt = 1 << 6,
+	MK_RightWin = 1 << 7,
+
+	MK_Ctrl = 0x11 << 0,
+	MK_Shift = 0x11 << 1,
+	MK_Alt = 0x11 << 2,
+	MK_Win = 0x11 << 3,
+};
 } // ui
 
 using UIRect = AABB<float>;
@@ -157,6 +175,7 @@ struct UIEvent
 
 	uint32_t longCode = 0;
 	uint8_t shortCode = 0;
+	uint8_t modifiers = 0;
 	bool down = false;
 	bool _stopPropagation = false;
 	uint16_t numRepeats = 0;
@@ -165,6 +184,7 @@ struct UIEvent
 	UIEvent(UIEventSystem* ctx, UIObject* tgt, UIEventType ty) : context(ctx), target(tgt), current(tgt), type(ty) {}
 	ui::Node* GetTargetNode() const;
 	UIMouseButton GetButton() const;
+	uint8_t GetModifierKeys() const { return modifiers; }
 	UIKeyAction GetKeyAction() const;
 	bool GetKeyActionModifier() const;
 	uint32_t GetUTF32Char() const;
@@ -172,6 +192,11 @@ struct UIEvent
 
 	bool IsPropagationStopped() const { return _stopPropagation; }
 	void StopPropagation() { _stopPropagation = true; }
+
+	bool IsCtrlPressed() const { return (GetModifierKeys() & ui::MK_Ctrl) != 0; }
+	bool IsShiftPressed() const { return (GetModifierKeys() & ui::MK_Shift) != 0; }
+	bool IsAltPressed() const { return (GetModifierKeys() & ui::MK_Alt) != 0; }
+	bool IsWinPressed() const { return (GetModifierKeys() & ui::MK_Win) != 0; }
 };
 
 struct UITimerData
@@ -214,11 +239,11 @@ struct UIEventSystem
 	void _UpdateCursor(UIObject* hoverObj);
 	void _UpdateTooltip();
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
-	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y);
+	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
-	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats);
-	void OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier);
-	void OnTextInput(uint32_t ch, uint16_t numRepeats);
+	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats);
+	void OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier);
+	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats);
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 

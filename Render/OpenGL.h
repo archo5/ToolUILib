@@ -62,7 +62,7 @@ void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices);
 void Begin3DMode(int x0, int y0, int x1, int y1);
 void End3DMode();
 void SetViewMatrix(const Mat4f& m);
-void SetPerspectiveMatrix(const Mat4f& m);
+void SetProjectionMatrix(const Mat4f& m);
 void SetForcedColor(const Color4b& col);
 void SetAmbientLight(const Color4f& col);
 void SetLightOff(int n);

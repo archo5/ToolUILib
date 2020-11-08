@@ -515,12 +515,12 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0);
 	}
-	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
+	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0);
+		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
 	}
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
 	{
@@ -528,23 +528,23 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnMouseScroll(dx, dy);
 	}
-	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
+	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 	{
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnKeyInput(down, vk, pk, numRepeats);
+		mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);
 	}
-	void OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier = false)
+	void OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
 	{
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnKeyAction(act, numRepeats, modifier);
+		mainTarget.target->OnKeyAction(act, mod, numRepeats, modifier);
 	}
-	void OnTextInput(uint32_t ch, uint16_t numRepeats)
+	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 	{
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnTextInput(ch, numRepeats);
+		mainTarget.target->OnTextInput(ch, mod, numRepeats);
 	}
 
 	Target mainTarget;
@@ -1308,6 +1308,27 @@ static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
 		ReleaseCapture();
 }
 
+static constexpr const unsigned g_virtualModKeys[] =
+{
+	VK_LCONTROL,
+	VK_LSHIFT,
+	VK_LMENU,
+	VK_LWIN,
+	VK_RCONTROL,
+	VK_RSHIFT,
+	VK_RMENU,
+	VK_RWIN,
+}; 
+
+static uint8_t GetModifierKeys()
+{
+	uint8_t ret = 0;
+	for (int i = 0; i < sizeof(g_virtualModKeys) / sizeof(g_virtualModKeys[0]); i++)
+		if (GetKeyState(g_virtualModKeys[i]) & 0x8000)
+			ret |= 1 << i;
+	return ret;
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -1356,7 +1377,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				message == WM_LBUTTONDOWN,
 				UIMouseButton::Left,
 				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)));
+				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				GetModifierKeys());
 		}
 		return TRUE;
 	case WM_RBUTTONDOWN:
@@ -1369,7 +1391,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				message == WM_RBUTTONDOWN,
 				UIMouseButton::Right,
 				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)));
+				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				GetModifierKeys());
 		}
 		return TRUE;
 	case WM_MBUTTONDOWN:
@@ -1382,7 +1405,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				message == WM_MBUTTONDOWN,
 				UIMouseButton::Middle,
 				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)));
+				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				GetModifierKeys());
 		}
 		return TRUE;
 	case WM_XBUTTONDOWN:
@@ -1395,7 +1419,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				message == WM_XBUTTONDOWN,
 				HIWORD(wParam) == XBUTTON1 ? UIMouseButton::X1 : UIMouseButton::X2,
 				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)));
+				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				GetModifierKeys());
 		}
 		return TRUE;
 	case WM_MOUSEWHEEL:
@@ -1415,82 +1440,89 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			uint16_t numRepeats = lParam & 0xffff;
-			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, (lParam >> 16) & 0xff, numRepeats);
+			auto M = GetModifierKeys();
+			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, (lParam >> 16) & 0xff, M, (lParam & (1U << 31)) != 0U, numRepeats);
 			if (message == WM_KEYDOWN)
 			{
 				switch (wParam)
 				{
-				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateDown, numRepeats); break;
-				case VK_RETURN: evsys->OnKeyAction(UIKeyAction::Enter, numRepeats); break;
+				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateDown, M, numRepeats); break;
+				case VK_RETURN: evsys->OnKeyAction(UIKeyAction::Enter, M, numRepeats); break;
 
 				case VK_BACK:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelPrevWord : UIKeyAction::DelPrevLetter,
+						M,
 						numRepeats);
 					break;
 				case VK_DELETE:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelNextWord : UIKeyAction::DelNextLetter,
+						M,
 						numRepeats);
-					evsys->OnKeyAction(UIKeyAction::Delete, numRepeats);
+					evsys->OnKeyAction(UIKeyAction::Delete, M, numRepeats);
 					break;
 
 				case VK_LEFT:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::PrevWord : UIKeyAction::PrevLetter,
+						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_RIGHT:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::NextWord : UIKeyAction::NextLetter,
+						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_UP:
-					evsys->OnKeyAction(UIKeyAction::Up, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					evsys->OnKeyAction(UIKeyAction::Up, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_DOWN:
-					evsys->OnKeyAction(UIKeyAction::Down, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					evsys->OnKeyAction(UIKeyAction::Down, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_HOME:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToStart : UIKeyAction::GoToLineStart,
+						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_END:
 					evsys->OnKeyAction(
 						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToEnd : UIKeyAction::GoToLineEnd,
+						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 
-				case VK_PRIOR: evsys->OnKeyAction(UIKeyAction::PageUp, numRepeats); break;
-				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, numRepeats); break;
+				case VK_PRIOR: evsys->OnKeyAction(UIKeyAction::PageUp, M, numRepeats); break;
+				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, M, numRepeats); break;
 
-				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, numRepeats); break;
+				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, M, numRepeats); break;
 
-				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, numRepeats); break;
-				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Copy, numRepeats); break;
-				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Paste, numRepeats); break;
-				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::SelectAll, numRepeats); break;
+				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, M, numRepeats); break;
+				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Copy, M, numRepeats); break;
+				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Paste, M, numRepeats); break;
+				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::SelectAll, M, numRepeats); break;
 
-				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, numRepeats); break;
+				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, M, numRepeats); break;
 				}
 			}
 			else
 			{
 				switch (wParam)
 				{
-				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateUp, numRepeats); break;
+				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateUp, M, numRepeats); break;
 				}
 			}
 		}
 		return TRUE;
 	case WM_CHAR:
 		if (auto* evsys = GetEventSys(hWnd))
-			evsys->OnTextInput(wParam, lParam & 0xffff);
+			evsys->OnTextInput(wParam, GetModifierKeys(), lParam & 0xffff);
 		return TRUE;
 	case WM_ERASEBKGND:
 		return FALSE;

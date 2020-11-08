@@ -569,7 +569,7 @@ struct The3DViewTest : ui::Node
 		using namespace ui::rhi;
 
 		Clear(16, 15, 14, 255);
-		SetPerspectiveMatrix(Mat4f::PerspectiveFOVLH(90, w / h, 0.01f, 1000));
+		SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, w / h, 0.01f, 1000));
 		SetViewMatrix(camera.GetViewMatrix());
 		VertPC verts[] =
 		{

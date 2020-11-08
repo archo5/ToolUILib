@@ -68,6 +68,10 @@ struct StringView
 	{
 		return _size >= sub._size && memcmp(_data, sub._data, sub._size) == 0;
 	}
+	bool ends_with(StringView sub) const
+	{
+		return _size >= sub._size && memcmp(_data + _size - sub._size, sub._data, sub._size) == 0;
+	}
 
 	int count(StringView sub, size_t maxpos = SIZE_MAX) const
 	{
@@ -89,9 +93,12 @@ struct StringView
 	}
 	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const
 	{
-		for (size_t i = min(_size - sub._size - 1, from); i < _size; i--)
+		for (size_t i = min(_size - sub._size, from) + 1; i < _size; )
+		{
+			i--;
 			if (memcmp(&_data[i], sub._data, sub._size) == 0)
 				return i;
+		}
 		return def;
 	}
 

@@ -460,7 +460,7 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 		ui::Notify(ui::DCT_MouseMoved, GetNativeWindow());
 }
 
-void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y)
+void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 {
 	int id = int(which);
 
@@ -468,6 +468,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 	ev.shortCode = id;
 	ev.x = x;
 	ev.y = y;
+	ev.modifiers = mod;
 
 	if (down)
 	{
@@ -571,24 +572,27 @@ void UIEventSystem::OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
 	}
 }
 
-void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint16_t numRepeats)
+void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 {
 	if (focusObj)
 	{
 		UIEvent ev(this, focusObj, down ? UIEventType::KeyDown : UIEventType::KeyUp);
 		ev.longCode = vk;
 		ev.shortCode = pk;
+		ev.modifiers = mod;
+		ev.arg0 = isRepeated;
 		ev.numRepeats = numRepeats;
 		BubblingEvent(ev);
 	}
 }
 
-void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modifier)
+void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier)
 {
 	UIEvent ev(this, focusObj, UIEventType::KeyAction);
 	if (focusObj)
 	{
 		ev.shortCode = uint8_t(act);
+		ev.modifiers = mod;
 		ev.numRepeats = numRepeats;
 		ev.arg0 = modifier;
 		BubblingEvent(ev);
@@ -649,12 +653,13 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint16_t numRepeats, bool modif
 	}
 }
 
-void UIEventSystem::OnTextInput(uint32_t ch, uint16_t numRepeats)
+void UIEventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 {
 	if (focusObj)
 	{
 		UIEvent ev(this, focusObj, UIEventType::TextInput);
 		ev.longCode = ch;
+		ev.modifiers = mod;
 		ev.numRepeats = numRepeats;
 		BubblingEvent(ev);
 	}

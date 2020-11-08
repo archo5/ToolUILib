@@ -117,7 +117,7 @@ void MeshEditorWindowNode::OnRender3D(UIRect rect)
 	using namespace ui::rhi;
 
 	ClearDepthOnly();
-	SetPerspectiveMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetWidth() / rect.GetHeight(), 0.01f, 100000));
+	SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetWidth() / rect.GetHeight(), 0.01f, 100000));
 	SetViewMatrix(orbitCamera.GetViewMatrix());
 
 	struct VertPC

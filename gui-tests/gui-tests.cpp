@@ -318,6 +318,7 @@ struct DataEditor : ui::Node
 
 
 void Test_RenderingPrimitives(UIContainer* ctx);
+void Test_KeyboardEvents(UIContainer* ctx);
 void Test_OpenClose(UIContainer* ctx);
 void Test_AnimationRequest(UIContainer* ctx);
 void Test_ElementReset(UIContainer* ctx);
@@ -381,6 +382,8 @@ static const TestEntry coreTestEntries[] =
 	{},
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
+	{ "- Events -" },
+	{ "Keyboard", Test_KeyboardEvents },
 	{},
 	{ "- Basic logic -" },
 	{ "Open/Close", Test_OpenClose },

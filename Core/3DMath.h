@@ -54,6 +54,14 @@ inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
 }
 
 
+struct Vec4f
+{
+	float x, y, z, w;
+
+	Vec3f WDivide() const { return { x / w, y / w, z / w }; }
+};
+
+
 struct Mat4f
 {
 	union
@@ -135,5 +143,21 @@ struct Mat4f
 			}
 		}
 		return ret;
+	}
+
+	Vec4f TransformPointNoDivide(const Vec3f& p) const
+	{
+		return
+		{
+			p.x * v00 + p.y * v01 + p.z * v02 + v03,
+			p.x * v10 + p.y * v11 + p.z * v12 + v13,
+			p.x * v20 + p.y * v21 + p.z * v22 + v23,
+			p.x * v30 + p.y * v31 + p.z * v32 + v33,
+		};
+	}
+	Vec3f TransformPoint(const Vec3f& p) const
+	{
+		auto t = TransformPointNoDivide(p);
+		return { t.x / t.w, t.y / t.w, t.z / t.w };
 	}
 };

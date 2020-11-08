@@ -776,7 +776,7 @@ void OrbitCamera::OnEvent(UIEvent& e)
 		if (rotating)
 			Rotate(e.dx * rotationSpeed, e.dy * rotationSpeed);
 		if (panning)
-			Pan(e.dx, e.dy);
+			Pan(e.dx / e.current->GetContentRect().GetWidth(), e.dy / e.current->GetContentRect().GetHeight());
 	}
 	if (e.type == UIEventType::MouseScroll)
 	{
@@ -793,6 +793,13 @@ void OrbitCamera::Rotate(float dx, float dy)
 
 void OrbitCamera::Pan(float dx, float dy)
 {
+	float scale = tanf(fieldOfView * 2) * distance * 2;
+	dx *= scale;
+	dy *= scale;
+	auto vm = GetViewMatrix();
+	Vec3f right = { vm.v00, vm.v01, vm.v02 };
+	Vec3f up = { vm.v10, vm.v11, vm.v12 };
+	pivot -= right * dx - up * dy;
 }
 
 void OrbitCamera::Zoom(float delta)

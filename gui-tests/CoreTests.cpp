@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include <stdarg.h>
 
 
 struct RenderingPrimitives : ui::Node
@@ -68,6 +69,83 @@ struct RenderingPrimitives : ui::Node
 void Test_RenderingPrimitives(UIContainer* ctx)
 {
 	ctx->Make<RenderingPrimitives>();
+}
+
+
+struct KeyboardEventsTest : ui::Node
+{
+	static constexpr bool Persistent = true;
+	static constexpr unsigned MAX_MESSAGES = 50;
+
+	KeyboardEventsTest()
+	{
+		SetFlag(UIObject_IsFocusable, true);
+		SetFlag(UIObject_DB_FocusOnLeftClick, true);
+	}
+	void OnInit() override
+	{
+		system->eventSystem.SetKeyboardFocus(this);
+	}
+	void OnEvent(UIEvent& e) override
+	{
+		if (e.type == UIEventType::KeyAction)
+		{
+			WriteMsg("type=KeyAction action=%u numRepeats=%u modifier=%s",
+				unsigned(e.GetKeyAction()),
+				e.numRepeats,
+				e.GetKeyActionModifier() ? "true" : "false");
+		}
+		else if (e.type == UIEventType::KeyDown || e.type == UIEventType::KeyUp)
+		{
+			WriteMsg("type=Key%s virtual=%u physical=%u mod=%02X numRepeats=%u",
+				e.type == UIEventType::KeyDown ? "Down" : "Up",
+				e.longCode,
+				e.shortCode,
+				e.GetModifierKeys(),
+				e.numRepeats);
+		}
+		else if (e.type == UIEventType::TextInput)
+		{
+			char text[5] = {};
+			e.GetUTF8Text(text);
+			WriteMsg("type=TextInput text=%s (code=%u) mod=%02X",
+				text,
+				e.GetUTF32Char(),
+				e.GetModifierKeys());
+		}
+	}
+	void OnPaint() override
+	{
+		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
+		for (unsigned i = 0; i < MAX_MESSAGES; i++)
+		{
+			unsigned idx = (MAX_MESSAGES * 2 + writePos - i - 1) % MAX_MESSAGES;
+			ui::draw::TextLine(font, 12, 0, finalRectC.y1 - i * 12, msgBuf[idx], ui::Color4f::White());
+		}
+	}
+	void Render(UIContainer* ctx) override
+	{
+		*this + ui::Width(style::Coord::Percent(100));
+		*this + ui::Height(style::Coord::Percent(100));
+	}
+
+	void WriteMsg(const char* fmt, ...)
+	{
+		char buf[1024];
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(buf, 1024, fmt, args);
+		va_end(args);
+		msgBuf[writePos++] = buf;
+		writePos %= MAX_MESSAGES;
+	}
+	
+	std::string msgBuf[MAX_MESSAGES];
+	unsigned writePos = 0;
+};
+void Test_KeyboardEvents(UIContainer* ctx)
+{
+	ctx->Make<KeyboardEventsTest>();
 }
 
 

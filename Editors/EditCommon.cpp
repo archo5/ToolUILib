@@ -56,8 +56,8 @@ bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, uintpt
 	{
 		if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left && hoverItem < UINTPTR_MAX && hovering)
 		{
-			if (selectionMode != SelectionMode::MultipleToggle ||
-				selectionMode == SelectionMode::Single) // TODO modifiers
+			if ((selectionMode != SelectionMode::MultipleToggle) ^ e.IsCtrlPressed() ||
+				selectionMode == SelectionMode::Single)
 				sel->ClearSelection();
 			sel->SetSelectionState(hoverItem, !sel->GetSelectionState(hoverItem));
 
@@ -68,9 +68,7 @@ bool SelectionImplementation::OnEvent(UIEvent& e, ISelectionStorage* sel, uintpt
 
 	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && hoverItem < UINTPTR_MAX && hovering)
 	{
-		// TODO modifiers
-		//e.GetKeyActionModifier();
-		if (selectionMode != SelectionMode::MultipleToggle)
+		if ((selectionMode != SelectionMode::MultipleToggle) ^ e.IsCtrlPressed())
 			sel->ClearSelection();
 
 		sel->SetSelectionState(hoverItem, !sel->GetSelectionState(hoverItem));
