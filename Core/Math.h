@@ -40,6 +40,7 @@ template<class T> struct AABB
 	static AABB FromCenterExtents(T x, T y, T ex, T ey) { return { x - ex, y - ey, x + ex, y + ey }; }
 	T GetWidth() const { return x1 - x0; }
 	T GetHeight() const { return y1 - y0; }
+	T GetAspectRatio() const { return y0 == y1 ? 1 : GetWidth() / GetHeight(); }
 	Size<T> GetSize() const { return { GetWidth(), GetHeight() }; }
 	bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
 	bool Contains(Point<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }

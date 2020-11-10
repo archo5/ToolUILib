@@ -1,6 +1,7 @@
 
 #pragma once
 #include <math.h>
+#include <float.h>
 #include "Math.h"
 
 
@@ -8,29 +9,34 @@ constexpr float DEG2RAD = 3.14159f / 180;
 constexpr float RAD2DEG = 180 * 3.14159f;
 
 
+#ifdef _MSC_VER
+#define UI_FORCEINLINE __forceinline
+#endif
+
+
 struct Vec3f
 {
 	float x, y, z;
 
-	Vec3f operator + (const Vec3f& o) const { return { x + o.x, y + o.y, z + o.z }; }
-	Vec3f operator - (const Vec3f& o) const { return { x - o.x, y - o.y, z - o.z }; }
-	Vec3f operator * (const Vec3f& o) const { return { x * o.x, y * o.y, z * o.z }; }
-	Vec3f operator / (const Vec3f& o) const { return { x / o.x, y / o.y, z / o.z }; }
+	UI_FORCEINLINE Vec3f operator + (const Vec3f& o) const { return { x + o.x, y + o.y, z + o.z }; }
+	UI_FORCEINLINE Vec3f operator - (const Vec3f& o) const { return { x - o.x, y - o.y, z - o.z }; }
+	UI_FORCEINLINE Vec3f operator * (const Vec3f& o) const { return { x * o.x, y * o.y, z * o.z }; }
+	UI_FORCEINLINE Vec3f operator / (const Vec3f& o) const { return { x / o.x, y / o.y, z / o.z }; }
 
-	Vec3f& operator += (const Vec3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
-	Vec3f& operator -= (const Vec3f& o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
-	Vec3f& operator *= (const Vec3f& o) { x *= o.x; y *= o.y; z *= o.z; return *this; }
-	Vec3f& operator /= (const Vec3f& o) { x /= o.x; y /= o.y; z /= o.z; return *this; }
+	UI_FORCEINLINE Vec3f& operator += (const Vec3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
+	UI_FORCEINLINE Vec3f& operator -= (const Vec3f& o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
+	UI_FORCEINLINE Vec3f& operator *= (const Vec3f& o) { x *= o.x; y *= o.y; z *= o.z; return *this; }
+	UI_FORCEINLINE Vec3f& operator /= (const Vec3f& o) { x /= o.x; y /= o.y; z /= o.z; return *this; }
 
-	Vec3f operator * (float f) const { return { x * f, y * f, z * f }; }
+	UI_FORCEINLINE Vec3f operator * (float f) const { return { x * f, y * f, z * f }; }
 
-	Vec3f operator + () const { return *this; }
-	Vec3f operator - () const { return { -x, -y, -z }; }
+	UI_FORCEINLINE Vec3f operator + () const { return *this; }
+	UI_FORCEINLINE Vec3f operator - () const { return { -x, -y, -z }; }
 
-	bool operator == (const Vec3f& o) const { return x == o.x && y == o.y && z == o.z; }
+	UI_FORCEINLINE bool operator == (const Vec3f& o) const { return x == o.x && y == o.y && z == o.z; }
 
-	float LengthSq() const { return x * x + y * y + z * z; }
-	float Length() const { return sqrtf(LengthSq()); }
+	UI_FORCEINLINE float LengthSq() const { return x * x + y * y + z * z; }
+	UI_FORCEINLINE float Length() const { return sqrtf(LengthSq()); }
 	Vec3f Normalized() const
 	{
 		float lsq = LengthSq();
@@ -42,7 +48,7 @@ struct Vec3f
 };
 
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
-inline float Vec3Dot(const Vec3f& a, const Vec3f& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+UI_FORCEINLINE float Vec3Dot(const Vec3f& a, const Vec3f& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
 {
 	return
@@ -58,8 +64,10 @@ struct Vec4f
 {
 	float x, y, z, w;
 
-	Vec3f WDivide() const { return { x / w, y / w, z / w }; }
+	UI_FORCEINLINE Vec3f GetVec3() const { return { x, y, z }; }
+	UI_FORCEINLINE Vec3f WDivide() const { return { x / w, y / w, z / w }; }
 };
+UI_FORCEINLINE Vec4f V4(const Vec3f& v, float w) { return { v.x, v.y, v.z, w }; }
 
 
 struct Mat4f
@@ -88,19 +96,19 @@ struct Mat4f
 		};
 	}
 
-	static Mat4f Translate(const Vec3f& v) { return Translate(v.x, v.y, v.z); }
+	UI_FORCEINLINE static Mat4f Translate(const Vec3f& v) { return Translate(v.x, v.y, v.z); }
 	static Mat4f Translate(float x, float y, float z);
 
-	static Mat4f Scale(const Vec3f& v) { return Scale(v.x, v.y, v.z); }
+	UI_FORCEINLINE static Mat4f Scale(const Vec3f& v) { return Scale(v.x, v.y, v.z); }
 	static Mat4f Scale(float x, float y, float z);
 
 	static Mat4f RotateX(float a);
 	static Mat4f RotateY(float a);
 	static Mat4f RotateZ(float a);
 
-	static Mat4f LookAtLH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirLH(pos, tgt - pos, up); }
+	UI_FORCEINLINE static Mat4f LookAtLH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirLH(pos, tgt - pos, up); }
 	static Mat4f LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up);
-	static Mat4f LookAtRH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirRH(pos, tgt - pos, up); }
+	UI_FORCEINLINE static Mat4f LookAtRH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirRH(pos, tgt - pos, up); }
 	static Mat4f LookAtDirRH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up);
 
 	static Mat4f PerspectiveFOVLH(float fovY, float aspect, float znear, float zfar)
@@ -116,7 +124,7 @@ struct Mat4f
 	}
 	static Mat4f PerspectiveExtRH(float xscale, float yscale, float znear, float zfar);
 
-	Mat4f Transposed() const
+	UI_FORCEINLINE Mat4f Transposed() const
 	{
 		return
 		{
@@ -145,6 +153,15 @@ struct Mat4f
 		return ret;
 	}
 
+	bool InvertTo(Mat4f& inv) const;
+	Mat4f Inverted() const
+	{
+		Mat4f ret;
+		if (InvertTo(ret))
+			return ret;
+		return Mat4f::Identity();
+	}
+
 	Vec4f TransformPointNoDivide(const Vec3f& p) const
 	{
 		return
@@ -161,3 +178,35 @@ struct Mat4f
 		return { t.x / t.w, t.y / t.w, t.z / t.w };
 	}
 };
+
+
+UI_FORCEINLINE float PlanePointSignedDistance(const Vec4f& plane, const Vec3f& point)
+{
+	return Vec3Dot(plane.GetVec3(), point) - plane.w;
+}
+
+struct RayPlaneIntersectResult
+{
+	// distance to intersection (positive if in front, negative if behind)
+	float dist;
+	// plane orientation wrt ray direction (negative if ray is oriented towards front, positive if towards back, 0 if no intersection)
+	float angcos;
+};
+inline RayPlaneIntersectResult RayPlaneIntersect(const Vec3f& pos, const Vec3f& dir, const Vec4f& plane)
+{
+	float diralign = -Vec3Dot(dir, plane.GetVec3());
+	if (diralign == 0)
+		return { 0, diralign };
+	float posdist = PlanePointSignedDistance(plane, pos);
+	return { posdist / diralign, diralign };
+}
+
+inline void GetCameraRay(const Mat4f& invVP, float x, float y, Vec3f& opos, Vec3f& odir)
+{
+	Vec3f p0 = { x, y, 0 };
+	Vec3f p1 = { x, y, 1 };
+	p0 = invVP.TransformPoint(p0);
+	p1 = invVP.TransformPoint(p1);
+	opos = p0;
+	odir = (p1 - p0).Normalized();
+}

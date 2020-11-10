@@ -549,8 +549,13 @@ struct The3DViewTest : ui::Node
 		{
 			auto& v = *ctx->Push<ui::View3D>();
 			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-			v.HandleEvent() = [this](UIEvent& e) { camera.OnEvent(e); };
-			v.onRender = [this, &v]() { Render3DView(v.GetContentRect().GetWidth(), v.GetContentRect().GetHeight()); };
+			v.HandleEvent() = [this](UIEvent& e)
+			{
+				if (e.type == UIEventType::MouseMove)
+					mousePos = { e.x, e.y };
+				camera.OnEvent(e);
+			};
+			v.onRender = [this, &v]() { Render3DView(v.GetContentRect()); };
 			v + ui::Height(style::Coord::Percent(100));
 			{
 				ctx->Text("Overlay text");
@@ -564,13 +569,18 @@ struct The3DViewTest : ui::Node
 		}
 		ctx->Pop();
 	}
-	void Render3DView(float w, float h)
+	void Render3DView(const UIRect& rect)
 	{
 		using namespace ui::rhi;
 
+		Mat4f pm = Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000);
+		Mat4f vm = camera.GetViewMatrix();
+		Mat4f vpm = vm * pm;
+		Mat4f ivpm = vpm.Inverted();
+
 		Clear(16, 15, 14, 255);
-		SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, w / h, 0.01f, 1000));
-		SetViewMatrix(camera.GetViewMatrix());
+		SetProjectionMatrix(pm);
+		SetViewMatrix(vm);
 		VertPC verts[] =
 		{
 			{ -1, -1, 0, { 100, 150, 200, 255 } },
@@ -582,9 +592,20 @@ struct The3DViewTest : ui::Node
 		DrawIndexed(Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+
+		SetRenderState(DF_ZTestOff | DF_ZWriteOff);
+		Vec3f rpos, rdir;
+		GetCameraRay(ivpm,
+			lerp(-1, 1, invlerp(rect.x0, rect.x1, mousePos.x)),
+			lerp(1, -1, invlerp(rect.y0, rect.y1, mousePos.y)),
+			rpos, rdir);
+		auto rpir = RayPlaneIntersect(rpos, rdir, { 0, 0, 1, -1 });
+		Vec3f isp = rpos + rdir * rpir.dist;
+		DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.1f) * Mat4f::Translate(isp), PT_Triangles, VF_Color, verts, 4, indices, 6);
 	}
 
 	ui::OrbitCamera camera;
+	Point<float> mousePos = {};
 };
 void Test_3DView(UIContainer* ctx)
 {
