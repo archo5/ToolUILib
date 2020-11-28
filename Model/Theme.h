@@ -20,6 +20,7 @@ struct Theme
 	style::BlockRef object;
 	style::BlockRef text;
 	style::BlockRef panel;
+	style::BlockRef header;
 	style::BlockRef button;
 	style::BlockRef checkbox;
 	style::BlockRef radioButton;

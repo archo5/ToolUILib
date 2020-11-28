@@ -12,6 +12,11 @@ struct Panel : UIElement
 	Panel();
 };
 
+struct Header : UIElement
+{
+	void OnInit() override;
+};
+
 struct Button : UIElement
 {
 	Button();

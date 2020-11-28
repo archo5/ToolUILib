@@ -121,7 +121,7 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* te
 void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, Texture* tex, const AABB<float>& texouter, const AABB<float>& texinner);
 void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col);
 
-void PushScissorRect(int x0, int y0, int x1, int y1);
+bool PushScissorRect(int x0, int y0, int x1, int y1);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
 AABB<float> GetCurrentScissorRectF();

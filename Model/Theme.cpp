@@ -12,6 +12,7 @@ struct DefaultTheme : Theme
 	style::Block dtObject;
 	style::Block dtText;
 	style::Block dtPanel;
+	style::Block dtHeader;
 	style::Block dtButton;
 	style::Block dtCheckbox;
 	style::Block dtRadioButton;
@@ -46,6 +47,7 @@ struct DefaultTheme : Theme
 		CreateObject();
 		CreateText();
 		CreatePanel();
+		CreateHeader();
 		CreateButton();
 		CreateCheckbox();
 		CreateRadioButton();
@@ -113,6 +115,15 @@ struct DefaultTheme : Theme
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
 		});
 		defaultTheme.panel = a.block;
+	}
+	void CreateHeader()
+	{
+		style::Accessor a(&dtHeader);
+		PreventHeapDelete(a);
+		a.SetFontWeight(style::FontWeight::Bold);
+		a.SetPadding(5);
+		a.SetPaintFunc([](const style::PaintInfo& info) {});
+		defaultTheme.header = a.block;
 	}
 	void CreateButton()
 	{

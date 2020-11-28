@@ -26,7 +26,7 @@ void MeshEditorWindowNode::Render(UIContainer* ctx)
 					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr->_texture, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 				});
 				view3d->HandleEvent() = [this](UIEvent& e) { orbitCamera.OnEvent(e); };
-				view3d->onRender = [this, view3d]() { OnRender3D(view3d->GetContentRect()); };
+				view3d->onRender = [this](UIRect r) { OnRender3D(r); };
 				{
 					auto s = ctx->Push<ui::ListBox>()->GetStyle();
 					s.SetEdge(style::Edge::Left);

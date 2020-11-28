@@ -14,6 +14,12 @@ Panel::Panel()
 }
 
 
+void Header::OnInit()
+{
+	styleProps = Theme::current->header;
+}
+
+
 Button::Button()
 {
 	styleProps = Theme::current->button;

@@ -277,11 +277,19 @@ struct ColorEdit : Node
 	MultiFormatColor _color;
 };
 
+struct View2D : UIElement
+{
+	void OnPaint() override;
+
+	std::function<void(UIRect)> onPaint;
+};
+
 struct View3D : UIElement
 {
 	void OnPaint() override;
 
-	std::function<void()> onRender;
+	std::function<void(UIRect)> onRender;
+	std::function<void(UIRect)> onPaintOverlay;
 };
 
 struct OrbitCamera

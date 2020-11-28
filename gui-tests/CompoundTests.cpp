@@ -555,7 +555,7 @@ struct The3DViewTest : ui::Node
 					mousePos = { e.x, e.y };
 				camera.OnEvent(e);
 			};
-			v.onRender = [this, &v]() { Render3DView(v.GetContentRect()); };
+			v.onRender = [this](UIRect r) { Render3DView(r); };
 			v + ui::Height(style::Coord::Percent(100));
 			{
 				ctx->Text("Overlay text");

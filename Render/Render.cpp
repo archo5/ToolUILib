@@ -677,7 +677,7 @@ void ApplyScissor()
 	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }
 
-void PushScissorRect(int x0, int y0, int x1, int y1)
+bool PushScissorRect(int x0, int y0, int x1, int y1)
 {
 	int i = scissorCount++;
 	AABB<int> r = scissorStack[i - 1];
@@ -687,6 +687,7 @@ void PushScissorRect(int x0, int y0, int x1, int y1)
 	if (r.y1 > y1) r.y1 = y1;
 	scissorStack[i] = r;
 	ApplyScissor();
+	return r.x0 < r.x1 && r.y0 < r.y1;
 }
 
 void PopScissorRect()

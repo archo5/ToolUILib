@@ -729,18 +729,39 @@ void ColorEdit::Render(UIContainer* ctx)
 }
 
 
+void View2D::OnPaint()
+{
+	styleProps->paint_func(this);
+
+	auto r = finalRectC;
+	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
+	{
+		if (onPaint)
+			onPaint(r);
+	}
+	draw::PopScissorRect();
+
+	PaintChildren();
+}
+
+
 void View3D::OnPaint()
 {
 	styleProps->paint_func(this);
 
 	auto r = finalRectC;
-	draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1);
-	rhi::Begin3DMode(r.x0, r.y0, r.x1, r.y1);
+	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
+	{
+		rhi::Begin3DMode(r.x0, r.y0, r.x1, r.y1);
 
-	if (onRender)
-		onRender();
+		if (onRender)
+			onRender(r);
 
-	rhi::End3DMode();
+		rhi::End3DMode();
+
+		if (onPaintOverlay)
+			onPaintOverlay(r);
+	}
 	draw::PopScissorRect();
 
 	PaintChildren();
