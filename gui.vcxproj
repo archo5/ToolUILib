@@ -185,7 +185,8 @@
     <ClInclude Include="Model\Theme.h" />
     <ClInclude Include="Render\OpenGL.h" />
     <ClInclude Include="Render\Render.h" />
-    <ClInclude Include="stb_truetype.h" />
+    <ClInclude Include="ThirdParty\stb_rect_pack.h" />
+    <ClInclude Include="ThirdParty\stb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="layout-design.txt" />

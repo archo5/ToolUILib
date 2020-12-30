@@ -6,7 +6,7 @@
 #include <Windows.h>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../stb_truetype.h"
+#include "../ThirdParty/stb_truetype.h"
 
 #include "Font.h"
 #include "../Render/Render.h"

@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #define STB_RECT_PACK_IMPLEMENTATION
-#include "../stb_rect_pack.h"
+#include "../ThirdParty/stb_rect_pack.h"
 
 #include "OpenGL.h"
 #include "Render.h"

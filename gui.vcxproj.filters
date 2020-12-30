@@ -78,7 +78,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="Core\PropertyStore.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -167,6 +166,12 @@
     <ClInclude Include="Editors\EditCommon.h">
       <Filter>Editors</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\stb_rect_pack.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\stb_truetype.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -180,6 +185,9 @@
     </Filter>
     <Filter Include="Editors">
       <UniqueIdentifier>{c1dfc1e9-aafa-430e-ada8-74558a8962f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{80f33962-520c-4caf-9f49-9dd8982290e7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
