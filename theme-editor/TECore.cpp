@@ -16,29 +16,11 @@ void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void Color4bSave(const char* key, Color4b& col, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	nts.WriteInt("r", col.r);
-	nts.WriteInt("g", col.g);
-	nts.WriteInt("b", col.b);
-	nts.WriteInt("a", col.a);
-	nts.EndDict();
-}
-
 void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader& nts)
 {
 	nts.BeginDict(key);
 	pt.x = nts.ReadFloat("x");
 	pt.y = nts.ReadFloat("y");
-	nts.EndDict();
-}
-
-void PointFloatSave(const char* key, Point<float>& pt, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	nts.WriteFloat("x", pt.x);
-	nts.WriteFloat("y", pt.y);
 	nts.EndDict();
 }
 
@@ -49,16 +31,6 @@ void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader&
 	rect.y0 = nts.ReadFloat("y0");
 	rect.x1 = nts.ReadFloat("x1");
 	rect.y1 = nts.ReadFloat("y1");
-	nts.EndDict();
-}
-
-void AABBFloatSave(const char* key, AABB<float>& rect, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	nts.WriteFloat("x0", rect.x0);
-	nts.WriteFloat("y0", rect.y0);
-	nts.WriteFloat("x1", rect.x1);
-	nts.WriteFloat("y1", rect.y1);
 	nts.EndDict();
 }
 
@@ -79,14 +51,6 @@ void SubRect::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.BeginDict(key);
 	AABBFloatLoad("anchors", anchors, nts);
 	AABBFloatLoad("offsets", offsets, nts);
-	nts.EndDict();
-}
-
-void SubRect::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	AABBFloatSave("anchors", anchors, nts);
-	AABBFloatSave("offsets", offsets, nts);
 	nts.EndDict();
 }
 
@@ -116,14 +80,6 @@ void SubPos::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void SubPos::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	PointFloatSave("anchor", anchor, nts);
-	PointFloatSave("offset", offset, nts);
-	nts.EndDict();
-}
-
 void SubPos::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "SubPos");
@@ -142,18 +98,6 @@ void CornerRadiuses::Load(const char* key, NamedTextSerializeReader& nts)
 	r10 = nts.ReadFloat("r10");
 	r01 = nts.ReadFloat("r01");
 	r11 = nts.ReadFloat("r11");
-	nts.EndDict();
-}
-
-void CornerRadiuses::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	nts.WriteBool("uniform", uniform);
-	nts.WriteFloat("r", r);
-	nts.WriteFloat("r00", r00);
-	nts.WriteFloat("r10", r10);
-	nts.WriteFloat("r01", r01);
-	nts.WriteFloat("r11", r11);
 	nts.EndDict();
 }
 
@@ -192,14 +136,6 @@ void TE_NamedColor::Load(NamedTextSerializeReader& nts)
 	nts.BeginDict("NamedColor");
 	name = nts.ReadString("name");
 	Color4bLoad("color", color, nts);
-	nts.EndDict();
-}
-
-void TE_NamedColor::Save(JSONLinearWriter& nts)
-{
-	nts.BeginDict("NamedColor");
-	nts.WriteString("name", name);
-	Color4bSave("color", color, nts);
 	nts.EndDict();
 }
 
@@ -270,16 +206,6 @@ void TE_ColorRef::Load(const char* key, NamedTextSerializeReader& nts)
 			ncref = nc;
 	}
 	Color4bLoad("color", color, nts);
-	nts.EndDict();
-}
-
-void TE_ColorRef::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	nts.WriteBool("useRef", useRef);
-	auto r = ncref.lock();
-	nts.WriteString("name", r ? r->name : "");
-	Color4bSave("color", color, nts);
 	nts.EndDict();
 }
 

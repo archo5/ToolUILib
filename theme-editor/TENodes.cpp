@@ -32,14 +32,6 @@ void TE_Node::_LoadBase(NamedTextSerializeReader& nts)
 	isPreviewEnabled = nts.ReadBool("__isPreviewEnabled");
 }
 
-void TE_Node::_SaveBase(JSONLinearWriter& nts)
-{
-	nts.WriteInt("__id", id);
-	nts.WriteFloat("__x", position.x);
-	nts.WriteFloat("__y", position.y);
-	nts.WriteBool("__isPreviewEnabled", isPreviewEnabled);
-}
-
 void TE_Node::_SerializeBase(IObjectIterator& oi)
 {
 	OnField(oi, "__id", id);
@@ -128,12 +120,6 @@ void TE_RectMask::Load(NamedTextSerializeReader& nts)
 	crad.Load("crad", nts);
 }
 
-void TE_RectMask::Save(JSONLinearWriter& nts)
-{
-	rect.Save("rect", nts);
-	crad.Save("crad", nts);
-}
-
 void TE_RectMask::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "rect", rect);
@@ -184,16 +170,6 @@ void TE_MaskRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_MaskRef::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	NodeRefSave("mask", mask, nts);
-	nts.WriteInt("border", border);
-	nts.WriteInt("radius", radius);
-	nts.WriteInt("vbias", vbias);
-	nts.EndDict();
-}
-
 void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "MaskRef");
@@ -220,13 +196,6 @@ void TE_CombineMask::Load(NamedTextSerializeReader& nts)
 	masks[0].Load("mask0", nts);
 	masks[1].Load("mask1", nts);
 	mode = (TE_MaskCombineMode)nts.ReadInt("mode", TEMCM_Intersect);
-}
-
-void TE_CombineMask::Save(JSONLinearWriter& nts)
-{
-	masks[0].Save("mask0", nts);
-	masks[1].Save("mask1", nts);
-	nts.WriteInt("mode", mode);
 }
 
 void TE_CombineMask::Serialize(IObjectIterator& oi)
@@ -286,12 +255,6 @@ void TE_SolidColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_SolidColorLayer::Save(JSONLinearWriter& nts)
-{
-	color.Save("color", nts);
-	mask.Save("mask", nts);
-}
-
 void TE_SolidColorLayer::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "color", color);
@@ -337,15 +300,6 @@ void TE_2ColorLinearGradientColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_2ColorLinearGradientColorLayer::Save(JSONLinearWriter& nts)
-{
-	color0.Save("color0", nts);
-	color1.Save("color1", nts);
-	pos0.Save("pos0", nts);
-	pos1.Save("pos1", nts);
-	mask.Save("mask", nts);
-}
-
 void TE_2ColorLinearGradientColorLayer::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "color0", color0);
@@ -386,15 +340,6 @@ void TE_LayerBlendRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_LayerBlendRef::Save(const char* key, JSONLinearWriter& nts)
-{
-	nts.BeginDict(key);
-	NodeRefSave("layer", layer, nts);
-	nts.WriteBool("enabled", enabled);
-	nts.WriteFloat("opacity", opacity);
-	nts.EndDict();
-}
-
 void TE_LayerBlendRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "LayerBlendRef");
@@ -428,14 +373,6 @@ void TE_BlendLayer::Load(NamedTextSerializeReader& nts)
 		layers.push_back(lbr);
 		nts.EndEntry();
 	}
-	nts.EndArray();
-}
-
-void TE_BlendLayer::Save(JSONLinearWriter& nts)
-{
-	nts.BeginArray("layers");
-	for (auto& lbr : layers)
-		lbr.Save("", nts);
 	nts.EndArray();
 }
 

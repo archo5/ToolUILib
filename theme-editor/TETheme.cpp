@@ -28,18 +28,6 @@ void TE_TmplSettings::Load(NamedTextSerializeReader& nts)
 	NodeRefLoad("layer", layer, nts);
 }
 
-void TE_TmplSettings::Save(JSONLinearWriter& nts)
-{
-	nts.WriteInt("w", w);
-	nts.WriteInt("h", h);
-	nts.WriteInt("l", l);
-	nts.WriteInt("t", t);
-	nts.WriteInt("r", r);
-	nts.WriteInt("b", b);
-	nts.WriteBool("gamma", gamma);
-	NodeRefSave("layer", layer, nts);
-}
-
 void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "TmplSettings");
@@ -146,44 +134,13 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Template::Save(JSONLinearWriter& nts)
-{
-	nts.BeginDict("template");
-
-	nts.WriteString("name", name);
-	nts.WriteInt("nodeIDAlloc", nodeIDAlloc);
-
-	nts.BeginArray("colors");
-	for (const auto& color : colors)
-	{
-		color->Save(nts);
-	}
-	nts.EndArray();
-
-	nts.BeginArray("nodes");
-	for (TE_Node* N : nodes)
-	{
-		nts.BeginDict("node");
-		nts.WriteString("__type", N->GetSysName());
-		N->_SaveBase(nts);
-		N->Save(nts);
-		nts.EndDict();
-	}
-	nts.EndArray();
-
-	nts.BeginDict("renderSettings");
-	renderSettings.Save(nts);
-	nts.EndDict();
-
-	nts.EndDict();
-}
-
 void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Template");
 
 	OnField(oi, "name", name);
 	OnField(oi, "nodeIDAlloc", nodeIDAlloc);
+
 	OnFieldPtrVector(oi, "colors", colors,
 		[](auto& v) -> TE_NamedColor& { return *v; },
 		[]() { return std::make_shared<TE_NamedColor>(); });
@@ -508,34 +465,6 @@ void TE_Theme::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Theme::Save(JSONLinearWriter& nts)
-{
-	nts.BeginDict("theme");
-
-	nts.BeginArray("templates");
-	for (const auto& tmpl : templates)
-	{
-		tmpl->Save(nts);
-	}
-	nts.EndArray();
-
-	int curTemplateNum = -1;
-	if (curTemplate)
-	{
-		for (size_t i = 0; i < templates.size(); i++)
-		{
-			if (templates[i] == curTemplate)
-			{
-				curTemplateNum = i;
-				break;
-			}
-		}
-	}
-	nts.WriteInt("curTemplate", curTemplateNum);
-
-	nts.EndDict();
-}
-
 void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Theme");
@@ -545,7 +474,7 @@ void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		[this]() { return new TE_Template(this); });
 
 	int curTemplateNum = -1;
-	if (curTemplate)
+	if (curTemplate && !oi.IsUnserializer())
 	{
 		for (size_t i = 0; i < templates.size(); i++)
 		{

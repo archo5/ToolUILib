@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "String.h"
+#include "ObjectIteration.h"
 
 namespace ui {
 

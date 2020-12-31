@@ -11,11 +11,8 @@ extern DataCategoryTag DCT_ChangeActiveImage[1];
 
 
 void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts);
-void Color4bSave(const char* key, Color4b& col, JSONLinearWriter& nts);
 void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader& nts);
-void PointFloatSave(const char* key, Point<float>& pt, JSONLinearWriter& nts);
 void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader& nts);
-void AABBFloatSave(const char* key, AABB<float>& rect, JSONLinearWriter& nts);
 
 
 using AbsRect = AABB<float>;
@@ -27,7 +24,6 @@ struct SubRect
 
 	AbsRect Resolve(const AbsRect& frame);
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, JSONLinearWriter& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -38,7 +34,6 @@ struct SubPos
 
 	Point<float> Resolve(const AbsRect& frame);
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, JSONLinearWriter& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -51,7 +46,6 @@ struct CornerRadiuses
 		return *this;
 	}
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, JSONLinearWriter& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	bool uniform = true;
@@ -71,7 +65,6 @@ struct TE_NamedColor
 	TE_NamedColor(const std::string& n, Color4b c) : name(n), color(c) {}
 
 	void Load(NamedTextSerializeReader& nts);
-	void Save(JSONLinearWriter& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -127,7 +120,6 @@ struct TE_ColorRef
 	}
 
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, JSONLinearWriter& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 	void UI(UIContainer* ctx);
 };
