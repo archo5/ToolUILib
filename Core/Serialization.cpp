@@ -512,14 +512,14 @@ void NamedTextSerializeReader::EndEntry()
 }
 
 
-JSONSerializeWriter::JSONSerializeWriter()
+JSONLinearWriter::JSONLinearWriter()
 {
 	_data = "{";
 	_starts = { { 0U, 2U } };
 	_inArray = { false };
 }
 
-void JSONSerializeWriter::WriteString(const char* key, StringView value)
+void JSONLinearWriter::WriteString(const char* key, StringView value)
 {
 	_WritePrefix(key);
 	_data += "\"";
@@ -542,14 +542,14 @@ void JSONSerializeWriter::WriteString(const char* key, StringView value)
 	_starts.back().weight += 9999;
 }
 
-void JSONSerializeWriter::WriteBool(const char* key, bool value)
+void JSONLinearWriter::WriteBool(const char* key, bool value)
 {
 	_WritePrefix(key);
 	_data += value ? "true" : "false";
 	_starts.back().weight += 6;
 }
 
-void JSONSerializeWriter::WriteInt(const char* key, int64_t value)
+void JSONLinearWriter::WriteInt(const char* key, int64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
@@ -558,7 +558,7 @@ void JSONSerializeWriter::WriteInt(const char* key, int64_t value)
 	_starts.back().weight += 6;
 }
 
-void JSONSerializeWriter::WriteInt(const char* key, uint64_t value)
+void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
@@ -567,7 +567,7 @@ void JSONSerializeWriter::WriteInt(const char* key, uint64_t value)
 	_starts.back().weight += 6;
 }
 
-void JSONSerializeWriter::WriteFloat(const char* key, double value)
+void JSONLinearWriter::WriteFloat(const char* key, double value)
 {
 	_WritePrefix(key);
 	char bfr[32];
@@ -579,7 +579,7 @@ void JSONSerializeWriter::WriteFloat(const char* key, double value)
 	_starts.back().weight += 6;
 }
 
-void JSONSerializeWriter::BeginArray(const char* key)
+void JSONLinearWriter::BeginArray(const char* key)
 {
 	_WritePrefix(key);
 	_starts.push_back({ _data.size(), 2U });
@@ -587,7 +587,7 @@ void JSONSerializeWriter::BeginArray(const char* key)
 	_inArray.push_back(true);
 }
 
-void JSONSerializeWriter::EndArray()
+void JSONLinearWriter::EndArray()
 {
 	_inArray.pop_back();
 	_WriteIndent(true);
@@ -595,7 +595,7 @@ void JSONSerializeWriter::EndArray()
 	_OnEndObject();
 }
 
-void JSONSerializeWriter::BeginDict(const char* key)
+void JSONLinearWriter::BeginDict(const char* key)
 {
 	_WriteIndent();
 	if (!_inArray.back())
@@ -609,7 +609,7 @@ void JSONSerializeWriter::BeginDict(const char* key)
 	_inArray.push_back(false);
 }
 
-void JSONSerializeWriter::EndDict()
+void JSONLinearWriter::EndDict()
 {
 	_inArray.pop_back();
 	_WriteIndent(true);
@@ -617,7 +617,7 @@ void JSONSerializeWriter::EndDict()
 	_OnEndObject();
 }
 
-std::string& JSONSerializeWriter::GetData()
+std::string& JSONLinearWriter::GetData()
 {
 	while (_inArray.size())
 	{
@@ -627,7 +627,7 @@ std::string& JSONSerializeWriter::GetData()
 	return _data;
 }
 
-void JSONSerializeWriter::_WriteIndent(bool skipComma)
+void JSONLinearWriter::_WriteIndent(bool skipComma)
 {
 	if (!skipComma && _data.back() != '{' && _data.back() != '[')
 		_data += ",";
@@ -636,7 +636,7 @@ void JSONSerializeWriter::_WriteIndent(bool skipComma)
 		_data += "\t";
 }
 
-void JSONSerializeWriter::_WritePrefix(const char* key)
+void JSONLinearWriter::_WritePrefix(const char* key)
 {
 	_WriteIndent();
 	if (!_inArray.back())
@@ -648,7 +648,7 @@ void JSONSerializeWriter::_WritePrefix(const char* key)
 	}
 }
 
-void JSONSerializeWriter::_OnEndObject()
+void JSONLinearWriter::_OnEndObject()
 {
 	_starts.back().weight += 2;
 	if (_starts.back().weight < 100U)

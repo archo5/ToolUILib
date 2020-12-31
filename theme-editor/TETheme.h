@@ -28,19 +28,22 @@ struct TE_TmplSettings
 	}
 	void UI(UIContainer* ctx);
 	void Load(NamedTextSerializeReader& nts);
-	void Save(JSONSerializeWriter& nts);
+	void Save(JSONLinearWriter& nts);
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
 
 struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 {
+	TE_Template(TE_IOverrideProvider* op) : ovrProv(op) {}
 	~TE_Template();
 	void Clear();
 
 	TE_Node* CreateNodeFromTypeName(StringView type);
 
 	void Load(NamedTextSerializeReader& nts);
-	void Save(JSONSerializeWriter& nts);
+	void Save(JSONLinearWriter& nts);
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	template <class T> T* CreateNode(float x, float y)
 	{
@@ -137,7 +140,8 @@ struct TE_Theme : TE_IOverrideProvider
 	void Clear();
 
 	void Load(NamedTextSerializeReader& nts);
-	void Save(JSONSerializeWriter& nts);
+	void Save(JSONLinearWriter& nts);
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	void LoadFromFile(const char* path);
 	void SaveToFile(const char* path);

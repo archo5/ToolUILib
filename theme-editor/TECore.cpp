@@ -16,7 +16,7 @@ void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void Color4bSave(const char* key, Color4b& col, JSONSerializeWriter& nts)
+void Color4bSave(const char* key, Color4b& col, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteInt("r", col.r);
@@ -34,7 +34,7 @@ void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader&
 	nts.EndDict();
 }
 
-void PointFloatSave(const char* key, Point<float>& pt, JSONSerializeWriter& nts)
+void PointFloatSave(const char* key, Point<float>& pt, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteFloat("x", pt.x);
@@ -52,7 +52,7 @@ void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader&
 	nts.EndDict();
 }
 
-void AABBFloatSave(const char* key, AABB<float>& rect, JSONSerializeWriter& nts)
+void AABBFloatSave(const char* key, AABB<float>& rect, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteFloat("x0", rect.x0);
@@ -82,12 +82,20 @@ void SubRect::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void SubRect::Save(const char* key, JSONSerializeWriter& nts)
+void SubRect::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	AABBFloatSave("anchors", anchors, nts);
 	AABBFloatSave("offsets", offsets, nts);
 	nts.EndDict();
+}
+
+void SubRect::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "SubRect");
+	OnField(oi, "anchors", anchors);
+	OnField(oi, "offsets", offsets);
+	oi.EndObject();
 }
 
 
@@ -108,12 +116,20 @@ void SubPos::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void SubPos::Save(const char* key, JSONSerializeWriter& nts)
+void SubPos::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	PointFloatSave("anchor", anchor, nts);
 	PointFloatSave("offset", offset, nts);
 	nts.EndDict();
+}
+
+void SubPos::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "SubPos");
+	OnField(oi, "anchor", anchor);
+	OnField(oi, "offset", offset);
+	oi.EndObject();
 }
 
 
@@ -129,7 +145,7 @@ void CornerRadiuses::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void CornerRadiuses::Save(const char* key, JSONSerializeWriter& nts)
+void CornerRadiuses::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteBool("uniform", uniform);
@@ -139,6 +155,18 @@ void CornerRadiuses::Save(const char* key, JSONSerializeWriter& nts)
 	nts.WriteFloat("r01", r01);
 	nts.WriteFloat("r11", r11);
 	nts.EndDict();
+}
+
+void CornerRadiuses::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "CornerRadiuses");
+	OnField(oi, "uniform", uniform);
+	OnField(oi, "r", r);
+	OnField(oi, "r00", r00);
+	OnField(oi, "r10", r10);
+	OnField(oi, "r01", r01);
+	OnField(oi, "r11", r11);
+	oi.EndObject();
 }
 
 float EvalAARoundedRectMask(float x, float y, const AbsRect& rr, const CornerRadiuses& cr)
@@ -167,12 +195,20 @@ void TE_NamedColor::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_NamedColor::Save(JSONSerializeWriter& nts)
+void TE_NamedColor::Save(JSONLinearWriter& nts)
 {
 	nts.BeginDict("NamedColor");
 	nts.WriteString("name", name);
 	Color4bSave("color", color, nts);
 	nts.EndDict();
+}
+
+void TE_NamedColor::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "NamedColor");
+	OnField(oi, "name", name);
+	OnField(oi, "color", color);
+	oi.EndObject();
 }
 
 
@@ -237,7 +273,7 @@ void TE_ColorRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_ColorRef::Save(const char* key, JSONSerializeWriter& nts)
+void TE_ColorRef::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteBool("useRef", useRef);
@@ -245,6 +281,31 @@ void TE_ColorRef::Save(const char* key, JSONSerializeWriter& nts)
 	nts.WriteString("name", r ? r->name : "");
 	Color4bSave("color", color, nts);
 	nts.EndDict();
+}
+
+void TE_ColorRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "ColorRef");
+
+	OnField(oi, "useRef", useRef);
+	if (!oi.HasField("useRef"))
+		useRef = true;
+
+	auto r = ncref.lock();
+	std::string name = r ? r->name : "";
+	OnField(oi, "name", name);
+	if (oi.IsUnserializer())
+	{
+		ncref = {};
+		for (auto& nc : *g_namedColors)
+		{
+			if (nc->name == name)
+				ncref = nc;
+		}
+	}
+
+	OnField(oi, "color", color);
+	oi.EndObject();
 }
 
 void TE_ColorRef::UI(UIContainer* ctx)

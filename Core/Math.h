@@ -2,6 +2,8 @@
 #pragma once
 
 #include <math.h>
+#include "Core.h"
+#include "ObjectIteration.h"
 
 
 template <class T> struct Point
@@ -13,6 +15,14 @@ template <class T> struct Point
 	Point<T>& operator += (const Point<T>& o) { x += o.x; y += o.y; return *this; }
 	Point<T>& operator -= (const Point<T>& o) { x -= o.x; y -= o.y; return *this; }
 	Point<T>& operator *= (float f) { x *= f; y *= f; return *this; }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Point");
+		OnField(oi, "x", x);
+		OnField(oi, "y", y);
+		oi.EndObject();
+	}
 
 	template <class U> Point<U> Cast() const { return { U(x), U(y) }; }
 };
@@ -50,13 +60,17 @@ template<class T> struct AABB
 	AABB MoveBy(float dx, float dy) const { return { x0 + dx, y0 + dy, x1 + dx, y1 + dy }; }
 	AABB operator * (T f) const { return { x0 * f, y0 * f, x1 * f, y1 * f }; }
 
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "AABB");
+		OnField(oi, "x0", x0);
+		OnField(oi, "y0", y0);
+		OnField(oi, "x1", x1);
+		OnField(oi, "y1", y1);
+		oi.EndObject();
+	}
+
 	template <class U> AABB<U> Cast() const { return { U(x0), U(y0), U(x1), U(y1) }; }
 };
 template <class T> AABB<T> operator * (T f, const AABB<T>& o) { return o * f; }
 
-
-inline float lerp(float a, float b, float s) { return a + (b - a) * s; }
-inline float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
-template <class T> __forceinline T min(T a, T b) { return a < b ? a : b; }
-template <class T> __forceinline T max(T a, T b) { return a > b ? a : b; }
-template <class T> __forceinline T clamp(T x, T vmin, T vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }

@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include "../Core/Math.h"
+#include "../Core/ObjectIteration.h"
 
 
 namespace ui {
@@ -41,6 +42,16 @@ struct Color4b
 
 	bool IsOpaque() const { return a == 255; }
 	Color4b GetOpaque() const { return { r, g, b, 255 }; }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Color4b");
+		OnField(oi, "r", r);
+		OnField(oi, "g", g);
+		OnField(oi, "b", b);
+		OnField(oi, "a", a);
+		oi.EndObject();
+	}
 
 	uint8_t r, g, b, a;
 };

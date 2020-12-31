@@ -373,7 +373,7 @@ struct TE_ThemeEditorNode : Node
 				}
 				if (imm::Button(ctx, "+"))
 				{
-					auto* p = new TE_Template;
+					auto* p = new TE_Template(theme);
 					p->name = "<name>";
 					theme->templates.push_back(p);
 				}

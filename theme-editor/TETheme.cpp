@@ -28,7 +28,7 @@ void TE_TmplSettings::Load(NamedTextSerializeReader& nts)
 	NodeRefLoad("layer", layer, nts);
 }
 
-void TE_TmplSettings::Save(JSONSerializeWriter& nts)
+void TE_TmplSettings::Save(JSONLinearWriter& nts)
 {
 	nts.WriteInt("w", w);
 	nts.WriteInt("h", h);
@@ -38,6 +38,20 @@ void TE_TmplSettings::Save(JSONSerializeWriter& nts)
 	nts.WriteInt("b", b);
 	nts.WriteBool("gamma", gamma);
 	NodeRefSave("layer", layer, nts);
+}
+
+void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "TmplSettings");
+	OnField(oi, "w", w);
+	OnField(oi, "h", h);
+	OnField(oi, "l", l);
+	OnField(oi, "t", t);
+	OnField(oi, "r", r);
+	OnField(oi, "b", b);
+	OnField(oi, "gamma", gamma);
+	OnNodeRefField(oi, "layer", layer);
+	oi.EndObject();
 }
 
 
@@ -132,7 +146,7 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Template::Save(JSONSerializeWriter& nts)
+void TE_Template::Save(JSONLinearWriter& nts)
 {
 	nts.BeginDict("template");
 
@@ -147,7 +161,7 @@ void TE_Template::Save(JSONSerializeWriter& nts)
 	nts.EndArray();
 
 	nts.BeginArray("nodes");
-	for (auto* N : nodes)
+	for (TE_Node* N : nodes)
 	{
 		nts.BeginDict("node");
 		nts.WriteString("__type", N->GetSysName());
@@ -162,6 +176,39 @@ void TE_Template::Save(JSONSerializeWriter& nts)
 	nts.EndDict();
 
 	nts.EndDict();
+}
+
+void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Template");
+
+	OnField(oi, "name", name);
+	OnField(oi, "nodeIDAlloc", nodeIDAlloc);
+	OnFieldPtrVector(oi, "colors", colors,
+		[](auto& v) -> TE_NamedColor& { return *v; },
+		[]() { return std::make_shared<TE_NamedColor>(); });
+
+	if (oi.IsUnserializer())
+	{
+		oi.BeginArray(0, "nodes");
+		nodes.clear();
+		while (oi.HasMoreArrayElements())
+		{
+			std::string type;
+			OnField(oi, "__type", type);
+			auto* N = CreateNodeFromTypeName(type);
+			nodes.push_back(N);
+		}
+		oi.EndArray();
+	}
+	oi.BeginArray(nodes.size(), "nodes");
+	for (TE_Node* node : nodes)
+		OnField(oi, {}, *node);
+	oi.EndArray();
+
+	OnField(oi, "renderSettings", renderSettings);
+
+	oi.EndObject();
 }
 
 void TE_Template::GetNodes(std::vector<Node*>& outNodes)
@@ -320,13 +367,13 @@ void TE_Template::InvalidateNode(TE_Node* n)
 
 void TE_Template::InvalidateAllNodes()
 {
-	for (auto* n : nodes)
+	for (TE_Node* n : nodes)
 		InvalidateNode(n);
 }
 
 void TE_Template::ResolveAllParameters(const TE_RenderContext& rc, const TE_Overrides* ovr)
 {
-	for (auto* n : nodes)
+	for (TE_Node* n : nodes)
 		if (n->IsDirty())
 			n->ResolveParameters(rc, ovr);
 }
@@ -447,8 +494,7 @@ void TE_Theme::Load(NamedTextSerializeReader& nts)
 	for (auto ch : nts.GetCurrentRange())
 	{
 		nts.BeginEntry(ch);
-		auto* tmpl = new TE_Template;
-		tmpl->ovrProv = this;
+		auto* tmpl = new TE_Template(this);
 		tmpl->Load(nts);
 		templates.push_back(tmpl);
 		nts.EndEntry();
@@ -462,7 +508,7 @@ void TE_Theme::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Theme::Save(JSONSerializeWriter& nts)
+void TE_Theme::Save(JSONLinearWriter& nts)
 {
 	nts.BeginDict("theme");
 
@@ -490,6 +536,35 @@ void TE_Theme::Save(JSONSerializeWriter& nts)
 	nts.EndDict();
 }
 
+void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Theme");
+
+	OnFieldPtrVector(oi, "templates", templates,
+		[](auto& v) -> TE_Template& { return *v; },
+		[this]() { return new TE_Template(this); });
+
+	int curTemplateNum = -1;
+	if (curTemplate)
+	{
+		for (size_t i = 0; i < templates.size(); i++)
+		{
+			if (templates[i] == curTemplate)
+			{
+				curTemplateNum = i;
+				break;
+			}
+		}
+	}
+	OnField(oi, "curTemplate", curTemplateNum);
+	if (!oi.HasField("curTemplate"))
+		curTemplateNum = -1;
+	curTemplate = curTemplateNum >= 0 && curTemplateNum < int(templates.size()) ? templates[curTemplateNum] : nullptr;
+	g_namedColors = curTemplate ? &curTemplate->colors : nullptr;
+
+	oi.EndObject();
+}
+
 void TE_Theme::LoadFromFile(const char* path)
 {
 	FILE* f = fopen(path, "r");
@@ -515,9 +590,9 @@ void TE_Theme::SaveToFile(const char* path)
 	FILE* f = fopen(path, "w");
 	if (!f)
 		return;
-	JSONSerializeWriter ntsw;
-	Save(ntsw);
-	fwrite(ntsw.GetData().data(), ntsw.GetData().size(), 1, f);
+	JSONSerializerObjectIterator w;
+	OnSerialize(w, "theme");
+	fwrite(w.GetData().data(), w.GetData().size(), 1, f);
 	fclose(f);
 }
 
@@ -525,8 +600,7 @@ void TE_Theme::CreateSampleTheme()
 {
 	Clear();
 
-	TE_Template* tmpl = new TE_Template;
-	tmpl->ovrProv = this;
+	TE_Template* tmpl = new TE_Template(this);
 	tmpl->name = "Button";
 
 	tmpl->colors.push_back(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x00, 0xff)));

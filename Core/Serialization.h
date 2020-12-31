@@ -113,7 +113,7 @@ struct NamedTextSerializeReader
 	std::vector<EntryRange> stack;
 };
 
-struct JSONSerializeWriter
+struct JSONLinearWriter
 {
 	struct CompactScope
 	{
@@ -121,7 +121,7 @@ struct JSONSerializeWriter
 		size_t weight;
 	};
 
-	JSONSerializeWriter();
+	JSONLinearWriter();
 	void WriteString(const char* key, StringView value);
 	void WriteBool(const char* key, bool value);
 	void WriteInt(const char* key, int value) { WriteInt(key, int64_t(value)); }
@@ -143,6 +143,56 @@ struct JSONSerializeWriter
 	std::string _data;
 	std::vector<CompactScope> _starts;
 	std::vector<bool> _inArray;
+};
+
+struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
+{
+	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped; }
+
+	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override
+	{
+		BeginDict(FI.GetNameOrEmptyStr());
+		if (outName)
+			WriteString("__", *outName);
+	}
+	void EndObject() override
+	{
+		EndDict();
+	}
+	size_t BeginArray(size_t size, const FieldInfo& FI) override
+	{
+		JSONLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
+		return 0;
+	}
+	void EndArray() override
+	{
+		JSONLinearWriter::EndArray();
+	}
+
+	void OnFieldBool(const FieldInfo& FI, bool& val) override
+	{
+		WriteBool(FI.GetNameOrEmptyStr(), val);
+	}
+	void OnFieldS64(const FieldInfo& FI, int64_t& val) override
+	{
+		WriteInt(FI.GetNameOrEmptyStr(), val);
+	}
+	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override
+	{
+		WriteInt(FI.GetNameOrEmptyStr(), val);
+	}
+	void OnFieldF64(const FieldInfo& FI, double& val) override
+	{
+		WriteFloat(FI.GetNameOrEmptyStr(), val);
+	}
+	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override
+	{
+		WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	}
+	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override
+	{
+		// TODO
+	}
 };
 
 } // ui

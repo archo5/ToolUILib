@@ -32,12 +32,32 @@ void TE_Node::_LoadBase(NamedTextSerializeReader& nts)
 	isPreviewEnabled = nts.ReadBool("__isPreviewEnabled");
 }
 
-void TE_Node::_SaveBase(JSONSerializeWriter& nts)
+void TE_Node::_SaveBase(JSONLinearWriter& nts)
 {
 	nts.WriteInt("__id", id);
 	nts.WriteFloat("__x", position.x);
 	nts.WriteFloat("__y", position.y);
 	nts.WriteBool("__isPreviewEnabled", isPreviewEnabled);
+}
+
+void TE_Node::_SerializeBase(IObjectIterator& oi)
+{
+	OnField(oi, "__id", id);
+	OnField(oi, "__pos", position);
+	OnField(oi, "__isPreviewEnabled", isPreviewEnabled);
+}
+
+void TE_Node::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Node");
+	if (!oi.IsUnserializer())
+	{
+		std::string type = GetSysName();
+		OnField(oi, "__type", type);
+	}
+	_SerializeBase(oi);
+	Serialize(oi);
+	oi.EndObject();
 }
 
 Image* TE_Node::GetImage(TE_IRenderContextProvider* rcp)
@@ -108,10 +128,16 @@ void TE_RectMask::Load(NamedTextSerializeReader& nts)
 	crad.Load("crad", nts);
 }
 
-void TE_RectMask::Save(JSONSerializeWriter& nts)
+void TE_RectMask::Save(JSONLinearWriter& nts)
 {
 	rect.Save("rect", nts);
 	crad.Save("crad", nts);
+}
+
+void TE_RectMask::Serialize(IObjectIterator& oi)
+{
+	OnField(oi, "rect", rect);
+	OnField(oi, "crad", crad);
 }
 
 float TE_RectMask::Eval(float x, float y, const TE_RenderContext& rc)
@@ -158,7 +184,7 @@ void TE_MaskRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_MaskRef::Save(const char* key, JSONSerializeWriter& nts)
+void TE_MaskRef::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	NodeRefSave("mask", mask, nts);
@@ -166,6 +192,16 @@ void TE_MaskRef::Save(const char* key, JSONSerializeWriter& nts)
 	nts.WriteInt("radius", radius);
 	nts.WriteInt("vbias", vbias);
 	nts.EndDict();
+}
+
+void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "MaskRef");
+	OnNodeRefField(oi, "mask", mask);
+	OnField(oi, "border", border);
+	OnField(oi, "radius", radius);
+	OnField(oi, "vbias", vbias);
+	oi.EndObject();
 }
 
 
@@ -186,11 +222,18 @@ void TE_CombineMask::Load(NamedTextSerializeReader& nts)
 	mode = (TE_MaskCombineMode)nts.ReadInt("mode", TEMCM_Intersect);
 }
 
-void TE_CombineMask::Save(JSONSerializeWriter& nts)
+void TE_CombineMask::Save(JSONLinearWriter& nts)
 {
 	masks[0].Save("mask0", nts);
 	masks[1].Save("mask1", nts);
 	nts.WriteInt("mode", mode);
+}
+
+void TE_CombineMask::Serialize(IObjectIterator& oi)
+{
+	OnField(oi, "mask0", masks[0]);
+	OnField(oi, "mask1", masks[1]);
+	OnFieldEnumInt(oi, "mode", mode);
 }
 
 float TE_CombineMask::Eval(float x, float y, const TE_RenderContext& rc)
@@ -243,10 +286,16 @@ void TE_SolidColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_SolidColorLayer::Save(JSONSerializeWriter& nts)
+void TE_SolidColorLayer::Save(JSONLinearWriter& nts)
 {
 	color.Save("color", nts);
 	mask.Save("mask", nts);
+}
+
+void TE_SolidColorLayer::Serialize(IObjectIterator& oi)
+{
+	OnField(oi, "color", color);
+	OnField(oi, "mask", mask);
 }
 
 void TE_SolidColorLayer::ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr)
@@ -288,13 +337,22 @@ void TE_2ColorLinearGradientColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_2ColorLinearGradientColorLayer::Save(JSONSerializeWriter& nts)
+void TE_2ColorLinearGradientColorLayer::Save(JSONLinearWriter& nts)
 {
 	color0.Save("color0", nts);
 	color1.Save("color1", nts);
 	pos0.Save("pos0", nts);
 	pos1.Save("pos1", nts);
 	mask.Save("mask", nts);
+}
+
+void TE_2ColorLinearGradientColorLayer::Serialize(IObjectIterator& oi)
+{
+	OnField(oi, "color0", color0);
+	OnField(oi, "color1", color1);
+	OnField(oi, "pos0", pos0);
+	OnField(oi, "pos1", pos1);
+	OnField(oi, "mask", mask);
 }
 
 void TE_2ColorLinearGradientColorLayer::ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr)
@@ -328,13 +386,22 @@ void TE_LayerBlendRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_LayerBlendRef::Save(const char* key, JSONSerializeWriter& nts)
+void TE_LayerBlendRef::Save(const char* key, JSONLinearWriter& nts)
 {
 	nts.BeginDict(key);
 	NodeRefSave("layer", layer, nts);
 	nts.WriteBool("enabled", enabled);
 	nts.WriteFloat("opacity", opacity);
 	nts.EndDict();
+}
+
+void TE_LayerBlendRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "LayerBlendRef");
+	OnNodeRefField(oi, "layer", layer);
+	OnField(oi, "enabled", enabled);
+	OnField(oi, "opacity", opacity);
+	oi.EndObject();
 }
 
 
@@ -364,12 +431,17 @@ void TE_BlendLayer::Load(NamedTextSerializeReader& nts)
 	nts.EndArray();
 }
 
-void TE_BlendLayer::Save(JSONSerializeWriter& nts)
+void TE_BlendLayer::Save(JSONLinearWriter& nts)
 {
 	nts.BeginArray("layers");
 	for (auto& lbr : layers)
 		lbr.Save("", nts);
 	nts.EndArray();
+}
+
+void TE_BlendLayer::Serialize(IObjectIterator& oi)
+{
+	OnField(oi, "layers", layers);
 }
 
 Color4f TE_BlendLayer::Eval(float x, float y, const TE_RenderContext& rc)
