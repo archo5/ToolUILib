@@ -512,4 +512,160 @@ void NamedTextSerializeReader::EndEntry()
 }
 
 
+JSONSerializeWriter::JSONSerializeWriter()
+{
+	_data = "{";
+	_starts = { { 0U, 2U } };
+	_inArray = { false };
+}
+
+void JSONSerializeWriter::WriteString(const char* key, StringView value)
+{
+	_WritePrefix(key);
+	_data += "\"";
+	for (char c : value)
+	{
+		if (c == '\n') _data += "\\n";
+		else if (c == '\r') _data += "\\r";
+		else if (c == '\t') _data += "\\t";
+		else if (c == '\b') _data += "\\b";
+		else if (c == '\\') _data += "\\\\";
+		else if (c < 0x20)
+		{
+			_data += "\\u00";
+			_data += "0123456789abcdef"[c >> 4];
+			_data += "0123456789abcdef"[c & 0xf];
+		}
+		else _data += c;
+	}
+	_data += "\"";
+	_starts.back().weight += 9999;
+}
+
+void JSONSerializeWriter::WriteBool(const char* key, bool value)
+{
+	_WritePrefix(key);
+	_data += value ? "true" : "false";
+	_starts.back().weight += 6;
+}
+
+void JSONSerializeWriter::WriteInt(const char* key, int64_t value)
+{
+	_WritePrefix(key);
+	char bfr[32];
+	snprintf(bfr, 32, "%" PRId64, value);
+	_data += bfr;
+	_starts.back().weight += 6;
+}
+
+void JSONSerializeWriter::WriteInt(const char* key, uint64_t value)
+{
+	_WritePrefix(key);
+	char bfr[32];
+	snprintf(bfr, 32, "%" PRIu64, value);
+	_data += bfr;
+	_starts.back().weight += 6;
+}
+
+void JSONSerializeWriter::WriteFloat(const char* key, double value)
+{
+	_WritePrefix(key);
+	char bfr[32];
+	snprintf(bfr, 32, "%g", value);
+	for (auto& c : bfr)
+		if (c == ',')
+			c = '.';
+	_data += bfr;
+	_starts.back().weight += 6;
+}
+
+void JSONSerializeWriter::BeginArray(const char* key)
+{
+	_WritePrefix(key);
+	_starts.push_back({ _data.size(), 2U });
+	_data += "[";
+	_inArray.push_back(true);
+}
+
+void JSONSerializeWriter::EndArray()
+{
+	_inArray.pop_back();
+	_WriteIndent(true);
+	_data += "]";
+	_OnEndObject();
+}
+
+void JSONSerializeWriter::BeginDict(const char* key)
+{
+	_WriteIndent();
+	if (!_inArray.back())
+	{
+		_data += "\"";
+		_data += key;
+		_data += "\": ";
+	}
+	_starts.push_back({ _data.size(), 2U });
+	_data += "{";
+	_inArray.push_back(false);
+}
+
+void JSONSerializeWriter::EndDict()
+{
+	_inArray.pop_back();
+	_WriteIndent(true);
+	_data += "}";
+	_OnEndObject();
+}
+
+std::string& JSONSerializeWriter::GetData()
+{
+	while (_inArray.size())
+	{
+		_data += _inArray.back() ? "\n]" : "\n}";
+		_inArray.pop_back();
+	}
+	return _data;
+}
+
+void JSONSerializeWriter::_WriteIndent(bool skipComma)
+{
+	if (!skipComma && _data.back() != '{' && _data.back() != '[')
+		_data += ",";
+	_data += "\n";
+	for (size_t i = 0; i < _inArray.size(); i++)
+		_data += "\t";
+}
+
+void JSONSerializeWriter::_WritePrefix(const char* key)
+{
+	_WriteIndent();
+	if (!_inArray.back())
+	{
+		_data += "\"";
+		_data += key;
+		_data += "\": ";
+		_starts.back().weight += strlen(key) + 4;
+	}
+}
+
+void JSONSerializeWriter::_OnEndObject()
+{
+	_starts.back().weight += 2;
+	if (_starts.back().weight < 100U)
+	{
+		size_t dst = _starts.back().start;
+		for (size_t src = _starts.back().start; src < _data.size(); src++)
+		{
+			if (_data[src] == '\n')
+				_data[dst++] = ' ';
+			else if (_data[src] != '\t')
+				_data[dst++] = _data[src];
+		}
+		_data.resize(dst);
+	}
+	_starts[_starts.size() - 2].weight += _starts.back().weight;
+	_starts.pop_back();
+}
+
+
 } // ui

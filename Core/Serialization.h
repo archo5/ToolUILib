@@ -113,4 +113,36 @@ struct NamedTextSerializeReader
 	std::vector<EntryRange> stack;
 };
 
+struct JSONSerializeWriter
+{
+	struct CompactScope
+	{
+		size_t start;
+		size_t weight;
+	};
+
+	JSONSerializeWriter();
+	void WriteString(const char* key, StringView value);
+	void WriteBool(const char* key, bool value);
+	void WriteInt(const char* key, int value) { WriteInt(key, int64_t(value)); }
+	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
+	void WriteInt(const char* key, int64_t value);
+	void WriteInt(const char* key, uint64_t value);
+	void WriteFloat(const char* key, double value);
+	void BeginArray(const char* key);
+	void EndArray();
+	void BeginDict(const char* key);
+	void EndDict();
+
+	std::string& GetData();
+
+	void _WriteIndent(bool skipComma = false);
+	void _WritePrefix(const char* key);
+	void _OnEndObject();
+
+	std::string _data;
+	std::vector<CompactScope> _starts;
+	std::vector<bool> _inArray;
+};
+
 } // ui

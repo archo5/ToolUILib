@@ -32,7 +32,7 @@ void TE_Node::_LoadBase(NamedTextSerializeReader& nts)
 	isPreviewEnabled = nts.ReadBool("__isPreviewEnabled");
 }
 
-void TE_Node::_SaveBase(NamedTextSerializeWriter& nts)
+void TE_Node::_SaveBase(JSONSerializeWriter& nts)
 {
 	nts.WriteInt("__id", id);
 	nts.WriteFloat("__x", position.x);
@@ -108,7 +108,7 @@ void TE_RectMask::Load(NamedTextSerializeReader& nts)
 	crad.Load("crad", nts);
 }
 
-void TE_RectMask::Save(NamedTextSerializeWriter& nts)
+void TE_RectMask::Save(JSONSerializeWriter& nts)
 {
 	rect.Save("rect", nts);
 	crad.Save("crad", nts);
@@ -158,7 +158,7 @@ void TE_MaskRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_MaskRef::Save(const char* key, NamedTextSerializeWriter& nts)
+void TE_MaskRef::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	NodeRefSave("mask", mask, nts);
@@ -186,7 +186,7 @@ void TE_CombineMask::Load(NamedTextSerializeReader& nts)
 	mode = (TE_MaskCombineMode)nts.ReadInt("mode", TEMCM_Intersect);
 }
 
-void TE_CombineMask::Save(NamedTextSerializeWriter& nts)
+void TE_CombineMask::Save(JSONSerializeWriter& nts)
 {
 	masks[0].Save("mask0", nts);
 	masks[1].Save("mask1", nts);
@@ -243,7 +243,7 @@ void TE_SolidColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_SolidColorLayer::Save(NamedTextSerializeWriter& nts)
+void TE_SolidColorLayer::Save(JSONSerializeWriter& nts)
 {
 	color.Save("color", nts);
 	mask.Save("mask", nts);
@@ -288,7 +288,7 @@ void TE_2ColorLinearGradientColorLayer::Load(NamedTextSerializeReader& nts)
 	mask.Load("mask", nts);
 }
 
-void TE_2ColorLinearGradientColorLayer::Save(NamedTextSerializeWriter& nts)
+void TE_2ColorLinearGradientColorLayer::Save(JSONSerializeWriter& nts)
 {
 	color0.Save("color0", nts);
 	color1.Save("color1", nts);
@@ -328,7 +328,7 @@ void TE_LayerBlendRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_LayerBlendRef::Save(const char* key, NamedTextSerializeWriter& nts)
+void TE_LayerBlendRef::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	NodeRefSave("layer", layer, nts);
@@ -364,7 +364,7 @@ void TE_BlendLayer::Load(NamedTextSerializeReader& nts)
 	nts.EndArray();
 }
 
-void TE_BlendLayer::Save(NamedTextSerializeWriter& nts)
+void TE_BlendLayer::Save(JSONSerializeWriter& nts)
 {
 	nts.BeginArray("layers");
 	for (auto& lbr : layers)

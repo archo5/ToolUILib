@@ -38,14 +38,14 @@ struct TE_Node
 	virtual void InputPinUI(int pin, UIContainer* ctx) = 0;
 	virtual void PropertyUI(UIContainer* ctx) = 0;
 	virtual void Load(NamedTextSerializeReader& nts) = 0;
-	virtual void Save(NamedTextSerializeWriter& nts) = 0;
+	virtual void Save(JSONSerializeWriter& nts) = 0;
 	virtual void Render(Canvas& canvas, const TE_RenderContext& rc) = 0;
 	virtual void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) = 0;
 
 	void PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp);
 
 	void _LoadBase(NamedTextSerializeReader& nts);
-	void _SaveBase(NamedTextSerializeWriter& nts);
+	void _SaveBase(JSONSerializeWriter& nts);
 
 	Image* GetImage(TE_IRenderContextProvider* rcp);
 
@@ -87,7 +87,7 @@ inline void NodeRefLoad(const char* key, T*& node, NamedTextSerializeReader& nts
 	node = it.is_valid() ? static_cast<T*>(it->value) : nullptr;
 }
 
-inline void NodeRefSave(const char* key, TE_Node* node, NamedTextSerializeWriter& nts)
+inline void NodeRefSave(const char* key, TE_Node* node, JSONSerializeWriter& nts)
 {
 	nts.WriteInt(key, node ? node->id : 0);
 }
@@ -120,7 +120,7 @@ struct TE_RectMask : TE_MaskNode
 
 	void PropertyUI(UIContainer* ctx) override;
 	void Load(NamedTextSerializeReader& nts) override;
-	void Save(NamedTextSerializeWriter& nts) override;
+	void Save(JSONSerializeWriter& nts) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
 
@@ -140,7 +140,7 @@ struct TE_MaskRef
 	void UI(UIContainer* ctx);
 
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, NamedTextSerializeWriter& nts);
+	void Save(const char* key, JSONSerializeWriter& nts);
 };
 
 
@@ -169,7 +169,7 @@ struct TE_CombineMask : TE_MaskNode
 
 	void PropertyUI(UIContainer* ctx) override;
 	void Load(NamedTextSerializeReader& nts) override;
-	void Save(NamedTextSerializeWriter& nts) override;
+	void Save(JSONSerializeWriter& nts) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
 
@@ -205,7 +205,7 @@ struct TE_SolidColorLayer : TE_LayerNode
 
 	void PropertyUI(UIContainer* ctx) override;
 	void Load(NamedTextSerializeReader& nts) override;
-	void Save(NamedTextSerializeWriter& nts) override;
+	void Save(JSONSerializeWriter& nts) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc);
@@ -230,7 +230,7 @@ struct TE_2ColorLinearGradientColorLayer : TE_LayerNode
 
 	void PropertyUI(UIContainer* ctx) override;
 	void Load(NamedTextSerializeReader& nts) override;
-	void Save(NamedTextSerializeWriter& nts) override;
+	void Save(JSONSerializeWriter& nts) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc) override;
@@ -250,7 +250,7 @@ struct TE_LayerBlendRef
 	float opacity = 1;
 
 	void Load(const char* key, NamedTextSerializeReader& nts);
-	void Save(const char* key, NamedTextSerializeWriter& nts);
+	void Save(const char* key, JSONSerializeWriter& nts);
 };
 
 struct TE_BlendLayer : TE_LayerNode
@@ -268,7 +268,7 @@ struct TE_BlendLayer : TE_LayerNode
 	void InputPinUI(int pin, UIContainer* ctx) override;
 	void PropertyUI(UIContainer* ctx) override;
 	void Load(NamedTextSerializeReader& nts) override;
-	void Save(NamedTextSerializeWriter& nts) override;
+	void Save(JSONSerializeWriter& nts) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc) override;

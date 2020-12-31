@@ -16,7 +16,7 @@ void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void Color4bSave(const char* key, Color4b& col, NamedTextSerializeWriter& nts)
+void Color4bSave(const char* key, Color4b& col, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteInt("r", col.r);
@@ -34,7 +34,7 @@ void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader&
 	nts.EndDict();
 }
 
-void PointFloatSave(const char* key, Point<float>& pt, NamedTextSerializeWriter& nts)
+void PointFloatSave(const char* key, Point<float>& pt, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteFloat("x", pt.x);
@@ -52,7 +52,7 @@ void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader&
 	nts.EndDict();
 }
 
-void AABBFloatSave(const char* key, AABB<float>& rect, NamedTextSerializeWriter& nts)
+void AABBFloatSave(const char* key, AABB<float>& rect, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteFloat("x0", rect.x0);
@@ -82,7 +82,7 @@ void SubRect::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void SubRect::Save(const char* key, NamedTextSerializeWriter& nts)
+void SubRect::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	AABBFloatSave("anchors", anchors, nts);
@@ -108,7 +108,7 @@ void SubPos::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void SubPos::Save(const char* key, NamedTextSerializeWriter& nts)
+void SubPos::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	PointFloatSave("anchor", anchor, nts);
@@ -129,7 +129,7 @@ void CornerRadiuses::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void CornerRadiuses::Save(const char* key, NamedTextSerializeWriter& nts)
+void CornerRadiuses::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteBool("uniform", uniform);
@@ -167,7 +167,7 @@ void TE_NamedColor::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_NamedColor::Save(NamedTextSerializeWriter& nts)
+void TE_NamedColor::Save(JSONSerializeWriter& nts)
 {
 	nts.BeginDict("NamedColor");
 	nts.WriteString("name", name);
@@ -237,7 +237,7 @@ void TE_ColorRef::Load(const char* key, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_ColorRef::Save(const char* key, NamedTextSerializeWriter& nts)
+void TE_ColorRef::Save(const char* key, JSONSerializeWriter& nts)
 {
 	nts.BeginDict(key);
 	nts.WriteBool("useRef", useRef);

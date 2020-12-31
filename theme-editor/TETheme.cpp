@@ -28,7 +28,7 @@ void TE_TmplSettings::Load(NamedTextSerializeReader& nts)
 	NodeRefLoad("layer", layer, nts);
 }
 
-void TE_TmplSettings::Save(NamedTextSerializeWriter& nts)
+void TE_TmplSettings::Save(JSONSerializeWriter& nts)
 {
 	nts.WriteInt("w", w);
 	nts.WriteInt("h", h);
@@ -132,7 +132,7 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Template::Save(NamedTextSerializeWriter& nts)
+void TE_Template::Save(JSONSerializeWriter& nts)
 {
 	nts.BeginDict("template");
 
@@ -462,7 +462,7 @@ void TE_Theme::Load(NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void TE_Theme::Save(NamedTextSerializeWriter& nts)
+void TE_Theme::Save(JSONSerializeWriter& nts)
 {
 	nts.BeginDict("theme");
 
@@ -515,9 +515,9 @@ void TE_Theme::SaveToFile(const char* path)
 	FILE* f = fopen(path, "w");
 	if (!f)
 		return;
-	NamedTextSerializeWriter ntsw;
+	JSONSerializeWriter ntsw;
 	Save(ntsw);
-	fwrite(ntsw.data.data(), ntsw.data.size(), 1, f);
+	fwrite(ntsw.GetData().data(), ntsw.GetData().size(), 1, f);
 	fclose(f);
 }
 
