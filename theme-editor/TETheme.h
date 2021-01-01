@@ -27,7 +27,6 @@ struct TE_TmplSettings
 		};
 	}
 	void UI(UIContainer* ctx);
-	void Load(JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -40,7 +39,6 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 
 	TE_Node* CreateNodeFromTypeName(StringView type);
 
-	void Load(JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	template <class T> T* CreateNode(float x, float y)
@@ -137,7 +135,6 @@ struct TE_Theme : TE_IOverrideProvider
 	~TE_Theme();
 	void Clear();
 
-	void Load(JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	void LoadFromFile(const char* path);

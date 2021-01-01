@@ -24,16 +24,6 @@ void TE_Node::PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp)
 	preview->rcp = rcp;
 }
 
-void TE_Node::_LoadBase(JSONLinearReader& nts)
-{
-	id = nts.ReadUInt("__id");
-	nts.BeginDict("__pos");
-	position.x = nts.ReadFloat("x");
-	position.y = nts.ReadFloat("y");
-	nts.EndDict();
-	isPreviewEnabled = nts.ReadBool("__isPreviewEnabled");
-}
-
 void TE_Node::_SerializeBase(IObjectIterator& oi)
 {
 	OnField(oi, "__id", id);
@@ -116,12 +106,6 @@ void TE_RectMask::PropertyUI(UIContainer* ctx)
 	}
 }
 
-void TE_RectMask::Load(JSONLinearReader& nts)
-{
-	rect.Load("rect", nts);
-	crad.Load("crad", nts);
-}
-
 void TE_RectMask::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "rect", rect);
@@ -162,16 +146,6 @@ void TE_MaskRef::UI(UIContainer* ctx)
 	ctx->Pop();
 }
 
-void TE_MaskRef::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	NodeRefLoad("mask", mask, nts);
-	border = nts.ReadUInt("border");
-	radius = nts.ReadUInt("radius");
-	vbias = nts.ReadUInt("vbias");
-	nts.EndDict();
-}
-
 void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "MaskRef");
@@ -191,13 +165,6 @@ void TE_CombineMask::PropertyUI(UIContainer* ctx)
 	imm::RadioButton(ctx, mode, TEMCM_HardDifference, "Difference (hard)");
 	imm::RadioButton(ctx, mode, TEMCM_AMinusB, "A-B");
 	imm::RadioButton(ctx, mode, TEMCM_BMinusA, "B-A");
-}
-
-void TE_CombineMask::Load(JSONLinearReader& nts)
-{
-	masks[0].Load("mask0", nts);
-	masks[1].Load("mask1", nts);
-	mode = (TE_MaskCombineMode)nts.ReadInt("mode", TEMCM_Intersect);
 }
 
 void TE_CombineMask::Serialize(IObjectIterator& oi)
@@ -251,12 +218,6 @@ void TE_SolidColorLayer::PropertyUI(UIContainer* ctx)
 	color.UI(ctx);
 }
 
-void TE_SolidColorLayer::Load(JSONLinearReader& nts)
-{
-	color.Load("color", nts);
-	mask.Load("mask", nts);
-}
-
 void TE_SolidColorLayer::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "color", color);
@@ -293,15 +254,6 @@ void TE_2ColorLinearGradientColorLayer::PropertyUI(UIContainer* ctx)
 	}
 }
 
-void TE_2ColorLinearGradientColorLayer::Load(JSONLinearReader& nts)
-{
-	color0.Load("color0", nts);
-	color1.Load("color1", nts);
-	pos0.Load("pos0", nts);
-	pos1.Load("pos1", nts);
-	mask.Load("mask", nts);
-}
-
 void TE_2ColorLinearGradientColorLayer::Serialize(IObjectIterator& oi)
 {
 	OnField(oi, "color0", color0);
@@ -333,15 +285,6 @@ Color4f TE_2ColorLinearGradientColorLayer::Eval(float x, float y, const TE_Rende
 }
 
 
-void TE_LayerBlendRef::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	NodeRefLoad("layer", layer, nts);
-	enabled = nts.ReadBool("enabled", true);
-	opacity = nts.ReadFloat("opacity", 1);
-	nts.EndDict();
-}
-
 void TE_LayerBlendRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "LayerBlendRef");
@@ -362,18 +305,6 @@ void TE_BlendLayer::PropertyUI(UIContainer* ctx)
 {
 	if (imm::Button(ctx, "Add pin"))
 		layers.push_back({});
-}
-
-void TE_BlendLayer::Load(JSONLinearReader& nts)
-{
-	nts.BeginArray("layers");
-	while (nts.HasMoreArrayElements())
-	{
-		TE_LayerBlendRef lbr;
-		lbr.Load("", nts);
-		layers.push_back(lbr);
-	}
-	nts.EndArray();
 }
 
 void TE_BlendLayer::Serialize(IObjectIterator& oi)

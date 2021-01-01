@@ -16,18 +16,6 @@ void TE_TmplSettings::UI(UIContainer* ctx)
 	imm::PropEditBool(ctx, "\bGamma", gamma);
 }
 
-void TE_TmplSettings::Load(JSONLinearReader& nts)
-{
-	w = nts.ReadUInt("w");
-	h = nts.ReadUInt("h");
-	l = nts.ReadUInt("l");
-	t = nts.ReadUInt("t");
-	r = nts.ReadUInt("r");
-	b = nts.ReadUInt("b");
-	gamma = nts.ReadBool("gamma");
-	NodeRefLoad("layer", layer, nts);
-}
-
 void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "TmplSettings");
@@ -66,70 +54,6 @@ TE_Node* TE_Template::CreateNodeFromTypeName(StringView type)
 	return nullptr;
 }
 
-struct EntryPair
-{
-	JSONLinearReader::Entry* entry;
-	TE_Node* node;
-};
-
-void TE_Template::Load(JSONLinearReader& nts)
-{
-	Clear();
-	nts.BeginDict("template");
-
-	name = nts.ReadString("name");
-	nodeIDAlloc = nts.ReadUInt("nodeIDAlloc");
-
-	nts.BeginArray("colors");
-	while (nts.HasMoreArrayElements())
-	{
-		auto color = std::make_shared<TE_NamedColor>();
-		color->Load(nts);
-		colors.push_back(color);
-	}
-	nts.EndArray();
-
-	auto* oldcol = g_namedColors;
-	g_namedColors = &colors;
-
-	nts.BeginArray("nodes");
-	// read node base data (at least type, id), create the node placeholders
-	std::vector<EntryPair> entryPairs;
-	while (nts.HasMoreArrayElements())
-	{
-		nts.BeginDict("node");
-		auto type = nts.ReadString("__type");
-		auto* N = CreateNodeFromTypeName(type);
-		if (N)
-		{
-			N->_LoadBase(nts);
-			entryPairs.push_back({ nullptr, N });
-			nodes.push_back(N);
-			g_nodeRefMap[N->id] = N;
-		}
-		nts.EndDict();
-	}
-	nts.EndArray();
-	// load node data
-	nts.BeginArray("nodes");
-	for (auto ch : entryPairs)
-	{
-		nts.BeginDict("node");
-		ch.node->Load(nts);
-		nts.EndDict();
-	}
-	nts.EndArray();
-
-	nts.BeginDict("renderSettings");
-	renderSettings.Load(nts);
-	nts.EndDict();
-
-	g_namedColors = oldcol;
-	g_nodeRefMap.clear();
-
-	nts.EndDict();
-}
-
 void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Template");
@@ -148,6 +72,7 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 		oi.BeginArray(0, "nodes");
 		nodes.clear();
+		// read node base data (at least type, id), create the node placeholders
 		while (oi.HasMoreArrayElements())
 		{
 			std::string type;
@@ -452,27 +377,6 @@ void TE_Theme::Clear()
 	g_namedColors = nullptr;
 }
 
-void TE_Theme::Load(JSONLinearReader& nts)
-{
-	Clear();
-	nts.BeginDict("theme");
-
-	nts.BeginArray("templates");
-	while (nts.HasMoreArrayElements())
-	{
-		auto* tmpl = new TE_Template(this);
-		tmpl->Load(nts);
-		templates.push_back(tmpl);
-	}
-	nts.EndArray();
-
-	int curTemplateNum = nts.ReadInt("curTemplate", -1);
-	curTemplate = curTemplateNum >= 0 && curTemplateNum < int(templates.size()) ? templates[curTemplateNum] : nullptr;
-	g_namedColors = curTemplate ? &curTemplate->colors : nullptr;
-
-	nts.EndDict();
-}
-
 void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Theme");
@@ -517,7 +421,6 @@ void TE_Theme::LoadFromFile(const char* path)
 		data.resize(s);
 	}
 	fclose(f);
-	//JSONLinearReader ntsr;
 	JSONUnserializerObjectIterator r;
 	if (!r.Parse(data))
 		return;

@@ -6,35 +6,6 @@ DataCategoryTag DCT_NodePreviewInvalidated[1];
 DataCategoryTag DCT_ChangeActiveImage[1];
 
 
-void Color4bLoad(const char* key, Color4b& col, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	col.r = nts.ReadInt("r");
-	col.g = nts.ReadInt("g");
-	col.b = nts.ReadInt("b");
-	col.a = nts.ReadInt("a");
-	nts.EndDict();
-}
-
-void PointFloatLoad(const char* key, Point<float>& pt, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	pt.x = nts.ReadFloat("x");
-	pt.y = nts.ReadFloat("y");
-	nts.EndDict();
-}
-
-void AABBFloatLoad(const char* key, AABB<float>& rect, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	rect.x0 = nts.ReadFloat("x0");
-	rect.y0 = nts.ReadFloat("y0");
-	rect.x1 = nts.ReadFloat("x1");
-	rect.y1 = nts.ReadFloat("y1");
-	nts.EndDict();
-}
-
-
 AbsRect SubRect::Resolve(const AbsRect& frame)
 {
 	return
@@ -44,14 +15,6 @@ AbsRect SubRect::Resolve(const AbsRect& frame)
 		lerp(frame.x0, frame.x1, anchors.x1) + offsets.x1,
 		lerp(frame.y0, frame.y1, anchors.y1) + offsets.y1,
 	};
-}
-
-void SubRect::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	AABBFloatLoad("anchors", anchors, nts);
-	AABBFloatLoad("offsets", offsets, nts);
-	nts.EndDict();
 }
 
 void SubRect::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
@@ -72,14 +35,6 @@ Point<float> SubPos::Resolve(const AbsRect& frame)
 	};
 }
 
-void SubPos::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	PointFloatLoad("anchor", anchor, nts);
-	PointFloatLoad("offset", offset, nts);
-	nts.EndDict();
-}
-
 void SubPos::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "SubPos");
@@ -88,18 +43,6 @@ void SubPos::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndObject();
 }
 
-
-void CornerRadiuses::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	uniform = nts.ReadBool("uniform", true);
-	r = nts.ReadFloat("r");
-	r00 = nts.ReadFloat("r00");
-	r10 = nts.ReadFloat("r10");
-	r01 = nts.ReadFloat("r01");
-	r11 = nts.ReadFloat("r11");
-	nts.EndDict();
-}
 
 void CornerRadiuses::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
@@ -130,14 +73,6 @@ float EvalAARoundedRectMask(float x, float y, const AbsRect& rr, const CornerRad
 	return AARect(x, y, rr);
 }
 
-
-void TE_NamedColor::Load(JSONLinearReader& nts)
-{
-	nts.BeginDict("NamedColor");
-	name = nts.ReadString("name");
-	Color4bLoad("color", color, nts);
-	nts.EndDict();
-}
 
 void TE_NamedColor::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
@@ -192,21 +127,6 @@ void TE_ColorRef::Resolve(const TE_RenderContext& rc, const TE_Overrides* ovr)
 	resolvedColor = _GetOrigResolvedColor(ovr);
 	if (rc.gamma)
 		resolvedColor = resolvedColor.Power(2.2f);
-}
-
-void TE_ColorRef::Load(const char* key, JSONLinearReader& nts)
-{
-	nts.BeginDict(key);
-	useRef = nts.ReadBool("useRef", true);
-	auto name = nts.ReadString("name");
-	ncref = {};
-	for (auto& nc : *g_namedColors)
-	{
-		if (nc->name == name)
-			ncref = nc;
-	}
-	Color4bLoad("color", color, nts);
-	nts.EndDict();
 }
 
 void TE_ColorRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)

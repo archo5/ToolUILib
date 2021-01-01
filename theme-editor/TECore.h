@@ -10,11 +10,6 @@ extern DataCategoryTag DCT_NodePreviewInvalidated[1];
 extern DataCategoryTag DCT_ChangeActiveImage[1];
 
 
-void Color4bLoad(const char* key, Color4b& col, JSONLinearReader& nts);
-void PointFloatLoad(const char* key, Point<float>& pt, JSONLinearReader& nts);
-void AABBFloatLoad(const char* key, AABB<float>& rect, JSONLinearReader& nts);
-
-
 using AbsRect = AABB<float>;
 
 struct SubRect
@@ -23,7 +18,6 @@ struct SubRect
 	AABB<float> offsets = {};
 
 	AbsRect Resolve(const AbsRect& frame);
-	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -33,7 +27,6 @@ struct SubPos
 	Point<float> offset = {};
 
 	Point<float> Resolve(const AbsRect& frame);
-	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -45,7 +38,6 @@ struct CornerRadiuses
 			return { uniform, r, r, r, r, r };
 		return *this;
 	}
-	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	bool uniform = true;
@@ -64,7 +56,6 @@ struct TE_NamedColor
 	TE_NamedColor() {}
 	TE_NamedColor(const std::string& n, Color4b c) : name(n), color(c) {}
 
-	void Load(JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -119,7 +110,6 @@ struct TE_ColorRef
 		color = c;
 	}
 
-	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 	void UI(UIContainer* ctx);
 };
