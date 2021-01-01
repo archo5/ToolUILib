@@ -16,7 +16,7 @@ void TE_TmplSettings::UI(UIContainer* ctx)
 	imm::PropEditBool(ctx, "\bGamma", gamma);
 }
 
-void TE_TmplSettings::Load(NamedTextSerializeReader& nts)
+void TE_TmplSettings::Load(JSONLinearReader& nts)
 {
 	w = nts.ReadUInt("w");
 	h = nts.ReadUInt("h");
@@ -68,11 +68,11 @@ TE_Node* TE_Template::CreateNodeFromTypeName(StringView type)
 
 struct EntryPair
 {
-	NamedTextSerializeReader::Entry* entry;
+	JSONLinearReader::Entry* entry;
 	TE_Node* node;
 };
 
-void TE_Template::Load(NamedTextSerializeReader& nts)
+void TE_Template::Load(JSONLinearReader& nts)
 {
 	Clear();
 	nts.BeginDict("template");
@@ -81,13 +81,11 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	nodeIDAlloc = nts.ReadUInt("nodeIDAlloc");
 
 	nts.BeginArray("colors");
-	for (auto ch : nts.GetCurrentRange())
+	while (nts.HasMoreArrayElements())
 	{
-		nts.BeginEntry(ch);
 		auto color = std::make_shared<TE_NamedColor>();
 		color->Load(nts);
 		colors.push_back(color);
-		nts.EndEntry();
 	}
 	nts.EndArray();
 
@@ -97,30 +95,28 @@ void TE_Template::Load(NamedTextSerializeReader& nts)
 	nts.BeginArray("nodes");
 	// read node base data (at least type, id), create the node placeholders
 	std::vector<EntryPair> entryPairs;
-	for (auto ch : nts.GetCurrentRange())
+	while (nts.HasMoreArrayElements())
 	{
-		nts.BeginEntry(ch);
 		nts.BeginDict("node");
 		auto type = nts.ReadString("__type");
 		auto* N = CreateNodeFromTypeName(type);
 		if (N)
 		{
 			N->_LoadBase(nts);
-			entryPairs.push_back({ ch, N });
+			entryPairs.push_back({ nullptr, N });
 			nodes.push_back(N);
 			g_nodeRefMap[N->id] = N;
 		}
 		nts.EndDict();
-		nts.EndEntry();
 	}
+	nts.EndArray();
 	// load node data
+	nts.BeginArray("nodes");
 	for (auto ch : entryPairs)
 	{
-		nts.BeginEntry(ch.entry);
 		nts.BeginDict("node");
 		ch.node->Load(nts);
 		nts.EndDict();
-		nts.EndEntry();
 	}
 	nts.EndArray();
 
@@ -145,16 +141,24 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		[](auto& v) -> TE_NamedColor& { return *v; },
 		[]() { return std::make_shared<TE_NamedColor>(); });
 
+	auto* oldcol = g_namedColors;
 	if (oi.IsUnserializer())
 	{
+		g_namedColors = &colors;
+
 		oi.BeginArray(0, "nodes");
 		nodes.clear();
 		while (oi.HasMoreArrayElements())
 		{
 			std::string type;
+			oi.BeginObject(FI, "Node");
 			OnField(oi, "__type", type);
+			uint32_t id = 0;
+			OnField(oi, "__id", id);
+			oi.EndObject();
 			auto* N = CreateNodeFromTypeName(type);
 			nodes.push_back(N);
+			g_nodeRefMap[id] = N;
 		}
 		oi.EndArray();
 	}
@@ -164,6 +168,12 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndArray();
 
 	OnField(oi, "renderSettings", renderSettings);
+
+	if (oi.IsUnserializer())
+	{
+		g_namedColors = oldcol;
+		g_nodeRefMap.clear();
+	}
 
 	oi.EndObject();
 }
@@ -442,19 +452,17 @@ void TE_Theme::Clear()
 	g_namedColors = nullptr;
 }
 
-void TE_Theme::Load(NamedTextSerializeReader& nts)
+void TE_Theme::Load(JSONLinearReader& nts)
 {
 	Clear();
 	nts.BeginDict("theme");
 
 	nts.BeginArray("templates");
-	for (auto ch : nts.GetCurrentRange())
+	while (nts.HasMoreArrayElements())
 	{
-		nts.BeginEntry(ch);
 		auto* tmpl = new TE_Template(this);
 		tmpl->Load(nts);
 		templates.push_back(tmpl);
-		nts.EndEntry();
 	}
 	nts.EndArray();
 
@@ -509,9 +517,12 @@ void TE_Theme::LoadFromFile(const char* path)
 		data.resize(s);
 	}
 	fclose(f);
-	NamedTextSerializeReader ntsr;
-	ntsr.Parse(data);
-	Load(ntsr);
+	//JSONLinearReader ntsr;
+	JSONUnserializerObjectIterator r;
+	if (!r.Parse(data))
+		return;
+	Clear();
+	OnSerialize(r, "theme");
 }
 
 void TE_Theme::SaveToFile(const char* path)

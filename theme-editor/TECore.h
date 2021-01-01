@@ -10,9 +10,9 @@ extern DataCategoryTag DCT_NodePreviewInvalidated[1];
 extern DataCategoryTag DCT_ChangeActiveImage[1];
 
 
-void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts);
-void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader& nts);
-void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader& nts);
+void Color4bLoad(const char* key, Color4b& col, JSONLinearReader& nts);
+void PointFloatLoad(const char* key, Point<float>& pt, JSONLinearReader& nts);
+void AABBFloatLoad(const char* key, AABB<float>& rect, JSONLinearReader& nts);
 
 
 using AbsRect = AABB<float>;
@@ -23,7 +23,7 @@ struct SubRect
 	AABB<float> offsets = {};
 
 	AbsRect Resolve(const AbsRect& frame);
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -33,7 +33,7 @@ struct SubPos
 	Point<float> offset = {};
 
 	Point<float> Resolve(const AbsRect& frame);
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -45,7 +45,7 @@ struct CornerRadiuses
 			return { uniform, r, r, r, r, r };
 		return *this;
 	}
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	bool uniform = true;
@@ -64,7 +64,7 @@ struct TE_NamedColor
 	TE_NamedColor() {}
 	TE_NamedColor(const std::string& n, Color4b c) : name(n), color(c) {}
 
-	void Load(NamedTextSerializeReader& nts);
+	void Load(JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -119,7 +119,7 @@ struct TE_ColorRef
 		color = c;
 	}
 
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 	void UI(UIContainer* ctx);
 };

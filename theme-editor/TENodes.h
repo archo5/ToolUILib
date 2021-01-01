@@ -37,14 +37,14 @@ struct TE_Node
 	virtual void SetInputPinValue(int pin, TE_Node* value) = 0;
 	virtual void InputPinUI(int pin, UIContainer* ctx) = 0;
 	virtual void PropertyUI(UIContainer* ctx) = 0;
-	virtual void Load(NamedTextSerializeReader& nts) = 0;
+	virtual void Load(JSONLinearReader& nts) = 0;
 	virtual void Serialize(IObjectIterator& oi) = 0;
 	virtual void Render(Canvas& canvas, const TE_RenderContext& rc) = 0;
 	virtual void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) = 0;
 
 	void PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp);
 
-	void _LoadBase(NamedTextSerializeReader& nts);
+	void _LoadBase(JSONLinearReader& nts);
 	void _SerializeBase(IObjectIterator& oi);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
@@ -81,7 +81,7 @@ struct TE_Node
 extern HashMap<uint32_t, TE_Node*> g_nodeRefMap;
 
 template <class T>
-inline void NodeRefLoad(const char* key, T*& node, NamedTextSerializeReader& nts)
+inline void NodeRefLoad(const char* key, T*& node, JSONLinearReader& nts)
 {
 	uint32_t id = nts.ReadInt(key);
 	auto it = id != 0 ? g_nodeRefMap.find(id) : g_nodeRefMap.end();
@@ -127,7 +127,7 @@ struct TE_RectMask : TE_MaskNode
 	void InputPinUI(int pin, UIContainer* ctx) override {}
 
 	void PropertyUI(UIContainer* ctx) override;
-	void Load(NamedTextSerializeReader& nts) override;
+	void Load(JSONLinearReader& nts) override;
 	void Serialize(IObjectIterator& oi) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
@@ -147,7 +147,7 @@ struct TE_MaskRef
 	float Eval(float x, float y, const TE_RenderContext& rc);
 	void UI(UIContainer* ctx);
 
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -176,7 +176,7 @@ struct TE_CombineMask : TE_MaskNode
 	void InputPinUI(int pin, UIContainer* ctx) override { masks[pin].UI(ctx); }
 
 	void PropertyUI(UIContainer* ctx) override;
-	void Load(NamedTextSerializeReader& nts) override;
+	void Load(JSONLinearReader& nts) override;
 	void Serialize(IObjectIterator& oi) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
@@ -212,7 +212,7 @@ struct TE_SolidColorLayer : TE_LayerNode
 	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
 
 	void PropertyUI(UIContainer* ctx) override;
-	void Load(NamedTextSerializeReader& nts) override;
+	void Load(JSONLinearReader& nts) override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
@@ -237,7 +237,7 @@ struct TE_2ColorLinearGradientColorLayer : TE_LayerNode
 	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
 
 	void PropertyUI(UIContainer* ctx) override;
-	void Load(NamedTextSerializeReader& nts) override;
+	void Load(JSONLinearReader& nts) override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
@@ -257,7 +257,7 @@ struct TE_LayerBlendRef
 	bool enabled = true;
 	float opacity = 1;
 
-	void Load(const char* key, NamedTextSerializeReader& nts);
+	void Load(const char* key, JSONLinearReader& nts);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -275,7 +275,7 @@ struct TE_BlendLayer : TE_LayerNode
 
 	void InputPinUI(int pin, UIContainer* ctx) override;
 	void PropertyUI(UIContainer* ctx) override;
-	void Load(NamedTextSerializeReader& nts) override;
+	void Load(JSONLinearReader& nts) override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 

@@ -178,6 +178,9 @@
     <ClInclude Include="Core\Core.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\json.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

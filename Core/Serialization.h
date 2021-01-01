@@ -7,6 +7,11 @@
 #include "String.h"
 #include "ObjectIteration.h"
 
+
+struct json_value_s;
+struct json_array_element_s;
+
+
 namespace ui {
 
 struct SettingsSerializer
@@ -146,6 +151,42 @@ struct JSONLinearWriter
 	std::vector<bool> _inArray;
 };
 
+struct JSONLinearReader
+{
+	using Entry = json_value_s;
+	struct StackElement
+	{
+		Entry* entry;
+		json_array_element_s* curElem;
+	};
+
+	~JSONLinearReader();
+	void _Free();
+
+	bool Parse(StringView all);
+
+	bool HasMoreArrayElements();
+	size_t GetCurrentArraySize();
+	Entry* FindEntry(const char* key);
+	std::string ReadString(const char* key, const std::string& def = "");
+	bool ReadBool(const char* key, bool def = false);
+	int ReadInt(const char* key, int def = 0);
+	unsigned ReadUInt(const char* key, unsigned def = 0);
+	int64_t ReadInt64(const char* key, int64_t def = 0);
+	uint64_t ReadUInt64(const char* key, uint64_t def = 0);
+	double ReadFloat(const char* key, double def = 0);
+	void BeginArray(const char* key);
+	void EndArray();
+	bool BeginDict(const char* key);
+	void EndDict();
+
+	json_value_s* _root = nullptr;
+	std::vector<StackElement> _stack;
+};
+
+std::string Base16Encode(const void* src, size_t size);
+std::string Base16Decode(StringView src, bool* valid = nullptr);
+
 struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
 {
 	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped; }
@@ -192,7 +233,58 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 	}
 	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override
 	{
-		// TODO
+		auto src = brw.Read();
+		WriteString(FI.GetNameOrEmptyStr(), Base16Encode(src.data(), src.size()));
+	}
+};
+
+struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinTypeUnserializeBase
+{
+	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OIF_KeyMapped; }
+
+	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override
+	{
+		BeginDict(FI.name);
+	}
+	void EndObject() override
+	{
+		EndDict();
+	}
+	size_t BeginArray(size_t size, const FieldInfo& FI) override
+	{
+		JSONLinearReader::BeginArray(FI.name);
+		return GetCurrentArraySize();
+	}
+	void EndArray() override
+	{
+		JSONLinearReader::EndArray();
+	}
+	bool HasMoreArrayElements() override { return JSONLinearReader::HasMoreArrayElements(); }
+	bool HasField(const char* name) override { return !!FindEntry(name); }
+
+	void OnFieldBool(const FieldInfo& FI, bool& val) override
+	{
+		val = ReadBool(FI.name);
+	}
+	void OnFieldS64(const FieldInfo& FI, int64_t& val) override
+	{
+		val = ReadInt64(FI.name);
+	}
+	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override
+	{
+		val = ReadUInt64(FI.name);
+	}
+	void OnFieldF64(const FieldInfo& FI, double& val) override
+	{
+		val = ReadFloat(FI.name);
+	}
+	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override
+	{
+		brw.Assign(ReadString(FI.name));
+	}
+	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override
+	{
+		brw.Assign(Base16Decode(ReadString(FI.name)));
 	}
 };
 

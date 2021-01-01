@@ -6,7 +6,7 @@ DataCategoryTag DCT_NodePreviewInvalidated[1];
 DataCategoryTag DCT_ChangeActiveImage[1];
 
 
-void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
+void Color4bLoad(const char* key, Color4b& col, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	col.r = nts.ReadInt("r");
@@ -16,7 +16,7 @@ void Color4bLoad(const char* key, Color4b& col, NamedTextSerializeReader& nts)
 	nts.EndDict();
 }
 
-void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader& nts)
+void PointFloatLoad(const char* key, Point<float>& pt, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	pt.x = nts.ReadFloat("x");
@@ -24,7 +24,7 @@ void PointFloatLoad(const char* key, Point<float>& pt, NamedTextSerializeReader&
 	nts.EndDict();
 }
 
-void AABBFloatLoad(const char* key, AABB<float>& rect, NamedTextSerializeReader& nts)
+void AABBFloatLoad(const char* key, AABB<float>& rect, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	rect.x0 = nts.ReadFloat("x0");
@@ -46,7 +46,7 @@ AbsRect SubRect::Resolve(const AbsRect& frame)
 	};
 }
 
-void SubRect::Load(const char* key, NamedTextSerializeReader& nts)
+void SubRect::Load(const char* key, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	AABBFloatLoad("anchors", anchors, nts);
@@ -72,7 +72,7 @@ Point<float> SubPos::Resolve(const AbsRect& frame)
 	};
 }
 
-void SubPos::Load(const char* key, NamedTextSerializeReader& nts)
+void SubPos::Load(const char* key, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	PointFloatLoad("anchor", anchor, nts);
@@ -89,7 +89,7 @@ void SubPos::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-void CornerRadiuses::Load(const char* key, NamedTextSerializeReader& nts)
+void CornerRadiuses::Load(const char* key, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	uniform = nts.ReadBool("uniform", true);
@@ -131,7 +131,7 @@ float EvalAARoundedRectMask(float x, float y, const AbsRect& rr, const CornerRad
 }
 
 
-void TE_NamedColor::Load(NamedTextSerializeReader& nts)
+void TE_NamedColor::Load(JSONLinearReader& nts)
 {
 	nts.BeginDict("NamedColor");
 	name = nts.ReadString("name");
@@ -194,7 +194,7 @@ void TE_ColorRef::Resolve(const TE_RenderContext& rc, const TE_Overrides* ovr)
 		resolvedColor = resolvedColor.Power(2.2f);
 }
 
-void TE_ColorRef::Load(const char* key, NamedTextSerializeReader& nts)
+void TE_ColorRef::Load(const char* key, JSONLinearReader& nts)
 {
 	nts.BeginDict(key);
 	useRef = nts.ReadBool("useRef", true);

@@ -7,6 +7,8 @@
 #define NONLS
 #include <Windows.h>
 
+#include "../ThirdParty/json.h"
+
 
 namespace ui {
 
@@ -665,6 +667,210 @@ void JSONLinearWriter::_OnEndObject()
 	}
 	_starts[_starts.size() - 2].weight += _starts.back().weight;
 	_starts.pop_back();
+}
+
+
+JSONLinearReader::~JSONLinearReader()
+{
+	_Free();
+}
+
+void JSONLinearReader::_Free()
+{
+	_stack.clear();
+	if (_root)
+	{
+		free(_root);
+		_root = nullptr;
+	}
+}
+
+bool JSONLinearReader::Parse(StringView all)
+{
+	_Free();
+	_root = json_parse(all.data(), all.size());
+	_stack.push_back({ _root });
+	return !!_root;
+}
+
+bool JSONLinearReader::HasMoreArrayElements()
+{
+	return !!_stack.back().curElem;
+}
+
+size_t JSONLinearReader::GetCurrentArraySize()
+{
+	if (auto* e = _stack.back().entry)
+		if (auto* a = json_value_as_array(e))
+			return a->length;
+	return 0;
+}
+
+JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
+{
+	if (auto*& e = _stack.back().curElem)
+	{
+		auto* r = e->value;
+		e = e->next;
+		return r;
+	}
+	if (key)
+	{
+		if (auto* e = _stack.back().entry)
+		{
+			if (auto* o = json_value_as_object(e))
+			{
+				for (auto* c = o->start; c; c = c->next)
+				{
+					if (strcmp(c->name->string, key) == 0)
+						return c->value;
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+std::string JSONLinearReader::ReadString(const char* key, const std::string& def)
+{
+	if (auto* e = FindEntry(key))
+	{
+		if (auto* s = json_value_as_string(e))
+			return std::string(s->string, s->string_size);
+		if (auto* n = json_value_as_number(e))
+			return std::string(n->number, n->number_size);
+		if (e->type == json_type_true)
+			return "true";
+		if (e->type == json_type_false)
+			return "false";
+	}
+	return def;
+}
+
+bool JSONLinearReader::ReadBool(const char* key, bool def)
+{
+	if (auto* e = FindEntry(key))
+	{
+		if (e->type == json_type_true)
+			return true;
+		if (e->type == json_type_false)
+			return false;
+	}
+	return def;
+}
+
+int JSONLinearReader::ReadInt(const char* key, int def)
+{
+	return ReadInt64(key, def);
+}
+
+unsigned JSONLinearReader::ReadUInt(const char* key, unsigned def)
+{
+	return ReadUInt64(key, def);
+}
+
+int64_t JSONLinearReader::ReadInt64(const char* key, int64_t def)
+{
+	if (auto* e = FindEntry(key))
+	{
+		if (auto* n = json_value_as_number(e))
+		{
+			return strtoll(n->number, nullptr, 10);
+		}
+	}
+	return def;
+}
+
+uint64_t JSONLinearReader::ReadUInt64(const char* key, uint64_t def)
+{
+	if (auto* e = FindEntry(key))
+	{
+		if (auto* n = json_value_as_number(e))
+		{
+			return strtoull(n->number, nullptr, 10);
+		}
+	}
+	return def;
+}
+
+double JSONLinearReader::ReadFloat(const char* key, double def)
+{
+	if (auto* e = FindEntry(key))
+	{
+		if (auto* n = json_value_as_number(e))
+		{
+			return strtod(n->number, nullptr);
+		}
+	}
+	return def;
+}
+
+void JSONLinearReader::BeginArray(const char* key)
+{
+	auto* e = FindEntry(key);
+	_stack.push_back({});
+	if (e)
+	{
+		if (auto* a = json_value_as_array(e))
+			_stack.back() = { e, a->start };
+	}
+}
+
+void JSONLinearReader::EndArray()
+{
+	_stack.pop_back();
+}
+
+bool JSONLinearReader::BeginDict(const char* key)
+{
+	_stack.push_back({ FindEntry(key) });
+	if (auto* e = _stack.back().entry)
+		if (e->type != json_type_object)
+			_stack.back().entry = nullptr;
+	return !!_stack.back().entry;
+}
+
+void JSONLinearReader::EndDict()
+{
+	_stack.pop_back();
+}
+
+
+std::string Base16Encode(const void* src, size_t size)
+{
+	std::string tmp;
+	auto* bsrc = static_cast<const uint8_t*>(src);
+	tmp.resize(size * 2);
+	for (size_t i = 0; i < size; i++)
+	{
+		uint8_t b = bsrc[i];
+		tmp[i * 2 + 0] = "0123456789abcdef"[b >> 4];
+		tmp[i * 2 + 1] = "0123456789abcdef"[b & 0xf];
+	}
+	return tmp;
+}
+
+std::string Base16Decode(StringView src, bool* valid)
+{
+	std::string tmp;
+	size_t size = src.size() / 2;
+	tmp.resize(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		char chi = src[i * 2 + 0];
+		char clo = src[i * 2 + 1];
+		uint8_t ihi = dechex(chi);
+		uint8_t ilo = dechex(clo);
+		if ((ihi == 0 && chi != '0') || (ilo == 0 && clo != '0'))
+		{
+			if (valid)
+				*valid = false;
+			return {};
+		}
+	}
+	if (valid)
+		*valid = true;
+	return tmp;
 }
 
 
