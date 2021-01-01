@@ -60,9 +60,6 @@ Image* TE_Node::GetImage(TE_IRenderContextProvider* rcp)
 }
 
 
-HashMap<uint32_t, TE_Node*> g_nodeRefMap;
-
-
 void TE_MaskNode::Render(Canvas& canvas, const TE_RenderContext& rc)
 {
 	canvas.SetSize(rc.width, rc.height);

@@ -101,6 +101,32 @@ void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
 	}
 }
 
+void OnField(IObjectIterator& oi, const FieldInfo& FI, std::weak_ptr<TE_NamedColor>& val)
+{
+	auto r = val.lock();
+	std::string name = r ? r->name : "";
+	OnField(oi, FI, name);
+	if (oi.IsUnserializer())
+	{
+		val = {};
+		for (auto& nc : *oi.GetUnserializeStorage<TE_IUnserializeStorage>()->curNamedColors)
+		{
+			if (nc->name == name)
+				val = nc;
+		}
+	}
+}
+
+
+void TE_ColorOverride::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "ColorOverride");
+	OnField(oi, "ncref", ncref);
+	OnField(oi, "color", color);
+	oi.EndObject();
+}
+
+
 Color4b TE_ColorRef::_GetOrigResolvedColor(const TE_Overrides* ovr)
 {
 	if (useRef)
@@ -137,18 +163,7 @@ void TE_ColorRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	if (!oi.HasField("useRef"))
 		useRef = true;
 
-	auto r = ncref.lock();
-	std::string name = r ? r->name : "";
-	OnField(oi, "name", name);
-	if (oi.IsUnserializer())
-	{
-		ncref = {};
-		for (auto& nc : *g_namedColors)
-		{
-			if (nc->name == name)
-				ncref = nc;
-		}
-	}
+	OnField(oi, "ncref", ncref);
 
 	OnField(oi, "color", color);
 	oi.EndObject();

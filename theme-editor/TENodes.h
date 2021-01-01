@@ -76,8 +76,6 @@ struct TE_Node
 };
 
 
-extern HashMap<uint32_t, TE_Node*> g_nodeRefMap;
-
 template <class T>
 inline void OnNodeRefField(IObjectIterator& oi, const FieldInfo& FI, T*& node)
 {
@@ -85,7 +83,8 @@ inline void OnNodeRefField(IObjectIterator& oi, const FieldInfo& FI, T*& node)
 	OnField(oi, FI, id);
 	if (oi.IsUnserializer())
 	{
-		auto it = id != 0 ? g_nodeRefMap.find(id) : g_nodeRefMap.end();
+		auto* US = oi.GetUnserializeStorage<TE_IUnserializeStorage>();
+		auto it = id != 0 ? US->curNodes.find(id) : US->curNodes.end();
 		node = it.is_valid() ? static_cast<T*>(it->value) : nullptr;
 	}
 }

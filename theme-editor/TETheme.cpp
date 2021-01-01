@@ -31,6 +31,45 @@ void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
+void TE_Image::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Image");
+	OnField(oi, "name", name);
+	OnField(oi, "expanded", expanded);
+
+	size_t sz = oi.BeginArray(overrides.size(), "overrides");
+	if (oi.IsUnserializer())
+	{
+		overrides.clear();
+		overrides.reserve(sz);
+		while (oi.HasMoreArrayElements())
+		{
+			oi.BeginObject({}, "Override");
+			std::string variation;
+			auto v_overrides = std::make_shared<TE_Overrides>();
+			OnField(oi, "variation", variation);
+			OnField(oi, "colorOverrides", v_overrides->colorOverrides);
+			if (auto* v = oi.GetUnserializeStorage<TE_IUnserializeStorage>()->FindVariation(variation))
+				overrides[v] = v_overrides;
+			oi.EndObject();
+		}
+	}
+	else
+	{
+		for (auto kvp : overrides)
+		{
+			oi.BeginObject({}, "Override");
+			OnField(oi, "variation", kvp.key->name);
+			OnField(oi, "colorOverrides", kvp.value->colorOverrides);
+			oi.EndObject();
+		}
+	}
+	oi.EndArray();
+
+	oi.EndObject();
+}
+
+
 TE_Template::~TE_Template()
 {
 	Clear();
@@ -65,11 +104,21 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		[](auto& v) -> TE_NamedColor& { return *v; },
 		[]() { return std::make_shared<TE_NamedColor>(); });
 
-	auto* oldcol = g_namedColors;
+	auto* US = oi.GetUnserializeStorage<TE_IUnserializeStorage>();
 	if (oi.IsUnserializer())
 	{
-		g_namedColors = &colors;
+		US->curNamedColors = &colors;
+		US->curNodes.clear();
+	}
 
+	OnFieldPtrVector(oi, "images", images,
+		[](auto& v) -> TE_Image& { return *v; },
+		[]() { return std::make_shared<TE_Image>(); });
+
+	OnFieldVectorValIndex(oi, "curPreviewImage", curPreviewImage, images, [](auto& v) -> TE_Image* { return v.get(); });
+
+	if (oi.IsUnserializer())
+	{
 		oi.BeginArray(0, "nodes");
 		nodes.clear();
 		// read node base data (at least type, id), create the node placeholders
@@ -83,7 +132,7 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 			oi.EndObject();
 			auto* N = CreateNodeFromTypeName(type);
 			nodes.push_back(N);
-			g_nodeRefMap[id] = N;
+			US->curNodes[id] = N;
 		}
 		oi.EndArray();
 	}
@@ -93,12 +142,6 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndArray();
 
 	OnField(oi, "renderSettings", renderSettings);
-
-	if (oi.IsUnserializer())
-	{
-		g_namedColors = oldcol;
-		g_nodeRefMap.clear();
-	}
 
 	oi.EndObject();
 }
@@ -353,8 +396,16 @@ const TE_RenderContext& TE_Template::GetRenderContext()
 {
 	static TE_RenderContext rc;
 	rc = renderSettings.MakeRenderContext();
-	ResolveAllParameters(rc, ovrProv->GetOverrides());
+	auto* ovr = curPreviewImage ? curPreviewImage->overrides[varProv->GetVariation()].get() : nullptr;
+	ResolveAllParameters(rc, ovr);
 	return rc;
+}
+
+void TE_Template::SetCurPreviewImage(TE_Image* cpi)
+{
+	InvalidateAllNodes();
+	curPreviewImage = cpi;
+	Notify(DCT_ChangeActiveImage);
 }
 
 
@@ -377,30 +428,31 @@ void TE_Theme::Clear()
 	g_namedColors = nullptr;
 }
 
+TE_Variation* TE_Theme::FindVariation(const std::string& name)
+{
+	for (auto& v : variations)
+	{
+		if (v->name == name)
+			return v.get();
+	}
+	return nullptr;
+}
+
 void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Theme");
+
+	OnFieldPtrVector(oi, "variations", variations,
+		[](auto& v) -> TE_Variation& { return *v; },
+		[this]() { return std::make_shared<TE_Variation>(); });
 
 	OnFieldPtrVector(oi, "templates", templates,
 		[](auto& v) -> TE_Template& { return *v; },
 		[this]() { return new TE_Template(this); });
 
-	int curTemplateNum = -1;
-	if (curTemplate && !oi.IsUnserializer())
-	{
-		for (size_t i = 0; i < templates.size(); i++)
-		{
-			if (templates[i] == curTemplate)
-			{
-				curTemplateNum = i;
-				break;
-			}
-		}
-	}
-	OnField(oi, "curTemplate", curTemplateNum);
-	if (!oi.HasField("curTemplate"))
-		curTemplateNum = -1;
-	curTemplate = curTemplateNum >= 0 && curTemplateNum < int(templates.size()) ? templates[curTemplateNum] : nullptr;
+	OnFieldVectorValIndex(oi, "curTemplate", curTemplate, templates);
+	OnFieldVectorValIndex(oi, "curVariation", curVariation, variations, [](auto& v) -> TE_Variation* { return v.get(); });
+
 	g_namedColors = curTemplate ? &curTemplate->colors : nullptr;
 
 	oi.EndObject();
@@ -422,6 +474,7 @@ void TE_Theme::LoadFromFile(const char* path)
 	}
 	fclose(f);
 	JSONUnserializerObjectIterator r;
+	r.unserializeStorage = this;
 	if (!r.Parse(data))
 		return;
 	Clear();
@@ -502,24 +555,15 @@ void TE_Theme::CreateSampleTheme()
 	auto image = std::make_shared<TE_Image>();
 	image->name = "TE_ButtonNormal";
 	image->overrides[variation.get()] = overrides;
-	images.push_back(image);
+	tmpl->images.push_back(image);
 
-	SetCurPreviewImage(image.get());
+	tmpl->SetCurPreviewImage(image.get());
 
 	//SaveToFile("sample.ths");
 	//LoadFromFile("sample.ths");
 }
 
-const TE_Overrides* TE_Theme::GetOverrides()
+TE_Variation* TE_Theme::GetVariation()
 {
-	if (!curPreviewImage)
-		return nullptr;
-	return curPreviewImage->overrides[curVariation].get();
-}
-
-void TE_Theme::SetCurPreviewImage(TE_Image* cpi)
-{
-	curTemplate->InvalidateAllNodes();
-	curPreviewImage = cpi;
-	Notify(DCT_ChangeActiveImage);
+	return curVariation;
 }

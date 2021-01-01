@@ -23,13 +23,25 @@ struct HashMap
 		EntryRef* operator -> () { return this; }
 		const EntryRef* operator -> () const { return this; }
 	};
-	struct Iterator
+	struct ConstIterator
 	{
 		const HashMap* _h;
 		size_t _pos;
 
-		bool operator == (const Iterator& o) { return _pos == o._pos; }
-		bool operator != (const Iterator& o) { return _pos != o._pos; }
+		bool operator == (const ConstIterator& o) const { return _pos == o._pos; }
+		bool operator != (const ConstIterator& o) const { return _pos != o._pos; }
+		ConstIterator& operator ++ () { _pos++; return *this; }
+		EntryRef operator * () const { return { _h->_keys[_pos], _h->_values[_pos] }; }
+		EntryRef operator -> () const { return { _h->_keys[_pos], _h->_values[_pos] }; }
+		bool is_valid() const { return _pos < _h->_count; }
+	};
+	struct Iterator
+	{
+		HashMap* _h;
+		size_t _pos;
+
+		bool operator == (const Iterator& o) const { return _pos == o._pos; }
+		bool operator != (const Iterator& o) const { return _pos != o._pos; }
 		Iterator& operator ++ () { _pos++; return *this; }
 		EntryRef operator * () const { return { _h->_keys[_pos], _h->_values[_pos] }; }
 		EntryRef operator -> () const { return { _h->_keys[_pos], _h->_values[_pos] }; }
@@ -84,8 +96,10 @@ struct HashMap
 
 	__forceinline size_t size() const { return _count; }
 	__forceinline size_t capacity() const { return _capacity; }
-	__forceinline Iterator begin() const { return { this, 0 }; }
-	__forceinline Iterator end() const { return { this, _count }; }
+	__forceinline Iterator begin() { return { this, 0 }; }
+	__forceinline Iterator end() { return { this, _count }; }
+	__forceinline ConstIterator begin() const { return { this, 0 }; }
+	__forceinline ConstIterator end() const { return { this, _count }; }
 
 	void clear()
 	{
@@ -245,7 +259,11 @@ struct HashMap
 				return 0;
 		}
 	}
-	__forceinline Iterator find(const K& key) const
+	__forceinline Iterator find(const K& key)
+	{
+		return { this, _find_pos(key, _count) };
+	}
+	__forceinline ConstIterator find(const K& key) const
 	{
 		return { this, _find_pos(key, _count) };
 	}

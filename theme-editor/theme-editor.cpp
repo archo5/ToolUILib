@@ -60,6 +60,8 @@ struct TE_SlicedImageElement : UIElement
 
 struct TE_MainPreviewNode : Node
 {
+	TE_Template* tmpl;
+
 	void Render(UIContainer* ctx) override
 	{
 		Subscribe(DCT_NodePreviewInvalidated);
@@ -69,9 +71,9 @@ struct TE_MainPreviewNode : Node
 		ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
 		{
 			ctx->Text("Preview") + Padding(5);
-			if (theme->curPreviewImage && imm::Button(ctx, "Reset to template"))
+			if (tmpl->curPreviewImage && imm::Button(ctx, "Reset to template"))
 			{
-				theme->SetCurPreviewImage(nullptr);
+				tmpl->SetCurPreviewImage(nullptr);
 			}
 		}
 		ctx->Pop();
@@ -139,72 +141,6 @@ struct TE_MainPreviewNode : Node
 			ctx->Pop();
 		}
 	}
-
-	TE_Theme* theme;
-	TE_Template* tmpl;
-};
-
-static bool showRenderSettings = true;
-static bool showColors = true;
-struct TE_TemplateEditorNode : Node
-{
-	void Render(UIContainer* ctx) override
-	{
-		auto* hsp = ctx->Push<SplitPane>();
-		{
-			ctx->Push<ListBox>();
-			{
-				auto* pge = ctx->Make<ProcGraphEditor>();
-				*pge + Height(style::Coord::Percent(100));
-				pge->Init(tmpl);
-			}
-			ctx->Pop();
-
-			ctx->PushBox();
-			{
-				auto* vsp = ctx->Push<SplitPane>();
-				{
-					auto* preview = ctx->Make<TE_MainPreviewNode>();
-					preview->theme = theme;
-					preview->tmpl = tmpl;
-
-					ctx->PushBox()
-						+ EventHandler(UIEventType::IMChange, [this](UIEvent&) { tmpl->InvalidateAllNodes(); });
-					{
-						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
-						if (showRenderSettings)
-						{
-							tmpl->renderSettings.UI(ctx);
-						}
-
-						imm::EditBool(ctx, showColors, "Colors", {}, imm::TreeStateToggleSkin());
-						if (showColors)
-						{
-							auto* ced = ctx->Make<SequenceEditor>();
-							*ced + Height(style::Coord::Percent(100));
-							ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
-							ced->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
-							{
-								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
-								imm::EditColor(ctx, NC->color);
-								imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
-							};
-						}
-					}
-					ctx->Pop();
-				}
-				ctx->Pop();
-				vsp->SetDirection(true);
-				vsp->SetSplits({ 0.5f });
-			}
-			ctx->Pop();
-		}
-		ctx->Pop();
-		hsp->SetSplits({ 0.8f });
-	}
-
-	TE_Theme* theme;
-	TE_Template* tmpl;
 };
 
 struct TE_ImageEditorNode : Node
@@ -212,6 +148,7 @@ struct TE_ImageEditorNode : Node
 	static constexpr bool Persistent = true;
 
 	TE_Theme* theme;
+	TE_Template* tmpl;
 
 	void Render(UIContainer* ctx) override
 	{
@@ -224,7 +161,7 @@ struct TE_ImageEditorNode : Node
 			{
 				auto img = std::make_shared<TE_Image>();
 				img->name = "<unnamed>";
-				theme->images.insert(theme->images.begin(), img);
+				tmpl->images.insert(tmpl->images.begin(), img);
 				Rerender();
 			}
 		}
@@ -233,7 +170,7 @@ struct TE_ImageEditorNode : Node
 		auto* imged = ctx->Make<SequenceEditor>();
 		*imged + Height(style::Coord::Percent(100));
 		imged->showDeleteButton = false;
-		imged->SetSequence(Allocate<StdSequence<decltype(theme->images)>>(theme->images));
+		imged->SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
 		imged->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 		{
 			EditImage(ctx, static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
@@ -247,9 +184,9 @@ struct TE_ImageEditorNode : Node
 			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 			{
 				imm::EditBool(ctx, img->expanded, nullptr, { Width(style::Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
-				if (imm::RadioButtonRaw(ctx, theme->curPreviewImage == img, "P", { Width(style::Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
+				if (imm::RadioButtonRaw(ctx, tmpl->curPreviewImage == img, "P", { Width(style::Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
 				{
-					theme->SetCurPreviewImage(img);
+					tmpl->SetCurPreviewImage(img);
 				}
 				imm::EditString(ctx, img->name.c_str(), [&img](const char* v) { img->name = v; });
 				se->OnBuildDeleteButton(ctx, idx);
@@ -261,7 +198,7 @@ struct TE_ImageEditorNode : Node
 				ctx->Push<Panel>()->HandleEvent() = [this](UIEvent& e)
 				{
 					if (e.type == UIEventType::Change || e.type == UIEventType::Commit || e.type == UIEventType::IMChange)
-						theme->curTemplate->InvalidateAllNodes();
+						tmpl->InvalidateAllNodes();
 				};
 				{
 					auto& ovr = img->overrides[theme->curVariation];
@@ -312,6 +249,72 @@ struct TE_ImageEditorNode : Node
 	}
 };
 
+static bool showRenderSettings = true;
+static bool showColors = true;
+struct TE_TemplateEditorNode : Node
+{
+	TE_Theme* theme;
+	TE_Template* tmpl;
+
+	void Render(UIContainer* ctx) override
+	{
+		auto* hsp = ctx->Push<SplitPane>();
+		{
+			ctx->Push<ListBox>();
+			{
+				auto* pge = ctx->Make<ProcGraphEditor>();
+				*pge + Height(style::Coord::Percent(100));
+				pge->Init(tmpl);
+			}
+			ctx->Pop();
+
+			auto* ien = ctx->Make<TE_ImageEditorNode>();
+			ien->theme = theme;
+			ien->tmpl = tmpl;
+
+			ctx->PushBox();
+			{
+				auto* vsp = ctx->Push<SplitPane>();
+				{
+					auto* preview = ctx->Make<TE_MainPreviewNode>();
+					preview->tmpl = tmpl;
+
+					ctx->PushBox()
+						+ EventHandler(UIEventType::IMChange, [this](UIEvent&) { tmpl->InvalidateAllNodes(); });
+					{
+						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
+						if (showRenderSettings)
+						{
+							tmpl->renderSettings.UI(ctx);
+						}
+
+						imm::EditBool(ctx, showColors, "Colors", {}, imm::TreeStateToggleSkin());
+						if (showColors)
+						{
+							auto* ced = ctx->Make<SequenceEditor>();
+							*ced + Height(style::Coord::Percent(100));
+							ced->SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
+							ced->itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+							{
+								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
+								imm::EditColor(ctx, NC->color);
+								imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+							};
+						}
+					}
+					ctx->Pop();
+				}
+				ctx->Pop();
+				vsp->SetDirection(true);
+				vsp->SetSplits({ 0.5f });
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+		hsp->SetSplits({ 0.6f, 0.8f });
+	}
+};
+
 struct TE_ThemeEditorNode : Node
 {
 	static constexpr bool Persistent = true;
@@ -330,71 +333,64 @@ struct TE_ThemeEditorNode : Node
 		}
 		ctx->Pop();
 
-		auto* hsp = ctx->Push<SplitPane>();
+		*ctx->Push<TabGroup>() + Height(style::Coord::Percent(100)) + Layout(style::layouts::EdgeSlice());
 		{
-			ctx->Make<TE_ImageEditorNode>()->theme = theme;
-
-			*ctx->Push<TabGroup>() + Height(style::Coord::Percent(100)) + Layout(style::layouts::EdgeSlice());
+			ctx->Push<TabButtonList>();
 			{
-				ctx->Push<TabButtonList>();
+				for (TE_Template* tmpl : theme->templates)
 				{
-					for (TE_Template* tmpl : theme->templates)
+					ctx->Push<TabButtonT<TE_Template*>>()->Init(theme->curTemplate, tmpl);
+					if (editNameTemplate != tmpl)
 					{
-						ctx->Push<TabButtonT<TE_Template*>>()->Init(theme->curTemplate, tmpl);
-						if (editNameTemplate != tmpl)
+						ctx->Text(tmpl->name).HandleEvent(UIEventType::Click) = [this, tmpl](UIEvent& e)
 						{
-							ctx->Text(tmpl->name).HandleEvent(UIEventType::Click) = [this, tmpl](UIEvent& e)
+							if (e.numRepeats == 2)
 							{
-								if (e.numRepeats == 2)
-								{
-									editNameTemplate = tmpl;
-									Rerender();
-								}
-							};
-						}
-						else
-						{
-							auto efn = [this](UIEvent& e)
-							{
-								if (e.type == UIEventType::LostFocus)
-								{
-									editNameTemplate = nullptr;
-									Rerender();
-								}
-							};
-							imm::EditString(
-								ctx,
-								tmpl->name.c_str(),
-								[tmpl](const char* v) { tmpl->name = v; },
-								{ Width(100), EventHandler(efn) });
-						}
-						ctx->Pop();
+								editNameTemplate = tmpl;
+								Rerender();
+							}
+						};
 					}
-				}
-				if (imm::Button(ctx, "+"))
-				{
-					auto* p = new TE_Template(theme);
-					p->name = "<name>";
-					theme->templates.push_back(p);
-				}
-				ctx->Pop();
-
-				if (theme->curTemplate)
-				{
-					*ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
+					else
 					{
-						auto* pen = ctx->Make<TE_TemplateEditorNode>();
-						*pen + Height(style::Coord::Percent(100));
-						pen->theme = theme;
-						pen->tmpl = theme->curTemplate;
+						auto efn = [this](UIEvent& e)
+						{
+							if (e.type == UIEventType::LostFocus)
+							{
+								editNameTemplate = nullptr;
+								Rerender();
+							}
+						};
+						imm::EditString(
+							ctx,
+							tmpl->name.c_str(),
+							[tmpl](const char* v) { tmpl->name = v; },
+							{ Width(100), EventHandler(efn) });
 					}
 					ctx->Pop();
 				}
 			}
+			if (imm::Button(ctx, "+"))
+			{
+				auto* p = new TE_Template(theme);
+				p->name = "<name>";
+				theme->templates.push_back(p);
+			}
 			ctx->Pop();
+
+			if (theme->curTemplate)
+			{
+				*ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
+				{
+					auto* pen = ctx->Make<TE_TemplateEditorNode>();
+					*pen + Height(style::Coord::Percent(100));
+					pen->theme = theme;
+					pen->tmpl = theme->curTemplate;
+				}
+				ctx->Pop();
+			}
 		}
 		ctx->Pop();
-		hsp->SetSplits({ 0.2f });
 	}
 
 	TE_Theme* theme;

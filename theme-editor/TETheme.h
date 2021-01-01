@@ -3,12 +3,6 @@
 #include "TENodes.h"
 
 
-struct TE_IOverrideProvider
-{
-	virtual const TE_Overrides* GetOverrides() = 0;
-};
-
-
 struct TE_TmplSettings
 {
 	unsigned w = 64, h = 64;
@@ -31,9 +25,36 @@ struct TE_TmplSettings
 };
 
 
+struct TE_Variation
+{
+	std::string name;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Variation");
+		OnField(oi, "name", name);
+		oi.EndObject();
+	}
+};
+
+struct TE_IVariationProvider
+{
+	virtual TE_Variation* GetVariation() = 0;
+};
+
+struct TE_Image
+{
+	bool expanded = true;
+	std::string name;
+	HashMap<TE_Variation*, std::shared_ptr<TE_Overrides>> overrides;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
+};
+
+
 struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 {
-	TE_Template(TE_IOverrideProvider* op) : ovrProv(op) {}
+	TE_Template(TE_IVariationProvider* vp) : varProv(vp) {}
 	~TE_Template();
 	void Clear();
 
@@ -104,36 +125,29 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 
 	const TE_RenderContext& GetRenderContext() override;
 
+	void SetCurPreviewImage(TE_Image* cpi);
+
 	std::vector<TE_Node*> nodes;
 	std::vector<std::shared_ptr<TE_NamedColor>> colors;
+	std::vector<std::shared_ptr<TE_Image>> images;
+	TE_Image* curPreviewImage = nullptr;
 	uint32_t nodeIDAlloc = 0;
 	std::string name;
 	TE_TmplSettings renderSettings;
 
 	// edit-only
 	std::vector<TE_Node*> topoSortedNodes;
-	TE_IOverrideProvider* ovrProv = nullptr;
+	TE_IVariationProvider* varProv = nullptr;
 };
 
 
-struct TE_Variation
-{
-	std::string name;
-};
-
-struct TE_Image
-{
-	bool expanded = true;
-	std::string name;
-	HashMap<TE_Variation*, std::shared_ptr<TE_Overrides>> overrides;
-};
-
-
-struct TE_Theme : TE_IOverrideProvider
+struct TE_Theme : TE_IVariationProvider, TE_IUnserializeStorage
 {
 	TE_Theme();
 	~TE_Theme();
 	void Clear();
+
+	TE_Variation* FindVariation(const std::string& name) override;
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
@@ -142,14 +156,10 @@ struct TE_Theme : TE_IOverrideProvider
 
 	void CreateSampleTheme();
 
-	const TE_Overrides* GetOverrides();
+	TE_Variation* GetVariation();
 
-	void SetCurPreviewImage(TE_Image* cpi);
-
-	std::vector<TE_Template*> templates;
 	std::vector<std::shared_ptr<TE_Variation>> variations;
-	std::vector<std::shared_ptr<TE_Image>> images;
-	TE_Template* curTemplate = nullptr;
+	std::vector<TE_Template*> templates;
 	TE_Variation* curVariation = nullptr;
-	TE_Image* curPreviewImage = nullptr;
+	TE_Template* curTemplate = nullptr;
 };

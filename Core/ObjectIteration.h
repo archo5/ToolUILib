@@ -69,9 +69,10 @@ struct IObjectIterator
 	virtual void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) { OnFieldBytes(FI, brw); }
 	virtual void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) = 0;
 
-	virtual IUnserializeStorage* GetUnserializeStorage() { return nullptr; }
+	IUnserializeStorage* unserializeStorage = nullptr;
 
 	// utility functions
+	template <class T> T* GetUnserializeStorage() const { return static_cast<T*>(unserializeStorage); }
 	bool IsSerializer() const { return (GetFlags() & ~OI_ALL_FLAGS) == OI_TYPE_Serializer; }
 	bool IsUnserializer() const { return (GetFlags() & ~OI_ALL_FLAGS) == OI_TYPE_Unserializer; }
 	bool IsBinary() const { return (GetFlags() & OIF_Binary) != 0; }
@@ -173,6 +174,37 @@ inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vect
 		}
 	}
 	oi.EndArray();
+}
+
+template <class T, class CT, class XF>
+inline void OnFieldVectorValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont, XF&& transform)
+{
+	int32_t idx = -1;
+	if (ptr && !oi.IsUnserializer())
+	{
+		int32_t i = 0;
+		for (auto& item : cont)
+		{
+			if (transform(item) == ptr)
+			{
+				idx = i;
+				break;
+			}
+			i++;
+		}
+	}
+	OnField(oi, FI, idx);
+	if (oi.IsUnserializer())
+	{
+		if (!oi.HasField(FI.GetNameOrEmptyStr()))
+			idx = -1;
+		ptr = idx >= 0 && idx < int32_t(cont.size()) ? transform(cont[idx]) : nullptr;
+	}
+}
+template <class T, class CT>
+inline void OnFieldVectorValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont)
+{
+	OnFieldVectorValIndex(oi, FI, ptr, cont, [](const T& v) { return v; });
 }
 
 template <class E> inline void OnFieldEnumInt(IObjectIterator& oi, const FieldInfo& FI, E& val)
