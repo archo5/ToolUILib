@@ -136,10 +136,12 @@ void TE_MaskRef::UI(UIContainer* ctx)
 {
 	if (mask)
 		return;
-	ctx->PushBox();
-	imm::PropEditInt(ctx, "\bBorder", border, { MinWidth(20) });
-	imm::PropEditInt(ctx, "\bRadius", radius, { MinWidth(20) });
-	imm::PropEditInt(ctx, "\bV.bias", vbias, { MinWidth(20) });
+	auto* pl = ctx->Push<PropertyList>();
+	pl->splitPos = style::Coord::Percent(30);
+	pl->minSplitPos = 50;
+	imm::PropEditInt(ctx, "Border", border, { MinWidth(20) });
+	imm::PropEditInt(ctx, "Radius", radius, { MinWidth(20) });
+	imm::PropEditInt(ctx, "V.bias", vbias, { MinWidth(20) });
 	ctx->Pop();
 }
 
@@ -241,13 +243,13 @@ void TE_2ColorLinearGradientColorLayer::PropertyUI(UIContainer* ctx)
 	color1.UI(ctx);
 	{
 		ctx->Text("Start pos.");
-		imm::PropEditFloatVec(ctx, "\bAnchor", &pos0.anchor.x, "XY", { MinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "\bOffset", &pos0.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "Anchor", &pos0.anchor.x, "XY", { MinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "Offset", &pos0.offset.x, "XY", { MinWidth(20) }, 0.5f);
 	}
 	{
 		ctx->Text("End pos.");
-		imm::PropEditFloatVec(ctx, "\bAnchor", &pos1.anchor.x, "XY", { MinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "\bOffset", &pos1.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "Anchor", &pos1.anchor.x, "XY", { MinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "Offset", &pos1.offset.x, "XY", { MinWidth(20) }, 0.5f);
 	}
 }
 

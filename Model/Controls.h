@@ -246,12 +246,6 @@ struct Property : UIElement
 	Property();
 	static void Begin(UIContainer* ctx, const char* label = nullptr);
 	static void End(UIContainer* ctx);
-	static void Make(UIContainer* ctx, const char* label, std::function<void()> content)
-	{
-		Begin(ctx, label);
-		content();
-		End(ctx);
-	}
 
 	static UIObject& Label(UIContainer* ctx, const char* label);
 	static UIObject& MinLabel(UIContainer* ctx, const char* label);
@@ -271,6 +265,7 @@ struct PropertyList : UIElement
 	void SetDefaultLabelStyle(const style::BlockRef& s) { _defaultLabelStyle = s; }
 
 	style::Coord splitPos = style::Coord::Percent(40);
+	style::Coord minSplitPos = 0;
 
 	style::BlockRef _defaultLabelStyle;
 	float _calcSplitX = 0;
@@ -278,6 +273,24 @@ struct PropertyList : UIElement
 
 struct LabeledProperty : UIElement
 {
+	struct Scope
+	{
+		Scope(UIContainer* c, const char* lblstr = nullptr) : ctx(c)
+		{
+			label = Begin(ctx, lblstr);
+		}
+		~Scope()
+		{
+			End(ctx);
+		}
+
+		UIContainer* ctx;
+		UIObject* label;
+	};
+
+	static LabeledProperty* Begin(UIContainer* ctx, const char* label = nullptr);
+	static void End(UIContainer* ctx);
+
 	void OnInit() override;
 	void OnPaint() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;

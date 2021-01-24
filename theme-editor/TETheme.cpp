@@ -5,15 +5,15 @@
 void TE_TmplSettings::UI(UIContainer* ctx)
 {
 	{
-		Property::Scope ps(ctx, "\bSize");
+		LabeledProperty::Scope ps(ctx, "Size");
 		imm::PropEditInt(ctx, "\bW", w, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 		imm::PropEditInt(ctx, "\bH", h, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 	}
-	imm::PropEditInt(ctx, "\bLeft", l, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "\bRight", r, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "\bTop", t, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "\bBtm.", b, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditBool(ctx, "\bGamma", gamma);
+	imm::PropEditInt(ctx, "Left", l, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "Right", r, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "Top", t, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt(ctx, "Bottom", b, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditBool(ctx, "Gamma", gamma);
 }
 
 void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)

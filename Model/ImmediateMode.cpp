@@ -300,7 +300,7 @@ bool EditFloatVec(UIContainer* ctx, float* val, const char* axes, ModInitList mo
 
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	auto& ctrl = ctx->Text(text) + ui::Padding(5);
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
@@ -308,67 +308,67 @@ void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList
 
 bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return Button(ctx, text, mods);
 }
 
 bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditBool(ctx, val, nullptr, mods);
 }
 
 bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
 bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
 bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
 bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
 bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditFloat(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
 bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditString(ctx, text, retfn, mods);
 }
 
 bool PropEditColor(UIContainer* ctx, const char* label, Color4f& val, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditColor(ctx, val, mods);
 }
 
 bool PropEditColor(UIContainer* ctx, const char* label, Color4b& val, ModInitList mods)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditColor(ctx, val, mods);
 }
 
 bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return EditFloatVec(ctx, val, axes, mods, speed, vmin, vmax, fmt);
 }
 

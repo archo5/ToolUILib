@@ -82,7 +82,12 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	std::string GetNodeName(Node* node) override { return static_cast<TE_Node*>(node)->GetName(); }
 	uintptr_t GetNodeInputCount(Node* node) override { return static_cast<TE_Node*>(node)->GetInputPinCount(); }
 	uintptr_t GetNodeOutputCount(Node* node) override { return 1; }
-	void NodePropertyEditorUI(Node* node, UIContainer* ctx) { static_cast<TE_Node*>(node)->PropertyUI(ctx); }
+	void NodePropertyEditorUI(Node* node, UIContainer* ctx)
+	{
+		ctx->Push<PropertyList>()->splitPos = style::Coord::Percent(25);
+		static_cast<TE_Node*>(node)->PropertyUI(ctx);
+		ctx->Pop();
+	}
 
 	std::string GetPinName(const Pin& pin) override;
 	Color4b GetPinColor(const Pin& pin) override;

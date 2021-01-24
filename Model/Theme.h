@@ -19,6 +19,8 @@ struct Theme
 	// core controls
 	style::BlockRef object;
 	style::BlockRef text;
+	style::BlockRef property;
+	style::BlockRef propLabel;
 	style::BlockRef panel;
 	style::BlockRef header;
 	style::BlockRef button;

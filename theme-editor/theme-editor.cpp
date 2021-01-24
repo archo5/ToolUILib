@@ -99,7 +99,7 @@ struct TE_MainPreviewNode : Node
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{
-					ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+					ctx->Push<LabeledProperty>();
 					{
 						imm::PropEditInt(ctx, "\bWidth", g_previewSlicedWidth, { MinWidth(20) });
 						imm::PropEditInt(ctx, "\bHeight", g_previewSlicedHeight, { MinWidth(20) });
@@ -279,7 +279,7 @@ struct TE_TemplateEditorNode : Node
 					auto* preview = ctx->Make<TE_MainPreviewNode>();
 					preview->tmpl = tmpl;
 
-					ctx->PushBox()
+					*ctx->Push<PropertyList>()
 						+ EventHandler(UIEventType::IMChange, [this](UIEvent&) { tmpl->InvalidateAllNodes(); });
 					{
 						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());

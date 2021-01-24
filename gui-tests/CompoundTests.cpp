@@ -666,15 +666,15 @@ struct IMGUITest : ui::Node
 
 	void Render(UIContainer* ctx) override
 	{
-		ui::Property::Begin(ctx, "buttons");
+		ui::LabeledProperty::Begin(ctx, "buttons");
 		if (ui::imm::Button(ctx, "working button"))
 			puts("working button");
 		if (ui::imm::Button(ctx, "disabled button", { ui::Enable(false) }))
 			puts("DISABLED button SHOULD NOT APPEAR");
-		ui::Property::End(ctx);
+		ui::LabeledProperty::End(ctx);
 
 		{
-			ui::Property::Begin(ctx, "bool");
+			ui::LabeledProperty::Begin(ctx, "bool");
 			auto tmp = boolVal;
 			if (ui::imm::EditBool(ctx, tmp, "working"))
 				boolVal = tmp;
@@ -684,11 +684,11 @@ struct IMGUITest : ui::Node
 				boolVal = tmp;
 			if (ui::imm::CheckboxRaw(ctx, tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 
 		{
-			ui::Property::Begin(ctx, "int format: %d");
+			ui::LabeledProperty::Begin(ctx, "int format: %d");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 0, "working"))
 				intFmt = tmp;
@@ -698,10 +698,10 @@ struct IMGUITest : ui::Node
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
-			ui::Property::Begin(ctx, "int format: %x");
+			ui::LabeledProperty::Begin(ctx, "int format: %x");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(ctx, tmp, 1, "working"))
 				intFmt = tmp;
@@ -711,11 +711,11 @@ struct IMGUITest : ui::Node
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 
 		{
-			ui::Property::Begin(ctx, "int");
+			ui::LabeledProperty::Begin(ctx, "int");
 			auto tmp = intVal;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
@@ -723,10 +723,10 @@ struct IMGUITest : ui::Node
 				intVal = tmp;
 
 			ctx->Text("int: " + std::to_string(intVal)) + ui::Padding(5);
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
-			ui::Property::Begin(ctx, "uint");
+			ui::LabeledProperty::Begin(ctx, "uint");
 			auto tmp = uintVal;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
@@ -734,10 +734,10 @@ struct IMGUITest : ui::Node
 				uintVal = tmp;
 
 			ctx->Text("uint: " + std::to_string(uintVal)) + ui::Padding(5);
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
-			ui::Property::Begin(ctx, "int64");
+			ui::LabeledProperty::Begin(ctx, "int64");
 			auto tmp = int64Val;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
@@ -745,10 +745,10 @@ struct IMGUITest : ui::Node
 				int64Val = tmp;
 
 			ctx->Text("int64: " + std::to_string(int64Val)) + ui::Padding(5);
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
-			ui::Property::Begin(ctx, "uint64");
+			ui::LabeledProperty::Begin(ctx, "uint64");
 			auto tmp = uint64Val;
 			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
@@ -756,10 +756,10 @@ struct IMGUITest : ui::Node
 				uint64Val = tmp;
 
 			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::Padding(5);
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
-			ui::Property::Begin(ctx, "float");
+			ui::LabeledProperty::Begin(ctx, "float");
 			auto tmp = floatVal;
 			if (ui::imm::PropEditFloat(ctx, "\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
@@ -767,7 +767,7 @@ struct IMGUITest : ui::Node
 				floatVal = tmp;
 
 			ctx->Text("float: " + std::to_string(floatVal)) + ui::Padding(5);
-			ui::Property::End(ctx);
+			ui::LabeledProperty::End(ctx);
 		}
 		{
 			ui::imm::PropEditFloatVec(ctx, "float3", float4val, "XYZ");

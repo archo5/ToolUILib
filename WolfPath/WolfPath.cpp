@@ -246,7 +246,7 @@ struct Level
 }
 g_level;
 
-Vec3 cameraPos = { 1.2f, 1.5f, 0.0f };
+Vec3 cameraPos = { 1.2f, 3.5f, 0.0f };
 Vec3 cameraDir = Vec3{ 2, 1, 0 };
 Vec3 cameraUp = { 0, 0, 1 };
 float cameraFOV = 90.0f;
@@ -384,15 +384,19 @@ struct InspectorView : ui::Node
 {
 	void Render(UIContainer* ctx) override
 	{
+		ctx->Push<ui::PropertyList>();
+
 		ctx->Text("Camera");
 		auto& cameraBox = ctx->PushBox();
-		ui::Property::EditFloat(ctx, "FOV", &cameraFOV);
-		ui::Property::EditFloat3(ctx, "Position", &cameraPos.x);
-		ui::Property::EditFloat3(ctx, "Direction", &cameraDir.x);
+		ui::imm::PropEditFloat(ctx, "FOV", cameraFOV);
+		ui::imm::PropEditFloatVec(ctx, "Position", &cameraPos.x);
+		ui::imm::PropEditFloatVec(ctx, "Direction", &cameraDir.x);
 		cameraBox.HandleEvent(UIEventType::Commit) = [](UIEvent& e)
 		{
 			ui::Notify(DCT_CameraEdited);
 		};
+		ctx->Pop();
+
 		ctx->Pop();
 	}
 };

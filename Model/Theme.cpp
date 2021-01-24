@@ -11,6 +11,8 @@ struct DefaultTheme : Theme
 {
 	style::Block dtObject;
 	style::Block dtText;
+	style::Block dtProperty;
+	style::Block dtPropLabel;
 	style::Block dtPanel;
 	style::Block dtHeader;
 	style::Block dtButton;
@@ -46,6 +48,8 @@ struct DefaultTheme : Theme
 	{
 		CreateObject();
 		CreateText();
+		CreateProperty();
+		CreatePropLabel();
 		CreatePanel();
 		CreateHeader();
 		CreateButton();
@@ -102,6 +106,27 @@ struct DefaultTheme : Theme
 		{
 		});
 		defaultTheme.text = a.block;
+	}
+	void CreateProperty()
+	{
+		style::Accessor a(&dtProperty);
+		PreventHeapDelete(a);
+		a.SetLayout(style::layouts::StackExpand());
+		a.SetStackingDirection(style::StackingDirection::LeftToRight);
+		a.SetPaintFunc([](const style::PaintInfo& info)
+		{
+		});
+		defaultTheme.property = a.block;
+	}
+	void CreatePropLabel()
+	{
+		style::Accessor a(&dtPropLabel);
+		PreventHeapDelete(a);
+		a.SetPadding(5);
+		a.SetPaintFunc([](const style::PaintInfo& info)
+		{
+		});
+		defaultTheme.propLabel = a.block;
 	}
 	void CreatePanel()
 	{

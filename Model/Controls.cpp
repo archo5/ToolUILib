@@ -376,41 +376,73 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 
 void PropertyList::OnInit()
 {
-	_defaultLabelStyle = Theme::current->object;
+	_defaultLabelStyle = Theme::current->propLabel;
 }
 
 UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
 {
 	auto pad = UIElement::CalcPaddingRect(expTgtRect);
 	auto estContent = expTgtRect.ShrinkBy(pad);
-	_calcSplitX = roundf(ResolveUnits(splitPos, estContent.GetWidth()) + estContent.x0);
+	float splitPosR = ResolveUnits(splitPos, estContent.GetWidth());
+	float minSplitPosR = ResolveUnits(minSplitPos, estContent.GetWidth());
+	float finalSplitPosR = max(splitPosR, minSplitPosR);
+	_calcSplitX = roundf(finalSplitPosR + estContent.x0);
 	return pad;
 }
 
 
+LabeledProperty* LabeledProperty::Begin(UIContainer* ctx, const char* label)
+{
+	auto* lp = ctx->Push<LabeledProperty>();
+	if (label)
+	{
+		if (*label == '\b')
+		{
+			lp->SetText(label + 1);
+			lp->SetBrief(true);
+		}
+		else
+			lp->SetText(label);
+	}
+	return lp;
+}
+
+void LabeledProperty::End(UIContainer* ctx)
+{
+	ctx->Pop();
+}
+
 void LabeledProperty::OnInit()
 {
+	SetStyle(Theme::current->property);
 	_propList = FindParentOfType<PropertyList>();
-	_labelStyle = _propList ? _propList->_defaultLabelStyle : Theme::current->object;
+	_labelStyle = _propList ? _propList->_defaultLabelStyle : Theme::current->propLabel;
 }
 
 void LabeledProperty::OnPaint()
 {
-	int size = int(GetFontSize(_labelStyle));
-	int weight = GetFontWeight(_labelStyle);
-	bool italic = GetFontIsItalic(_labelStyle);
-	Color4b color = GetTextColor(_labelStyle);
-
-	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
-
 	styleProps->paint_func(this);
 
-	// TODO label style padding, respect container padding
-	auto r = GetPaddingRect();
-	// TODO optimize scissor (shared across labels)
-	ui::draw::PushScissorRect(r.x0, r.y0, GetContentRect().x0, r.y1);
-	ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
-	ui::draw::PopScissorRect();
+	if (!_labelText.empty())
+	{
+		int size = int(GetFontSize(_labelStyle));
+		int weight = GetFontWeight(_labelStyle);
+		bool italic = GetFontIsItalic(_labelStyle);
+		Color4b color = GetTextColor(_labelStyle);
+
+		auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+		auto contPadRect = GetPaddingRect();
+		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
+		auto labelPadRect = GetPaddingRect(_labelStyle, labelContRect.GetWidth());
+		auto cr = labelContRect;
+		auto r = labelContRect.ShrinkBy(labelPadRect);
+
+		// TODO optimize scissor (shared across labels)
+		ui::draw::PushScissorRect(cr.x0, cr.y0, cr.x1, cr.y1);
+		ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
+		ui::draw::PopScissorRect();
+	}
 
 	PaintChildren();
 }
@@ -418,20 +450,25 @@ void LabeledProperty::OnPaint()
 UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 {
 	auto r = UIElement::CalcPaddingRect(expTgtRect);
-	if (_isBrief)
+	if (!_labelText.empty())
 	{
-		int size = int(GetFontSize(_labelStyle));
-		int weight = GetFontWeight(_labelStyle);
-		bool italic = GetFontIsItalic(_labelStyle);
-		auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+		if (_isBrief)
+		{
+			int size = int(GetFontSize(_labelStyle));
+			int weight = GetFontWeight(_labelStyle);
+			bool italic = GetFontIsItalic(_labelStyle);
+			auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
-		r.x0 += ui::GetTextWidth(font, size, _labelText);
-	}
-	else
-	{
-		r.x0 += _propList
-			? _propList->_calcSplitX - expTgtRect.x0
-			: roundf(expTgtRect.ShrinkBy(r).GetWidth() * 0.4f);
+			r.x0 += ui::GetTextWidth(font, size, _labelText);
+			auto labelPadRect = GetPaddingRect(_labelStyle, 0);
+			r.x0 += labelPadRect.x0 + labelPadRect.x1;
+		}
+		else
+		{
+			r.x0 += _propList
+				? _propList->_calcSplitX - expTgtRect.x0
+				: roundf(expTgtRect.ShrinkBy(r).GetWidth() * 0.4f);
+		}
 	}
 	return r;
 }
@@ -635,7 +672,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 			split++;
 			r.x0 = prevEdge;
 			r.x1 = sr.x0;
-			ch->OnLayout(r, finalRectC.GetSize());
+			ch->PerformLayout(r, finalRectC.GetSize());
 			prevEdge = sr.x1;
 		}
 	}
@@ -650,7 +687,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 			split++;
 			r.y0 = prevEdge;
 			r.y1 = sr.y0;
-			ch->OnLayout(r, finalRectC.GetSize());
+			ch->PerformLayout(r, finalRectC.GetSize());
 			prevEdge = sr.y1;
 		}
 	}
