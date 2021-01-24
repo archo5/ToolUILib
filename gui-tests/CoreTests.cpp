@@ -542,6 +542,78 @@ void Test_GlobalEvents(UIContainer* ctx)
 }
 
 
+// TODO
+namespace ui {
+extern FrameContents* g_curSystem;
+} // ui
+struct FrameTest : ui::Node
+{
+	struct FrameA : ui::Node
+	{
+		void Render(UIContainer* ctx) override
+		{
+			ctx->Text("Frame A");
+		}
+	};
+	struct FrameB : ui::Node
+	{
+		void Render(UIContainer* ctx) override
+		{
+			ctx->Text("Frame B");
+		}
+	};
+
+	void OnInit() override
+	{
+		frameContents[0] = new ui::FrameContents;
+		{
+			TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, frameContents[0]);
+			auto& cont = frameContents[0]->container;
+			auto* N = cont.AllocIfDifferent<FrameA>(cont.rootNode);
+			cont._BuildUsing(N);
+		}
+		frameContents[1] = new ui::FrameContents;
+		{
+			TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, frameContents[1]);
+			auto& cont = frameContents[1]->container;
+			auto* N = cont.AllocIfDifferent<FrameB>(cont.rootNode);
+			cont._BuildUsing(N);
+		}
+	}
+	void OnDestroy() override
+	{
+		delete frameContents[0];
+		delete frameContents[1];
+	}
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Push<ui::Panel>();
+		inlineFrames[0] = ctx->Make<ui::InlineFrameNode>();
+		ctx->Pop();
+		ctx->Push<ui::Panel>();
+		inlineFrames[1] = ctx->Make<ui::InlineFrameNode>();
+		ctx->Pop();
+		for (int i = 0; i < 2; i++)
+			*inlineFrames[i] + ui::Height(32);
+		*ctx->MakeWithText<ui::Button>("Place 1 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(0, 0); });
+		*ctx->MakeWithText<ui::Button>("Place 1 in 2") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(0, 1); });
+		*ctx->MakeWithText<ui::Button>("Place 2 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(1, 0); });
+		*ctx->MakeWithText<ui::Button>("Place 2 in 2") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(1, 1); });
+	}
+	void Set(int contID, int frameID)
+	{
+		inlineFrames[frameID]->SetFrameContents(frameContents[contID]);
+	}
+
+	ui::FrameContents* frameContents[2] = {};
+	ui::InlineFrameNode* inlineFrames[2] = {};
+};
+void Test_Frames(UIContainer* ctx)
+{
+	ctx->Make<FrameTest>();
+}
+
+
 struct DialogWindowTest : ui::Node
 {
 	struct BasicDialog : ui::NativeDialogWindow

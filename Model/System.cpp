@@ -385,6 +385,7 @@ void InlineFrameNode::SetFrameContents(FrameContents* contents)
 	}
 	frameContents = contents;
 	contents->nativeWindow = GetNativeWindow();
+	_OnChangeStyle();
 	ownsContents = false;
 }
 

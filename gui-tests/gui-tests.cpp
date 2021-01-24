@@ -326,6 +326,7 @@ void Test_SubUI(UIContainer* ctx);
 void Test_HighElementCount(UIContainer* ctx);
 void Test_ZeroRerender(UIContainer* ctx);
 void Test_GlobalEvents(UIContainer* ctx);
+void Test_Frames(UIContainer* ctx);
 void Test_DialogWindow(UIContainer* ctx);
 
 void Test_EdgeSlice(UIContainer* ctx);
@@ -395,7 +396,8 @@ static const TestEntry coreTestEntries[] =
 	{ "Zero-rerender", Test_ZeroRerender },
 	{ "Global events", Test_GlobalEvents },
 	{},
-	{ "- Windows -" },
+	{ "- Frames and windows -" },
+	{ "Frames", Test_Frames },
 	{ "Dialog window", Test_DialogWindow },
 };
 static const TestEntry layoutTestEntries[] =
