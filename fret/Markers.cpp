@@ -580,46 +580,52 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	}
 	if (marker->type == DT_F32 && marker->count == 3 && marker->repeats > 1 && ui::imm::Button(ctx, "Export points to .obj"))
 	{
-		FILE* fp = fopen("positions.obj", "w");
-		for (uint64_t i = 0; i < marker->repeats; i++)
+		if (FILE* fp = fopen("positions.obj", "w"))
 		{
-			float vec[3];
-			dataSource->Read(marker->at + marker->stride * i, sizeof(vec), vec);
-			fprintf(fp, "v %g %g %g\n", vec[0], vec[1], vec[2]);
+			for (uint64_t i = 0; i < marker->repeats; i++)
+			{
+				float vec[3];
+				dataSource->Read(marker->at + marker->stride * i, sizeof(vec), vec);
+				fprintf(fp, "v %g %g %g\n", vec[0], vec[1], vec[2]);
+			}
+			fclose(fp);
 		}
-		fclose(fp);
 	}
 	if (marker->type >= DT_I8 && marker->type <= DT_U64 && marker->count == 2 && marker->repeats > 1 && ui::imm::Button(ctx, "Export links to .dot"))
 	{
-		FILE* fp = fopen("graph.dot", "w");
-		fprintf(fp, "graph exported {\n");
-		for (uint64_t i = 0; i < marker->repeats; i++)
+		if (FILE* fp = fopen("graph.dot", "w"))
 		{
-			int64_t A = int64ReadFuncs[marker->type](
-				dataSource,
-				marker->at + marker->stride * i,
-				marker->bitstart,
-				marker->bitend);
-			int64_t B = int64ReadFuncs[marker->type](
-				dataSource,
-				marker->at + marker->stride * i + typeSizes[marker->type],
-				marker->bitstart,
-				marker->bitend);
-			fprintf(fp, "\t%" PRId64 " -- %" PRId64 "\n", A, B);
+			fprintf(fp, "graph exported {\n");
+			for (uint64_t i = 0; i < marker->repeats; i++)
+			{
+				int64_t A = int64ReadFuncs[marker->type](
+					dataSource,
+					marker->at + marker->stride * i,
+					marker->bitstart,
+					marker->bitend);
+				int64_t B = int64ReadFuncs[marker->type](
+					dataSource,
+					marker->at + marker->stride * i + typeSizes[marker->type],
+					marker->bitstart,
+					marker->bitend);
+				fprintf(fp, "\t%" PRId64 " -- %" PRId64 "\n", A, B);
+			}
+			fprintf(fp, "}\n");
+			fclose(fp);
 		}
-		fprintf(fp, "}\n");
-		fclose(fp);
 	}
 	if (ui::imm::Button(ctx, "Export data to CSV"))
 	{
-		FILE* fp = fopen("marker.csv", "w");
-		for (size_t i = 0; i < marker->repeats; i++)
+		if (FILE* fp = fopen("marker.csv", "w"))
 		{
-			auto line = GetMarkerSingleLine(*marker, dataSource, i);
-			fwrite(line.data(), 1, line.size(), fp);
-			fputc('\n', fp);
+			for (size_t i = 0; i < marker->repeats; i++)
+			{
+				auto line = GetMarkerSingleLine(*marker, dataSource, i);
+				fwrite(line.data(), 1, line.size(), fp);
+				fputc('\n', fp);
+			}
+			fclose(fp);
 		}
-		fclose(fp);
 	}
 	if (analysisData.results.size())
 	{
