@@ -542,42 +542,28 @@ void Test_GlobalEvents(UIContainer* ctx)
 }
 
 
-// TODO
-namespace ui {
-extern FrameContents* g_curSystem;
-} // ui
 struct FrameTest : ui::Node
 {
-	struct FrameA : ui::Node
+	struct Frame : ui::Node
 	{
 		void Render(UIContainer* ctx) override
 		{
-			ctx->Text("Frame A");
+			ctx->Text(name);
 		}
-	};
-	struct FrameB : ui::Node
-	{
-		void Render(UIContainer* ctx) override
-		{
-			ctx->Text("Frame B");
-		}
+		const char* name = "unknown";
 	};
 
 	void OnInit() override
 	{
 		frameContents[0] = new ui::FrameContents;
 		{
-			TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, frameContents[0]);
-			auto& cont = frameContents[0]->container;
-			auto* N = cont.AllocIfDifferent<FrameA>(cont.rootNode);
-			cont._BuildUsing(N);
+			frameContents[0]->AllocRoot<Frame>()->name = "Frame A";
+			frameContents[0]->RenderRoot();
 		}
 		frameContents[1] = new ui::FrameContents;
 		{
-			TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, frameContents[1]);
-			auto& cont = frameContents[1]->container;
-			auto* N = cont.AllocIfDifferent<FrameB>(cont.rootNode);
-			cont._BuildUsing(N);
+			frameContents[1]->AllocRoot<Frame>()->name = "Frame B";
+			frameContents[1]->RenderRoot();
 		}
 	}
 	void OnDestroy() override
@@ -590,14 +576,18 @@ struct FrameTest : ui::Node
 		ctx->Push<ui::Panel>();
 		inlineFrames[0] = ctx->Make<ui::InlineFrameNode>();
 		ctx->Pop();
+
+		*ctx->MakeWithText<ui::Button>("Place 1 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(0, 0); });
+		*ctx->MakeWithText<ui::Button>("Place 2 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(1, 0); });
+
 		ctx->Push<ui::Panel>();
 		inlineFrames[1] = ctx->Make<ui::InlineFrameNode>();
 		ctx->Pop();
+
 		for (int i = 0; i < 2; i++)
 			*inlineFrames[i] + ui::Height(32);
-		*ctx->MakeWithText<ui::Button>("Place 1 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(0, 0); });
+
 		*ctx->MakeWithText<ui::Button>("Place 1 in 2") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(0, 1); });
-		*ctx->MakeWithText<ui::Button>("Place 2 in 1") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(1, 0); });
 		*ctx->MakeWithText<ui::Button>("Place 2 in 2") + ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { Set(1, 1); });
 	}
 	void Set(int contID, int frameID)

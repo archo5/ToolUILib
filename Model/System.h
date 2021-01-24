@@ -270,19 +270,29 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
+typedef Node* NodeAllocFunc(UIContainer*);
+template <class T> inline Node* NodeAlloc(UIContainer* ctx)
+{
+	return ctx->AllocIfDifferent<T>(ctx->rootNode);
+}
+
+class InlineFrameNode;
 struct FrameContents
 {
-	FrameContents()
+	FrameContents();
+	~FrameContents();
+	template <class T> T* AllocRoot()
 	{
-		container.owner = this;
-		eventSystem.container = &container;
-		eventSystem.overlays = &overlays;
+		return static_cast<T*>(_AllocRootImpl(NodeAlloc<T>));
 	}
+	Node* _AllocRootImpl(NodeAllocFunc* f);
+	void RenderRoot();
 
 	UIContainer container;
 	UIEventSystem eventSystem;
-	ui::NativeWindowBase* nativeWindow = nullptr;
 	Overlays overlays;
+	NativeWindowBase* nativeWindow = nullptr;
+	InlineFrameNode* owningFrame = nullptr;
 };
 
 class InlineFrameNode : public Node

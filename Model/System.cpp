@@ -324,11 +324,38 @@ void Overlays::UpdateSorted()
 	sortedOutdated = false;
 }
 
+
+FrameContents::FrameContents()
+{
+	container.owner = this;
+	eventSystem.container = &container;
+	eventSystem.overlays = &overlays;
+}
+
+FrameContents::~FrameContents()
+{
+	container.Free();
+}
+
+Node* FrameContents::_AllocRootImpl(NodeAllocFunc* f)
+{
+	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
+	auto* N = f(&container);
+	container.rootNode = N;
+	return N;
+}
+
+void FrameContents::RenderRoot()
+{
+	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
+	container._BuildUsing(container.rootNode);
+}
+
+
 void InlineFrameNode::OnDestroy()
 {
 	if (ownsContents && frameContents)
 	{
-		frameContents->container.Free();
 		delete frameContents;
 		frameContents = nullptr;
 		ownsContents = false;
@@ -354,9 +381,13 @@ void InlineFrameNode::OnEvent(UIEvent& ev)
 
 void InlineFrameNode::OnPaint()
 {
+	styleProps->paint_func(this);
+
 	if (frameContents &&
 		frameContents->container.rootNode)
 		frameContents->container.rootNode->OnPaint();
+
+	PaintChildren();
 }
 
 float InlineFrameNode::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
@@ -373,40 +404,44 @@ void InlineFrameNode::OnLayoutChanged()
 {
 	if (frameContents &&
 		frameContents->container.rootNode)
-		frameContents->container.rootNode->OnLayout(finalRectC, finalRectC.GetSize());
+		frameContents->container.rootNode->PerformLayout(finalRectC, finalRectC.GetSize());
 }
 
 void InlineFrameNode::SetFrameContents(FrameContents* contents)
 {
-	if (ownsContents && frameContents)
+	if (frameContents)
 	{
-		frameContents->container.Free();
-		delete frameContents;
+		if (ownsContents)
+		{
+			delete frameContents;
+		}
+		else
+		{
+			frameContents->owningFrame = nullptr;
+			frameContents->nativeWindow = nullptr;
+		}
+	}
+	if (contents)
+	{
+		if (contents->owningFrame)
+		{
+			contents->owningFrame->frameContents = nullptr;
+		}
+		contents->nativeWindow = GetNativeWindow();
+		contents->owningFrame = this;
 	}
 	frameContents = contents;
-	contents->nativeWindow = GetNativeWindow();
-	_OnChangeStyle();
 	ownsContents = false;
+	_OnChangeStyle();
 }
 
 void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc)
 {
-	if (ownsContents && frameContents)
-	{
-		frameContents->container.Free();
-		delete frameContents;
-	}
-	frameContents = new FrameContents();
-	frameContents->nativeWindow = GetNativeWindow();
+	auto* contents = new FrameContents();
+	contents->AllocRoot<RenderNode>()->renderFunc = renderFunc;
+	contents->RenderRoot();
+	SetFrameContents(contents);
 	ownsContents = true;
-
-	auto& cont = frameContents->container;
-	auto& evsys = frameContents->eventSystem;
-
-	auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
-	N->renderFunc = renderFunc;
-	cont._BuildUsing(N);
-	evsys.RecomputeLayout();
 }
 
 } // ui

@@ -611,14 +611,8 @@ struct NativeWindow_Impl
 
 	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
 	{
-		auto& cont = GetContainer();
-		auto& evsys = GetEventSys();
-
-		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, cont.owner);
-		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
-		N->renderFunc = renderFunc;
-		cont._BuildUsing(N);
-		evsys.RecomputeLayout();
+		system.AllocRoot<RenderNode>()->renderFunc = renderFunc;
+		system.RenderRoot();
 	}
 
 	void Redraw(bool canRebuild)
@@ -875,14 +869,7 @@ void NativeWindowBase::SetVisible(bool v)
 	{
 		_impl->firstShow = false;
 
-		auto& cont = _impl->GetContainer();
-		auto& evsys = _impl->GetEventSys();
-
-		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, cont.owner);
-		auto* N = cont.AllocIfDifferent<RenderNode>(cont.rootNode);
-		N->renderFunc = [this](UIContainer* ctx) { OnRender(ctx); };
-		cont._BuildUsing(N);
-		evsys.RecomputeLayout();
+		_impl->SetRenderFunc([this](UIContainer* ctx) { OnRender(ctx); });
 	}
 }
 
