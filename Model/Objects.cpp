@@ -495,7 +495,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 	auto box_sizing = style.GetBoxSizing();
 
 	UIRect Mrect = GetMarginRect(style.block, rect.GetWidth());
-	UIRect Prect = GetPaddingRect(style.block, rect.GetWidth());
+	UIRect Prect = CalcPaddingRect(rect);
 	UIRect Arect =
 	{
 		Mrect.x0 + Prect.x0,
@@ -571,6 +571,11 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 
 	for (UIObject* ch = firstChild; ch; ch = ch->next)
 		ch->_PerformPlacement(finalRectC, finalRectC.GetSize());
+}
+
+UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
+{
+	return GetPaddingRect(styleProps, expTgtRect.GetWidth());
 }
 
 void UIObject::SetFlag(UIObjectFlags flag, bool set)

@@ -185,6 +185,53 @@ void Test_StateButtons(UIContainer* ctx)
 }
 
 
+struct PropertyListTest : ui::Node
+{
+	void Render(UIContainer* ctx) override
+	{
+		ctx->Push<ui::PropertyList>();
+
+		ctx->Push<ui::LabeledProperty>()->SetText("label for 1");
+		ctx->Text("test 1");
+		ctx->Pop();
+
+		ctx->MakeWithText<ui::Button>("interjection");
+
+		ctx->Push<ui::LabeledProperty>()->SetText("and for 2").GetLabelStyle().SetFontWeight(style::FontWeight::Bold);
+		ctx->MakeWithText<ui::Button>("test 2");
+		ctx->Pop();
+
+		ctx->PushBox().GetStyle().SetPaddingLeft(32);
+		{
+			ctx->Push<ui::LabeledProperty>()->SetText("also 3");
+			ctx->Text("test 3 elevated");
+			ctx->Pop();
+
+			auto s = ctx->Push<ui::LabeledProperty>()->SetText("and 4 (brief sublabels)").GetStyle();
+			s.SetLayout(style::layouts::StackExpand());
+			s.SetStackingDirection(style::StackingDirection::LeftToRight);
+			{
+				ctx->Push<ui::LabeledProperty>()->SetText("X").SetBrief(true);
+				ctx->MakeWithText<ui::Button>("A");
+				ctx->Pop();
+
+				ctx->Push<ui::LabeledProperty>()->SetText("Y").SetBrief(true);
+				ctx->MakeWithText<ui::Button>("B");
+				ctx->Pop();
+			}
+			ctx->Pop();
+		}
+		ctx->Pop();
+
+		ctx->Pop();
+	}
+};
+void Test_PropertyList(UIContainer* ctx)
+{
+	ctx->Make<PropertyListTest>();
+}
+
+
 struct SlidersTest : ui::Node
 {
 	void Render(UIContainer* ctx) override

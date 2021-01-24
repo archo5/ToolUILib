@@ -282,6 +282,7 @@ void UIContainer::_Pop()
 {
 	objectStack[objectStackSize - 1]->OnCompleteStructure();
 	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
+	_lastCreated = objectStack[objectStackSize - 1];
 	if (objChildStack[objectStackSize - 1])
 	{
 		// remove leftover children

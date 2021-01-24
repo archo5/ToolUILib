@@ -336,6 +336,7 @@ void Test_Placement(UIContainer* ctx);
 
 void Test_DragDrop(UIContainer* ctx);
 void Test_StateButtons(UIContainer* ctx);
+void Test_PropertyList(UIContainer* ctx);
 void Test_Sliders(UIContainer* ctx);
 void Test_SplitPane(UIContainer* ctx);
 void Test_Tabs(UIContainer* ctx);
@@ -412,6 +413,7 @@ static const TestEntry compoundTestEntries[] =
 	{},
 	{ "- Advanced/compound UI -" },
 	{ "State buttons", Test_StateButtons },
+	{ "Property list", Test_PropertyList },
 	{ "Sliders", Test_Sliders },
 	{ "Split pane", Test_SplitPane },
 	{ "Tabs", Test_Tabs },

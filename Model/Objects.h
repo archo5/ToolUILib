@@ -225,6 +225,7 @@ struct UIObject
 	void _PerformPlacement(const UIRect& rect, const Size<float>& containerSize);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size<float>& containerSize);
+	virtual UIRect CalcPaddingRect(const UIRect& expTgtRect);
 	virtual bool Contains(float x, float y) const
 	{
 		return GetBorderRect().Contains(x, y);
@@ -358,9 +359,10 @@ struct TextElement : UIElement
 	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
 	void OnPaint() override;
 
-	void SetText(StringView t)
+	TextElement& SetText(StringView t)
 	{
 		text.assign(t.data(), t.size());
+		return *this;
 	}
 
 	std::string text;

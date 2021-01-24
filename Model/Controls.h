@@ -224,6 +224,7 @@ struct Slider : UIElement
 	float _mxoff = 0;
 };
 
+
 struct Property : UIElement
 {
 	struct Scope
@@ -260,6 +261,42 @@ struct Property : UIElement
 	static void EditFloat3(UIContainer* ctx, const char* label, float* v);
 	static void EditFloat4(UIContainer* ctx, const char* label, float* v);
 };
+
+struct PropertyList : UIElement
+{
+	void OnInit() override;
+	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
+
+	style::Accessor GetDefaultLabelStyle() { return style::Accessor(_defaultLabelStyle, this); }
+	void SetDefaultLabelStyle(const style::BlockRef& s) { _defaultLabelStyle = s; }
+
+	style::Coord splitPos = style::Coord::Percent(40);
+
+	style::BlockRef _defaultLabelStyle;
+	float _calcSplitX = 0;
+};
+
+struct LabeledProperty : UIElement
+{
+	void OnInit() override;
+	void OnPaint() override;
+	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
+
+	StringView GetText() const { return _labelText; }
+	LabeledProperty& SetText(StringView text);
+
+	bool IsBrief() const { return _isBrief; }
+	LabeledProperty& SetBrief(bool b) { _isBrief = b; return *this; }
+
+	style::Accessor GetLabelStyle() { return style::Accessor(_labelStyle, this); }
+	LabeledProperty& SetLabelStyle(const style::BlockRef& s) { _labelStyle = s; return *this; }
+
+	style::BlockRef _labelStyle;
+	std::string _labelText;
+	PropertyList* _propList = nullptr;
+	bool _isBrief = false;
+};
+
 
 struct SplitPane : UIElement
 {

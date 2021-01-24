@@ -191,6 +191,7 @@ struct UIContainer
 			lastIsNew = true;
 		}
 		obj->OnInit();
+		_lastCreated = obj;
 		return obj;
 	}
 	ui::BoxElement& PushBox() { return *Push<ui::BoxElement>(); }
@@ -202,6 +203,7 @@ struct UIContainer
 		return *T;
 	}
 	bool LastIsNew() const { return lastIsNew; }
+	UIObject* GetLastCreated() const { return _lastCreated; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	ui::Node* GetCurrentNode() const { return _curNode; }
@@ -209,6 +211,7 @@ struct UIContainer
 	ui::FrameContents* owner = nullptr;
 	ui::Node* rootNode = nullptr;
 	ui::Node* _curNode = nullptr;
+	UIObject* _lastCreated = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
 	//int debugpad2 = 0;

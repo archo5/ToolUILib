@@ -374,6 +374,75 @@ void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
 }
 
 
+void PropertyList::OnInit()
+{
+	_defaultLabelStyle = Theme::current->object;
+}
+
+UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
+{
+	auto pad = UIElement::CalcPaddingRect(expTgtRect);
+	auto estContent = expTgtRect.ShrinkBy(pad);
+	_calcSplitX = roundf(ResolveUnits(splitPos, estContent.GetWidth()) + estContent.x0);
+	return pad;
+}
+
+
+void LabeledProperty::OnInit()
+{
+	_propList = FindParentOfType<PropertyList>();
+	_labelStyle = _propList ? _propList->_defaultLabelStyle : Theme::current->object;
+}
+
+void LabeledProperty::OnPaint()
+{
+	int size = int(GetFontSize(_labelStyle));
+	int weight = GetFontWeight(_labelStyle);
+	bool italic = GetFontIsItalic(_labelStyle);
+	Color4b color = GetTextColor(_labelStyle);
+
+	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	styleProps->paint_func(this);
+
+	// TODO label style padding, respect container padding
+	auto r = GetPaddingRect();
+	// TODO optimize scissor (shared across labels)
+	ui::draw::PushScissorRect(r.x0, r.y0, GetContentRect().x0, r.y1);
+	ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
+	ui::draw::PopScissorRect();
+
+	PaintChildren();
+}
+
+UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
+{
+	auto r = UIElement::CalcPaddingRect(expTgtRect);
+	if (_isBrief)
+	{
+		int size = int(GetFontSize(_labelStyle));
+		int weight = GetFontWeight(_labelStyle);
+		bool italic = GetFontIsItalic(_labelStyle);
+		auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+		r.x0 += ui::GetTextWidth(font, size, _labelText);
+	}
+	else
+	{
+		r.x0 += _propList
+			? _propList->_calcSplitX - expTgtRect.x0
+			: roundf(expTgtRect.ShrinkBy(r).GetWidth() * 0.4f);
+	}
+	return r;
+}
+
+LabeledProperty& LabeledProperty::SetText(StringView text)
+{
+	_labelText.assign(text.data(), text.size());
+	return *this;
+}
+
+
 SplitPane::SplitPane()
 {
 	// TODO
