@@ -364,6 +364,7 @@ void Benchmark_SubUI(UIContainer* ctx);
 void Test_TableView(UIContainer* ctx);
 
 void Demo_Calculator(UIContainer* ctx);
+void Demo_SettingsWindow(UIContainer* ctx);
 void Demo_BasicTreeNodeEdit(UIContainer* ctx);
 void Demo_CompactTreeNodeEdit(UIContainer* ctx);
 void Demo_ScriptTree(UIContainer* ctx);
@@ -465,6 +466,7 @@ static const TestEntry demoEntries[] =
 	{ "Calculator (grid layout)", Demo_Calculator },
 	{},
 	{ "- Editors -" },
+	{ "Settings window", Demo_SettingsWindow },
 	{ "Tree", Demo_BasicTreeNodeEdit },
 	{ "Inline tree", Demo_CompactTreeNodeEdit },
 	{ "Script tree", Demo_ScriptTree },
