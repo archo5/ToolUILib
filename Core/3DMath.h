@@ -181,6 +181,15 @@ struct Mat4f
 		auto t = TransformPointNoDivide(p);
 		return { t.x / t.w, t.y / t.w, t.z / t.w };
 	}
+	Vec3f TransformDirection(const Vec3f& d) const
+	{
+		return
+		{
+			d.x * v00 + d.y * v01 + d.z * v02,
+			d.x * v10 + d.y * v11 + d.z * v12,
+			d.x * v20 + d.y * v21 + d.z * v22,
+		};
+	}
 };
 
 

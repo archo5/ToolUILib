@@ -449,6 +449,7 @@ struct Gizmo_Moving
 
 	int _selectedPart = -1;
 	int _hoveredPart = -1;
+	Point<float> _lastCursorPos = {};
 
 	Point<float> _origDiffWP = {};
 	std::vector<char> _origData;

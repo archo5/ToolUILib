@@ -958,6 +958,7 @@ enum MovingGizmoParts
 	MGP_XPlane,
 	MGP_YPlane,
 	MGP_ZPlane,
+	MGP_ScreenPlane,
 };
 
 struct SDFRet
@@ -997,6 +998,8 @@ static SDFRet MovingGizmoSDF(const Vec3f& pos)
 	float planeDistY = BoxSDF(pos, { 0, 0, 0 }, { 0.3f, 0, 0.3f });
 	float planeDistZ = BoxSDF(pos, { 0, 0, 0 }, { 0.3f, 0.3f, 0 });
 
+	float sphereDistC = pos.Length() - 0.1f;
+
 	SDFRet ret = { FLT_MAX, MGP_NONE };
 	if (ret.dist > coneDistX) ret = { coneDistX, MGP_XAxis };
 	if (ret.dist > coneDistY) ret = { coneDistY, MGP_YAxis };
@@ -1007,6 +1010,7 @@ static SDFRet MovingGizmoSDF(const Vec3f& pos)
 	if (ret.dist > planeDistX) ret = { planeDistX, MGP_XPlane };
 	if (ret.dist > planeDistY) ret = { planeDistY, MGP_YPlane };
 	if (ret.dist > planeDistZ) ret = { planeDistZ, MGP_ZPlane };
+	if (ret.dist > sphereDistC) ret = { sphereDistC, MGP_ScreenPlane };
 	return ret;
 }
 
@@ -1039,6 +1043,7 @@ bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditab
 	auto& editableNC = const_cast<IGizmoEditable&>(editable);
 	if (e.type == UIEventType::MouseMove)
 	{
+		_lastCursorPos = { e.x, e.y };
 		if (_selectedPart == MGP_NONE)
 		{
 			_hoveredPart = _GetIntersectingPart(cam.GetLocalRayEP(e, _combinedXF.Inverted()));
@@ -1056,6 +1061,10 @@ bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditab
 			case MGP_ZAxis: case MGP_ZPlane: axis = { 0, 0, 1 }; break;
 			}
 			Vec3f worldAxis = (_combinedXF.TransformPoint(axis) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized();
+			if (_selectedPart == MGP_ScreenPlane)
+			{
+				worldAxis = cam.GetInverseViewMatrix().TransformDirection({ 0, 0, 1 }).Normalized();
+			}
 
 			Vec3f worldOrigPos = _origPos;
 
@@ -1083,7 +1092,8 @@ bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditab
 				break; }
 			case MGP_XPlane:
 			case MGP_YPlane:
-			case MGP_ZPlane: {
+			case MGP_ZPlane:
+			case MGP_ScreenPlane: {
 				auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { worldAxis.x, worldAxis.y, worldAxis.z, Vec3Dot(worldAxis, worldOrigPos) });
 				if (rpir.angcos)
 				{
@@ -1099,42 +1109,50 @@ bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditab
 			}
 		}
 	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hoveredPart != MGP_NONE)
+	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
 	{
-		Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-		float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-		float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-		float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-
-		float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
-		float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
-		float visZ = clamp(invlerp(0.99f, 0.97f, dotZ), 0.0f, 1.0f);
-		float visPX = clamp(invlerp(0.05f, 0.21f, dotX), 0.0f, 1.0f);
-		float visPY = clamp(invlerp(0.05f, 0.21f, dotY), 0.0f, 1.0f);
-		float visPZ = clamp(invlerp(0.05f, 0.21f, dotZ), 0.0f, 1.0f);
-
-		switch (_hoveredPart)
+		if (_selectedPart != MGP_NONE)
 		{
-		case MGP_XAxis: if (visX <= 0) return false; break;
-		case MGP_YAxis: if (visY <= 0) return false; break;
-		case MGP_ZAxis: if (visZ <= 0) return false; break;
-		case MGP_XPlane: if (visPX <= 0) return false; break;
-		case MGP_YPlane: if (visPY <= 0) return false; break;
-		case MGP_ZPlane: if (visPZ <= 0) return false; break;
+			_selectedPart = MGP_NONE;
+			e.StopPropagation();
 		}
+		else if (_hoveredPart != MGP_NONE)
+		{
+			Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
+			float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
+			float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
+			float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
 
-		_selectedPart = _hoveredPart;
+			float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
+			float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
+			float visZ = clamp(invlerp(0.99f, 0.97f, dotZ), 0.0f, 1.0f);
+			float visPX = clamp(invlerp(0.05f, 0.21f, dotX), 0.0f, 1.0f);
+			float visPY = clamp(invlerp(0.05f, 0.21f, dotY), 0.0f, 1.0f);
+			float visPZ = clamp(invlerp(0.05f, 0.21f, dotZ), 0.0f, 1.0f);
 
-		_origPos = _combinedXF.TransformPoint({ 0, 0, 0 });
+			switch (_hoveredPart)
+			{
+			case MGP_XAxis: if (visX <= 0) return false; break;
+			case MGP_YAxis: if (visY <= 0) return false; break;
+			case MGP_ZAxis: if (visZ <= 0) return false; break;
+			case MGP_XPlane: if (visPX <= 0) return false; break;
+			case MGP_YPlane: if (visPY <= 0) return false; break;
+			case MGP_ZPlane: if (visPZ <= 0) return false; break;
+			}
 
-		auto pointWP = cam.WorldToWindowPoint(_origPos);
-		_origDiffWP = { pointWP.x - e.x, pointWP.y - e.y };
+			_selectedPart = _hoveredPart;
 
-		_origData.clear();
-		ui::DataWriter dw(_origData);
-		editable.Backup(dw);
+			_origPos = _combinedXF.TransformPoint({ 0, 0, 0 });
 
-		e.StopPropagation();
+			auto pointWP = cam.WorldToWindowPoint(_origPos);
+			_origDiffWP = { pointWP.x - e.x, pointWP.y - e.y };
+
+			_origData.clear();
+			ui::DataWriter dw(_origData);
+			editable.Backup(dw);
+
+			e.StopPropagation();
+		}
 	}
 	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Right && _selectedPart != MGP_NONE)
 	{
@@ -1147,7 +1165,38 @@ bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditab
 	{
 		_selectedPart = MGP_NONE;
 	}
-	// TODO esc
+	else if (e.type == UIEventType::KeyDown)
+	{
+		switch (e.shortCode)
+		{
+		case 1 /* Esc */:
+			if (_selectedPart != MGP_NONE)
+			{
+				_selectedPart = MGP_NONE;
+				ui::DataReader dr(_origData);
+				editableNC.Transform(dr, nullptr);
+
+				e.StopPropagation();
+				return true;
+			}
+			break;
+
+		case 34 /* G */: {
+			_selectedPart = MGP_ScreenPlane;
+
+			_origPos = _combinedXF.TransformPoint({ 0, 0, 0 });
+
+			auto pointWP = cam.WorldToWindowPoint(_origPos);
+			_origDiffWP = { pointWP.x - _lastCursorPos.x, pointWP.y - _lastCursorPos.y };
+
+			_origData.clear();
+			ui::DataWriter dw(_origData);
+			editable.Backup(dw);
+
+			e.StopPropagation();
+			break; }
+		}
+	}
 	return false;
 }
 
@@ -1182,6 +1231,13 @@ void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeM
 	uint16_t coneIndices[coneIC];
 	ui::prim::GenerateCone(CS, coneVerts, coneIndices);
 
+	constexpr ui::prim::BoxSphereSettings SS = {};
+	constexpr uint16_t sphereVC = SS.CalcVertexCount();
+	constexpr uint16_t sphereIC = SS.CalcIndexCount();
+	ui::Vertex_PF3CB4 sphereVerts[sphereVC];
+	uint16_t sphereIndices[sphereIC];
+	ui::prim::GenerateBoxSphere(SS, sphereVerts, sphereIndices);
+
 	ui::Vertex_PF3CB4 tmpVerts[2] = {};
 
 	Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
@@ -1196,7 +1252,7 @@ void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeM
 	float visPY = clamp(invlerp(0.05f, 0.21f, dotY), 0.0f, 1.0f);
 	float visPZ = clamp(invlerp(0.05f, 0.21f, dotZ), 0.0f, 1.0f);
 
-	constexpr int NUM_PARTS = 9;
+	constexpr int NUM_PARTS = 10;
 	Vec3f centers[NUM_PARTS] =
 	{
 		{ 0, 0.15f, 0.15f }, // x plane
@@ -1208,6 +1264,7 @@ void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeM
 		{ 0.95f, 0, 0 }, // x cone
 		{ 0, 0.95f, 0 }, // y cone
 		{ 0, 0, 0.95f }, // z cone
+		{ 0, 0, 0 }, // center sphere
 	};
 	float distances[NUM_PARTS];
 	Mat4f matWorldView = _combinedXF * cam.GetViewMatrix();
@@ -1216,7 +1273,7 @@ void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeM
 		distances[i] = matWorldView.TransformPoint(centers[i]).z;
 	}
 
-	int sortedParts[NUM_PARTS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+	int sortedParts[NUM_PARTS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	std::sort(std::begin(sortedParts), std::end(sortedParts), [&distances](int a, int b) { return distances[a] > distances[b]; });
 
 	constexpr unsigned DF_PRIMARY = DF_AlphaBlended | DF_ZTestOff | DF_ZWriteOff;
@@ -1291,6 +1348,13 @@ void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeM
 			ui::prim::SetVertexColor(coneVerts, coneVC, ui::Color4f(0.0f, 0.1f, 0.9f, (_hoveredPart == MGP_ZAxis ? 1.0f : 0.5f) * visZ));
 			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * _combinedXF,
 				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
+			break;
+
+		case 9:
+			SetRenderState(DF_PRIMARY | DF_Cull);
+			ui::prim::SetVertexColor(sphereVerts, sphereVC, ui::Color4f(1.0f, (_hoveredPart == MGP_ScreenPlane ? 1.0f : 0.5f) * visZ));
+			DrawIndexed(Mat4f::Scale(0.1f) * _combinedXF,
+				PT_Triangles, VF_Color, sphereVerts, sphereVC, sphereIndices, sphereIC);
 			break;
 		}
 	}

@@ -737,6 +737,8 @@ struct GizmoTest : ui::Node
 			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](UIEvent& e)
 			{
+				if (e.type == UIEventType::ButtonDown)
+					e.context->SetKeyboardFocus(e.current);
 				if (moveGizmo.OnEvent(e, camera, ui::GizmoEditablePosVec3f(pos)))
 					Rerender();
 				camera.OnEvent(e);
