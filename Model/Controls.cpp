@@ -1000,7 +1000,10 @@ void Textbox::OnPaint()
 
 	{
 		auto r = GetContentRect();
-		DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _text.c_str(), 1, 1, 1);
+		if (!_placeholder.empty() && !IsFocused() && _text.empty())
+			DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _placeholder.c_str(), 1, 1, 1, 0.5f);
+		if (!_text.empty())
+			DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _text.c_str(), 1, 1, 1);
 
 		if (IsFocused())
 		{
@@ -1363,15 +1366,21 @@ int Textbox::_FindCursorPos(float vpx)
 	return _text.size();
 }
 
-Textbox& Textbox::SetText(const std::string& s)
+Textbox& Textbox::SetText(StringView s)
 {
 	if (InUse())
 		return *this;
-	_text = s;
+	_text.assign(s.data(), s.size());
 	if (startCursor > _text.size())
 		startCursor = _text.size();
 	if (endCursor > _text.size())
 		endCursor = _text.size();
+	return *this;
+}
+
+Textbox& Textbox::SetPlaceholder(StringView s)
+{
+	_placeholder.assign(s.data(), s.size());
 	return *this;
 }
 

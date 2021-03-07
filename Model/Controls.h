@@ -457,7 +457,8 @@ struct Textbox : UIElement
 	int _FindCursorPos(float vpx);
 
 	const std::string& GetText() const { return _text; }
-	Textbox& SetText(const std::string& s);
+	Textbox& SetText(StringView s);
+	Textbox& SetPlaceholder(StringView s);
 
 	Textbox& Init(float& val);
 	template <size_t N> Textbox& Init(char (&val)[N])
@@ -474,10 +475,24 @@ struct Textbox : UIElement
 	}
 
 	std::string _text;
+	std::string _placeholder;
 	int startCursor = 0;
 	int endCursor = 0;
 	bool showCaretState = false;
 	float accumulator = 0;
+};
+
+struct TextboxPlaceholder : Modifier
+{
+	StringView placeholder;
+
+	TextboxPlaceholder(StringView pch) : placeholder(pch) {}
+
+	void Apply(UIObject* obj) const override
+	{
+		if (auto* tb = dynamic_cast<Textbox*>(obj))
+			tb->SetPlaceholder(placeholder);
+	}
 };
 
 struct CollapsibleTreeNode : UIElement

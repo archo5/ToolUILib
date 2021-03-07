@@ -41,7 +41,7 @@ struct SettingsWindowDemo : ui::Node
 
 		ctx->Push<ui::ListBox>();
 
-		ui::imm::PropEditString(ctx, "Search", search.c_str(), [this](const char* v) { search = v; });
+		ui::imm::EditString(ctx, search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
 
 		std::unordered_set<StringView> sections;
 		for (auto& entry : entries)
