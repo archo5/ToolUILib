@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "../Core/3DMath.h"
 #include "../Render/OpenGL.h"
+#include "../Render/Primitives.h"
 
 
 struct StateButtonsTest : ui::Node
@@ -620,14 +621,13 @@ struct The3DViewTest : ui::Node
 	{
 		using namespace ui::rhi;
 
-		Mat4f pm = Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000);
-		Mat4f vm = camera.GetViewMatrix();
-		Mat4f vpm = vm * pm;
-		Mat4f ivpm = vpm.Inverted();
+		camera.SetWindowRect(rect);
+		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000));
 
 		Clear(16, 15, 14, 255);
-		SetProjectionMatrix(pm);
-		SetViewMatrix(vm);
+		SetProjectionMatrix(camera.GetProjectionMatrix());
+		SetViewMatrix(camera.GetViewMatrix());
+		SetForcedColor(ui::Color4f(0.5f));
 		VertPC verts[] =
 		{
 			{ -1, -1, 0, { 100, 150, 200, 255 } },
@@ -640,15 +640,73 @@ struct The3DViewTest : ui::Node
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 
+		{
+			constexpr ui::prim::PlaneSettings S = { 2, 3 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GeneratePlane(S, verts, idcs);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.2f, 0.8f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.4f, 0, 0));
+		}
+
+		{
+			constexpr ui::prim::BoxSettings S = { 2, 3, 4 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateBox(S, verts, idcs);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.5f, 0.8f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.2f, 0, 0));
+		}
+
+		{
+			constexpr ui::prim::ConeSettings S = { 31 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateCone(S, verts, idcs);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.8f, 0.5f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.0f, 0, 0));
+		}
+
+		{
+			constexpr ui::prim::UVSphereSettings S = { 31, 13 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateUVSphere(S, verts, idcs);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.8f, 0.2f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(-0.2f, 0, 0));
+		}
+
+		{
+			constexpr ui::prim::BoxSphereSettings S = { 5 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateBoxSphere(S, verts, idcs);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.8f, 0.5f, 0.2f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(-0.4f, 0, 0));
+		}
+
 		SetRenderState(DF_ZTestOff | DF_ZWriteOff);
-		Vec3f rpos, rdir;
-		GetCameraRay(ivpm,
-			lerp(-1, 1, invlerp(rect.x0, rect.x1, mousePos.x)),
-			lerp(1, -1, invlerp(rect.y0, rect.y1, mousePos.y)),
-			rpos, rdir);
-		auto rpir = RayPlaneIntersect(rpos, rdir, { 0, 0, 1, -1 });
-		Vec3f isp = rpos + rdir * rpir.dist;
+		auto ray = camera.GetRayWP(mousePos);
+		auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { 0, 0, 1, -1 });
+		Vec3f isp = ray.GetPoint(rpir.dist);
 		DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.1f) * Mat4f::Translate(isp), PT_Triangles, VF_Color, verts, 4, indices, 6);
+	}
+	void DrawPrim(ui::Vertex_PF3CB4* verts, uint16_t vc, uint16_t* idcs, unsigned ic, const ui::Color4b& col, const Mat4f& m)
+	{
+		using namespace ui::rhi;
+
+		ui::prim::SetVertexColor(verts, vc, col);
+
+		SetRenderState(DF_AlphaBlended | DF_Cull);
+		DrawIndexed(m, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+
+		SetRenderState(DF_Wireframe | DF_ForceColor);
+		DrawIndexed(m, PT_Triangles, VF_Color, verts, vc, idcs, ic);
 	}
 
 	ui::OrbitCamera camera;
@@ -657,6 +715,111 @@ struct The3DViewTest : ui::Node
 void Test_3DView(UIContainer* ctx)
 {
 	ctx->Make<The3DViewTest>();
+}
+
+
+struct GizmoTest : ui::Node
+{
+	static constexpr bool Persistent = true;
+
+	struct VertPC
+	{
+		float x, y, z;
+		ui::Color4b col;
+	};
+	void Render(UIContainer* ctx) override
+	{
+		*ctx->Push<ui::Panel>()
+			+ ui::Margin(0)
+			+ ui::Height(style::Coord::Percent(100));
+		{
+			auto& v = *ctx->Push<ui::View3D>();
+			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+			v.HandleEvent() = [this](UIEvent& e)
+			{
+				if (moveGizmo.OnEvent(e, camera, pos))
+					Rerender();
+				camera.OnEvent(e);
+			};
+			v.onRender = [this](UIRect r) { Render3DView(r); };
+			v + ui::Height(style::Coord::Percent(100));
+
+			char tmp[256] = {};
+			snprintf(tmp, 256, "pos=%g;%g;%g", pos.x, pos.y, pos.z);
+			ctx->Text(tmp);
+
+			ctx->Pop();
+		}
+		ctx->Pop();
+	}
+	void Render3DView(const UIRect& rect)
+	{
+		using namespace ui::rhi;
+
+		camera.SetWindowRect(rect);
+		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000));
+
+		Clear(16, 15, 14, 255);
+		SetProjectionMatrix(camera.GetProjectionMatrix());
+		SetViewMatrix(camera.GetViewMatrix());
+		VertPC verts[] =
+		{
+			{ -1, -1, 0, { 100, 150, 200, 255 } },
+			{ 1, -1, 0, { 100, 0, 200, 255 } },
+			{ -1, 1, 0, { 200, 150, 0, 255 } },
+			{ 1, 1, 0, { 150, 50, 0, 255 } },
+		};
+		uint16_t indices[] = { 0, 1, 2, 1, 3, 2 };
+		DrawIndexed(Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+
+		RenderObject(Mat4f::Scale(0.1f) * Mat4f::Translate(pos));
+
+		moveGizmo.SetTransform(Mat4f::Scale(200.0f / rect.GetHeight()) * Mat4f::Translate(pos), camera);
+		moveGizmo.Render(camera);
+	}
+
+	void RenderObject(const Mat4f& mtx)
+	{
+		using namespace ui::rhi;
+
+		SetRenderState(DF_Cull);
+
+		{
+			constexpr ui::prim::BoxSettings S = {};
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateBox(S, verts, idcs);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0.1f, 1));
+			DrawIndexed(mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+		}
+
+		{
+			constexpr ui::prim::ConeSettings S = { 32 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateCone(S, verts, idcs);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0.2f, 0, 0, 1));
+			DrawIndexed(Mat4f::Translate(0, 0, 1) * Mat4f::RotateY(-90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0.2f, 0, 1));
+			DrawIndexed(Mat4f::Translate(0, 0, 1) * Mat4f::RotateX(90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0, 0.2f, 1));
+			DrawIndexed(Mat4f::Translate(0, 0, 1) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+		}
+	}
+
+	ui::OrbitCamera camera;
+	ui::Gizmo_Moving moveGizmo;
+	Vec3f pos = { 0.01f, 0.02f, 0.03f };
+};
+void Test_Gizmo(UIContainer* ctx)
+{
+	ctx->Make<GizmoTest>();
 }
 
 

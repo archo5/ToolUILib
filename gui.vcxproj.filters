@@ -76,6 +76,9 @@
     <ClCompile Include="Editors\EditCommon.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Render\Primitives.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -180,6 +183,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\json.h">
       <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Primitives.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

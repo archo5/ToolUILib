@@ -346,6 +346,7 @@ void Test_ColorBlock(UIContainer* ctx);
 void Test_Image(UIContainer* ctx);
 void Test_ColorPicker(UIContainer* ctx);
 void Test_3DView(UIContainer* ctx);
+void Test_Gizmo(UIContainer* ctx);
 void Test_IMGUI(UIContainer* ctx);
 void Test_Tooltip(UIContainer* ctx);
 void Test_Dropdown(UIContainer* ctx);
@@ -427,7 +428,9 @@ static const TestEntry compoundTestEntries[] =
 	{ "Color block", Test_ColorBlock },
 	{ "Image", Test_Image },
 	{ "Color picker", Test_ColorPicker },
+	{},
 	{ "3D view", Test_3DView },
+	{ "Gizmo", Test_Gizmo },
 	{},
 	{ "IMGUI test", Test_IMGUI },
 };

@@ -99,6 +99,7 @@ struct Mat4f
 	UI_FORCEINLINE static Mat4f Translate(const Vec3f& v) { return Translate(v.x, v.y, v.z); }
 	static Mat4f Translate(float x, float y, float z);
 
+	UI_FORCEINLINE static Mat4f Scale(float q) { return Scale(q, q, q); }
 	UI_FORCEINLINE static Mat4f Scale(const Vec3f& v) { return Scale(v.x, v.y, v.z); }
 	static Mat4f Scale(float x, float y, float z);
 
@@ -180,6 +181,18 @@ struct Mat4f
 };
 
 
+struct Ray3f
+{
+	Vec3f origin;
+	Vec3f direction;
+
+	UI_FORCEINLINE Ray3f() {}
+	UI_FORCEINLINE Ray3f(const Vec3f& p, const Vec3f& d) : origin(p), direction(d) {}
+
+	Vec3f GetPoint(float dist) const { return origin + direction * dist; }
+};
+
+
 UI_FORCEINLINE float PlanePointSignedDistance(const Vec4f& plane, const Vec3f& point)
 {
 	return Vec3Dot(plane.GetVec3(), point) - plane.w;
@@ -201,12 +214,11 @@ inline RayPlaneIntersectResult RayPlaneIntersect(const Vec3f& pos, const Vec3f& 
 	return { posdist / diralign, diralign };
 }
 
-inline void GetCameraRay(const Mat4f& invVP, float x, float y, Vec3f& opos, Vec3f& odir)
+inline Ray3f GetCameraRay(const Mat4f& invVP, float x, float y)
 {
 	Vec3f p0 = { x, y, 0 };
 	Vec3f p1 = { x, y, 1 };
 	p0 = invVP.TransformPoint(p0);
 	p1 = invVP.TransformPoint(p1);
-	opos = p0;
-	odir = (p1 - p0).Normalized();
+	return { p0, (p1 - p0).Normalized() };
 }

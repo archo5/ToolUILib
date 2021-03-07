@@ -292,15 +292,55 @@ struct View3D : UIElement
 	std::function<void(UIRect)> onPaintOverlay;
 };
 
-struct OrbitCamera
+struct CameraBase
 {
-	void OnEvent(UIEvent& e);
+	Mat4f _mtxView;
+	Mat4f _mtxInvView;
+	Mat4f _mtxProj;
+	Mat4f _mtxInvProj;
+	Mat4f _mtxViewProj;
+	Mat4f _mtxInvViewProj;
+	UIRect _windowRect;
+
+	void _UpdateViewProjMatrix();
+
+	UI_FORCEINLINE const Mat4f& GetViewMatrix() const { return _mtxView; }
+	UI_FORCEINLINE const Mat4f& GetInverseViewMatrix() const { return _mtxInvView; }
+	void SetViewMatrix(const Mat4f& m);
+
+	UI_FORCEINLINE const Mat4f& GetProjectionMatrix() const { return _mtxProj; }
+	UI_FORCEINLINE const Mat4f& GetInverseProjectionMatrix() const { return _mtxInvProj; }
+	void SetProjectionMatrix(const Mat4f& m);
+
+	UI_FORCEINLINE const Mat4f& GetViewProjectionMatrix() const { return _mtxViewProj; }
+	UI_FORCEINLINE const Mat4f& GetInverseViewProjectionMatrix() const { return _mtxInvViewProj; }
+
+	UI_FORCEINLINE const UIRect& GetWindowRect() const { return _windowRect; }
+	void SetWindowRect(const UIRect& rect);
+
+	Point<float> WindowToNormalizedPoint(Point<float> p) const;
+	Point<float> NormalizedToWindowPoint(Point<float> p) const;
+	Point<float> WorldToNormalizedPoint(const Vec3f& p) const;
+	Point<float> WorldToWindowPoint(const Vec3f& p) const;
+
+	Ray3f GetRayNP(Point<float> p) const;
+	Ray3f GetLocalRayNP(Point<float> p, const Mat4f& world2local) const;
+	Ray3f GetRayWP(Point<float> p) const;
+	Ray3f GetLocalRayWP(Point<float> p, const Mat4f& world2local) const;
+	Ray3f GetRayEP(const UIEvent& e) const;
+	Ray3f GetLocalRayEP(const UIEvent& e, const Mat4f& world2local) const;
+};
+
+struct OrbitCamera : CameraBase
+{
+	OrbitCamera();
+	bool OnEvent(UIEvent& e);
 
 	void Rotate(float dx, float dy);
 	void Pan(float dx, float dy);
 	void Zoom(float delta);
 
-	Mat4f GetViewMatrix();
+	void _UpdateViewMatrix();
 
 	// state/settings
 	Vec3f pivot = {};
@@ -320,6 +360,23 @@ struct OrbitCamera
 	// state
 	bool rotating = false;
 	bool panning = false;
+};
+
+struct Gizmo_Moving
+{
+	Mat4f transform = Mat4f::Identity();
+
+	int _selectedPart = -1;
+	int _hoveredPart = -1;
+
+	Point<float> _origDiffWP = {};
+	Vec3f _origPos = {};
+
+	int _GetIntersectingPart(const Ray3f& ray);
+
+	void SetTransform(const Mat4f& base, const CameraBase& cam);
+	bool OnEvent(UIEvent& e, const CameraBase& cam, Vec3f& pos);
+	void Render(const CameraBase& cam);
 };
 
 } // ui

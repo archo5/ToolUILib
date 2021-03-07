@@ -152,6 +152,7 @@
     <ClCompile Include="Model\System.cpp" />
     <ClCompile Include="Model\Theme.cpp" />
     <ClCompile Include="Render\OpenGL.cpp" />
+    <ClCompile Include="Render\Primitives.cpp" />
     <ClCompile Include="Render\Render.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +187,7 @@
     <ClInclude Include="Model\System.h" />
     <ClInclude Include="Model\Theme.h" />
     <ClInclude Include="Render\OpenGL.h" />
+    <ClInclude Include="Render\Primitives.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="ThirdParty\json.h" />
     <ClInclude Include="ThirdParty\stb_rect_pack.h" />
