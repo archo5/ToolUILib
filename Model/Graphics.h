@@ -294,13 +294,13 @@ struct View3D : UIElement
 
 struct CameraBase
 {
-	Mat4f _mtxView;
-	Mat4f _mtxInvView;
-	Mat4f _mtxProj;
-	Mat4f _mtxInvProj;
-	Mat4f _mtxViewProj;
-	Mat4f _mtxInvViewProj;
-	UIRect _windowRect;
+	Mat4f _mtxView = Mat4f::Identity();
+	Mat4f _mtxInvView = Mat4f::Identity();
+	Mat4f _mtxProj = Mat4f::Identity();
+	Mat4f _mtxInvProj = Mat4f::Identity();
+	Mat4f _mtxViewProj = Mat4f::Identity();
+	Mat4f _mtxInvViewProj = Mat4f::Identity();
+	UIRect _windowRect = { -1, -1, 0, 0 };
 
 	void _UpdateViewProjMatrix();
 
@@ -362,21 +362,103 @@ struct OrbitCamera : CameraBase
 	bool panning = false;
 };
 
+struct DataWriter
+{
+	std::vector<char>& _data;
+
+	DataWriter(std::vector<char>& data) : _data(data) {}
+
+	template <class T> DataWriter& operator << (const T& src)
+	{
+		_data.insert(_data.end(), (char*)&src, (char*)(&src + 1));
+		return *this;
+	}
+};
+
+struct DataReader
+{
+	std::vector<char>& _data;
+	size_t _off = 0;
+
+	DataReader(std::vector<char>& data) : _data(data) {}
+
+	size_t Remaining() const
+	{
+		return _off <= _data.size() ? _data.size() - _off : 0;
+	}
+
+	void Reset()
+	{
+		_off = 0;
+	}
+
+	template <class T> void Skip(size_t count = 1)
+	{
+		_off += sizeof(T) * count;
+	}
+
+	template <class T> DataReader& operator << (T& o)
+	{
+		if (_off + sizeof(o) <= _data.size())
+		{
+			memcpy(&o, &_data[_off], sizeof(T));
+			_off += sizeof(T);
+		}
+		else
+		{
+			memset(&o, 0, sizeof(T));
+		}
+		return *this;
+	}
+};
+
+struct IGizmoEditable
+{
+	virtual void Backup(DataWriter& data) const = 0;
+	virtual void Transform(DataReader& data, const Mat4f* xf) = 0;
+};
+
+struct GizmoEditablePosVec3f : IGizmoEditable
+{
+	Vec3f& pos;
+
+	GizmoEditablePosVec3f(Vec3f& p) : pos(p) {}
+	void Backup(DataWriter& data) const override
+	{
+		data << pos;
+	}
+	void Transform(DataReader& data, const Mat4f* xf) override
+	{
+		data << pos;
+		if (xf)
+			pos = xf->TransformPoint(pos);
+	}
+};
+
+enum class GizmoSizeMode
+{
+	Scene,
+	ViewNormalized,
+	ViewPixelsY,
+};
+
 struct Gizmo_Moving
 {
-	Mat4f transform = Mat4f::Identity();
+	Mat4f _xf = Mat4f::Identity();
+	Mat4f _combinedXF = Mat4f::Identity();
 
 	int _selectedPart = -1;
 	int _hoveredPart = -1;
 
 	Point<float> _origDiffWP = {};
+	std::vector<char> _origData;
 	Vec3f _origPos = {};
 
 	int _GetIntersectingPart(const Ray3f& ray);
 
-	void SetTransform(const Mat4f& base, const CameraBase& cam);
-	bool OnEvent(UIEvent& e, const CameraBase& cam, Vec3f& pos);
-	void Render(const CameraBase& cam);
+	void SetTransform(const Mat4f& base);
+	bool OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& editable);
+	void Render(const CameraBase& cam, float size = 100.0f, GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixelsY);
 };
 
 } // ui

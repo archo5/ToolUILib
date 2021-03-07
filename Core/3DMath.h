@@ -28,6 +28,9 @@ struct Vec3f
 	UI_FORCEINLINE Vec3f& operator *= (const Vec3f& o) { x *= o.x; y *= o.y; z *= o.z; return *this; }
 	UI_FORCEINLINE Vec3f& operator /= (const Vec3f& o) { x /= o.x; y /= o.y; z /= o.z; return *this; }
 
+	UI_FORCEINLINE Vec3f& operator *= (float f) { x *= f; y *= f; z *= f; return *this; }
+	UI_FORCEINLINE Vec3f& operator /= (float f) { x /= f; y /= f; z /= f; return *this; }
+
 	UI_FORCEINLINE Vec3f operator * (float f) const { return { x * f, y * f, z * f }; }
 
 	UI_FORCEINLINE Vec3f operator + () const { return *this; }

@@ -737,7 +737,7 @@ struct GizmoTest : ui::Node
 			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](UIEvent& e)
 			{
-				if (moveGizmo.OnEvent(e, camera, pos))
+				if (moveGizmo.OnEvent(e, camera, ui::GizmoEditablePosVec3f(pos)))
 					Rerender();
 				camera.OnEvent(e);
 			};
@@ -776,7 +776,7 @@ struct GizmoTest : ui::Node
 
 		RenderObject(Mat4f::Scale(0.1f) * Mat4f::Translate(pos));
 
-		moveGizmo.SetTransform(Mat4f::Scale(200.0f / rect.GetHeight()) * Mat4f::Translate(pos), camera);
+		moveGizmo.SetTransform(Mat4f::Translate(pos));
 		moveGizmo.Render(camera);
 	}
 
