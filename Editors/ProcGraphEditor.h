@@ -116,8 +116,8 @@ struct IProcGraph
 	virtual Color4b GetNewLinkColor(const Pin&) { return Color4f(0.9f, 0.8f, 0.2f); }
 
 	// node position state
-	virtual Point<float> GetNodePosition(Node*) = 0;
-	virtual void SetNodePosition(Node*, const Point<float>&) = 0;
+	virtual Point2f GetNodePosition(Node*) = 0;
+	virtual void SetNodePosition(Node*, const Point2f&) = 0;
 
 	// node preview
 	virtual bool HasPreview(Node*) { return false; }
@@ -184,7 +184,7 @@ struct ProcGraphEditor_Node : Node
 	void Render(UIContainer* ctx) override;
 	void OnEvent(UIEvent& e) override;
 
-	void Init(IProcGraph* graph, IProcGraph::Node* node, Point<float> vOff);
+	void Init(IProcGraph* graph, IProcGraph::Node* node, Point2f vOff);
 
 	virtual void OnBuildTitleBar(UIContainer* ctx);
 	virtual void OnBuildEditor(UIContainer* ctx);
@@ -195,9 +195,9 @@ struct ProcGraphEditor_Node : Node
 	IProcGraph* _graph = nullptr;
 	IProcGraph::Node* _node = nullptr;
 	bool _isDragging = false;
-	Point<float> _dragStartPos = {};
-	Point<float> _dragStartMouse = {};
-	Point<float> _viewOffset = {};
+	Point2f _dragStartPos = {};
+	Point2f _dragStartMouse = {};
+	Point2f _viewOffset = {};
 };
 
 struct ProcGraphEditor : Node
@@ -214,22 +214,22 @@ struct ProcGraphEditor : Node
 	virtual void OnMakeCreationMenu(struct MenuItemCollection& menu);
 	virtual void OnDrawCurrentLinks();
 	virtual void OnDrawPendingLinks();
-	virtual void GetLinkPoints(const IProcGraph::Link& link, std::vector<Point<float>>& outPoints);
-	virtual void GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::vector<Point<float>>& outPoints);
+	virtual void GetLinkPoints(const IProcGraph::Link& link, std::vector<Point2f>& outPoints);
+	virtual void GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::vector<Point2f>& outPoints);
 	// connecting = 0 (not), 1 (output-*), -1 (*-input)
-	virtual void GetLinkPointsRaw(const Point<float>& p0, const Point<float>& p1, int connecting, std::vector<Point<float>>& outPoints);
-	virtual void GetTangents(const Point<float>& b0, const Point<float>& b3, Point<float>& b1, Point<float>& b2);
-	virtual void GetLinkPointsRawInner(const Point<float>& b0, const Point<float>& b3, std::vector<Point<float>>& outPoints);
-	virtual Point<float> GetPinPos(ProcGraphEditor_NodePin* P);
-	virtual void OnDrawSingleLink(const std::vector<Point<float>>& points, int connecting, float width, Color4b color);
+	virtual void GetLinkPointsRaw(const Point2f& p0, const Point2f& p1, int connecting, std::vector<Point2f>& outPoints);
+	virtual void GetTangents(const Point2f& b0, const Point2f& b3, Point2f& b1, Point2f& b2);
+	virtual void GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3, std::vector<Point2f>& outPoints);
+	virtual Point2f GetPinPos(ProcGraphEditor_NodePin* P);
+	virtual void OnDrawSingleLink(const std::vector<Point2f>& points, int connecting, float width, Color4b color);
 
 	IProcGraph* _graph = nullptr;
 	PinUIMap pinUIMap;
 
-	Point<float> viewOffset = {};
+	Point2f viewOffset = {};
 
-	Point<float> origMPos = {};
-	Point<float> origVPos = {};
+	Point2f origMPos = {};
+	Point2f origVPos = {};
 
 	bool drawCurrentLinksOnTop = false;
 	bool drawPendingLinksOnTop = true;

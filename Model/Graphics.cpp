@@ -4,9 +4,6 @@
 #include "Controls.h"
 #include "System.h"
 #include "../Render/OpenGL.h"
-#include "../Render/Primitives.h"
-
-#include <algorithm>
 
 
 namespace ui {
@@ -755,7 +752,7 @@ void View3D::OnPaint()
 	auto r = finalRectC;
 	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
 	{
-		rhi::Begin3DMode(r.x0, r.y0, r.x1, r.y1);
+		rhi::Begin3DMode(r.Cast<int>());
 
 		if (onRender)
 			onRender(r);
@@ -796,7 +793,7 @@ void CameraBase::SetWindowRect(const UIRect& rect)
 	_windowRect = rect;
 }
 
-Point<float> CameraBase::WindowToNormalizedPoint(Point<float> p) const
+Point2f CameraBase::WindowToNormalizedPoint(Point2f p) const
 {
 	auto& cr = _windowRect;
 	return
@@ -806,7 +803,7 @@ Point<float> CameraBase::WindowToNormalizedPoint(Point<float> p) const
 	};
 }
 
-Point<float> CameraBase::NormalizedToWindowPoint(Point<float> p) const
+Point2f CameraBase::NormalizedToWindowPoint(Point2f p) const
 {
 	auto& cr = _windowRect;
 	return
@@ -816,33 +813,44 @@ Point<float> CameraBase::NormalizedToWindowPoint(Point<float> p) const
 	};
 }
 
-Point<float> CameraBase::WorldToNormalizedPoint(const Vec3f& p) const
+Point2f CameraBase::WorldToNormalizedPoint(const Vec3f& p) const
 {
 	auto np = GetViewProjectionMatrix().TransformPoint(p);
 	return { np.x, np.y };
 }
 
-Point<float> CameraBase::WorldToWindowPoint(const Vec3f& p) const
+Point2f CameraBase::WorldToWindowPoint(const Vec3f& p) const
 {
 	return NormalizedToWindowPoint(WorldToNormalizedPoint(p));
 }
 
-Ray3f CameraBase::GetRayNP(Point<float> p) const
+float CameraBase::WorldToWindowSize(float size, const Vec3f& refp) const
+{
+	float dist = GetViewMatrix().TransformPoint(refp).z;
+	return size * GetWindowRect().GetHeight() * GetProjectionMatrix().m[1][1] * 0.5f / dist;
+}
+
+float CameraBase::WindowToWorldSize(float size, const Vec3f& refp) const
+{
+	return size / WorldToWindowSize(1.0f, refp);
+}
+
+Ray3f CameraBase::GetRayNP(Point2f p) const
 {
 	return GetCameraRay(GetInverseViewProjectionMatrix(), p.x, p.y);
 }
 
-Ray3f CameraBase::GetLocalRayNP(Point<float> p, const Mat4f& world2local) const
+Ray3f CameraBase::GetLocalRayNP(Point2f p, const Mat4f& world2local) const
 {
 	return GetCameraRay(GetInverseViewProjectionMatrix() * world2local, p.x, p.y);
 }
 
-Ray3f CameraBase::GetRayWP(Point<float> p) const
+Ray3f CameraBase::GetRayWP(Point2f p) const
 {
 	return GetRayNP(WindowToNormalizedPoint(p));
 }
 
-Ray3f CameraBase::GetLocalRayWP(Point<float> p, const Mat4f& world2local) const
+Ray3f CameraBase::GetLocalRayWP(Point2f p, const Mat4f& world2local) const
 {
 	return GetLocalRayNP(WindowToNormalizedPoint(p), world2local);
 }
@@ -946,418 +954,6 @@ void OrbitCamera::_UpdateViewMatrix()
 	Mat4f vm = Mat4f::LookAtLH(pivot + dir * distance, pivot, { 0, 0, 1 });
 
 	SetViewMatrix(vm);
-}
-
-
-enum MovingGizmoParts
-{
-	MGP_NONE = -1,
-	MGP_XAxis,
-	MGP_YAxis,
-	MGP_ZAxis,
-	MGP_XPlane,
-	MGP_YPlane,
-	MGP_ZPlane,
-	MGP_ScreenPlane,
-};
-
-struct SDFRet
-{
-	float dist;
-	int part;
-};
-
-static float ConeSDF(const Vec3f& p, const Vec3f& slope)
-{
-	float q = sqrtf(p.x * p.x + p.y * p.y);
-	return slope.x * q + slope.y * p.z;
-}
-
-static float BoxSDF(const Vec3f& p, const Vec3f& bbmin, const Vec3f& bbmax)
-{
-	Vec3f c = p;
-	if (c.x < bbmin.x) c.x = bbmin.x; else if (c.x > bbmax.x) c.x = bbmax.x;
-	if (c.y < bbmin.y) c.y = bbmin.y; else if (c.y > bbmax.y) c.y = bbmax.y;
-	if (c.z < bbmin.z) c.z = bbmin.z; else if (c.z > bbmax.z) c.z = bbmax.z;
-	return (c - p).Length();
-}
-
-static SDFRet MovingGizmoSDF(const Vec3f& pos)
-{
-	auto coneSlope = Vec3f{ 2, 1 }.Normalized();
-
-	float coneDistX = max(ConeSDF({ pos.y, pos.z, pos.x - 1.1f }, coneSlope), 0.9f - pos.x);
-	float coneDistY = max(ConeSDF({ pos.z, pos.x, pos.y - 1.1f }, coneSlope), 0.9f - pos.y);
-	float coneDistZ = max(ConeSDF({ pos.x, pos.y, pos.z - 1.1f }, coneSlope), 0.9f - pos.z);
-
-	float axisDistX = BoxSDF(pos, { 0, 0, 0 }, { 0.9f, 0, 0 }) - 0.05f;
-	float axisDistY = BoxSDF(pos, { 0, 0, 0 }, { 0, 0.9f, 0 }) - 0.05f;
-	float axisDistZ = BoxSDF(pos, { 0, 0, 0 }, { 0, 0, 0.9f }) - 0.05f;
-
-	float planeDistX = BoxSDF(pos, { 0, 0, 0 }, { 0, 0.3f, 0.3f });
-	float planeDistY = BoxSDF(pos, { 0, 0, 0 }, { 0.3f, 0, 0.3f });
-	float planeDistZ = BoxSDF(pos, { 0, 0, 0 }, { 0.3f, 0.3f, 0 });
-
-	float sphereDistC = pos.Length() - 0.1f;
-
-	SDFRet ret = { FLT_MAX, MGP_NONE };
-	if (ret.dist > coneDistX) ret = { coneDistX, MGP_XAxis };
-	if (ret.dist > coneDistY) ret = { coneDistY, MGP_YAxis };
-	if (ret.dist > coneDistZ) ret = { coneDistZ, MGP_ZAxis };
-	if (ret.dist > axisDistX) ret = { axisDistX, MGP_XAxis };
-	if (ret.dist > axisDistY) ret = { axisDistY, MGP_YAxis };
-	if (ret.dist > axisDistZ) ret = { axisDistZ, MGP_ZAxis };
-	if (ret.dist > planeDistX) ret = { planeDistX, MGP_XPlane };
-	if (ret.dist > planeDistY) ret = { planeDistY, MGP_YPlane };
-	if (ret.dist > planeDistZ) ret = { planeDistZ, MGP_ZPlane };
-	if (ret.dist > sphereDistC) ret = { sphereDistC, MGP_ScreenPlane };
-	return ret;
-}
-
-int Gizmo_Moving::_GetIntersectingPart(const Ray3f& ray)
-{
-	Vec3f pos = ray.origin;
-
-	for (int i = 0; i < 64; i++)
-	{
-		auto nearest = MovingGizmoSDF(pos);
-		if (nearest.dist < 0.001f)
-			return nearest.part;
-
-		pos += ray.direction * nearest.dist;
-	}
-
-	return MGP_NONE;
-}
-
-void Gizmo_Moving::SetTransform(const Mat4f& base)
-{
-	_xf = base;
-}
-
-bool Gizmo_Moving::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& editable)
-{
-	if (e.IsPropagationStopped())
-		return false;
-
-	auto& editableNC = const_cast<IGizmoEditable&>(editable);
-	if (e.type == UIEventType::MouseMove)
-	{
-		_lastCursorPos = { e.x, e.y };
-		if (_selectedPart == MGP_NONE)
-		{
-			_hoveredPart = _GetIntersectingPart(cam.GetLocalRayEP(e, _combinedXF.Inverted()));
-		}
-		else
-		{
-			Point<float> newPointWP = { e.x + _origDiffWP.x, e.y + _origDiffWP.y };
-			Ray3f ray = cam.GetRayWP(newPointWP);
-
-			Vec3f axis = {};
-			switch (_selectedPart)
-			{
-			case MGP_XAxis: case MGP_XPlane: axis = { 1, 0, 0 }; break;
-			case MGP_YAxis: case MGP_YPlane: axis = { 0, 1, 0 }; break;
-			case MGP_ZAxis: case MGP_ZPlane: axis = { 0, 0, 1 }; break;
-			}
-			Vec3f worldAxis = (_combinedXF.TransformPoint(axis) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized();
-			if (_selectedPart == MGP_ScreenPlane)
-			{
-				worldAxis = cam.GetInverseViewMatrix().TransformDirection({ 0, 0, 1 }).Normalized();
-			}
-
-			Vec3f worldOrigPos = _origPos;
-
-			switch (_selectedPart)
-			{
-			case MGP_XAxis:
-			case MGP_YAxis:
-			case MGP_ZAxis: {
-				// generate a plane
-				Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-				Vec3f rt = Vec3Cross(cam2center, worldAxis);
-				Vec3f pn = Vec3Cross(rt, worldAxis);
-				auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { pn.x, pn.y, pn.z, Vec3Dot(pn, worldOrigPos) });
-				if (rpir.angcos)
-				{
-					Vec3f isp = ray.GetPoint(rpir.dist);
-					float diff = Vec3Dot(worldAxis, isp) - Vec3Dot(worldAxis, worldOrigPos);
-
-					auto xf = Mat4f::Translate(worldAxis * diff);
-
-					ui::DataReader dr(_origData);
-					editableNC.Transform(dr, &xf);
-					return true;
-				}
-				break; }
-			case MGP_XPlane:
-			case MGP_YPlane:
-			case MGP_ZPlane:
-			case MGP_ScreenPlane: {
-				auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { worldAxis.x, worldAxis.y, worldAxis.z, Vec3Dot(worldAxis, worldOrigPos) });
-				if (rpir.angcos)
-				{
-					Vec3f diff = ray.GetPoint(rpir.dist) - _origPos;
-
-					auto xf = Mat4f::Translate(diff);
-
-					ui::DataReader dr(_origData);
-					editableNC.Transform(dr, &xf);
-					return true;
-				}
-				break; }
-			}
-		}
-	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
-	{
-		if (_selectedPart != MGP_NONE)
-		{
-			_selectedPart = MGP_NONE;
-			e.StopPropagation();
-		}
-		else if (_hoveredPart != MGP_NONE)
-		{
-			Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-			float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-			float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-			float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-
-			float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
-			float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
-			float visZ = clamp(invlerp(0.99f, 0.97f, dotZ), 0.0f, 1.0f);
-			float visPX = clamp(invlerp(0.05f, 0.21f, dotX), 0.0f, 1.0f);
-			float visPY = clamp(invlerp(0.05f, 0.21f, dotY), 0.0f, 1.0f);
-			float visPZ = clamp(invlerp(0.05f, 0.21f, dotZ), 0.0f, 1.0f);
-
-			switch (_hoveredPart)
-			{
-			case MGP_XAxis: if (visX <= 0) return false; break;
-			case MGP_YAxis: if (visY <= 0) return false; break;
-			case MGP_ZAxis: if (visZ <= 0) return false; break;
-			case MGP_XPlane: if (visPX <= 0) return false; break;
-			case MGP_YPlane: if (visPY <= 0) return false; break;
-			case MGP_ZPlane: if (visPZ <= 0) return false; break;
-			}
-
-			_selectedPart = _hoveredPart;
-
-			_origPos = _combinedXF.TransformPoint({ 0, 0, 0 });
-
-			auto pointWP = cam.WorldToWindowPoint(_origPos);
-			_origDiffWP = { pointWP.x - e.x, pointWP.y - e.y };
-
-			_origData.clear();
-			ui::DataWriter dw(_origData);
-			editable.Backup(dw);
-
-			e.StopPropagation();
-		}
-	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Right && _selectedPart != MGP_NONE)
-	{
-		_selectedPart = MGP_NONE;
-		ui::DataReader dr(_origData);
-		editableNC.Transform(dr, nullptr);
-		return true;
-	}
-	else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
-	{
-		_selectedPart = MGP_NONE;
-	}
-	else if (e.type == UIEventType::KeyDown)
-	{
-		switch (e.shortCode)
-		{
-		case 1 /* Esc */:
-			if (_selectedPart != MGP_NONE)
-			{
-				_selectedPart = MGP_NONE;
-				ui::DataReader dr(_origData);
-				editableNC.Transform(dr, nullptr);
-
-				e.StopPropagation();
-				return true;
-			}
-			break;
-
-		case 34 /* G */: {
-			_selectedPart = MGP_ScreenPlane;
-
-			_origPos = _combinedXF.TransformPoint({ 0, 0, 0 });
-
-			auto pointWP = cam.WorldToWindowPoint(_origPos);
-			_origDiffWP = { pointWP.x - _lastCursorPos.x, pointWP.y - _lastCursorPos.y };
-
-			_origData.clear();
-			ui::DataWriter dw(_origData);
-			editable.Backup(dw);
-
-			e.StopPropagation();
-			break; }
-		}
-	}
-	return false;
-}
-
-void Gizmo_Moving::Render(const CameraBase& cam, float size, GizmoSizeMode sizeMode)
-{
-	using namespace ui::rhi;
-
-	if (sizeMode != GizmoSizeMode::Scene)
-	{
-		Vec3f pos = _xf.TransformPoint({ 0, 0, 0 });
-		float q = max(0.00001f, cam.GetViewMatrix().TransformPoint(pos).z);
-		size *= q;
-		if (sizeMode == GizmoSizeMode::ViewPixelsY)
-			size /= cam.GetWindowRect().GetHeight();
-	}
-	_combinedXF = Mat4f::Scale(size) * _xf;
-
-	constexpr ui::prim::PlaneSettings PS = {};
-	constexpr uint16_t planeVC = PS.CalcVertexCount();
-	constexpr uint16_t planeIC = PS.CalcIndexCount();
-	ui::Vertex_PF3CB4 planeVerts[planeVC];
-	uint16_t planeIndices[planeIC];
-	ui::prim::GeneratePlane(PS, planeVerts, planeIndices);
-
-	constexpr uint16_t planeFrameIC = 5;
-	uint16_t planeFrameIndices[planeFrameIC] = { 0, 1, 3, 2, 0 };
-
-	constexpr ui::prim::ConeSettings CS = {};
-	constexpr uint16_t coneVC = CS.CalcVertexCount();
-	constexpr uint16_t coneIC = CS.CalcIndexCount();
-	ui::Vertex_PF3CB4 coneVerts[coneVC];
-	uint16_t coneIndices[coneIC];
-	ui::prim::GenerateCone(CS, coneVerts, coneIndices);
-
-	constexpr ui::prim::BoxSphereSettings SS = {};
-	constexpr uint16_t sphereVC = SS.CalcVertexCount();
-	constexpr uint16_t sphereIC = SS.CalcIndexCount();
-	ui::Vertex_PF3CB4 sphereVerts[sphereVC];
-	uint16_t sphereIndices[sphereIC];
-	ui::prim::GenerateBoxSphere(SS, sphereVerts, sphereIndices);
-
-	ui::Vertex_PF3CB4 tmpVerts[2] = {};
-
-	Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-	float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-
-	float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
-	float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
-	float visZ = clamp(invlerp(0.99f, 0.97f, dotZ), 0.0f, 1.0f);
-	float visPX = clamp(invlerp(0.05f, 0.21f, dotX), 0.0f, 1.0f);
-	float visPY = clamp(invlerp(0.05f, 0.21f, dotY), 0.0f, 1.0f);
-	float visPZ = clamp(invlerp(0.05f, 0.21f, dotZ), 0.0f, 1.0f);
-
-	constexpr int NUM_PARTS = 10;
-	Vec3f centers[NUM_PARTS] =
-	{
-		{ 0, 0.15f, 0.15f }, // x plane
-		{ 0.15f, 0, 0.15f }, // y plane
-		{ 0.15f, 0.15f, 0 }, // z plane
-		{ 0.45f, 0, 0 }, // x line
-		{ 0, 0.45f, 0 }, // y line
-		{ 0, 0, 0.45f }, // z line
-		{ 0.95f, 0, 0 }, // x cone
-		{ 0, 0.95f, 0 }, // y cone
-		{ 0, 0, 0.95f }, // z cone
-		{ 0, 0, 0 }, // center sphere
-	};
-	float distances[NUM_PARTS];
-	Mat4f matWorldView = _combinedXF * cam.GetViewMatrix();
-	for (int i = 0; i < NUM_PARTS; i++)
-	{
-		distances[i] = matWorldView.TransformPoint(centers[i]).z;
-	}
-
-	int sortedParts[NUM_PARTS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::sort(std::begin(sortedParts), std::end(sortedParts), [&distances](int a, int b) { return distances[a] > distances[b]; });
-
-	constexpr unsigned DF_PRIMARY = DF_AlphaBlended | DF_ZTestOff | DF_ZWriteOff;
-
-	SetTexture(nullptr);
-
-	for (int i = 0; i < NUM_PARTS; i++)
-	{
-		switch (sortedParts[i])
-		{
-		case 0:
-			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, ui::Color4f(0.9f, 0.1f, 0.0f, (_hoveredPart == MGP_XPlane ? 0.7f : 0.3f) * visPX));
-			Mat4f mtxXPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.15f, 0.15f, 0) * Mat4f::RotateY(90) * _combinedXF;
-			DrawIndexed(mtxXPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
-			DrawIndexed(mtxXPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
-			break;
-
-		case 1:
-			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, ui::Color4f(0.1f, 0.9f, 0.0f, (_hoveredPart == MGP_YPlane ? 0.7f : 0.3f) * visPY));
-			Mat4f mtxYPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.15f, 0.15f, 0) * Mat4f::RotateX(-90) * _combinedXF;
-			DrawIndexed(mtxYPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
-			DrawIndexed(mtxYPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
-			break;
-
-		case 2:
-			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, ui::Color4f(0.0f, 0.1f, 0.9f, (_hoveredPart == MGP_ZPlane ? 0.7f : 0.3f) * visPZ));
-			Mat4f mtxZPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.15f, 0.15f, 0) * _combinedXF;
-			DrawIndexed(mtxZPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
-			DrawIndexed(mtxZPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
-			break;
-
-		case 3:
-			SetRenderState(DF_PRIMARY);
-			tmpVerts[1].pos = { 0.9f, 0, 0 };
-			tmpVerts[0].col = tmpVerts[1].col = ui::Color4f(0.9f, 0.1f, 0.0f, (_hoveredPart == MGP_XAxis ? 1.0f : 0.5f) * visX);
-			Draw(_combinedXF, PT_Lines, VF_Color, tmpVerts, 2);
-			break;
-
-		case 4:
-			SetRenderState(DF_PRIMARY);
-			tmpVerts[1].pos = { 0, 0.9f, 0 };
-			tmpVerts[0].col = tmpVerts[1].col = ui::Color4f(0.1f, 0.9f, 0.0f, (_hoveredPart == MGP_YAxis ? 1.0f : 0.5f) * visY);
-			Draw(_combinedXF, PT_Lines, VF_Color, tmpVerts, 2);
-			break;
-
-		case 5:
-			SetRenderState(DF_PRIMARY);
-			tmpVerts[1].pos = { 0, 0, 0.9f };
-			tmpVerts[0].col = tmpVerts[1].col = ui::Color4f(0.0f, 0.1f, 0.9f, (_hoveredPart == MGP_ZAxis ? 1.0f : 0.5f) * visZ);
-			Draw(_combinedXF, PT_Lines, VF_Color, tmpVerts, 2);
-			break;
-
-		case 6:
-			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, ui::Color4f(0.9f, 0.1f, 0.0f, (_hoveredPart == MGP_XAxis ? 1.0f : 0.5f) * visX));
-			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * Mat4f::RotateY(-90) * _combinedXF,
-				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
-			break;
-
-		case 7:
-			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, ui::Color4f(0.1f, 0.9f, 0.0f, (_hoveredPart == MGP_YAxis ? 1.0f : 0.5f) * visY));
-			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * Mat4f::RotateX(90) * _combinedXF,
-				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
-			break;
-
-		case 8:
-			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, ui::Color4f(0.0f, 0.1f, 0.9f, (_hoveredPart == MGP_ZAxis ? 1.0f : 0.5f) * visZ));
-			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * _combinedXF,
-				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
-			break;
-
-		case 9:
-			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(sphereVerts, sphereVC, ui::Color4f(1.0f, (_hoveredPart == MGP_ScreenPlane ? 1.0f : 0.5f) * visZ));
-			DrawIndexed(Mat4f::Scale(0.1f) * _combinedXF,
-				PT_Triangles, VF_Color, sphereVerts, sphereVC, sphereIndices, sphereIC);
-			break;
-		}
-	}
 }
 
 } // ui

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../Core/Math.h"
 #include "../Core/Image.h"
+#include "../Core/Memory.h"
 
 
 struct Sprite
@@ -107,11 +108,16 @@ namespace internals {
 
 void OnBeginDrawFrame();
 void OnEndDrawFrame();
+void Flush();
 
 } // internals
 
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel = true);
 void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel = true);
+void LineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed, bool midpixel = true);
+void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed, bool midpixel = true);
+void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
+void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
 void RectTex(float x0, float y0, float x1, float y1, Texture* tex);

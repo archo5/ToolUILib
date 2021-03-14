@@ -627,12 +627,12 @@ template <class T> bool DropdownMenuList(UIContainer* ctx, T& val, OptionList* o
 
 template <class MT, class T> bool PropDropdownMenuListCustom(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return DropdownMenuListCustom<MT, T>(ctx, val, ol, mods);
 }
 template <class T> bool PropDropdownMenuList(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
-	Property::Scope ps(ctx, label);
+	LabeledProperty::Scope ps(ctx, label);
 	return DropdownMenuList<T>(ctx, val, ol, mods);
 }
 

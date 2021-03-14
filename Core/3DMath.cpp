@@ -66,6 +66,22 @@ Mat4f Mat4f::RotateZ(float a)
 	};
 }
 
+Mat4f Mat4f::RotateAxisAngle(const Vec3f& axis, float a)
+{
+	a *= 3.14159f / 180;
+	float c = cosf(a);
+	float s = sinf(a);
+	float ic = 1 - c;
+	float x = axis.x, y = axis.y, z = axis.z;
+	return
+	{
+		c + x * x * ic, x * y * ic - z * s, x * z * ic + y * s, 0,
+		y * x * ic + z * s, c + y * y * ic, y * z * ic - x * s, 0,
+		z * x * ic - y * s, z * y * ic + x * s, c + z * z * ic, 0,
+		0, 0, 0, 1,
+	};
+}
+
 Mat4f Mat4f::LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up)
 {
 	auto z = dir.Normalized();

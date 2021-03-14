@@ -341,6 +341,11 @@ void OnEndDrawFrame()
 	_Flush();
 }
 
+void Flush()
+{
+	_Flush();
+}
+
 } // internals
 
 static void DebugOffScale(rhi::Vertex* verts, size_t count, float x, float y, float s)
@@ -396,48 +401,45 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 #endif
 }
 
+static inline void MidpixelAdjust(Point2f& p, const Point2f& d)
+{
+	p.x += 0.5f;
+	p.y += 0.5f;
+#if 0
+	if (d.x + d.y >= 0)
+		p -= d;
+	else
+		p += d;
+#endif
+}
+
+static UI_FORCEINLINE rhi::Vertex ColorVert(const Point2f& p, Color4b col)
+{
+	return { p.x, p.y, 0.5f, 0.5f, col };
+}
+
 void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool midpixel)
 {
 	if (x0 == x1 && y0 == y1)
 		return;
 
-	float dx = x1 - x0;
-	float dy = y1 - y0;
-	float lensq = dx * dx + dy * dy;
-	float hinvlen = 0.5f / sqrtf(lensq);
-	dx *= hinvlen;
-	dy *= hinvlen;
-	float tx = -dy * w;
-	float ty = dx * w;
+	Point2f p0 = { x0, y0 };
+	Point2f p1 = { x1, y1 };
+	Point2f d = (p1 - p0).Normalized() * 0.5f;
+	Point2f t = d.Perp() * w;
 
 	if (midpixel)
 	{
-		x0 += 0.5f;
-		y0 += 0.5f;
-		x1 += 0.5f;
-		y1 += 0.5f;
-		if (dx + dy >= 0)
-		{
-			x0 -= dx;
-			y0 -= dy;
-			x1 -= dx;
-			y1 -= dy;
-		}
-		else
-		{
-			x0 += dx;
-			y0 += dy;
-			x1 += dx;
-			y1 += dy;
-		}
+		MidpixelAdjust(p0, d);
+		MidpixelAdjust(p1, d);
 	}
 
 	rhi::Vertex verts[4] =
 	{
-		{ x0 + tx, y0 + ty, 0.5f, 0.5f, col },
-		{ x1 + tx, y1 + ty, 0.5f, 0.5f, col },
-		{ x1 - tx, y1 - ty, 0.5f, 0.5f, col },
-		{ x0 - tx, y0 - ty, 0.5f, 0.5f, col },
+		ColorVert(p0 + t, col),
+		ColorVert(p1 + t, col),
+		ColorVert(p1 - t, col),
+		ColorVert(p0 - t, col),
 	};
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
@@ -449,35 +451,15 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 	if (x0 == x1 && y0 == y1)
 		return;
 
-	float dx = x1 - x0;
-	float dy = y1 - y0;
-	float lensq = dx * dx + dy * dy;
-	float hinvlen = 0.5f / sqrtf(lensq);
-	dx *= hinvlen;
-	dy *= hinvlen;
-	float tx = dy;
-	float ty = -dx;
+	Point2f p0 = { x0, y0 };
+	Point2f p1 = { x1, y1 };
+	Point2f d = (p1 - p0).Normalized() * 0.5f;
+	Point2f t = d.Perp();
 
 	if (midpixel)
 	{
-		x0 += 0.5f;
-		y0 += 0.5f;
-		x1 += 0.5f;
-		y1 += 0.5f;
-		if (dx + dy >= 0)
-		{
-			x0 -= dx;
-			y0 -= dy;
-			x1 -= dx;
-			y1 -= dy;
-		}
-		else
-		{
-			x0 += dx;
-			y0 += dy;
-			x1 += dx;
-			y1 += dy;
-		}
+		MidpixelAdjust(p0, d);
+		MidpixelAdjust(p1, d);
 	}
 
 	Color4b colA0 = col;
@@ -485,8 +467,7 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 
 	if (w <= 1)
 	{
-		tx *= w * 2;
-		ty *= w * 2;
+		t *= w * 2;
 
 		Color4b colM = col;
 		colM.a = colM.a * w;
@@ -494,14 +475,14 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 		rhi::Vertex verts[6] =
 		{
 			// + side
-			{ x0 + tx - dx, y0 + ty - dy, 0.5f, 0.5f, colA0 },
-			{ x1 + tx + dx, y1 + ty + dy, 0.5f, 0.5f, colA0 },
+			ColorVert(p0 + t - d, colA0),
+			ColorVert(p1 + t + d, colA0),
 			// middle
-			{ x0 + dx, y0 + dy, 0.5f, 0.5f, colM },
-			{ x1 - dx, y1 - dy, 0.5f, 0.5f, colM },
+			ColorVert(p0 + d, colM),
+			ColorVert(p1 - d, colM),
 			// - side
-			{ x0 - tx - dx, y0 - ty - dy, 0.5f, 0.5f, colA0 },
-			{ x1 - tx + dx, y1 - ty + dy, 0.5f, 0.5f, colA0 },
+			ColorVert(p0 - t - d, colA0),
+			ColorVert(p1 - t + d, colA0),
 		};
 		uint16_t indices[6 * 3] =
 		{
@@ -514,23 +495,22 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 	}
 	else
 	{
-		float twx = tx * w;
-		float twy = ty * w;
+		Point2f tw = t * w;
 
 		rhi::Vertex verts[8] =
 		{
 			// + side
-			{ x0 + twx + tx - dx, y0 + twy + ty - dy, 0.5f, 0.5f, colA0 },
-			{ x1 + twx + tx + dx, y1 + twy + ty + dy, 0.5f, 0.5f, colA0 },
+			ColorVert(p0 + tw + t - d, colA0),
+			ColorVert(p1 + tw + t + d, colA0),
 			// + middle
-			{ x0 + twx - tx + dx, y0 + twy - ty + dy, 0.5f, 0.5f, col },
-			{ x1 + twx - tx - dx, y1 + twy - ty - dy, 0.5f, 0.5f, col },
+			ColorVert(p0 + tw - t + d, col),
+			ColorVert(p1 + tw - t - d, col),
 			// - middle
-			{ x0 - twx + tx + dx, y0 - twy + ty + dy, 0.5f, 0.5f, col },
-			{ x1 - twx + tx - dx, y1 - twy + ty - dy, 0.5f, 0.5f, col },
+			ColorVert(p0 - tw + t + d, col),
+			ColorVert(p1 - tw + t - d, col),
 			// - side
-			{ x0 - twx - tx - dx, y0 - twy - ty - dy, 0.5f, 0.5f, colA0 },
-			{ x1 - twx - tx + dx, y1 - twy - ty + dy, 0.5f, 0.5f, colA0 },
+			ColorVert(p0 - tw - t - d, colA0),
+			ColorVert(p1 - tw - t + d, colA0),
 		};
 		uint16_t indices[10 * 3] =
 		{
@@ -542,6 +522,160 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 		};
 		IndexedTriangles(nullptr, verts, 8, indices, 10 * 3);
 	}
+}
+
+void LineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed, bool midpixel)
+{
+	size_t size = points.size();
+	if (size < 2)
+		return;
+
+	Point2f t_prev = {};
+	if (closed)
+		t_prev = (points[0] - points[size - 1]).Normalized().Perp();
+	else
+		t_prev = (points[1] - points[0]).Normalized().Perp();
+
+	std::vector<rhi::Vertex> verts;
+	verts.reserve(size * 2);
+	for (size_t i = 0; i < size; i++)
+	{
+		Point2f p0 = points[i];
+		Point2f p1 = points[i + 1 < size ? i + 1 : closed ? 0 : size - 1];
+		Point2f t_next = (p1 - p0).Normalized().Perp();
+		Point2f t_avg = (t_prev + t_next).Normalized();
+
+		if (midpixel)
+		{
+			MidpixelAdjust(p0, {}/*t_avg.Perp2() * 0.5f*/);
+		}
+
+		Point2f t = t_avg * (w * 0.5f / Vec2Dot(t_avg, t_prev));
+		verts.push_back(ColorVert(p0 + t, col));
+		verts.push_back(ColorVert(p0 - t, col));
+
+		t_prev = t_next;
+	}
+
+	std::vector<uint16_t> indices;
+	indices.reserve((size - 1) * 6);
+	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
+	{
+		size_t i1 = (i + 1) % size;
+		indices.push_back(uint16_t(i * 2 + 0));
+		indices.push_back(uint16_t(i1 * 2 + 0));
+		indices.push_back(uint16_t(i1 * 2 + 1));
+
+		indices.push_back(uint16_t(i1 * 2 + 1));
+		indices.push_back(uint16_t(i * 2 + 1));
+		indices.push_back(uint16_t(i * 2 + 0));
+	}
+
+	IndexedTriangles(nullptr, verts.data(), verts.size(), indices.data(), indices.size());
+}
+
+void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed, bool midpixel)
+{
+	size_t size = points.size();
+	if (size < 2)
+		return;
+
+	Color4b colA0 = col;
+	colA0.a = 0;
+	Color4b colM = col;
+	colM.a = colM.a * w;
+
+	Point2f t_prev = {};
+	if (closed)
+		t_prev = (points[0] - points[size - 1]).Normalized().Perp();
+	else
+		t_prev = (points[1] - points[0]).Normalized().Perp();
+
+	size_t ncols = w <= 1 ? 3 : 4;
+
+	std::vector<rhi::Vertex> verts;
+	verts.reserve(size * ncols);
+	for (size_t i = 0; i < size; i++)
+	{
+		Point2f p0 = points[i];
+		Point2f p1 = points[i + 1 < size ? i + 1 : closed ? 0 : size - 1];
+		Point2f t_next = (p1 - p0).Normalized().Perp();
+		Point2f t_avg = (t_prev + t_next).Normalized();
+
+		if (midpixel)
+		{
+			MidpixelAdjust(p0, {}/*t_avg.Perp2() * 0.5f*/);
+		}
+
+		float q = 1.0f / Vec2Dot(t_avg, t_prev);
+		if (w <= 1)
+		{
+			auto t = t_avg * w * q;
+			verts.push_back(ColorVert(p0 + t, colA0));
+			verts.push_back(ColorVert(p0, colM));
+			verts.push_back(ColorVert(p0 - t, colA0));
+		}
+		else
+		{
+			auto t0 = t_avg * (w + 1) * 0.5f * q;
+			auto t1 = t_avg * (w - 1) * 0.5f * q;
+			verts.push_back(ColorVert(p0 + t0, colA0));
+			verts.push_back(ColorVert(p0 + t1, col));
+			verts.push_back(ColorVert(p0 - t1, col));
+			verts.push_back(ColorVert(p0 - t0, colA0));
+		}
+
+		t_prev = t_next;
+	}
+
+	std::vector<uint16_t> indices;
+	indices.reserve((size - 1) * (ncols - 1) * 6);
+	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
+	{
+		size_t i1 = (i + 1) % size;
+		for (size_t j = 0; j + 1 < ncols; j++)
+		{
+			indices.push_back(uint16_t(i * ncols + j));
+			indices.push_back(uint16_t(i1 * ncols + j));
+			indices.push_back(uint16_t(i1 * ncols + j + 1));
+
+			indices.push_back(uint16_t(i1 * ncols + j + 1));
+			indices.push_back(uint16_t(i * ncols + j + 1));
+			indices.push_back(uint16_t(i * ncols + j));
+		}
+	}
+
+	IndexedTriangles(nullptr, verts.data(), verts.size(), indices.data(), indices.size());
+}
+
+struct CircleList
+{
+	std::vector<Point2f> points;
+
+	CircleList(Point2f center, float radius)
+	{
+		size_t size = radius * 3.14159f;
+		if (size < 3)
+			size = 3;
+		if (size > 4096)
+			size = 4096;
+
+		for (size_t i = 0; i < size; i++)
+		{
+			float a = i * 3.14159f * 2 / size;
+			points.push_back({ sinf(a) * radius + center.x, cosf(a) * radius + center.y });
+		}
+	}
+};
+
+void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+{
+	LineCol(CircleList(center, rad).points, w, col, true, midpixel);
+}
+
+void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+{
+	AALineCol(CircleList(center, rad).points, w, col, true, midpixel);
 }
 
 void RectCol(float x0, float y0, float x1, float y1, Color4b col)

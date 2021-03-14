@@ -13,20 +13,34 @@ struct RenderingPrimitives : ui::Node
 		for (int t = 0; t <= 5; t++)
 		{
 			float w = powf(3.0f, t * 0.2f);
-			float xo = t * 70 + 20;
+			float xo = t * 74 + 10;
 			float x0 = 10 + xo;
 			float x1 = 25 + xo;
 			float x2 = 45 + xo;
 			float x3 = 60 + xo;
+			float x4 = 72 + xo;
 			for (int i = 0; i < 8; i++)
 			{
-				ui::draw::LineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, col);
-				ui::draw::AALineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, colO);
-				ui::draw::AALineCol(x0, 210 + i * 4, x1, 210 + i * 5, w, col);
+				if (i % 2 == 0)
+				{
+					ui::draw::LineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, col);
+					ui::draw::AALineCol(x0, 10 + i * 4, x1, 10 + i * 5, w, colO);
+					ui::draw::AALineCol(x0, 210 + i * 4, x1, 210 + i * 5, w, col);
 
-				ui::draw::LineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, col);
-				ui::draw::AALineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, colO);
-				ui::draw::AALineCol(x2, 210 + i * 5, x3, 210 + i * 4, w, col);
+					ui::draw::LineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, col);
+					ui::draw::AALineCol(x2, 10 + i * 5, x3, 10 + i * 4, w, colO);
+					ui::draw::AALineCol(x2, 210 + i * 5, x3, 210 + i * 4, w, col);
+				}
+				else
+				{
+					ui::draw::LineCol(x1, 10 + i * 5, x0, 10 + i * 4, w, col);
+					ui::draw::AALineCol(x1, 10 + i * 5, x0, 10 + i * 4, w, colO);
+					ui::draw::AALineCol(x1, 210 + i * 5, x0, 210 + i * 4, w, col);
+
+					ui::draw::LineCol(x3, 10 + i * 4, x2, 10 + i * 5, w, col);
+					ui::draw::AALineCol(x3, 10 + i * 4, x2, 10 + i * 5, w, colO);
+					ui::draw::AALineCol(x3, 210 + i * 4, x2, 210 + i * 5, w, col);
+				}
 			}
 			for (int i = 4; i < 12; i++)
 			{
@@ -52,9 +66,43 @@ struct RenderingPrimitives : ui::Node
 				ui::draw::AALineCol(x - c * r, y - s * r, x + c * r, y + s * r, w, colO);
 				ui::draw::AALineCol(x - c * r, y2 - s * r, x + c * r, y2 + s * r, w, col);
 			}
+			{
+				Point2f pts[4] =
+				{
+					{ x4 - 5, 10 },
+					{ x4 + 5, 10 },
+					{ x4 + 5, 20 },
+					{ x4 - 5, 20 },
+				};
+				ui::draw::LineCol(pts, w, col, true);
+				ui::draw::AALineCol(pts, w, colO, true);
+				for (auto& p : pts)
+					p.y += 200;
+				ui::draw::AALineCol(pts, w, col, true);
+			}
+			for (int i = 0; i < 4; i++)
+			{
+				Point2f p = { x4, 32.0f + i * 20 };
+				int ptcount = i + 3;
+				Point2f pts[6];
+				for (int j = 0; j < ptcount; j++)
+				{
+					float a = 3.14159f * 2 * j / float(ptcount);
+					pts[j] = p + Point2f{ sinf(a), cosf(a) } * 6.0f;
+				}
+
+				ui::draw::LineCol(ArrayView<Point2f>(pts, ptcount), w, col, true);
+				ui::draw::AALineCol(ArrayView<Point2f>(pts, ptcount), w, colO, true);
+				for (int j = 0; j < ptcount; j++)
+					pts[j].y += 200;
+				ui::draw::AALineCol(ArrayView<Point2f>(pts, ptcount), w, col, true);
+			}
+			ui::draw::CircleLineCol({ x4, 110 }, 5, w, col);
+			ui::draw::AACircleLineCol({ x4, 110 }, 5, w, colO);
+			ui::draw::AACircleLineCol({ x4, 110 + 200 }, 5, w, col);
 		}
 
-		ui::draw::RectCol(50, 10, 60, 20, col);
+		ui::draw::RectCol(40, 10, 50, 20, col);
 
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SANS_SERIF), 20, 20, 150, "sans-serif w=normal it=0", ui::Color4f(0.9f, 0.8f, 0.6f));
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SERIF, ui::FONT_WEIGHT_BOLD), 20, 20, 170, "serif w=bold it=0", ui::Color4f(0.6f, 0.8f, 0.9f));

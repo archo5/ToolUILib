@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include "../Core/3DMath.h"
+#include "../Model/Gizmo.h"
 #include "../Render/OpenGL.h"
 #include "../Render/Primitives.h"
 
@@ -739,17 +740,43 @@ struct GizmoTest : ui::Node
 			{
 				if (e.type == UIEventType::ButtonDown)
 					e.context->SetKeyboardFocus(e.current);
-				if (moveGizmo.OnEvent(e, camera, ui::GizmoEditablePosVec3f(pos)))
+				if (gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
 					Rerender();
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](UIRect r) { Render3DView(r); };
 			v + ui::Height(style::Coord::Percent(100));
+			{
+#if 0
+				auto* leftTop = Allocate<style::PointAnchoredPlacement>();
+				*ctx->Push<ui::Panel>() + ui::Width(200) + ui::SetPlacement(leftTop);
+				{
+					ctx->MakeWithText<ui::Header>("Camera");
+					ui::imm::PropEditFloat(ctx, "FOV", fov, {}, 1.0f, 1.0f, 179.0f);
+					ctx->MakeWithText<ui::Header>("Object");
 
-			char tmp[256] = {};
-			snprintf(tmp, 256, "pos=%g;%g;%g", pos.x, pos.y, pos.z);
-			ctx->Text(tmp);
-
+					char tmp[256] = {};
+					auto pos = xf.TransformPoint({ 0, 0, 0 });
+					snprintf(tmp, 256, "pos=%g;%g;%g", pos.x, pos.y, pos.z);
+					ctx->Text(tmp);
+				}
+#endif
+				auto* rightTop = Allocate<style::PointAnchoredPlacement>();
+				rightTop->SetAnchorAndPivot({ 1, 0 });
+				*ctx->Push<ui::Panel>() + ui::Width(200) + ui::SetPlacement(rightTop);
+				{
+					ctx->MakeWithText<ui::Header>("Gizmo");
+					ui::imm::PropEditFloat(ctx, "Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
+					ui::imm::PropDropdownMenuList(ctx, "Size mode", gizmoSizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
+					{
+						ui::LabeledProperty::Scope ps(ctx, "Type");
+						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Move, "Move", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Rotate, "Rotate", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Scale, "Scale", {}, ui::imm::ButtonStateToggleSkin());
+					}
+				}
+				ctx->Pop();
+			}
 			ctx->Pop();
 		}
 		ctx->Pop();
@@ -759,7 +786,7 @@ struct GizmoTest : ui::Node
 		using namespace ui::rhi;
 
 		camera.SetWindowRect(rect);
-		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000));
+		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
 
 		Clear(16, 15, 14, 255);
 		SetProjectionMatrix(camera.GetProjectionMatrix());
@@ -776,10 +803,10 @@ struct GizmoTest : ui::Node
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 
-		RenderObject(Mat4f::Scale(0.1f) * Mat4f::Translate(pos));
+		RenderObject(Mat4f::Scale(0.1f) * xf);
 
-		moveGizmo.SetTransform(Mat4f::Translate(pos));
-		moveGizmo.Render(camera);
+		gizmo.SetTransform(Mat4f::Translate(xf.TransformPoint({ 0, 0, 0 })));
+		gizmo.Render(camera, gizmoSize, gizmoSizeMode);
 	}
 
 	void RenderObject(const Mat4f& mtx)
@@ -816,8 +843,11 @@ struct GizmoTest : ui::Node
 	}
 
 	ui::OrbitCamera camera;
-	ui::Gizmo_Moving moveGizmo;
-	Vec3f pos = { 0.01f, 0.02f, 0.03f };
+	ui::Gizmo gizmo;
+	float gizmoSize = 100;
+	ui::GizmoSizeMode gizmoSizeMode = ui::GizmoSizeMode::ViewPixels;
+	Mat4f xf = Mat4f::Translate(0.01f, 0.02f, 0.03f);
+	float fov = 90;
 };
 void Test_Gizmo(UIContainer* ctx)
 {

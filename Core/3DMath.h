@@ -14,9 +14,21 @@ constexpr float RAD2DEG = 180 * 3.14159f;
 #endif
 
 
+enum DoNotInitializeTag
+{
+	DoNotInitialize
+};
+
+
 struct Vec3f
 {
 	float x, y, z;
+
+	UI_FORCEINLINE Vec3f(DoNotInitializeTag) {}
+	UI_FORCEINLINE Vec3f() : x(0), y(0), z(0) {}
+	UI_FORCEINLINE Vec3f(float f) : x(f), y(f), z(f) {}
+	UI_FORCEINLINE Vec3f(float ax, float ay) : x(ax), y(ay), z(0) {}
+	UI_FORCEINLINE Vec3f(float ax, float ay, float az) : x(ax), y(ay), z(az) {}
 
 	UI_FORCEINLINE Vec3f operator + (const Vec3f& o) const { return { x + o.x, y + o.y, z + o.z }; }
 	UI_FORCEINLINE Vec3f operator - (const Vec3f& o) const { return { x - o.x, y - o.y, z - o.z }; }
@@ -51,6 +63,7 @@ struct Vec3f
 };
 
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
+inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z) }; }
 UI_FORCEINLINE float Vec3Dot(const Vec3f& a, const Vec3f& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
 {
@@ -109,6 +122,7 @@ struct Mat4f
 	static Mat4f RotateX(float a);
 	static Mat4f RotateY(float a);
 	static Mat4f RotateZ(float a);
+	static Mat4f RotateAxisAngle(const Vec3f& axis, float a);
 
 	UI_FORCEINLINE static Mat4f LookAtLH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirLH(pos, tgt - pos, up); }
 	static Mat4f LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up);

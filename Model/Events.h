@@ -235,10 +235,10 @@ struct UIEventSystem
 	UIObject* FindObjectAtPosition(float x, float y);
 	static UIObject* _FindObjectAtPosition(UIObject* root, float x, float y);
 	void MoveClickTo(UIObject* obj, UIMouseButton btn = UIMouseButton::Left);
-	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents);
+	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, uint8_t mod, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
 	void _UpdateTooltip();
-	void OnMouseMove(UIMouseCoord x, UIMouseCoord y);
+	void OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod);
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod);
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats);

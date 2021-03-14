@@ -262,6 +262,27 @@ static HGLOBAL UTF8ToWCHARGlobal(const char* str)
 namespace ui {
 
 
+static constexpr const unsigned g_virtualModKeys[] =
+{
+	VK_LCONTROL,
+	VK_LSHIFT,
+	VK_LMENU,
+	VK_LWIN,
+	VK_RCONTROL,
+	VK_RSHIFT,
+	VK_RMENU,
+	VK_RWIN,
+};
+
+static uint8_t GetModifierKeys()
+{
+	uint8_t ret = 0;
+	for (int i = 0; i < sizeof(g_virtualModKeys) / sizeof(g_virtualModKeys[0]); i++)
+		if (GetKeyState(g_virtualModKeys[i]) & 0x8000)
+			ret |= 1 << i;
+	return ret;
+}
+
 namespace platform {
 
 uint32_t GetTimeMs()
@@ -508,12 +529,12 @@ struct ProxyEventSystem
 		UIRect window;
 	};
 
-	void OnMouseMove(UIMouseCoord x, UIMouseCoord y)
+	void OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0);
+		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
 	}
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	{
@@ -639,7 +660,7 @@ struct NativeWindow_Impl
 		if (canRebuild)
 			cont.ProcessNodeRenderStack();
 		cont.ProcessLayoutStack();
-		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY);
+		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY, GetModifierKeys());
 		if (canRebuild)
 			cont.ProcessNodeRenderStack();
 		cont.ProcessLayoutStack();
@@ -1295,27 +1316,6 @@ static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
 		ReleaseCapture();
 }
 
-static constexpr const unsigned g_virtualModKeys[] =
-{
-	VK_LCONTROL,
-	VK_LSHIFT,
-	VK_LMENU,
-	VK_LWIN,
-	VK_RCONTROL,
-	VK_RSHIFT,
-	VK_RMENU,
-	VK_RWIN,
-}; 
-
-static uint8_t GetModifierKeys()
-{
-	uint8_t ret = 0;
-	for (int i = 0; i < sizeof(g_virtualModKeys) / sizeof(g_virtualModKeys[0]); i++)
-		if (GetKeyState(g_virtualModKeys[i]) & 0x8000)
-			ret |= 1 << i;
-	return ret;
-}
-
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -1333,7 +1333,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
 		{
 			TRACKMOUSEEVENT tme = {};
 			tme.cbSize = sizeof(tme);
@@ -1344,7 +1344,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return 0;
 	case WM_MOUSELEAVE:
 		if (auto* evsys = GetEventSys(hWnd))
-			evsys->OnMouseMove(-1, -1);
+			evsys->OnMouseMove(-1, -1, GetModifierKeys());
 		return 0;
 	case WM_SETCURSOR:
 		if (LOWORD(lParam) == HTCLIENT)
@@ -1359,7 +1359,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_LBUTTONDOWN,
 				UIMouseButton::Left,
@@ -1373,7 +1373,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_RBUTTONDOWN,
 				UIMouseButton::Right,
@@ -1387,7 +1387,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_MBUTTONDOWN,
 				UIMouseButton::Middle,
@@ -1401,7 +1401,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)));
+			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_XBUTTONDOWN,
 				HIWORD(wParam) == XBUTTON1 ? UIMouseButton::X1 : UIMouseButton::X2,

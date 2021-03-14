@@ -79,6 +79,9 @@
     <ClCompile Include="Render\Primitives.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Gizmo.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -186,6 +189,9 @@
     </ClInclude>
     <ClInclude Include="Render\Primitives.h">
       <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Gizmo.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

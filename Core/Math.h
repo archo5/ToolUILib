@@ -10,11 +10,27 @@ template <class T> struct Point
 {
 	T x, y;
 
-	Point<T> operator + (const Point<T>& o) const { return { x + o.x, y + o.y }; }
-	Point<T> operator - (const Point<T>& o) const { return { x - o.x, y - o.y }; }
-	Point<T>& operator += (const Point<T>& o) { x += o.x; y += o.y; return *this; }
-	Point<T>& operator -= (const Point<T>& o) { x -= o.x; y -= o.y; return *this; }
-	Point<T>& operator *= (float f) { x *= f; y *= f; return *this; }
+	Point operator + (const Point& o) const { return { x + o.x, y + o.y }; }
+	Point operator - (const Point& o) const { return { x - o.x, y - o.y }; }
+	Point operator * (T f) const { return { x * f, y * f }; }
+	Point operator / (T f) const { return { x / f, y / f }; }
+	Point& operator += (const Point& o) { x += o.x; y += o.y; return *this; }
+	Point& operator -= (const Point& o) { x -= o.x; y -= o.y; return *this; }
+	Point& operator *= (T f) { x *= f; y *= f; return *this; }
+	Point& operator /= (T f) { x /= f; y /= f; return *this; }
+
+	T LengthSq() const { return x * x + y * y; }
+	float Length() const { return sqrtf(x * x + y * y); }
+	Point Normalized() const
+	{
+		T lsq = LengthSq();
+		if (!lsq)
+			return { 0, 0 };
+		float l = sqrtf(lsq);
+		return { x / l, y / l };
+	}
+	Point Perp() const { return { -y, x }; }
+	Point Perp2() const { return { y, -x }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
@@ -26,6 +42,10 @@ template <class T> struct Point
 
 	template <class U> Point<U> Cast() const { return { U(x), U(y) }; }
 };
+
+using Point2f = Point<float>;
+
+template <class T> T Vec2Dot(const Point<T>& a, const Point<T>& b) { return a.x * b.x + a.y * b.y; }
 
 template <class T> struct Size
 {

@@ -318,15 +318,18 @@ struct CameraBase
 	UI_FORCEINLINE const UIRect& GetWindowRect() const { return _windowRect; }
 	void SetWindowRect(const UIRect& rect);
 
-	Point<float> WindowToNormalizedPoint(Point<float> p) const;
-	Point<float> NormalizedToWindowPoint(Point<float> p) const;
-	Point<float> WorldToNormalizedPoint(const Vec3f& p) const;
-	Point<float> WorldToWindowPoint(const Vec3f& p) const;
+	Point2f WindowToNormalizedPoint(Point2f p) const;
+	Point2f NormalizedToWindowPoint(Point2f p) const;
+	Point2f WorldToNormalizedPoint(const Vec3f& p) const;
+	Point2f WorldToWindowPoint(const Vec3f& p) const;
 
-	Ray3f GetRayNP(Point<float> p) const;
-	Ray3f GetLocalRayNP(Point<float> p, const Mat4f& world2local) const;
-	Ray3f GetRayWP(Point<float> p) const;
-	Ray3f GetLocalRayWP(Point<float> p, const Mat4f& world2local) const;
+	float WorldToWindowSize(float size, const Vec3f& refp) const;
+	float WindowToWorldSize(float size, const Vec3f& refp) const;
+
+	Ray3f GetRayNP(Point2f p) const;
+	Ray3f GetLocalRayNP(Point2f p, const Mat4f& world2local) const;
+	Ray3f GetRayWP(Point2f p) const;
+	Ray3f GetLocalRayWP(Point2f p, const Mat4f& world2local) const;
 	Ray3f GetRayEP(const UIEvent& e) const;
 	Ray3f GetLocalRayEP(const UIEvent& e, const Mat4f& world2local) const;
 };
@@ -360,106 +363,6 @@ struct OrbitCamera : CameraBase
 	// state
 	bool rotating = false;
 	bool panning = false;
-};
-
-struct DataWriter
-{
-	std::vector<char>& _data;
-
-	DataWriter(std::vector<char>& data) : _data(data) {}
-
-	template <class T> DataWriter& operator << (const T& src)
-	{
-		_data.insert(_data.end(), (char*)&src, (char*)(&src + 1));
-		return *this;
-	}
-};
-
-struct DataReader
-{
-	std::vector<char>& _data;
-	size_t _off = 0;
-
-	DataReader(std::vector<char>& data) : _data(data) {}
-
-	size_t Remaining() const
-	{
-		return _off <= _data.size() ? _data.size() - _off : 0;
-	}
-
-	void Reset()
-	{
-		_off = 0;
-	}
-
-	template <class T> void Skip(size_t count = 1)
-	{
-		_off += sizeof(T) * count;
-	}
-
-	template <class T> DataReader& operator << (T& o)
-	{
-		if (_off + sizeof(o) <= _data.size())
-		{
-			memcpy(&o, &_data[_off], sizeof(T));
-			_off += sizeof(T);
-		}
-		else
-		{
-			memset(&o, 0, sizeof(T));
-		}
-		return *this;
-	}
-};
-
-struct IGizmoEditable
-{
-	virtual void Backup(DataWriter& data) const = 0;
-	virtual void Transform(DataReader& data, const Mat4f* xf) = 0;
-};
-
-struct GizmoEditablePosVec3f : IGizmoEditable
-{
-	Vec3f& pos;
-
-	GizmoEditablePosVec3f(Vec3f& p) : pos(p) {}
-	void Backup(DataWriter& data) const override
-	{
-		data << pos;
-	}
-	void Transform(DataReader& data, const Mat4f* xf) override
-	{
-		data << pos;
-		if (xf)
-			pos = xf->TransformPoint(pos);
-	}
-};
-
-enum class GizmoSizeMode
-{
-	Scene,
-	ViewNormalized,
-	ViewPixelsY,
-};
-
-struct Gizmo_Moving
-{
-	Mat4f _xf = Mat4f::Identity();
-	Mat4f _combinedXF = Mat4f::Identity();
-
-	int _selectedPart = -1;
-	int _hoveredPart = -1;
-	Point<float> _lastCursorPos = {};
-
-	Point<float> _origDiffWP = {};
-	std::vector<char> _origData;
-	Vec3f _origPos = {};
-
-	int _GetIntersectingPart(const Ray3f& ray);
-
-	void SetTransform(const Mat4f& base);
-	bool OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& editable);
-	void Render(const CameraBase& cam, float size = 100.0f, GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixelsY);
 };
 
 } // ui

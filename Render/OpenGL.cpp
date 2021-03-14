@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "OpenGL.h"
+#include "Render.h"
 #include "../Core/Math.h"
 
 #pragma warning(disable:4996)
@@ -358,11 +359,14 @@ void SetForcedColor(const Color4b& col)
 }
 
 static GLint g_prevTex;
-void Begin3DMode(int x0, int y0, int x1, int y1)
+static AABB<int> g_3DRect;
+void Begin3DMode(const AABB<int>& rect)
 {
+	draw::internals::Flush();
+
 	GLCHK(glGetIntegerv(GL_TEXTURE_BINDING_2D, &g_prevTex));
 
-	GLCHK(glViewport(x0, curRTTHeight - y1, max(x1 - x0, 0), max(y1 - y0, 0)));
+	GLCHK(glViewport(rect.x0, curRTTHeight - rect.y1, max(rect.x1 - rect.x0, 0), max(rect.y1 - rect.y0, 0)));
 
 	SetRenderState(0);
 	SetProjectionMatrix(Mat4f::Identity());
@@ -373,10 +377,13 @@ void Begin3DMode(int x0, int y0, int x1, int y1)
 	g_forcedColor = { 255, 0, 255 };
 
 	SetTexture(nullptr);
+
+	g_3DRect = rect;
 }
 
-void End3DMode()
+AABB<int> End3DMode()
 {
+	auto curRect = g_3DRect;
 	GLCHK(glDisableClientState(GL_NORMAL_ARRAY));
 	GLCHK(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
 	GLCHK(glEnableClientState(GL_COLOR_ARRAY));
@@ -398,6 +405,8 @@ void End3DMode()
 		GLCHK(glEnable(GL_TEXTURE_2D));
 	else
 		GLCHK(glDisable(GL_TEXTURE_2D));
+
+	return curRect;
 }
 
 void SetAmbientLight(const Color4f& col)

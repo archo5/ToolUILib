@@ -331,7 +331,7 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, UIEvent& e, uint32_t fl
 	o->_DoEvent(e);
 }
 
-void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, bool dragEvents)
+void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, uint8_t mod, bool dragEvents)
 {
 	auto* tgt = dragEvents ?
 		ui::DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(x, y) :
@@ -340,6 +340,7 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	UIEvent ev(this, curHoverObj, dragEvents ? UIEventType::DragLeave : UIEventType::MouseLeave);
 	ev.x = x;
 	ev.y = y;
+	ev.modifiers = mod;
 
 	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
 
@@ -405,7 +406,7 @@ void UIEventSystem::_UpdateTooltip()
 	}
 }
 
-void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
+void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 {
 	bool moved = x != prevMouseX || y != prevMouseY;
 	if (moved)
@@ -439,9 +440,9 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y)
 	}
 #endif
 
-	_UpdateHoverObj(hoverObj, x, y, false);
+	_UpdateHoverObj(hoverObj, x, y, mod, false);
 	_UpdateCursor(hoverObj);
-	_UpdateHoverObj(dragHoverObj, x, y, true);
+	_UpdateHoverObj(dragHoverObj, x, y, mod, true);
 
 	if (moved)
 	{
@@ -546,7 +547,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 				BubblingEvent(ev);
 
 				ui::DragDrop::SetData(nullptr);
-				_UpdateHoverObj(dragHoverObj, x, y, true);
+				_UpdateHoverObj(dragHoverObj, x, y, mod, true);
 				//dragHoverObj = nullptr;
 				dragEventInProgress = false;
 			}
