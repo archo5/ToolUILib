@@ -314,6 +314,7 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 
 			Vec3f axis = GetAxis(_selectedPart);
 			Mat4f xfBasis = GetTransformBasis(_origXF, _curXFWorldSpace);
+			Mat4f xfBasisW = GetTransformBasis(_origXF, true);
 
 			if (IsMoveAction(_selectedPart))
 			{
@@ -330,6 +331,12 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 				}
 				Vec3f worldOrigPos = xfBasis.TransformPoint({ 0, 0, 0 });
 
+				if (_totalMovedWinVec.x == 0 && _totalMovedWinVec.y == 0)
+				{
+					ui::DataReader dr(_origData);
+					editableNC.Transform(dr, nullptr);
+					return true;
+				}
 				if ((int(_selectedPart) & GAF_Shape_MASK) == GAF_Shape_Axis)
 				{
 					// generate a plane
@@ -390,8 +397,9 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 
 					auto rx = Mat4f::RotateAxisAngle(cam.GetInverseViewMatrix().TransformDirection({ 1, 0, 0 }).Normalized(), angles.y);
 					auto ry = Mat4f::RotateAxisAngle(cam.GetInverseViewMatrix().TransformDirection({ 0, 1, 0 }).Normalized(), angles.x);
+					auto xf = rx * ry;
 
-					fullXF = rx * ry;
+					fullXF = xfBasisW.Inverted() * xf * xfBasisW;
 				}
 				else
 				{
@@ -427,7 +435,7 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 						Snap(angle, snapAngle);
 
 					auto xf = Mat4f::RotateAxisAngle(worldAxis, angle);
-					fullXF = xfBasis.Inverted() * xf * xfBasis;
+					fullXF = xfBasisW.Inverted() * xf * xfBasisW;
 				}
 
 				ui::DataReader dr(_origData);

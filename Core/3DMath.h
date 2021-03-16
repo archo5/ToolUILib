@@ -204,6 +204,13 @@ struct Mat4f
 			d.x * v20 + d.y * v21 + d.z * v22,
 		};
 	}
+
+	Vec3f GetTranslation() const { return { v03, v13, v23 }; }
+	Vec3f GetScale() const;
+
+	Mat4f GetRotationMatrix() const;
+	Mat4f RemoveTranslation() const;
+	Mat4f RemoveScale() const;
 };
 
 

@@ -184,6 +184,40 @@ bool Mat4f::InvertTo(Mat4f& inv) const
 	return true;
 }
 
+Vec3f Mat4f::GetScale() const
+{
+	return Vec3f(
+		Vec3f(v00, v10, v20).Length(),
+		Vec3f(v10, v11, v12).Length(),
+		Vec3f(v20, v21, v22).Length());
+}
+
+Mat4f Mat4f::GetRotationMatrix() const
+{
+	return RemoveTranslation().RemoveScale();
+}
+
+Mat4f Mat4f::RemoveTranslation() const
+{
+	Mat4f copy = *this;
+	copy.v03 = copy.v13 = copy.v23 = 0;
+	return copy;
+}
+
+Mat4f Mat4f::RemoveScale() const
+{
+	Mat4f copy = *this;
+	for (int i = 0; i < 3; i++)
+	{
+		Vec3f tmp(copy.m[i][0], copy.m[i][1], copy.m[i][2]);
+		tmp = tmp.Normalized();
+		copy.m[i][0] = tmp.x;
+		copy.m[i][1] = tmp.y;
+		copy.m[i][2] = tmp.z;
+	}
+	return copy;
+}
+
 
 #if 0
 #include <stdio.h>
