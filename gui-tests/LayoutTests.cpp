@@ -347,9 +347,7 @@ struct SizeTest : ui::Node
 	{
 		if (fabsf(r.GetWidth() - w) > 0.0001f || fabsf(r.GetHeight() - h) > 0.0001f)
 		{
-			char bfr[1024];
-			snprintf(bfr, 1024, "expected %g;%g - got %g;%g", w, h, r.GetWidth(), r.GetHeight());
-			return bfr;
+			return Format("expected %g;%g - got %g;%g", w, h, r.GetWidth(), r.GetHeight());
 		}
 		return {};
 	}
@@ -379,9 +377,7 @@ struct SizeTest : ui::Node
 			auto r = obj->finalRectCPB;
 			if (fabsf(r.x0 - x) > 0.0001f)
 			{
-				char bfr[1024];
-				snprintf(bfr, 1024, "expected x %g - got %g", x, r.x0);
-				return bfr;
+				return Format("expected x %g - got %g", x, r.x0);
 			}
 			return {};
 		};

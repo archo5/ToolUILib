@@ -150,6 +150,7 @@ struct UIContainer
 		Pop();
 		return ret;
 	}
+
 	template<class T, class = typename T::IsElement> T* MakeWithText(StringView text)
 	{
 		auto* ret = Push<T>();
@@ -157,6 +158,24 @@ struct UIContainer
 		Pop();
 		return ret;
 	}
+	template<class T, class = typename T::IsElement> T* MakeWithTextVA(const char* fmt, va_list args)
+	{
+		auto* ret = Push<T>();
+		TextVA(fmt, args);
+		Pop();
+		return ret;
+	}
+	template<class T, class = typename T::IsElement> T* MakeWithTextf(const char* fmt, ...)
+	{
+		auto* ret = Push<T>();
+		va_list args;
+		va_start(args, fmt);
+		TextVA(fmt, args);
+		va_end(args);
+		Pop();
+		return ret;
+	}
+
 	template<class T, class = typename T::IsElement> T* Push()
 	{
 		auto* obj = _Alloc<T>();
@@ -195,6 +214,7 @@ struct UIContainer
 		return obj;
 	}
 	ui::BoxElement& PushBox() { return *Push<ui::BoxElement>(); }
+
 	ui::TextElement& Text(StringView s)
 	{
 		auto* T = Push<ui::TextElement>();
@@ -202,6 +222,19 @@ struct UIContainer
 		Pop();
 		return *T;
 	}
+	ui::TextElement& TextVA(const char* fmt, va_list args)
+	{
+		return Text(FormatVA(fmt, args));
+	}
+	ui::TextElement& Textf(const char* fmt, ...)
+	{
+		va_list args;
+		va_start(args, fmt);
+		auto str = FormatVA(fmt, args);
+		va_end(args);
+		return Text(str);
+	}
+
 	bool LastIsNew() const { return lastIsNew; }
 	UIObject* GetLastCreated() const { return _lastCreated; }
 

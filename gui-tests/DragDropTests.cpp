@@ -155,11 +155,7 @@ struct SlideReorderTest : ui::Node
 					Rerender();
 				}
 			};
-			char bfr[32];
-			snprintf(bfr, 32, "item %d", iids[i]);
-			if (dragging)
-				strcat(bfr, " [dragging]");
-			ctx->Text(bfr);
+			ctx->Textf("item %d%s", iids[i], dragging ? " [dragging]" : "");
 			ctx->Pop();
 		}
 		ctx->Pop();
@@ -204,9 +200,7 @@ struct TreeNodeReorderTest : ui::Node
 			}
 			else
 			{
-				char bfr[32];
-				snprintf(bfr, 32, "%zu items", entries.size());
-				ctx->Text(bfr);
+				ctx->Textf("%zu items", entries.size());
 			}
 		}
 		std::vector<Entry> entries;

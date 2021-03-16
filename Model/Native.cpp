@@ -532,6 +532,7 @@ struct ProxyEventSystem
 	void OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
@@ -539,30 +540,39 @@ struct ProxyEventSystem
 	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
 	}
 	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnMouseScroll(dx, dy);
 	}
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);
 	}
 	void OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnKeyAction(act, mod, numRepeats, modifier);
 	}
 	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 	{
+		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
+
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnTextInput(ch, mod, numRepeats);

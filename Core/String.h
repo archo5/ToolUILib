@@ -1,9 +1,11 @@
 
 #pragma once
 #include <assert.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
 #include <functional>
+#include <string>
 
 #include "Core.h"
 
@@ -185,4 +187,35 @@ struct hash<StringView>
 		return size_t(hash);
 	}
 };
+} // std
+
+inline std::string FormatVA(const char* fmt, va_list args)
+{
+	va_list args2;
+	va_copy(args2, args);
+	int len = vsnprintf(nullptr, 0, fmt, args2);
+	va_end(args2);
+	if (len > 0)
+	{
+		std::string ret;
+		ret.resize(len + 1);
+		va_copy(args2, args);
+		int len2 = vsnprintf(&ret[0], ret.size(), fmt, args2);
+		va_end(args2);
+		if (len2 > 0)
+		{
+			ret.resize(len2);
+			return ret;
+		}
+	}
+	return {};
+}
+
+inline std::string Format(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	auto ret = FormatVA(fmt, args);
+	va_end(args);
+	return ret;
 }

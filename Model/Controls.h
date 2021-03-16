@@ -366,7 +366,8 @@ public:
 	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	float yoff = 23;
+	Size<float> estContentSize = {};
+	float yoff = 0;
 	ScrollbarV sbv;
 };
 

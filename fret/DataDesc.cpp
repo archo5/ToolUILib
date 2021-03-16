@@ -45,14 +45,12 @@ void DataDesc::EditStructuralItems(UIContainer* ctx)
 		ui::imm::PropEditString(ctx, "\bTQ:", testQuery.expr.c_str(), [](const char* v) { testQuery.SetExpr(v); });
 		if (testQuery.inst)
 		{
-			char bfr[128];
 			VariableSource vs;
 			{
 				vs.desc = this;
 				vs.root = curInst;
 			}
-			snprintf(bfr, 128, "Value: %" PRId64, testQuery.inst->Evaluate(&vs));
-			ctx->Text(bfr);
+			ctx->Textf("Value: %" PRId64, testQuery.inst->Evaluate(&vs));
 		}
 
 		auto id = curInst ? curInst->id : -1LL;
@@ -249,8 +247,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 			{
 				if (size != F_NO_VALUE)
 				{
-					snprintf(bfr, 256, "Data (size=%" PRId64 ")", size);
-					ctx->Text(bfr) + ui::Padding(5);
+					ctx->Textf("Data (size=%" PRId64 ")", size) + ui::Padding(5);
 				}
 				else
 				{

@@ -852,6 +852,7 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 
 ScrollArea::ScrollArea()
 {
+	SetFlag(UIObject_ClipChildren, true);
 }
 
 void ScrollArea::OnPaint()
@@ -864,7 +865,7 @@ void ScrollArea::OnPaint()
 	float w = cr.GetWidth();
 	auto sbvr = cr;
 	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
-	sbv.OnPaint({ this, sbvr, cr.GetHeight(), 300, yoff });
+	sbv.OnPaint({ this, sbvr, cr.GetHeight(), estContentSize.y, yoff });
 }
 
 void ScrollArea::OnEvent(UIEvent& e)
@@ -873,18 +874,24 @@ void ScrollArea::OnEvent(UIEvent& e)
 	float w = cr.GetWidth();
 	auto sbvr = cr;
 	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
-	ScrollbarData info = { this, sbvr, cr.GetHeight(), 300, yoff };
+	ScrollbarData info = { this, sbvr, cr.GetHeight(), estContentSize.y, yoff };
 
 	if (e.type == UIEventType::MouseScroll)
 	{
 		yoff -= e.dy / 4;
 		yoff = min(max(info.contentSize - info.viewportSize, 0.0f), max(0.0f, yoff));
+		_OnChangeStyle();
 	}
 	sbv.OnEvent(info, e);
 }
 
 void ScrollArea::OnLayout(const UIRect& rect, const Size<float>& containerSize)
 {
+	estContentSize.y = CalcEstimatedHeight(containerSize, style::EstSizeType::Exact);
+	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
+	if (yoff > maxYOff)
+		yoff = maxYOff;
+
 	UIRect r = rect;
 	r.y0 -= yoff;
 	r.y1 -= yoff;

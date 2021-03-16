@@ -376,9 +376,7 @@ static const char* g_primTypeNames[] =
 
 void MSN_NewPrimitive::InlineEditUI(UIContainer* ctx)
 {
-	char bfr[64];
-	snprintf(bfr, 64, "New primitive (%s)", g_primTypeNames[int(type)]);
-	ctx->Text(bfr) + ui::Padding(5);
+	ctx->Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::Padding(5);
 }
 
 void MSN_NewPrimitive::FullEditUI(UIContainer* ctx)
@@ -506,9 +504,7 @@ static const char* g_types[] = { "i8", "u8", "i16", "u16", "i32", "u32", "i64", 
 
 void MSN_VertexData::InlineEditUI(UIContainer* ctx)
 {
-	char bfr[64];
-	snprintf(bfr, 64, "vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp);
-	ctx->Text(bfr) + ui::Padding(5);
+	ctx->Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::Padding(5);
 }
 
 void MSN_VertexData::FullEditUI(UIContainer* ctx)
@@ -561,9 +557,7 @@ static const char* g_idxtypes[] = { "u8", "u16", "u32" };
 
 void MSN_IndexData::InlineEditUI(UIContainer* ctx)
 {
-	char bfr[64];
-	snprintf(bfr, 64, "idx.data(%s)", g_idxtypes[int(type)]);
-	ctx->Text(bfr) + ui::Padding(5);
+	ctx->Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::Padding(5);
 }
 
 void MSN_IndexData::FullEditUI(UIContainer* ctx)

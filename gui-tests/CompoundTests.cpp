@@ -420,11 +420,27 @@ void Test_Tabs(UIContainer* ctx)
 
 struct ScrollbarsTest : ui::Node
 {
+	static constexpr bool Persistent = true;
+
+	int count = 20;
+	bool expanding = true;
+
 	void Render(UIContainer* ctx) override
 	{
-		*ctx->Push<ui::ScrollArea>() + ui::Width(300) + ui::Height(200);
-		for (int i = 0; i < 20; i++)
-			ctx->Text("Inside scroll area");
+		GetStyle().SetLayout(style::layouts::EdgeSlice());
+
+		ui::imm::PropEditInt(ctx, "\bCount", count);
+		ui::imm::PropEditBool(ctx, "\bExpanding", expanding);
+
+		auto& sa = *ctx->Push<ui::ScrollArea>();
+		if (!expanding)
+			sa + ui::Width(300) + ui::Height(200);
+		else
+			sa + ui::Height(style::Coord::Percent(100));
+
+		for (int i = 0; i < count; i++)
+			ctx->Textf("Inside scroll area [%d]", i);
+
 		ctx->Pop();
 	}
 };

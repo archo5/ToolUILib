@@ -658,13 +658,11 @@ std::string DDStructInst::GetNextInstanceInfo(bool lazy) const
 	int64_t size = GetSize(lazy);
 	int64_t remSizeSub = remainingCountIsSize ? (sizeOverrideEnable ? sizeOverrideValue : size) : 1;
 
-	char bfr[256];
-	snprintf(bfr, 256, "@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64,
+	return Format("@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64,
 		off + size,
 		sizeOverrideEnable ? sizeOverrideValue : size,
 		remainingCountIsSize ? "size" : "count",
 		remainingCount - remSizeSub);
-	return bfr;
 }
 
 DDStructInst* DDStructInst::CreateNextInstance(CreationReason cr) const

@@ -161,19 +161,15 @@ struct OSCommunicationTest : ui::Node
 				ui::Clipboard::SetText(clipboardData);
 		}
 
-		char bfr[128];
-		snprintf(bfr, sizeof(bfr), "time (ms): %u, double click time (ms): %u",
+		ctx->Textf("time (ms): %u, double click time (ms): %u",
 			unsigned(ui::platform::GetTimeMs()),
-			unsigned(ui::platform::GetDoubleClickTime())
-		);
-		ctx->Text(bfr) + ui::Padding(5);
+			unsigned(ui::platform::GetDoubleClickTime())) + ui::Padding(5);
 
 		auto pt = ui::platform::GetCursorScreenPos();
 		auto col = ui::platform::GetColorAtScreenPos(pt);
-		snprintf(bfr, sizeof(bfr), "cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
+		ctx->Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
 			pt.x, pt.y,
-			col.r, col.g, col.b, col.a);
-		ctx->Text(bfr) + ui::Padding(5);
+			col.r, col.g, col.b, col.a) + ui::Padding(5);
 		ctx->Make<ui::ColorInspectBlock>()->SetColor(col);
 	}
 
