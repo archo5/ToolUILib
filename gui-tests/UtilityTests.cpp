@@ -171,6 +171,9 @@ struct OSCommunicationTest : ui::Node
 			pt.x, pt.y,
 			col.r, col.g, col.b, col.a) + ui::Padding(5);
 		ctx->Make<ui::ColorInspectBlock>()->SetColor(col);
+
+		if (ui::imm::Button(ctx, "Show error message"))
+			ui::platform::ShowErrorMessage("Error", "Message");
 	}
 
 	ui::AnimationCallbackRequester animReq;

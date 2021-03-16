@@ -460,36 +460,25 @@ void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 void TE_Theme::LoadFromFile(const char* path)
 {
-	FILE* f = fopen(path, "r");
-	if (!f)
-		return;
-	std::string data;
-	fseek(f, 0, SEEK_END);
-	if (auto s = ftell(f))
-	{
-		data.resize(s);
-		fseek(f, 0, SEEK_SET);
-		s = fread(&data[0], 1, s, f);
-		data.resize(s);
-	}
-	fclose(f);
+	auto data = ReadTextFile(path);
+	if (data.empty())
+		platform::ShowErrorMessage("Theme Editor", Format("Failed to load theme data from %s", path));
+
 	JSONUnserializerObjectIterator r;
 	r.unserializeStorage = this;
 	if (!r.Parse(data))
-		return;
+		platform::ShowErrorMessage("Theme Editor", Format("Failed to read theme data in %s, it may be corrupted", path));
+
 	Clear();
 	OnSerialize(r, "theme");
 }
 
 void TE_Theme::SaveToFile(const char* path)
 {
-	FILE* f = fopen(path, "w");
-	if (!f)
-		return;
 	JSONSerializerObjectIterator w;
 	OnSerialize(w, "theme");
-	fwrite(w.GetData().data(), w.GetData().size(), 1, f);
-	fclose(f);
+	if (!WriteTextFile(path, w.GetData()))
+		platform::ShowErrorMessage("Theme Editor", Format("Failed to save theme data to %s", path));
 }
 
 void TE_Theme::CreateSampleTheme()

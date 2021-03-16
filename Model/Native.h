@@ -22,6 +22,7 @@ Point<int> GetCursorScreenPos();
 Color4b GetColorAtScreenPos(Point<int> pos);
 std::string GetWorkingDirectory();
 bool SetWorkingDirectory(StringView sv);
+void ShowErrorMessage(StringView title, StringView text);
 } // platform
 
 

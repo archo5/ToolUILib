@@ -131,6 +131,7 @@
   <ItemGroup>
     <ClCompile Include="Core\3DMath.cpp" />
     <ClCompile Include="Core\ContainerTests.cpp" />
+    <ClCompile Include="Core\FileSystem.cpp" />
     <ClCompile Include="Core\Font.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
@@ -160,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\HashTable.h" />
     <ClInclude Include="Core\Image.h" />

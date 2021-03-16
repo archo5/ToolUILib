@@ -341,6 +341,11 @@ bool SetWorkingDirectory(StringView sv)
 	return ::SetCurrentDirectoryW(UTF8toWCHAR(sv).c_str()) != FALSE;
 }
 
+void ShowErrorMessage(StringView title, StringView text)
+{
+	::MessageBoxW(nullptr, UTF8toWCHAR(text).c_str(), UTF8toWCHAR(title).c_str(), MB_ICONERROR);
+}
+
 } // platform
 
 

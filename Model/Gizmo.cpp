@@ -313,6 +313,8 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 			Point2f delta = { e.dx, e.dy };
 
 			Vec3f axis = GetAxis(_selectedPart);
+			Vec3f tg1(axis.z, axis.x, axis.y);
+			Vec3f tg2(axis.y, axis.z, axis.x);
 			Mat4f xfBasis = GetTransformBasis(_origXF, _curXFWorldSpace);
 			Mat4f xfBasisW = GetTransformBasis(_origXF, true);
 
@@ -325,9 +327,13 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 				Ray3f ray = cam.GetRayWP(_origCenterWinPos + _totalMovedWinVec);
 
 				Vec3f worldAxis = xfBasis.TransformDirection(axis).Normalized();
+				Vec3f worldTg1 = xfBasis.TransformDirection(tg1).Normalized();
+				Vec3f worldTg2 = xfBasis.TransformDirection(tg2).Normalized();
 				if (_selectedPart == GizmoAction::MoveScreenPlane)
 				{
 					worldAxis = cam.GetInverseViewMatrix().TransformDirection({ 0, 0, 1 }).Normalized();
+					worldTg1 = cam.GetInverseViewMatrix().TransformDirection({ 1, 0, 0 }).Normalized();
+					worldTg2 = cam.GetInverseViewMatrix().TransformDirection({ 0, 1, 0 }).Normalized();
 				}
 				Vec3f worldOrigPos = xfBasis.TransformPoint({ 0, 0, 0 });
 
@@ -364,12 +370,14 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 					if (rpir.angcos)
 					{
 						Vec3f diff = ray.GetPoint(rpir.dist) - worldOrigPos;
+						float diffX = Vec3Dot(diff, worldTg1);
+						float diffY = Vec3Dot(diff, worldTg2);
 						if (snapping)
 						{
-							Snap(diff.x, snapDist);
-							Snap(diff.y, snapDist);
-							Snap(diff.z, snapDist);
+							Snap(diffX, snapDist);
+							Snap(diffY, snapDist);
 						}
+						diff = worldTg1 * diffX + worldTg2 * diffY;
 
 						auto xf = Mat4f::Translate(diff);
 

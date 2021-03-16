@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "Core/FileSystem.h"
 #include "Core/String.h"
 #include "Core/Math.h"
 #include "Core/Threading.h"

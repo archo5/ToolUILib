@@ -96,10 +96,7 @@ struct MainWindowNode : ui::Node
 		{
 			NamedTextSerializeWriter ntsw;
 			workspace.Save(ntsw);
-			for (FILE* f = fopen(CUR_WORKSPACE, "w");
-				fwrite(ntsw.data.data(), ntsw.data.size(), 1, f),
-				fclose(f),
-				false;);
+			ui::WriteTextFile(CUR_WORKSPACE, ntsw.data);
 		});
 		ctx->Make<ui::MenuItemElement>()->SetText("Export script").Func([&]()
 		{
@@ -108,10 +105,7 @@ struct MainWindowNode : ui::Node
 			*strrchr(bfr, '.') = '\0';
 			strcat(bfr, ".py");
 			auto scr = ExportPythonScript(&workspace.desc);
-			for (FILE* f = fopen(bfr, "w");
-				fwrite(scr.data(), scr.size(), 1, f),
-				fclose(f),
-				false;);
+			ui::WriteTextFile(bfr, scr);
 		});
 		ctx->Pop();
 
