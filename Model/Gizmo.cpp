@@ -1,7 +1,7 @@
 
 #include "Gizmo.h"
 
-#include "../Render/OpenGL.h"
+#include "../Render/RHI.h"
 #include "../Render/Primitives.h"
 
 #include <algorithm>

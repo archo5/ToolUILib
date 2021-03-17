@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "MeshEditor.h"
 
-#include "../Render/OpenGL.h"
+#include "../Render/RHI.h"
 
 
 void MeshEditorWindowNode::Render(UIContainer* ctx)

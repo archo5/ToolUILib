@@ -3,7 +3,6 @@
 #include <windowsx.h>
 #include <shellapi.h>
 
-#include <codecvt>
 #include <algorithm>
 #undef min
 #undef max
@@ -15,7 +14,7 @@
 #include "System.h"
 #include "Menu.h"
 
-#include "../Render/OpenGL.h"
+#include "../Render/RHI.h"
 #include "../Render/Render.h"
 
 
@@ -1531,13 +1530,14 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_SIZE:
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
-			rhi::SetViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
-			draw::_ResetScissorRectStack(0, 0, LOWORD(lParam), HIWORD(lParam));
 			if (auto* window = GetNativeWindow(hWnd))
 			{
-				auto& evsys = window->GetEventSys();
 				auto w = LOWORD(lParam);
 				auto h = HIWORD(lParam);
+				rhi::OnResizeWindow(window->renderCtx, w, h);
+				draw::_ResetScissorRectStack(0, 0, w, h);
+
+				auto& evsys = window->GetEventSys();
 				if (w != evsys.width || h != evsys.height)
 				{
 					ui::Notify(DCT_ResizeWindow, window->GetOwner());
@@ -1691,6 +1691,19 @@ void dumpallocinfo()
 }
 
 
+struct GlobalResources
+{
+	GlobalResources()
+	{
+		InitializeWin32();
+		ui::rhi::GlobalInit();
+	}
+	~GlobalResources()
+	{
+		ui::rhi::GlobalFree();
+	}
+};
+
 
 int uimain(int argc, char* argv[]);
 void IncludeContainerTests();
@@ -1705,15 +1718,14 @@ int RealMain()
 	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	std::vector<std::string> args;
 	std::vector<char*> argp;
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
 	for (int i = 0; i < argc; i++)
 	{
-		args.push_back(myconv.to_bytes(argv[i]));
+		args.push_back(WCHARtoUTF8(argv[i]));
 		argp.push_back(const_cast<char*>(args[i].c_str()));
 	}
 	LocalFree(argv);
 
-	InitializeWin32();
+	GlobalResources grsrc;
 
 	return uimain(argc, argp.data());
 }

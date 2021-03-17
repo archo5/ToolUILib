@@ -28,9 +28,13 @@ struct Vertex
 struct Texture2D;
 struct RenderContext;
 
+void GlobalInit();
+void GlobalFree();
+
 RenderContext* CreateRenderContext(void* window);
 void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
+void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
 
 void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);
@@ -56,7 +60,7 @@ void UnmapTexture(Texture2D* tex);
 
 void SetTexture(Texture2D* tex);
 void DrawTriangles(Vertex* verts, size_t num_verts);
-void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices);
+void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, size_t num_indices);
 
 
 void Begin3DMode(const AABB<int>& rect);

@@ -10,9 +10,6 @@
     <ClCompile Include="Model\Objects.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="Render\OpenGL.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="Model\Controls.cpp">
       <Filter>Model</Filter>
     </ClCompile>
@@ -85,6 +82,15 @@
     <ClCompile Include="Core\FileSystem.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Render\RHI_OpenGL.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\RHI_D3D11.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\RHI.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -98,9 +104,6 @@
     </ClInclude>
     <ClInclude Include="Model\Objects.h">
       <Filter>Model</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\OpenGL.h">
-      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="Model\Controls.h">
       <Filter>Model</Filter>
@@ -199,6 +202,9 @@
     <ClInclude Include="Core\FileSystem.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Render\RHI.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -216,8 +222,25 @@
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{80f33962-520c-4caf-9f49-9dd8982290e7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Render\D3D11Shaders">
+      <UniqueIdentifier>{b87fa685-edd0-4618-a02f-44930dc3fd25}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="layout-design.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Render\D3D11Shaders\clear.vs.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Render\D3D11Shaders\clear.ps.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Render\D3D11Shaders\draw2d.vs.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Render\D3D11Shaders\draw2d.ps.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

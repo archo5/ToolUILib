@@ -2,11 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "OpenGL.h"
+#include "RHI.h"
 #include "Render.h"
 #include "../Core/Math.h"
-
-#pragma warning(disable:4996)
 
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
@@ -19,25 +17,11 @@ namespace ui {
 namespace rhi {
 
 
-static Stats g_stats;
-
-Stats Stats::operator - (const Stats& o) const
-{
-	Stats r;
-	r.num_SetTexture = num_SetTexture - o.num_SetTexture;
-	r.num_DrawTriangles = num_DrawTriangles - o.num_DrawTriangles;
-	r.num_DrawIndexedTriangles = num_DrawIndexedTriangles - o.num_DrawIndexedTriangles;
-	return r;
-}
-
-Stats Stats::Get()
-{
-	return g_stats;
-}
+extern Stats g_stats;
 
 
 #define GLCHK(x) do { x; _Check(#x, __FILE__, __LINE__); } while (0)
-void _Check(const char* code, const char* file, int line)
+static void _Check(const char* code, const char* file, int line)
 {
 	auto err = glGetError();
 	if (err != GL_NO_ERROR)
@@ -83,6 +67,14 @@ struct RenderContext
 };
 RenderContext* RenderContext::first;
 RenderContext* RenderContext::last;
+
+void GlobalInit()
+{
+}
+
+void GlobalFree()
+{
+}
 
 RenderContext* CreateRenderContext(void* window)
 {
@@ -144,6 +136,10 @@ void FreeRenderContext(RenderContext* RC)
 void SetActiveContext(RenderContext* RC)
 {
 	wglMakeCurrent(RC->dc, RC->rc);
+}
+
+void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
+{
 }
 
 static int curRTTHeight;
@@ -279,7 +275,7 @@ void DrawTriangles(Vertex* verts, size_t num_verts)
 	GLCHK(glDrawArrays(GL_TRIANGLES, 0, num_verts));
 }
 
-void DrawIndexedTriangles(Vertex* verts, uint16_t* indices, size_t num_indices)
+void DrawIndexedTriangles(Vertex* verts, size_t /*num_verts*/, uint16_t* indices, size_t num_indices)
 {
 	g_stats.num_DrawIndexedTriangles++;
 	GLCHK(glVertexPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].x));
