@@ -25,6 +25,31 @@ struct Vertex
 	Color4b col;
 };
 
+struct RHIInternalPointers
+{
+	// ID3D11Device* / HDC
+	void* device;
+	// ID3D11DeviceContext* / HGLRC
+	void* context;
+	// HWND
+	void* window;
+	// IDXGISwapChain* / NULL(OpenGL)
+	void* swapChain;
+};
+
+struct IRHIListener
+{
+	// OpenGL: first created context
+	virtual void OnAttach(const RHIInternalPointers& ip) = 0;
+
+	// OpenGL: last destroyed context
+	virtual void OnDetach(const RHIInternalPointers& ip) = 0;
+
+	virtual void OnAfterInitSwapChain(const RHIInternalPointers& ip) = 0;
+	virtual void OnBeforeFreeSwapChain(const RHIInternalPointers& ip) = 0;
+	virtual void OnChangeCurrentContext(const RHIInternalPointers& ip) = 0;
+};
+
 struct Texture2D;
 struct RenderContext;
 
@@ -35,6 +60,9 @@ RenderContext* CreateRenderContext(void* window);
 void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
+
+void AttachListener(IRHIListener*);
+void DetachListener(IRHIListener*);
 
 void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);

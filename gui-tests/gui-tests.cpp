@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "../Render/RHI.h"
 
 
 ui::DataCategoryTag DCT_ItemSelection[1];
@@ -608,6 +609,33 @@ struct TEST : ui::Node
 
 
 
+struct RHIListener : ui::rhi::IRHIListener
+{
+	void OnAttach(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		printf("RHI attach device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+	}
+	void OnDetach(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		printf("RHI detach device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+	}
+	void OnAfterInitSwapChain(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		printf("RHI after init swapchain device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+	}
+	void OnBeforeFreeSwapChain(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		printf("RHI before free swapchain device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+	}
+	void OnChangeCurrentContext(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		//printf("RHI change current context device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+	}
+}
+g_rl;
+
+
+
 void EarlyTest()
 {
 	puts("done");
@@ -624,7 +652,7 @@ struct MainWindow : ui::NativeMainWindow
 int uimain(int argc, char* argv[])
 {
 	//EarlyTest();
-
+	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);
 	MainWindow mw;
 	mw.SetVisible(true);

@@ -205,6 +205,7 @@
     <ClInclude Include="Render\RHI.h" />
     <ClInclude Include="Render\Primitives.h" />
     <ClInclude Include="Render\Render.h" />
+    <ClCompile Include="Render\RHI_Internal.cpp" />
     <ClInclude Include="ThirdParty\json.h" />
     <ClInclude Include="ThirdParty\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\stb_truetype.h" />

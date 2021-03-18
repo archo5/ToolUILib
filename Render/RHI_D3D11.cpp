@@ -1,5 +1,6 @@
 
 #include "RHI.h"
+#include "../Core/Memory.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
@@ -166,8 +167,12 @@ static ID3D11VertexShader* g_vsDraw3DUnlit = nullptr;
 static ID3D11PixelShader* g_psDraw3DUnlit = nullptr;
 
 
+ArrayView<IRHIListener*> GetListeners();
+
+
 struct RenderContext
 {
+	HWND window = nullptr;
 	IDXGISwapChain* swapChain = nullptr;
 	ID3D11Texture2D* backBufferTex = nullptr;
 	ID3D11RenderTargetView* backBufferRTV = nullptr;
@@ -201,6 +206,8 @@ struct RenderContext
 		if (last == this)
 			last = last->prev;
 	}
+
+	RHIInternalPointers GetPtrs() const { return { g_dev, g_ctx, window, swapChain }; }
 
 	void InitSwapChain(HWND hwnd)
 	{
@@ -254,9 +261,15 @@ struct RenderContext
 			dsvd.Texture2D.MipSlice = 0;
 		}
 		D3DCHK(g_dev->CreateDepthStencilView(depthStencilTex, &dsvd, &depthStencilView));
+
+		for (auto* L : GetListeners())
+			L->OnAfterInitSwapChain(GetPtrs());
 	}
 	void ReleaseBuffer()
 	{
+		for (auto* L : GetListeners())
+			L->OnBeforeFreeSwapChain(GetPtrs());
+
 		SAFE_RELEASE(depthStencilView);
 		SAFE_RELEASE(depthStencilTex);
 		SAFE_RELEASE(backBufferRTV);
@@ -510,11 +523,17 @@ void GlobalInit()
 	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw3dunlit, sizeof(g_shobj_vs_draw3dunlit), nullptr, &g_vsDraw3DUnlit));
 	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw3dunlit, sizeof(g_shobj_ps_draw3dunlit), nullptr, &g_psDraw3DUnlit));
 
+	for (auto* L : GetListeners())
+		L->OnAttach({ g_dev, g_ctx });
+
 	Reset2DRender();
 }
 
 void GlobalFree()
 {
+	for (auto* L : GetListeners())
+		L->OnDetach({ g_dev, g_ctx });
+
 	SAFE_RELEASE(g_psDraw3DUnlit);
 	SAFE_RELEASE(g_vsDraw3DUnlit);
 
@@ -554,11 +573,29 @@ void GlobalFree()
 	SAFE_RELEASE(g_dev);
 }
 
+void OnListenerAdd(IRHIListener* L)
+{
+	L->OnAttach({ g_dev, g_ctx });
+
+	for (auto* rc = RenderContext::first; rc; rc = rc->next)
+		L->OnAfterInitSwapChain(rc->GetPtrs());
+}
+
+void OnListenerRemove(IRHIListener* L)
+{
+	for (auto* rc = RenderContext::first; rc; rc = rc->next)
+		L->OnBeforeFreeSwapChain(rc->GetPtrs());
+
+	L->OnDetach({ g_dev, g_ctx });
+}
+
 RenderContext* CreateRenderContext(void* window)
 {
 	RenderContext* RC = new RenderContext();
 
 	auto hwnd = (HWND)window;
+	RC->window = hwnd;
+
 	RECT size = {};
 	GetClientRect(hwnd, &size);
 

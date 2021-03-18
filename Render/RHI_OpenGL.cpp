@@ -56,7 +56,9 @@ struct RenderContext
 		if (last == this)
 			last = last->prev;
 	}
+	RHIInternalPointers GetPtrs() const { return { dc, rc, window }; }
 
+	HWND window;
 	HDC dc;
 	HGLRC rc;
 
@@ -68,6 +70,8 @@ struct RenderContext
 RenderContext* RenderContext::first;
 RenderContext* RenderContext::last;
 
+ArrayView<IRHIListener*> GetListeners();
+
 void GlobalInit()
 {
 }
@@ -76,10 +80,29 @@ void GlobalFree()
 {
 }
 
+void OnListenerAdd(IRHIListener* L)
+{
+	if (auto* rc = RenderContext::first)
+		L->OnAttach(rc->GetPtrs());
+
+	for (auto* rc = RenderContext::first; rc; rc = rc->next)
+		L->OnAfterInitSwapChain(rc->GetPtrs());
+}
+
+void OnListenerRemove(IRHIListener* L)
+{
+	for (auto* rc = RenderContext::first; rc; rc = rc->next)
+		L->OnBeforeFreeSwapChain(rc->GetPtrs());
+
+	if (auto* rc = RenderContext::first)
+		L->OnDetach(rc->GetPtrs());
+}
+
 RenderContext* CreateRenderContext(void* window)
 {
 	RenderContext* RC = new RenderContext();
-	RC->dc = GetDC((HWND)window);
+	RC->window = (HWND)window;
+	RC->dc = GetDC(RC->window);
 
 	PIXELFORMATDESCRIPTOR pfd =
 	{
@@ -121,12 +144,26 @@ RenderContext* CreateRenderContext(void* window)
 	GLCHK(glEnableClientState(GL_COLOR_ARRAY));
 	GLCHK(glEnable(GL_SCISSOR_TEST));
 
+	if (!RenderContext::first)
+		for (auto* L : GetListeners())
+			L->OnAttach(RC->GetPtrs());
+
+	for (auto* L : GetListeners())
+		L->OnAfterInitSwapChain(RC->GetPtrs());
+
 	RC->AddToList();
 	return RC;
 }
 
 void FreeRenderContext(RenderContext* RC)
 {
+	for (auto* L : GetListeners())
+		L->OnBeforeFreeSwapChain(RC->GetPtrs());
+
+	if (RenderContext::first == RenderContext::last)
+		for (auto* L : GetListeners())
+			L->OnDetach(RC->GetPtrs());
+
 	wglMakeCurrent(nullptr, nullptr);
 	wglDeleteContext(RC->rc);
 	// ReleaseDC(RC->dc); - TODO?
@@ -140,6 +177,11 @@ void SetActiveContext(RenderContext* RC)
 
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
 {
+	for (auto* L : GetListeners())
+		L->OnBeforeFreeSwapChain(RC->GetPtrs());
+
+	for (auto* L : GetListeners())
+		L->OnAfterInitSwapChain(RC->GetPtrs());
 }
 
 static int curRTTHeight;

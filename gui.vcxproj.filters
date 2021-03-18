@@ -91,6 +91,9 @@
     <ClCompile Include="Render\RHI.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\RHI_Internal.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
