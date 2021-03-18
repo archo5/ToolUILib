@@ -4,7 +4,7 @@
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../ThirdParty/stb_rect_pack.h"
 
-#include "OpenGL.h"
+#include "RHI.h"
 #include "Render.h"
 
 
@@ -324,7 +324,7 @@ void _Flush()
 	if (!g_numIndices)
 		return;
 	ApplyRHITex(GetRHITex(g_curTex));
-	rhi::DrawIndexedTriangles(g_bufVertices, g_bufIndices, g_numIndices);
+	rhi::DrawIndexedTriangles(g_bufVertices, g_numVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
 }
@@ -382,7 +382,7 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 		_Flush();
 		g_curTex = tex;
 		ApplyRHITex(GetRHITex(g_curTex));
-		rhi::DrawIndexedTriangles(verts, indices, num_indices);
+		rhi::DrawIndexedTriangles(verts, num_vertices, indices, num_indices);
 		return;
 	}
 

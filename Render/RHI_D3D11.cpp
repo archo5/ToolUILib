@@ -14,6 +14,8 @@
 #include "clear.ps.h"
 #include "draw2d.vs.h"
 #include "draw2d.ps.h"
+#include "draw3dunlit.vs.h"
+#include "draw3dunlit.ps.h"
 
 
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
@@ -85,24 +87,83 @@ namespace ui {
 namespace rhi {
 
 
+struct Texture2D
+{
+	ID3D11Texture2D* tex = nullptr;
+	ID3D11ShaderResourceView* srv = nullptr;
+	uint8_t _flags;
+
+	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags)
+	{
+		D3D11_TEXTURE2D_DESC t2d = {};
+		{
+			t2d.Width = width;
+			t2d.Height = height;
+			t2d.MipLevels = 1;
+			t2d.ArraySize = 1;
+			t2d.Format = a8 ? DXGI_FORMAT_A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM;
+			t2d.SampleDesc.Count = 1;
+			t2d.Usage = D3D11_USAGE_DEFAULT;
+			t2d.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			t2d.CPUAccessFlags = data ? 0 : D3D11_CPU_ACCESS_WRITE;
+		}
+
+		D3D11_SUBRESOURCE_DATA srd;
+		{
+			srd.pSysMem = data;
+			srd.SysMemPitch = width * (a8 ? 1 : 4);
+		}
+
+		D3DCHK(g_dev->CreateTexture2D(&t2d, data ? &srd : nullptr, &tex));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
+		{
+			srvd.Format = a8 ? DXGI_FORMAT_A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM;
+			srvd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+			srvd.Texture2D.MipLevels = 1;
+		}
+
+		D3DCHK(g_dev->CreateShaderResourceView(tex, &srvd, &srv));
+	}
+	~Texture2D()
+	{
+		SAFE_RELEASE(srv);
+		SAFE_RELEASE(tex);
+	}
+};
+
+
 extern Stats g_stats;
 
 static TempBuffer* g_tmpVB = nullptr;
 static TempBuffer* g_tmpIB = nullptr;
 static TempBuffer* g_tmpCB = nullptr;
+static TempBuffer* g_defVB = nullptr;
+static TempBuffer* g_defVBCC = nullptr;
+static Texture2D* g_defTex = nullptr;
 
-static ID3D11RasterizerState* g_rs2D = nullptr;
-static ID3D11DepthStencilState* g_dss2D = nullptr;
+static ID3D11RasterizerState* g_renderState2D = nullptr;
+static ID3D11RasterizerState* g_renderStates3D[4] = {};
+
+static ID3D11DepthStencilState* g_depthStencilStates[4] = {};
+
 static ID3D11SamplerState* g_samplers[4] = {};
 
 static ID3D11BlendState* g_bsClear = nullptr;
+static ID3D11BlendState* g_bsNoBlend = nullptr;
+static ID3D11BlendState* g_bsAlphaBlend = nullptr;
+
+static ID3D11InputLayout* g_inputLayout2D = nullptr;
+static ID3D11InputLayout* g_inputLayouts3D[8] = {};
+
 static ID3D11VertexShader* g_vsClear = nullptr;
 static ID3D11PixelShader* g_psClear = nullptr;
 
-static ID3D11BlendState* g_bsDraw2D = nullptr;
 static ID3D11VertexShader* g_vsDraw2D = nullptr;
 static ID3D11PixelShader* g_psDraw2D = nullptr;
-static ID3D11InputLayout* g_iaDraw2D = nullptr;
+
+static ID3D11VertexShader* g_vsDraw3DUnlit = nullptr;
+static ID3D11PixelShader* g_psDraw3DUnlit = nullptr;
 
 
 struct RenderContext
@@ -220,18 +281,25 @@ static RenderContext* g_RC;
 static void Reset2DRender()
 {
 	g_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	g_ctx->RSSetState(g_rs2D);
-	g_ctx->OMSetDepthStencilState(g_dss2D, 0);
-	float factor[4] = {};
-	g_ctx->OMSetBlendState(g_bsDraw2D, factor, 0xffffffff);
+	g_ctx->RSSetState(g_renderState2D);
+	g_ctx->OMSetDepthStencilState(g_depthStencilStates[3], 0);
+	g_ctx->OMSetBlendState(g_bsAlphaBlend, nullptr, 0xffffffff);
 	float cbData[2] = { g_RC ? 2.0f / g_RC->width : 1.0f, g_RC ? -2.0f / g_RC->height : 1.0f };
 	g_tmpCB->Write(cbData, sizeof(cbData));
 	g_ctx->VSSetShader(g_vsDraw2D, nullptr, 0);
 	g_ctx->VSSetConstantBuffers(0, 1, &g_tmpCB->buffer);
 	g_ctx->PSSetShader(g_psDraw2D, nullptr, 0);
-	g_ctx->IASetInputLayout(g_iaDraw2D);
+	g_ctx->IASetInputLayout(g_inputLayout2D);
 }
 
+
+struct DefaultVertex
+{
+	Vec3f pos;
+	Vec3f nrm;
+	Point2f tex;
+	Color4b col;
+};
 
 void GlobalInit()
 {
@@ -271,25 +339,52 @@ void GlobalInit()
 	g_tmpVB = new TempBuffer(D3D11_BIND_VERTEX_BUFFER);
 	g_tmpIB = new TempBuffer(D3D11_BIND_INDEX_BUFFER);
 	g_tmpCB = new TempBuffer(D3D11_BIND_CONSTANT_BUFFER);
+	g_defVB = new TempBuffer(D3D11_BIND_VERTEX_BUFFER, sizeof(DefaultVertex));
+	g_defVBCC = new TempBuffer(D3D11_BIND_VERTEX_BUFFER, sizeof(DefaultVertex));
+	{
+		DefaultVertex v = {};
+		v.col = Color4b::White();
+		g_defVB->Write(&v, sizeof(v));
+		g_defVBCC->Write(&v, sizeof(v));
+	}
+	auto defTexCol = Color4b::White();
+	g_defTex = CreateTextureRGBA8(&defTexCol, 1, 1, 0);
 
 	D3D11_RASTERIZER_DESC rd = {};
 	{
 		rd.FillMode = D3D11_FILL_SOLID;
 		rd.CullMode = D3D11_CULL_NONE;
-		rd.FrontCounterClockwise = FALSE;
+		rd.FrontCounterClockwise = TRUE;
 		rd.ScissorEnable = TRUE;
 		rd.MultisampleEnable = FALSE;
 		rd.AntialiasedLineEnable = FALSE;
 	}
-	D3DCHK(g_dev->CreateRasterizerState(&rd, &g_rs2D));
+	D3DCHK(g_dev->CreateRasterizerState(&rd, &g_renderState2D));
 
-	D3D11_DEPTH_STENCIL_DESC dsd = {};
+	for (int i = 0; i < 4; i++)
 	{
-		dsd.DepthEnable = FALSE;
-		dsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		dsd.StencilEnable = FALSE;
+		D3D11_RASTERIZER_DESC rd = {};
+		{
+			rd.FillMode = i & 2 ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+			rd.CullMode = i & 1 ? D3D11_CULL_BACK : D3D11_CULL_NONE;
+			rd.FrontCounterClockwise = TRUE;
+			rd.ScissorEnable = TRUE;
+			rd.MultisampleEnable = FALSE;
+			rd.AntialiasedLineEnable = FALSE;
+		}
+		D3DCHK(g_dev->CreateRasterizerState(&rd, &g_renderStates3D[i]));
 	}
-	D3DCHK(g_dev->CreateDepthStencilState(&dsd, &g_dss2D));
+
+	for (int i = 0; i < 4; i++)
+	{
+		D3D11_DEPTH_STENCIL_DESC dsd = {};
+		{
+			dsd.DepthEnable = i & 1 ? FALSE : TRUE;
+			dsd.DepthWriteMask = i & 2 ? D3D11_DEPTH_WRITE_MASK_ZERO : D3D11_DEPTH_WRITE_MASK_ALL;
+			dsd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+		}
+		D3DCHK(g_dev->CreateDepthStencilState(&dsd, &g_depthStencilStates[i]));
+	}
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -321,10 +416,16 @@ void GlobalInit()
 		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsClear));
 	}
 
-	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_clear, sizeof(g_shobj_vs_clear), nullptr, &g_vsClear));
-	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_clear, sizeof(g_shobj_ps_clear), nullptr, &g_psClear));
-
-	// draw2d
+	// no blend
+	{
+		D3D11_BLEND_DESC bsd = {};
+		{
+			bsd.RenderTarget[0].BlendEnable = FALSE;
+			bsd.RenderTarget[0].RenderTargetWriteMask = 0xf;
+		}
+		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsNoBlend));
+	}
+	// alpha blend
 	{
 		D3D11_BLEND_DESC bsd = {};
 		{
@@ -337,11 +438,8 @@ void GlobalInit()
 			bsd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 			bsd.RenderTarget[0].RenderTargetWriteMask = 0xf;
 		}
-		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsDraw2D));
+		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsAlphaBlend));
 	}
-
-	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), nullptr, &g_vsDraw2D));
-	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw2d, sizeof(g_shobj_ps_draw2d), nullptr, &g_psDraw2D));
 
 	D3D11_INPUT_ELEMENT_DESC ied[3] = {};
 	{
@@ -369,27 +467,84 @@ void GlobalInit()
 		ied[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 		ied[2].InstanceDataStepRate = 0;
 	}
-	D3DCHK(g_dev->CreateInputLayout(ied, 3, g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), &g_iaDraw2D));
+	D3DCHK(g_dev->CreateInputLayout(ied, 3, g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), &g_inputLayout2D));
+
+	for (int i = 0; i < 8; i++)
+	{
+		D3D11_INPUT_ELEMENT_DESC ie[4];
+		{
+			UINT off = 0;
+			ie[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, off, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+			off += 12;
+
+			if (i & VF_Normal)
+			{
+				ie[1] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, off, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+				off += 12;
+			}
+			else
+				ie[1] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 12, D3D11_INPUT_PER_INSTANCE_DATA, 0 };
+
+			if (i & VF_Texcoord)
+			{
+				ie[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, off, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+				off += 8;
+			}
+			else
+				ie[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 24, D3D11_INPUT_PER_INSTANCE_DATA, 0 };
+
+			if (i & VF_Color)
+				ie[3] = { "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, off, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+			else
+				ie[3] = { "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 0 };
+		}
+		D3DCHK(g_dev->CreateInputLayout(ie, 4, g_shobj_vs_draw3dunlit, sizeof(g_shobj_vs_draw3dunlit), &g_inputLayouts3D[i]));
+	}
+
+	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_clear, sizeof(g_shobj_vs_clear), nullptr, &g_vsClear));
+	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_clear, sizeof(g_shobj_ps_clear), nullptr, &g_psClear));
+
+	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), nullptr, &g_vsDraw2D));
+	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw2d, sizeof(g_shobj_ps_draw2d), nullptr, &g_psDraw2D));
+
+	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw3dunlit, sizeof(g_shobj_vs_draw3dunlit), nullptr, &g_vsDraw3DUnlit));
+	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw3dunlit, sizeof(g_shobj_ps_draw3dunlit), nullptr, &g_psDraw3DUnlit));
 
 	Reset2DRender();
 }
 
 void GlobalFree()
 {
-	SAFE_RELEASE(g_iaDraw2D);
+	SAFE_RELEASE(g_psDraw3DUnlit);
+	SAFE_RELEASE(g_vsDraw3DUnlit);
+
 	SAFE_RELEASE(g_psDraw2D);
 	SAFE_RELEASE(g_vsDraw2D);
-	SAFE_RELEASE(g_bsDraw2D);
 	
 	SAFE_RELEASE(g_psClear);
 	SAFE_RELEASE(g_vsClear);
+
+	for (int i = 0; i < 8; i++)
+		SAFE_RELEASE(g_inputLayouts3D[i]);
+	SAFE_RELEASE(g_inputLayout2D);
+
+	SAFE_RELEASE(g_bsAlphaBlend);
+	SAFE_RELEASE(g_bsNoBlend);
 	SAFE_RELEASE(g_bsClear);
 
 	for (int i = 0; i < 4; i++)
 		SAFE_RELEASE(g_samplers[i]);
-	SAFE_RELEASE(g_dss2D);
-	SAFE_RELEASE(g_rs2D);
 
+	for (int i = 0; i < 4; i++)
+		SAFE_RELEASE(g_depthStencilStates[i]);
+
+	for (int i = 0; i < 4; i++)
+		SAFE_RELEASE(g_renderStates3D[i]);
+	SAFE_RELEASE(g_renderState2D);
+
+	delete g_defTex;
+	delete g_defVBCC;
+	delete g_defVB;
 	delete g_tmpCB;
 	delete g_tmpIB;
 	delete g_tmpVB;
@@ -444,25 +599,38 @@ void SetScissorRect(int x0, int y0, int x1, int y1)
 	g_ctx->RSSetScissorRects(1, &rect);
 }
 
+static AABB<int> g_realVP;
+static void _SetViewport(const AABB<int>& vp)
+{
+	g_realVP = vp;
+	D3D11_VIEWPORT viewport = { float(vp.x0), float(vp.y0), float(vp.x1 - vp.x0), float(vp.y1 - vp.y0), 0.0f, 1.0f };
+	g_ctx->RSSetViewports(1, &viewport);
+}
+
+static AABB<int> g_viewport;
 void SetViewport(int x0, int y0, int x1, int y1)
 {
-	D3D11_VIEWPORT viewport = { float(x0), float(y0), float(x1 - x0), float(y1 - y0), 0.0f, 1.0f };
-	g_ctx->RSSetViewports(1, &viewport);
+	g_viewport = { x0, y0, x1, y1 };
+	_SetViewport(g_viewport);
 }
 
 void Clear(int r, int g, int b, int a)
 {
 	Color4f col = Color4b(r, g, b, a);
-	g_ctx->ClearRenderTargetView(g_RC->backBufferRTV, &col.r);
+	if (g_realVP.x0 == 0 && g_realVP.y0 == 0 && g_realVP.x1 == g_RC->width && g_realVP.y1 == g_RC->height)
+	{
+		g_ctx->ClearRenderTargetView(g_RC->backBufferRTV, &col.r);
+		g_ctx->ClearDepthStencilView(g_RC->depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+	else
+	{
+		g_ctx->VSSetShader(g_vsClear, nullptr, 0);
+		g_ctx->PSSetShader(g_psClear, nullptr, 0);
 
-	g_ctx->VSSetShader(g_vsClear, nullptr, 0);
-	g_ctx->PSSetShader(g_psClear, nullptr, 0);
+		g_ctx->OMSetBlendState(g_bsClear, &col.r, 0xffffffff);
 
-	g_ctx->OMSetBlendState(g_bsClear, &col.r, 0xffffffff);
-
-	g_ctx->Draw(3, 0);
-
-	Reset2DRender();
+		g_ctx->Draw(3, 0);
+	}
 }
 
 void ClearDepthOnly()
@@ -474,51 +642,6 @@ void Present(RenderContext* RC)
 {
 	RC->swapChain->Present(0, 0);
 }
-
-struct Texture2D
-{
-	ID3D11Texture2D* tex = nullptr;
-	ID3D11ShaderResourceView* srv = nullptr;
-	uint8_t _flags;
-
-	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags)
-	{
-		D3D11_TEXTURE2D_DESC t2d = {};
-		{
-			t2d.Width = width;
-			t2d.Height = height;
-			t2d.MipLevels = 1;
-			t2d.ArraySize = 1;
-			t2d.Format = a8 ? DXGI_FORMAT_A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM;
-			t2d.SampleDesc.Count = 1;
-			t2d.Usage = D3D11_USAGE_DEFAULT;
-			t2d.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-			t2d.CPUAccessFlags = data ? 0 : D3D11_CPU_ACCESS_WRITE;
-		}
-
-		D3D11_SUBRESOURCE_DATA srd;
-		{
-			srd.pSysMem = data;
-			srd.SysMemPitch = width * (a8 ? 1 : 4);
-		}
-
-		D3DCHK(g_dev->CreateTexture2D(&t2d, data ? &srd : nullptr, &tex));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
-		{
-			srvd.Format = a8 ? DXGI_FORMAT_A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM;
-			srvd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-			srvd.Texture2D.MipLevels = 1;
-		}
-
-		D3DCHK(g_dev->CreateShaderResourceView(tex, &srvd, &srv));
-	}
-	~Texture2D()
-	{
-		SAFE_RELEASE(srv);
-		SAFE_RELEASE(tex);
-	}
-};
 
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags)
 {
@@ -578,10 +701,13 @@ void UnmapTexture(Texture2D* tex)
 #endif
 }
 
+static Texture2D* g_curTex;
 void SetTexture(Texture2D* tex)
 {
-	auto* srv = tex ? tex->srv : nullptr;
-	g_ctx->PSSetShaderResources(0, 1, &srv);
+	g_curTex = tex;
+	if (!tex)
+		tex = g_defTex;
+	g_ctx->PSSetShaderResources(0, 1, &tex->srv);
 	g_ctx->PSSetSamplers(0, 1, &g_samplers[tex->_flags]);
 }
 
@@ -612,36 +738,61 @@ void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, si
 	g_ctx->DrawIndexed(num_indices, 0, 0);
 }
 
+static unsigned g_drawFlags;
 void SetRenderState(unsigned drawFlags)
 {
-	// TODO
+	g_drawFlags = drawFlags;
 }
+
+static Mat4f g_viewMatrix = Mat4f::Identity();
+static Mat4f g_projMatrix = Mat4f::Identity();
 
 void SetViewMatrix(const Mat4f& m)
 {
-	// TODO
+	g_viewMatrix = m;
 }
 
 void SetProjectionMatrix(const Mat4f& m)
 {
-	// TODO
+	g_projMatrix = m;
 }
 
 void SetForcedColor(const Color4b& col)
 {
-	// TODO
+	DefaultVertex dv = {};
+	dv.col = col;
+	g_defVBCC->Write(&dv, sizeof(dv));
 }
 
+static Texture2D* g_prevTex;
+static AABB<int> g_3DRect;
 void Begin3DMode(const AABB<int>& rect)
 {
-	// TODO
+	_SetViewport(rect);
+
+	SetRenderState(0);
+	SetProjectionMatrix(Mat4f::Identity());
+	SetAmbientLight(Color4f::White());
+	for (int i = 0; i < 8; i++)
+		SetLightOff(i);
+
+	SetForcedColor({ 255, 0, 255 });
+
+	g_prevTex = g_curTex;
+	SetTexture(nullptr);
+
+	g_3DRect = rect;
 }
 
 AABB<int> End3DMode()
 {
-	// TODO
+	auto curRect = g_3DRect;
+
 	Reset2DRender();
-	return {};
+	SetTexture(g_prevTex);
+	_SetViewport(g_viewport);
+
+	return curRect;
 }
 
 void SetAmbientLight(const Color4f& col)
@@ -659,6 +810,65 @@ void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col)
 	// TODO
 }
 
+static D3D11_PRIMITIVE_TOPOLOGY ConvertPrimitiveType(PrimitiveType t)
+{
+	switch (t)
+	{
+	case PT_Points: return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+	case PT_Lines: return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	case PT_LineStrip: return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+	case PT_Triangles: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	case PT_TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+	default: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
+}
+
+static void ApplyVertexData(unsigned vertexFormat, const void* vertices, size_t numVertices)
+{
+	size_t size = GetVertexSize(vertexFormat);
+	g_tmpVB->Write(vertices, size * numVertices);
+	ID3D11Buffer* buffers[2] = { g_tmpVB->buffer, (g_drawFlags & DF_ForceColor ? g_defVBCC : g_defVB)->buffer };
+	UINT strides[2] = { size, 0 };
+	UINT offsets[2] = {};
+	g_ctx->IASetVertexBuffers(0, 2, buffers, strides, offsets);
+	if (g_drawFlags & DF_ForceColor)
+		vertexFormat &= ~VF_Color;
+	g_ctx->IASetInputLayout(g_inputLayouts3D[vertexFormat & 0x7]);
+}
+
+struct CBuf3D
+{
+	Mat4f worldViewProjMtx;
+	float alphaTestShift;
+	float padding[3];
+};
+
+static void UploadShaderData(const Mat4f& world)
+{
+	// DF_Lit (TODO)
+	g_ctx->VSSetShader(g_vsDraw3DUnlit, nullptr, 0);
+
+	g_ctx->PSSetShader(g_psDraw3DUnlit, nullptr, 0);
+
+	// DF_Cull / DF_Wireframe
+	unsigned rsidx = (g_drawFlags & DF_Cull ? 1 : 0) | (g_drawFlags & DF_Wireframe ? 2 : 0);
+	g_ctx->RSSetState(g_renderStates3D[rsidx]);
+
+	// DF_AlphaBlended
+	g_ctx->OMSetBlendState(g_drawFlags & DF_AlphaBlended ? g_bsAlphaBlend : g_bsNoBlend, nullptr, 0xffffffff);
+
+	// DF_ZTestOff / DF_ZWriteOff
+	unsigned dssidx = (g_drawFlags & DF_ZTestOff ? 1 : 0) | (g_drawFlags & DF_ZWriteOff ? 2 : 0);
+	g_ctx->OMSetDepthStencilState(g_depthStencilStates[dssidx], 0);
+
+	CBuf3D cbuf = {};
+	cbuf.worldViewProjMtx = world * g_viewMatrix * g_projMatrix;
+	cbuf.alphaTestShift = g_drawFlags & DF_AlphaTest ? 0.5f : 0;
+	g_tmpCB->Write(&cbuf, sizeof(cbuf));
+	g_ctx->VSSetConstantBuffers(0, 1, &g_tmpCB->buffer);
+	g_ctx->PSSetConstantBuffers(0, 1, &g_tmpCB->buffer);
+}
+
 void Draw(
 	const Mat4f& xf,
 	PrimitiveType primType,
@@ -666,7 +876,11 @@ void Draw(
 	const void* vertices,
 	size_t numVertices)
 {
-	// TODO
+	g_ctx->IASetPrimitiveTopology(ConvertPrimitiveType(primType));
+	ApplyVertexData(vertexFormat, vertices, numVertices);
+	UploadShaderData(xf);
+
+	g_ctx->Draw(numVertices, 0);
 }
 
 void DrawIndexed(
@@ -679,7 +893,14 @@ void DrawIndexed(
 	size_t numIndices,
 	bool i32)
 {
-	// TODO
+	g_ctx->IASetPrimitiveTopology(ConvertPrimitiveType(primType));
+	ApplyVertexData(vertexFormat, vertices, numVertices);
+	UploadShaderData(xf);
+
+	g_tmpIB->Write(indices, numIndices * (i32 ? 4 : 2));
+	g_ctx->IASetIndexBuffer(g_tmpIB->buffer, i32 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT, 0);
+
+	g_ctx->DrawIndexed(numIndices, 0, 0);
 }
 
 

@@ -242,5 +242,11 @@
     <FxCompile Include="Render\D3D11Shaders\draw2d.ps.hlsl">
       <Filter>Render\D3D11Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Render\D3D11Shaders\draw3dunlit.vs.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Render\D3D11Shaders\draw3dunlit.ps.hlsl">
+      <Filter>Render\D3D11Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

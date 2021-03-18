@@ -427,13 +427,7 @@ static void ApplyVertexData(unsigned vertexFormat, const void* vertices)
 {
 	auto v = (const char*)vertices;
 
-	GLsizei stride = sizeof(float) * 3;
-	if (vertexFormat & VF_Normal)
-		stride += sizeof(float) * 3;
-	if (vertexFormat & VF_Texcoord)
-		stride += sizeof(float) * 2;
-	if (vertexFormat & VF_Color)
-		stride += 4;
+	GLsizei stride = GetVertexSize(vertexFormat);
 
 	GLCHK(glVertexPointer(3, GL_FLOAT, stride, v));
 	v += sizeof(float) * 3;

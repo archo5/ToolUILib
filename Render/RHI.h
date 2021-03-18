@@ -97,6 +97,7 @@ enum VertexFormat         // position:   float3
 	VF_Texcoord = 1 << 1, // + texcoord: float2
 	VF_Color    = 1 << 2, // + color:    ubyte4
 };
+size_t GetVertexSize(unsigned vertexFormat);
 void Draw(
 	const Mat4f& xf,
 	PrimitiveType primType,

@@ -22,5 +22,18 @@ Stats Stats::Get()
 }
 
 
+size_t GetVertexSize(unsigned vertexFormat)
+{
+	size_t size = sizeof(float) * 3;
+	if (vertexFormat & VF_Normal)
+		size += sizeof(float) * 3;
+	if (vertexFormat & VF_Texcoord)
+		size += sizeof(float) * 2;
+	if (vertexFormat & VF_Color)
+		size += 4;
+	return size;
+}
+
+
 } // rhi
 } // ui
