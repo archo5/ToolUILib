@@ -208,6 +208,9 @@
     <ClInclude Include="Render\RHI.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Core\WindowsUtils.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

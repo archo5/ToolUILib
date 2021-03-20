@@ -183,6 +183,7 @@
     <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
+    <ClInclude Include="Core\WindowsUtils.h" />
     <ClInclude Include="Editors\EditCommon.h" />
     <ClInclude Include="Editors\ProcGraphEditor.h" />
     <ClInclude Include="Editors\SequenceEditor.h" />
