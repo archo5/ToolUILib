@@ -26,8 +26,6 @@ struct StringView
 	const char& last() const { return _data[_size - 1]; }
 	const char* begin() const { return _data; }
 	const char* end() const { return _data + _size; }
-	bool operator == (const StringView& o) const { return _size == o._size && memcmp(_data, o._data, _size) == 0; }
-	bool operator != (const StringView& o) const { return !(*this == o); }
 	char operator [] (size_t pos) const { return _data[pos]; }
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
@@ -174,6 +172,9 @@ struct StringView
 	const char* _data;
 	size_t _size;
 };
+
+inline bool operator == (const StringView& a, const StringView& b) { return a._size == b._size && memcmp(a._data, b._data, b._size) == 0; }
+inline bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
 
 namespace std {
 template <>

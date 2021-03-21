@@ -1561,6 +1561,12 @@ void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::functi
 		fn(*a, i + from);
 }
 
+void StringArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
+{
+	for (size_t i = 0; i < count && i + from < options.size(); i++)
+		fn(options[i + from].c_str(), i + from);
+}
+
 
 void DropdownMenuList::OnSerialize(IDataSerializer& s)
 {

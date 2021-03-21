@@ -571,6 +571,13 @@ struct CStrArrayOptionList : CStrOptionList
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 };
 
+struct StringArrayOptionList : CStrOptionList
+{
+	std::vector<std::string> options;
+
+	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+};
+
 
 struct DropdownMenuList : DropdownMenu
 {

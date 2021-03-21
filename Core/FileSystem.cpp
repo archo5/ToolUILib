@@ -37,6 +37,16 @@ bool WriteTextFile(const char* path, StringView text)
 	return success;
 }
 
+bool WriteBinaryFile(const char* path, const void* data, size_t size)
+{
+	FILE* f = fopen(path, "wb");
+	if (!f)
+		return false;
+	bool success = fwrite(data, size, 1, f) != 0;
+	fclose(f);
+	return success;
+}
+
 
 struct DirectoryIteratorImpl
 {

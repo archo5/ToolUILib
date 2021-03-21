@@ -8,6 +8,7 @@ namespace ui {
 
 std::string ReadTextFile(const char* path);
 bool WriteTextFile(const char* path, StringView text);
+bool WriteBinaryFile(const char* path, const void* data, size_t size);
 
 struct DirectoryIterator
 {
