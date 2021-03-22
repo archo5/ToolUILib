@@ -9,8 +9,9 @@
 #include "../ThirdParty/stb_truetype.h"
 
 #include "Font.h"
-#include "../Render/Render.h"
+#include "FileSystem.h"
 #include "HashTable.h"
+#include "../Render/Render.h"
 
 namespace ui {
 
@@ -64,28 +65,16 @@ struct Font
 
 	bool LoadFromPath(const char* path)
 	{
-		FILE* f = fopen(path, "rb");
-		if (!f)
-		{
+		data = ui::ReadBinaryFile(path);
+		if (data.empty())
 			return false;
-		}
-
-		fseek(f, 0, SEEK_END);
-		size_t len = ftell(f);
-		data.resize(len);
-
-		fseek(f, 0, SEEK_SET);
-		if (len != fread(&data[0], 1, len, f))
-		{
-			return false;
-		}
 
 		return InitFromMemory();
 	}
 
 	bool InitFromMemory()
 	{
-		if (!stbtt_InitFont(&info, data.data(), 0))
+		if (!stbtt_InitFont(&info, (const unsigned char*)data.data(), 0))
 			return false;
 		return true;
 	}
@@ -135,7 +124,7 @@ struct Font
 	}
 
 	FontKey key;
-	std::vector<uint8_t> data;
+	std::string data;
 	stbtt_fontinfo info;
 	HashMap<int, SizeContext> sizes;
 };
@@ -166,7 +155,7 @@ int CALLBACK _FontEnumCallback(const LOGFONTA* lf, const TEXTMETRICA* ntm, DWORD
 	return 1;
 }
 
-static std::vector<uint8_t> FindFontDataByName(const char* name, int weight, bool italic)
+static std::string FindFontDataByName(const char* name, int weight, bool italic)
 {
 	FontEnumData fed = { weight, italic };
 	HDC dc = GetDC(nullptr);
@@ -174,7 +163,7 @@ static std::vector<uint8_t> FindFontDataByName(const char* name, int weight, boo
 	HFONT font = CreateFontIndirectA(&fed.outFont);
 	SelectObject(dc, font);
 	DWORD reqSize = GetFontData(dc, 0, 0, nullptr, 0);
-	std::vector<uint8_t> data;
+	std::string data;
 	data.resize(reqSize);
 	DWORD readSize = GetFontData(dc, 0, 0, &data[0], reqSize);
 	data.resize(readSize);

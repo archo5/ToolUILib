@@ -17,6 +17,7 @@
 #include "../Render/RHI.h"
 #include "../Render/Render.h"
 #include "../Core/WindowsUtils.h"
+#include "../Core/FileSystem.h"
 
 
 #define WINDOW_CLASS_NAME L"UIWindow"
@@ -285,28 +286,6 @@ Color4b GetColorAtScreenPos(Point<int> pos)
 	return col;
 }
 
-std::string GetWorkingDirectory()
-{
-	DWORD len = ::GetCurrentDirectoryW(0, nullptr);
-	if (len > 0)
-	{
-		std::wstring ret;
-		ret.resize(len);
-		DWORD len2 = ::GetCurrentDirectoryW(ret.size(), &ret[0]);
-		if (len2 > 0)
-		{
-			ret.resize(len2);
-			return WCHARtoUTF8s(ret);
-		}
-	}
-	return {};
-}
-
-bool SetWorkingDirectory(StringView sv)
-{
-	return ::SetCurrentDirectoryW(UTF8toWCHAR(sv).c_str()) != FALSE;
-}
-
 void ShowErrorMessage(StringView title, StringView text)
 {
 	::MessageBoxW(nullptr, UTF8toWCHAR(text).c_str(), UTF8toWCHAR(title).c_str(), MB_ICONERROR);
@@ -413,6 +392,9 @@ bool FileSelectionWindow::Show(bool save)
 		if (!currentDir.empty())
 		{
 			fileBufW.append(UTF8toWCHAR(currentDir));
+			for (auto& c : fileBufW)
+				if (c == '/')
+					c = '\\';
 			fileBufW.push_back('\\');
 		}
 		fileBufW.append(UTF8toWCHAR(f));
@@ -424,7 +406,7 @@ bool FileSelectionWindow::Show(bool save)
 	ofn.lpstrFile = &fileBufW[0];
 	ofn.nMaxFile = maxFileNameBuffer;
 
-	auto cwd = platform::GetWorkingDirectory();
+	auto cwd = GetWorkingDirectory();
 	
 	BOOL ret = save
 		? GetSaveFileNameW(&ofn)
@@ -433,14 +415,16 @@ bool FileSelectionWindow::Show(bool save)
 	if (ret)
 	{
 		currentDir = WCHARtoUTF8(fileBufW.c_str(), ofn.nFileOffset - 1);
+		NormalizePath(currentDir);
 		selectedFiles.clear();
 		for (size_t i = ofn.nFileOffset; i < fileBufW.size() && fileBufW[i]; i += wcslen(fileBufW.c_str() + i) + 1)
 		{
 			selectedFiles.push_back(WCHARtoUTF8(fileBufW.c_str() + i));
+			NormalizePath(selectedFiles.back());
 		}
 	}
 
-	platform::SetWorkingDirectory(cwd);
+	SetWorkingDirectory(cwd);
 
 	return ret != 0;
 }

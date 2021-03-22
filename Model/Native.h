@@ -20,8 +20,6 @@ uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
 Point<int> GetCursorScreenPos();
 Color4b GetColorAtScreenPos(Point<int> pos);
-std::string GetWorkingDirectory();
-bool SetWorkingDirectory(StringView sv);
 void ShowErrorMessage(StringView title, StringView text);
 } // platform
 

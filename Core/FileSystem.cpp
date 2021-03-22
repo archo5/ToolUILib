@@ -4,14 +4,67 @@
 #include "WindowsUtils.h"
 
 
+#undef CreateDirectory
 #undef GetFileAttributes
 
 
 namespace ui {
 
-std::string ReadTextFile(const char* path)
+std::string PathGetParent(StringView path)
 {
-	FILE* f = fopen(path, "r");
+	if (path == ".." || path.ends_with("/.."))
+		return to_string(path, "/..");
+	if (path == "." || path == "")
+		return "..";
+	auto lastSep = path.find_last_at("/");
+	if (lastSep == SIZE_MAX)
+		return ".";
+	if (lastSep == 0 || path[lastSep - 1] == ':')
+		return ""; // end of absolute path
+	return to_string(path.substr(0, lastSep));
+}
+
+std::string PathJoin(StringView a, StringView b)
+{
+	while (a.ends_with("/"))
+		a = a.substr(0, a.size() - 1);
+	while (b.starts_with("/"))
+		b = b.substr(1);
+	return to_string(a, "/", b);
+}
+
+bool PathIsAbsolute(StringView path)
+{
+	if (path.starts_with("/"))
+		return true;
+	if (path.size() >= 3 && path[1] == ':' && path[2] == '/')
+		return true;
+	return false;
+}
+
+std::string PathGetAbsolute(StringView path)
+{
+	if (PathIsAbsolute(path))
+		return to_string(path);
+	auto cwd = GetWorkingDirectory();
+	return PathJoin(cwd, path);
+}
+
+bool PathIsRelativeTo(StringView path, StringView relativeTo)
+{
+	auto abspath = PathGetAbsolute(path);
+	auto absrelto = PathGetAbsolute(relativeTo);
+	if (StringView(abspath).ends_with("/"))
+		abspath.push_back('/');
+	if (StringView(absrelto).ends_with("/"))
+		absrelto.push_back('/');
+	return StringView(abspath).starts_with(absrelto);
+}
+
+
+static std::string ReadFile(StringView path, const char* mode)
+{
+	FILE* f = fopen(CStr<MAX_PATH>(path), mode);
 	if (!f)
 		return {};
 	std::string data;
@@ -27,9 +80,14 @@ std::string ReadTextFile(const char* path)
 	return data;
 }
 
-bool WriteTextFile(const char* path, StringView text)
+std::string ReadTextFile(StringView path)
 {
-	FILE* f = fopen(path, "w");
+	return ReadFile(path, "r");
+}
+
+bool WriteTextFile(StringView path, StringView text)
+{
+	FILE* f = fopen(CStr<MAX_PATH>(path), "w");
 	if (!f)
 		return false;
 	bool success = fwrite(text.data(), text.size(), 1, f) != 0;
@@ -37,14 +95,73 @@ bool WriteTextFile(const char* path, StringView text)
 	return success;
 }
 
-bool WriteBinaryFile(const char* path, const void* data, size_t size)
+std::string ReadBinaryFile(StringView path)
 {
-	FILE* f = fopen(path, "wb");
+	return ReadFile(path, "rb");
+}
+
+bool WriteBinaryFile(StringView path, const void* data, size_t size)
+{
+	FILE* f = fopen(CStr<MAX_PATH>(path), "wb");
 	if (!f)
 		return false;
 	bool success = fwrite(data, size, 1, f) != 0;
 	fclose(f);
 	return success;
+}
+
+
+bool DirectoryExists(StringView path)
+{
+	auto attr = ::GetFileAttributesW(UTF8toWCHAR(path).c_str());
+	return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+bool CreateDirectory(StringView path)
+{
+	return ::CreateDirectoryW(UTF8toWCHAR(path).c_str(), nullptr) != FALSE;
+}
+
+bool CreateMissingDirectories(StringView path)
+{
+	if (!DirectoryExists(path))
+	{
+		auto parent = PathGetParent(path);
+		if (!parent.empty())
+			if (!CreateMissingDirectories(parent))
+				return false;
+		return CreateDirectory(path);
+	}
+	return true;
+}
+
+bool CreateMissingParentDirectories(StringView path)
+{
+	return CreateMissingDirectories(PathGetParent(path));
+}
+
+
+std::string GetWorkingDirectory()
+{
+	DWORD len = ::GetCurrentDirectoryW(0, nullptr);
+	if (len > 0)
+	{
+		std::wstring ret;
+		ret.resize(len);
+		DWORD len2 = ::GetCurrentDirectoryW(ret.size(), &ret[0]);
+		if (len2 > 0)
+		{
+			ret.resize(len2);
+			NormalizePath(ret);
+			return WCHARtoUTF8s(ret);
+		}
+	}
+	return {};
+}
+
+bool SetWorkingDirectory(StringView sv)
+{
+	return ::SetCurrentDirectoryW(UTF8toWCHAR(sv).c_str()) != FALSE;
 }
 
 
@@ -61,7 +178,7 @@ struct DirectoryIteratorImpl
 	}
 };
 
-DirectoryIterator::DirectoryIterator(const char* path) : _impl(new DirectoryIteratorImpl)
+DirectoryIterator::DirectoryIterator(StringView path) : _impl(new DirectoryIteratorImpl)
 {
 	_impl->path = UTF8toWCHAR(path);
 	_impl->path.append(L"/*");
@@ -78,14 +195,24 @@ bool DirectoryIterator::GetNext(std::string& retFile)
 		return false;
 
 	bool success;
-	if (_impl->handle == nullptr)
+	for (;;)
 	{
-		_impl->handle = FindFirstFileW(_impl->path.c_str(), &_impl->findData);
-		success = _impl->handle != nullptr;
+		if (_impl->handle == nullptr)
+		{
+			_impl->handle = FindFirstFileW(_impl->path.c_str(), &_impl->findData);
+			success = _impl->handle != nullptr;
+		}
+		else
+			success = FindNextFileW(_impl->handle, &_impl->findData) != FALSE;
+
+		if (!success)
+			break;
+
+		if (wcscmp(_impl->findData.cFileName, L".") != 0 &&
+			wcscmp(_impl->findData.cFileName, L"..") != 0)
+			break; // found an actual entry
 	}
-	else
-		success = FindNextFileW(_impl->handle, &_impl->findData) != FALSE;
-	
+
 	if (!success)
 		return false;
 
@@ -94,10 +221,12 @@ bool DirectoryIterator::GetNext(std::string& retFile)
 }
 
 
-unsigned GetFileAttributes(const char* path)
+unsigned GetFileAttributes(StringView path)
 {
 	auto attr = GetFileAttributesW(UTF8toWCHAR(path).c_str());
-	unsigned ret = 0;
+	if (attr == INVALID_FILE_ATTRIBUTES)
+		return 0;
+	unsigned ret = FA_Exists;
 	if (attr & FILE_ATTRIBUTE_DIRECTORY)
 		ret |= FA_Directory;
 	if (attr & FILE_ATTRIBUTE_REPARSE_POINT)
@@ -105,7 +234,7 @@ unsigned GetFileAttributes(const char* path)
 	return ret;
 }
 
-uint64_t GetFileModTimeUTC(const char* path)
+uint64_t GetFileModTimeUTC(StringView path)
 {
 	HANDLE hfile = CreateFileW(UTF8toWCHAR(path).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (!hfile)

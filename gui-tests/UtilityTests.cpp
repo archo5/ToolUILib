@@ -191,7 +191,7 @@ struct FileSelectionWindowTest : ui::Node
 	void Render(UIContainer* ctx) override
 	{
 		ctx->Text("Check for change");
-		ui::imm::PropText(ctx, "Current working directory", ui::platform::GetWorkingDirectory().c_str());
+		ui::imm::PropText(ctx, "Current working directory", ui::GetWorkingDirectory().c_str());
 
 		ctx->Text("Inputs");
 		ui::Property::Begin(ctx, "Filters");

@@ -173,6 +173,55 @@ struct StringView
 	size_t _size;
 };
 
+inline std::string to_string(StringView s)
+{
+	std::string out;
+	out.append(s.data(), s.size());
+	return out;
+}
+inline std::string to_string(StringView s1, StringView s2)
+{
+	std::string out;
+	out.reserve(s1.size() + s2.size());
+	out.append(s1.data(), s1.size());
+	out.append(s2.data(), s2.size());
+	return out;
+}
+inline std::string to_string(StringView s1, StringView s2, StringView s3)
+{
+	std::string out;
+	out.reserve(s1.size() + s2.size() + s3.size());
+	out.append(s1.data(), s1.size());
+	out.append(s2.data(), s2.size());
+	out.append(s3.data(), s3.size());
+	return out;
+}
+
+template <size_t S>
+struct CStr
+{
+	CStr(StringView s)
+	{
+		if (s.size() + 1 <= S)
+			_ptr = _tmp;
+		else
+			_ptr = new char[s.size() + 1];
+
+		memcpy(_ptr, s.data(), s.size());
+		_ptr[s.size()] = 0;
+	}
+	~CStr()
+	{
+		if (_ptr != _tmp)
+			delete[] _ptr;
+	}
+	const char* c_str() const { return _ptr; }
+	operator const char*() const { return _ptr; }
+
+	char* _ptr;
+	char _tmp[S];
+};
+
 inline bool operator == (const StringView& a, const StringView& b) { return a._size == b._size && memcmp(a._data, b._data, b._size) == 0; }
 inline bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
 

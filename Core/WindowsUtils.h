@@ -37,3 +37,11 @@ static std::string WCHARtoUTF8s(const std::wstring& s)
 {
 	return WCHARtoUTF8(s.c_str(), s.size());
 }
+
+template <class T>
+static void NormalizePath(T& cont)
+{
+	for (auto& c : cont)
+		if (c == '\\')
+			c = '/';
+}
