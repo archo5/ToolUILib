@@ -599,6 +599,8 @@ struct NativeWindow_Impl
 	{
 		system.AllocRoot<RenderNode>()->renderFunc = renderFunc;
 		system.RenderRoot();
+		system.eventSystem.RecomputeLayout();
+		GetOwner()->InvalidateAll();
 	}
 
 	void Redraw(bool canRebuild)
@@ -1648,9 +1650,11 @@ struct GlobalResources
 	{
 		InitializeWin32();
 		ui::rhi::GlobalInit();
+		ui::draw::internals::InitResources();
 	}
 	~GlobalResources()
 	{
+		ui::draw::internals::FreeResources();
 		ui::rhi::GlobalFree();
 	}
 };

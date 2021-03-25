@@ -165,6 +165,23 @@ struct TextureStorage
 		}
 	}
 
+	void ReleaseResources()
+	{
+		for (auto*& alloc : pendingAllocs)
+		{
+			delete alloc;
+			alloc = nullptr;
+		}
+		numPendingAllocs = 0;
+
+		for (auto*& page : pages)
+		{
+			delete page;
+			page = nullptr;
+		}
+		numPages = 0;
+	}
+
 	TexturePage* pages[MAX_TEXTURE_PAGES] = {};
 	int numPages = 0;
 	TextureNode* pendingAllocs[MAX_PENDING_ALLOCS] = {};
@@ -280,11 +297,6 @@ rhi::Texture2D* TextureGetInternal(Texture* tex)
 }
 
 
-void _TextureInitStorage()
-{
-}
-
-
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
 static rhi::Vertex g_bufVertices[MAX_VERTICES];
@@ -294,6 +306,7 @@ static int g_numVertices;
 static int g_numIndices;
 static Texture* g_whiteTex;
 static Texture* g_curTex;
+static rhi::Texture2D* g_curTexRHI;
 static rhi::Texture2D* g_appliedTex;
 
 static Texture* GetWhiteTex()
@@ -331,6 +344,15 @@ void _Flush()
 
 namespace internals {
 
+void InitResources()
+{
+}
+
+void FreeResources()
+{
+	g_textureStorage.ReleaseResources();
+}
+
 void OnBeginDrawFrame()
 {
 	g_appliedTex = nullptr;
@@ -339,6 +361,11 @@ void OnBeginDrawFrame()
 void OnEndDrawFrame()
 {
 	_Flush();
+	if (g_curTex)
+	{
+		TextureRelease(g_curTex);
+		g_curTex = nullptr;
+	}
 }
 
 void Flush()
@@ -386,7 +413,14 @@ void IndexedTriangles(Texture* tex, rhi::Vertex* verts, size_t num_vertices, uin
 		return;
 	}
 
-	g_curTex = tex;
+	if (g_curTex != tex)
+	{
+		if (g_curTex)
+			TextureRelease(g_curTex);
+		g_curTex = tex;
+		if (g_curTex)
+			TextureAddRef(g_curTex);
+	}
 	memcpy(&g_bufVertices[g_numVertices], verts, sizeof(*verts) * num_vertices);
 	if (g_curTex)
 		TextureStorage::RemapUVs(&g_bufVertices[g_numVertices], num_vertices, g_curTex->atlasNode);

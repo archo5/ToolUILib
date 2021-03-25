@@ -219,6 +219,7 @@ int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
 	WindowT<MainWindowNode> mw;
+	mw.subWindow = false;
 	mw.SetVisible(true);
 	return app.Run();
 }

@@ -25,7 +25,15 @@ struct WindowT : ui::NativeMainWindow
 	{
 		rootNode = ctx->Make<T>();
 	}
+	void OnClose() override
+	{
+		if (subWindow)
+			SetVisible(false);
+		else
+			ui::NativeMainWindow::OnClose();
+	}
 	T* rootNode = nullptr;
+	bool subWindow = true;
 };
 
 using NamedTextSerializeReader = ui::NamedTextSerializeReader;

@@ -86,7 +86,7 @@ struct StringView
 	}
 	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const
 	{
-		for (size_t i = min(_size - sub._size, from) + 1; i < _size; )
+		for (size_t i = min(_size - sub._size, from) + 1; i <= _size; )
 		{
 			i--;
 			if (memcmp(&_data[i], sub._data, sub._size) == 0)

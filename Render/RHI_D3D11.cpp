@@ -10,6 +10,8 @@
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 
+#define D3D_DUMP_LIVE_OBJECTS
+
 
 #include "clear.vs.h"
 #include "clear.ps.h"
@@ -317,7 +319,7 @@ struct DefaultVertex
 void GlobalInit()
 {
 	UINT flags = 0;
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
@@ -570,7 +572,20 @@ void GlobalFree()
 
 	SAFE_RELEASE(g_dxgiFactory);
 	SAFE_RELEASE(g_ctx);
+
+#ifdef D3D_DUMP_LIVE_OBJECTS
+	ID3D11Debug* dbg = nullptr;
+	g_dev->QueryInterface(__uuidof(ID3D11Debug), (void**)&dbg);
+#endif
 	SAFE_RELEASE(g_dev);
+
+#ifdef D3D_DUMP_LIVE_OBJECTS
+	if (dbg)
+	{
+		dbg->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		dbg->Release();
+	}
+#endif
 }
 
 void OnListenerAdd(IRHIListener* L)

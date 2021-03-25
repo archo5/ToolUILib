@@ -106,6 +106,8 @@ rhi::Texture2D* TextureGetInternal(Texture* tex);
 
 namespace internals {
 
+void InitResources();
+void FreeResources();
 void OnBeginDrawFrame();
 void OnEndDrawFrame();
 void Flush();
