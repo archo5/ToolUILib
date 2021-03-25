@@ -15,15 +15,15 @@ struct SetPropEntry
 	ui::StringView section;
 	ui::StringView group;
 	ui::StringView searchStr;
-	void(*editFunc)(ui::UIContainer*, Settings&);
+	void(*editFunc)(Settings&);
 };
 
 
 static const SetPropEntry entries[] =
 {
-	{ "General", "Intro", "Integer", [](ui::UIContainer* ctx, Settings& S) { ui::imm::PropEditInt(ctx, "Integer", S.introInt); } },
-	{ "General", "Misc", "Other", [](ui::UIContainer* ctx, Settings& S) { ui::imm::PropEditFloat(ctx, "Other", S.otherInt); } },
-	{ "Extended", "Advanced", "Hidden", [](ui::UIContainer* ctx, Settings& S) { ui::imm::PropEditBool(ctx, "Hidden", S.extAdvHidden); } },
+	{ "General", "Intro", "Integer", [](Settings& S) { ui::imm::PropEditInt("Integer", S.introInt); } },
+	{ "General", "Misc", "Other", [](Settings& S) { ui::imm::PropEditFloat("Other", S.otherInt); } },
+	{ "Extended", "Advanced", "Hidden", [](Settings& S) { ui::imm::PropEditBool("Hidden", S.extAdvHidden); } },
 };
 
 
@@ -35,13 +35,13 @@ struct SettingsWindowDemo : ui::Buildable
 	std::string currentSection = "General";
 	Settings settings;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		auto& sp = ctx->Push<ui::SplitPane>();
+		auto& sp = ui::Push<ui::SplitPane>();
 
-		ctx->Push<ui::ListBox>();
+		ui::Push<ui::ListBox>();
 
-		ui::imm::EditString(ctx, search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
+		ui::imm::EditString(search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
 
 		std::unordered_set<ui::StringView> sections;
 		for (auto& entry : entries)
@@ -50,7 +50,7 @@ struct SettingsWindowDemo : ui::Buildable
 				continue;
 			if (sections.insert(entry.section).second)
 			{
-				ctx->MakeWithText<ui::Selectable>(entry.section).Init(entry.section == currentSection)
+				ui::MakeWithText<ui::Selectable>(entry.section).Init(entry.section == currentSection)
 					+ ui::AddEventHandler(ui::EventType::Activate, [this, &entry](ui::Event&)
 				{
 					currentSection.assign(entry.section.data(), entry.section.size());
@@ -59,9 +59,9 @@ struct SettingsWindowDemo : ui::Buildable
 			}
 		}
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox();
+		ui::PushBox();
 
 		ui::StringView lastGroup;
 		for (auto& entry : entries)
@@ -74,24 +74,24 @@ struct SettingsWindowDemo : ui::Buildable
 			if (entry.group != lastGroup)
 			{
 				if (lastGroup.size())
-					ctx->Pop();
+					ui::Pop();
 
 				if (entry.group.size())
 				{
-					ctx->Text(entry.group);
-					ctx->Push<ui::ListBox>();
+					ui::Text(entry.group);
+					ui::Push<ui::ListBox>();
 				}
 				lastGroup = entry.group;
 			}
 
-			entry.editFunc(ctx, settings);
+			entry.editFunc(settings);
 		}
 		if (lastGroup.size())
-			ctx->Pop();
+			ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 		sp.SetSplits({ 0.4f });
 	}
 
@@ -103,7 +103,7 @@ struct SettingsWindowDemo : ui::Buildable
 		return s.find_first_at(search) != SIZE_MAX;
 	}
 };
-void Demo_SettingsWindow(ui::UIContainer* ctx)
+void Demo_SettingsWindow()
 {
-	ctx->Make<SettingsWindowDemo>();
+	ui::Make<SettingsWindowDemo>();
 }

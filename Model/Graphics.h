@@ -156,7 +156,7 @@ struct ColorDragDropData : DragDropData
 {
 	static constexpr const char* NAME = "color";
 	ColorDragDropData(const Color4f& c) : DragDropData(NAME), color(c) {}
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	Color4f color;
 };
 
@@ -228,7 +228,7 @@ struct ColorPicker : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	ColorPicker& SetColor(const MultiFormatColor& c)
@@ -253,7 +253,7 @@ struct ColorPicker : Buildable
 struct ColorPickerWindow : NativeDialogWindow
 {
 	ColorPickerWindow();
-	void OnBuild(UIContainer* ctx) override;
+	void OnBuild() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	void SetColor(const MultiFormatColor& c) { _color = c; }
@@ -265,7 +265,7 @@ struct ColorEdit : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	ColorEdit& SetColor(const MultiFormatColor& c)

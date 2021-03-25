@@ -7,7 +7,7 @@ struct Workspace;
 
 struct TabImages : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	Workspace* workspace = nullptr;
 };

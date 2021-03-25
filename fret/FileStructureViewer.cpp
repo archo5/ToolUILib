@@ -144,7 +144,7 @@ char StructureParser::ReadNext(ISyncReadStream* s)
 }
 
 
-void FileStructureViewer::Build(ui::UIContainer* ctx)
+void FileStructureViewer::Build()
 {
 	FileSyncReadStream fsrs("sockdump.txt");
 	StructureParser sp;
@@ -166,15 +166,15 @@ void FileStructureViewer::Build(ui::UIContainer* ctx)
 				openness.push_back(false);
 			if (curLevel == openLevel)
 			{
-				auto& item = ctx->Push<ui::CollapsibleTreeNode>();
-				if (ctx->LastIsNew())
+				auto& item = ui::Push<ui::CollapsibleTreeNode>();
+				if (ui::LastIsNew())
 					item.open = openness[id];
 				else
 					openness[id] = item.open;
 
 				if (item.open)
 					openLevel++;
-				ctx->Text(sp.name.c_str());
+				ui::Text(sp.name.c_str());
 			}
 			curLevel++;
 			break;
@@ -182,11 +182,11 @@ void FileStructureViewer::Build(ui::UIContainer* ctx)
 		case '}':
 			if (curLevel - 1 == openLevel)
 			{
-				ctx->Pop();
+				ui::Pop();
 			}
 			else if (curLevel == openLevel)
 			{
-				ctx->Pop();
+				ui::Pop();
 				openLevel--;
 			}
 			curLevel--;
@@ -201,7 +201,7 @@ void FileStructureViewer::Build(ui::UIContainer* ctx)
 					text << "[" << sp.arraySize << "]";
 				}
 				text << ") = " << sp.preview;
-				ctx->Text(text.str().c_str());
+				ui::Text(text.str().c_str());
 			}
 			break;
 		}

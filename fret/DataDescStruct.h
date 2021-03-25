@@ -58,7 +58,7 @@ enum class DDStructResourceType
 	Image,
 	Mesh,
 };
-bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& format);
+bool EditImageFormat(const char* label, std::string& format);
 struct DDRsrcImage
 {
 	struct FormatOverride

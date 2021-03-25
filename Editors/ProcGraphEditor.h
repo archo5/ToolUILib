@@ -71,14 +71,14 @@ struct IProcGraph
 	virtual std::string GetNodeName(Node*) = 0;
 	virtual uintptr_t GetNodeInputCount(Node*) = 0;
 	virtual uintptr_t GetNodeOutputCount(Node*) = 0;
-	virtual void NodePropertyEditorUI(Node*, UIContainer*) {}
+	virtual void NodePropertyEditorUI(Node*) {}
 	virtual void OnNodeContextMenu(Node*, struct MenuItemCollection&) {}
 
 	// basic pin info
 	virtual std::string GetPinName(const Pin&) = 0;
 	virtual Color4b GetPinColor(const Pin&) { return Color4b(255, 0); }
 	virtual void OnPinContextMenu(const Pin&, struct MenuItemCollection&) {}
-	virtual void InputPinEditorUI(const Pin&, UIContainer*) {}
+	virtual void InputPinEditorUI(const Pin&) {}
 
 	// pin linkage info (with default suboptimal implementations)
 	virtual bool IsPinLinked(const Pin& pin)
@@ -123,7 +123,7 @@ struct IProcGraph
 	virtual bool HasPreview(Node*) { return false; }
 	virtual bool IsPreviewEnabled(Node*) { return false; }
 	virtual void SetPreviewEnabled(Node*, bool) {}
-	virtual void PreviewUI(Node*, UIContainer*) {}
+	virtual void PreviewUI(Node*) {}
 
 	// node editing
 	virtual void OnEditNode(Event&, Node*) {}
@@ -154,7 +154,7 @@ struct ProcGraphEditor_NodePin : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnDestroy() override;
@@ -181,16 +181,16 @@ struct ProcGraphEditor_Node : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 
 	void Init(IProcGraph* graph, IProcGraph::Node* node, Point2f vOff);
 
-	virtual void OnBuildTitleBar(UIContainer* ctx);
-	virtual void OnBuildEditor(UIContainer* ctx);
-	virtual void OnBuildInputPins(UIContainer* ctx);
-	virtual void OnBuildOutputPins(UIContainer* ctx);
-	virtual void OnBuildPreview(UIContainer* ctx);
+	virtual void OnBuildTitleBar();
+	virtual void OnBuildEditor();
+	virtual void OnBuildInputPins();
+	virtual void OnBuildOutputPins();
+	virtual void OnBuildPreview();
 
 	IProcGraph* _graph = nullptr;
 	IProcGraph::Node* _node = nullptr;
@@ -204,13 +204,13 @@ struct ProcGraphEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
 	void Init(IProcGraph* graph);
 
-	virtual void OnBuildNodes(UIContainer* ctx);
+	virtual void OnBuildNodes();
 	virtual void OnMakeCreationMenu(struct MenuItemCollection& menu);
 	virtual void OnDrawCurrentLinks();
 	virtual void OnDrawPendingLinks();

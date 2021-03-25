@@ -229,31 +229,30 @@ struct Property : UIElement
 {
 	struct Scope
 	{
-		Scope(UIContainer* c, const char* lblstr = nullptr) : ctx(c)
+		Scope(const char* lblstr = nullptr)
 		{
-			Begin(ctx);
-			label = lblstr ? &Label(ctx, lblstr) : nullptr;
+			Begin();
+			label = lblstr ? &Label(lblstr) : nullptr;
 		}
 		~Scope()
 		{
-			End(ctx);
+			End();
 		}
 
-		UIContainer* ctx;
 		UIObject* label;
 	};
 
 	Property();
-	static void Begin(UIContainer* ctx, const char* label = nullptr);
-	static void End(UIContainer* ctx);
+	static void Begin(const char* label = nullptr);
+	static void End();
 
-	static UIObject& Label(UIContainer* ctx, const char* label);
-	static UIObject& MinLabel(UIContainer* ctx, const char* label);
+	static UIObject& Label(const char* label);
+	static UIObject& MinLabel(const char* label);
 
-	static void EditFloat(UIContainer* ctx, const char* label, float* v);
-	static void EditFloat2(UIContainer* ctx, const char* label, float* v);
-	static void EditFloat3(UIContainer* ctx, const char* label, float* v);
-	static void EditFloat4(UIContainer* ctx, const char* label, float* v);
+	static void EditFloat(const char* label, float* v);
+	static void EditFloat2(const char* label, float* v);
+	static void EditFloat3(const char* label, float* v);
+	static void EditFloat4(const char* label, float* v);
 };
 
 struct PropertyList : UIElement
@@ -275,21 +274,20 @@ struct LabeledProperty : UIElement
 {
 	struct Scope
 	{
-		Scope(UIContainer* c, const char* lblstr = nullptr) : ctx(c)
+		Scope(const char* lblstr = nullptr)
 		{
-			label = &Begin(ctx, lblstr);
+			label = &Begin(lblstr);
 		}
 		~Scope()
 		{
-			End(ctx);
+			End();
 		}
 
-		UIContainer* ctx;
 		UIObject* label;
 	};
 
-	static LabeledProperty& Begin(UIContainer* ctx, const char* label = nullptr);
-	static void End(UIContainer* ctx);
+	static LabeledProperty& Begin(const char* label = nullptr);
+	static void End();
 
 	void OnInit() override;
 	void OnPaint() override;
@@ -520,15 +518,15 @@ struct BackgroundBlocker : UIElement
 
 struct DropdownMenu : Buildable
 {
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 
-	virtual void OnBuildButton(UIContainer* ctx);
-	virtual void OnBuildMenuWithLayout(UIContainer* ctx);
-	virtual UIObject& OnBuildMenu(UIContainer* ctx);
+	virtual void OnBuildButton();
+	virtual void OnBuildMenuWithLayout();
+	virtual UIObject& OnBuildMenu();
 
-	virtual void OnBuildButtonContents(UIContainer* ctx) = 0;
-	virtual void OnBuildMenuContents(UIContainer* ctx) = 0;
+	virtual void OnBuildButtonContents() = 0;
+	virtual void OnBuildMenuContents() = 0;
 };
 
 
@@ -537,12 +535,12 @@ struct OptionList
 	typedef void ElementFunc(const void* ptr, uintptr_t id);
 
 	virtual void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) = 0;
-	virtual void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) = 0;
+	virtual void BuildElement(const void* ptr, uintptr_t id, bool list) = 0;
 };
 
 struct CStrOptionList : OptionList
 {
-	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override;
+	void BuildElement(const void* ptr, uintptr_t id, bool list) override;
 };
 
 struct ZeroSepCStrOptionList : CStrOptionList
@@ -591,18 +589,18 @@ struct DropdownMenuList : DropdownMenu
 	uintptr_t GetSelected() { return _selected; }
 
 	void OnSerialize(IDataSerializer& s) override;
-	void OnBuildButtonContents(UIContainer* ctx) override;
-	void OnBuildMenuContents(UIContainer* ctx) override;
+	void OnBuildButtonContents() override;
+	void OnBuildMenuContents() override;
 
-	virtual void OnBuildEmptyButtonContents(UIContainer* ctx);
-	virtual void OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id);
+	virtual void OnBuildEmptyButtonContents();
+	virtual void OnBuildMenuElement(const void* ptr, uintptr_t id);
 };
 
 namespace imm {
 
-template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> bool DropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
 {
-	auto& ddml = ctx->Make<MT>();
+	auto& ddml = Make<MT>();
 	ddml.SetOptions(ol);
 	for (auto& mod : mods)
 		mod->Apply(&ddml);
@@ -628,20 +626,20 @@ template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& va
 
 	return edited;
 }
-template <class T> bool DropdownMenuList(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
+template <class T> bool DropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
 {
-	return DropdownMenuListCustom<ui::DropdownMenuList>(ctx, val, ol, mods);
+	return DropdownMenuListCustom<ui::DropdownMenuList>(val, ol, mods);
 }
 
-template <class MT, class T> bool PropDropdownMenuListCustom(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> bool PropDropdownMenuListCustom(const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return DropdownMenuListCustom<MT, T>(ctx, val, ol, mods);
+	LabeledProperty::Scope ps(label);
+	return DropdownMenuListCustom<MT, T>(val, ol, mods);
 }
-template <class T> bool PropDropdownMenuList(UIContainer* ctx, const char* label, T& val, OptionList* ol, ModInitList mods = {})
+template <class T> bool PropDropdownMenuList(const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return DropdownMenuList<T>(ctx, val, ol, mods);
+	LabeledProperty::Scope ps(label);
+	return DropdownMenuList<T>(val, ol, mods);
 }
 
 } // imm
@@ -670,7 +668,7 @@ struct DragDropDataFrame : OverlayInfoFrame
 
 struct DefaultOverlayBuilder : Buildable
 {
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	bool drawTooltip = true;
 	bool drawDragDrop = true;

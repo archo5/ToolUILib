@@ -14,26 +14,26 @@ DataCategoryTag DCT_EditProcGraph[1];
 DataCategoryTag DCT_EditProcGraphNode[1];
 
 
-void ProcGraphEditor_NodePin::Build(UIContainer* ctx)
+void ProcGraphEditor_NodePin::Build()
 {
-	_sel = &ctx->Push<Selectable>();
+	_sel = &Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
 	*_sel + Set(!_pin.isOutput ? StackingDirection::LeftToRight : StackingDirection::RightToLeft);
 
-	ctx->Text(_graph->GetPinName(_pin));
+	Text(_graph->GetPinName(_pin));
 
 	if (!_pin.isOutput && !_graph->IsPinLinked(_pin))
 	{
 		// TODO not implemented right->left
 		*_sel + SetLayout(layouts::StackExpand());
 
-		_graph->InputPinEditorUI(_pin, ctx);
+		_graph->InputPinEditorUI(_pin);
 	}
 
-	ctx->Pop();
+	Pop();
 
-	auto& cb = ctx->Make<ColorBlock>();
+	auto& cb = Make<ColorBlock>();
 	cb.SetColor(_graph->GetPinColor(_pin));
 	cb + Set(BoxSizing::ContentBox) + SetWidth(4) + SetHeight(6);
 	auto* pap = Allocate<PointAnchoredPlacement>();
@@ -162,7 +162,7 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 }
 
 
-void ProcGraphEditor_Node::Build(UIContainer* ctx)
+void ProcGraphEditor_Node::Build()
 {
 	Subscribe(DCT_EditProcGraphNode, _node);
 
@@ -170,15 +170,15 @@ void ProcGraphEditor_Node::Build(UIContainer* ctx)
 	s.SetWidth(Coord::Undefined());
 	s.SetMinWidth(100);
 
-	ctx->Push<TabPanel>() + SetWidth(Coord::Undefined()) + SetMargin(0);
+	Push<TabPanel>() + SetWidth(Coord::Undefined()) + SetMargin(0);
 
-	OnBuildTitleBar(ctx);
-	OnBuildOutputPins(ctx);
-	OnBuildPreview(ctx);
-	OnBuildEditor(ctx);
-	OnBuildInputPins(ctx);
+	OnBuildTitleBar();
+	OnBuildOutputPins();
+	OnBuildPreview();
+	OnBuildEditor();
+	OnBuildInputPins();
 
-	ctx->Pop();
+	Pop();
 }
 
 void ProcGraphEditor_Node::OnEvent(Event& e)
@@ -222,13 +222,13 @@ void ProcGraphEditor_Node::Init(IProcGraph* graph, IProcGraph::Node* node, Point
 	_viewOffset = vOff;
 }
 
-void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
+void ProcGraphEditor_Node::OnBuildTitleBar()
 {
 	auto* placement = Allocate<PointAnchoredPlacement>();
 	placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
 	GetStyle().SetPlacement(placement);
 
-	auto& sel = ctx->Push<Selectable>().Init(_isDragging);
+	auto& sel = Push<Selectable>().Init(_isDragging);
 	sel.GetStyle().SetFontWeight(FontWeight::Bold);
 	sel.GetStyle().SetFontStyle(FontStyle::Italic);
 	sel
@@ -257,52 +257,52 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 	if (hasPreview)
 	{
 		bool showPreview = _graph->IsPreviewEnabled(_node);
-		imm::EditBool(ctx, showPreview, nullptr);
+		imm::EditBool(showPreview, nullptr);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
-	ctx->Text(_graph->GetNodeName(_node)) + SetPadding(5, hasPreview ? 0 : 5, 5, 5);
-	ctx->Pop();
+	Text(_graph->GetNodeName(_node)) + SetPadding(5, hasPreview ? 0 : 5, 5, 5);
+	Pop();
 }
 
-void ProcGraphEditor_Node::OnBuildEditor(UIContainer* ctx)
+void ProcGraphEditor_Node::OnBuildEditor()
 {
-	_graph->NodePropertyEditorUI(_node, ctx);
+	_graph->NodePropertyEditorUI(_node);
 }
 
-void ProcGraphEditor_Node::OnBuildInputPins(UIContainer* ctx)
+void ProcGraphEditor_Node::OnBuildInputPins()
 {
 	uintptr_t count = _graph->GetNodeInputCount(_node);
 	for (uintptr_t i = 0; i < count; i++)
-		ctx->Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, false);
+		Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, false);
 }
 
-void ProcGraphEditor_Node::OnBuildOutputPins(UIContainer* ctx)
+void ProcGraphEditor_Node::OnBuildOutputPins()
 {
 	uintptr_t count = _graph->GetNodeOutputCount(_node);
 	for (uintptr_t i = 0; i < count; i++)
-		ctx->Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, true);
+		Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, true);
 }
 
-void ProcGraphEditor_Node::OnBuildPreview(UIContainer* ctx)
+void ProcGraphEditor_Node::OnBuildPreview()
 {
 	bool showPreview = _graph->HasPreview(_node) && _graph->IsPreviewEnabled(_node);
 	if (showPreview)
 	{
-		_graph->PreviewUI(_node, ctx);
+		_graph->PreviewUI(_node);
 	}
 }
 
 
-void ProcGraphEditor::Build(UIContainer* ctx)
+void ProcGraphEditor::Build()
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
 	*this + SetHeight(Coord::Percent(100));
-	//*ctx->Push<ListBox>() + Height(Coord::Percent(100));
+	//*Push<ListBox>() + Height(Coord::Percent(100));
 
-	OnBuildNodes(ctx);
+	OnBuildNodes();
 
-	//ctx->Pop();
+	//Pop();
 }
 
 void ProcGraphEditor::OnEvent(Event& e)
@@ -349,13 +349,13 @@ void ProcGraphEditor::Init(IProcGraph* graph)
 	_graph = graph;
 }
 
-void ProcGraphEditor::OnBuildNodes(UIContainer* ctx)
+void ProcGraphEditor::OnBuildNodes()
 {
 	std::vector<IProcGraph::Node*> nodes;
 	_graph->GetNodes(nodes);
 	for (auto* N : nodes)
 	{
-		ctx->Make<ProcGraphEditor_Node>().Init(_graph, N, viewOffset);
+		Make<ProcGraphEditor_Node>().Init(_graph, N, viewOffset);
 	}
 }
 

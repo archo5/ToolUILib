@@ -3,16 +3,16 @@
 #include "ImageEditor.h"
 
 
-void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
+void ImageEditorWindowNode::Build()
 {
-	auto& sp1 = ctx->Push<ui::SplitPane>();
+	auto& sp1 = ui::Push<ui::SplitPane>();
 	{
-		auto& sp2 = ctx->Push<ui::SplitPane>();
+		auto& sp2 = ui::Push<ui::SplitPane>();
 		{
-			ctx->Push<ui::Panel>();
+			ui::Push<ui::Panel>();
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
-				auto& img = ctx->Make<ui::ImageElement>();
+				auto& img = ui::Make<ui::ImageElement>();
 				img + ui::SetWidth(ui::Coord::Percent(100));
 				img + ui::SetHeight(ui::Coord::Percent(100));
 				img.GetStyle().SetPaintFunc([](const ui::PaintInfo& info)
@@ -26,39 +26,39 @@ void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 				img.SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
 				img.SetScaleMode(ui::ScaleMode::Fit);
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->PushBox();
+			ui::PushBox();
 			if (structDef)
 			{
-				EditImageFormat(ctx, "Format", image->format);
-				ctx->Text("Conditional format overrides") + ui::SetPadding(5);
-				ctx->Push<ui::Panel>();
+				EditImageFormat("Format", image->format);
+				ui::Text("Conditional format overrides") + ui::SetPadding(5);
+				ui::Push<ui::Panel>();
 				for (auto& FO : image->formatOverrides)
 				{
-					EditImageFormat(ctx, "Format", FO.format);
-					ui::imm::PropEditString(ctx, "Condition", FO.condition.expr.c_str(), [&FO](const char* v) { FO.condition.SetExpr(v); });
+					EditImageFormat("Format", FO.format);
+					ui::imm::PropEditString("Condition", FO.condition.expr.c_str(), [&FO](const char* v) { FO.condition.SetExpr(v); });
 				}
-				if (ui::imm::Button(ctx, "Add"))
+				if (ui::imm::Button("Add"))
 				{
 					image->formatOverrides.push_back({});
 				}
-				ctx->Pop();
-				ui::imm::PropEditString(ctx, "Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Width", image->width.expr.c_str(), [this](const char* v) { image->width.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Height", image->height.expr.c_str(), [this](const char* v) { image->height.SetExpr(v); });
+				ui::Pop();
+				ui::imm::PropEditString("Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
+				ui::imm::PropEditString("Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });
+				ui::imm::PropEditString("Width", image->width.expr.c_str(), [this](const char* v) { image->width.SetExpr(v); });
+				ui::imm::PropEditString("Height", image->height.expr.c_str(), [this](const char* v) { image->height.SetExpr(v); });
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ctx->PushBox();
+		ui::PushBox();
 		if (ddiSrc.dataDesc)
 		{
-			auto& tv = ctx->Make<ui::TableView>();
+			auto& tv = ui::Make<ui::TableView>();
 			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
@@ -67,9 +67,9 @@ void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 			tv.CalculateColumnWidths();
 			tv.HandleEvent(ui::EventType::SelectionChange) = [this, &tv](ui::Event& e) { e.current->Rebuild(); };
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	sp1.SetDirection(false);
 	sp1.SetSplits({ 0.6f });
 }

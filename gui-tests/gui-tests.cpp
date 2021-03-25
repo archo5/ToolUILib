@@ -21,14 +21,14 @@ struct DataEditor : ui::Buildable
 			GetStyle().SetLayout(ui::layouts::Stack());
 			//GetStyle().SetMargin(32);
 		}
-		void Build(ui::UIContainer* ctx) override
+		void Build() override
 		{
 			static int wat = 0;
-			auto& b = ctx->Push<ui::Button>();
+			auto& b = ui::Push<ui::Button>();
 			b.GetStyle().SetWidth(ui::Coord::Percent(100));
 			//b.SetInputDisabled(wat++ % 2);
-			ctx->Text(name);
-			ctx->Pop();
+			ui::Text(name);
+			ui::Pop();
 		}
 		void OnEvent(ui::Event& e) override
 		{
@@ -105,31 +105,31 @@ struct DataEditor : ui::Buildable
 	}
 #endif
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::MenuBarElement>();
+		ui::Push<ui::MenuBarElement>();
 		{
-			ctx->Push<ui::MenuItemElement>().SetText("File");
+			ui::Push<ui::MenuItemElement>().SetText("File");
 			{
-				ctx->Make<ui::MenuItemElement>().SetText("New", "Ctrl+N");
-				ctx->Make<ui::MenuItemElement>().SetText("Open", "Ctrl+O");
-				ctx->Make<ui::MenuItemElement>().SetText("Save", "Ctrl+S");
-				ctx->Make<ui::MenuSeparatorElement>();
-				ctx->Make<ui::MenuItemElement>().SetText("Quit", "Ctrl+Q");
+				ui::Make<ui::MenuItemElement>().SetText("New", "Ctrl+N");
+				ui::Make<ui::MenuItemElement>().SetText("Open", "Ctrl+O");
+				ui::Make<ui::MenuItemElement>().SetText("Save", "Ctrl+S");
+				ui::Make<ui::MenuSeparatorElement>();
+				ui::Make<ui::MenuItemElement>().SetText("Quit", "Ctrl+Q");
 			}
-			ctx->Pop();
-			ctx->Push<ui::MenuItemElement>().SetText("Help");
+			ui::Pop();
+			ui::Push<ui::MenuItemElement>().SetText("Help");
 			{
-				ctx->Make<ui::MenuItemElement>().SetText("Documentation", "F1");
-				ctx->Make<ui::MenuItemElement>().SetText("About");
+				ui::Make<ui::MenuItemElement>().SetText("Documentation", "F1");
+				ui::Make<ui::MenuItemElement>().SetText("About");
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
+		ui::MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
 		static float sldval = 0.63f;
-		ctx->Make<ui::Slider>().Init(sldval, { 0, 2, 0.1 });
+		ui::Make<ui::Slider>().Init(sldval, { 0, 2, 0.1 });
 
 #if 0
 		struct TableDS : ui::TableDataSource
@@ -141,7 +141,7 @@ struct DataEditor : ui::Buildable
 			std::string GetText(size_t row, size_t col) { return "R" + std::to_string(row) + "C" + std::to_string(col); }
 		};
 		static TableDS tblds;
-		auto* tbl = ctx->Make<ui::TableView>();
+		auto* tbl = ui::Make<ui::TableView>();
 		tbl->SetDataSource(&tblds);
 		tbl->GetStyle().SetHeight(90);
 #endif
@@ -166,17 +166,17 @@ struct DataEditor : ui::Buildable
 			std::string GetText(uintptr_t id, size_t col) { return "ID" + std::to_string(id) + "C" + std::to_string(col); }
 		};
 		static TreeDS treeds;
-		auto& trv = ctx->Make<ui::TreeView>();
+		auto& trv = ui::Make<ui::TreeView>();
 		trv.SetDataSource(&treeds);
 		trv.GetStyle().SetHeight(90);
 #endif
 
 #if 1
-		auto& nw = ctx->Make<ui::NativeWindowNode>();
+		auto& nw = ui::Make<ui::NativeWindowNode>();
 		nw.GetWindow()->SetTitle("Subwindow A");
-		auto buildFunc = [](ui::UIContainer* ctx)
+		auto buildFunc = []()
 		{
-			ctx->Push<ui::Panel>();
+			ui::Push<ui::Panel>();
 			auto onClick = []()
 			{
 				struct DialogTest : ui::NativeDialogWindow
@@ -185,46 +185,46 @@ struct DataEditor : ui::Buildable
 					{
 						SetStyle(ui::WS_Resizable);
 					}
-					void OnBuild(ui::UIContainer* ctx) override
+					void OnBuild() override
 					{
-						auto s = ctx->Push<ui::Panel>().GetStyle();
+						auto s = ui::Push<ui::Panel>().GetStyle();
 						s.SetLayout(ui::layouts::Stack());
 						s.SetStackingDirection(ui::StackingDirection::RightToLeft);
-						if (ui::imm::Button(ctx, "X"))
+						if (ui::imm::Button("X"))
 							OnClose();
-						if (ui::imm::Button(ctx, "[]"))
+						if (ui::imm::Button("[]"))
 							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized);
-						if (ui::imm::Button(ctx, "_"))
+						if (ui::imm::Button("_"))
 							SetState(ui::WindowState::Minimized);
-						ctx->Pop();
+						ui::Pop();
 
-						ctx->Push<ui::Panel>();
-						ctx->Make<ItemButton>().Init("Test", [this]() { OnClose(); });
-						ctx->Pop();
+						ui::Push<ui::Panel>();
+						ui::Make<ItemButton>().Init("Test", [this]() { OnClose(); });
+						ui::Pop();
 					}
 				} dlg;
 				dlg.SetTitle("Dialog!");
 				dlg.Show();
 			};
-			ctx->Make<ItemButton>().Init("Only a button", []() {});
-			ctx->Make<ItemButton>().Init("Only another button (dialog)", onClick);
-			ctx->Pop();
+			ui::Make<ItemButton>().Init("Only a button", []() {});
+			ui::Make<ItemButton>().Init("Only another button (dialog)", onClick);
+			ui::Pop();
 		};
 		nw.GetWindow()->SetBuildFunc(buildFunc);
 		nw.GetWindow()->SetVisible(true);
 #endif
 
 #if 1
-		auto& frm = ctx->Make<ui::InlineFrame>();
-		auto frf = [](ui::UIContainer* ctx)
+		auto& frm = ui::Make<ui::InlineFrame>();
+		auto frf = []()
 		{
-			ctx->Push<ui::Panel>();
-			ctx->MakeWithText<ui::Button>("In-frame button");
+			ui::Push<ui::Panel>();
+			ui::MakeWithText<ui::Button>("In-frame button");
 			static int cur = 1;
-			BasicRadioButton(ctx, "Zero", cur, 0);
-			BasicRadioButton2(ctx, "One", cur, 1);
-			BasicRadioButton2(ctx, "Two", cur, 2);
-			ctx->Pop();
+			BasicRadioButton("Zero", cur, 0);
+			BasicRadioButton2("One", cur, 1);
+			BasicRadioButton2("Two", cur, 2);
+			ui::Pop();
 		};
 		frm.CreateFrameContents(frf);
 		auto frs = frm.GetStyle();
@@ -235,75 +235,75 @@ struct DataEditor : ui::Buildable
 
 		static bool lbsel0 = false;
 		static bool lbsel1 = true;
-		ctx->Push<ui::ListBox>();
-		ctx->Push<ui::ScrollArea>();
-		ctx->MakeWithText<ui::Selectable>("Item 1").Init(lbsel0);
-		ctx->MakeWithText<ui::Selectable>("Item two").Init(lbsel1);
-		ctx->Pop();
-		ctx->Pop();
+		ui::Push<ui::ListBox>();
+		ui::Push<ui::ScrollArea>();
+		ui::MakeWithText<ui::Selectable>("Item 1").Init(lbsel0);
+		ui::MakeWithText<ui::Selectable>("Item two").Init(lbsel1);
+		ui::Pop();
+		ui::Pop();
 
 		Subscribe(DCT_ItemSelection);
 		if (editing == SIZE_MAX)
 		{
-			ctx->Text("List");
-			ctx->Push<ui::Panel>();
+			ui::Text("List");
+			ui::Push<ui::Panel>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
-				ctx->Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
+				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			auto& r1 = ctx->Push<ui::CollapsibleTreeNode>();
-			ctx->Text("root item 1");
+			auto& r1 = ui::Push<ui::CollapsibleTreeNode>();
+			ui::Text("root item 1");
 			if (r1.open)
 			{
-				ctx->Text("- data under root item 1");
-				auto& r1c1 = ctx->Push<ui::CollapsibleTreeNode>();
-				ctx->Text("child 1");
+				ui::Text("- data under root item 1");
+				auto& r1c1 = ui::Push<ui::CollapsibleTreeNode>();
+				ui::Text("child 1");
 				if (r1c1.open)
 				{
-					auto& r1c1c1 = ctx->Push<ui::CollapsibleTreeNode>();
-					ctx->Text("subchild 1");
-					ctx->Pop();
+					auto& r1c1c1 = ui::Push<ui::CollapsibleTreeNode>();
+					ui::Text("subchild 1");
+					ui::Pop();
 				}
-				ctx->Pop();
+				ui::Pop();
 
-				auto& r1c2 = ctx->Push<ui::CollapsibleTreeNode>();
-				ctx->Text("child 2");
+				auto& r1c2 = ui::Push<ui::CollapsibleTreeNode>();
+				ui::Text("child 2");
 				if (r1c2.open)
 				{
-					auto& r1c2c1 = ctx->Push<ui::CollapsibleTreeNode>();
-					ctx->Text("subchild 1");
-					ctx->Pop();
+					auto& r1c2c1 = ui::Push<ui::CollapsibleTreeNode>();
+					ui::Text("subchild 1");
+					ui::Pop();
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			auto& r2 = ctx->Push<ui::CollapsibleTreeNode>();
-			ctx->Text("root item 2");
+			auto& r2 = ui::Push<ui::CollapsibleTreeNode>();
+			ui::Text("root item 2");
 			if (r2.open)
 			{
-				ctx->Text("- data under root item 2");
+				ui::Text("- data under root item 2");
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
 		else
 		{
-			ctx->PushBox()
+			ui::PushBox()
 				+ ui::SetLayout(ui::layouts::StackExpand())
 				+ ui::Set(ui::StackingDirection::LeftToRight);
-			ctx->Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
-			ctx->Text(items[editing].name.c_str());
-			if (ui::imm::Button(ctx, "Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))
+			ui::Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
+			ui::Text(items[editing].name.c_str());
+			if (ui::imm::Button("Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))
 			{
 				editing = SIZE_MAX;
 				ui::Notify(DCT_ItemSelection);
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ui::imm::PropEditString(ctx, "Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });
-			ui::imm::PropEditBool(ctx, "Enable", items[editing].enable);
+			ui::imm::PropEditString("Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });
+			ui::imm::PropEditBool("Enable", items[editing].enable);
 		}
 	}
 
@@ -318,72 +318,72 @@ struct DataEditor : ui::Buildable
 };
 
 
-void Test_RenderingPrimitives(ui::UIContainer* ctx);
-void Test_KeyboardEvents(ui::UIContainer* ctx);
-void Test_OpenClose(ui::UIContainer* ctx);
-void Test_AnimationRequest(ui::UIContainer* ctx);
-void Test_ElementReset(ui::UIContainer* ctx);
-void Test_SubUI(ui::UIContainer* ctx);
-void Test_HighElementCount(ui::UIContainer* ctx);
-void Test_ZeroRebuild(ui::UIContainer* ctx);
-void Test_GlobalEvents(ui::UIContainer* ctx);
-void Test_Frames(ui::UIContainer* ctx);
-void Test_DialogWindow(ui::UIContainer* ctx);
+void Test_RenderingPrimitives();
+void Test_KeyboardEvents();
+void Test_OpenClose();
+void Test_AnimationRequest();
+void Test_ElementReset();
+void Test_SubUI();
+void Test_HighElementCount();
+void Test_ZeroRebuild();
+void Test_GlobalEvents();
+void Test_Frames();
+void Test_DialogWindow();
 
-void Test_EdgeSlice(ui::UIContainer* ctx);
-void Test_LayoutNestCombo(ui::UIContainer* ctx);
-void Test_StackingLayoutVariations(ui::UIContainer* ctx);
-void Test_Size(ui::UIContainer* ctx);
-void Test_Placement(ui::UIContainer* ctx);
+void Test_EdgeSlice();
+void Test_LayoutNestCombo();
+void Test_StackingLayoutVariations();
+void Test_Size();
+void Test_Placement();
 
-void Test_DragDrop(ui::UIContainer* ctx);
-void Test_StateButtons(ui::UIContainer* ctx);
-void Test_PropertyList(ui::UIContainer* ctx);
-void Test_Sliders(ui::UIContainer* ctx);
-void Test_SplitPane(ui::UIContainer* ctx);
-void Test_Tabs(ui::UIContainer* ctx);
-void Test_Scrollbars(ui::UIContainer* ctx);
-void Test_ColorBlock(ui::UIContainer* ctx);
-void Test_Image(ui::UIContainer* ctx);
-void Test_ColorPicker(ui::UIContainer* ctx);
-void Test_3DView(ui::UIContainer* ctx);
-void Test_Gizmo(ui::UIContainer* ctx);
-void Test_IMGUI(ui::UIContainer* ctx);
-void Test_Tooltip(ui::UIContainer* ctx);
-void Test_Dropdown(ui::UIContainer* ctx);
+void Test_DragDrop();
+void Test_StateButtons();
+void Test_PropertyList();
+void Test_Sliders();
+void Test_SplitPane();
+void Test_Tabs();
+void Test_Scrollbars();
+void Test_ColorBlock();
+void Test_Image();
+void Test_ColorPicker();
+void Test_3DView();
+void Test_Gizmo();
+void Test_IMGUI();
+void Test_Tooltip();
+void Test_Dropdown();
 
-void Test_BasicEasingAnim(ui::UIContainer* ctx);
-void Test_ThreadWorker(ui::UIContainer* ctx);
-void Test_ThreadedImageRendering(ui::UIContainer* ctx);
-void Test_OSCommunication(ui::UIContainer* ctx);
-void Test_FileSelectionWindow(ui::UIContainer* ctx);
+void Test_BasicEasingAnim();
+void Test_ThreadWorker();
+void Test_ThreadedImageRendering();
+void Test_OSCommunication();
+void Test_FileSelectionWindow();
 
-void Test_SequenceEditors(ui::UIContainer* ctx);
-void Test_TreeEditors(ui::UIContainer* ctx);
-void Test_MessageLogView(ui::UIContainer* ctx);
+void Test_SequenceEditors();
+void Test_TreeEditors();
+void Test_MessageLogView();
 
-void Benchmark_SubUI(ui::UIContainer* ctx);
-void Test_TableView(ui::UIContainer* ctx);
+void Benchmark_SubUI();
+void Test_TableView();
 
-void Demo_Calculator(ui::UIContainer* ctx);
-void Demo_SettingsWindow(ui::UIContainer* ctx);
-void Demo_BasicTreeNodeEdit(ui::UIContainer* ctx);
-void Demo_CompactTreeNodeEdit(ui::UIContainer* ctx);
-void Demo_ScriptTree(ui::UIContainer* ctx);
-void Demo_NodeGraphEditor(ui::UIContainer* ctx);
-void Demo_TrackEditor(ui::UIContainer* ctx);
-void Demo_SlidingHighlightAnim(ui::UIContainer* ctx);
-void Demo_ButtonPressHighlight(ui::UIContainer* ctx);
+void Demo_Calculator();
+void Demo_SettingsWindow();
+void Demo_BasicTreeNodeEdit();
+void Demo_CompactTreeNodeEdit();
+void Demo_ScriptTree();
+void Demo_NodeGraphEditor();
+void Demo_TrackEditor();
+void Demo_SlidingHighlightAnim();
+void Demo_ButtonPressHighlight();
 
 
 struct TestEntry
 {
 	const char* name;
-	void(*func)(ui::UIContainer* ctx);
+	void(*func)();
 };
 static const TestEntry coreTestEntries[] =
 {
-	{ "Off", [](ui::UIContainer* ctx) {} },
+	{ "Off", []() {} },
 	{},
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
@@ -480,7 +480,7 @@ static const TestEntry demoEntries[] =
 	{ "Sliding highlight anim", Demo_SlidingHighlightAnim },
 	{ "Button press highlight", Demo_ButtonPressHighlight },
 	// TODO fix/redistribute
-	//{ "Data editor", [](ui::UIContainer* ctx) { ctx->Make<DataEditor>(); } },
+	//{ "Data editor", []() { ui::Make<DataEditor>(); } },
 };
 
 struct ExampleGroup
@@ -502,21 +502,21 @@ static ExampleGroup exampleGroups[] =
 static bool rebuildAlways;
 struct TEST : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::MenuBarElement>();
+		ui::Push<ui::MenuBarElement>();
 
 		for (const auto& group : exampleGroups)
 		{
-			ctx->Push<ui::MenuItemElement>().SetText(group.name);
+			ui::Push<ui::MenuItemElement>().SetText(group.name);
 			for (auto& entry : group.entries)
 			{
 				if (!entry.func)
 				{
 					if (entry.name)
-						ctx->Make<ui::MenuItemElement>().SetText(entry.name).SetDisabled(true);
+						ui::Make<ui::MenuItemElement>().SetText(entry.name).SetDisabled(true);
 					else
-						ctx->Make<ui::MenuSeparatorElement>();
+						ui::Make<ui::MenuSeparatorElement>();
 					continue;
 				}
 
@@ -526,24 +526,24 @@ struct TEST : ui::Buildable
 					GetNativeWindow()->SetTitle(entry.name);
 					Rebuild();
 				};
-				ctx->Make<ui::MenuItemElement>().SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
+				ui::Make<ui::MenuItemElement>().SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
 
-		ctx->Push<ui::MenuItemElement>().SetText("Debug");
+		ui::Push<ui::MenuItemElement>().SetText("Debug");
 		{
-			ctx->Make<ui::MenuItemElement>().SetText("Rebuild always").SetChecked(rebuildAlways).onActivate = [this]() { rebuildAlways ^= true; Rebuild(); };
-			ctx->Make<ui::MenuItemElement>().SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
-			ctx->Make<ui::MenuItemElement>().SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
+			ui::Make<ui::MenuItemElement>().SetText("Rebuild always").SetChecked(rebuildAlways).onActivate = [this]() { rebuildAlways ^= true; Rebuild(); };
+			ui::Make<ui::MenuItemElement>().SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
+			ui::Make<ui::MenuItemElement>().SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); };
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 
 		if (curTest)
-			curTest->func(ctx);
+			curTest->func();
 
 		if (rebuildAlways)
 			Rebuild();
@@ -643,9 +643,9 @@ void EarlyTest()
 
 struct MainWindow : ui::NativeMainWindow
 {
-	void OnBuild(ui::UIContainer* ctx) override
+	void OnBuild() override
 	{
-		ctx->Make<TEST>();
+		ui::Make<TEST>();
 	}
 };
 

@@ -22,7 +22,7 @@ struct Graph
 		virtual float* GetInputDefaultValuePtr(int which) = 0;
 
 		virtual bool HasPreview() = 0;
-		virtual void PreviewUI(ui::UIContainer* ctx) {}
+		virtual void PreviewUI() {}
 
 		ui::Point2f position = {};
 		bool showPreview = true;
@@ -219,7 +219,7 @@ struct GraphImpl : ui::IProcGraph
 		Graph::LinkEnd gle = { static_cast<Graph::Node*>(pin.end.node), int(pin.end.num), pin.isOutput };
 		graph->UnlinkAll(gle);
 	}
-	void InputPinEditorUI(const Pin& pin, ui::UIContainer* ctx) override
+	void InputPinEditorUI(const Pin& pin) override
 	{
 		auto* node = static_cast<Graph::Node*>(pin.end.node);
 		auto type = node->GetInputType(pin.end.num);
@@ -227,10 +227,10 @@ struct GraphImpl : ui::IProcGraph
 		switch (type)
 		{
 		case Graph::Type::Scalar:
-			ui::imm::PropEditFloat(ctx, "\b=", *data);
+			ui::imm::PropEditFloat("\b=", *data);
 			break;
 		case Graph::Type::Vector:
-			ui::imm::PropEditFloatVec(ctx, nullptr, data);
+			ui::imm::PropEditFloatVec(nullptr, data);
 			break;
 		}
 	}
@@ -287,9 +287,9 @@ struct GraphImpl : ui::IProcGraph
 	{
 		static_cast<Graph::Node*>(node)->showPreview = enabled;
 	}
-	void PreviewUI(Node*, ui::UIContainer* ctx)
+	void PreviewUI(Node*)
 	{
-		ctx->MakeWithText<ui::Panel>("Preview");
+		ui::MakeWithText<ui::Panel>("Preview");
 	}
 
 	bool CanDeleteNode(Node*) override { return true; }
@@ -349,16 +349,16 @@ struct NodeGraphEditorDemo : ui::Buildable
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 1 } });
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { scaleVec, 0 } });
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		*this + ui::SetHeight(ui::Coord::Percent(100));
-		ctx->Make<ui::ProcGraphEditor>().Init(Allocate<GraphImpl>(&graph));
+		ui::Make<ui::ProcGraphEditor>().Init(Allocate<GraphImpl>(&graph));
 	}
 
 	Graph graph;
 };
-void Demo_NodeGraphEditor(ui::UIContainer* ctx)
+void Demo_NodeGraphEditor()
 {
-	ctx->Make<NodeGraphEditorDemo>();
+	ui::Make<NodeGraphEditorDemo>();
 }
 

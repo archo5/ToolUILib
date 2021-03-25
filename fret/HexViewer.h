@@ -40,7 +40,7 @@ struct HighlightSettings
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);
 
-	void EditUI(ui::UIContainer* ctx);
+	void EditUI();
 };
 
 struct ByteColors

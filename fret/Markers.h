@@ -105,7 +105,7 @@ struct MarkerDataSource : ui::TableDataSource, ui::ISelectionStorage
 
 struct MarkedItemEditor : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	IDataSource* dataSource;
 	Marker* marker;
@@ -114,7 +114,7 @@ struct MarkedItemEditor : ui::Buildable
 
 struct MarkedItemsList : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	MarkerData* markerData;
 };

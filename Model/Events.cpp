@@ -666,9 +666,9 @@ NativeWindowBase* EventSystem::GetNativeWindow() const
 }
 
 
-void DragDropData::Build(UIContainer* ctx)
+void DragDropData::Build()
 {
-	ctx->Text(type);
+	Text(type);
 }
 
 DataCategoryTag DCT_DragDropDataChanged[1];
@@ -712,9 +712,9 @@ bool Tooltip::IsSet()
 	return !!g_curTooltipBuildFn;
 }
 
-void Tooltip::Build(UIContainer* ctx)
+void Tooltip::Build()
 {
-	g_curTooltipBuildFn(ctx);
+	g_curTooltipBuildFn();
 }
 
 

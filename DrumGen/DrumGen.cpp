@@ -21,9 +21,9 @@ struct DrumGenerator : ui::Buildable
 	{
 		//Regenerate();
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		if (ui::imm::Button(ctx, "Play"))
+		if (ui::imm::Button("Play"))
 		{
 			Regenerate();
 			Play();
@@ -31,7 +31,7 @@ struct DrumGenerator : ui::Buildable
 
 		for (int i = 0; i < 3; i++)
 		{
-			ui::imm::RadioButton(ctx, state, i, nullptr);
+			ui::imm::RadioButton(state, i, nullptr);
 		}
 	}
 	void Play()
@@ -135,9 +135,9 @@ struct MainWindow : ui::NativeMainWindow
 	{
 		SetTitle("Drum generator");
 	}
-	void OnBuild(ui::UIContainer* ctx) override
+	void OnBuild() override
 	{
-		ctx->Make<DrumGenerator>();
+		ui::Make<DrumGenerator>();
 	}
 };
 

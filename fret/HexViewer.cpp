@@ -108,57 +108,57 @@ void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndDict();
 }
 
-void HighlightSettings::EditUI(ui::UIContainer* ctx)
+void HighlightSettings::EditUI()
 {
-	ui::imm::PropEditBool(ctx, "Exclude zeroes", excludeZeroes);
+	ui::imm::PropEditBool("Exclude zeroes", excludeZeroes);
 
-	ui::Property::Begin(ctx, "float32");
-	ui::imm::PropEditBool(ctx, nullptr, enableFloat32);
-	ui::imm::PropEditFloat(ctx, "\bMin", minFloat32, {}, 0.01f);
-	ui::imm::PropEditFloat(ctx, "\bMax", maxFloat32);
-	ui::Property::End(ctx);
+	ui::Property::Begin("float32");
+	ui::imm::PropEditBool(nullptr, enableFloat32);
+	ui::imm::PropEditFloat("\bMin", minFloat32, {}, 0.01f);
+	ui::imm::PropEditFloat("\bMax", maxFloat32);
+	ui::Property::End();
 
-	ui::Property::Begin(ctx, "int16");
-	ui::imm::PropEditBool(ctx, nullptr, enableInt16);
-	ui::imm::PropEditInt(ctx, "\bMin", minInt16);
-	ui::imm::PropEditInt(ctx, "\bMax", maxInt16);
-	ui::Property::End(ctx);
+	ui::Property::Begin("int16");
+	ui::imm::PropEditBool(nullptr, enableInt16);
+	ui::imm::PropEditInt("\bMin", minInt16);
+	ui::imm::PropEditInt("\bMax", maxInt16);
+	ui::Property::End();
 
-	ui::Property::Begin(ctx, "int32");
-	ui::imm::PropEditBool(ctx, nullptr, enableInt32);
-	ui::imm::PropEditInt(ctx, "\bMin", minInt32);
-	ui::imm::PropEditInt(ctx, "\bMax", maxInt32);
-	ui::Property::End(ctx);
+	ui::Property::Begin("int32");
+	ui::imm::PropEditBool(nullptr, enableInt32);
+	ui::imm::PropEditInt("\bMin", minInt32);
+	ui::imm::PropEditInt("\bMax", maxInt32);
+	ui::Property::End();
 
-	ui::Property::Begin(ctx, "ASCII");
-	ui::imm::PropEditBool(ctx, nullptr, enableASCII);
-	ui::imm::PropEditInt(ctx, "\bMin chars", minASCIIChars, {}, 1, 1, 128);
-	ui::Property::End(ctx);
+	ui::Property::Begin("ASCII");
+	ui::imm::PropEditBool(nullptr, enableASCII);
+	ui::imm::PropEditInt("\bMin chars", minASCIIChars, {}, 1, 1, 128);
+	ui::Property::End();
 
-	ui::Property::Begin(ctx, "Near file size");
-	ui::imm::PropEditBool(ctx, "\bu32", enableNearFileSize32);
-	ui::imm::PropEditBool(ctx, "\bu64", enableNearFileSize64);
-	ui::imm::PropEditFloat(ctx, "\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
-	ui::Property::End(ctx);
+	ui::Property::Begin("Near file size");
+	ui::imm::PropEditBool("\bu32", enableNearFileSize32);
+	ui::imm::PropEditBool("\bu64", enableNearFileSize64);
+	ui::imm::PropEditFloat("\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
+	ui::Property::End();
 
-	ctx->Text("Custom int32") + ui::SetPadding(25, 5, 5);
+	ui::Text("Custom int32") + ui::SetPadding(25, 5, 5);
 
-	auto& seqEd = ctx->Make<ui::SequenceEditor>();
-	seqEd.SetSequence(ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(customInt32)>>(customInt32));
-	seqEd.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+	auto& seqEd = ui::Make<ui::SequenceEditor>();
+	seqEd.SetSequence(ui::BuildAlloc<ui::StdSequence<decltype(customInt32)>>(customInt32));
+	seqEd.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 	{
 		auto& h = *static_cast<Int32Highlight*>(ptr);
-		ui::imm::EditBool(ctx, h.enabled, nullptr);
-		ui::imm::EditColor(ctx, h.color);
+		ui::imm::EditBool(h.enabled, nullptr);
+		ui::imm::EditColor(h.color);
 		if (h.range)
-			ui::imm::PropEditInt(ctx, "\bMin", h.vmin);
+			ui::imm::PropEditInt("\bMin", h.vmin);
 		else
-			ui::imm::PropEditInt(ctx, "\bValue", h.vspec);
-		ui::imm::EditBool(ctx, h.range, nullptr);
+			ui::imm::PropEditInt("\bValue", h.vspec);
+		ui::imm::EditBool(h.range, nullptr);
 		if (h.range)
-			ui::imm::PropEditInt(ctx, "\bMax", h.vmax);
+			ui::imm::PropEditInt("\bMax", h.vmax);
 	};
-	if (ui::imm::Button(ctx, "Add"))
+	if (ui::imm::Button("Add"))
 	{
 		customInt32.push_back({});
 	}

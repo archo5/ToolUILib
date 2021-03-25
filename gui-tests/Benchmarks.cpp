@@ -52,7 +52,7 @@ struct SubUIBenchmark : ui::Buildable
 			}
 		}
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		GetStyle().SetPadding(3);
 		GetStyle().SetWidth(820);
@@ -63,8 +63,8 @@ struct SubUIBenchmark : ui::Buildable
 	std::vector<ui::Point2f> points;
 	ui::Vec2f dragOff = { 0, 0 };
 };
-void Benchmark_SubUI(ui::UIContainer* ctx)
+void Benchmark_SubUI()
 {
-	ctx->Make<SubUIBenchmark>();
+	ui::Make<SubUIBenchmark>();
 }
 

@@ -5,20 +5,20 @@
 #include "Workspace.h"
 
 
-void TabHighlights::Build(ui::UIContainer* ctx)
+void TabHighlights::Build()
 {
-	auto& spmkr = ctx->Push<ui::SplitPane>();
+	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ctx->PushBox();
+		ui::PushBox();
 
-		ctx->Text("Highlighted items") + ui::SetPadding(5);
+		ui::Text("Highlighted items") + ui::SetPadding(5);
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox();
-		of->highlightSettings.EditUI(ctx);
-		ctx->Pop();
+		ui::PushBox();
+		of->highlightSettings.EditUI();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	spmkr.SetSplits({ 0.6f });
 }

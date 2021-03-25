@@ -90,16 +90,16 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 }
 
 
-void TreeEditor::Build(UIContainer* ctx)
+void TreeEditor::Build()
 {
-	auto s = ctx->Push<ListBox>().GetStyle();
+	auto s = Push<ListBox>().GetStyle();
 	s.SetMinHeight(22);
 	s.SetBoxSizing(BoxSizing::ContentBox);
 
 	TreePath path;
-	OnBuildList(ctx, path);
+	OnBuildList(path);
 
-	ctx->Pop();
+	Pop();
 }
 
 void TreeEditor::OnEvent(Event& e)
@@ -128,34 +128,34 @@ void TreeEditor::OnSerialize(IDataSerializer& s)
 	_selImpl.OnSerialize(s);
 }
 
-void TreeEditor::OnBuildChildList(UIContainer* ctx, TreePath& path)
+void TreeEditor::OnBuildChildList(TreePath& path)
 {
-	ctx->PushBox().GetStyle().SetPaddingLeft(8);
+	PushBox().GetStyle().SetPaddingLeft(8);
 
-	OnBuildList(ctx, path);
+	OnBuildList(path);
 
-	ctx->Pop();
+	Pop();
 }
 
-void TreeEditor::OnBuildList(UIContainer* ctx, TreePath& path)
+void TreeEditor::OnBuildList(TreePath& path)
 {
 	size_t index = 0;
-	_tree->IterateChildren(path, [this, ctx, &index, &path](void* data)
+	_tree->IterateChildren(path, [this, &index, &path](void* data)
 	{
 		path.push_back(index);
 
-		ctx->Push<TreeItemElement>().Init(this, path);
+		Push<TreeItemElement>().Init(this, path);
 
-		OnBuildItem(ctx, path, data);
+		OnBuildItem(path, data);
 
 		if (showDeleteButton)
-			OnBuildDeleteButton(ctx);
+			OnBuildDeleteButton();
 
-		ctx->Pop();
+		Pop();
 
 		if (_tree->HasChildren(path))
 		{
-			OnBuildChildList(ctx, path);
+			OnBuildChildList(path);
 		}
 
 		path.pop_back();
@@ -163,15 +163,15 @@ void TreeEditor::OnBuildList(UIContainer* ctx, TreePath& path)
 	});
 }
 
-void TreeEditor::OnBuildItem(UIContainer* ctx, TreePathRef path, void* data)
+void TreeEditor::OnBuildItem(TreePathRef path, void* data)
 {
 	if (itemUICallback)
-		itemUICallback(ctx, this, path, data);
+		itemUICallback(this, path, data);
 }
 
-void TreeEditor::OnBuildDeleteButton(UIContainer* ctx)
+void TreeEditor::OnBuildDeleteButton()
 {
-	auto& delBtn = ctx->MakeWithText<Button>("X");
+	auto& delBtn = MakeWithText<Button>("X");
 	delBtn + SetWidth(20);
 	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event&)
 	{

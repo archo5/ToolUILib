@@ -6,21 +6,21 @@
 
 namespace ui {
 
-void SequenceDragData::Build(UIContainer* ctx)
+void SequenceDragData::Build()
 {
 	if (scope->itemUICallback)
 	{
-		ctx->PushBox() + SetWidth(width);
-		scope->GetSequence()->IterateElements(at, [this, ctx](size_t idx, void* ptr)
+		PushBox() + SetWidth(width);
+		scope->GetSequence()->IterateElements(at, [this](size_t idx, void* ptr)
 		{
-			scope->itemUICallback(ctx, scope, idx, ptr);
+			scope->itemUICallback(scope, idx, ptr);
 			return false;
 		});
-		ctx->Pop();
+		Pop();
 	}
 	else
 	{
-		ctx->Text("item");
+		Text("item");
 	}
 }
 
@@ -118,24 +118,24 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 }
 
 
-void SequenceEditor::Build(UIContainer* ctx)
+void SequenceEditor::Build()
 {
-	ctx->Push<ListBox>();
+	Push<ListBox>();
 
-	_sequence->IterateElements(0, [this, ctx](size_t idx, void* ptr)
+	_sequence->IterateElements(0, [this](size_t idx, void* ptr)
 	{
-		ctx->Push<SequenceItemElement>().Init(this, idx);
+		Push<SequenceItemElement>().Init(this, idx);
 
-		OnBuildItem(ctx, idx, ptr);
+		OnBuildItem(idx, ptr);
 
 		if (showDeleteButton)
-			OnBuildDeleteButton(ctx, idx);
+			OnBuildDeleteButton(idx);
 
-		ctx->Pop();
+		Pop();
 		return true;
 	});
 
-	ctx->Pop();
+	Pop();
 }
 
 void SequenceEditor::OnEvent(Event& e)
@@ -165,15 +165,15 @@ void SequenceEditor::OnSerialize(IDataSerializer& s)
 	_selImpl.OnSerialize(s);
 }
 
-void SequenceEditor::OnBuildItem(UIContainer* ctx, size_t idx, void* ptr)
+void SequenceEditor::OnBuildItem(size_t idx, void* ptr)
 {
 	if (itemUICallback)
-		itemUICallback(ctx, this, idx, ptr);
+		itemUICallback(this, idx, ptr);
 }
 
-void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
+void SequenceEditor::OnBuildDeleteButton(size_t idx)
 {
-	auto& delBtn = ctx->MakeWithText<Button>("X");
+	auto& delBtn = MakeWithText<Button>("X");
 	delBtn + SetWidth(20);
 	delBtn + AddEventHandler(EventType::Activate, [this, idx](Event& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
 }

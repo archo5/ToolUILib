@@ -1086,9 +1086,9 @@ bool Buildable::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 
 AddTooltip::AddTooltip(const std::string& s)
 {
-	_evfn = [s](UIContainer* ctx)
+	_evfn = [s]()
 	{
-		ctx->Text(s);
+		Text(s);
 	};
 }
 

@@ -20,7 +20,7 @@ struct TE_TmplSettings
 			gamma,
 		};
 	}
-	void UI(UIContainer* ctx);
+	void UI();
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
@@ -82,16 +82,16 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	std::string GetNodeName(Node* node) override { return static_cast<TE_Node*>(node)->GetName(); }
 	uintptr_t GetNodeInputCount(Node* node) override { return static_cast<TE_Node*>(node)->GetInputPinCount(); }
 	uintptr_t GetNodeOutputCount(Node* node) override { return 1; }
-	void NodePropertyEditorUI(Node* node, UIContainer* ctx)
+	void NodePropertyEditorUI(Node* node)
 	{
-		ctx->Push<PropertyList>().splitPos = Coord::Percent(25);
-		static_cast<TE_Node*>(node)->PropertyUI(ctx);
-		ctx->Pop();
+		Push<PropertyList>().splitPos = Coord::Percent(25);
+		static_cast<TE_Node*>(node)->PropertyUI();
+		Pop();
 	}
 
 	std::string GetPinName(const Pin& pin) override;
 	Color4b GetPinColor(const Pin& pin) override;
-	void InputPinEditorUI(const Pin& pin, UIContainer* ctx) override;
+	void InputPinEditorUI(const Pin& pin) override;
 
 	void UnlinkPin(const Pin& pin) override;
 	bool LinkExists(const Link& link) override;
@@ -111,7 +111,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	bool HasPreview(Node*) override { return true; }
 	bool IsPreviewEnabled(Node* node) override { return static_cast<TE_Node*>(node)->isPreviewEnabled; }
 	void SetPreviewEnabled(Node* node, bool v) override { static_cast<TE_Node*>(node)->isPreviewEnabled = v; }
-	void PreviewUI(Node* node, UIContainer* ctx) override { static_cast<TE_Node*>(node)->PreviewUI(ctx, this); }
+	void PreviewUI(Node* node) override { static_cast<TE_Node*>(node)->PreviewUI(this); }
 
 	void OnEditNode(Event& e, Node* node) override;
 

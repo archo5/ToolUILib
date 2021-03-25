@@ -104,8 +104,8 @@ struct MSNode
 	virtual void Do(MSContext& C) = 0;
 	virtual const char* GetName() = 0;
 	virtual MSNode* CloneBase() = 0;
-	virtual void InlineEditUI(ui::UIContainer* ctx) = 0;
-	virtual void FullEditUI(ui::UIContainer* ctx) = 0;
+	virtual void InlineEditUI() = 0;
+	virtual void FullEditUI() = 0;
 	virtual void LoadProps(NamedTextSerializeReader& nts) = 0;
 	virtual void SaveProps(NamedTextSerializeWriter& nts) = 0;
 };
@@ -128,7 +128,7 @@ struct MeshScript : ui::ITree
 	void LoadNodeArr(const char* key, std::vector<MSNode::Ptr>& arr, NamedTextSerializeReader& nts);
 	void SaveNodeArr(const char* key, std::vector<MSNode::Ptr>& arr, NamedTextSerializeWriter& nts);
 	MSData RunScript(IDataSource* src, IVariableSource* instCtx);
-	void EditUI(ui::UIContainer* ctx);
+	void EditUI();
 
 	struct NodeLoc
 	{
@@ -163,8 +163,8 @@ struct MSN_NewPrimitive : MSNode
 	MSN_NODE(NewPrimitive);
 
 	void Do(MSContext& C) override;
-	void InlineEditUI(ui::UIContainer* ctx) override;
-	void FullEditUI(ui::UIContainer* ctx) override;
+	void InlineEditUI() override;
+	void FullEditUI() override;
 	void LoadProps(NamedTextSerializeReader& nts) override
 	{
 		type = MSPrimType(nts.ReadInt("type", int(MSPrimType::Points)));
@@ -185,8 +185,8 @@ struct MSN_VertexData : MSNode
 	MSN_NODE(VertexData);
 
 	void Do(MSContext& C) override;
-	void InlineEditUI(ui::UIContainer* ctx) override;
-	void FullEditUI(ui::UIContainer* ctx) override;
+	void InlineEditUI() override;
+	void FullEditUI() override;
 	void LoadProps(NamedTextSerializeReader& nts) override
 	{
 		dest = MSVDDest(nts.ReadInt("dest", int(MSVDDest::Position)));
@@ -219,8 +219,8 @@ struct MSN_IndexData : MSNode
 	MSN_NODE(IndexData);
 
 	void Do(MSContext& C) override;
-	void InlineEditUI(ui::UIContainer* ctx) override;
-	void FullEditUI(ui::UIContainer* ctx) override;
+	void InlineEditUI() override;
+	void FullEditUI() override;
 	void LoadProps(NamedTextSerializeReader& nts) override
 	{
 		type = MSIDType(nts.ReadInt("type", int(MSIDType::U16)));

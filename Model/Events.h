@@ -349,7 +349,7 @@ struct DragDropData
 	DragDropData(const std::string& t) : type(t) {}
 	virtual ~DragDropData() {}
 	virtual bool ShouldBuild() { return true; }
-	virtual void Build(UIContainer* ctx);
+	virtual void Build();
 
 	std::string type;
 };
@@ -382,12 +382,12 @@ struct DragDrop
 extern struct DataCategoryTag DCT_TooltipChanged[1];
 struct Tooltip
 {
-	using BuildFunc = std::function<void(UIContainer*)>;
+	using BuildFunc = std::function<void()>;
 
 	static void Set(const BuildFunc& f);
 	static void Unset();
 	static bool IsSet();
-	static void Build(UIContainer* ctx);
+	static void Build();
 };
 
 struct ContextMenu

@@ -271,11 +271,11 @@ struct RenderView : ui::Buildable
 	{
 		delete image;
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		Subscribe(DCT_CameraEdited);
 
-		imageEl = &ctx->Make<ui::ImageElement>();
+		imageEl = &ui::Make<ui::ImageElement>();
 		imageEl->GetStyle().SetWidth(ui::Coord::Percent(100));
 		imageEl->GetStyle().SetHeight(ui::Coord::Percent(100));
 		imageEl->SetScaleMode(ui::ScaleMode::Stretch);
@@ -375,53 +375,53 @@ struct RenderView : ui::Buildable
 
 struct EditorView : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 	}
 };
 
 struct InspectorView : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::PropertyList>();
+		ui::Push<ui::PropertyList>();
 
-		ctx->Text("Camera");
-		auto& cameraBox = ctx->PushBox();
-		ui::imm::PropEditFloat(ctx, "FOV", cameraFOV);
-		ui::imm::PropEditFloatVec(ctx, "Position", &cameraPos.x);
-		ui::imm::PropEditFloatVec(ctx, "Direction", &cameraDir.x);
+		ui::Text("Camera");
+		auto& cameraBox = ui::PushBox();
+		ui::imm::PropEditFloat("FOV", cameraFOV);
+		ui::imm::PropEditFloatVec("Position", &cameraPos.x);
+		ui::imm::PropEditFloatVec("Direction", &cameraDir.x);
 		cameraBox.HandleEvent(ui::EventType::Commit) = [](ui::Event& e)
 		{
 			ui::Notify(DCT_CameraEdited);
 		};
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 	}
 };
 
 struct MainWindow : ui::NativeMainWindow
 {
-	void OnBuild(ui::UIContainer* ctx) override
+	void OnBuild() override
 	{
-		auto& hsp = ctx->Push<ui::SplitPane>();
+		auto& hsp = ui::Push<ui::SplitPane>();
 		{
-			auto& vsp = ctx->Push<ui::SplitPane>();
+			auto& vsp = ui::Push<ui::SplitPane>();
 			vsp.SetDirection(true);
 			{
-				ctx->Make<RenderView>();
-				ctx->Make<EditorView>();
+				ui::Make<RenderView>();
+				ui::Make<EditorView>();
 
 				vsp.SetSplits({ 0.6f });
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->Make<InspectorView>();
+			ui::Make<InspectorView>();
 
 			hsp.SetSplits({ 0.6f });
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 };
 

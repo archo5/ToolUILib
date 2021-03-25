@@ -8,7 +8,7 @@ struct Workspace;
 
 struct TabStructures : ui::Buildable, TableWithOffsets
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	Workspace* workspace = nullptr;
 };

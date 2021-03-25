@@ -595,7 +595,7 @@ struct NativeWindow_Impl
 		return true;
 	}
 
-	void SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
+	void SetBuildFunc(std::function<void()> buildFunc)
 	{
 		system.AllocRoot<BuildCallback>()->buildFunc = buildFunc;
 		system.BuildRoot();
@@ -857,7 +857,7 @@ void NativeWindowBase::SetVisible(bool v)
 	{
 		_impl->firstShow = false;
 
-		_impl->SetBuildFunc([this](UIContainer* ctx) { OnBuild(ctx); });
+		_impl->SetBuildFunc([this]() { OnBuild(); });
 	}
 }
 
@@ -1028,13 +1028,13 @@ bool NativeWindowBase::IsDragged() const
 }
 
 
-void NativeWindowBuildFunc::OnBuild(UIContainer* ctx)
+void NativeWindowBuildFunc::OnBuild()
 {
 	if (_buildFunc)
-		_buildFunc(ctx);
+		_buildFunc();
 }
 
-void NativeWindowBuildFunc::SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
+void NativeWindowBuildFunc::SetBuildFunc(std::function<void()> buildFunc)
 {
 	_buildFunc = buildFunc;
 }
@@ -1104,7 +1104,7 @@ struct Inspector : NativeDialogWindow
 
 		Inspector* insp;
 
-		void Build(UIContainer* ctx) override {}
+		void Build() override {}
 
 		static const char* CleanName(const char* name)
 		{
@@ -1155,9 +1155,9 @@ struct Inspector : NativeDialogWindow
 		}
 	};
 
-	void OnBuild(UIContainer* ctx) override
+	void OnBuild() override
 	{
-		ui = &ctx->Make<InspectorUI>();
+		ui = &Make<InspectorUI>();
 		*ui + SetLayout(layouts::EdgeSlice());
 		ui->insp = this;
 	}

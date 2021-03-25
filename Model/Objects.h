@@ -382,7 +382,7 @@ struct Buildable : UIObject
 	~Buildable();
 	typedef char IsBuildable[2];
 
-	virtual void Build(UIContainer* ctx) = 0;
+	virtual void Build() = 0;
 	void Rebuild();
 
 	virtual void OnNotify(DataCategoryTag* tag, uintptr_t at);

@@ -5,15 +5,15 @@
 #include "Workspace.h"
 
 
-void TabImages::Build(ui::UIContainer* ctx)
+void TabImages::Build()
 {
-	auto& spstr = ctx->Push<ui::SplitPane>();
+	auto& spstr = ui::Push<ui::SplitPane>();
 	{
-		ctx->PushBox();
+		ui::PushBox();
 
-		workspace->ddimgSrc.Edit(ctx);
+		workspace->ddimgSrc.Edit();
 
-		auto& tv = ctx->Make<ui::TableView>();
+		auto& tv = ui::Make<ui::TableView>();
 		tv + ui::SetLayout(ui::layouts::EdgeSlice());
 		tv.SetDataSource(&workspace->ddimgSrc);
 		tv.SetSelectionStorage(&workspace->ddimgSrc);
@@ -79,15 +79,15 @@ void TabImages::Build(ui::UIContainer* ctx)
 			}
 		};
 
-		ctx->Pop();
+		ui::Pop();
 	}
 	{
-		auto& spvert = ctx->Push<ui::SplitPane>();
+		auto& spvert = ui::Push<ui::SplitPane>();
 		{
 			if (workspace->desc.curImage < workspace->desc.images.size())
 			{
-				ctx->Push<ui::Panel>();
-				auto& img = ctx->Make<ui::ImageElement>();
+				ui::Push<ui::Panel>();
+				auto& img = ui::Make<ui::ImageElement>();
 				img + ui::SetWidth(ui::Coord::Percent(100));
 				img + ui::SetHeight(ui::Coord::Percent(100));
 				img.GetStyle().SetPaintFunc([](const ui::PaintInfo& info)
@@ -100,16 +100,16 @@ void TabImages::Build(ui::UIContainer* ctx)
 				});
 				img.SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
 				img.SetScaleMode(ui::ScaleMode::Fit);
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->PushBox();
-			workspace->desc.EditImageItems(ctx);
-			ctx->Pop();
+			ui::PushBox();
+			workspace->desc.EditImageItems();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 		spvert.SetDirection(true);
 		spvert.SetSplits({ 0.5f });
 	}
-	ctx->Pop();
+	ui::Pop();
 	spstr.SetSplits({ 0.5f });
 }

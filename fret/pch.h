@@ -21,9 +21,9 @@ enum GlobalEvents
 template <class T>
 struct WindowT : ui::NativeMainWindow
 {
-	void OnBuild(ui::UIContainer* ctx) override
+	void OnBuild() override
 	{
-		rootBuildable = &ctx->Make<T>();
+		rootBuildable = &ui::Make<T>();
 	}
 	void OnClose() override
 	{

@@ -159,7 +159,7 @@ struct SequenceDragData : DragDropData
 		width(w),
 		at(f)
 	{}
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	SequenceEditor* scope;
 	float width;
@@ -182,13 +182,13 @@ struct SequenceEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	virtual void OnBuildItem(UIContainer* ctx, size_t idx, void* ptr);
-	virtual void OnBuildDeleteButton(UIContainer* ctx, size_t idx);
+	virtual void OnBuildItem(size_t idx, void* ptr);
+	virtual void OnBuildDeleteButton(size_t idx);
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
@@ -200,7 +200,7 @@ struct SequenceEditor : Buildable
 
 	void _OnEdit(UIObject* who);
 
-	std::function<void(UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
+	std::function<void(SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 
 	bool showDeleteButton = true;
 

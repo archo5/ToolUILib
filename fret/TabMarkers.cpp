@@ -5,15 +5,15 @@
 #include "Workspace.h"
 
 
-void TabMarkers::Build(ui::UIContainer* ctx)
+void TabMarkers::Build()
 {
 	auto* f = of->ddFile;
-	auto& spmkr = ctx->Push<ui::SplitPane>();
+	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 
-		ctx->Text("Marked items") + ui::SetPadding(5);
-		auto& tv = ctx->Make<ui::TableView>();
+		ui::Text("Marked items") + ui::SetPadding(5);
+		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
 		tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&f->mdSrc);
@@ -55,17 +55,17 @@ void TabMarkers::Build(ui::UIContainer* ctx)
 			}
 		};
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 		if (f->mdSrc.selected < f->markerData.markers.size())
 		{
-			auto& MIE = ctx->Make<MarkedItemEditor>();
+			auto& MIE = ui::Make<MarkedItemEditor>();
 			MIE.dataSource = f->dataSource;
 			MIE.marker = &f->markerData.markers[f->mdSrc.selected];
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	spmkr.SetSplits({ 0.6f });
 }

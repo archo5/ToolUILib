@@ -8,6 +8,7 @@ namespace ui {
 
 extern uint32_t g_curLayoutFrame;
 FrameContents* g_curSystem;
+UIContainer* g_curContainer;
 
 
 #if 0
@@ -160,6 +161,7 @@ void UIContainer::ProcessBuildStack()
 		return;
 
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
+	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, this);
 
 	buildStack.RemoveChildren();
 
@@ -181,7 +183,7 @@ void UIContainer::ProcessBuildStack()
 		decltype(Buildable::_deferredDestructors) oldDDs;
 		std::swap(oldDDs, currentBuildable->_deferredDestructors);
 
-		currentBuildable->Build(this);
+		currentBuildable->Build();
 
 		while (oldDDs.size())
 		{
@@ -296,6 +298,56 @@ NativeWindowBase* UIContainer::GetNativeWindow() const
 	return owner->nativeWindow;
 }
 
+UIContainer* UIContainer::GetCurrent()
+{
+	return g_curContainer;
+}
+
+
+void Pop()
+{
+	return g_curContainer->Pop();
+}
+
+BoxElement& PushBox()
+{
+	return g_curContainer->PushBox();
+}
+
+TextElement& Text(StringView s)
+{
+	return g_curContainer->Text(s);
+}
+
+TextElement& TextVA(const char* fmt, va_list args)
+{
+	return g_curContainer->TextVA(fmt, args);
+}
+
+TextElement& Textf(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	auto str = FormatVA(fmt, args);
+	va_end(args);
+	return Text(str);
+}
+
+void RebuildCurrent()
+{
+	GetCurrentBuildable()->Rebuild();
+}
+
+Buildable* GetCurrentBuildable()
+{
+	return UIContainer::GetCurrent()->GetCurrentBuildable();
+}
+
+bool LastIsNew()
+{
+	return UIContainer::GetCurrent()->LastIsNew();
+}
+
 
 void Overlays::Register(UIObject* obj, float depth)
 {
@@ -338,7 +390,8 @@ FrameContents::~FrameContents()
 Buildable* FrameContents::_AllocRootImpl(BuildableAllocFunc* f)
 {
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
-	auto* N = f(&container);
+	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, &container);
+	auto* N = f();
 	container.rootBuildable = N;
 	return N;
 }
@@ -346,6 +399,7 @@ Buildable* FrameContents::_AllocRootImpl(BuildableAllocFunc* f)
 void FrameContents::BuildRoot()
 {
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
+	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, &container);
 	container._BuildUsing(container.rootBuildable);
 }
 
@@ -360,7 +414,7 @@ void InlineFrame::OnDestroy()
 	}
 }
 
-void InlineFrame::Build(UIContainer* ctx)
+void InlineFrame::Build()
 {
 }
 
@@ -433,7 +487,7 @@ void InlineFrame::SetFrameContents(FrameContents* contents)
 	_OnChangeStyle();
 }
 
-void InlineFrame::CreateFrameContents(std::function<void(UIContainer* ctx)> buildFunc)
+void InlineFrame::CreateFrameContents(std::function<void()> buildFunc)
 {
 	auto* contents = new FrameContents();
 	contents->AllocRoot<BuildCallback>()->buildFunc = buildFunc;

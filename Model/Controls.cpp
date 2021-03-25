@@ -246,42 +246,42 @@ Property::Property()
 	GetStyle().SetStackingDirection(StackingDirection::LeftToRight);
 }
 
-void Property::Begin(UIContainer* ctx, const char* label)
+void Property::Begin(const char* label)
 {
-	ctx->Push<Property>();
+	Push<Property>();
 	if (label)
 	{
-		Label(ctx, label);
+		Label(label);
 	}
 }
 
-void Property::End(UIContainer* ctx)
+void Property::End()
 {
-	ctx->Pop();
+	Pop();
 }
 
-UIObject& Property::Label(UIContainer* ctx, const char* label)
+UIObject& Property::Label(const char* label)
 {
 	if (*label == '\b')
-		return MinLabel(ctx, label + 1);
-	return ctx->Text(label)
+		return MinLabel(label + 1);
+	return Text(label)
 		+ SetPadding(5)
 		+ SetMinWidth(100)
 		+ SetWidth(Coord::Percent(30));
 }
 
-UIObject& Property::MinLabel(UIContainer* ctx, const char* label)
+UIObject& Property::MinLabel(const char* label)
 {
-	return ctx->Text(label)
+	return Text(label)
 		+ SetPadding(5)
 		+ SetWidth(Coord::Fraction(0));
 }
 
-void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
+void Property::EditFloat(const char* label, float* v)
 {
-	Property::Begin(ctx);
-	auto& lbl = Property::Label(ctx, label);
-	auto& tb = ctx->Make<Textbox>();
+	Property::Begin();
+	auto& lbl = Property::Label(label);
+	auto& tb = Make<Textbox>();
 	lbl.HandleEvent() = [v](Event& e)
 	{
 		if (e.type == EventType::MouseMove && e.target->IsClicked() && e.delta.x != 0)
@@ -304,27 +304,27 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 		*v = atof(tb.GetText().c_str());
 		e.target->Rebuild();
 	};
-	Property::End(ctx);
+	Property::End();
 }
 
 static const char* subLabelNames[] = { "X", "Y", "Z", "W" };
-static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size)
+static void EditFloatVec(const char* label, float* v, int size)
 {
-	Property::Begin(ctx, label);
+	Property::Begin(label);
 
-	ctx->PushBox()
+	PushBox()
 		+ SetLayout(layouts::StackExpand())
 		+ Set(StackingDirection::LeftToRight);
 	{
 		for (int i = 0; i < size; i++)
 		{
 			float* vc = v + i;
-			ctx->PushBox()
+			PushBox()
 				+ SetLayout(layouts::StackExpand())
 				+ Set(StackingDirection::LeftToRight)
 				+ SetWidth(Coord::Fraction(1));
 
-			Property::MinLabel(ctx, subLabelNames[i]).HandleEvent() = [vc](Event& e)
+			Property::MinLabel(subLabelNames[i]).HandleEvent() = [vc](Event& e)
 			{
 				if (e.type == EventType::MouseMove && e.target->IsClicked() && e.delta.x != 0)
 				{
@@ -339,7 +339,7 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 				}
 			};
 
-			auto& tb = ctx->Make<Textbox>();
+			auto& tb = Make<Textbox>();
 			tb + SetWidth(Coord::Fraction(0.2f));
 			char buf[64];
 			snprintf(buf, 64, "%g", v[i]);
@@ -350,27 +350,27 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 				e.target->Rebuild();
 			};
 
-			ctx->Pop();
+			Pop();
 		}
 	}
-	ctx->Pop();
+	Pop();
 
-	Property::End(ctx);
+	Property::End();
 }
 
-void Property::EditFloat2(UIContainer* ctx, const char* label, float* v)
+void Property::EditFloat2(const char* label, float* v)
 {
-	EditFloatVec(ctx, label, v, 2);
+	EditFloatVec(label, v, 2);
 }
 
-void Property::EditFloat3(UIContainer* ctx, const char* label, float* v)
+void Property::EditFloat3(const char* label, float* v)
 {
-	EditFloatVec(ctx, label, v, 3);
+	EditFloatVec(label, v, 3);
 }
 
-void Property::EditFloat4(UIContainer* ctx, const char* label, float* v)
+void Property::EditFloat4(const char* label, float* v)
 {
-	EditFloatVec(ctx, label, v, 4);
+	EditFloatVec(label, v, 4);
 }
 
 
@@ -391,9 +391,9 @@ UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
 }
 
 
-LabeledProperty& LabeledProperty::Begin(UIContainer* ctx, const char* label)
+LabeledProperty& LabeledProperty::Begin(const char* label)
 {
-	auto& lp = ctx->Push<LabeledProperty>();
+	auto& lp = Push<LabeledProperty>();
 	if (label)
 	{
 		if (*label == '\b')
@@ -407,9 +407,9 @@ LabeledProperty& LabeledProperty::Begin(UIContainer* ctx, const char* label)
 	return lp;
 }
 
-void LabeledProperty::End(UIContainer* ctx)
+void LabeledProperty::End()
 {
-	ctx->Pop();
+	Pop();
 }
 
 void LabeledProperty::OnInit()
@@ -1474,14 +1474,14 @@ void BackgroundBlocker::OnButton()
 }
 
 
-void DropdownMenu::Build(UIContainer* ctx)
+void DropdownMenu::Build()
 {
-	OnBuildButton(ctx);
+	OnBuildButton();
 
 	if (HasFlags(UIObject_IsChecked))
 	{
-		ctx->Make<BackgroundBlocker>();
-		OnBuildMenuWithLayout(ctx);
+		Make<BackgroundBlocker>();
+		OnBuildMenuWithLayout();
 	}
 }
 
@@ -1496,9 +1496,9 @@ void DropdownMenu::OnEvent(Event& e)
 	}
 }
 
-void DropdownMenu::OnBuildButton(UIContainer* ctx)
+void DropdownMenu::OnBuildButton()
 {
-	auto& btn = ctx->PushBox();
+	auto& btn = PushBox();
 	btn + ApplyStyle(Theme::current->button);
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
@@ -1509,15 +1509,15 @@ void DropdownMenu::OnBuildButton(UIContainer* ctx)
 		Rebuild();
 	};
 
-	OnBuildButtonContents(ctx);
+	OnBuildButtonContents();
 
-	ctx->Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + SetMargin(0, 0, 0, 5);
-	ctx->Pop();
+	Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + SetMargin(0, 0, 0, 5);
+	Pop();
 }
 
-void DropdownMenu::OnBuildMenuWithLayout(UIContainer* ctx)
+void DropdownMenu::OnBuildMenuWithLayout()
 {
-	auto& list = OnBuildMenu(ctx);
+	auto& list = OnBuildMenu();
 	auto* topLeftPlacement = Allocate<PointAnchoredPlacement>();
 	topLeftPlacement->anchor = { 0, 1 };
 	list + SetPlacement(topLeftPlacement);
@@ -1525,20 +1525,20 @@ void DropdownMenu::OnBuildMenuWithLayout(UIContainer* ctx)
 	list + SetMinWidth(Coord::Percent(100));
 }
 
-UIObject& DropdownMenu::OnBuildMenu(UIContainer* ctx)
+UIObject& DropdownMenu::OnBuildMenu()
 {
-	auto& ret = ctx->Push<ListBox>();
+	auto& ret = Push<ListBox>();
 
-	OnBuildMenuContents(ctx);
+	OnBuildMenuContents();
 
-	ctx->Pop();
+	Pop();
 	return ret;
 }
 
 
-void CStrOptionList::BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
+void CStrOptionList::BuildElement(const void* ptr, uintptr_t id, bool list)
 {
-	ctx->Text(static_cast<const char*>(ptr));
+	Text(static_cast<const char*>(ptr));
 }
 
 static const char* Next(const char* v)
@@ -1575,41 +1575,41 @@ void DropdownMenuList::OnSerialize(IDataSerializer& s)
 	s << _selected;
 }
 
-void DropdownMenuList::OnBuildButtonContents(UIContainer* ctx)
+void DropdownMenuList::OnBuildButtonContents()
 {
 	bool found = false;
-	_options->IterateElements(0, SIZE_MAX, [this, ctx, &found](const void* ptr, uintptr_t id)
+	_options->IterateElements(0, SIZE_MAX, [this, &found](const void* ptr, uintptr_t id)
 	{
 		if (id == _selected && !found)
 		{
-			_options->BuildElement(ctx, ptr, id, false);
+			_options->BuildElement(ptr, id, false);
 			found = true;
 		}
 	});
 	if (!found)
-		OnBuildEmptyButtonContents(ctx);
+		OnBuildEmptyButtonContents();
 }
 
-void DropdownMenuList::OnBuildMenuContents(UIContainer* ctx)
+void DropdownMenuList::OnBuildMenuContents()
 {
-	_options->IterateElements(0, SIZE_MAX, [this, ctx](const void* ptr, uintptr_t id)
+	_options->IterateElements(0, SIZE_MAX, [this](const void* ptr, uintptr_t id)
 	{
-		OnBuildMenuElement(ctx, ptr, id);
+		OnBuildMenuElement(ptr, id);
 	});
 }
 
-void DropdownMenuList::OnBuildEmptyButtonContents(UIContainer* ctx)
+void DropdownMenuList::OnBuildEmptyButtonContents()
 {
 }
 
-void DropdownMenuList::OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
+void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 {
-	auto& opt = ctx->Push<Selectable>();
+	auto& opt = Push<Selectable>();
 	opt.Init(_selected == id);
 
-	_options->BuildElement(ctx, ptr, id, true);
+	_options->BuildElement(ptr, id, true);
 
-	ctx->Pop();
+	Pop();
 
 	opt + AddEventHandler(EventType::ButtonUp, [this, id](Event& e)
 	{
@@ -1686,7 +1686,7 @@ DragDropDataFrame::DragDropDataFrame()
 }
 
 
-void DefaultOverlayBuilder::Build(UIContainer* ctx)
+void DefaultOverlayBuilder::Build()
 {
 	if (drawTooltip || drawDragDrop)
 		Subscribe(DCT_MouseMoved);
@@ -1696,9 +1696,9 @@ void DefaultOverlayBuilder::Build(UIContainer* ctx)
 		Subscribe(DCT_TooltipChanged);
 		if (Tooltip::IsSet())
 		{
-			ctx->Push<TooltipFrame>().RegisterAsOverlay();
-			Tooltip::Build(ctx);
-			ctx->Pop();
+			Push<TooltipFrame>().RegisterAsOverlay();
+			Tooltip::Build();
+			Pop();
 		}
 	}
 
@@ -1709,9 +1709,9 @@ void DefaultOverlayBuilder::Build(UIContainer* ctx)
 		{
 			if (ddd->ShouldBuild())
 			{
-				ctx->Push<DragDropDataFrame>().RegisterAsOverlay();
-				ddd->Build(ctx);
-				ctx->Pop();
+				Push<DragDropDataFrame>().RegisterAsOverlay();
+				ddd->Build();
+				Pop();
 			}
 		}
 	}

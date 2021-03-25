@@ -9,7 +9,7 @@ struct DDStruct;
 
 struct FileView : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	void HexViewer_OnRightClick();
 

@@ -60,7 +60,7 @@ struct FileStructureViewer : ui::Buildable
 	{
 		::system("cd FRET_Plugins && set RAW=1 && a > ../sockdump.txt");
 	}
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	std::vector<bool> openness;
 };
@@ -141,9 +141,9 @@ struct FileStructureDataSource : ui::TreeDataSource
 
 struct FileStructureViewer2 : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		auto& trv = ctx->Make<ui::TreeView>();
+		auto& trv = ui::Make<ui::TreeView>();
 		trv.GetStyle().SetHeight(ui::Coord::Percent(100));
 		trv.SetDataSource(ds);
 		trv.CalculateColumnWidths();

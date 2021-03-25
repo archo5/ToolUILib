@@ -16,7 +16,7 @@ struct TE_Node
 {
 	struct Preview : Buildable
 	{
-		void Build(UIContainer* ctx) override;
+		void Build() override;
 
 		TE_Node* node;
 		TE_IRenderContextProvider* rcp;
@@ -35,13 +35,13 @@ struct TE_Node
 	virtual TE_NodeType GetInputPinType(int pin) = 0;
 	virtual TE_Node* GetInputPinValue(int pin) = 0;
 	virtual void SetInputPinValue(int pin, TE_Node* value) = 0;
-	virtual void InputPinUI(int pin, UIContainer* ctx) = 0;
-	virtual void PropertyUI(UIContainer* ctx) = 0;
+	virtual void InputPinUI(int pin) = 0;
+	virtual void PropertyUI() = 0;
 	virtual void Serialize(IObjectIterator& oi) = 0;
 	virtual void Render(Canvas& canvas, const TE_RenderContext& rc) = 0;
 	virtual void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) = 0;
 
-	void PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp);
+	void PreviewUI(TE_IRenderContextProvider* rcp);
 
 	void _SerializeBase(IObjectIterator& oi);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
@@ -113,9 +113,9 @@ struct TE_RectMask : TE_MaskNode
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Unknown; }
 	TE_Node* GetInputPinValue(int pin) override { return nullptr; }
 	void SetInputPinValue(int pin, TE_Node* value) override {}
-	void InputPinUI(int pin, UIContainer* ctx) override {}
+	void InputPinUI(int pin) override {}
 
-	void PropertyUI(UIContainer* ctx) override;
+	void PropertyUI() override;
 	void Serialize(IObjectIterator& oi) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
@@ -133,7 +133,7 @@ struct TE_MaskRef
 	int vbias = 0;
 
 	float Eval(float x, float y, const TE_RenderContext& rc);
-	void UI(UIContainer* ctx);
+	void UI();
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
@@ -160,9 +160,9 @@ struct TE_CombineMask : TE_MaskNode
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
 	TE_Node* GetInputPinValue(int pin) override { return masks[pin].mask; }
 	void SetInputPinValue(int pin, TE_Node* value) override { masks[pin].mask = dynamic_cast<TE_MaskNode*>(value); }
-	void InputPinUI(int pin, UIContainer* ctx) override { masks[pin].UI(ctx); }
+	void InputPinUI(int pin) override { masks[pin].UI(); }
 
-	void PropertyUI(UIContainer* ctx) override;
+	void PropertyUI() override;
 	void Serialize(IObjectIterator& oi) override;
 
 	float Eval(float x, float y, const TE_RenderContext& rc) override;
@@ -195,9 +195,9 @@ struct TE_SolidColorLayer : TE_LayerNode
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
 	TE_Node* GetInputPinValue(int pin) override { return mask.mask; }
 	void SetInputPinValue(int pin, TE_Node* value) override { mask.mask = dynamic_cast<TE_MaskNode*>(value); }
-	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
+	void InputPinUI(int pin) override { mask.UI(); }
 
-	void PropertyUI(UIContainer* ctx) override;
+	void PropertyUI() override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
@@ -219,9 +219,9 @@ struct TE_2ColorLinearGradientColorLayer : TE_LayerNode
 	TE_NodeType GetInputPinType(int pin) override { return TENT_Mask; }
 	TE_Node* GetInputPinValue(int pin) override { return mask.mask; }
 	void SetInputPinValue(int pin, TE_Node* value) override { mask.mask = dynamic_cast<TE_MaskNode*>(value); }
-	void InputPinUI(int pin, UIContainer* ctx) override { mask.UI(ctx); }
+	void InputPinUI(int pin) override { mask.UI(); }
 
-	void PropertyUI(UIContainer* ctx) override;
+	void PropertyUI() override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override;
 
@@ -256,8 +256,8 @@ struct TE_BlendLayer : TE_LayerNode
 	TE_Node* GetInputPinValue(int pin) override { return layers[pin].layer; }
 	void SetInputPinValue(int pin, TE_Node* value) override { layers[pin].layer = dynamic_cast<TE_LayerNode*>(value); }
 
-	void InputPinUI(int pin, UIContainer* ctx) override;
-	void PropertyUI(UIContainer* ctx) override;
+	void InputPinUI(int pin) override;
+	void PropertyUI() override;
 	void Serialize(IObjectIterator& oi) override;
 	void ResolveParameters(const TE_RenderContext& rc, const TE_Overrides* ovr) override {}
 

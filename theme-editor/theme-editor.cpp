@@ -62,52 +62,52 @@ struct TE_MainPreviewNode : Buildable
 {
 	TE_Template* tmpl;
 
-	void Build(UIContainer* ctx) override
+	void Build() override
 	{
 		Subscribe(DCT_NodePreviewInvalidated);
 		Subscribe(DCT_EditProcGraph);
 		Subscribe(DCT_EditProcGraphNode);
 
-		ctx->PushBox() + Set(StackingDirection::LeftToRight);
+		PushBox() + Set(StackingDirection::LeftToRight);
 		{
-			ctx->Text("Preview") + SetPadding(5);
-			if (tmpl->curPreviewImage && imm::Button(ctx, "Reset to template"))
+			Text("Preview") + SetPadding(5);
+			if (tmpl->curPreviewImage && imm::Button("Reset to template"))
 			{
 				tmpl->SetCurPreviewImage(nullptr);
 			}
 		}
-		ctx->Pop();
+		Pop();
 
 		if (tmpl->renderSettings.layer)
 		{
-			ctx->PushBox() + SetLayout(layouts::EdgeSlice());
+			PushBox() + SetLayout(layouts::EdgeSlice());
 			{
-				ctx->PushBox() + Set(StackingDirection::LeftToRight);
+				PushBox() + Set(StackingDirection::LeftToRight);
 				{
-					imm::RadioButton(ctx, g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
-					imm::RadioButton(ctx, g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
+					imm::RadioButton(g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
+					imm::RadioButton(g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
 				}
-				ctx->Pop();
+				Pop();
 				if (g_previewMode == TEPM_Original)
 				{
-					ctx->PushBox() + Set(StackingDirection::LeftToRight);
+					PushBox() + Set(StackingDirection::LeftToRight);
 					{
-						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
-						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
+						imm::RadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
+						imm::RadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
 					}
-					ctx->Pop();
+					Pop();
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{
-					ctx->Push<LabeledProperty>();
+					Push<LabeledProperty>();
 					{
-						imm::PropEditInt(ctx, "\bWidth", g_previewSlicedWidth, { SetMinWidth(20) });
-						imm::PropEditInt(ctx, "\bHeight", g_previewSlicedHeight, { SetMinWidth(20) });
+						imm::PropEditInt("\bWidth", g_previewSlicedWidth, { SetMinWidth(20) });
+						imm::PropEditInt("\bHeight", g_previewSlicedHeight, { SetMinWidth(20) });
 					}
-					ctx->Pop();
+					Pop();
 				}
 
-				ctx->Push<ListBox>() + SetHeight(Coord::Percent(95)); // TODO
+				Push<ListBox>() + SetHeight(Coord::Percent(95)); // TODO
 
 				Canvas canvas;
 #if 0
@@ -120,7 +120,7 @@ struct TE_MainPreviewNode : Buildable
 				auto* img = Allocate<Image>(canvas);
 				if (g_previewMode == TEPM_Original)
 				{
-					ctx->Make<ImageElement>()
+					Make<ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(g_previewScaleMode)
 						+ SetWidth(Coord::Percent(100))
@@ -128,7 +128,7 @@ struct TE_MainPreviewNode : Buildable
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{
-					ctx->Make<TE_SlicedImageElement>()
+					Make<TE_SlicedImageElement>()
 						.SetImage(img)
 						.SetTargetSize(g_previewSlicedWidth, g_previewSlicedHeight)
 						.SetBorderSizes(rs.l, rs.t, rs.r, rs.b)
@@ -136,9 +136,9 @@ struct TE_MainPreviewNode : Buildable
 						+ SetHeight(Coord::Percent(100));
 				}
 
-				ctx->Pop();
+				Pop();
 			}
-			ctx->Pop();
+			Pop();
 		}
 	}
 };
@@ -150,14 +150,14 @@ struct TE_ImageEditorNode : Buildable
 	TE_Theme* theme;
 	TE_Template* tmpl;
 
-	void Build(UIContainer* ctx) override
+	void Build() override
 	{
 		Subscribe(DCT_ChangeActiveImage);
 
-		ctx->PushBox() + Set(StackingDirection::LeftToRight);
+		PushBox() + Set(StackingDirection::LeftToRight);
 		{
-			ctx->Text("Images") + SetPadding(5);
-			if (imm::Button(ctx, "Add"))
+			Text("Images") + SetPadding(5);
+			if (imm::Button("Add"))
 			{
 				auto img = std::make_shared<TE_Image>();
 				img->name = "<unnamed>";
@@ -165,37 +165,37 @@ struct TE_ImageEditorNode : Buildable
 				Rebuild();
 			}
 		}
-		ctx->Pop();
+		Pop();
 
-		auto& imged = ctx->Make<SequenceEditor>();
+		auto& imged = Make<SequenceEditor>();
 		imged + SetHeight(Coord::Percent(100));
 		imged.showDeleteButton = false;
 		imged.SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
-		imged.itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+		imged.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 		{
-			EditImage(ctx, static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
+			EditImage(static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
 		};
 	}
 
-	void EditImage(UIContainer* ctx, TE_Image* img, SequenceEditor* se, size_t idx, void* ptr)
+	void EditImage(TE_Image* img, SequenceEditor* se, size_t idx, void* ptr)
 	{
-		ctx->PushBox();
+		PushBox();
 		{
-			ctx->PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
+			PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
 			{
-				imm::EditBool(ctx, img->expanded, nullptr, { SetWidth(Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
-				if (imm::RadioButtonRaw(ctx, tmpl->curPreviewImage == img, "P", { SetWidth(Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
+				imm::EditBool(img->expanded, nullptr, { SetWidth(Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
+				if (imm::RadioButtonRaw(tmpl->curPreviewImage == img, "P", { SetWidth(Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
 				{
 					tmpl->SetCurPreviewImage(img);
 				}
-				imm::EditString(ctx, img->name.c_str(), [&img](const char* v) { img->name = v; });
-				se->OnBuildDeleteButton(ctx, idx);
+				imm::EditString(img->name.c_str(), [&img](const char* v) { img->name = v; });
+				se->OnBuildDeleteButton(idx);
 			}
-			ctx->Pop();
+			Pop();
 
 			if (img->expanded)
 			{
-				ctx->Push<Panel>().HandleEvent() = [this](Event& e)
+				Push<Panel>().HandleEvent() = [this](Event& e)
 				{
 					if (e.type == EventType::Change || e.type == EventType::Commit || e.type == EventType::IMChange)
 						tmpl->InvalidateAllNodes();
@@ -205,20 +205,20 @@ struct TE_ImageEditorNode : Buildable
 					if (!ovr)
 						ovr = std::make_shared<TE_Overrides>();
 
-					auto& coed = ctx->Make<SequenceEditor>();
-					// TODO making Allocate automatically work in the current node would avoid this bug (Allocate instead of ctx->GetCurrentNode()->)
-					coed.SetSequence(ctx->GetCurrentBuildable()->Allocate<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
-					coed.itemUICallback = [](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+					auto& coed = Make<SequenceEditor>();
+					// TODO making Allocate automatically work in the current node would avoid this bug (Allocate instead of GetCurrentNode()->)
+					coed.SetSequence(ui::BuildAlloc<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
+					coed.itemUICallback = [](SequenceEditor* se, size_t idx, void* ptr)
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);
 						if (auto ncr = co.ncref.lock())
-							ctx->MakeWithText<BoxElement>(ncr->name) + SetPadding(5);
+							MakeWithText<BoxElement>(ncr->name) + SetPadding(5);
 						else
-							EditNCRef(ctx, co.ncref);
-						imm::EditColor(ctx, co.color, { SetWidth(40) });
+							EditNCRef(co.ncref);
+						imm::EditColor(co.color, { SetWidth(40) });
 					};
 
-					if (imm::Button(ctx, "Add override"))
+					if (imm::Button("Add override"))
 					{
 						std::vector<MenuItem> items;
 						for (auto& col : theme->curTemplate->colors)
@@ -242,10 +242,10 @@ struct TE_ImageEditorNode : Buildable
 						Menu(items).Show(this);
 					}
 				}
-				ctx->Pop();
+				Pop();
 			}
 		}
-		ctx->Pop();
+		Pop();
 	}
 };
 
@@ -256,61 +256,61 @@ struct TE_TemplateEditorNode : Buildable
 	TE_Theme* theme;
 	TE_Template* tmpl;
 
-	void Build(UIContainer* ctx) override
+	void Build() override
 	{
-		auto& hsp = ctx->Push<SplitPane>();
+		auto& hsp = Push<SplitPane>();
 		{
-			ctx->Push<ListBox>();
+			Push<ListBox>();
 			{
-				auto& pge = ctx->Make<ProcGraphEditor>();
+				auto& pge = Make<ProcGraphEditor>();
 				pge + SetHeight(Coord::Percent(100));
 				pge.Init(tmpl);
 			}
-			ctx->Pop();
+			Pop();
 
-			auto& ien = ctx->Make<TE_ImageEditorNode>();
+			auto& ien = Make<TE_ImageEditorNode>();
 			ien.theme = theme;
 			ien.tmpl = tmpl;
 
-			ctx->PushBox();
+			PushBox();
 			{
-				auto& vsp = ctx->Push<SplitPane>();
+				auto& vsp = Push<SplitPane>();
 				{
-					auto& preview = ctx->Make<TE_MainPreviewNode>();
+					auto& preview = Make<TE_MainPreviewNode>();
 					preview.tmpl = tmpl;
 
-					ctx->Push<PropertyList>()
+					Push<PropertyList>()
 						+ AddEventHandler(EventType::IMChange, [this](Event&) { tmpl->InvalidateAllNodes(); });
 					{
-						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
+						imm::EditBool(showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
 						if (showRenderSettings)
 						{
-							tmpl->renderSettings.UI(ctx);
+							tmpl->renderSettings.UI();
 						}
 
-						imm::EditBool(ctx, showColors, "Colors", {}, imm::TreeStateToggleSkin());
+						imm::EditBool(showColors, "Colors", {}, imm::TreeStateToggleSkin());
 						if (showColors)
 						{
-							auto& ced = ctx->Make<SequenceEditor>();
+							auto& ced = Make<SequenceEditor>();
 							ced + SetHeight(Coord::Percent(100));
 							ced.SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
-							ced.itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
+							ced.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 							{
 								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
-								imm::EditColor(ctx, NC->color);
-								imm::EditString(ctx, NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+								imm::EditColor(NC->color);
+								imm::EditString(NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
 							};
 						}
 					}
-					ctx->Pop();
+					Pop();
 				}
-				ctx->Pop();
+				Pop();
 				vsp.SetDirection(true);
 				vsp.SetSplits({ 0.5f });
 			}
-			ctx->Pop();
+			Pop();
 		}
-		ctx->Pop();
+		Pop();
 		hsp.SetSplits({ 0.6f, 0.8f });
 	}
 };
@@ -319,30 +319,30 @@ struct TE_ThemeEditorNode : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<MenuBarElement>();
+		Push<MenuBarElement>();
 		{
-			ctx->Push<MenuItemElement>().SetText("File");
+			Push<MenuItemElement>().SetText("File");
 			{
-				ctx->Make<MenuItemElement>().SetText("New").Func([this]() { theme->Clear(); Rebuild(); });
-				ctx->Make<MenuItemElement>().SetText("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); });
-				ctx->Make<MenuItemElement>().SetText("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); });
+				Make<MenuItemElement>().SetText("New").Func([this]() { theme->Clear(); Rebuild(); });
+				Make<MenuItemElement>().SetText("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); });
+				Make<MenuItemElement>().SetText("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); });
 			}
-			ctx->Pop();
+			Pop();
 		}
-		ctx->Pop();
+		Pop();
 
-		ctx->Push<TabGroup>() + SetHeight(Coord::Percent(100)) + SetLayout(layouts::EdgeSlice());
+		Push<TabGroup>() + SetHeight(Coord::Percent(100)) + SetLayout(layouts::EdgeSlice());
 		{
-			ctx->Push<TabButtonList>();
+			Push<TabButtonList>();
 			{
 				for (TE_Template* tmpl : theme->templates)
 				{
-					ctx->Push<TabButtonT<TE_Template*>>().Init(theme->curTemplate, tmpl);
+					Push<TabButtonT<TE_Template*>>().Init(theme->curTemplate, tmpl);
 					if (editNameTemplate != tmpl)
 					{
-						ctx->Text(tmpl->name).HandleEvent(EventType::Click) = [this, tmpl](Event& e)
+						Text(tmpl->name).HandleEvent(EventType::Click) = [this, tmpl](Event& e)
 						{
 							if (e.numRepeats == 2)
 							{
@@ -362,35 +362,34 @@ struct TE_ThemeEditorNode : Buildable
 							}
 						};
 						imm::EditString(
-							ctx,
 							tmpl->name.c_str(),
 							[tmpl](const char* v) { tmpl->name = v; },
 							{ SetWidth(100), AddEventHandler(efn) });
 					}
-					ctx->Pop();
+					Pop();
 				}
 			}
-			if (imm::Button(ctx, "+"))
+			if (imm::Button("+"))
 			{
 				auto* p = new TE_Template(theme);
 				p->name = "<name>";
 				theme->templates.push_back(p);
 			}
-			ctx->Pop();
+			Pop();
 
 			if (theme->curTemplate)
 			{
-				ctx->Push<TabPanel>() + SetHeight(Coord::Percent(100));
+				Push<TabPanel>() + SetHeight(Coord::Percent(100));
 				{
-					auto& pen = ctx->Make<TE_TemplateEditorNode>();
+					auto& pen = Make<TE_TemplateEditorNode>();
 					pen + SetHeight(Coord::Percent(100));
 					pen.theme = theme;
 					pen.tmpl = theme->curTemplate;
 				}
-				ctx->Pop();
+				Pop();
 			}
 		}
-		ctx->Pop();
+		Pop();
 	}
 
 	TE_Theme* theme;
@@ -404,13 +403,13 @@ struct ThemeEditorMainWindow : NativeMainWindow
 		SetTitle("Theme Editor");
 		SetSize(1280, 720);
 	}
-	void OnBuild(UIContainer* ctx) override
+	void OnBuild() override
 	{
-		auto& ten = ctx->Make<TE_ThemeEditorNode>();
+		auto& ten = Make<TE_ThemeEditorNode>();
 		ten + SetHeight(Coord::Percent(100));
 		ten.theme = &theme;
 
-		ctx->Make<DefaultOverlayBuilder>();
+		Make<DefaultOverlayBuilder>();
 	}
 
 	TE_Theme theme;

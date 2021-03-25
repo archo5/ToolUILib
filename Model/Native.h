@@ -96,7 +96,7 @@ struct NativeWindowBase
 	//NativeWindowBase(std::function<void(UIContainer*)> buildFunc);
 	~NativeWindowBase();
 
-	virtual void OnBuild(UIContainer* ctx) = 0;
+	virtual void OnBuild() = 0;
 	virtual void OnClose();
 	//void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
 
@@ -150,11 +150,11 @@ struct NativeWindowBase
 class NativeWindowBuildFunc : public NativeWindowBase
 {
 public:
-	void OnBuild(UIContainer* ctx) override;
-	void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
+	void OnBuild() override;
+	void SetBuildFunc(std::function<void()> buildFunc);
 
 private:
-	std::function<void(UIContainer*)> _buildFunc;
+	std::function<void()> _buildFunc;
 };
 
 class NativeMainWindow : public NativeWindowBase
@@ -176,7 +176,7 @@ public:
 class NativeWindowNode : public Buildable
 {
 public:
-	void Build(UIContainer* ctx) override {}
+	void Build() override {}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	Range2f GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return {}; }
 	Range2f GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return {}; }
@@ -247,11 +247,11 @@ public:
 		struct DefaultWindowWrapper : Node
 		{
 			NativeWindow* w = nullptr;
-			void Build(UIContainer* ctx) override
+			void Build() override
 			{
-				w = ctx->Push<NativeWindow>();
-				ctx->Make<T>();
-				ctx->Pop();
+				w = Push<NativeWindow>();
+				Make<T>();
+				Pop();
 			}
 		};
 		return system.Build<DefaultWindowWrapper>()->w;

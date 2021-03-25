@@ -63,15 +63,15 @@ struct TreeEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	virtual void OnBuildChildList(UIContainer* ctx, TreePath& path);
-	virtual void OnBuildList(UIContainer* ctx, TreePath& path);
-	virtual void OnBuildItem(UIContainer* ctx, TreePathRef path, void* data);
-	virtual void OnBuildDeleteButton(UIContainer* ctx);
+	virtual void OnBuildChildList(TreePath& path);
+	virtual void OnBuildList(TreePath& path);
+	virtual void OnBuildItem(TreePathRef path, void* data);
+	virtual void OnBuildDeleteButton();
 
 	ITree* GetTree() const { return _tree; }
 	TreeEditor& SetTree(ITree* t);
@@ -81,7 +81,7 @@ struct TreeEditor : Buildable
 	void _OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, Event& e);
 	void _OnDragDrop(TreeDragData* tdd);
 
-	std::function<void(UIContainer* ctx, TreeEditor* te, TreePathRef path, void* data)> itemUICallback;
+	std::function<void(TreeEditor* te, TreePathRef path, void* data)> itemUICallback;
 
 	bool showDeleteButton = true;
 

@@ -537,29 +537,29 @@ void MarkerDataSource::SetSelectionState(uintptr_t item, bool sel)
 }
 
 
-void MarkedItemEditor::Build(ui::UIContainer* ctx)
+void MarkedItemEditor::Build()
 {
 	Subscribe(DCT_Marker, marker);
-	ctx->Text("Marker");
+	ui::Text("Marker");
 
-	ctx->Push<ui::Panel>();
-	ui::imm::DropdownMenuList(ctx, marker->type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(typeNames));
-	ui::imm::PropEditInt(ctx, "Offset", marker->at);
-	ui::imm::PropEditInt(ctx, "Count", marker->count);
-	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
-	ui::imm::PropEditInt(ctx, "Stride", marker->stride);
+	ui::Push<ui::Panel>();
+	ui::imm::DropdownMenuList(marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
+	ui::imm::PropEditInt("Offset", marker->at);
+	ui::imm::PropEditInt("Count", marker->count);
+	ui::imm::PropEditInt("Repeats", marker->repeats);
+	ui::imm::PropEditInt("Stride", marker->stride);
 	unsigned bs = marker->bitstart;
-	if (ui::imm::PropEditInt(ctx, "Start bit", bs, {}, 1U, 0U, 64U))
+	if (ui::imm::PropEditInt("Start bit", bs, {}, 1U, 0U, 64U))
 		marker->bitstart = bs;
 	unsigned be = marker->bitend;
-	if (ui::imm::PropEditInt(ctx, "End bit", be, {}, 1U, 0U, 64U))
+	if (ui::imm::PropEditInt("End bit", be, {}, 1U, 0U, 64U))
 		marker->bitend = be;
-	ui::imm::PropEditBool(ctx, "Exclude zeroes", marker->excludeZeroes);
-	ui::imm::PropEditString(ctx, "Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
-	ctx->Pop();
+	ui::imm::PropEditBool("Exclude zeroes", marker->excludeZeroes);
+	ui::imm::PropEditString("Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
+	ui::Pop();
 
-	ctx->Push<ui::Panel>();
-	if (ui::imm::Button(ctx, "Analyze"))
+	ui::Push<ui::Panel>();
+	if (ui::imm::Button("Analyze"))
 	{
 		analysisData.results.clear();
 		if (marker->repeats <= 1)
@@ -578,7 +578,7 @@ void MarkedItemEditor::Build(ui::UIContainer* ctx)
 			}
 		}
 	}
-	if (marker->type == DT_F32 && marker->count == 3 && marker->repeats > 1 && ui::imm::Button(ctx, "Export points to .obj"))
+	if (marker->type == DT_F32 && marker->count == 3 && marker->repeats > 1 && ui::imm::Button("Export points to .obj"))
 	{
 		if (FILE* fp = fopen("positions.obj", "w"))
 		{
@@ -591,7 +591,7 @@ void MarkedItemEditor::Build(ui::UIContainer* ctx)
 			fclose(fp);
 		}
 	}
-	if (marker->type >= DT_I8 && marker->type <= DT_U64 && marker->count == 2 && marker->repeats > 1 && ui::imm::Button(ctx, "Export links to .dot"))
+	if (marker->type >= DT_I8 && marker->type <= DT_U64 && marker->count == 2 && marker->repeats > 1 && ui::imm::Button("Export links to .dot"))
 	{
 		if (FILE* fp = fopen("graph.dot", "w"))
 		{
@@ -614,7 +614,7 @@ void MarkedItemEditor::Build(ui::UIContainer* ctx)
 			fclose(fp);
 		}
 	}
-	if (ui::imm::Button(ctx, "Export data to CSV"))
+	if (ui::imm::Button("Export data to CSV"))
 	{
 		if (FILE* fp = fopen("marker.csv", "w"))
 		{
@@ -629,27 +629,27 @@ void MarkedItemEditor::Build(ui::UIContainer* ctx)
 	}
 	if (analysisData.results.size())
 	{
-		auto& tbl = ctx->Make<ui::TableView>();
+		auto& tbl = ui::Make<ui::TableView>();
 		tbl.GetStyle().SetHeight(analysisData.results.size() * 24 + 32);
 		tbl.SetDataSource(&analysisData);
 		tbl.CalculateColumnWidths();
 	}
-	ctx->Pop();
+	ui::Pop();
 }
 
 
-void MarkedItemsList::Build(ui::UIContainer* ctx)
+void MarkedItemsList::Build()
 {
 	Subscribe(DCT_MarkedItems, markerData);
-	ctx->Text("Edit marked items");
+	ui::Text("Edit marked items");
 	for (auto& m : markerData->markers)
 	{
-		ctx->Push<ui::Panel>();
-		ui::imm::PropDropdownMenuList(ctx, "Type", m.type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(typeNames));
-		ui::imm::PropEditInt(ctx, "Offset", m.at);
-		ui::imm::PropEditInt(ctx, "Count", m.count);
-		ui::imm::PropEditInt(ctx, "Repeats", m.repeats);
-		ui::imm::PropEditInt(ctx, "Stride", m.stride);
-		ctx->Pop();
+		ui::Push<ui::Panel>();
+		ui::imm::PropDropdownMenuList("Type", m.type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
+		ui::imm::PropEditInt("Offset", m.at);
+		ui::imm::PropEditInt("Count", m.count);
+		ui::imm::PropEditInt("Repeats", m.repeats);
+		ui::imm::PropEditInt("Stride", m.stride);
+		ui::Pop();
 	}
 }

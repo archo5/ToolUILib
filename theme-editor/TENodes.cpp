@@ -2,13 +2,13 @@
 #include "TENodes.h"
 
 
-void TE_Node::Preview::Build(UIContainer* ctx)
+void TE_Node::Preview::Build()
 {
 	Subscribe(DCT_NodePreviewInvalidated);
 	Subscribe(DCT_EditProcGraph);
 	Subscribe(DCT_EditProcGraphNode);
 
-	ctx->Make<ImageElement>()
+	Make<ImageElement>()
 		.SetImage(node->GetImage(rcp))
 		.SetScaleMode(ScaleMode::Fit)
 		.SetAlphaBackgroundEnabled(true)
@@ -17,9 +17,9 @@ void TE_Node::Preview::Build(UIContainer* ctx)
 		;
 }
 
-void TE_Node::PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp)
+void TE_Node::PreviewUI(TE_IRenderContextProvider* rcp)
 {
-	auto& preview = ctx->Make<Preview>();
+	auto& preview = Make<Preview>();
 	preview.node = this;
 	preview.rcp = rcp;
 }
@@ -74,31 +74,31 @@ void TE_MaskNode::Render(Canvas& canvas, const TE_RenderContext& rc)
 }
 
 
-void TE_RectMask::PropertyUI(UIContainer* ctx)
+void TE_RectMask::PropertyUI()
 {
 	{
-		ctx->Text("Anchors");
-		imm::PropEditFloatVec(ctx, "\bMin", &rect.anchors.x0, "XY", { SetMinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "\bMax", &rect.anchors.x1, "XY", { SetMinWidth(20) }, 0.01f);
+		Text("Anchors");
+		imm::PropEditFloatVec("\bMin", &rect.anchors.x0, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec("\bMax", &rect.anchors.x1, "XY", { SetMinWidth(20) }, 0.01f);
 	}
 	{
-		ctx->Text("Offsets");
-		imm::PropEditFloatVec(ctx, "\bMin", &rect.offsets.x0, "XY", { SetMinWidth(20) }, 0.5f);
-		imm::PropEditFloatVec(ctx, "\bMax", &rect.offsets.x1, "XY", { SetMinWidth(20) }, 0.5f);
+		Text("Offsets");
+		imm::PropEditFloatVec("\bMin", &rect.offsets.x0, "XY", { SetMinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec("\bMax", &rect.offsets.x1, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 	{
-		ctx->Text("Radius");
-		imm::PropEditBool(ctx, "\bUniform", crad.uniform);
+		Text("Radius");
+		imm::PropEditBool("\bUniform", crad.uniform);
 		if (crad.uniform)
 		{
-			imm::PropEditFloat(ctx, "\bRadius", crad.r);
+			imm::PropEditFloat("\bRadius", crad.r);
 		}
 		else
 		{
-			imm::PropEditFloat(ctx, "\bR(top-left)", crad.r00);
-			imm::PropEditFloat(ctx, "\bR(top-right)", crad.r10);
-			imm::PropEditFloat(ctx, "\bR(bottom-left)", crad.r01);
-			imm::PropEditFloat(ctx, "\bR(bottom-right)", crad.r11);
+			imm::PropEditFloat("\bR(top-left)", crad.r00);
+			imm::PropEditFloat("\bR(top-right)", crad.r10);
+			imm::PropEditFloat("\bR(bottom-left)", crad.r01);
+			imm::PropEditFloat("\bR(bottom-right)", crad.r11);
 		}
 	}
 }
@@ -132,17 +132,17 @@ float TE_MaskRef::Eval(float x, float y, const TE_RenderContext& rc)
 	return EvalAARoundedRectMask(x, y, rr, cr);
 }
 
-void TE_MaskRef::UI(UIContainer* ctx)
+void TE_MaskRef::UI()
 {
 	if (mask)
 		return;
-	auto& pl = ctx->Push<PropertyList>();
+	auto& pl = Push<PropertyList>();
 	pl.splitPos = Coord::Percent(30);
 	pl.minSplitPos = 50;
-	imm::PropEditInt(ctx, "Border", border, { SetMinWidth(20) });
-	imm::PropEditInt(ctx, "Radius", radius, { SetMinWidth(20) });
-	imm::PropEditInt(ctx, "V.bias", vbias, { SetMinWidth(20) });
-	ctx->Pop();
+	imm::PropEditInt("Border", border, { SetMinWidth(20) });
+	imm::PropEditInt("Radius", radius, { SetMinWidth(20) });
+	imm::PropEditInt("V.bias", vbias, { SetMinWidth(20) });
+	Pop();
 }
 
 void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
@@ -156,14 +156,14 @@ void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-void TE_CombineMask::PropertyUI(UIContainer* ctx)
+void TE_CombineMask::PropertyUI()
 {
-	imm::RadioButton(ctx, mode, TEMCM_Intersect, "Intersect");
-	imm::RadioButton(ctx, mode, TEMCM_Union, "Union");
-	imm::RadioButton(ctx, mode, TEMCM_SoftDifference, "Difference (soft)");
-	imm::RadioButton(ctx, mode, TEMCM_HardDifference, "Difference (hard)");
-	imm::RadioButton(ctx, mode, TEMCM_AMinusB, "A-B");
-	imm::RadioButton(ctx, mode, TEMCM_BMinusA, "B-A");
+	imm::RadioButton(mode, TEMCM_Intersect, "Intersect");
+	imm::RadioButton(mode, TEMCM_Union, "Union");
+	imm::RadioButton(mode, TEMCM_SoftDifference, "Difference (soft)");
+	imm::RadioButton(mode, TEMCM_HardDifference, "Difference (hard)");
+	imm::RadioButton(mode, TEMCM_AMinusB, "A-B");
+	imm::RadioButton(mode, TEMCM_BMinusA, "B-A");
 }
 
 void TE_CombineMask::Serialize(IObjectIterator& oi)
@@ -212,9 +212,9 @@ void TE_LayerNode::Render(Canvas& canvas, const TE_RenderContext& rc)
 }
 
 
-void TE_SolidColorLayer::PropertyUI(UIContainer* ctx)
+void TE_SolidColorLayer::PropertyUI()
 {
-	color.UI(ctx);
+	color.UI();
 }
 
 void TE_SolidColorLayer::Serialize(IObjectIterator& oi)
@@ -237,19 +237,19 @@ Color4f TE_SolidColorLayer::Eval(float x, float y, const TE_RenderContext& rc)
 }
 
 
-void TE_2ColorLinearGradientColorLayer::PropertyUI(UIContainer* ctx)
+void TE_2ColorLinearGradientColorLayer::PropertyUI()
 {
-	color0.UI(ctx);
-	color1.UI(ctx);
+	color0.UI();
+	color1.UI();
 	{
-		ctx->Text("Start pos.");
-		imm::PropEditFloatVec(ctx, "Anchor", &pos0.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "Offset", &pos0.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
+		Text("Start pos.");
+		imm::PropEditFloatVec("Anchor", &pos0.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec("Offset", &pos0.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 	{
-		ctx->Text("End pos.");
-		imm::PropEditFloatVec(ctx, "Anchor", &pos1.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "Offset", &pos1.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
+		Text("End pos.");
+		imm::PropEditFloatVec("Anchor", &pos1.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec("Offset", &pos1.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 }
 
@@ -294,15 +294,15 @@ void TE_LayerBlendRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-void TE_BlendLayer::InputPinUI(int pin, UIContainer* ctx)
+void TE_BlendLayer::InputPinUI(int pin)
 {
-	imm::EditBool(ctx, layers[pin].enabled, nullptr);
-	imm::PropEditFloat(ctx, "\bO", layers[pin].opacity);
+	imm::EditBool(layers[pin].enabled, nullptr);
+	imm::PropEditFloat("\bO", layers[pin].opacity);
 }
 
-void TE_BlendLayer::PropertyUI(UIContainer* ctx)
+void TE_BlendLayer::PropertyUI()
 {
-	if (imm::Button(ctx, "Add pin"))
+	if (imm::Button("Add pin"))
 		layers.push_back({});
 }
 

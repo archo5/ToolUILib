@@ -247,18 +247,62 @@ struct UIContainer
 	UIObjectDirtyStack layoutStack{ UIObject_IsInLayoutStack };
 
 	bool lastIsNew = false;
+
+	static UIContainer* GetCurrent();
 };
+
+
+void Pop();
+template <class T, class = typename T::IsBuildable> inline T& Make(decltype(bool()) = 0)
+{
+	return UIContainer::GetCurrent()->Make<T>();
+}
+template <class T, class = typename T::IsElement> inline T& Make(decltype(char()) = 0)
+{
+	return UIContainer::GetCurrent()->Make<T>();
+}
+template <class T, class = typename T::IsElement> inline T& MakeWithText(StringView text)
+{
+	return UIContainer::GetCurrent()->MakeWithText<T>(text);
+}
+template <class T, class = typename T::IsElement> inline T& MakeWithTextVA(const char* fmt, va_list args)
+{
+	return UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
+}
+template <class T, class = typename T::IsElement> inline T& MakeWithTextf(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	auto& ret = UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
+	va_end(args);
+	return ret;
+}
+template <class T, class = typename T::IsElement> T& Push()
+{
+	return UIContainer::GetCurrent()->Push<T>();
+}
+BoxElement& PushBox();
+TextElement& Text(StringView s);
+TextElement& TextVA(const char* fmt, va_list args);
+TextElement& Textf(const char* fmt, ...);
+template <class T, class... Args> T* BuildAlloc(Args&&... args)
+{
+	return UIContainer::GetCurrent()->GetCurrentBuildable()->Allocate<T, Args...>(args...);
+}
+void RebuildCurrent();
+Buildable* GetCurrentBuildable();
+bool LastIsNew();
 
 
 class BuildCallback : public Buildable
 {
 public:
-	void Build(UIContainer* ctx) override
+	void Build() override
 	{
-		buildFunc(ctx);
+		buildFunc();
 	}
 
-	std::function<void(UIContainer*)> buildFunc;
+	std::function<void()> buildFunc;
 };
 
 struct Overlays
@@ -282,9 +326,10 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
-typedef Buildable* BuildableAllocFunc(UIContainer*);
-template <class T> inline Buildable* BuildableAlloc(UIContainer* ctx)
+typedef Buildable* BuildableAllocFunc();
+template <class T> inline Buildable* BuildableAlloc()
 {
+	auto* ctx = UIContainer::GetCurrent();
 	return ctx->AllocIfDifferent<T>(ctx->rootBuildable);
 }
 
@@ -317,10 +362,10 @@ public:
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayoutChanged() override;
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	void SetFrameContents(FrameContents* contents);
-	void CreateFrameContents(std::function<void(UIContainer* ctx)> buildFunc);
+	void CreateFrameContents(std::function<void()> buildFunc);
 
 private:
 

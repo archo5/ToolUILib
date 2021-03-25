@@ -48,71 +48,71 @@ struct SequenceEditorsTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
-		if (ui::imm::Button(ctx, "Reset"))
+		if (ui::imm::Button("Reset"))
 		{
 			vectordata = { 1, 2, 3, 4 };
 			listdata = { 1, 2, 3, 4 };
 			dequedata = { 1, 2, 3, 4 };
 		}
-		if (ui::imm::Button(ctx, "100 values"))
+		if (ui::imm::Button("100 values"))
 			AdjustSizeAll(100);
-		if (ui::imm::Button(ctx, "1000 values"))
+		if (ui::imm::Button("1000 values"))
 			AdjustSizeAll(1000);
-		if (ui::imm::Button(ctx, "10000 values"))
+		if (ui::imm::Button("10000 values"))
 			AdjustSizeAll(10000);
 
-		ctx->Pop();
+		ui::Pop();
 
 		{
-			ui::Property::Scope ps(ctx, "\bSelection type:");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::None, "None");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Single, "Single");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
-			ui::imm::EditBool(ctx, setSelectionStorage, "Storage");
+			ui::Property::Scope ps("\bSelection type:");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::imm::EditBool(setSelectionStorage, "Storage");
 		}
 
-		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
-		ctx->Text("std::vector<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Text("std::vector<int>:");
+		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
-		ctx->Text("std::list<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Text("std::list<int>:");
+		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
-		ctx->Text("std::deque<int>:");
-		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Text("std::deque<int>:");
+		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
-		ctx->Text("int[5]:");
-		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Text("int[5]:");
+		SeqEdit(Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Make<ui::DefaultOverlayBuilder>();
+		ui::Make<ui::DefaultOverlayBuilder>();
 	}
 
-	void SeqEdit(ui::UIContainer* ctx, ui::ISequence* seq, ui::ISelectionStorage* sel)
+	void SeqEdit(ui::ISequence* seq, ui::ISelectionStorage* sel)
 	{
-		ctx->Make<ui::SequenceEditor>()
+		ui::Make<ui::SequenceEditor>()
 			.SetSequence(seq)
 			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
 			.SetContextMenuSource(&g_infoDumpCMS)
-			.itemUICallback = [](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
-			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(ptr));
+			ui::imm::PropEditInt("\bvalue", *static_cast<int*>(ptr));
 		};
 	}
 
@@ -144,9 +144,9 @@ struct SequenceEditorsTest : ui::Buildable
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
 	bool setSelectionStorage = true;
 };
-void Test_SequenceEditors(ui::UIContainer* ctx)
+void Test_SequenceEditors()
 {
-	ctx->Make<SequenceEditorsTest>();
+	ui::Make<SequenceEditorsTest>();
 }
 
 
@@ -461,80 +461,80 @@ struct TreeEditorsTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		{
-			ui::Property::Scope ps(ctx);
-			if (ui::imm::Button(ctx, "Default"))
+			ui::Property::Scope ps;
+			if (ui::imm::Button("Default"))
 			{
 				cpaTree.SetDefault();
 				cvaTree.SetDefault();
 			}
-			if (ui::imm::Button(ctx, "Flat 10"))
+			if (ui::imm::Button("Flat 10"))
 			{
 				cpaTree.SetFlat(10);
 				cvaTree.SetFlat(10);
 			}
-			if (ui::imm::Button(ctx, "Flat 100"))
+			if (ui::imm::Button("Flat 100"))
 			{
 				cpaTree.SetFlat(100);
 				cvaTree.SetFlat(100);
 			}
-			if (ui::imm::Button(ctx, "Flat 1K"))
+			if (ui::imm::Button("Flat 1K"))
 			{
 				cpaTree.SetFlat(1000);
 				cvaTree.SetFlat(1000);
 			}
-			if (ui::imm::Button(ctx, "Branchy 2"))
+			if (ui::imm::Button("Branchy 2"))
 			{
 				cpaTree.SetBranchy(2);
 				cvaTree.SetBranchy(2);
 			}
-			if (ui::imm::Button(ctx, "Branchy 4"))
+			if (ui::imm::Button("Branchy 4"))
 			{
 				cpaTree.SetBranchy(4);
 				cvaTree.SetBranchy(4);
 			}
-			if (ui::imm::Button(ctx, "Branchy 8"))
+			if (ui::imm::Button("Branchy 8"))
 			{
 				cpaTree.SetBranchy(8);
 				cvaTree.SetBranchy(8);
 			}
 		};
 
-		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
-		ctx->Text("child pointer array:");
-		TreeEdit(ctx, &cpaTree);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		ui::Text("child pointer array:");
+		TreeEdit(&cpaTree);
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
-		ctx->Text("child value array:");
-		TreeEdit(ctx, &cvaTree);
-		ctx->Pop();
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		ui::Text("child value array:");
+		TreeEdit(&cvaTree);
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Make<ui::DefaultOverlayBuilder>();
+		ui::Make<ui::DefaultOverlayBuilder>();
 	}
 
-	void TreeEdit(ui::UIContainer* ctx, ui::ITree* itree)
+	void TreeEdit(ui::ITree* itree)
 	{
-		ctx->Make<ui::TreeEditor>()
+		ui::Make<ui::TreeEditor>()
 			.SetTree(itree)
-			.itemUICallback = [](ui::UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
+			.itemUICallback = [](ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
-			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(data));
+			ui::imm::PropEditInt("\bvalue", *static_cast<int*>(data));
 		};
 	}
 
 	cpa::Tree cpaTree;
 	cva::Tree cvaTree;
 };
-void Test_TreeEditors(ui::UIContainer* ctx)
+void Test_TreeEditors()
 {
-	ctx->Make<TreeEditorsTest>();
+	ui::Make<TreeEditorsTest>();
 }
 
 
@@ -567,19 +567,19 @@ struct TableViewTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		GetStyle().SetLayout(ui::layouts::EdgeSlice());
 
 		{
-			ui::Property::Scope ps(ctx, "\bSelection type:");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::None, "None");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Single, "Single");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
-			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::Property::Scope ps("\bSelection type:");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
 		}
 
-		auto& tv = ctx->Make<ui::TableView>();
+		auto& tv = ui::Make<ui::TableView>();
 		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetSelectionMode(selectionType);
 		tv.SetSelectionStorage(&g_randomNumbers);
@@ -589,9 +589,9 @@ struct TableViewTest : ui::Buildable
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
 };
-void Test_TableView(ui::UIContainer* ctx)
+void Test_TableView()
 {
-	ctx->Make<TableViewTest>();
+	ui::Make<TableViewTest>();
 }
 
 
@@ -683,40 +683,40 @@ struct MessageLogViewTest : ui::Buildable
 			mlvI->ScrollToEnd();
 	}
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		{
-			ui::Property::Scope ps(ctx);
-			if (ui::imm::Button(ctx, "Clear"))
+			ui::Property::Scope ps;
+			if (ui::imm::Button("Clear"))
 				messages.clear();
-			if (ui::imm::Button(ctx, "Add 1 line"))
+			if (ui::imm::Button("Add 1 line"))
 				AddMessages(1);
-			if (ui::imm::Button(ctx, "Add 10"))
+			if (ui::imm::Button("Add 10"))
 				AddMessages(10);
-			if (ui::imm::Button(ctx, "Add 100"))
+			if (ui::imm::Button("Add 100"))
 				AddMessages(100);
-			if (ui::imm::Button(ctx, "Add 1K"))
+			if (ui::imm::Button("Add 1K"))
 				AddMessages(1000);
-			if (ui::imm::Button(ctx, "Add 10K"))
+			if (ui::imm::Button("Add 10K"))
 				AddMessages(10000);
 		};
-		ctx->PushBox()
+		ui::PushBox()
 			+ ui::Set(ui::StackingDirection::LeftToRight)
 			//+ ui::SetHeight(ui::Coord::Percent(50));
 			+ ui::SetHeight(200);
 		{
-			ctx->PushBox()
+			ui::PushBox()
 				+ ui::SetLayout(ui::layouts::EdgeSlice())
 				+ ui::SetWidth(ui::Coord::Percent(50))
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
-				ctx->Text("single line");
-				ctx->Push<ui::ListBox>()
+				ui::Text("single line");
+				ui::Push<ui::ListBox>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_R>();
 					rds->msgs = &messages;
-					auto& mlv = ctx->Make<ui::MessageLogView>();
+					auto& mlv = ui::Make<ui::MessageLogView>();
 					mlv + ui::SetHeight(ui::Coord::Percent(100));
 					mlv.GetLivenessToken();
 					mlv.SetDataSource(rds);
@@ -724,33 +724,33 @@ struct MessageLogViewTest : ui::Buildable
 					mlvR = &mlv;
 					mlvRtoken = mlv.GetLivenessToken();
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->PushBox()
+			ui::PushBox()
 				+ ui::SetLayout(ui::layouts::EdgeSlice())
 				+ ui::SetWidth(ui::Coord::Percent(50))
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
-				ctx->Text("two lines, custom drawing");
-				ctx->Push<ui::ListBox>()
+				ui::Text("two lines, custom drawing");
+				ui::Push<ui::ListBox>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_I>();
 					rds->msgs = &messages;
-					auto& mlv = ctx->Make<ui::MessageLogView>();
+					auto& mlv = ui::Make<ui::MessageLogView>();
 					mlv + ui::SetHeight(ui::Coord::Percent(100));
 					mlv.SetDataSource(rds);
 
 					mlvI = &mlv;
 					mlvItoken = mlv.GetLivenessToken();
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 
 	std::vector<Message> messages;
@@ -760,7 +760,7 @@ struct MessageLogViewTest : ui::Buildable
 	ui::LivenessToken mlvItoken;
 	ui::MessageLogView* mlvI;
 };
-void Test_MessageLogView(ui::UIContainer* ctx)
+void Test_MessageLogView()
 {
-	ctx->Make<MessageLogViewTest>();
+	ui::Make<MessageLogViewTest>();
 }

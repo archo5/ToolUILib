@@ -2,18 +2,18 @@
 #include "TETheme.h"
 
 
-void TE_TmplSettings::UI(UIContainer* ctx)
+void TE_TmplSettings::UI()
 {
 	{
-		LabeledProperty::Scope ps(ctx, "Size");
-		imm::PropEditInt(ctx, "\bW", w, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
-		imm::PropEditInt(ctx, "\bH", h, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		LabeledProperty::Scope ps("Size");
+		imm::PropEditInt("\bW", w, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		imm::PropEditInt("\bH", h, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 	}
-	imm::PropEditInt(ctx, "Left", l, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "Right", r, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "Top", t, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt(ctx, "Bottom", b, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditBool(ctx, "Gamma", gamma);
+	imm::PropEditInt("Left", l, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt("Right", r, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt("Top", t, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt("Bottom", b, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditBool("Gamma", gamma);
 }
 
 void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
@@ -206,11 +206,11 @@ Color4b TE_Template::GetPinColor(const Pin& pin)
 		return GetColorByType(static_cast<TE_Node*>(pin.end.node)->GetInputPinType(pin.end.num));
 }
 
-void TE_Template::InputPinEditorUI(const Pin& pin, UIContainer* ctx)
+void TE_Template::InputPinEditorUI(const Pin& pin)
 {
 	if (pin.isOutput)
 		return;
-	static_cast<TE_Node*>(pin.end.node)->InputPinUI(pin.end.num, ctx);
+	static_cast<TE_Node*>(pin.end.node)->InputPinUI(pin.end.num);
 }
 
 void TE_Template::UnlinkPin(const Pin& pin)

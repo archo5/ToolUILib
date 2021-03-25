@@ -24,7 +24,7 @@ struct MessageLogView : Buildable
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	MessageLogDataSource* GetDataSource() const;
 	void SetDataSource(MessageLogDataSource* src);
@@ -59,7 +59,7 @@ struct TableView : Buildable
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
@@ -108,7 +108,7 @@ struct TreeView : Buildable
 	void OnPaint() override;
 	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
 	void OnEvent(Event& e) override;
-	void Build(UIContainer* ctx) override;
+	void Build() override;
 
 	TreeDataSource* GetDataSource() const;
 	void SetDataSource(TreeDataSource* src);

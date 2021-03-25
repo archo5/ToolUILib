@@ -9,39 +9,39 @@ struct BasicEasingAnimTest : ui::Buildable
 		animPlayer.onAnimUpdate = [this]() { Rebuild(); };
 		anim = std::make_shared<ui::AnimEaseLinear>("test", 123, 1);
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ui::Property::Begin(ctx, "Control");
-		if (ui::imm::Button(ctx, "Play"))
+		ui::Property::Begin("Control");
+		if (ui::imm::Button("Play"))
 		{
 			animPlayer.SetVariable("test", 0);
 			animPlayer.PlayAnim(anim);
 		}
-		if (ui::imm::Button(ctx, "Stop"))
+		if (ui::imm::Button("Stop"))
 		{
 			animPlayer.StopAnim(anim);
 		}
-		ctx->MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
-		ui::Property::End(ctx);
+		ui::MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
+		ui::Property::End();
 		sliderVal = animPlayer.GetVariable("test");
-		ctx->Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });
+		ui::Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });
 	}
 
 	ui::AnimPlayer animPlayer;
 	ui::AnimPtr anim;
 	float sliderVal = 0;
 };
-void Test_BasicEasingAnim(ui::UIContainer* ctx)
+void Test_BasicEasingAnim()
 {
-	ctx->Make<BasicEasingAnimTest>();
+	ui::Make<BasicEasingAnimTest>();
 }
 
 
 struct ThreadWorkerTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->MakeWithText<ui::Button>("Do it").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
+		ui::MakeWithText<ui::Button>("Do it").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 		{
 			wq.Push([this]()
 			{
@@ -59,7 +59,7 @@ struct ThreadWorkerTest : ui::Buildable
 				}
 			}, true);
 		};
-		auto& pb = ctx->MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
+		auto& pb = ui::MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
 		pb.progress = progress;
 	}
 
@@ -67,9 +67,9 @@ struct ThreadWorkerTest : ui::Buildable
 
 	ui::WorkerQueue wq;
 };
-void Test_ThreadWorker(ui::UIContainer* ctx)
+void Test_ThreadWorker()
 {
-	ctx->Make<ThreadWorkerTest>();
+	ui::Make<ThreadWorkerTest>();
 }
 
 
@@ -79,11 +79,11 @@ struct ThreadedImageRenderingTest : ui::Buildable
 	{
 		delete image;
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
 
-		auto& img = ctx->Make<ui::ImageElement>();
+		auto& img = ui::Make<ui::ImageElement>();
 		img.GetStyle().SetWidth(ui::Coord::Percent(100));
 		img.GetStyle().SetHeight(ui::Coord::Percent(100));
 		img.SetScaleMode(ui::ScaleMode::Fill);
@@ -135,9 +135,9 @@ struct ThreadedImageRenderingTest : ui::Buildable
 	ui::WorkerQueue wq;
 	ui::Image* image = nullptr;
 };
-void Test_ThreadedImageRendering(ui::UIContainer* ctx)
+void Test_ThreadedImageRendering()
 {
-	ctx->Make<ThreadedImageRenderingTest>();
+	ui::Make<ThreadedImageRenderingTest>();
 }
 
 
@@ -148,31 +148,31 @@ struct OSCommunicationTest : ui::Buildable
 		animReq.callback = [this]() { Rebuild(); };
 		animReq.BeginAnimation();
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		{
-			ui::Property::Scope ps(ctx, "\bClipboard");
+			ui::Property::Scope ps("\bClipboard");
 			bool hasText = ui::Clipboard::HasText();
-			ui::imm::EditBool(ctx, hasText, nullptr, { ui::Enable(false) });
-			ui::imm::EditString(ctx, clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
-			if (ui::imm::Button(ctx, "Read", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
+			ui::imm::EditBool(hasText, nullptr, { ui::Enable(false) });
+			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
+			if (ui::imm::Button("Read", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
 				clipboardData = ui::Clipboard::GetText();
-			if (ui::imm::Button(ctx, "Write", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
+			if (ui::imm::Button("Write", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
 				ui::Clipboard::SetText(clipboardData);
 		}
 
-		ctx->Textf("time (ms): %u, double click time (ms): %u",
+		ui::Textf("time (ms): %u, double click time (ms): %u",
 			unsigned(ui::platform::GetTimeMs()),
 			unsigned(ui::platform::GetDoubleClickTime())) + ui::SetPadding(5);
 
 		auto pt = ui::platform::GetCursorScreenPos();
 		auto col = ui::platform::GetColorAtScreenPos(pt);
-		ctx->Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
+		ui::Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
 			pt.x, pt.y,
 			col.r, col.g, col.b, col.a) + ui::SetPadding(5);
-		ctx->Make<ui::ColorInspectBlock>().SetColor(col);
+		ui::Make<ui::ColorInspectBlock>().SetColor(col);
 
-		if (ui::imm::Button(ctx, "Show error message"))
+		if (ui::imm::Button("Show error message"))
 			ui::platform::ShowErrorMessage("Error", "Message");
 	}
 
@@ -180,72 +180,72 @@ struct OSCommunicationTest : ui::Buildable
 
 	std::string clipboardData;
 };
-void Test_OSCommunication(ui::UIContainer* ctx)
+void Test_OSCommunication()
 {
-	ctx->Make<OSCommunicationTest>();
+	ui::Make<OSCommunicationTest>();
 }
 
 
 struct FileSelectionWindowTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Text("Check for change");
-		ui::imm::PropText(ctx, "Current working directory", ui::GetWorkingDirectory().c_str());
+		ui::Text("Check for change");
+		ui::imm::PropText("Current working directory", ui::GetWorkingDirectory().c_str());
 
-		ctx->Text("Inputs");
-		ui::Property::Begin(ctx, "Filters");
-		ctx->PushBox();
+		ui::Text("Inputs");
+		ui::Property::Begin("Filters");
+		ui::PushBox();
 		{
-			auto& se = ctx->Make<ui::SequenceEditor>();
+			auto& se = ui::Make<ui::SequenceEditor>();
 			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.filters)>>(fsw.filters));
-			se.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* filter = static_cast<ui::FileSelectionWindow::Filter*>(ptr);
-				ui::imm::PropEditString(ctx, "\bName", filter->name.c_str(), [filter](const char* v) { filter->name = v; });
-				ui::imm::PropEditString(ctx, "\bExts", filter->exts.c_str(), [filter](const char* v) { filter->exts = v; });
+				ui::imm::PropEditString("\bName", filter->name.c_str(), [filter](const char* v) { filter->name = v; });
+				ui::imm::PropEditString("\bExts", filter->exts.c_str(), [filter](const char* v) { filter->exts = v; });
 			};
-			if (ui::imm::Button(ctx, "Add"))
+			if (ui::imm::Button("Add"))
 				fsw.filters.push_back({});
 		}
-		ctx->Pop();
-		ui::Property::End(ctx);
+		ui::Pop();
+		ui::Property::End();
 
-		ui::imm::PropEditString(ctx, "Default extension", fsw.defaultExt.c_str(), [&](const char* s) { fsw.defaultExt = s; });
-		ui::imm::PropEditString(ctx, "Title", fsw.title.c_str(), [&](const char* s) { fsw.title = s; });
-		ui::Property::Begin(ctx, "Options");
-		ui::imm::EditFlag(ctx, fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::imm::ButtonStateToggleSkin());
-		ui::imm::EditFlag(ctx, fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::imm::ButtonStateToggleSkin());
-		ui::Property::End(ctx);
+		ui::imm::PropEditString("Default extension", fsw.defaultExt.c_str(), [&](const char* s) { fsw.defaultExt = s; });
+		ui::imm::PropEditString("Title", fsw.title.c_str(), [&](const char* s) { fsw.title = s; });
+		ui::Property::Begin("Options");
+		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::imm::ButtonStateToggleSkin());
+		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::imm::ButtonStateToggleSkin());
+		ui::Property::End();
 
-		ctx->Text("Inputs / outputs");
-		ui::imm::PropEditString(ctx, "Current directory", fsw.currentDir.c_str(), [&](const char* s) { fsw.currentDir = s; });
-		ui::Property::Begin(ctx, "Selected files");
-		ctx->PushBox();
+		ui::Text("Inputs / outputs");
+		ui::imm::PropEditString("Current directory", fsw.currentDir.c_str(), [&](const char* s) { fsw.currentDir = s; });
+		ui::Property::Begin("Selected files");
+		ui::PushBox();
 		{
-			auto& se = ctx->Make<ui::SequenceEditor>();
+			auto& se = ui::Make<ui::SequenceEditor>();
 			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.selectedFiles)>>(fsw.selectedFiles));
-			se.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* file = static_cast<std::string*>(ptr);
-				ui::imm::PropEditString(ctx, "\bFile", file->c_str(), [file](const char* v) { *file = v; });
+				ui::imm::PropEditString("\bFile", file->c_str(), [file](const char* v) { *file = v; });
 			};
-			if (ui::imm::Button(ctx, "Add"))
+			if (ui::imm::Button("Add"))
 				fsw.selectedFiles.push_back({});
 		}
-		ctx->Pop();
-		ui::Property::End(ctx);
+		ui::Pop();
+		ui::Property::End();
 
-		ctx->Text("Controls");
-		ui::Property::Begin(ctx, "Open file selection window");
-		if (ui::imm::Button(ctx, "Open"))
+		ui::Text("Controls");
+		ui::Property::Begin("Open file selection window");
+		if (ui::imm::Button("Open"))
 			Show(false);
-		if (ui::imm::Button(ctx, "Save"))
+		if (ui::imm::Button("Save"))
 			Show(true);
-		ui::Property::End(ctx);
+		ui::Property::End();
 
-		ctx->Text("Outputs");
-		ui::imm::PropText(ctx, "Last returned value", lastRet);
+		ui::Text("Outputs");
+		ui::imm::PropText("Last returned value", lastRet);
 	}
 
 	void Show(bool save)
@@ -257,8 +257,8 @@ struct FileSelectionWindowTest : ui::Buildable
 
 	const char* lastRet = "-";
 };
-void Test_FileSelectionWindow(ui::UIContainer* ctx)
+void Test_FileSelectionWindow()
 {
-	ctx->Make<FileSelectionWindowTest>();
+	ui::Make<FileSelectionWindowTest>();
 }
 

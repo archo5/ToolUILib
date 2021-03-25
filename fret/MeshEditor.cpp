@@ -5,16 +5,16 @@
 #include "../Render/RHI.h"
 
 
-void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
+void MeshEditorWindowNode::Build()
 {
-	auto& sp1 = ctx->Push<ui::SplitPane>();
+	auto& sp1 = ui::Push<ui::SplitPane>();
 	{
-		auto& sp2 = ctx->Push<ui::SplitPane>();
+		auto& sp2 = ui::Push<ui::SplitPane>();
 		{
-			ctx->Push<ui::Panel>();
+			ui::Push<ui::Panel>();
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
-				auto& view3d = ctx->Push<ui::View3D>();
+				auto& view3d = ui::Push<ui::View3D>();
 				view3d + ui::SetWidth(ui::Coord::Percent(100));
 				view3d + ui::SetHeight(ui::Coord::Percent(100));
 				view3d + ui::SetLayout(ui::layouts::EdgeSlice());
@@ -28,48 +28,48 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
 				{
-					ctx->Push<ui::ListBox>()
+					ui::Push<ui::ListBox>()
 						+ ui::Set(ui::Edge::Left)
 						+ ui::SetWidth(200);
 					{
-						ui::imm::PropEditBool(ctx, "Alpha blend", alphaBlend);
-						ui::imm::PropEditBool(ctx, "Cull", cull);
-						ui::imm::PropEditBool(ctx, "Use texture", useTexture);
-						ui::imm::PropEditBool(ctx, "Draw wireframe", drawWireframe);
-						ui::imm::PropEditColor(ctx, "Wire color", wireColor);
+						ui::imm::PropEditBool("Alpha blend", alphaBlend);
+						ui::imm::PropEditBool("Cull", cull);
+						ui::imm::PropEditBool("Use texture", useTexture);
+						ui::imm::PropEditBool("Draw wireframe", drawWireframe);
+						ui::imm::PropEditColor("Wire color", wireColor);
 					}
-					ctx->Pop();
+					ui::Pop();
 
-					ctx->PushBox()
+					ui::PushBox()
 						+ ui::Set(ui::Edge::Right)
 						+ ui::SetWidth(200);
 					{
-						if (ui::imm::Button(ctx, "Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
+						if (ui::imm::Button("Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
 						{
 							ReloadMesh();
 						}
 					}
-					ctx->Pop();
+					ui::Pop();
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->PushBox();
+			ui::PushBox();
 			if (structDef)
 			{
-				mesh->script.EditUI(ctx);
+				mesh->script.EditUI();
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ctx->PushBox();
+		ui::PushBox();
 		if (ddiSrc.dataDesc)
 		{
-			auto& tv = ctx->Make<ui::TableView>();
+			auto& tv = ui::Make<ui::TableView>();
 			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
@@ -83,9 +83,9 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 					ReloadMesh();
 			};
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	sp1.SetDirection(false);
 	sp1.SetSplits({ 0.6f });
 }

@@ -120,13 +120,13 @@ struct TrackEditorDemo : ui::Buildable
 		ui::SubUI<uint32_t> subui;
 		float dx, dy;
 	};
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Make<TrackEditor>();
+		ui::Make<TrackEditor>();
 	}
 };
-void Demo_TrackEditor(ui::UIContainer* ctx)
+void Demo_TrackEditor()
 {
-	ctx->Make<TrackEditorDemo>();
+	ui::Make<TrackEditorDemo>();
 }
 

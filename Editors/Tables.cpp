@@ -106,7 +106,7 @@ void MessageLogView::OnSerialize(IDataSerializer& s)
 	//selection.OnSerialize(s);
 }
 
-void MessageLogView::Build(UIContainer* ctx)
+void MessageLogView::Build()
 {
 }
 
@@ -388,7 +388,7 @@ void TableView::OnSerialize(IDataSerializer& s)
 	_impl->sel.OnSerialize(s);
 }
 
-void TableView::Build(UIContainer* ctx)
+void TableView::Build()
 {
 }
 
@@ -685,7 +685,7 @@ void TreeView::OnEvent(Event& e)
 	}
 }
 
-void TreeView::Build(UIContainer* ctx)
+void TreeView::Build()
 {
 }
 

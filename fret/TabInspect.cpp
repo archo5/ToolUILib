@@ -6,13 +6,13 @@
 #include "Workspace.h"
 
 
-void TabInspect::Build(ui::UIContainer* ctx)
+void TabInspect::Build()
 {
 	Subscribe(DCT_HexViewerState, &of->hexViewerState);
 
-	auto& spmkr = ctx->Push<ui::SplitPane>();
+	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ctx->PushBox();
+		ui::PushBox();
 
 		auto pos = of->hexViewerState.hoverByte;
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
@@ -44,24 +44,24 @@ void TabInspect::Build(ui::UIContainer* ctx)
 		char txt_float64[32];
 		ds->GetFloat64Text(txt_float64, 32, pos);
 
-		ui::imm::PropText(ctx, "i8", txt_int8);
-		ui::imm::PropText(ctx, "u8", txt_uint8);
-		ui::imm::PropText(ctx, "i16", txt_int16);
-		ui::imm::PropText(ctx, "u16", txt_uint16);
-		ui::imm::PropText(ctx, "i32", txt_int32);
-		ui::imm::PropText(ctx, "u32", txt_uint32);
-		ui::imm::PropText(ctx, "i64", txt_int64);
-		ui::imm::PropText(ctx, "u64", txt_uint64);
-		ui::imm::PropText(ctx, "f32", txt_float32);
-		ui::imm::PropText(ctx, "f64", txt_float64);
-		ui::imm::PropText(ctx, "ASCII", txt_ascii);
+		ui::imm::PropText("i8", txt_int8);
+		ui::imm::PropText("u8", txt_uint8);
+		ui::imm::PropText("i16", txt_int16);
+		ui::imm::PropText("u16", txt_uint16);
+		ui::imm::PropText("i32", txt_int32);
+		ui::imm::PropText("u32", txt_uint32);
+		ui::imm::PropText("i64", txt_int64);
+		ui::imm::PropText("u64", txt_uint64);
+		ui::imm::PropText("f32", txt_float32);
+		ui::imm::PropText("f64", txt_float64);
+		ui::imm::PropText("ASCII", txt_ascii);
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox();
-		ctx->Text("Settings") + ui::SetPadding(5);
-		ctx->Pop();
+		ui::PushBox();
+		ui::Text("Settings") + ui::SetPadding(5);
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	spmkr.SetSplits({ 0.6f });
 }

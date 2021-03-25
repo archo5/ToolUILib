@@ -36,39 +36,39 @@ struct StateButtonsTest : ui::Buildable
 		}
 	}
 
-	void MakeContents(ui::UIContainer* ctx, const char* text, int row)
+	void MakeContents(const char* text, int row)
 	{
 		switch (row)
 		{
 		case 0:
-			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text(text) + ui::SetPadding(4); // TODO consistent padding from theme?
+			ui::Make<ui::CheckboxIcon>();
+			ui::Text(text) + ui::SetPadding(4); // TODO consistent padding from theme?
 			break;
 		case 1:
-			ctx->Make<ui::RadioButtonIcon>();
-			ctx->Text(text) + ui::SetPadding(4);
+			ui::Make<ui::RadioButtonIcon>();
+			ui::Text(text) + ui::SetPadding(4);
 			break;
 		case 2:
-			ctx->Make<ui::TreeExpandIcon>();
-			ctx->Text(text) + ui::SetPadding(4);
+			ui::Make<ui::TreeExpandIcon>();
+			ui::Text(text) + ui::SetPadding(4);
 			break;
 		case 3:
-			ctx->MakeWithText<ui::StateButtonSkin>(text);
+			ui::MakeWithText<ui::StateButtonSkin>(text);
 			break;
 		case 4:
-			ctx->Text(GetStateText(stb->GetState()) + text) + ui::SetPadding(5);
+			ui::Text(GetStateText(stb->GetState()) + text) + ui::SetPadding(5);
 			break;
 		case 5:
-			ctx->Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));
-			ctx->Text(text) + ui::SetPadding(4);
+			ui::Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));
+			ui::Text(text) + ui::SetPadding(4);
 			break;
 		case 6:
-			ctx->MakeWithText<ui::ColorBlock>(text)
+			ui::MakeWithText<ui::ColorBlock>(text)
 				.SetColor(GetStateColorDark(stb->GetState()))
 				+ ui::SetWidth(ui::Coord::Undefined());
 			break;
 		case 7: {
-			auto s = ctx->Text(text).GetStyle();
+			auto s = ui::Text(text).GetStyle();
 			s.SetPadding(5);
 			s.SetTextColor(GetStateColor(stb->GetState()));
 			s.SetFontWeight(stb->GetState() == 1 ? ui::FontWeight::Bold : ui::FontWeight::Normal);
@@ -77,103 +77,103 @@ struct StateButtonsTest : ui::Buildable
 		}
 	}
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		constexpr int NUM_STYLES = 8;
 
 		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
-			ctx->Text("CB activate");
+			ui::Text("CB activate");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(cb1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { cb1 = !cb1; Rebuild(); };
-				MakeContents(ctx, "one", i);
-				ctx->Pop();
+				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(cb1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { cb1 = !cb1; Rebuild(); };
+				MakeContents("one", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
-			ctx->Text("CB int.state");
+			ui::Text("CB int.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto& cbbs = ctx->Push<ui::StateToggle>().InitEditable(cb1, 2);
+				auto& cbbs = ui::Push<ui::StateToggle>().InitEditable(cb1, 2);
 				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb1 = cbbs.GetState(); Rebuild(); };
-				MakeContents(ctx, "two", i);
-				ctx->Pop();
+				MakeContents("two", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
-			ctx->Text("CB ext.state");
+			ui::Text("CB ext.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				*(stb = &ctx->Push<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
-				MakeContents(ctx, "three", i);
-				ctx->Pop();
+				*(stb = &ui::Push<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
+				MakeContents("three", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
-			ctx->Text("CB int.3-state");
+			ui::Text("CB int.3-state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto& cbbs = ctx->Push<ui::StateToggle>().InitEditable(cb3state, 3);
+				auto& cbbs = ui::Push<ui::StateToggle>().InitEditable(cb3state, 3);
 				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb3state = cbbs.GetState(); Rebuild(); };
-				MakeContents(ctx, "four", i);
-				ctx->Pop();
+				MakeContents("four", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
-			ctx->Text("RB activate");
+			ui::Text("RB activate");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Property::Scope ps(ctx);
+				ui::Property::Scope ps;
 
-				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
-				MakeContents(ctx, "r1a", i);
-				ctx->Pop();
+				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
+				MakeContents("r1a", i);
+				ui::Pop();
 
-				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
-				MakeContents(ctx, "r1b", i);
-				ctx->Pop();
+				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
+				MakeContents("r1b", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
+		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
-			ctx->Text("RB ext.state");
+			ui::Text("RB ext.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Property::Scope ps(ctx);
+				ui::Property::Scope ps;
 
-				*(stb = &ctx->Push<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
-				MakeContents(ctx, "r2a", i);
-				ctx->Pop();
+				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
+				MakeContents("r2a", i);
+				ui::Pop();
 
-				*(stb = &ctx->Push<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
-				MakeContents(ctx, "r2b", i);
-				ctx->Pop();
+				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
+				MakeContents("r2b", i);
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 
 	ui::StateToggleBase* stb = nullptr;
@@ -181,80 +181,80 @@ struct StateButtonsTest : ui::Buildable
 	int cb3state = 0;
 	int rb1 = 0;
 };
-void Test_StateButtons(ui::UIContainer* ctx)
+void Test_StateButtons()
 {
-	ctx->Make<StateButtonsTest>();
+	ui::Make<StateButtonsTest>();
 }
 
 
 struct PropertyListTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::PropertyList>();
+		ui::Push<ui::PropertyList>();
 
-		ctx->Push<ui::LabeledProperty>().SetText("label for 1");
-		ctx->Text("test 1");
-		ctx->Pop();
+		ui::Push<ui::LabeledProperty>().SetText("label for 1");
+		ui::Text("test 1");
+		ui::Pop();
 
-		ctx->MakeWithText<ui::Button>("interjection");
+		ui::MakeWithText<ui::Button>("interjection");
 
-		ctx->Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(ui::FontWeight::Bold);
-		ctx->MakeWithText<ui::Button>("test 2");
-		ctx->Pop();
+		ui::Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(ui::FontWeight::Bold);
+		ui::MakeWithText<ui::Button>("test 2");
+		ui::Pop();
 
-		ctx->PushBox().GetStyle().SetPaddingLeft(32);
+		ui::PushBox().GetStyle().SetPaddingLeft(32);
 		{
-			ctx->Push<ui::LabeledProperty>().SetText("also 3");
-			ctx->Text("test 3 elevated");
-			ctx->Pop();
+			ui::Push<ui::LabeledProperty>().SetText("also 3");
+			ui::Text("test 3 elevated");
+			ui::Pop();
 
-			auto s = ctx->Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)").GetStyle();
+			auto s = ui::Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)").GetStyle();
 			s.SetLayout(ui::layouts::StackExpand());
 			s.SetStackingDirection(ui::StackingDirection::LeftToRight);
 			{
-				ctx->Push<ui::LabeledProperty>().SetText("X").SetBrief(true);
-				ctx->MakeWithText<ui::Button>("A");
-				ctx->Pop();
+				ui::Push<ui::LabeledProperty>().SetText("X").SetBrief(true);
+				ui::MakeWithText<ui::Button>("A");
+				ui::Pop();
 
-				ctx->Push<ui::LabeledProperty>().SetText("Y").SetBrief(true);
-				ctx->MakeWithText<ui::Button>("B");
-				ctx->Pop();
+				ui::Push<ui::LabeledProperty>().SetText("Y").SetBrief(true);
+				ui::MakeWithText<ui::Button>("B");
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 	}
 };
-void Test_PropertyList(ui::UIContainer* ctx)
+void Test_PropertyList()
 {
-	ctx->Make<PropertyListTest>();
+	ui::Make<PropertyListTest>();
 }
 
 
 struct SlidersTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		static float sldval0 = 0.63f;
-		ctx->Make<ui::Slider>().Init(sldval0, { 0, 1 });
+		ui::Make<ui::Slider>().Init(sldval0, { 0, 1 });
 
-		ui::Property::Begin(ctx, "Slider 1: 0-2 step=0");
+		ui::Property::Begin("Slider 1: 0-2 step=0");
 		static float sldval1 = 0.63f;
-		ctx->Make<ui::Slider>().Init(sldval1, { 0, 2 });
-		ui::Property::End(ctx);
+		ui::Make<ui::Slider>().Init(sldval1, { 0, 2 });
+		ui::Property::End();
 
-		ui::Property::Begin(ctx, "Slider 2: 0-2 step=0.1");
+		ui::Property::Begin("Slider 2: 0-2 step=0.1");
 		static float sldval2 = 0.63f;
-		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 });
-		ui::Property::End(ctx);
+		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 });
+		ui::Property::End();
 
-		ui::Property::Begin(ctx, "Slider 3: custom track bg");
+		ui::Property::Begin("Slider 3: custom track bg");
 		static float sldval3 = 0.63f;
 		{
-			auto& s = ctx->Make<ui::Slider>().Init(sldval3, { 0, 1 });
+			auto& s = ui::Make<ui::Slider>().Init(sldval3, { 0, 1 });
 			ui::StyleAccessor a = s.GetTrackStyle();
 			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const ui::PaintInfo& info)
 			{
@@ -264,76 +264,76 @@ struct SlidersTest : ui::Buildable
 			});
 			s.GetTrackFillStyle().SetPaintFunc([](const ui::PaintInfo& info) {});
 		}
-		ui::Property::End(ctx);
+		ui::Property::End();
 
-		ui::Property::Begin(ctx, "Slider 4: vert stretched");
-		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::SetHeight(40);
-		ui::Property::End(ctx);
+		ui::Property::Begin("Slider 4: vert stretched");
+		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::SetHeight(40);
+		ui::Property::End();
 
-		ui::Property::Begin(ctx, "Color picker parts");
+		ui::Property::Begin("Color picker parts");
 		static float hue = 0.6f, sat = 0.3f, val = 0.8f;
 		{
-			auto s = ctx->Make<ui::HueSatPicker>().Init(hue, sat).GetStyle();
+			auto s = ui::Make<ui::HueSatPicker>().Init(hue, sat).GetStyle();
 			s.SetWidth(100);
 			s.SetHeight(100);
 		}
 		{
-			auto s = ctx->Make<ui::ColorCompPicker2D>().Init(hue, sat).GetStyle();
+			auto s = ui::Make<ui::ColorCompPicker2D>().Init(hue, sat).GetStyle();
 			s.SetWidth(120);
 			s.SetHeight(100);
 		}
-		ui::Property::End(ctx);
+		ui::Property::End();
 	}
 };
-void Test_Sliders(ui::UIContainer* ctx)
+void Test_Sliders()
 {
-	ctx->Make<SlidersTest>();
+	ui::Make<SlidersTest>();
 }
 
 
 struct SplitPaneTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		GetStyle().SetWidth(ui::Coord::Percent(100));
 		GetStyle().SetHeight(ui::Coord::Percent(100));
 
-		ctx->Push<ui::SplitPane>();
+		ui::Push<ui::SplitPane>();
 
-		ctx->MakeWithText<ui::Panel>("Pane A");
-		ctx->MakeWithText<ui::Panel>("Pane B");
+		ui::MakeWithText<ui::Panel>("Pane A");
+		ui::MakeWithText<ui::Panel>("Pane B");
 
-		ctx->Push<ui::SplitPane>().SetDirection(true);
+		ui::Push<ui::SplitPane>().SetDirection(true);
 
-		ctx->MakeWithText<ui::Panel>("Pane C");
-		ctx->MakeWithText<ui::Panel>("Pane D");
-		ctx->MakeWithText<ui::Panel>("Pane E");
+		ui::MakeWithText<ui::Panel>("Pane C");
+		ui::MakeWithText<ui::Panel>("Pane D");
+		ui::MakeWithText<ui::Panel>("Pane E");
 
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Pop();
+		ui::Pop();
 	}
 };
-void Test_SplitPane(ui::UIContainer* ctx)
+void Test_SplitPane()
 {
-	ctx->Make<SplitPaneTest>();
+	ui::Make<SplitPaneTest>();
 }
 
 
 struct TabsTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::TabGroup>();
+		ui::Push<ui::TabGroup>();
 		{
-			ctx->Push<ui::TabButtonList>();
+			ui::Push<ui::TabButtonList>();
 			{
-				ctx->Push<ui::TabButtonT<int>>().Init(tab1, 0);
-				ctx->Text("First tab") + ui::SetPadding(5);
-				ctx->MakeWithText<ui::Button>("button");
-				ctx->Pop();
+				ui::Push<ui::TabButtonT<int>>().Init(tab1, 0);
+				ui::Text("First tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::Button>("button");
+				ui::Pop();
 
-				ctx->Push<ui::TabButton>().Init(tab1 == 1).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
+				ui::Push<ui::TabButton>().Init(tab1 == 1).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
 				{
 					if (e.target == e.current)
 					{
@@ -341,31 +341,31 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ctx->Text("Second tab") + ui::SetPadding(5);
-				ctx->MakeWithText<ui::Button>("button");
-				ctx->Pop();
+				ui::Text("Second tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::Button>("button");
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->Push<ui::TabPanel>().SetVisible(tab1 == 0);
+			ui::Push<ui::TabPanel>().SetVisible(tab1 == 0);
 			{
-				ctx->Text("Contents of the first tab (SetVisible)");
+				ui::Text("Contents of the first tab (SetVisible)");
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->Push<ui::TabPanel>().SetVisible(tab1 == 1);
+			ui::Push<ui::TabPanel>().SetVisible(tab1 == 1);
 			{
-				ctx->Text("Contents of the second tab (SetVisible)");
+				ui::Text("Contents of the second tab (SetVisible)");
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->Push<ui::TabGroup>();
+		ui::Push<ui::TabGroup>();
 		{
-			ctx->Push<ui::TabButtonList>();
+			ui::Push<ui::TabButtonList>();
 			{
-				ctx->Push<ui::TabButton>().Init(tab2 == 0).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
+				ui::Push<ui::TabButton>().Init(tab2 == 0).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
 				{
 					if (e.target == e.current)
 					{
@@ -373,36 +373,36 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ctx->Text("First tab") + ui::SetPadding(5);
-				ctx->MakeWithText<ui::Button>("button");
-				ctx->Pop();
+				ui::Text("First tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::Button>("button");
+				ui::Pop();
 
-				ctx->Push<ui::TabButtonT<int>>().Init(tab2, 1);
-				ctx->Text("Second tab") + ui::SetPadding(5);
-				ctx->MakeWithText<ui::Button>("button");
-				ctx->Pop();
+				ui::Push<ui::TabButtonT<int>>().Init(tab2, 1);
+				ui::Text("Second tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::Button>("button");
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 
 			if (tab2 == 0)
 			{
-				ctx->Push<ui::TabPanel>();
+				ui::Push<ui::TabPanel>();
 				{
-					ctx->Text("Contents of the first tab (conditional build)");
+					ui::Text("Contents of the first tab (conditional build)");
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
 
 			if (tab2 == 1)
 			{
-				ctx->Push<ui::TabPanel>();
+				ui::Push<ui::TabPanel>();
 				{
-					ctx->Text("Contents of the second tab (conditional build)");
+					ui::Text("Contents of the second tab (conditional build)");
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 
 	void OnSerialize(ui::IDataSerializer& s)
@@ -412,9 +412,9 @@ struct TabsTest : ui::Buildable
 
 	int tab1 = 0, tab2 = 0;
 };
-void Test_Tabs(ui::UIContainer* ctx)
+void Test_Tabs()
 {
-	ctx->Make<TabsTest>();
+	ui::Make<TabsTest>();
 }
 
 
@@ -425,89 +425,89 @@ struct ScrollbarsTest : ui::Buildable
 	int count = 20;
 	bool expanding = true;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		GetStyle().SetLayout(ui::layouts::EdgeSlice());
 
-		ui::imm::PropEditInt(ctx, "\bCount", count);
-		ui::imm::PropEditBool(ctx, "\bExpanding", expanding);
+		ui::imm::PropEditInt("\bCount", count);
+		ui::imm::PropEditBool("\bExpanding", expanding);
 
-		auto& sa = ctx->Push<ui::ScrollArea>();
+		auto& sa = ui::Push<ui::ScrollArea>();
 		if (!expanding)
 			sa + ui::SetWidth(300) + ui::SetHeight(200);
 		else
 			sa + ui::SetHeight(ui::Coord::Percent(100));
 
 		for (int i = 0; i < count; i++)
-			ctx->Textf("Inside scroll area [%d]", i);
+			ui::Textf("Inside scroll area [%d]", i);
 
-		ctx->Pop();
+		ui::Pop();
 	}
 };
-void Test_Scrollbars(ui::UIContainer* ctx)
+void Test_Scrollbars()
 {
-	ctx->Make<ScrollbarsTest>();
+	ui::Make<ScrollbarsTest>();
 }
 
 
 struct ColorBlockTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Text("Default color block");
-		ctx->Make<ui::ColorBlock>().SetColor(colorA);
-		ctx->Make<ui::ColorBlock>().SetColor(colorB);
+		ui::Text("Default color block");
+		ui::Make<ui::ColorBlock>().SetColor(colorA);
+		ui::Make<ui::ColorBlock>().SetColor(colorB);
 
-		ctx->Text("Without edge");
-		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
-		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
+		ui::Text("Without edge");
+		ui::Make<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
+		ui::Make<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
 
-		ctx->Text("Custom size");
-		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
-		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
+		ui::Text("Custom size");
+		ui::Make<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
+		ui::Make<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
 
-		ctx->Text("Color inspect block");
-		ctx->Make<ui::ColorInspectBlock>().SetColor(colorA);
-		ctx->Make<ui::ColorInspectBlock>().SetColor(colorB);
+		ui::Text("Color inspect block");
+		ui::Make<ui::ColorInspectBlock>().SetColor(colorA);
+		ui::Make<ui::ColorInspectBlock>().SetColor(colorB);
 
-		ctx->Text("Assembled");
+		ui::Text("Assembled");
 		auto C = colorB;
-		ctx->Push<ui::Panel>()
+		ui::Push<ui::Panel>()
 			+ ui::SetPadding(3);
 		{
-			ctx->PushBox()
+			ui::PushBox()
 				+ ui::SetLayout(ui::layouts::StackExpand())
 				+ ui::Set(ui::StackingDirection::LeftToRight);
 			{
-				ctx->Make<ui::ColorBlock>().SetColor(C.GetOpaque())
+				ui::Make<ui::ColorBlock>().SetColor(C.GetOpaque())
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(50));
-				ctx->Make<ui::ColorBlock>().SetColor(C)
+				ui::Make<ui::ColorBlock>().SetColor(C)
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(50));
 			}
-			ctx->Pop();
-			ctx->Push<ui::ColorBlock>().SetColor(ui::Color4b::Black())
+			ui::Pop();
+			ui::Push<ui::ColorBlock>().SetColor(ui::Color4b::Black())
 				+ ui::SetPadding(0)
 				+ ui::SetWidth(ui::Coord::Percent(100))
 				+ ui::SetHeight(4);
 			{
-				ctx->Make<ui::ColorBlock>().SetColor(ui::Color4b::White())
+				ui::Make<ui::ColorBlock>().SetColor(ui::Color4b::White())
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(100.f * C.a / 255.f))
 					+ ui::SetHeight(4);
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 
 	ui::Color4b colorA = { 240, 180, 120, 255 };
 	ui::Color4b colorB = { 120, 180, 240, 120 };
 };
-void Test_ColorBlock(ui::UIContainer* ctx)
+void Test_ColorBlock()
 {
-	ctx->Make<ColorBlockTest>();
+	ui::Make<ColorBlockTest>();
 }
 
 
@@ -527,7 +527,7 @@ struct ImageTest : ui::Buildable
 	{
 		delete img;
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		ui::StyleBlockRef pbr = ui::Theme::current->panel;
 		ui::StyleAccessor pa(pbr, nullptr);
@@ -548,52 +548,52 @@ struct ImageTest : ui::Buildable
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			ctx->Push<ui::Panel>().SetStyle(pbr);
+			ui::Push<ui::Panel>().SetStyle(pbr);
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					ctx->Push<ui::Panel>().SetStyle(pbr);
-					ctx->Make<ui::ImageElement>()
+					ui::Push<ui::Panel>().SetStyle(pbr);
+					ui::Make<ui::ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
 						.SetStyle(mode / 3 ? ibr2 : ibr);
-					ctx->Pop();
+					ui::Pop();
 				}
 			}
 
-			ctx->Text(scaleModeNames[mode % 3]);
+			ui::Text(scaleModeNames[mode % 3]);
 
-			ctx->Pop();
+			ui::Pop();
 		}
 	}
 
 	ui::Image* img;
 };
-void Test_Image(ui::UIContainer* ctx)
+void Test_Image()
 {
-	ctx->Make<ImageTest>();
+	ui::Make<ImageTest>();
 }
 
 
 static ui::Color4f colorPickerTestCol;
 struct ColorPickerTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		auto& cp = ctx->Make<ui::ColorPicker>().SetColor(colorPickerTestCol);
+		auto& cp = ui::Make<ui::ColorPicker>().SetColor(colorPickerTestCol);
 		cp.HandleEvent(ui::EventType::Change) = [&cp](ui::Event& e)
 		{
 			colorPickerTestCol = cp.GetColor().GetRGBA();
 		};
 
-		ctx->Make<ui::DefaultOverlayBuilder>();
+		ui::Make<ui::DefaultOverlayBuilder>();
 	}
 };
-void Test_ColorPicker(ui::UIContainer* ctx)
+void Test_ColorPicker()
 {
-	ctx->Make<ColorPickerTest>();
+	ui::Make<ColorPickerTest>();
 }
 
 
@@ -606,13 +606,13 @@ struct The3DViewTest : ui::Buildable
 		float x, y, z;
 		ui::Color4b col;
 	};
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::Panel>()
+		ui::Push<ui::Panel>()
 			+ ui::SetMargin(0)
 			+ ui::SetHeight(ui::Coord::Percent(100));
 		{
-			auto& v = ctx->Push<ui::View3D>();
+			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](ui::Event& e)
 			{
@@ -623,16 +623,16 @@ struct The3DViewTest : ui::Buildable
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
-				ctx->Text("Overlay text");
-				ctx->Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
-				ctx->MakeWithText<ui::Button>("Reset")
+				ui::Text("Overlay text");
+				ui::Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
+				ui::MakeWithText<ui::Button>("Reset")
 					+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { camera = {}; })
 					+ ui::SetWidth(40)
 					+ ui::SetLayout(ui::layouts::InlineBlock()); // TODO FIX
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{
@@ -729,9 +729,9 @@ struct The3DViewTest : ui::Buildable
 	ui::OrbitCamera camera;
 	ui::Point2f mousePos = {};
 };
-void Test_3DView(ui::UIContainer* ctx)
+void Test_3DView()
 {
-	ctx->Make<The3DViewTest>();
+	ui::Make<The3DViewTest>();
 }
 
 
@@ -751,13 +751,13 @@ struct GizmoTest : ui::Buildable
 		float x, y, z;
 		ui::Color4b col;
 	};
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->Push<ui::Panel>()
+		ui::Push<ui::Panel>()
 			+ ui::SetMargin(0)
 			+ ui::SetHeight(ui::Coord::Percent(100));
 		{
-			auto& v = ctx->Push<ui::View3D>();
+			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](ui::Event& e)
 			{
@@ -772,47 +772,47 @@ struct GizmoTest : ui::Buildable
 			{
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
-				ctx->Push<ui::Panel>() + ui::SetWidth(120) + ui::SetPlacement(leftTop);
+				ui::Push<ui::Panel>() + ui::SetWidth(120) + ui::SetPlacement(leftTop);
 				{
-					ctx->MakeWithText<ui::Header>("Camera");
-					ui::imm::PropEditFloat(ctx, "FOV", fov, {}, 1.0f, 1.0f, 179.0f);
+					ui::MakeWithText<ui::Header>("Camera");
+					ui::imm::PropEditFloat("FOV", fov, {}, 1.0f, 1.0f, 179.0f);
 
 					{
-						ui::LabeledProperty::Scope ps(ctx);
-						ctx->MakeWithText<ui::Header>("Object");
-						if (ui::imm::Button(ctx, "Reset"))
+						ui::LabeledProperty::Scope ps;
+						ui::MakeWithText<ui::Header>("Object");
+						if (ui::imm::Button("Reset"))
 							xf = ui::Mat4f::Translate(0.01f, 0.02f, 0.03f);
 					}
 
 					auto pos = xf.TransformPoint({ 0, 0, 0 });
-					ctx->Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::SetPadding(5);
+					ui::Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::SetPadding(5);
 				}
-				ctx->Pop();
+				ui::Pop();
 
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
-				ctx->Push<ui::Panel>() + ui::SetWidth(180) + ui::SetPlacement(rightTop);
+				ui::Push<ui::Panel>() + ui::SetWidth(180) + ui::SetPlacement(rightTop);
 				{
-					ctx->MakeWithText<ui::Header>("Gizmo");
-					ui::imm::PropEditFloat(ctx, "Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
-					ui::imm::PropDropdownMenuList(ctx, "Size mode", gizmoSizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
+					ui::MakeWithText<ui::Header>("Gizmo");
+					ui::imm::PropEditFloat("Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
+					ui::imm::PropDropdownMenuList("Size mode", gizmoSizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
 					{
-						ui::LabeledProperty::Scope ps(ctx, "Type");
-						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(ctx, gizmo.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
+						ui::LabeledProperty::Scope ps("Type");
+						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
 					}
 					{
-						ui::LabeledProperty::Scope ps(ctx, "Space");
-						ui::imm::RadioButton(ctx, gizmo.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(ctx, gizmo.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
+						ui::LabeledProperty::Scope ps("Space");
+						ui::imm::RadioButton(gizmo.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmo.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
 					}
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{
@@ -875,9 +875,9 @@ struct GizmoTest : ui::Buildable
 		}
 	}
 };
-void Test_Gizmo(ui::UIContainer* ctx)
+void Test_Gizmo()
 {
-	ctx->Make<GizmoTest>();
+	ui::Make<GizmoTest>();
 }
 
 
@@ -885,118 +885,118 @@ struct IMGUITest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ui::LabeledProperty::Begin(ctx, "buttons");
-		if (ui::imm::Button(ctx, "working button"))
+		ui::LabeledProperty::Begin("buttons");
+		if (ui::imm::Button("working button"))
 			puts("working button");
-		if (ui::imm::Button(ctx, "disabled button", { ui::Enable(false) }))
+		if (ui::imm::Button("disabled button", { ui::Enable(false) }))
 			puts("DISABLED button SHOULD NOT APPEAR");
-		ui::LabeledProperty::End(ctx);
+		ui::LabeledProperty::End();
 
 		{
-			ui::LabeledProperty::Begin(ctx, "bool");
+			ui::LabeledProperty::Begin("bool");
 			auto tmp = boolVal;
-			if (ui::imm::EditBool(ctx, tmp, "working"))
+			if (ui::imm::EditBool(tmp, "working"))
 				boolVal = tmp;
-			if (ui::imm::CheckboxRaw(ctx, tmp, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::CheckboxRaw(tmp, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			if (ui::imm::EditBool(ctx, tmp, "disabled", { ui::Enable(false) }))
+			if (ui::imm::EditBool(tmp, "disabled", { ui::Enable(false) }))
 				boolVal = tmp;
-			if (ui::imm::CheckboxRaw(ctx, tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::CheckboxRaw(tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			ui::LabeledProperty::End(ctx);
+			ui::LabeledProperty::End();
 		}
 
 		{
-			ui::LabeledProperty::Begin(ctx, "int format: %d");
+			ui::LabeledProperty::Begin("int format: %d");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(ctx, tmp, 0, "working"))
+			if (ui::imm::RadioButton(tmp, 0, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::RadioButtonRaw(tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
-			if (ui::imm::RadioButton(ctx, tmp, 0, "disabled", { ui::Enable(false) }))
+			if (ui::imm::RadioButton(tmp, 0, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::RadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
-			ui::LabeledProperty::End(ctx);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin(ctx, "int format: %x");
+			ui::LabeledProperty::Begin("int format: %x");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(ctx, tmp, 1, "working"))
+			if (ui::imm::RadioButton(tmp, 1, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::RadioButtonRaw(tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
-			if (ui::imm::RadioButton(ctx, tmp, 1, "disabled", { ui::Enable(false) }))
+			if (ui::imm::RadioButton(tmp, 1, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(ctx, tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imm::RadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
-			ui::LabeledProperty::End(ctx);
+			ui::LabeledProperty::End();
 		}
 
 		{
-			ui::LabeledProperty::Begin(ctx, "int");
+			ui::LabeledProperty::Begin("int");
 			auto tmp = intVal;
-			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
-			ctx->Text("int: " + std::to_string(intVal)) + ui::SetPadding(5);
-			ui::LabeledProperty::End(ctx);
+			ui::Text("int: " + std::to_string(intVal)) + ui::SetPadding(5);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin(ctx, "uint");
+			ui::LabeledProperty::Begin("uint");
 			auto tmp = uintVal;
-			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
-			ctx->Text("uint: " + std::to_string(uintVal)) + ui::SetPadding(5);
-			ui::LabeledProperty::End(ctx);
+			ui::Text("uint: " + std::to_string(uintVal)) + ui::SetPadding(5);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin(ctx, "int64");
+			ui::LabeledProperty::Begin("int64");
 			auto tmp = int64Val;
-			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
-			ctx->Text("int64: " + std::to_string(int64Val)) + ui::SetPadding(5);
-			ui::LabeledProperty::End(ctx);
+			ui::Text("int64: " + std::to_string(int64Val)) + ui::SetPadding(5);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin(ctx, "uint64");
+			ui::LabeledProperty::Begin("uint64");
 			auto tmp = uint64Val;
-			if (ui::imm::PropEditInt(ctx, "\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
-			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
-			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::SetPadding(5);
-			ui::LabeledProperty::End(ctx);
+			ui::Text("uint64: " + std::to_string(uint64Val)) + ui::SetPadding(5);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin(ctx, "float");
+			ui::LabeledProperty::Begin("float");
 			auto tmp = floatVal;
-			if (ui::imm::PropEditFloat(ctx, "\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat("\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
-			if (ui::imm::PropEditFloat(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat("\bdisabled", tmp, { ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
-			ctx->Text("float: " + std::to_string(floatVal)) + ui::SetPadding(5);
-			ui::LabeledProperty::End(ctx);
+			ui::Text("float: " + std::to_string(floatVal)) + ui::SetPadding(5);
+			ui::LabeledProperty::End();
 		}
 		{
-			ui::imm::PropEditFloatVec(ctx, "float3", float4val, "XYZ");
-			ui::imm::PropEditFloatVec(ctx, "float4", float4val, "RGBA");
+			ui::imm::PropEditFloatVec("float3", float4val, "XYZ");
+			ui::imm::PropEditFloatVec("float4", float4val, "RGBA");
 		}
 		{
-			ui::imm::PropEditColor(ctx, "color B", colorValB);
-			ui::imm::PropEditColor(ctx, "color F", colorValF);
+			ui::imm::PropEditColor("color B", colorValB);
+			ui::imm::PropEditColor("color F", colorValF);
 		}
 	}
 
@@ -1011,30 +1011,30 @@ struct IMGUITest : ui::Buildable
 	ui::Color4b colorValB = { 180, 200, 220, 255 };
 	ui::Color4f colorValF = { 0.9f, 0.7f, 0.5f, 0.8f };
 };
-void Test_IMGUI(ui::UIContainer* ctx)
+void Test_IMGUI()
 {
-	ctx->Make<IMGUITest>();
+	ui::Make<IMGUITest>();
 }
 
 
 struct TooltipTest : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ctx->MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
-		ctx->MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([](ui::UIContainer* ctx)
+		ui::MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
+		ui::MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([]()
 		{
 			bool t = true, f = false;
-			ui::imm::PropEditBool(ctx, "Done", t, { ui::Enable(false) });
-			ui::imm::PropEditBool(ctx, "Not done", f, { ui::Enable(false) });
+			ui::imm::PropEditBool("Done", t, { ui::Enable(false) });
+			ui::imm::PropEditBool("Not done", f, { ui::Enable(false) });
 		});
 
-		ctx->Make<ui::DefaultOverlayBuilder>();
+		ui::Make<ui::DefaultOverlayBuilder>();
 	}
 };
-void Test_Tooltip(ui::UIContainer* ctx)
+void Test_Tooltip()
 {
-	ctx->Make<TooltipTest>();
+	ui::Make<TooltipTest>();
 }
 
 
@@ -1046,42 +1046,42 @@ struct DropdownTest : ui::Buildable
 	uintptr_t selPtr = uintptr_t(&typeid(ui::Buildable));
 	const type_info* selPtrReal = &typeid(ui::Buildable);
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		*this + ui::Set(ui::StackingDirection::LeftToRight);
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		{
-			ctx->Make<SpecificDropdownMenu>();
+			ui::Make<SpecificDropdownMenu>();
 
-			ctx->Text("[zssl] unlimited options");
-			MenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
-			ctx->Text("[zssl] limited options");
-			MenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>(2, "First\0Second"));
+			ui::Text("[zssl] unlimited options");
+			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
+			ui::Text("[zssl] limited options");
+			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>(2, "First\0Second"));
 
 			static const char* options[] = { "First", "Second", "Third", nullptr };
 
-			ctx->Text("[sa] unlimited options");
-			MenuList(ctx, sel3opts, Allocate<ui::CStrArrayOptionList>(options));
-			ctx->Text("[sa] limited options");
-			MenuList(ctx, sel3opts, Allocate<ui::CStrArrayOptionList>(2, options));
+			ui::Text("[sa] unlimited options");
+			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(options));
+			ui::Text("[sa] limited options");
+			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(2, options));
 
-			ctx->Text("custom pointer options");
-			MenuList(ctx, selPtr, Allocate<TypeInfoOptions>());
+			ui::Text("custom pointer options");
+			MenuList(selPtr, Allocate<TypeInfoOptions>());
 		}
-		ctx->Pop();
+		ui::Pop();
 
-		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		{
-			ctx->Text("immediate mode");
-			ui::imm::DropdownMenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
-			ui::imm::DropdownMenuList(ctx, selPtrReal, Allocate<TypeInfoOptions>());
+			ui::Text("immediate mode");
+			ui::imm::DropdownMenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
+			ui::imm::DropdownMenuList(selPtrReal, Allocate<TypeInfoOptions>());
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
 
-	void MenuList(ui::UIContainer* ctx, uintptr_t& sel, ui::OptionList* list)
+	void MenuList(uintptr_t& sel, ui::OptionList* list)
 	{
-		auto& ddml = ctx->Make<ui::DropdownMenuList>();
+		auto& ddml = ui::Make<ui::DropdownMenuList>();
 		ddml.SetSelected(sel);
 		ddml.SetOptions(list);
 		ddml.HandleEvent(ui::EventType::Commit) = [this, &ddml, &sel](ui::Event& e)
@@ -1095,23 +1095,23 @@ struct DropdownTest : ui::Buildable
 
 	struct SpecificDropdownMenu : ui::DropdownMenu
 	{
-		void OnBuildButtonContents(ui::UIContainer* ctx) override
+		void OnBuildButtonContents() override
 		{
-			ctx->Text("Menu");
+			ui::Text("Menu");
 		}
-		void OnBuildMenuContents(ui::UIContainer* ctx) override
+		void OnBuildMenuContents() override
 		{
 			static bool flag1, flag2;
 
-			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag1);
-			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text("Option 1") + ui::SetPadding(5);
-			ctx->Pop();
+			ui::Push<ui::CheckboxFlagT<bool>>().Init(flag1);
+			ui::Make<ui::CheckboxIcon>();
+			ui::Text("Option 1") + ui::SetPadding(5);
+			ui::Pop();
 
-			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag2);
-			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text("Option 2") + ui::SetPadding(5);
-			ctx->Pop();
+			ui::Push<ui::CheckboxFlagT<bool>>().Init(flag2);
+			ui::Make<ui::CheckboxIcon>();
+			ui::Text("Option 2") + ui::SetPadding(5);
+			ui::Pop();
 		}
 	};
 
@@ -1133,14 +1133,14 @@ struct DropdownTest : ui::Buildable
 				fn(types[i], uintptr_t(types[i]));
 			}
 		}
-		void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
+		void BuildElement(const void* ptr, uintptr_t id, bool list)
 		{
-			ctx->Text(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
+			ui::Text(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
 		}
 	};
 };
-void Test_Dropdown(ui::UIContainer* ctx)
+void Test_Dropdown()
 {
-	ctx->Make<DropdownTest>();
+	ui::Make<DropdownTest>();
 }
 

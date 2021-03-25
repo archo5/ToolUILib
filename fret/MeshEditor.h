@@ -12,7 +12,7 @@ struct MeshEditorWindowNode : ui::Buildable
 		GetNativeWindow()->SetTitle("Mesh Resource Editor");
 		GetNativeWindow()->SetSize(1200, 800);
 	}
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 	void Setup(DataDesc* desc)
 	{
 		ddiSrc.dataDesc = desc;

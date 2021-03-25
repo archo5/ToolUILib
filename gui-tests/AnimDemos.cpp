@@ -8,18 +8,18 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 	{
 		animReq.callback = [this]() { GetNativeWindow()->InvalidateAll(); };
 	}
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
-		ui::imm::RadioButton(ctx, layout, 0, "No button", { ui::ApplyStyle(ui::Theme::current->button) });
-		ui::imm::RadioButton(ctx, layout, 1, "Left", { ui::ApplyStyle(ui::Theme::current->button) });
-		ui::imm::RadioButton(ctx, layout, 2, "Right", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(layout, 0, "No button", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(layout, 1, "Left", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(layout, 2, "Right", { ui::ApplyStyle(ui::Theme::current->button) });
 
 		tgt = nullptr;
 		if (layout != 0)
 		{
-			ctx->PushBox() + ui::Set(layout == 1 ? ui::StackingDirection::LeftToRight : ui::StackingDirection::RightToLeft);
-			tgt = &ctx->MakeWithText<ui::Button>(layout == 1 ? "Left" : "Right button");
-			ctx->Pop();
+			ui::PushBox() + ui::Set(layout == 1 ? ui::StackingDirection::LeftToRight : ui::StackingDirection::RightToLeft);
+			tgt = &ui::MakeWithText<ui::Button>(layout == 1 ? "Left" : "Right button");
+			ui::Pop();
 		}
 	}
 	void OnLayoutChanged() override
@@ -89,9 +89,9 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 
 	ui::AnimationCallbackRequester animReq;
 };
-void Demo_SlidingHighlightAnim(ui::UIContainer* ctx)
+void Demo_SlidingHighlightAnim()
 {
-	ctx->Make<SlidingHighlightAnimDemo>();
+	ui::Make<SlidingHighlightAnimDemo>();
 }
 
 
@@ -130,13 +130,13 @@ struct ButtonPressHighlightDemo : ui::Buildable
 		button + ui::AddEventHandler(ui::EventType::Activate, [this, &button](ui::Event&) { PlayActivationAnim(button); });
 	}
 
-	void Build(ui::UIContainer* ctx) override
+	void Build() override
 	{
 		*this + ui::SetPadding(30);
 		*this + ui::SetHeight(ui::Coord::Percent(100));
 
-		AddActivationAnim(ctx->MakeWithText<ui::Button>("Press me"));
-		AddActivationAnim(ctx->MakeWithText<ui::Button>("...or me"));
+		AddActivationAnim(ui::MakeWithText<ui::Button>("Press me"));
+		AddActivationAnim(ui::MakeWithText<ui::Button>("...or me"));
 	}
 	void OnPaint() override
 	{
@@ -155,8 +155,8 @@ struct ButtonPressHighlightDemo : ui::Buildable
 
 	std::vector<std::unique_ptr<ActivationAnimData>> anims;
 };
-void Demo_ButtonPressHighlight(ui::UIContainer* ctx)
+void Demo_ButtonPressHighlight()
 {
-	ctx->Make<ButtonPressHighlightDemo>();
+	ui::Make<ButtonPressHighlightDemo>();
 }
 

@@ -5,30 +5,30 @@
 #include "Workspace.h"
 
 
-void TabStructures::Build(ui::UIContainer* ctx)
+void TabStructures::Build()
 {
 	if (workspace->ddiSrc.filterFileFollow && workspace->curOpenedFile < (int)workspace->openedFiles.size())
 		workspace->ddiSrc.filterFile = workspace->openedFiles[workspace->curOpenedFile]->ddFile;
 
-	auto& spstr = ctx->Push<ui::SplitPane>();
+	auto& spstr = ui::Push<ui::SplitPane>();
 	{
-		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 
-		workspace->ddiSrc.Edit(ctx);
+		workspace->ddiSrc.Edit();
 
-		ui::Property::Begin(ctx);
-		ctx->Text("Instances") + ui::SetPadding(5);
-		if (ui::imm::Button(ctx, "Expand all instances"))
+		ui::Property::Begin();
+		ui::Text("Instances") + ui::SetPadding(5);
+		if (ui::imm::Button("Expand all instances"))
 		{
 			workspace->desc.ExpandAllInstances(workspace->ddiSrc.filterFile);
 		}
-		if (ui::imm::Button(ctx, "Delete auto-created"))
+		if (ui::imm::Button("Delete auto-created"))
 		{
 			workspace->desc.DeleteAllInstances(workspace->ddiSrc.filterFile, workspace->ddiSrc.filterStruct);
 		}
-		ui::Property::End(ctx);
+		ui::Property::End();
 
-		auto& tv = ctx->Make<ui::TableView>();
+		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
 		tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&workspace->ddiSrc);
@@ -77,13 +77,13 @@ void TabStructures::Build(ui::UIContainer* ctx)
 			}
 		};
 
-		ctx->Pop();
+		ui::Pop();
 	}
 	{
-		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
-		workspace->desc.EditStructuralItems(ctx);
-		ctx->Pop();
+		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		workspace->desc.EditStructuralItems();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	spstr.SetSplits({ 0.6f });
 }

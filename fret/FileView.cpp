@@ -9,11 +9,11 @@
 #include "Workspace.h"
 
 
-void FileView::Build(ui::UIContainer* ctx)
+void FileView::Build()
 {
-	ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+	ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 
-	ctx->PushBox();
+	ui::PushBox();
 	{
 		char buf[256];
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
@@ -36,23 +36,23 @@ void FileView::Build(ui::UIContainer* ctx)
 		}
 		else
 			snprintf(buf, 256, "Selection: <none>");
-		ctx->Text(buf);
+		ui::Text(buf);
 	}
-	ctx->Pop();
+	ui::Pop();
 
-	ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
-	auto& vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
-	ctx->Pop();
+	ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+	auto& vs = ui::MakeWithText<ui::CollapsibleTreeNode>("View settings");
+	ui::Pop();
 
-	ctx->PushBox(); // tree stabilization box
+	ui::PushBox(); // tree stabilization box
 	if (vs.open)
 	{
-		ui::imm::PropEditInt(ctx, "Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
-		ui::imm::PropEditInt(ctx, "Position", of->hexViewerState.basePos, {}, 1, 0);
+		ui::imm::PropEditInt("Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
+		ui::imm::PropEditInt("Position", of->hexViewerState.basePos, {}, 1, 0);
 	}
-	ctx->Pop(); // end tree stabilization box
+	ui::Pop(); // end tree stabilization box
 
-	auto& hv = ctx->Make<HexViewer>();
+	auto& hv = ui::Make<HexViewer>();
 	curHexViewer = &hv;
 	hv.Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
 	hv.HandleEvent(ui::EventType::ButtonUp) = [this](ui::Event& e)
@@ -62,7 +62,7 @@ void FileView::Build(ui::UIContainer* ctx)
 			HexViewer_OnRightClick();
 		}
 	};
-	ctx->Pop();
+	ui::Pop();
 }
 
 void FileView::HexViewer_OnRightClick()

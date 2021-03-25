@@ -9,9 +9,9 @@ ui::DataCategoryTag DCT_Struct[1];
 ui::DataCategoryTag DCT_CurStructInst[1];
 
 
-bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& format)
+bool EditImageFormat(const char* label, std::string& format)
 {
-	if (ui::imm::PropButton(ctx, label, format.c_str()))
+	if (ui::imm::PropButton(label, format.c_str()))
 	{
 		std::vector<ui::MenuItem> imgFormats;
 		ui::StringView prevCat;
@@ -26,7 +26,7 @@ bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& forma
 			ui::StringView name = GetImageFormatName(i);
 			imgFormats.push_back(ui::MenuItem(name).Func([&format, name]() { format.assign(name.data(), name.size()); }));
 		}
-		ui::Menu(imgFormats).Show(ctx->GetCurrentBuildable());
+		ui::Menu(imgFormats).Show(ui::GetCurrentBuildable());
 		return true;
 	}
 	return false;
@@ -35,14 +35,14 @@ bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& forma
 
 static bool advancedAccess = false;
 static MathExprObj testQuery;
-void DataDesc::EditStructuralItems(ui::UIContainer* ctx)
+void DataDesc::EditStructuralItems()
 {
-	ctx->Push<ui::Panel>();
+	ui::Push<ui::Panel>();
 
-	ui::imm::PropEditBool(ctx, "Advanced access", advancedAccess);
+	ui::imm::PropEditBool("Advanced access", advancedAccess);
 	if (advancedAccess)
 	{
-		ui::imm::PropEditString(ctx, "\bTQ:", testQuery.expr.c_str(), [](const char* v) { testQuery.SetExpr(v); });
+		ui::imm::PropEditString("\bTQ:", testQuery.expr.c_str(), [](const char* v) { testQuery.SetExpr(v); });
 		if (testQuery.inst)
 		{
 			VariableSource vs;
@@ -50,57 +50,57 @@ void DataDesc::EditStructuralItems(ui::UIContainer* ctx)
 				vs.desc = this;
 				vs.root = curInst;
 			}
-			ctx->Textf("Value: %" PRId64, testQuery.inst->Evaluate(&vs));
+			ui::Textf("Value: %" PRId64, testQuery.inst->Evaluate(&vs));
 		}
 
 		auto id = curInst ? curInst->id : -1LL;
-		ui::imm::PropEditInt(ctx, "Current instance ID", id, {}, 1);
+		ui::imm::PropEditInt("Current instance ID", id, {}, 1);
 		if (!curInst || curInst->id != id)
 			SetCurrentInstance(FindInstanceByID(id));
 
 		if (curInst)
 		{
-			ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
-			if (ui::imm::Button(ctx, "Drop cache"))
+			ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+			if (ui::imm::Button("Drop cache"))
 			{
 				curInst->cachedFields.clear();
 				curInst->cachedReadOff = curInst->off;
 				curInst->cachedSize = F_NO_VALUE;
 			}
-			if (ui::imm::Button(ctx, "Edit inst"))
+			if (ui::imm::Button("Edit inst"))
 			{
 				curInst->OnEdit();
 			}
-			if (ui::imm::Button(ctx, "Edit struct"))
+			if (ui::imm::Button("Edit struct"))
 			{
 				if (curInst->def)
 					curInst->def->OnEdit();
 			}
-			ctx->Pop();
+			ui::Pop();
 		}
 	}
 
-	ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
-	ctx->Text("Edit:") + ui::SetPadding(5);
-	ui::imm::RadioButton(ctx, editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
-	ui::imm::RadioButton(ctx, editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
-	ui::imm::RadioButton(ctx, editMode, 2, "field", {}, ui::imm::ButtonStateToggleSkin());
-	ctx->Pop();
+	ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+	ui::Text("Edit:") + ui::SetPadding(5);
+	ui::imm::RadioButton(editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
+	ui::imm::RadioButton(editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
+	ui::imm::RadioButton(editMode, 2, "field", {}, ui::imm::ButtonStateToggleSkin());
+	ui::Pop();
 
 	if (editMode == 0)
 	{
-		EditInstance(ctx);
+		EditInstance();
 	}
 	if (editMode == 1)
 	{
-		EditStruct(ctx);
+		EditStruct();
 	}
 	if (editMode == 2)
 	{
-		EditField(ctx);
+		EditField();
 	}
 
-	ctx->Pop();
+	ui::Pop();
 }
 
 static const char* CreationReasonToString(CreationReason cr)
@@ -127,65 +127,65 @@ static const char* CreationReasonToStringShort(CreationReason cr)
 	}
 }
 
-static bool EditCreationReason(ui::UIContainer* ctx, const char* label, CreationReason& cr)
+static bool EditCreationReason(const char* label, CreationReason& cr)
 {
-	return ui::imm::PropDropdownMenuList(ctx, label, cr,
-		ctx->GetCurrentBuildable()->Allocate<ui::ZeroSepCStrOptionList>(
+	return ui::imm::PropDropdownMenuList(label, cr,
+		ui::BuildAlloc<ui::ZeroSepCStrOptionList>(
 			"user-defined\0manual expand\0auto expand\0query\0"));
 }
 
-void DataDesc::EditInstance(ui::UIContainer* ctx)
+void DataDesc::EditInstance()
 {
 	if (auto* SI = curInst)
 	{
 		bool del = false;
 
-		if (ui::imm::Button(ctx, "Delete"))
+		if (ui::imm::Button("Delete"))
 		{
 			del = true;
 		}
-		ui::imm::PropEditString(ctx, "Notes", SI->notes.c_str(), [&SI](const char* s) { SI->notes = s; });
-		ui::imm::PropEditBool(ctx, "Allow auto expand", SI->allowAutoExpand);
-		ui::imm::PropEditInt(ctx, "Offset", SI->off);
-		if (ui::imm::PropButton(ctx, "Edit struct:", SI->def->name.c_str()))
+		ui::imm::PropEditString("Notes", SI->notes.c_str(), [&SI](const char* s) { SI->notes = s; });
+		ui::imm::PropEditBool("Allow auto expand", SI->allowAutoExpand);
+		ui::imm::PropEditInt("Offset", SI->off);
+		if (ui::imm::PropButton("Edit struct:", SI->def->name.c_str()))
 		{
 			editMode = 1;
-			ctx->GetCurrentBuildable()->Rebuild();
+			ui::RebuildCurrent();
 		}
 
 		if (advancedAccess)
 		{
-			EditCreationReason(ctx, "Creation reason", SI->creationReason);
-			ui::imm::PropEditBool(ctx, "Use remaining size", SI->remainingCountIsSize);
-			ui::imm::PropEditInt(ctx, SI->remainingCountIsSize ? "Remaining size" : "Remaining count", SI->remainingCount);
+			EditCreationReason("Creation reason", SI->creationReason);
+			ui::imm::PropEditBool("Use remaining size", SI->remainingCountIsSize);
+			ui::imm::PropEditInt(SI->remainingCountIsSize ? "Remaining size" : "Remaining count", SI->remainingCount);
 
-			ui::Property::Begin(ctx);
-			auto& lbl = ui::Property::Label(ctx, "Size override");
-			ui::imm::EditBool(ctx, SI->sizeOverrideEnable, nullptr);
-			ui::imm::EditInt(ctx, &lbl, SI->sizeOverrideValue);
-			ui::Property::End(ctx);
+			ui::Property::Begin();
+			auto& lbl = ui::Property::Label("Size override");
+			ui::imm::EditBool(SI->sizeOverrideEnable, nullptr);
+			ui::imm::EditInt(&lbl, SI->sizeOverrideValue);
+			ui::Property::End();
 		}
 
-		ctx->Text("Arguments") + ui::SetPadding(5);
-		ctx->Push<ui::Panel>();
+		ui::Text("Arguments") + ui::SetPadding(5);
+		ui::Push<ui::Panel>();
 
-		auto* argSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
-		auto& argEditor = ctx->Make<ui::SequenceEditor>();
+		auto* argSeq = ui::BuildAlloc<ui::StdSequence<decltype(SI->args)>>(SI->args);
+		auto& argEditor = ui::Make<ui::SequenceEditor>();
 		argEditor.SetSequence(argSeq);
-		argEditor.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+		argEditor.itemUICallback = [this](ui::SequenceEditor* ed, size_t idx, void* ptr)
 		{
 			auto& A = *static_cast<DDArg*>(ptr);
 
-			ui::imm::PropEditString(ctx, "\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
-			ui::imm::PropEditInt(ctx, "\bValue", A.intVal);
+			ui::imm::PropEditString("\bName", A.name.c_str(), [&A](const char* v) { A.name = v; });
+			ui::imm::PropEditInt("\bValue", A.intVal);
 		};
 
-		if (ui::imm::Button(ctx, "Add"))
+		if (ui::imm::Button("Add"))
 		{
 			SI->args.push_back({ "unnamed", 0 });
-			ctx->GetCurrentBuildable()->Rebuild();
+			ui::RebuildCurrent();
 		}
-		ctx->Pop();
+		ui::Pop();
 
 		if (SI->def)
 		{
@@ -227,7 +227,7 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 
 				DDStructInst* SI;
 			};
-			auto* data = ctx->GetCurrentBuildable()->Allocate<Data>();
+			auto* data = ui::BuildAlloc<Data>();
 			data->SI = SI;
 
 			char bfr[256];
@@ -237,55 +237,55 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 				int64_t remSizeSub = SI->remainingCountIsSize ? (SI->sizeOverrideEnable ? SI->sizeOverrideValue : size) : 1;
 
 				snprintf(bfr, 256, "Next instance (%s)", SI->GetNextInstanceInfo().c_str());
-				if (SI->remainingCount - remSizeSub && ui::imm::Button(ctx, bfr, { ui::Enable(SI->remainingCount - remSizeSub > 0) }))
+				if (SI->remainingCount - remSizeSub && ui::imm::Button(bfr, { ui::Enable(SI->remainingCount - remSizeSub > 0) }))
 				{
 					SetCurrentInstance(SI->CreateNextInstance(CreationReason::ManualExpand));
 				}
 			}
 
-			ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+			ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 			{
 				if (size != F_NO_VALUE)
 				{
-					ctx->Textf("Data (size=%" PRId64 ")", size) + ui::SetPadding(5);
+					ui::Textf("Data (size=%" PRId64 ")", size) + ui::SetPadding(5);
 				}
 				else
 				{
-					ctx->Text("Data (size=") + ui::SetPadding(5);
+					ui::Text("Data (size=") + ui::SetPadding(5);
 					{
-						if (ui::imm::Button(ctx, "?"))
+						if (ui::imm::Button("?"))
 							SI->GetSize();
 					}
-					ctx->Text(")") + ui::SetPadding(5);
+					ui::Text(")") + ui::SetPadding(5);
 				}
 			}
-			ctx->Pop();
+			ui::Pop();
 
 			bool incomplete = size == F_NO_VALUE;
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
 				auto desc = SI->GetFieldDescLazy(i, &incomplete);
-				ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
-				ctx->Text(desc) + ui::SetPadding(5);
+				ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+				ui::Text(desc) + ui::SetPadding(5);
 
 				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
 				{
-					if (ui::imm::Button(ctx, "View"))
+					if (ui::imm::Button("View"))
 					{
 						// TODO indices
 						if (auto* inst = SI->CreateFieldInstances(i, 0, CreationReason::ManualExpand))
 							SetCurrentInstance(inst);
 					}
 				}
-				ctx->Pop();
+				ui::Pop();
 			}
-			auto& tv = ctx->Make<ui::TableView>();
+			auto& tv = ui::Make<ui::TableView>();
 			tv + ui::SetHeight(200);
 			tv.enableRowHeader = false;
 			tv.SetDataSource(data);
 			tv.CalculateColumnWidths();
 
-			if (incomplete && ui::imm::Button(ctx, "Load completely"))
+			if (incomplete && ui::imm::Button("Load completely"))
 			{
 				for (size_t i = 0; i < S.fields.size(); i++)
 				{
@@ -298,16 +298,16 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
-				if (ui::imm::Button(ctx, "Open image in tab", { ui::Enable(!!S.resource.image) }))
+				if (ui::imm::Button("Open image in tab", { ui::Enable(!!S.resource.image) }))
 				{
 					images.push_back(GetInstanceImage(*SI));
 
 					curImage = images.size() - 1;
-					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
+					ui::GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
 				}
-				if (ui::imm::Button(ctx, "Open image in editor", { ui::Enable(!!S.resource.image) }))
+				if (ui::imm::Button("Open image in editor", { ui::Enable(!!S.resource.image) }))
 				{
-					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
+					ui::GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
@@ -333,41 +333,41 @@ struct RenameDialog : ui::NativeDialogWindow
 		rename = false;
 		SetVisible(false);
 	}
-	void OnBuild(ui::UIContainer* ctx) override
+	void OnBuild() override
 	{
-		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetPadding(16);
-		ui::imm::PropEditString(ctx, "New name:", newName.c_str(), [this](const char* s) { newName = s; });
+		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetPadding(16);
+		ui::imm::PropEditString("New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
-		ctx->Make<ui::BoxElement>() + ui::SetHeight(16);
+		ui::Make<ui::BoxElement>() + ui::SetHeight(16);
 
-		ui::Property::Begin(ctx);
-		if (ui::imm::Button(ctx, "OK", { ui::SetHeight(30) }))
+		ui::Property::Begin();
+		if (ui::imm::Button("OK", { ui::SetHeight(30) }))
 		{
 			rename = true;
 			SetVisible(false);
 		}
-		ctx->Make<ui::BoxElement>() + ui::SetWidth(16);
-		if (ui::imm::Button(ctx, "Cancel", { ui::SetHeight(30) }))
+		ui::Make<ui::BoxElement>() + ui::SetWidth(16);
+		if (ui::imm::Button("Cancel", { ui::SetHeight(30) }))
 		{
 			rename = false;
 			SetVisible(false);
 		}
-		ui::Property::End(ctx);
-		ctx->Pop();
+		ui::Property::End();
+		ui::Pop();
 	}
 
 	bool rename = false;
 	std::string newName;
 };
 
-void DataDesc::EditStruct(ui::UIContainer* ctx)
+void DataDesc::EditStruct()
 {
 	if (auto* SI = curInst)
 	{
-		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
-		ctx->Text("Struct:") + ui::SetPadding(5);
-		ctx->Text(SI->def->name) + ui::SetPadding(5);
-		if (ui::imm::Button(ctx, "Rename"))
+		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::Text("Struct:") + ui::SetPadding(5);
+		ui::Text(SI->def->name) + ui::SetPadding(5);
+		if (ui::imm::Button("Rename"))
 		{
 			RenameDialog rd(SI->def->name);
 			for (;;)
@@ -394,46 +394,46 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 				break;
 			}
 		}
-		ctx->Pop();
+		ui::Pop();
 
 		auto it = structs.find(SI->def->name);
 		if (it != structs.end())
 		{
 			auto& S = *it->second;
-			ui::imm::PropEditBool(ctx, "Is serialized?", S.serialized);
+			ui::imm::PropEditBool("Is serialized?", S.serialized);
 
-			ui::imm::PropEditInt(ctx, "Size", S.size);
-			ui::imm::PropEditString(ctx, "Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
+			ui::imm::PropEditInt("Size", S.size);
+			ui::imm::PropEditString("Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
-			ctx->Text("Parameters") + ui::SetPadding(5);
-			ctx->Push<ui::Panel>();
+			ui::Text("Parameters") + ui::SetPadding(5);
+			ui::Push<ui::Panel>();
 
-			auto* paramSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
-			auto& paramEditor = ctx->Make<ui::SequenceEditor>();
+			auto* paramSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.params)>>(S.params);
+			auto& paramEditor = ui::Make<ui::SequenceEditor>();
 			paramEditor.SetSequence(paramSeq);
-			paramEditor.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+			paramEditor.itemUICallback = [this](ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
 				auto& P = *static_cast<DDParam*>(ptr);
 
-				ui::imm::PropEditString(ctx, "\bName", P.name.c_str(), [&P](const char* v) { P.name = v; });
-				ui::imm::PropEditInt(ctx, "\bValue", P.intVal);
+				ui::imm::PropEditString("\bName", P.name.c_str(), [&P](const char* v) { P.name = v; });
+				ui::imm::PropEditInt("\bValue", P.intVal);
 			};
 
-			if (ui::imm::Button(ctx, "Add"))
+			if (ui::imm::Button("Add"))
 			{
 				S.params.push_back({ "unnamed", 0 });
-				ctx->GetCurrentBuildable()->Rebuild();
+				ui::RebuildCurrent();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->Text("Fields") + ui::SetPadding(5);
-			ctx->Push<ui::Panel>();
+			ui::Text("Fields") + ui::SetPadding(5);
+			ui::Push<ui::Panel>();
 
-			auto* fieldSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.fields)>>(S.fields);
-			auto& fieldEditor = ctx->Make<ui::SequenceEditor>();
+			auto* fieldSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.fields)>>(S.fields);
+			auto& fieldEditor = ui::Make<ui::SequenceEditor>();
 			fieldEditor.SetSequence(fieldSeq);
-			auto* N = ctx->GetCurrentBuildable(); // TODO remove workaround
-			fieldEditor.itemUICallback = [this, &S, N](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+			auto* N = ui::GetCurrentBuildable(); // TODO remove workaround
+			fieldEditor.itemUICallback = [this, &S, N](ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
 				auto& F = *static_cast<DDField*>(ptr);
 
@@ -447,9 +447,9 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 					F.count);
 				if (!S.serialized)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
-				ctx->MakeWithText<ui::BoxElement>(info) + ui::SetPadding(5);
+				ui::MakeWithText<ui::BoxElement>(info) + ui::SetPadding(5);
 
-				if (ui::imm::Button(ctx, "Edit", { ui::SetWidth(50) }))
+				if (ui::imm::Button("Edit", { ui::SetWidth(50) }))
 				{
 					editMode = 2;
 					curField = idx;
@@ -457,50 +457,50 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 				}
 			};
 
-			if (ui::imm::Button(ctx, "Add"))
+			if (ui::imm::Button("Add"))
 			{
 				S.fields.push_back({ "i32", "unnamed" });
 				editMode = 2;
 				curField = S.fields.size() - 1;
-				ctx->GetCurrentBuildable()->Rebuild();
+				ui::RebuildCurrent();
 			}
-			ctx->Pop();
+			ui::Pop();
 
-			ctx->Text("Resource") + ui::SetPadding(5);
-			ui::Property::Begin(ctx);
-			ctx->Text("Type:") + ui::SetPadding(5);
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Mesh, "Mesh", {}, ui::imm::ButtonStateToggleSkin());
-			ui::Property::End(ctx);
+			ui::Text("Resource") + ui::SetPadding(5);
+			ui::Property::Begin();
+			ui::Text("Type:") + ui::SetPadding(5);
+			ui::imm::RadioButton(S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(S.resource.type, DDStructResourceType::Mesh, "Mesh", {}, ui::imm::ButtonStateToggleSkin());
+			ui::Property::End();
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
-				if (ui::imm::Button(ctx, "Edit image"))
+				if (ui::imm::Button("Edit image"))
 				{
 					if (!S.resource.image)
 						S.resource.image = new DDRsrcImage;
-					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
+					ui::GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 			if (S.resource.type == DDStructResourceType::Mesh)
 			{
-				if (ui::imm::Button(ctx, "Edit mesh"))
+				if (ui::imm::Button("Edit mesh"))
 				{
 					if (!S.resource.mesh)
 						S.resource.mesh = new DDRsrcMesh;
-					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenMeshRsrcEditor, uintptr_t(SI->def));
+					ui::GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenMeshRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
 		else
 		{
-			ctx->Text("-- NOT FOUND --") + ui::SetPadding(10);
+			ui::Text("-- NOT FOUND --") + ui::SetPadding(10);
 		}
 	}
 }
 
-void DataDesc::EditField(ui::UIContainer* ctx)
+void DataDesc::EditField()
 {
 	if (curInst)
 	{
@@ -511,41 +511,41 @@ void DataDesc::EditField(ui::UIContainer* ctx)
 			if (curField < S.fields.size())
 			{
 				auto& F = S.fields[curField];
-				ui::imm::PropEditString(ctx, "Value expr.", F.valueExpr.expr.c_str(), [&F](const char* v) { F.valueExpr.SetExpr(v); });
+				ui::imm::PropEditString("Value expr.", F.valueExpr.expr.c_str(), [&F](const char* v) { F.valueExpr.SetExpr(v); });
 				if (!S.serialized)
-					ui::imm::PropEditInt(ctx, "Offset", F.off);
-				ui::imm::PropEditString(ctx, "Off.expr.", F.offExpr.expr.c_str(), [&F](const char* v) { F.offExpr.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
-				ui::imm::PropEditString(ctx, "Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
-				ui::imm::PropEditInt(ctx, "Count", F.count, {}, 1);
-				ui::imm::PropEditString(ctx, "Count source", F.countSrc.c_str(), [&F](const char* s) { F.countSrc = s; });
-				ui::imm::PropEditBool(ctx, "Count is max. size", F.countIsMaxSize);
-				ui::imm::PropEditBool(ctx, "Individual computed offsets", F.individualComputedOffsets);
-				ui::imm::PropEditBool(ctx, "Read until 0", F.readUntil0);
+					ui::imm::PropEditInt("Offset", F.off);
+				ui::imm::PropEditString("Off.expr.", F.offExpr.expr.c_str(), [&F](const char* v) { F.offExpr.SetExpr(v); });
+				ui::imm::PropEditString("Name", F.name.c_str(), [&F](const char* s) { F.name = s; });
+				ui::imm::PropEditString("Type", F.type.c_str(), [&F](const char* s) { F.type = s; });
+				ui::imm::PropEditInt("Count", F.count, {}, 1);
+				ui::imm::PropEditString("Count source", F.countSrc.c_str(), [&F](const char* s) { F.countSrc = s; });
+				ui::imm::PropEditBool("Count is max. size", F.countIsMaxSize);
+				ui::imm::PropEditBool("Individual computed offsets", F.individualComputedOffsets);
+				ui::imm::PropEditBool("Read until 0", F.readUntil0);
 
-				ctx->Text("Struct arguments") + ui::SetPadding(5);
-				ctx->Push<ui::Panel>();
+				ui::Text("Struct arguments") + ui::SetPadding(5);
+				ui::Push<ui::Panel>();
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{
 					auto& SA = F.structArgs[i];
-					ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
-					ui::imm::PropEditString(ctx, "\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
-					ui::imm::PropEditString(ctx, "\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
-					ui::imm::PropEditInt(ctx, "\bOffset", SA.intVal);
-					if (ui::imm::Button(ctx, "X", { ui::SetWidth(20) }))
+					ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+					ui::imm::PropEditString("\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
+					ui::imm::PropEditString("\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
+					ui::imm::PropEditInt("\bOffset", SA.intVal);
+					if (ui::imm::Button("X", { ui::SetWidth(20) }))
 					{
 						F.structArgs.erase(F.structArgs.begin() + i);
 					}
-					ctx->Pop();
+					ui::Pop();
 				}
-				if (ui::imm::Button(ctx, "Add"))
+				if (ui::imm::Button("Add"))
 				{
 					F.structArgs.push_back({ "unnamed", "", 0 });
 				}
-				ctx->Pop();
+				ui::Pop();
 
-				ui::imm::PropEditString(ctx, "Condition", F.condition.expr.c_str(), [&F](const char* v) { F.condition.SetExpr(v); });
-				ui::imm::PropEditString(ctx, "Elem.cond.",
+				ui::imm::PropEditString("Condition", F.condition.expr.c_str(), [&F](const char* v) { F.condition.SetExpr(v); });
+				ui::imm::PropEditString("Elem.cond.",
 					F.elementCondition.expr.c_str(),
 					[&F](const char* v) { F.elementCondition.SetExpr(v); },
 					{ ui::Enable(F.individualComputedOffsets) });
@@ -554,25 +554,25 @@ void DataDesc::EditField(ui::UIContainer* ctx)
 	}
 }
 
-void DataDesc::EditImageItems(ui::UIContainer* ctx)
+void DataDesc::EditImageItems()
 {
 	if (curImage < images.size())
 	{
-		ctx->Push<ui::Panel>();
+		ui::Push<ui::Panel>();
 
 		auto& I = images[curImage];
 
 		bool chg = false;
-		chg |= ui::imm::PropEditString(ctx, "Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
-		chg |= EditImageFormat(ctx, "Format", I.format);
-		chg |= ui::imm::PropEditInt(ctx, "Image offset", I.offImage);
-		chg |= ui::imm::PropEditInt(ctx, "Palette offset", I.offPalette);
-		chg |= ui::imm::PropEditInt(ctx, "Width", I.width);
-		chg |= ui::imm::PropEditInt(ctx, "Height", I.height);
+		chg |= ui::imm::PropEditString("Notes", I.notes.c_str(), [&I](const char* s) { I.notes = s; });
+		chg |= EditImageFormat("Format", I.format);
+		chg |= ui::imm::PropEditInt("Image offset", I.offImage);
+		chg |= ui::imm::PropEditInt("Palette offset", I.offPalette);
+		chg |= ui::imm::PropEditInt("Width", I.width);
+		chg |= ui::imm::PropEditInt("Height", I.height);
 		if (chg)
-			ctx->GetCurrentBuildable()->Rebuild();
+			ui::RebuildCurrent();
 
-		ctx->Pop();
+		ui::Pop();
 	}
 }
 
@@ -1100,10 +1100,10 @@ struct StructOptions : ui::OptionList
 		for (size_t i = from; i < from + count && i < structs.size(); i++)
 			fn(structs[i], uintptr_t(structs[i]));
 	}
-	void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	void BuildElement(const void* ptr, uintptr_t id, bool list) override
 	{
 		auto* s = static_cast<const DDStruct*>(ptr);
-		ctx->Text(s ? s->name : "<none>");
+		ui::Text(s ? s->name : "<none>");
 	}
 };
 
@@ -1122,10 +1122,10 @@ struct FileOptions : ui::OptionList
 		for (size_t i = from; i < from + count && i < files.size(); i++)
 			fn(files[i], uintptr_t(files[i]));
 	}
-	void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	void BuildElement(const void* ptr, uintptr_t id, bool list) override
 	{
 		auto* s = static_cast<const DDFile*>(ptr);
-		ctx->Text(s ? s->name : "<none>");
+		ui::Text(s ? s->name : "<none>");
 	}
 };
 
@@ -1134,19 +1134,19 @@ struct StructsDropdownMenu : ui::DropdownMenu
 	DataDesc* dataDesc = nullptr;
 	std::unordered_set<DDStruct*>* structSet = nullptr;
 
-	void OnBuildButtonContents(ui::UIContainer* ctx) override
+	void OnBuildButtonContents() override
 	{
 		if (structSet->empty())
-			ctx->Text("<none>");
+			ui::Text("<none>");
 		else if (structSet->size() == dataDesc->structs.size())
-			ctx->Text("<all>");
+			ui::Text("<all>");
 		else if (structSet->size() == 1)
-			ctx->Text((*structSet->begin())->name);
+			ui::Text((*structSet->begin())->name);
 		else
-			ctx->Text("<many>");
+			ui::Text("<many>");
 	}
 
-	void OnBuildMenuContents(ui::UIContainer* ctx) override
+	void OnBuildMenuContents() override
 	{
 		std::vector<DDStruct*> structs;
 		for (auto& kvp : dataDesc->structs)
@@ -1155,7 +1155,7 @@ struct StructsDropdownMenu : ui::DropdownMenu
 
 		for (DDStruct* S : structs)
 		{
-			if (ui::imm::CheckboxRaw(ctx, structSet->count(S) > 0, S->name.c_str()))
+			if (ui::imm::CheckboxRaw(structSet->count(S) > 0, S->name.c_str()))
 			{
 				if (structSet->count(S))
 					structSet->erase(S);
@@ -1166,22 +1166,22 @@ struct StructsDropdownMenu : ui::DropdownMenu
 	}
 };
 
-void DataDescInstanceSource::Edit(ui::UIContainer* ctx)
+void DataDescInstanceSource::Edit()
 {
-	ui::Property::Begin(ctx, "Filter by struct");
-	if (ui::imm::EditBool(ctx, filterStructEnable, nullptr))
+	ui::Property::Begin("Filter by struct");
+	if (ui::imm::EditBool(filterStructEnable, nullptr))
 		refilter = true;
-	if (ui::imm::DropdownMenuList(ctx, filterStruct, ctx->GetCurrentBuildable()->Allocate<StructOptions>(dataDesc)))
+	if (ui::imm::DropdownMenuList(filterStruct, ui::BuildAlloc<StructOptions>(dataDesc)))
 		refilter = true;
-	ui::imm::PropEditInt(ctx, "\bBytes", showBytes, {}, 1, 0, 128);
-	ui::Property::End(ctx);
+	ui::imm::PropEditInt("\bBytes", showBytes, {}, 1, 0, 128);
+	ui::Property::End();
 
 	if (!filterStructEnable || !filterStruct)
 	{
-		ui::Property::Scope ps(ctx, "Hide structs");
-		if (ui::imm::EditBool(ctx, filterHideStructsEnable, nullptr))
+		ui::Property::Scope ps("Hide structs");
+		if (ui::imm::EditBool(filterHideStructsEnable, nullptr))
 			refilter = true;
-		auto& ddm = ctx->Make<StructsDropdownMenu>();
+		auto& ddm = ui::Make<StructsDropdownMenu>();
 		ddm.dataDesc = dataDesc;
 		ddm.structSet = &filterHideStructs;
 		ddm.HandleEvent(ui::EventType::IMChange) = [this](ui::Event& e)
@@ -1191,15 +1191,15 @@ void DataDescInstanceSource::Edit(ui::UIContainer* ctx)
 		};
 	}
 
-	ui::Property::Begin(ctx, "Filter by file");
-	if (ui::imm::EditBool(ctx, filterFileEnable, nullptr))
+	ui::Property::Begin("Filter by file");
+	if (ui::imm::EditBool(filterFileEnable, nullptr))
 		refilter = true;
-	if (ui::imm::DropdownMenuList(ctx, filterFile, ctx->GetCurrentBuildable()->Allocate<FileOptions>(dataDesc)))
+	if (ui::imm::DropdownMenuList(filterFile, ui::BuildAlloc<FileOptions>(dataDesc)))
 		refilter = true;
-	ui::imm::PropEditBool(ctx, "\bFollow", filterFileFollow);
-	ui::Property::End(ctx);
+	ui::imm::PropEditBool("\bFollow", filterFileFollow);
+	ui::Property::End();
 
-	if (EditCreationReason(ctx, "Filter by creation reason", filterCreationReason))
+	if (EditCreationReason("Filter by creation reason", filterCreationReason))
 		refilter = true;
 }
 
@@ -1315,11 +1315,11 @@ void DataDescImageSource::SetSelectionState(uintptr_t item, bool sel)
 		dataDesc->curImage = UINT32_MAX;
 }
 
-void DataDescImageSource::Edit(ui::UIContainer* ctx)
+void DataDescImageSource::Edit()
 {
-	if (ui::imm::PropDropdownMenuList(ctx, "Filter by file", filterFile, ctx->GetCurrentBuildable()->Allocate<FileOptions>(dataDesc)))
+	if (ui::imm::PropDropdownMenuList("Filter by file", filterFile, ui::BuildAlloc<FileOptions>(dataDesc)))
 		refilter = true;
-	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
+	if (ui::imm::PropEditBool("Show user created only", filterUserCreated))
 		refilter = true;
 }
 

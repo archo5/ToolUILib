@@ -69,7 +69,7 @@ struct TE_IUnserializeStorage : IUnserializeStorage
 
 extern std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 
-void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref);
+void EditNCRef(std::weak_ptr<TE_NamedColor>& ncref);
 void OnField(IObjectIterator& oi, const FieldInfo& FI, std::weak_ptr<TE_NamedColor>& val);
 
 
@@ -122,7 +122,7 @@ struct TE_ColorRef
 	}
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
-	void UI(UIContainer* ctx);
+	void UI();
 };
 
 

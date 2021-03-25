@@ -7,7 +7,7 @@ struct OpenedFile;
 
 struct TabHighlights : ui::Buildable
 {
-	void Build(ui::UIContainer* ctx) override;
+	void Build() override;
 
 	OpenedFile* of = nullptr;
 };

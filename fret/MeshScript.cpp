@@ -214,37 +214,37 @@ MSData MeshScript::RunScript(IDataSource* src, IVariableSource* instCtx)
 	return ret;
 }
 
-void MeshScript::EditUI(ui::UIContainer* ctx)
+void MeshScript::EditUI()
 {
-	auto& sp1 = ctx->Push<ui::SplitPane>();
+	auto& sp1 = ui::Push<ui::SplitPane>();
 	{
-		auto& tree = ctx->Make<ui::TreeEditor>();
+		auto& tree = ui::Make<ui::TreeEditor>();
 		tree + ui::SetWidth(ui::Coord::Percent(100));
 		tree + ui::SetHeight(ui::Coord::Percent(100));
 		tree.SetTree(this);
-		tree.itemUICallback = [this](ui::UIContainer* ctx, ui::TreeEditor*, ui::TreePathRef path, void* data)
+		tree.itemUICallback = [this](ui::TreeEditor*, ui::TreePathRef path, void* data)
 		{
-			ui::Property::Scope ps(ctx);
-			FindNode(path).Get()->InlineEditUI(ctx);
+			ui::Property::Scope ps;
+			FindNode(path).Get()->InlineEditUI();
 		};
 
-		ctx->PushBox();
+		ui::PushBox();
 		if (auto selNode = selected.lock())
 		{
-			selNode->FullEditUI(ctx);
+			selNode->FullEditUI();
 		}
-		ctx->Pop();
+		ui::Pop();
 	}
-	ctx->Pop();
+	ui::Pop();
 	sp1.SetDirection(false);
 	sp1.SetSplits({ 0.5f });
-	auto* cb = ctx->GetCurrentBuildable();
+	auto* cb = ui::GetCurrentBuildable();
 	cb->Subscribe(DCT_MeshScriptChanged, this);
 	sp1.HandleEvent() = [cb](ui::Event& e)
 	{
 		if (e.type == ui::EventType::IMChange ||
 			e.type == ui::EventType::SelectionChange)
-			cb->Rebuild();
+			e.target->RebuildContainer();
 	};
 }
 
@@ -374,15 +374,15 @@ static const char* g_primTypeNames[] =
 	"Quads",
 };
 
-void MSN_NewPrimitive::InlineEditUI(ui::UIContainer* ctx)
+void MSN_NewPrimitive::InlineEditUI()
 {
-	ctx->Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::SetPadding(5);
+	ui::Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::SetPadding(5);
 }
 
-void MSN_NewPrimitive::FullEditUI(ui::UIContainer* ctx)
+void MSN_NewPrimitive::FullEditUI()
 {
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_primTypeNames));
-	ui::imm::PropEditString(ctx, "Tex.inst.", texInst.expr.c_str(), [this](const char* v) { texInst.SetExpr(v); });
+	ui::imm::PropDropdownMenuList("Type", type, ui::BuildAlloc<ui::CStrArrayOptionList>(g_primTypeNames));
+	ui::imm::PropEditString("Tex.inst.", texInst.expr.c_str(), [this](const char* v) { texInst.SetExpr(v); });
 }
 
 
@@ -502,19 +502,19 @@ void MSN_VertexData::Do(MSContext& C)
 static const char* g_dests[] = { "position", "normal", "texcoord", "color" };
 static const char* g_types[] = { "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64" };
 
-void MSN_VertexData::InlineEditUI(ui::UIContainer* ctx)
+void MSN_VertexData::InlineEditUI()
 {
-	ctx->Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::SetPadding(5);
+	ui::Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::SetPadding(5);
 }
 
-void MSN_VertexData::FullEditUI(ui::UIContainer* ctx)
+void MSN_VertexData::FullEditUI()
 {
-	ui::imm::PropDropdownMenuList(ctx, "Destination", dest, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_dests));
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_types));
-	ui::imm::PropEditInt(ctx, "# components", ncomp, {}, 1.0f, 1, 4);
-	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
-	ui::imm::PropEditString(ctx, "Stride", stride.expr.c_str(), [this](const char* v) { stride.SetExpr(v); });
-	ui::imm::PropEditString(ctx, "Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
+	ui::imm::PropDropdownMenuList("Destination", dest, ui::BuildAlloc<ui::CStrArrayOptionList>(g_dests));
+	ui::imm::PropDropdownMenuList("Type", type, ui::BuildAlloc<ui::CStrArrayOptionList>(g_types));
+	ui::imm::PropEditInt("# components", ncomp, {}, 1.0f, 1, 4);
+	ui::imm::PropEditString("Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
+	ui::imm::PropEditString("Stride", stride.expr.c_str(), [this](const char* v) { stride.SetExpr(v); });
+	ui::imm::PropEditString("Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
 }
 
 
@@ -555,14 +555,14 @@ void MSN_IndexData::Do(MSContext& C)
 
 static const char* g_idxtypes[] = { "u8", "u16", "u32" };
 
-void MSN_IndexData::InlineEditUI(ui::UIContainer* ctx)
+void MSN_IndexData::InlineEditUI()
 {
-	ctx->Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::SetPadding(5);
+	ui::Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::SetPadding(5);
 }
 
-void MSN_IndexData::FullEditUI(ui::UIContainer* ctx)
+void MSN_IndexData::FullEditUI()
 {
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_idxtypes));
-	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
-	ui::imm::PropEditString(ctx, "Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
+	ui::imm::PropDropdownMenuList("Type", type, ui::BuildAlloc<ui::CStrArrayOptionList>(g_idxtypes));
+	ui::imm::PropEditString("Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
+	ui::imm::PropEditString("Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
 }

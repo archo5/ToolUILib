@@ -85,11 +85,11 @@ void TE_NamedColor::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 
-void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
+void EditNCRef(std::weak_ptr<TE_NamedColor>& ncref)
 {
 	// TODO internal selection with color previews
 	auto ncr = ncref.lock();
-	if (imm::Button(ctx, ncr ? ncr->name.c_str() : "<none>"))
+	if (imm::Button(ncr ? ncr->name.c_str() : "<none>"))
 	{
 		MenuItemCollection mic;
 		mic.Add("<none>", false, false, -1) = [&ncref]() { ncref = {}; };
@@ -97,7 +97,7 @@ void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
 		{
 			mic.Add(nc->name) = [&ncref, &nc]() { ncref = nc; };
 		}
-		Menu(mic.Finalize()).Show(ctx->GetCurrentBuildable());
+		Menu(mic.Finalize()).Show(ui::GetCurrentBuildable());
 	}
 }
 
@@ -169,16 +169,16 @@ void TE_ColorRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndObject();
 }
 
-void TE_ColorRef::UI(UIContainer* ctx)
+void TE_ColorRef::UI()
 {
-	Property::Scope ps(ctx, "\bColor");
-	imm::EditBool(ctx, useRef, useRef ? "N" : "C", {}, imm::ButtonStateToggleSkin());
+	Property::Scope ps("\bColor");
+	imm::EditBool(useRef, useRef ? "N" : "C", {}, imm::ButtonStateToggleSkin());
 	if (useRef)
 	{
-		EditNCRef(ctx, ncref);
+		EditNCRef(ncref);
 	}
 	else
 	{
-		imm::EditColor(ctx, color);
+		imm::EditColor(color);
 	}
 }

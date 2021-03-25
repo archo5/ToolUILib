@@ -8,35 +8,35 @@
 namespace ui {
 namespace imm {
 
-void CheckboxStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
+void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	ctx->Make<CheckboxIcon>();
+	Make<CheckboxIcon>();
 	if (!text.empty())
-		ctx->Text(text) + SetPadding(4);
+		Text(text) + SetPadding(4);
 }
 
-void RadioButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
+void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	ctx->Make<RadioButtonIcon>();
+	Make<RadioButtonIcon>();
 	if (!text.empty())
-		ctx->Text(text) + SetPadding(4);
+		Text(text) + SetPadding(4);
 }
 
-void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
+void ButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	ctx->MakeWithText<StateButtonSkin>(text);
+	MakeWithText<StateButtonSkin>(text);
 }
 
-void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
+void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	ctx->Make<TreeExpandIcon>();
+	Make<TreeExpandIcon>();
 	if (!text.empty())
-		ctx->Text(text) + SetPadding(4);
+		Text(text) + SetPadding(4);
 }
 
-bool Button(UIContainer* ctx, const char* text, ModInitList mods)
+bool Button(const char* text, ModInitList mods)
 {
-	auto& btn = ctx->MakeWithText<ui::Button>(text);
+	auto& btn = MakeWithText<ui::Button>(text);
 	btn.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
@@ -50,11 +50,11 @@ bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 	return clicked;
 }
 
-bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	auto& cb = ctx->Push<StateToggle>();
-	skin.BuildContents(ctx, cb, text ? text : StringView(), val);
-	ctx->Pop();
+	auto& cb = Push<StateToggle>();
+	skin.BuildContents(cb, text ? text : StringView(), val);
+	Pop();
 
 	cb.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
@@ -70,9 +70,9 @@ bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods,
 	return edited;
 }
 
-bool EditBool(UIContainer* ctx, bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+bool EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	if (CheckboxRaw(ctx, val, text, mods, skin))
+	if (CheckboxRaw(val, text, mods, skin))
 	{
 		val = !val;
 		return true;
@@ -80,11 +80,11 @@ bool EditBool(UIContainer* ctx, bool& val, const char* text, ModInitList mods, c
 	return false;
 }
 
-bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	auto& rb = ctx->Push<StateToggle>();
-	skin.BuildContents(ctx, rb, text ? text : StringView(), val);
-	ctx->Pop();
+	auto& rb = Push<StateToggle>();
+	skin.BuildContents(rb, text ? text : StringView(), val);
+	Pop();
 
 	rb.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
@@ -124,9 +124,9 @@ template <> struct MakeSigned<int64_t> { using type = int64_t; };
 template <> struct MakeSigned<uint64_t> { using type = int64_t; };
 template <> struct MakeSigned<float> { using type = float; };
 
-template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, ModInitList mods, float speed, TNum vmin, TNum vmax, const char* fmt)
+template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, float speed, TNum vmin, TNum vmax, const char* fmt)
 {
-	auto& tb = ctx->Make<Textbox>();
+	auto& tb = Make<Textbox>();
 	for (auto& mod : mods)
 		mod->Apply(&tb);
 
@@ -203,34 +203,34 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 	return edited;
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
 {
-	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
-	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
-	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditInt(UIContainer* ctx, UIObject* dragObj, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
-	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
-	return EditNumber(ctx, dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	auto& tb = ctx->Make<Textbox>();
+	auto& tb = Make<Textbox>();
 	for (auto& mod : mods)
 		mod->Apply(&tb);
 	bool changed = false;
@@ -251,9 +251,9 @@ bool EditString(UIContainer* ctx, const char* text, const std::function<void(con
 	return changed;
 }
 
-bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
+bool EditColor(Color4f& val, ModInitList mods)
 {
-	auto& ced = ctx->Make<ColorEdit>();
+	auto& ced = Make<ColorEdit>();
 	for (auto& mod : mods)
 		mod->Apply(&ced);
 	bool changed = false;
@@ -274,10 +274,10 @@ bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
 	return changed;
 }
 
-bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods)
+bool EditColor(Color4b& val, ModInitList mods)
 {
 	Color4f tmp = val;
-	if (EditColor(ctx, tmp, mods))
+	if (EditColor(tmp, mods))
 	{
 		val = tmp;
 		return true;
@@ -285,91 +285,91 @@ bool EditColor(UIContainer* ctx, Color4b& val, ModInitList mods)
 	return false;
 }
 
-bool EditFloatVec(UIContainer* ctx, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool EditFloatVec(float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
 	bool any = false;
 	char axisLabel[3] = "\b\0";
 	while (*axes)
 	{
 		axisLabel[1] = *axes++;
-		any |= PropEditFloat(ctx, axisLabel, *val++, mods, speed, vmin, vmax, fmt);
+		any |= PropEditFloat(axisLabel, *val++, mods, speed, vmin, vmax, fmt);
 	}
 	return any;
 }
 
 
-void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
+void PropText(const char* label, const char* text, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	auto& ctrl = ctx->Text(text) + SetPadding(5);
+	LabeledProperty::Scope ps(label);
+	auto& ctrl = Text(text) + SetPadding(5);
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
 }
 
-bool PropButton(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
+bool PropButton(const char* label, const char* text, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return Button(ctx, text, mods);
+	LabeledProperty::Scope ps(label);
+	return Button(text, mods);
 }
 
-bool PropEditBool(UIContainer* ctx, const char* label, bool& val, ModInitList mods)
+bool PropEditBool(const char* label, bool& val, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditBool(ctx, val, nullptr, mods);
+	LabeledProperty::Scope ps(label);
+	return EditBool(val, nullptr, mods);
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
+bool PropEditInt(const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool PropEditInt(const char* label, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool PropEditInt(const char* label, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool PropEditInt(UIContainer* ctx, const char* label, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditInt(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool PropEditFloat(UIContainer* ctx, const char* label, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool PropEditFloat(const char* label, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditFloat(ctx, ps.label, val, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditFloat(ps.label, val, mods, speed, vmin, vmax, fmt);
 }
 
-bool PropEditString(UIContainer* ctx, const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditString(ctx, text, retfn, mods);
+	LabeledProperty::Scope ps(label);
+	return EditString(text, retfn, mods);
 }
 
-bool PropEditColor(UIContainer* ctx, const char* label, Color4f& val, ModInitList mods)
+bool PropEditColor(const char* label, Color4f& val, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditColor(ctx, val, mods);
+	LabeledProperty::Scope ps(label);
+	return EditColor(val, mods);
 }
 
-bool PropEditColor(UIContainer* ctx, const char* label, Color4b& val, ModInitList mods)
+bool PropEditColor(const char* label, Color4b& val, ModInitList mods)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditColor(ctx, val, mods);
+	LabeledProperty::Scope ps(label);
+	return EditColor(val, mods);
 }
 
-bool PropEditFloatVec(UIContainer* ctx, const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
 {
-	LabeledProperty::Scope ps(ctx, label);
-	return EditFloatVec(ctx, val, axes, mods, speed, vmin, vmax, fmt);
+	LabeledProperty::Scope ps(label);
+	return EditFloatVec(val, axes, mods, speed, vmin, vmax, fmt);
 }
 
 } // imm
