@@ -50,7 +50,7 @@ struct SequenceEditorsTest : ui::Buildable
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
 		if (ui::imm::Button(ctx, "Reset"))
 		{
@@ -76,24 +76,24 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imm::EditBool(ctx, setSelectionStorage, "Storage");
 		}
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
 		ctx->Text("std::vector<int>:");
 		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ctx->Pop();
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
 		ctx->Text("std::list<int>:");
 		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ctx->Pop();
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
 		ctx->Text("std::deque<int>:");
 		SeqEdit(ctx, Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ctx->Pop();
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(25));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(25));
 		ctx->Text("int[5]:");
 		SeqEdit(ctx, Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
 		ctx->Pop();
@@ -502,14 +502,14 @@ struct TreeEditorsTest : ui::Buildable
 			}
 		};
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		ctx->Text("child pointer array:");
 		TreeEdit(ctx, &cpaTree);
 		ctx->Pop();
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		ctx->Text("child value array:");
 		TreeEdit(ctx, &cvaTree);
 		ctx->Pop();
@@ -569,7 +569,7 @@ struct TableViewTest : ui::Buildable
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		GetStyle().SetLayout(style::layouts::EdgeSlice());
+		GetStyle().SetLayout(ui::layouts::EdgeSlice());
 
 		{
 			ui::Property::Scope ps(ctx, "\bSelection type:");
@@ -580,7 +580,7 @@ struct TableViewTest : ui::Buildable
 		}
 
 		auto& tv = ctx->Make<ui::TableView>();
-		tv + ui::Height(style::Coord::Percent(100));
+		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetSelectionMode(selectionType);
 		tv.SetSelectionStorage(&g_randomNumbers);
 		tv.SetDataSource(&g_randomNumbers);
@@ -701,23 +701,23 @@ struct MessageLogViewTest : ui::Buildable
 				AddMessages(10000);
 		};
 		ctx->PushBox()
-			+ ui::StackingDirection(style::StackingDirection::LeftToRight)
-			//+ ui::Height(style::Coord::Percent(50));
-			+ ui::Height(200);
+			+ ui::Set(ui::StackingDirection::LeftToRight)
+			//+ ui::SetHeight(ui::Coord::Percent(50));
+			+ ui::SetHeight(200);
 		{
 			ctx->PushBox()
-				+ ui::Layout(style::layouts::EdgeSlice())
-				+ ui::Width(style::Coord::Percent(50))
-				+ ui::Height(style::Coord::Percent(100));
+				+ ui::SetLayout(ui::layouts::EdgeSlice())
+				+ ui::SetWidth(ui::Coord::Percent(50))
+				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
 				ctx->Text("single line");
 				ctx->Push<ui::ListBox>()
-					;// +ui::Height(style::Coord::Percent(100));
+					;// +ui::Height(ui::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_R>();
 					rds->msgs = &messages;
 					auto& mlv = ctx->Make<ui::MessageLogView>();
-					mlv + ui::Height(style::Coord::Percent(100));
+					mlv + ui::SetHeight(ui::Coord::Percent(100));
 					mlv.GetLivenessToken();
 					mlv.SetDataSource(rds);
 
@@ -729,18 +729,18 @@ struct MessageLogViewTest : ui::Buildable
 			ctx->Pop();
 
 			ctx->PushBox()
-				+ ui::Layout(style::layouts::EdgeSlice())
-				+ ui::Width(style::Coord::Percent(50))
-				+ ui::Height(style::Coord::Percent(100));
+				+ ui::SetLayout(ui::layouts::EdgeSlice())
+				+ ui::SetWidth(ui::Coord::Percent(50))
+				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
 				ctx->Text("two lines, custom drawing");
 				ctx->Push<ui::ListBox>()
-					;// +ui::Height(style::Coord::Percent(100));
+					;// +ui::Height(ui::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_I>();
 					rds->msgs = &messages;
 					auto& mlv = ctx->Make<ui::MessageLogView>();
-					mlv + ui::Height(style::Coord::Percent(100));
+					mlv + ui::SetHeight(ui::Coord::Percent(100));
 					mlv.SetDataSource(rds);
 
 					mlvI = &mlv;

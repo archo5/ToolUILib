@@ -11,7 +11,7 @@ void TabHighlights::Build(ui::UIContainer* ctx)
 	{
 		ctx->PushBox();
 
-		ctx->Text("Highlighted items") + ui::Padding(5);
+		ctx->Text("Highlighted items") + ui::SetPadding(5);
 
 		ctx->Pop();
 

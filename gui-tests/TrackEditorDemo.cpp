@@ -26,7 +26,7 @@ struct TrackEditorDemo : ui::Buildable
 		{
 			for (int i = 0; i < 4; i++)
 			{
-				style::PaintInfo info(this);
+				ui::PaintInfo info(this);
 				info.rect.y0 += i * TRACK_HEIGHT;
 				info.rect.y1 = info.rect.y0 + TRACK_HEIGHT;
 				ui::Theme::current->listBox->paint_func(info);
@@ -35,13 +35,13 @@ struct TrackEditorDemo : ui::Buildable
 			uint32_t id = 0;
 			for (Item& item : items)
 			{
-				style::PaintInfo info(this);
+				ui::PaintInfo info(this);
 				info.rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
 				info.state = 0;
 				if (subui.IsHovered(id))
-					info.state |= style::PS_Hover;
+					info.state |= ui::PS_Hover;
 				if (subui.IsPressed(id))
-					info.state |= style::PS_Down;
+					info.state |= ui::PS_Down;
 				ui::Theme::current->button->paint_func(info);
 				id++;
 			}

@@ -8,19 +8,15 @@
 #include <algorithm>
 
 
-namespace style {
-
-// TODO
-using namespace ui;
-
+namespace ui {
 
 void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
 	UIRect parentRect = outRect;
 	Size2f contSize = parentRect.GetSize();
 
-	float w = curObj->GetFullEstimatedWidth(contSize, style::EstSizeType::Expanding, false).min;
-	float h = curObj->GetFullEstimatedHeight(contSize, style::EstSizeType::Expanding, false).min;
+	float w = curObj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding, false).min;
+	float h = curObj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding, false).min;
 
 	float xo = 0, yo = 0;
 	if (useContentBox)
@@ -50,7 +46,7 @@ void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 
 namespace layouts {
 
-struct InlineBlockLayout : Layout
+struct InlineBlockLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
@@ -84,26 +80,26 @@ struct InlineBlockLayout : Layout
 	}
 }
 g_inlineBlockLayout;
-Layout* InlineBlock() { return &g_inlineBlockLayout; }
+ILayout* InlineBlock() { return &g_inlineBlockLayout; }
 
-struct StackLayout : Layout
+struct StackLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
 		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
+		if (dir == StackingDirection::Undefined)
+			dir = StackingDirection::TopDown;
 		switch (dir)
 		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
+		case StackingDirection::TopDown:
+		case StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
+		case StackingDirection::LeftToRight:
+		case StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 			break;
@@ -115,17 +111,17 @@ struct StackLayout : Layout
 		auto style = curObj->GetStyle();
 		float size = 0;
 		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
+		if (dir == StackingDirection::Undefined)
+			dir = StackingDirection::TopDown;
 		switch (dir)
 		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
+		case StackingDirection::TopDown:
+		case StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
+		case StackingDirection::LeftToRight:
+		case StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 			break;
@@ -179,7 +175,7 @@ struct StackLayout : Layout
 			float p = inrect.x0;
 			float xw = 0;
 			auto ha = style.GetHAlign();
-			if (ha != style::HAlign::Undefined && ha != style::HAlign::Left)
+			if (ha != HAlign::Undefined && ha != HAlign::Left)
 			{
 				float tw = 0;
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
@@ -187,13 +183,13 @@ struct StackLayout : Layout
 				float diff = inrect.GetWidth() - tw;
 				switch (ha)
 				{
-				case style::HAlign::Center:
+				case HAlign::Center:
 					p += diff / 2;
 					break;
-				case style::HAlign::Right:
+				case HAlign::Right:
 					p += diff;
 					break;
-				case style::HAlign::Justify: {
+				case HAlign::Justify: {
 					auto cc = curObj->CountChildrenImmediate();
 					if (cc > 1)
 						xw += diff / (cc - 1);
@@ -215,26 +211,26 @@ struct StackLayout : Layout
 	}
 }
 g_stackLayout;
-Layout* Stack() { return &g_stackLayout; }
+ILayout* Stack() { return &g_stackLayout; }
 
-struct StackExpandLayout : Layout
+struct StackExpandLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
 		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
+		if (dir == StackingDirection::Undefined)
+			dir = StackingDirection::TopDown;
 		switch (dir)
 		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
+		case StackingDirection::TopDown:
+		case StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min);
 			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
+		case StackingDirection::LeftToRight:
+		case StackingDirection::RightToLeft:
 			if (type == EstSizeType::Expanding)
 			{
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
@@ -251,12 +247,12 @@ struct StackExpandLayout : Layout
 		auto style = curObj->GetStyle();
 		float size = 0;
 		auto dir = style.GetStackingDirection();
-		if (dir == style::StackingDirection::Undefined)
-			dir = style::StackingDirection::TopDown;
+		if (dir == StackingDirection::Undefined)
+			dir = StackingDirection::TopDown;
 		switch (dir)
 		{
-		case style::StackingDirection::TopDown:
-		case style::StackingDirection::BottomUp:
+		case StackingDirection::TopDown:
+		case StackingDirection::BottomUp:
 			if (type == EstSizeType::Expanding)
 			{
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
@@ -265,8 +261,8 @@ struct StackExpandLayout : Layout
 			else
 				size = containerSize.y;
 			break;
-		case style::StackingDirection::LeftToRight:
-		case style::StackingDirection::RightToLeft:
+		case StackingDirection::LeftToRight:
+		case StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
 			break;
@@ -298,7 +294,7 @@ struct StackExpandLayout : Layout
 			{
 				auto s = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
 				auto sw = ch->GetStyle().GetWidth();
-				float fr = sw.unit == style::CoordTypeUnit::Fraction ? sw.value : 1;
+				float fr = sw.unit == CoordTypeUnit::Fraction ? sw.value : 1;
 				items.push_back({ ch, s.min, s.max, s.min, fr });
 				sorted.push_back(sorted.size());
 				sum += s.min;
@@ -335,10 +331,10 @@ struct StackExpandLayout : Layout
 	}
 }
 g_stackExpandLayout;
-Layout* StackExpand() { return &g_stackExpandLayout; }
+ILayout* StackExpand() { return &g_stackExpandLayout; }
 
 
-struct EdgeSliceLayout : Layout
+struct EdgeSliceLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
@@ -384,11 +380,12 @@ struct EdgeSliceLayout : Layout
 	}
 }
 g_edgeSliceLayout;
-Layout* EdgeSlice() { return &g_edgeSliceLayout; }
+ILayout* EdgeSlice() { return &g_edgeSliceLayout; }
+
 } // layouts
 
 
-int g_numBlocks;
+int g_numStyleBlocks;
 
 
 PaintInfo::PaintInfo(const UIObject* o) : obj(o)
@@ -407,7 +404,7 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 }
 
 
-void Block::MergeDirect(const Block& o)
+void StyleBlock::MergeDirect(const StyleBlock& o)
 {
 	//if (display == Display::Undefined) display = o.display;
 	//if (position == Position::Undefined) position = o.position;
@@ -437,7 +434,7 @@ void Block::MergeDirect(const Block& o)
 	if (!padding_bottom.IsDefined()) padding_bottom = o.padding_bottom;
 }
 
-void Block::MergeParent(const Block& o)
+void StyleBlock::MergeParent(const StyleBlock& o)
 {
 	//if (layout == Layout::Inherit) layout = o.layout;
 	if (stacking_direction == StackingDirection::Inherit) stacking_direction = o.stacking_direction;
@@ -465,7 +462,7 @@ void Block::MergeParent(const Block& o)
 	if (padding_bottom.unit == CoordTypeUnit::Inherit) padding_bottom = o.padding_bottom;
 }
 
-Block::~Block()
+StyleBlock::~StyleBlock()
 {
 	for (auto* ch = _firstChild; ch; ch = ch->_next)
 	{
@@ -489,13 +486,13 @@ Block::~Block()
 	}
 }
 
-void Block::_Release()
+void StyleBlock::_Release()
 {
 	if (--_refCount <= 0)
 		delete this;
 }
 
-Block* Block::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref)
+StyleBlock* StyleBlock::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref)
 {
 	for (auto* ch = _firstChild; ch; ch = ch->_next)
 	{
@@ -506,7 +503,7 @@ Block* Block::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const
 	}
 
 	// create new
-	Block* copy = new Block(*this);
+	StyleBlock* copy = new StyleBlock(*this);
 	copy->_refCount = 0;
 	copy->_numChildren = 0;
 	copy->_prev = nullptr;
@@ -533,39 +530,39 @@ Block* Block::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const
 }
 
 
-Accessor::Accessor(Block* b) : block(b), blkref(nullptr), owner(nullptr)
+StyleAccessor::StyleAccessor(StyleBlock* b) : block(b), blkref(nullptr), owner(nullptr)
 {
 }
 
-Accessor::Accessor(BlockRef& r, UIObject* o) : block(r), blkref(&r), owner(o)
+StyleAccessor::StyleAccessor(StyleBlockRef& r, UIObject* o) : block(r), blkref(&r), owner(o)
 {
 }
 
 #if 0
-Display Accessor::GetDisplay() const
+Display StyleAccessor::GetDisplay() const
 {
 	return obj->styleProps ? obj->styleProps->display : Display::Undefined;
 }
 
-void Accessor::SetDisplay(Display display)
+void StyleAccessor::SetDisplay(Display display)
 {
-	CreateBlock(obj);
+	CreateStyleBlock(obj);
 	obj->styleProps->display = display;
 }
 
-Position Accessor::GetPosition() const
+Position StyleAccessor::GetPosition() const
 {
 	return obj->styleProps ? obj->styleProps->position : Position::Undefined;
 }
 
-void Accessor::SetPosition(Position position)
+void StyleAccessor::SetPosition(Position position)
 {
-	CreateBlock(obj);
+	CreateStyleBlock(obj);
 	obj->styleProps->position = position;
 }
 #endif
 
-template <class T> void AccSet(Accessor& a, int off, T v)
+template <class T> void AccSet(StyleAccessor& a, int off, T v)
 {
 	if (a.blkref)
 	{
@@ -582,259 +579,260 @@ template <class T> void AccSet(Accessor& a, int off, T v)
 		a.owner->_OnChangeStyle();
 }
 
-Layout* Accessor::GetLayout() const
+ILayout* StyleAccessor::GetLayout() const
 {
 	return block->layout;
 }
 
-void Accessor::SetLayout(Layout* v)
+void StyleAccessor::SetLayout(ILayout* v)
 {
-	AccSet(*this, offsetof(Block, layout), v);
+	AccSet(*this, offsetof(StyleBlock, layout), v);
 }
 
-Placement* Accessor::GetPlacement() const
+IPlacement* StyleAccessor::GetPlacement() const
 {
 	return block->placement;
 }
 
-void Accessor::SetPlacement(Placement* v)
+void StyleAccessor::SetPlacement(IPlacement* v)
 {
-	AccSet(*this, offsetof(Block, placement), v);
+	AccSet(*this, offsetof(StyleBlock, placement), v);
 }
 
-StackingDirection Accessor::GetStackingDirection() const
-{
-	return block->stacking_direction;
-}
-
-void Accessor::SetStackingDirection(StackingDirection v)
-{
-	AccSet(*this, offsetof(Block, stacking_direction), v);
-}
-
-Edge Accessor::GetEdge() const
-{
-	return block->edge;
-}
-
-void Accessor::SetEdge(Edge v)
-{
-	AccSet(*this, offsetof(Block, edge), v);
-}
-
-BoxSizing Accessor::GetBoxSizing() const
-{
-	return block->box_sizing;
-}
-
-void Accessor::SetBoxSizing(BoxSizing v)
-{
-	AccSet(*this, offsetof(Block, box_sizing), v);
-}
-
-HAlign Accessor::GetHAlign() const
-{
-	return block->h_align;
-}
-
-void Accessor::SetHAlign(HAlign a)
-{
-	AccSet(*this, offsetof(Block, h_align), a);
-}
-
-PaintFunction Accessor::GetPaintFunc() const
+PaintFunction StyleAccessor::GetPaintFunc() const
 {
 	return block->paint_func;
 }
 
-void Accessor::SetPaintFunc(const PaintFunction& f)
+void StyleAccessor::SetPaintFunc(const PaintFunction& f)
 {
-	AccSet(*this, offsetof(Block, paint_func), f);
+	AccSet(*this, offsetof(StyleBlock, paint_func), f);
 }
 
 
-FontWeight Accessor::GetFontWeight() const
+StackingDirection StyleAccessor::GetStackingDirection() const
+{
+	return block->stacking_direction;
+}
+
+void StyleAccessor::SetStackingDirection(StackingDirection v)
+{
+	AccSet(*this, offsetof(StyleBlock, stacking_direction), v);
+}
+
+Edge StyleAccessor::GetEdge() const
+{
+	return block->edge;
+}
+
+void StyleAccessor::SetEdge(Edge v)
+{
+	AccSet(*this, offsetof(StyleBlock, edge), v);
+}
+
+BoxSizing StyleAccessor::GetBoxSizing() const
+{
+	return block->box_sizing;
+}
+
+void StyleAccessor::SetBoxSizing(BoxSizing v)
+{
+	AccSet(*this, offsetof(StyleBlock, box_sizing), v);
+}
+
+HAlign StyleAccessor::GetHAlign() const
+{
+	return block->h_align;
+}
+
+void StyleAccessor::SetHAlign(HAlign a)
+{
+	AccSet(*this, offsetof(StyleBlock, h_align), a);
+}
+
+
+FontWeight StyleAccessor::GetFontWeight() const
 {
 	return block->font_weight;
 }
 
-void Accessor::SetFontWeight(FontWeight v)
+void StyleAccessor::SetFontWeight(FontWeight v)
 {
-	AccSet(*this, offsetof(Block, font_weight), v);
+	AccSet(*this, offsetof(StyleBlock, font_weight), v);
 }
 
-FontStyle Accessor::GetFontStyle() const
+FontStyle StyleAccessor::GetFontStyle() const
 {
 	return block->font_style;
 }
 
-void Accessor::SetFontStyle(FontStyle v)
+void StyleAccessor::SetFontStyle(FontStyle v)
 {
-	AccSet(*this, offsetof(Block, font_style), v);
+	AccSet(*this, offsetof(StyleBlock, font_style), v);
 }
 
-Coord Accessor::GetFontSize() const
+Coord StyleAccessor::GetFontSize() const
 {
 	return block->font_size;
 }
 
-void Accessor::SetFontSize(Coord v)
+void StyleAccessor::SetFontSize(Coord v)
 {
-	AccSet(*this, offsetof(Block, font_size), v);
+	AccSet(*this, offsetof(StyleBlock, font_size), v);
 }
 
-Color Accessor::GetTextColor() const
+StyleColor StyleAccessor::GetTextColor() const
 {
 	return block->text_color;
 }
 
-void Accessor::SetTextColor(Color v)
+void StyleAccessor::SetTextColor(StyleColor v)
 {
-	AccSet(*this, offsetof(Block, text_color), v);
+	AccSet(*this, offsetof(StyleBlock, text_color), v);
 }
 
 
-Coord Accessor::GetWidth() const
+Coord StyleAccessor::GetWidth() const
 {
 	return block->width;
 }
 
-void Accessor::SetWidth(Coord v)
+void StyleAccessor::SetWidth(Coord v)
 {
-	AccSet(*this, offsetof(Block, width), v);
+	AccSet(*this, offsetof(StyleBlock, width), v);
 }
 
-Coord Accessor::GetHeight() const
+Coord StyleAccessor::GetHeight() const
 {
 	return block->height;
 }
 
-void Accessor::SetHeight(Coord v)
+void StyleAccessor::SetHeight(Coord v)
 {
-	AccSet(*this, offsetof(Block, height), v);
+	AccSet(*this, offsetof(StyleBlock, height), v);
 }
 
-Coord Accessor::GetMinWidth() const
+Coord StyleAccessor::GetMinWidth() const
 {
 	return block->min_width;
 }
 
-void Accessor::SetMinWidth(Coord v)
+void StyleAccessor::SetMinWidth(Coord v)
 {
-	AccSet(*this, offsetof(Block, min_width), v);
+	AccSet(*this, offsetof(StyleBlock, min_width), v);
 }
 
-Coord Accessor::GetMinHeight() const
+Coord StyleAccessor::GetMinHeight() const
 {
 	return block->min_height;
 }
 
-void Accessor::SetMinHeight(Coord v)
+void StyleAccessor::SetMinHeight(Coord v)
 {
-	AccSet(*this, offsetof(Block, min_height), v);
+	AccSet(*this, offsetof(StyleBlock, min_height), v);
 }
 
-Coord Accessor::GetMaxWidth() const
+Coord StyleAccessor::GetMaxWidth() const
 {
 	return block->max_width;
 }
 
-void Accessor::SetMaxWidth(Coord v)
+void StyleAccessor::SetMaxWidth(Coord v)
 {
-	AccSet(*this, offsetof(Block, max_width), v);
+	AccSet(*this, offsetof(StyleBlock, max_width), v);
 }
 
-Coord Accessor::GetMaxHeight() const
+Coord StyleAccessor::GetMaxHeight() const
 {
 	return block->max_height;
 }
 
-void Accessor::SetMaxHeight(Coord v)
+void StyleAccessor::SetMaxHeight(Coord v)
 {
-	AccSet(*this, offsetof(Block, max_height), v);
+	AccSet(*this, offsetof(StyleBlock, max_height), v);
 }
 
-Coord Accessor::GetLeft() const
+Coord StyleAccessor::GetLeft() const
 {
 	return block->left;
 }
 
-void Accessor::SetLeft(Coord v)
+void StyleAccessor::SetLeft(Coord v)
 {
-	AccSet(*this, offsetof(Block, left), v);
+	AccSet(*this, offsetof(StyleBlock, left), v);
 }
 
-Coord Accessor::GetRight() const
+Coord StyleAccessor::GetRight() const
 {
 	return block->right;
 }
 
-void Accessor::SetRight(Coord v)
+void StyleAccessor::SetRight(Coord v)
 {
-	AccSet(*this, offsetof(Block, right), v);
+	AccSet(*this, offsetof(StyleBlock, right), v);
 }
 
-Coord Accessor::GetTop() const
+Coord StyleAccessor::GetTop() const
 {
 	return block->top;
 }
 
-void Accessor::SetTop(Coord v)
+void StyleAccessor::SetTop(Coord v)
 {
-	AccSet(*this, offsetof(Block, top), v);
+	AccSet(*this, offsetof(StyleBlock, top), v);
 }
 
-Coord Accessor::GetBottom() const
+Coord StyleAccessor::GetBottom() const
 {
 	return block->bottom;
 }
 
-void Accessor::SetBottom(Coord v)
+void StyleAccessor::SetBottom(Coord v)
 {
-	AccSet(*this, offsetof(Block, bottom), v);
+	AccSet(*this, offsetof(StyleBlock, bottom), v);
 }
 
-Coord Accessor::GetMarginLeft() const
+Coord StyleAccessor::GetMarginLeft() const
 {
 	return block->margin_left;
 }
 
-void Accessor::SetMarginLeft(Coord v)
+void StyleAccessor::SetMarginLeft(Coord v)
 {
-	AccSet(*this, offsetof(Block, margin_left), v);
+	AccSet(*this, offsetof(StyleBlock, margin_left), v);
 }
 
-Coord Accessor::GetMarginRight() const
+Coord StyleAccessor::GetMarginRight() const
 {
 	return block->margin_right;
 }
 
-void Accessor::SetMarginRight(Coord v)
+void StyleAccessor::SetMarginRight(Coord v)
 {
-	AccSet(*this, offsetof(Block, margin_right), v);
+	AccSet(*this, offsetof(StyleBlock, margin_right), v);
 }
 
-Coord Accessor::GetMarginTop() const
+Coord StyleAccessor::GetMarginTop() const
 {
 	return block->margin_top;
 }
 
-void Accessor::SetMarginTop(Coord v)
+void StyleAccessor::SetMarginTop(Coord v)
 {
-	AccSet(*this, offsetof(Block, margin_top), v);
+	AccSet(*this, offsetof(StyleBlock, margin_top), v);
 }
 
-Coord Accessor::GetMarginBottom() const
+Coord StyleAccessor::GetMarginBottom() const
 {
 	return block->margin_bottom;
 }
 
-void Accessor::SetMarginBottom(Coord v)
+void StyleAccessor::SetMarginBottom(Coord v)
 {
-	AccSet(*this, offsetof(Block, margin_bottom), v);
+	AccSet(*this, offsetof(StyleBlock, margin_bottom), v);
 }
 
-void Accessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
+void StyleAccessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 {
 	// TODO?
 #if 0
@@ -844,53 +842,53 @@ void Accessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 	block->margin_bottom = b;
 	block->margin_left = l;
 #endif
-	AccSet(*this, offsetof(Block, margin_top), t);
-	AccSet(*this, offsetof(Block, margin_right), r);
-	AccSet(*this, offsetof(Block, margin_bottom), b);
-	AccSet(*this, offsetof(Block, margin_left), l);
+	AccSet(*this, offsetof(StyleBlock, margin_top), t);
+	AccSet(*this, offsetof(StyleBlock, margin_right), r);
+	AccSet(*this, offsetof(StyleBlock, margin_bottom), b);
+	AccSet(*this, offsetof(StyleBlock, margin_left), l);
 }
 
-Coord Accessor::GetPaddingLeft() const
+Coord StyleAccessor::GetPaddingLeft() const
 {
 	return block->padding_left;
 }
 
-void Accessor::SetPaddingLeft(Coord v)
+void StyleAccessor::SetPaddingLeft(Coord v)
 {
-	AccSet(*this, offsetof(Block, padding_left), v);
+	AccSet(*this, offsetof(StyleBlock, padding_left), v);
 }
 
-Coord Accessor::GetPaddingRight() const
+Coord StyleAccessor::GetPaddingRight() const
 {
 	return block->padding_right;
 }
 
-void Accessor::SetPaddingRight(Coord v)
+void StyleAccessor::SetPaddingRight(Coord v)
 {
-	AccSet(*this, offsetof(Block, padding_right), v);
+	AccSet(*this, offsetof(StyleBlock, padding_right), v);
 }
 
-Coord Accessor::GetPaddingTop() const
+Coord StyleAccessor::GetPaddingTop() const
 {
 	return block->padding_top;
 }
 
-void Accessor::SetPaddingTop(Coord v)
+void StyleAccessor::SetPaddingTop(Coord v)
 {
-	AccSet(*this, offsetof(Block, padding_top), v);
+	AccSet(*this, offsetof(StyleBlock, padding_top), v);
 }
 
-Coord Accessor::GetPaddingBottom() const
+Coord StyleAccessor::GetPaddingBottom() const
 {
 	return block->padding_bottom;
 }
 
-void Accessor::SetPaddingBottom(Coord v)
+void StyleAccessor::SetPaddingBottom(Coord v)
 {
-	AccSet(*this, offsetof(Block, padding_bottom), v);
+	AccSet(*this, offsetof(StyleBlock, padding_bottom), v);
 }
 
-void Accessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
+void StyleAccessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
 {
 	// TODO?
 #if 0
@@ -900,10 +898,10 @@ void Accessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
 	block->padding_bottom = b;
 	block->padding_left = l;
 #endif
-	AccSet(*this, offsetof(Block, padding_top), t);
-	AccSet(*this, offsetof(Block, padding_right), r);
-	AccSet(*this, offsetof(Block, padding_bottom), b);
-	AccSet(*this, offsetof(Block, padding_left), l);
+	AccSet(*this, offsetof(StyleBlock, padding_top), t);
+	AccSet(*this, offsetof(StyleBlock, padding_right), r);
+	AccSet(*this, offsetof(StyleBlock, padding_bottom), b);
+	AccSet(*this, offsetof(StyleBlock, padding_left), l);
 }
 
 
@@ -1001,4 +999,4 @@ void FlexLayout(UIObject* obj)
 }
 
 
-}
+} // ui

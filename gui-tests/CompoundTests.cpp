@@ -42,37 +42,37 @@ struct StateButtonsTest : ui::Buildable
 		{
 		case 0:
 			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text(text) + ui::Padding(4); // TODO consistent padding from theme?
+			ctx->Text(text) + ui::SetPadding(4); // TODO consistent padding from theme?
 			break;
 		case 1:
 			ctx->Make<ui::RadioButtonIcon>();
-			ctx->Text(text) + ui::Padding(4);
+			ctx->Text(text) + ui::SetPadding(4);
 			break;
 		case 2:
 			ctx->Make<ui::TreeExpandIcon>();
-			ctx->Text(text) + ui::Padding(4);
+			ctx->Text(text) + ui::SetPadding(4);
 			break;
 		case 3:
 			ctx->MakeWithText<ui::StateButtonSkin>(text);
 			break;
 		case 4:
-			ctx->Text(GetStateText(stb->GetState()) + text) + ui::Padding(5);
+			ctx->Text(GetStateText(stb->GetState()) + text) + ui::SetPadding(5);
 			break;
 		case 5:
 			ctx->Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));
-			ctx->Text(text) + ui::Padding(4);
+			ctx->Text(text) + ui::SetPadding(4);
 			break;
 		case 6:
 			ctx->MakeWithText<ui::ColorBlock>(text)
 				.SetColor(GetStateColorDark(stb->GetState()))
-				+ ui::Width(style::Coord::Undefined());
+				+ ui::SetWidth(ui::Coord::Undefined());
 			break;
 		case 7: {
 			auto s = ctx->Text(text).GetStyle();
 			s.SetPadding(5);
 			s.SetTextColor(GetStateColor(stb->GetState()));
-			s.SetFontWeight(stb->GetState() == 1 ? style::FontWeight::Bold : style::FontWeight::Normal);
-			s.SetFontStyle(stb->GetState() > 1 ? style::FontStyle::Italic : style::FontStyle::Normal);
+			s.SetFontWeight(stb->GetState() == 1 ? ui::FontWeight::Bold : ui::FontWeight::Normal);
+			s.SetFontStyle(stb->GetState() > 1 ? ui::FontStyle::Italic : ui::FontStyle::Normal);
 			break; }
 		}
 	}
@@ -81,9 +81,9 @@ struct StateButtonsTest : ui::Buildable
 	{
 		constexpr int NUM_STYLES = 8;
 
-		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ctx->Text("CB activate");
 
@@ -96,7 +96,7 @@ struct StateButtonsTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ctx->Text("CB int.state");
 
@@ -110,7 +110,7 @@ struct StateButtonsTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ctx->Text("CB ext.state");
 
@@ -123,7 +123,7 @@ struct StateButtonsTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(15));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ctx->Text("CB int.3-state");
 
@@ -137,7 +137,7 @@ struct StateButtonsTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
 			ctx->Text("RB activate");
 
@@ -156,7 +156,7 @@ struct StateButtonsTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetWidth(style::Coord::Percent(20));
+		ctx->PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
 			ctx->Text("RB ext.state");
 
@@ -199,7 +199,7 @@ struct PropertyListTest : ui::Buildable
 
 		ctx->MakeWithText<ui::Button>("interjection");
 
-		ctx->Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(style::FontWeight::Bold);
+		ctx->Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(ui::FontWeight::Bold);
 		ctx->MakeWithText<ui::Button>("test 2");
 		ctx->Pop();
 
@@ -210,8 +210,8 @@ struct PropertyListTest : ui::Buildable
 			ctx->Pop();
 
 			auto s = ctx->Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)").GetStyle();
-			s.SetLayout(style::layouts::StackExpand());
-			s.SetStackingDirection(style::StackingDirection::LeftToRight);
+			s.SetLayout(ui::layouts::StackExpand());
+			s.SetStackingDirection(ui::StackingDirection::LeftToRight);
 			{
 				ctx->Push<ui::LabeledProperty>().SetText("X").SetBrief(true);
 				ctx->MakeWithText<ui::Button>("A");
@@ -255,19 +255,19 @@ struct SlidersTest : ui::Buildable
 		static float sldval3 = 0.63f;
 		{
 			auto& s = ctx->Make<ui::Slider>().Init(sldval3, { 0, 1 });
-			style::Accessor a = s.GetTrackStyle();
-			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const style::PaintInfo& info)
+			ui::StyleAccessor a = s.GetTrackStyle();
+			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const ui::PaintInfo& info)
 			{
 				fn(info);
 				auto r = info.rect;
 				ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
 			});
-			s.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
+			s.GetTrackFillStyle().SetPaintFunc([](const ui::PaintInfo& info) {});
 		}
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 4: vert stretched");
-		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::Height(40);
+		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::SetHeight(40);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Color picker parts");
@@ -295,8 +295,8 @@ struct SplitPaneTest : ui::Buildable
 {
 	void Build(ui::UIContainer* ctx) override
 	{
-		GetStyle().SetWidth(style::Coord::Percent(100));
-		GetStyle().SetHeight(style::Coord::Percent(100));
+		GetStyle().SetWidth(ui::Coord::Percent(100));
+		GetStyle().SetHeight(ui::Coord::Percent(100));
 
 		ctx->Push<ui::SplitPane>();
 
@@ -329,7 +329,7 @@ struct TabsTest : ui::Buildable
 			ctx->Push<ui::TabButtonList>();
 			{
 				ctx->Push<ui::TabButtonT<int>>().Init(tab1, 0);
-				ctx->Text("First tab") + ui::Padding(5);
+				ctx->Text("First tab") + ui::SetPadding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 
@@ -341,7 +341,7 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ctx->Text("Second tab") + ui::Padding(5);
+				ctx->Text("Second tab") + ui::SetPadding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 			}
@@ -373,12 +373,12 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ctx->Text("First tab") + ui::Padding(5);
+				ctx->Text("First tab") + ui::SetPadding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 
 				ctx->Push<ui::TabButtonT<int>>().Init(tab2, 1);
-				ctx->Text("Second tab") + ui::Padding(5);
+				ctx->Text("Second tab") + ui::SetPadding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 			}
@@ -427,16 +427,16 @@ struct ScrollbarsTest : ui::Buildable
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		GetStyle().SetLayout(style::layouts::EdgeSlice());
+		GetStyle().SetLayout(ui::layouts::EdgeSlice());
 
 		ui::imm::PropEditInt(ctx, "\bCount", count);
 		ui::imm::PropEditBool(ctx, "\bExpanding", expanding);
 
 		auto& sa = ctx->Push<ui::ScrollArea>();
 		if (!expanding)
-			sa + ui::Width(300) + ui::Height(200);
+			sa + ui::SetWidth(300) + ui::SetHeight(200);
 		else
-			sa + ui::Height(style::Coord::Percent(100));
+			sa + ui::SetHeight(ui::Coord::Percent(100));
 
 		for (int i = 0; i < count; i++)
 			ctx->Textf("Inside scroll area [%d]", i);
@@ -459,12 +459,12 @@ struct ColorBlockTest : ui::Buildable
 		ctx->Make<ui::ColorBlock>().SetColor(colorB);
 
 		ctx->Text("Without edge");
-		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::Padding(0);
-		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::Padding(0);
+		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
+		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
 
 		ctx->Text("Custom size");
-		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::Width(200) + ui::Height(40);
-		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::Width(200) + ui::Height(40);
+		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
+		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
 
 		ctx->Text("Color inspect block");
 		ctx->Make<ui::ColorInspectBlock>().SetColor(colorA);
@@ -473,29 +473,29 @@ struct ColorBlockTest : ui::Buildable
 		ctx->Text("Assembled");
 		auto C = colorB;
 		ctx->Push<ui::Panel>()
-			+ ui::Padding(3);
+			+ ui::SetPadding(3);
 		{
 			ctx->PushBox()
-				+ ui::Layout(style::layouts::StackExpand())
-				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
+				+ ui::SetLayout(ui::layouts::StackExpand())
+				+ ui::Set(ui::StackingDirection::LeftToRight);
 			{
 				ctx->Make<ui::ColorBlock>().SetColor(C.GetOpaque())
-					+ ui::Padding(0)
-					+ ui::Width(style::Coord::Percent(50));
+					+ ui::SetPadding(0)
+					+ ui::SetWidth(ui::Coord::Percent(50));
 				ctx->Make<ui::ColorBlock>().SetColor(C)
-					+ ui::Padding(0)
-					+ ui::Width(style::Coord::Percent(50));
+					+ ui::SetPadding(0)
+					+ ui::SetWidth(ui::Coord::Percent(50));
 			}
 			ctx->Pop();
 			ctx->Push<ui::ColorBlock>().SetColor(ui::Color4b::Black())
-				+ ui::Padding(0)
-				+ ui::Width(style::Coord::Percent(100))
-				+ ui::Height(4);
+				+ ui::SetPadding(0)
+				+ ui::SetWidth(ui::Coord::Percent(100))
+				+ ui::SetHeight(4);
 			{
 				ctx->Make<ui::ColorBlock>().SetColor(ui::Color4b::White())
-					+ ui::Padding(0)
-					+ ui::Width(style::Coord::Percent(100.f * C.a / 255.f))
-					+ ui::Height(4);
+					+ ui::SetPadding(0)
+					+ ui::SetWidth(ui::Coord::Percent(100.f * C.a / 255.f))
+					+ ui::SetHeight(4);
 			}
 			ctx->Pop();
 		}
@@ -529,18 +529,18 @@ struct ImageTest : ui::Buildable
 	}
 	void Build(ui::UIContainer* ctx) override
 	{
-		style::BlockRef pbr = ui::Theme::current->panel;
-		style::Accessor pa(pbr, nullptr);
-		pa.SetLayout(style::layouts::InlineBlock());
+		ui::StyleBlockRef pbr = ui::Theme::current->panel;
+		ui::StyleAccessor pa(pbr, nullptr);
+		pa.SetLayout(ui::layouts::InlineBlock());
 		pa.SetPadding(4);
 		pa.SetMargin(0);
 
-		style::BlockRef ibr = ui::Theme::current->image;
-		style::Accessor ia(ibr, nullptr);
+		ui::StyleBlockRef ibr = ui::Theme::current->image;
+		ui::StyleAccessor ia(ibr, nullptr);
 		ia.SetHeight(25);
 
-		style::BlockRef ibr2 = ui::Theme::current->image;
-		style::Accessor ia2(ibr2, nullptr);
+		ui::StyleBlockRef ibr2 = ui::Theme::current->image;
+		ui::StyleAccessor ia2(ibr2, nullptr);
 		ia2.SetWidth(25);
 
 		ui::ScaleMode scaleModes[3] = { ui::ScaleMode::Stretch, ui::ScaleMode::Fit, ui::ScaleMode::Fill };
@@ -609,8 +609,8 @@ struct The3DViewTest : ui::Buildable
 	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::Panel>()
-			+ ui::Margin(0)
-			+ ui::Height(style::Coord::Percent(100));
+			+ ui::SetMargin(0)
+			+ ui::SetHeight(ui::Coord::Percent(100));
 		{
 			auto& v = ctx->Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -621,14 +621,14 @@ struct The3DViewTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
-			v + ui::Height(style::Coord::Percent(100));
+			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
 				ctx->Text("Overlay text");
 				ctx->Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
 				ctx->MakeWithText<ui::Button>("Reset")
-					+ ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { camera = {}; })
-					+ ui::Width(40)
-					+ ui::Layout(style::layouts::InlineBlock()); // TODO FIX
+					+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { camera = {}; })
+					+ ui::SetWidth(40)
+					+ ui::SetLayout(ui::layouts::InlineBlock()); // TODO FIX
 			}
 			ctx->Pop();
 		}
@@ -754,8 +754,8 @@ struct GizmoTest : ui::Buildable
 	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::Panel>()
-			+ ui::Margin(0)
-			+ ui::Height(style::Coord::Percent(100));
+			+ ui::SetMargin(0)
+			+ ui::SetHeight(ui::Coord::Percent(100));
 		{
 			auto& v = ctx->Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -768,11 +768,11 @@ struct GizmoTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
-			v + ui::Height(style::Coord::Percent(100));
+			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
-				auto* leftTop = Allocate<style::PointAnchoredPlacement>();
+				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
-				ctx->Push<ui::Panel>() + ui::Width(120) + ui::SetPlacement(leftTop);
+				ctx->Push<ui::Panel>() + ui::SetWidth(120) + ui::SetPlacement(leftTop);
 				{
 					ctx->MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat(ctx, "FOV", fov, {}, 1.0f, 1.0f, 179.0f);
@@ -785,13 +785,13 @@ struct GizmoTest : ui::Buildable
 					}
 
 					auto pos = xf.TransformPoint({ 0, 0, 0 });
-					ctx->Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::Padding(5);
+					ctx->Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::SetPadding(5);
 				}
 				ctx->Pop();
 
-				auto* rightTop = Allocate<style::PointAnchoredPlacement>();
+				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
-				ctx->Push<ui::Panel>() + ui::Width(180) + ui::SetPlacement(rightTop);
+				ctx->Push<ui::Panel>() + ui::SetWidth(180) + ui::SetPlacement(rightTop);
 				{
 					ctx->MakeWithText<ui::Header>("Gizmo");
 					ui::imm::PropEditFloat(ctx, "Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
@@ -943,7 +943,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
-			ctx->Text("int: " + std::to_string(intVal)) + ui::Padding(5);
+			ctx->Text("int: " + std::to_string(intVal)) + ui::SetPadding(5);
 			ui::LabeledProperty::End(ctx);
 		}
 		{
@@ -954,7 +954,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
-			ctx->Text("uint: " + std::to_string(uintVal)) + ui::Padding(5);
+			ctx->Text("uint: " + std::to_string(uintVal)) + ui::SetPadding(5);
 			ui::LabeledProperty::End(ctx);
 		}
 		{
@@ -965,7 +965,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
-			ctx->Text("int64: " + std::to_string(int64Val)) + ui::Padding(5);
+			ctx->Text("int64: " + std::to_string(int64Val)) + ui::SetPadding(5);
 			ui::LabeledProperty::End(ctx);
 		}
 		{
@@ -976,7 +976,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
-			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::Padding(5);
+			ctx->Text("uint64: " + std::to_string(uint64Val)) + ui::SetPadding(5);
 			ui::LabeledProperty::End(ctx);
 		}
 		{
@@ -987,7 +987,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditFloat(ctx, "\bdisabled", tmp, { ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
 				floatVal = tmp;
 
-			ctx->Text("float: " + std::to_string(floatVal)) + ui::Padding(5);
+			ctx->Text("float: " + std::to_string(floatVal)) + ui::SetPadding(5);
 			ui::LabeledProperty::End(ctx);
 		}
 		{
@@ -1048,8 +1048,8 @@ struct DropdownTest : ui::Buildable
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::StackingDirection(style::StackingDirection::LeftToRight);
-		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		*this + ui::Set(ui::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		{
 			ctx->Make<SpecificDropdownMenu>();
 
@@ -1070,7 +1070,7 @@ struct DropdownTest : ui::Buildable
 		}
 		ctx->Pop();
 
-		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
+		ctx->PushBox() + ui::SetWidth(ui::Coord::Percent(33));
 		{
 			ctx->Text("immediate mode");
 			ui::imm::DropdownMenuList(ctx, sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
@@ -1105,12 +1105,12 @@ struct DropdownTest : ui::Buildable
 
 			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag1);
 			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text("Option 1") + ui::Padding(5);
+			ctx->Text("Option 1") + ui::SetPadding(5);
 			ctx->Pop();
 
 			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag2);
 			ctx->Make<ui::CheckboxIcon>();
-			ctx->Text("Option 2") + ui::Padding(5);
+			ctx->Text("Option 2") + ui::SetPadding(5);
 			ctx->Pop();
 		}
 	};

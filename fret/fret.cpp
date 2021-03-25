@@ -110,8 +110,8 @@ struct MainWindowContents : ui::Buildable
 		ctx->Pop();
 
 		ctx->Push<ui::TabGroup>()
-			+ ui::Layout(style::layouts::EdgeSlice())
-			+ ui::Height(style::Coord::Percent(100));
+			+ ui::SetLayout(ui::layouts::EdgeSlice())
+			+ ui::SetHeight(ui::Coord::Percent(100));
 		{
 			ctx->Push<ui::TabButtonList>();
 			{
@@ -132,9 +132,9 @@ struct MainWindowContents : ui::Buildable
 				if (workspace.curOpenedFile != nf++)
 					continue;
 
-				ctx->Push<ui::TabPanel>() + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+				ctx->Push<ui::TabPanel>() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 				{
-					ctx->Push<ui::Panel>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Height(style::Coord::Percent(100));
+					ctx->Push<ui::Panel>() + ui::SetBoxSizing(ui::BoxSizing::BorderBox) + ui::SetHeight(ui::Coord::Percent(100));
 					{
 						//ctx->Make<FileStructureViewer2>()->ds = f->ds;
 						auto& sp = ctx->Push<ui::SplitPane>();
@@ -147,8 +147,8 @@ struct MainWindowContents : ui::Buildable
 
 							// right
 							ctx->Push<ui::TabGroup>()
-								+ ui::Layout(style::layouts::EdgeSlice())
-								+ ui::Height(style::Coord::Percent(100));
+								+ ui::SetLayout(ui::layouts::EdgeSlice())
+								+ ui::SetHeight(ui::Coord::Percent(100));
 							{
 								ctx->Push<ui::TabButtonList>();
 								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Inspect").Init(workspace.curSubtab, SubtabType::Inspect);
@@ -159,8 +159,8 @@ struct MainWindowContents : ui::Buildable
 								ctx->Pop();
 
 								ctx->Push<ui::TabPanel>()
-									+ ui::Layout(style::layouts::EdgeSlice())
-									+ ui::Height(style::Coord::Percent(100));
+									+ ui::SetLayout(ui::layouts::EdgeSlice())
+									+ ui::SetHeight(ui::Coord::Percent(100));
 
 								if (workspace.curSubtab == SubtabType::Inspect)
 								{

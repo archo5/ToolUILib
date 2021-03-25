@@ -154,7 +154,7 @@ struct SequenceDragData : DragDropData
 	static constexpr const char* NAME = "SequenceDragData";
 
 	SequenceDragData(SequenceEditor* s, float w, size_t f) :
-		ui::DragDropData(NAME),
+		DragDropData(NAME),
 		scope(s),
 		width(w),
 		at(f)

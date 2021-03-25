@@ -10,14 +10,14 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 	}
 	void Build(ui::UIContainer* ctx) override
 	{
-		ui::imm::RadioButton(ctx, layout, 0, "No button", { ui::Style(ui::Theme::current->button) });
-		ui::imm::RadioButton(ctx, layout, 1, "Left", { ui::Style(ui::Theme::current->button) });
-		ui::imm::RadioButton(ctx, layout, 2, "Right", { ui::Style(ui::Theme::current->button) });
+		ui::imm::RadioButton(ctx, layout, 0, "No button", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(ctx, layout, 1, "Left", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(ctx, layout, 2, "Right", { ui::ApplyStyle(ui::Theme::current->button) });
 
 		tgt = nullptr;
 		if (layout != 0)
 		{
-			ctx->PushBox() + ui::StackingDirection(layout == 1 ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
+			ctx->PushBox() + ui::Set(layout == 1 ? ui::StackingDirection::LeftToRight : ui::StackingDirection::RightToLeft);
 			tgt = &ctx->MakeWithText<ui::Button>(layout == 1 ? "Left" : "Right button");
 			ctx->Pop();
 		}
@@ -127,13 +127,13 @@ struct ButtonPressHighlightDemo : ui::Buildable
 	}
 	void AddActivationAnim(ui::Button& button)
 	{
-		button + ui::EventHandler(ui::EventType::Activate, [this, &button](ui::Event&) { PlayActivationAnim(button); });
+		button + ui::AddEventHandler(ui::EventType::Activate, [this, &button](ui::Event&) { PlayActivationAnim(button); });
 	}
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::Padding(30);
-		*this + ui::Height(style::Coord::Percent(100));
+		*this + ui::SetPadding(30);
+		*this + ui::SetHeight(ui::Coord::Percent(100));
 
 		AddActivationAnim(ctx->MakeWithText<ui::Button>("Press me"));
 		AddActivationAnim(ctx->MakeWithText<ui::Button>("...or me"));

@@ -41,7 +41,7 @@ struct TreeDragData : DragDropData
 {
 	static constexpr const char* NAME = "TreeDragData";
 
-	TreeDragData(TreeEditor* s, const std::vector<TreePath>& pv) : ui::DragDropData(NAME), scope(s), paths(pv) {}
+	TreeDragData(TreeEditor* s, const std::vector<TreePath>& pv) : DragDropData(NAME), scope(s), paths(pv) {}
 
 	TreeEditor* scope;
 	std::vector<TreePath> paths;

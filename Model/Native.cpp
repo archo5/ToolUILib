@@ -753,7 +753,7 @@ struct NativeWindow_Impl
 	UIContainer& GetContainer() { return system.container; }
 	NativeWindowBase* GetOwner() { return system.nativeWindow; }
 
-	ui::FrameContents system;
+	FrameContents system;
 	ProxyEventSystem proxyEventSystem;
 
 	HWND window;
@@ -1111,7 +1111,7 @@ struct Inspector : NativeDialogWindow
 			if (strncmp(name, "struct ", 7) == 0) name += 7;
 			if (strncmp(name, "class ", 6) == 0) name += 6;
 			if (strncmp(name, "ui::", 4) == 0) name += 4;
-			if (strncmp(name, "style::layouts::", 5 + 7 + 4) == 0) name += 5 + 7 + 4;
+			if (strncmp(name, "layouts::", 9) == 0) name += 9;
 			return name;
 		}
 
@@ -1158,7 +1158,7 @@ struct Inspector : NativeDialogWindow
 	void OnBuild(UIContainer* ctx) override
 	{
 		ui = &ctx->Make<InspectorUI>();
-		*ui + ui::Layout(style::layouts::EdgeSlice());
+		*ui + SetLayout(layouts::EdgeSlice());
 		ui->insp = this;
 	}
 
@@ -1489,7 +1489,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				auto& evsys = window->GetEventSys();
 				if (w != evsys.width || h != evsys.height)
 				{
-					ui::Notify(DCT_ResizeWindow, window->GetOwner());
+					Notify(DCT_ResizeWindow, window->GetOwner());
 				}
 				evsys.width = w;
 				evsys.height = h;
@@ -1524,7 +1524,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			auto& evsys = window->GetEventSys();
 			if (w != evsys.width || h != evsys.height)
 			{
-				ui::Notify(DCT_ResizeWindow, window->GetOwner());
+				Notify(DCT_ResizeWindow, window->GetOwner());
 			}
 			evsys.width = w;
 			evsys.height = h;

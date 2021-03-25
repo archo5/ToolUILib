@@ -205,13 +205,13 @@ struct UIObject
 	virtual void OnPaint();
 	void Paint();
 	void PaintChildren();
-	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
-	virtual float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type);
-	virtual float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type);
-	Range2f GetEstimatedWidth(const Size2f& containerSize, style::EstSizeType type);
-	Range2f GetEstimatedHeight(const Size2f& containerSize, style::EstSizeType type);
-	virtual Range2f GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout = true);
-	virtual Range2f GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout = true);
+	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
+	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	Range2f GetEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	Range2f GetEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	virtual Range2f GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
+	virtual Range2f GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
 	void _PerformPlacement(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
@@ -268,22 +268,22 @@ struct UIObject
 	bool IsInputDisabled() const;
 	void SetInputDisabled(bool v);
 
-	style::Accessor GetStyle();
-	void SetStyle(style::Block* style);
+	StyleAccessor GetStyle();
+	void SetStyle(StyleBlock* style);
 	void _OnChangeStyle();
 
-	float ResolveUnits(style::Coord coord, float ref);
-	UIRect GetMarginRect(style::Block* style, float ref);
-	UIRect GetPaddingRect(style::Block* style, float ref);
+	float ResolveUnits(Coord coord, float ref);
+	UIRect GetMarginRect(StyleBlock* style, float ref);
+	UIRect GetPaddingRect(StyleBlock* style, float ref);
 
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
 	UIRect GetBorderRect() const { return finalRectCPB; }
 
-	float GetFontSize(style::Block* styleOverride = nullptr);
-	int GetFontWeight(style::Block* styleOverride = nullptr);
-	bool GetFontIsItalic(style::Block* styleOverride = nullptr);
-	ui::Color4b GetTextColor(style::Block* styleOverride = nullptr);
+	float GetFontSize(StyleBlock* styleOverride = nullptr);
+	int GetFontWeight(StyleBlock* styleOverride = nullptr);
+	bool GetFontIsItalic(StyleBlock* styleOverride = nullptr);
+	ui::Color4b GetTextColor(StyleBlock* styleOverride = nullptr);
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
@@ -301,7 +301,7 @@ struct UIObject
 	ui::EventHandlerEntry* _lastEH = nullptr;
 
 	ui::FrameContents* system = nullptr;
-	style::BlockRef styleProps;
+	StyleBlockRef styleProps;
 	LivenessToken _livenessToken;
 
 	// final layout rectangles: C=content, P=padding, B=border
@@ -329,11 +329,11 @@ struct TextElement : UIElement
 {
 	TextElement();
 #if 0
-	float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type) override
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(text.c_str()));
 	}
-	float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type) override
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		return GetFontHeight();
 	}
@@ -345,7 +345,7 @@ struct TextElement : UIElement
 		//finalRect.y1 = finalRect.y0 + GetFontHeight();
 	}
 #endif
-	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
+	void GetSize(Coord& outWidth, Coord& outHeight) override;
 	void OnPaint() override;
 
 	TextElement& SetText(StringView t)
@@ -444,89 +444,99 @@ struct Enable : Modifier
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
 };
 
-struct Style : Modifier
+struct ApplyStyle : Modifier
 {
-	style::Block* _style;
-	Style(style::Block* style) : _style(style) {}
+	StyleBlock* _style;
+	ApplyStyle(StyleBlock* style) : _style(style) {}
 	void Apply(UIObject* obj) const override { obj->SetStyle(_style); }
 };
 
-struct Layout : Modifier
+struct SetLayout : Modifier
 {
-	style::Layout* _layout;
-	Layout(style::Layout* layout) : _layout(layout) {}
+	ILayout* _layout;
+	SetLayout(ILayout* layout) : _layout(layout) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetLayout(_layout); }
 };
 
 struct SetPlacement : Modifier
 {
-	style::Placement* _placement;
-	SetPlacement(style::Placement* placement) : _placement(placement) {}
+	IPlacement* _placement;
+	SetPlacement(IPlacement* placement) : _placement(placement) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPlacement(_placement); }
 };
 
-struct StackingDirection : Modifier
+struct SetStackingDirection : Modifier
 {
-	style::StackingDirection _dir;
-	StackingDirection(style::StackingDirection dir) : _dir(dir) {}
+	StackingDirection _dir;
+	SetStackingDirection(StackingDirection dir) : _dir(dir) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetStackingDirection(_dir); }
 };
+inline SetStackingDirection Set(StackingDirection dir) { return dir; }
 
-struct BoxSizing : Modifier
+struct SetEdge : Modifier
 {
-	style::BoxSizing _bs;
-	BoxSizing(style::BoxSizing bs) : _bs(bs) {}
+	Edge _edge;
+	SetEdge(Edge edge) : _edge(edge) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetEdge(_edge); }
+};
+inline SetEdge Set(Edge edge) { return edge; }
+
+struct SetBoxSizing : Modifier
+{
+	BoxSizing _bs;
+	SetBoxSizing(BoxSizing bs) : _bs(bs) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetBoxSizing(_bs); }
 };
+inline SetBoxSizing Set(BoxSizing bs) { return bs; }
 
-struct Width : Modifier
+struct SetWidth : Modifier
 {
-	style::Coord _c;
-	Width(const style::Coord& c) : _c(c) {}
+	Coord _c;
+	SetWidth(const Coord& c) : _c(c) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetWidth(_c); }
 };
 
-struct Height : Modifier
+struct SetHeight : Modifier
 {
-	style::Coord _c;
-	Height(const style::Coord& c) : _c(c) {}
+	Coord _c;
+	SetHeight(const Coord& c) : _c(c) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetHeight(_c); }
 };
 
-struct MinWidth : Modifier
+struct SetMinWidth : Modifier
 {
-	style::Coord _c;
-	MinWidth(const style::Coord& c) : _c(c) {}
+	Coord _c;
+	SetMinWidth(const Coord& c) : _c(c) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetMinWidth(_c); }
 };
 
-struct Padding : Modifier
+struct SetPadding : Modifier
 {
-	style::Coord _l, _r, _t, _b;
-	Padding(const style::Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
-	Padding(const style::Coord& v, const style::Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
-	Padding(const style::Coord& t, const style::Coord& lr, const style::Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	Padding(const style::Coord& t, const style::Coord& r, const style::Coord& b, const style::Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
+	Coord _l, _r, _t, _b;
+	SetPadding(const Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
+	SetPadding(const Coord& v, const Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
+	SetPadding(const Coord& t, const Coord& lr, const Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
+	SetPadding(const Coord& t, const Coord& r, const Coord& b, const Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
 };
 
-struct Margin : Modifier
+struct SetMargin : Modifier
 {
-	style::Coord _l, _r, _t, _b;
-	Margin(const style::Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
-	Margin(const style::Coord& v, const style::Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
-	Margin(const style::Coord& t, const style::Coord& lr, const style::Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	Margin(const style::Coord& t, const style::Coord& r, const style::Coord& b, const style::Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
+	Coord _l, _r, _t, _b;
+	SetMargin(const Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
+	SetMargin(const Coord& v, const Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
+	SetMargin(const Coord& t, const Coord& lr, const Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
+	SetMargin(const Coord& t, const Coord& r, const Coord& b, const Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetMargin(_t, _r, _b, _l); }
 };
 
-struct EventHandler : Modifier
+struct AddEventHandler : Modifier
 {
 	std::function<void(Event&)> _evfn;
 	EventType _type = EventType::Any;
 	UIObject* _tgt = nullptr;
-	EventHandler(std::function<void(Event&)>&& fn) : _evfn(std::move(fn)) {}
-	EventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
+	AddEventHandler(std::function<void(Event&)>&& fn) : _evfn(std::move(fn)) {}
+	AddEventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
 };
 
@@ -560,14 +570,14 @@ struct MakeOverlay : Modifier
 	float _depth;
 };
 
-struct MakeDraggable : EventHandler
+struct MakeDraggable : AddEventHandler
 {
-	MakeDraggable() : EventHandler({}) {}
-	MakeDraggable(std::function<void(Event&)>&& fn) : EventHandler(EventType::DragStart, std::move(fn)) {}
-	MakeDraggable(std::function<void()>&& fn) : EventHandler(EventType::DragStart, [fn{ std::move(fn) }](Event&){ fn(); }) {}
+	MakeDraggable() : AddEventHandler({}) {}
+	MakeDraggable(std::function<void(Event&)>&& fn) : AddEventHandler(EventType::DragStart, std::move(fn)) {}
+	MakeDraggable(std::function<void()>&& fn) : AddEventHandler(EventType::DragStart, [fn{ std::move(fn) }](Event&){ fn(); }) {}
 	void Apply(UIObject* obj) const override
 	{
-		EventHandler::Apply(obj);
+		AddEventHandler::Apply(obj);
 		obj->SetFlag(UIObjectFlags::UIObject_DB_Draggable, true);
 	}
 };

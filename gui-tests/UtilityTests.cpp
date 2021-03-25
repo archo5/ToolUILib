@@ -84,8 +84,8 @@ struct ThreadedImageRenderingTest : ui::Buildable
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
 
 		auto& img = ctx->Make<ui::ImageElement>();
-		img.GetStyle().SetWidth(style::Coord::Percent(100));
-		img.GetStyle().SetHeight(style::Coord::Percent(100));
+		img.GetStyle().SetWidth(ui::Coord::Percent(100));
+		img.GetStyle().SetHeight(ui::Coord::Percent(100));
 		img.SetScaleMode(ui::ScaleMode::Fill);
 		img.SetImage(image);
 
@@ -155,21 +155,21 @@ struct OSCommunicationTest : ui::Buildable
 			bool hasText = ui::Clipboard::HasText();
 			ui::imm::EditBool(ctx, hasText, nullptr, { ui::Enable(false) });
 			ui::imm::EditString(ctx, clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
-			if (ui::imm::Button(ctx, "Read", { ui::Width(style::Coord::Fraction(0.1f)) }))
+			if (ui::imm::Button(ctx, "Read", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
 				clipboardData = ui::Clipboard::GetText();
-			if (ui::imm::Button(ctx, "Write", { ui::Width(style::Coord::Fraction(0.1f)) }))
+			if (ui::imm::Button(ctx, "Write", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
 				ui::Clipboard::SetText(clipboardData);
 		}
 
 		ctx->Textf("time (ms): %u, double click time (ms): %u",
 			unsigned(ui::platform::GetTimeMs()),
-			unsigned(ui::platform::GetDoubleClickTime())) + ui::Padding(5);
+			unsigned(ui::platform::GetDoubleClickTime())) + ui::SetPadding(5);
 
 		auto pt = ui::platform::GetCursorScreenPos();
 		auto col = ui::platform::GetColorAtScreenPos(pt);
 		ctx->Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
 			pt.x, pt.y,
-			col.r, col.g, col.b, col.a) + ui::Padding(5);
+			col.r, col.g, col.b, col.a) + ui::SetPadding(5);
 		ctx->Make<ui::ColorInspectBlock>().SetColor(col);
 
 		if (ui::imm::Button(ctx, "Show error message"))

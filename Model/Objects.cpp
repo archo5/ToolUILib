@@ -23,7 +23,7 @@ struct EventHandlerEntry
 
 UIObject::UIObject()
 {
-	SetStyle(ui::Theme::current->object);
+	SetStyle(Theme::current->object);
 }
 
 UIObject::~UIObject()
@@ -48,7 +48,7 @@ void UIObject::_Reset()
 {
 	ClearEventHandlers();
 	UnregisterAsOverlay();
-	SetStyle(ui::Theme::current->object);
+	SetStyle(Theme::current->object);
 	OnReset();
 }
 
@@ -180,9 +180,9 @@ void UIObject::SendUserEvent(int id, uintptr_t arg0, uintptr_t arg1)
 	system->eventSystem.OnUserEvent(this, id, arg0, arg1);
 }
 
-ui::EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
+EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
 {
-	auto eh = new ui::EventHandlerEntry;
+	auto eh = new EventHandlerEntry;
 	if (_lastEH)
 		_lastEH->next = eh;
 	else
@@ -198,7 +198,7 @@ ui::EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
 void UIObject::ClearLocalEventHandlers()
 {
 	auto** eh = &_firstEH;
-	ui::EventHandlerEntry* lastEH = nullptr;
+	EventHandlerEntry* lastEH = nullptr;
 	while (*eh)
 	{
 		auto* n = (*eh)->next;
@@ -253,7 +253,7 @@ void UIObject::Paint()
 	if (!_CanPaint())
 		return;
 
-	if (!((flags & UIObject_DisableCulling) || ui::draw::GetCurrentScissorRectF().Intersects(finalRectCPB)))
+	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Intersects(finalRectCPB)))
 		return;
 
 	OnPaint();
@@ -266,33 +266,33 @@ void UIObject::PaintChildren()
 
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
-		ui::draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+		draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
 
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		ch->Paint();
 
 	if (clipChildren)
-		ui::draw::PopScissorRect();
+		draw::PopScissorRect();
 }
 
-float UIObject::CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
+float UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
-		layout = style::layouts::Stack();
+		layout = layouts::Stack();
 	return layout->CalcEstimatedWidth(this, containerSize, type);
 }
 
-float UIObject::CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
+float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
-		layout = style::layouts::Stack();
+		layout = layouts::Stack();
 	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
-Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
+Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -300,7 +300,7 @@ Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, style::EstSizeT
 	auto width = style.GetWidth();
 	if (!width.IsDefined())
 	{
-		auto height = style::Coord::Undefined();
+		auto height = Coord::Undefined();
 		GetSize(width, height);
 	}
 
@@ -332,7 +332,7 @@ Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, style::EstSizeT
 	return { size, maxsize };
 }
 
-Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
+Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -340,7 +340,7 @@ Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, style::EstSize
 	auto height = style.GetHeight();
 	if (!height.IsDefined())
 	{
-		auto width = style::Coord::Undefined();
+		auto width = Coord::Undefined();
 		GetSize(width, height);
 	}
 
@@ -372,11 +372,11 @@ Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, style::EstSize
 	return { size, maxsize };
 }
 
-Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
-	if (ui::g_curLayoutFrame == _cacheFrameWidth)
+	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
 	auto style = GetStyle();
 	auto s = GetEstimatedWidth(containerSize, type);
@@ -384,12 +384,12 @@ Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, style::EstS
 	auto width = style.GetWidth();
 	if (!width.IsDefined())
 	{
-		auto height = style::Coord::Undefined();
+		auto height = Coord::Undefined();
 		GetSize(width, height);
 	}
 
 	float w_add = ResolveUnits(style.GetMarginLeft(), containerSize.x) + ResolveUnits(style.GetMarginRight(), containerSize.x);
-	if (box_sizing == style::BoxSizing::ContentBox || !width.IsDefined())
+	if (box_sizing == BoxSizing::ContentBox || !width.IsDefined())
 	{
 		w_add += ResolveUnits(style.GetPaddingLeft(), containerSize.x) + ResolveUnits(style.GetPaddingRight(), containerSize.x);
 	}
@@ -397,16 +397,16 @@ Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, style::EstS
 	if (s.max < FLT_MAX)
 		s.max += w_add;
 
-	_cacheFrameWidth = ui::g_curLayoutFrame;
+	_cacheFrameWidth = g_curLayoutFrame;
 	_cacheValueWidth = s;
 	return s;
 }
 
-Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
-	if (ui::g_curLayoutFrame == _cacheFrameHeight)
+	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
 	auto style = GetStyle();
 	auto s = GetEstimatedHeight(containerSize, type);
@@ -414,12 +414,12 @@ Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, style::Est
 	auto height = style.GetHeight();
 	if (!height.IsDefined())
 	{
-		auto width = style::Coord::Undefined();
+		auto width = Coord::Undefined();
 		GetSize(width, height);
 	}
 
 	float h_add = ResolveUnits(style.GetMarginTop(), containerSize.y) + ResolveUnits(style.GetMarginBottom(), containerSize.y);
-	if (box_sizing == style::BoxSizing::ContentBox || !height.IsDefined())
+	if (box_sizing == BoxSizing::ContentBox || !height.IsDefined())
 	{
 		h_add += ResolveUnits(style.GetPaddingTop(), containerSize.y) + ResolveUnits(style.GetPaddingBottom(), containerSize.y);
 	}
@@ -427,7 +427,7 @@ Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, style::Est
 	if (s.max < FLT_MAX)
 		s.max += h_add;
 
-	_cacheFrameHeight = ui::g_curLayoutFrame;
+	_cacheFrameHeight = g_curLayoutFrame;
 	_cacheValueHeight = s;
 	return s;
 }
@@ -452,15 +452,13 @@ void UIObject::_PerformPlacement(const UIRect& rect, const Size2f& containerSize
 
 void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 {
-	using namespace style;
-
 	lastLayoutInputRect = inRect;
 	lastLayoutInputCSize = containerSize;
 
 	auto style = GetStyle();
 
-	auto swidth = style::Coord::Undefined();
-	auto sheight = style::Coord::Undefined();
+	auto swidth = Coord::Undefined();
+	auto sheight = Coord::Undefined();
 	GetSize(swidth, sheight);
 
 	auto placement = style.GetPlacement();
@@ -478,13 +476,13 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 	}
 
 	auto width = style.GetWidth();
-	if (width.unit == style::CoordTypeUnit::Fraction)
+	if (width.unit == CoordTypeUnit::Fraction)
 		width = rect.GetWidth();
 	if (!width.IsDefined())
 		width = swidth;
 
 	auto height = style.GetHeight();
-	if (height.unit == style::CoordTypeUnit::Fraction)
+	if (height.unit == CoordTypeUnit::Fraction)
 		height = rect.GetHeight();
 	if (!height.IsDefined())
 		height = sheight;
@@ -514,7 +512,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 	auto layout = style.GetLayout();
 	if (layout == nullptr)
-		layout = style::layouts::Stack();
+		layout = layouts::Stack();
 	LayoutState state = { inrect, { inrect.x0, inrect.y0 } };
 	layout->OnLayout(this, inrect, state);
 
@@ -529,7 +527,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 			tgt = max(tgt, ResolveUnits(min_width, containerSize.x));
 		if (max_width.IsDefined())
 			tgt = min(tgt, ResolveUnits(max_width, containerSize.x));
-		if (box_sizing != style::BoxSizing::ContentBox)
+		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.x0 + Prect.x1;
 		if (tgt != orig)
 		{
@@ -551,7 +549,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 			tgt = max(tgt, ResolveUnits(min_height, containerSize.y));
 		if (max_height.IsDefined())
 			tgt = min(tgt, ResolveUnits(max_height, containerSize.y));
-		if (box_sizing != style::BoxSizing::ContentBox)
+		if (box_sizing != BoxSizing::ContentBox)
 			tgt -= Prect.y0 + Prect.y1;
 		if (tgt != orig)
 		{
@@ -654,13 +652,13 @@ UIObject* UIObject::GetLastInOrder()
 
 void UIObject::Rebuild()
 {
-	if (auto* n = FindParentOfType<ui::Buildable>())
+	if (auto* n = FindParentOfType<Buildable>())
 		n->Rebuild();
 }
 
 void UIObject::RebuildContainer()
 {
-	if (auto* n = (parent ? parent : this)->FindParentOfType<ui::Buildable>())
+	if (auto* n = (parent ? parent : this)->FindParentOfType<Buildable>())
 		n->Rebuild();
 }
 
@@ -717,12 +715,12 @@ void UIObject::SetInputDisabled(bool v)
 		flags &= ~UIObject_IsDisabled;
 }
 
-style::Accessor UIObject::GetStyle()
+StyleAccessor UIObject::GetStyle()
 {
-	return style::Accessor(styleProps, this);
+	return StyleAccessor(styleProps, this);
 }
 
-void UIObject::SetStyle(style::Block* style)
+void UIObject::SetStyle(StyleBlock* style)
 {
 	styleProps = style;
 	_OnChangeStyle();
@@ -730,13 +728,11 @@ void UIObject::SetStyle(style::Block* style)
 
 void UIObject::_OnChangeStyle()
 {
-	ui::g_curSystem->container.layoutStack.Add(parent ? parent : this);
+	g_curSystem->container.layoutStack.Add(parent ? parent : this);
 }
 
-float UIObject::ResolveUnits(style::Coord coord, float ref)
+float UIObject::ResolveUnits(Coord coord, float ref)
 {
-	using namespace style;
-
 	switch (coord.unit)
 	{
 	case CoordTypeUnit::Pixels:
@@ -751,7 +747,7 @@ float UIObject::ResolveUnits(style::Coord coord, float ref)
 	}
 }
 
-UIRect UIObject::GetMarginRect(style::Block* style, float ref)
+UIRect UIObject::GetMarginRect(StyleBlock* style, float ref)
 {
 	return
 	{
@@ -762,7 +758,7 @@ UIRect UIObject::GetMarginRect(style::Block* style, float ref)
 	};
 }
 
-UIRect UIObject::GetPaddingRect(style::Block* style, float ref)
+UIRect UIObject::GetPaddingRect(StyleBlock* style, float ref)
 {
 	return
 	{
@@ -773,51 +769,51 @@ UIRect UIObject::GetPaddingRect(style::Block* style, float ref)
 	};
 }
 
-float UIObject::GetFontSize(style::Block* styleOverride)
+float UIObject::GetFontSize(StyleBlock* styleOverride)
 {
-	style::Coord c;
+	Coord c;
 	if (styleOverride)
 		c = styleOverride->font_size;
-	for (auto* p = this; p && (c.unit == style::CoordTypeUnit::Undefined || c.unit == style::CoordTypeUnit::Inherit); p = p->parent)
+	for (auto* p = this; p && (c.unit == CoordTypeUnit::Undefined || c.unit == CoordTypeUnit::Inherit); p = p->parent)
 	{
 		c = p->GetStyle().GetFontSize();
 	}
-	if (!c.IsDefined() || c.unit == style::CoordTypeUnit::Inherit)
+	if (!c.IsDefined() || c.unit == CoordTypeUnit::Inherit)
 		c = 12;
 	return ResolveUnits(c, GetContentRect().GetWidth());
 }
 
-int UIObject::GetFontWeight(style::Block* styleOverride)
+int UIObject::GetFontWeight(StyleBlock* styleOverride)
 {
-	auto w = style::FontWeight::Undefined;
+	auto w = FontWeight::Undefined;
 	if (styleOverride)
 		w = styleOverride->font_weight;
-	for (auto* p = this; p && (w == style::FontWeight::Undefined || w == style::FontWeight::Inherit); p = p->parent)
+	for (auto* p = this; p && (w == FontWeight::Undefined || w == FontWeight::Inherit); p = p->parent)
 	{
 		w = p->GetStyle().GetFontWeight();
 	}
-	if (w == style::FontWeight::Undefined || w == style::FontWeight::Inherit)
-		w = style::FontWeight::Normal;
+	if (w == FontWeight::Undefined || w == FontWeight::Inherit)
+		w = FontWeight::Normal;
 	return int(w);
 }
 
-bool UIObject::GetFontIsItalic(style::Block* styleOverride)
+bool UIObject::GetFontIsItalic(StyleBlock* styleOverride)
 {
-	auto s = style::FontStyle::Undefined;
+	auto s = FontStyle::Undefined;
 	if (styleOverride)
 		s = styleOverride->font_style;
-	for (auto* p = this; p && (s == style::FontStyle::Undefined || s == style::FontStyle::Inherit); p = p->parent)
+	for (auto* p = this; p && (s == FontStyle::Undefined || s == FontStyle::Inherit); p = p->parent)
 	{
 		s = p->GetStyle().GetFontStyle();
 	}
-	if (s == style::FontStyle::Undefined || s == style::FontStyle::Inherit)
-		s = style::FontStyle::Normal;
-	return s == style::FontStyle::Italic;
+	if (s == FontStyle::Undefined || s == FontStyle::Inherit)
+		s = FontStyle::Normal;
+	return s == FontStyle::Italic;
 }
 
-ui::Color4b UIObject::GetTextColor(style::Block* styleOverride)
+Color4b UIObject::GetTextColor(StyleBlock* styleOverride)
 {
-	style::Color c;
+	StyleColor c;
 	if (styleOverride)
 		c = styleOverride->text_color;
 	for (auto* p = this; p && c.inherit; p = p->parent)
@@ -825,11 +821,11 @@ ui::Color4b UIObject::GetTextColor(style::Block* styleOverride)
 		c = p->GetStyle().GetTextColor();
 	}
 	if (c.inherit)
-		c = ui::Color4b::White();
+		c = Color4b::White();
 	return c.color;
 }
 
-ui::NativeWindowBase* UIObject::GetNativeWindow() const
+NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
 }
@@ -840,7 +836,7 @@ TextElement::TextElement()
 	styleProps = Theme::current->text;
 }
 
-void TextElement::GetSize(style::Coord& outWidth, style::Coord& outHeight)
+void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
 {
 	int size = int(GetFontSize());
 	int weight = GetFontWeight();
@@ -864,7 +860,7 @@ void TextElement::OnPaint()
 	styleProps->paint_func(this);
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+	draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
 	PaintChildren();
 }
 
@@ -1101,7 +1097,7 @@ void AddTooltip::Apply(UIObject* obj) const
 	auto fn = _evfn;
 	obj->HandleEvent(EventType::Tooltip) = [fn{ std::move(fn) }](Event& e)
 	{
-		ui::Tooltip::Set(fn);
+		Tooltip::Set(fn);
 		e.StopPropagation();
 	};
 }

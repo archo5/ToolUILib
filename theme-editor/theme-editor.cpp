@@ -27,7 +27,7 @@ struct TE_SlicedImageElement : UIElement
 		UIRect outer = { x0, y0, x0 + _width, y0 + _height };
 		UIRect inner = outer.ShrinkBy({ float(_left), float(_top), float(_right), float(_bottom) });
 		UIRect texinner = { invlerp(0, iw, _left), invlerp(0, ih, _top), invlerp(iw, 0, _right), invlerp(ih, 0, _bottom) };
-		draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), _image->_texture, { 0, 0, 1, 1 }, texinner);
+		draw::RectColTex9Slice(outer, inner, Color4b::White(), _image->_texture, { 0, 0, 1, 1 }, texinner);
 	}
 	TE_SlicedImageElement& SetImage(Image* img)
 	{
@@ -68,9 +68,9 @@ struct TE_MainPreviewNode : Buildable
 		Subscribe(DCT_EditProcGraph);
 		Subscribe(DCT_EditProcGraphNode);
 
-		ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + Set(StackingDirection::LeftToRight);
 		{
-			ctx->Text("Preview") + Padding(5);
+			ctx->Text("Preview") + SetPadding(5);
 			if (tmpl->curPreviewImage && imm::Button(ctx, "Reset to template"))
 			{
 				tmpl->SetCurPreviewImage(nullptr);
@@ -80,9 +80,9 @@ struct TE_MainPreviewNode : Buildable
 
 		if (tmpl->renderSettings.layer)
 		{
-			ctx->PushBox() + Layout(style::layouts::EdgeSlice());
+			ctx->PushBox() + SetLayout(layouts::EdgeSlice());
 			{
-				ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+				ctx->PushBox() + Set(StackingDirection::LeftToRight);
 				{
 					imm::RadioButton(ctx, g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
 					imm::RadioButton(ctx, g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
@@ -90,7 +90,7 @@ struct TE_MainPreviewNode : Buildable
 				ctx->Pop();
 				if (g_previewMode == TEPM_Original)
 				{
-					ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+					ctx->PushBox() + Set(StackingDirection::LeftToRight);
 					{
 						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
 						imm::RadioButton(ctx, g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
@@ -101,13 +101,13 @@ struct TE_MainPreviewNode : Buildable
 				{
 					ctx->Push<LabeledProperty>();
 					{
-						imm::PropEditInt(ctx, "\bWidth", g_previewSlicedWidth, { MinWidth(20) });
-						imm::PropEditInt(ctx, "\bHeight", g_previewSlicedHeight, { MinWidth(20) });
+						imm::PropEditInt(ctx, "\bWidth", g_previewSlicedWidth, { SetMinWidth(20) });
+						imm::PropEditInt(ctx, "\bHeight", g_previewSlicedHeight, { SetMinWidth(20) });
 					}
 					ctx->Pop();
 				}
 
-				ctx->Push<ListBox>() + Height(style::Coord::Percent(95)); // TODO
+				ctx->Push<ListBox>() + SetHeight(Coord::Percent(95)); // TODO
 
 				Canvas canvas;
 #if 0
@@ -123,8 +123,8 @@ struct TE_MainPreviewNode : Buildable
 					ctx->Make<ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(g_previewScaleMode)
-						+ ui::Width(style::Coord::Percent(100))
-						+ ui::Height(style::Coord::Percent(100));
+						+ SetWidth(Coord::Percent(100))
+						+ SetHeight(Coord::Percent(100));
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{
@@ -132,8 +132,8 @@ struct TE_MainPreviewNode : Buildable
 						.SetImage(img)
 						.SetTargetSize(g_previewSlicedWidth, g_previewSlicedHeight)
 						.SetBorderSizes(rs.l, rs.t, rs.r, rs.b)
-						+ ui::Width(style::Coord::Percent(100))
-						+ ui::Height(style::Coord::Percent(100));
+						+ SetWidth(Coord::Percent(100))
+						+ SetHeight(Coord::Percent(100));
 				}
 
 				ctx->Pop();
@@ -154,9 +154,9 @@ struct TE_ImageEditorNode : Buildable
 	{
 		Subscribe(DCT_ChangeActiveImage);
 
-		ctx->PushBox() + StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + Set(StackingDirection::LeftToRight);
 		{
-			ctx->Text("Images") + Padding(5);
+			ctx->Text("Images") + SetPadding(5);
 			if (imm::Button(ctx, "Add"))
 			{
 				auto img = std::make_shared<TE_Image>();
@@ -168,7 +168,7 @@ struct TE_ImageEditorNode : Buildable
 		ctx->Pop();
 
 		auto& imged = ctx->Make<SequenceEditor>();
-		imged + Height(style::Coord::Percent(100));
+		imged + SetHeight(Coord::Percent(100));
 		imged.showDeleteButton = false;
 		imged.SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
 		imged.itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
@@ -181,10 +181,10 @@ struct TE_ImageEditorNode : Buildable
 	{
 		ctx->PushBox();
 		{
-			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			ctx->PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
 			{
-				imm::EditBool(ctx, img->expanded, nullptr, { Width(style::Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
-				if (imm::RadioButtonRaw(ctx, tmpl->curPreviewImage == img, "P", { Width(style::Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
+				imm::EditBool(ctx, img->expanded, nullptr, { SetWidth(Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
+				if (imm::RadioButtonRaw(ctx, tmpl->curPreviewImage == img, "P", { SetWidth(Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
 				{
 					tmpl->SetCurPreviewImage(img);
 				}
@@ -212,10 +212,10 @@ struct TE_ImageEditorNode : Buildable
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);
 						if (auto ncr = co.ncref.lock())
-							ctx->MakeWithText<BoxElement>(ncr->name) + Padding(5);
+							ctx->MakeWithText<BoxElement>(ncr->name) + SetPadding(5);
 						else
 							EditNCRef(ctx, co.ncref);
-						imm::EditColor(ctx, co.color, { Width(40) });
+						imm::EditColor(ctx, co.color, { SetWidth(40) });
 					};
 
 					if (imm::Button(ctx, "Add override"))
@@ -263,7 +263,7 @@ struct TE_TemplateEditorNode : Buildable
 			ctx->Push<ListBox>();
 			{
 				auto& pge = ctx->Make<ProcGraphEditor>();
-				pge + Height(style::Coord::Percent(100));
+				pge + SetHeight(Coord::Percent(100));
 				pge.Init(tmpl);
 			}
 			ctx->Pop();
@@ -280,7 +280,7 @@ struct TE_TemplateEditorNode : Buildable
 					preview.tmpl = tmpl;
 
 					ctx->Push<PropertyList>()
-						+ EventHandler(EventType::IMChange, [this](Event&) { tmpl->InvalidateAllNodes(); });
+						+ AddEventHandler(EventType::IMChange, [this](Event&) { tmpl->InvalidateAllNodes(); });
 					{
 						imm::EditBool(ctx, showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
 						if (showRenderSettings)
@@ -292,7 +292,7 @@ struct TE_TemplateEditorNode : Buildable
 						if (showColors)
 						{
 							auto& ced = ctx->Make<SequenceEditor>();
-							ced + Height(style::Coord::Percent(100));
+							ced + SetHeight(Coord::Percent(100));
 							ced.SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
 							ced.itemUICallback = [this](UIContainer* ctx, SequenceEditor* se, size_t idx, void* ptr)
 							{
@@ -333,7 +333,7 @@ struct TE_ThemeEditorNode : Buildable
 		}
 		ctx->Pop();
 
-		ctx->Push<TabGroup>() + Height(style::Coord::Percent(100)) + Layout(style::layouts::EdgeSlice());
+		ctx->Push<TabGroup>() + SetHeight(Coord::Percent(100)) + SetLayout(layouts::EdgeSlice());
 		{
 			ctx->Push<TabButtonList>();
 			{
@@ -365,7 +365,7 @@ struct TE_ThemeEditorNode : Buildable
 							ctx,
 							tmpl->name.c_str(),
 							[tmpl](const char* v) { tmpl->name = v; },
-							{ Width(100), EventHandler(efn) });
+							{ SetWidth(100), AddEventHandler(efn) });
 					}
 					ctx->Pop();
 				}
@@ -380,10 +380,10 @@ struct TE_ThemeEditorNode : Buildable
 
 			if (theme->curTemplate)
 			{
-				ctx->Push<TabPanel>() + Height(style::Coord::Percent(100));
+				ctx->Push<TabPanel>() + SetHeight(Coord::Percent(100));
 				{
 					auto& pen = ctx->Make<TE_TemplateEditorNode>();
-					pen + Height(style::Coord::Percent(100));
+					pen + SetHeight(Coord::Percent(100));
 					pen.theme = theme;
 					pen.tmpl = theme->curTemplate;
 				}
@@ -407,7 +407,7 @@ struct ThemeEditorMainWindow : NativeMainWindow
 	void OnBuild(UIContainer* ctx) override
 	{
 		auto& ten = ctx->Make<TE_ThemeEditorNode>();
-		ten + Height(style::Coord::Percent(100));
+		ten + SetHeight(Coord::Percent(100));
 		ten.theme = &theme;
 
 		ctx->Make<DefaultOverlayBuilder>();

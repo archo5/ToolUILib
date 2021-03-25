@@ -174,7 +174,7 @@ void TableView::OnPaint()
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
 
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 
 	auto RC = GetContentRect();
 
@@ -285,9 +285,9 @@ void TableView::OnPaint()
 			};
 			info.checkState = _impl->selStorage ? _impl->selStorage->GetSelectionState(r) : false;
 			if (_impl->hoverRow == r)
-				info.state |= style::PS_Hover;
+				info.state |= PS_Hover;
 			else
-				info.state &= ~style::PS_Hover;
+				info.state &= ~PS_Hover;
 			cellStyle->paint_func(info);
 		}
 	}
@@ -561,7 +561,7 @@ size_t TableView::GetHoverRow() const
 
 struct TreeView::PaintState
 {
-	style::PaintInfo info;
+	PaintInfo info;
 	int nc;
 	float x;
 	float y;
@@ -598,7 +598,7 @@ void TreeView::OnPaint()
 	int nc = _impl->dataSource->GetNumCols();
 	int nr = 0;// _dataSource->GetNumRows();
 
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 
 	auto RC = GetContentRect();
 

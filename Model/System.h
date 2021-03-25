@@ -224,10 +224,10 @@ struct UIContainer
 	bool LastIsNew() const { return lastIsNew; }
 	UIObject* GetLastCreated() const { return _lastCreated; }
 
-	ui::NativeWindowBase* GetNativeWindow() const;
+	NativeWindowBase* GetNativeWindow() const;
 	Buildable* GetCurrentBuildable() const { return _curBuildable; }
 
-	ui::FrameContents* owner = nullptr;
+	FrameContents* owner = nullptr;
 	Buildable* rootBuildable = nullptr;
 	Buildable* _curBuildable = nullptr;
 	UIObject* _lastCreated = nullptr;
@@ -314,8 +314,8 @@ public:
 	void OnDestroy() override;
 	void OnEvent(Event& ev) override;
 	void OnPaint() override;
-	float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type) override;
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayoutChanged() override;
 	void Build(UIContainer* ctx) override;
 

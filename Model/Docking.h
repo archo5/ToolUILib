@@ -37,7 +37,7 @@ private:
 	std::vector<Window> _windows;
 };
 
-class Dockable : public ui::Buildable
+class Dockable : public Buildable
 {
 public:
 	void OnInit() override;

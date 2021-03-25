@@ -59,7 +59,7 @@ void TabInspect::Build(ui::UIContainer* ctx)
 		ctx->Pop();
 
 		ctx->PushBox();
-		ctx->Text("Settings") + ui::Padding(5);
+		ctx->Text("Settings") + ui::SetPadding(5);
 		ctx->Pop();
 	}
 	ctx->Pop();

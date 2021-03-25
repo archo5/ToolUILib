@@ -63,14 +63,14 @@ struct ColorInspectBlock : UIElement
 	Color4b _color = Color4b::Black();
 	std::shared_ptr<Image> _bgImage;
 
-	style::Coord alphaBarHeight = 2;
+	Coord alphaBarHeight = 2;
 };
 
 struct ImageElement : UIElement
 {
 	void OnInit() override;
 	void OnPaint() override;
-	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
+	void GetSize(Coord& outWidth, Coord& outHeight) override;
 
 	ImageElement& SetImage(Image* img);
 	// range: 0-1 (0.5 = middle)
@@ -104,7 +104,7 @@ struct HueSatPicker : UIElement
 
 	void _RegenerateBackground(int w);
 
-	style::BlockRef selectorStyle;
+	StyleBlockRef selectorStyle;
 	float _hue = 0;
 	float _sat = 0;
 	Image* _bgImage = nullptr;
@@ -187,7 +187,7 @@ struct ColorCompPicker2D : UIElement
 
 	void _RegenerateBackground(int w, int h);
 
-	style::BlockRef selectorStyle;
+	StyleBlockRef selectorStyle;
 	ColorCompPicker2DSettings _settings, _curImgSettings;
 	float _x = 0;
 	float _y = 0;

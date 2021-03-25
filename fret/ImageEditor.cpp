@@ -13,9 +13,9 @@ void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& img = ctx->Make<ui::ImageElement>();
-				img + ui::Width(style::Coord::Percent(100));
-				img + ui::Height(style::Coord::Percent(100));
-				img.GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+				img + ui::SetWidth(ui::Coord::Percent(100));
+				img + ui::SetHeight(ui::Coord::Percent(100));
+				img.GetStyle().SetPaintFunc([](const ui::PaintInfo& info)
 				{
 					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 
@@ -32,7 +32,7 @@ void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 			if (structDef)
 			{
 				EditImageFormat(ctx, "Format", image->format);
-				ctx->Text("Conditional format overrides") + ui::Padding(5);
+				ctx->Text("Conditional format overrides") + ui::SetPadding(5);
 				ctx->Push<ui::Panel>();
 				for (auto& FO : image->formatOverrides)
 				{
@@ -59,7 +59,7 @@ void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ctx->Make<ui::TableView>();
-			tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);

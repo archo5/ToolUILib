@@ -141,7 +141,7 @@ void HighlightSettings::EditUI(ui::UIContainer* ctx)
 	ui::imm::PropEditFloat(ctx, "\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
 	ui::Property::End(ctx);
 
-	ctx->Text("Custom int32") + ui::Padding(25, 5, 5);
+	ctx->Text("Custom int32") + ui::SetPadding(25, 5, 5);
 
 	auto& seqEd = ctx->Make<ui::SequenceEditor>();
 	seqEd.SetSequence(ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(customInt32)>>(customInt32));

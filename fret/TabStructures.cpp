@@ -12,12 +12,12 @@ void TabStructures::Build(ui::UIContainer* ctx)
 
 	auto& spstr = ctx->Push<ui::SplitPane>();
 	{
-		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
+		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 
 		workspace->ddiSrc.Edit(ctx);
 
 		ui::Property::Begin(ctx);
-		ctx->Text("Instances") + ui::Padding(5);
+		ctx->Text("Instances") + ui::SetPadding(5);
 		if (ui::imm::Button(ctx, "Expand all instances"))
 		{
 			workspace->desc.ExpandAllInstances(workspace->ddiSrc.filterFile);
@@ -30,7 +30,7 @@ void TabStructures::Build(ui::UIContainer* ctx)
 
 		auto& tv = ctx->Make<ui::TableView>();
 		curTable = &tv;
-		tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+		tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&workspace->ddiSrc);
 		tv.SetSelectionStorage(&workspace->ddiSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);
@@ -80,7 +80,7 @@ void TabStructures::Build(ui::UIContainer* ctx)
 		ctx->Pop();
 	}
 	{
-		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
+		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 		workspace->desc.EditStructuralItems(ctx);
 		ctx->Pop();
 	}

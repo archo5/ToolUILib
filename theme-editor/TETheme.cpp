@@ -6,8 +6,8 @@ void TE_TmplSettings::UI(UIContainer* ctx)
 {
 	{
 		LabeledProperty::Scope ps(ctx, "Size");
-		imm::PropEditInt(ctx, "\bW", w, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
-		imm::PropEditInt(ctx, "\bH", h, { MinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		imm::PropEditInt(ctx, "\bW", w, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		imm::PropEditInt(ctx, "\bH", h, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
 	}
 	imm::PropEditInt(ctx, "Left", l, {}, imm::DEFAULT_SPEED, 0, 1024);
 	imm::PropEditInt(ctx, "Right", r, {}, imm::DEFAULT_SPEED, 0, 1024);

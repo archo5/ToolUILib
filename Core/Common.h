@@ -25,6 +25,14 @@ struct TmpEdit
 	T backup;
 };
 
+template <int& at>
+struct InstanceCounter
+{
+	InstanceCounter() { at++; }
+	InstanceCounter(const InstanceCounter&) { at++; }
+	~InstanceCounter() { at--; }
+};
+
 template <class F>
 struct DeferImpl
 {

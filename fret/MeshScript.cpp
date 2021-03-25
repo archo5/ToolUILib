@@ -219,8 +219,8 @@ void MeshScript::EditUI(ui::UIContainer* ctx)
 	auto& sp1 = ctx->Push<ui::SplitPane>();
 	{
 		auto& tree = ctx->Make<ui::TreeEditor>();
-		tree + ui::Width(style::Coord::Percent(100));
-		tree + ui::Height(style::Coord::Percent(100));
+		tree + ui::SetWidth(ui::Coord::Percent(100));
+		tree + ui::SetHeight(ui::Coord::Percent(100));
 		tree.SetTree(this);
 		tree.itemUICallback = [this](ui::UIContainer* ctx, ui::TreeEditor*, ui::TreePathRef path, void* data)
 		{
@@ -376,7 +376,7 @@ static const char* g_primTypeNames[] =
 
 void MSN_NewPrimitive::InlineEditUI(ui::UIContainer* ctx)
 {
-	ctx->Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::Padding(5);
+	ctx->Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::SetPadding(5);
 }
 
 void MSN_NewPrimitive::FullEditUI(ui::UIContainer* ctx)
@@ -504,7 +504,7 @@ static const char* g_types[] = { "i8", "u8", "i16", "u16", "i32", "u32", "i64", 
 
 void MSN_VertexData::InlineEditUI(ui::UIContainer* ctx)
 {
-	ctx->Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::Padding(5);
+	ctx->Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::SetPadding(5);
 }
 
 void MSN_VertexData::FullEditUI(ui::UIContainer* ctx)
@@ -557,7 +557,7 @@ static const char* g_idxtypes[] = { "u8", "u16", "u32" };
 
 void MSN_IndexData::InlineEditUI(ui::UIContainer* ctx)
 {
-	ctx->Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::Padding(5);
+	ctx->Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::SetPadding(5);
 }
 
 void MSN_IndexData::FullEditUI(ui::UIContainer* ctx)

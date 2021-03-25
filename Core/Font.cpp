@@ -42,7 +42,7 @@ static HashMap<FontKey, Font*, FontKey::Hasher> g_loadedFonts;
 
 struct GlyphValue
 {
-	ui::draw::Texture* tex = nullptr;
+	draw::Texture* tex = nullptr;
 	uint16_t w;
 	uint16_t h;
 	float xoff;
@@ -65,7 +65,7 @@ struct Font
 
 	bool LoadFromPath(const char* path)
 	{
-		data = ui::ReadBinaryFile(path);
+		data = ReadBinaryFile(path);
 		if (data.empty())
 			return false;
 
@@ -116,7 +116,7 @@ struct Font
 		{
 			int x, y, w, h;
 			auto* bitmap = stbtt_GetGlyphBitmap(&info, scale, scale, glyphID, &w, &h, &x, &y);
-			gv->tex = ui::draw::TextureCreateA8(w, h, bitmap);
+			gv->tex = draw::TextureCreateA8(w, h, bitmap);
 			stbtt_FreeBitmap(bitmap, nullptr);
 		}
 
@@ -184,7 +184,7 @@ Font* GetFontByPath(const char* path)
 	FontKey key = { path, -1, false };
 	if (auto* f = FindExistingFont(key))
 		return f;
-	auto* font = new ui::Font;
+	auto* font = new Font;
 	font->LoadFromPath(path);
 	font->key = key;
 	g_loadedFonts[key] = font;
@@ -243,7 +243,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);
 		gv.xoff = roundf(gv.xoff + x);
 		gv.yoff = roundf(gv.yoff + y);
-		ui::draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, color, gv.tex);
+		draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, color, gv.tex);
 		x += gv.xadv;
 	}
 }
@@ -252,16 +252,16 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 
 
 // TODO
-ui::Font* g_font;
+Font* g_font;
 
 void InitFont()
 {
-	g_font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF, ui::FONT_WEIGHT_NORMAL, false);
+	g_font = GetFont(FONT_FAMILY_SANS_SERIF, FONT_WEIGHT_NORMAL, false);
 }
 
 float GetTextWidth(const char* text, size_t num)
 {
-	return ui::GetTextWidth(g_font, GetFontHeight(), num == SIZE_MAX ? StringView(text) : StringView(text, num));
+	return GetTextWidth(g_font, GetFontHeight(), num == SIZE_MAX ? StringView(text) : StringView(text, num));
 }
 
 float GetFontHeight()
@@ -271,7 +271,7 @@ float GetFontHeight()
 
 void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
 {
-	ui::draw::TextLine(g_font, GetFontHeight(), x, y, text, ui::Color4f(r, g, b, a));
+	draw::TextLine(g_font, GetFontHeight(), x, y, text, Color4f(r, g, b, a));
 }
 
 } // ui

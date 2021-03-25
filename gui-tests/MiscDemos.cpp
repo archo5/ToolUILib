@@ -51,7 +51,7 @@ struct SettingsWindowDemo : ui::Buildable
 			if (sections.insert(entry.section).second)
 			{
 				ctx->MakeWithText<ui::Selectable>(entry.section).Init(entry.section == currentSection)
-					+ ui::EventHandler(ui::EventType::Activate, [this, &entry](ui::Event&)
+					+ ui::AddEventHandler(ui::EventType::Activate, [this, &entry](ui::Event&)
 				{
 					currentSection.assign(entry.section.data(), entry.section.size());
 					Rebuild();

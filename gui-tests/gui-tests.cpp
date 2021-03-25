@@ -18,14 +18,14 @@ struct DataEditor : ui::Buildable
 	{
 		ItemButton()
 		{
-			GetStyle().SetLayout(style::layouts::Stack());
+			GetStyle().SetLayout(ui::layouts::Stack());
 			//GetStyle().SetMargin(32);
 		}
 		void Build(ui::UIContainer* ctx) override
 		{
 			static int wat = 0;
 			auto& b = ctx->Push<ui::Button>();
-			b.GetStyle().SetWidth(style::Coord::Percent(100));
+			b.GetStyle().SetWidth(ui::Coord::Percent(100));
 			//b.SetInputDisabled(wat++ % 2);
 			ctx->Text(name);
 			ctx->Pop();
@@ -188,8 +188,8 @@ struct DataEditor : ui::Buildable
 					void OnBuild(ui::UIContainer* ctx) override
 					{
 						auto s = ctx->Push<ui::Panel>().GetStyle();
-						s.SetLayout(style::layouts::Stack());
-						s.SetStackingDirection(style::StackingDirection::RightToLeft);
+						s.SetLayout(ui::layouts::Stack());
+						s.SetStackingDirection(ui::StackingDirection::RightToLeft);
 						if (ui::imm::Button(ctx, "X"))
 							OnClose();
 						if (ui::imm::Button(ctx, "[]"))
@@ -291,11 +291,11 @@ struct DataEditor : ui::Buildable
 		else
 		{
 			ctx->PushBox()
-				+ ui::Layout(style::layouts::StackExpand())
-				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
-			ctx->Text("Item:") + ui::Padding(5) + ui::Width(style::Coord::Fraction(0));
+				+ ui::SetLayout(ui::layouts::StackExpand())
+				+ ui::Set(ui::StackingDirection::LeftToRight);
+			ctx->Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
 			ctx->Text(items[editing].name.c_str());
-			if (ui::imm::Button(ctx, "Go back", { ui::Width(style::Coord::Fraction(0)) }))
+			if (ui::imm::Button(ctx, "Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))
 			{
 				editing = SIZE_MAX;
 				ui::Notify(DCT_ItemSelection);
@@ -554,32 +554,32 @@ struct TEST : ui::Buildable
 		auto* ss = strchr(s, ' ');
 		if (ss)
 			s = ss + 1;
-		if (strncmp(s, "style::layouts::", sizeof("style::layouts::") - 1) == 0)
-			s += sizeof("style::layouts::") - 1;
+		if (strncmp(s, "ui::layouts::", sizeof("ui::layouts::") - 1) == 0)
+			s += sizeof("ui::layouts::") - 1;
 		return s;
 	}
-	static const style::Layout* glo(UIObject* o)
+	static const ui::ILayout* glo(UIObject* o)
 	{
 		auto* lo = o->GetStyle().GetLayout();
-		return lo ? lo : style::layouts::Stack();
+		return lo ? lo : ui::layouts::Stack();
 	}
-	static const char* dir(const style::Accessor& a)
+	static const char* dir(const ui::StyleAccessor& a)
 	{
 		static const char* names[] = { "-", "Inh", "T-B", "R-L", "B-T", "L-R" };
 		return names[(int)a.GetStackingDirection()];
 	}
-	static const char* ctu(style::CoordTypeUnit u)
+	static const char* ctu(ui::CoordTypeUnit u)
 	{
 		static const char* names[] = { "undefined", "inherit", "auto", "px", "%", "fr" };
 		return names[(int)u];
 	}
-	static const char* costr(const style::Coord& c)
+	static const char* costr(const ui::Coord& c)
 	{
 		static char buf[128];
 		auto* us = ctu(c.unit);
-		if (c.unit == style::CoordTypeUnit::Undefined ||
-			c.unit == style::CoordTypeUnit::Inherit ||
-			c.unit == style::CoordTypeUnit::Auto)
+		if (c.unit == ui::CoordTypeUnit::Undefined ||
+			c.unit == ui::CoordTypeUnit::Inherit ||
+			c.unit == ui::CoordTypeUnit::Auto)
 			return us;
 		snprintf(buf, 128, "%g%s", c.value, us);
 		return buf;
@@ -590,7 +590,7 @@ struct TEST : ui::Buildable
 			printf("  ");
 		auto* lo = glo(o);
 		printf("%s  -%s", cln(typeid(*o).name()), cln(typeid(*lo).name()));
-		if (lo == style::layouts::Stack() || lo == style::layouts::StackExpand())
+		if (lo == ui::layouts::Stack() || lo == ui::layouts::StackExpand())
 			printf(":%s", dir(o->GetStyle()));
 		printf(" w=%s", costr(o->GetStyle().GetWidth()));
 		printf(" h=%s", costr(o->GetStyle().GetHeight()));

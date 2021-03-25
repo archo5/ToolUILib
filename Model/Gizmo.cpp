@@ -271,7 +271,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 		_totalAngleDiff = 0;
 
 		_origData.clear();
-		ui::DataWriter dw(_origData);
+		DataWriter dw(_origData);
 		editable.Backup(dw);
 	}
 
@@ -339,7 +339,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 				if (_totalMovedWinVec.x == 0 && _totalMovedWinVec.y == 0)
 				{
-					ui::DataReader dr(_origData);
+					DataReader dr(_origData);
 					editableNC.Transform(dr, nullptr);
 					return true;
 				}
@@ -359,7 +359,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 						auto xf = Mat4f::Translate(worldAxis * diff);
 
-						ui::DataReader dr(_origData);
+						DataReader dr(_origData);
 						editableNC.Transform(dr, &xf);
 						return true;
 					}
@@ -381,7 +381,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 						auto xf = Mat4f::Translate(diff);
 
-						ui::DataReader dr(_origData);
+						DataReader dr(_origData);
 						editableNC.Transform(dr, &xf);
 						return true;
 					}
@@ -446,7 +446,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 					fullXF = xfBasisW.Inverted() * xf * xfBasisW;
 				}
 
-				ui::DataReader dr(_origData);
+				DataReader dr(_origData);
 				editableNC.Transform(dr, &fullXF);
 				return true;
 			}
@@ -477,7 +477,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 				auto fullXF = xfBasis.Inverted() * xf * xfBasis;
 
-				ui::DataReader dr(_origData);
+				DataReader dr(_origData);
 				editableNC.Transform(dr, &fullXF);
 				return true;
 			}
@@ -525,7 +525,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Right && _selectedPart != GizmoAction::None && visible)
 	{
 		_selectedPart = GizmoAction::None;
-		ui::DataReader dr(_origData);
+		DataReader dr(_origData);
 		editableNC.Transform(dr, nullptr);
 		return true;
 	}
@@ -541,7 +541,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			if (_selectedPart != GizmoAction::None)
 			{
 				_selectedPart = GizmoAction::None;
-				ui::DataReader dr(_origData);
+				DataReader dr(_origData);
 				editableNC.Transform(dr, nullptr);
 
 				e.StopPropagation();
@@ -626,33 +626,33 @@ static Color4b GetColor(GizmoAction action)
 
 static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, const CameraBase& cam)
 {
-	using namespace ui::rhi;
+	using namespace rhi;
 
-	constexpr ui::prim::PlaneSettings PS = {};
+	constexpr prim::PlaneSettings PS = {};
 	constexpr uint16_t planeVC = PS.CalcVertexCount();
 	constexpr uint16_t planeIC = PS.CalcIndexCount();
-	ui::Vertex_PF3CB4 planeVerts[planeVC];
+	Vertex_PF3CB4 planeVerts[planeVC];
 	uint16_t planeIndices[planeIC];
-	ui::prim::GeneratePlane(PS, planeVerts, planeIndices);
+	prim::GeneratePlane(PS, planeVerts, planeIndices);
 
 	constexpr uint16_t planeFrameIC = 5;
 	uint16_t planeFrameIndices[planeFrameIC] = { 0, 1, 3, 2, 0 };
 
-	constexpr ui::prim::ConeSettings CS = {};
+	constexpr prim::ConeSettings CS = {};
 	constexpr uint16_t coneVC = CS.CalcVertexCount();
 	constexpr uint16_t coneIC = CS.CalcIndexCount();
-	ui::Vertex_PF3CB4 coneVerts[coneVC];
+	Vertex_PF3CB4 coneVerts[coneVC];
 	uint16_t coneIndices[coneIC];
-	ui::prim::GenerateCone(CS, coneVerts, coneIndices);
+	prim::GenerateCone(CS, coneVerts, coneIndices);
 
-	constexpr ui::prim::BoxSphereSettings SS = {};
+	constexpr prim::BoxSphereSettings SS = {};
 	constexpr uint16_t sphereVC = SS.CalcVertexCount();
 	constexpr uint16_t sphereIC = SS.CalcIndexCount();
-	ui::Vertex_PF3CB4 sphereVerts[sphereVC];
+	Vertex_PF3CB4 sphereVerts[sphereVC];
 	uint16_t sphereIndices[sphereIC];
-	ui::prim::GenerateBoxSphere(SS, sphereVerts, sphereIndices);
+	prim::GenerateBoxSphere(SS, sphereVerts, sphereIndices);
 
-	ui::Vertex_PF3CB4 tmpVerts[2] = {};
+	Vertex_PF3CB4 tmpVerts[2] = {};
 
 	Vec3f cam2center = (transform.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
 	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
@@ -698,7 +698,7 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 		{
 		case 0:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveXPlane, visPX));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveXPlane, visPX));
 			Mat4f mtxXPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * Mat4f::RotateY(90) * transform;
 			DrawIndexed(mtxXPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxXPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -706,7 +706,7 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 		case 1:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveYPlane, visPY));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveYPlane, visPY));
 			Mat4f mtxYPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * Mat4f::RotateX(-90) * transform;
 			DrawIndexed(mtxYPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxYPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -714,7 +714,7 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 		case 2:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveZPlane, visPZ));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::MoveZPlane, visPZ));
 			Mat4f mtxZPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * transform;
 			DrawIndexed(mtxZPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxZPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -746,28 +746,28 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 		case 6:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveXAxis, visX));
+			prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveXAxis, visX));
 			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * Mat4f::RotateY(-90) * transform,
 				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
 			break;
 
 		case 7:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveYAxis, visY));
+			prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveYAxis, visY));
 			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * Mat4f::RotateX(90) * transform,
 				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
 			break;
 
 		case 8:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveZAxis, visZ));
+			prim::SetVertexColor(coneVerts, coneVC, GetColor(hoverPart, GizmoAction::MoveZAxis, visZ));
 			DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.2f) * Mat4f::Translate(0, 0, 0.9f) * transform,
 				PT_Triangles, VF_Color, coneVerts, coneVC, coneIndices, coneIC);
 			break;
 
 		case 9:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(sphereVerts, sphereVC, GetColor(hoverPart, GizmoAction::MoveScreenPlane, 1.0f));
+			prim::SetVertexColor(sphereVerts, sphereVC, GetColor(hoverPart, GizmoAction::MoveScreenPlane, 1.0f));
 			DrawIndexed(Mat4f::Scale(0.15f) * transform,
 				PT_Triangles, VF_Color, sphereVerts, sphereVC, sphereIndices, sphereIC);
 			break;
@@ -777,7 +777,7 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color, const CameraBase& cam, Vec3f darkZoneCenter, float darkZoneRadius)
 {
-	using namespace ui::rhi;
+	using namespace rhi;
 
 	constexpr int NUMSEG = 64;
 
@@ -788,7 +788,7 @@ static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color
 	float dzrWin = cam.WorldToWindowSize(darkZoneRadius, darkZoneCenter);
 	float dzz = cam.GetViewMatrix().TransformPoint(darkZoneCenter).z;
 
-	ui::Vertex_PF3CB4 circleVerts[NUMSEG * 2];
+	Vertex_PF3CB4 circleVerts[NUMSEG * 2];
 	int realnum = 0;
 	for (int i = 0; i < NUMSEG; i++)
 	{
@@ -817,7 +817,7 @@ static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color
 
 static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, float size, const CameraBase& cam)
 {
-	using namespace ui::rhi;
+	using namespace rhi;
 
 	auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
 	auto wsp = cam.WorldToWindowPoint(worldPoint);
@@ -827,8 +827,8 @@ static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, f
 	{
 		auto prevRect = End3DMode();
 
-		draw::AACircleLineCol(wsp, sizeScale * size, 1, ui::Color4f(1, hoverPart == GizmoAction::RotateScreenAxis ? 0.5f : 0.2f));
-		draw::AACircleLineCol(wsp, sizeScale * size * 0.4f, sizeScale * size * 0.8f, ui::Color4f(1, hoverPart == GizmoAction::RotateTrackpad ? 0.3f : 0.1f));
+		draw::AACircleLineCol(wsp, sizeScale * size, 1, Color4f(1, hoverPart == GizmoAction::RotateScreenAxis ? 0.5f : 0.2f));
+		draw::AACircleLineCol(wsp, sizeScale * size * 0.4f, sizeScale * size * 0.8f, Color4f(1, hoverPart == GizmoAction::RotateTrackpad ? 0.3f : 0.1f));
 
 		Begin3DMode(prevRect);
 		SetViewMatrix(cam.GetViewMatrix());
@@ -846,26 +846,26 @@ static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, f
 
 static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, float size, const CameraBase& cam)
 {
-	using namespace ui::rhi;
+	using namespace rhi;
 
-	constexpr ui::prim::PlaneSettings PS = {};
+	constexpr prim::PlaneSettings PS = {};
 	constexpr uint16_t planeVC = PS.CalcVertexCount();
 	constexpr uint16_t planeIC = PS.CalcIndexCount();
-	ui::Vertex_PF3CB4 planeVerts[planeVC];
+	Vertex_PF3CB4 planeVerts[planeVC];
 	uint16_t planeIndices[planeIC];
-	ui::prim::GeneratePlane(PS, planeVerts, planeIndices);
+	prim::GeneratePlane(PS, planeVerts, planeIndices);
 
 	constexpr uint16_t planeFrameIC = 5;
 	uint16_t planeFrameIndices[planeFrameIC] = { 0, 1, 3, 2, 0 };
 
-	constexpr ui::prim::BoxSettings BS = {};
+	constexpr prim::BoxSettings BS = {};
 	constexpr uint16_t boxVC = BS.CalcVertexCount();
 	constexpr uint16_t boxIC = BS.CalcIndexCount();
-	ui::Vertex_PF3CB4 boxVerts[boxVC];
+	Vertex_PF3CB4 boxVerts[boxVC];
 	uint16_t boxIndices[boxIC];
-	ui::prim::GenerateBox(BS, boxVerts, boxIndices);
+	prim::GenerateBox(BS, boxVerts, boxIndices);
 
-	ui::Vertex_PF3CB4 tmpVerts[2] = {};
+	Vertex_PF3CB4 tmpVerts[2] = {};
 
 	Vec3f cam2center = (transform.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
 	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
@@ -913,9 +913,9 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 		auto wsp = cam.WorldToWindowPoint(worldPoint);
 		float sizeScale = cam.WorldToWindowSize(1.0f, worldPoint);
 
-		draw::AACircleLineCol(wsp, sizeScale * size * 0.6f, sizeScale * size * 0.8f, ui::Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.2f : 0.1f));
-		draw::AACircleLineCol(wsp, sizeScale * size, 1, ui::Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
-		draw::AACircleLineCol(wsp, sizeScale * size * 0.2f, 1, ui::Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
+		draw::AACircleLineCol(wsp, sizeScale * size * 0.6f, sizeScale * size * 0.8f, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.2f : 0.1f));
+		draw::AACircleLineCol(wsp, sizeScale * size, 1, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
+		draw::AACircleLineCol(wsp, sizeScale * size * 0.2f, 1, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
 
 		rhi::Begin3DMode(prevRect);
 		rhi::SetViewMatrix(cam.GetViewMatrix());
@@ -928,7 +928,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 		{
 		case 0:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleXPlane, visPX));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleXPlane, visPX));
 			Mat4f mtxXPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * Mat4f::RotateY(90) * transform;
 			DrawIndexed(mtxXPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxXPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -936,7 +936,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 		case 1:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleYPlane, visPY));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleYPlane, visPY));
 			Mat4f mtxYPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * Mat4f::RotateX(-90) * transform;
 			DrawIndexed(mtxYPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxYPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -944,7 +944,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 		case 2:
 			SetRenderState(DF_PRIMARY);
-			ui::prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleZPlane, visPZ));
+			prim::SetVertexColor(planeVerts, planeVC, GetColor(hoverPart, GizmoAction::ScaleZPlane, visPZ));
 			Mat4f mtxZPlane = Mat4f::Scale(0.15f, 0.15f, 1.0f) * Mat4f::Translate(0.75f, 0.75f, 0) * transform;
 			DrawIndexed(mtxZPlane, PT_Triangles, VF_Color, planeVerts, planeVC, planeIndices, planeIC);
 			DrawIndexed(mtxZPlane, PT_LineStrip, VF_Color, planeVerts, planeVC, planeFrameIndices, planeFrameIC);
@@ -973,28 +973,28 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 		case 6:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleXAxis, visX));
+			prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleXAxis, visX));
 			DrawIndexed(Mat4f::Scale(0.05f) * Mat4f::Translate(0, 0, 0.95f) * Mat4f::RotateY(-90) * transform,
 				PT_Triangles, VF_Color, boxVerts, boxVC, boxIndices, boxIC);
 			break;
 
 		case 7:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleYAxis, visY));
+			prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleYAxis, visY));
 			DrawIndexed(Mat4f::Scale(0.05f) * Mat4f::Translate(0, 0, 0.95f) * Mat4f::RotateX(90) * transform,
 				PT_Triangles, VF_Color, boxVerts, boxVC, boxIndices, boxIC);
 			break;
 
 		case 8:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleZAxis, visZ));
+			prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleZAxis, visZ));
 			DrawIndexed(Mat4f::Scale(0.05f) * Mat4f::Translate(0, 0, 0.95f) * transform,
 				PT_Triangles, VF_Color, boxVerts, boxVC, boxIndices, boxIC);
 			break;
 #if 0
 		case 9:
 			SetRenderState(DF_PRIMARY | DF_Cull);
-			ui::prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleUniform, visZ));
+			prim::SetVertexColor(boxVerts, boxVC, GetColor(hoverPart, GizmoAction::ScaleUniform, visZ));
 			DrawIndexed(Mat4f::Scale(0.1f) * transform,
 				PT_Triangles, VF_Color, boxVerts, boxVC, boxIndices, boxIC);
 			break;
@@ -1005,10 +1005,10 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 static void RenderInfiniteLine(Color4b col, Vec3f origin, Vec3f dir)
 {
-	using namespace ui::rhi;
+	using namespace rhi;
 
 	constexpr int COUNT = 35;
-	ui::Vertex_PF3CB4 tmpVerts[COUNT];
+	Vertex_PF3CB4 tmpVerts[COUNT];
 	for (int i = 0; i < COUNT; i++)
 	{
 		float off = i - (COUNT / 2);

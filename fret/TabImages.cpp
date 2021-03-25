@@ -14,7 +14,7 @@ void TabImages::Build(ui::UIContainer* ctx)
 		workspace->ddimgSrc.Edit(ctx);
 
 		auto& tv = ctx->Make<ui::TableView>();
-		tv + ui::Layout(style::layouts::EdgeSlice());
+		tv + ui::SetLayout(ui::layouts::EdgeSlice());
 		tv.SetDataSource(&workspace->ddimgSrc);
 		tv.SetSelectionStorage(&workspace->ddimgSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);
@@ -88,9 +88,9 @@ void TabImages::Build(ui::UIContainer* ctx)
 			{
 				ctx->Push<ui::Panel>();
 				auto& img = ctx->Make<ui::ImageElement>();
-				img + ui::Width(style::Coord::Percent(100));
-				img + ui::Height(style::Coord::Percent(100));
-				img.GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+				img + ui::SetWidth(ui::Coord::Percent(100));
+				img + ui::SetHeight(ui::Coord::Percent(100));
+				img.GetStyle().SetPaintFunc([](const ui::PaintInfo& info)
 				{
 					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 

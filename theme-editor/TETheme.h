@@ -84,7 +84,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	uintptr_t GetNodeOutputCount(Node* node) override { return 1; }
 	void NodePropertyEditorUI(Node* node, UIContainer* ctx)
 	{
-		ctx->Push<PropertyList>().splitPos = style::Coord::Percent(25);
+		ctx->Push<PropertyList>().splitPos = Coord::Percent(25);
 		static_cast<TE_Node*>(node)->PropertyUI(ctx);
 		ctx->Pop();
 	}

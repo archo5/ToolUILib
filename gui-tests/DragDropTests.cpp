@@ -51,13 +51,13 @@ struct TransferCountablesTest : ui::Buildable
 	{
 		ctx->Text("Transfer countables");
 
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 		for (int i = 0; i < 3; i++)
 		{
 			auto& btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
 			if (btn.flags & ui::UIObject_DragHovered)
 			{
-				btn + ui::Padding(4, 4, 10, 4);
+				btn + ui::SetPadding(4, 4, 10, 4);
 			}
 			btn.SetInputDisabled(slots[i] == 0);
 			btn.HandleEvent() = [this, i](ui::Event& e)
@@ -250,7 +250,7 @@ struct TreeNodeReorderTest : ui::Buildable
 
 			ctx->Push<ui::Selectable>().Init(selectedNodes.count(N))
 				+ ui::MakeDraggable()
-				+ ui::EventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
+				+ ui::AddEventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
 			{
 				if (e.type == ui::EventType::DragStart)
 				{
@@ -281,7 +281,7 @@ struct TreeNodeReorderTest : ui::Buildable
 				}
 			});
 
-			ctx->PushBox() + ui::Width(level * 12);
+			ctx->PushBox() + ui::SetWidth(level * 12);
 			ctx->Pop();
 
 			ctx->Push<ui::CheckboxFlagT<bool>>().Init(N->open) + ui::RebuildOnChange();
@@ -457,15 +457,15 @@ struct DragElementTest : ui::Buildable
 	{
 		ctx->Text("Drag element");
 
-		ctx->Push<ui::ListBox>() + ui::Height(100);
+		ctx->Push<ui::ListBox>() + ui::SetHeight(100);
 
 		auto& tp = ctx->Push<ui::TabPanel>();
 		auto s = tp.GetStyle(); // for style only
-		s.SetWidth(style::Coord::Undefined());
-		drelPlacement = Allocate<style::PointAnchoredPlacement>();
+		s.SetWidth(ui::Coord::Undefined());
+		drelPlacement = Allocate<ui::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
 		s.SetPlacement(drelPlacement);
-		ctx->MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::EventHandler([this, &tp](ui::Event& e)
+		ctx->MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::AddEventHandler([this, &tp](ui::Event& e)
 		{
 			if (e.type == ui::EventType::ButtonDown && e.GetButton() == ui::MouseButton::Left)
 			{
@@ -484,13 +484,13 @@ struct DragElementTest : ui::Buildable
 				tp._OnChangeStyle(); // TODO?
 			}
 		});
-		ctx->Text("the other part") + ui::Padding(5);
+		ctx->Text("the other part") + ui::SetPadding(5);
 		ctx->Pop();
 
 		ctx->Pop();
 	}
 
-	style::PointAnchoredPlacement* drelPlacement = nullptr;
+	ui::PointAnchoredPlacement* drelPlacement = nullptr;
 	ui::Point2f drelPos = { 25, 15 };
 	ui::Point2f drelDragStartMouse = {};
 	ui::Point2f drelDragStartPos = {};
@@ -619,15 +619,15 @@ struct DragConnectTest : ui::Buildable
 		ctx->Text("Drag connect");
 
 		ctx->Push<ui::ListBox>()
-			+ ui::Layout(style::layouts::EdgeSlice())
-			+ ui::Height(60);
+			+ ui::SetLayout(ui::layouts::EdgeSlice())
+			+ ui::SetHeight(60);
 
-		ctx->PushBox().GetStyle().SetEdge(style::Edge::Left);
+		ctx->PushBox().GetStyle().SetEdge(ui::Edge::Left);
 		ctx->MakeWithText<Linkable>("left A").Init(false, 0);
 		ctx->MakeWithText<Linkable>("left B").Init(false, 1);
 		ctx->Pop();
 
-		ctx->PushBox().GetStyle().SetEdge(style::Edge::Right);
+		ctx->PushBox().GetStyle().SetEdge(ui::Edge::Right);
 		ctx->MakeWithText<Linkable>("right A").Init(true, 2);
 		ctx->MakeWithText<Linkable>("right B").Init(true, 3);
 		ctx->Pop();
@@ -689,11 +689,11 @@ struct DragDropTest : ui::Buildable
 
 	void Build(ui::UIContainer* ctx) override
 	{
-		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
 
 		auto s = ctx->Push<ui::Panel>().GetStyle();
-		s.SetWidth(style::Coord::Percent(50));
-		s.SetBoxSizing(style::BoxSizing::BorderBox);
+		s.SetWidth(ui::Coord::Percent(50));
+		s.SetBoxSizing(ui::BoxSizing::BorderBox);
 
 		ctx->Make<FileReceiverTest>();
 		ctx->Make<TransferCountablesTest>();
@@ -703,8 +703,8 @@ struct DragDropTest : ui::Buildable
 		ctx->Pop();
 
 		s = ctx->Push<ui::Panel>().GetStyle();
-		s.SetWidth(style::Coord::Percent(50));
-		s.SetBoxSizing(style::BoxSizing::BorderBox);
+		s.SetWidth(ui::Coord::Percent(50));
+		s.SetBoxSizing(ui::BoxSizing::BorderBox);
 
 		ctx->Make<DragElementTest>();
 		ctx->Make<DragConnectTest>();

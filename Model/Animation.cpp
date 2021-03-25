@@ -11,7 +11,7 @@ void AnimPlayer::PlayAnim(const AnimPtr& anim)
 	_activeAnims.push_back(anim);
 
 	if (!IsAnimating())
-		_prevTime = ui::platform::GetTimeMs();
+		_prevTime = platform::GetTimeMs();
 	BeginAnimation();
 }
 
@@ -48,7 +48,7 @@ void AnimPlayer::SetVariable(const std::string& name, float value)
 
 void AnimPlayer::OnAnimationFrame()
 {
-	uint32_t t = ui::platform::GetTimeMs();
+	uint32_t t = platform::GetTimeMs();
 	for (size_t i = 0; i < _activeAnims.size(); i++)
 	{
 		if (_activeAnims[i]->Advance((t - _prevTime) * 0.001f, this) > 0)

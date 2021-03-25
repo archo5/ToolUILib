@@ -12,8 +12,8 @@ void TE_Node::Preview::Build(UIContainer* ctx)
 		.SetImage(node->GetImage(rcp))
 		.SetScaleMode(ScaleMode::Fit)
 		.SetAlphaBackgroundEnabled(true)
-		//+ Width(style::Coord::Percent(100)) -- TODO fix
-		+ Width(134)
+		//+ SetWidth(Coord::Percent(100)) -- TODO fix
+		+ SetWidth(134)
 		;
 }
 
@@ -78,13 +78,13 @@ void TE_RectMask::PropertyUI(UIContainer* ctx)
 {
 	{
 		ctx->Text("Anchors");
-		imm::PropEditFloatVec(ctx, "\bMin", &rect.anchors.x0, "XY", { MinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "\bMax", &rect.anchors.x1, "XY", { MinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "\bMin", &rect.anchors.x0, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "\bMax", &rect.anchors.x1, "XY", { SetMinWidth(20) }, 0.01f);
 	}
 	{
 		ctx->Text("Offsets");
-		imm::PropEditFloatVec(ctx, "\bMin", &rect.offsets.x0, "XY", { MinWidth(20) }, 0.5f);
-		imm::PropEditFloatVec(ctx, "\bMax", &rect.offsets.x1, "XY", { MinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "\bMin", &rect.offsets.x0, "XY", { SetMinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "\bMax", &rect.offsets.x1, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 	{
 		ctx->Text("Radius");
@@ -137,11 +137,11 @@ void TE_MaskRef::UI(UIContainer* ctx)
 	if (mask)
 		return;
 	auto& pl = ctx->Push<PropertyList>();
-	pl.splitPos = style::Coord::Percent(30);
+	pl.splitPos = Coord::Percent(30);
 	pl.minSplitPos = 50;
-	imm::PropEditInt(ctx, "Border", border, { MinWidth(20) });
-	imm::PropEditInt(ctx, "Radius", radius, { MinWidth(20) });
-	imm::PropEditInt(ctx, "V.bias", vbias, { MinWidth(20) });
+	imm::PropEditInt(ctx, "Border", border, { SetMinWidth(20) });
+	imm::PropEditInt(ctx, "Radius", radius, { SetMinWidth(20) });
+	imm::PropEditInt(ctx, "V.bias", vbias, { SetMinWidth(20) });
 	ctx->Pop();
 }
 
@@ -243,13 +243,13 @@ void TE_2ColorLinearGradientColorLayer::PropertyUI(UIContainer* ctx)
 	color1.UI(ctx);
 	{
 		ctx->Text("Start pos.");
-		imm::PropEditFloatVec(ctx, "Anchor", &pos0.anchor.x, "XY", { MinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "Offset", &pos0.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "Anchor", &pos0.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "Offset", &pos0.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 	{
 		ctx->Text("End pos.");
-		imm::PropEditFloatVec(ctx, "Anchor", &pos1.anchor.x, "XY", { MinWidth(20) }, 0.01f);
-		imm::PropEditFloatVec(ctx, "Offset", &pos1.offset.x, "XY", { MinWidth(20) }, 0.5f);
+		imm::PropEditFloatVec(ctx, "Anchor", &pos1.anchor.x, "XY", { SetMinWidth(20) }, 0.01f);
+		imm::PropEditFloatVec(ctx, "Offset", &pos1.offset.x, "XY", { SetMinWidth(20) }, 0.5f);
 	}
 }
 

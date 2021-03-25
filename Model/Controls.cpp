@@ -30,7 +30,7 @@ Button::Button()
 StateButtonBase::StateButtonBase()
 {
 	SetFlag(UIObject_DB_Button, true);
-	GetStyle().SetLayout(style::layouts::InlineBlock());
+	GetStyle().SetLayout(layouts::InlineBlock());
 }
 
 
@@ -83,7 +83,7 @@ bool StateToggle::OnActivate()
 void StateToggleVisualBase::OnPaint()
 {
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
-	style::PaintInfo info(st ? static_cast<UIObject*>(st) : this);
+	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
 		info.checkState = st->GetState();
 	styleProps->paint_func(info);
@@ -94,25 +94,25 @@ void StateToggleVisualBase::OnPaint()
 
 CheckboxIcon::CheckboxIcon()
 {
-	styleProps = ui::Theme::current->checkbox;
+	styleProps = Theme::current->checkbox;
 }
 
 
 RadioButtonIcon::RadioButtonIcon()
 {
-	styleProps = ui::Theme::current->radioButton;
+	styleProps = Theme::current->radioButton;
 }
 
 
 TreeExpandIcon::TreeExpandIcon()
 {
-	styleProps = ui::Theme::current->collapsibleTreeNode;
+	styleProps = Theme::current->collapsibleTreeNode;
 }
 
 
 StateButtonSkin::StateButtonSkin()
 {
-	styleProps = ui::Theme::current->button;
+	styleProps = Theme::current->button;
 }
 
 
@@ -140,7 +140,7 @@ void ProgressBar::OnPaint()
 {
 	styleProps->paint_func(this);
 
-	style::PaintInfo cinfo(this);
+	PaintInfo cinfo(this);
 	cinfo.rect = cinfo.rect.ShrinkBy(GetMarginRect(completionBarStyle, cinfo.rect.GetWidth()));
 	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
 	completionBarStyle->paint_func(cinfo);
@@ -162,7 +162,7 @@ void Slider::OnPaint()
 	styleProps->paint_func(this);
 
 	// track
-	style::PaintInfo trkinfo(this);
+	PaintInfo trkinfo(this);
 	float w = trkinfo.rect.GetWidth();
 	trkinfo.rect = trkinfo.rect.ShrinkBy(GetMarginRect(trackStyle, w));
 	trackStyle->paint_func(trkinfo);
@@ -242,8 +242,8 @@ double Slider::ValueToQ(double v)
 
 Property::Property()
 {
-	GetStyle().SetLayout(style::layouts::StackExpand());
-	GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+	GetStyle().SetLayout(layouts::StackExpand());
+	GetStyle().SetStackingDirection(StackingDirection::LeftToRight);
 }
 
 void Property::Begin(UIContainer* ctx, const char* label)
@@ -265,16 +265,16 @@ UIObject& Property::Label(UIContainer* ctx, const char* label)
 	if (*label == '\b')
 		return MinLabel(ctx, label + 1);
 	return ctx->Text(label)
-		+ Padding(5)
-		+ MinWidth(100)
-		+ Width(style::Coord::Percent(30));
+		+ SetPadding(5)
+		+ SetMinWidth(100)
+		+ SetWidth(Coord::Percent(30));
 }
 
 UIObject& Property::MinLabel(UIContainer* ctx, const char* label)
 {
 	return ctx->Text(label)
-		+ Padding(5)
-		+ Width(style::Coord::Fraction(0));
+		+ SetPadding(5)
+		+ SetWidth(Coord::Fraction(0));
 }
 
 void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
@@ -313,16 +313,16 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 	Property::Begin(ctx, label);
 
 	ctx->PushBox()
-		+ Layout(style::layouts::StackExpand())
-		+ StackingDirection(style::StackingDirection::LeftToRight);
+		+ SetLayout(layouts::StackExpand())
+		+ Set(StackingDirection::LeftToRight);
 	{
 		for (int i = 0; i < size; i++)
 		{
 			float* vc = v + i;
 			ctx->PushBox()
-				+ Layout(style::layouts::StackExpand())
-				+ StackingDirection(style::StackingDirection::LeftToRight)
-				+ Width(style::Coord::Fraction(1));
+				+ SetLayout(layouts::StackExpand())
+				+ Set(StackingDirection::LeftToRight)
+				+ SetWidth(Coord::Fraction(1));
 
 			Property::MinLabel(ctx, subLabelNames[i]).HandleEvent() = [vc](Event& e)
 			{
@@ -340,7 +340,7 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 			};
 
 			auto& tb = ctx->Make<Textbox>();
-			tb + Width(style::Coord::Fraction(0.2f));
+			tb + SetWidth(Coord::Fraction(0.2f));
 			char buf[64];
 			snprintf(buf, 64, "%g", v[i]);
 			tb.SetText(buf);
@@ -439,9 +439,9 @@ void LabeledProperty::OnPaint()
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
 		// TODO optimize scissor (shared across labels)
-		ui::draw::PushScissorRect(cr.x0, cr.y0, cr.x1, cr.y1);
-		ui::draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
-		ui::draw::PopScissorRect();
+		draw::PushScissorRect(cr.x0, cr.y0, cr.x1, cr.y1);
+		draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
+		draw::PopScissorRect();
 	}
 
 	PaintChildren();
@@ -459,7 +459,7 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 			bool italic = GetFontIsItalic(_labelStyle);
 			auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
-			r.x0 += ui::GetTextWidth(font, size, _labelText);
+			r.x0 += GetTextWidth(font, size, _labelText);
 			auto labelPadRect = GetPaddingRect(_labelStyle, 0);
 			r.x0 += labelPadRect.x0 + labelPadRect.x1;
 		}
@@ -484,9 +484,9 @@ SplitPane::SplitPane()
 {
 	// TODO
 	vertSepStyle = Theme::current->button;
-	style::Accessor(vertSepStyle, this).SetWidth(8);
+	StyleAccessor(vertSepStyle, this).SetWidth(8);
 	horSepStyle = Theme::current->button;
-	style::Accessor(horSepStyle, this).SetHeight(8);
+	StyleAccessor(horSepStyle, this).SetHeight(8);
 }
 
 static float SplitQToX(SplitPane* sp, float split)
@@ -580,18 +580,18 @@ void SplitPane::OnPaint()
 	styleProps->paint_func(this);
 	PaintChildren();
 
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 	if (!_verticalSplit)
 	{
 		for (size_t i = 0; i < _splits.size(); i++)
 		{
 			auto ii = (uint16_t)i;
 			info.rect = GetSplitRectH(this, ii);
-			info.state &= ~(style::PS_Hover | style::PS_Down);
+			info.state &= ~(PS_Hover | PS_Down);
 			if (_splitUI.IsHovered(ii))
-				info.state |= style::PS_Hover;
+				info.state |= PS_Hover;
 			if (_splitUI.IsPressed(ii))
-				info.state |= style::PS_Down;
+				info.state |= PS_Down;
 			vertSepStyle->paint_func(info);
 		}
 	}
@@ -601,11 +601,11 @@ void SplitPane::OnPaint()
 		{
 			auto ii = (uint16_t)i;
 			info.rect = GetSplitRectV(this, ii);
-			info.state &= ~(style::PS_Hover | style::PS_Down);
+			info.state &= ~(PS_Hover | PS_Down);
 			if (_splitUI.IsHovered(ii))
-				info.state |= style::PS_Hover;
+				info.state |= PS_Hover;
 			if (_splitUI.IsPressed(ii))
-				info.state |= style::PS_Down;
+				info.state |= PS_Down;
 			horSepStyle->paint_func(info);
 		}
 	}
@@ -647,7 +647,7 @@ void SplitPane::OnEvent(Event& e)
 	}
 	if (e.type == EventType::SetCursor && _splitUI.IsAnyHovered())
 	{
-		e.context->SetDefaultCursor(_verticalSplit ? ui::DefaultCursor::ResizeRow : ui::DefaultCursor::ResizeCol);
+		e.context->SetDefaultCursor(_verticalSplit ? DefaultCursor::ResizeRow : DefaultCursor::ResizeCol);
 		e.StopPropagation();
 	}
 }
@@ -703,12 +703,12 @@ void SplitPane::OnSerialize(IDataSerializer& s)
 		s << v;
 }
 
-Range2f SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Range2f SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.y, containerSize.y };
 }
@@ -757,12 +757,12 @@ ScrollbarV::ScrollbarV()
 	thumbVStyle = Theme::current->scrollVThumb;
 }
 
-style::Coord ScrollbarV::GetWidth()
+Coord ScrollbarV::GetWidth()
 {
 	return trackVStyle->width;
 }
 
-static UIRect sbv_GetTrackRect(const ScrollbarData& info, style::Block* trackVStyle)
+static UIRect sbv_GetTrackRect(const ScrollbarData& info, StyleBlock* trackVStyle)
 {
 	return info.rect.ShrinkBy(info.owner->GetPaddingRect(trackVStyle, info.rect.GetWidth()));
 }
@@ -788,7 +788,7 @@ UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
 
 void ScrollbarV::OnPaint(const ScrollbarData& info)
 {
-	style::PaintInfo vsinfo;
+	PaintInfo vsinfo;
 	vsinfo.obj = info.owner;
 	vsinfo.rect = info.rect;
 	trackVStyle->paint_func(vsinfo);
@@ -796,13 +796,13 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 	vsinfo.rect = GetThumbRect(info);
 	vsinfo.state = 0;
 	if (info.contentSize <= info.viewportSize)
-		vsinfo.state |= style::PS_Disabled;
+		vsinfo.state |= PS_Disabled;
 	else
 	{
 		if (uiState.IsHovered(0))
-			vsinfo.state |= style::PS_Hover;
+			vsinfo.state |= PS_Hover;
 		if (uiState.IsPressed(0))
-			vsinfo.state |= style::PS_Down;
+			vsinfo.state |= PS_Down;
 	}
 	thumbVStyle->paint_func(vsinfo);
 }
@@ -818,12 +818,12 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 
 	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
 	{
-	case ui::SubUIDragState::Start:
+	case SubUIDragState::Start:
 		dragStartContentOff = info.contentOff;
 		dragStartCursorPos = e.position.y;
 		e.StopPropagation();
 		break;
-	case ui::SubUIDragState::Move: {
+	case SubUIDragState::Move: {
 		float thumbSizeFactor = viewportSize / contentSize;
 
 		UIRect trackRect = sbv_GetTrackRect(info, trackVStyle);
@@ -838,7 +838,7 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 		info.contentOff = min(maxOff, max(0.0f, dragStartContentOff + (e.position.y - dragStartCursorPos) * dragSpeed));
 		e.StopPropagation();
 		break; }
-	case ui::SubUIDragState::Stop:
+	case SubUIDragState::Stop:
 		e.StopPropagation();
 		break;
 	}
@@ -887,7 +887,7 @@ void ScrollArea::OnEvent(Event& e)
 
 void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	estContentSize.y = CalcEstimatedHeight(containerSize, style::EstSizeType::Exact);
+	estContentSize.y = CalcEstimatedHeight(containerSize, EstSizeType::Exact);
 	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
 	if (yoff > maxYOff)
 		yoff = maxYOff;
@@ -957,7 +957,7 @@ void TabButtonBase::OnDestroy()
 
 void TabButtonBase::OnPaint()
 {
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 	if (IsSelected())
 		info.checkState = 1;
 	styleProps->paint_func(info);
@@ -1412,10 +1412,10 @@ CollapsibleTreeNode::CollapsibleTreeNode()
 
 void CollapsibleTreeNode::OnPaint()
 {
-	style::PaintInfo info(this);
-	info.state &= ~style::PS_Hover;
+	PaintInfo info(this);
+	info.state &= ~PS_Hover;
 	if (_hovered)
-		info.state |= style::PS_Hover;
+		info.state |= PS_Hover;
 	if (open)
 		info.checkState = 1;
 	styleProps->paint_func(info);
@@ -1499,7 +1499,7 @@ void DropdownMenu::OnEvent(Event& e)
 void DropdownMenu::OnBuildButton(UIContainer* ctx)
 {
 	auto& btn = ctx->PushBox();
-	btn + ui::Style(ui::Theme::current->button);
+	btn + ApplyStyle(Theme::current->button);
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{
@@ -1511,23 +1511,23 @@ void DropdownMenu::OnBuildButton(UIContainer* ctx)
 
 	OnBuildButtonContents(ctx);
 
-	ctx->Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + ui::Margin(0, 0, 0, 5);
+	ctx->Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + SetMargin(0, 0, 0, 5);
 	ctx->Pop();
 }
 
 void DropdownMenu::OnBuildMenuWithLayout(UIContainer* ctx)
 {
 	auto& list = OnBuildMenu(ctx);
-	auto* topLeftPlacement = Allocate<style::PointAnchoredPlacement>();
+	auto* topLeftPlacement = Allocate<PointAnchoredPlacement>();
 	topLeftPlacement->anchor = { 0, 1 };
-	list + ui::SetPlacement(topLeftPlacement);
-	list + ui::MakeOverlay(200.f);
-	list + ui::MinWidth(style::Coord::Percent(100));
+	list + SetPlacement(topLeftPlacement);
+	list + MakeOverlay(200.f);
+	list + SetMinWidth(Coord::Percent(100));
 }
 
 UIObject& DropdownMenu::OnBuildMenu(UIContainer* ctx)
 {
-	auto& ret = ctx->Push<ui::ListBox>();
+	auto& ret = ctx->Push<ListBox>();
 
 	OnBuildMenuContents(ctx);
 
@@ -1604,14 +1604,14 @@ void DropdownMenuList::OnBuildEmptyButtonContents(UIContainer* ctx)
 
 void DropdownMenuList::OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
 {
-	auto& opt = ctx->Push<ui::Selectable>();
+	auto& opt = ctx->Push<Selectable>();
 	opt.Init(_selected == id);
 
 	_options->BuildElement(ctx, ptr, id, true);
 
 	ctx->Pop();
 
-	opt + ui::EventHandler(EventType::ButtonUp, [this, id](Event& e)
+	opt + AddEventHandler(EventType::ButtonUp, [this, id](Event& e)
 	{
 		if (e.GetButton() != MouseButton::Left)
 			return;
@@ -1639,8 +1639,8 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 		minContSize.y = contSize.y;
 #endif
 
-	float w = curObj->GetFullEstimatedWidth(minContSize, style::EstSizeType::Expanding, false).min;
-	float h = curObj->GetFullEstimatedHeight(minContSize, style::EstSizeType::Expanding, false).min;
+	float w = curObj->GetFullEstimatedWidth(minContSize, EstSizeType::Expanding, false).min;
+	float h = curObj->GetFullEstimatedHeight(minContSize, EstSizeType::Expanding, false).min;
 
 	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMousePos, 16);
 
@@ -1694,10 +1694,10 @@ void DefaultOverlayBuilder::Build(UIContainer* ctx)
 	if (drawTooltip)
 	{
 		Subscribe(DCT_TooltipChanged);
-		if (ui::Tooltip::IsSet())
+		if (Tooltip::IsSet())
 		{
-			ctx->Push<ui::TooltipFrame>().RegisterAsOverlay();
-			ui::Tooltip::Build(ctx);
+			ctx->Push<TooltipFrame>().RegisterAsOverlay();
+			Tooltip::Build(ctx);
 			ctx->Pop();
 		}
 	}
@@ -1705,11 +1705,11 @@ void DefaultOverlayBuilder::Build(UIContainer* ctx)
 	if (drawDragDrop)
 	{
 		Subscribe(DCT_DragDropDataChanged);
-		if (auto* ddd = ui::DragDrop::GetData())
+		if (auto* ddd = DragDrop::GetData())
 		{
 			if (ddd->ShouldBuild())
 			{
-				ctx->Push<ui::DragDropDataFrame>().RegisterAsOverlay();
+				ctx->Push<DragDropDataFrame>().RegisterAsOverlay();
 				ddd->Build(ctx);
 				ctx->Pop();
 			}

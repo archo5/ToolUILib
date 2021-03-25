@@ -23,7 +23,7 @@ void ColorBlock::OnPaint()
 
 	if (!_color.IsOpaque())
 	{
-		ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage->_texture, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage->_texture, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
 	}
 	
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
@@ -50,7 +50,7 @@ void ColorInspectBlock::OnPaint()
 
 	if (!_color.IsOpaque())
 	{
-		ui::draw::RectTex(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, _bgImage->_texture, 0, 0, r_rt.GetWidth() / _bgImage->GetWidth(), r_rt.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, _bgImage->_texture, 0, 0, r_rt.GetWidth() / _bgImage->GetWidth(), r_rt.GetHeight() / _bgImage->GetHeight());
 	}
 
 	draw::RectCol(r_lf.x0, r_lf.y0, r_lf.x1, r_lf.y1, _color.GetOpaque());
@@ -82,7 +82,7 @@ void ImageElement::OnPaint()
 	auto c = GetContentRect();
 	if (_bgImage)
 	{
-		ui::draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage->_texture, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage->_texture, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
 	}
 	if (_image && _image->GetWidth() && _image->GetHeight() && c.GetWidth() && c.GetHeight())
 	{
@@ -131,7 +131,7 @@ void ImageElement::OnPaint()
 	PaintChildren();
 }
 
-void ImageElement::GetSize(style::Coord& outWidth, style::Coord& outHeight)
+void ImageElement::GetSize(Coord& outWidth, Coord& outHeight)
 {
 	if (_image)
 	{
@@ -212,7 +212,7 @@ void HueSatPicker::OnPaint()
 	float sh = ResolveUnits(selectorStyle->height, cr.GetWidth());
 	sx = roundf(sx - sw / 2);
 	sy = roundf(sy - sh / 2);
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 	info.rect = { sx, sy, sx + sw, sy + sh };
 	selectorStyle->paint_func(info);
 
@@ -246,7 +246,7 @@ void HueSatPicker::_RegenerateBackground(int w)
 
 void ColorDragDropData::Build(UIContainer* ctx)
 {
-	ctx->Make<ui::ColorInspectBlock>().SetColor(color) + Width(40) + Padding(0);
+	ctx->Make<ColorInspectBlock>().SetColor(color) + SetWidth(40) + SetPadding(0);
 }
 
 
@@ -292,7 +292,7 @@ void ColorCompPicker2D::OnPaint()
 	float sh = ResolveUnits(selectorStyle->height, cr.GetWidth());
 	sx = roundf(sx - sw / 2);
 	sy = roundf(sy - sh / 2);
-	style::PaintInfo info(this);
+	PaintInfo info(this);
 	info.rect = { sx, sy, sx + sw, sy + sh };
 	selectorStyle->paint_func(info);
 
@@ -461,7 +461,7 @@ static std::string gstr(float f)
 
 static void DrawHGradQuad(UIRect r, Color4f a, Color4f b)
 {
-	ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, a, b);
+	draw::RectGradH(r.x0, r.y0, r.x1, r.y1, a, b);
 }
 
 static UIRect RectHSlice(UIRect r, float i, float n)
@@ -489,16 +489,16 @@ void ColorPicker::Build(UIContainer* ctx)
 	*this + RebuildOnChange();
 
 	ctx->PushBox()
-		+ Layout(style::layouts::StackExpand())
-		+ StackingDirection(style::StackingDirection::LeftToRight);
+		+ SetLayout(layouts::StackExpand())
+		+ Set(StackingDirection::LeftToRight);
 	{
 		// left side
 		ctx->PushBox()
-			+ Width(style::Coord::Fraction(0)); // TODO any way to make this unnecessary?
+			+ SetWidth(Coord::Fraction(0)); // TODO any way to make this unnecessary?
 		{
 			auto& hsp = ctx->Make<HueSatPicker>().Init(_color._hue, _color._sat)
-				+ Width(240)
-				+ Height(240);
+				+ SetWidth(240)
+				+ SetHeight(240);
 			hsp.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 		}
 		ctx->Pop();
@@ -506,140 +506,140 @@ void ColorPicker::Build(UIContainer* ctx)
 		FloatLimits limit = { 0, 1 };
 
 		// right side
-		ctx->PushBox() + Padding(8);
+		ctx->PushBox() + SetPadding(8);
 		{
-		//	ctx->PushBox() + Padding(8);
+		//	ctx->PushBox() + SetPadding(8);
 			//ctx->Text("HSV");
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("H") + Width(10);
+				ctx->Text("H") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._hue, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, sat{ _color._sat }, val{ _color._val }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, sat{ _color._sat }, val{ _color._val }](const PaintInfo& info)
 				{
 					fn(info);
 					for (int i = 0; i < 6; i++)
 						DrawHGradQuad(RectHSlice(info.rect, i, 6), Color4f::HSV(i / 6.0f, sat, val), Color4f::HSV((i + 1) / 6.0f, sat, val));
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._hue) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._hue) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("S") + Width(10);
+				ctx->Text("S") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._sat, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, val{ _color._val }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, val{ _color._val }](const PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, 0, val), Color4f::HSV(hue, 1, val));
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._sat) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._sat) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("V") + Width(10);
+				ctx->Text("V") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._val, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, sat{ _color._sat }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, sat{ _color._sat }](const PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, sat, 0), Color4f::HSV(hue, sat, 1));
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._val) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._val) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("R") + Width(10);
+				ctx->Text("R") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._rgba.r, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { 0, col.g, col.b }, { 1, col.g, col.b });
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._rgba.r) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._rgba.r) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("G") + Width(10);
+				ctx->Text("G") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._rgba.g, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { col.r, 0, col.b }, { col.r, 1, col.b });
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._rgba.g) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._rgba.g) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("B") + Width(10);
+				ctx->Text("B") + SetWidth(10);
 				auto& sl = ctx->Make<Slider>().Init(_color._rgba.b, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				style::Accessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const style::PaintInfo& info)
+				StyleAccessor a = sl.GetTrackStyle();
+				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					fn(info);
 					DrawHGradQuad(info.rect, { col.r, col.g, 0 }, { col.r, col.g, 1 });
 				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const style::PaintInfo& info) {});
-				ctx->Make<Textbox>().Init(_color._rgba.b) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				ctx->Make<Textbox>().Init(_color._rgba.b) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
-				ctx->Text("A") + Width(10);
+				ctx->Text("A") + SetWidth(10);
 				ctx->Make<Slider>().Init(_color._rgba.a, limit);
-				ctx->Make<Textbox>().Init(_color._rgba.a) + Width(50);
+				ctx->Make<Textbox>().Init(_color._rgba.a) + SetWidth(50);
 			}
 			Property::End(ctx);
 
 			Property::Begin(ctx);
 			{
 				ctx->Push<Panel>()
-					+ StackingDirection(style::StackingDirection::LeftToRight)
-					+ Padding(3)
-					+ MakeDraggable([this](Event& e) { ui::DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
-					+ EventHandler(EventType::DragDrop, [this](Event& e)
+					+ Set(StackingDirection::LeftToRight)
+					+ SetPadding(3)
+					+ MakeDraggable([this](Event& e) { DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
+					+ AddEventHandler(EventType::DragDrop, [this](Event& e)
 				{
-					if (auto* cddd = ui::DragDrop::GetData<ColorDragDropData>())
+					if (auto* cddd = DragDrop::GetData<ColorDragDropData>())
 					{
 						_color.SetRGBA(cddd->color);
 						e.context->OnChange(this);
 					}
 				});
-				ctx->Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + Width(50) + Height(60) + Padding(0);
-				ctx->Make<ColorBlock>().SetColor(_color.GetRGBA()) + Width(50) + Height(60) + Padding(0);
+				ctx->Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
+				ctx->Make<ColorBlock>().SetColor(_color.GetRGBA()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
 				ctx->Pop();
 
 				ctx->PushBox();
 
-				ctx->PushBox() + Layout(style::layouts::StackExpand()) + StackingDirection(style::StackingDirection::LeftToRight) + Height(22);
-				ctx->Make<BoxElement>() + Width(style::Coord::Fraction(1));
-				ctx->Text("Hex:") + Height(22);
-				ctx->Make<Textbox>().Init(_color.hex) + Width(50) + EventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });
+				ctx->PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight) + SetHeight(22);
+				ctx->Make<BoxElement>() + SetWidth(Coord::Fraction(1));
+				ctx->Text("Hex:") + SetHeight(22);
+				ctx->Make<Textbox>().Init(_color.hex) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });
 				ctx->Pop();
 
 				auto& pick = ctx->MakeWithText<Button>("Pick");
@@ -670,18 +670,18 @@ void ColorPicker::Build(UIContainer* ctx)
 	ctx->Pop();
 
 	ctx->PushBox()
-		+ Layout(style::layouts::InlineBlock())
-		+ StackingDirection(style::StackingDirection::LeftToRight)
-		+ Padding(8);
+		+ SetLayout(layouts::InlineBlock())
+		+ Set(StackingDirection::LeftToRight)
+		+ SetPadding(8);
 	{
 		auto& sc = GetSavedColors();
 		for (int i = 0; i < 16; i++)
 		{
 			ctx->Make<ColorBlock>().SetColor(sc.colors[i])
-				+ MakeDraggable([this, i]() { ui::DragDrop::SetData(new ColorDragDropData(GetSavedColors().colors[i])); })
-				+ EventHandler(EventType::DragDrop, [this, i](Event&)
+				+ MakeDraggable([this, i]() { DragDrop::SetData(new ColorDragDropData(GetSavedColors().colors[i])); })
+				+ AddEventHandler(EventType::DragDrop, [this, i](Event&)
 			{
-				if (auto* cddd = ui::DragDrop::GetData<ColorDragDropData>())
+				if (auto* cddd = DragDrop::GetData<ColorDragDropData>())
 				{
 					GetSavedColors().colors[i] = cddd->color;
 					Rebuild();
@@ -714,7 +714,7 @@ void ColorEdit::Build(UIContainer* ctx)
 {
 	auto& cib = ctx->Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
 	cib.SetFlag(UIObject_DB_Button, true);
-	cib + EventHandler(EventType::Click, [this](Event& e)
+	cib + AddEventHandler(EventType::Click, [this](Event& e)
 	{
 		if (e.GetButton() == MouseButton::Left)
 		{

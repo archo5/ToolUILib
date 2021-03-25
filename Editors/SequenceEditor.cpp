@@ -10,7 +10,7 @@ void SequenceDragData::Build(UIContainer* ctx)
 {
 	if (scope->itemUICallback)
 	{
-		ctx->PushBox() + Width(width);
+		ctx->PushBox() + SetWidth(width);
 		scope->GetSequence()->IterateElements(at, [this, ctx](size_t idx, void* ptr)
 		{
 			scope->itemUICallback(ctx, scope, idx, ptr);
@@ -30,7 +30,7 @@ void SequenceItemElement::OnInit()
 	Selectable::OnInit();
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
-	s.SetLayout(style::layouts::StackExpand());
+	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
 }
 
@@ -43,13 +43,13 @@ void SequenceItemElement::OnEvent(Event& e)
 
 	if (e.context->DragCheck(e, MouseButton::Left))
 	{
-		ui::DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
+		DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
 	else if (e.type == EventType::DragMove)
 	{
-		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
+		if (auto* ddd = DragDrop::GetData<SequenceDragData>())
 		{
 			if (ddd->scope == seqEd)
 			{
@@ -63,7 +63,7 @@ void SequenceItemElement::OnEvent(Event& e)
 	}
 	if (e.type == EventType::DragDrop)
 	{
-		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
+		if (auto* ddd = DragDrop::GetData<SequenceDragData>())
 		{
 			if (ddd->scope == seqEd)
 			{
@@ -105,7 +105,7 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 	num = n;
 
 	bool dragging = false;
-	if (auto* dd = ui::DragDrop::GetData<SequenceDragData>())
+	if (auto* dd = DragDrop::GetData<SequenceDragData>())
 		if (dd->at == n && dd->scope == se)
 			dragging = true;
 
@@ -156,7 +156,7 @@ void SequenceEditor::OnPaint()
 	if (_dragTargetPos < SIZE_MAX)
 	{
 		auto r = _dragTargetLine.ExtendBy(UIRect::UniformBorder(1));
-		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
+		draw::RectCol(r.x0, r.y0, r.x1, r.y1, Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 	}
 }
 
@@ -173,9 +173,9 @@ void SequenceEditor::OnBuildItem(UIContainer* ctx, size_t idx, void* ptr)
 
 void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 {
-	auto& delBtn = ctx->MakeWithText<ui::Button>("X");
-	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(EventType::Activate, [this, idx](Event& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
+	auto& delBtn = ctx->MakeWithText<Button>("X");
+	delBtn + SetWidth(20);
+	delBtn + AddEventHandler(EventType::Activate, [this, idx](Event& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)

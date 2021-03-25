@@ -60,7 +60,7 @@ void DataDesc::EditStructuralItems(ui::UIContainer* ctx)
 
 		if (curInst)
 		{
-			ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
 			if (ui::imm::Button(ctx, "Drop cache"))
 			{
 				curInst->cachedFields.clear();
@@ -80,8 +80,8 @@ void DataDesc::EditStructuralItems(ui::UIContainer* ctx)
 		}
 	}
 
-	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-	ctx->Text("Edit:") + ui::Padding(5);
+	ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+	ctx->Text("Edit:") + ui::SetPadding(5);
 	ui::imm::RadioButton(ctx, editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
 	ui::imm::RadioButton(ctx, editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
 	ui::imm::RadioButton(ctx, editMode, 2, "field", {}, ui::imm::ButtonStateToggleSkin());
@@ -166,7 +166,7 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 			ui::Property::End(ctx);
 		}
 
-		ctx->Text("Arguments") + ui::Padding(5);
+		ctx->Text("Arguments") + ui::SetPadding(5);
 		ctx->Push<ui::Panel>();
 
 		auto* argSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
@@ -243,20 +243,20 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 				}
 			}
 
-			ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+			ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 			{
 				if (size != F_NO_VALUE)
 				{
-					ctx->Textf("Data (size=%" PRId64 ")", size) + ui::Padding(5);
+					ctx->Textf("Data (size=%" PRId64 ")", size) + ui::SetPadding(5);
 				}
 				else
 				{
-					ctx->Text("Data (size=") + ui::Padding(5);
+					ctx->Text("Data (size=") + ui::SetPadding(5);
 					{
 						if (ui::imm::Button(ctx, "?"))
 							SI->GetSize();
 					}
-					ctx->Text(")") + ui::Padding(5);
+					ctx->Text(")") + ui::SetPadding(5);
 				}
 			}
 			ctx->Pop();
@@ -265,8 +265,8 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
 				auto desc = SI->GetFieldDescLazy(i, &incomplete);
-				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
-				ctx->Text(desc) + ui::Padding(5);
+				ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+				ctx->Text(desc) + ui::SetPadding(5);
 
 				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
 				{
@@ -280,7 +280,7 @@ void DataDesc::EditInstance(ui::UIContainer* ctx)
 				ctx->Pop();
 			}
 			auto& tv = ctx->Make<ui::TableView>();
-			tv + ui::Height(200);
+			tv + ui::SetHeight(200);
 			tv.enableRowHeader = false;
 			tv.SetDataSource(data);
 			tv.CalculateColumnWidths();
@@ -335,19 +335,19 @@ struct RenameDialog : ui::NativeDialogWindow
 	}
 	void OnBuild(ui::UIContainer* ctx) override
 	{
-		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice()) + ui::Padding(16);
+		ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetPadding(16);
 		ui::imm::PropEditString(ctx, "New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
-		ctx->Make<ui::BoxElement>() + ui::Height(16);
+		ctx->Make<ui::BoxElement>() + ui::SetHeight(16);
 
 		ui::Property::Begin(ctx);
-		if (ui::imm::Button(ctx, "OK", { ui::Height(30) }))
+		if (ui::imm::Button(ctx, "OK", { ui::SetHeight(30) }))
 		{
 			rename = true;
 			SetVisible(false);
 		}
-		ctx->Make<ui::BoxElement>() + ui::Width(16);
-		if (ui::imm::Button(ctx, "Cancel", { ui::Height(30) }))
+		ctx->Make<ui::BoxElement>() + ui::SetWidth(16);
+		if (ui::imm::Button(ctx, "Cancel", { ui::SetHeight(30) }))
 		{
 			rename = false;
 			SetVisible(false);
@@ -364,9 +364,9 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 {
 	if (auto* SI = curInst)
 	{
-		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-		ctx->Text("Struct:") + ui::Padding(5);
-		ctx->Text(SI->def->name) + ui::Padding(5);
+		ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ctx->Text("Struct:") + ui::SetPadding(5);
+		ctx->Text(SI->def->name) + ui::SetPadding(5);
 		if (ui::imm::Button(ctx, "Rename"))
 		{
 			RenameDialog rd(SI->def->name);
@@ -405,7 +405,7 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 			ui::imm::PropEditInt(ctx, "Size", S.size);
 			ui::imm::PropEditString(ctx, "Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
-			ctx->Text("Parameters") + ui::Padding(5);
+			ctx->Text("Parameters") + ui::SetPadding(5);
 			ctx->Push<ui::Panel>();
 
 			auto* paramSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
@@ -426,7 +426,7 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 			}
 			ctx->Pop();
 
-			ctx->Text("Fields") + ui::Padding(5);
+			ctx->Text("Fields") + ui::SetPadding(5);
 			ctx->Push<ui::Panel>();
 
 			auto* fieldSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.fields)>>(S.fields);
@@ -447,9 +447,9 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 					F.count);
 				if (!S.serialized)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
-				ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
+				ctx->MakeWithText<ui::BoxElement>(info) + ui::SetPadding(5);
 
-				if (ui::imm::Button(ctx, "Edit", { ui::Width(50) }))
+				if (ui::imm::Button(ctx, "Edit", { ui::SetWidth(50) }))
 				{
 					editMode = 2;
 					curField = idx;
@@ -466,9 +466,9 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 			}
 			ctx->Pop();
 
-			ctx->Text("Resource") + ui::Padding(5);
+			ctx->Text("Resource") + ui::SetPadding(5);
 			ui::Property::Begin(ctx);
-			ctx->Text("Type:") + ui::Padding(5);
+			ctx->Text("Type:") + ui::SetPadding(5);
 			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(ctx, S.resource.type, DDStructResourceType::Mesh, "Mesh", {}, ui::imm::ButtonStateToggleSkin());
@@ -495,7 +495,7 @@ void DataDesc::EditStruct(ui::UIContainer* ctx)
 		}
 		else
 		{
-			ctx->Text("-- NOT FOUND --") + ui::Padding(10);
+			ctx->Text("-- NOT FOUND --") + ui::SetPadding(10);
 		}
 	}
 }
@@ -523,16 +523,16 @@ void DataDesc::EditField(ui::UIContainer* ctx)
 				ui::imm::PropEditBool(ctx, "Individual computed offsets", F.individualComputedOffsets);
 				ui::imm::PropEditBool(ctx, "Read until 0", F.readUntil0);
 
-				ctx->Text("Struct arguments") + ui::Padding(5);
+				ctx->Text("Struct arguments") + ui::SetPadding(5);
 				ctx->Push<ui::Panel>();
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{
 					auto& SA = F.structArgs[i];
-					ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
+					ctx->PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
 					ui::imm::PropEditString(ctx, "\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
 					ui::imm::PropEditString(ctx, "\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
 					ui::imm::PropEditInt(ctx, "\bOffset", SA.intVal);
-					if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
+					if (ui::imm::Button(ctx, "X", { ui::SetWidth(20) }))
 					{
 						F.structArgs.erase(F.structArgs.begin() + i);
 					}

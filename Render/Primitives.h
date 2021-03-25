@@ -17,7 +17,7 @@ struct Vertex_PF3CB4
 namespace prim {
 
 
-inline void SetVertexColor(Vertex_PF3CB4* verts, uint16_t count, ui::Color4b col)
+inline void SetVertexColor(Vertex_PF3CB4* verts, uint16_t count, Color4b col)
 {
 	for (uint16_t i = 0; i < count; i++)
 		verts[i].col = col;

@@ -9,40 +9,40 @@ Theme* Theme::current;
 static
 struct DefaultTheme : Theme
 {
-	style::Block dtObject;
-	style::Block dtText;
-	style::Block dtProperty;
-	style::Block dtPropLabel;
-	style::Block dtPanel;
-	style::Block dtHeader;
-	style::Block dtButton;
-	style::Block dtCheckbox;
-	style::Block dtRadioButton;
-	style::Block dtSelectable;
-	style::Block dtCollapsibleTreeNode;
-	style::Block dtTextBoxBase;
-	style::Block dtListBox;
-	style::Block dtProgressBarBase;
-	style::Block dtProgressBarCompletion;
-	style::Block dtSliderHBase;
-	style::Block dtSliderHTrack;
-	style::Block dtSliderHTrackFill;
-	style::Block dtSliderHThumb;
-	style::Block dtScrollVTrack;
-	style::Block dtScrollVThumb;
-	style::Block dtTabGroup;
-	style::Block dtTabList;
-	style::Block dtTabButton;
-	style::Block dtTabPanel;
-	style::Block dtTableBase;
-	style::Block dtTableCell;
-	style::Block dtTableRowHeader;
-	style::Block dtTableColHeader;
-	style::Block dtColorBlock;
-	style::Block dtColorInspectBlock;
-	style::Block dtImage;
-	style::Block dtSelectorContainer;
-	style::Block dtSelector;
+	StyleBlock dtObject;
+	StyleBlock dtText;
+	StyleBlock dtProperty;
+	StyleBlock dtPropLabel;
+	StyleBlock dtPanel;
+	StyleBlock dtHeader;
+	StyleBlock dtButton;
+	StyleBlock dtCheckbox;
+	StyleBlock dtRadioButton;
+	StyleBlock dtSelectable;
+	StyleBlock dtCollapsibleTreeNode;
+	StyleBlock dtTextBoxBase;
+	StyleBlock dtListBox;
+	StyleBlock dtProgressBarBase;
+	StyleBlock dtProgressBarCompletion;
+	StyleBlock dtSliderHBase;
+	StyleBlock dtSliderHTrack;
+	StyleBlock dtSliderHTrackFill;
+	StyleBlock dtSliderHThumb;
+	StyleBlock dtScrollVTrack;
+	StyleBlock dtScrollVThumb;
+	StyleBlock dtTabGroup;
+	StyleBlock dtTabList;
+	StyleBlock dtTabButton;
+	StyleBlock dtTabPanel;
+	StyleBlock dtTableBase;
+	StyleBlock dtTableCell;
+	StyleBlock dtTableRowHeader;
+	StyleBlock dtTableColHeader;
+	StyleBlock dtColorBlock;
+	StyleBlock dtColorInspectBlock;
+	StyleBlock dtImage;
+	StyleBlock dtSelectorContainer;
+	StyleBlock dtSelector;
 
 	DefaultTheme()
 	{
@@ -83,58 +83,58 @@ struct DefaultTheme : Theme
 #define defaultTheme (*this) // TODO
 		Theme::current = &defaultTheme;
 	}
-	void PreventHeapDelete(style::Accessor& a)
+	void PreventHeapDelete(StyleAccessor& a)
 	{
 		a.block->_refCount++;
 	}
 	void CreateObject()
 	{
-		style::Accessor a(&dtObject);
+		StyleAccessor a(&dtObject);
 		PreventHeapDelete(a);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.object = a.block;
 	}
 	void CreateText()
 	{
-		style::Accessor a(&dtText);
+		StyleAccessor a(&dtText);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
-		a.SetBoxSizing(style::BoxSizing::ContentBox);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetLayout(layouts::InlineBlock());
+		a.SetBoxSizing(BoxSizing::ContentBox);
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.text = a.block;
 	}
 	void CreateProperty()
 	{
-		style::Accessor a(&dtProperty);
+		StyleAccessor a(&dtProperty);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::StackExpand());
-		a.SetStackingDirection(style::StackingDirection::LeftToRight);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetLayout(layouts::StackExpand());
+		a.SetStackingDirection(StackingDirection::LeftToRight);
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.property = a.block;
 	}
 	void CreatePropLabel()
 	{
-		style::Accessor a(&dtPropLabel);
+		StyleAccessor a(&dtPropLabel);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.propLabel = a.block;
 	}
 	void CreatePanel()
 	{
-		style::Accessor a(&dtPanel);
+		StyleAccessor a(&dtPanel);
 		PreventHeapDelete(a);
 		a.SetMargin(2);
 		a.SetPadding(6);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
@@ -143,24 +143,24 @@ struct DefaultTheme : Theme
 	}
 	void CreateHeader()
 	{
-		style::Accessor a(&dtHeader);
+		StyleAccessor a(&dtHeader);
 		PreventHeapDelete(a);
-		a.SetFontWeight(style::FontWeight::Bold);
+		a.SetFontWeight(FontWeight::Bold);
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info) {});
+		a.SetPaintFunc([](const PaintInfo& info) {});
 		defaultTheme.header = a.block;
 	}
 	void CreateButton()
 	{
-		style::Accessor a(&dtButton);
+		StyleAccessor a(&dtButton);
 		PreventHeapDelete(a);
 		//a.SetLayout(style::Layout::InlineBlock);
-		a.SetLayout(style::layouts::Stack());
-		a.SetStackingDirection(style::StackingDirection::LeftToRight);
-		a.SetHAlign(style::HAlign::Center);
-		a.SetWidth(style::Coord::Fraction(1));
+		a.SetLayout(layouts::Stack());
+		a.SetStackingDirection(StackingDirection::LeftToRight);
+		a.SetHAlign(HAlign::Center);
+		a.SetWidth(Coord::Fraction(1));
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -174,14 +174,14 @@ struct DefaultTheme : Theme
 	}
 	void CreateCheckbox()
 	{
-		style::Accessor a(&dtCheckbox);
+		StyleAccessor a(&dtCheckbox);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
-		//a.SetWidth(style::Coord::Percent(12));
-		//a.SetHeight(style::Coord::Percent(12));
+		a.SetLayout(layouts::InlineBlock());
+		//a.SetWidth(Coord::Percent(12));
+		//a.SetHeight(Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = min(r.GetWidth(), r.GetHeight());
@@ -200,17 +200,17 @@ struct DefaultTheme : Theme
 	}
 	void CreateRadioButton()
 	{
-		style::Accessor a(&dtRadioButton);
+		StyleAccessor a(&dtRadioButton);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
-		//a.SetWidth(style::Coord::Percent(12));
-		//a.SetHeight(style::Coord::Percent(12));
+		a.SetLayout(layouts::InlineBlock());
+		//a.SetWidth(Coord::Percent(12));
+		//a.SetHeight(Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		//a.SetMargin(5);
 		//a.SetHeight(GetFontHeight());
 		a.SetPadding(5);
 		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = min(r.GetWidth(), r.GetHeight());
@@ -227,13 +227,13 @@ struct DefaultTheme : Theme
 	}
 	void CreateSelectable()
 	{
-		style::Accessor a(&dtSelectable);
+		StyleAccessor a(&dtSelectable);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::Stack());
-		a.SetStackingDirection(style::StackingDirection::LeftToRight);
-		a.SetWidth(style::Coord::Fraction(1));
+		a.SetLayout(layouts::Stack());
+		a.SetStackingDirection(StackingDirection::LeftToRight);
+		a.SetWidth(Coord::Fraction(1));
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (info.IsChecked() || info.IsDown() || info.IsHovered())
@@ -254,15 +254,15 @@ struct DefaultTheme : Theme
 	}
 	void CreateCollapsibleTreeNode()
 	{
-		style::Accessor a(&dtCollapsibleTreeNode);
+		StyleAccessor a(&dtCollapsibleTreeNode);
 		PreventHeapDelete(a);
-		//a.SetLayout(style::layouts::Stack());
+		//a.SetLayout(layouts::Stack());
 		//a.SetPadding(1);
 		//a.SetPaddingLeft(GetFontHeight());
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = min(r.GetWidth(), r.GetHeight());
@@ -274,13 +274,13 @@ struct DefaultTheme : Theme
 	}
 	void CreateTextBoxBase()
 	{
-		style::Accessor a(&dtTextBoxBase);
+		StyleAccessor a(&dtTextBoxBase);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(5);
-		a.SetWidth(style::Coord::Fraction(1));
+		a.SetWidth(Coord::Fraction(1));
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
@@ -291,11 +291,11 @@ struct DefaultTheme : Theme
 	}
 	void CreateListBox()
 	{
-		style::Accessor a(&dtListBox);
+		StyleAccessor a(&dtListBox);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::Stack());
+		a.SetLayout(layouts::Stack());
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
@@ -304,11 +304,11 @@ struct DefaultTheme : Theme
 	}
 	void CreateProgressBarBase()
 	{
-		style::Accessor a(&dtProgressBarBase);
+		StyleAccessor a(&dtProgressBarBase);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetWidth(style::Coord::Percent(100));
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetWidth(Coord::Percent(100));
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
@@ -317,11 +317,11 @@ struct DefaultTheme : Theme
 	}
 	void CreateProgressBarCompletion()
 	{
-		style::Accessor a(&dtProgressBarCompletion);
+		StyleAccessor a(&dtProgressBarCompletion);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetMargin(2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
@@ -330,21 +330,21 @@ struct DefaultTheme : Theme
 	}
 	void CreateSliderHBase()
 	{
-		style::Accessor a(&dtSliderHBase);
+		StyleAccessor a(&dtSliderHBase);
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
-		a.SetWidth(style::Coord::Fraction(1));
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetWidth(Coord::Fraction(1));
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.sliderHBase = a.block;
 	}
 	void CreateSliderHTrack()
 	{
-		style::Accessor a(&dtSliderHTrack);
+		StyleAccessor a(&dtSliderHTrack);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -358,10 +358,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateSliderHTrackFill()
 	{
-		style::Accessor a(&dtSliderHTrackFill);
+		StyleAccessor a(&dtSliderHTrackFill);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -375,10 +375,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateSliderHThumb()
 	{
-		style::Accessor a(&dtSliderHThumb);
+		StyleAccessor a(&dtSliderHThumb);
 		PreventHeapDelete(a);
 		a.SetPadding(6, 4);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -391,11 +391,11 @@ struct DefaultTheme : Theme
 	}
 	void CreateScrollVTrack()
 	{
-		style::Accessor a(&dtScrollVTrack);
+		StyleAccessor a(&dtScrollVTrack);
 		PreventHeapDelete(a);
 		a.SetWidth(20);
 		a.SetPadding(2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
@@ -404,10 +404,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateScrollVThumb()
 	{
-		style::Accessor a(&dtScrollVThumb);
+		StyleAccessor a(&dtScrollVThumb);
 		PreventHeapDelete(a);
 		a.SetMinHeight(16);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -420,33 +420,33 @@ struct DefaultTheme : Theme
 	}
 	void CreateTabGroup()
 	{
-		style::Accessor a(&dtTabGroup);
+		StyleAccessor a(&dtTabGroup);
 		PreventHeapDelete(a);
 		a.SetMargin(2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.tabGroup = a.block;
 	}
 	void CreateTabList()
 	{
-		style::Accessor a(&dtTabList);
+		StyleAccessor a(&dtTabList);
 		PreventHeapDelete(a);
 		a.SetPadding(0, 4);
-		a.SetLayout(style::layouts::Stack());
-		a.SetStackingDirection(style::StackingDirection::LeftToRight);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetLayout(layouts::Stack());
+		a.SetStackingDirection(StackingDirection::LeftToRight);
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.tabList = a.block;
 	}
 	void CreateTabButton()
 	{
-		style::Accessor a(&dtTabButton);
+		StyleAccessor a(&dtTabButton);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(5);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
@@ -457,12 +457,12 @@ struct DefaultTheme : Theme
 	}
 	void CreateTabPanel()
 	{
-		style::Accessor a(&dtTabPanel);
+		StyleAccessor a(&dtTabPanel);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetWidth(style::Coord::Percent(100));
+		a.SetWidth(Coord::Percent(100));
 		a.SetMarginTop(-2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_TabPanel, r.x0, r.y0, r.x1, r.y1);
@@ -471,11 +471,11 @@ struct DefaultTheme : Theme
 	}
 	void CreateTableBase()
 	{
-		style::Accessor a(&dtTableBase);
+		StyleAccessor a(&dtTableBase);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetWidth(style::Coord::Percent(100));
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetWidth(Coord::Percent(100));
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
@@ -484,10 +484,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateTableCell()
 	{
-		style::Accessor a(&dtTableCell);
+		StyleAccessor a(&dtTableCell);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			Color4f colContents;
 			if (info.IsChecked())
@@ -514,10 +514,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateTableRowHeader()
 	{
-		style::Accessor a(&dtTableRowHeader);
+		StyleAccessor a(&dtTableRowHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
 			Color4f colEdge(0.2f, 0.2f, 0.2f);
@@ -530,10 +530,10 @@ struct DefaultTheme : Theme
 	}
 	void CreateTableColHeader()
 	{
-		style::Accessor a(&dtTableColHeader);
+		StyleAccessor a(&dtTableColHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
 			Color4f colEdge(0.2f, 0.2f, 0.2f);
@@ -546,13 +546,13 @@ struct DefaultTheme : Theme
 	}
 	void CreateColorBlock()
 	{
-		style::Accessor a(&dtColorBlock);
+		StyleAccessor a(&dtColorBlock);
 		PreventHeapDelete(a);
 		a.SetWidth(20);
 		a.SetHeight(20);
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(3);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
@@ -561,13 +561,13 @@ struct DefaultTheme : Theme
 	}
 	void CreateColorInspectBlock()
 	{
-		style::Accessor a(&dtColorInspectBlock);
+		StyleAccessor a(&dtColorInspectBlock);
 		PreventHeapDelete(a);
-		a.SetWidth(style::Coord::Fraction(1));
+		a.SetWidth(Coord::Fraction(1));
 		a.SetHeight(20);
-		a.SetLayout(style::layouts::InlineBlock());
+		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(3);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
@@ -576,28 +576,28 @@ struct DefaultTheme : Theme
 	}
 	void CreateImage()
 	{
-		style::Accessor a(&dtImage);
+		StyleAccessor a(&dtImage);
 		PreventHeapDelete(a);
-		a.SetLayout(style::layouts::InlineBlock());
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetLayout(layouts::InlineBlock());
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 		});
 		defaultTheme.image = a.block;
 	}
 	void CreateSelectorContainer()
 	{
-		style::Accessor a(&dtSelectorContainer);
+		StyleAccessor a(&dtSelectorContainer);
 		PreventHeapDelete(a);
 		a.SetPadding(8);
 		defaultTheme.selectorContainer = a.block;
 	}
 	void CreateSelector()
 	{
-		style::Accessor a(&dtSelector);
+		StyleAccessor a(&dtSelector);
 		PreventHeapDelete(a);
 		a.SetWidth(16);
 		a.SetHeight(16);
-		a.SetPaintFunc([](const style::PaintInfo& info)
+		a.SetPaintFunc([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(TE_Selector16, r.x0, r.y0, r.x1, r.y1);

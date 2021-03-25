@@ -110,8 +110,8 @@ struct RenderingPrimitives : ui::Buildable
 	}
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::Width(1000);
-		*this + ui::Height(1000);
+		*this + ui::SetWidth(1000);
+		*this + ui::SetHeight(1000);
 	}
 };
 void Test_RenderingPrimitives(ui::UIContainer* ctx)
@@ -173,8 +173,8 @@ struct KeyboardEventsTest : ui::Buildable
 	}
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::Width(style::Coord::Percent(100));
-		*this + ui::Height(style::Coord::Percent(100));
+		*this + ui::SetWidth(ui::Coord::Percent(100));
+		*this + ui::SetHeight(ui::Coord::Percent(100));
 	}
 
 	void WriteMsg(const char* fmt, ...)
@@ -228,8 +228,8 @@ struct OpenCloseTest : ui::Buildable
 			ctx->Text("It is open!");
 			auto s = ctx->MakeWithText<ui::BoxElement>("Different text").GetStyle();
 			s.SetFontSize(16);
-			s.SetFontWeight(style::FontWeight::Bold);
-			s.SetFontStyle(style::FontStyle::Italic);
+			s.SetFontWeight(ui::FontWeight::Bold);
+			s.SetFontStyle(ui::FontStyle::Italic);
 			s.SetTextColor(ui::Color4f(1.0f, 0.1f, 0.0f));
 			ctx->Pop();
 		}
@@ -261,8 +261,8 @@ struct AnimationRequestTest : ui::Buildable
 	}
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::Width(200);
-		*this + ui::Height(200);
+		*this + ui::SetWidth(200);
+		*this + ui::SetHeight(200);
 		auto& cb = ctx->Push<ui::StateToggle>().InitReadOnly(animReq.IsAnimating());
 		ctx->Make<ui::CheckboxIcon>();
 		ctx->Pop();
@@ -297,26 +297,26 @@ struct ElementResetTest : ui::Buildable
 		if (first)
 		{
 			ctx->MakeWithText<ui::Button>("First")
-				+ ui::Width(300)
-				+ ui::EventHandler(ui::EventType::Click, [this](ui::Event&) { first = false; Rebuild(); });
+				+ ui::SetWidth(300)
+				+ ui::AddEventHandler(ui::EventType::Click, [this](ui::Event&) { first = false; Rebuild(); });
 
 			auto& tb = ctx->Make<ui::Textbox>();
-			tb + ui::EventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[0] = tb.GetText(); });
+			tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[0] = tb.GetText(); });
 			tb.SetText(text[0]);
 		}
 		else
 		{
 			ctx->MakeWithText<ui::Button>("Second")
-				+ ui::Height(30)
-				+ ui::EventHandler(ui::EventType::Click, [this](ui::Event&) { first = true; Rebuild(); });
+				+ ui::SetHeight(30)
+				+ ui::AddEventHandler(ui::EventType::Click, [this](ui::Event&) { first = true; Rebuild(); });
 
 			auto& tb = ctx->Make<ui::Textbox>();
-			tb + ui::EventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[1] = tb.GetText(); });
+			tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[1] = tb.GetText(); });
 			tb.SetText(text[1]);
 		}
 
 		auto& tb = ctx->Make<ui::Textbox>();
-		tb + ui::EventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[2] = tb.GetText(); });
+		tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[2] = tb.GetText(); });
 		tb.SetText(text[2]);
 	}
 	bool first = true;
@@ -340,7 +340,7 @@ struct SubUITest : ui::Buildable
 	}
 	void OnPaint() override
 	{
-		style::PaintInfo info(this);
+		ui::PaintInfo info(this);
 		ui::Theme::current->textBoxBase->paint_func(info);
 		auto r = finalRectC;
 
@@ -437,7 +437,7 @@ struct HighElementCountTest : ui::Buildable
 			auto r = GetContentRect();
 			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));
 		}
-		void GetSize(style::Coord& outWidth, style::Coord& outHeight) override
+		void GetSize(ui::Coord& outWidth, ui::Coord& outHeight) override
 		{
 			outWidth = 100;
 			outHeight = 1;
@@ -445,7 +445,7 @@ struct HighElementCountTest : ui::Buildable
 	};
 	void Build(ui::UIContainer* ctx) override
 	{
-		ctx->PushBox();// + ui::StackingDirection(style::StackingDirection::LeftToRight); TODO FIX
+		ctx->PushBox();// + ui::StackingDirection(ui::StackingDirection::LeftToRight); TODO FIX
 		BasicRadioButton(ctx, "no styles", styleMode, 0) + ui::RebuildOnChange();
 		BasicRadioButton(ctx, "same style", styleMode, 1) + ui::RebuildOnChange();
 		BasicRadioButton(ctx, "different styles", styleMode, 2) + ui::RebuildOnChange();
@@ -457,12 +457,12 @@ struct HighElementCountTest : ui::Buildable
 			switch (styleMode)
 			{
 			case 0: break;
-			case 1: el + ui::Width(200); break;
-			case 2: el + ui::Width(100 + i * 0.02f); break;
+			case 1: el + ui::SetWidth(200); break;
+			case 2: el + ui::SetWidth(100 + i * 0.02f); break;
 			}
 		}
 
-		printf("# blocks: %d\n", style::g_numBlocks);
+		printf("# blocks: %d\n", ui::g_numStyleBlocks);
 	}
 	int styleMode;
 };
@@ -488,16 +488,16 @@ struct ZeroRebuildTest : ui::Buildable
 		ctx->Pop();
 		ui::Property::End(ctx);
 
-		*cbShow + ui::EventHandler(ui::EventType::Change, [this](ui::Event& e) { show = cbShow->GetState(); OnShowChange(); });
+		*cbShow + ui::AddEventHandler(ui::EventType::Change, [this](ui::Event& e) { show = cbShow->GetState(); OnShowChange(); });
 		ctx->MakeWithText<ui::Button>("Show")
-			+ ui::EventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = true; OnShowChange(); });
+			+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = true; OnShowChange(); });
 		ctx->MakeWithText<ui::Button>("Hide")
-			+ ui::EventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = false; OnShowChange(); });
+			+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = false; OnShowChange(); });
 
 		showable = &ctx->Push<ui::Panel>();
 		contentLabel = &ctx->Text("Contents: " + text);
 		tbText = &ctx->Make<ui::Textbox>().SetText(text);
-		*tbText + ui::EventHandler(ui::EventType::Change, [this](ui::Event& e)
+		*tbText + ui::AddEventHandler(ui::EventType::Change, [this](ui::Event& e)
 		{
 			text = tbText->GetText();
 			contentLabel->SetText("Contents: " + text);
@@ -510,7 +510,7 @@ struct ZeroRebuildTest : ui::Buildable
 	void OnShowChange()
 	{
 		cbShow->SetState(show);
-		showable->GetStyle().SetHeight(show ? style::Coord::Undefined() : style::Coord(0));
+		showable->GetStyle().SetHeight(show ? ui::Coord::Undefined() : ui::Coord(0));
 	}
 
 	ui::StateToggle* cbShow;
@@ -625,18 +625,18 @@ struct FrameTest : ui::Buildable
 		inlineFrames[0] = &ctx->Make<ui::InlineFrame>();
 		ctx->Pop();
 
-		ctx->MakeWithText<ui::Button>("Place 1 in 1") + ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 0); });
-		ctx->MakeWithText<ui::Button>("Place 2 in 1") + ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 0); });
+		ctx->MakeWithText<ui::Button>("Place 1 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 0); });
+		ctx->MakeWithText<ui::Button>("Place 2 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 0); });
 
 		ctx->Push<ui::Panel>();
 		inlineFrames[1] = &ctx->Make<ui::InlineFrame>();
 		ctx->Pop();
 
 		for (int i = 0; i < 2; i++)
-			*inlineFrames[i] + ui::Height(32);
+			*inlineFrames[i] + ui::SetHeight(32);
 
-		ctx->MakeWithText<ui::Button>("Place 1 in 2") + ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 1); });
-		ctx->MakeWithText<ui::Button>("Place 2 in 2") + ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 1); });
+		ctx->MakeWithText<ui::Button>("Place 1 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 1); });
+		ctx->MakeWithText<ui::Button>("Place 2 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 1); });
 	}
 	void Set(int contID, int frameID)
 	{
@@ -681,7 +681,7 @@ struct DialogWindowTest : ui::Buildable
 	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->MakeWithText<ui::Button>("Open dialog")
-			+ ui::EventHandler(ui::EventType::Activate, [this](ui::Event&)
+			+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&)
 		{
 			puts("start showing window");
 			BasicDialog bdw;

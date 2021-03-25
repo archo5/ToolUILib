@@ -32,18 +32,18 @@ struct Calculator : ui::Buildable
 {
 	void Build(ui::UIContainer* ctx) override
 	{
-		*this + ui::Width(style::Coord::Percent(100));
-		*this + ui::Height(style::Coord::Percent(100));
+		*this + ui::SetWidth(ui::Coord::Percent(100));
+		*this + ui::SetHeight(ui::Coord::Percent(100));
 
 		auto& inputs = ctx->Make<ui::Textbox>().SetText(operation);
 		//auto& inputs = ctx->PushBox();
 		inputs + ui::MakeOverlay();
-		auto* rap_inputs = Allocate<style::RectAnchoredPlacement>();
+		auto* rap_inputs = Allocate<ui::RectAnchoredPlacement>();
 		rap_inputs->anchor = { 0, 0, 1, 0.1f };
 		inputs + ui::SetPlacement(rap_inputs);
 		//ctx->Pop();
 
-		auto* rap_result = Allocate<style::RectAnchoredPlacement>();
+		auto* rap_result = Allocate<ui::RectAnchoredPlacement>();
 		rap_result->anchor = { 0, 0.1f, 1, 0.2f };
 		ctx->Push<ui::Panel>() + ui::MakeOverlay() + ui::SetPlacement(rap_result);
 		ctx->Text("=" + ToString(Calculate()));
@@ -51,13 +51,13 @@ struct Calculator : ui::Buildable
 
 		auto& buttons = ctx->PushBox();
 		buttons + ui::MakeOverlay();
-		auto* rap_buttons = Allocate<style::RectAnchoredPlacement>();
+		auto* rap_buttons = Allocate<ui::RectAnchoredPlacement>();
 		rap_buttons->anchor = { 0, 0.2f, 1, 1 };
 		buttons.GetStyle().SetPlacement(rap_buttons);
 
 		for (int i = 0; i < 15; i++)
 		{
-			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			auto* rap = Allocate<ui::RectAnchoredPlacement>();
 			rap->anchor = calcOpAnchors[i];
 			if (ui::imm::Button(ctx, calcOpNames[i], { ui::SetPlacement(rap) }))
 			{
@@ -67,7 +67,7 @@ struct Calculator : ui::Buildable
 
 		// =
 		{
-			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			auto* rap = Allocate<ui::RectAnchoredPlacement>();
 			rap->anchor = CalcBoxButton(2, 4);
 			if (ui::imm::Button(ctx, "=", { ui::SetPlacement(rap) }))
 			{
@@ -77,7 +77,7 @@ struct Calculator : ui::Buildable
 
 		// backspace
 		{
-			auto* rap = Allocate<style::RectAnchoredPlacement>();
+			auto* rap = Allocate<ui::RectAnchoredPlacement>();
 			rap->anchor = CalcBoxButton(2, 0);
 			if (ui::imm::Button(ctx, "<", { ui::SetPlacement(rap) }))
 			{

@@ -12,14 +12,14 @@ void CheckboxStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& p
 {
 	ctx->Make<CheckboxIcon>();
 	if (!text.empty())
-		ctx->Text(text) + Padding(4);
+		ctx->Text(text) + SetPadding(4);
 }
 
 void RadioButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	ctx->Make<RadioButtonIcon>();
 	if (!text.empty())
-		ctx->Text(text) + Padding(4);
+		ctx->Text(text) + SetPadding(4);
 }
 
 void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
@@ -31,7 +31,7 @@ void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& paren
 {
 	ctx->Make<TreeExpandIcon>();
 	if (!text.empty())
-		ctx->Text(text) + Padding(4);
+		ctx->Text(text) + SetPadding(4);
 }
 
 bool Button(UIContainer* ctx, const char* text, ModInitList mods)
@@ -230,7 +230,7 @@ bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods
 
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	auto& tb = ctx->Make<ui::Textbox>();
+	auto& tb = ctx->Make<Textbox>();
 	for (auto& mod : mods)
 		mod->Apply(&tb);
 	bool changed = false;
@@ -301,7 +301,7 @@ bool EditFloatVec(UIContainer* ctx, float* val, const char* axes, ModInitList mo
 void PropText(UIContainer* ctx, const char* label, const char* text, ModInitList mods)
 {
 	LabeledProperty::Scope ps(ctx, label);
-	auto& ctrl = ctx->Text(text) + ui::Padding(5);
+	auto& ctrl = ctx->Text(text) + SetPadding(5);
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
 }

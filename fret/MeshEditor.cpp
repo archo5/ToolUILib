@@ -15,11 +15,11 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& view3d = ctx->Push<ui::View3D>();
-				view3d + ui::Width(style::Coord::Percent(100));
-				view3d + ui::Height(style::Coord::Percent(100));
-				view3d + ui::Layout(style::layouts::EdgeSlice());
+				view3d + ui::SetWidth(ui::Coord::Percent(100));
+				view3d + ui::SetHeight(ui::Coord::Percent(100));
+				view3d + ui::SetLayout(ui::layouts::EdgeSlice());
 				auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
-				view3d.GetStyle().SetPaintFunc([bgr](const style::PaintInfo& info)
+				view3d.GetStyle().SetPaintFunc([bgr](const ui::PaintInfo& info)
 				{
 					auto r = info.rect;
 
@@ -28,9 +28,9 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
 				{
-					auto s = ctx->Push<ui::ListBox>().GetStyle();
-					s.SetEdge(style::Edge::Left);
-					s.SetWidth(200);
+					ctx->Push<ui::ListBox>()
+						+ ui::Set(ui::Edge::Left)
+						+ ui::SetWidth(200);
 					{
 						ui::imm::PropEditBool(ctx, "Alpha blend", alphaBlend);
 						ui::imm::PropEditBool(ctx, "Cull", cull);
@@ -40,9 +40,9 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 					}
 					ctx->Pop();
 
-					s = ctx->PushBox().GetStyle();
-					s.SetEdge(style::Edge::Right);
-					s.SetWidth(200);
+					ctx->PushBox()
+						+ ui::Set(ui::Edge::Right)
+						+ ui::SetWidth(200);
 					{
 						if (ui::imm::Button(ctx, "Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
 						{
@@ -70,7 +70,7 @@ void MeshEditorWindowNode::Build(ui::UIContainer* ctx)
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ctx->Make<ui::TableView>();
-			tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);

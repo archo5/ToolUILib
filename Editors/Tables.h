@@ -77,9 +77,9 @@ struct TableView : Buildable
 	size_t GetHoverRow() const;
 
 	bool enableRowHeader = true;
-	style::BlockRef cellStyle;
-	style::BlockRef rowHeaderStyle;
-	style::BlockRef colHeaderStyle;
+	StyleBlockRef cellStyle;
+	StyleBlockRef rowHeaderStyle;
+	StyleBlockRef colHeaderStyle;
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 
@@ -114,9 +114,9 @@ struct TreeView : Buildable
 	void SetDataSource(TreeDataSource* src);
 	void CalculateColumnWidths(bool firstTimeOnly = true);
 
-	style::BlockRef cellStyle;
-	style::BlockRef expandButtonStyle;
-	style::BlockRef colHeaderStyle;
+	StyleBlockRef cellStyle;
+	StyleBlockRef expandButtonStyle;
+	StyleBlockRef colHeaderStyle;
 
 private:
 	struct TreeViewImpl* _impl;

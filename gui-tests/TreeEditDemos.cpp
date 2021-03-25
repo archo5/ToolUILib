@@ -111,7 +111,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		void UI(ui::UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\b#");
-			ui::imm::EditInt(ctx, &lbl, number, { ui::Width(50) });
+			ui::imm::EditInt(ctx, &lbl, number, { ui::SetWidth(50) });
 		}
 		int Compute(ComputeInfo&) override { return number; }
 	};
@@ -122,7 +122,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		void UI(ui::UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\bName:");
-			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { ui::Width(50) });
+			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { ui::SetWidth(50) });
 		}
 		int Compute(ComputeInfo& cinfo) override
 		{
@@ -140,9 +140,9 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI(ui::UIContainer* ctx) override
 		{
-			ctx->Push<ui::Panel>() + ui::Padding(2) + ui::Layout(style::layouts::InlineBlock());
+			ctx->Push<ui::Panel>() + ui::SetPadding(2) + ui::SetLayout(ui::layouts::InlineBlock());
 			NodeUI(ctx, a);
-			ctx->Text(Name()) + ui::Padding(5);
+			ctx->Text(Name()) + ui::SetPadding(5);
 			NodeUI(ctx, b);
 			ctx->Pop();
 		}
@@ -195,7 +195,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 	{
 		ui::Property::Begin(ctx, "Expression:");
 
-		ctx->PushBox() + ui::Layout(style::layouts::Stack()) + ui::Width(style::Coord::Percent(100));
+		ctx->PushBox() + ui::SetLayout(ui::layouts::Stack()) + ui::SetWidth(ui::Coord::Percent(100));
 		NodeUI(ctx, root);
 		ctx->Pop();
 
@@ -208,7 +208,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		for (auto& v : variables)
 		{
 			ui::Property::Begin(ctx);
-			if (ui::imm::Button(ctx, "X", { ui::Width(20) }))
+			if (ui::imm::Button(ctx, "X", { ui::SetWidth(20) }))
 			{
 				del = &v;
 			}
@@ -254,7 +254,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 };
 void CompactTreeNodeEditDemo::NodeUI(ui::UIContainer* ctx, ExprNode*& node)
 {
-	auto& b = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock());
+	auto& b = ctx->PushBox() + ui::SetLayout(ui::layouts::InlineBlock());
 	if (node)
 	{
 		b.HandleEvent(ui::EventType::ContextMenu) = [&node](ui::Event& e)
@@ -266,7 +266,7 @@ void CompactTreeNodeEditDemo::NodeUI(ui::UIContainer* ctx, ExprNode*& node)
 	}
 	else
 	{
-		if (ui::imm::Button(ctx, "+", { ui::Layout(style::layouts::InlineBlock()) }))
+		if (ui::imm::Button(ctx, "+", { ui::SetLayout(ui::layouts::InlineBlock()) }))
 		{
 			ui::MenuItem items[] =
 			{
@@ -507,12 +507,12 @@ struct ScriptTreeDemo : ui::Buildable
 			{
 				if (tree.selected)
 				{
-					ctx->Text(typeid(*tree.selected).name()) + ui::Padding(5);
+					ctx->Text(typeid(*tree.selected).name()) + ui::SetPadding(5);
 					tree.selected->ItemUI(ctx);
 				}
 				else
 				{
-					ctx->Text("No node selected...") + ui::Padding(5);
+					ctx->Text("No node selected...") + ui::SetPadding(5);
 				}
 			}
 			ctx->Pop();

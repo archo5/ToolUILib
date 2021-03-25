@@ -11,7 +11,7 @@
 
 void FileView::Build(ui::UIContainer* ctx)
 {
-	ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
+	ctx->PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
 
 	ctx->PushBox();
 	{
@@ -40,7 +40,7 @@ void FileView::Build(ui::UIContainer* ctx)
 	}
 	ctx->Pop();
 
-	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
+	ctx->PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
 	auto& vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
 	ctx->Pop();
 

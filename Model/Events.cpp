@@ -78,7 +78,7 @@ bool Event::GetUTF8Text(char out[5]) const
 EventSystem::EventSystem()
 {
 	for (auto& val : clickLastTimes)
-		val = ui::platform::GetTimeMs();
+		val = platform::GetTimeMs();
 }
 
 void EventSystem::BubblingEvent(Event& e, UIObject* tgt, bool stopOnDisabled)
@@ -95,7 +95,7 @@ void EventSystem::BubblingEvent(Event& e, UIObject* tgt, bool stopOnDisabled)
 
 void EventSystem::RecomputeLayout()
 {
-	ui::g_curLayoutFrame++;
+	g_curLayoutFrame++;
 	if (container->rootBuildable)
 		container->rootBuildable->OnLayout({ 0, 0, width, height }, { width, height });
 }
@@ -146,8 +146,8 @@ void EventSystem::OnDestroy(UIObject* o)
 	if (tooltipObj == o)
 	{
 		tooltipObj = nullptr;
-		ui::Tooltip::Unset();
-		ui::Notify(ui::DCT_TooltipChanged);
+		Tooltip::Unset();
+		Notify(DCT_TooltipChanged);
 	}
 	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
 		if (clickObj[i] == o)
@@ -225,7 +225,7 @@ void EventSystem::SetKeyboardFocus(UIObject* o)
 bool EventSystem::DragCheck(Event& e, MouseButton btn)
 {
 	int at = (int)btn;
-	if (ui::DragDrop::GetData())
+	if (DragDrop::GetData())
 		return false;
 	return e.type == EventType::MouseMove
 		&& (e.current->flags & UIObject_IsPressedMouse)
@@ -262,7 +262,7 @@ void EventSystem::SetTimer(UIObject* tgt, float t, int id)
 	pendingTimers.push_back({ tgt, t, id });
 }
 
-void EventSystem::SetDefaultCursor(ui::DefaultCursor cur)
+void EventSystem::SetDefaultCursor(DefaultCursor cur)
 {
 	GetNativeWindow()->SetDefaultCursor(cur);
 }
@@ -334,7 +334,7 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, Event& e, uint32_t fl)
 void EventSystem::_UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
 {
 	auto* tgt = dragEvents ?
-		ui::DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(cursorPos) :
+		DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(cursorPos) :
 		mouseCaptureObj ? mouseCaptureObj : FindObjectAtPosition(cursorPos);
 
 	Event ev(this, curHoverObj, dragEvents ? EventType::DragLeave : EventType::MouseLeave);
@@ -379,13 +379,13 @@ void EventSystem::_UpdateCursor(UIObject* hoverObj)
 	BubblingEvent(ev);
 	if (!ev.IsPropagationStopped())
 	{
-		SetDefaultCursor(ui::DefaultCursor::Default);
+		SetDefaultCursor(DefaultCursor::Default);
 	}
 }
 
 void EventSystem::_UpdateTooltip()
 {
-	if (ui::Tooltip::IsSet())
+	if (Tooltip::IsSet())
 		return;
 
 	Event ev(this, hoverObj, EventType::Tooltip);
@@ -393,10 +393,10 @@ void EventSystem::_UpdateTooltip()
 	while (obj && !ev.IsPropagationStopped())
 	{
 		obj->_DoEvent(ev);
-		if (ui::Tooltip::IsSet())
+		if (Tooltip::IsSet())
 		{
 			tooltipObj = obj;
-			ui::Notify(ui::DCT_TooltipChanged);
+			Notify(DCT_TooltipChanged);
 			break;
 		}
 		obj = obj->parent;
@@ -425,9 +425,9 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 			for (auto* p = clickObj[0]; p; p = p->parent)
 			{
 				p->_DoEvent(ev);
-				if (ev.IsPropagationStopped() || ui::DragDrop::GetData())
+				if (ev.IsPropagationStopped() || DragDrop::GetData())
 				{
-					dragEventInProgress = ui::DragDrop::GetData() != nullptr;
+					dragEventInProgress = DragDrop::GetData() != nullptr;
 					if (dragEventInProgress)
 						dragHoverObj = nullptr; // allow it to be entered from root
 					break;
@@ -443,10 +443,10 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 
 	if (moved)
 	{
-		if (ui::Tooltip::IsSet() && tooltipObj && (!hoverObj || !hoverObj->IsChildOrSame(tooltipObj)))
+		if (Tooltip::IsSet() && tooltipObj && (!hoverObj || !hoverObj->IsChildOrSame(tooltipObj)))
 		{
-			ui::Tooltip::Unset();
-			ui::Notify(ui::DCT_TooltipChanged);
+			Tooltip::Unset();
+			Notify(DCT_TooltipChanged);
 		}
 	}
 	_UpdateTooltip();
@@ -454,7 +454,7 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 	prevMousePos = cursorPos;
 
 	if (moved)
-		ui::Notify(ui::DCT_MouseMoved, GetNativeWindow());
+		Notify(DCT_MouseMoved, GetNativeWindow());
 }
 
 void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
@@ -482,8 +482,8 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 		if (clickObj[id] == hoverObj)
 		{
-			uint32_t t = ui::platform::GetTimeMs();
-			unsigned clickCount = (t - clickLastTimes[id] < ui::platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
+			uint32_t t = platform::GetTimeMs();
+			unsigned clickCount = (t - clickLastTimes[id] < platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
 			clickLastTimes[id] = t;
 			clickCounts[id] = clickCount;
 
@@ -494,7 +494,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 			if (which == MouseButton::Right && !ev._stopPropagation)
 			{
-				auto& CM = ui::ContextMenu::Get();
+				auto& CM = ContextMenu::Get();
 				CM.StartNew();
 
 				ev.type = EventType::ContextMenu;
@@ -504,13 +504,13 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 					{
 						obj->_DoEvent(ev);
 						obj = obj->parent;
-						CM.basePriority += ui::MenuItemCollection::BASE_ADVANCE;
+						CM.basePriority += MenuItemCollection::BASE_ADVANCE;
 					}
 				}
 
 				if (CM.HasAny())
 				{
-					ui::Menu menu(CM.Finalize());
+					Menu menu(CM.Finalize());
 					menu.Show(container->rootBuildable);
 					CM.Clear();
 				}
@@ -519,7 +519,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 		if (which == MouseButton::Left)
 		{
-			if (ui::DragDrop::GetData())
+			if (DragDrop::GetData())
 			{
 				ev.type = EventType::DragDrop;
 				ev.target = dragHoverObj;
@@ -541,7 +541,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 				ev._stopPropagation = false;
 				BubblingEvent(ev);
 
-				ui::DragDrop::SetData(nullptr);
+				DragDrop::SetData(nullptr);
 				_UpdateHoverObj(dragHoverObj, cursorPos, mod, true);
 				//dragHoverObj = nullptr;
 				dragEventInProgress = false;
@@ -596,7 +596,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 	if (!ev.IsPropagationStopped())
 	{
 		if (act == KeyAction::Inspect)
-			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
+			Application::OpenInspector(GetNativeWindow(), hoverObj);
 		else if (act == KeyAction::FocusNext && lastFocusObj)
 		{
 			bool found = false;
@@ -660,7 +660,7 @@ void EventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 	}
 }
 
-ui::NativeWindowBase* EventSystem::GetNativeWindow() const
+NativeWindowBase* EventSystem::GetNativeWindow() const
 {
 	return container->GetNativeWindow();
 }

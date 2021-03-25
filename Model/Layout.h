@@ -13,25 +13,7 @@ struct UIObject;
 
 using UIRect = AABB2f;
 
-}
-
-template <int& at>
-struct InstanceCounter
-{
-	InstanceCounter() { at++; }
-	InstanceCounter(const InstanceCounter&) { at++; }
-	~InstanceCounter() { at--; }
-};
-
-
-namespace style {
-
-using UIObject = ui::UIObject;
-using UIRect = ui::UIRect;
-using Point2f = ui::Point2f;
-using Size2f = ui::Size2f;
-
-extern int g_numBlocks;
+extern int g_numStyleBlocks;
 
 enum EnumKindID
 {
@@ -80,21 +62,21 @@ enum class EstSizeType
 	Expanding,
 };
 
-struct Layout
+struct ILayout
 {
 	virtual float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
 	virtual float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
 	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
 };
 
-struct Placement
+struct IPlacement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) = 0;
 	bool applyOnLayout = false;
 	bool fullScreenRelative = false;
 };
 
-struct PointAnchoredPlacement : Placement
+struct PointAnchoredPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
 
@@ -110,7 +92,7 @@ struct PointAnchoredPlacement : Placement
 	bool useContentBox = false;
 };
 
-struct RectAnchoredPlacement : Placement
+struct RectAnchoredPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
 
@@ -120,10 +102,10 @@ struct RectAnchoredPlacement : Placement
 
 namespace layouts {
 
-Layout* InlineBlock();
-Layout* Stack();
-Layout* StackExpand();
-Layout* EdgeSlice();
+ILayout* InlineBlock();
+ILayout* Stack();
+ILayout* StackExpand();
+ILayout* EdgeSlice();
 
 }
 
@@ -326,15 +308,15 @@ enum class CoordTypeUnit
 	Fraction,
 };
 
-struct Color
+struct StyleColor
 {
-	ui::Color4b color;
+	Color4b color;
 	bool inherit = true;
 
-	Color() {}
-	Color(ui::Color4b col) : color(col), inherit(false) {}
-	Color(ui::Color4f col) : color(col), inherit(false) {}
-	bool operator == (const Color& o) const
+	StyleColor() {}
+	StyleColor(Color4b col) : color(col), inherit(false) {}
+	StyleColor(Color4f col) : color(col), inherit(false) {}
+	bool operator == (const StyleColor& o) const
 	{
 		return inherit == o.inherit && (inherit || color == o.color);
 	}
@@ -426,15 +408,15 @@ struct PropFuncs
 	}
 };
 
-struct Block
+struct StyleBlock
 {
-	~Block();
-	void MergeDirect(const Block& o);
-	void MergeParent(const Block& o);
+	~StyleBlock();
+	void MergeDirect(const StyleBlock& o);
+	void MergeParent(const StyleBlock& o);
 	void _Release();
 
-	Block* _GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref);
-	template <class T> Block* GetWithChange(int off, const T& val)
+	StyleBlock* _GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref);
+	template <class T> StyleBlock* GetWithChange(int off, const T& val)
 	{
 		return _GetWithChange(off, PropFuncs<T>::IsEqual, PropFuncs<T>::Copy, &val);
 	}
@@ -443,25 +425,27 @@ struct Block
 	int _numChildren = 0;
 	int _parentDiffOffset = 0;
 	FnIsPropEqual* _parentDiffFunc = nullptr;
-	Block* _parent = nullptr;
-	Block* _prev = nullptr;
-	Block* _next = nullptr;
-	Block* _firstChild = nullptr;
-	Block* _lastChild = nullptr;
+	StyleBlock* _parent = nullptr;
+	StyleBlock* _prev = nullptr;
+	StyleBlock* _next = nullptr;
+	StyleBlock* _firstChild = nullptr;
+	StyleBlock* _lastChild = nullptr;
+
+	ILayout* layout = nullptr;
+	IPlacement* placement = nullptr;
+
+	PaintFunction paint_func;
 
 	Presence presence = Presence::Undefined;
-	Layout* layout = nullptr;
-	Placement* placement = nullptr;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Undefined;
 	BoxSizing box_sizing = BoxSizing::Undefined;
 	HAlign h_align = HAlign::Undefined;
-	PaintFunction paint_func;
 
 	FontWeight font_weight = FontWeight::Inherit;
 	FontStyle font_style = FontStyle::Inherit;
 	Coord font_size;
-	Color text_color;
+	StyleColor text_color;
 
 	Coord width;
 	Coord height;
@@ -483,19 +467,19 @@ struct Block
 	Coord padding_top;
 	Coord padding_bottom;
 
-	InstanceCounter<g_numBlocks> _ic;
+	InstanceCounter<g_numStyleBlocks> _ic;
 };
-static_assert(sizeof(Block) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
+static_assert(sizeof(StyleBlock) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
 
-class BlockRef
+class StyleBlockRef
 {
 public:
-	BlockRef() : block(nullptr) {}
-	BlockRef(Block* b) : block(b) { b->_refCount++;  }
-	BlockRef(const BlockRef& b) : block(b.block) { if (block) block->_refCount++; }
-	BlockRef(BlockRef&& b) : block(b.block) { b.block = nullptr; }
-	~BlockRef() { if (block) block->_Release(); }
-	BlockRef& operator = (Block* b)
+	StyleBlockRef() : block(nullptr) {}
+	StyleBlockRef(StyleBlock* b) : block(b) { b->_refCount++;  }
+	StyleBlockRef(const StyleBlockRef& b) : block(b.block) { if (block) block->_refCount++; }
+	StyleBlockRef(StyleBlockRef&& b) : block(b.block) { b.block = nullptr; }
+	~StyleBlockRef() { if (block) block->_Release(); }
+	StyleBlockRef& operator = (StyleBlock* b)
 	{
 		if (b)
 			b->_refCount++;
@@ -504,7 +488,7 @@ public:
 		block = b;
 		return *this;
 	}
-	BlockRef& operator = (const BlockRef& b)
+	StyleBlockRef& operator = (const StyleBlockRef& b)
 	{
 		if (b.block)
 			b.block->_refCount++;
@@ -513,7 +497,7 @@ public:
 		block = b.block;
 		return *this;
 	}
-	BlockRef& operator = (BlockRef&& b)
+	StyleBlockRef& operator = (StyleBlockRef&& b)
 	{
 		if (block && block != b.block)
 			block->_Release();
@@ -521,21 +505,21 @@ public:
 		b.block = nullptr;
 		return *this;
 	}
-	operator Block* () const { return block; }
-	Block& operator * () const { return *block; }
-	Block* operator -> () const { return block; }
+	operator StyleBlock* () const { return block; }
+	StyleBlock& operator * () const { return *block; }
+	StyleBlock* operator -> () const { return block; }
 
 private:
-	Block* block;
+	StyleBlock* block;
 };
 
-class Accessor
+class StyleAccessor
 {
 public:
 
-	explicit Accessor(Block* b);
-	explicit Accessor(BlockRef& r) = delete;
-	explicit Accessor(BlockRef& r, UIObject* o);
+	explicit StyleAccessor(StyleBlock* b);
+	explicit StyleAccessor(StyleBlockRef& r) = delete;
+	explicit StyleAccessor(StyleBlockRef& r, UIObject* o);
 
 #if 0
 	Display GetDisplay() const;
@@ -545,11 +529,15 @@ public:
 	void SetPosition(Position position);
 #endif
 
-	Layout* GetLayout() const;
-	void SetLayout(Layout* v);
+	ILayout* GetLayout() const;
+	void SetLayout(ILayout* v);
 
-	Placement* GetPlacement() const;
-	void SetPlacement(Placement* v);
+	IPlacement* GetPlacement() const;
+	void SetPlacement(IPlacement* v);
+
+	PaintFunction GetPaintFunc() const;
+	void SetPaintFunc(const PaintFunction& f);
+
 
 	StackingDirection GetStackingDirection() const;
 	void SetStackingDirection(StackingDirection v);
@@ -563,9 +551,6 @@ public:
 	HAlign GetHAlign() const;
 	void SetHAlign(HAlign a);
 
-	PaintFunction GetPaintFunc() const;
-	void SetPaintFunc(const PaintFunction& f);
-
 
 	FontWeight GetFontWeight() const;
 	void SetFontWeight(FontWeight v);
@@ -576,8 +561,8 @@ public:
 	Coord GetFontSize() const;
 	void SetFontSize(Coord v);
 
-	Color GetTextColor() const;
-	void SetTextColor(Color v);
+	StyleColor GetTextColor() const;
+	void SetTextColor(StyleColor v);
 
 
 	Coord GetWidth() const;
@@ -648,11 +633,11 @@ public:
 	void SetPadding(Coord t, Coord r, Coord b, Coord l);
 
 
-	Block* block;
-	BlockRef* blkref;
+	StyleBlock* block;
+	StyleBlockRef* blkref;
 	UIObject* owner;
 };
 
 void FlexLayout(UIObject* obj);
 
-}
+} // ui

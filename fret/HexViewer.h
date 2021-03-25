@@ -72,8 +72,8 @@ struct HexViewer : ui::UIElement
 {
 	HexViewer()
 	{
-		GetStyle().SetWidth(style::Coord::Percent(100));
-		GetStyle().SetHeight(style::Coord::Percent(100));
+		GetStyle().SetWidth(ui::Coord::Percent(100));
+		GetStyle().SetHeight(ui::Coord::Percent(100));
 	}
 	~HexViewer()
 	{

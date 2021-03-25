@@ -19,14 +19,14 @@ void ProcGraphEditor_NodePin::Build(UIContainer* ctx)
 	_sel = &ctx->Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
-	*_sel + StackingDirection(!_pin.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
+	*_sel + Set(!_pin.isOutput ? StackingDirection::LeftToRight : StackingDirection::RightToLeft);
 
 	ctx->Text(_graph->GetPinName(_pin));
 
 	if (!_pin.isOutput && !_graph->IsPinLinked(_pin))
 	{
 		// TODO not implemented right->left
-		*_sel + Layout(style::layouts::StackExpand());
+		*_sel + SetLayout(layouts::StackExpand());
 
 		_graph->InputPinEditorUI(_pin, ctx);
 	}
@@ -35,8 +35,8 @@ void ProcGraphEditor_NodePin::Build(UIContainer* ctx)
 
 	auto& cb = ctx->Make<ColorBlock>();
 	cb.SetColor(_graph->GetPinColor(_pin));
-	cb + BoxSizing(style::BoxSizing::ContentBox) + Width(4) + Height(6);
-	auto* pap = Allocate<style::PointAnchoredPlacement>();
+	cb + Set(BoxSizing::ContentBox) + SetWidth(4) + SetHeight(6);
+	auto* pap = Allocate<PointAnchoredPlacement>();
 	pap->pivot = { _pin.isOutput ? 0.f : 1.f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
 	pap->useContentBox = true;
@@ -167,10 +167,10 @@ void ProcGraphEditor_Node::Build(UIContainer* ctx)
 	Subscribe(DCT_EditProcGraphNode, _node);
 
 	auto s = GetStyle(); // for style only
-	s.SetWidth(style::Coord::Undefined());
+	s.SetWidth(Coord::Undefined());
 	s.SetMinWidth(100);
 
-	ctx->Push<TabPanel>() + Width(style::Coord::Undefined()) + Margin(0);
+	ctx->Push<TabPanel>() + SetWidth(Coord::Undefined()) + SetMargin(0);
 
 	OnBuildTitleBar(ctx);
 	OnBuildOutputPins(ctx);
@@ -224,17 +224,17 @@ void ProcGraphEditor_Node::Init(IProcGraph* graph, IProcGraph::Node* node, Point
 
 void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 {
-	auto* placement = Allocate<style::PointAnchoredPlacement>();
+	auto* placement = Allocate<PointAnchoredPlacement>();
 	placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
 	GetStyle().SetPlacement(placement);
 
 	auto& sel = ctx->Push<Selectable>().Init(_isDragging);
-	sel.GetStyle().SetFontWeight(style::FontWeight::Bold);
-	sel.GetStyle().SetFontStyle(style::FontStyle::Italic);
+	sel.GetStyle().SetFontWeight(FontWeight::Bold);
+	sel.GetStyle().SetFontStyle(FontStyle::Italic);
 	sel
-		+ Padding(0)
+		+ SetPadding(0)
 		+ MakeDraggable()
-		+ EventHandler([this, placement](Event& e)
+		+ AddEventHandler([this, placement](Event& e)
 	{
 		if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 		{
@@ -260,7 +260,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 		imm::EditBool(ctx, showPreview, nullptr);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
-	ctx->Text(_graph->GetNodeName(_node)) + Padding(5, hasPreview ? 0 : 5, 5, 5);
+	ctx->Text(_graph->GetNodeName(_node)) + SetPadding(5, hasPreview ? 0 : 5, 5, 5);
 	ctx->Pop();
 }
 
@@ -297,8 +297,8 @@ void ProcGraphEditor::Build(UIContainer* ctx)
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
-	*this + Height(style::Coord::Percent(100));
-	//*ctx->Push<ListBox>() + Height(style::Coord::Percent(100));
+	*this + SetHeight(Coord::Percent(100));
+	//*ctx->Push<ListBox>() + Height(Coord::Percent(100));
 
 	OnBuildNodes(ctx);
 

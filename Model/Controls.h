@@ -168,7 +168,7 @@ struct ProgressBar : UIElement
 	ProgressBar();
 	void OnPaint() override;
 
-	style::BlockRef completionBarStyle;
+	StyleBlockRef completionBarStyle;
 	float progress = 0.5f;
 };
 
@@ -210,16 +210,16 @@ struct Slider : UIElement
 		return *this;
 	}
 
-	style::Accessor GetTrackStyle() { return style::Accessor(trackStyle, this); }
-	style::Accessor GetTrackFillStyle() { return style::Accessor(trackFillStyle, this); }
-	style::Accessor GetThumbStyle() { return style::Accessor(thumbStyle, this); }
+	StyleAccessor GetTrackStyle() { return StyleAccessor(trackStyle, this); }
+	StyleAccessor GetTrackFillStyle() { return StyleAccessor(trackFillStyle, this); }
+	StyleAccessor GetThumbStyle() { return StyleAccessor(thumbStyle, this); }
 
 	double _value = 0;
 	FloatLimits _limits = { 0, 1, 0 };
 
-	style::BlockRef trackStyle;
-	style::BlockRef trackFillStyle;
-	style::BlockRef thumbStyle;
+	StyleBlockRef trackStyle;
+	StyleBlockRef trackFillStyle;
+	StyleBlockRef thumbStyle;
 
 	float _mxoff = 0;
 };
@@ -261,13 +261,13 @@ struct PropertyList : UIElement
 	void OnInit() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
 
-	style::Accessor GetDefaultLabelStyle() { return style::Accessor(_defaultLabelStyle, this); }
-	void SetDefaultLabelStyle(const style::BlockRef& s) { _defaultLabelStyle = s; }
+	StyleAccessor GetDefaultLabelStyle() { return StyleAccessor(_defaultLabelStyle, this); }
+	void SetDefaultLabelStyle(const StyleBlockRef& s) { _defaultLabelStyle = s; }
 
-	style::Coord splitPos = style::Coord::Percent(40);
-	style::Coord minSplitPos = 0;
+	Coord splitPos = Coord::Percent(40);
+	Coord minSplitPos = 0;
 
-	style::BlockRef _defaultLabelStyle;
+	StyleBlockRef _defaultLabelStyle;
 	float _calcSplitX = 0;
 };
 
@@ -301,10 +301,10 @@ struct LabeledProperty : UIElement
 	bool IsBrief() const { return _isBrief; }
 	LabeledProperty& SetBrief(bool b) { _isBrief = b; return *this; }
 
-	style::Accessor GetLabelStyle() { return style::Accessor(_labelStyle, this); }
-	LabeledProperty& SetLabelStyle(const style::BlockRef& s) { _labelStyle = s; return *this; }
+	StyleAccessor GetLabelStyle() { return StyleAccessor(_labelStyle, this); }
+	LabeledProperty& SetLabelStyle(const StyleBlockRef& s) { _labelStyle = s; return *this; }
 
-	style::BlockRef _labelStyle;
+	StyleBlockRef _labelStyle;
 	std::string _labelText;
 	PropertyList* _propList = nullptr;
 	bool _isBrief = false;
@@ -318,14 +318,14 @@ struct SplitPane : UIElement
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
-	Range2f GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override;
-	Range2f GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override;
+	Range2f GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
+	Range2f GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
 
-	style::BlockRef vertSepStyle; // for horizontal splitting
-	style::BlockRef horSepStyle; // for vertical splitting
+	StyleBlockRef vertSepStyle; // for horizontal splitting
+	StyleBlockRef horSepStyle; // for vertical splitting
 	std::vector<float> _splits;
 	bool _splitsSet = false;
 	bool _verticalSplit = false;
@@ -345,13 +345,13 @@ struct ScrollbarData
 struct ScrollbarV
 {
 	ScrollbarV();
-	style::Coord GetWidth();
+	Coord GetWidth();
 	UIRect GetThumbRect(const ScrollbarData& info);
 	void OnPaint(const ScrollbarData& info);
 	void OnEvent(const ScrollbarData& info, Event& e);
 
-	style::BlockRef trackVStyle;
-	style::BlockRef thumbVStyle;
+	StyleBlockRef trackVStyle;
+	StyleBlockRef thumbVStyle;
 	SubUI<int> uiState;
 	float dragStartContentOff;
 	float dragStartCursorPos;
@@ -514,7 +514,7 @@ struct BackgroundBlocker : UIElement
 	void OnEvent(Event& e) override;
 	void OnButton();
 
-	style::RectAnchoredPlacement _fullScreenPlacement;
+	RectAnchoredPlacement _fullScreenPlacement;
 };
 
 
@@ -647,7 +647,7 @@ template <class T> bool PropDropdownMenuList(UIContainer* ctx, const char* label
 } // imm
 
 
-struct OverlayInfoPlacement : style::Placement
+struct OverlayInfoPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
 };

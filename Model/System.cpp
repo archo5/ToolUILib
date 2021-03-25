@@ -388,12 +388,12 @@ void InlineFrame::OnPaint()
 	PaintChildren();
 }
 
-float InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
+float InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	return 100; // default width
 }
 
-float InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
+float InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	return 100; // default height
 }

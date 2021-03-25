@@ -13,7 +13,7 @@ void TreeItemElement::OnInit()
 	Selectable::OnInit();
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
-	s.SetLayout(style::layouts::StackExpand());
+	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
 }
 
@@ -26,25 +26,25 @@ void TreeItemElement::OnEvent(Event& e)
 
 	if (e.context->DragCheck(e, MouseButton::Left))
 	{
-		ui::DragDrop::SetData(new TreeDragData(treeEd, { path }));
+		DragDrop::SetData(new TreeDragData(treeEd, { path }));
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
 	else if (e.type == EventType::DragMove)
 	{
-		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+		if (auto* ddd = DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
 				treeEd->_OnDragMove(ddd, path, GetBorderRect(), e);
 	}
 	if (e.type == EventType::DragDrop)
 	{
-		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+		if (auto* ddd = DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
 				treeEd->_OnDragDrop(ddd);
 	}
 	else if (e.type == EventType::DragLeave)
 	{
-		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
+		if (auto* ddd = DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
 				treeEd->_dragTargetLoc = {};
 	}
@@ -82,7 +82,7 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 	path = p;
 
 	bool dragging = false;
-	if (auto* dd = ui::DragDrop::GetData<TreeDragData>())
+	if (auto* dd = DragDrop::GetData<TreeDragData>())
 		if (dd->paths.size() == 1 && dd->paths[0] == p && dd->scope == te)
 			dragging = true;
 
@@ -94,7 +94,7 @@ void TreeEditor::Build(UIContainer* ctx)
 {
 	auto s = ctx->Push<ListBox>().GetStyle();
 	s.SetMinHeight(22);
-	s.SetBoxSizing(style::BoxSizing::ContentBox);
+	s.SetBoxSizing(BoxSizing::ContentBox);
 
 	TreePath path;
 	OnBuildList(ctx, path);
@@ -119,7 +119,7 @@ void TreeEditor::OnPaint()
 	if (!_dragTargetLoc.empty())
 	{
 		auto r = _dragTargetLine.ExtendBy(UIRect::UniformBorder(1));
-		ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0.1f, 0.7f, 0.9f, 0.6f));
+		draw::RectCol(r.x0, r.y0, r.x1, r.y1, Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 	}
 }
 
@@ -171,9 +171,9 @@ void TreeEditor::OnBuildItem(UIContainer* ctx, TreePathRef path, void* data)
 
 void TreeEditor::OnBuildDeleteButton(UIContainer* ctx)
 {
-	auto& delBtn = ctx->MakeWithText<ui::Button>("X");
-	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(EventType::Activate, [this, &delBtn](Event&)
+	auto& delBtn = ctx->MakeWithText<Button>("X");
+	delBtn + SetWidth(20);
+	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event&)
 	{
 		GetTree()->Remove(delBtn.FindParentOfType<TreeItemElement>()->path);
 		_OnEdit(this);
