@@ -2,16 +2,16 @@
 #include "TENodes.h"
 
 
-void TE_Node::Preview::Render(UIContainer* ctx)
+void TE_Node::Preview::Build(UIContainer* ctx)
 {
 	Subscribe(DCT_NodePreviewInvalidated);
 	Subscribe(DCT_EditProcGraph);
 	Subscribe(DCT_EditProcGraphNode);
 
-	*ctx->Make<ImageElement>()
-		->SetImage(node->GetImage(rcp))
-		->SetScaleMode(ScaleMode::Fit)
-		->SetAlphaBackgroundEnabled(true)
+	ctx->Make<ImageElement>()
+		.SetImage(node->GetImage(rcp))
+		.SetScaleMode(ScaleMode::Fit)
+		.SetAlphaBackgroundEnabled(true)
 		//+ Width(style::Coord::Percent(100)) -- TODO fix
 		+ Width(134)
 		;
@@ -19,9 +19,9 @@ void TE_Node::Preview::Render(UIContainer* ctx)
 
 void TE_Node::PreviewUI(UIContainer* ctx, TE_IRenderContextProvider* rcp)
 {
-	auto* preview = ctx->Make<Preview>();
-	preview->node = this;
-	preview->rcp = rcp;
+	auto& preview = ctx->Make<Preview>();
+	preview.node = this;
+	preview.rcp = rcp;
 }
 
 void TE_Node::_SerializeBase(IObjectIterator& oi)
@@ -136,9 +136,9 @@ void TE_MaskRef::UI(UIContainer* ctx)
 {
 	if (mask)
 		return;
-	auto* pl = ctx->Push<PropertyList>();
-	pl->splitPos = style::Coord::Percent(30);
-	pl->minSplitPos = 50;
+	auto& pl = ctx->Push<PropertyList>();
+	pl.splitPos = style::Coord::Percent(30);
+	pl.minSplitPos = 50;
 	imm::PropEditInt(ctx, "Border", border, { MinWidth(20) });
 	imm::PropEditInt(ctx, "Radius", radius, { MinWidth(20) });
 	imm::PropEditInt(ctx, "V.bias", vbias, { MinWidth(20) });

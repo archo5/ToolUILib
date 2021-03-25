@@ -201,7 +201,7 @@ BOOL CALLBACK EnableAllExcept(HWND win, LPARAM except)
 }
 
 
-static HGLOBAL UTF8ToWCHARGlobal(StringView str)
+static HGLOBAL UTF8ToWCHARGlobal(ui::StringView str)
 {
 	int size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
 	if (size < 0)
@@ -222,7 +222,7 @@ static HGLOBAL UTF8ToWCHARGlobal(StringView str)
 
 static HGLOBAL UTF8ToWCHARGlobal(const char* str)
 {
-	return UTF8ToWCHARGlobal(StringView(str, strlen(str)));
+	return UTF8ToWCHARGlobal(ui::StringView(str, strlen(str)));
 }
 
 
@@ -263,7 +263,7 @@ uint32_t GetDoubleClickTime()
 	return ::GetDoubleClickTime();
 }
 
-Point<int> GetCursorScreenPos()
+Point2i GetCursorScreenPos()
 {
 	POINT p;
 	if (::GetCursorPos(&p))
@@ -271,7 +271,7 @@ Point<int> GetCursorScreenPos()
 	return { -1, -1 };
 }
 
-Color4b GetColorAtScreenPos(Point<int> pos)
+Color4b GetColorAtScreenPos(Point2i pos)
 {
 	Color4b col(0);
 	if (auto dc = ::GetDC(nullptr))
@@ -480,33 +480,33 @@ struct ProxyEventSystem
 {
 	struct Target
 	{
-		UIEventSystem* target;
+		EventSystem* target;
 		UIRect window;
 	};
 
-	void OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
+	void OnMouseMove(Point2f cursorPos, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseMove(x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
+		mainTarget.target->OnMouseMove(cursorPos - mainTarget.window.GetMin(), mod);
 	}
-	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
+	void OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseButton(down, which, x - mainTarget.window.x0, y - mainTarget.window.y0, mod);
+		mainTarget.target->OnMouseButton(down, which, cursorPos - mainTarget.window.GetMin(), mod);
 	}
-	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
+	void OnMouseScroll(Vec2f delta)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseScroll(dx, dy);
+		mainTarget.target->OnMouseScroll(delta);
 	}
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 	{
@@ -516,7 +516,7 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);
 	}
-	void OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
+	void OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
@@ -595,10 +595,10 @@ struct NativeWindow_Impl
 		return true;
 	}
 
-	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+	void SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
 	{
-		system.AllocRoot<RenderNode>()->renderFunc = renderFunc;
-		system.RenderRoot();
+		system.AllocRoot<BuildCallback>()->buildFunc = buildFunc;
+		system.BuildRoot();
 		system.eventSystem.RecomputeLayout();
 		GetOwner()->InvalidateAll();
 	}
@@ -625,11 +625,11 @@ struct NativeWindow_Impl
 		prevTime = t;
 
 		if (canRebuild)
-			cont.ProcessNodeRenderStack();
+			cont.ProcessBuildStack();
 		cont.ProcessLayoutStack();
-		evsys.OnMouseMove(evsys.prevMouseX, evsys.prevMouseY, GetModifierKeys());
+		evsys.OnMouseMove(evsys.prevMousePos, GetModifierKeys());
 		if (canRebuild)
-			cont.ProcessNodeRenderStack();
+			cont.ProcessBuildStack();
 		cont.ProcessLayoutStack();
 
 #if DRAW_STATS
@@ -644,8 +644,8 @@ struct NativeWindow_Impl
 
 		//GL::Clear(20, 40, 80, 255);
 		rhi::Clear(0x25, 0x25, 0x25, 255);
-		if (cont.rootNode)
-			cont.rootNode->OnPaint();
+		if (cont.rootBuildable)
+			cont.rootBuildable->OnPaint();
 
 		system.overlays.UpdateSorted();
 		for (auto& ovr : system.overlays.sorted)
@@ -662,8 +662,8 @@ struct NativeWindow_Impl
 		if (debugDrawEnabled)
 		{
 			// debug draw
-			if (cont.rootNode)
-				DebugDraw(cont.rootNode);
+			if (cont.rootBuildable)
+				DebugDraw(cont.rootBuildable);
 		}
 
 #if 0
@@ -748,7 +748,7 @@ struct NativeWindow_Impl
 		exclusiveMode = false;
 	}
 
-	UIEventSystem& GetEventSys() { return system.eventSystem; }
+	EventSystem& GetEventSys() { return system.eventSystem; }
 	ProxyEventSystem& GetProxyEventSys() { return proxyEventSystem; }
 	UIContainer& GetContainer() { return system.container; }
 	NativeWindowBase* GetOwner() { return system.nativeWindow; }
@@ -793,11 +793,11 @@ NativeWindowBase::NativeWindowBase()
 }
 
 #if 0
-NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> renderFunc)
+NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> buildFunc)
 {
 	_impl = new NativeWindow_Impl();
 	_impl->Init(this);
-	_impl->SetRenderFunc(renderFunc);
+	_impl->SetBuildFunc(buildFunc);
 }
 #endif
 
@@ -813,9 +813,9 @@ void NativeWindowBase::OnClose()
 }
 
 #if 0
-void NativeWindowBase::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+void NativeWindowBase::SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
 {
-	_impl->SetRenderFunc(renderFunc);
+	_impl->SetBuildFunc(buildFunc);
 }
 #endif
 
@@ -857,7 +857,7 @@ void NativeWindowBase::SetVisible(bool v)
 	{
 		_impl->firstShow = false;
 
-		_impl->SetRenderFunc([this](UIContainer* ctx) { OnRender(ctx); });
+		_impl->SetBuildFunc([this](UIContainer* ctx) { OnBuild(ctx); });
 	}
 }
 
@@ -873,7 +873,7 @@ void NativeWindowBase::SetMenu(Menu* m)
 	// TODO is there a way to prevent partial redrawing results from showing up?
 }
 
-Point<int> NativeWindowBase::GetPosition()
+Point2i NativeWindowBase::GetPosition()
 {
 	RECT r = {};
 	GetWindowRect(_impl->window, &r);
@@ -904,7 +904,7 @@ void NativeWindowBase::ProcessEventsExclusive()
 	_impl->ExitExclusiveMode();
 }
 
-Size<int> NativeWindowBase::GetSize()
+Size2i NativeWindowBase::GetSize()
 {
 	RECT r = {};
 	GetWindowRect(_impl->window, &r);
@@ -1028,15 +1028,15 @@ bool NativeWindowBase::IsDragged() const
 }
 
 
-void NativeWindowRenderFunc::OnRender(UIContainer* ctx)
+void NativeWindowBuildFunc::OnBuild(UIContainer* ctx)
 {
-	if (_renderFunc)
-		_renderFunc(ctx);
+	if (_buildFunc)
+		_buildFunc(ctx);
 }
 
-void NativeWindowRenderFunc::SetRenderFunc(std::function<void(UIContainer*)> renderFunc)
+void NativeWindowBuildFunc::SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
 {
-	_renderFunc = renderFunc;
+	_buildFunc = buildFunc;
 }
 
 
@@ -1046,7 +1046,7 @@ void NativeMainWindow::OnClose()
 }
 
 
-void NativeWindowNode::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void NativeWindowNode::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	finalRectC = finalRectCP = finalRectCPB = {};
 }
@@ -1090,7 +1090,7 @@ void AnimationRequester::EndAnimation()
 }
 
 
-struct Inspector : ui::NativeDialogWindow
+struct Inspector : NativeDialogWindow
 {
 	Inspector()
 	{
@@ -1098,13 +1098,13 @@ struct Inspector : ui::NativeDialogWindow
 		SetSize(1024, 768);
 	}
 
-	struct InspectorUI : ui::Node
+	struct InspectorUI : Buildable
 	{
 		static constexpr int TAB_W = 10;
 
 		Inspector* insp;
 
-		void Render(UIContainer* ctx) override {}
+		void Build(UIContainer* ctx) override {}
 
 		static const char* CleanName(const char* name)
 		{
@@ -1146,18 +1146,18 @@ struct Inspector : ui::NativeDialogWindow
 			DrawTextLine(0, y, "Name", 1, 1, 1, 0.6f);
 			DrawTextLine(300, y, "Rect", 1, 1, 1, 0.6f);
 			DrawTextLine(400, y, "Layout", 1, 1, 1, 0.6f);
-			PaintObject(c.rootNode, 0, y);
+			PaintObject(c.rootBuildable, 0, y);
 			//DrawTextLine(10, 10, "inspector", 1, 1, 1);
 		}
 
-		void OnEvent(UIEvent& e) override
+		void OnEvent(Event& e) override
 		{
 		}
 	};
 
-	void OnRender(UIContainer* ctx) override
+	void OnBuild(UIContainer* ctx) override
 	{
-		ui = ctx->Make<InspectorUI>();
+		ui = &ctx->Make<InspectorUI>();
 		*ui + ui::Layout(style::layouts::EdgeSlice());
 		ui->insp = this;
 	}
@@ -1167,7 +1167,7 @@ struct Inspector : ui::NativeDialogWindow
 		selWindow = window;
 		selObj = obj;
 		if (ui)
-			ui->Rerender();
+			ui->Rebuild();
 	}
 
 	InspectorUI* ui = nullptr;
@@ -1300,7 +1300,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
+			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
 		{
 			TRACKMOUSEEVENT tme = {};
 			tme.cbSize = sizeof(tme);
@@ -1311,7 +1311,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return 0;
 	case WM_MOUSELEAVE:
 		if (auto* evsys = GetEventSys(hWnd))
-			evsys->OnMouseMove(-1, -1, GetModifierKeys());
+			evsys->OnMouseMove({ -1, -1 }, GetModifierKeys());
 		return 0;
 	case WM_SETCURSOR:
 		if (LOWORD(lParam) == HTCLIENT)
@@ -1326,12 +1326,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
+			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_LBUTTONDOWN,
-				UIMouseButton::Left,
-				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				MouseButton::Left,
+				{ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) },
 				GetModifierKeys());
 		}
 		return TRUE;
@@ -1340,12 +1339,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
+			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_RBUTTONDOWN,
-				UIMouseButton::Right,
-				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				MouseButton::Right,
+				{ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) },
 				GetModifierKeys());
 		}
 		return TRUE;
@@ -1354,12 +1352,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
+			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_MBUTTONDOWN,
-				UIMouseButton::Middle,
-				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				MouseButton::Middle,
+				{ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) },
 				GetModifierKeys());
 		}
 		return TRUE;
@@ -1368,25 +1365,24 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* evsys = GetEventSys(hWnd))
 		{
 			AdjustMouseCapture(hWnd, wParam);
-			evsys->OnMouseMove(UIMouseCoord(GET_X_LPARAM(lParam)), UIMouseCoord(GET_Y_LPARAM(lParam)), GetModifierKeys());
+			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
 			evsys->OnMouseButton(
 				message == WM_XBUTTONDOWN,
-				HIWORD(wParam) == XBUTTON1 ? UIMouseButton::X1 : UIMouseButton::X2,
-				UIMouseCoord(GET_X_LPARAM(lParam)),
-				UIMouseCoord(GET_Y_LPARAM(lParam)),
+				HIWORD(wParam) == XBUTTON1 ? MouseButton::X1 : MouseButton::X2,
+				{ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) },
 				GetModifierKeys());
 		}
 		return TRUE;
 	case WM_MOUSEWHEEL:
 		if (auto* evsys = GetEventSys(hWnd))
 		{
-			evsys->OnMouseScroll(0, GET_WHEEL_DELTA_WPARAM(wParam));
+			evsys->OnMouseScroll({ 0, float(GET_WHEEL_DELTA_WPARAM(wParam)) });
 		}
 		return TRUE;
 	case WM_MOUSEHWHEEL:
 		if (auto* evsys = GetEventSys(hWnd))
 		{
-			evsys->OnMouseScroll(GET_WHEEL_DELTA_WPARAM(wParam), 0);
+			evsys->OnMouseScroll({ float(GET_WHEEL_DELTA_WPARAM(wParam)), 0 });
 		}
 		return TRUE;
 	case WM_KEYDOWN:
@@ -1400,76 +1396,76 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			{
 				switch (wParam)
 				{
-				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateDown, M, numRepeats); break;
-				case VK_RETURN: evsys->OnKeyAction(UIKeyAction::Enter, M, numRepeats); break;
+				case VK_SPACE: evsys->OnKeyAction(KeyAction::ActivateDown, M, numRepeats); break;
+				case VK_RETURN: evsys->OnKeyAction(KeyAction::Enter, M, numRepeats); break;
 
 				case VK_BACK:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelPrevWord : UIKeyAction::DelPrevLetter,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelPrevWord : KeyAction::DelPrevLetter,
 						M,
 						numRepeats);
 					break;
 				case VK_DELETE:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::DelNextWord : UIKeyAction::DelNextLetter,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelNextWord : KeyAction::DelNextLetter,
 						M,
 						numRepeats);
-					evsys->OnKeyAction(UIKeyAction::Delete, M, numRepeats);
+					evsys->OnKeyAction(KeyAction::Delete, M, numRepeats);
 					break;
 
 				case VK_LEFT:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::PrevWord : UIKeyAction::PrevLetter,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::PrevWord : KeyAction::PrevLetter,
 						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_RIGHT:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::NextWord : UIKeyAction::NextLetter,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::NextWord : KeyAction::NextLetter,
 						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_UP:
-					evsys->OnKeyAction(UIKeyAction::Up, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					evsys->OnKeyAction(KeyAction::Up, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_DOWN:
-					evsys->OnKeyAction(UIKeyAction::Down, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+					evsys->OnKeyAction(KeyAction::Down, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_HOME:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToStart : UIKeyAction::GoToLineStart,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToStart : KeyAction::GoToLineStart,
 						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 				case VK_END:
 					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? UIKeyAction::GoToEnd : UIKeyAction::GoToLineEnd,
+						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToEnd : KeyAction::GoToLineEnd,
 						M,
 						numRepeats,
 						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
 					break;
 
-				case VK_PRIOR: evsys->OnKeyAction(UIKeyAction::PageUp, M, numRepeats); break;
-				case VK_NEXT: evsys->OnKeyAction(UIKeyAction::PageDown, M, numRepeats); break;
+				case VK_PRIOR: evsys->OnKeyAction(KeyAction::PageUp, M, numRepeats); break;
+				case VK_NEXT: evsys->OnKeyAction(KeyAction::PageDown, M, numRepeats); break;
 
-				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? UIKeyAction::FocusPrev : UIKeyAction::FocusNext, M, numRepeats); break;
+				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? KeyAction::FocusPrev : KeyAction::FocusNext, M, numRepeats); break;
 
-				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Cut, M, numRepeats); break;
-				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Copy, M, numRepeats); break;
-				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::Paste, M, numRepeats); break;
-				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(UIKeyAction::SelectAll, M, numRepeats); break;
+				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Cut, M, numRepeats); break;
+				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Copy, M, numRepeats); break;
+				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Paste, M, numRepeats); break;
+				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::SelectAll, M, numRepeats); break;
 
-				case VK_F11: evsys->OnKeyAction(UIKeyAction::Inspect, M, numRepeats); break;
+				case VK_F11: evsys->OnKeyAction(KeyAction::Inspect, M, numRepeats); break;
 				}
 			}
 			else
 			{
 				switch (wParam)
 				{
-				case VK_SPACE: evsys->OnKeyAction(UIKeyAction::ActivateUp, M, numRepeats); break;
+				case VK_SPACE: evsys->OnKeyAction(KeyAction::ActivateUp, M, numRepeats); break;
 				}
 			}
 		}
@@ -1570,8 +1566,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 			DragDrop::SetData(files);
 			{
-				auto* tgt = window->GetEventSys().FindObjectAtPosition(pt.x, pt.y);
-				UIEvent ev(&window->GetEventSys(), tgt, UIEventType::DragDrop);
+				auto* tgt = window->GetEventSys().FindObjectAtPosition({ float(pt.x), float(pt.y) });
+				Event ev(&window->GetEventSys(), tgt, EventType::DragDrop);
 				window->GetEventSys().BubblingEvent(ev);
 			}
 			DragDrop::SetData(nullptr);
@@ -1675,7 +1671,7 @@ int RealMain()
 	std::vector<char*> argp;
 	for (int i = 0; i < argc; i++)
 	{
-		args.push_back(WCHARtoUTF8(argv[i]));
+		args.push_back(ui::WCHARtoUTF8(argv[i]));
 		argp.push_back(const_cast<char*>(args[i].c_str()));
 	}
 	LocalFree(argv);

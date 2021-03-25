@@ -14,9 +14,9 @@ enum TE_NodeType
 
 struct TE_Node
 {
-	struct Preview : Node
+	struct Preview : Buildable
 	{
-		void Render(UIContainer* ctx) override;
+		void Build(UIContainer* ctx) override;
 
 		TE_Node* node;
 		TE_IRenderContextProvider* rcp;
@@ -69,7 +69,7 @@ struct TE_Node
 	}
 
 	uint32_t id = 0;
-	Point<float> position = {};
+	Point2f position = {};
 	bool isPreviewEnabled = true;
 	uint8_t _topoState = 0;
 	Image* _image = nullptr;

@@ -40,7 +40,7 @@ struct HighlightSettings
 	void Load(const char* key, NamedTextSerializeReader& r);
 	void Save(const char* key, NamedTextSerializeWriter& w);
 
-	void EditUI(UIContainer* ctx);
+	void EditUI(ui::UIContainer* ctx);
 };
 
 struct ByteColors
@@ -68,7 +68,7 @@ struct HexViewerState
 };
 extern ui::DataCategoryTag DCT_HexViewerState[1];
 
-struct HexViewer : UIElement
+struct HexViewer : ui::UIElement
 {
 	HexViewer()
 	{
@@ -78,10 +78,10 @@ struct HexViewer : UIElement
 	~HexViewer()
 	{
 	}
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(ui::Event& e) override;
 	void OnPaint() override;
 
-	UIRect GetByteRect(uint64_t pos);
+	ui::UIRect GetByteRect(uint64_t pos);
 
 	uint64_t GetBasePos()
 	{

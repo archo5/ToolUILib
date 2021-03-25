@@ -2,7 +2,7 @@
 #include "pch.h"
 
 
-struct SubUIBenchmark : ui::Node
+struct SubUIBenchmark : ui::Buildable
 {
 	SubUIBenchmark()
 	{
@@ -22,7 +22,7 @@ struct SubUIBenchmark : ui::Node
 
 		for (uint16_t pid = 0; pid < points.size(); pid++)
 		{
-			auto ddr = UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4);
+			auto ddr = ui::UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4);
 
 			ui::Color4f col;
 			if (subui.IsPressed(pid))
@@ -34,27 +34,25 @@ struct SubUIBenchmark : ui::Node
 			ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, col);
 		}
 	}
-	void OnEvent(UIEvent& e) override
+	void OnEvent(ui::Event& e) override
 	{
 		auto r = finalRectC;
 
 		subui.InitOnEvent(e);
 		for (uint16_t pid = 0; pid < points.size(); pid++)
 		{
-			switch (subui.DragOnEvent(pid, UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4), e))
+			switch (subui.DragOnEvent(pid, ui::UIRect::FromCenterExtents(r.x0 + points[pid].x, r.y0 + points[pid].y, 4), e))
 			{
 			case ui::SubUIDragState::Start:
-				dox = points[pid].x - e.x;
-				doy = points[pid].y - e.y;
+				dragOff = points[pid] - e.position;
 				break;
 			case ui::SubUIDragState::Move:
-				points[pid].x = e.x + dox;
-				points[pid].y = e.y + doy;
+				points[pid] = e.position + dragOff;
 				break;
 			}
 		}
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		GetStyle().SetPadding(3);
 		GetStyle().SetWidth(820);
@@ -62,10 +60,10 @@ struct SubUIBenchmark : ui::Node
 	}
 
 	ui::SubUI<uint16_t> subui;
-	std::vector<Point<float>> points;
-	float dox = 0, doy = 0;
+	std::vector<ui::Point2f> points;
+	ui::Vec2f dragOff = { 0, 0 };
 };
-void Benchmark_SubUI(UIContainer* ctx)
+void Benchmark_SubUI(ui::UIContainer* ctx)
 {
 	ctx->Make<SubUIBenchmark>();
 }

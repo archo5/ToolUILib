@@ -5,6 +5,9 @@
 #include <type_traits>
 #include <new>
 
+
+namespace ui {
+
 template <class K, class V, class Hasher = std::hash<K>, class Equal = std::equal_to<K>>
 struct HashMap
 {
@@ -47,7 +50,7 @@ struct HashMap
 		EntryRef operator -> () const { return { _h->_keys[_pos], _h->_values[_pos] }; }
 		bool is_valid() const { return _pos < _h->_count; }
 	};
-	
+
 	size_t* _hashTable = nullptr;
 	size_t _hashCap = 0;
 	H* _hashes = nullptr;
@@ -348,3 +351,5 @@ struct HashMap
 		return true;
 	}
 };
+
+} // ui

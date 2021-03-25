@@ -3,19 +3,19 @@
 #include "ImageEditor.h"
 
 
-void ImageEditorWindowNode::Render(UIContainer* ctx)
+void ImageEditorWindowNode::Build(ui::UIContainer* ctx)
 {
-	auto* sp1 = ctx->Push<ui::SplitPane>();
+	auto& sp1 = ctx->Push<ui::SplitPane>();
 	{
-		auto* sp2 = ctx->Push<ui::SplitPane>();
+		auto& sp2 = ctx->Push<ui::SplitPane>();
 		{
 			ctx->Push<ui::Panel>();
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
-				auto* img = ctx->Make<ui::ImageElement>();
-				*img + ui::Width(style::Coord::Percent(100));
-				*img + ui::Height(style::Coord::Percent(100));
-				img->GetStyle().SetPaintFunc([](const style::PaintInfo& info)
+				auto& img = ctx->Make<ui::ImageElement>();
+				img + ui::Width(style::Coord::Percent(100));
+				img + ui::Height(style::Coord::Percent(100));
+				img.GetStyle().SetPaintFunc([](const style::PaintInfo& info)
 				{
 					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
 
@@ -23,8 +23,8 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 
 					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr->_texture, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 				});
-				img->SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
-				img->SetScaleMode(ui::ScaleMode::Fit);
+				img.SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
+				img.SetScaleMode(ui::ScaleMode::Fit);
 			}
 			ctx->Pop();
 
@@ -52,24 +52,24 @@ void ImageEditorWindowNode::Render(UIContainer* ctx)
 			ctx->Pop();
 		}
 		ctx->Pop();
-		sp2->SetDirection(true);
-		sp2->SetSplits({ 0.6f });
+		sp2.SetDirection(true);
+		sp2.SetSplits({ 0.6f });
 
 		ctx->PushBox();
 		if (ddiSrc.dataDesc)
 		{
-			auto* tv = ctx->Make<ui::TableView>();
-			*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
-			tv->SetDataSource(&ddiSrc);
-			tv->SetSelectionStorage(&ddiSrc);
-			tv->SetSelectionMode(ui::SelectionMode::Single);
+			auto& tv = ctx->Make<ui::TableView>();
+			tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+			tv.SetDataSource(&ddiSrc);
+			tv.SetSelectionStorage(&ddiSrc);
+			tv.SetSelectionMode(ui::SelectionMode::Single);
 			ddiSrc.refilter = true;
-			tv->CalculateColumnWidths();
-			tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
+			tv.CalculateColumnWidths();
+			tv.HandleEvent(ui::EventType::SelectionChange) = [this, &tv](ui::Event& e) { e.current->Rebuild(); };
 		}
 		ctx->Pop();
 	}
 	ctx->Pop();
-	sp1->SetDirection(false);
-	sp1->SetSplits({ 0.6f });
+	sp1.SetDirection(false);
+	sp1.SetSplits({ 0.6f });
 }

@@ -42,20 +42,20 @@ struct PyWriter
 		text.append(bfr, len);
 		text += "\n";
 	}
-	std::string Name(StringView v)
+	std::string Name(ui::StringView v)
 	{
 		std::string ret;
 		ret.reserve(v.size());
 		for (char c : v)
 		{
-			if (IsAlphaNum(c) || c == '_')
+			if (ui::IsAlphaNum(c) || c == '_')
 				ret += c;
 			else
 				ret += '_';
 		}
 		return ret;
 	}
-	std::string String(StringView v)
+	std::string String(ui::StringView v)
 	{
 		std::string ret;
 		ret += "\"";

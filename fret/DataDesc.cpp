@@ -9,24 +9,24 @@ ui::DataCategoryTag DCT_Struct[1];
 ui::DataCategoryTag DCT_CurStructInst[1];
 
 
-bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format)
+bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& format)
 {
 	if (ui::imm::PropButton(ctx, label, format.c_str()))
 	{
 		std::vector<ui::MenuItem> imgFormats;
-		StringView prevCat;
+		ui::StringView prevCat;
 		for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
 		{
-			StringView cat = GetImageFormatCategory(i);
+			ui::StringView cat = GetImageFormatCategory(i);
 			if (cat != prevCat)
 			{
 				prevCat = cat;
 				imgFormats.push_back(ui::MenuItem(cat, {}, true));
 			}
-			StringView name = GetImageFormatName(i);
+			ui::StringView name = GetImageFormatName(i);
 			imgFormats.push_back(ui::MenuItem(name).Func([&format, name]() { format.assign(name.data(), name.size()); }));
 		}
-		ui::Menu(imgFormats).Show(ctx->GetCurrentNode());
+		ui::Menu(imgFormats).Show(ctx->GetCurrentBuildable());
 		return true;
 	}
 	return false;
@@ -35,7 +35,7 @@ bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format)
 
 static bool advancedAccess = false;
 static MathExprObj testQuery;
-void DataDesc::EditStructuralItems(UIContainer* ctx)
+void DataDesc::EditStructuralItems(ui::UIContainer* ctx)
 {
 	ctx->Push<ui::Panel>();
 
@@ -127,14 +127,14 @@ static const char* CreationReasonToStringShort(CreationReason cr)
 	}
 }
 
-static bool EditCreationReason(UIContainer* ctx, const char* label, CreationReason& cr)
+static bool EditCreationReason(ui::UIContainer* ctx, const char* label, CreationReason& cr)
 {
 	return ui::imm::PropDropdownMenuList(ctx, label, cr,
-		ctx->GetCurrentNode()->Allocate<ui::ZeroSepCStrOptionList>(
+		ctx->GetCurrentBuildable()->Allocate<ui::ZeroSepCStrOptionList>(
 			"user-defined\0manual expand\0auto expand\0query\0"));
 }
 
-void DataDesc::EditInstance(UIContainer* ctx)
+void DataDesc::EditInstance(ui::UIContainer* ctx)
 {
 	if (auto* SI = curInst)
 	{
@@ -150,7 +150,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 		if (ui::imm::PropButton(ctx, "Edit struct:", SI->def->name.c_str()))
 		{
 			editMode = 1;
-			ctx->GetCurrentNode()->Rerender();
+			ctx->GetCurrentBuildable()->Rebuild();
 		}
 
 		if (advancedAccess)
@@ -169,10 +169,10 @@ void DataDesc::EditInstance(UIContainer* ctx)
 		ctx->Text("Arguments") + ui::Padding(5);
 		ctx->Push<ui::Panel>();
 
-		auto* argSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
-		auto* argEditor = ctx->Make<ui::SequenceEditor>();
-		argEditor->SetSequence(argSeq);
-		argEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+		auto* argSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(SI->args)>>(SI->args);
+		auto& argEditor = ctx->Make<ui::SequenceEditor>();
+		argEditor.SetSequence(argSeq);
+		argEditor.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 		{
 			auto& A = *static_cast<DDArg*>(ptr);
 
@@ -183,7 +183,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 		if (ui::imm::Button(ctx, "Add"))
 		{
 			SI->args.push_back({ "unnamed", 0 });
-			ctx->GetCurrentNode()->Rerender();
+			ctx->GetCurrentBuildable()->Rebuild();
 		}
 		ctx->Pop();
 
@@ -227,7 +227,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 				DDStructInst* SI;
 			};
-			auto* data = ctx->GetCurrentNode()->Allocate<Data>();
+			auto* data = ctx->GetCurrentBuildable()->Allocate<Data>();
 			data->SI = SI;
 
 			char bfr[256];
@@ -267,7 +267,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				auto desc = SI->GetFieldDescLazy(i, &incomplete);
 				ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 				ctx->Text(desc) + ui::Padding(5);
-				
+
 				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
 				{
 					if (ui::imm::Button(ctx, "View"))
@@ -279,11 +279,11 @@ void DataDesc::EditInstance(UIContainer* ctx)
 				}
 				ctx->Pop();
 			}
-			auto* tv = ctx->Make<ui::TableView>();
-			*tv + ui::Height(200);
-			tv->enableRowHeader = false;
-			tv->SetDataSource(data);
-			tv->CalculateColumnWidths();
+			auto& tv = ctx->Make<ui::TableView>();
+			tv + ui::Height(200);
+			tv.enableRowHeader = false;
+			tv.SetDataSource(data);
+			tv.CalculateColumnWidths();
 
 			if (incomplete && ui::imm::Button(ctx, "Load completely"))
 			{
@@ -303,11 +303,11 @@ void DataDesc::EditInstance(UIContainer* ctx)
 					images.push_back(GetInstanceImage(*SI));
 
 					curImage = images.size() - 1;
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
+					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImage, images.size() - 1);
 				}
 				if (ui::imm::Button(ctx, "Open image in editor", { ui::Enable(!!S.resource.image) }))
 				{
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
+					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
@@ -321,7 +321,7 @@ void DataDesc::EditInstance(UIContainer* ctx)
 
 struct RenameDialog : ui::NativeDialogWindow
 {
-	RenameDialog(StringView name)
+	RenameDialog(ui::StringView name)
 	{
 		newName.assign(name.data(), name.size());
 		SetTitle(("Rename struct: " + newName).c_str());
@@ -333,12 +333,12 @@ struct RenameDialog : ui::NativeDialogWindow
 		rename = false;
 		SetVisible(false);
 	}
-	void OnRender(UIContainer* ctx) override
+	void OnBuild(ui::UIContainer* ctx) override
 	{
 		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice()) + ui::Padding(16);
 		ui::imm::PropEditString(ctx, "New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
-		*ctx->Make<ui::BoxElement>() + ui::Height(16);
+		ctx->Make<ui::BoxElement>() + ui::Height(16);
 
 		ui::Property::Begin(ctx);
 		if (ui::imm::Button(ctx, "OK", { ui::Height(30) }))
@@ -346,7 +346,7 @@ struct RenameDialog : ui::NativeDialogWindow
 			rename = true;
 			SetVisible(false);
 		}
-		*ctx->Make<ui::BoxElement>() + ui::Width(16);
+		ctx->Make<ui::BoxElement>() + ui::Width(16);
 		if (ui::imm::Button(ctx, "Cancel", { ui::Height(30) }))
 		{
 			rename = false;
@@ -360,7 +360,7 @@ struct RenameDialog : ui::NativeDialogWindow
 	std::string newName;
 };
 
-void DataDesc::EditStruct(UIContainer* ctx)
+void DataDesc::EditStruct(ui::UIContainer* ctx)
 {
 	if (auto* SI = curInst)
 	{
@@ -408,10 +408,10 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			ctx->Text("Parameters") + ui::Padding(5);
 			ctx->Push<ui::Panel>();
 
-			auto* paramSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
-			auto* paramEditor = ctx->Make<ui::SequenceEditor>();
-			paramEditor->SetSequence(paramSeq);
-			paramEditor->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+			auto* paramSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.params)>>(S.params);
+			auto& paramEditor = ctx->Make<ui::SequenceEditor>();
+			paramEditor.SetSequence(paramSeq);
+			paramEditor.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
 				auto& P = *static_cast<DDParam*>(ptr);
 
@@ -422,18 +422,18 @@ void DataDesc::EditStruct(UIContainer* ctx)
 			if (ui::imm::Button(ctx, "Add"))
 			{
 				S.params.push_back({ "unnamed", 0 });
-				ctx->GetCurrentNode()->Rerender();
+				ctx->GetCurrentBuildable()->Rebuild();
 			}
 			ctx->Pop();
 
 			ctx->Text("Fields") + ui::Padding(5);
 			ctx->Push<ui::Panel>();
 
-			auto* fieldSeq = ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(S.fields)>>(S.fields);
-			auto* fieldEditor = ctx->Make<ui::SequenceEditor>();
-			fieldEditor->SetSequence(fieldSeq);
-			auto* N = ctx->GetCurrentNode(); // TODO remove workaround
-			fieldEditor->itemUICallback = [this, &S, N](UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
+			auto* fieldSeq = ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(S.fields)>>(S.fields);
+			auto& fieldEditor = ctx->Make<ui::SequenceEditor>();
+			fieldEditor.SetSequence(fieldSeq);
+			auto* N = ctx->GetCurrentBuildable(); // TODO remove workaround
+			fieldEditor.itemUICallback = [this, &S, N](ui::UIContainer* ctx, ui::SequenceEditor* ed, size_t idx, void* ptr)
 			{
 				auto& F = *static_cast<DDField*>(ptr);
 
@@ -447,13 +447,13 @@ void DataDesc::EditStruct(UIContainer* ctx)
 					F.count);
 				if (!S.serialized)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
-				*ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
+				ctx->MakeWithText<ui::BoxElement>(info) + ui::Padding(5);
 
 				if (ui::imm::Button(ctx, "Edit", { ui::Width(50) }))
 				{
 					editMode = 2;
 					curField = idx;
-					N->Rerender();
+					N->Rebuild();
 				}
 			};
 
@@ -462,7 +462,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				S.fields.push_back({ "i32", "unnamed" });
 				editMode = 2;
 				curField = S.fields.size() - 1;
-				ctx->GetCurrentNode()->Rerender();
+				ctx->GetCurrentBuildable()->Rebuild();
 			}
 			ctx->Pop();
 
@@ -480,7 +480,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				{
 					if (!S.resource.image)
 						S.resource.image = new DDRsrcImage;
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
+					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenImageRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 			if (S.resource.type == DDStructResourceType::Mesh)
@@ -489,7 +489,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 				{
 					if (!S.resource.mesh)
 						S.resource.mesh = new DDRsrcMesh;
-					ctx->GetCurrentNode()->SendUserEvent(GlobalEvent_OpenMeshRsrcEditor, uintptr_t(SI->def));
+					ctx->GetCurrentBuildable()->SendUserEvent(GlobalEvent_OpenMeshRsrcEditor, uintptr_t(SI->def));
 				}
 			}
 		}
@@ -500,7 +500,7 @@ void DataDesc::EditStruct(UIContainer* ctx)
 	}
 }
 
-void DataDesc::EditField(UIContainer* ctx)
+void DataDesc::EditField(ui::UIContainer* ctx)
 {
 	if (curInst)
 	{
@@ -554,7 +554,7 @@ void DataDesc::EditField(UIContainer* ctx)
 	}
 }
 
-void DataDesc::EditImageItems(UIContainer* ctx)
+void DataDesc::EditImageItems(ui::UIContainer* ctx)
 {
 	if (curImage < images.size())
 	{
@@ -570,7 +570,7 @@ void DataDesc::EditImageItems(UIContainer* ctx)
 		chg |= ui::imm::PropEditInt(ctx, "Width", I.width);
 		chg |= ui::imm::PropEditInt(ctx, "Height", I.height);
 		if (chg)
-			ctx->GetCurrentNode()->Rerender();
+			ctx->GetCurrentBuildable()->Rebuild();
 
 		ctx->Pop();
 	}
@@ -585,7 +585,7 @@ DDStructInst* DataDesc::AddInstance(const DDStructInst& src)
 		auto* I = instances[i];
 		if (I->off == src.off && I->def == src.def && I->file == src.file)
 		{
-			I->creationReason = min(I->creationReason, src.creationReason);
+			I->creationReason = ui::min(I->creationReason, src.creationReason);
 			I->remainingCount = src.remainingCount;
 			I->remainingCountIsSize = src.remainingCountIsSize;
 			return I;
@@ -1096,11 +1096,11 @@ struct StructOptions : ui::OptionList
 		for (auto& kvp : desc->structs)
 			structs.push_back(kvp.second);
 		std::sort(structs.begin() + 1, structs.end(), [](const DDStruct* a, const DDStruct* b) { return a->name < b->name; });
-		
+
 		for (size_t i = from; i < from + count && i < structs.size(); i++)
 			fn(structs[i], uintptr_t(structs[i]));
 	}
-	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
 	{
 		auto* s = static_cast<const DDStruct*>(ptr);
 		ctx->Text(s ? s->name : "<none>");
@@ -1122,7 +1122,7 @@ struct FileOptions : ui::OptionList
 		for (size_t i = from; i < from + count && i < files.size(); i++)
 			fn(files[i], uintptr_t(files[i]));
 	}
-	void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
+	void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list) override
 	{
 		auto* s = static_cast<const DDFile*>(ptr);
 		ctx->Text(s ? s->name : "<none>");
@@ -1134,7 +1134,7 @@ struct StructsDropdownMenu : ui::DropdownMenu
 	DataDesc* dataDesc = nullptr;
 	std::unordered_set<DDStruct*>* structSet = nullptr;
 
-	void OnBuildButtonContents(UIContainer* ctx) override
+	void OnBuildButtonContents(ui::UIContainer* ctx) override
 	{
 		if (structSet->empty())
 			ctx->Text("<none>");
@@ -1146,7 +1146,7 @@ struct StructsDropdownMenu : ui::DropdownMenu
 			ctx->Text("<many>");
 	}
 
-	void OnBuildMenuContents(UIContainer* ctx) override
+	void OnBuildMenuContents(ui::UIContainer* ctx) override
 	{
 		std::vector<DDStruct*> structs;
 		for (auto& kvp : dataDesc->structs)
@@ -1166,12 +1166,12 @@ struct StructsDropdownMenu : ui::DropdownMenu
 	}
 };
 
-void DataDescInstanceSource::Edit(UIContainer* ctx)
+void DataDescInstanceSource::Edit(ui::UIContainer* ctx)
 {
 	ui::Property::Begin(ctx, "Filter by struct");
 	if (ui::imm::EditBool(ctx, filterStructEnable, nullptr))
 		refilter = true;
-	if (ui::imm::DropdownMenuList(ctx, filterStruct, ctx->GetCurrentNode()->Allocate<StructOptions>(dataDesc)))
+	if (ui::imm::DropdownMenuList(ctx, filterStruct, ctx->GetCurrentBuildable()->Allocate<StructOptions>(dataDesc)))
 		refilter = true;
 	ui::imm::PropEditInt(ctx, "\bBytes", showBytes, {}, 1, 0, 128);
 	ui::Property::End(ctx);
@@ -1181,20 +1181,20 @@ void DataDescInstanceSource::Edit(UIContainer* ctx)
 		ui::Property::Scope ps(ctx, "Hide structs");
 		if (ui::imm::EditBool(ctx, filterHideStructsEnable, nullptr))
 			refilter = true;
-		auto* ddm = ctx->Make<StructsDropdownMenu>();
-		ddm->dataDesc = dataDesc;
-		ddm->structSet = &filterHideStructs;
-		ddm->HandleEvent(UIEventType::IMChange) = [this](UIEvent& e)
+		auto& ddm = ctx->Make<StructsDropdownMenu>();
+		ddm.dataDesc = dataDesc;
+		ddm.structSet = &filterHideStructs;
+		ddm.HandleEvent(ui::EventType::IMChange) = [this](ui::Event& e)
 		{
 			refilter = true;
-			e.current->RerenderContainerNode();
+			e.current->RebuildContainer();
 		};
 	}
 
 	ui::Property::Begin(ctx, "Filter by file");
 	if (ui::imm::EditBool(ctx, filterFileEnable, nullptr))
 		refilter = true;
-	if (ui::imm::DropdownMenuList(ctx, filterFile, ctx->GetCurrentNode()->Allocate<FileOptions>(dataDesc)))
+	if (ui::imm::DropdownMenuList(ctx, filterFile, ctx->GetCurrentBuildable()->Allocate<FileOptions>(dataDesc)))
 		refilter = true;
 	ui::imm::PropEditBool(ctx, "\bFollow", filterFileFollow);
 	ui::Property::End(ctx);
@@ -1315,9 +1315,9 @@ void DataDescImageSource::SetSelectionState(uintptr_t item, bool sel)
 		dataDesc->curImage = UINT32_MAX;
 }
 
-void DataDescImageSource::Edit(UIContainer* ctx)
+void DataDescImageSource::Edit(ui::UIContainer* ctx)
 {
-	if (ui::imm::PropDropdownMenuList(ctx, "Filter by file", filterFile, ctx->GetCurrentNode()->Allocate<FileOptions>(dataDesc)))
+	if (ui::imm::PropDropdownMenuList(ctx, "Filter by file", filterFile, ctx->GetCurrentBuildable()->Allocate<FileOptions>(dataDesc)))
 		refilter = true;
 	if (ui::imm::PropEditBool(ctx, "Show user created only", filterUserCreated))
 		refilter = true;

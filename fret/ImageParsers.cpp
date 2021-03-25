@@ -39,8 +39,8 @@ struct ReadImageIO
 typedef void ReadImage(ReadImageIO& io, const ImageInfo& info);
 struct ImageFormat
 {
-	StringView category;
-	StringView name;
+	ui::StringView category;
+	ui::StringView name;
 	ReadImage* readFunc;
 };
 
@@ -367,17 +367,17 @@ size_t GetImageFormatCount()
 	return sizeof(g_imageFormats) / sizeof(g_imageFormats[0]);
 }
 
-StringView GetImageFormatCategory(size_t fid)
+ui::StringView GetImageFormatCategory(size_t fid)
 {
 	return g_imageFormats[fid].category;
 }
 
-StringView GetImageFormatName(size_t fid)
+ui::StringView GetImageFormatName(size_t fid)
 {
 	return g_imageFormats[fid].name;
 }
 
-ui::Image* CreateImageFrom(IDataSource* ds, StringView fmt, const ImageInfo& info)
+ui::Image* CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo& info)
 {
 	ui::Canvas c(info.width, info.height);
 	auto* B = c.GetBytes();

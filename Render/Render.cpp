@@ -504,7 +504,7 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 		t *= w * 2;
 
 		Color4b colM = col;
-		colM.a = colM.a * w;
+		colM.a = uint8_t(colM.a * w);
 
 		rhi::Vertex verts[6] =
 		{
@@ -617,7 +617,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 	Color4b colA0 = col;
 	colA0.a = 0;
 	Color4b colM = col;
-	colM.a = colM.a * w;
+	colM.a = uint8_t(colM.a * w);
 
 	Point2f t_prev = {};
 	if (closed)
@@ -760,7 +760,7 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* te
 	IndexedTriangles(tex, verts, 4, indices, 6);
 }
 
-void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, Texture* tex, const AABB<float>& texouter, const AABB<float>& texinner)
+void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, Texture* tex, const AABB2f& texouter, const AABB2f& texinner)
 {
 	//  0  1  2  3
 	//  4  5  6  7
@@ -808,7 +808,7 @@ void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4
 	IndexedTriangles(tex, verts, 16, indices, 6 * 9);
 }
 
-void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col)
+void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col)
 {
 	auto& cutr = cutout;
 	rhi::Vertex verts[8] =
@@ -835,20 +835,20 @@ void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b c
 	IndexedTriangles(nullptr, verts, 8, indices, 24);
 }
 
-static AABB<int> scissorStack[100];
+static AABB2i scissorStack[100];
 static int scissorCount = 1;
 
 void ApplyScissor()
 {
 	_Flush();
-	AABB<int> r = scissorStack[scissorCount - 1];
+	AABB2i r = scissorStack[scissorCount - 1];
 	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }
 
 bool PushScissorRect(int x0, int y0, int x1, int y1)
 {
 	int i = scissorCount++;
-	AABB<int> r = scissorStack[i - 1];
+	AABB2i r = scissorStack[i - 1];
 	if (r.x0 < x0) r.x0 = x0;
 	if (r.x1 > x1) r.x1 = x1;
 	if (r.y0 < y0) r.y0 = y0;
@@ -871,7 +871,7 @@ void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 	ApplyScissor();
 }
 
-AABB<float> GetCurrentScissorRectF()
+AABB2f GetCurrentScissorRectF()
 {
 	return scissorStack[scissorCount - 1].Cast<float>();
 }
@@ -997,7 +997,7 @@ void InitTheme()
 	delete[] data;
 }
 
-AABB<float> GetThemeElementBorderWidths(EThemeElement e)
+ui::AABB2f GetThemeElementBorderWidths(EThemeElement e)
 {
 	auto& s = g_themeSprites[e];
 	return { float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) };
@@ -1006,10 +1006,10 @@ AABB<float> GetThemeElementBorderWidths(EThemeElement e)
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 {
 	const Sprite& s = g_themeSprites[e];
-	AABB<float> outer = { x0, y0, x1, y1 };
-	AABB<float> inner = outer.ShrinkBy({ float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) });
+	ui::AABB2f outer = { x0, y0, x1, y1 };
+	ui::AABB2f inner = outer.ShrinkBy({ float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) });
 	float ifw = 1.0f / (s.ox1 - s.ox0), ifh = 1.0f / (s.oy1 - s.oy0);
 	int s_ix0 = s.bx0, s_iy0 = s.by0, s_ix1 = (s.ox1 - s.ox0) - s.bx1, s_iy1 = (s.oy1 - s.oy0) - s.by1;
-	AABB<float> texinner = { s_ix0 * ifw, s_iy0 * ifh, s_ix1 * ifw, s_iy1 * ifh };
+	ui::AABB2f texinner = { s_ix0 * ifw, s_iy0 * ifh, s_ix1 * ifw, s_iy1 * ifh };
 	ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), g_themeTextures[e], { 0, 0, 1, 1 }, texinner);
 }

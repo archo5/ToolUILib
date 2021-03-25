@@ -19,12 +19,12 @@ struct MessageLogDataSource
 	virtual void OnDrawMessage(UIObject* context, size_t msg, UIRect area);
 };
 
-struct MessageLogView : Node
+struct MessageLogView : Buildable
 {
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	MessageLogDataSource* GetDataSource() const;
 	void SetDataSource(MessageLogDataSource* src);
@@ -52,14 +52,14 @@ struct TableDataSource
 	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
 };
 
-struct TableView : Node
+struct TableView : Buildable
 {
 	TableView();
 	~TableView();
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
@@ -99,7 +99,7 @@ struct TreeDataSource
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
 };
 
-struct TreeView : Node
+struct TreeView : Buildable
 {
 	struct PaintState;
 
@@ -107,8 +107,8 @@ struct TreeView : Node
 	~TreeView();
 	void OnPaint() override;
 	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
-	void OnEvent(UIEvent& e) override;
-	void Render(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
+	void Build(UIContainer* ctx) override;
 
 	TreeDataSource* GetDataSource() const;
 	void SetDataSource(TreeDataSource* src);

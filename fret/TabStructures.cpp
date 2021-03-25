@@ -5,12 +5,12 @@
 #include "Workspace.h"
 
 
-void TabStructures::Render(UIContainer* ctx)
+void TabStructures::Build(ui::UIContainer* ctx)
 {
 	if (workspace->ddiSrc.filterFileFollow && workspace->curOpenedFile < (int)workspace->openedFiles.size())
 		workspace->ddiSrc.filterFile = workspace->openedFiles[workspace->curOpenedFile]->ddFile;
 
-	auto& spstr = *ctx->Push<ui::SplitPane>();
+	auto& spstr = ctx->Push<ui::SplitPane>();
 	{
 		ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
@@ -28,19 +28,19 @@ void TabStructures::Render(UIContainer* ctx)
 		}
 		ui::Property::End(ctx);
 
-		auto* tv = ctx->Make<ui::TableView>();
-		curTable = tv;
-		*tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
-		tv->SetDataSource(&workspace->ddiSrc);
-		tv->SetSelectionStorage(&workspace->ddiSrc);
-		tv->SetSelectionMode(ui::SelectionMode::Single);
+		auto& tv = ctx->Make<ui::TableView>();
+		curTable = &tv;
+		tv + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+		tv.SetDataSource(&workspace->ddiSrc);
+		tv.SetSelectionStorage(&workspace->ddiSrc);
+		tv.SetSelectionMode(ui::SelectionMode::Single);
 		workspace->ddiSrc.refilter = true;
-		tv->CalculateColumnWidths();
-		tv->HandleEvent(UIEventType::SelectionChange) = [this, tv](UIEvent& e) { e.current->RerenderNode(); };
-		tv->HandleEvent(UIEventType::Click) = [this, tv](UIEvent& e)
+		tv.CalculateColumnWidths();
+		tv.HandleEvent(ui::EventType::SelectionChange) = [this, &tv](ui::Event& e) { e.current->Rebuild(); };
+		tv.HandleEvent(ui::EventType::Click) = [this, &tv](ui::Event& e)
 		{
-			size_t row = tv->GetHoverRow();
-			if (row != SIZE_MAX && e.GetButton() == UIMouseButton::Left && e.numRepeats == 2)
+			size_t row = tv.GetHoverRow();
+			if (row != SIZE_MAX && e.GetButton() == ui::MouseButton::Left && e.numRepeats == 2)
 			{
 				auto idx = workspace->ddiSrc._indices[row];
 				auto* SI = workspace->desc.instances[idx];
@@ -60,19 +60,19 @@ void TabStructures::Render(UIContainer* ctx)
 				{
 					workspace->curOpenedFile = ofid;
 					ofile->hexViewerState.basePos = SI->off;
-					tv->RerenderNode();
+					tv.Rebuild();
 				}
 			}
 		};
-		tv->HandleEvent(UIEventType::KeyAction) = [this, tv](UIEvent& e)
+		tv.HandleEvent(ui::EventType::KeyAction) = [this, &tv](ui::Event& e)
 		{
-			if (e.GetKeyAction() == UIKeyAction::Delete)
+			if (e.GetKeyAction() == ui::KeyAction::Delete)
 			{
 				if (workspace->desc.curInst)
 				{
 					workspace->desc.DeleteInstance(workspace->desc.curInst);
 					workspace->ddiSrc.refilter = true;
-					e.current->RerenderNode();
+					e.current->Rebuild();
 				}
 			}
 		};

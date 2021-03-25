@@ -32,20 +32,20 @@ struct StateButtonBase : UIElement
 
 struct StateToggleBase : StateButtonBase
 {
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 
 	virtual bool OnActivate() = 0;
 };
 
 struct StateToggle : StateToggleBase
 {
-	StateToggle* InitReadOnly(uint8_t state);
-	StateToggle* InitEditable(uint8_t state, uint8_t maxNumStates = 2);
+	StateToggle& InitReadOnly(uint8_t state);
+	StateToggle& InitEditable(uint8_t state, uint8_t maxNumStates = 2);
 
 	void OnSerialize(IDataSerializer& s) override;
 
 	uint8_t GetState() const override { return _state; }
-	StateToggle* SetState(uint8_t state);
+	StateToggle& SetState(uint8_t state);
 	bool OnActivate() override;
 
 	uint8_t _state = 0;
@@ -55,11 +55,11 @@ struct StateToggle : StateToggleBase
 template <class T>
 struct CheckboxFlagT : StateToggleBase
 {
-	CheckboxFlagT* Init(T& iref, T value)
+	CheckboxFlagT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
 		_value = value;
-		return this;
+		return *this;
 	}
 
 	uint8_t GetState() const override { return _iptr && (*_iptr & _value) == _value; }
@@ -81,10 +81,10 @@ struct CheckboxFlagT : StateToggleBase
 template <>
 struct CheckboxFlagT<bool> : StateToggleBase
 {
-	CheckboxFlagT* Init(bool& bref)
+	CheckboxFlagT& Init(bool& bref)
 	{
 		_bptr = &bref;
-		return this;
+		return *this;
 	}
 
 	bool OnActivate() override
@@ -102,11 +102,11 @@ struct CheckboxFlagT<bool> : StateToggleBase
 template <class T>
 struct RadioButtonT : StateToggleBase
 {
-	RadioButtonT* Init(T& iref, T value)
+	RadioButtonT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
 		_value = value;
-		return this;
+		return *this;
 	}
 
 	uint8_t GetState() const override { return _iptr && *_iptr == _value; }
@@ -156,10 +156,10 @@ struct ListBox : UIElement
 struct Selectable : UIElement
 {
 	void OnInit() override;
-	Selectable* Init(bool selected)
+	Selectable& Init(bool selected)
 	{
 		SetFlag(UIObject_IsChecked, selected);
-		return this;
+		return *this;
 	}
 };
 
@@ -183,7 +183,7 @@ struct Slider : UIElement
 {
 	void OnInit() override;
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 
 	double PosToQ(double x);
 	double QToValue(double q);
@@ -199,14 +199,14 @@ struct Slider : UIElement
 	{
 		SetLimits(limits);
 		SetValue(vp);
-		HandleEvent(UIEventType::Change) = [this, &vp](UIEvent&) { vp = (float)GetValue(); };
+		HandleEvent(EventType::Change) = [this, &vp](Event&) { vp = (float)GetValue(); };
 		return *this;
 	}
 	Slider& Init(double& vp, FloatLimits limits = { 0, 1, 0 })
 	{
 		SetLimits(limits);
 		SetValue(vp);
-		HandleEvent(UIEventType::Change) = [this, &vp](UIEvent&) { vp = GetValue(); };
+		HandleEvent(EventType::Change) = [this, &vp](Event&) { vp = GetValue(); };
 		return *this;
 	}
 
@@ -277,7 +277,7 @@ struct LabeledProperty : UIElement
 	{
 		Scope(UIContainer* c, const char* lblstr = nullptr) : ctx(c)
 		{
-			label = Begin(ctx, lblstr);
+			label = &Begin(ctx, lblstr);
 		}
 		~Scope()
 		{
@@ -288,7 +288,7 @@ struct LabeledProperty : UIElement
 		UIObject* label;
 	};
 
-	static LabeledProperty* Begin(UIContainer* ctx, const char* label = nullptr);
+	static LabeledProperty& Begin(UIContainer* ctx, const char* label = nullptr);
 	static void End(UIContainer* ctx);
 
 	void OnInit() override;
@@ -315,11 +315,11 @@ struct SplitPane : UIElement
 {
 	SplitPane();
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	void OnEvent(Event& e) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
-	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override;
-	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override;
+	Range2f GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override;
+	Range2f GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override;
 
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
@@ -348,7 +348,7 @@ struct ScrollbarV
 	style::Coord GetWidth();
 	UIRect GetThumbRect(const ScrollbarData& info);
 	void OnPaint(const ScrollbarData& info);
-	void OnEvent(const ScrollbarData& info, UIEvent& e);
+	void OnEvent(const ScrollbarData& info, Event& e);
 
 	style::BlockRef trackVStyle;
 	style::BlockRef thumbVStyle;
@@ -362,11 +362,11 @@ class ScrollArea : public UIElement
 public:
 	ScrollArea();
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
+	void OnEvent(Event& e) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
 
-	Size<float> estContentSize = {};
+	Size2f estContentSize = {};
 	float yoff = 0;
 	ScrollbarV sbv;
 };
@@ -391,7 +391,7 @@ struct TabButtonBase : UIElement
 	TabButtonBase();
 	void OnDestroy() override;
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 
 	virtual void OnSelect() {}
 	virtual bool IsSelected() const { return !!(flags & UIObject_IsChecked); }
@@ -399,13 +399,13 @@ struct TabButtonBase : UIElement
 
 struct TabButton : TabButtonBase
 {
-	TabButton* Init(bool selected)
+	TabButton& Init(bool selected)
 	{
 		SetFlag(UIObject_IsChecked, selected);
 		if (selected)
 			if (auto* g = FindParentOfType<TabGroup>())
 				g->_activeBtn = this;
-		return this;
+		return *this;
 	}
 	// implement Activate event to set source state
 };
@@ -413,14 +413,14 @@ struct TabButton : TabButtonBase
 template <class T>
 struct TabButtonT : TabButtonBase
 {
-	TabButtonT* Init(T& iref, T value)
+	TabButtonT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
 		_value = value;
 		if (iref == value)
 			if (auto* g = FindParentOfType<TabGroup>())
 				g->_activeBtn = this;
-		return this;
+		return *this;
 	}
 
 	void OnSelect() override
@@ -428,7 +428,7 @@ struct TabButtonT : TabButtonBase
 		if (!_iptr)
 			return;
 		*_iptr = _value;
-		RerenderNode();
+		Rebuild();
 	}
 	bool IsSelected() const override { return _iptr && *_iptr == _value; }
 
@@ -447,7 +447,7 @@ struct Textbox : UIElement
 {
 	Textbox();
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
@@ -465,7 +465,7 @@ struct Textbox : UIElement
 	template <size_t N> Textbox& Init(char (&val)[N])
 	{
 		SetText(val);
-		HandleEvent(UIEventType::Change) = [this, &val](UIEvent&)
+		HandleEvent(EventType::Change) = [this, &val](Event&)
 		{
 			auto& t = GetText();
 			size_t s = min(t.size(), N - 1);
@@ -500,7 +500,7 @@ struct CollapsibleTreeNode : UIElement
 {
 	CollapsibleTreeNode();
 	void OnPaint() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;
 
 	bool open = false;
@@ -511,17 +511,17 @@ struct CollapsibleTreeNode : UIElement
 struct BackgroundBlocker : UIElement
 {
 	void OnInit() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnButton();
 
 	style::RectAnchoredPlacement _fullScreenPlacement;
 };
 
 
-struct DropdownMenu : ui::Node
+struct DropdownMenu : Buildable
 {
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 
 	virtual void OnBuildButton(UIContainer* ctx);
 	virtual void OnBuildMenuWithLayout(UIContainer* ctx);
@@ -602,28 +602,28 @@ namespace imm {
 
 template <class MT, class T> bool DropdownMenuListCustom(UIContainer* ctx, T& val, OptionList* ol, ModInitList mods = {})
 {
-	auto* ddml = ctx->Make<MT>();
-	ddml->SetOptions(ol);
+	auto& ddml = ctx->Make<MT>();
+	ddml.SetOptions(ol);
 	for (auto& mod : mods)
-		mod->Apply(ddml);
+		mod->Apply(&ddml);
 
 	bool edited = false;
-	if (ddml->flags & UIObject_IsEdited)
+	if (ddml.flags & UIObject_IsEdited)
 	{
-		val = T(ddml->GetSelected());
-		ddml->flags &= ~UIObject_IsEdited;
-		ddml->_OnIMChange();
+		val = T(ddml.GetSelected());
+		ddml.flags &= ~UIObject_IsEdited;
+		ddml._OnIMChange();
 		edited = true;
 	}
 	else
-		ddml->SetSelected(uintptr_t(val));
+		ddml.SetSelected(uintptr_t(val));
 
-	ddml->HandleEvent(UIEventType::Commit) = [ddml](UIEvent& e)
+	ddml.HandleEvent(EventType::Commit) = [&ddml](Event& e)
 	{
-		if (e.target != ddml)
+		if (e.target != &ddml)
 			return;
 		e.current->flags |= UIObject_IsEdited;
-		e.current->RerenderContainerNode();
+		e.current->RebuildContainer();
 	};
 
 	return edited;
@@ -668,9 +668,9 @@ struct DragDropDataFrame : OverlayInfoFrame
 	DragDropDataFrame();
 };
 
-struct DefaultOverlayRenderer : Node
+struct DefaultOverlayBuilder : Buildable
 {
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	bool drawTooltip = true;
 	bool drawDragDrop = true;

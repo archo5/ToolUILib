@@ -5,9 +5,9 @@
 struct OpenedFile;
 
 
-struct TabInspect : ui::Node
+struct TabInspect : ui::Buildable
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	OpenedFile* of = nullptr;
 };

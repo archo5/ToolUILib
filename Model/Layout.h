@@ -4,11 +4,16 @@
 #include <functional>
 #include "../Core/Math.h"
 #include "../Core/String.h"
+#include "../Core/Image.h"
 
+
+namespace ui {
 
 struct UIObject;
 
-using UIRect = AABB<float>;
+using UIRect = AABB2f;
+
+}
 
 template <int& at>
 struct InstanceCounter
@@ -20,6 +25,11 @@ struct InstanceCounter
 
 
 namespace style {
+
+using UIObject = ui::UIObject;
+using UIRect = ui::UIRect;
+using Point2f = ui::Point2f;
+using Size2f = ui::Size2f;
 
 extern int g_numBlocks;
 
@@ -61,7 +71,7 @@ enum class Layout : uint8_t
 struct LayoutState
 {
 	UIRect finalContentRect;
-	Point<float> scaleOrigin;
+	Point2f scaleOrigin;
 };
 
 enum class EstSizeType
@@ -72,8 +82,8 @@ enum class EstSizeType
 
 struct Layout
 {
-	virtual float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type) = 0;
-	virtual float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type) = 0;
+	virtual float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
+	virtual float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
 	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
 };
 
@@ -88,15 +98,15 @@ struct PointAnchoredPlacement : Placement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
 
-	void SetAnchorAndPivot(Point<float> p)
+	void SetAnchorAndPivot(Point2f p)
 	{
 		anchor = p;
 		pivot = p;
 	}
 
-	Point<float> anchor = { 0, 0 };
-	Point<float> pivot = { 0, 0 };
-	Point<float> bias = { 0, 0 };
+	Point2f anchor = { 0, 0 };
+	Point2f pivot = { 0, 0 };
+	Point2f bias = { 0, 0 };
 	bool useContentBox = false;
 };
 

@@ -9,7 +9,7 @@ ui::DataCategoryTag DCT_MeshScriptChanged[1];
 typedef MSNode* CreateNodeFn();
 struct NodeCreationEntry
 {
-	StringView name;
+	ui::StringView name;
 	const char* menuName;
 	CreateNodeFn* fn;
 };
@@ -21,7 +21,7 @@ static NodeCreationEntry g_nodeTypes[] =
 	DEF_NODE(IndexData, "Index data"),
 };
 
-static MSNode* CreateNode(StringView name)
+static MSNode* CreateNode(ui::StringView name)
 {
 	for (auto& nt : g_nodeTypes)
 		if (nt.name == name)
@@ -214,15 +214,15 @@ MSData MeshScript::RunScript(IDataSource* src, IVariableSource* instCtx)
 	return ret;
 }
 
-void MeshScript::EditUI(UIContainer* ctx)
+void MeshScript::EditUI(ui::UIContainer* ctx)
 {
-	auto* sp1 = ctx->Push<ui::SplitPane>();
+	auto& sp1 = ctx->Push<ui::SplitPane>();
 	{
-		auto* tree = ctx->Make<ui::TreeEditor>();
-		*tree + ui::Width(style::Coord::Percent(100));
-		*tree + ui::Height(style::Coord::Percent(100));
-		tree->SetTree(this);
-		tree->itemUICallback = [this](UIContainer* ctx, ui::TreeEditor*, ui::TreePathRef path, void* data)
+		auto& tree = ctx->Make<ui::TreeEditor>();
+		tree + ui::Width(style::Coord::Percent(100));
+		tree + ui::Height(style::Coord::Percent(100));
+		tree.SetTree(this);
+		tree.itemUICallback = [this](ui::UIContainer* ctx, ui::TreeEditor*, ui::TreePathRef path, void* data)
 		{
 			ui::Property::Scope ps(ctx);
 			FindNode(path).Get()->InlineEditUI(ctx);
@@ -236,15 +236,15 @@ void MeshScript::EditUI(UIContainer* ctx)
 		ctx->Pop();
 	}
 	ctx->Pop();
-	sp1->SetDirection(false);
-	sp1->SetSplits({ 0.5f });
-	auto* cn = ctx->GetCurrentNode();
-	cn->Subscribe(DCT_MeshScriptChanged, this);
-	sp1->HandleEvent() = [cn](UIEvent& e)
+	sp1.SetDirection(false);
+	sp1.SetSplits({ 0.5f });
+	auto* cb = ctx->GetCurrentBuildable();
+	cb->Subscribe(DCT_MeshScriptChanged, this);
+	sp1.HandleEvent() = [cb](ui::Event& e)
 	{
-		if (e.type == UIEventType::IMChange ||
-			e.type == UIEventType::SelectionChange)
-			cn->Rerender();
+		if (e.type == ui::EventType::IMChange ||
+			e.type == ui::EventType::SelectionChange)
+			cb->Rebuild();
 	};
 }
 
@@ -374,14 +374,14 @@ static const char* g_primTypeNames[] =
 	"Quads",
 };
 
-void MSN_NewPrimitive::InlineEditUI(UIContainer* ctx)
+void MSN_NewPrimitive::InlineEditUI(ui::UIContainer* ctx)
 {
 	ctx->Textf("New primitive (%s)", g_primTypeNames[int(type)]) + ui::Padding(5);
 }
 
-void MSN_NewPrimitive::FullEditUI(UIContainer* ctx)
+void MSN_NewPrimitive::FullEditUI(ui::UIContainer* ctx)
 {
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_primTypeNames));
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_primTypeNames));
 	ui::imm::PropEditString(ctx, "Tex.inst.", texInst.expr.c_str(), [this](const char* v) { texInst.SetExpr(v); });
 }
 
@@ -436,7 +436,7 @@ template <class T> static void NormalizeDataT(std::vector<float>& data)
 	float tgtmin = minval ? -1 : 0;
 	float tgtmax = 1;
 	for (auto& elem : data)
-		elem = lerp(tgtmin, tgtmax, invlerp(minval, maxval, elem));
+		elem = ui::lerp(tgtmin, tgtmax, ui::invlerp(minval, maxval, elem));
 }
 static void NormalizeData_NONE(std::vector<float>&) {}
 typedef void NormalizeDataFn(std::vector<float>& data);
@@ -479,7 +479,7 @@ void MSN_VertexData::Do(MSContext& C)
 	int64_t v_attrOff = attrOff.Evaluate(*C.vs);
 
 	int destcomp = g_destComps[int(dest)];
-	int realcomp = min(ncomp, destcomp);
+	int realcomp = ui::min(ncomp, destcomp);
 
 	std::vector<float> data;
 	ReadVertexData(data, C.src, type, destcomp, realcomp, v_attrOff, v_count, v_stride);
@@ -502,15 +502,15 @@ void MSN_VertexData::Do(MSContext& C)
 static const char* g_dests[] = { "position", "normal", "texcoord", "color" };
 static const char* g_types[] = { "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64" };
 
-void MSN_VertexData::InlineEditUI(UIContainer* ctx)
+void MSN_VertexData::InlineEditUI(ui::UIContainer* ctx)
 {
 	ctx->Textf("vtx.data(%s) %sx%d", g_dests[int(dest)], g_types[int(type)], ncomp) + ui::Padding(5);
 }
 
-void MSN_VertexData::FullEditUI(UIContainer* ctx)
+void MSN_VertexData::FullEditUI(ui::UIContainer* ctx)
 {
-	ui::imm::PropDropdownMenuList(ctx, "Destination", dest, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_dests));
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_types));
+	ui::imm::PropDropdownMenuList(ctx, "Destination", dest, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_dests));
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_types));
 	ui::imm::PropEditInt(ctx, "# components", ncomp, {}, 1.0f, 1, 4);
 	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
 	ui::imm::PropEditString(ctx, "Stride", stride.expr.c_str(), [this](const char* v) { stride.SetExpr(v); });
@@ -555,14 +555,14 @@ void MSN_IndexData::Do(MSContext& C)
 
 static const char* g_idxtypes[] = { "u8", "u16", "u32" };
 
-void MSN_IndexData::InlineEditUI(UIContainer* ctx)
+void MSN_IndexData::InlineEditUI(ui::UIContainer* ctx)
 {
 	ctx->Textf("idx.data(%s)", g_idxtypes[int(type)]) + ui::Padding(5);
 }
 
-void MSN_IndexData::FullEditUI(UIContainer* ctx)
+void MSN_IndexData::FullEditUI(ui::UIContainer* ctx)
 {
-	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(g_idxtypes));
+	ui::imm::PropDropdownMenuList(ctx, "Type", type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(g_idxtypes));
 	ui::imm::PropEditString(ctx, "Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
 	ui::imm::PropEditString(ctx, "Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });
 }

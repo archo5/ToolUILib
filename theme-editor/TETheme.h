@@ -84,7 +84,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	uintptr_t GetNodeOutputCount(Node* node) override { return 1; }
 	void NodePropertyEditorUI(Node* node, UIContainer* ctx)
 	{
-		ctx->Push<PropertyList>()->splitPos = style::Coord::Percent(25);
+		ctx->Push<PropertyList>().splitPos = style::Coord::Percent(25);
 		static_cast<TE_Node*>(node)->PropertyUI(ctx);
 		ctx->Pop();
 	}
@@ -105,15 +105,15 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	}
 	Color4b GetNewLinkColor(const Pin& pin) override { return GetPinColor(pin); }
 
-	Point<float> GetNodePosition(Node* node) override { return static_cast<TE_Node*>(node)->position; }
-	void SetNodePosition(Node* node, const Point<float>& pos) override { static_cast<TE_Node*>(node)->position = pos; }
+	Point2f GetNodePosition(Node* node) override { return static_cast<TE_Node*>(node)->position; }
+	void SetNodePosition(Node* node, const Point2f& pos) override { static_cast<TE_Node*>(node)->position = pos; }
 
 	bool HasPreview(Node*) override { return true; }
 	bool IsPreviewEnabled(Node* node) override { return static_cast<TE_Node*>(node)->isPreviewEnabled; }
 	void SetPreviewEnabled(Node* node, bool v) override { static_cast<TE_Node*>(node)->isPreviewEnabled = v; }
 	void PreviewUI(Node* node, UIContainer* ctx) override { static_cast<TE_Node*>(node)->PreviewUI(ctx, this); }
 
-	void OnEditNode(UIEvent& e, Node* node) override;
+	void OnEditNode(Event& e, Node* node) override;
 
 	void InvalidateNode(TE_Node* n);
 	void InvalidateAllNodes();

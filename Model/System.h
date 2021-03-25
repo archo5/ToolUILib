@@ -7,24 +7,10 @@
 #include "Objects.h"
 
 
-#define DEBUG_FLOW(x) //x
+#define UI_DEBUG_FLOW(x) //x
 
 
-template <class T>
-struct TmpEdit
-{
-	TmpEdit(T& dst, T src) : dest(dst), backup(dst)
-	{
-		dst = src;
-	}
-	~TmpEdit()
-	{
-		dest = backup;
-	}
-	T& dest;
-	T backup;
-};
-
+namespace ui {
 
 template<class T> void Node_AddChild(T* node, T* ch)
 {
@@ -80,10 +66,10 @@ struct UIContainer
 			t->UnregisterAsOverlay();
 
 			// TODO is there a way to optimize this?
-			auto* node = dynamic_cast<ui::Node*>(obj);
-			decltype(node->_deferredDestructors) ddList;
-			if (node)
-				std::swap(node->_deferredDestructors, ddList);
+			auto* buildable = dynamic_cast<Buildable*>(obj);
+			decltype(buildable->_deferredDestructors) ddList;
+			if (buildable)
+				std::swap(buildable->_deferredDestructors, ddList);
 
 			if (T::Persistent)
 			{
@@ -100,11 +86,11 @@ struct UIContainer
 				DataReadSerializer drs(buf);
 				t->_SerializePersistent(drs);
 				// in case these flags have been set by ctor
-				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInRenderStack);
+				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInBuildStack);
 			}
 
-			if (node)
-				std::swap(node->_deferredDestructors, ddList);
+			if (buildable)
+				std::swap(buildable->_deferredDestructors, ddList);
 
 			t->_OnChangeStyle();
 			return t;
@@ -114,60 +100,60 @@ struct UIContainer
 		p->_OnChangeStyle();
 		return p;
 	}
-	void AddToRenderStack(ui::Node* n)
+	void AddToBuildStack(Buildable* n)
 	{
-		DEBUG_FLOW(printf("add %p to render stack\n", n));
-		if (n->_lastRenderedFrameID != _lastRenderedFrameID)
-			nodeRenderStack.Add(n);
+		UI_DEBUG_FLOW(printf("add %p to build stack\n", n));
+		if (n->_lastBuildFrameID != _lastBuildFrameID)
+			buildStack.Add(n);
 		else
-			nextFrameNodeRenderStack.Add(n);
+			nextFrameBuildStack.Add(n);
 	}
-	void ProcessNodeRenderStack();
+	void ProcessBuildStack();
 	void ProcessLayoutStack();
 
-	void _BuildUsing(ui::Node* n);
+	void _BuildUsing(Buildable* n);
 
-	void _Push(UIObject* obj, bool isCurNode);
+	void _Push(UIObject* obj, bool isCurBuildable);
 	void _Destroy(UIObject* obj);
 	void _Pop();
 	void Pop()
 	{
 		assert(objectStackSize > 1);
 		_Pop();
-		DEBUG_FLOW(printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name()));
+		UI_DEBUG_FLOW(printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name()));
 	}
-	template<class T, class = typename T::IsNode> T* Make(decltype(bool()) = 0)
+	template<class T, class = typename T::IsBuildable> T& Make(decltype(bool()) = 0)
 	{
 		T* obj = _Alloc<T>();
-		obj->_lastRenderedFrameID = _lastRenderedFrameID - 1;
-		DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
-		AddToRenderStack(obj);
-		return obj;
+		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
+		UI_DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
+		AddToBuildStack(obj);
+		return *obj;
 	}
-	template<class T, class = typename T::IsElement> T* Make(decltype(char()) = 0)
+	template<class T, class = typename T::IsElement> T& Make(decltype(char()) = 0)
 	{
-		auto* ret = Push<T>();
+		auto& ret = Push<T>();
 		Pop();
 		return ret;
 	}
 
-	template<class T, class = typename T::IsElement> T* MakeWithText(StringView text)
+	template<class T, class = typename T::IsElement> T& MakeWithText(StringView text)
 	{
-		auto* ret = Push<T>();
+		auto& ret = Push<T>();
 		Text(text);
 		Pop();
 		return ret;
 	}
-	template<class T, class = typename T::IsElement> T* MakeWithTextVA(const char* fmt, va_list args)
+	template<class T, class = typename T::IsElement> T& MakeWithTextVA(const char* fmt, va_list args)
 	{
-		auto* ret = Push<T>();
+		auto& ret = Push<T>();
 		TextVA(fmt, args);
 		Pop();
 		return ret;
 	}
-	template<class T, class = typename T::IsElement> T* MakeWithTextf(const char* fmt, ...)
+	template<class T, class = typename T::IsElement> T& MakeWithTextf(const char* fmt, ...)
 	{
-		auto* ret = Push<T>();
+		auto& ret = Push<T>();
 		va_list args;
 		va_start(args, fmt);
 		TextVA(fmt, args);
@@ -176,12 +162,12 @@ struct UIContainer
 		return ret;
 	}
 
-	template<class T, class = typename T::IsElement> T* Push()
+	template<class T, class = typename T::IsElement> T& Push()
 	{
 		auto* obj = _Alloc<T>();
-		DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
+		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
 		_Push(obj, false);
-		return obj;
+		return *obj;
 	}
 	template<class T> T* _Alloc()
 	{
@@ -192,19 +178,19 @@ struct UIContainer
 		if (obj == objChildStack[objectStackSize - 1])
 		{
 			// continue the match streak
-			DEBUG_FLOW(puts("/// match streak ///"));
+			UI_DEBUG_FLOW(puts("/// match streak ///"));
 			objChildStack[objectStackSize - 1] = obj->next;
 			lastIsNew = false;
 		}
 		else
 		{
-			DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
+			UI_DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
 			if (objChildStack[objectStackSize - 1])
 			{
-				// delete all nodes starting from this child, the match streak is gone
+				// delete all buildables starting from this child, the match streak is gone
 				DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
 			}
-			DEBUG_FLOW(puts(">>> new element >>>"));
+			UI_DEBUG_FLOW(puts(">>> new element >>>"));
 			Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
 			objChildStack[objectStackSize - 1] = nullptr;
 			lastIsNew = true;
@@ -213,20 +199,20 @@ struct UIContainer
 		_lastCreated = obj;
 		return obj;
 	}
-	ui::BoxElement& PushBox() { return *Push<ui::BoxElement>(); }
+	BoxElement& PushBox() { return Push<BoxElement>(); }
 
-	ui::TextElement& Text(StringView s)
+	TextElement& Text(StringView s)
 	{
-		auto* T = Push<ui::TextElement>();
-		T->SetText(s);
+		auto& T = Push<TextElement>();
+		T.SetText(s);
 		Pop();
-		return *T;
+		return T;
 	}
-	ui::TextElement& TextVA(const char* fmt, va_list args)
+	TextElement& TextVA(const char* fmt, va_list args)
 	{
 		return Text(FormatVA(fmt, args));
 	}
-	ui::TextElement& Textf(const char* fmt, ...)
+	TextElement& Textf(const char* fmt, ...)
 	{
 		va_list args;
 		va_start(args, fmt);
@@ -239,11 +225,11 @@ struct UIContainer
 	UIObject* GetLastCreated() const { return _lastCreated; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
-	ui::Node* GetCurrentNode() const { return _curNode; }
+	Buildable* GetCurrentBuildable() const { return _curBuildable; }
 
 	ui::FrameContents* owner = nullptr;
-	ui::Node* rootNode = nullptr;
-	ui::Node* _curNode = nullptr;
+	Buildable* rootBuildable = nullptr;
+	Buildable* _curBuildable = nullptr;
 	UIObject* _lastCreated = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
@@ -251,35 +237,28 @@ struct UIContainer
 	UIObject* objectStack[1024];
 	int debugpad4 = 0;
 	UIObject* objChildStack[1024];
-	//ui::Node* currentNode;
+	//Buildable* currentBuildable;
 	//int elementStackSize = 0;
 	int objectStackSize = 0;
-	uint64_t _lastRenderedFrameID = 1;
+	uint64_t _lastBuildFrameID = 1;
 
-	UIObjectDirtyStack nodeRenderStack{ UIObject_IsInRenderStack };
-	UIObjectDirtyStack nextFrameNodeRenderStack{ UIObject_IsInRenderStack };
+	UIObjectDirtyStack buildStack{ UIObject_IsInBuildStack };
+	UIObjectDirtyStack nextFrameBuildStack{ UIObject_IsInBuildStack };
 	UIObjectDirtyStack layoutStack{ UIObject_IsInLayoutStack };
 
 	bool lastIsNew = false;
 };
 
-class UILayoutEngine
+
+class BuildCallback : public Buildable
 {
 public:
-};
-
-
-namespace ui {
-
-class RenderNode : public Node
-{
-public:
-	void Render(UIContainer* ctx) override
+	void Build(UIContainer* ctx) override
 	{
-		renderFunc(ctx);
+		buildFunc(ctx);
 	}
 
-	std::function<void(UIContainer*)> renderFunc;
+	std::function<void(UIContainer*)> buildFunc;
 };
 
 struct Overlays
@@ -303,45 +282,45 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
-typedef Node* NodeAllocFunc(UIContainer*);
-template <class T> inline Node* NodeAlloc(UIContainer* ctx)
+typedef Buildable* BuildableAllocFunc(UIContainer*);
+template <class T> inline Buildable* BuildableAlloc(UIContainer* ctx)
 {
-	return ctx->AllocIfDifferent<T>(ctx->rootNode);
+	return ctx->AllocIfDifferent<T>(ctx->rootBuildable);
 }
 
-class InlineFrameNode;
+class InlineFrame;
 struct FrameContents
 {
 	FrameContents();
 	~FrameContents();
 	template <class T> T* AllocRoot()
 	{
-		return static_cast<T*>(_AllocRootImpl(NodeAlloc<T>));
+		return static_cast<T*>(_AllocRootImpl(BuildableAlloc<T>));
 	}
-	Node* _AllocRootImpl(NodeAllocFunc* f);
-	void RenderRoot();
+	Buildable* _AllocRootImpl(BuildableAllocFunc* f);
+	void BuildRoot();
 
 	UIContainer container;
-	UIEventSystem eventSystem;
+	EventSystem eventSystem;
 	Overlays overlays;
 	NativeWindowBase* nativeWindow = nullptr;
-	InlineFrameNode* owningFrame = nullptr;
+	InlineFrame* owningFrame = nullptr;
 };
 
-class InlineFrameNode : public Node
+class InlineFrame : public Buildable
 {
 public:
 
 	void OnDestroy() override;
-	void OnEvent(UIEvent& ev) override;
+	void OnEvent(Event& ev) override;
 	void OnPaint() override;
-	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override;
-	float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override;
+	float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type) override;
 	void OnLayoutChanged() override;
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	void SetFrameContents(FrameContents* contents);
-	void CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc);
+	void CreateFrameContents(std::function<void(UIContainer* ctx)> buildFunc);
 
 private:
 
@@ -349,13 +328,11 @@ private:
 	bool ownsContents = false;
 };
 
-} // ui
-
 
 inline const char* objtype(UIObject* obj)
 {
-	if (dynamic_cast<ui::Node*>(obj))
-		return "node";
+	if (dynamic_cast<Buildable*>(obj))
+		return "buildable";
 	if (dynamic_cast<UIElement*>(obj))
 		return "element";
 	return "object";
@@ -373,3 +350,5 @@ inline void dumptree(UIObject* obj, int lev = 0)
 	}
 	if (lev == 0) puts("");
 }
+
+} // ui

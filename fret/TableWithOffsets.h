@@ -6,7 +6,7 @@
 struct ConnectOffset
 {
 	uint64_t off;
-	Point<float> tablePos;
+	ui::Point2f tablePos;
 	bool sel;
 };
 

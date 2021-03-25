@@ -651,15 +651,15 @@ void SetScissorRect(int x0, int y0, int x1, int y1)
 	g_ctx->RSSetScissorRects(1, &rect);
 }
 
-static AABB<int> g_realVP;
-static void _SetViewport(const AABB<int>& vp)
+static AABB2i g_realVP;
+static void _SetViewport(const AABB2i& vp)
 {
 	g_realVP = vp;
 	D3D11_VIEWPORT viewport = { float(vp.x0), float(vp.y0), float(vp.x1 - vp.x0), float(vp.y1 - vp.y0), 0.0f, 1.0f };
 	g_ctx->RSSetViewports(1, &viewport);
 }
 
-static AABB<int> g_viewport;
+static AABB2i g_viewport;
 void SetViewport(int x0, int y0, int x1, int y1)
 {
 	g_viewport = { x0, y0, x1, y1 };
@@ -817,8 +817,8 @@ void SetForcedColor(const Color4b& col)
 }
 
 static Texture2D* g_prevTex;
-static AABB<int> g_3DRect;
-void Begin3DMode(const AABB<int>& rect)
+static AABB2i g_3DRect;
+void Begin3DMode(const AABB2i& rect)
 {
 	_SetViewport(rect);
 
@@ -836,7 +836,7 @@ void Begin3DMode(const AABB<int>& rect)
 	g_3DRect = rect;
 }
 
-AABB<int> End3DMode()
+AABB2i End3DMode()
 {
 	auto curRect = g_3DRect;
 

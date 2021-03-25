@@ -26,7 +26,7 @@ void SubRect::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-Point<float> SubPos::Resolve(const AbsRect& frame)
+Point2f SubPos::Resolve(const AbsRect& frame)
 {
 	return
 	{
@@ -97,7 +97,7 @@ void EditNCRef(UIContainer* ctx, std::weak_ptr<TE_NamedColor>& ncref)
 		{
 			mic.Add(nc->name) = [&ncref, &nc]() { ncref = nc; };
 		}
-		Menu(mic.Finalize()).Show(ctx->GetCurrentNode());
+		Menu(mic.Finalize()).Show(ctx->GetCurrentBuildable());
 	}
 }
 

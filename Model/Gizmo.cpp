@@ -279,15 +279,15 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 	_curXFWorldSpace = isWorldSpace;
 }
 
-bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& editable)
+bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable)
 {
 	if (e.IsPropagationStopped())
 		return false;
 
 	auto& editableNC = const_cast<IGizmoEditable&>(editable);
-	if (e.type == UIEventType::MouseMove)
+	if (e.type == EventType::MouseMove)
 	{
-		_lastCursorPos = { e.x, e.y };
+		_lastCursorPos = e.position;
 		if (_selectedPart == GizmoAction::None)
 		{
 			if (visible)
@@ -310,7 +310,7 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 			bool slowMotion = (e.GetModifierKeys() & MK_Shift) != 0;
 			bool snapping = (e.GetModifierKeys() & MK_Ctrl) != 0;
 
-			Point2f delta = { e.dx, e.dy };
+			Point2f delta = e.delta;
 
 			Vec3f axis = GetAxis(_selectedPart);
 			Vec3f tg1(axis.z, axis.x, axis.y);
@@ -483,7 +483,7 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 			}
 		}
 	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
 		if (_selectedPart != GizmoAction::None)
 		{
@@ -517,23 +517,23 @@ bool Gizmo::OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& edi
 				}
 			}
 
-			Start(_hoveredPart, { e.x, e.y }, cam, editable);
+			Start(_hoveredPart, e.position, cam, editable);
 
 			e.StopPropagation();
 		}
 	}
-	else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Right && _selectedPart != GizmoAction::None && visible)
+	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Right && _selectedPart != GizmoAction::None && visible)
 	{
 		_selectedPart = GizmoAction::None;
 		ui::DataReader dr(_origData);
 		editableNC.Transform(dr, nullptr);
 		return true;
 	}
-	else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
 		_selectedPart = GizmoAction::None;
 	}
-	else if (e.type == UIEventType::KeyDown)
+	else if (e.type == EventType::KeyDown)
 	{
 		switch (e.shortCode)
 		{

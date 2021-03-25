@@ -7,6 +7,7 @@
 #include "String.h"
 
 
+namespace ui {
 
 struct FieldInfo
 {
@@ -295,4 +296,4 @@ struct IObjectStringReaderIteratorBase : IObjectIteratorMinTypeUnserializeBase
 	}
 };
 
-
+} // ui

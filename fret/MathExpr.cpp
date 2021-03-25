@@ -564,10 +564,10 @@ enum METokenType
 struct Token
 {
 	METokenType type;
-	StringView text;
+	ui::StringView text;
 };
 
-static StringView operatorStrings[] =
+static ui::StringView operatorStrings[] =
 {
 	"(", ")", "[", "]", ",", "@", ".", "$",
 	"+", "-", "*", "/", "%",
@@ -585,11 +585,11 @@ static_assert(sizeof(operatorStrings) / sizeof(operatorStrings[0]) == sizeof(ope
 
 static bool IsNameChar(char c)
 {
-	return IsAlphaNum(c) || c == '_' || c == '#';
+	return ui::IsAlphaNum(c) || c == '_' || c == '#';
 }
 static bool IsFirstNameChar(char c)
 {
-	return IsAlpha(c) || c == '_' || c == '"' || c == '#';
+	return ui::IsAlpha(c) || c == '_' || c == '"' || c == '#';
 }
 
 struct Compiler
@@ -619,14 +619,14 @@ struct Compiler
 			}
 		}
 
-		if (it.first_char_is(IsDigit))
+		if (it.first_char_is(ui::IsDigit))
 		{
-			StringView num = it.take_while(IsDigit);
+			ui::StringView num = it.take_while(ui::IsDigit);
 			if (it.first_char_is([](char c) { return c == 'x'; }))
 			{
 				it.take_char();
-				StringView num2 = it.take_while(IsHexDigit);
-				num = StringView(num.data(), num2.end() - num.data());
+				ui::StringView num2 = it.take_while(ui::IsHexDigit);
+				num = ui::StringView(num.data(), num2.end() - num.data());
 			}
 			return { CONSTANT, num };
 		}
@@ -641,7 +641,7 @@ struct Compiler
 				bool isQuoted = it.first() == '"';
 				if (isQuoted)
 					it.take_char(); // eat the first '"'
-				StringView name = isQuoted ? it.take_while([](char c) { return c != '"'; }) : it.take_while(IsNameChar);
+				ui::StringView name = isQuoted ? it.take_while([](char c) { return c != '"'; }) : it.take_while(IsNameChar);
 				if (isQuoted && it.size())
 					it.take_char(); // eat the other '"'
 				if (name.empty())
@@ -779,7 +779,7 @@ struct Compiler
 			{
 				auto* N = new ConstantNode;
 				int64_t val = 0;
-				StringView it = tokens[r.from].text;
+				ui::StringView it = tokens[r.from].text;
 				if (it.starts_with("0x"))
 				{
 					it = it.substr(2);
@@ -1164,7 +1164,7 @@ struct Compiler
 		root->Dump(0);
 	}
 
-	StringView it;
+	ui::StringView it;
 	std::vector<Token> tokens;
 	ValueNode* root;
 };

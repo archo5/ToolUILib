@@ -128,10 +128,10 @@ void DDStructResource::Save(NamedTextSerializeWriter& w)
 	}
 }
 
-size_t DDStruct::FindFieldByName(StringView name)
+size_t DDStruct::FindFieldByName(ui::StringView name)
 {
 	for (size_t i = 0; i < fields.size(); i++)
-		if (StringView(fields[i].name) == name)
+		if (ui::StringView(fields[i].name) == name)
 			return i;
 	return SIZE_MAX;
 }
@@ -658,7 +658,7 @@ std::string DDStructInst::GetNextInstanceInfo(bool lazy) const
 	int64_t size = GetSize(lazy);
 	int64_t remSizeSub = remainingCountIsSize ? (sizeOverrideEnable ? sizeOverrideValue : size) : 1;
 
-	return Format("@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64,
+	return ui::Format("@%" PRId64 ", after %" PRId64 ", rem. %s: %" PRId64,
 		off + size,
 		sizeOverrideEnable ? sizeOverrideValue : size,
 		remainingCountIsSize ? "size" : "count",

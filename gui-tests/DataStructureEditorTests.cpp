@@ -44,11 +44,11 @@ static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
 }
 
 
-struct SequenceEditorsTest : ui::Node
+struct SequenceEditorsTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 
@@ -100,17 +100,17 @@ struct SequenceEditorsTest : ui::Node
 
 		ctx->Pop();
 
-		ctx->Make<ui::DefaultOverlayRenderer>();
+		ctx->Make<ui::DefaultOverlayBuilder>();
 	}
 
-	void SeqEdit(UIContainer* ctx, ui::ISequence* seq, ui::ISelectionStorage* sel)
+	void SeqEdit(ui::UIContainer* ctx, ui::ISequence* seq, ui::ISelectionStorage* sel)
 	{
 		ctx->Make<ui::SequenceEditor>()
-			->SetSequence(seq)
+			.SetSequence(seq)
 			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
 			.SetContextMenuSource(&g_infoDumpCMS)
-			.itemUICallback = [](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			.itemUICallback = [](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(ptr));
 		};
@@ -144,7 +144,7 @@ struct SequenceEditorsTest : ui::Node
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
 	bool setSelectionStorage = true;
 };
-void Test_SequenceEditors(UIContainer* ctx)
+void Test_SequenceEditors(ui::UIContainer* ctx)
 {
 	ctx->Make<SequenceEditorsTest>();
 }
@@ -457,11 +457,11 @@ struct Tree : ui::ITree
 };
 } // cva
 
-struct TreeEditorsTest : ui::Node
+struct TreeEditorsTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		{
 			ui::Property::Scope ps(ctx);
@@ -516,14 +516,14 @@ struct TreeEditorsTest : ui::Node
 
 		ctx->Pop();
 
-		ctx->Make<ui::DefaultOverlayRenderer>();
+		ctx->Make<ui::DefaultOverlayBuilder>();
 	}
 
-	void TreeEdit(UIContainer* ctx, ui::ITree* itree)
+	void TreeEdit(ui::UIContainer* ctx, ui::ITree* itree)
 	{
 		ctx->Make<ui::TreeEditor>()
-			->SetTree(itree)
-			.itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
+			.SetTree(itree)
+			.itemUICallback = [](ui::UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
 			ui::imm::PropEditInt(ctx, "\bvalue", *static_cast<int*>(data));
 		};
@@ -532,7 +532,7 @@ struct TreeEditorsTest : ui::Node
 	cpa::Tree cpaTree;
 	cva::Tree cvaTree;
 };
-void Test_TreeEditors(UIContainer* ctx)
+void Test_TreeEditors(ui::UIContainer* ctx)
 {
 	ctx->Make<TreeEditorsTest>();
 }
@@ -563,11 +563,11 @@ struct RandomNumberDataSource : ui::TableDataSource, ui::ISelectionStorage
 }
 g_randomNumbers;
 
-struct TableViewTest : ui::Node
+struct TableViewTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		GetStyle().SetLayout(style::layouts::EdgeSlice());
 
@@ -579,23 +579,23 @@ struct TableViewTest : ui::Node
 			ui::imm::RadioButton(ctx, selectionType, ui::SelectionMode::Multiple, "Multiple");
 		}
 
-		auto* tv = ctx->Make<ui::TableView>();
-		*tv + ui::Height(style::Coord::Percent(100));
-		tv->SetSelectionMode(selectionType);
-		tv->SetSelectionStorage(&g_randomNumbers);
-		tv->SetDataSource(&g_randomNumbers);
-		tv->SetContextMenuSource(&g_infoDumpCMS);
+		auto& tv = ctx->Make<ui::TableView>();
+		tv + ui::Height(style::Coord::Percent(100));
+		tv.SetSelectionMode(selectionType);
+		tv.SetSelectionStorage(&g_randomNumbers);
+		tv.SetDataSource(&g_randomNumbers);
+		tv.SetContextMenuSource(&g_infoDumpCMS);
 	}
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
 };
-void Test_TableView(UIContainer* ctx)
+void Test_TableView(ui::UIContainer* ctx)
 {
 	ctx->Make<TableViewTest>();
 }
 
 
-struct MessageLogViewTest : ui::Node
+struct MessageLogViewTest : ui::Buildable
 {
 	struct Message
 	{
@@ -630,7 +630,7 @@ struct MessageLogViewTest : ui::Node
 		{
 			return MLV_Common::GetMessageWidth(context, msg) + GetMessageHeight(context);
 		}
-		void OnDrawMessage(UIObject* context, size_t msg, UIRect area) override
+		void OnDrawMessage(UIObject* context, size_t msg, ui::UIRect area) override
 		{
 			float h = area.GetHeight();
 			ui::draw::RectCol(area.x0 + 4, area.y0 + 4, area.x0 + h - 4, area.y1 - 4, ui::Color4b(200, 200, 200));
@@ -683,7 +683,7 @@ struct MessageLogViewTest : ui::Node
 			mlvI->ScrollToEnd();
 	}
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		{
 			ui::Property::Scope ps(ctx);
@@ -711,18 +711,18 @@ struct MessageLogViewTest : ui::Node
 				+ ui::Height(style::Coord::Percent(100));
 			{
 				ctx->Text("single line");
-				*ctx->Push<ui::ListBox>()
+				ctx->Push<ui::ListBox>()
 					;// +ui::Height(style::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_R>();
 					rds->msgs = &messages;
-					auto* mlv = ctx->Make<ui::MessageLogView>();
-					*mlv + ui::Height(style::Coord::Percent(100));
-					mlv->GetLivenessToken();
-					mlv->SetDataSource(rds);
+					auto& mlv = ctx->Make<ui::MessageLogView>();
+					mlv + ui::Height(style::Coord::Percent(100));
+					mlv.GetLivenessToken();
+					mlv.SetDataSource(rds);
 
-					mlvR = mlv;
-					mlvRtoken = mlv->GetLivenessToken();
+					mlvR = &mlv;
+					mlvRtoken = mlv.GetLivenessToken();
 				}
 				ctx->Pop();
 			}
@@ -734,17 +734,17 @@ struct MessageLogViewTest : ui::Node
 				+ ui::Height(style::Coord::Percent(100));
 			{
 				ctx->Text("two lines, custom drawing");
-				*ctx->Push<ui::ListBox>()
+				ctx->Push<ui::ListBox>()
 					;// +ui::Height(style::Coord::Percent(100));
 				{
 					auto* rds = Allocate<MLV_I>();
 					rds->msgs = &messages;
-					auto* mlv = ctx->Make<ui::MessageLogView>();
-					*mlv + ui::Height(style::Coord::Percent(100));
-					mlv->SetDataSource(rds);
+					auto& mlv = ctx->Make<ui::MessageLogView>();
+					mlv + ui::Height(style::Coord::Percent(100));
+					mlv.SetDataSource(rds);
 
-					mlvI = mlv;
-					mlvItoken = mlv->GetLivenessToken();
+					mlvI = &mlv;
+					mlvItoken = mlv.GetLivenessToken();
 				}
 				ctx->Pop();
 			}
@@ -755,12 +755,12 @@ struct MessageLogViewTest : ui::Node
 
 	std::vector<Message> messages;
 
-	LivenessToken mlvRtoken;
+	ui::LivenessToken mlvRtoken;
 	ui::MessageLogView* mlvR;
-	LivenessToken mlvItoken;
+	ui::LivenessToken mlvItoken;
 	ui::MessageLogView* mlvI;
 };
-void Test_MessageLogView(UIContainer* ctx)
+void Test_MessageLogView(ui::UIContainer* ctx)
 {
 	ctx->Make<MessageLogViewTest>();
 }

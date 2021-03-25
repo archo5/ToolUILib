@@ -72,7 +72,7 @@ struct IVariableSource
 
 struct PredefinedConstant
 {
-	StringView name;
+	ui::StringView name;
 	int64_t value;
 };
 

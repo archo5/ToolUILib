@@ -6,7 +6,7 @@
 #include "../Render/Primitives.h"
 
 
-struct StateButtonsTest : ui::Node
+struct StateButtonsTest : ui::Buildable
 {
 	static std::string GetStateText(uint8_t s)
 	{
@@ -36,7 +36,7 @@ struct StateButtonsTest : ui::Node
 		}
 	}
 
-	void MakeContents(UIContainer* ctx, const char* text, int row)
+	void MakeContents(ui::UIContainer* ctx, const char* text, int row)
 	{
 		switch (row)
 		{
@@ -59,12 +59,12 @@ struct StateButtonsTest : ui::Node
 			ctx->Text(GetStateText(stb->GetState()) + text) + ui::Padding(5);
 			break;
 		case 5:
-			ctx->Make<ui::ColorBlock>()->SetColor(GetStateColor(stb->GetState()));
+			ctx->Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));
 			ctx->Text(text) + ui::Padding(4);
 			break;
 		case 6:
 			ctx->MakeWithText<ui::ColorBlock>(text)
-				->SetColor(GetStateColorDark(stb->GetState()))
+				.SetColor(GetStateColorDark(stb->GetState()))
 				+ ui::Width(style::Coord::Undefined());
 			break;
 		case 7: {
@@ -77,7 +77,7 @@ struct StateButtonsTest : ui::Node
 		}
 	}
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		constexpr int NUM_STYLES = 8;
 
@@ -89,7 +89,7 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(cb1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { cb1 = !cb1; Rerender(); };
+				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(cb1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { cb1 = !cb1; Rebuild(); };
 				MakeContents(ctx, "one", i);
 				ctx->Pop();
 			}
@@ -102,8 +102,8 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto* cbbs = ctx->Push<ui::StateToggle>()->InitEditable(cb1, 2);
-				(stb = cbbs)->HandleEvent(UIEventType::Change) = [this, cbbs](UIEvent&) { cb1 = cbbs->GetState(); Rerender(); };
+				auto& cbbs = ctx->Push<ui::StateToggle>().InitEditable(cb1, 2);
+				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb1 = cbbs.GetState(); Rebuild(); };
 				MakeContents(ctx, "two", i);
 				ctx->Pop();
 			}
@@ -116,7 +116,7 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				*(stb = ctx->Push<ui::CheckboxFlagT<bool>>()->Init(cb1)) + ui::RerenderOnChange();
+				*(stb = &ctx->Push<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
 				MakeContents(ctx, "three", i);
 				ctx->Pop();
 			}
@@ -129,8 +129,8 @@ struct StateButtonsTest : ui::Node
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto* cbbs = ctx->Push<ui::StateToggle>()->InitEditable(cb3state, 3);
-				(stb = cbbs)->HandleEvent(UIEventType::Change) = [this, cbbs](UIEvent&) { cb3state = cbbs->GetState(); Rerender(); };
+				auto& cbbs = ctx->Push<ui::StateToggle>().InitEditable(cb3state, 3);
+				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb3state = cbbs.GetState(); Rebuild(); };
 				MakeContents(ctx, "four", i);
 				ctx->Pop();
 			}
@@ -145,11 +145,11 @@ struct StateButtonsTest : ui::Node
 			{
 				ui::Property::Scope ps(ctx);
 
-				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 0))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 0; Rerender(); };
+				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
 				MakeContents(ctx, "r1a", i);
 				ctx->Pop();
 
-				(stb = ctx->Push<ui::StateToggle>()->InitReadOnly(rb1 == 1))->HandleEvent(UIEventType::Activate) = [this](UIEvent&) { rb1 = 1; Rerender(); };
+				(stb = &ctx->Push<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
 				MakeContents(ctx, "r1b", i);
 				ctx->Pop();
 			}
@@ -164,11 +164,11 @@ struct StateButtonsTest : ui::Node
 			{
 				ui::Property::Scope ps(ctx);
 
-				*(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 0)) + ui::RerenderOnChange();
+				*(stb = &ctx->Push<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
 				MakeContents(ctx, "r2a", i);
 				ctx->Pop();
 
-				*(stb = ctx->Push<ui::RadioButtonT<int>>()->Init(rb1, 1)) + ui::RerenderOnChange();
+				*(stb = &ctx->Push<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
 				MakeContents(ctx, "r2b", i);
 				ctx->Pop();
 			}
@@ -181,43 +181,43 @@ struct StateButtonsTest : ui::Node
 	int cb3state = 0;
 	int rb1 = 0;
 };
-void Test_StateButtons(UIContainer* ctx)
+void Test_StateButtons(ui::UIContainer* ctx)
 {
 	ctx->Make<StateButtonsTest>();
 }
 
 
-struct PropertyListTest : ui::Node
+struct PropertyListTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::PropertyList>();
 
-		ctx->Push<ui::LabeledProperty>()->SetText("label for 1");
+		ctx->Push<ui::LabeledProperty>().SetText("label for 1");
 		ctx->Text("test 1");
 		ctx->Pop();
 
 		ctx->MakeWithText<ui::Button>("interjection");
 
-		ctx->Push<ui::LabeledProperty>()->SetText("and for 2").GetLabelStyle().SetFontWeight(style::FontWeight::Bold);
+		ctx->Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(style::FontWeight::Bold);
 		ctx->MakeWithText<ui::Button>("test 2");
 		ctx->Pop();
 
 		ctx->PushBox().GetStyle().SetPaddingLeft(32);
 		{
-			ctx->Push<ui::LabeledProperty>()->SetText("also 3");
+			ctx->Push<ui::LabeledProperty>().SetText("also 3");
 			ctx->Text("test 3 elevated");
 			ctx->Pop();
 
-			auto s = ctx->Push<ui::LabeledProperty>()->SetText("and 4 (brief sublabels)").GetStyle();
+			auto s = ctx->Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)").GetStyle();
 			s.SetLayout(style::layouts::StackExpand());
 			s.SetStackingDirection(style::StackingDirection::LeftToRight);
 			{
-				ctx->Push<ui::LabeledProperty>()->SetText("X").SetBrief(true);
+				ctx->Push<ui::LabeledProperty>().SetText("X").SetBrief(true);
 				ctx->MakeWithText<ui::Button>("A");
 				ctx->Pop();
 
-				ctx->Push<ui::LabeledProperty>()->SetText("Y").SetBrief(true);
+				ctx->Push<ui::LabeledProperty>().SetText("Y").SetBrief(true);
 				ctx->MakeWithText<ui::Button>("B");
 				ctx->Pop();
 			}
@@ -228,33 +228,33 @@ struct PropertyListTest : ui::Node
 		ctx->Pop();
 	}
 };
-void Test_PropertyList(UIContainer* ctx)
+void Test_PropertyList(ui::UIContainer* ctx)
 {
 	ctx->Make<PropertyListTest>();
 }
 
 
-struct SlidersTest : ui::Node
+struct SlidersTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		static float sldval0 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(sldval0, { 0, 1 });
+		ctx->Make<ui::Slider>().Init(sldval0, { 0, 1 });
 
 		ui::Property::Begin(ctx, "Slider 1: 0-2 step=0");
 		static float sldval1 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(sldval1, { 0, 2 });
+		ctx->Make<ui::Slider>().Init(sldval1, { 0, 2 });
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 2: 0-2 step=0.1");
 		static float sldval2 = 0.63f;
-		ctx->Make<ui::Slider>()->Init(sldval2, { 0, 2, 0.1 });
+		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 });
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 3: custom track bg");
 		static float sldval3 = 0.63f;
 		{
-			auto& s = ctx->Make<ui::Slider>()->Init(sldval3, { 0, 1 });
+			auto& s = ctx->Make<ui::Slider>().Init(sldval3, { 0, 1 });
 			style::Accessor a = s.GetTrackStyle();
 			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const style::PaintInfo& info)
 			{
@@ -267,33 +267,33 @@ struct SlidersTest : ui::Node
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Slider 4: vert stretched");
-		ctx->Make<ui::Slider>()->Init(sldval2, { 0, 2, 0.1 }) + ui::Height(40);
+		ctx->Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::Height(40);
 		ui::Property::End(ctx);
 
 		ui::Property::Begin(ctx, "Color picker parts");
 		static float hue = 0.6f, sat = 0.3f, val = 0.8f;
 		{
-			auto s = ctx->Make<ui::HueSatPicker>()->Init(hue, sat).GetStyle();
+			auto s = ctx->Make<ui::HueSatPicker>().Init(hue, sat).GetStyle();
 			s.SetWidth(100);
 			s.SetHeight(100);
 		}
 		{
-			auto s = ctx->Make<ui::ColorCompPicker2D>()->Init(hue, sat).GetStyle();
+			auto s = ctx->Make<ui::ColorCompPicker2D>().Init(hue, sat).GetStyle();
 			s.SetWidth(120);
 			s.SetHeight(100);
 		}
 		ui::Property::End(ctx);
 	}
 };
-void Test_Sliders(UIContainer* ctx)
+void Test_Sliders(ui::UIContainer* ctx)
 {
 	ctx->Make<SlidersTest>();
 }
 
 
-struct SplitPaneTest : ui::Node
+struct SplitPaneTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		GetStyle().SetWidth(style::Coord::Percent(100));
 		GetStyle().SetHeight(style::Coord::Percent(100));
@@ -303,7 +303,7 @@ struct SplitPaneTest : ui::Node
 		ctx->MakeWithText<ui::Panel>("Pane A");
 		ctx->MakeWithText<ui::Panel>("Pane B");
 
-		ctx->Push<ui::SplitPane>()->SetDirection(true);
+		ctx->Push<ui::SplitPane>().SetDirection(true);
 
 		ctx->MakeWithText<ui::Panel>("Pane C");
 		ctx->MakeWithText<ui::Panel>("Pane D");
@@ -314,31 +314,31 @@ struct SplitPaneTest : ui::Node
 		ctx->Pop();
 	}
 };
-void Test_SplitPane(UIContainer* ctx)
+void Test_SplitPane(ui::UIContainer* ctx)
 {
 	ctx->Make<SplitPaneTest>();
 }
 
 
-struct TabsTest : ui::Node
+struct TabsTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::TabGroup>();
 		{
 			ctx->Push<ui::TabButtonList>();
 			{
-				ctx->Push<ui::TabButtonT<int>>()->Init(tab1, 0);
+				ctx->Push<ui::TabButtonT<int>>().Init(tab1, 0);
 				ctx->Text("First tab") + ui::Padding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 
-				ctx->Push<ui::TabButton>()->Init(tab1 == 1)->HandleEvent(UIEventType::Activate) = [this](UIEvent& e)
+				ctx->Push<ui::TabButton>().Init(tab1 == 1).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
 				{
 					if (e.target == e.current)
 					{
 						tab1 = 1;
-						Rerender();
+						Rebuild();
 					}
 				};
 				ctx->Text("Second tab") + ui::Padding(5);
@@ -347,13 +347,13 @@ struct TabsTest : ui::Node
 			}
 			ctx->Pop();
 
-			ctx->Push<ui::TabPanel>()->SetVisible(tab1 == 0);
+			ctx->Push<ui::TabPanel>().SetVisible(tab1 == 0);
 			{
 				ctx->Text("Contents of the first tab (SetVisible)");
 			}
 			ctx->Pop();
 
-			ctx->Push<ui::TabPanel>()->SetVisible(tab1 == 1);
+			ctx->Push<ui::TabPanel>().SetVisible(tab1 == 1);
 			{
 				ctx->Text("Contents of the second tab (SetVisible)");
 			}
@@ -365,19 +365,19 @@ struct TabsTest : ui::Node
 		{
 			ctx->Push<ui::TabButtonList>();
 			{
-				ctx->Push<ui::TabButton>()->Init(tab2 == 0)->HandleEvent(UIEventType::Activate) = [this](UIEvent& e)
+				ctx->Push<ui::TabButton>().Init(tab2 == 0).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
 				{
 					if (e.target == e.current)
 					{
 						tab2 = 0;
-						Rerender();
+						Rebuild();
 					}
 				};
 				ctx->Text("First tab") + ui::Padding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
 
-				ctx->Push<ui::TabButtonT<int>>()->Init(tab2, 1);
+				ctx->Push<ui::TabButtonT<int>>().Init(tab2, 1);
 				ctx->Text("Second tab") + ui::Padding(5);
 				ctx->MakeWithText<ui::Button>("button");
 				ctx->Pop();
@@ -388,7 +388,7 @@ struct TabsTest : ui::Node
 			{
 				ctx->Push<ui::TabPanel>();
 				{
-					ctx->Text("Contents of the first tab (conditional render)");
+					ctx->Text("Contents of the first tab (conditional build)");
 				}
 				ctx->Pop();
 			}
@@ -397,7 +397,7 @@ struct TabsTest : ui::Node
 			{
 				ctx->Push<ui::TabPanel>();
 				{
-					ctx->Text("Contents of the second tab (conditional render)");
+					ctx->Text("Contents of the second tab (conditional build)");
 				}
 				ctx->Pop();
 			}
@@ -405,34 +405,34 @@ struct TabsTest : ui::Node
 		ctx->Pop();
 	}
 
-	void OnSerialize(IDataSerializer& s)
+	void OnSerialize(ui::IDataSerializer& s)
 	{
 		s << tab1 << tab2;
 	}
 
 	int tab1 = 0, tab2 = 0;
 };
-void Test_Tabs(UIContainer* ctx)
+void Test_Tabs(ui::UIContainer* ctx)
 {
 	ctx->Make<TabsTest>();
 }
 
 
-struct ScrollbarsTest : ui::Node
+struct ScrollbarsTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
 	int count = 20;
 	bool expanding = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		GetStyle().SetLayout(style::layouts::EdgeSlice());
 
 		ui::imm::PropEditInt(ctx, "\bCount", count);
 		ui::imm::PropEditBool(ctx, "\bExpanding", expanding);
 
-		auto& sa = *ctx->Push<ui::ScrollArea>();
+		auto& sa = ctx->Push<ui::ScrollArea>();
 		if (!expanding)
 			sa + ui::Width(300) + ui::Height(200);
 		else
@@ -444,55 +444,55 @@ struct ScrollbarsTest : ui::Node
 		ctx->Pop();
 	}
 };
-void Test_Scrollbars(UIContainer* ctx)
+void Test_Scrollbars(ui::UIContainer* ctx)
 {
 	ctx->Make<ScrollbarsTest>();
 }
 
 
-struct ColorBlockTest : ui::Node
+struct ColorBlockTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Default color block");
-		ctx->Make<ui::ColorBlock>()->SetColor(colorA);
-		ctx->Make<ui::ColorBlock>()->SetColor(colorB);
+		ctx->Make<ui::ColorBlock>().SetColor(colorA);
+		ctx->Make<ui::ColorBlock>().SetColor(colorB);
 
 		ctx->Text("Without edge");
-		ctx->Make<ui::ColorBlock>()->SetColor(colorA) + ui::Padding(0);
-		ctx->Make<ui::ColorBlock>()->SetColor(colorB) + ui::Padding(0);
+		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::Padding(0);
+		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::Padding(0);
 
 		ctx->Text("Custom size");
-		ctx->Make<ui::ColorBlock>()->SetColor(colorA) + ui::Width(200) + ui::Height(40);
-		ctx->Make<ui::ColorBlock>()->SetColor(colorB) + ui::Width(200) + ui::Height(40);
+		ctx->Make<ui::ColorBlock>().SetColor(colorA) + ui::Width(200) + ui::Height(40);
+		ctx->Make<ui::ColorBlock>().SetColor(colorB) + ui::Width(200) + ui::Height(40);
 
 		ctx->Text("Color inspect block");
-		ctx->Make<ui::ColorInspectBlock>()->SetColor(colorA);
-		ctx->Make<ui::ColorInspectBlock>()->SetColor(colorB);
+		ctx->Make<ui::ColorInspectBlock>().SetColor(colorA);
+		ctx->Make<ui::ColorInspectBlock>().SetColor(colorB);
 
 		ctx->Text("Assembled");
 		auto C = colorB;
-		*ctx->Push<ui::Panel>()
+		ctx->Push<ui::Panel>()
 			+ ui::Padding(3);
 		{
 			ctx->PushBox()
 				+ ui::Layout(style::layouts::StackExpand())
 				+ ui::StackingDirection(style::StackingDirection::LeftToRight);
 			{
-				ctx->Make<ui::ColorBlock>()->SetColor(C.GetOpaque())
+				ctx->Make<ui::ColorBlock>().SetColor(C.GetOpaque())
 					+ ui::Padding(0)
 					+ ui::Width(style::Coord::Percent(50));
-				ctx->Make<ui::ColorBlock>()->SetColor(C)
+				ctx->Make<ui::ColorBlock>().SetColor(C)
 					+ ui::Padding(0)
 					+ ui::Width(style::Coord::Percent(50));
 			}
 			ctx->Pop();
-			ctx->Push<ui::ColorBlock>()->SetColor(ui::Color4b::Black())
+			ctx->Push<ui::ColorBlock>().SetColor(ui::Color4b::Black())
 				+ ui::Padding(0)
 				+ ui::Width(style::Coord::Percent(100))
 				+ ui::Height(4);
 			{
-				ctx->Make<ui::ColorBlock>()->SetColor(ui::Color4b::White())
+				ctx->Make<ui::ColorBlock>().SetColor(ui::Color4b::White())
 					+ ui::Padding(0)
 					+ ui::Width(style::Coord::Percent(100.f * C.a / 255.f))
 					+ ui::Height(4);
@@ -505,13 +505,13 @@ struct ColorBlockTest : ui::Node
 	ui::Color4b colorA = { 240, 180, 120, 255 };
 	ui::Color4b colorB = { 120, 180, 240, 120 };
 };
-void Test_ColorBlock(UIContainer* ctx)
+void Test_ColorBlock(ui::UIContainer* ctx)
 {
 	ctx->Make<ColorBlockTest>();
 }
 
 
-struct ImageTest : ui::Node
+struct ImageTest : ui::Buildable
 {
 	ImageTest()
 	{
@@ -527,7 +527,7 @@ struct ImageTest : ui::Node
 	{
 		delete img;
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		style::BlockRef pbr = ui::Theme::current->panel;
 		style::Accessor pa(pbr, nullptr);
@@ -548,17 +548,17 @@ struct ImageTest : ui::Node
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			ctx->Push<ui::Panel>()->SetStyle(pbr);
+			ctx->Push<ui::Panel>().SetStyle(pbr);
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					ctx->Push<ui::Panel>()->SetStyle(pbr);
+					ctx->Push<ui::Panel>().SetStyle(pbr);
 					ctx->Make<ui::ImageElement>()
-						->SetImage(img)
-						->SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
-						->SetStyle(mode / 3 ? ibr2 : ibr);
+						.SetImage(img)
+						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
+						.SetStyle(mode / 3 ? ibr2 : ibr);
 					ctx->Pop();
 				}
 			}
@@ -571,33 +571,33 @@ struct ImageTest : ui::Node
 
 	ui::Image* img;
 };
-void Test_Image(UIContainer* ctx)
+void Test_Image(ui::UIContainer* ctx)
 {
 	ctx->Make<ImageTest>();
 }
 
 
 static ui::Color4f colorPickerTestCol;
-struct ColorPickerTest : ui::Node
+struct ColorPickerTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		auto& cp = ctx->Make<ui::ColorPicker>()->SetColor(colorPickerTestCol);
-		cp.HandleEvent(UIEventType::Change) = [&cp](UIEvent& e)
+		auto& cp = ctx->Make<ui::ColorPicker>().SetColor(colorPickerTestCol);
+		cp.HandleEvent(ui::EventType::Change) = [&cp](ui::Event& e)
 		{
 			colorPickerTestCol = cp.GetColor().GetRGBA();
 		};
 
-		ctx->Make<ui::DefaultOverlayRenderer>();
+		ctx->Make<ui::DefaultOverlayBuilder>();
 	}
 };
-void Test_ColorPicker(UIContainer* ctx)
+void Test_ColorPicker(ui::UIContainer* ctx)
 {
 	ctx->Make<ColorPickerTest>();
 }
 
 
-struct The3DViewTest : ui::Node
+struct The3DViewTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -606,27 +606,27 @@ struct The3DViewTest : ui::Node
 		float x, y, z;
 		ui::Color4b col;
 	};
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		*ctx->Push<ui::Panel>()
+		ctx->Push<ui::Panel>()
 			+ ui::Margin(0)
 			+ ui::Height(style::Coord::Percent(100));
 		{
-			auto& v = *ctx->Push<ui::View3D>();
-			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-			v.HandleEvent() = [this](UIEvent& e)
+			auto& v = ctx->Push<ui::View3D>();
+			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
+			v.HandleEvent() = [this](ui::Event& e)
 			{
-				if (e.type == UIEventType::MouseMove)
-					mousePos = { e.x, e.y };
+				if (e.type == ui::EventType::MouseMove)
+					mousePos = e.position;
 				camera.OnEvent(e);
 			};
-			v.onRender = [this](UIRect r) { Render3DView(r); };
+			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			v + ui::Height(style::Coord::Percent(100));
 			{
 				ctx->Text("Overlay text");
-				ctx->Make<ui::ColorBlock>()->SetColor({ 100, 0, 200, 255 });
-				*ctx->MakeWithText<ui::Button>("Reset")
-					+ ui::EventHandler(UIEventType::Activate, [this](UIEvent&) { camera = {}; })
+				ctx->Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
+				ctx->MakeWithText<ui::Button>("Reset")
+					+ ui::EventHandler(ui::EventType::Activate, [this](ui::Event&) { camera = {}; })
 					+ ui::Width(40)
 					+ ui::Layout(style::layouts::InlineBlock()); // TODO FIX
 			}
@@ -634,12 +634,12 @@ struct The3DViewTest : ui::Node
 		}
 		ctx->Pop();
 	}
-	void Render3DView(const UIRect& rect)
+	void Render3DView(const ui::UIRect& rect)
 	{
 		using namespace ui::rhi;
 
 		camera.SetWindowRect(rect);
-		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000));
+		camera.SetProjectionMatrix(ui::Mat4f::PerspectiveFOVLH(90, rect.GetAspectRatio(), 0.01f, 1000));
 
 		Clear(16, 15, 14, 255);
 		SetProjectionMatrix(camera.GetProjectionMatrix());
@@ -653,9 +653,9 @@ struct The3DViewTest : ui::Node
 			{ 1, 1, 0, { 150, 50, 0, 255 } },
 		};
 		uint16_t indices[] = { 0, 1, 2, 1, 3, 2 };
-		DrawIndexed(Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
-		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
-		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 
 		{
 			constexpr ui::prim::PlaneSettings S = { 2, 3 };
@@ -664,7 +664,7 @@ struct The3DViewTest : ui::Node
 			ui::Vertex_PF3CB4 verts[vc];
 			uint16_t idcs[ic];
 			ui::prim::GeneratePlane(S, verts, idcs);
-			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.2f, 0.8f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.4f, 0, 0));
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.2f, 0.8f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(0.4f, 0, 0));
 		}
 
 		{
@@ -674,7 +674,7 @@ struct The3DViewTest : ui::Node
 			ui::Vertex_PF3CB4 verts[vc];
 			uint16_t idcs[ic];
 			ui::prim::GenerateBox(S, verts, idcs);
-			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.5f, 0.8f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.2f, 0, 0));
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.5f, 0.8f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(0.2f, 0, 0));
 		}
 
 		{
@@ -684,7 +684,7 @@ struct The3DViewTest : ui::Node
 			ui::Vertex_PF3CB4 verts[vc];
 			uint16_t idcs[ic];
 			ui::prim::GenerateCone(S, verts, idcs);
-			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.8f, 0.5f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(0.0f, 0, 0));
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.2f, 0.8f, 0.5f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(0.0f, 0, 0));
 		}
 
 		{
@@ -694,7 +694,7 @@ struct The3DViewTest : ui::Node
 			ui::Vertex_PF3CB4 verts[vc];
 			uint16_t idcs[ic];
 			ui::prim::GenerateUVSphere(S, verts, idcs);
-			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.8f, 0.2f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(-0.2f, 0, 0));
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.8f, 0.2f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(-0.2f, 0, 0));
 		}
 
 		{
@@ -704,16 +704,16 @@ struct The3DViewTest : ui::Node
 			ui::Vertex_PF3CB4 verts[vc];
 			uint16_t idcs[ic];
 			ui::prim::GenerateBoxSphere(S, verts, idcs);
-			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.8f, 0.5f, 0.2f, 0.7f), Mat4f::Scale(0.1f) * Mat4f::Translate(-0.4f, 0, 0));
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.8f, 0.5f, 0.2f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(-0.4f, 0, 0));
 		}
 
 		SetRenderState(DF_ZTestOff | DF_ZWriteOff);
 		auto ray = camera.GetRayWP(mousePos);
 		auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { 0, 0, 1, -1 });
-		Vec3f isp = ray.GetPoint(rpir.dist);
-		DrawIndexed(Mat4f::Scale(0.1f, 0.1f, 0.1f) * Mat4f::Translate(isp), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		ui::Vec3f isp = ray.GetPoint(rpir.dist);
+		DrawIndexed(ui::Mat4f::Scale(0.1f, 0.1f, 0.1f) * ui::Mat4f::Translate(isp), PT_Triangles, VF_Color, verts, 4, indices, 6);
 	}
-	void DrawPrim(ui::Vertex_PF3CB4* verts, uint16_t vc, uint16_t* idcs, unsigned ic, const ui::Color4b& col, const Mat4f& m)
+	void DrawPrim(ui::Vertex_PF3CB4* verts, uint16_t vc, uint16_t* idcs, unsigned ic, const ui::Color4b& col, const ui::Mat4f& m)
 	{
 		using namespace ui::rhi;
 
@@ -727,15 +727,15 @@ struct The3DViewTest : ui::Node
 	}
 
 	ui::OrbitCamera camera;
-	Point<float> mousePos = {};
+	ui::Point2f mousePos = {};
 };
-void Test_3DView(UIContainer* ctx)
+void Test_3DView(ui::UIContainer* ctx)
 {
 	ctx->Make<The3DViewTest>();
 }
 
 
-struct GizmoTest : ui::Node
+struct GizmoTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -743,7 +743,7 @@ struct GizmoTest : ui::Node
 	ui::Gizmo gizmo;
 	float gizmoSize = 100;
 	ui::GizmoSizeMode gizmoSizeMode = ui::GizmoSizeMode::ViewPixels;
-	Mat4f xf = Mat4f::Translate(0.01f, 0.02f, 0.03f);
+	ui::Mat4f xf = ui::Mat4f::Translate(0.01f, 0.02f, 0.03f);
 	float fov = 90;
 
 	struct VertPC
@@ -751,28 +751,28 @@ struct GizmoTest : ui::Node
 		float x, y, z;
 		ui::Color4b col;
 	};
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		*ctx->Push<ui::Panel>()
+		ctx->Push<ui::Panel>()
 			+ ui::Margin(0)
 			+ ui::Height(style::Coord::Percent(100));
 		{
-			auto& v = *ctx->Push<ui::View3D>();
-			v.SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-			v.HandleEvent() = [this](UIEvent& e)
+			auto& v = ctx->Push<ui::View3D>();
+			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
+			v.HandleEvent() = [this](ui::Event& e)
 			{
-				if (e.type == UIEventType::ButtonDown)
+				if (e.type == ui::EventType::ButtonDown)
 					e.context->SetKeyboardFocus(e.current);
 				if (gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
-					Rerender();
+					Rebuild();
 				camera.OnEvent(e);
 			};
-			v.onRender = [this](UIRect r) { Render3DView(r); };
+			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			v + ui::Height(style::Coord::Percent(100));
 			{
 				auto* leftTop = Allocate<style::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
-				*ctx->Push<ui::Panel>() + ui::Width(120) + ui::SetPlacement(leftTop);
+				ctx->Push<ui::Panel>() + ui::Width(120) + ui::SetPlacement(leftTop);
 				{
 					ctx->MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat(ctx, "FOV", fov, {}, 1.0f, 1.0f, 179.0f);
@@ -781,7 +781,7 @@ struct GizmoTest : ui::Node
 						ui::LabeledProperty::Scope ps(ctx);
 						ctx->MakeWithText<ui::Header>("Object");
 						if (ui::imm::Button(ctx, "Reset"))
-							xf = Mat4f::Translate(0.01f, 0.02f, 0.03f);
+							xf = ui::Mat4f::Translate(0.01f, 0.02f, 0.03f);
 					}
 
 					auto pos = xf.TransformPoint({ 0, 0, 0 });
@@ -791,7 +791,7 @@ struct GizmoTest : ui::Node
 
 				auto* rightTop = Allocate<style::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
-				*ctx->Push<ui::Panel>() + ui::Width(180) + ui::SetPlacement(rightTop);
+				ctx->Push<ui::Panel>() + ui::Width(180) + ui::SetPlacement(rightTop);
 				{
 					ctx->MakeWithText<ui::Header>("Gizmo");
 					ui::imm::PropEditFloat(ctx, "Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
@@ -814,12 +814,12 @@ struct GizmoTest : ui::Node
 		}
 		ctx->Pop();
 	}
-	void Render3DView(const UIRect& rect)
+	void Render3DView(const ui::UIRect& rect)
 	{
 		using namespace ui::rhi;
 
 		camera.SetWindowRect(rect);
-		camera.SetProjectionMatrix(Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
+		camera.SetProjectionMatrix(ui::Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
 
 		Clear(16, 15, 14, 255);
 		SetProjectionMatrix(camera.GetProjectionMatrix());
@@ -832,17 +832,17 @@ struct GizmoTest : ui::Node
 			{ 1, 1, 0, { 150, 50, 0, 255 } },
 		};
 		uint16_t indices[] = { 0, 1, 2, 1, 3, 2 };
-		DrawIndexed(Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
-		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
-		DrawIndexed(Mat4f::Translate(0, 0, -1) * Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
 
-		RenderObject(Mat4f::Scale(0.1f) * xf);
+		RenderObject(ui::Mat4f::Scale(0.1f) * xf);
 
 		gizmo.SetTransform(xf.RemoveScale());
 		gizmo.Render(camera, gizmoSize, gizmoSizeMode);
 	}
 
-	void RenderObject(const Mat4f& mtx)
+	void RenderObject(const ui::Mat4f& mtx)
 	{
 		using namespace ui::rhi;
 
@@ -867,25 +867,25 @@ struct GizmoTest : ui::Node
 			uint16_t idcs[ic];
 			ui::prim::GenerateCone(S, verts, idcs);
 			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0.2f, 0, 0, 1));
-			DrawIndexed(Mat4f::Translate(0, 0, 1) * Mat4f::RotateY(-90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * ui::Mat4f::RotateY(-90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
 			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0.2f, 0, 1));
-			DrawIndexed(Mat4f::Translate(0, 0, 1) * Mat4f::RotateX(90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * ui::Mat4f::RotateX(90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
 			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0, 0.2f, 1));
-			DrawIndexed(Mat4f::Translate(0, 0, 1) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
 		}
 	}
 };
-void Test_Gizmo(UIContainer* ctx)
+void Test_Gizmo(ui::UIContainer* ctx)
 {
 	ctx->Make<GizmoTest>();
 }
 
 
-struct IMGUITest : ui::Node
+struct IMGUITest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ui::LabeledProperty::Begin(ctx, "buttons");
 		if (ui::imm::Button(ctx, "working button"))
@@ -1011,42 +1011,42 @@ struct IMGUITest : ui::Node
 	ui::Color4b colorValB = { 180, 200, 220, 255 };
 	ui::Color4f colorValF = { 0.9f, 0.7f, 0.5f, 0.8f };
 };
-void Test_IMGUI(UIContainer* ctx)
+void Test_IMGUI(ui::UIContainer* ctx)
 {
 	ctx->Make<IMGUITest>();
 }
 
 
-struct TooltipTest : ui::Node
+struct TooltipTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		*ctx->MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
-		*ctx->MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([](UIContainer* ctx)
+		ctx->MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
+		ctx->MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([](ui::UIContainer* ctx)
 		{
 			bool t = true, f = false;
 			ui::imm::PropEditBool(ctx, "Done", t, { ui::Enable(false) });
 			ui::imm::PropEditBool(ctx, "Not done", f, { ui::Enable(false) });
 		});
 
-		ctx->Make<ui::DefaultOverlayRenderer>();
+		ctx->Make<ui::DefaultOverlayBuilder>();
 	}
 };
-void Test_Tooltip(UIContainer* ctx)
+void Test_Tooltip(ui::UIContainer* ctx)
 {
 	ctx->Make<TooltipTest>();
 }
 
 
-struct DropdownTest : ui::Node
+struct DropdownTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
 	uintptr_t sel3opts = 1;
-	uintptr_t selPtr = uintptr_t(&typeid(ui::Node));
-	const type_info* selPtrReal = &typeid(ui::Node);
+	uintptr_t selPtr = uintptr_t(&typeid(ui::Buildable));
+	const type_info* selPtrReal = &typeid(ui::Buildable);
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		*this + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		ctx->PushBox() + ui::Width(style::Coord::Percent(33));
@@ -1079,36 +1079,36 @@ struct DropdownTest : ui::Node
 		ctx->Pop();
 	}
 
-	void MenuList(UIContainer* ctx, uintptr_t& sel, ui::OptionList* list)
+	void MenuList(ui::UIContainer* ctx, uintptr_t& sel, ui::OptionList* list)
 	{
-		auto* ddml = ctx->Make<ui::DropdownMenuList>();
-		ddml->SetSelected(sel);
-		ddml->SetOptions(list);
-		ddml->HandleEvent(UIEventType::Commit) = [this, ddml, &sel](UIEvent& e)
+		auto& ddml = ctx->Make<ui::DropdownMenuList>();
+		ddml.SetSelected(sel);
+		ddml.SetOptions(list);
+		ddml.HandleEvent(ui::EventType::Commit) = [this, &ddml, &sel](ui::Event& e)
 		{
-			if (e.target != ddml)
+			if (e.target != &ddml)
 				return;
-			sel = ddml->GetSelected();
-			Rerender();
+			sel = ddml.GetSelected();
+			Rebuild();
 		};
 	}
 
 	struct SpecificDropdownMenu : ui::DropdownMenu
 	{
-		void OnBuildButtonContents(UIContainer* ctx) override
+		void OnBuildButtonContents(ui::UIContainer* ctx) override
 		{
 			ctx->Text("Menu");
 		}
-		void OnBuildMenuContents(UIContainer* ctx) override
+		void OnBuildMenuContents(ui::UIContainer* ctx) override
 		{
 			static bool flag1, flag2;
 
-			ctx->Push<ui::CheckboxFlagT<bool>>()->Init(flag1);
+			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag1);
 			ctx->Make<ui::CheckboxIcon>();
 			ctx->Text("Option 1") + ui::Padding(5);
 			ctx->Pop();
 
-			ctx->Push<ui::CheckboxFlagT<bool>>()->Init(flag2);
+			ctx->Push<ui::CheckboxFlagT<bool>>().Init(flag2);
 			ctx->Make<ui::CheckboxIcon>();
 			ctx->Text("Option 2") + ui::Padding(5);
 			ctx->Pop();
@@ -1122,9 +1122,9 @@ struct DropdownTest : ui::Node
 			static const type_info* types[] =
 			{
 				nullptr,
-				&typeid(UIObject),
-				&typeid(UIElement),
-				&typeid(ui::Node),
+				&typeid(ui::UIObject),
+				&typeid(ui::UIElement),
+				&typeid(ui::Buildable),
 				&typeid(ui::BoxElement),
 				&typeid(ui::TextElement),
 			};
@@ -1133,13 +1133,13 @@ struct DropdownTest : ui::Node
 				fn(types[i], uintptr_t(types[i]));
 			}
 		}
-		void BuildElement(UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
+		void BuildElement(ui::UIContainer* ctx, const void* ptr, uintptr_t id, bool list)
 		{
 			ctx->Text(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
 		}
 	};
 };
-void Test_Dropdown(UIContainer* ctx)
+void Test_Dropdown(ui::UIContainer* ctx)
 {
 	ctx->Make<DropdownTest>();
 }

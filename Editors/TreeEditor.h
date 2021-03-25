@@ -50,7 +50,7 @@ struct TreeDragData : DragDropData
 struct TreeItemElement : Selectable
 {
 	void OnInit() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	virtual void ContextMenu();
 
 	void Init(TreeEditor* te, const TreePath& path);
@@ -59,12 +59,12 @@ struct TreeItemElement : Selectable
 	TreePath path;
 };
 
-struct TreeEditor : Node
+struct TreeEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 
@@ -78,7 +78,7 @@ struct TreeEditor : Node
 	TreeEditor& SetSelectionMode(SelectionMode mode);
 
 	void _OnEdit(UIObject* who);
-	void _OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, UIEvent& e);
+	void _OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, Event& e);
 	void _OnDragDrop(TreeDragData* tdd);
 
 	std::function<void(UIContainer* ctx, TreeEditor* te, TreePathRef path, void* data)> itemUICallback;

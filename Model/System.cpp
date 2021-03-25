@@ -5,9 +5,9 @@
 
 
 namespace ui {
+
 extern uint32_t g_curLayoutFrame;
 FrameContents* g_curSystem;
-} // ui
 
 
 #if 0
@@ -105,13 +105,13 @@ void UIObjectDirtyStack::RemoveNth(size_t n)
 
 void UIContainer::Free()
 {
-	if (rootNode)
+	if (rootBuildable)
 	{
-		_Destroy(rootNode);
-		objectStack[0] = rootNode;
+		_Destroy(rootBuildable);
+		objectStack[0] = rootBuildable;
 		objectStackSize = 1;
 		ProcessObjectDeleteStack();
-		rootNode = nullptr;
+		rootBuildable = nullptr;
 	}
 }
 
@@ -124,10 +124,10 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 		for (auto* n = cur->firstChild; n != nullptr; n = n->next)
 			objectStack[objectStackSize++] = n;
 
-		DEBUG_FLOW(printf("    deleting %p\n", cur));
+		UI_DEBUG_FLOW(printf("    deleting %p\n", cur));
 		cur->system->eventSystem.OnDestroy(cur);
-		nodeRenderStack.OnDestroy(cur);
-		nextFrameNodeRenderStack.OnDestroy(cur);
+		buildStack.OnDestroy(cur);
+		nextFrameBuildStack.OnDestroy(cur);
 		layoutStack.OnDestroy(cur);
 		delete cur;
 	}
@@ -149,39 +149,39 @@ void UIContainer::DeleteObjectsStartingFrom(UIObject* obj)
 	ProcessObjectDeleteStack(first);
 }
 
-void UIContainer::ProcessNodeRenderStack()
+void UIContainer::ProcessBuildStack()
 {
-	if (nodeRenderStack.ContainsAny())
+	if (buildStack.ContainsAny())
 	{
-		DEBUG_FLOW(puts(" ---- processing node RENDER stack ----"));
-		_lastRenderedFrameID++;
+		UI_DEBUG_FLOW(puts(" ---- processing node BUILD stack ----"));
+		_lastBuildFrameID++;
 	}
 	else
 		return;
 
-	TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, owner);
+	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
 
-	nodeRenderStack.RemoveChildren();
+	buildStack.RemoveChildren();
 
-	while (nodeRenderStack.ContainsAny())
+	while (buildStack.ContainsAny())
 	{
-		ui::Node* currentNode = static_cast<ui::Node*>(nodeRenderStack.Pop());
+		Buildable* currentBuildable = static_cast<Buildable*>(buildStack.Pop());
 
 		objectStackSize = 0;
-		_Push(currentNode, true);
+		_Push(currentBuildable, true);
 
-		DEBUG_FLOW(printf("rendering %s\n", typeid(*currentNode).name()));
-		_curNode = currentNode;
-		currentNode->_lastRenderedFrameID = _lastRenderedFrameID;
+		UI_DEBUG_FLOW(printf("building %s\n", typeid(*currentBuildable).name()));
+		_curBuildable = currentBuildable;
+		currentBuildable->_lastBuildFrameID = _lastBuildFrameID;
 
-		currentNode->ClearLocalEventHandlers();
+		currentBuildable->ClearLocalEventHandlers();
 
-		// do not run old dtors before render (so that mid-render all data is still valid)
+		// do not run old dtors before build (so that mid-build all data is still valid)
 		// but have the space cleaned out for the new dtors
-		decltype(ui::Node::_deferredDestructors) oldDDs;
-		std::swap(oldDDs, currentNode->_deferredDestructors);
+		decltype(Buildable::_deferredDestructors) oldDDs;
+		std::swap(oldDDs, currentBuildable->_deferredDestructors);
 
-		currentNode->Render(this);
+		currentBuildable->Build(this);
 
 		while (oldDDs.size())
 		{
@@ -189,7 +189,7 @@ void UIContainer::ProcessNodeRenderStack()
 			oldDDs.pop_back();
 		}
 
-		_curNode = nullptr;
+		_curBuildable = nullptr;
 
 		if (objectStackSize > 1)
 		{
@@ -203,20 +203,20 @@ void UIContainer::ProcessNodeRenderStack()
 		_Pop(); // root
 	}
 
-	nodeRenderStack.Swap(nextFrameNodeRenderStack);
-	_lastRenderedFrameID++;
+	buildStack.Swap(nextFrameBuildStack);
+	_lastBuildFrameID++;
 }
 
 void UIContainer::ProcessLayoutStack()
 {
 	if (layoutStack.ContainsAny())
 	{
-		DEBUG_FLOW(printf(" ---- processing node LAYOUT stack (%zu items) ----\n", layoutStack.stack.size()));
+		UI_DEBUG_FLOW(printf(" ---- processing node LAYOUT stack (%zu items) ----\n", layoutStack.stack.size()));
 	}
 	else
 		return;
 
-	TmpEdit<decltype(ui::g_curSystem)> tmp(ui::g_curSystem, owner);
+	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
 
 	// TODO check if the styles are actually different and if not, remove element from the stack
 
@@ -239,7 +239,7 @@ void UIContainer::ProcessLayoutStack()
 	layoutStack.RemoveChildren();
 
 	assert(!layoutStack.stack.empty());
-	ui::g_curLayoutFrame++;
+	g_curLayoutFrame++;
 
 	// single pass
 	for (UIObject* obj : layoutStack.stack)
@@ -252,17 +252,17 @@ void UIContainer::ProcessLayoutStack()
 	layoutStack.Clear();
 }
 
-void UIContainer::_BuildUsing(ui::Node* n)
+void UIContainer::_BuildUsing(Buildable* n)
 {
-	rootNode = n;
-	assert(!nodeRenderStack.ContainsAny());
-	nodeRenderStack.ClearWithoutFlags(); // TODO: is this needed?
-	AddToRenderStack(rootNode);
-	ProcessNodeRenderStack();
+	rootBuildable = n;
+	assert(!buildStack.ContainsAny());
+	buildStack.ClearWithoutFlags(); // TODO: is this needed?
+	AddToBuildStack(rootBuildable);
+	ProcessBuildStack();
 	ProcessLayoutStack();
 }
 
-void UIContainer::_Push(UIObject* obj, bool isCurNode)
+void UIContainer::_Push(UIObject* obj, bool isCurBuildable)
 {
 	objectStack[objectStackSize] = obj;
 	objChildStack[objectStackSize] = obj->firstChild;
@@ -271,7 +271,7 @@ void UIContainer::_Push(UIObject* obj, bool isCurNode)
 
 void UIContainer::_Destroy(UIObject* obj)
 {
-	DEBUG_FLOW(printf("    destroy %p\n", obj));
+	UI_DEBUG_FLOW(printf("    destroy %p\n", obj));
 	obj->_livenessToken.SetAlive(false);
 	obj->OnDestroy();
 	for (auto* ch = obj->firstChild; ch; ch = ch->next)
@@ -291,13 +291,11 @@ void UIContainer::_Pop()
 	objectStackSize--;
 }
 
-ui::NativeWindowBase* UIContainer::GetNativeWindow() const
+NativeWindowBase* UIContainer::GetNativeWindow() const
 {
 	return owner->nativeWindow;
 }
 
-
-namespace ui {
 
 void Overlays::Register(UIObject* obj, float depth)
 {
@@ -337,22 +335,22 @@ FrameContents::~FrameContents()
 	container.Free();
 }
 
-Node* FrameContents::_AllocRootImpl(NodeAllocFunc* f)
+Buildable* FrameContents::_AllocRootImpl(BuildableAllocFunc* f)
 {
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
 	auto* N = f(&container);
-	container.rootNode = N;
+	container.rootBuildable = N;
 	return N;
 }
 
-void FrameContents::RenderRoot()
+void FrameContents::BuildRoot()
 {
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
-	container._BuildUsing(container.rootNode);
+	container._BuildUsing(container.rootBuildable);
 }
 
 
-void InlineFrameNode::OnDestroy()
+void InlineFrame::OnDestroy()
 {
 	if (ownsContents && frameContents)
 	{
@@ -362,52 +360,52 @@ void InlineFrameNode::OnDestroy()
 	}
 }
 
-void InlineFrameNode::Render(UIContainer* ctx)
+void InlineFrame::Build(UIContainer* ctx)
 {
 }
 
-void InlineFrameNode::OnEvent(UIEvent& ev)
+void InlineFrame::OnEvent(Event& ev)
 {
 	if (frameContents)
 	{
 		// pass events
-		if (ev.type == UIEventType::ButtonDown || ev.type == UIEventType::ButtonUp)
-			frameContents->eventSystem.OnMouseButton(ev.type == UIEventType::ButtonDown, ev.GetButton(), ev.x, ev.y, ev.modifiers);
-		if (ev.type == UIEventType::MouseMove)
-			frameContents->eventSystem.OnMouseMove(ev.x, ev.y, ev.modifiers);
+		if (ev.type == EventType::ButtonDown || ev.type == EventType::ButtonUp)
+			frameContents->eventSystem.OnMouseButton(ev.type == EventType::ButtonDown, ev.GetButton(), ev.position, ev.modifiers);
+		if (ev.type == EventType::MouseMove)
+			frameContents->eventSystem.OnMouseMove(ev.position, ev.modifiers);
 	}
-	Node::OnEvent(ev);
+	Buildable::OnEvent(ev);
 }
 
-void InlineFrameNode::OnPaint()
+void InlineFrame::OnPaint()
 {
 	styleProps->paint_func(this);
 
 	if (frameContents &&
-		frameContents->container.rootNode)
-		frameContents->container.rootNode->OnPaint();
+		frameContents->container.rootBuildable)
+		frameContents->container.rootBuildable->OnPaint();
 
 	PaintChildren();
 }
 
-float InlineFrameNode::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
+float InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
 {
 	return 100; // default width
 }
 
-float InlineFrameNode::CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
+float InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
 {
 	return 100; // default height
 }
 
-void InlineFrameNode::OnLayoutChanged()
+void InlineFrame::OnLayoutChanged()
 {
 	if (frameContents &&
-		frameContents->container.rootNode)
-		frameContents->container.rootNode->PerformLayout(finalRectC, finalRectC.GetSize());
+		frameContents->container.rootBuildable)
+		frameContents->container.rootBuildable->PerformLayout(finalRectC, finalRectC.GetSize());
 }
 
-void InlineFrameNode::SetFrameContents(FrameContents* contents)
+void InlineFrame::SetFrameContents(FrameContents* contents)
 {
 	if (frameContents)
 	{
@@ -435,11 +433,11 @@ void InlineFrameNode::SetFrameContents(FrameContents* contents)
 	_OnChangeStyle();
 }
 
-void InlineFrameNode::CreateFrameContents(std::function<void(UIContainer* ctx)> renderFunc)
+void InlineFrame::CreateFrameContents(std::function<void(UIContainer* ctx)> buildFunc)
 {
 	auto* contents = new FrameContents();
-	contents->AllocRoot<RenderNode>()->renderFunc = renderFunc;
-	contents->RenderRoot();
+	contents->AllocRoot<BuildCallback>()->buildFunc = buildFunc;
+	contents->BuildRoot();
 	SetFrameContents(contents);
 	ownsContents = true;
 }

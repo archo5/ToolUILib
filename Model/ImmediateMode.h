@@ -13,23 +13,23 @@ constexpr float DEFAULT_SPEED = 1.0f;
 
 struct IStateToggleSkin
 {
-	virtual void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const = 0;
+	virtual void BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const = 0;
 };
 struct CheckboxStateToggleSkin : IStateToggleSkin
 {
-	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+	void BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 struct RadioButtonStateToggleSkin : IStateToggleSkin
 {
-	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+	void BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 struct ButtonStateToggleSkin : IStateToggleSkin
 {
-	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+	void BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 struct TreeStateToggleSkin : IStateToggleSkin
 {
-	void BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const override;
+	void BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
 bool Button(UIContainer* ctx, const char* text, ModInitList mods = {});

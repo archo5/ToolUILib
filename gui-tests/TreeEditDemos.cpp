@@ -5,7 +5,7 @@
 
 
 static ui::DataCategoryTag DCT_Node[1];
-struct BasicTreeNodeEditDemo : ui::Node
+struct BasicTreeNodeEditDemo : ui::Buildable
 {
 	struct TreeNode
 	{
@@ -19,16 +19,16 @@ struct BasicTreeNodeEditDemo : ui::Node
 		std::vector<TreeNode*> children;
 	};
 
-	struct TreeNodeUI : ui::Node
+	struct TreeNodeUI : ui::Buildable
 	{
-		void Render(UIContainer* ctx) override
+		void Build(ui::UIContainer* ctx) override
 		{
 			Subscribe(DCT_Node, tgt);
 			ctx->Push<ui::Panel>();
 
 			if (parent)
 			{
-				ctx->MakeWithText<ui::Button>("Delete")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+				ctx->MakeWithText<ui::Button>("Delete").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 				{
 					delete tgt;
 					parent->children.erase(std::find(parent->children.begin(), parent->children.end(), tgt));
@@ -44,9 +44,9 @@ struct BasicTreeNodeEditDemo : ui::Node
 			for (size_t i = 0; i < tgt->children.size(); i++)
 			{
 				AddButton(ctx, i);
-				auto* tnui = ctx->Make<TreeNodeUI>();
-				tnui->tgt = tgt->children[i];
-				tnui->parent = tgt;
+				auto& tnui = ctx->Make<TreeNodeUI>();
+				tnui.tgt = tgt->children[i];
+				tnui.parent = tgt;
 			}
 			AddButton(ctx, tgt->children.size());
 
@@ -55,9 +55,9 @@ struct BasicTreeNodeEditDemo : ui::Node
 			ctx->Pop();
 		}
 
-		void AddButton(UIContainer* ctx, size_t inspos)
+		void AddButton(ui::UIContainer* ctx, size_t inspos)
 		{
-			ctx->MakeWithText<ui::Button>("Add")->HandleEvent(UIEventType::Activate) = [this, inspos](UIEvent&)
+			ctx->MakeWithText<ui::Button>("Add").HandleEvent(ui::EventType::Activate) = [this, inspos](ui::Event&)
 			{
 				static int ctr = 0;
 				auto* t = new TreeNode;
@@ -71,21 +71,21 @@ struct BasicTreeNodeEditDemo : ui::Node
 		TreeNode* parent = nullptr;
 	};
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		ctx->Make<TreeNodeUI>()->tgt = &root;
+		ctx->Make<TreeNodeUI>().tgt = &root;
 	}
 
 	static TreeNode root;
 };
 BasicTreeNodeEditDemo::TreeNode BasicTreeNodeEditDemo::root = { "root" };
-void Demo_BasicTreeNodeEdit(UIContainer* ctx)
+void Demo_BasicTreeNodeEdit(ui::UIContainer* ctx)
 {
 	ctx->Make<BasicTreeNodeEditDemo>();
 }
 
 
-struct CompactTreeNodeEditDemo : ui::Node
+struct CompactTreeNodeEditDemo : ui::Buildable
 {
 	struct Variable
 	{
@@ -100,15 +100,15 @@ struct CompactTreeNodeEditDemo : ui::Node
 
 	struct ExprNode
 	{
-		virtual void UI(UIContainer* ctx) = 0;
+		virtual void UI(ui::UIContainer* ctx) = 0;
 		virtual int Compute(ComputeInfo& cinfo) = 0;
 	};
-	static void NodeUI(UIContainer* ctx, ExprNode*& node);
+	static void NodeUI(ui::UIContainer* ctx, ExprNode*& node);
 	struct NumberNode : ExprNode
 	{
 		int number = 0;
 
-		void UI(UIContainer* ctx) override
+		void UI(ui::UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\b#");
 			ui::imm::EditInt(ctx, &lbl, number, { ui::Width(50) });
@@ -119,7 +119,7 @@ struct CompactTreeNodeEditDemo : ui::Node
 	{
 		std::string name;
 
-		void UI(UIContainer* ctx) override
+		void UI(ui::UIContainer* ctx) override
 		{
 			auto& lbl = ui::Property::Label(ctx, "\bName:");
 			ui::imm::EditString(ctx, name.c_str(), [this](const char* s) { name = s; }, { ui::Width(50) });
@@ -138,9 +138,9 @@ struct CompactTreeNodeEditDemo : ui::Node
 		ExprNode* a = nullptr;
 		ExprNode* b = nullptr;
 
-		void UI(UIContainer* ctx) override
+		void UI(ui::UIContainer* ctx) override
 		{
-			*ctx->Push<ui::Panel>() + ui::Padding(2) + ui::Layout(style::layouts::InlineBlock());
+			ctx->Push<ui::Panel>() + ui::Padding(2) + ui::Layout(style::layouts::InlineBlock());
 			NodeUI(ctx, a);
 			ctx->Text(Name()) + ui::Padding(5);
 			NodeUI(ctx, b);
@@ -191,7 +191,7 @@ struct CompactTreeNodeEditDemo : ui::Node
 		}
 	};
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ui::Property::Begin(ctx, "Expression:");
 
@@ -220,7 +220,7 @@ struct CompactTreeNodeEditDemo : ui::Node
 		if (del)
 		{
 			variables.erase(variables.begin() + (del - variables.data()));
-			Rerender();
+			Rebuild();
 		}
 
 		if (ui::imm::Button(ctx, "Add"))
@@ -252,14 +252,14 @@ struct CompactTreeNodeEditDemo : ui::Node
 	std::vector<Variable> variables{ { "test", 5 } };
 	ExprNode* root = nullptr;
 };
-void CompactTreeNodeEditDemo::NodeUI(UIContainer* ctx, ExprNode*& node)
+void CompactTreeNodeEditDemo::NodeUI(ui::UIContainer* ctx, ExprNode*& node)
 {
 	auto& b = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock());
 	if (node)
 	{
-		b.HandleEvent(UIEventType::ContextMenu) = [&node](UIEvent& e)
+		b.HandleEvent(ui::EventType::ContextMenu) = [&node](ui::Event& e)
 		{
-			ui::ContextMenu::Get().Add("Delete") = [&node, &e]() { delete node; node = nullptr; e.target->RerenderNode(); };
+			ui::ContextMenu::Get().Add("Delete") = [&node, &e]() { delete node; node = nullptr; e.target->Rebuild(); };
 			e.StopPropagation();
 		};
 		node->UI(ctx);
@@ -270,12 +270,12 @@ void CompactTreeNodeEditDemo::NodeUI(UIContainer* ctx, ExprNode*& node)
 		{
 			ui::MenuItem items[] =
 			{
-				ui::MenuItem("Number").Func([&node, &b]() { node = new NumberNode; b.RerenderNode(); }),
-				ui::MenuItem("Variable").Func([&node, &b]() { node = new VarNode; b.RerenderNode(); }),
-				ui::MenuItem("Add").Func([&node, &b]() { node = new AddNode; b.RerenderNode(); }),
-				ui::MenuItem("Subtract").Func([&node, &b]() { node = new SubNode; b.RerenderNode(); }),
-				ui::MenuItem("Multiply").Func([&node, &b]() { node = new MulNode; b.RerenderNode(); }),
-				ui::MenuItem("Divide").Func([&node, &b]() { node = new DivNode; b.RerenderNode(); }),
+				ui::MenuItem("Number").Func([&node, &b]() { node = new NumberNode; b.Rebuild(); }),
+				ui::MenuItem("Variable").Func([&node, &b]() { node = new VarNode; b.Rebuild(); }),
+				ui::MenuItem("Add").Func([&node, &b]() { node = new AddNode; b.Rebuild(); }),
+				ui::MenuItem("Subtract").Func([&node, &b]() { node = new SubNode; b.Rebuild(); }),
+				ui::MenuItem("Multiply").Func([&node, &b]() { node = new MulNode; b.Rebuild(); }),
+				ui::MenuItem("Divide").Func([&node, &b]() { node = new DivNode; b.Rebuild(); }),
 			};
 			ui::Menu menu(items);
 			menu.Show(&b);
@@ -283,7 +283,7 @@ void CompactTreeNodeEditDemo::NodeUI(UIContainer* ctx, ExprNode*& node)
 	}
 	ctx->Pop();
 }
-void Demo_CompactTreeNodeEdit(UIContainer* ctx)
+void Demo_CompactTreeNodeEdit(ui::UIContainer* ctx)
 {
 	ctx->Make<CompactTreeNodeEditDemo>();
 }
@@ -309,7 +309,7 @@ struct Node
 		return tmp;
 	}
 
-	virtual void ItemUI(UIContainer* ctx)
+	virtual void ItemUI(ui::UIContainer* ctx)
 	{
 		ctx->Text("Item");
 	}
@@ -325,7 +325,7 @@ struct RepeatNode : Node
 {
 	int times = 5;
 	Node* CloneBase() override { return new RepeatNode(*this); }
-	virtual void ItemUI(UIContainer* ctx)
+	virtual void ItemUI(ui::UIContainer* ctx)
 	{
 		ui::imm::PropEditInt(ctx, "\bRepeat #", times);
 	}
@@ -342,7 +342,7 @@ struct PrintNode : Node
 {
 	std::string text;
 	Node* CloneBase() override { return new PrintNode(*this); }
-	virtual void ItemUI(UIContainer* ctx)
+	virtual void ItemUI(ui::UIContainer* ctx)
 	{
 		ui::imm::PropEditString(ctx, "\bPrint text:", text.c_str(), [this](const char* v) { text = v; });
 	}
@@ -486,22 +486,22 @@ struct Tree : ui::ITree
 	}
 };
 } // script_tree
-struct ScriptTreeDemo : ui::Node
+struct ScriptTreeDemo : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		Subscribe(script_tree::DCT_TreeChanged);
-		auto* sp = ctx->Push<ui::SplitPane>();
+		auto& sp = ctx->Push<ui::SplitPane>();
 		{
-			auto* te = ctx->Make<ui::TreeEditor>();
-			te->SetTree(&tree);
-			te->itemUICallback = [](UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
+			auto& te = ctx->Make<ui::TreeEditor>();
+			te.SetTree(&tree);
+			te.itemUICallback = [](ui::UIContainer* ctx, ui::TreeEditor* te, ui::TreePathRef path, void* data)
 			{
 				static_cast<script_tree::Node*>(data)->ItemUI(ctx);
 			};
-			te->HandleEvent(UIEventType::SelectionChange) = [this](UIEvent&) { Rerender(); };
+			te.HandleEvent(ui::EventType::SelectionChange) = [this](ui::Event&) { Rebuild(); };
 
 			ctx->PushBox();
 			{
@@ -517,19 +517,19 @@ struct ScriptTreeDemo : ui::Node
 			}
 			ctx->Pop();
 		}
-		sp->SetDirection(false);
-		sp->SetSplits({ 0.5f });
+		sp.SetDirection(false);
+		sp.SetSplits({ 0.5f });
 	}
-	void OnEvent(UIEvent& e) override
+	void OnEvent(ui::Event& e) override
 	{
-		Node::OnEvent(e);
-		if (e.type == UIEventType::IMChange)
-			Rerender();
+		Buildable::OnEvent(e);
+		if (e.type == ui::EventType::IMChange)
+			Rebuild();
 	}
 
 	script_tree::Tree tree;
 };
-void Demo_ScriptTree(UIContainer* ctx)
+void Demo_ScriptTree(ui::UIContainer* ctx)
 {
 	ctx->Make<ScriptTreeDemo>();
 }

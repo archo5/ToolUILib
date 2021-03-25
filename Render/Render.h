@@ -126,18 +126,19 @@ void RectTex(float x0, float y0, float x1, float y1, Texture* tex);
 void RectTex(float x0, float y0, float x1, float y1, Texture* tex, float u0, float v0, float u1, float v1);
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex);
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex, float u0, float v0, float u1, float v1);
-void RectColTex9Slice(const AABB<float>& outer, const AABB<float>& inner, Color4b col, Texture* tex, const AABB<float>& texouter, const AABB<float>& texinner);
-void RectCutoutCol(const AABB<float>& rect, const AABB<float>& cutout, Color4b col);
+void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, Texture* tex, const AABB2f& texouter, const AABB2f& texinner);
+void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col);
 
 bool PushScissorRect(int x0, int y0, int x1, int y1);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
-AABB<float> GetCurrentScissorRectF();
+AABB2f GetCurrentScissorRectF();
 
 } // draw
 } // ui
 
 
+// TODO move
 void InitTheme();
-AABB<float> GetThemeElementBorderWidths(EThemeElement e);
+ui::AABB2f GetThemeElementBorderWidths(EThemeElement e);
 void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);

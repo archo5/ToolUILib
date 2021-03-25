@@ -108,7 +108,7 @@ void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
 	w.EndDict();
 }
 
-void HighlightSettings::EditUI(UIContainer* ctx)
+void HighlightSettings::EditUI(ui::UIContainer* ctx)
 {
 	ui::imm::PropEditBool(ctx, "Exclude zeroes", excludeZeroes);
 
@@ -143,9 +143,9 @@ void HighlightSettings::EditUI(UIContainer* ctx)
 
 	ctx->Text("Custom int32") + ui::Padding(25, 5, 5);
 
-	auto* seqEd = ctx->Make<ui::SequenceEditor>();
-	seqEd->SetSequence(ctx->GetCurrentNode()->Allocate<ui::StdSequence<decltype(customInt32)>>(customInt32));
-	seqEd->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+	auto& seqEd = ctx->Make<ui::SequenceEditor>();
+	seqEd.SetSequence(ctx->GetCurrentBuildable()->Allocate<ui::StdSequence<decltype(customInt32)>>(customInt32));
+	seqEd.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 	{
 		auto& h = *static_cast<Int32Highlight*>(ptr);
 		ui::imm::EditBool(ctx, h.enabled, nullptr);
@@ -364,49 +364,49 @@ static void Highlight(HighlightSettings* hs, DataDesc* desc, DDFile* file, uint6
 }
 
 
-void HexViewer::OnEvent(UIEvent& e)
+void HexViewer::OnEvent(ui::Event& e)
 {
 	int W = state->byteWidth;
 
-	if (e.type == UIEventType::ButtonDown)
+	if (e.type == ui::EventType::ButtonDown)
 	{
-		if (e.GetButton() == UIMouseButton::Left)
+		if (e.GetButton() == ui::MouseButton::Left)
 		{
 			state->mouseDown = true;
 			state->selectionStart = state->selectionEnd = state->hoverByte;
 			ui::Notify(DCT_HexViewerState, state);
-			RerenderNode();
+			Rebuild();
 		}
 	}
-	else if (e.type == UIEventType::ButtonUp)
+	else if (e.type == ui::EventType::ButtonUp)
 	{
-		if (e.GetButton() == UIMouseButton::Left)
+		if (e.GetButton() == ui::MouseButton::Left)
 		{
 			state->mouseDown = false;
 			ui::Notify(DCT_HexViewerState, state);
 		}
 	}
-	else if (e.type == UIEventType::MouseMove)
+	else if (e.type == ui::EventType::MouseMove)
 	{
-		float fh = GetFontHeight() + 4;
-		float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
+		float fh = ui::GetFontHeight() + 4;
+		float x = finalRectC.x0 + 2 + ui::GetTextWidth("0") * 8;
 		float y = finalRectC.y0 + fh;
 		float x2 = x + 20 * W + 10;
 
 		state->hoverSection = -1;
 		state->hoverByte = UINT64_MAX;
-		if (e.y >= y && e.x >= x && e.x < x + W * 20)
+		if (e.position.y >= y && e.position.x >= x && e.position.x < x + W * 20)
 		{
 			state->hoverSection = 0;
-			int xpos = std::min(std::max(0, int((e.x - x) / 20)), W - 1);
-			int ypos = (e.y - y) / fh;
+			int xpos = ui::min(ui::max(0, int((e.position.x - x) / 20)), W - 1);
+			int ypos = (e.position.y - y) / fh;
 			state->hoverByte = GetBasePos() + xpos + ypos * W;
 		}
-		else if (e.y >= y && e.x >= x2 && e.x < x2 + W * 10)
+		else if (e.position.y >= y && e.position.x >= x2 && e.position.x < x2 + W * 10)
 		{
 			state->hoverSection = 1;
-			int xpos = std::min(std::max(0, int((e.x - x2) / 10)), W - 1);
-			int ypos = (e.y - y) / fh;
+			int xpos = ui::min(ui::max(0, int((e.position.x - x2) / 10)), W - 1);
+			int ypos = (e.position.y - y) / fh;
 			state->hoverByte = GetBasePos() + xpos + ypos * W;
 		}
 		if (state->mouseDown)
@@ -414,25 +414,25 @@ void HexViewer::OnEvent(UIEvent& e)
 			state->selectionEnd = state->hoverByte;
 		}
 		ui::Notify(DCT_HexViewerState, state);
-		RerenderNode();
+		Rebuild();
 	}
-	else if (e.type == UIEventType::MouseLeave)
+	else if (e.type == ui::EventType::MouseLeave)
 	{
 		state->hoverSection = -1;
 		state->hoverByte = UINT64_MAX;
 		ui::Notify(DCT_HexViewerState, state);
-		RerenderNode();
+		Rebuild();
 	}
-	else if (e.type == UIEventType::MouseScroll)
+	else if (e.type == ui::EventType::MouseScroll)
 	{
-		int64_t diff = round(e.dy / 40) * 16;
+		int64_t diff = round(e.delta.y / 40) * 16;
 		if (diff > 0 && diff > state->basePos)
 			state->basePos = 0;
 		else
 			state->basePos -= diff;
 		state->basePos = std::min(file->dataSource->GetSize() - 1, state->basePos);
 		ui::Notify(DCT_HexViewerState, state);
-		RerenderNode();
+		Rebuild();
 	}
 }
 
@@ -448,8 +448,8 @@ void HexViewer::OnPaint()
 	memset(&bcol, 0, sizeof(bcol));
 	size_t sz = file->dataSource->Read(GetBasePos(), W * 64, buf);
 
-	float fh = GetFontHeight() + 4;
-	float x = finalRectC.x0 + 2 + GetTextWidth("0") * 8;
+	float fh = ui::GetFontHeight() + 4;
+	float x = finalRectC.x0 + 2 + ui::GetTextWidth("0") * 8;
 	float y = finalRectC.y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
 
@@ -516,7 +516,7 @@ void HexViewer::OnPaint()
 			break;
 		char str[16];
 		snprintf(str, 16, "%" PRIX64, GetBasePos() + i * W);
-		float w = GetTextWidth(str);
+		float w = ui::GetTextWidth(str);
 		ui::draw::TextLine(font, 12, x - w - 10, y + i * fh, str, colHalfTransparentWhite);
 	}
 
@@ -545,7 +545,7 @@ void HexViewer::OnPaint()
 	}
 }
 
-UIRect HexViewer::GetByteRect(uint64_t pos)
+ui::UIRect HexViewer::GetByteRect(uint64_t pos)
 {
 	int64_t at = pos - GetBasePos();
 
@@ -555,8 +555,8 @@ UIRect HexViewer::GetByteRect(uint64_t pos)
 
 	int y = at / state->byteWidth;
 
-	float fh = GetFontHeight() + 4;
-	float x0 = finalRectC.x0 + GetTextWidth("0") * 8 + x * 20;
+	float fh = ui::GetFontHeight() + 4;
+	float x0 = finalRectC.x0 + ui::GetTextWidth("0") * 8 + x * 20;
 	float y0 = finalRectC.y0 + 4 + fh * (1 + y);
 
 	return { x0, y0, x0 + 16, y0 + fh };

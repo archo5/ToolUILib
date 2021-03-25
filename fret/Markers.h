@@ -103,18 +103,18 @@ struct MarkerDataSource : ui::TableDataSource, ui::ISelectionStorage
 	size_t selected = SIZE_MAX;
 };
 
-struct MarkedItemEditor : ui::Node
+struct MarkedItemEditor : ui::Buildable
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	IDataSource* dataSource;
 	Marker* marker;
 	AnalysisData analysisData;
 };
 
-struct MarkedItemsList : ui::Node
+struct MarkedItemsList : ui::Buildable
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	MarkerData* markerData;
 };

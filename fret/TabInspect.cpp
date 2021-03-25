@@ -6,11 +6,11 @@
 #include "Workspace.h"
 
 
-void TabInspect::Render(UIContainer* ctx)
+void TabInspect::Build(ui::UIContainer* ctx)
 {
 	Subscribe(DCT_HexViewerState, &of->hexViewerState);
 
-	auto& spmkr = *ctx->Push<ui::SplitPane>();
+	auto& spmkr = ctx->Push<ui::SplitPane>();
 	{
 		ctx->PushBox();
 

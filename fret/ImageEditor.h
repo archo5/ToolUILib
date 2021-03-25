@@ -5,14 +5,14 @@
 #include "DataDesc.h"
 
 
-struct ImageEditorWindowNode : ui::Node
+struct ImageEditorWindowNode : ui::Buildable
 {
 	void OnInit() override
 	{
 		GetNativeWindow()->SetTitle("Image Resource Editor");
 		GetNativeWindow()->SetSize(1200, 800);
 	}
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 	void Setup(DataDesc* desc)
 	{
 		ddiSrc.dataDesc = desc;

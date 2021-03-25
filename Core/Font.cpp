@@ -250,15 +250,8 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 
 } // draw
 
-// TEMPORARY to resolve C++ function finding issues
-float GetTextWidth(const char* text, size_t num)
-{
-	return ::GetTextWidth(text, num);
-}
 
-} // ui
-
-
+// TODO
 ui::Font* g_font;
 
 void InitFont()
@@ -280,3 +273,5 @@ void DrawTextLine(float x, float y, const char* text, float r, float g, float b,
 {
 	ui::draw::TextLine(g_font, GetFontHeight(), x, y, text, ui::Color4f(r, g, b, a));
 }
+
+} // ui

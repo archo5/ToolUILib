@@ -537,13 +537,13 @@ void MarkerDataSource::SetSelectionState(uintptr_t item, bool sel)
 }
 
 
-void MarkedItemEditor::Render(UIContainer* ctx)
+void MarkedItemEditor::Build(ui::UIContainer* ctx)
 {
 	Subscribe(DCT_Marker, marker);
 	ctx->Text("Marker");
 
 	ctx->Push<ui::Panel>();
-	ui::imm::DropdownMenuList(ctx, marker->type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(typeNames));
+	ui::imm::DropdownMenuList(ctx, marker->type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(typeNames));
 	ui::imm::PropEditInt(ctx, "Offset", marker->at);
 	ui::imm::PropEditInt(ctx, "Count", marker->count);
 	ui::imm::PropEditInt(ctx, "Repeats", marker->repeats);
@@ -629,23 +629,23 @@ void MarkedItemEditor::Render(UIContainer* ctx)
 	}
 	if (analysisData.results.size())
 	{
-		auto* tbl = ctx->Make<ui::TableView>();
-		tbl->GetStyle().SetHeight(analysisData.results.size() * 24 + 32);
-		tbl->SetDataSource(&analysisData);
-		tbl->CalculateColumnWidths();
+		auto& tbl = ctx->Make<ui::TableView>();
+		tbl.GetStyle().SetHeight(analysisData.results.size() * 24 + 32);
+		tbl.SetDataSource(&analysisData);
+		tbl.CalculateColumnWidths();
 	}
 	ctx->Pop();
 }
 
 
-void MarkedItemsList::Render(UIContainer* ctx)
+void MarkedItemsList::Build(ui::UIContainer* ctx)
 {
 	Subscribe(DCT_MarkedItems, markerData);
 	ctx->Text("Edit marked items");
 	for (auto& m : markerData->markers)
 	{
 		ctx->Push<ui::Panel>();
-		ui::imm::PropDropdownMenuList(ctx, "Type", m.type, ctx->GetCurrentNode()->Allocate<ui::CStrArrayOptionList>(typeNames));
+		ui::imm::PropDropdownMenuList(ctx, "Type", m.type, ctx->GetCurrentBuildable()->Allocate<ui::CStrArrayOptionList>(typeNames));
 		ui::imm::PropEditInt(ctx, "Offset", m.at);
 		ui::imm::PropEditInt(ctx, "Count", m.count);
 		ui::imm::PropEditInt(ctx, "Repeats", m.repeats);

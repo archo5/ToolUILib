@@ -18,8 +18,8 @@ class Menu;
 namespace platform {
 uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
-Point<int> GetCursorScreenPos();
-Color4b GetColorAtScreenPos(Point<int> pos);
+Point2i GetCursorScreenPos();
+Color4b GetColorAtScreenPos(Point2i pos);
 void ShowErrorMessage(StringView title, StringView text);
 } // platform
 
@@ -83,8 +83,8 @@ inline constexpr WindowStyle operator | (WindowStyle a, WindowStyle b)
 
 struct NativeWindowGeometry
 {
-	Point<int> position;
-	Point<int> size;
+	Point2i position;
+	Point2i size;
 	uint32_t state;
 };
 
@@ -93,12 +93,12 @@ struct NativeWindow_Impl;
 struct NativeWindowBase
 {
 	NativeWindowBase();
-	//NativeWindowBase(std::function<void(UIContainer*)> renderFunc);
+	//NativeWindowBase(std::function<void(UIContainer*)> buildFunc);
 	~NativeWindowBase();
 
-	virtual void OnRender(UIContainer* ctx) = 0;
+	virtual void OnBuild(UIContainer* ctx) = 0;
 	virtual void OnClose();
-	//void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+	//void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
 
 	std::string GetTitle();
 	void SetTitle(const char* title);
@@ -112,13 +112,13 @@ struct NativeWindowBase
 	Menu* GetMenu();
 	void SetMenu(Menu* m);
 
-	Point<int> GetPosition();
+	Point2i GetPosition();
 	void SetPosition(int x, int y);
-	void SetPosition(Point<int> p) { SetPosition(p.x, p.y); }
+	void SetPosition(Point2i p) { SetPosition(p.x, p.y); }
 
-	Size<int> GetSize();
+	Size2i GetSize();
 	void SetSize(int x, int y, bool inner = true);
-	void SetSize(Size<int> p, bool inner = true) { SetSize(p.x, p.y, inner); }
+	void SetSize(Size2i p, bool inner = true) { SetSize(p.x, p.y, inner); }
 
 	WindowState GetState();
 	void SetState(WindowState ws);
@@ -147,14 +147,14 @@ struct NativeWindowBase
 	NativeWindow_Impl* _impl = nullptr;
 };
 
-class NativeWindowRenderFunc : public NativeWindowBase
+class NativeWindowBuildFunc : public NativeWindowBase
 {
 public:
-	void OnRender(UIContainer* ctx) override;
-	void SetRenderFunc(std::function<void(UIContainer*)> renderFunc);
+	void OnBuild(UIContainer* ctx) override;
+	void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
 
 private:
-	std::function<void(UIContainer*)> _renderFunc;
+	std::function<void(UIContainer*)> _buildFunc;
 };
 
 class NativeMainWindow : public NativeWindowBase
@@ -173,18 +173,18 @@ public:
 	}
 };
 
-class NativeWindowNode : public Node
+class NativeWindowNode : public Buildable
 {
 public:
-	void Render(UIContainer* ctx) override {}
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override;
-	Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
-	Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
+	void Build(UIContainer* ctx) override {}
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	Range2f GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
+	Range2f GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout) override { return {}; }
 
-	NativeWindowRenderFunc* GetWindow() { return &_window; }
+	NativeWindowBuildFunc* GetWindow() { return &_window; }
 
 private:
-	NativeWindowRenderFunc _window;
+	NativeWindowBuildFunc _window;
 };
 
 struct AnimationRequester
@@ -247,7 +247,7 @@ public:
 		struct DefaultWindowWrapper : Node
 		{
 			NativeWindow* w = nullptr;
-			void Render(UIContainer* ctx) override
+			void Build(UIContainer* ctx) override
 			{
 				w = ctx->Push<NativeWindow>();
 				ctx->Make<T>();

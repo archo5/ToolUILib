@@ -7,40 +7,40 @@
 
 
 namespace ui {
+
 uint32_t g_curLayoutFrame = 0;
 DataCategoryTag DCT_MouseMoved[1];
-} // ui
 
 
-ui::Node* UIEvent::GetTargetNode() const
+Buildable* Event::GetTargetBuildable() const
 {
 	for (auto* t = target; t; t = t->parent)
-		if (auto* n = dynamic_cast<ui::Node*>(t))
+		if (auto* n = dynamic_cast<Buildable*>(t))
 			return n;
 	return nullptr;
 }
 
-UIMouseButton UIEvent::GetButton() const
+MouseButton Event::GetButton() const
 {
-	return static_cast<UIMouseButton>(shortCode);
+	return static_cast<MouseButton>(shortCode);
 }
 
-UIKeyAction UIEvent::GetKeyAction() const
+KeyAction Event::GetKeyAction() const
 {
-	return static_cast<UIKeyAction>(shortCode);
+	return static_cast<KeyAction>(shortCode);
 }
 
-bool UIEvent::GetKeyActionModifier() const
+bool Event::GetKeyActionModifier() const
 {
 	return arg0 != 0;
 }
 
-uint32_t UIEvent::GetUTF32Char() const
+uint32_t Event::GetUTF32Char() const
 {
 	return longCode;
 }
 
-bool UIEvent::GetUTF8Text(char out[5]) const
+bool Event::GetUTF8Text(char out[5]) const
 {
 	auto utf32char = GetUTF32Char();
 	if (utf32char <= 0x7f)
@@ -75,13 +75,13 @@ bool UIEvent::GetUTF8Text(char out[5]) const
 }
 
 
-UIEventSystem::UIEventSystem()
+EventSystem::EventSystem()
 {
 	for (auto& val : clickLastTimes)
 		val = ui::platform::GetTimeMs();
 }
 
-void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt, bool stopOnDisabled)
+void EventSystem::BubblingEvent(Event& e, UIObject* tgt, bool stopOnDisabled)
 {
 	UIObject* obj = e.target;
 	while (obj != tgt && !e.IsPropagationStopped())
@@ -93,14 +93,14 @@ void UIEventSystem::BubblingEvent(UIEvent& e, UIObject* tgt, bool stopOnDisabled
 	}
 }
 
-void UIEventSystem::RecomputeLayout()
+void EventSystem::RecomputeLayout()
 {
 	ui::g_curLayoutFrame++;
-	if (container->rootNode)
-		container->rootNode->OnLayout({ 0, 0, width, height }, { width, height });
+	if (container->rootBuildable)
+		container->rootBuildable->OnLayout({ 0, 0, width, height }, { width, height });
 }
 
-float UIEventSystem::ProcessTimers(float dt)
+float EventSystem::ProcessTimers(float dt)
 {
 	float minTime = FLT_MAX;
 	size_t endOfInitialTimers = pendingTimers.size();
@@ -110,7 +110,7 @@ float UIEventSystem::ProcessTimers(float dt)
 		T.timeLeft -= dt;
 		if (T.timeLeft <= 0)
 		{
-			UIEvent ev(this, T.target, UIEventType::Timer);
+			Event ev(this, T.target, EventType::Timer);
 			size_t sizeBefore = pendingTimers.size();
 			T.target->_DoEvent(ev);
 			bool added = pendingTimers.size() > sizeBefore;
@@ -130,12 +130,12 @@ float UIEventSystem::ProcessTimers(float dt)
 	return minTime;
 }
 
-void UIEventSystem::Repaint(UIObject* o)
+void EventSystem::Repaint(UIObject* o)
 {
 	// TODO
 }
 
-void UIEventSystem::OnDestroy(UIObject* o)
+void EventSystem::OnDestroy(UIObject* o)
 {
 	if (hoverObj == o)
 		hoverObj = nullptr;
@@ -168,46 +168,46 @@ void UIEventSystem::OnDestroy(UIObject* o)
 	}
 }
 
-void UIEventSystem::OnActivate(UIObject* o)
+void EventSystem::OnActivate(UIObject* o)
 {
-	UIEvent ev(this, o, UIEventType::Activate);
+	Event ev(this, o, EventType::Activate);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnCommit(UIObject* o)
+void EventSystem::OnCommit(UIObject* o)
 {
-	UIEvent ev(this, o, UIEventType::Commit);
+	Event ev(this, o, EventType::Commit);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnChange(UIObject* o)
+void EventSystem::OnChange(UIObject* o)
 {
-	UIEvent ev(this, o, UIEventType::Change);
+	Event ev(this, o, EventType::Change);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnIMChange(UIObject* o)
+void EventSystem::OnIMChange(UIObject* o)
 {
-	UIEvent ev(this, o, UIEventType::IMChange);
+	Event ev(this, o, EventType::IMChange);
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1)
+void EventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1)
 {
-	UIEvent ev(this, o, UserEvent(id));
+	Event ev(this, o, UserEvent(id));
 	ev.arg0 = arg0;
 	ev.arg1 = arg1;
 	BubblingEvent(ev);
 }
 
-void UIEventSystem::SetKeyboardFocus(UIObject* o)
+void EventSystem::SetKeyboardFocus(UIObject* o)
 {
 	if (focusObj == o)
 		return;
 
 	if (focusObj)
 	{
-		UIEvent ev(this, focusObj, UIEventType::LostFocus);
+		Event ev(this, focusObj, EventType::LostFocus);
 		focusObj->_DoEvent(ev);
 	}
 
@@ -217,33 +217,33 @@ void UIEventSystem::SetKeyboardFocus(UIObject* o)
 
 	if (focusObj)
 	{
-		UIEvent ev(this, focusObj, UIEventType::GotFocus);
+		Event ev(this, focusObj, EventType::GotFocus);
 		focusObj->_DoEvent(ev);
 	}
 }
 
-bool UIEventSystem::DragCheck(UIEvent& e, UIMouseButton btn)
+bool EventSystem::DragCheck(Event& e, MouseButton btn)
 {
 	int at = (int)btn;
 	if (ui::DragDrop::GetData())
 		return false;
-	return e.type == UIEventType::MouseMove
+	return e.type == EventType::MouseMove
 		&& (e.current->flags & UIObject_IsPressedMouse)
-		&& (fabsf(e.x - clickStartPositions[at].x) >= 3.0f
-			|| fabsf(e.y - clickStartPositions[at].y) >= 3.0f);
+		&& (fabsf(e.position.x - clickStartPositions[at].x) >= 3.0f
+			|| fabsf(e.position.y - clickStartPositions[at].y) >= 3.0f);
 }
 
-void UIEventSystem::CaptureMouse(UIObject* o)
+void EventSystem::CaptureMouse(UIObject* o)
 {
 	ReleaseMouse();
 	mouseCaptureObj = o;
 }
 
-bool UIEventSystem::ReleaseMouse()
+bool EventSystem::ReleaseMouse()
 {
 	if (mouseCaptureObj)
 	{
-		UIEvent ev(this, mouseCaptureObj, UIEventType::MouseCaptureChanged);
+		Event ev(this, mouseCaptureObj, EventType::MouseCaptureChanged);
 		BubblingEvent(ev);
 
 		mouseCaptureObj = nullptr;
@@ -252,37 +252,37 @@ bool UIEventSystem::ReleaseMouse()
 	return false;
 }
 
-UIObject* UIEventSystem::GetMouseCapture()
+UIObject* EventSystem::GetMouseCapture()
 {
 	return mouseCaptureObj;
 }
 
-void UIEventSystem::SetTimer(UIObject* tgt, float t, int id)
+void EventSystem::SetTimer(UIObject* tgt, float t, int id)
 {
 	pendingTimers.push_back({ tgt, t, id });
 }
 
-void UIEventSystem::SetDefaultCursor(ui::DefaultCursor cur)
+void EventSystem::SetDefaultCursor(ui::DefaultCursor cur)
 {
 	GetNativeWindow()->SetDefaultCursor(cur);
 }
 
-UIObject* UIEventSystem::FindObjectAtPosition(float x, float y)
+UIObject* EventSystem::FindObjectAtPosition(Point2f pos)
 {
 	overlays->UpdateSorted();
 	for (size_t i = overlays->sorted.size(); i > 0; )
 	{
 		i--;
-		if (auto* o = _FindObjectAtPosition(overlays->sorted[i].obj, x, y))
+		if (auto* o = _FindObjectAtPosition(overlays->sorted[i].obj, pos))
 			return o;
 	}
-	return _FindObjectAtPosition(container->rootNode, x, y);
+	return _FindObjectAtPosition(container->rootBuildable, pos);
 }
 
-UIObject* UIEventSystem::_FindObjectAtPosition(UIObject* root, float x, float y)
+UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 {
 	UIObject* o = root;
-	if (!o || !o->Contains(x, y))
+	if (!o || !o->Contains(pos))
 		return nullptr;
 
 	bool found = true;
@@ -291,7 +291,7 @@ UIObject* UIEventSystem::_FindObjectAtPosition(UIObject* root, float x, float y)
 		found = false;
 		for (auto* ch = o->lastChild; ch; ch = ch->prev)
 		{
-			if (ch->Contains(x, y))
+			if (ch->Contains(pos))
 			{
 				o = ch;
 				found = true;
@@ -302,7 +302,7 @@ UIObject* UIEventSystem::_FindObjectAtPosition(UIObject* root, float x, float y)
 	return o;
 }
 
-void UIEventSystem::MoveClickTo(UIObject* obj, UIMouseButton btn)
+void EventSystem::MoveClickTo(UIObject* obj, MouseButton btn)
 {
 	int at = (int)btn;
 	if (auto* old = clickObj[at])
@@ -319,7 +319,7 @@ void UIEventSystem::MoveClickTo(UIObject* obj, UIMouseButton btn)
 	}
 }
 
-static void _HoverEnterEvent(UIObject* o, UIObject* end, UIEvent& e, uint32_t fl)
+static void _HoverEnterEvent(UIObject* o, UIObject* end, Event& e, uint32_t fl)
 {
 	if (o == end)
 		return;
@@ -331,15 +331,14 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, UIEvent& e, uint32_t fl
 	o->_DoEvent(e);
 }
 
-void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, uint8_t mod, bool dragEvents)
+void EventSystem::_UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
 {
 	auto* tgt = dragEvents ?
-		ui::DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(x, y) :
-		mouseCaptureObj ? mouseCaptureObj : FindObjectAtPosition(x, y);
+		ui::DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(cursorPos) :
+		mouseCaptureObj ? mouseCaptureObj : FindObjectAtPosition(cursorPos);
 
-	UIEvent ev(this, curHoverObj, dragEvents ? UIEventType::DragLeave : UIEventType::MouseLeave);
-	ev.x = x;
-	ev.y = y;
+	Event ev(this, curHoverObj, dragEvents ? EventType::DragLeave : EventType::MouseLeave);
+	ev.position = cursorPos;
 	ev.modifiers = mod;
 
 	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
@@ -353,9 +352,8 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 		o = o->parent;
 	}
 
-	ev.type = dragEvents ? UIEventType::DragMove : UIEventType::MouseMove;
-	ev.dx = x - prevMouseX;
-	ev.dy = y - prevMouseY;
+	ev.type = dragEvents ? EventType::DragMove : EventType::MouseMove;
+	ev.delta = cursorPos - prevMousePos;
 	ev.target = tgt;
 	ev._stopPropagation = false;
 	BubblingEvent(ev);
@@ -367,18 +365,17 @@ void UIEventSystem::_UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMo
 	}
 #endif
 
-	ev.type = dragEvents ? UIEventType::DragEnter : UIEventType::MouseEnter;
-	ev.dx = 0;
-	ev.dy = 0;
+	ev.type = dragEvents ? EventType::DragEnter : EventType::MouseEnter;
+	ev.delta = { 0, 0 };
 
 	_HoverEnterEvent(tgt, o, ev, hoverFlag);
 
 	curHoverObj = tgt;
 }
 
-void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
+void EventSystem::_UpdateCursor(UIObject* hoverObj)
 {
-	UIEvent ev(this, hoverObj, UIEventType::SetCursor);
+	Event ev(this, hoverObj, EventType::SetCursor);
 	BubblingEvent(ev);
 	if (!ev.IsPropagationStopped())
 	{
@@ -386,12 +383,12 @@ void UIEventSystem::_UpdateCursor(UIObject* hoverObj)
 	}
 }
 
-void UIEventSystem::_UpdateTooltip()
+void EventSystem::_UpdateTooltip()
 {
 	if (ui::Tooltip::IsSet())
 		return;
 
-	UIEvent ev(this, hoverObj, UIEventType::Tooltip);
+	Event ev(this, hoverObj, EventType::Tooltip);
 	UIObject* obj = ev.target;
 	while (obj && !ev.IsPropagationStopped())
 	{
@@ -406,9 +403,9 @@ void UIEventSystem::_UpdateTooltip()
 	}
 }
 
-void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
+void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 {
-	bool moved = x != prevMouseX || y != prevMouseY;
+	bool moved = cursorPos != prevMousePos;
 	if (moved)
 	{
 		for (int i = 0; i < 5; i++)
@@ -421,7 +418,7 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 		dragEventAttempted = true;
 		if (clickObj[0])
 		{
-			UIEvent ev(this, clickObj[0], UIEventType::DragStart);
+			Event ev(this, clickObj[0], EventType::DragStart);
 			ev.x = prevMouseX;
 			ev.y = prevMouseY;
 			dragEventInProgress = false;
@@ -440,9 +437,9 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	}
 #endif
 
-	_UpdateHoverObj(hoverObj, x, y, mod, false);
+	_UpdateHoverObj(hoverObj, cursorPos, mod, false);
 	_UpdateCursor(hoverObj);
-	_UpdateHoverObj(dragHoverObj, x, y, mod, true);
+	_UpdateHoverObj(dragHoverObj, cursorPos, mod, true);
 
 	if (moved)
 	{
@@ -454,21 +451,19 @@ void UIEventSystem::OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod)
 	}
 	_UpdateTooltip();
 
-	prevMouseX = x;
-	prevMouseY = y;
+	prevMousePos = cursorPos;
 
 	if (moved)
 		ui::Notify(ui::DCT_MouseMoved, GetNativeWindow());
 }
 
-void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod)
+void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
 {
 	int id = int(which);
 
-	UIEvent ev(this, hoverObj, UIEventType::ButtonDown);
+	Event ev(this, hoverObj, EventType::ButtonDown);
 	ev.shortCode = id;
-	ev.x = x;
-	ev.y = y;
+	ev.position = cursorPos;
 	ev.modifiers = mod;
 
 	if (down)
@@ -477,7 +472,7 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			p->flags |= _UIObject_IsClicked_First << id;
 
 		clickObj[id] = hoverObj;
-		clickStartPositions[id] = { x, y };
+		clickStartPositions[id] = cursorPos;
 		BubblingEvent(ev);
 	}
 	else
@@ -492,17 +487,17 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 			clickLastTimes[id] = t;
 			clickCounts[id] = clickCount;
 
-			ev.type = UIEventType::Click;
+			ev.type = EventType::Click;
 			ev.numRepeats = clickCount;
 			ev._stopPropagation = false;
 			BubblingEvent(ev);
 
-			if (which == UIMouseButton::Right && !ev._stopPropagation)
+			if (which == MouseButton::Right && !ev._stopPropagation)
 			{
 				auto& CM = ui::ContextMenu::Get();
 				CM.StartNew();
 
-				ev.type = UIEventType::ContextMenu;
+				ev.type = EventType::ContextMenu;
 				{
 					UIObject* obj = ev.target;
 					while (obj != nullptr && !ev.IsPropagationStopped())
@@ -516,23 +511,23 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 				if (CM.HasAny())
 				{
 					ui::Menu menu(CM.Finalize());
-					menu.Show(container->rootNode);
+					menu.Show(container->rootBuildable);
 					CM.Clear();
 				}
 			}
 		}
 
-		if (which == UIMouseButton::Left)
+		if (which == MouseButton::Left)
 		{
 			if (ui::DragDrop::GetData())
 			{
-				ev.type = UIEventType::DragDrop;
+				ev.type = EventType::DragDrop;
 				ev.target = dragHoverObj;
 				ev._stopPropagation = false;
 				BubblingEvent(ev);
 
 #if 0
-				ev.type = UIEventType::DragLeave;
+				ev.type = EventType::DragLeave;
 				ev.target = dragHoverObj;
 				ev._stopPropagation = false;
 				for (auto* p = dragHoverObj; p; p = p->parent)
@@ -541,20 +536,20 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 				}
 #endif
 
-				ev.type = UIEventType::DragEnd;
+				ev.type = EventType::DragEnd;
 				ev.target = clickObj[id];
 				ev._stopPropagation = false;
 				BubblingEvent(ev);
 
 				ui::DragDrop::SetData(nullptr);
-				_UpdateHoverObj(dragHoverObj, x, y, mod, true);
+				_UpdateHoverObj(dragHoverObj, cursorPos, mod, true);
 				//dragHoverObj = nullptr;
 				dragEventInProgress = false;
 			}
 			dragEventAttempted = false;
 		}
 
-		ev.type = UIEventType::ButtonUp;
+		ev.type = EventType::ButtonUp;
 		ev._stopPropagation = false;
 		ev.target = hoverObj;
 		clickObj[id] = nullptr;
@@ -562,22 +557,21 @@ void UIEventSystem::OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x
 	}
 }
 
-void UIEventSystem::OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy)
+void EventSystem::OnMouseScroll(Vec2f delta)
 {
 	if (hoverObj)
 	{
-		UIEvent e(this, hoverObj, UIEventType::MouseScroll);
-		e.dx = dx;
-		e.dy = dy;
+		Event e(this, hoverObj, EventType::MouseScroll);
+		e.delta = delta;
 		BubblingEvent(e);
 	}
 }
 
-void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
+void EventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 {
 	if (focusObj)
 	{
-		UIEvent ev(this, focusObj, down ? UIEventType::KeyDown : UIEventType::KeyUp);
+		Event ev(this, focusObj, down ? EventType::KeyDown : EventType::KeyUp);
 		ev.longCode = vk;
 		ev.shortCode = pk;
 		ev.modifiers = mod;
@@ -587,9 +581,9 @@ void UIEventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, 
 	}
 }
 
-void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier)
+void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier)
 {
-	UIEvent ev(this, focusObj, UIEventType::KeyAction);
+	Event ev(this, focusObj, EventType::KeyAction);
 	if (focusObj)
 	{
 		ev.shortCode = uint8_t(act);
@@ -601,9 +595,9 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeat
 
 	if (!ev.IsPropagationStopped())
 	{
-		if (act == UIKeyAction::Inspect)
+		if (act == KeyAction::Inspect)
 			ui::Application::OpenInspector(GetNativeWindow(), hoverObj);
-		else if (act == UIKeyAction::FocusNext && lastFocusObj)
+		else if (act == KeyAction::FocusNext && lastFocusObj)
 		{
 			bool found = false;
 			for (UIObject* it = lastFocusObj->GetNextInOrder(); it; it = it->GetNextInOrder())
@@ -617,7 +611,7 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeat
 			}
 			if (!found)
 			{
-				for (UIObject* it = container->rootNode->GetFirstInOrder(); it && it != lastFocusObj; it = it->GetNextInOrder())
+				for (UIObject* it = container->rootBuildable->GetFirstInOrder(); it && it != lastFocusObj; it = it->GetNextInOrder())
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
@@ -627,7 +621,7 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeat
 				}
 			}
 		}
-		else if (act == UIKeyAction::FocusPrev && lastFocusObj)
+		else if (act == KeyAction::FocusPrev && lastFocusObj)
 		{
 			bool found = false;
 			for (UIObject* it = lastFocusObj->GetPrevInOrder(); it; it = it->GetPrevInOrder())
@@ -641,7 +635,7 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeat
 			}
 			if (!found)
 			{
-				for (UIObject* it = container->rootNode->GetLastInOrder(); it && it != lastFocusObj; it = it->GetPrevInOrder())
+				for (UIObject* it = container->rootBuildable->GetLastInOrder(); it && it != lastFocusObj; it = it->GetPrevInOrder())
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
@@ -654,11 +648,11 @@ void UIEventSystem::OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeat
 	}
 }
 
-void UIEventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
+void EventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 {
 	if (focusObj)
 	{
-		UIEvent ev(this, focusObj, UIEventType::TextInput);
+		Event ev(this, focusObj, EventType::TextInput);
 		ev.longCode = ch;
 		ev.modifiers = mod;
 		ev.numRepeats = numRepeats;
@@ -666,15 +660,13 @@ void UIEventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 	}
 }
 
-ui::NativeWindowBase* UIEventSystem::GetNativeWindow() const
+ui::NativeWindowBase* EventSystem::GetNativeWindow() const
 {
 	return container->GetNativeWindow();
 }
 
 
-namespace ui {
-
-void DragDropData::Render(UIContainer* ctx)
+void DragDropData::Build(UIContainer* ctx)
 {
 	ctx->Text(type);
 }
@@ -701,28 +693,28 @@ DragDropData* DragDrop::GetData(const char* type)
 }
 
 
-static Tooltip::RenderFunc g_curTooltipRenderFn;
+static Tooltip::BuildFunc g_curTooltipBuildFn;
 
 DataCategoryTag DCT_TooltipChanged[1];
 
-void Tooltip::Set(const RenderFunc& f)
+void Tooltip::Set(const BuildFunc& f)
 {
-	g_curTooltipRenderFn = f;
+	g_curTooltipBuildFn = f;
 }
 
 void Tooltip::Unset()
 {
-	g_curTooltipRenderFn = {};
+	g_curTooltipBuildFn = {};
 }
 
 bool Tooltip::IsSet()
 {
-	return !!g_curTooltipRenderFn;
+	return !!g_curTooltipBuildFn;
 }
 
-void Tooltip::Render(UIContainer* ctx)
+void Tooltip::Build(UIContainer* ctx)
 {
-	g_curTooltipRenderFn(ctx);
+	g_curTooltipBuildFn(ctx);
 }
 
 

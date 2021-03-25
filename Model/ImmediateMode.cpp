@@ -8,26 +8,26 @@
 namespace ui {
 namespace imm {
 
-void CheckboxStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+void CheckboxStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	ctx->Make<CheckboxIcon>();
 	if (!text.empty())
 		ctx->Text(text) + Padding(4);
 }
 
-void RadioButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+void RadioButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	ctx->Make<RadioButtonIcon>();
 	if (!text.empty())
 		ctx->Text(text) + Padding(4);
 }
 
-void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+void ButtonStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	ctx->MakeWithText<StateButtonSkin>(text);
 }
 
-void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* parent, StringView text, uint8_t state) const
+void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	ctx->Make<TreeExpandIcon>();
 	if (!text.empty())
@@ -36,37 +36,37 @@ void TreeStateToggleSkin::BuildContents(UIContainer* ctx, StateToggleBase* paren
 
 bool Button(UIContainer* ctx, const char* text, ModInitList mods)
 {
-	auto* btn = ctx->MakeWithText<ui::Button>(text);
-	btn->flags |= UIObject_DB_IMEdit;
+	auto& btn = ctx->MakeWithText<ui::Button>(text);
+	btn.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
-		mod->Apply(btn);
+		mod->Apply(&btn);
 	bool clicked = false;
-	if (btn->flags & UIObject_IsEdited)
+	if (btn.flags & UIObject_IsEdited)
 	{
 		clicked = true;
-		btn->flags &= ~UIObject_IsEdited;
-		btn->_OnIMChange();
+		btn.flags &= ~UIObject_IsEdited;
+		btn._OnIMChange();
 	}
 	return clicked;
 }
 
 bool CheckboxRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	auto* cb = ctx->Push<StateToggle>();
+	auto& cb = ctx->Push<StateToggle>();
 	skin.BuildContents(ctx, cb, text ? text : StringView(), val);
 	ctx->Pop();
 
-	cb->flags |= UIObject_DB_IMEdit;
+	cb.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
-		mod->Apply(cb);
+		mod->Apply(&cb);
 	bool edited = false;
-	if (cb->flags & UIObject_IsEdited)
+	if (cb.flags & UIObject_IsEdited)
 	{
-		cb->flags &= ~UIObject_IsEdited;
+		cb.flags &= ~UIObject_IsEdited;
 		edited = true;
-		cb->_OnIMChange();
+		cb._OnIMChange();
 	}
-	cb->InitReadOnly(val);
+	cb.InitReadOnly(val);
 	return edited;
 }
 
@@ -82,21 +82,21 @@ bool EditBool(UIContainer* ctx, bool& val, const char* text, ModInitList mods, c
 
 bool RadioButtonRaw(UIContainer* ctx, bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	auto* rb = ctx->Push<StateToggle>();
+	auto& rb = ctx->Push<StateToggle>();
 	skin.BuildContents(ctx, rb, text ? text : StringView(), val);
 	ctx->Pop();
 
-	rb->flags |= UIObject_DB_IMEdit;
+	rb.flags |= UIObject_DB_IMEdit;
 	for (auto& mod : mods)
-		mod->Apply(rb);
+		mod->Apply(&rb);
 	bool edited = false;
-	if (rb->flags & UIObject_IsEdited)
+	if (rb.flags & UIObject_IsEdited)
 	{
-		rb->flags &= ~UIObject_IsEdited;
+		rb.flags &= ~UIObject_IsEdited;
 		edited = true;
-		rb->_OnIMChange();
+		rb._OnIMChange();
 	}
-	rb->InitReadOnly(val);
+	rb.InitReadOnly(val);
 	return edited;
 }
 
@@ -126,17 +126,17 @@ template <> struct MakeSigned<float> { using type = float; };
 
 template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum& val, ModInitList mods, float speed, TNum vmin, TNum vmax, const char* fmt)
 {
-	auto* tb = ctx->Make<Textbox>();
+	auto& tb = ctx->Make<Textbox>();
 	for (auto& mod : mods)
-		mod->Apply(tb);
+		mod->Apply(&tb);
 
 	NumFmtBox fb(fmt);
 
 	bool edited = false;
-	if (tb->flags & UIObject_IsEdited)
+	if (tb.flags & UIObject_IsEdited)
 	{
 		decltype(val + 0) tmp = 0;
-		sscanf(tb->GetText().c_str(), fb.fmt, &tmp);
+		sscanf(tb.GetText().c_str(), fb.fmt, &tmp);
 		if (tmp == 0)
 			tmp = 0;
 		if (tmp > vmax)
@@ -144,34 +144,34 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 		if (tmp < vmin)
 			tmp = vmin;
 		val = tmp;
-		tb->flags &= ~UIObject_IsEdited;
+		tb.flags &= ~UIObject_IsEdited;
 		edited = true;
-		tb->_OnIMChange();
+		tb._OnIMChange();
 	}
 
 	char buf[1024];
 	snprintf(buf, 1024, fb.fmt + 1, val);
-	tb->SetText(RemoveNegZero(buf));
+	tb.SetText(RemoveNegZero(buf));
 
 	if (dragObj)
 	{
 		dragObj->SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-		dragObj->HandleEvent() = [val, speed, vmin, vmax, tb, fb](UIEvent& e)
+		dragObj->HandleEvent() = [val, speed, vmin, vmax, &tb, fb](Event& e)
 		{
-			if (tb->IsInputDisabled())
+			if (tb.IsInputDisabled())
 				return;
-			if (e.type == UIEventType::MouseMove && e.target->IsPressed() && e.dx != 0)
+			if (e.type == EventType::MouseMove && e.target->IsPressed() && e.delta.x != 0)
 			{
-				if (tb->IsFocused())
+				if (tb.IsFocused())
 					e.context->SetKeyboardFocus(nullptr);
 
-				float diff = e.dx * speed * UNITS_PER_PX;
-				tb->accumulator += diff;
+				float diff = e.delta.x * speed * UNITS_PER_PX;
+				tb.accumulator += diff;
 				TNum nv = val;
-				if (fabsf(tb->accumulator) >= speed)
+				if (fabsf(tb.accumulator) >= speed)
 				{
-					nv += trunc(tb->accumulator / speed) * speed;
-					tb->accumulator = fmodf(tb->accumulator, speed);
+					nv += trunc(tb.accumulator / speed) * speed;
+					tb.accumulator = fmodf(tb.accumulator, speed);
 				}
 
 				if (nv > vmax || (diff > 0 && nv < val))
@@ -181,23 +181,23 @@ template <class TNum> bool EditNumber(UIContainer* ctx, UIObject* dragObj, TNum&
 
 				char buf[1024];
 				snprintf(buf, 1024, fb.fmt + 1, nv);
-				tb->SetText(RemoveNegZero(buf));
-				tb->flags |= UIObject_IsEdited;
+				tb.SetText(RemoveNegZero(buf));
+				tb.flags |= UIObject_IsEdited;
 
 				e.context->OnCommit(e.target);
-				e.target->RerenderContainerNode();
+				tb.RebuildContainer();
 			}
-			if (e.type == UIEventType::SetCursor)
+			if (e.type == EventType::SetCursor)
 			{
 				e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
 				e.StopPropagation();
 			}
 		};
 	}
-	tb->HandleEvent(UIEventType::Commit) = [tb](UIEvent& e)
+	tb.HandleEvent(EventType::Commit) = [&tb](Event& e)
 	{
-		tb->flags |= UIObject_IsEdited;
-		e.target->RerenderContainerNode();
+		tb.flags |= UIObject_IsEdited;
+		tb.RebuildContainer();
 	};
 
 	return edited;
@@ -230,46 +230,46 @@ bool EditFloat(UIContainer* ctx, UIObject* dragObj, float& val, ModInitList mods
 
 bool EditString(UIContainer* ctx, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	auto* tb = ctx->Make<ui::Textbox>();
+	auto& tb = ctx->Make<ui::Textbox>();
 	for (auto& mod : mods)
-		mod->Apply(tb);
+		mod->Apply(&tb);
 	bool changed = false;
-	if (tb->flags & UIObject_IsEdited)
+	if (tb.flags & UIObject_IsEdited)
 	{
-		retfn(tb->GetText().c_str());
-		tb->flags &= ~UIObject_IsEdited;
-		tb->_OnIMChange();
+		retfn(tb.GetText().c_str());
+		tb.flags &= ~UIObject_IsEdited;
+		tb._OnIMChange();
 		changed = true;
 	}
 	else // text can be invalidated if retfn is called
-		tb->SetText(text);
-	tb->HandleEvent(UIEventType::Change) = [tb](UIEvent&)
+		tb.SetText(text);
+	tb.HandleEvent(EventType::Change) = [&tb](Event&)
 	{
-		tb->flags |= UIObject_IsEdited;
-		tb->RerenderContainerNode();
+		tb.flags |= UIObject_IsEdited;
+		tb.RebuildContainer();
 	};
 	return changed;
 }
 
 bool EditColor(UIContainer* ctx, Color4f& val, ModInitList mods)
 {
-	auto* ced = ctx->Make<ColorEdit>();
+	auto& ced = ctx->Make<ColorEdit>();
 	for (auto& mod : mods)
-		mod->Apply(ced);
+		mod->Apply(&ced);
 	bool changed = false;
-	if (ced->flags & UIObject_IsEdited)
+	if (ced.flags & UIObject_IsEdited)
 	{
-		val = ced->GetColor().GetRGBA();
-		ced->flags &= ~UIObject_IsEdited;
-		ced->_OnIMChange();
+		val = ced.GetColor().GetRGBA();
+		ced.flags &= ~UIObject_IsEdited;
+		ced._OnIMChange();
 		changed = true;
 	}
 	else
-		ced->SetColor(val);
-	ced->HandleEvent(UIEventType::Change) = [ced](UIEvent&)
+		ced.SetColor(val);
+	ced.HandleEvent(EventType::Change) = [&ced](Event&)
 	{
-		ced->flags |= UIObject_IsEdited;
-		ced->RerenderContainerNode();
+		ced.flags |= UIObject_IsEdited;
+		ced.RebuildContainer();
 	};
 	return changed;
 }

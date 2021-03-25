@@ -34,10 +34,10 @@ StateButtonBase::StateButtonBase()
 }
 
 
-void StateToggleBase::OnEvent(UIEvent& e)
+void StateToggleBase::OnEvent(Event& e)
 {
 	StateButtonBase::OnEvent(e);
-	if (e.type == UIEventType::Activate && OnActivate())
+	if (e.type == EventType::Activate && OnActivate())
 	{
 		e.StopPropagation();
 		e.context->OnChange(this);
@@ -46,18 +46,18 @@ void StateToggleBase::OnEvent(UIEvent& e)
 }
 
 
-StateToggle* StateToggle::InitReadOnly(uint8_t state)
+StateToggle& StateToggle::InitReadOnly(uint8_t state)
 {
 	_state = state;
 	_maxNumStates = 0;
-	return this;
+	return *this;
 }
 
-StateToggle* StateToggle::InitEditable(uint8_t state, uint8_t maxNumStates)
+StateToggle& StateToggle::InitEditable(uint8_t state, uint8_t maxNumStates)
 {
 	_state = state;
 	_maxNumStates = maxNumStates;
-	return this;
+	return *this;
 }
 
 void StateToggle::OnSerialize(IDataSerializer& s)
@@ -65,10 +65,10 @@ void StateToggle::OnSerialize(IDataSerializer& s)
 	s << _state << _maxNumStates;
 }
 
-StateToggle* StateToggle::SetState(uint8_t state)
+StateToggle& StateToggle::SetState(uint8_t state)
 {
 	_state = state;
-	return this;
+	return *this;
 }
 
 bool StateToggle::OnActivate()
@@ -183,21 +183,21 @@ void Slider::OnPaint()
 	PaintChildren();
 }
 
-void Slider::OnEvent(UIEvent& e)
+void Slider::OnEvent(Event& e)
 {
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
 		e.context->CaptureMouse(this);
 		_mxoff = 0;
 		// TODO if inside, calc offset
 	}
-	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
 		e.context->ReleaseMouse();
 	}
-	if (e.type == UIEventType::MouseMove && IsClicked())
+	if (e.type == EventType::MouseMove && IsClicked())
 	{
-		_value = PosToValue(e.x + _mxoff);
+		_value = PosToValue(e.position.x + _mxoff);
 		e.context->OnChange(this);
 	}
 }
@@ -281,16 +281,16 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 {
 	Property::Begin(ctx);
 	auto& lbl = Property::Label(ctx, label);
-	auto* tb = ctx->Make<Textbox>();
-	lbl.HandleEvent() = [v](UIEvent& e)
+	auto& tb = ctx->Make<Textbox>();
+	lbl.HandleEvent() = [v](Event& e)
 	{
-		if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+		if (e.type == EventType::MouseMove && e.target->IsClicked() && e.delta.x != 0)
 		{
-			*v += 0.1f * e.dx;
+			*v += 0.1f * e.delta.x;
 			e.context->OnCommit(e.target);
-			e.target->RerenderNode();
+			e.target->Rebuild();
 		}
-		if (e.type == UIEventType::SetCursor)
+		if (e.type == EventType::SetCursor)
 		{
 			e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
 			e.StopPropagation();
@@ -298,11 +298,11 @@ void Property::EditFloat(UIContainer* ctx, const char* label, float* v)
 	};
 	char buf[64];
 	snprintf(buf, 64, "%g", *v);
-	tb->SetText(buf);
-	tb->HandleEvent(UIEventType::Commit) = [v, tb](UIEvent& e)
+	tb.SetText(buf);
+	tb.HandleEvent(EventType::Commit) = [v, &tb](Event& e)
 	{
-		*v = atof(tb->GetText().c_str());
-		e.target->RerenderNode();
+		*v = atof(tb.GetText().c_str());
+		e.target->Rebuild();
 	};
 	Property::End(ctx);
 }
@@ -324,30 +324,30 @@ static void EditFloatVec(UIContainer* ctx, const char* label, float* v, int size
 				+ StackingDirection(style::StackingDirection::LeftToRight)
 				+ Width(style::Coord::Fraction(1));
 
-			Property::MinLabel(ctx, subLabelNames[i]).HandleEvent() = [vc](UIEvent& e)
+			Property::MinLabel(ctx, subLabelNames[i]).HandleEvent() = [vc](Event& e)
 			{
-				if (e.type == UIEventType::MouseMove && e.target->IsClicked() && e.dx != 0)
+				if (e.type == EventType::MouseMove && e.target->IsClicked() && e.delta.x != 0)
 				{
-					*vc += 0.1f * e.dx;
+					*vc += 0.1f * e.delta.x;
 					e.context->OnCommit(e.target);
-					e.target->RerenderNode();
+					e.target->Rebuild();
 				}
-				if (e.type == UIEventType::SetCursor)
+				if (e.type == EventType::SetCursor)
 				{
 					e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
 					e.StopPropagation();
 				}
 			};
 
-			auto& tb = *ctx->Make<Textbox>();
+			auto& tb = ctx->Make<Textbox>();
 			tb + Width(style::Coord::Fraction(0.2f));
 			char buf[64];
 			snprintf(buf, 64, "%g", v[i]);
 			tb.SetText(buf);
-			tb.HandleEvent(UIEventType::Commit) = [vc, &tb](UIEvent& e)
+			tb.HandleEvent(EventType::Commit) = [vc, &tb](Event& e)
 			{
 				*vc = atof(tb.GetText().c_str());
-				e.target->RerenderNode();
+				e.target->Rebuild();
 			};
 
 			ctx->Pop();
@@ -391,18 +391,18 @@ UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
 }
 
 
-LabeledProperty* LabeledProperty::Begin(UIContainer* ctx, const char* label)
+LabeledProperty& LabeledProperty::Begin(UIContainer* ctx, const char* label)
 {
-	auto* lp = ctx->Push<LabeledProperty>();
+	auto& lp = ctx->Push<LabeledProperty>();
 	if (label)
 	{
 		if (*label == '\b')
 		{
-			lp->SetText(label + 1);
-			lp->SetBrief(true);
+			lp.SetText(label + 1);
+			lp.SetBrief(true);
 		}
 		else
-			lp->SetText(label);
+			lp.SetText(label);
 	}
 	return lp;
 }
@@ -611,7 +611,7 @@ void SplitPane::OnPaint()
 	}
 }
 
-void SplitPane::OnEvent(UIEvent& e)
+void SplitPane::OnEvent(Event& e)
 {
 	CheckSplits(this);
 
@@ -623,10 +623,10 @@ void SplitPane::OnEvent(UIEvent& e)
 			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectH(this, i), e))
 			{
 			case SubUIDragState::Start:
-				_dragOff = SplitQToX(this, _splits[i]) - e.x;
+				_dragOff = SplitQToX(this, _splits[i]) - e.position.x;
 				break;
 			case SubUIDragState::Move:
-				_splits[i] = SplitXToQ(this, e.x + _dragOff);
+				_splits[i] = SplitXToQ(this, e.position.x + _dragOff);
 				_OnChangeStyle();
 				break;
 			}
@@ -636,23 +636,23 @@ void SplitPane::OnEvent(UIEvent& e)
 			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectV(this, i), e))
 			{
 			case SubUIDragState::Start:
-				_dragOff = SplitQToY(this, _splits[i]) - e.y;
+				_dragOff = SplitQToY(this, _splits[i]) - e.position.y;
 				break;
 			case SubUIDragState::Move:
-				_splits[i] = SplitYToQ(this, e.y + _dragOff);
+				_splits[i] = SplitYToQ(this, e.position.y + _dragOff);
 				_OnChangeStyle();
 				break;
 			}
 		}
 	}
-	if (e.type == UIEventType::SetCursor && _splitUI.IsAnyHovered())
+	if (e.type == EventType::SetCursor && _splitUI.IsAnyHovered())
 	{
 		e.context->SetDefaultCursor(_verticalSplit ? ui::DefaultCursor::ResizeRow : ui::DefaultCursor::ResizeCol);
 		e.StopPropagation();
 	}
 }
 
-void SplitPane::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	CheckSplits(this);
 
@@ -703,12 +703,12 @@ void SplitPane::OnSerialize(IDataSerializer& s)
 		s << v;
 }
 
-Range<float> SplitPane::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Range<float> SplitPane::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.y, containerSize.y };
 }
@@ -807,7 +807,7 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 	thumbVStyle->paint_func(vsinfo);
 }
 
-void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
+void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 {
 	uiState.InitOnEvent(e);
 
@@ -820,7 +820,7 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 	{
 	case ui::SubUIDragState::Start:
 		dragStartContentOff = info.contentOff;
-		dragStartCursorPos = e.y;
+		dragStartCursorPos = e.position.y;
 		e.StopPropagation();
 		break;
 	case ui::SubUIDragState::Move: {
@@ -835,7 +835,7 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 		float trackRange = trackRect.GetHeight() - thumbSize;
 
 		float dragSpeed = (contentSize - viewportSize) / trackRange;
-		info.contentOff = min(maxOff, max(0.0f, dragStartContentOff + (e.y - dragStartCursorPos) * dragSpeed));
+		info.contentOff = min(maxOff, max(0.0f, dragStartContentOff + (e.position.y - dragStartCursorPos) * dragSpeed));
 		e.StopPropagation();
 		break; }
 	case ui::SubUIDragState::Stop:
@@ -843,9 +843,9 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, UIEvent& e)
 		break;
 	}
 
-	if (e.type == UIEventType::MouseScroll)
+	if (e.type == EventType::MouseScroll)
 	{
-		info.contentOff = min(maxOff, max(0.0f, info.contentOff - e.dy));
+		info.contentOff = min(maxOff, max(0.0f, info.contentOff - e.delta.y));
 	}
 }
 
@@ -868,7 +868,7 @@ void ScrollArea::OnPaint()
 	sbv.OnPaint({ this, sbvr, cr.GetHeight(), estContentSize.y, yoff });
 }
 
-void ScrollArea::OnEvent(UIEvent& e)
+void ScrollArea::OnEvent(Event& e)
 {
 	auto cr = GetContentRect();
 	float w = cr.GetWidth();
@@ -876,16 +876,16 @@ void ScrollArea::OnEvent(UIEvent& e)
 	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
 	ScrollbarData info = { this, sbvr, cr.GetHeight(), estContentSize.y, yoff };
 
-	if (e.type == UIEventType::MouseScroll)
+	if (e.type == EventType::MouseScroll)
 	{
-		yoff -= e.dy / 4;
+		yoff -= e.delta.y / 4;
 		yoff = min(max(info.contentSize - info.viewportSize, 0.0f), max(0.0f, yoff));
 		_OnChangeStyle();
 	}
 	sbv.OnEvent(info, e);
 }
 
-void ScrollArea::OnLayout(const UIRect& rect, const Size<float>& containerSize)
+void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	estContentSize.y = CalcEstimatedHeight(containerSize, style::EstSizeType::Exact);
 	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
@@ -964,12 +964,13 @@ void TabButtonBase::OnPaint()
 	PaintChildren();
 }
 
-void TabButtonBase::OnEvent(UIEvent& e)
+void TabButtonBase::OnEvent(Event& e)
 {
-	if ((e.type == UIEventType::Activate || e.type == UIEventType::ButtonDown) && IsChildOrSame(e.GetTargetNode()))
+	if ((e.type == EventType::Activate || e.type == EventType::ButtonDown) && e.target == e.current)
 	{
 		OnSelect();
-		e.context->OnActivate(this);
+		if (e.type != EventType::Activate)
+			e.context->OnActivate(this);
 		e.context->OnChange(this);
 		e.context->OnCommit(this);
 		e.StopPropagation();
@@ -1153,52 +1154,52 @@ static size_t NextWord(StringView str, size_t pos)
 	return pos;
 }
 
-void Textbox::OnEvent(UIEvent& e)
+void Textbox::OnEvent(Event& e)
 {
-	if (e.type == UIEventType::ButtonDown)
+	if (e.type == EventType::ButtonDown)
 	{
-		if (e.GetButton() == UIMouseButton::Left)
-			startCursor = endCursor = _FindCursorPos(e.x);
+		if (e.GetButton() == MouseButton::Left)
+			startCursor = endCursor = _FindCursorPos(e.position.x);
 	}
-	else if (e.type == UIEventType::ButtonUp)
+	else if (e.type == EventType::ButtonUp)
 	{
-		if (e.GetButton() == UIMouseButton::Left)
-			endCursor = _FindCursorPos(e.x);
+		if (e.GetButton() == MouseButton::Left)
+			endCursor = _FindCursorPos(e.position.x);
 	}
-	else if (e.type == UIEventType::MouseMove)
+	else if (e.type == EventType::MouseMove)
 	{
 		if (IsClicked(0))
-			endCursor = _FindCursorPos(e.x);
+			endCursor = _FindCursorPos(e.position.x);
 	}
-	else if (e.type == UIEventType::SetCursor)
+	else if (e.type == EventType::SetCursor)
 	{
 		e.context->SetDefaultCursor(DefaultCursor::Text);
 		e.StopPropagation();
 	}
-	else if (e.type == UIEventType::Timer)
+	else if (e.type == EventType::Timer)
 	{
 		showCaretState = !showCaretState;
 		if (IsFocused())
 			e.context->SetTimer(this, 0.5f);
 	}
-	else if (e.type == UIEventType::GotFocus)
+	else if (e.type == EventType::GotFocus)
 	{
 		showCaretState = true;
 		e.context->SetTimer(this, 0.5f);
 	}
-	else if (e.type == UIEventType::LostFocus)
+	else if (e.type == EventType::LostFocus)
 	{
 		e.context->OnCommit(this);
 	}
-	else if (e.type == UIEventType::KeyAction)
+	else if (e.type == EventType::KeyAction)
 	{
 		switch (e.GetKeyAction())
 		{
-		case UIKeyAction::Enter:
+		case KeyAction::Enter:
 			e.context->SetKeyboardFocus(nullptr);
 			break;
 
-		case UIKeyAction::PrevLetter:
+		case KeyAction::PrevLetter:
 			if (IsLongSelection() && !e.GetKeyActionModifier())
 			{
 				startCursor = endCursor = startCursor < endCursor ? startCursor : endCursor;
@@ -1210,7 +1211,7 @@ void Textbox::OnEvent(UIEvent& e)
 					startCursor = endCursor;
 			}
 			break;
-		case UIKeyAction::NextLetter:
+		case KeyAction::NextLetter:
 			if (IsLongSelection() && !e.GetKeyActionModifier())
 			{
 				startCursor = endCursor = startCursor > endCursor ? startCursor : endCursor;
@@ -1223,31 +1224,31 @@ void Textbox::OnEvent(UIEvent& e)
 			}
 			break;
 
-		case UIKeyAction::PrevWord:
+		case KeyAction::PrevWord:
 			endCursor = PrevWord(_text, endCursor);
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
-		case UIKeyAction::NextWord:
+		case KeyAction::NextWord:
 			endCursor = NextWord(_text, endCursor);
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
 
-		case UIKeyAction::GoToLineStart:
-		case UIKeyAction::GoToStart:
+		case KeyAction::GoToLineStart:
+		case KeyAction::GoToStart:
 			endCursor = 0;
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
-		case UIKeyAction::GoToLineEnd:
-		case UIKeyAction::GoToEnd:
+		case KeyAction::GoToLineEnd:
+		case KeyAction::GoToEnd:
 			endCursor = _text.size();
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
 
-		case UIKeyAction::Cut:
+		case KeyAction::Cut:
 			Clipboard::SetText(GetSelectedText());
 			if (!IsInputDisabled())
 			{
@@ -1255,10 +1256,10 @@ void Textbox::OnEvent(UIEvent& e)
 				e.context->OnChange(this);
 			}
 			break;
-		case UIKeyAction::Copy:
+		case KeyAction::Copy:
 			Clipboard::SetText(GetSelectedText());
 			break;
-		case UIKeyAction::SelectAll:
+		case KeyAction::SelectAll:
 			startCursor = 0;
 			endCursor = _text.size();
 			break;
@@ -1268,10 +1269,10 @@ void Textbox::OnEvent(UIEvent& e)
 		{
 			switch (e.GetKeyAction())
 			{
-			case UIKeyAction::DelPrevLetter:
-			case UIKeyAction::DelNextLetter:
-			case UIKeyAction::DelPrevWord:
-			case UIKeyAction::DelNextWord:
+			case KeyAction::DelPrevLetter:
+			case KeyAction::DelNextLetter:
+			case KeyAction::DelPrevWord:
+			case KeyAction::DelNextWord:
 				if (IsLongSelection())
 				{
 					EraseSelection();
@@ -1281,21 +1282,21 @@ void Textbox::OnEvent(UIEvent& e)
 					size_t to;
 					switch (e.GetKeyAction())
 					{
-					case UIKeyAction::DelPrevLetter:
+					case KeyAction::DelPrevLetter:
 						to = PrevChar(_text, endCursor);
 						_text.erase(to, endCursor - to);
 						startCursor = endCursor = to;
 						break;
-					case UIKeyAction::DelNextLetter:
+					case KeyAction::DelNextLetter:
 						to = NextChar(_text, endCursor);
 						_text.erase(endCursor, to - endCursor);
 						break;
-					case UIKeyAction::DelPrevWord:
+					case KeyAction::DelPrevWord:
 						to = PrevWord(_text, endCursor);
 						_text.erase(to, endCursor - to);
 						startCursor = endCursor = to;
 						break;
-					case UIKeyAction::DelNextWord:
+					case KeyAction::DelNextWord:
 						to = NextWord(_text, endCursor);
 						_text.erase(endCursor, to - endCursor);
 						break;
@@ -1303,13 +1304,13 @@ void Textbox::OnEvent(UIEvent& e)
 				}
 				e.context->OnChange(this);
 				break;
-			case UIKeyAction::Paste:
+			case KeyAction::Paste:
 				EnterText(Clipboard::GetText().c_str());
 				break;
 			}
 		}
 	}
-	else if (e.type == UIEventType::TextInput)
+	else if (e.type == EventType::TextInput)
 	{
 		if (!IsInputDisabled())
 		{
@@ -1399,7 +1400,7 @@ Textbox& Textbox::Init(float& val)
 		snprintf(bfr, 64, "%g", val);
 		SetText(bfr);
 	}
-	HandleEvent(UIEventType::Change) = [this, &val](UIEvent&) { val = atof(GetText().c_str()); };
+	HandleEvent(EventType::Change) = [this, &val](Event&) { val = atof(GetText().c_str()); };
 	return *this;
 }
 
@@ -1421,22 +1422,22 @@ void CollapsibleTreeNode::OnPaint()
 	PaintChildren();
 }
 
-void CollapsibleTreeNode::OnEvent(UIEvent& e)
+void CollapsibleTreeNode::OnEvent(Event& e)
 {
-	if (e.type == UIEventType::MouseEnter || e.type == UIEventType::MouseMove)
+	if (e.type == EventType::MouseEnter || e.type == EventType::MouseMove)
 	{
 		auto r = GetPaddingRect();
 		float h = GetFontHeight();
-		_hovered = e.x >= r.x0 && e.x < r.x0 + h && e.y >= r.y0 && e.y < r.y0 + h;
+		_hovered = e.position.x >= r.x0 && e.position.x < r.x0 + h && e.position.y >= r.y0 && e.position.y < r.y0 + h;
 	}
-	if (e.type == UIEventType::MouseLeave)
+	if (e.type == EventType::MouseLeave)
 	{
 		_hovered = false;
 	}
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hovered)
+	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered)
 	{
 		open = !open;
-		e.GetTargetNode()->Rerender();
+		e.GetTargetBuildable()->Rebuild();
 	}
 }
 
@@ -1453,12 +1454,12 @@ void BackgroundBlocker::OnInit()
 	GetStyle().SetPlacement(&_fullScreenPlacement);
 }
 
-void BackgroundBlocker::OnEvent(UIEvent& e)
+void BackgroundBlocker::OnEvent(Event& e)
 {
 	UIElement::OnEvent(e);
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 		OnButton();
-	if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
 		if (HasFlags(UIObject_IsChecked))
 			OnButton();
@@ -1468,12 +1469,12 @@ void BackgroundBlocker::OnEvent(UIEvent& e)
 
 void BackgroundBlocker::OnButton()
 {
-	UIEvent e(&system->eventSystem, this, UIEventType::BackgroundClick);
+	Event e(&system->eventSystem, this, EventType::BackgroundClick);
 	system->eventSystem.BubblingEvent(e);
 }
 
 
-void DropdownMenu::Render(UIContainer* ctx)
+void DropdownMenu::Build(UIContainer* ctx)
 {
 	OnBuildButton(ctx);
 
@@ -1484,13 +1485,13 @@ void DropdownMenu::Render(UIContainer* ctx)
 	}
 }
 
-void DropdownMenu::OnEvent(UIEvent& e)
+void DropdownMenu::OnEvent(Event& e)
 {
-	Node::OnEvent(e);
-	if (e.type == UIEventType::BackgroundClick)
+	Buildable::OnEvent(e);
+	if (e.type == EventType::BackgroundClick)
 	{
 		SetFlag(UIObject_IsChecked, false);
-		Rerender();
+		Rebuild();
 		e.StopPropagation();
 	}
 }
@@ -1500,12 +1501,12 @@ void DropdownMenu::OnBuildButton(UIContainer* ctx)
 	auto& btn = ctx->PushBox();
 	btn + ui::Style(ui::Theme::current->button);
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
-	btn.HandleEvent(UIEventType::ButtonDown) = [this](UIEvent& e)
+	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{
-		if (e.GetButton() != UIMouseButton::Left)
+		if (e.GetButton() != MouseButton::Left)
 			return;
 		SetFlag(UIObject_IsChecked, true);
-		Rerender();
+		Rebuild();
 	};
 
 	OnBuildButtonContents(ctx);
@@ -1526,7 +1527,7 @@ void DropdownMenu::OnBuildMenuWithLayout(UIContainer* ctx)
 
 UIObject& DropdownMenu::OnBuildMenu(UIContainer* ctx)
 {
-	auto& ret = *ctx->Push<ui::ListBox>();
+	auto& ret = ctx->Push<ui::ListBox>();
 
 	OnBuildMenuContents(ctx);
 
@@ -1603,22 +1604,22 @@ void DropdownMenuList::OnBuildEmptyButtonContents(UIContainer* ctx)
 
 void DropdownMenuList::OnBuildMenuElement(UIContainer* ctx, const void* ptr, uintptr_t id)
 {
-	auto& opt = *ctx->Push<ui::Selectable>();
+	auto& opt = ctx->Push<ui::Selectable>();
 	opt.Init(_selected == id);
 
 	_options->BuildElement(ctx, ptr, id, true);
 
 	ctx->Pop();
 
-	opt + ui::EventHandler(UIEventType::ButtonUp, [this, id](UIEvent& e)
+	opt + ui::EventHandler(EventType::ButtonUp, [this, id](Event& e)
 	{
-		if (e.GetButton() != UIMouseButton::Left)
+		if (e.GetButton() != MouseButton::Left)
 			return;
 		_selected = id;
 		SetFlag(UIObject_IsChecked, false);
 		e.context->OnChange(this);
 		e.context->OnCommit(this);
-		Rerender();
+		Rebuild();
 	});
 }
 
@@ -1628,7 +1629,7 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	auto contSize = curObj->GetNativeWindow()->GetSize();
 
 #if 1
-	Size<float> minContSize = { float(contSize.x), float(contSize.y) };
+	Size2f minContSize = { float(contSize.x), float(contSize.y) };
 #else
 	// do not let container size exceed window size
 	auto minContSize = containerSize;
@@ -1641,7 +1642,7 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	float w = curObj->GetFullEstimatedWidth(minContSize, style::EstSizeType::Expanding, false).min;
 	float h = curObj->GetFullEstimatedHeight(minContSize, style::EstSizeType::Expanding, false).min;
 
-	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMouseX, curObj->system->eventSystem.prevMouseY, 16);
+	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMousePos, 16);
 
 	float freeL = avoidRect.x0;
 	float freeR = contSize.x - avoidRect.x1;
@@ -1685,7 +1686,7 @@ DragDropDataFrame::DragDropDataFrame()
 }
 
 
-void DefaultOverlayRenderer::Render(UIContainer* ctx)
+void DefaultOverlayBuilder::Build(UIContainer* ctx)
 {
 	if (drawTooltip || drawDragDrop)
 		Subscribe(DCT_MouseMoved);
@@ -1695,8 +1696,8 @@ void DefaultOverlayRenderer::Render(UIContainer* ctx)
 		Subscribe(DCT_TooltipChanged);
 		if (ui::Tooltip::IsSet())
 		{
-			ctx->Push<ui::TooltipFrame>()->RegisterAsOverlay();
-			ui::Tooltip::Render(ctx);
+			ctx->Push<ui::TooltipFrame>().RegisterAsOverlay();
+			ui::Tooltip::Build(ctx);
 			ctx->Pop();
 		}
 	}
@@ -1706,10 +1707,10 @@ void DefaultOverlayRenderer::Render(UIContainer* ctx)
 		Subscribe(DCT_DragDropDataChanged);
 		if (auto* ddd = ui::DragDrop::GetData())
 		{
-			if (ddd->ShouldRender())
+			if (ddd->ShouldBuild())
 			{
-				ctx->Push<ui::DragDropDataFrame>()->RegisterAsOverlay();
-				ddd->Render(ctx);
+				ctx->Push<ui::DragDropDataFrame>().RegisterAsOverlay();
+				ddd->Build(ctx);
 				ctx->Pop();
 			}
 		}

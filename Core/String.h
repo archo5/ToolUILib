@@ -4,10 +4,18 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
-#include <functional>
 #include <string>
 
-#include "Core.h"
+#include "Common.h"
+
+
+namespace ui {
+
+static inline bool IsSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+static inline bool IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+static inline bool IsDigit(char c) { return c >= '0' && c <= '9'; }
+static inline bool IsHexDigit(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+static inline bool IsAlphaNum(char c) { return IsAlpha(c) || IsDigit(c); }
 
 
 struct StringView
@@ -225,11 +233,12 @@ struct CStr
 inline bool operator == (const StringView& a, const StringView& b) { return a._size == b._size && memcmp(a._data, b._data, b._size) == 0; }
 inline bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
 
+} // ui
 namespace std {
 template <>
-struct hash<StringView>
+struct hash<ui::StringView>
 {
-	size_t operator () (const StringView& v) const
+	size_t operator () (const ui::StringView& v) const
 	{
 		uint64_t hash = 0xcbf29ce484222325;
 		for (char c : v)
@@ -238,6 +247,7 @@ struct hash<StringView>
 	}
 };
 } // std
+namespace ui {
 
 inline std::string FormatVA(const char* fmt, va_list args)
 {
@@ -269,3 +279,5 @@ inline std::string Format(const char* fmt, ...)
 	va_end(args);
 	return ret;
 }
+
+} // ui

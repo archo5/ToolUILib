@@ -6,7 +6,7 @@
 
 namespace ui {
 
-void SequenceDragData::Render(UIContainer* ctx)
+void SequenceDragData::Build(UIContainer* ctx)
 {
 	if (scope->itemUICallback)
 	{
@@ -34,34 +34,34 @@ void SequenceItemElement::OnInit()
 	s.SetPadding(0, 0, 0, 16);
 }
 
-void SequenceItemElement::OnEvent(UIEvent& e)
+void SequenceItemElement::OnEvent(Event& e)
 {
 	Selectable::OnEvent(e);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 		ContextMenu();
 
-	if (e.context->DragCheck(e, UIMouseButton::Left))
+	if (e.context->DragCheck(e, MouseButton::Left))
 	{
 		ui::DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
-	else if (e.type == UIEventType::DragMove)
+	else if (e.type == EventType::DragMove)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
 		{
 			if (ddd->scope == seqEd)
 			{
 				auto r = GetBorderRect();
-				bool after = e.y > (r.y0 + r.y1) * 0.5f;
+				bool after = e.position.y > (r.y0 + r.y1) * 0.5f;
 				seqEd->_dragTargetPos = num + after;
 				float y = after ? r.y1 : r.y0;
 				seqEd->_dragTargetLine = UIRect{ r.x0, y, r.x1, y };
 			}
 		}
 	}
-	if (e.type == UIEventType::DragDrop)
+	if (e.type == EventType::DragDrop)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<SequenceDragData>())
 		{
@@ -73,7 +73,7 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 			}
 		}
 	}
-	else if (e.type == UIEventType::DragLeave)
+	else if (e.type == EventType::DragLeave)
 	{
 		if (auto* p = FindParentOfType<SequenceEditor>())
 			p->_dragTargetPos = SIZE_MAX;
@@ -81,9 +81,9 @@ void SequenceItemElement::OnEvent(UIEvent& e)
 
 	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSelectionStorage(), num, true, true))
 	{
-		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
-		RerenderNode();
+		Rebuild();
 	}
 }
 
@@ -118,13 +118,13 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 }
 
 
-void SequenceEditor::Render(UIContainer* ctx)
+void SequenceEditor::Build(UIContainer* ctx)
 {
 	ctx->Push<ListBox>();
 
 	_sequence->IterateElements(0, [this, ctx](size_t idx, void* ptr)
 	{
-		ctx->Push<SequenceItemElement>()->Init(this, idx);
+		ctx->Push<SequenceItemElement>().Init(this, idx);
 
 		OnBuildItem(ctx, idx, ptr);
 
@@ -138,11 +138,11 @@ void SequenceEditor::Render(UIContainer* ctx)
 	ctx->Pop();
 }
 
-void SequenceEditor::OnEvent(UIEvent& e)
+void SequenceEditor::OnEvent(Event& e)
 {
-	Node::OnEvent(e);
+	Buildable::OnEvent(e);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 	{
 		if (auto* cms = GetContextMenuSource())
 			cms->FillListContextMenu(ContextMenu::Get());
@@ -151,7 +151,7 @@ void SequenceEditor::OnEvent(UIEvent& e)
 
 void SequenceEditor::OnPaint()
 {
-	Node::OnPaint();
+	Buildable::OnPaint();
 
 	if (_dragTargetPos < SIZE_MAX)
 	{
@@ -173,9 +173,9 @@ void SequenceEditor::OnBuildItem(UIContainer* ctx, size_t idx, void* ptr)
 
 void SequenceEditor::OnBuildDeleteButton(UIContainer* ctx, size_t idx)
 {
-	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
+	auto& delBtn = ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, idx](UIEvent& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
+	delBtn + ui::EventHandler(EventType::Activate, [this, idx](Event& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
@@ -206,7 +206,7 @@ void SequenceEditor::_OnEdit(UIObject* who)
 {
 	system->eventSystem.OnChange(who);
 	system->eventSystem.OnCommit(who);
-	who->RerenderNode();
+	who->Rebuild();
 }
 
 } // ui

@@ -91,8 +91,8 @@ void DrawTriangles(Vertex* verts, size_t num_verts);
 void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, size_t num_indices);
 
 
-void Begin3DMode(const AABB<int>& rect);
-AABB<int> End3DMode();
+void Begin3DMode(const AABB2i& rect);
+AABB2i End3DMode();
 void SetViewMatrix(const Mat4f& m);
 void SetProjectionMatrix(const Mat4f& m);
 void SetForcedColor(const Color4b& col);

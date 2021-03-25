@@ -171,7 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
-    <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\Common.h" />
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\HashTable.h" />
@@ -179,6 +179,7 @@
     <ClInclude Include="Core\Math.h" />
     <ClInclude Include="Core\Memory.h" />
     <ClInclude Include="Core\ObjectIteration.h" />
+    <ClInclude Include="Core\Platform.h" />
     <ClInclude Include="Core\PropertyStore.h" />
     <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\String.h" />

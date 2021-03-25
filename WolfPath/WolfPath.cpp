@@ -265,17 +265,17 @@ Vec3 GetCameraRayDir(int x, int y, int w, int h)
 	return (camDirNorm + cameraRight * fx * d * asp - cameraUp * fy * d).Normalized();
 }
 
-struct RenderView : ui::Node
+struct RenderView : ui::Buildable
 {
 	~RenderView()
 	{
 		delete image;
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		Subscribe(DCT_CameraEdited);
 
-		imageEl = ctx->Make<ui::ImageElement>();
+		imageEl = &ctx->Make<ui::ImageElement>();
 		imageEl->GetStyle().SetWidth(style::Coord::Percent(100));
 		imageEl->GetStyle().SetHeight(style::Coord::Percent(100));
 		imageEl->SetScaleMode(ui::ScaleMode::Stretch);
@@ -283,7 +283,7 @@ struct RenderView : ui::Node
 	}
 	void OnNotify(ui::DataCategoryTag* tag, uintptr_t at) override
 	{
-		ui::Node::OnNotify(tag, at);
+		ui::Buildable::OnNotify(tag, at);
 		if (tag == DCT_CameraEdited)
 			UpdateImage(true);
 	}
@@ -361,28 +361,28 @@ struct RenderView : ui::Node
 					{
 						delete image;
 						image = new ui::Image(canvas);
-						Rerender();
+						Rebuild();
 					});
 				}
 			}, true);
 		});
 	}
 
-	WorkerQueue wq;
+	ui::WorkerQueue wq;
 	ui::Image* image = nullptr;
 	ui::ImageElement* imageEl = nullptr;
 };
 
-struct EditorView : ui::Node
+struct EditorView : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 	}
 };
 
-struct InspectorView : ui::Node
+struct InspectorView : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::PropertyList>();
 
@@ -391,7 +391,7 @@ struct InspectorView : ui::Node
 		ui::imm::PropEditFloat(ctx, "FOV", cameraFOV);
 		ui::imm::PropEditFloatVec(ctx, "Position", &cameraPos.x);
 		ui::imm::PropEditFloatVec(ctx, "Direction", &cameraDir.x);
-		cameraBox.HandleEvent(UIEventType::Commit) = [](UIEvent& e)
+		cameraBox.HandleEvent(ui::EventType::Commit) = [](ui::Event& e)
 		{
 			ui::Notify(DCT_CameraEdited);
 		};
@@ -403,23 +403,23 @@ struct InspectorView : ui::Node
 
 struct MainWindow : ui::NativeMainWindow
 {
-	void OnRender(UIContainer* ctx)
+	void OnBuild(ui::UIContainer* ctx) override
 	{
-		auto* hsp = ctx->Push<ui::SplitPane>();
+		auto& hsp = ctx->Push<ui::SplitPane>();
 		{
-			auto* vsp = ctx->Push<ui::SplitPane>();
-			vsp->SetDirection(true);
+			auto& vsp = ctx->Push<ui::SplitPane>();
+			vsp.SetDirection(true);
 			{
 				ctx->Make<RenderView>();
 				ctx->Make<EditorView>();
 
-				vsp->SetSplits({ 0.6f });
+				vsp.SetSplits({ 0.6f });
 			}
 			ctx->Pop();
 
 			ctx->Make<InspectorView>();
 
-			vsp->SetSplits({ 0.6f });
+			hsp.SetSplits({ 0.6f });
 		}
 		ctx->Pop();
 	}

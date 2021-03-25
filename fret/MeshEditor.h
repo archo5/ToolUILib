@@ -5,14 +5,14 @@
 #include "DataDesc.h"
 
 
-struct MeshEditorWindowNode : ui::Node
+struct MeshEditorWindowNode : ui::Buildable
 {
 	void OnInit() override
 	{
 		GetNativeWindow()->SetTitle("Mesh Resource Editor");
 		GetNativeWindow()->SetSize(1200, 800);
 	}
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 	void Setup(DataDesc* desc)
 	{
 		ddiSrc.dataDesc = desc;
@@ -28,7 +28,7 @@ struct MeshEditorWindowNode : ui::Node
 	}
 
 	void ReloadMesh();
-	void OnRender3D(UIRect rect);
+	void OnRender3D(ui::UIRect rect);
 	void RenderMesh(MSPrimitive& P);
 
 	DDStruct* structDef = nullptr;

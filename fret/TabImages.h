@@ -5,9 +5,9 @@
 struct Workspace;
 
 
-struct TabImages : ui::Node
+struct TabImages : ui::Buildable
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	Workspace* workspace = nullptr;
 };

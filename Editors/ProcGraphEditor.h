@@ -126,7 +126,7 @@ struct IProcGraph
 	virtual void PreviewUI(Node*, UIContainer*) {}
 
 	// node editing
-	virtual void OnEditNode(UIEvent&, Node*) {}
+	virtual void OnEditNode(Event&, Node*) {}
 
 	virtual bool CanDeleteNode(Node*) { return false; }
 	virtual void DeleteNode(Node*) {}
@@ -144,18 +144,18 @@ struct ProcGraphLinkDragDropData : DragDropData
 		_graph(graph),
 		_pin(pin)
 	{}
-	bool ShouldRender() override { return false; }
+	bool ShouldBuild() override { return false; }
 	IProcGraph* _graph;
 	IProcGraph::Pin _pin;
 };
 
 
-struct ProcGraphEditor_NodePin : Node
+struct ProcGraphEditor_NodePin : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnDestroy() override;
 
@@ -177,12 +177,12 @@ struct ProcGraphEditor_NodePin : Node
 
 using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::PinHash>;
 
-struct ProcGraphEditor_Node : Node
+struct ProcGraphEditor_Node : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 
 	void Init(IProcGraph* graph, IProcGraph::Node* node, Point2f vOff);
 
@@ -200,12 +200,12 @@ struct ProcGraphEditor_Node : Node
 	Point2f _viewOffset = {};
 };
 
-struct ProcGraphEditor : Node
+struct ProcGraphEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
 	void Init(IProcGraph* graph);

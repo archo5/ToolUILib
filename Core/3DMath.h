@@ -1,18 +1,13 @@
 
 #pragma once
-#include <math.h>
-#include <float.h>
+
 #include "Math.h"
 
+#include <math.h>
+#include <float.h>
 
-constexpr float DEG2RAD = 3.14159f / 180;
-constexpr float RAD2DEG = 180 * 3.14159f;
 
-
-#ifdef _MSC_VER
-#define UI_FORCEINLINE __forceinline
-#endif
-
+namespace ui {
 
 enum DoNotInitializeTag
 {
@@ -255,3 +250,5 @@ inline Ray3f GetCameraRay(const Mat4f& invVP, float x, float y)
 	p1 = invVP.TransformPoint(p1);
 	return { p0, (p1 - p0).Normalized() };
 }
+
+} // ui

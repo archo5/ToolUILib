@@ -17,32 +17,32 @@ void TreeItemElement::OnInit()
 	s.SetPadding(0, 0, 0, 16);
 }
 
-void TreeItemElement::OnEvent(UIEvent& e)
+void TreeItemElement::OnEvent(Event& e)
 {
 	Selectable::OnEvent(e);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 		ContextMenu();
 
-	if (e.context->DragCheck(e, UIMouseButton::Left))
+	if (e.context->DragCheck(e, MouseButton::Left))
 	{
 		ui::DragDrop::SetData(new TreeDragData(treeEd, { path }));
 		e.context->SetKeyboardFocus(nullptr);
 		e.context->ReleaseMouse();
 	}
-	else if (e.type == UIEventType::DragMove)
+	else if (e.type == EventType::DragMove)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
 				treeEd->_OnDragMove(ddd, path, GetBorderRect(), e);
 	}
-	if (e.type == UIEventType::DragDrop)
+	if (e.type == EventType::DragDrop)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
 				treeEd->_OnDragDrop(ddd);
 	}
-	else if (e.type == UIEventType::DragLeave)
+	else if (e.type == EventType::DragLeave)
 	{
 		if (auto* ddd = ui::DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
@@ -50,20 +50,20 @@ void TreeItemElement::OnEvent(UIEvent& e)
 	}
 
 #if 1 // TODO
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
 		treeEd->GetTree()->ClearSelection();
 		treeEd->GetTree()->SetSelectionState(path, true);
-		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
-		RerenderNode();
+		Rebuild();
 	}
 #else
 	if (treeEd->_selImpl.OnEvent(e, treeEd->GetSelectionStorage(), num, true, true))
 	{
-		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
-		RerenderNode();
+		Rebuild();
 	}
 #endif
 }
@@ -90,9 +90,9 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 }
 
 
-void TreeEditor::Render(UIContainer* ctx)
+void TreeEditor::Build(UIContainer* ctx)
 {
-	auto s = ctx->Push<ListBox>()->GetStyle();
+	auto s = ctx->Push<ListBox>().GetStyle();
 	s.SetMinHeight(22);
 	s.SetBoxSizing(style::BoxSizing::ContentBox);
 
@@ -102,11 +102,11 @@ void TreeEditor::Render(UIContainer* ctx)
 	ctx->Pop();
 }
 
-void TreeEditor::OnEvent(UIEvent& e)
+void TreeEditor::OnEvent(Event& e)
 {
-	Node::OnEvent(e);
+	Buildable::OnEvent(e);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 	{
 		GetTree()->FillListContextMenu(ContextMenu::Get());
 	}
@@ -114,7 +114,7 @@ void TreeEditor::OnEvent(UIEvent& e)
 
 void TreeEditor::OnPaint()
 {
-	Node::OnPaint();
+	Buildable::OnPaint();
 
 	if (!_dragTargetLoc.empty())
 	{
@@ -144,7 +144,7 @@ void TreeEditor::OnBuildList(UIContainer* ctx, TreePath& path)
 	{
 		path.push_back(index);
 
-		ctx->Push<TreeItemElement>()->Init(this, path);
+		ctx->Push<TreeItemElement>().Init(this, path);
 
 		OnBuildItem(ctx, path, data);
 
@@ -171,9 +171,9 @@ void TreeEditor::OnBuildItem(UIContainer* ctx, TreePathRef path, void* data)
 
 void TreeEditor::OnBuildDeleteButton(UIContainer* ctx)
 {
-	auto& delBtn = *ctx->MakeWithText<ui::Button>("X");
+	auto& delBtn = ctx->MakeWithText<ui::Button>("X");
 	delBtn + ui::Width(20);
-	delBtn + ui::EventHandler(UIEventType::Activate, [this, &delBtn](UIEvent&)
+	delBtn + ui::EventHandler(EventType::Activate, [this, &delBtn](Event&)
 	{
 		GetTree()->Remove(delBtn.FindParentOfType<TreeItemElement>()->path);
 		_OnEdit(this);
@@ -196,19 +196,19 @@ void TreeEditor::_OnEdit(UIObject* who)
 {
 	system->eventSystem.OnChange(who);
 	system->eventSystem.OnCommit(who);
-	who->RerenderNode();
+	who->Rebuild();
 }
 
-void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, UIEvent& e)
+void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIRect& rect, Event& e)
 {
 	auto& R = rect;
-	if (e.y < lerp(R.y0, R.y1, 0.25f))
+	if (e.position.y < lerp(R.y0, R.y1, 0.25f))
 	{
 		// above
 		_dragTargetLine = UIRect{ R.x0, R.y0, R.x1, R.y0 };
 		_dragTargetLoc.assign(hoverPath.begin(), hoverPath.end());
 	}
-	else if (e.y > lerp(R.y0, R.y1, 0.75f))
+	else if (e.position.y > lerp(R.y0, R.y1, 0.75f))
 	{
 		// below
 		_dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 };

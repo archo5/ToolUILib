@@ -20,34 +20,25 @@
 #include "Layout.h"
 
 
-struct UIEvent;
+namespace ui {
+
+struct Event;
 struct UIObject; // any item
 struct UIElement; // physical item
 struct UIContainer;
-struct UIEventSystem;
+struct EventSystem;
 
-namespace prs {
-class PropertyBlock;
-enum class Unit;
-}
-
-namespace style {
-struct Block;
-}
-
-namespace ui {
 struct NativeWindowBase;
 struct FrameContents;
 struct EventHandlerEntry;
-struct Node; // logical item
+struct Buildable; // logical item
 
-using EventFunc = std::function<void(UIEvent& e)>;
-}
+using EventFunc = std::function<void(Event& e)>;
 
 
 enum UIObjectFlags
 {
-	UIObject_IsInRenderStack = 1 << 0,
+	UIObject_IsInBuildStack = 1 << 0,
 	UIObject_IsInLayoutStack = 1 << 1,
 	UIObject_IsHovered = 1 << 2,
 	_UIObject_IsClicked_First = 1 << 3,
@@ -67,7 +58,7 @@ enum UIObjectFlags
 	UIObject_IsPressedMouse = 1 << 14,
 	UIObject_IsPressedOther = 1 << 15,
 	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
-	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and RerenderNode upon activation
+	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and Rebuild upon activation
 	UIObject_IsOverlay = 1 << 17,
 	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
 	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
@@ -76,7 +67,7 @@ enum UIObjectFlags
 	UIObject_DB_Selectable = 1 << 22,
 	UIObject_DisableCulling = 1 << 23,
 	UIObject_NoPaint = 1 << 24,
-	UIObject_DB_RerenderOnChange = 1 << 25,
+	UIObject_DB_RebuildOnChange = 1 << 25,
 	UIObject_ClipChildren = 1 << 26,
 
 	UIObject_DB__Defaults = 0,
@@ -198,13 +189,13 @@ struct UIObject
 	virtual void OnReset() {}
 	void _Reset();
 
-	virtual void OnEvent(UIEvent& e) {}
-	void _DoEvent(UIEvent& e);
-	void _PerformDefaultBehaviors(UIEvent& e, uint32_t f);
+	virtual void OnEvent(Event& e) {}
+	void _DoEvent(Event& e);
+	void _PerformDefaultBehaviors(Event& e, uint32_t f);
 
 	void SendUserEvent(int id, uintptr_t arg0 = 0, uintptr_t arg1 = 0);
-	ui::EventFunc& HandleEvent(UIEventType type) { return HandleEvent(nullptr, type); }
-	ui::EventFunc& HandleEvent(UIObject* target = nullptr, UIEventType type = UIEventType::Any);
+	ui::EventFunc& HandleEvent(EventType type) { return HandleEvent(nullptr, type); }
+	ui::EventFunc& HandleEvent(UIObject* target = nullptr, EventType type = EventType::Any);
 	void ClearEventHandlers();
 	void ClearLocalEventHandlers();
 
@@ -215,20 +206,20 @@ struct UIObject
 	void Paint();
 	void PaintChildren();
 	virtual void GetSize(style::Coord& outWidth, style::Coord& outHeight) {}
-	virtual float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
-	virtual float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
-	Range<float> GetEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type);
-	Range<float> GetEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type);
-	virtual Range<float> GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout = true);
-	virtual Range<float> GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout = true);
-	void PerformLayout(const UIRect& rect, const Size<float>& containerSize);
-	void _PerformPlacement(const UIRect& rect, const Size<float>& containerSize);
+	virtual float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type);
+	virtual float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type);
+	Range2f GetEstimatedWidth(const Size2f& containerSize, style::EstSizeType type);
+	Range2f GetEstimatedHeight(const Size2f& containerSize, style::EstSizeType type);
+	virtual Range2f GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout = true);
+	virtual Range2f GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout = true);
+	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
+	void _PerformPlacement(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
-	virtual void OnLayout(const UIRect& rect, const Size<float>& containerSize);
+	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
 	virtual UIRect CalcPaddingRect(const UIRect& expTgtRect);
-	virtual bool Contains(float x, float y) const
+	virtual bool Contains(Point2f pos) const
 	{
-		return GetBorderRect().Contains(x, y);
+		return GetBorderRect().Contains(pos);
 	}
 
 	void SetFlag(UIObjectFlags flag, bool set);
@@ -262,8 +253,8 @@ struct UIObject
 	UIObject* GetFirstInOrder();
 	UIObject* GetLastInOrder();
 
-	void RerenderNode();
-	void RerenderContainerNode();
+	void Rebuild();
+	void RebuildContainer();
 	void _OnIMChange();
 
 	bool IsHovered() const;
@@ -320,13 +311,13 @@ struct UIObject
 
 	// previous layout input argument cache
 	UIRect lastLayoutInputRect = {};
-	Size<float> lastLayoutInputCSize = {};
+	Size2f lastLayoutInputCSize = {};
 
 	// size cache
 	uint32_t _cacheFrameWidth = {};
 	uint32_t _cacheFrameHeight = {};
-	Range<float> _cacheValueWidth = {};
-	Range<float> _cacheValueHeight = {};
+	Range2f _cacheValueWidth = {};
+	Range2f _cacheValueHeight = {};
 };
 
 struct UIElement : UIObject
@@ -334,21 +325,19 @@ struct UIElement : UIObject
 	typedef char IsElement[1];
 };
 
-namespace ui {
-
 struct TextElement : UIElement
 {
 	TextElement();
 #if 0
-	float CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type) override
+	float CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(text.c_str()));
 	}
-	float CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type) override
+	float CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type) override
 	{
 		return GetFontHeight();
 	}
-	void OnLayout(const UIRect& rect, const Size<float>& containerSize) override
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
 		finalRectCP = finalRectCPB = rect;
 		finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
@@ -388,13 +377,13 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
 }
 
-struct Node : UIObject
+struct Buildable : UIObject
 {
-	~Node();
-	typedef char IsNode[2];
+	~Buildable();
+	typedef char IsBuildable[2];
 
-	virtual void Render(UIContainer* ctx) = 0;
-	void Rerender();
+	virtual void Build(UIContainer* ctx) = 0;
+	void Rebuild();
 
 	virtual void OnNotify(DataCategoryTag* tag, uintptr_t at);
 	bool Subscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
@@ -421,7 +410,7 @@ struct Node : UIObject
 
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
-	uint64_t _lastRenderedFrameID = 0;
+	uint64_t _lastBuildFrameID = 0;
 	std::vector<std::function<void()>> _deferredDestructors;
 };
 
@@ -533,24 +522,24 @@ struct Margin : Modifier
 
 struct EventHandler : Modifier
 {
-	std::function<void(UIEvent&)> _evfn;
-	UIEventType _type = UIEventType::Any;
+	std::function<void(Event&)> _evfn;
+	EventType _type = EventType::Any;
 	UIObject* _tgt = nullptr;
-	EventHandler(std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)) {}
-	EventHandler(UIEventType t, std::function<void(UIEvent&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
+	EventHandler(std::function<void(Event&)>&& fn) : _evfn(std::move(fn)) {}
+	EventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
 };
 
-struct RerenderOnChange : Modifier
+struct RebuildOnChange : Modifier
 {
-	void Apply(UIObject* obj) const override { obj->SetFlag(UIObject_DB_RerenderOnChange, true); }
+	void Apply(UIObject* obj) const override { obj->SetFlag(UIObject_DB_RebuildOnChange, true); }
 };
 
 struct AddTooltip : Modifier
 {
-	ui::Tooltip::RenderFunc _evfn;
+	ui::Tooltip::BuildFunc _evfn;
 
-	AddTooltip(ui::Tooltip::RenderFunc&& fn) : _evfn(std::move(fn)) {}
+	AddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(std::move(fn)) {}
 	AddTooltip(const std::string& s);
 	void Apply(UIObject* obj) const override;
 };
@@ -574,8 +563,8 @@ struct MakeOverlay : Modifier
 struct MakeDraggable : EventHandler
 {
 	MakeDraggable() : EventHandler({}) {}
-	MakeDraggable(std::function<void(UIEvent&)>&& fn) : EventHandler(UIEventType::DragStart, std::move(fn)) {}
-	MakeDraggable(std::function<void()>&& fn) : EventHandler(UIEventType::DragStart, [fn{ std::move(fn) }](UIEvent&){ fn(); }) {}
+	MakeDraggable(std::function<void(Event&)>&& fn) : EventHandler(EventType::DragStart, std::move(fn)) {}
+	MakeDraggable(std::function<void()>&& fn) : EventHandler(EventType::DragStart, [fn{ std::move(fn) }](Event&){ fn(); }) {}
 	void Apply(UIObject* obj) const override
 	{
 		EventHandler::Apply(obj);

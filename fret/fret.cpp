@@ -21,7 +21,7 @@
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 
-struct MainWindowNode : ui::Node
+struct MainWindowContents : ui::Buildable
 {
 	void OnInit() override
 	{
@@ -39,7 +39,7 @@ struct MainWindowNode : ui::Node
 	}
 	void OnPaint() override
 	{
-		ui::Node::OnPaint();
+		ui::Buildable::OnPaint();
 
 		if (curFileView && curFileView->curHexViewer && curTable)
 		{
@@ -62,43 +62,43 @@ struct MainWindowNode : ui::Node
 			}
 		}
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		curFileView = nullptr;
 		curTable = nullptr;
 
-		HandleEvent(UserEvent(GlobalEvent_OpenImage)) = [this](UIEvent& e)
+		HandleEvent(ui::UserEvent(GlobalEvent_OpenImage)) = [this](ui::Event& e)
 		{
 			workspace.curSubtab = SubtabType::Images;
-			Rerender();
+			Rebuild();
 		};
-		HandleEvent(UserEvent(GlobalEvent_OpenImageRsrcEditor)) = [this](UIEvent& e)
+		HandleEvent(ui::UserEvent(GlobalEvent_OpenImageRsrcEditor)) = [this](ui::Event& e)
 		{
 			if (!curImageEditor)
 				curImageEditor = new WindowT<ImageEditorWindowNode>();
 			curImageEditor->SetVisible(true);
-			curImageEditor->rootNode->Setup(&workspace.desc);
-			curImageEditor->rootNode->SetStruct((DDStruct*)e.arg0);
-			curImageEditor->rootNode->Rerender();
+			curImageEditor->rootBuildable->Setup(&workspace.desc);
+			curImageEditor->rootBuildable->SetStruct((DDStruct*)e.arg0);
+			curImageEditor->rootBuildable->Rebuild();
 		};
-		HandleEvent(UserEvent(GlobalEvent_OpenMeshRsrcEditor)) = [this](UIEvent& e)
+		HandleEvent(ui::UserEvent(GlobalEvent_OpenMeshRsrcEditor)) = [this](ui::Event& e)
 		{
 			if (!curMeshEditor)
 				curMeshEditor = new WindowT<MeshEditorWindowNode>();
 			curMeshEditor->SetVisible(true);
-			curMeshEditor->rootNode->Setup(&workspace.desc);
-			curMeshEditor->rootNode->SetStruct((DDStruct*)e.arg0);
-			curMeshEditor->rootNode->Rerender();
+			curMeshEditor->rootBuildable->Setup(&workspace.desc);
+			curMeshEditor->rootBuildable->SetStruct((DDStruct*)e.arg0);
+			curMeshEditor->rootBuildable->Rebuild();
 		};
 
 		ctx->Push<ui::MenuBarElement>();
-		ctx->Make<ui::MenuItemElement>()->SetText("Save").Func([&]()
+		ctx->Make<ui::MenuItemElement>().SetText("Save").Func([&]()
 		{
 			NamedTextSerializeWriter ntsw;
 			workspace.Save(ntsw);
 			ui::WriteTextFile(CUR_WORKSPACE, ntsw.data);
 		});
-		ctx->Make<ui::MenuItemElement>()->SetText("Export script").Func([&]()
+		ctx->Make<ui::MenuItemElement>().SetText("Export script").Func([&]()
 		{
 			char bfr[256];
 			strcpy(bfr, CUR_WORKSPACE);
@@ -109,7 +109,7 @@ struct MainWindowNode : ui::Node
 		});
 		ctx->Pop();
 
-		*ctx->Push<ui::TabGroup>()
+		ctx->Push<ui::TabGroup>()
 			+ ui::Layout(style::layouts::EdgeSlice())
 			+ ui::Height(style::Coord::Percent(100));
 		{
@@ -118,7 +118,7 @@ struct MainWindowNode : ui::Node
 				int nf = 0;
 				for (auto* f : workspace.openedFiles)
 				{
-					ctx->Push<ui::TabButtonT<int>>()->Init(workspace.curOpenedFile, nf++);
+					ctx->Push<ui::TabButtonT<int>>().Init(workspace.curOpenedFile, nf++);
 					ctx->Text(f->ddFile->name);
 					ctx->MakeWithText<ui::Button>("X");
 					ctx->Pop();
@@ -132,63 +132,63 @@ struct MainWindowNode : ui::Node
 				if (workspace.curOpenedFile != nf++)
 					continue;
 
-				*ctx->Push<ui::TabPanel>() + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
+				ctx->Push<ui::TabPanel>() + ui::Layout(style::layouts::EdgeSlice()) + ui::Height(style::Coord::Percent(100));
 				{
-					*ctx->Push<ui::Panel>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Height(style::Coord::Percent(100));
+					ctx->Push<ui::Panel>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Height(style::Coord::Percent(100));
 					{
 						//ctx->Make<FileStructureViewer2>()->ds = f->ds;
-						auto* sp = ctx->Push<ui::SplitPane>();
+						auto& sp = ctx->Push<ui::SplitPane>();
 						{
 							// left
-							auto* fv = ctx->Make<FileView>();
-							fv->workspace = &workspace;
-							fv->of = of;
-							curFileView = fv;
+							auto& fv = ctx->Make<FileView>();
+							fv.workspace = &workspace;
+							fv.of = of;
+							curFileView = &fv;
 
 							// right
-							*ctx->Push<ui::TabGroup>()
+							ctx->Push<ui::TabGroup>()
 								+ ui::Layout(style::layouts::EdgeSlice())
 								+ ui::Height(style::Coord::Percent(100));
 							{
 								ctx->Push<ui::TabButtonList>();
-								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Inspect")->Init(workspace.curSubtab, SubtabType::Inspect);
-								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Highlights")->Init(workspace.curSubtab, SubtabType::Highlights);
-								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Markers")->Init(workspace.curSubtab, SubtabType::Markers);
-								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Structures")->Init(workspace.curSubtab, SubtabType::Structures);
-								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Images")->Init(workspace.curSubtab, SubtabType::Images);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Inspect").Init(workspace.curSubtab, SubtabType::Inspect);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Highlights").Init(workspace.curSubtab, SubtabType::Highlights);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Markers").Init(workspace.curSubtab, SubtabType::Markers);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Structures").Init(workspace.curSubtab, SubtabType::Structures);
+								ctx->MakeWithText<ui::TabButtonT<SubtabType>>("Images").Init(workspace.curSubtab, SubtabType::Images);
 								ctx->Pop();
 
-								*ctx->Push<ui::TabPanel>()
+								ctx->Push<ui::TabPanel>()
 									+ ui::Layout(style::layouts::EdgeSlice())
 									+ ui::Height(style::Coord::Percent(100));
 
 								if (workspace.curSubtab == SubtabType::Inspect)
 								{
-									ctx->Make<TabInspect>()->of = of;
+									ctx->Make<TabInspect>().of = of;
 								}
 
 								if (workspace.curSubtab == SubtabType::Highlights)
 								{
-									ctx->Make<TabHighlights>()->of = of;
+									ctx->Make<TabHighlights>().of = of;
 								}
 
 								if (workspace.curSubtab == SubtabType::Markers)
 								{
-									auto* tm = ctx->Make<TabMarkers>();
-									tm->of = of;
-									curTable = tm;
+									auto& tm = ctx->Make<TabMarkers>();
+									tm.of = of;
+									curTable = &tm;
 								}
 
 								if (workspace.curSubtab == SubtabType::Structures)
 								{
-									auto* ts = ctx->Make<TabStructures>();
-									ts->workspace = &workspace;
-									curTable = ts;
+									auto& ts = ctx->Make<TabStructures>();
+									ts.workspace = &workspace;
+									curTable = &ts;
 								}
 
 								if (workspace.curSubtab == SubtabType::Images)
 								{
-									ctx->Make<TabImages>()->workspace = &workspace;
+									ctx->Make<TabImages>().workspace = &workspace;
 								}
 
 								// tab panel
@@ -196,7 +196,7 @@ struct MainWindowNode : ui::Node
 							}
 							ctx->Pop();
 						}
-						sp->SetSplits({ 0.3f });
+						sp.SetSplits({ 0.3f });
 						ctx->Pop();
 					}
 					ctx->Pop();
@@ -218,7 +218,7 @@ struct MainWindowNode : ui::Node
 int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
-	WindowT<MainWindowNode> mw;
+	WindowT<MainWindowContents> mw;
 	mw.subWindow = false;
 	mw.SetVisible(true);
 	return app.Run();

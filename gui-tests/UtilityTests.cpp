@@ -2,14 +2,14 @@
 #include "pch.h"
 
 
-struct BasicEasingAnimTest : ui::Node
+struct BasicEasingAnimTest : ui::Buildable
 {
 	BasicEasingAnimTest()
 	{
-		animPlayer.onAnimUpdate = [this]() { Rerender(); };
+		animPlayer.onAnimUpdate = [this]() { Rebuild(); };
 		anim = std::make_shared<ui::AnimEaseLinear>("test", 123, 1);
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ui::Property::Begin(ctx, "Control");
 		if (ui::imm::Button(ctx, "Play"))
@@ -24,24 +24,24 @@ struct BasicEasingAnimTest : ui::Node
 		ctx->MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
 		ui::Property::End(ctx);
 		sliderVal = animPlayer.GetVariable("test");
-		ctx->Make<ui::Slider>()->Init(sliderVal, { 0, 123, 0 });
+		ctx->Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });
 	}
 
 	ui::AnimPlayer animPlayer;
 	ui::AnimPtr anim;
 	float sliderVal = 0;
 };
-void Test_BasicEasingAnim(UIContainer* ctx)
+void Test_BasicEasingAnim(ui::UIContainer* ctx)
 {
 	ctx->Make<BasicEasingAnimTest>();
 }
 
 
-struct ThreadWorkerTest : ui::Node
+struct ThreadWorkerTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		ctx->MakeWithText<ui::Button>("Do it")->HandleEvent(UIEventType::Activate) = [this](UIEvent&)
+		ctx->MakeWithText<ui::Button>("Do it").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 		{
 			wq.Push([this]()
 			{
@@ -52,46 +52,46 @@ struct ThreadWorkerTest : ui::Node
 					ui::Application::PushEvent(this, [this, i]()
 					{
 						progress = i / 100.0f;
-						Rerender();
+						Rebuild();
 					});
 #pragma warning (disable:4996)
 					_sleep(20);
 				}
 			}, true);
 		};
-		auto* pb = ctx->MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
-		pb->progress = progress;
+		auto& pb = ctx->MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
+		pb.progress = progress;
 	}
 
 	float progress = 0;
 
-	WorkerQueue wq;
+	ui::WorkerQueue wq;
 };
-void Test_ThreadWorker(UIContainer* ctx)
+void Test_ThreadWorker(ui::UIContainer* ctx)
 {
 	ctx->Make<ThreadWorkerTest>();
 }
 
 
-struct ThreadedImageRenderingTest : ui::Node
+struct ThreadedImageRenderingTest : ui::Buildable
 {
 	~ThreadedImageRenderingTest()
 	{
 		delete image;
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
 
-		auto* img = ctx->Make<ui::ImageElement>();
-		img->GetStyle().SetWidth(style::Coord::Percent(100));
-		img->GetStyle().SetHeight(style::Coord::Percent(100));
-		img->SetScaleMode(ui::ScaleMode::Fill);
-		img->SetImage(image);
+		auto& img = ctx->Make<ui::ImageElement>();
+		img.GetStyle().SetWidth(style::Coord::Percent(100));
+		img.GetStyle().SetHeight(style::Coord::Percent(100));
+		img.SetScaleMode(ui::ScaleMode::Fill);
+		img.SetImage(image);
 
-		ui::Application::PushEvent(this, [this, img]()
+		ui::Application::PushEvent(this, [this, &img]()
 		{
-			auto cr = img->GetContentRect();
+			auto cr = img.GetContentRect();
 			int tw = cr.GetWidth();
 			int th = cr.GetHeight();
 
@@ -126,29 +126,29 @@ struct ThreadedImageRenderingTest : ui::Node
 				{
 					delete image;
 					image = new ui::Image(canvas);
-					Rerender();
+					Rebuild();
 				});
 			}, true);
 		});
 	}
 
-	WorkerQueue wq;
+	ui::WorkerQueue wq;
 	ui::Image* image = nullptr;
 };
-void Test_ThreadedImageRendering(UIContainer* ctx)
+void Test_ThreadedImageRendering(ui::UIContainer* ctx)
 {
 	ctx->Make<ThreadedImageRenderingTest>();
 }
 
 
-struct OSCommunicationTest : ui::Node
+struct OSCommunicationTest : ui::Buildable
 {
 	OSCommunicationTest()
 	{
-		animReq.callback = [this]() { Rerender(); };
+		animReq.callback = [this]() { Rebuild(); };
 		animReq.BeginAnimation();
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		{
 			ui::Property::Scope ps(ctx, "\bClipboard");
@@ -170,7 +170,7 @@ struct OSCommunicationTest : ui::Node
 		ctx->Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
 			pt.x, pt.y,
 			col.r, col.g, col.b, col.a) + ui::Padding(5);
-		ctx->Make<ui::ColorInspectBlock>()->SetColor(col);
+		ctx->Make<ui::ColorInspectBlock>().SetColor(col);
 
 		if (ui::imm::Button(ctx, "Show error message"))
 			ui::platform::ShowErrorMessage("Error", "Message");
@@ -180,15 +180,15 @@ struct OSCommunicationTest : ui::Node
 
 	std::string clipboardData;
 };
-void Test_OSCommunication(UIContainer* ctx)
+void Test_OSCommunication(ui::UIContainer* ctx)
 {
 	ctx->Make<OSCommunicationTest>();
 }
 
 
-struct FileSelectionWindowTest : ui::Node
+struct FileSelectionWindowTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Check for change");
 		ui::imm::PropText(ctx, "Current working directory", ui::GetWorkingDirectory().c_str());
@@ -197,9 +197,9 @@ struct FileSelectionWindowTest : ui::Node
 		ui::Property::Begin(ctx, "Filters");
 		ctx->PushBox();
 		{
-			auto* se = ctx->Make<ui::SequenceEditor>();
-			se->SetSequence(Allocate<ui::StdSequence<decltype(fsw.filters)>>(fsw.filters));
-			se->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			auto& se = ctx->Make<ui::SequenceEditor>();
+			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.filters)>>(fsw.filters));
+			se.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* filter = static_cast<ui::FileSelectionWindow::Filter*>(ptr);
 				ui::imm::PropEditString(ctx, "\bName", filter->name.c_str(), [filter](const char* v) { filter->name = v; });
@@ -223,9 +223,9 @@ struct FileSelectionWindowTest : ui::Node
 		ui::Property::Begin(ctx, "Selected files");
 		ctx->PushBox();
 		{
-			auto* se = ctx->Make<ui::SequenceEditor>();
-			se->SetSequence(Allocate<ui::StdSequence<decltype(fsw.selectedFiles)>>(fsw.selectedFiles));
-			se->itemUICallback = [this](UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
+			auto& se = ctx->Make<ui::SequenceEditor>();
+			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.selectedFiles)>>(fsw.selectedFiles));
+			se.itemUICallback = [this](ui::UIContainer* ctx, ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* file = static_cast<std::string*>(ptr);
 				ui::imm::PropEditString(ctx, "\bFile", file->c_str(), [file](const char* v) { *file = v; });
@@ -257,7 +257,7 @@ struct FileSelectionWindowTest : ui::Node
 
 	const char* lastRet = "-";
 };
-void Test_FileSelectionWindow(UIContainer* ctx)
+void Test_FileSelectionWindow(ui::UIContainer* ctx)
 {
 	ctx->Make<FileSelectionWindowTest>();
 }

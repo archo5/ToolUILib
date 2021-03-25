@@ -54,13 +54,13 @@ struct StructureParser
 	uint64_t arraySize;
 };
 
-struct FileStructureViewer : ui::Node
+struct FileStructureViewer : ui::Buildable
 {
 	FileStructureViewer()
 	{
 		::system("cd FRET_Plugins && set RAW=1 && a > ../sockdump.txt");
 	}
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	std::vector<bool> openness;
 };
@@ -139,14 +139,14 @@ struct FileStructureDataSource : ui::TreeDataSource
 	Node root;
 };
 
-struct FileStructureViewer2 : ui::Node
+struct FileStructureViewer2 : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		auto* trv = ctx->Make<ui::TreeView>();
-		trv->GetStyle().SetHeight(style::Coord::Percent(100));
-		trv->SetDataSource(ds);
-		trv->CalculateColumnWidths();
+		auto& trv = ctx->Make<ui::TreeView>();
+		trv.GetStyle().SetHeight(style::Coord::Percent(100));
+		trv.SetDataSource(ds);
+		trv.CalculateColumnWidths();
 	}
 
 	FileStructureDataSource* ds = nullptr;

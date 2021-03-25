@@ -1,6 +1,10 @@
 
 #pragma once
+
 #include <type_traits>
+
+
+namespace ui {
 
 struct AtomicBool
 {
@@ -8,7 +12,7 @@ struct AtomicBool
 	bool Load() const;
 	void Store(bool v);
 
-	operator bool () { return Load(); }
+	operator bool() { return Load(); }
 
 private:
 	int32_t _mem;
@@ -111,3 +115,5 @@ struct WorkerQueue
 
 	struct WorkerQueueImpl* _impl;
 };
+
+} // ui

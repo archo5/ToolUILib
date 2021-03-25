@@ -1,13 +1,16 @@
 
 #pragma once
+
+#include "../Core/Math.h"
+
 #include <vector>
 #include <functional>
-#include "../Core/Math.h"
 
 
 namespace ui {
+
 struct NativeWindowBase;
-struct Node;
+struct Buildable;
 struct Overlays;
 extern struct DataCategoryTag DCT_MouseMoved[1];
 
@@ -28,17 +31,14 @@ enum ModifierKeyFlags
 	MK_Alt = 0x11 << 2,
 	MK_Win = 0x11 << 3,
 };
-} // ui
-
-using UIRect = AABB<float>;
 
 struct UIObject;
 struct UIElement;
 struct UIContainer;
-struct UIEventSystem;
+struct EventSystem;
 
 
-enum class UIEventType
+enum class EventType
 {
 	Any,
 
@@ -78,12 +78,12 @@ enum class UIEventType
 
 	User = 256,
 };
-inline UIEventType UserEvent(int id)
+inline EventType UserEvent(int id)
 {
-	return UIEventType(int(UIEventType::User) + id);
+	return EventType(int(EventType::User) + id);
 }
 
-enum class UIMouseButton
+enum class MouseButton
 {
 	Left = 0,
 	Right = 1,
@@ -92,7 +92,7 @@ enum class UIMouseButton
 	X2 = 4,
 };
 
-enum class UIKeyAction
+enum class KeyAction
 {
 	ActivateDown,
 	ActivateUp,
@@ -134,7 +134,6 @@ enum class UIKeyAction
 	Inspect,
 };
 
-namespace ui {
 enum class DefaultCursor
 {
 	None,
@@ -156,22 +155,19 @@ enum class DefaultCursor
 
 	_COUNT,
 };
-} // ui
 
-using UIMouseCoord = float;
+using MouseCoord = float;
 
-struct UIEvent
+struct Event
 {
-	UIEventSystem* context;
+	EventSystem* context;
 	UIObject* target;
 	UIObject* current;
 
-	UIEventType type;
+	EventType type;
 
-	UIMouseCoord x = 0;
-	UIMouseCoord y = 0;
-	UIMouseCoord dx = 0;
-	UIMouseCoord dy = 0;
+	Point2f position;
+	Vec2f delta;
 
 	uint32_t longCode = 0;
 	uint8_t shortCode = 0;
@@ -181,11 +177,11 @@ struct UIEvent
 	uint16_t numRepeats = 0;
 	uintptr_t arg0 = 0, arg1 = 0;
 
-	UIEvent(UIEventSystem* ctx, UIObject* tgt, UIEventType ty) : context(ctx), target(tgt), current(tgt), type(ty) {}
-	ui::Node* GetTargetNode() const;
-	UIMouseButton GetButton() const;
+	Event(EventSystem* ctx, UIObject* tgt, EventType ty) : context(ctx), target(tgt), current(tgt), type(ty) {}
+	Buildable* GetTargetBuildable() const;
+	MouseButton GetButton() const;
 	uint8_t GetModifierKeys() const { return modifiers; }
-	UIKeyAction GetKeyAction() const;
+	KeyAction GetKeyAction() const;
 	bool GetKeyActionModifier() const;
 	uint32_t GetUTF32Char() const;
 	bool GetUTF8Text(char out[5]) const;
@@ -193,23 +189,23 @@ struct UIEvent
 	bool IsPropagationStopped() const { return _stopPropagation; }
 	void StopPropagation() { _stopPropagation = true; }
 
-	bool IsCtrlPressed() const { return (GetModifierKeys() & ui::MK_Ctrl) != 0; }
-	bool IsShiftPressed() const { return (GetModifierKeys() & ui::MK_Shift) != 0; }
-	bool IsAltPressed() const { return (GetModifierKeys() & ui::MK_Alt) != 0; }
-	bool IsWinPressed() const { return (GetModifierKeys() & ui::MK_Win) != 0; }
+	bool IsCtrlPressed() const { return (GetModifierKeys() & MK_Ctrl) != 0; }
+	bool IsShiftPressed() const { return (GetModifierKeys() & MK_Shift) != 0; }
+	bool IsAltPressed() const { return (GetModifierKeys() & MK_Alt) != 0; }
+	bool IsWinPressed() const { return (GetModifierKeys() & MK_Win) != 0; }
 };
 
-struct UITimerData
+struct TimerData
 {
 	UIObject* target;
 	float timeLeft;
 	int id;
 };
 
-struct UIEventSystem
+struct EventSystem
 {
-	UIEventSystem();
-	void BubblingEvent(UIEvent& e, UIObject* tgt = nullptr, bool stopOnDisabled = false);
+	EventSystem();
+	void BubblingEvent(Event& e, UIObject* tgt = nullptr, bool stopOnDisabled = false);
 
 	void RecomputeLayout();
 	float ProcessTimers(float dt);
@@ -223,32 +219,32 @@ struct UIEventSystem
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o);
 
-	bool DragCheck(UIEvent& e, UIMouseButton btn);
+	bool DragCheck(Event& e, MouseButton btn);
 
 	void CaptureMouse(UIObject* o);
 	bool ReleaseMouse();
 	UIObject* GetMouseCapture();
 
 	void SetTimer(UIObject* tgt, float t, int id = 0);
-	void SetDefaultCursor(ui::DefaultCursor cur);
+	void SetDefaultCursor(DefaultCursor cur);
 
-	UIObject* FindObjectAtPosition(float x, float y);
-	static UIObject* _FindObjectAtPosition(UIObject* root, float x, float y);
-	void MoveClickTo(UIObject* obj, UIMouseButton btn = UIMouseButton::Left);
-	void _UpdateHoverObj(UIObject*& curHoverObj, UIMouseCoord x, UIMouseCoord y, uint8_t mod, bool dragEvents);
+	UIObject* FindObjectAtPosition(Point2f pos);
+	static UIObject* _FindObjectAtPosition(UIObject* root, Point2f pos);
+	void MoveClickTo(UIObject* obj, MouseButton btn = MouseButton::Left);
+	void _UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
 	void _UpdateTooltip();
-	void OnMouseMove(UIMouseCoord x, UIMouseCoord y, uint8_t mod);
-	void OnMouseButton(bool down, UIMouseButton which, UIMouseCoord x, UIMouseCoord y, uint8_t mod);
-	void OnMouseScroll(UIMouseCoord dx, UIMouseCoord dy);
+	void OnMouseMove(Point2f cursorPos, uint8_t mod);
+	void OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod);
+	void OnMouseScroll(Vec2f delta);
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats);
-	void OnKeyAction(UIKeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier);
+	void OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier);
 	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats);
 
-	ui::NativeWindowBase* GetNativeWindow() const;
+	NativeWindowBase* GetNativeWindow() const;
 
 	UIContainer* container;
-	ui::Overlays* overlays;
+	Overlays* overlays;
 
 	UIObject* hoverObj = nullptr;
 	UIObject* dragHoverObj = nullptr;
@@ -257,20 +253,17 @@ struct UIEventSystem
 	UIObject* clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
-	Point<float> clickStartPositions[5] = {};
+	Point2f clickStartPositions[5] = {};
 	UIObject* focusObj = nullptr;
 	UIObject* lastFocusObj = nullptr;
-	std::vector<UITimerData> pendingTimers;
+	std::vector<TimerData> pendingTimers;
 	float width = 100;
 	float height = 100;
-	float prevMouseX = 0;
-	float prevMouseY = 0;
+	Point2f prevMousePos;
 
 	bool dragEventAttempted = false;
 	bool dragEventInProgress = false;
 };
-
-namespace ui {
 
 enum class SubUIDragState
 {
@@ -289,51 +282,51 @@ template <class T> struct SubUI
 	bool IsHovered(T id) const { return _hovered == id; }
 	bool IsPressed(T id) const { return _pressed == id; }
 
-	void InitOnEvent(UIEvent& e)
+	void InitOnEvent(Event& e)
 	{
-		if (e.type == UIEventType::MouseMove)
+		if (e.type == EventType::MouseMove)
 			_hovered = NoValue;
-		if (e.type == UIEventType::MouseLeave)
+		if (e.type == EventType::MouseLeave)
 			_hovered = NoValue;
 	}
 
-	bool ButtonOnEvent(T id, const UIRect& r, UIEvent& e)
+	bool ButtonOnEvent(T id, const AABB2f& r, Event& e)
 	{
-		if (e.type == UIEventType::MouseMove)
+		if (e.type == EventType::MouseMove)
 		{
-			if (r.Contains(e.x, e.y))
+			if (r.Contains(e.position))
 				_hovered = id;
 		}
-		else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hovered == id)
+		else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered == id)
 			_pressed = id;
-		else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 			_pressed = NoValue;
-		else if (e.type == UIEventType::Activate)
+		else if (e.type == EventType::Activate)
 			if (_pressed == id && _hovered == id)
 				return true;
 		return false;
 	}
 
-	SubUIDragState DragOnEvent(T id, const UIRect& r, UIEvent& e)
+	SubUIDragState DragOnEvent(T id, const AABB2f& r, Event& e)
 	{
-		if (e.type == UIEventType::MouseMove)
+		if (e.type == EventType::MouseMove)
 		{
-			if (r.Contains(e.x, e.y))
+			if (r.Contains(e.position))
 				_hovered = id;
 			if (_pressed == id)
 				return SubUIDragState::Move;
 		}
-		else if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left && _hovered == id)
+		else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered == id)
 		{
 			_pressed = id;
 			return SubUIDragState::Start;
 		}
-		else if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 		{
 			_pressed = NoValue;
 			return SubUIDragState::Stop;
 		}
-		else if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Left)
+		else if (e.type == EventType::Click && e.GetButton() == MouseButton::Left)
 		{
 			if (_pressed != NoValue)
 				e.StopPropagation(); // eat invalid event
@@ -355,8 +348,8 @@ struct DragDropData
 	DragDropData() {}
 	DragDropData(const std::string& t) : type(t) {}
 	virtual ~DragDropData() {}
-	virtual bool ShouldRender() { return true; }
-	virtual void Render(UIContainer* ctx);
+	virtual bool ShouldBuild() { return true; }
+	virtual void Build(UIContainer* ctx);
 
 	std::string type;
 };
@@ -389,12 +382,12 @@ struct DragDrop
 extern struct DataCategoryTag DCT_TooltipChanged[1];
 struct Tooltip
 {
-	using RenderFunc = std::function<void(UIContainer*)>;
+	using BuildFunc = std::function<void(UIContainer*)>;
 
-	static void Set(const RenderFunc& f);
+	static void Set(const BuildFunc& f);
 	static void Unset();
 	static bool IsSet();
-	static void Render(UIContainer* ctx);
+	static void Build(UIContainer* ctx);
 };
 
 struct ContextMenu

@@ -200,7 +200,7 @@ struct Gizmo
 
 	void SetTransform(const Mat4f& base);
 	void Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable);
-	bool OnEvent(UIEvent& e, const CameraBase& cam, const IGizmoEditable& editable);
+	bool OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable);
 	void Render(const CameraBase& cam, float size = 100.0f, GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixels);
 };
 

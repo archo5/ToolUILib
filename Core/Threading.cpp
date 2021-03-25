@@ -8,6 +8,8 @@
 #include "Threading.h"
 
 
+namespace ui {
+
 static_assert(sizeof(std::atomic<bool>) <= sizeof(int32_t), "unexpected atomic bool size");
 
 AtomicBool::AtomicBool(bool v) : _mem(0)
@@ -221,3 +223,5 @@ bool WorkerQueue::IsQuitting()
 {
 	return _impl->quit;
 }
+
+} // ui

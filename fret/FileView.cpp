@@ -9,7 +9,7 @@
 #include "Workspace.h"
 
 
-void FileView::Render(UIContainer* ctx)
+void FileView::Build(ui::UIContainer* ctx)
 {
 	ctx->PushBox() + ui::Layout(style::layouts::EdgeSlice());
 
@@ -18,8 +18,8 @@ void FileView::Render(UIContainer* ctx)
 		char buf[256];
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
 		{
-			int64_t selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-			int64_t selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+			int64_t selMin = ui::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+			int64_t selMax = ui::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 			int64_t len = selMax - selMin + 1;
 			int64_t ciOff = 0, ciSize = 0;
 			if (auto* SI = workspace->desc.curInst)
@@ -41,23 +41,23 @@ void FileView::Render(UIContainer* ctx)
 	ctx->Pop();
 
 	ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
-	auto* vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
+	auto& vs = ctx->MakeWithText<ui::CollapsibleTreeNode>("View settings");
 	ctx->Pop();
 
 	ctx->PushBox(); // tree stabilization box
-	if (vs->open)
+	if (vs.open)
 	{
 		ui::imm::PropEditInt(ctx, "Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
 		ui::imm::PropEditInt(ctx, "Position", of->hexViewerState.basePos, {}, 1, 0);
 	}
 	ctx->Pop(); // end tree stabilization box
 
-	auto* hv = ctx->Make<HexViewer>();
-	curHexViewer = hv;
-	hv->Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
-	hv->HandleEvent(UIEventType::ButtonUp) = [this](UIEvent& e)
+	auto& hv = ctx->Make<HexViewer>();
+	curHexViewer = &hv;
+	hv.Init(&workspace->desc, of->ddFile, &of->hexViewerState, &of->highlightSettings);
+	hv.HandleEvent(ui::EventType::ButtonUp) = [this](ui::Event& e)
 	{
-		if (e.GetButton() == UIMouseButton::Right)
+		if (e.GetButton() == ui::MouseButton::Right)
 		{
 			HexViewer_OnRightClick();
 		}
@@ -69,8 +69,8 @@ void FileView::HexViewer_OnRightClick()
 {
 	auto* ds = of->ddFile->dataSource;
 	int64_t pos = of->hexViewerState.hoverByte;
-	auto selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-	auto selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMin = ui::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = ui::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 	if (selMin != UINT64_MAX && selMax != UINT64_MAX && selMin <= pos && pos <= selMax)
 		pos = selMin;
 
@@ -123,16 +123,16 @@ void FileView::HexViewer_OnRightClick()
 	}
 
 	std::vector<ui::MenuItem> images;
-	StringView prevCat;
+	ui::StringView prevCat;
 	for (size_t i = 0, count = GetImageFormatCount(); i < count; i++)
 	{
-		StringView cat = GetImageFormatCategory(i);
+		ui::StringView cat = GetImageFormatCategory(i);
 		if (cat != prevCat)
 		{
 			prevCat = cat;
 			images.push_back(ui::MenuItem(cat, {}, true));
 		}
-		StringView name = GetImageFormatName(i);
+		ui::StringView name = GetImageFormatName(i);
 		images.push_back(ui::MenuItem(name).Func([this, pos, name]() { CreateImage(pos, name); }));
 	}
 
@@ -161,7 +161,7 @@ void FileView::HexViewer_OnRightClick()
 	};
 	ui::Menu menu(items);
 	menu.Show(this);
-	Rerender();
+	Rebuild();
 }
 
 DDStruct* FileView::CreateBlankStruct(int64_t pos)
@@ -170,11 +170,12 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 	do
 	{
 		ns->name = "struct" + std::to_string(rand() % 10000);
-	} while (workspace->desc.structs.count(ns->name));
+	}
+	while (workspace->desc.structs.count(ns->name));
 	int64_t off = pos;
 	if (of->hexViewerState.selectionStart != UINT64_MAX && of->hexViewerState.selectionEnd != UINT64_MAX)
 	{
-		off = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+		off = ui::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 		ns->size = abs(int(of->hexViewerState.selectionEnd - of->hexViewerState.selectionStart)) + 1;
 	}
 	workspace->desc.structs[ns->name] = ns;
@@ -185,8 +186,8 @@ DDStruct* FileView::CreateBlankStruct(int64_t pos)
 DDStruct* FileView::CreateStructFromMarkers(int64_t pos)
 {
 	auto* ns = CreateBlankStruct(pos);
-	auto selMin = min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
-	auto selMax = max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMin = ui::min(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
+	auto selMax = ui::max(of->hexViewerState.selectionStart, of->hexViewerState.selectionEnd);
 	int at = 0;
 	for (Marker& M : of->ddFile->markerData.markers)
 	{
@@ -203,7 +204,7 @@ DDStruct* FileView::CreateStructFromMarkers(int64_t pos)
 	return ns;
 }
 
-void FileView::CreateImage(int64_t pos, StringView fmt)
+void FileView::CreateImage(int64_t pos, ui::StringView fmt)
 {
 	DataDesc::Image img;
 	img.userCreated = true;

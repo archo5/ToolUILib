@@ -82,7 +82,7 @@ void MessageLogView::OnPaint()
 	PaintChildren();
 }
 
-void MessageLogView::OnEvent(UIEvent& e)
+void MessageLogView::OnEvent(Event& e)
 {
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
@@ -106,7 +106,7 @@ void MessageLogView::OnSerialize(IDataSerializer& s)
 	//selection.OnSerialize(s);
 }
 
-void MessageLogView::Render(UIContainer* ctx)
+void MessageLogView::Build(UIContainer* ctx)
 {
 }
 
@@ -316,7 +316,7 @@ void TableView::OnPaint()
 	PaintChildren();
 }
 
-void TableView::OnEvent(UIEvent& e)
+void TableView::OnEvent(Event& e)
 {
 	size_t nr = _impl->dataSource->GetNumRows();
 
@@ -346,7 +346,7 @@ void TableView::OnEvent(UIEvent& e)
 
 	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 	{
 		auto& CM = ContextMenu::Get();
 		if (_impl->hoverRow != SIZE_MAX)
@@ -358,20 +358,20 @@ void TableView::OnEvent(UIEvent& e)
 			_impl->ctxMenuSrc->FillListContextMenu(CM);
 	}
 
-	if (e.type == UIEventType::MouseMove)
+	if (e.type == EventType::MouseMove)
 	{
-		if (e.x < RC.x1 && e.y > RC.y0 + chh)
-			_impl->hoverRow = GetRowAt(e.y);
+		if (e.position.x < RC.x1 && e.position.y > RC.y0 + chh)
+			_impl->hoverRow = GetRowAt(e.position.y);
 		else
 			_impl->hoverRow = SIZE_MAX;
 	}
-	if (e.type == UIEventType::MouseLeave)
+	if (e.type == EventType::MouseLeave)
 	{
 		_impl->hoverRow = SIZE_MAX;
 	}
-	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverRow, e.x < RC.x1 && e.y > RC.y0 + chh))
+	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverRow, e.position.x < RC.x1 && e.position.y > RC.y0 + chh))
 	{
-		UIEvent selev(e.context, this, UIEventType::SelectionChange);
+		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
 	}
 }
@@ -388,7 +388,7 @@ void TableView::OnSerialize(IDataSerializer& s)
 	_impl->sel.OnSerialize(s);
 }
 
-void TableView::Render(UIContainer* ctx)
+void TableView::Build(UIContainer* ctx)
 {
 }
 
@@ -409,7 +409,7 @@ void TableView::SetDataSource(TableDataSource* src)
 	while (_impl->colEnds.size() > nc + 1)
 		_impl->colEnds.pop_back();
 
-	Rerender();
+	Rebuild();
 }
 
 ISelectionStorage* TableView::GetSelectionStorage() const
@@ -677,15 +677,15 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 	}
 }
 
-void TreeView::OnEvent(UIEvent& e)
+void TreeView::OnEvent(Event& e)
 {
-	if (e.type == UIEventType::ButtonDown)
+	if (e.type == EventType::ButtonDown)
 	{
 		e.context->SetKeyboardFocus(this);
 	}
 }
 
-void TreeView::Render(UIContainer* ctx)
+void TreeView::Build(UIContainer* ctx)
 {
 }
 
@@ -706,7 +706,7 @@ void TreeView::SetDataSource(TreeDataSource* src)
 	while (_impl->colEnds.size() > nc + 1)
 		_impl->colEnds.pop_back();
 
-	Rerender();
+	Rebuild();
 }
 
 void TreeView::CalculateColumnWidths(bool firstTimeOnly)

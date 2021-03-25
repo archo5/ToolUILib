@@ -2,25 +2,25 @@
 #include "pch.h"
 
 
-struct EdgeSliceTest : ui::Node
+struct EdgeSliceTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
-		auto s = ctx->Push<ui::Panel>()->GetStyle();
+		auto s = ctx->Push<ui::Panel>().GetStyle();
 		s.SetLayout(style::layouts::EdgeSlice());
 		s.SetBoxSizing(style::BoxSizing::BorderBox);
 		s.SetMargin(0);
 		s.SetHeight(style::Coord::Percent(100));
 
-		ctx->MakeWithText<ui::Button>("Top")->GetStyle().SetEdge(style::Edge::Top);
-		ctx->MakeWithText<ui::Button>("Right")->GetStyle().SetEdge(style::Edge::Right);
-		ctx->MakeWithText<ui::Button>("Bottom")->GetStyle().SetEdge(style::Edge::Bottom);
-		ctx->MakeWithText<ui::Button>("Left")->GetStyle().SetEdge(style::Edge::Left);
+		ctx->MakeWithText<ui::Button>("Top").GetStyle().SetEdge(style::Edge::Top);
+		ctx->MakeWithText<ui::Button>("Right").GetStyle().SetEdge(style::Edge::Right);
+		ctx->MakeWithText<ui::Button>("Bottom").GetStyle().SetEdge(style::Edge::Bottom);
+		ctx->MakeWithText<ui::Button>("Left").GetStyle().SetEdge(style::Edge::Left);
 
 		ctx->Pop();
 	}
 };
-void Test_EdgeSlice(UIContainer* ctx)
+void Test_EdgeSlice(ui::UIContainer* ctx)
 {
 	ctx->Make<EdgeSliceTest>();
 }
@@ -46,9 +46,9 @@ static const char* layoutLongNames[] =
 };
 constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
 
-struct LayoutNestComboTest : ui::Node
+struct LayoutNestComboTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		static int parentLayout = 0;
 		static int childLayout = 0;
@@ -56,16 +56,16 @@ struct LayoutNestComboTest : ui::Node
 		LayoutUI(ctx, parentLayout);
 		LayoutUI(ctx, childLayout);
 
-		SetLayout(ctx->Push<ui::Panel>()->GetStyle(), parentLayout, -1);
+		SetLayout(ctx->Push<ui::Panel>().GetStyle(), parentLayout, -1);
 		{
-			SetLayout(ctx->Push<ui::Panel>()->GetStyle(), childLayout, parentLayout);
+			SetLayout(ctx->Push<ui::Panel>().GetStyle(), childLayout, parentLayout);
 			{
 				ctx->Text("[c 1A]");
 				ctx->Text("[c 1B]");
 			}
 			ctx->Pop();
 
-			SetLayout(ctx->Push<ui::Panel>()->GetStyle(), childLayout, parentLayout);
+			SetLayout(ctx->Push<ui::Panel>().GetStyle(), childLayout, parentLayout);
 			{
 				ctx->Text("[c 2A]");
 				ctx->Text("[c 2B]");
@@ -75,12 +75,12 @@ struct LayoutNestComboTest : ui::Node
 		ctx->Pop();
 	}
 
-	void LayoutUI(UIContainer* ctx, int& layout)
+	void LayoutUI(ui::UIContainer* ctx, int& layout)
 	{
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		ctx->Push<ui::Panel>().GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			*BasicRadioButton2(ctx, layoutShortNames[i], layout, i) + ui::RerenderOnChange();
+			BasicRadioButton2(ctx, layoutShortNames[i], layout, i) + ui::RebuildOnChange();
 		}
 		ctx->Text(layoutLongNames[layout]);
 		ctx->Pop();
@@ -134,15 +134,15 @@ struct LayoutNestComboTest : ui::Node
 		}
 	}
 };
-void Test_LayoutNestCombo(UIContainer* ctx)
+void Test_LayoutNestCombo(ui::UIContainer* ctx)
 {
 	ctx->Make<LayoutNestComboTest>();
 }
 
 
-struct StackingLayoutVariationsTest : ui::Node
+struct StackingLayoutVariationsTest : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		static int mode = 0;
 
@@ -156,64 +156,64 @@ struct StackingLayoutVariationsTest : ui::Node
 		};
 		constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
 
-		ctx->Push<ui::Panel>()->GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
+		ctx->Push<ui::Panel>().GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < layoutCount; i++)
 		{
-			*BasicRadioButton2(ctx, layoutShortNames[i], mode, i) + ui::RerenderOnChange();
+			BasicRadioButton2(ctx, layoutShortNames[i], mode, i) + ui::RebuildOnChange();
 		}
 		ctx->Text(layoutLongNames[mode]);
 		ctx->Pop();
 
 		if (mode == 0)
 		{
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetWidth(100);
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One").GetStyle().SetWidth(100);
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->MakeWithText<ui::Button>("The third");
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
-			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetWidth(100);
+			ctx->MakeWithText<ui::Button>("Another one").GetStyle().SetWidth(100);
 			ctx->MakeWithText<ui::Button>("The third");
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
-			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetWidth(100);
+			ctx->MakeWithText<ui::Button>("The third").GetStyle().SetWidth(100);
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			ctx->MakeWithText<ui::Button>("One")->GetStyle().SetMinWidth(50);
-			ctx->MakeWithText<ui::Button>("Another one")->GetStyle().SetMinWidth(100);
-			ctx->MakeWithText<ui::Button>("The third")->GetStyle().SetMinWidth(150);
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			ctx->MakeWithText<ui::Button>("One").GetStyle().SetMinWidth(50);
+			ctx->MakeWithText<ui::Button>("Another one").GetStyle().SetMinWidth(100);
+			ctx->MakeWithText<ui::Button>("The third").GetStyle().SetMinWidth(150);
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
-			{ auto s = ctx->MakeWithText<ui::Button>("One")->GetStyle(); s.SetMinWidth(100); s.SetWidth(style::Coord::Percent(30)); }
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::StackExpand()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->MakeWithText<ui::Button>("One").GetStyle(); s.SetMinWidth(100); s.SetWidth(style::Coord::Percent(30)); }
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 
-			{ auto s = ctx->Push<ui::Panel>()->GetStyle(); s.SetLayout(style::layouts::Stack()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
+			{ auto s = ctx->Push<ui::Panel>().GetStyle(); s.SetLayout(style::layouts::Stack()); s.SetStackingDirection(style::StackingDirection::LeftToRight); }
 			ctx->MakeWithText<ui::Button>("One");
 			ctx->MakeWithText<ui::Button>("Another one");
 			ctx->Pop();
 		}
 	}
 };
-void Test_StackingLayoutVariations(UIContainer* ctx)
+void Test_StackingLayoutVariations(ui::UIContainer* ctx)
 {
 	ctx->Make<StackingLayoutVariationsTest>();
 }
 
 
-struct SizeTest : ui::Node
+struct SizeTest : ui::Buildable
 {
 	struct SizedBox : ui::Placeholder
 	{
@@ -233,39 +233,39 @@ struct SizeTest : ui::Node
 
 	void OnPaint() override
 	{
-		ui::Node::OnPaint();
+		ui::Buildable::OnPaint();
 		for (const auto& t : tests)
 		{
 			auto res = t.func();
 			if (res.size())
 			{
-				DrawTextLine(t.obj->finalRectC.x1, t.obj->finalRectC.y1, res.c_str(), 1, 0, 0);
+				ui::DrawTextLine(t.obj->finalRectC.x1, t.obj->finalRectC.y1, res.c_str(), 1, 0, 0);
 			}
 		}
 	}
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		tests.clear();
 		ctx->Text("Any errors will be drawn next to the element in red");
 
-		TestContentSize(ctx->Text("Testing text element size"), ceilf(GetTextWidth("Testing text element size")), GetFontHeight());
+		TestContentSize(ctx->Text("Testing text element size"), ceilf(ui::GetTextWidth("Testing text element size")), ui::GetFontHeight());
 
 		ctx->PushBox() + ui::Layout(style::layouts::StackExpand()) + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		{
 			auto& txt1 = ctx->Text("Text size + padding") + ui::Padding(5);
-			TestContentSize(txt1, ceilf(GetTextWidth("Text size + padding")), GetFontHeight());
-			TestFullSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
-			TestFullEstSize(txt1, ceilf(GetTextWidth("Text size + padding")) + 10, GetFontHeight() + 10);
+			TestContentSize(txt1, ceilf(ui::GetTextWidth("Text size + padding")), ui::GetFontHeight());
+			TestFullSize(txt1, ceilf(ui::GetTextWidth("Text size + padding")) + 10, ui::GetFontHeight() + 10);
+			TestFullEstSize(txt1, ceilf(ui::GetTextWidth("Text size + padding")) + 10, ui::GetFontHeight() + 10);
 		}
 
 		{
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5);
 			ctx->Text("Testing text in box");
 			ctx->Pop();
-			TestContentSize(box, ceilf(GetTextWidth("Testing text in box")), GetFontHeight());
-			TestFullSize(box, ceilf(GetTextWidth("Testing text in box")) + 10, GetFontHeight() + 10);
-			TestFullX(box, ceilf(GetTextWidth("Text size + padding")) + 10);
+			TestContentSize(box, ceilf(ui::GetTextWidth("Testing text in box")), ui::GetFontHeight());
+			TestFullSize(box, ceilf(ui::GetTextWidth("Testing text in box")) + 10, ui::GetFontHeight() + 10);
+			TestFullX(box, ceilf(ui::GetTextWidth("Text size + padding")) + 10);
 		}
 		ctx->Pop();
 
@@ -273,69 +273,69 @@ struct SizeTest : ui::Node
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::BoxSizing(style::BoxSizing::BorderBox);
 			ctx->Text("Testing text in box [border]");
 			ctx->Pop();
-			TestContentSize(box, ceilf(GetTextWidth("Testing text in box [border]")), GetFontHeight());
-			TestFullSize(box, ceilf(GetTextWidth("Testing text in box [border]")) + 10, GetFontHeight() + 10);
+			TestContentSize(box, ceilf(ui::GetTextWidth("Testing text in box [border]")), ui::GetFontHeight());
+			TestFullSize(box, ceilf(ui::GetTextWidth("Testing text in box [border]")) + 10, ui::GetFontHeight() + 10);
 		}
 
 		{
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::BoxSizing(style::BoxSizing::ContentBox);
 			ctx->Text("Testing text in box [content]");
 			ctx->Pop();
-			TestContentSize(box, ceilf(GetTextWidth("Testing text in box [content]")), GetFontHeight());
-			TestFullSize(box, ceilf(GetTextWidth("Testing text in box [content]")) + 10, GetFontHeight() + 10);
+			TestContentSize(box, ceilf(ui::GetTextWidth("Testing text in box [content]")), ui::GetFontHeight());
+			TestFullSize(box, ceilf(ui::GetTextWidth("Testing text in box [content]")) + 10, ui::GetFontHeight() + 10);
 		}
 
 		{
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140);
 			ctx->Text("Testing text in box +W");
 			ctx->Pop();
-			TestContentSize(box, 140 - 10, GetFontHeight());
-			TestFullSize(box, 140, GetFontHeight() + 10);
+			TestContentSize(box, 140 - 10, ui::GetFontHeight());
+			TestFullSize(box, 140, ui::GetFontHeight() + 10);
 		}
 
 		{
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140) + ui::BoxSizing(style::BoxSizing::BorderBox);
 			ctx->Text("Testing text in box +W [border]");
 			ctx->Pop();
-			TestContentSize(box, 140 - 10, GetFontHeight());
-			TestFullSize(box, 140, GetFontHeight() + 10);
+			TestContentSize(box, 140 - 10, ui::GetFontHeight());
+			TestFullSize(box, 140, ui::GetFontHeight() + 10);
 		}
 
 		{
 			auto& box = ctx->PushBox() + ui::Layout(style::layouts::InlineBlock()) + ui::Padding(5) + ui::Width(140) + ui::BoxSizing(style::BoxSizing::ContentBox);
 			ctx->Text("Testing text in box +W [content]");
 			ctx->Pop();
-			TestContentSize(box, 140, GetFontHeight());
-			TestFullSize(box, 140 + 10, GetFontHeight() + 10);
+			TestContentSize(box, 140, ui::GetFontHeight());
+			TestFullSize(box, 140 + 10, ui::GetFontHeight() + 10);
 		}
 
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		{
-			auto& box = *ctx->Make<SizedBox>();
+			auto& box = ctx->Make<SizedBox>();
 			TestContentSize(box, 40, 40);
 			TestFullSize(box, 40, 40);
 			TestFullEstSize(box, 40, 40);
 		}
 		{
-			auto& box = *ctx->Make<SizedBox>() + ui::Width(50);
+			auto& box = ctx->Make<SizedBox>() + ui::Width(50);
 			TestContentSize(box, 50, 40);
 			TestFullSize(box, 50, 40);
 			TestFullEstSize(box, 50, 40);
 		}
 		{
-			auto& box = *ctx->Make<SizedBox>() + ui::Width(50) + ui::Padding(2, 7, 8, 3);
+			auto& box = ctx->Make<SizedBox>() + ui::Width(50) + ui::Padding(2, 7, 8, 3);
 			TestContentSize(box, 40, 30);
 			TestFullSize(box, 50, 40);
 			TestFullEstSize(box, 50, 40);
 		}
 		{
-			auto& box = *ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Width(50) + ui::Padding(2, 7, 8, 3);
+			auto& box = ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::BorderBox) + ui::Width(50) + ui::Padding(2, 7, 8, 3);
 			TestContentSize(box, 40, 30);
 			TestFullSize(box, 50, 40);
 			TestFullEstSize(box, 50, 40);
 		}
 		{
-			auto& box = *ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::ContentBox) + ui::Height(30) + ui::Padding(2, 7, 8, 3);
+			auto& box = ctx->Make<SizedBox>() + ui::BoxSizing(style::BoxSizing::ContentBox) + ui::Height(30) + ui::Padding(2, 7, 8, 3);
 			TestContentSize(box, 40, 30);
 			TestFullSize(box, 50, 40);
 			TestFullEstSize(box, 50, 40);
@@ -343,11 +343,11 @@ struct SizeTest : ui::Node
 		ctx->Pop();
 	}
 
-	static std::string TestSize(UIRect& r, float w, float h)
+	static std::string TestSize(ui::UIRect& r, float w, float h)
 	{
 		if (fabsf(r.GetWidth() - w) > 0.0001f || fabsf(r.GetHeight() - h) > 0.0001f)
 		{
-			return Format("expected %g;%g - got %g;%g", w, h, r.GetWidth(), r.GetHeight());
+			return ui::Format("expected %g;%g - got %g;%g", w, h, r.GetWidth(), r.GetHeight());
 		}
 		return {};
 	}
@@ -377,7 +377,7 @@ struct SizeTest : ui::Node
 			auto r = obj->finalRectCPB;
 			if (fabsf(r.x0 - x) > 0.0001f)
 			{
-				return Format("expected x %g - got %g", x, r.x0);
+				return ui::Format("expected x %g - got %g", x, r.x0);
 			}
 			return {};
 		};
@@ -394,7 +394,7 @@ struct SizeTest : ui::Node
 				return "est.width: max < min";
 			if (eh.max < eh.min)
 				return "est.height: max < min";
-			UIRect r{ 0, 0, ew.min, eh.min };
+			ui::UIRect r{ 0, 0, ew.min, eh.min };
 			return TestSize(r, w, h);
 		};
 		tests.push_back({ &obj, fn });
@@ -402,20 +402,20 @@ struct SizeTest : ui::Node
 
 	std::vector<Test> tests;
 };
-void Test_Size(UIContainer* ctx)
+void Test_Size(ui::UIContainer* ctx)
 {
 	ctx->Make<SizeTest>();
 }
 
 
-struct PlacementTest : ui::Node
+struct PlacementTest : ui::Buildable
 {
 	PlacementTest()
 	{
 		buttonPlacement.bias = { 3, -2, -2, -2 };
 		buttonPlacement.applyOnLayout = true;
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		*this + ui::Padding(20);
 
@@ -426,15 +426,15 @@ struct PlacementTest : ui::Node
 
 		if (open)
 		{
-			auto* lb = ctx->Push<ui::ListBox>();
-			lb->RegisterAsOverlay();
+			auto& lb = ctx->Push<ui::ListBox>();
+			lb.RegisterAsOverlay();
 			auto* pap = Allocate<style::PointAnchoredPlacement>();
 			pap->SetAnchorAndPivot({ 0, 0 });
 			pap->bias = { -5, -5 };
-			lb->GetStyle().SetPlacement(pap);
+			lb.GetStyle().SetPlacement(pap);
 
 			// room for checkbox
-			*ctx->Make<ui::BoxElement>() + ui::Width(25) + ui::Height(25);
+			ctx->Make<ui::BoxElement>() + ui::Width(25) + ui::Height(25);
 
 			ctx->Text("opened");
 			ui::imm::PropEditBool(ctx, "One", one);
@@ -450,25 +450,25 @@ struct PlacementTest : ui::Node
 		ctx->PushBox();
 		ui::imm::EditString(ctx, text.c_str(),
 			[this](const char* v) { text = v; }, {
-			ui::EventHandler(UIEventType::GotFocus, [this](UIEvent&) { showDropdown = true; curSelection = 0; Rerender(); }),
-			ui::EventHandler(UIEventType::LostFocus, [this](UIEvent&) { showDropdown = false; Rerender(); }),
-			ui::EventHandler(UIEventType::KeyAction, [this](UIEvent& e)
+			ui::EventHandler(ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),
+			ui::EventHandler(ui::EventType::LostFocus, [this](ui::Event&) { showDropdown = false; Rebuild(); }),
+			ui::EventHandler(ui::EventType::KeyAction, [this](ui::Event& e)
 			{
 				switch (e.GetKeyAction())
 				{
-				case UIKeyAction::Down:
+				case ui::KeyAction::Down:
 					curSelection++;
 					if (curSelection >= curOptionCount)
 						curSelection = 0;
-					Rerender();
+					Rebuild();
 					break;
-				case UIKeyAction::Up:
+				case ui::KeyAction::Up:
 					curSelection--;
 					if (curSelection < 0)
 						curSelection = std::max(curOptionCount - 1, 0);
-					Rerender();
+					Rebuild();
 					break;
-				case UIKeyAction::Enter:
+				case ui::KeyAction::Enter:
 					if (text.size())
 					{
 						for (int num = 0, i = 0; i < 7; i++)
@@ -485,7 +485,7 @@ struct PlacementTest : ui::Node
 						}
 						e.context->SetKeyboardFocus(nullptr);
 						e.StopPropagation();
-						Rerender();
+						Rebuild();
 					}
 					break;
 				}
@@ -493,19 +493,19 @@ struct PlacementTest : ui::Node
 			});
 		if (showDropdown)
 		{
-			auto* lb = ctx->Push<ui::ListBox>();
-			lb->RegisterAsOverlay();
+			auto& lb = ctx->Push<ui::ListBox>();
+			lb.RegisterAsOverlay();
 			auto* pap = Allocate<style::PointAnchoredPlacement>();
 			pap->anchor = { 0, 1 };
-			lb->GetStyle().SetPlacement(pap);
+			lb.GetStyle().SetPlacement(pap);
 
 			int num = 0;
 			for (int i = 0; i < 7; i++)
 			{
 				if (strstr(suggestions[i], text.c_str()))
 				{
-					*ctx->MakeWithText<ui::Selectable>(suggestions[i])->Init(curSelection == num)
-						+ ui::EventHandler(UIEventType::Activate, [this, i](UIEvent& e) { text = suggestions[i]; e.context->SetKeyboardFocus(nullptr); });
+					ctx->MakeWithText<ui::Selectable>(suggestions[i]).Init(curSelection == num)
+						+ ui::EventHandler(ui::EventType::Activate, [this, i](ui::Event& e) { text = suggestions[i]; e.context->SetKeyboardFocus(nullptr); });
 					num++;
 				}
 			}
@@ -518,7 +518,7 @@ struct PlacementTest : ui::Node
 		ctx->Pop();
 
 		ctx->Text("Self-based placement example:");
-		ctx->MakeWithText<ui::Button>("This should not cover the entire parent")->GetStyle().SetPlacement(&buttonPlacement);
+		ctx->MakeWithText<ui::Button>("This should not cover the entire parent").GetStyle().SetPlacement(&buttonPlacement);
 		ui::imm::PropEditFloatVec(ctx, "Anchor", &buttonPlacement.anchor.x0, "LTRB", {}, 0.01f);
 		ui::imm::PropEditFloatVec(ctx, "Bias", &buttonPlacement.bias.x0, "LTRB");
 	}
@@ -533,7 +533,7 @@ struct PlacementTest : ui::Node
 	int curOptionCount = 0;
 	style::RectAnchoredPlacement buttonPlacement;
 };
-void Test_Placement(UIContainer* ctx)
+void Test_Placement(ui::UIContainer* ctx)
 {
 	ctx->Make<PlacementTest>();
 }

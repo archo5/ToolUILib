@@ -2,6 +2,9 @@
 #pragma once
 #include <assert.h>
 
+
+namespace ui {
+
 template <class T>
 struct ArrayView
 {
@@ -36,3 +39,5 @@ struct ArrayView
 	const T* _data;
 	size_t _size;
 };
+
+} // ui

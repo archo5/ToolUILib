@@ -15,13 +15,13 @@ float randf()
 	return rand() / (float)RAND_MAX;
 }
 
-struct DrumGenerator : ui::Node
+struct DrumGenerator : ui::Buildable
 {
 	DrumGenerator()
 	{
 		//Regenerate();
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		if (ui::imm::Button(ctx, "Play"))
 		{
@@ -89,20 +89,40 @@ struct DrumGenerator : ui::Node
 		float volumes[NUM_IMPULSES];
 		for (int i = 0; i < NUM_IMPULSES; i++)
 		{
-			frequencies[i] = lerp(30, 15000, randf());
-			invhalflifes[i] = lerp(20, 40, randf());
-			offsets[i] = lerp(0, 0.01f, randf());
-			volumes[i] = lerp(0.5f, 0.8f, randf()) / NUM_IMPULSES;
+			frequencies[i] = ui::lerp(30, 15000, randf());
+			invhalflifes[i] = ui::lerp(20, 40, randf());
+			offsets[i] = ui::lerp(0, 0.01f, randf());
+			volumes[i] = ui::lerp(0.5f, 0.8f, randf()) / NUM_IMPULSES;
 		}
 
-		genData.resize(22050);
 		float invSR = 1.0f / 44100.0f;
+		genData.resize(22050);
+#if 0
 		for (int s = 0; s < 22050; s++)
 		{
 			float o = 0;
 			for (int i = 0; i < NUM_IMPULSES; i++)
 				o += cosf((s * invSR * frequencies[i] - offsets[i]) * 2 * float(M_PI)) * volumes[i] / exp2f((s * invSR - offsets[i]) * invhalflifes[i]);
 			genData[s] = o;
+		}
+#endif
+		float off = 0.01f;
+		float invhl = 30.0f;
+		float vol = 0.5f;
+		std::vector<float> tmp(22050, 0.0f);
+		for (int s = 0; s < 22050; s++)
+		{
+			float o = 0;
+			o += cosf((s * invSR * 100.0f - off) * 2 * float(M_PI)) * vol / exp2f((s * invSR - off) * invhl);
+			tmp[s] = o;
+		}
+		for (int s = 0; s < 22050; s++)
+		{
+			genData[s] =
+				tmp[s]
+				+ tmp[s * 3 / 4 + 50] * 0.5f
+				+ tmp[s / 2 + 50] * 0.4f
+				+ tmp[s / 4 + 80] * 0.4f;
 		}
 	}
 	int state = 0;
@@ -115,7 +135,7 @@ struct MainWindow : ui::NativeMainWindow
 	{
 		SetTitle("Drum generator");
 	}
-	void OnRender(UIContainer* ctx) override
+	void OnBuild(ui::UIContainer* ctx) override
 	{
 		ctx->Make<DrumGenerator>();
 	}

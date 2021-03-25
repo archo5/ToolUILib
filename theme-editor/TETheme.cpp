@@ -270,7 +270,7 @@ bool TE_Template::Unlink(const Link& link)
 	return true;
 }
 
-void TE_Template::OnEditNode(UIEvent& e, Node* node)
+void TE_Template::OnEditNode(Event& e, Node* node)
 {
 	auto* N = static_cast<TE_Node*>(node);
 	if (renderSettings.layer == N)

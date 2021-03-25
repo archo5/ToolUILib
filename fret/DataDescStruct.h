@@ -58,7 +58,7 @@ enum class DDStructResourceType
 	Image,
 	Mesh,
 };
-bool EditImageFormat(UIContainer* ctx, const char* label, std::string& format);
+bool EditImageFormat(ui::UIContainer* ctx, const char* label, std::string& format);
 struct DDRsrcImage
 {
 	struct FormatOverride
@@ -103,7 +103,7 @@ struct DDStruct
 		editVersionS++;
 	}
 	size_t GetFieldCount() const { return fields.size(); }
-	size_t FindFieldByName(StringView name);
+	size_t FindFieldByName(ui::StringView name);
 	void Load(NamedTextSerializeReader& r);
 	void Save(NamedTextSerializeWriter& w);
 };

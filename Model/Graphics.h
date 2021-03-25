@@ -72,10 +72,10 @@ struct ImageElement : UIElement
 	void OnPaint() override;
 	void GetSize(style::Coord& outWidth, style::Coord& outHeight) override;
 
-	ImageElement* SetImage(Image* img);
+	ImageElement& SetImage(Image* img);
 	// range: 0-1 (0.5 = middle)
-	ImageElement* SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
-	ImageElement* SetAlphaBackgroundEnabled(bool enabled);
+	ImageElement& SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
+	ImageElement& SetAlphaBackgroundEnabled(bool enabled);
 
 	Image* _image = nullptr;
 	ScaleMode _scaleMode = ScaleMode::Fit;
@@ -91,14 +91,14 @@ struct HueSatPicker : UIElement
 
 	~HueSatPicker();
 	void OnInit() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
 	HueSatPicker& Init(float& hue, float& sat)
 	{
 		_hue = hue;
 		_sat = sat;
-		HandleEvent(UIEventType::Change) = [&hue, &sat, this](UIEvent&) { hue = _hue; sat = _sat; };
+		HandleEvent(EventType::Change) = [&hue, &sat, this](Event&) { hue = _hue; sat = _sat; };
 		return *this;
 	}
 
@@ -156,7 +156,7 @@ struct ColorDragDropData : DragDropData
 {
 	static constexpr const char* NAME = "color";
 	ColorDragDropData(const Color4f& c) : DragDropData(NAME), color(c) {}
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 	Color4f color;
 };
 
@@ -164,7 +164,7 @@ struct ColorCompPicker2D : UIElement
 {
 	ColorCompPicker2D();
 	~ColorCompPicker2D();
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
 	ColorCompPicker2DSettings GetSettings() const { return _settings; }
@@ -181,7 +181,7 @@ struct ColorCompPicker2D : UIElement
 		SetSettings(s);
 		SetX(x);
 		SetY(y);
-		HandleEvent(UIEventType::Change) = [&x, &y, this](UIEvent&) { x = _x; y = _y; RerenderNode(); };
+		HandleEvent(EventType::Change) = [&x, &y, this](Event&) { x = _x; y = _y; Rebuild(); };
 		return *this;
 	}
 
@@ -224,11 +224,11 @@ struct MultiFormatColor
 	char hex[7] = "FFFFFF";
 };
 
-struct ColorPicker : Node
+struct ColorPicker : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	ColorPicker& SetColor(const MultiFormatColor& c)
@@ -253,7 +253,7 @@ struct ColorPicker : Node
 struct ColorPickerWindow : NativeDialogWindow
 {
 	ColorPickerWindow();
-	void OnRender(UIContainer* ctx) override;
+	void OnBuild(UIContainer* ctx) override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	void SetColor(const MultiFormatColor& c) { _color = c; }
@@ -261,11 +261,11 @@ struct ColorPickerWindow : NativeDialogWindow
 	MultiFormatColor _color;
 };
 
-struct ColorEdit : Node
+struct ColorEdit : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	ColorEdit& SetColor(const MultiFormatColor& c)
@@ -330,14 +330,14 @@ struct CameraBase
 	Ray3f GetLocalRayNP(Point2f p, const Mat4f& world2local) const;
 	Ray3f GetRayWP(Point2f p) const;
 	Ray3f GetLocalRayWP(Point2f p, const Mat4f& world2local) const;
-	Ray3f GetRayEP(const UIEvent& e) const;
-	Ray3f GetLocalRayEP(const UIEvent& e, const Mat4f& world2local) const;
+	Ray3f GetRayEP(const Event& e) const;
+	Ray3f GetLocalRayEP(const Event& e, const Mat4f& world2local) const;
 };
 
 struct OrbitCamera : CameraBase
 {
 	OrbitCamera();
-	bool OnEvent(UIEvent& e);
+	bool OnEvent(Event& e);
 
 	void Rotate(float dx, float dy);
 	void Pan(float dx, float dy);
@@ -357,8 +357,8 @@ struct OrbitCamera : CameraBase
 	float maxPitch = 85;
 	float rotationSpeed = 0.5f; // degrees per pixel
 	float distanceScale = 1.2f; // scale per scroll
-	UIMouseButton rotateButton = UIMouseButton::Left;
-	UIMouseButton panButton = UIMouseButton::Middle;
+	MouseButton rotateButton = MouseButton::Left;
+	MouseButton panButton = MouseButton::Middle;
 
 	// state
 	bool rotating = false;

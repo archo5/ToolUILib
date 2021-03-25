@@ -6,9 +6,9 @@
 struct Workspace;
 
 
-struct TabStructures : ui::Node, TableWithOffsets
+struct TabStructures : ui::Buildable, TableWithOffsets
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	Workspace* workspace = nullptr;
 };

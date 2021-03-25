@@ -2,9 +2,9 @@
 #include "pch.h"
 
 
-struct TrackEditorDemo : ui::Node
+struct TrackEditorDemo : ui::Buildable
 {
-	struct TrackEditor : UIElement
+	struct TrackEditor : ui::UIElement
 	{
 		static constexpr float TRACK_HEIGHT = 40;
 		struct Item
@@ -16,7 +16,7 @@ struct TrackEditorDemo : ui::Node
 
 		TrackEditor()
 		{
-			SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+			SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			items.push_back({ 100, 150, 50, 0, "Animation one" });
 			items.push_back({ 200, 350, 150, 0, "Sound effect two" });
 			items.push_back({ 120, 320, 200, 1, "Camera track" });
@@ -48,56 +48,56 @@ struct TrackEditorDemo : ui::Node
 
 			for (Item& item : items)
 			{
-				UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
+				ui::UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
 				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3 + 1, rect.y1 - 4 + 1, item.name, ui::Color4f(0.0f, 0.5f));
 				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3, rect.y1 - 4, item.name, ui::Color4f(0.9f, 1));
 			}
 		}
-		void OnEvent(UIEvent& e) override
+		void OnEvent(ui::Event& e) override
 		{
 			subui.InitOnEvent(e);
 			uint32_t id = 0;
 			for (Item& item : items)
 			{
-				UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
+				ui::UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
 				switch (subui.DragOnEvent(id, rect, e))
 				{
 				case ui::SubUIDragState::Start:
-					dx = e.x - item.x0;
-					dy = e.y - item.track * TRACK_HEIGHT;
+					dx = e.position.x - item.x0;
+					dy = e.position.y - item.track * TRACK_HEIGHT;
 					break;
 				case ui::SubUIDragState::Move:
-					item.x0 = e.x - dx;
+					item.x0 = e.position.x - dx;
 					item.x1 = item.x0 + item.size;
-					item.track = round((e.y - dy) / TRACK_HEIGHT);
+					item.track = round((e.position.y - dy) / TRACK_HEIGHT);
 					item.track = std::min(std::max(item.track, 0), 3);
 					break;
 				}
 
-				UIRect rectL = rect;
+				ui::UIRect rectL = rect;
 				rectL.x1 = rectL.x0 + 8;
 				switch (subui.DragOnEvent(id | (1 << 30), rectL, e))
 				{
 				case ui::SubUIDragState::Start:
-					dx = e.x - item.x0;
+					dx = e.position.x - item.x0;
 					break;
 				case ui::SubUIDragState::Move:
-					item.x0 = e.x - dx;
+					item.x0 = e.position.x - dx;
 					if (item.x0 > item.x1)
 						item.x0 = item.x1;
 					item.size = item.x1 - item.x0;
 					break;
 				}
 
-				UIRect rectR = rect;
+				ui::UIRect rectR = rect;
 				rectR.x0 = rectR.x1 - 8;
 				switch (subui.DragOnEvent(id | (1 << 31), rectR, e))
 				{
 				case ui::SubUIDragState::Start:
-					dx = e.x - item.x1;
+					dx = e.position.x - item.x1;
 					break;
 				case ui::SubUIDragState::Move:
-					item.x1 = e.x - dx;
+					item.x1 = e.position.x - dx;
 					if (item.x1 < item.x0)
 						item.x1 = item.x0;
 					item.size = item.x1 - item.x0;
@@ -106,7 +106,7 @@ struct TrackEditorDemo : ui::Node
 
 				id++;
 			}
-			if (e.type == UIEventType::SetCursor)
+			if (e.type == ui::EventType::SetCursor)
 			{
 				if (subui.IsAnyHovered() && subui._hovered >= 0x40000000)
 				{
@@ -120,12 +120,12 @@ struct TrackEditorDemo : ui::Node
 		ui::SubUI<uint32_t> subui;
 		float dx, dy;
 	};
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Make<TrackEditor>();
 	}
 };
-void Demo_TrackEditor(UIContainer* ctx)
+void Demo_TrackEditor(ui::UIContainer* ctx)
 {
 	ctx->Make<TrackEditorDemo>();
 }

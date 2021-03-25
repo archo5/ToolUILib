@@ -5,9 +5,9 @@
 #include "Workspace.h"
 
 
-void TabHighlights::Render(UIContainer* ctx)
+void TabHighlights::Build(ui::UIContainer* ctx)
 {
-	auto& spmkr = *ctx->Push<ui::SplitPane>();
+	auto& spmkr = ctx->Push<ui::SplitPane>();
 	{
 		ctx->PushBox();
 

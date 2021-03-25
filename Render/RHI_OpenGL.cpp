@@ -397,8 +397,8 @@ void SetForcedColor(const Color4b& col)
 }
 
 static GLint g_prevTex;
-static AABB<int> g_3DRect;
-void Begin3DMode(const AABB<int>& rect)
+static AABB2i g_3DRect;
+void Begin3DMode(const AABB2i& rect)
 {
 	draw::internals::Flush();
 
@@ -419,7 +419,7 @@ void Begin3DMode(const AABB<int>& rect)
 	g_3DRect = rect;
 }
 
-AABB<int> End3DMode()
+AABB2i End3DMode()
 {
 	auto curRect = g_3DRect;
 	GLCHK(glDisableClientState(GL_NORMAL_ARRAY));

@@ -3,11 +3,11 @@
 
 
 static const char* calcOpNames[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "+", "-", "*", "/" };
-static UIRect CalcBoxButton(int x, int y, int w = 1, int h = 1)
+static ui::UIRect CalcBoxButton(int x, int y, int w = 1, int h = 1)
 {
 	return { x / 4.f, y / 5.f, (x + w) / 4.f, (y + h) / 5.f };
 }
-static UIRect calcOpAnchors[] =
+static ui::UIRect calcOpAnchors[] =
 {
 	// numbers
 	CalcBoxButton(0, 4),
@@ -28,14 +28,14 @@ static UIRect calcOpAnchors[] =
 	CalcBoxButton(3, 1),
 	CalcBoxButton(3, 0),
 };
-struct Calculator : ui::Node
+struct Calculator : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		*this + ui::Width(style::Coord::Percent(100));
 		*this + ui::Height(style::Coord::Percent(100));
 
-		auto& inputs = ctx->Make<ui::Textbox>()->SetText(operation);
+		auto& inputs = ctx->Make<ui::Textbox>().SetText(operation);
 		//auto& inputs = ctx->PushBox();
 		inputs + ui::MakeOverlay();
 		auto* rap_inputs = Allocate<style::RectAnchoredPlacement>();
@@ -45,7 +45,7 @@ struct Calculator : ui::Node
 
 		auto* rap_result = Allocate<style::RectAnchoredPlacement>();
 		rap_result->anchor = { 0, 0.1f, 1, 0.2f };
-		*ctx->Push<ui::Panel>() + ui::MakeOverlay() + ui::SetPlacement(rap_result);
+		ctx->Push<ui::Panel>() + ui::MakeOverlay() + ui::SetPlacement(rap_result);
 		ctx->Text("=" + ToString(Calculate()));
 		ctx->Pop();
 
@@ -115,7 +115,7 @@ struct Calculator : ui::Node
 				return;
 		}
 		operation.push_back(ch);
-		Rerender();
+		Rebuild();
 	}
 
 	int precedence(char op)
@@ -189,7 +189,7 @@ struct Calculator : ui::Node
 
 	std::string operation;
 };
-void Demo_Calculator(UIContainer* ctx)
+void Demo_Calculator(ui::UIContainer* ctx)
 {
 	ctx->Make<Calculator>();
 }

@@ -61,12 +61,12 @@ struct DataDesc
 	uint32_t curImage = 0;
 	uint32_t curField = 0;
 
-	void EditStructuralItems(UIContainer* ctx);
-	void EditInstance(UIContainer* ctx);
-	void EditStruct(UIContainer* ctx);
-	void EditField(UIContainer* ctx);
+	void EditStructuralItems(ui::UIContainer* ctx);
+	void EditInstance(ui::UIContainer* ctx);
+	void EditStruct(ui::UIContainer* ctx);
+	void EditField(ui::UIContainer* ctx);
 
-	void EditImageItems(UIContainer* ctx);
+	void EditImageItems(ui::UIContainer* ctx);
 
 	DDStructInst* AddInstance(const DDStructInst& src);
 	void DeleteInstance(DDStructInst* inst);
@@ -103,7 +103,7 @@ struct DataDescInstanceSource : ui::TableDataSource, ui::ISelectionStorage
 	bool GetSelectionState(uintptr_t item) override;
 	void SetSelectionState(uintptr_t item, bool sel) override;
 
-	void Edit(UIContainer* ctx);
+	void Edit(ui::UIContainer* ctx);
 
 	void _Refilter();
 
@@ -140,7 +140,7 @@ struct DataDescImageSource : ui::TableDataSource, ui::ISelectionStorage
 	bool GetSelectionState(uintptr_t item) override;
 	void SetSelectionState(uintptr_t item, bool sel) override;
 
-	void Edit(UIContainer* ctx);
+	void Edit(ui::UIContainer* ctx);
 
 	void _Refilter();
 

@@ -2,6 +2,8 @@
 #include "3DMath.h"
 
 
+namespace ui {
+
 Mat4f Mat4f::Translate(float x, float y, float z)
 {
 	return
@@ -280,3 +282,5 @@ struct Test3DMath
 }
 g_tests;
 #endif
+
+} // ui

@@ -7,18 +7,19 @@
 
 
 namespace ui {
+
 extern uint32_t g_curLayoutFrame;
 extern FrameContents* g_curSystem;
+
 
 struct EventHandlerEntry
 {
 	EventHandlerEntry* next;
 	UIObject* target;
-	UIEventType type;
+	EventType type;
 	bool isLocal;
 	EventFunc func;
 };
-} // ui
 
 UIObject::UIObject()
 {
@@ -51,12 +52,12 @@ void UIObject::_Reset()
 	OnReset();
 }
 
-void UIObject::_DoEvent(UIEvent& e)
+void UIObject::_DoEvent(Event& e)
 {
 	e.current = this;
 	for (auto* n = _firstEH; n && !e.IsPropagationStopped(); n = n->next)
 	{
-		if (n->type != UIEventType::Any && n->type != e.type)
+		if (n->type != EventType::Any && n->type != e.type)
 			continue;
 		if (n->target && !e.target->IsChildOrSame(n->target))
 			continue;
@@ -73,44 +74,44 @@ void UIObject::_DoEvent(UIEvent& e)
 	}
 }
 
-void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
+void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 {
 	if (!IsInputDisabled())
 	{
-		if (HasFlags(f, UIObject_DB_IMEdit) && e.target == this && e.type == UIEventType::Activate)
+		if (HasFlags(f, UIObject_DB_IMEdit) && e.target == this && e.type == EventType::Activate)
 		{
 			flags |= UIObject_IsEdited;
-			RerenderNode();
+			Rebuild();
 		}
 
-		if (HasFlags(f, UIObject_DB_RerenderOnChange) &&
-			(e.type == UIEventType::Change || e.type == UIEventType::Commit))
+		if (HasFlags(f, UIObject_DB_RebuildOnChange) &&
+			(e.type == EventType::Change || e.type == EventType::Commit))
 		{
-			RerenderNode();
+			Rebuild();
 		}
 
 		if (HasFlags(f, UIObject_DB_Button))
 		{
-			if (e.type == UIEventType::ButtonUp &&
-				e.GetButton() == UIMouseButton::Left &&
+			if (e.type == EventType::ButtonUp &&
+				e.GetButton() == MouseButton::Left &&
 				e.context->GetMouseCapture() == this &&
 				HasFlags(UIObject_IsPressedMouse))
 			{
 				e.context->OnActivate(this);
 			}
-			if (e.type == UIEventType::MouseMove)
+			if (e.type == EventType::MouseMove)
 			{
 				if (e.context->GetMouseCapture() == this) // TODO separate flag for this!
-					SetFlag(UIObject_IsPressedMouse, finalRectCPB.Contains(e.x, e.y));
+					SetFlag(UIObject_IsPressedMouse, finalRectCPB.Contains(e.position));
 				//e.StopPropagation();
 			}
-			if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateDown)
+			if (e.type == EventType::KeyAction && e.GetKeyAction() == KeyAction::ActivateDown)
 			{
 				e.context->CaptureMouse(this);
 				flags |= UIObject_IsPressedOther;
 				e.StopPropagation();
 			}
-			if (e.type == UIEventType::KeyAction && e.GetKeyAction() == UIKeyAction::ActivateUp)
+			if (e.type == EventType::KeyAction && e.GetKeyAction() == KeyAction::ActivateUp)
 			{
 				if (flags & UIObject_IsPressedOther)
 				{
@@ -125,17 +126,17 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
 
 		if (HasFlags(f, UIObject_DB_Draggable))
 		{
-			if (e.context->DragCheck(e, UIMouseButton::Left))
+			if (e.context->DragCheck(e, MouseButton::Left))
 			{
 				e.context->SetKeyboardFocus(nullptr);
-				UIEvent e(&system->eventSystem, this, UIEventType::DragStart);
+				Event e(&system->eventSystem, this, EventType::DragStart);
 				e.context->BubblingEvent(e);
 			}
 		}
 
 		if (HasFlags(f, UIObject_DB_Selectable))
 		{
-			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 			{
 				e.context->OnActivate(this);
 				e.StopPropagation();
@@ -144,7 +145,7 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
 
 		if (HasFlags(f, UIObject_DB_FocusOnLeftClick))
 		{
-			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 			{
 				e.context->SetKeyboardFocus(this);
 				e.StopPropagation();
@@ -153,19 +154,19 @@ void UIObject::_PerformDefaultBehaviors(UIEvent& e, uint32_t f)
 
 		if (HasFlags(f, UIObject_DB_CaptureMouseOnLeftClick))
 		{
-			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 			{
 				e.context->CaptureMouse(e.current);
 				e.current->flags |= UIObject_IsPressedMouse;
 				e.StopPropagation();
 			}
-			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+			if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 			{
 				if (e.context->GetMouseCapture() == this)
 					e.context->ReleaseMouse();
 				e.StopPropagation();
 			}
-			if (e.type == UIEventType::MouseCaptureChanged)
+			if (e.type == EventType::MouseCaptureChanged)
 			{
 				flags &= ~UIObject_IsPressedMouse;
 				e.StopPropagation();
@@ -179,7 +180,7 @@ void UIObject::SendUserEvent(int id, uintptr_t arg0, uintptr_t arg1)
 	system->eventSystem.OnUserEvent(this, id, arg0, arg1);
 }
 
-ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
+ui::EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
 {
 	auto eh = new ui::EventHandlerEntry;
 	if (_lastEH)
@@ -189,7 +190,7 @@ ui::EventFunc& UIObject::HandleEvent(UIObject* target, UIEventType type)
 	eh->next = nullptr;
 	eh->target = target;
 	eh->type = type;
-	eh->isLocal = system->container._curNode == this;
+	eh->isLocal = system->container._curBuildable == this;
 	_lastEH = eh;
 	return eh->func;
 }
@@ -274,7 +275,7 @@ void UIObject::PaintChildren()
 		ui::draw::PopScissorRect();
 }
 
-float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
+float UIObject::CalcEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
 {
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
@@ -282,7 +283,7 @@ float UIObject::CalcEstimatedWidth(const Size<float>& containerSize, style::EstS
 	return layout->CalcEstimatedWidth(this, containerSize, type);
 }
 
-float UIObject::CalcEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
+float UIObject::CalcEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
 {
 	float size = 0;
 	auto layout = GetStyle().GetLayout();
@@ -291,7 +292,7 @@ float UIObject::CalcEstimatedHeight(const Size<float>& containerSize, style::Est
 	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
-Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type)
+Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, style::EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -331,7 +332,7 @@ Range<float> UIObject::GetEstimatedWidth(const Size<float>& containerSize, style
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type)
+Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, style::EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -371,7 +372,7 @@ Range<float> UIObject::GetEstimatedHeight(const Size<float>& containerSize, styl
 	return { size, maxsize };
 }
 
-Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
@@ -401,7 +402,7 @@ Range<float> UIObject::GetFullEstimatedWidth(const Size<float>& containerSize, s
 	return s;
 }
 
-Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, style::EstSizeType type, bool forParentLayout)
+Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, style::EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
@@ -431,7 +432,7 @@ Range<float> UIObject::GetFullEstimatedHeight(const Size<float>& containerSize, 
 	return s;
 }
 
-void UIObject::PerformLayout(const UIRect& rect, const Size<float>& containerSize)
+void UIObject::PerformLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	if (_IsPartOfParentLayout())
 	{
@@ -440,7 +441,7 @@ void UIObject::PerformLayout(const UIRect& rect, const Size<float>& containerSiz
 	}
 }
 
-void UIObject::_PerformPlacement(const UIRect& rect, const Size<float>& containerSize)
+void UIObject::_PerformPlacement(const UIRect& rect, const Size2f& containerSize)
 {
 	if (_NeedsLayout() && GetStyle().GetPlacement() && !GetStyle().GetPlacement()->applyOnLayout)
 	{
@@ -449,7 +450,7 @@ void UIObject::_PerformPlacement(const UIRect& rect, const Size<float>& containe
 	}
 }
 
-void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
+void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 {
 	using namespace style;
 
@@ -528,7 +529,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 			tgt = max(tgt, ResolveUnits(min_width, containerSize.x));
 		if (max_width.IsDefined())
 			tgt = min(tgt, ResolveUnits(max_width, containerSize.x));
-		if (box_sizing != BoxSizing::ContentBox)
+		if (box_sizing != style::BoxSizing::ContentBox)
 			tgt -= Prect.x0 + Prect.x1;
 		if (tgt != orig)
 		{
@@ -550,7 +551,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size<float>& containerSize)
 			tgt = max(tgt, ResolveUnits(min_height, containerSize.y));
 		if (max_height.IsDefined())
 			tgt = min(tgt, ResolveUnits(max_height, containerSize.y));
-		if (box_sizing != BoxSizing::ContentBox)
+		if (box_sizing != style::BoxSizing::ContentBox)
 			tgt -= Prect.y0 + Prect.y1;
 		if (tgt != orig)
 		{
@@ -651,22 +652,22 @@ UIObject* UIObject::GetLastInOrder()
 	return ret;
 }
 
-void UIObject::RerenderNode()
+void UIObject::Rebuild()
 {
-	if (auto* n = FindParentOfType<ui::Node>())
-		n->Rerender();
+	if (auto* n = FindParentOfType<ui::Buildable>())
+		n->Rebuild();
 }
 
-void UIObject::RerenderContainerNode()
+void UIObject::RebuildContainer()
 {
-	if (auto* n = (parent ? parent : this)->FindParentOfType<ui::Node>())
-		n->Rerender();
+	if (auto* n = (parent ? parent : this)->FindParentOfType<ui::Buildable>())
+		n->Rebuild();
 }
 
 void UIObject::_OnIMChange()
 {
 	system->eventSystem.OnIMChange(this);
-	RerenderContainerNode();
+	RebuildContainer();
 }
 
 bool UIObject::IsHovered() const
@@ -834,8 +835,6 @@ ui::NativeWindowBase* UIObject::GetNativeWindow() const
 }
 
 
-namespace ui {
-
 TextElement::TextElement()
 {
 	styleProps = Theme::current->text;
@@ -951,13 +950,13 @@ struct Subscription
 	void Link()
 	{
 		// append to front because removal starts from that side as well
-		prevInNode = nullptr;
-		nextInNode = node->_firstSub;
-		if (nextInNode)
-			nextInNode->prevInNode = this;
+		prevInBuildable = nullptr;
+		nextInBuildable = buildable->_firstSub;
+		if (nextInBuildable)
+			nextInBuildable->prevInBuildable = this;
 		else
-			node->_lastSub = this;
-		node->_firstSub = this;
+			buildable->_lastSub = this;
+		buildable->_firstSub = this;
 
 		prevInTable = nullptr;
 		nextInTable = tableEntry->_firstSub;
@@ -969,15 +968,15 @@ struct Subscription
 	}
 	void Unlink()
 	{
-		// node
-		if (prevInNode)
-			prevInNode->nextInNode = nextInNode;
-		if (nextInNode)
-			nextInNode->prevInNode = prevInNode;
-		if (node->_firstSub == this)
-			node->_firstSub = nextInNode;
-		if (node->_lastSub == this)
-			node->_lastSub = prevInNode;
+		// buildable
+		if (prevInBuildable)
+			prevInBuildable->nextInBuildable = nextInBuildable;
+		if (nextInBuildable)
+			nextInBuildable->prevInBuildable = prevInBuildable;
+		if (buildable->_firstSub == this)
+			buildable->_firstSub = nextInBuildable;
+		if (buildable->_lastSub == this)
+			buildable->_lastSub = prevInBuildable;
 
 		// table
 		if (prevInTable)
@@ -990,12 +989,12 @@ struct Subscription
 			tableEntry->_lastSub = prevInTable;
 	}
 
-	Node* node;
+	Buildable* buildable;
 	SubscrTableValue* tableEntry;
 	DataCategoryTag* tag;
 	uintptr_t at;
-	Subscription* prevInNode;
-	Subscription* nextInNode;
+	Subscription* prevInBuildable;
+	Subscription* nextInBuildable;
 	Subscription* prevInTable;
 	Subscription* nextInTable;
 };
@@ -1006,7 +1005,7 @@ static void _Notify(DataCategoryTag* tag, uintptr_t at)
 	if (it.is_valid())
 	{
 		for (auto* s = it->value->_firstSub; s; s = s->nextInTable)
-			s->node->OnNotify(tag, at);
+			s->buildable->OnNotify(tag, at);
 	}
 }
 
@@ -1017,7 +1016,7 @@ void Notify(DataCategoryTag* tag, uintptr_t at)
 	_Notify(tag, ANY_ITEM);
 }
 
-Node::~Node()
+Buildable::~Buildable()
 {
 	while (_firstSub)
 	{
@@ -1032,18 +1031,18 @@ Node::~Node()
 	}
 }
 
-void Node::Rerender()
+void Buildable::Rebuild()
 {
-	system->container.AddToRenderStack(this);
+	system->container.AddToBuildStack(this);
 	GetNativeWindow()->InvalidateAll();
 }
 
-void Node::OnNotify(DataCategoryTag* /*tag*/, uintptr_t /*at*/)
+void Buildable::OnNotify(DataCategoryTag* /*tag*/, uintptr_t /*at*/)
 {
-	Rerender();
+	Rebuild();
 }
 
-bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
+bool Buildable::Subscribe(DataCategoryTag* tag, uintptr_t at)
 {
 	SubscrTableValue* lst;
 	auto it = g_subscrTable->find({ tag, at });
@@ -1051,7 +1050,7 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 	{
 		lst = it->value;
 		// TODO compare list sizes to decide which is the shorter one to iterate
-		for (auto* s = _firstSub; s; s = s->nextInNode)
+		for (auto* s = _firstSub; s; s = s->nextInBuildable)
 			if (s->tag == tag && s->at == at)
 				return false;
 		//for (auto* s = lst->_firstSub; s; s = s->nextInTable)
@@ -1062,7 +1061,7 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 		g_subscrTable->insert(SubscrTableKey{ tag, at }, lst = new SubscrTableValue);
 
 	auto* s = new Subscription;
-	s->node = this;
+	s->buildable = this;
 	s->tableEntry = lst;
 	s->tag = tag;
 	s->at = at;
@@ -1070,14 +1069,14 @@ bool Node::Subscribe(DataCategoryTag* tag, uintptr_t at)
 	return true;
 }
 
-bool Node::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
+bool Buildable::Unsubscribe(DataCategoryTag* tag, uintptr_t at)
 {
 	auto it = g_subscrTable->find({ tag, at });
 	if (it.is_valid())
 		return false;
 
 	// TODO compare list sizes to decide which is the shorter one to iterate
-	for (auto* s = _firstSub; s; s = s->nextInNode)
+	for (auto* s = _firstSub; s; s = s->nextInBuildable)
 	{
 		if (s->tag == tag && s->at == at)
 		{
@@ -1100,7 +1099,7 @@ AddTooltip::AddTooltip(const std::string& s)
 void AddTooltip::Apply(UIObject* obj) const
 {
 	auto fn = _evfn;
-	obj->HandleEvent(UIEventType::Tooltip) = [fn{ std::move(fn) }](UIEvent& e)
+	obj->HandleEvent(EventType::Tooltip) = [fn{ std::move(fn) }](Event& e)
 	{
 		ui::Tooltip::Set(fn);
 		e.StopPropagation();

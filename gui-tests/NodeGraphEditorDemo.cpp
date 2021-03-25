@@ -22,9 +22,9 @@ struct Graph
 		virtual float* GetInputDefaultValuePtr(int which) = 0;
 
 		virtual bool HasPreview() = 0;
-		virtual void PreviewUI(UIContainer* ctx) {}
+		virtual void PreviewUI(ui::UIContainer* ctx) {}
 
-		Point<float> position = {};
+		ui::Point2f position = {};
 		bool showPreview = true;
 	};
 	struct LinkEnd
@@ -151,7 +151,7 @@ struct DotProduct : Graph::Node
 };
 
 
-static ui::Color4b g_graphColors[] = 
+static ui::Color4b g_graphColors[] =
 {
 	ui::Color4f(0.9f, 0.1f, 0),
 	ui::Color4f(0.3f, 0.6f, 0.9f),
@@ -174,7 +174,7 @@ struct GraphImpl : ui::IProcGraph
 				uintptr_t(l->output.pin),
 				static_cast<Node*>(l->input.node),
 				uintptr_t(l->input.pin),
-			});
+				});
 		}
 	}
 	static Node* AddNode(IProcGraph* graph, Graph::Node* node)
@@ -219,7 +219,7 @@ struct GraphImpl : ui::IProcGraph
 		Graph::LinkEnd gle = { static_cast<Graph::Node*>(pin.end.node), int(pin.end.num), pin.isOutput };
 		graph->UnlinkAll(gle);
 	}
-	void InputPinEditorUI(const Pin& pin, UIContainer* ctx) override
+	void InputPinEditorUI(const Pin& pin, ui::UIContainer* ctx) override
 	{
 		auto* node = static_cast<Graph::Node*>(pin.end.node);
 		auto type = node->GetInputType(pin.end.num);
@@ -266,11 +266,11 @@ struct GraphImpl : ui::IProcGraph
 		return GetPinColor(pin);
 	}
 
-	Point<float> GetNodePosition(Node* node) override
+	ui::Point2f GetNodePosition(Node* node) override
 	{
 		return static_cast<Graph::Node*>(node)->position;
 	}
-	void SetNodePosition(Node* node, const Point<float>& pos) override
+	void SetNodePosition(Node* node, const ui::Point2f& pos) override
 	{
 		static_cast<Graph::Node*>(node)->position = pos;
 	}
@@ -287,7 +287,7 @@ struct GraphImpl : ui::IProcGraph
 	{
 		static_cast<Graph::Node*>(node)->showPreview = enabled;
 	}
-	void PreviewUI(Node*, UIContainer* ctx)
+	void PreviewUI(Node*, ui::UIContainer* ctx)
 	{
 		ctx->MakeWithText<ui::Panel>("Preview");
 	}
@@ -327,7 +327,7 @@ struct GraphImpl : ui::IProcGraph
 	Graph* graph;
 };
 
-struct NodeGraphEditorDemo : ui::Node
+struct NodeGraphEditorDemo : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -349,15 +349,15 @@ struct NodeGraphEditorDemo : ui::Node
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 1 } });
 		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { scaleVec, 0 } });
 	}
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		*this + ui::Height(style::Coord::Percent(100));
-		ctx->Make<ui::ProcGraphEditor>()->Init(Allocate<GraphImpl>(&graph));
+		ctx->Make<ui::ProcGraphEditor>().Init(Allocate<GraphImpl>(&graph));
 	}
 
 	Graph graph;
 };
-void Demo_NodeGraphEditor(UIContainer* ctx)
+void Demo_NodeGraphEditor(ui::UIContainer* ctx)
 {
 	ctx->Make<NodeGraphEditorDemo>();
 }

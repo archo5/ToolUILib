@@ -2,20 +2,20 @@
 #include "pch.h"
 
 
-struct FileReceiverTest : ui::Node
+struct FileReceiverTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("File receiver");
 
-		ctx->Push<ui::ListBox>()->HandleEvent(UIEventType::DragDrop) = [this](UIEvent& e)
+		ctx->Push<ui::ListBox>().HandleEvent(ui::EventType::DragDrop) = [this](ui::Event& e)
 		{
 			if (auto* ddd = static_cast<ui::DragDropFiles*>(ui::DragDrop::GetData(ui::DragDropFiles::NAME)))
 			{
 				filePaths = ddd->paths;
-				Rerender();
+				Rebuild();
 			}
 		};
 		if (filePaths.empty())
@@ -36,7 +36,7 @@ struct FileReceiverTest : ui::Node
 };
 
 
-struct TransferCountablesTest : ui::Node
+struct TransferCountablesTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -47,22 +47,22 @@ struct TransferCountablesTest : ui::Node
 		int from;
 	};
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Transfer countables");
 
 		ctx->PushBox() + ui::StackingDirection(style::StackingDirection::LeftToRight);
 		for (int i = 0; i < 3; i++)
 		{
-			auto* btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
-			if (btn->flags & UIObject_DragHovered)
+			auto& btn = ctx->MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
+			if (btn.flags & ui::UIObject_DragHovered)
 			{
-				*btn + ui::Padding(4, 4, 10, 4);
+				btn + ui::Padding(4, 4, 10, 4);
 			}
-			btn->SetInputDisabled(slots[i] == 0);
-			btn->HandleEvent() = [this, i, btn](UIEvent& e)
+			btn.SetInputDisabled(slots[i] == 0);
+			btn.HandleEvent() = [this, i](ui::Event& e)
 			{
-				if (e.context->DragCheck(e, UIMouseButton::Left))
+				if (e.context->DragCheck(e, ui::MouseButton::Left))
 				{
 					if (slots[i] > 0)
 					{
@@ -70,23 +70,23 @@ struct TransferCountablesTest : ui::Node
 						ui::DragDrop::SetData(new Data(i));
 					}
 				}
-				else if (e.type == UIEventType::DragDrop)
+				else if (e.type == ui::EventType::DragDrop)
 				{
 					if (auto* ddd = ui::DragDrop::GetData<Data>())
 					{
 						slots[i]++;
 						slots[ddd->from]--;
 						e.StopPropagation();
-						Rerender();
+						Rebuild();
 					}
 				}
-				else if (e.type == UIEventType::DragEnter)
+				else if (e.type == ui::EventType::DragEnter)
 				{
-					Rerender();
+					Rebuild();
 				}
-				else if (e.type == UIEventType::DragLeave)
+				else if (e.type == ui::EventType::DragLeave)
 				{
-					Rerender();
+					Rebuild();
 				}
 			};
 		}
@@ -97,7 +97,7 @@ struct TransferCountablesTest : ui::Node
 };
 
 
-struct SlideReorderTest : ui::Node
+struct SlideReorderTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -108,7 +108,7 @@ struct SlideReorderTest : ui::Node
 		int at;
 	};
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Slide-reorder (instant)");
 
@@ -119,17 +119,17 @@ struct SlideReorderTest : ui::Node
 			if (auto* dd = ui::DragDrop::GetData<Data>())
 				if (dd->at == i)
 					dragging = true;
-			auto* sel = ctx->Push<ui::Selectable>()->Init(dragging);
-			sel->SetFlag(UIObject_DB_Draggable, true);
-			sel->HandleEvent() = [this, i](UIEvent& e)
+			auto& sel = ctx->Push<ui::Selectable>().Init(dragging);
+			sel.SetFlag(ui::UIObject_DB_Draggable, true);
+			sel.HandleEvent() = [this, i](ui::Event& e)
 			{
-				if (e.context->DragCheck(e, UIMouseButton::Left))
+				if (e.context->DragCheck(e, ui::MouseButton::Left))
 				{
 					ui::DragDrop::SetData(new Data(i));
 					e.context->SetKeyboardFocus(nullptr);
 					e.context->ReleaseMouse();
 				}
-				else if (e.type == UIEventType::DragEnter)
+				else if (e.type == ui::EventType::DragEnter)
 				{
 					if (auto* ddd = ui::DragDrop::GetData<Data>())
 					{
@@ -148,11 +148,11 @@ struct SlideReorderTest : ui::Node
 							std::swap(iids[pos], iids[pos - 1]);
 						}
 					}
-					Rerender();
+					Rebuild();
 				}
-				else if (e.type == UIEventType::DragLeave || e.type == UIEventType::DragEnd)
+				else if (e.type == ui::EventType::DragLeave || e.type == ui::EventType::DragEnd)
 				{
-					Rerender();
+					Rebuild();
 				}
 			};
 			ctx->Textf("item %d%s", iids[i], dragging ? " [dragging]" : "");
@@ -165,7 +165,7 @@ struct SlideReorderTest : ui::Node
 };
 
 
-struct TreeNodeReorderTest : ui::Node
+struct TreeNodeReorderTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -192,7 +192,7 @@ struct TreeNodeReorderTest : ui::Node
 		DragDropNodeData() : ui::DragDropData(NAME)
 		{
 		}
-		void Render(UIContainer* ctx) override
+		void Build(ui::UIContainer* ctx) override
 		{
 			if (entries.size() == 1)
 			{
@@ -233,26 +233,26 @@ struct TreeNodeReorderTest : ui::Node
 			delete ch;
 	}
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Tree node reorder with preview");
 
 		ctx->Push<ui::ListBox>();
-		RenderNodeList(ctx, nullptr, rootNodes, 0);
+		BuildNodeList(ctx, nullptr, rootNodes, 0);
 		ctx->Pop();
 	}
-	void RenderNodeList(UIContainer* ctx, Node* cont, std::vector<Node*>& nodes, int level)
+	void BuildNodeList(ui::UIContainer* ctx, Node* cont, std::vector<Node*>& nodes, int level)
 	{
 		for (size_t i = 0; i < nodes.size(); i++)
 		{
 			Node* N = nodes[i];
 			ctx->PushBox();
 
-			*ctx->Push<ui::Selectable>()->Init(selectedNodes.count(N))
+			ctx->Push<ui::Selectable>().Init(selectedNodes.count(N))
 				+ ui::MakeDraggable()
-				+ ui::EventHandler([this, cont, N, i, &nodes, level](UIEvent& e)
+				+ ui::EventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
 			{
-				if (e.type == UIEventType::DragStart)
+				if (e.type == ui::EventType::DragStart)
 				{
 					if (selectedNodes.size())
 					{
@@ -261,30 +261,30 @@ struct TreeNodeReorderTest : ui::Node
 						ui::DragDrop::SetData(ddd);
 					}
 				}
-				if (e.type == UIEventType::DragMove)
+				if (e.type == ui::EventType::DragMove)
 				{
 					Tree_OnDragMove(cont, nodes, level, i, e);
 				}
-				if (e.type == UIEventType::DragDrop)
+				if (e.type == ui::EventType::DragDrop)
 				{
 					Tree_OnDragDrop();
 				}
-				if (e.type == UIEventType::DragLeave)
+				if (e.type == ui::EventType::DragLeave)
 				{
 					hasDragTarget = false;
 				}
-				if (e.type == UIEventType::Activate)
+				if (e.type == ui::EventType::Activate)
 				{
 					selectedNodes.clear();
 					selectedNodes.insert(N);
-					Rerender();
+					Rebuild();
 				}
 			});
 
 			ctx->PushBox() + ui::Width(level * 12);
 			ctx->Pop();
 
-			*ctx->Push<ui::CheckboxFlagT<bool>>()->Init(N->open) + ui::RerenderOnChange();
+			ctx->Push<ui::CheckboxFlagT<bool>>().Init(N->open) + ui::RebuildOnChange();
 			ctx->Make<ui::TreeExpandIcon>();
 			ctx->Pop();
 
@@ -294,30 +294,30 @@ struct TreeNodeReorderTest : ui::Node
 			if (N->open)
 			{
 				ctx->PushBox();
-				RenderNodeList(ctx, N, N->children, level + 1);
+				BuildNodeList(ctx, N, N->children, level + 1);
 				ctx->Pop();
 			}
 			ctx->Pop();
 		}
 	}
-	void Tree_OnDragMove(Node* cont, std::vector<Node*>& nodes, int level, size_t i, UIEvent& e)
+	void Tree_OnDragMove(Node* cont, std::vector<Node*>& nodes, int level, size_t i, ui::Event& e)
 	{
 		Node* N = nodes[i];
 
 		hasDragTarget = true;
-		UIRect& R = e.current->finalRectCPB;
-		if (e.y < lerp(R.y0, R.y1, 0.25f))
+		ui::UIRect& R = e.current->finalRectCPB;
+		if (e.position.y < ui::lerp(R.y0, R.y1, 0.25f))
 		{
 			// above
-			dragTargetLine = UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(UIRect::UniformBorder(1));
+			dragTargetLine = ui::UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(ui::UIRect::UniformBorder(1));
 			dragTargetArr = &nodes;
 			dragTargetCont = cont;
 			dragTargetInsertBefore = i;
 		}
-		else if (e.y > lerp(R.y0, R.y1, 0.75f))
+		else if (e.position.y > ui::lerp(R.y0, R.y1, 0.75f))
 		{
 			// below
-			dragTargetLine = UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(UIRect::UniformBorder(1));
+			dragTargetLine = ui::UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(ui::UIRect::UniformBorder(1));
 			if (N->open && N->children.size())
 			{
 				// first child
@@ -369,7 +369,7 @@ struct TreeNodeReorderTest : ui::Node
 		else
 		{
 			// in
-			dragTargetLine = UIRect{ R.x0 + level * 12, lerp(R.y0, R.y1, 0.25f), R.x1, lerp(R.y0, R.y1, 0.75f) };
+			dragTargetLine = ui::UIRect{ R.x0 + level * 12, ui::lerp(R.y0, R.y1, 0.25f), R.x1, ui::lerp(R.y0, R.y1, 0.75f) };
 			dragTargetArr = &N->children;
 			dragTargetCont = N;
 			dragTargetInsertBefore = N->children.size();
@@ -423,13 +423,13 @@ struct TreeNodeReorderTest : ui::Node
 					dragTargetArr->insert(dragTargetArr->begin() + dragTargetInsertBefore, E.node);
 				}
 
-				Rerender();
+				Rebuild();
 			}
 		}
 	}
 	void OnPaint()
 	{
-		ui::Node::OnPaint();
+		ui::Buildable::OnPaint();
 
 		if (hasDragTarget)
 		{
@@ -442,47 +442,46 @@ struct TreeNodeReorderTest : ui::Node
 	std::unordered_set<Node*> selectedNodes;
 
 	bool hasDragTarget = false;
-	UIRect dragTargetLine = {};
+	ui::UIRect dragTargetLine = {};
 	size_t dragTargetInsertBefore = 0;
 	Node* dragTargetCont = nullptr;
 	std::vector<Node*>* dragTargetArr = nullptr;
 };
 
 
-struct DragElementTest : ui::Node
+struct DragElementTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Drag element");
 
-		*ctx->Push<ui::ListBox>() + ui::Height(100);
+		ctx->Push<ui::ListBox>() + ui::Height(100);
 
-		auto* tp = ctx->Push<ui::TabPanel>();
-		auto s = tp->GetStyle(); // for style only
+		auto& tp = ctx->Push<ui::TabPanel>();
+		auto s = tp.GetStyle(); // for style only
 		s.SetWidth(style::Coord::Undefined());
 		drelPlacement = Allocate<style::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
 		s.SetPlacement(drelPlacement);
-		*ctx->MakeWithText<ui::Selectable>("draggable area")->Init(drelIsDragging) + ui::MakeDraggable() + ui::EventHandler([this, tp](UIEvent& e)
+		ctx->MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::EventHandler([this, &tp](ui::Event& e)
 		{
-			if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+			if (e.type == ui::EventType::ButtonDown && e.GetButton() == ui::MouseButton::Left)
 			{
 				drelIsDragging = true;
-				drelDragStartMouse = e.context->clickStartPositions[int(UIMouseButton::Left)];
+				drelDragStartMouse = e.context->clickStartPositions[int(ui::MouseButton::Left)];
 				drelDragStartPos = drelPos;
 			}
-			if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+			if (e.type == ui::EventType::ButtonUp && e.GetButton() == ui::MouseButton::Left)
 				drelIsDragging = false;
-			if (e.type == UIEventType::MouseMove && drelIsDragging)
+			if (e.type == ui::EventType::MouseMove && drelIsDragging)
 			{
-				Point<float> curMousePos = { e.x, e.y };
-				//drelPos = drelDragStartPos + curMousePos - drelDragStartMouse;
-				drelPos.x = drelDragStartPos.x + curMousePos.x - drelDragStartMouse.x;
-				drelPos.y = drelDragStartPos.y + curMousePos.y - drelDragStartMouse.y;
+				//drelPos = drelDragStartPos + e.position - drelDragStartMouse;
+				drelPos.x = drelDragStartPos.x + e.position.x - drelDragStartMouse.x;
+				drelPos.y = drelDragStartPos.y + e.position.y - drelDragStartMouse.y;
 				drelPlacement->bias = drelPos;
-				tp->_OnChangeStyle(); // TODO?
+				tp._OnChangeStyle(); // TODO?
 			}
 		});
 		ctx->Text("the other part") + ui::Padding(5);
@@ -492,14 +491,14 @@ struct DragElementTest : ui::Node
 	}
 
 	style::PointAnchoredPlacement* drelPlacement = nullptr;
-	Point<float> drelPos = { 25, 15 };
-	Point<float> drelDragStartMouse = {};
-	Point<float> drelDragStartPos = {};
+	ui::Point2f drelPos = { 25, 15 };
+	ui::Point2f drelDragStartMouse = {};
+	ui::Point2f drelDragStartPos = {};
 	bool drelIsDragging = false;
 };
 
 
-struct DragConnectTest : ui::Node
+struct DragConnectTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
@@ -514,7 +513,7 @@ struct DragConnectTest : ui::Node
 	{
 		static constexpr const char* NAME = "link";
 		LinkDragDropData(int linkID) : DragDropData(NAME), _linkID(linkID) {}
-		bool ShouldRender() override { return false; }
+		bool ShouldBuild() override { return false; }
 		int _linkID;
 	};
 
@@ -531,32 +530,32 @@ struct DragConnectTest : ui::Node
 		{
 			*this + ui::MakeDraggable();
 		}
-		void OnEvent(UIEvent& e) override
+		void OnEvent(ui::Event& e) override
 		{
 			ui::Selectable::OnEvent(e);
 
-			if (e.type == UIEventType::DragStart)
+			if (e.type == ui::EventType::DragStart)
 			{
 				dragged = true;
 				ui::Selectable::Init(dragged || dragHL);
 				ui::DragDrop::SetData(new LinkDragDropData(_which));
 			}
-			if (e.type == UIEventType::DragEnd)
+			if (e.type == ui::EventType::DragEnd)
 			{
 				dragged = false;
 				ui::Selectable::Init(dragged || dragHL);
 			}
-			if (e.type == UIEventType::DragEnter)
+			if (e.type == ui::EventType::DragEnter)
 			{
 				dragHL = true;
 				ui::Selectable::Init(dragged || dragHL);
 			}
-			if (e.type == UIEventType::DragLeave)
+			if (e.type == ui::EventType::DragLeave)
 			{
 				dragHL = false;
 				ui::Selectable::Init(dragged || dragHL);
 			}
-			if (e.type == UIEventType::DragDrop)
+			if (e.type == ui::EventType::DragDrop)
 			{
 				if (auto* ddd = ui::DragDrop::GetData<LinkDragDropData>())
 				{
@@ -573,7 +572,7 @@ struct DragConnectTest : ui::Node
 				}
 			}
 
-			if (e.type == UIEventType::ContextMenu)
+			if (e.type == ui::EventType::ContextMenu)
 			{
 				ui::ContextMenu::Get().Add("Unlink") = [this]() { UnlinkAll(); };
 			}
@@ -615,29 +614,29 @@ struct DragConnectTest : ui::Node
 		bool dragged = false;
 		bool dragHL = false;
 	};
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Text("Drag connect");
 
-		*ctx->Push<ui::ListBox>()
+		ctx->Push<ui::ListBox>()
 			+ ui::Layout(style::layouts::EdgeSlice())
 			+ ui::Height(60);
 
 		ctx->PushBox().GetStyle().SetEdge(style::Edge::Left);
-		ctx->MakeWithText<Linkable>("left A")->Init(false, 0);
-		ctx->MakeWithText<Linkable>("left B")->Init(false, 1);
+		ctx->MakeWithText<Linkable>("left A").Init(false, 0);
+		ctx->MakeWithText<Linkable>("left B").Init(false, 1);
 		ctx->Pop();
 
 		ctx->PushBox().GetStyle().SetEdge(style::Edge::Right);
-		ctx->MakeWithText<Linkable>("right A")->Init(true, 2);
-		ctx->MakeWithText<Linkable>("right B")->Init(true, 3);
+		ctx->MakeWithText<Linkable>("right A").Init(true, 2);
+		ctx->MakeWithText<Linkable>("right B").Init(true, 3);
 		ctx->Pop();
 
 		ctx->Pop();
 	}
 	void OnPaint() override
 	{
-		ui::Node::OnPaint();
+		ui::Buildable::OnPaint();
 
 		for (int link : links)
 		{
@@ -664,13 +663,13 @@ struct DragConnectTest : ui::Node
 				auto pos = GetLinkablePos(linkable);
 				ui::draw::AALineCol(
 					pos.x, pos.y,
-					system->eventSystem.prevMouseX, system->eventSystem.prevMouseY,
+					system->eventSystem.prevMousePos.x, system->eventSystem.prevMousePos.y,
 					1, ui::Color4f(0.9f, 0.8f, 0.2f));
 			}
 		}
 	}
 
-	Point<float> GetLinkablePos(Linkable* L)
+	ui::Point2f GetLinkablePos(Linkable* L)
 	{
 		return
 		{
@@ -679,20 +678,20 @@ struct DragConnectTest : ui::Node
 		};
 	}
 
-	HashMap<int, Linkable*> linkables;
+	ui::HashMap<int, Linkable*> linkables;
 	std::unordered_set<int> links; // smallest first
 };
 
 
-struct DragDropTest : ui::Node
+struct DragDropTest : ui::Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		GetStyle().SetStackingDirection(style::StackingDirection::LeftToRight);
 
-		auto s = ctx->Push<ui::Panel>()->GetStyle();
+		auto s = ctx->Push<ui::Panel>().GetStyle();
 		s.SetWidth(style::Coord::Percent(50));
 		s.SetBoxSizing(style::BoxSizing::BorderBox);
 
@@ -703,7 +702,7 @@ struct DragDropTest : ui::Node
 
 		ctx->Pop();
 
-		s = ctx->Push<ui::Panel>()->GetStyle();
+		s = ctx->Push<ui::Panel>().GetStyle();
 		s.SetWidth(style::Coord::Percent(50));
 		s.SetBoxSizing(style::BoxSizing::BorderBox);
 
@@ -712,10 +711,10 @@ struct DragDropTest : ui::Node
 
 		ctx->Pop();
 
-		ctx->Make<ui::DefaultOverlayRenderer>();
+		ctx->Make<ui::DefaultOverlayBuilder>();
 	}
 };
-void Test_DragDrop(UIContainer* ctx)
+void Test_DragDrop(ui::UIContainer* ctx)
 {
 	ctx->Make<DragDropTest>();
 }

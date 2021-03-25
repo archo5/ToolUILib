@@ -159,7 +159,7 @@ struct SequenceDragData : DragDropData
 		width(w),
 		at(f)
 	{}
-	void Render(UIContainer* ctx) override;
+	void Build(UIContainer* ctx) override;
 
 	SequenceEditor* scope;
 	float width;
@@ -169,7 +169,7 @@ struct SequenceDragData : DragDropData
 struct SequenceItemElement : Selectable
 {
 	void OnInit() override;
-	void OnEvent(UIEvent& e) override;
+	void OnEvent(Event& e) override;
 	virtual void ContextMenu();
 
 	void Init(SequenceEditor* se, size_t n);
@@ -178,12 +178,12 @@ struct SequenceItemElement : Selectable
 	size_t num = 0;
 };
 
-struct SequenceEditor : Node
+struct SequenceEditor : Buildable
 {
 	static constexpr bool Persistent = true;
 
-	void Render(UIContainer* ctx) override;
-	void OnEvent(UIEvent& e) override;
+	void Build(UIContainer* ctx) override;
+	void OnEvent(Event& e) override;
 	void OnPaint() override;
 	void OnSerialize(IDataSerializer& s) override;
 

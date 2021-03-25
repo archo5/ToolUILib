@@ -4,7 +4,7 @@
 
 
 ui::DataCategoryTag DCT_ItemSelection[1];
-struct DataEditor : ui::Node
+struct DataEditor : ui::Buildable
 {
 	struct Item
 	{
@@ -14,29 +14,29 @@ struct DataEditor : ui::Node
 		float value2;
 	};
 
-	struct ItemButton : ui::Node
+	struct ItemButton : ui::Buildable
 	{
 		ItemButton()
 		{
 			GetStyle().SetLayout(style::layouts::Stack());
 			//GetStyle().SetMargin(32);
 		}
-		void Render(UIContainer* ctx) override
+		void Build(ui::UIContainer* ctx) override
 		{
 			static int wat = 0;
-			auto* b = ctx->Push<ui::Button>();
-			b->GetStyle().SetWidth(style::Coord::Percent(100));
-			//b->SetInputDisabled(wat++ % 2);
+			auto& b = ctx->Push<ui::Button>();
+			b.GetStyle().SetWidth(style::Coord::Percent(100));
+			//b.SetInputDisabled(wat++ % 2);
 			ctx->Text(name);
 			ctx->Pop();
 		}
-		void OnEvent(UIEvent& e) override
+		void OnEvent(ui::Event& e) override
 		{
-			if (e.type == UIEventType::Activate)
+			if (e.type == ui::EventType::Activate)
 			{
 				callback();
 			}
-			if (e.type == UIEventType::Click && e.GetButton() == UIMouseButton::Right)
+			if (e.type == ui::EventType::Click && e.GetButton() == ui::MouseButton::Right)
 			{
 				ui::MenuItem sm[] =
 				{
@@ -105,31 +105,31 @@ struct DataEditor : ui::Node
 	}
 #endif
 
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::MenuBarElement>();
 		{
-			ctx->Push<ui::MenuItemElement>()->SetText("File");
+			ctx->Push<ui::MenuItemElement>().SetText("File");
 			{
-				ctx->Make<ui::MenuItemElement>()->SetText("New", "Ctrl+N");
-				ctx->Make<ui::MenuItemElement>()->SetText("Open", "Ctrl+O");
-				ctx->Make<ui::MenuItemElement>()->SetText("Save", "Ctrl+S");
+				ctx->Make<ui::MenuItemElement>().SetText("New", "Ctrl+N");
+				ctx->Make<ui::MenuItemElement>().SetText("Open", "Ctrl+O");
+				ctx->Make<ui::MenuItemElement>().SetText("Save", "Ctrl+S");
 				ctx->Make<ui::MenuSeparatorElement>();
-				ctx->Make<ui::MenuItemElement>()->SetText("Quit", "Ctrl+Q");
+				ctx->Make<ui::MenuItemElement>().SetText("Quit", "Ctrl+Q");
 			}
 			ctx->Pop();
-			ctx->Push<ui::MenuItemElement>()->SetText("Help");
+			ctx->Push<ui::MenuItemElement>().SetText("Help");
 			{
-				ctx->Make<ui::MenuItemElement>()->SetText("Documentation", "F1");
-				ctx->Make<ui::MenuItemElement>()->SetText("About");
+				ctx->Make<ui::MenuItemElement>().SetText("Documentation", "F1");
+				ctx->Make<ui::MenuItemElement>().SetText("About");
 			}
 			ctx->Pop();
 		}
 		ctx->Pop();
 
-		ctx->MakeWithText<ui::ProgressBar>("Processing...")->progress = 0.37f;
+		ctx->MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
 		static float sldval = 0.63f;
-		ctx->Make<ui::Slider>()->Init(sldval, { 0, 2, 0.1 });
+		ctx->Make<ui::Slider>().Init(sldval, { 0, 2, 0.1 });
 
 #if 0
 		struct TableDS : ui::TableDataSource
@@ -166,15 +166,15 @@ struct DataEditor : ui::Node
 			std::string GetText(uintptr_t id, size_t col) { return "ID" + std::to_string(id) + "C" + std::to_string(col); }
 		};
 		static TreeDS treeds;
-		auto* trv = ctx->Make<ui::TreeView>();
-		trv->SetDataSource(&treeds);
-		trv->GetStyle().SetHeight(90);
+		auto& trv = ctx->Make<ui::TreeView>();
+		trv.SetDataSource(&treeds);
+		trv.GetStyle().SetHeight(90);
 #endif
 
 #if 1
-		auto* nw = ctx->Make<ui::NativeWindowNode>();
-		nw->GetWindow()->SetTitle("Subwindow A");
-		auto renderFunc = [](UIContainer* ctx)
+		auto& nw = ctx->Make<ui::NativeWindowNode>();
+		nw.GetWindow()->SetTitle("Subwindow A");
+		auto buildFunc = [](ui::UIContainer* ctx)
 		{
 			ctx->Push<ui::Panel>();
 			auto onClick = []()
@@ -185,9 +185,9 @@ struct DataEditor : ui::Node
 					{
 						SetStyle(ui::WS_Resizable);
 					}
-					void OnRender(UIContainer* ctx) override
+					void OnBuild(ui::UIContainer* ctx) override
 					{
-						auto s = ctx->Push<ui::Panel>()->GetStyle();
+						auto s = ctx->Push<ui::Panel>().GetStyle();
 						s.SetLayout(style::layouts::Stack());
 						s.SetStackingDirection(style::StackingDirection::RightToLeft);
 						if (ui::imm::Button(ctx, "X"))
@@ -199,24 +199,24 @@ struct DataEditor : ui::Node
 						ctx->Pop();
 
 						ctx->Push<ui::Panel>();
-						ctx->Make<ItemButton>()->Init("Test", [this]() { OnClose(); });
+						ctx->Make<ItemButton>().Init("Test", [this]() { OnClose(); });
 						ctx->Pop();
 					}
 				} dlg;
 				dlg.SetTitle("Dialog!");
 				dlg.Show();
 			};
-			ctx->Make<ItemButton>()->Init("Only a button", []() {});
-			ctx->Make<ItemButton>()->Init("Only another button (dialog)", onClick);
+			ctx->Make<ItemButton>().Init("Only a button", []() {});
+			ctx->Make<ItemButton>().Init("Only another button (dialog)", onClick);
 			ctx->Pop();
 		};
-		nw->GetWindow()->SetRenderFunc(renderFunc);
-		nw->GetWindow()->SetVisible(true);
+		nw.GetWindow()->SetBuildFunc(buildFunc);
+		nw.GetWindow()->SetVisible(true);
 #endif
 
 #if 1
-		auto* frm = ctx->Make<ui::InlineFrameNode>();
-		auto frf = [](UIContainer* ctx)
+		auto& frm = ctx->Make<ui::InlineFrame>();
+		auto frf = [](ui::UIContainer* ctx)
 		{
 			ctx->Push<ui::Panel>();
 			ctx->MakeWithText<ui::Button>("In-frame button");
@@ -226,8 +226,8 @@ struct DataEditor : ui::Node
 			BasicRadioButton2(ctx, "Two", cur, 2);
 			ctx->Pop();
 		};
-		frm->CreateFrameContents(frf);
-		auto frs = frm->GetStyle();
+		frm.CreateFrameContents(frf);
+		auto frs = frm.GetStyle();
 		frs.SetPadding(4);
 		frs.SetMinWidth(100);
 		frs.SetMinHeight(100);
@@ -237,8 +237,8 @@ struct DataEditor : ui::Node
 		static bool lbsel1 = true;
 		ctx->Push<ui::ListBox>();
 		ctx->Push<ui::ScrollArea>();
-		ctx->MakeWithText<ui::Selectable>("Item 1")->Init(lbsel0);
-		ctx->MakeWithText<ui::Selectable>("Item two")->Init(lbsel1);
+		ctx->MakeWithText<ui::Selectable>("Item 1").Init(lbsel0);
+		ctx->MakeWithText<ui::Selectable>("Item two").Init(lbsel1);
 		ctx->Pop();
 		ctx->Pop();
 
@@ -249,30 +249,30 @@ struct DataEditor : ui::Node
 			ctx->Push<ui::Panel>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
-				ctx->Make<ItemButton>()->Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
+				ctx->Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
 			}
 			ctx->Pop();
 
-			auto* r1 = ctx->Push<ui::CollapsibleTreeNode>();
+			auto& r1 = ctx->Push<ui::CollapsibleTreeNode>();
 			ctx->Text("root item 1");
-			if (r1->open)
+			if (r1.open)
 			{
 				ctx->Text("- data under root item 1");
-				auto* r1c1 = ctx->Push<ui::CollapsibleTreeNode>();
+				auto& r1c1 = ctx->Push<ui::CollapsibleTreeNode>();
 				ctx->Text("child 1");
-				if (r1c1->open)
+				if (r1c1.open)
 				{
-					auto* r1c1c1 = ctx->Push<ui::CollapsibleTreeNode>();
+					auto& r1c1c1 = ctx->Push<ui::CollapsibleTreeNode>();
 					ctx->Text("subchild 1");
 					ctx->Pop();
 				}
 				ctx->Pop();
 
-				auto* r1c2 = ctx->Push<ui::CollapsibleTreeNode>();
+				auto& r1c2 = ctx->Push<ui::CollapsibleTreeNode>();
 				ctx->Text("child 2");
-				if (r1c2->open)
+				if (r1c2.open)
 				{
-					auto* r1c2c1 = ctx->Push<ui::CollapsibleTreeNode>();
+					auto& r1c2c1 = ctx->Push<ui::CollapsibleTreeNode>();
 					ctx->Text("subchild 1");
 					ctx->Pop();
 				}
@@ -280,9 +280,9 @@ struct DataEditor : ui::Node
 			}
 			ctx->Pop();
 
-			auto* r2 = ctx->Push<ui::CollapsibleTreeNode>();
+			auto& r2 = ctx->Push<ui::CollapsibleTreeNode>();
 			ctx->Text("root item 2");
-			if (r2->open)
+			if (r2.open)
 			{
 				ctx->Text("- data under root item 2");
 			}
@@ -318,72 +318,72 @@ struct DataEditor : ui::Node
 };
 
 
-void Test_RenderingPrimitives(UIContainer* ctx);
-void Test_KeyboardEvents(UIContainer* ctx);
-void Test_OpenClose(UIContainer* ctx);
-void Test_AnimationRequest(UIContainer* ctx);
-void Test_ElementReset(UIContainer* ctx);
-void Test_SubUI(UIContainer* ctx);
-void Test_HighElementCount(UIContainer* ctx);
-void Test_ZeroRerender(UIContainer* ctx);
-void Test_GlobalEvents(UIContainer* ctx);
-void Test_Frames(UIContainer* ctx);
-void Test_DialogWindow(UIContainer* ctx);
+void Test_RenderingPrimitives(ui::UIContainer* ctx);
+void Test_KeyboardEvents(ui::UIContainer* ctx);
+void Test_OpenClose(ui::UIContainer* ctx);
+void Test_AnimationRequest(ui::UIContainer* ctx);
+void Test_ElementReset(ui::UIContainer* ctx);
+void Test_SubUI(ui::UIContainer* ctx);
+void Test_HighElementCount(ui::UIContainer* ctx);
+void Test_ZeroRebuild(ui::UIContainer* ctx);
+void Test_GlobalEvents(ui::UIContainer* ctx);
+void Test_Frames(ui::UIContainer* ctx);
+void Test_DialogWindow(ui::UIContainer* ctx);
 
-void Test_EdgeSlice(UIContainer* ctx);
-void Test_LayoutNestCombo(UIContainer* ctx);
-void Test_StackingLayoutVariations(UIContainer* ctx);
-void Test_Size(UIContainer* ctx);
-void Test_Placement(UIContainer* ctx);
+void Test_EdgeSlice(ui::UIContainer* ctx);
+void Test_LayoutNestCombo(ui::UIContainer* ctx);
+void Test_StackingLayoutVariations(ui::UIContainer* ctx);
+void Test_Size(ui::UIContainer* ctx);
+void Test_Placement(ui::UIContainer* ctx);
 
-void Test_DragDrop(UIContainer* ctx);
-void Test_StateButtons(UIContainer* ctx);
-void Test_PropertyList(UIContainer* ctx);
-void Test_Sliders(UIContainer* ctx);
-void Test_SplitPane(UIContainer* ctx);
-void Test_Tabs(UIContainer* ctx);
-void Test_Scrollbars(UIContainer* ctx);
-void Test_ColorBlock(UIContainer* ctx);
-void Test_Image(UIContainer* ctx);
-void Test_ColorPicker(UIContainer* ctx);
-void Test_3DView(UIContainer* ctx);
-void Test_Gizmo(UIContainer* ctx);
-void Test_IMGUI(UIContainer* ctx);
-void Test_Tooltip(UIContainer* ctx);
-void Test_Dropdown(UIContainer* ctx);
+void Test_DragDrop(ui::UIContainer* ctx);
+void Test_StateButtons(ui::UIContainer* ctx);
+void Test_PropertyList(ui::UIContainer* ctx);
+void Test_Sliders(ui::UIContainer* ctx);
+void Test_SplitPane(ui::UIContainer* ctx);
+void Test_Tabs(ui::UIContainer* ctx);
+void Test_Scrollbars(ui::UIContainer* ctx);
+void Test_ColorBlock(ui::UIContainer* ctx);
+void Test_Image(ui::UIContainer* ctx);
+void Test_ColorPicker(ui::UIContainer* ctx);
+void Test_3DView(ui::UIContainer* ctx);
+void Test_Gizmo(ui::UIContainer* ctx);
+void Test_IMGUI(ui::UIContainer* ctx);
+void Test_Tooltip(ui::UIContainer* ctx);
+void Test_Dropdown(ui::UIContainer* ctx);
 
-void Test_BasicEasingAnim(UIContainer* ctx);
-void Test_ThreadWorker(UIContainer* ctx);
-void Test_ThreadedImageRendering(UIContainer* ctx);
-void Test_OSCommunication(UIContainer* ctx);
-void Test_FileSelectionWindow(UIContainer* ctx);
+void Test_BasicEasingAnim(ui::UIContainer* ctx);
+void Test_ThreadWorker(ui::UIContainer* ctx);
+void Test_ThreadedImageRendering(ui::UIContainer* ctx);
+void Test_OSCommunication(ui::UIContainer* ctx);
+void Test_FileSelectionWindow(ui::UIContainer* ctx);
 
-void Test_SequenceEditors(UIContainer* ctx);
-void Test_TreeEditors(UIContainer* ctx);
-void Test_MessageLogView(UIContainer* ctx);
+void Test_SequenceEditors(ui::UIContainer* ctx);
+void Test_TreeEditors(ui::UIContainer* ctx);
+void Test_MessageLogView(ui::UIContainer* ctx);
 
-void Benchmark_SubUI(UIContainer* ctx);
-void Test_TableView(UIContainer* ctx);
+void Benchmark_SubUI(ui::UIContainer* ctx);
+void Test_TableView(ui::UIContainer* ctx);
 
-void Demo_Calculator(UIContainer* ctx);
-void Demo_SettingsWindow(UIContainer* ctx);
-void Demo_BasicTreeNodeEdit(UIContainer* ctx);
-void Demo_CompactTreeNodeEdit(UIContainer* ctx);
-void Demo_ScriptTree(UIContainer* ctx);
-void Demo_NodeGraphEditor(UIContainer* ctx);
-void Demo_TrackEditor(UIContainer* ctx);
-void Demo_SlidingHighlightAnim(UIContainer* ctx);
-void Demo_ButtonPressHighlight(UIContainer* ctx);
+void Demo_Calculator(ui::UIContainer* ctx);
+void Demo_SettingsWindow(ui::UIContainer* ctx);
+void Demo_BasicTreeNodeEdit(ui::UIContainer* ctx);
+void Demo_CompactTreeNodeEdit(ui::UIContainer* ctx);
+void Demo_ScriptTree(ui::UIContainer* ctx);
+void Demo_NodeGraphEditor(ui::UIContainer* ctx);
+void Demo_TrackEditor(ui::UIContainer* ctx);
+void Demo_SlidingHighlightAnim(ui::UIContainer* ctx);
+void Demo_ButtonPressHighlight(ui::UIContainer* ctx);
 
 
 struct TestEntry
 {
 	const char* name;
-	void(*func)(UIContainer* ctx);
+	void(*func)(ui::UIContainer* ctx);
 };
 static const TestEntry coreTestEntries[] =
 {
-	{ "Off", [](UIContainer* ctx) {} },
+	{ "Off", [](ui::UIContainer* ctx) {} },
 	{},
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
@@ -396,7 +396,7 @@ static const TestEntry coreTestEntries[] =
 	{ "Element reset", Test_ElementReset },
 	{ "SubUI", Test_SubUI },
 	{ "High element count", Test_HighElementCount },
-	{ "Zero-rerender", Test_ZeroRerender },
+	{ "Zero-rebuild", Test_ZeroRebuild },
 	{ "Global events", Test_GlobalEvents },
 	{},
 	{ "- Frames and windows -" },
@@ -480,13 +480,13 @@ static const TestEntry demoEntries[] =
 	{ "Sliding highlight anim", Demo_SlidingHighlightAnim },
 	{ "Button press highlight", Demo_ButtonPressHighlight },
 	// TODO fix/redistribute
-	//{ "Data editor", [](UIContainer* ctx) { ctx->Make<DataEditor>(); } },
+	//{ "Data editor", [](ui::UIContainer* ctx) { ctx->Make<DataEditor>(); } },
 };
 
 struct ExampleGroup
 {
 	const char* name;
-	ArrayView<TestEntry> entries;
+	ui::ArrayView<TestEntry> entries;
 };
 static ExampleGroup exampleGroups[] =
 {
@@ -499,22 +499,22 @@ static ExampleGroup exampleGroups[] =
 	{ "Demo", demoEntries },
 };
 
-static bool rerenderAlways;
-struct TEST : ui::Node
+static bool rebuildAlways;
+struct TEST : ui::Buildable
 {
-	void Render(UIContainer* ctx) override
+	void Build(ui::UIContainer* ctx) override
 	{
 		ctx->Push<ui::MenuBarElement>();
 
 		for (const auto& group : exampleGroups)
 		{
-			ctx->Push<ui::MenuItemElement>()->SetText(group.name);
+			ctx->Push<ui::MenuItemElement>().SetText(group.name);
 			for (auto& entry : group.entries)
 			{
 				if (!entry.func)
 				{
 					if (entry.name)
-						ctx->Make<ui::MenuItemElement>()->SetText(entry.name).SetDisabled(true);
+						ctx->Make<ui::MenuItemElement>().SetText(entry.name).SetDisabled(true);
 					else
 						ctx->Make<ui::MenuSeparatorElement>();
 					continue;
@@ -524,19 +524,19 @@ struct TEST : ui::Node
 				{
 					curTest = &entry;
 					GetNativeWindow()->SetTitle(entry.name);
-					Rerender();
+					Rebuild();
 				};
-				ctx->Make<ui::MenuItemElement>()->SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
+				ctx->Make<ui::MenuItemElement>().SetText(entry.name).SetChecked(curTest == &entry).onActivate = fn;
 			}
 			ctx->Pop();
 		}
 
-		ctx->Push<ui::MenuItemElement>()->SetText("Debug");
+		ctx->Push<ui::MenuItemElement>().SetText("Debug");
 		{
-			ctx->Make<ui::MenuItemElement>()->SetText("Rerender always").SetChecked(rerenderAlways).onActivate = [this]() { rerenderAlways ^= true; Rerender(); };
-			ctx->Make<ui::MenuItemElement>()->SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
-			ctx->Make<ui::MenuItemElement>()->SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
-				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rerender(); };
+			ctx->Make<ui::MenuItemElement>().SetText("Rebuild always").SetChecked(rebuildAlways).onActivate = [this]() { rebuildAlways ^= true; Rebuild(); };
+			ctx->Make<ui::MenuItemElement>().SetText("Dump layout").onActivate = [this]() { DumpLayout(lastChild); };
+			ctx->Make<ui::MenuItemElement>().SetText("Draw rectangles").SetChecked(GetNativeWindow()->IsDebugDrawEnabled()).onActivate = [this]() {
+				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); };
 		}
 		ctx->Pop();
 
@@ -545,8 +545,8 @@ struct TEST : ui::Node
 		if (curTest)
 			curTest->func(ctx);
 
-		if (rerenderAlways)
-			Rerender();
+		if (rebuildAlways)
+			Rebuild();
 	}
 
 	static const char* cln(const char* s)
@@ -643,7 +643,7 @@ void EarlyTest()
 
 struct MainWindow : ui::NativeMainWindow
 {
-	void OnRender(UIContainer* ctx)
+	void OnBuild(ui::UIContainer* ctx) override
 	{
 		ctx->Make<TEST>();
 	}

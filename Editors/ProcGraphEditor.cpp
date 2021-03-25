@@ -14,9 +14,9 @@ DataCategoryTag DCT_EditProcGraph[1];
 DataCategoryTag DCT_EditProcGraphNode[1];
 
 
-void ProcGraphEditor_NodePin::Render(UIContainer* ctx)
+void ProcGraphEditor_NodePin::Build(UIContainer* ctx)
 {
-	_sel = ctx->Push<Selectable>();
+	_sel = &ctx->Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
 	*_sel + StackingDirection(!_pin.isOutput ? style::StackingDirection::LeftToRight : style::StackingDirection::RightToLeft);
@@ -33,7 +33,7 @@ void ProcGraphEditor_NodePin::Render(UIContainer* ctx)
 
 	ctx->Pop();
 
-	auto& cb = *ctx->Make<ColorBlock>();
+	auto& cb = ctx->Make<ColorBlock>();
 	cb.SetColor(_graph->GetPinColor(_pin));
 	cb + BoxSizing(style::BoxSizing::ContentBox) + Width(4) + Height(6);
 	auto* pap = Allocate<style::PointAnchoredPlacement>();
@@ -43,20 +43,20 @@ void ProcGraphEditor_NodePin::Render(UIContainer* ctx)
 	cb.GetStyle().SetPlacement(pap);
 }
 
-void ProcGraphEditor_NodePin::OnEvent(UIEvent& e)
+void ProcGraphEditor_NodePin::OnEvent(Event& e)
 {
-	if (e.type == UIEventType::DragStart)
+	if (e.type == EventType::DragStart)
 	{
 		_dragged = true;
 		_sel->Init(_dragged || _dragHL);
 		DragDrop::SetData(new ProcGraphLinkDragDropData(_graph, _pin));
 	}
-	if (e.type == UIEventType::DragEnd)
+	if (e.type == EventType::DragEnd)
 	{
 		_dragged = false;
 		_sel->Init(_dragged || _dragHL);
 	}
-	if (e.type == UIEventType::DragEnter)
+	if (e.type == EventType::DragEnter)
 	{
 		if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
 		{
@@ -70,12 +70,12 @@ void ProcGraphEditor_NodePin::OnEvent(UIEvent& e)
 		}
 		_sel->Init(_dragged || _dragHL);
 	}
-	if (e.type == UIEventType::DragLeave)
+	if (e.type == EventType::DragLeave)
 	{
 		_dragHL = false;
 		_sel->Init(_dragged || _dragHL);
 	}
-	if (e.type == UIEventType::DragDrop)
+	if (e.type == EventType::DragDrop)
 	{
 		if (auto* ddd = DragDrop::GetData<ProcGraphLinkDragDropData>())
 		{
@@ -84,7 +84,7 @@ void ProcGraphEditor_NodePin::OnEvent(UIEvent& e)
 		}
 	}
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 	{
 		auto& CM = ContextMenu::Get();
 		CM.Add("Unlink pin") = [this]() { _UnlinkPin(); };
@@ -96,7 +96,7 @@ void ProcGraphEditor_NodePin::OnEvent(UIEvent& e)
 
 void ProcGraphEditor_NodePin::OnPaint()
 {
-	Node::OnPaint();
+	Buildable::OnPaint();
 
 #if 0
 	auto c = _graph->GetPinColor(_pin);
@@ -162,7 +162,7 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 }
 
 
-void ProcGraphEditor_Node::Render(UIContainer* ctx)
+void ProcGraphEditor_Node::Build(UIContainer* ctx)
 {
 	Subscribe(DCT_EditProcGraphNode, _node);
 
@@ -170,7 +170,7 @@ void ProcGraphEditor_Node::Render(UIContainer* ctx)
 	s.SetWidth(style::Coord::Undefined());
 	s.SetMinWidth(100);
 
-	*ctx->Push<TabPanel>() + Width(style::Coord::Undefined()) + Margin(0);
+	ctx->Push<TabPanel>() + Width(style::Coord::Undefined()) + Margin(0);
 
 	OnBuildTitleBar(ctx);
 	OnBuildOutputPins(ctx);
@@ -181,10 +181,10 @@ void ProcGraphEditor_Node::Render(UIContainer* ctx)
 	ctx->Pop();
 }
 
-void ProcGraphEditor_Node::OnEvent(UIEvent& e)
+void ProcGraphEditor_Node::OnEvent(Event& e)
 {
-	Node::OnEvent(e);
-	if (e.type == UIEventType::ContextMenu)
+	Buildable::OnEvent(e);
+	if (e.type == EventType::ContextMenu)
 	{
 		ContextMenu::Get().Add("Delete node", !_graph->CanDeleteNode(_node)) = [this]()
 		{
@@ -207,9 +207,9 @@ void ProcGraphEditor_Node::OnEvent(UIEvent& e)
 
 		_graph->OnNodeContextMenu(_node, ContextMenu::Get());
 	}
-	if (e.type == UIEventType::Change ||
-		e.type == UIEventType::Commit ||
-		e.type == UIEventType::IMChange)
+	if (e.type == EventType::Change ||
+		e.type == EventType::Commit ||
+		e.type == EventType::IMChange)
 	{
 		_graph->OnEditNode(e, _node);
 	}
@@ -228,30 +228,25 @@ void ProcGraphEditor_Node::OnBuildTitleBar(UIContainer* ctx)
 	placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
 	GetStyle().SetPlacement(placement);
 
-	auto* sel = ctx->Push<Selectable>()->Init(_isDragging);
-	sel->GetStyle().SetFontWeight(style::FontWeight::Bold);
-	sel->GetStyle().SetFontStyle(style::FontStyle::Italic);
-	*sel
+	auto& sel = ctx->Push<Selectable>().Init(_isDragging);
+	sel.GetStyle().SetFontWeight(style::FontWeight::Bold);
+	sel.GetStyle().SetFontStyle(style::FontStyle::Italic);
+	sel
 		+ Padding(0)
 		+ MakeDraggable()
-		+ EventHandler([this, placement](UIEvent& e)
+		+ EventHandler([this, placement](Event& e)
 	{
-		if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Left)
+		if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 		{
 			_isDragging = true;
-			_dragStartMouse = e.context->clickStartPositions[int(UIMouseButton::Left)];
+			_dragStartMouse = e.context->clickStartPositions[int(MouseButton::Left)];
 			_dragStartPos = _graph->GetNodePosition(_node);
 		}
-		if (e.type == UIEventType::ButtonUp && e.GetButton() == UIMouseButton::Left)
+		if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 			_isDragging = false;
-		if (e.type == UIEventType::MouseMove && _isDragging)
+		if (e.type == EventType::MouseMove && _isDragging)
 		{
-			Point2f curMousePos = { e.x, e.y };
-			Point2f newPos =
-			{
-				_dragStartPos.x + curMousePos.x - _dragStartMouse.x,
-				_dragStartPos.y + curMousePos.y - _dragStartMouse.y,
-			};
+			Point2f newPos = _dragStartPos + e.position - _dragStartMouse;
 			placement->bias = newPos + _viewOffset;
 			_graph->SetNodePosition(_node, newPos);
 			_OnChangeStyle();
@@ -278,14 +273,14 @@ void ProcGraphEditor_Node::OnBuildInputPins(UIContainer* ctx)
 {
 	uintptr_t count = _graph->GetNodeInputCount(_node);
 	for (uintptr_t i = 0; i < count; i++)
-		ctx->Make<ProcGraphEditor_NodePin>()->Init(_graph, _node, i, false);
+		ctx->Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, false);
 }
 
 void ProcGraphEditor_Node::OnBuildOutputPins(UIContainer* ctx)
 {
 	uintptr_t count = _graph->GetNodeOutputCount(_node);
 	for (uintptr_t i = 0; i < count; i++)
-		ctx->Make<ProcGraphEditor_NodePin>()->Init(_graph, _node, i, true);
+		ctx->Make<ProcGraphEditor_NodePin>().Init(_graph, _node, i, true);
 }
 
 void ProcGraphEditor_Node::OnBuildPreview(UIContainer* ctx)
@@ -298,7 +293,7 @@ void ProcGraphEditor_Node::OnBuildPreview(UIContainer* ctx)
 }
 
 
-void ProcGraphEditor::Render(UIContainer* ctx)
+void ProcGraphEditor::Build(UIContainer* ctx)
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
@@ -310,26 +305,25 @@ void ProcGraphEditor::Render(UIContainer* ctx)
 	//ctx->Pop();
 }
 
-void ProcGraphEditor::OnEvent(UIEvent& e)
+void ProcGraphEditor::OnEvent(Event& e)
 {
-	Node::OnEvent(e);
+	Buildable::OnEvent(e);
 
-	if (e.type == UIEventType::ContextMenu)
+	if (e.type == EventType::ContextMenu)
 	{
 		if (!ContextMenu::Get().HasAny())
 			OnMakeCreationMenu(ContextMenu::Get());
 	}
 
-	if (e.type == UIEventType::ButtonDown && e.GetButton() == UIMouseButton::Middle)
+	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Middle)
 	{
-		origMPos = { e.x, e.y };
+		origMPos = e.position;
 		origVPos = viewOffset;
 	}
-	if (e.type == UIEventType::MouseMove && HasFlags(UIObject_IsClickedM))
+	if (e.type == EventType::MouseMove && HasFlags(UIObject_IsClickedM))
 	{
-		Point2f mpos = { e.x, e.y };
-		viewOffset = origVPos + mpos - origMPos;
-		Rerender();
+		viewOffset = origVPos + e.position - origMPos;
+		Rebuild();
 	}
 }
 
@@ -361,7 +355,7 @@ void ProcGraphEditor::OnBuildNodes(UIContainer* ctx)
 	_graph->GetNodes(nodes);
 	for (auto* N : nodes)
 	{
-		ctx->Make<ProcGraphEditor_Node>()->Init(_graph, N, viewOffset);
+		ctx->Make<ProcGraphEditor_Node>().Init(_graph, N, viewOffset);
 	}
 }
 
@@ -434,7 +428,7 @@ void ProcGraphEditor::GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::v
 	if (auto* P = pinUIMap.get(pin))
 	{
 		auto p0 = GetPinPos(P);
-		Point2f p1 = { system->eventSystem.prevMouseX, system->eventSystem.prevMouseY };
+		Point2f p1 = system->eventSystem.prevMousePos;
 		if (!pin.isOutput)
 			std::swap(p0, p1);
 		GetLinkPointsRaw(p0, p1, pin.isOutput ? 1 : -1, outPoints);

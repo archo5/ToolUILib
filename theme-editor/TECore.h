@@ -10,12 +10,12 @@ extern DataCategoryTag DCT_NodePreviewInvalidated[1];
 extern DataCategoryTag DCT_ChangeActiveImage[1];
 
 
-using AbsRect = AABB<float>;
+using AbsRect = AABB2f;
 
 struct SubRect
 {
-	AABB<float> anchors = {};
-	AABB<float> offsets = {};
+	AABB2f anchors = {};
+	AABB2f offsets = {};
 
 	AbsRect Resolve(const AbsRect& frame);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
@@ -23,10 +23,10 @@ struct SubRect
 
 struct SubPos
 {
-	Point<float> anchor = {};
-	Point<float> offset = {};
+	Point2f anchor = {};
+	Point2f offset = {};
 
-	Point<float> Resolve(const AbsRect& frame);
+	Point2f Resolve(const AbsRect& frame);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 

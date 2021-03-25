@@ -7,9 +7,9 @@
 struct OpenedFile;
 
 
-struct TabMarkers : ui::Node, TableWithOffsets
+struct TabMarkers : ui::Buildable, TableWithOffsets
 {
-	void Render(UIContainer* ctx) override;
+	void Build(ui::UIContainer* ctx) override;
 
 	OpenedFile* of = nullptr;
 };

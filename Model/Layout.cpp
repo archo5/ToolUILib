@@ -1,19 +1,23 @@
 
+#include "Layout.h"
+
+#include "Native.h"
+#include "Objects.h"
+
 #include <vector>
 #include <algorithm>
 
-#include "Native.h"
-#include "Layout.h"
-#include "Objects.h"
-
 
 namespace style {
+
+// TODO
+using namespace ui;
 
 
 void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 {
 	UIRect parentRect = outRect;
-	Size<float> contSize = parentRect.GetSize();
+	Size2f contSize = parentRect.GetSize();
 
 	float w = curObj->GetFullEstimatedWidth(contSize, style::EstSizeType::Expanding, false).min;
 	float h = curObj->GetFullEstimatedHeight(contSize, style::EstSizeType::Expanding, false).min;
@@ -48,14 +52,14 @@ namespace layouts {
 
 struct InlineBlockLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		float size = 0;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		float size = GetFontHeight();
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
@@ -84,7 +88,7 @@ Layout* InlineBlock() { return &g_inlineBlockLayout; }
 
 struct StackLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -106,7 +110,7 @@ struct StackLayout : Layout
 		}
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -215,7 +219,7 @@ Layout* Stack() { return &g_stackLayout; }
 
 struct StackExpandLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -242,7 +246,7 @@ struct StackExpandLayout : Layout
 		}
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		auto style = curObj->GetStyle();
 		float size = 0;
@@ -336,11 +340,11 @@ Layout* StackExpand() { return &g_stackExpandLayout; }
 
 struct EdgeSliceLayout : Layout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		return containerSize.x;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size<float>& containerSize, EstSizeType type)
+	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		return containerSize.y;
 	}
