@@ -1,12 +1,13 @@
 
 #pragma once
+
+#include "Common.h"
+
 #include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
 #include <string>
-
-#include "Common.h"
 
 
 namespace ui {

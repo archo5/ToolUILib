@@ -1,11 +1,11 @@
 
-#include <stdio.h>
+#include "RHI.h"
+#include "Render.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../ThirdParty/stb_rect_pack.h"
 
-#include "RHI.h"
-#include "Render.h"
+#include <stdio.h>
 
 
 namespace ui {

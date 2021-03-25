@@ -1,17 +1,18 @@
 
+#include "Font.h"
+#include "FileSystem.h"
+#include "HashTable.h"
+#include "../Render/Render.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../ThirdParty/stb_truetype.h"
+
 #include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "../ThirdParty/stb_truetype.h"
-
-#include "Font.h"
-#include "FileSystem.h"
-#include "HashTable.h"
-#include "../Render/Render.h"
 
 namespace ui {
 

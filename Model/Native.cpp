@@ -1055,7 +1055,7 @@ void NativeWindowNode::OnLayout(const UIRect& rect, const Size2f& containerSize)
 static HashMap<AnimationRequester*, bool> g_animRequesters;
 static UINT_PTR g_animReqTimerID;
 
-static void CALLBACK AnimTimerProc(HWND, UINT, UINT, DWORD)
+static void CALLBACK AnimTimerProc(HWND, UINT, UINT_PTR, DWORD)
 {
 	for (auto& kvp : g_animRequesters)
 	{

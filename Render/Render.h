@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <stdint.h>
 #include "../Core/Math.h"
 #include "../Core/Image.h"
 #include "../Core/Memory.h"

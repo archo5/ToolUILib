@@ -1,9 +1,11 @@
 
 #pragma once
-#include <inttypes.h>
-#include <string.h>
+
 #include "../Core/Math.h"
 #include "../Core/ObjectIteration.h"
+
+#include <inttypes.h>
+#include <string.h>
 
 
 namespace ui {

@@ -1,9 +1,11 @@
 
 #pragma once
-#include <string>
 
 #include "String.h"
 #include "Image.h"
+
+#include <string>
+
 
 namespace ui {
 
