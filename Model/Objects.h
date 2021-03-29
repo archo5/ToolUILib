@@ -489,26 +489,22 @@ struct SetBoxSizing : Modifier
 };
 inline SetBoxSizing Set(BoxSizing bs) { return bs; }
 
-struct SetWidth : Modifier
-{
-	Coord _c;
-	SetWidth(const Coord& c) : _c(c) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetWidth(_c); }
-};
+#define UI_COORD_VALUE_PROXY(name) \
+struct name : Modifier \
+{ \
+	Coord _c; \
+	name(const Coord& c) : _c(c) {} \
+	void Apply(UIObject* obj) const override { obj->GetStyle().name(_c); } \
+}
 
-struct SetHeight : Modifier
-{
-	Coord _c;
-	SetHeight(const Coord& c) : _c(c) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetHeight(_c); }
-};
+UI_COORD_VALUE_PROXY(SetWidth);
+UI_COORD_VALUE_PROXY(SetHeight);
+UI_COORD_VALUE_PROXY(SetMinWidth);
+UI_COORD_VALUE_PROXY(SetMinHeight);
+UI_COORD_VALUE_PROXY(SetMaxWidth);
+UI_COORD_VALUE_PROXY(SetMaxHeight);
 
-struct SetMinWidth : Modifier
-{
-	Coord _c;
-	SetMinWidth(const Coord& c) : _c(c) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetMinWidth(_c); }
-};
+#undef UI_COORD_VALUE_PROXY
 
 struct SetPadding : Modifier
 {

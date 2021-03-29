@@ -1,10 +1,12 @@
 
 #pragma once
-#include <vector>
-#include <functional>
+
 #include "../Core/Math.h"
 #include "../Core/String.h"
 #include "../Core/Image.h"
+
+#include <vector>
+#include <functional>
 
 
 namespace ui {

@@ -247,6 +247,8 @@ struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinType
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override
 	{
 		BeginDict(FI.name);
+		if (outName)
+			*outName = ReadString("__");
 	}
 	void EndObject() override
 	{

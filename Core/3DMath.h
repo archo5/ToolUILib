@@ -55,6 +55,15 @@ struct Vec3f
 		float q = 1.0f / sqrtf(lsq);
 		return { x * q, y * q, z * q };
 	}
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Vec3");
+		OnField(oi, "x", x);
+		OnField(oi, "y", y);
+		OnField(oi, "z", z);
+		oi.EndObject();
+	}
 };
 
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
