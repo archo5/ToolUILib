@@ -544,6 +544,13 @@ void JSONLinearWriter::WriteString(const char* key, StringView value)
 	_starts.back().weight += 9999;
 }
 
+void JSONLinearWriter::WriteNull(const char* key)
+{
+	_WritePrefix(key);
+	_data += "null";
+	_starts.back().weight += 6;
+}
+
 void JSONLinearWriter::WriteBool(const char* key, bool value)
 {
 	_WritePrefix(key);
@@ -578,6 +585,13 @@ void JSONLinearWriter::WriteFloat(const char* key, double value)
 		if (c == ',')
 			c = '.';
 	_data += bfr;
+	_starts.back().weight += 6;
+}
+
+void JSONLinearWriter::WriteRawNumber(const char* key, StringView value)
+{
+	_WritePrefix(key);
+	_data.append(value.data(), value.size());
 	_starts.back().weight += 6;
 }
 

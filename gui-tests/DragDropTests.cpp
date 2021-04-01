@@ -4,8 +4,6 @@
 
 struct FileReceiverTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		ui::Text("File receiver");
@@ -38,8 +36,6 @@ struct FileReceiverTest : ui::Buildable
 
 struct TransferCountablesTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	struct Data : ui::DragDropData
 	{
 		static constexpr const char* NAME = "slot item";
@@ -99,8 +95,6 @@ struct TransferCountablesTest : ui::Buildable
 
 struct SlideReorderTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	struct Data : ui::DragDropData
 	{
 		static constexpr const char* NAME = "current location";
@@ -167,8 +161,6 @@ struct SlideReorderTest : ui::Buildable
 
 struct TreeNodeReorderTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	struct Node
 	{
 		~Node()
@@ -451,8 +443,6 @@ struct TreeNodeReorderTest : ui::Buildable
 
 struct DragElementTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		ui::Text("Drag element");
@@ -500,8 +490,6 @@ struct DragElementTest : ui::Buildable
 
 struct DragConnectTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	static int CombineLinkableIDs(int a, int b)
 	{
 		if (a > b)
@@ -524,8 +512,6 @@ struct DragConnectTest : ui::Buildable
 
 	struct Linkable : ui::Selectable
 	{
-		static constexpr bool Persistent = true;
-
 		Linkable()
 		{
 			*this + ui::MakeDraggable();
@@ -685,8 +671,6 @@ struct DragConnectTest : ui::Buildable
 
 struct DragDropTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);

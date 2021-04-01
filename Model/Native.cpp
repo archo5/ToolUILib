@@ -827,7 +827,7 @@ std::string NativeWindowBase::GetTitle()
 	return WCHARtoUTF8s(titleW);
 }
 
-void NativeWindowBase::SetTitle(const char* title)
+void NativeWindowBase::SetTitle(StringView title)
 {
 	SetWindowTextW(_impl->window, UTF8toWCHAR(title).c_str());
 }

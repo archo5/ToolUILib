@@ -23,6 +23,7 @@ struct FieldInfo
 	FieldInfo() {}
 	FieldInfo(const char* nm, uint32_t f = 0) : name(nm), flags(f) {}
 
+	bool NeedObject() const { return name != nullptr; }
 	const char* GetNameOrEmptyStr() const { return name ? name : ""; }
 };
 

@@ -180,8 +180,6 @@ struct SequenceItemElement : Selectable
 
 struct SequenceEditor : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;

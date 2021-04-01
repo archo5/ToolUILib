@@ -87,8 +87,6 @@ struct ImageElement : UIElement
 
 struct HueSatPicker : UIElement
 {
-	static constexpr bool Persistent = true;
-
 	~HueSatPicker();
 	void OnInit() override;
 	void OnEvent(Event& e) override;
@@ -226,8 +224,6 @@ struct MultiFormatColor
 
 struct ColorPicker : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
@@ -263,8 +259,6 @@ struct ColorPickerWindow : NativeDialogWindow
 
 struct ColorEdit : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }

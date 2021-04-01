@@ -145,8 +145,6 @@ struct TE_MainPreviewNode : Buildable
 
 struct TE_ImageEditorNode : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	TE_Theme* theme;
 	TE_Template* tmpl;
 
@@ -317,8 +315,6 @@ struct TE_TemplateEditorNode : Buildable
 
 struct TE_ThemeEditorNode : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		Push<MenuBarElement>();

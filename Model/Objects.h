@@ -379,6 +379,8 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 
 struct Buildable : UIObject
 {
+	static constexpr bool Persistent = true;
+
 	~Buildable();
 	typedef char IsBuildable[2];
 

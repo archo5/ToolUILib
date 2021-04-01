@@ -46,8 +46,6 @@ static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
 
 struct SequenceEditorsTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
@@ -459,8 +457,6 @@ struct Tree : ui::ITree
 
 struct TreeEditorsTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		{
@@ -565,8 +561,6 @@ g_randomNumbers;
 
 struct TableViewTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		GetStyle().SetLayout(ui::layouts::EdgeSlice());
@@ -638,8 +632,6 @@ struct MessageLogViewTest : ui::Buildable
 			MLV_Common::OnDrawMessage(context, msg, area);
 		}
 	};
-
-	static constexpr bool Persistent = true;
 
 	MessageLogViewTest()
 	{

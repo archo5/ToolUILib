@@ -101,7 +101,7 @@ struct NativeWindowBase
 	//void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
 
 	std::string GetTitle();
-	void SetTitle(const char* title);
+	void SetTitle(StringView title);
 
 	WindowStyle GetStyle();
 	void SetStyle(WindowStyle ws);

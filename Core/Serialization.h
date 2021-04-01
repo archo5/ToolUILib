@@ -131,12 +131,14 @@ struct JSONLinearWriter
 
 	JSONLinearWriter();
 	void WriteString(const char* key, StringView value);
+	void WriteNull(const char* key);
 	void WriteBool(const char* key, bool value);
 	void WriteInt(const char* key, int value) { WriteInt(key, int64_t(value)); }
 	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
 	void WriteInt(const char* key, int64_t value);
 	void WriteInt(const char* key, uint64_t value);
 	void WriteFloat(const char* key, double value);
+	void WriteRawNumber(const char* key, StringView value);
 	void BeginArray(const char* key);
 	void EndArray();
 	void BeginDict(const char* key);

@@ -61,8 +61,6 @@ struct TreeItemElement : Selectable
 
 struct TreeEditor : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;

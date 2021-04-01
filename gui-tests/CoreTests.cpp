@@ -122,7 +122,6 @@ void Test_RenderingPrimitives()
 
 struct KeyboardEventsTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
 	static constexpr unsigned MAX_MESSAGES = 50;
 
 	KeyboardEventsTest()
@@ -531,7 +530,6 @@ struct GlobalEventsTest : ui::Buildable
 {
 	struct EventTest : ui::Buildable
 	{
-		static constexpr bool Persistent = true;
 		void Build() override
 		{
 			Subscribe(dct);

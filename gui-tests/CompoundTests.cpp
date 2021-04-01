@@ -420,8 +420,6 @@ void Test_Tabs()
 
 struct ScrollbarsTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	int count = 20;
 	bool expanding = true;
 
@@ -599,8 +597,6 @@ void Test_ColorPicker()
 
 struct The3DViewTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	struct VertPC
 	{
 		float x, y, z;
@@ -737,8 +733,6 @@ void Test_3DView()
 
 struct GizmoTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	ui::OrbitCamera camera;
 	ui::Gizmo gizmo;
 	float gizmoSize = 100;
@@ -883,8 +877,6 @@ void Test_Gizmo()
 
 struct IMGUITest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		ui::LabeledProperty::Begin("buttons");
@@ -1040,8 +1032,6 @@ void Test_Tooltip()
 
 struct DropdownTest : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	uintptr_t sel3opts = 1;
 	uintptr_t selPtr = uintptr_t(&typeid(ui::Buildable));
 	const type_info* selPtrReal = &typeid(ui::Buildable);

@@ -152,8 +152,6 @@ struct ProcGraphLinkDragDropData : DragDropData
 
 struct ProcGraphEditor_NodePin : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
@@ -179,8 +177,6 @@ using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::
 
 struct ProcGraphEditor_Node : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 	void OnEvent(Event& e) override;
 
@@ -202,8 +198,6 @@ struct ProcGraphEditor_Node : Buildable
 
 struct ProcGraphEditor : Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;

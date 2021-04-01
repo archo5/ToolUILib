@@ -488,8 +488,6 @@ struct Tree : ui::ITree
 } // script_tree
 struct ScriptTreeDemo : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	void Build() override
 	{
 		Subscribe(script_tree::DCT_TreeChanged);

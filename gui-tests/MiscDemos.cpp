@@ -29,8 +29,6 @@ static const SetPropEntry entries[] =
 
 struct SettingsWindowDemo : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	std::string search = "";
 	std::string currentSection = "General";
 	Settings settings;

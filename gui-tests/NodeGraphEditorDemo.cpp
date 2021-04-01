@@ -329,8 +329,6 @@ struct GraphImpl : ui::IProcGraph
 
 struct NodeGraphEditorDemo : ui::Buildable
 {
-	static constexpr bool Persistent = true;
-
 	NodeGraphEditorDemo()
 	{
 		Graph::Node* makeVec1 = new MakeVec();
