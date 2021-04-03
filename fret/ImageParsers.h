@@ -15,4 +15,4 @@ struct ImageInfo
 size_t GetImageFormatCount();
 ui::StringView GetImageFormatCategory(size_t fid);
 ui::StringView GetImageFormatName(size_t fid);
-ui::Image* CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo& info);
+ui::draw::ImageHandle CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo& info);

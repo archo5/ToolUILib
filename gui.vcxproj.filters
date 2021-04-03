@@ -214,6 +214,9 @@
     <ClInclude Include="Core\Common.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Core\RefCounted.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

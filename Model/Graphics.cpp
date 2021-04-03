@@ -23,7 +23,7 @@ void ColorBlock::OnPaint()
 
 	if (!_color.IsOpaque())
 	{
-		draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage->_texture, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
 	}
 	
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
@@ -50,7 +50,7 @@ void ColorInspectBlock::OnPaint()
 
 	if (!_color.IsOpaque())
 	{
-		draw::RectTex(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, _bgImage->_texture, 0, 0, r_rt.GetWidth() / _bgImage->GetWidth(), r_rt.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, _bgImage, 0, 0, r_rt.GetWidth() / _bgImage->GetWidth(), r_rt.GetHeight() / _bgImage->GetHeight());
 	}
 
 	draw::RectCol(r_lf.x0, r_lf.y0, r_lf.x1, r_lf.y1, _color.GetOpaque());
@@ -82,7 +82,7 @@ void ImageElement::OnPaint()
 	auto c = GetContentRect();
 	if (_bgImage)
 	{
-		draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage->_texture, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
+		draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
 	}
 	if (_image && _image->GetWidth() && _image->GetHeight() && c.GetWidth() && c.GetHeight())
 	{
@@ -92,10 +92,10 @@ void ImageElement::OnPaint()
 			float w = _image->GetWidth(), h = _image->GetHeight();
 			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
 			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(x, y, x + w, y + h, _image->_texture);
+			draw::RectTex(x, y, x + w, y + h, _image);
 			break; }
 		case ScaleMode::Stretch:
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture);
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image);
 			break;
 		case ScaleMode::Fit: {
 			float iasp = _image->GetWidth() / (float)_image->GetHeight();
@@ -107,7 +107,7 @@ void ImageElement::OnPaint()
 				w = h * iasp;
 			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
 			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(x, y, x + w, y + h, _image->_texture);
+			draw::RectTex(x, y, x + w, y + h, _image);
 			break; }
 		case ScaleMode::Fill: {
 			float iasp = _image->GetWidth() / (float)_image->GetHeight();
@@ -119,7 +119,7 @@ void ImageElement::OnPaint()
 				w = h * iasp;
 			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
 			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image->_texture,
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image,
 				(c.x0 - x) / w,
 				(c.y0 - y) / h,
 				(c.x1 - x) / w,
@@ -140,7 +140,7 @@ void ImageElement::GetSize(Coord& outWidth, Coord& outHeight)
 	}
 }
 
-ImageElement& ImageElement::SetImage(Image* img)
+ImageElement& ImageElement::SetImage(draw::IImage* img)
 {
 	_image = img;
 	return *this;
@@ -160,11 +160,6 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 	return *this;
 }
 
-
-HueSatPicker::~HueSatPicker()
-{
-	delete _bgImage;
-}
 
 void HueSatPicker::OnInit()
 {
@@ -201,7 +196,7 @@ void HueSatPicker::OnPaint()
 	if (!_bgImage || _bgImage->GetWidth() != tgtw)
 		_RegenerateBackground(tgtw);
 
-	draw::RectTex(cr.x0, cr.y0, cr.x0 + tgtw, cr.y0 + tgtw, _bgImage->_texture);
+	draw::RectTex(cr.x0, cr.y0, cr.x0 + tgtw, cr.y0 + tgtw, _bgImage);
 
 	float hw = tgtw / 2.0f;
 	float cx = cr.x0 + hw;
@@ -239,8 +234,7 @@ void HueSatPicker::_RegenerateBackground(int w)
 		}
 	}
 
-	delete _bgImage;
-	_bgImage = new Image(c);
+	_bgImage = draw::ImageCreateFromCanvas(c);
 }
 
 
@@ -254,11 +248,6 @@ ColorCompPicker2D::ColorCompPicker2D()
 {
 	styleProps = Theme::current->selectorContainer;
 	selectorStyle = Theme::current->selector;
-}
-
-ColorCompPicker2D::~ColorCompPicker2D()
-{
-	delete _bgImage;
 }
 
 void ColorCompPicker2D::OnEvent(Event& e)
@@ -284,7 +273,7 @@ void ColorCompPicker2D::OnPaint()
 	if (!_bgImage || _bgImage->GetWidth() != tgtw || _bgImage->GetHeight() != tgth || _settings != _curImgSettings)
 		_RegenerateBackground(tgtw, tgth);
 
-	draw::RectTex(cr.x0, cr.y0, cr.x1, cr.y1, _bgImage->_texture);
+	draw::RectTex(cr.x0, cr.y0, cr.x1, cr.y1, _bgImage);
 
 	float sx = lerp(cr.x0, cr.x1, _settings._invx ? 1 - _x : _x);
 	float sy = lerp(cr.y0, cr.y1, _settings._invy ? 1 - _y : _y);
@@ -352,8 +341,7 @@ void ColorCompPicker2D::_RegenerateBackground(int w, int h)
 		}
 	}
 
-	delete _bgImage;
-	_bgImage = new Image(c);
+	_bgImage = draw::ImageCreateFromCanvas(c);
 	_curImgSettings = _settings;
 }
 

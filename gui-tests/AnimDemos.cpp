@@ -108,17 +108,17 @@ struct ButtonPressHighlightDemo : ui::Buildable
 		aad->baseRect = button.finalRectCPB;
 		aad->player.onAnimUpdate = [this]() { GetNativeWindow()->InvalidateAll(); };
 
-		ui::AnimPtr activationAnim = std::make_shared<ui::ParallelAnimation>
+		ui::AnimPtr activationAnim = new ui::ParallelAnimation
 			(std::initializer_list<ui::AnimPtr>{
-			std::make_shared<ui::SequenceAnimation>
+			new ui::SequenceAnimation
 				(std::initializer_list<ui::AnimPtr>{
-				std::make_shared<ui::AnimSetValue>("dist", 0),
-					std::make_shared<ui::AnimEaseLinear>("dist", 10, 1),
+				new ui::AnimSetValue("dist", 0),
+					new ui::AnimEaseLinear("dist", 10, 1),
 			}),
-				std::make_shared<ui::SequenceAnimation>
+				new ui::SequenceAnimation
 					(std::initializer_list<ui::AnimPtr>{
-					std::make_shared<ui::AnimSetValue>("alpha", 1),
-						std::make_shared<ui::AnimEaseOutCubic>("alpha", 0, 1),
+					new ui::AnimSetValue("alpha", 1),
+						new ui::AnimEaseOutCubic("alpha", 0, 1),
 				}),
 		});
 		aad->player.PlayAnim(activationAnim);

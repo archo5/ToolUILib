@@ -519,11 +519,7 @@ struct ImageTest : ui::Buildable
 		{
 			p[i] = (i / 4 + i / 4 / c.GetHeight()) % 2 ? 0xffffffff : 0;
 		}
-		img = new ui::Image(c);
-	}
-	~ImageTest()
-	{
-		delete img;
+		img = ui::draw::ImageCreateFromCanvas(c);
 	}
 	void Build() override
 	{
@@ -567,7 +563,7 @@ struct ImageTest : ui::Buildable
 		}
 	}
 
-	ui::Image* img;
+	ui::draw::ImageHandle img;
 };
 void Test_Image()
 {

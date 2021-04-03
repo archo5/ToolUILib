@@ -90,11 +90,7 @@ struct HashMap
 	}
 	~HashMap()
 	{
-		_destruct_all();
-		free(_hashTable);
-		free(_hashes);
-		free(_keys);
-		free(_values);
+		_destruct_free();
 	}
 
 	__forceinline size_t size() const { return _count; }
@@ -103,6 +99,27 @@ struct HashMap
 	__forceinline Iterator end() { return { this, _count }; }
 	__forceinline ConstIterator begin() const { return { this, 0 }; }
 	__forceinline ConstIterator end() const { return { this, _count }; }
+
+	void dealloc()
+	{
+		_destruct_free();
+		_hashTable = nullptr;
+		_hashCap = 0;
+		_hashes = nullptr;
+		_keys = nullptr;
+		_values = nullptr;
+		_count = 0;
+		_capacity = 0;
+	}
+
+	void _destruct_free()
+	{
+		_destruct_all();
+		free(_hashTable);
+		free(_hashes);
+		free(_keys);
+		free(_values);
+	}
 
 	void clear()
 	{

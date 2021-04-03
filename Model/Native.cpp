@@ -13,6 +13,7 @@
 #include "Native.h"
 #include "System.h"
 #include "Menu.h"
+#include "Theme.h"
 
 #include "../Render/RHI.h"
 #include "../Render/Render.h"
@@ -539,6 +540,7 @@ struct ProxyEventSystem
 struct NativeWindow_Impl;
 static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
+static int g_rsrcUsers = 0;
 
 struct NativeWindow_Impl
 {
@@ -564,14 +566,13 @@ struct NativeWindow_Impl
 
 		pes.mainTarget = { &evsys, { 0, 0, evsys.width, evsys.height } };
 
-		// TODO fix
-		static bool init = false;
-		if (!init)
+		if (!g_rsrcUsers)
 		{
-			init = true;
+			draw::internals::InitResources();
 			InitFont();
 			InitTheme();
 		}
+		g_rsrcUsers++;
 
 		prevTime = hqtime();
 
@@ -580,6 +581,13 @@ struct NativeWindow_Impl
 	}
 	~NativeWindow_Impl()
 	{
+		if (--g_rsrcUsers == 0)
+		{
+			FreeTheme();
+			FreeFont();
+			draw::internals::FreeResources();
+		}
+
 		if (invalidated)
 			g_windowRepaintList->erase(std::remove(g_windowRepaintList->begin(), g_windowRepaintList->end(), this), g_windowRepaintList->end());
 		rhi::FreeRenderContext(renderCtx);
@@ -1646,11 +1654,9 @@ struct GlobalResources
 	{
 		InitializeWin32();
 		ui::rhi::GlobalInit();
-		ui::draw::internals::InitResources();
 	}
 	~GlobalResources()
 	{
-		ui::draw::internals::FreeResources();
 		ui::rhi::GlobalFree();
 	}
 };
@@ -1662,8 +1668,7 @@ void IncludeContainerTests();
 int RealMain()
 {
 	IncludeContainerTests();
-#define DEFER(f) struct _defer_##__LINE__ { ~_defer_##__LINE__() { f; } } _defer_inst_##__LINE__
-	DEFER(dumpallocinfo());
+	UI_DEFER(dumpallocinfo());
 
 	int argc = 0;
 	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);

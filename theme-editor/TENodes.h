@@ -22,10 +22,7 @@ struct TE_Node
 		TE_IRenderContextProvider* rcp;
 	};
 
-	virtual ~TE_Node()
-	{
-		delete _image;
-	}
+	virtual ~TE_Node() {}
 	virtual const char* GetName() = 0;
 	virtual const char* GetSysName() = 0;
 	virtual TE_NodeType GetType() = 0;
@@ -46,11 +43,10 @@ struct TE_Node
 	void _SerializeBase(IObjectIterator& oi);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
-	Image* GetImage(TE_IRenderContextProvider* rcp);
+	draw::ImageHandle GetImage(TE_IRenderContextProvider* rcp);
 
 	void SetDirty()
 	{
-		delete _image;
 		_image = nullptr;
 	}
 	bool IsDirty()
@@ -72,7 +68,7 @@ struct TE_Node
 	Point2f position = {};
 	bool isPreviewEnabled = true;
 	uint8_t _topoState = 0;
-	Image* _image = nullptr;
+	draw::ImageHandle _image;
 };
 
 

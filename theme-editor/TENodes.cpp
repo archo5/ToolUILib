@@ -44,7 +44,7 @@ void TE_Node::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndObject();
 }
 
-Image* TE_Node::GetImage(TE_IRenderContextProvider* rcp)
+draw::ImageHandle TE_Node::GetImage(TE_IRenderContextProvider* rcp)
 {
 	if (!_image)
 	{
@@ -54,7 +54,7 @@ Image* TE_Node::GetImage(TE_IRenderContextProvider* rcp)
 			// show when the image is regenerated
 		* canvas.GetPixels() = Color4f(Color4b(rand() % 256, 255)).GetColor32();
 #endif
-		_image = new Image(canvas);
+		_image = draw::ImageCreateFromCanvas(canvas);
 	}
 	return _image;
 }

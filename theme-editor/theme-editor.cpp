@@ -27,9 +27,9 @@ struct TE_SlicedImageElement : UIElement
 		UIRect outer = { x0, y0, x0 + _width, y0 + _height };
 		UIRect inner = outer.ShrinkBy({ float(_left), float(_top), float(_right), float(_bottom) });
 		UIRect texinner = { invlerp(0, iw, _left), invlerp(0, ih, _top), invlerp(iw, 0, _right), invlerp(ih, 0, _bottom) };
-		draw::RectColTex9Slice(outer, inner, Color4b::White(), _image->_texture, { 0, 0, 1, 1 }, texinner);
+		draw::RectColTex9Slice(outer, inner, Color4b::White(), _image, { 0, 0, 1, 1 }, texinner);
 	}
-	TE_SlicedImageElement& SetImage(Image* img)
+	TE_SlicedImageElement& SetImage(draw::IImage* img)
 	{
 		_image = img;
 		return *this;
@@ -49,7 +49,7 @@ struct TE_SlicedImageElement : UIElement
 		return *this;
 	}
 
-	Image* _image = nullptr;
+	draw::ImageHandle _image;
 	int _width = 0;
 	int _height = 0;
 	int _left = 0;
@@ -117,7 +117,7 @@ struct TE_MainPreviewNode : Buildable
 #endif
 				auto& rs = tmpl->renderSettings;
 				rs.layer->Render(canvas, tmpl->GetRenderContext());
-				auto* img = Allocate<Image>(canvas);
+				auto img = draw::ImageCreateFromCanvas(canvas);
 				if (g_previewMode == TEPM_Original)
 				{
 					Make<ImageElement>()

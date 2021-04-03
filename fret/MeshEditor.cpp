@@ -23,7 +23,7 @@ void MeshEditorWindowNode::Build()
 				{
 					auto r = info.rect;
 
-					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr->_texture, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 				});
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
@@ -148,7 +148,7 @@ void MeshEditorWindowNode::OnRender3D(ui::UIRect rect)
 			if (SI && SI->def->resource.type == DDStructResourceType::Image)
 			{
 				auto ii = ddiSrc.dataDesc->GetInstanceImage(*SI);
-				tex = ui::draw::TextureGetInternal(CI.GetImage(ii)->_texture);
+				tex = CI.GetImage(ii)->GetInternalExclusive();
 			}
 		}
 		SetTexture(tex);

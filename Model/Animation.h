@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
 #include <functional>
 
@@ -17,13 +16,13 @@ struct IAnimState
 	virtual void SetVariable(const std::string& name, float value) = 0;
 };
 
-struct Animation
+struct Animation : RefCountedMT
 {
 	virtual void Reset(IAnimState* asrw) = 0;
 	// returns how much time was NOT used (0 if used all)
 	virtual float Advance(float dt, IAnimState* asrw) = 0;
 };
-using AnimPtr = std::shared_ptr<Animation>;
+using AnimPtr = RCHandle<Animation>;
 
 struct AnimPlayer : IAnimState, protected AnimationRequester
 {

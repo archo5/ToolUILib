@@ -140,7 +140,6 @@ struct MeshScript : ui::ITree
 	NodeLoc FindNode(ui::TreePathRef path);
 
 	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override;
-	bool HasChildren(ui::TreePathRef path) override;
 	size_t GetChildCount(ui::TreePathRef path) override;
 
 	uint32_t lastVer = ui::ContextMenu::Get().GetVersion();

@@ -406,10 +406,6 @@ struct Tree : ui::ITree
 				fn(node);
 		}
 	}
-	bool HasChildren(ui::TreePathRef path) override
-	{
-		return GetChildCount(path) != 0;
-	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
 		if (path.empty())

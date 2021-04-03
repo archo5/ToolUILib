@@ -181,6 +181,7 @@
     <ClInclude Include="Core\ObjectIteration.h" />
     <ClInclude Include="Core\Platform.h" />
     <ClInclude Include="Core\PropertyStore.h" />
+    <ClInclude Include="Core\RefCounted.h" />
     <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />

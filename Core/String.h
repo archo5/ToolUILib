@@ -2,12 +2,14 @@
 #pragma once
 
 #include "Common.h"
+#include "Memory.h"
 
 #include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 
 namespace ui {
@@ -25,8 +27,10 @@ struct StringView
 	StringView(const char* s) : _data(s), _size(strlen(s)) {}
 	StringView(char* s) : _data(s), _size(strlen(s)) {}
 	StringView(const char* ptr, size_t sz) : _data(ptr), _size(sz) {}
-	template <class T>
-	StringView(const T& o) : _data(o.data()), _size(o.size()) {}
+	// TODO
+	StringView(const std::string& o) : _data(o.data()), _size(o.size()) {}
+	//StringView(const std::vector<char>& o) : _data(o.data()), _size(o.size()) {}
+	StringView(const ArrayView<char>& o) : _data(o.data()), _size(o.size()) {}
 
 	const char* data() const { return _data; }
 	size_t size() const { return _size; }
@@ -36,6 +40,17 @@ struct StringView
 	const char* begin() const { return _data; }
 	const char* end() const { return _data + _size; }
 	char operator [] (size_t pos) const { return _data[pos]; }
+
+	int compare(const StringView& o) const
+	{
+		size_t minSize = min(_size, o._size);
+		int diff = memcmp(_data, o._data, minSize);
+		if (diff != 0)
+			return diff;
+		return _size == o._size
+			? 0
+			: _size < o._size ? -1 : 1;
+	}
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{
@@ -117,8 +132,8 @@ struct StringView
 
 	StringView after_last(StringView sub) const
 	{
-		size_t at = find_last_at(sub, SIZE_MAX, 0);
-		return substr(at + sub._size);
+		size_t at = find_last_at(sub);
+		return substr(at < SIZE_MAX ? at + sub._size : 0);
 	}
 	StringView until_last(StringView sub) const
 	{
@@ -233,6 +248,10 @@ struct CStr
 
 inline bool operator == (const StringView& a, const StringView& b) { return a._size == b._size && memcmp(a._data, b._data, b._size) == 0; }
 inline bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
+inline bool operator < (const StringView& a, const StringView& b) { return a.compare(b) < 0; }
+inline bool operator > (const StringView& a, const StringView& b) { return a.compare(b) > 0; }
+inline bool operator <= (const StringView& a, const StringView& b) { return a.compare(b) <= 0; }
+inline bool operator >= (const StringView& a, const StringView& b) { return a.compare(b) >= 0; }
 
 } // ui
 namespace std {

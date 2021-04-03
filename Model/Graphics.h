@@ -4,33 +4,10 @@
 #include "Native.h"
 #include "../Core/Image.h"
 #include "../Core/3DMath.h"
+#include "../Render/Render.h"
 
 
 namespace ui {
-
-struct Image
-{
-	Image() {}
-	Image(uint32_t w, uint32_t h, const void* d, draw::TexFlags flags = draw::TexFlags::None) : _width(w), _height(h)
-	{
-		_texture = draw::TextureCreateRGBA8(w, h, d, flags);
-	}
-	Image(const Canvas& c, draw::TexFlags flags = draw::TexFlags::None) : _width(c.GetWidth()), _height(c.GetHeight())
-	{
-		_texture = draw::TextureCreateRGBA8(c.GetWidth(), c.GetHeight(), c.GetBytes(), flags);
-	}
-	Image(const Image& img) = delete;
-	Image(Image&& img) : _width(img._width), _height(img._height), _texture(img._texture) { img._texture = nullptr; }
-	~Image() { Destroy(); }
-
-	void Destroy() { if (_texture) draw::TextureRelease(_texture); _texture = nullptr; }
-	uint32_t GetWidth() const { return _width; }
-	uint32_t GetHeight() const { return _height; }
-
-	uint32_t _width = 0;
-	uint32_t _height = 0;
-	draw::Texture* _texture = nullptr;
-};
 
 enum class ScaleMode
 {
@@ -49,7 +26,7 @@ struct ColorBlock : UIElement
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
 
 	Color4b _color = Color4b::Black();
-	std::shared_ptr<Image> _bgImage;
+	draw::ImageHandle _bgImage;
 };
 
 struct ColorInspectBlock : UIElement
@@ -61,7 +38,7 @@ struct ColorInspectBlock : UIElement
 	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
 
 	Color4b _color = Color4b::Black();
-	std::shared_ptr<Image> _bgImage;
+	draw::ImageHandle _bgImage;
 
 	Coord alphaBarHeight = 2;
 };
@@ -72,22 +49,21 @@ struct ImageElement : UIElement
 	void OnPaint() override;
 	void GetSize(Coord& outWidth, Coord& outHeight) override;
 
-	ImageElement& SetImage(Image* img);
+	ImageElement& SetImage(draw::IImage* img);
 	// range: 0-1 (0.5 = middle)
 	ImageElement& SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
 	ImageElement& SetAlphaBackgroundEnabled(bool enabled);
 
-	Image* _image = nullptr;
+	draw::ImageHandle _image;
 	ScaleMode _scaleMode = ScaleMode::Fit;
 	float _anchorX = 0.5f;
 	float _anchorY = 0.5f;
 
-	std::shared_ptr<Image> _bgImage;
+	draw::ImageHandle _bgImage;
 };
 
 struct HueSatPicker : UIElement
 {
-	~HueSatPicker();
 	void OnInit() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
@@ -105,7 +81,7 @@ struct HueSatPicker : UIElement
 	StyleBlockRef selectorStyle;
 	float _hue = 0;
 	float _sat = 0;
-	Image* _bgImage = nullptr;
+	draw::ImageHandle _bgImage;
 };
 
 enum ColorMode
@@ -161,7 +137,6 @@ struct ColorDragDropData : DragDropData
 struct ColorCompPicker2D : UIElement
 {
 	ColorCompPicker2D();
-	~ColorCompPicker2D();
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
@@ -189,7 +164,7 @@ struct ColorCompPicker2D : UIElement
 	ColorCompPicker2DSettings _settings, _curImgSettings;
 	float _x = 0;
 	float _y = 0;
-	Image* _bgImage = nullptr;
+	draw::ImageHandle _bgImage;
 };
 
 struct MultiFormatColor

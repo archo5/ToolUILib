@@ -4,61 +4,7 @@
 #include "../Core/Math.h"
 #include "../Core/Image.h"
 #include "../Core/Memory.h"
-
-
-struct Sprite
-{
-	int ox0, oy0, ox1, oy1;
-	int bx0, by0, bx1, by1;
-};
-
-enum EThemeElement
-{
-	TE_ButtonNormal,
-	TE_ButtonHover,
-	TE_ButtonPressed,
-	TE_ButtonDisabled,
-	TE_ButtonDownDisabled,
-
-	TE_Panel,
-
-	TE_TextboxNormal,
-	TE_TextboxDisabled,
-
-	TE_CheckBgrNormal,
-	TE_CheckBgrHover,
-	TE_CheckBgrPressed,
-	TE_CheckBgrDisabled,
-
-	TE_CheckMark,
-	TE_CheckMarkDisabled,
-	TE_CheckInd,
-	TE_CheckIndDisabled,
-
-	TE_RadioBgrNormal,
-	TE_RadioBgrHover,
-	TE_RadioBgrPressed,
-	TE_RadioBgrDisabled,
-	TE_RadioMark,
-	TE_RadioMarkDisabled,
-
-	TE_Selector32,
-	TE_Selector16,
-	TE_Selector12,
-	TE_Outline,
-
-	TE_TabNormal,
-	TE_TabHover,
-	TE_TabSelected,
-	TE_TabPanel,
-
-	TE_TreeTickClosedNormal,
-	TE_TreeTickClosedHover,
-	TE_TreeTickOpenNormal,
-	TE_TreeTickOpenHover,
-
-	TE__COUNT,
-};
+#include "../Core/RefCounted.h"
 
 
 namespace ui {
@@ -95,13 +41,20 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
 
 } // debug
 
-struct Texture;
-Texture* TextureCreateRGBA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
-Texture* TextureCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
-Texture* TextureCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
-void TextureAddRef(Texture* tex);
-void TextureRelease(Texture* tex);
-rhi::Texture2D* TextureGetInternal(Texture* tex);
+struct IImage : IRefCounted
+{
+	virtual uint16_t GetWidth() const = 0;
+	virtual uint16_t GetHeight() const = 0;
+	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
+};
+using ImageHandle = RCHandle<IImage>;
+
+ImageHandle ImageLoadFromFile(StringView path);
+
+ImageHandle ImageCreateRGBA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
+ImageHandle ImageCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
+ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
+ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::None);
 
 namespace internals {
 
@@ -121,11 +74,11 @@ void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixe
 void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
-void RectTex(float x0, float y0, float x1, float y1, Texture* tex);
-void RectTex(float x0, float y0, float x1, float y1, Texture* tex, float u0, float v0, float u1, float v1);
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex);
-void RectColTex(float x0, float y0, float x1, float y1, Color4b col, Texture* tex, float u0, float v0, float u1, float v1);
-void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, Texture* tex, const AABB2f& texouter, const AABB2f& texinner);
+void RectTex(float x0, float y0, float x1, float y1, IImage* tex);
+void RectTex(float x0, float y0, float x1, float y1, IImage* tex, float u0, float v0, float u1, float v1);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex);
+void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex, float u0, float v0, float u1, float v1);
+void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IImage* tex, const AABB2f& texouter, const AABB2f& texinner);
 void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col);
 
 bool PushScissorRect(int x0, int y0, int x1, int y1);
@@ -135,9 +88,3 @@ AABB2f GetCurrentScissorRectF();
 
 } // draw
 } // ui
-
-
-// TODO move
-void InitTheme();
-ui::AABB2f GetThemeElementBorderWidths(EThemeElement e);
-void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1);

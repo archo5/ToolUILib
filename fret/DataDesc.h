@@ -158,7 +158,7 @@ struct CachedImage
 	{
 		delete curImg;
 	}
-	ui::Image* GetImage(const DataDesc::Image& imgDesc)
+	ui::draw::ImageHandle GetImage(const DataDesc::Image& imgDesc)
 	{
 		if (curImg)
 		{
@@ -173,12 +173,11 @@ struct CachedImage
 			}
 		}
 
-		delete curImg;
 		curImg = CreateImageFrom(imgDesc.file->dataSource, imgDesc.format.c_str(), { imgDesc.offImage, imgDesc.offPalette, imgDesc.width, imgDesc.height });
 		curImgDesc = imgDesc;
 		return curImg;
 	}
 
-	ui::Image* curImg = nullptr;
+	ui::draw::ImageHandle curImg = nullptr;
 	DataDesc::Image curImgDesc;
 };

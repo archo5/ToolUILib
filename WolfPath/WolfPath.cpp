@@ -267,10 +267,6 @@ Vec3 GetCameraRayDir(int x, int y, int w, int h)
 
 struct RenderView : ui::Buildable
 {
-	~RenderView()
-	{
-		delete image;
-	}
 	void Build() override
 	{
 		Subscribe(DCT_CameraEdited);
@@ -359,8 +355,7 @@ struct RenderView : ui::Buildable
 
 					ui::Application::PushEvent(this, [this, canvas]()
 					{
-						delete image;
-						image = new ui::Image(canvas);
+						image = ui::draw::ImageCreateFromCanvas(canvas);
 						Rebuild();
 					});
 				}
@@ -369,7 +364,7 @@ struct RenderView : ui::Buildable
 	}
 
 	ui::WorkerQueue wq;
-	ui::Image* image = nullptr;
+	ui::draw::ImageHandle image;
 	ui::ImageElement* imageEl = nullptr;
 };
 

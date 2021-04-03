@@ -261,10 +261,6 @@ struct Tree : ui::ITree
 				fn(&node->num);
 		}
 	}
-	bool HasChildren(ui::TreePathRef path) override
-	{
-		return GetChildCount(path) != 0;
-	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
 		if (path.empty())
@@ -401,10 +397,6 @@ struct Tree : ui::ITree
 			for (auto& node : loc.arr->at(loc.idx).children)
 				fn(&node.num);
 		}
-	}
-	bool HasChildren(ui::TreePathRef path) override
-	{
-		return GetChildCount(path) != 0;
 	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{

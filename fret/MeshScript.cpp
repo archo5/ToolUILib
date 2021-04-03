@@ -274,11 +274,6 @@ void MeshScript::IterateChildren(ui::TreePathRef path, IterationFunc&& fn)
 	}
 }
 
-bool MeshScript::HasChildren(ui::TreePathRef path)
-{
-	return GetChildCount(path) != 0;
-}
-
 size_t MeshScript::GetChildCount(ui::TreePathRef path)
 {
 	if (path.empty())

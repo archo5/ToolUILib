@@ -18,7 +18,7 @@ struct ITree
 {
 	using IterationFunc = std::function<void(void* ptr)>;
 	virtual void IterateChildren(TreePathRef path, IterationFunc&& fn) = 0;
-	virtual bool HasChildren(TreePathRef path) = 0;
+	virtual bool HasChildren(TreePathRef path) { return GetChildCount(path) != 0; }
 	virtual size_t GetChildCount(TreePathRef path) = 0;
 
 	virtual void ClearSelection() {}

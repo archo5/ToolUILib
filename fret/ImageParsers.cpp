@@ -377,7 +377,7 @@ ui::StringView GetImageFormatName(size_t fid)
 	return g_imageFormats[fid].name;
 }
 
-ui::Image* CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo& info)
+ui::draw::ImageHandle CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo& info)
 {
 	ui::Canvas c(info.width, info.height);
 	auto* B = c.GetBytes();
@@ -398,5 +398,5 @@ ui::Image* CreateImageFrom(IDataSource* ds, ui::StringView fmt, const ImageInfo&
 	if (!done)
 		return nullptr;
 
-	return new ui::Image(c, ui::draw::TF_Repeat);
+	return ui::draw::ImageCreateFromCanvas(c, ui::draw::TF_Repeat);
 }

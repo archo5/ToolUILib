@@ -43,7 +43,7 @@ static HashMap<FontKey, Font*, FontKey::Hasher> g_loadedFonts;
 
 struct GlyphValue
 {
-	draw::Texture* tex = nullptr;
+	draw::ImageHandle img;
 	uint16_t w;
 	uint16_t h;
 	float xoff;
@@ -90,7 +90,7 @@ struct Font
 	GlyphValue FindGlyph(SizeContext& sctx, uint32_t codepoint, bool needTex)
 	{
 		auto it = sctx.glyphMap.find(codepoint);
-		if (it != sctx.glyphMap.end() && (!needTex || it->value.tex))
+		if (it != sctx.glyphMap.end() && (!needTex || it->value.img))
 			return it->value;
 
 		int glyphID = stbtt_FindGlyphIndex(&info, codepoint);
@@ -113,11 +113,11 @@ struct Font
 		else
 			gv = &it->value;
 
-		if (needTex && !gv->tex)
+		if (needTex && !gv->img)
 		{
 			int x, y, w, h;
 			auto* bitmap = stbtt_GetGlyphBitmap(&info, scale, scale, glyphID, &w, &h, &x, &y);
-			gv->tex = draw::TextureCreateA8(w, h, bitmap);
+			gv->img = draw::ImageCreateA8(w, h, bitmap);
 			stbtt_FreeBitmap(bitmap, nullptr);
 		}
 
@@ -244,7 +244,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);
 		gv.xoff = roundf(gv.xoff + x);
 		gv.yoff = roundf(gv.yoff + y);
-		draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, color, gv.tex);
+		draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, color, gv.img);
 		x += gv.xadv;
 	}
 }
@@ -258,6 +258,13 @@ Font* g_font;
 void InitFont()
 {
 	g_font = GetFont(FONT_FAMILY_SANS_SERIF, FONT_WEIGHT_NORMAL, false);
+}
+
+void FreeFont()
+{
+	delete g_font;
+	g_font = nullptr;
+	g_loadedFonts.dealloc();
 }
 
 float GetTextWidth(const char* text, size_t num)

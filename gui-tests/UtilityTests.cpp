@@ -7,7 +7,7 @@ struct BasicEasingAnimTest : ui::Buildable
 	BasicEasingAnimTest()
 	{
 		animPlayer.onAnimUpdate = [this]() { Rebuild(); };
-		anim = std::make_shared<ui::AnimEaseLinear>("test", 123, 1);
+		anim = new ui::AnimEaseLinear("test", 123, 1);
 	}
 	void Build() override
 	{
@@ -75,10 +75,6 @@ void Test_ThreadWorker()
 
 struct ThreadedImageRenderingTest : ui::Buildable
 {
-	~ThreadedImageRenderingTest()
-	{
-		delete image;
-	}
 	void Build() override
 	{
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
@@ -124,8 +120,7 @@ struct ThreadedImageRenderingTest : ui::Buildable
 
 				ui::Application::PushEvent(this, [this, canvas{ std::move(canvas) }]()
 				{
-					delete image;
-					image = new ui::Image(canvas);
+					image = ui::draw::ImageCreateFromCanvas(canvas);
 					Rebuild();
 				});
 			}, true);
@@ -133,7 +128,7 @@ struct ThreadedImageRenderingTest : ui::Buildable
 	}
 
 	ui::WorkerQueue wq;
-	ui::Image* image = nullptr;
+	ui::draw::ImageHandle image;
 };
 void Test_ThreadedImageRendering()
 {

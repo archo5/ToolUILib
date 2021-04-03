@@ -21,7 +21,7 @@ void ImageEditorWindowNode::Build()
 
 					auto r = info.rect;
 
-					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr->_texture, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
 				});
 				img.SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
 				img.SetScaleMode(ui::ScaleMode::Fit);
