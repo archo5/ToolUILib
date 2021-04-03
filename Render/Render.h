@@ -19,12 +19,10 @@ namespace draw {
 enum class TexFlags : uint8_t
 {
 	None = 0,
-	Filter = 1 << 0,
+	NoFilter = 1 << 0,
 	Repeat = 1 << 1,
+	Packed = 1 << 2,
 };
-constexpr TexFlags TF_None = TexFlags::None;
-constexpr TexFlags TF_Filter = TexFlags::Filter;
-constexpr TexFlags TF_Repeat = TexFlags::Repeat;
 inline TexFlags operator | (TexFlags a, TexFlags b)
 {
 	return TexFlags(int(a) | int(b));
@@ -32,6 +30,10 @@ inline TexFlags operator | (TexFlags a, TexFlags b)
 inline TexFlags operator & (TexFlags a, TexFlags b)
 {
 	return TexFlags(int(a) & int(b));
+}
+inline TexFlags operator ~ (TexFlags f)
+{
+	return TexFlags(~int(f));
 }
 
 namespace debug {
@@ -45,16 +47,17 @@ struct IImage : IRefCounted
 {
 	virtual uint16_t GetWidth() const = 0;
 	virtual uint16_t GetHeight() const = 0;
+	virtual StringView GetPath() const = 0;
 	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
 };
 using ImageHandle = RCHandle<IImage>;
-
-ImageHandle ImageLoadFromFile(StringView path);
 
 ImageHandle ImageCreateRGBA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::None);
+
+ImageHandle ImageLoadFromFile(StringView path, TexFlags flags = TexFlags::Packed);
 
 namespace internals {
 

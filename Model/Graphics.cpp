@@ -25,7 +25,7 @@ void ColorBlock::OnPaint()
 	{
 		draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
 	}
-	
+
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
 
 	PaintChildren();
@@ -70,6 +70,54 @@ void ColorInspectBlock::OnPaint()
 }
 
 
+void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, float ax, float ay)
+{
+	if (img && img->GetWidth() && img->GetHeight() && c.GetWidth() && c.GetHeight())
+	{
+		switch (sm)
+		{
+		case ScaleMode::None: {
+			float w = img->GetWidth(), h = img->GetHeight();
+			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
+			draw::RectTex(x, y, x + w, y + h, img);
+			break; }
+		case ScaleMode::Stretch:
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, img);
+			break;
+		case ScaleMode::Fit: {
+			float iasp = img->GetWidth() / (float)img->GetHeight();
+			float w = c.GetWidth(), h = c.GetHeight();
+			float rasp = w / h;
+			if (iasp > rasp) // matched width, adjust height
+				h = w / iasp;
+			else
+				w = h * iasp;
+			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
+			draw::RectTex(x, y, x + w, y + h, img);
+			break; }
+		case ScaleMode::Fill: {
+			float iasp = img->GetWidth() / (float)img->GetHeight();
+			float w = c.GetWidth(), h = c.GetHeight();
+			float rasp = w / h;
+			if (iasp < rasp) // matched width, adjust height
+				h = w / iasp;
+			else
+				w = h * iasp;
+			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
+			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, img,
+				(c.x0 - x) / w,
+				(c.y0 - y) / h,
+				(c.x1 - x) / w,
+				(c.y1 - y) / h);
+			break; }
+		}
+	}
+}
+
+
 void ImageElement::OnInit()
 {
 	styleProps = Theme::current->image;
@@ -77,55 +125,22 @@ void ImageElement::OnInit()
 
 void ImageElement::OnPaint()
 {
-	styleProps->paint_func(this);
-
 	auto c = GetContentRect();
-	if (_bgImage)
+	if (draw::GetCurrentScissorRectF().Intersects(c))
 	{
-		draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
-	}
-	if (_image && _image->GetWidth() && _image->GetHeight() && c.GetWidth() && c.GetHeight())
-	{
-		switch (_scaleMode)
+		if (_tryDelayLoad)
 		{
-		case ScaleMode::None: {
-			float w = _image->GetWidth(), h = _image->GetHeight();
-			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(x, y, x + w, y + h, _image);
-			break; }
-		case ScaleMode::Stretch:
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image);
-			break;
-		case ScaleMode::Fit: {
-			float iasp = _image->GetWidth() / (float)_image->GetHeight();
-			float w = c.GetWidth(), h = c.GetHeight();
-			float rasp = w / h;
-			if (iasp > rasp) // matched width, adjust height
-				h = w / iasp;
-			else
-				w = h * iasp;
-			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(x, y, x + w, y + h, _image);
-			break; }
-		case ScaleMode::Fill: {
-			float iasp = _image->GetWidth() / (float)_image->GetHeight();
-			float w = c.GetWidth(), h = c.GetHeight();
-			float rasp = w / h;
-			if (iasp < rasp) // matched width, adjust height
-				h = w / iasp;
-			else
-				w = h * iasp;
-			float x = roundf(c.x0 + (c.GetWidth() - w) * _anchorX);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * _anchorY);
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _image,
-				(c.x0 - x) / w,
-				(c.y0 - y) / h,
-				(c.x1 - x) / w,
-				(c.y1 - y) / h);
-			break; }
+			_tryDelayLoad = false;
+			_image = draw::ImageLoadFromFile(_delayLoadPath, draw::TexFlags::None);
 		}
+
+		styleProps->paint_func(this);
+
+		if (_bgImage)
+		{
+			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
+		}
+		DrawImage(c, _image, _scaleMode, _anchorX, _anchorY);
 	}
 
 	PaintChildren();
@@ -143,6 +158,23 @@ void ImageElement::GetSize(Coord& outWidth, Coord& outHeight)
 ImageElement& ImageElement::SetImage(draw::IImage* img)
 {
 	_image = img;
+	_tryDelayLoad = false;
+	_delayLoadPath.clear();
+	return *this;
+}
+
+ImageElement& ImageElement::SetPath(StringView path)
+{
+	return SetImage(draw::ImageLoadFromFile(path, draw::TexFlags::None));
+}
+
+ImageElement& ImageElement::SetDelayLoadPath(StringView path)
+{
+	if (_image && _image->GetPath() == path)
+		return *this;
+	_image = nullptr;
+	_tryDelayLoad = true;
+	_delayLoadPath = to_string(path);
 	return *this;
 }
 

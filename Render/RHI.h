@@ -71,7 +71,7 @@ void Clear(int r, int g, int b, int a);
 void ClearDepthOnly();
 void Present(RenderContext* RC);
 
-constexpr uint8_t TF_FILTER = 1 << 0;
+constexpr uint8_t TF_NOFILTER = 1 << 0;
 constexpr uint8_t TF_REPEAT = 1 << 1;
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags);
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags);

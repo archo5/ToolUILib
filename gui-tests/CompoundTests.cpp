@@ -561,6 +561,11 @@ struct ImageTest : ui::Buildable
 
 			ui::Pop();
 		}
+
+		ui::Make<ui::ImageElement>()
+			.SetImage(img)
+			+ ui::SetWidth(50)
+			+ ui::SetHeight(50);
 	}
 
 	ui::draw::ImageHandle img;

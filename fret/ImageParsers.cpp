@@ -398,5 +398,5 @@ ui::draw::ImageHandle CreateImageFrom(IDataSource* ds, ui::StringView fmt, const
 	if (!done)
 		return nullptr;
 
-	return ui::draw::ImageCreateFromCanvas(c, ui::draw::TF_Repeat);
+	return ui::draw::ImageCreateFromCanvas(c, ui::draw::TexFlags::Repeat | ui::draw::TexFlags::NoFilter);
 }

@@ -287,7 +287,7 @@ TextElement& TextVA(const char* fmt, va_list args);
 TextElement& Textf(const char* fmt, ...);
 template <class T, class... Args> T* BuildAlloc(Args&&... args)
 {
-	return UIContainer::GetCurrent()->GetCurrentBuildable()->Allocate<T, Args...>(args...);
+	return UIContainer::GetCurrent()->GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
 }
 void RebuildCurrent();
 Buildable* GetCurrentBuildable();

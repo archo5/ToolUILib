@@ -5,6 +5,21 @@
 
 struct RenderingPrimitives : ui::Buildable
 {
+	ui::draw::ImageHandle stretchTestImg;
+	ui::draw::ImageHandle fileTestImg;
+
+	RenderingPrimitives()
+	{
+		ui::Color4b a(35, 100, 200);
+		ui::Color4b b(200, 100, 35);
+		ui::Color4b cols[4] =
+		{
+			a, b,
+			b, a,
+		};
+		stretchTestImg = ui::draw::ImageCreateRGBA8(2, 2, cols, ui::draw::TexFlags::Packed);
+		fileTestImg = ui::draw::ImageLoadFromFile("gui-theme2.tga");
+	}
 	void OnPaint() override
 	{
 		ui::Color4b col = ui::Color4f(1, 0.5f, 0);
@@ -107,6 +122,9 @@ struct RenderingPrimitives : ui::Buildable
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SANS_SERIF), 20, 20, 150, "sans-serif w=normal it=0", ui::Color4f(0.9f, 0.8f, 0.6f));
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SERIF, ui::FONT_WEIGHT_BOLD), 20, 20, 170, "serif w=bold it=0", ui::Color4f(0.6f, 0.8f, 0.9f));
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_MONOSPACE, ui::FONT_WEIGHT_NORMAL, true), 20, 20, 190, "monospace w=normal it=1", ui::Color4f(0.7f, 0.9f, 0.6f));
+
+		ui::draw::RectTex(300, 140, 350, 190, stretchTestImg);
+		ui::draw::RectTex(350, 140, 450, 190, fileTestImg);
 	}
 	void Build() override
 	{

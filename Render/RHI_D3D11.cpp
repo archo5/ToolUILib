@@ -96,7 +96,7 @@ struct Texture2D
 	ID3D11ShaderResourceView* srv = nullptr;
 	uint8_t _flags;
 
-	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags)
+	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags & 3)
 	{
 		D3D11_TEXTURE2D_DESC t2d = {};
 		{
@@ -405,7 +405,7 @@ void GlobalInit()
 	{
 		D3D11_SAMPLER_DESC sd = {};
 		{
-			sd.Filter = i & TF_FILTER ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+			sd.Filter = !(i & TF_NOFILTER) ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
 			sd.AddressU = i & TF_REPEAT ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
 			sd.AddressV = i & TF_REPEAT ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
 			sd.AddressW = i & TF_REPEAT ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;

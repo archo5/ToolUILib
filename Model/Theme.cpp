@@ -746,7 +746,7 @@ struct DefaultTheme : Theme
 			for (int y = 0; y < 16; y++)
 				for (int x = 0; x < 16; x++)
 					c.GetPixels()[x + y * 16] = ((x < 8) ^ (y < 8) ? Color4f(0.2f, 1) : Color4f(0.4f, 1)).GetColor32();
-			return draw::ImageCreateFromCanvas(c, draw::TF_Repeat); }
+			return draw::ImageCreateFromCanvas(c, draw::TexFlags::Repeat); }
 		default:
 			return nullptr;
 		}
@@ -761,7 +761,12 @@ void InitTheme()
 	for (int i = 0; i < TE__COUNT; i++)
 	{
 		auto& s = g_themeSprites[i];
-		g_themeImages[i] = ui::draw::ImageCreateRGBA8(s.ox1 - s.ox0, s.oy1 - s.oy0, size[0] * 4, &data[(s.ox0 + s.oy0 * size[0]) * 4]);
+		g_themeImages[i] = ui::draw::ImageCreateRGBA8(
+			s.ox1 - s.ox0,
+			s.oy1 - s.oy0,
+			size[0] * 4,
+			&data[(s.ox0 + s.oy0 * size[0]) * 4],
+			draw::TexFlags::Packed);
 	}
 	delete[] data;
 

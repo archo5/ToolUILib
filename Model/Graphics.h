@@ -43,6 +43,8 @@ struct ColorInspectBlock : UIElement
 	Coord alphaBarHeight = 2;
 };
 
+void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, float ax = 0.5f, float ay = 0.5f);
+
 struct ImageElement : UIElement
 {
 	void OnInit() override;
@@ -50,6 +52,8 @@ struct ImageElement : UIElement
 	void GetSize(Coord& outWidth, Coord& outHeight) override;
 
 	ImageElement& SetImage(draw::IImage* img);
+	ImageElement& SetPath(StringView path);
+	ImageElement& SetDelayLoadPath(StringView path);
 	// range: 0-1 (0.5 = middle)
 	ImageElement& SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
 	ImageElement& SetAlphaBackgroundEnabled(bool enabled);
@@ -58,6 +62,9 @@ struct ImageElement : UIElement
 	ScaleMode _scaleMode = ScaleMode::Fit;
 	float _anchorX = 0.5f;
 	float _anchorY = 0.5f;
+
+	bool _tryDelayLoad = false;
+	std::string _delayLoadPath;
 
 	draw::ImageHandle _bgImage;
 };

@@ -117,7 +117,7 @@ struct Font
 		{
 			int x, y, w, h;
 			auto* bitmap = stbtt_GetGlyphBitmap(&info, scale, scale, glyphID, &w, &h, &x, &y);
-			gv->img = draw::ImageCreateA8(w, h, bitmap);
+			gv->img = draw::ImageCreateA8(w, h, bitmap, draw::TexFlags::Packed);
 			stbtt_FreeBitmap(bitmap, nullptr);
 		}
 

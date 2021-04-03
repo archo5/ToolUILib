@@ -1,9 +1,16 @@
 
-#include "RHI.h"
 #include "Render.h"
+
+#include "RHI.h"
+
+#include "../Core/FileSystem.h"
+#include "../Core/HashTable.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../ThirdParty/stb_rect_pack.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../ThirdParty/stb_image.h"
 
 #include <stdio.h>
 
@@ -25,9 +32,10 @@ struct TextureNode
 	uint16_t y = 0;
 	uint16_t w = 0;
 	uint16_t h = 0;
+	uint16_t rw = 0;
+	uint16_t rh = 0;
 	const void* srcData = nullptr;
 	TextureNode* nextInPage = nullptr;
-	bool srcAlpha8 = false;
 };
 
 struct TexturePage
@@ -47,29 +55,42 @@ struct TexturePage
 	unsigned pixelsAllocated = 0;
 	stbrp_context rectPackContext;
 	stbrp_node rectPackNodes[MAX_TEXTURE_PAGE_NODES];
+	std::vector<ImageHandle> allocatedImages;
 };
+
+static bool CanPack(TexFlags f)
+{
+	// needs Packed flag
+	if ((f & TexFlags::Packed) == TexFlags::None)
+		return false;
+	// does not support NoFilter flag
+	if ((f & TexFlags::NoFilter) != TexFlags::None)
+		return false;
+	return true;
+}
 
 struct TextureStorage
 {
-	TextureNode* AllocNode(int w, int h, const void* d, bool a8, TexFlags flg)
+	TextureNode* AllocNode(int w, int h, TexFlags flg, IImage* img)
 	{
-		if ((flg & TexFlags::Repeat) != TexFlags::None)
+		if (!CanPack(flg))
 			return nullptr;
-		if ((flg & TexFlags::Filter) != TexFlags::None) // TODO add 1px border?
-			return nullptr;
-		if (w > TEXTURE_PAGE_WIDTH / 2 || h > TEXTURE_PAGE_HEIGHT / 2)
+		if (w + 2 > TEXTURE_PAGE_WIDTH / 2 || h + 2 > TEXTURE_PAGE_HEIGHT / 2)
 			return nullptr;
 
-		auto* N = new TextureNode;
-		N->w = w;
-		N->h = h;
-		N->srcData = d;
-		N->srcAlpha8 = a8;
-		pendingAllocs[numPendingAllocs++] = N;
 		if (numPendingAllocs == MAX_PENDING_ALLOCS)
 		{
 			FlushPendingAllocs();
 		}
+
+		auto* N = new TextureNode;
+		N->w = w;
+		N->h = h;
+		N->rw = w + 2;
+		N->rh = h + 2;
+		int pidx = numPendingAllocs++;
+		pendingAllocs[pidx] = N;
+		pendingImages[pidx] = img;
 		return N;
 	}
 	void FlushPendingAllocs()
@@ -82,8 +103,8 @@ struct TextureStorage
 		{
 			auto& R = rectsToPack[i];
 			R.id = i;
-			R.w = pendingAllocs[i]->w;
-			R.h = pendingAllocs[i]->h;
+			R.w = pendingAllocs[i]->rw;
+			R.h = pendingAllocs[i]->rh;
 		}
 		int numRemainingRects = numPendingAllocs;
 
@@ -108,11 +129,12 @@ struct TextureStorage
 				{
 					anyPacked = true;
 					auto* N = pendingAllocs[R.id];
-					N->x = R.x;
-					N->y = R.y;
+					N->x = R.x + 1;
+					N->y = R.y + 1;
 					N->page = page_num;
-					P->pixelsAllocated += N->w * N->h;
-					P->pixelsUsed += N->w * N->h;
+					P->pixelsAllocated += N->rw * N->rh;
+					P->pixelsUsed += N->rw * N->rh;
+					P->allocatedImages.push_back(pendingImages[R.id]);
 				}
 			}
 
@@ -125,7 +147,15 @@ struct TextureStorage
 					const auto& R = rectsToPack[i];
 					if (R.was_packed)
 					{
-						rhi::CopyToMappedTextureRect(P->rhiTex, md, R.x, R.y, R.w, R.h, pendingAllocs[R.id]->srcData, pendingAllocs[R.id]->srcAlpha8);
+						rhi::CopyToMappedTextureRect(
+							P->rhiTex,
+							md,
+							R.x,
+							R.y,
+							R.w,
+							R.h,
+							pendingAllocs[R.id]->srcData,
+							false);
 					}
 				}
 				rhi::UnmapTexture(P->rhiTex);
@@ -147,6 +177,9 @@ struct TextureStorage
 			if (numRemainingRects == 0)
 				break;
 		}
+
+		for (int i = 0; i < numPendingAllocs; i++)
+			pendingImages[i] = nullptr;
 
 		numPendingAllocs = 0;
 	}
@@ -172,6 +205,8 @@ struct TextureStorage
 			delete alloc;
 			alloc = nullptr;
 		}
+		for (auto& img : pendingImages)
+			img = nullptr;
 		numPendingAllocs = 0;
 
 		for (auto*& page : pages)
@@ -185,6 +220,7 @@ struct TextureStorage
 	TexturePage* pages[MAX_TEXTURE_PAGES] = {};
 	int numPages = 0;
 	TextureNode* pendingAllocs[MAX_PENDING_ALLOCS] = {};
+	ImageHandle pendingImages[MAX_PENDING_ALLOCS];
 	int numPendingAllocs = 0;
 }
 g_textureStorage;
@@ -210,49 +246,82 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2])
 } // debug
 
 
+static HashMap<StringView, IImage*> g_imageTextures;
+
 struct ImageImpl : IImage
 {
 	int refcount = 0;
-	uint16_t width;
-	uint16_t height;
-	uint8_t* data;
-	TexFlags flags;
+	uint16_t width = 0;
+	uint16_t height = 0;
+	uint8_t* data = nullptr;
+	TexFlags flags = TexFlags::None;
 	rhi::Texture2D* rhiTex = nullptr;
 	TextureNode* atlasNode = nullptr;
+
+	std::string path;
 
 	ImageImpl(int w, int h, int pitch, const void* d, bool a8, TexFlags flg) :
 		width(w), height(h), flags(flg)
 	{
-		data = new uint8_t[w * h * 4];
-		if (!a8)
+		if (auto* n = g_textureStorage.AllocNode(w, h, flg, this))
 		{
-			for (int y = 0; y < h; y++)
+			int dstw = w + 2;
+			int dsth = h + 2;
+			data = new uint8_t[dstw * dsth * 4];
+			if (!a8)
 			{
-				memcpy(&data[y * w * 4], &((const char*)d)[y * pitch], w * 4);
-			}
-		}
-		else
-		{
-			for (int y = 0; y < h; y++)
-			{
-				for (int x = 0; x < w; x++)
+				for (int y = 0; y < h; y++)
 				{
-					data[(x + y * w) * 4 + 0] = 255;
-					data[(x + y * w) * 4 + 1] = 255;
-					data[(x + y * w) * 4 + 2] = 255;
-					data[(x + y * w) * 4 + 3] = ((const char*)d)[x + y * pitch];
+					memcpy(&data[((y + 1) * dstw + 1) * 4], &((const char*)d)[y * pitch], w * 4);
 				}
 			}
-		}
-		if (auto* n = g_textureStorage.AllocNode(w, h, data, false, flg))
+			else
+			{
+				for (int y = 0; y < h; y++)
+				{
+					int y1 = y + 1;
+					for (int x = 0; x < w; x++)
+					{
+						int x1 = x + 1;
+						int off = (x1 + y1 * dstw) * 4;
+						data[off + 0] = 255;
+						data[off + 1] = 255;
+						data[off + 2] = 255;
+						data[off + 3] = ((const char*)d)[x + y * pitch];
+					}
+				}
+			}
+
+			// copy top row
+			memcpy(&data[4], &data[(dstw + 1) * 4], w * 4);
+			// copy bottom row
+			memcpy(&data[(dstw * (dsth - 1) + 1) * 4], &data[(dstw * (dsth - 2) + 1) * 4], w * 4);
+			// copy left/right edges
+			for (int y = 0; y < dsth; y++)
+			{
+				memcpy(&data[y * dstw * 4], &data[(y * dstw + 1) * 4], 4);
+				memcpy(&data[(y * dstw + dstw - 1) * 4], &data[(y * dstw + dstw - 2) * 4], 4);
+			}
+
+			n->srcData = data;
 			atlasNode = n;
+		}
 		else
-			rhiTex = a8 ? rhi::CreateTextureA8(d, w, h, uint8_t(flg)) : rhi::CreateTextureRGBA8(d, w, h, uint8_t(flg));
+		{
+			rhiTex = a8
+				? rhi::CreateTextureA8(d, w, h, uint8_t(flg))
+				: rhi::CreateTextureRGBA8(d, w, h, uint8_t(flg));
+		}
 	}
 	~ImageImpl()
 	{
 		rhi::DestroyTexture(rhiTex);
 		delete[] data;
+
+		if (!path.empty())
+		{
+			g_imageTextures.erase(path);
+		}
 	}
 	rhi::Texture2D* GetRHITex() const
 	{
@@ -275,11 +344,10 @@ struct ImageImpl : IImage
 	// IImage
 	uint16_t GetWidth() const override { return width; }
 	uint16_t GetHeight() const override { return height; }
+	StringView GetPath() const override { return path; }
 	rhi::Texture2D* GetInternalExclusive() const override
 	{
-		if (rhiTex)
-			return rhiTex;
-		return nullptr;
+		return rhiTex;
 	}
 };
 
@@ -305,6 +373,36 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags)
 }
 
 
+ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
+{
+	auto it = g_imageTextures.find(path);
+	if (it.is_valid() && static_cast<ImageImpl*>(it->value)->flags == flags)
+		return it->value;
+
+	if (flags != TexFlags::Packed)
+		flags = flags & ~TexFlags::Packed;
+
+	auto fileData = ReadBinaryFile(path);
+	if (fileData.empty())
+		return nullptr; // TODO return default?
+
+	int w = 0, h = 0, n = 0;
+	auto* imgData = stbi_load_from_memory((const stbi_uc*)fileData.data(), fileData.size(), &w, &h, &n, 4);
+	if (!imgData)
+		return nullptr;
+	UI_DEFER(stbi_image_free(imgData));
+
+	auto img = ImageCreateRGBA8(w, h, imgData, flags);
+	if (!img)
+		return nullptr;
+
+	auto* impl = static_cast<ImageImpl*>(img.get_ptr());
+	impl->path = to_string(path);
+	g_imageTextures[impl->path] = impl;
+	return impl;
+}
+
+
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
 static rhi::Vertex g_bufVertices[MAX_VERTICES];
@@ -322,7 +420,7 @@ static ImageHandle GetWhiteTex()
 	if (!g_whiteTex)
 	{
 		static uint8_t white[] = { 255, 255, 255, 255 };
-		g_whiteTex = ImageCreateRGBA8(1, 1, white);
+		g_whiteTex = ImageCreateRGBA8(1, 1, white, draw::TexFlags::Packed);
 	}
 	return g_whiteTex;
 }
