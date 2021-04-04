@@ -209,7 +209,7 @@ struct RenderContext
 			last = last->prev;
 	}
 
-	RHIInternalPointers GetPtrs() const { return { g_dev, g_ctx, window, swapChain }; }
+	RHIInternalPointers GetPtrs() const { return { g_dev, g_ctx, window, swapChain, backBufferRTV, depthStencilView }; }
 
 	void InitSwapChain(HWND hwnd)
 	{
@@ -642,6 +642,20 @@ void SetActiveContext(RenderContext* RC)
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
 {
 	RC->Resize(w, h);
+}
+
+void BeginFrame(RenderContext* RC)
+{
+	SetActiveContext(RC);
+	for (auto* L : GetListeners())
+		L->OnBeginFrame(RC->GetPtrs());
+}
+
+void EndFrame(RenderContext* RC)
+{
+	for (auto* L : GetListeners())
+		L->OnEndFrame(RC->GetPtrs());
+	Present(RC);
 }
 
 

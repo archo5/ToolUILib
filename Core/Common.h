@@ -4,6 +4,10 @@
 #include "Platform.h"
 
 
+#define UI_CONCAT_(a, b) a ## b
+#define UI_CONCAT(a, b) UI_CONCAT_(a, b)
+
+
 namespace ui {
 
 template <class T> UI_FORCEINLINE T min(T a, T b) { return a < b ? a : b; }
@@ -42,7 +46,7 @@ struct DeferImpl
 		func();
 	}
 };
-#define UI_DEFER(fn) auto __deferimpl_##__LINE__ = [&](){ fn; }; \
-	::ui::DeferImpl<decltype(__deferimpl_##__LINE__)> __defer_##__LINE__ = { __deferimpl_##__LINE__ };
+#define UI_DEFER(fn) auto UI_CONCAT(__deferimpl_, __LINE__) = [&](){ fn; }; \
+	::ui::DeferImpl<decltype(UI_CONCAT(__deferimpl_, __LINE__))> UI_CONCAT(__defer_, __LINE__) = { UI_CONCAT(__deferimpl_, __LINE__) };
 
 } // ui

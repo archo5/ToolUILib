@@ -35,6 +35,10 @@ struct RHIInternalPointers
 	void* window;
 	// IDXGISwapChain* / NULL(OpenGL)
 	void* swapChain;
+	// ID3D11RenderTargetView*
+	void* renderTargetView;
+	// ID3D11DepthStencilView*
+	void* depthStencilView;
 };
 
 struct IRHIListener
@@ -47,7 +51,9 @@ struct IRHIListener
 
 	virtual void OnAfterInitSwapChain(const RHIInternalPointers& ip) = 0;
 	virtual void OnBeforeFreeSwapChain(const RHIInternalPointers& ip) = 0;
-	virtual void OnChangeCurrentContext(const RHIInternalPointers& ip) = 0;
+
+	virtual void OnBeginFrame(const RHIInternalPointers& ip) = 0;
+	virtual void OnEndFrame(const RHIInternalPointers& ip) = 0;
 };
 
 struct Texture2D;
@@ -63,6 +69,9 @@ void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
 
 void AttachListener(IRHIListener*);
 void DetachListener(IRHIListener*);
+
+void BeginFrame(RenderContext* RC);
+void EndFrame(RenderContext* RC);
 
 void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);

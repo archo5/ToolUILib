@@ -618,7 +618,7 @@ struct NativeWindow_Impl
 
 		double t = hqtime();
 
-		rhi::SetActiveContext(renderCtx);
+		rhi::BeginFrame(renderCtx);
 
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
@@ -718,7 +718,7 @@ struct NativeWindow_Impl
 		}
 #endif
 
-		rhi::Present(renderCtx);
+		rhi::EndFrame(renderCtx);
 	}
 
 	void UpdateVisibilityState()

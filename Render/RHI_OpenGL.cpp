@@ -184,6 +184,20 @@ void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
 		L->OnAfterInitSwapChain(RC->GetPtrs());
 }
 
+void BeginFrame(RenderContext* RC)
+{
+	SetActiveContext(RC);
+	for (auto* L : GetListeners())
+		L->OnBeginFrame(RC->GetPtrs());
+}
+
+void EndFrame(RenderContext* RC)
+{
+	for (auto* L : GetListeners())
+		L->OnEndFrame(RC->GetPtrs());
+	Present(RC);
+}
+
 static int curRTTHeight;
 
 void SetScissorRect(int x0, int y0, int x1, int y1)

@@ -611,25 +611,35 @@ struct TEST : ui::Buildable
 
 struct RHIListener : ui::rhi::IRHIListener
 {
+	static void PrintPointers(const char* when, const ui::rhi::RHIInternalPointers& ip)
+	{
+		printf("RHI %s device=%p context=%p window=%p swapChain=%p RTV=%p DSV=%p\n",
+			when, ip.device, ip.context, ip.window, ip.swapChain, ip.renderTargetView, ip.depthStencilView);
+	}
+
 	void OnAttach(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		printf("RHI attach device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+		PrintPointers("attach", ip);
 	}
 	void OnDetach(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		printf("RHI detach device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+		PrintPointers("detach", ip);
 	}
 	void OnAfterInitSwapChain(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		printf("RHI after init swapchain device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+		PrintPointers("after init swapchain", ip);
 	}
 	void OnBeforeFreeSwapChain(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		printf("RHI before free swapchain device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+		PrintPointers("before free swapchain", ip);
 	}
-	void OnChangeCurrentContext(const ui::rhi::RHIInternalPointers& ip) override
+	void OnBeginFrame(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		//printf("RHI change current context device=%p context=%p window=%p swapChain=%p\n", ip.device, ip.context, ip.window, ip.swapChain);
+		PrintPointers("begin frame", ip);
+	}
+	void OnEndFrame(const ui::rhi::RHIInternalPointers& ip) override
+	{
+		PrintPointers("end frame", ip);
 	}
 }
 g_rl;
