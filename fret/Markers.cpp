@@ -549,10 +549,10 @@ void MarkedItemEditor::Build()
 	ui::imm::PropEditInt("Repeats", marker->repeats);
 	ui::imm::PropEditInt("Stride", marker->stride);
 	unsigned bs = marker->bitstart;
-	if (ui::imm::PropEditInt("Start bit", bs, {}, 1U, 0U, 64U))
+	if (ui::imm::PropEditInt("Start bit", bs, {}, 1U, { 0U, 64U }))
 		marker->bitstart = bs;
 	unsigned be = marker->bitend;
-	if (ui::imm::PropEditInt("End bit", be, {}, 1U, 0U, 64U))
+	if (ui::imm::PropEditInt("End bit", be, {}, 1U, { 0U, 64U }))
 		marker->bitend = be;
 	ui::imm::PropEditBool("Exclude zeroes", marker->excludeZeroes);
 	ui::imm::PropEditString("Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });

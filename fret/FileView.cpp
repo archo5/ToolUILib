@@ -47,8 +47,8 @@ void FileView::Build()
 	ui::PushBox(); // tree stabilization box
 	if (vs.open)
 	{
-		ui::imm::PropEditInt("Width", of->hexViewerState.byteWidth, {}, 1, 1, 256);
-		ui::imm::PropEditInt("Position", of->hexViewerState.basePos, {}, 1, 0);
+		ui::imm::PropEditInt("Width", of->hexViewerState.byteWidth, {}, {}, { 1, 256 });
+		ui::imm::PropEditInt("Position", of->hexViewerState.basePos);
 	}
 	ui::Pop(); // end tree stabilization box
 

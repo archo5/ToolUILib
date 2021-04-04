@@ -316,8 +316,8 @@ struct UIObject
 	// size cache
 	uint32_t _cacheFrameWidth = {};
 	uint32_t _cacheFrameHeight = {};
-	Range2f _cacheValueWidth = {};
-	Range2f _cacheValueHeight = {};
+	Range2f _cacheValueWidth = { 0, 0 };
+	Range2f _cacheValueHeight = { 0, 0 };
 };
 
 struct UIElement : UIObject

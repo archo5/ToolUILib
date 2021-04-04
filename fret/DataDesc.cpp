@@ -1173,7 +1173,7 @@ void DataDescInstanceSource::Edit()
 		refilter = true;
 	if (ui::imm::DropdownMenuList(filterStruct, ui::BuildAlloc<StructOptions>(dataDesc)))
 		refilter = true;
-	ui::imm::PropEditInt("\bBytes", showBytes, {}, 1, 0, 128);
+	ui::imm::PropEditInt("\bBytes", showBytes, {}, {}, { 0, 128 });
 	ui::Property::End();
 
 	if (!filterStructEnable || !filterStruct)

@@ -78,6 +78,8 @@ using Size2i = Size2<int>;
 
 template <class T> struct Range
 {
+	Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
+
 	T min, max;
 };
 

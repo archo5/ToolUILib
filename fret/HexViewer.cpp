@@ -132,13 +132,13 @@ void HighlightSettings::EditUI()
 
 	ui::Property::Begin("ASCII");
 	ui::imm::PropEditBool(nullptr, enableASCII);
-	ui::imm::PropEditInt("\bMin chars", minASCIIChars, {}, 1, 1, 128);
+	ui::imm::PropEditInt("\bMin chars", minASCIIChars, {}, 1, { 1, 128 });
 	ui::Property::End();
 
 	ui::Property::Begin("Near file size");
 	ui::imm::PropEditBool("\bu32", enableNearFileSize32);
 	ui::imm::PropEditBool("\bu64", enableNearFileSize64);
-	ui::imm::PropEditFloat("\bPercent", nearFileSizePercent, {}, 0.1f, 0, 100);
+	ui::imm::PropEditFloat("\bPercent", nearFileSizePercent, {}, 0.1f, { 0, 100 });
 	ui::Property::End();
 
 	ui::Text("Custom int32") + ui::SetPadding(25, 5, 5);

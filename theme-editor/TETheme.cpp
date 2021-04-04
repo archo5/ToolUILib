@@ -6,13 +6,13 @@ void TE_TmplSettings::UI()
 {
 	{
 		LabeledProperty::Scope ps("Size");
-		imm::PropEditInt("\bW", w, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
-		imm::PropEditInt("\bH", h, { SetMinWidth(20) }, imm::DEFAULT_SPEED, 1, 1024);
+		imm::PropEditInt("\bW", w, { SetMinWidth(20) }, {}, { 1, 1024 });
+		imm::PropEditInt("\bH", h, { SetMinWidth(20) }, {}, { 1, 1024 });
 	}
-	imm::PropEditInt("Left", l, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt("Right", r, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt("Top", t, {}, imm::DEFAULT_SPEED, 0, 1024);
-	imm::PropEditInt("Bottom", b, {}, imm::DEFAULT_SPEED, 0, 1024);
+	imm::PropEditInt("Left", l, {}, {}, { 0, 1024 });
+	imm::PropEditInt("Right", r, {}, {}, { 0, 1024 });
+	imm::PropEditInt("Top", t, {}, {}, { 0, 1024 });
+	imm::PropEditInt("Bottom", b, {}, {}, { 0, 1024 });
 	imm::PropEditBool("Gamma", gamma);
 }
 

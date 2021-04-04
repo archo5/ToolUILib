@@ -506,7 +506,7 @@ void MSN_VertexData::FullEditUI()
 {
 	ui::imm::PropDropdownMenuList("Destination", dest, ui::BuildAlloc<ui::CStrArrayOptionList>(g_dests));
 	ui::imm::PropDropdownMenuList("Type", type, ui::BuildAlloc<ui::CStrArrayOptionList>(g_types));
-	ui::imm::PropEditInt("# components", ncomp, {}, 1.0f, 1, 4);
+	ui::imm::PropEditInt("# components", ncomp, {}, 1.0f, { 1, 4 });
 	ui::imm::PropEditString("Count", count.expr.c_str(), [this](const char* v) { count.SetExpr(v); });
 	ui::imm::PropEditString("Stride", stride.expr.c_str(), [this](const char* v) { stride.SetExpr(v); });
 	ui::imm::PropEditString("Attr.off.", attrOff.expr.c_str(), [this](const char* v) { attrOff.SetExpr(v); });

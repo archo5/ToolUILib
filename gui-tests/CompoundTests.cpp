@@ -770,7 +770,7 @@ struct GizmoTest : ui::Buildable
 				ui::Push<ui::Panel>() + ui::SetWidth(120) + ui::SetPlacement(leftTop);
 				{
 					ui::MakeWithText<ui::Header>("Camera");
-					ui::imm::PropEditFloat("FOV", fov, {}, 1.0f, 1.0f, 179.0f);
+					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
 
 					{
 						ui::LabeledProperty::Scope ps;
@@ -789,7 +789,7 @@ struct GizmoTest : ui::Buildable
 				ui::Push<ui::Panel>() + ui::SetWidth(180) + ui::SetPlacement(rightTop);
 				{
 					ui::MakeWithText<ui::Header>("Gizmo");
-					ui::imm::PropEditFloat("Size", gizmoSize, {}, 1.0f, 0.001f, 200.0f);
+					ui::imm::PropEditFloat("Size", gizmoSize, {}, {}, { 0.001f, 200.0f });
 					ui::imm::PropDropdownMenuList("Size mode", gizmoSizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
@@ -931,9 +931,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::LabeledProperty::Begin("int");
 			auto tmp = intVal;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ui::Text("int: " + std::to_string(intVal)) + ui::SetPadding(5);
@@ -942,9 +942,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::LabeledProperty::Begin("uint");
 			auto tmp = uintVal;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%x" : "%d"))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
 			ui::Text("uint: " + std::to_string(uintVal)) + ui::SetPadding(5);
@@ -953,9 +953,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::LabeledProperty::Begin("int64");
 			auto tmp = int64Val;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, -543, 1234, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
 			ui::Text("int64: " + std::to_string(int64Val)) + ui::SetPadding(5);
@@ -964,9 +964,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::LabeledProperty::Begin("uint64");
 			auto tmp = uint64Val;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, 1, 0, 1234, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
 			ui::Text("uint64: " + std::to_string(uint64Val)) + ui::SetPadding(5);
@@ -975,9 +975,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::LabeledProperty::Begin("float");
 			auto tmp = floatVal;
-			if (ui::imm::PropEditFloat("\bworking", tmp, {}, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat("\bworking", tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
-			if (ui::imm::PropEditFloat("\bdisabled", tmp, { ui::Enable(false) }, 0.1f, -37.4f, 154.1f))
+			if (ui::imm::PropEditFloat("\bdisabled", tmp, { ui::Enable(false) }, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
 
 			ui::Text("float: " + std::to_string(floatVal)) + ui::SetPadding(5);
@@ -986,6 +986,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imm::PropEditFloatVec("float3", float4val, "XYZ");
 			ui::imm::PropEditFloatVec("float4", float4val, "RGBA");
+		}
+		{
+			ui::imm::PropEditFloat("multiplier", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });
 		}
 		{
 			ui::imm::PropEditColor("color B", colorValB);
@@ -1001,6 +1004,7 @@ struct IMGUITest : ui::Buildable
 	uint64_t uint64Val = 2;
 	float floatVal = 3.14f;
 	float float4val[4] = { 1, 2, 3, 4 };
+	float multiplierVal = 2;
 	ui::Color4b colorValB = { 180, 200, 220, 255 };
 	ui::Color4f colorValF = { 0.9f, 0.7f, 0.5f, 0.8f };
 };

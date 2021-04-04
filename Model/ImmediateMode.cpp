@@ -100,6 +100,26 @@ bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateTo
 	return edited;
 }
 
+float DragConfig::GetSpeed(uint8_t modifierKeys) const
+{
+	if (modifierKeys & slowdownKey)
+		return slowdownSpeed;
+	if (modifierKeys & boostKey)
+		return boostSpeed;
+	return speed;
+}
+
+float DragConfig::GetSnap(uint8_t modifierKeys) const
+{
+	if (modifierKeys & snapOffKey)
+		return 0;
+	if (modifierKeys & slowdownKey)
+		return slowdownSnap;
+	if (modifierKeys & boostKey)
+		return boostSnap;
+	return snap;
+}
+
 struct NumFmtBox
 {
 	char fmt[8];
@@ -124,7 +144,11 @@ template <> struct MakeSigned<int64_t> { using type = int64_t; };
 template <> struct MakeSigned<uint64_t> { using type = int64_t; };
 template <> struct MakeSigned<float> { using type = float; };
 
-template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, float speed, TNum vmin, TNum vmax, const char* fmt)
+template <class T> float GetMinSnap(T) { return 1; }
+float GetMinSnap(float v) { return max(nextafterf(v, INFINITY) - v, FLT_EPSILON); }
+float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON); }
+
+template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
 	auto& tb = Make<Textbox>();
 	for (auto& mod : mods)
@@ -139,10 +163,10 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		sscanf(tb.GetText().c_str(), fb.fmt, &tmp);
 		if (tmp == 0)
 			tmp = 0;
-		if (tmp > vmax)
-			tmp = vmax;
-		if (tmp < vmin)
-			tmp = vmin;
+		if (tmp > range.max)
+			tmp = range.max;
+		if (tmp < range.min)
+			tmp = range.min;
 		val = tmp;
 		tb.flags &= ~UIObject_IsEdited;
 		edited = true;
@@ -156,7 +180,7 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	if (dragObj)
 	{
 		dragObj->SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
-		dragObj->HandleEvent() = [val, speed, vmin, vmax, &tb, fb](Event& e)
+		dragObj->HandleEvent() = [val, cfg = cfg, range, &tb, fb](Event& e)
 		{
 			if (tb.IsInputDisabled())
 				return;
@@ -165,19 +189,36 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 				if (tb.IsFocused())
 					e.context->SetKeyboardFocus(nullptr);
 
-				float diff = e.delta.x * speed * UNITS_PER_PX;
-				tb.accumulator += diff;
-				TNum nv = val;
-				if (fabsf(tb.accumulator) >= speed)
+				float speed = cfg.GetSpeed(e.GetModifierKeys());
+				float snap = cfg.GetSnap(e.GetModifierKeys());
+				if (cfg.relativeSpeed)
 				{
-					nv += trunc(tb.accumulator / speed) * speed;
-					tb.accumulator = fmodf(tb.accumulator, speed);
+					speed *= fabsf(val);
+					snap = 0;
+				}
+				float minSnap = GetMinSnap(val);
+				if (snap < minSnap)
+					snap = minSnap;
+
+				float diff = e.delta.x * speed;
+				TNum nv = val;
+
+				if (fabsf(tb.accumulator) >= snap)
+				{
+					// previous snap value was bigger
+					tb.accumulator = 0;
+				}
+				tb.accumulator += diff;
+				if (fabsf(tb.accumulator) >= snap)
+				{
+					nv += trunc(tb.accumulator / snap) * snap;
+					tb.accumulator = fmodf(tb.accumulator, snap);
 				}
 
-				if (nv > vmax || (diff > 0 && nv < val))
-					nv = vmax;
-				if (nv < vmin || (diff < 0 && nv > val))
-					nv = vmin;
+				if (nv > range.max || (diff > 0 && nv < val))
+					nv = range.max;
+				if (nv < range.min || (diff < 0 && nv > val))
+					nv = range.min;
 
 				char buf[1024];
 				snprintf(buf, 1024, fb.fmt + 1, nv);
@@ -203,29 +244,29 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	return edited;
 }
 
-bool EditInt(UIObject* dragObj, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, speed, vmin, vmax, fmt);
+	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
 bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
@@ -285,14 +326,14 @@ bool EditColor(Color4b& val, ModInitList mods)
 	return false;
 }
 
-bool EditFloatVec(float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	bool any = false;
 	char axisLabel[3] = "\b\0";
 	while (*axes)
 	{
 		axisLabel[1] = *axes++;
-		any |= PropEditFloat(axisLabel, *val++, mods, speed, vmin, vmax, fmt);
+		any |= PropEditFloat(axisLabel, *val++, mods, cfg, range, fmt);
 	}
 	return any;
 }
@@ -318,34 +359,34 @@ bool PropEditBool(const char* label, bool& val, ModInitList mods)
 	return EditBool(val, nullptr, mods);
 }
 
-bool PropEditInt(const char* label, int& val, ModInitList mods, float speed, int vmin, int vmax, const char* fmt)
+bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
+	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
-bool PropEditInt(const char* label, unsigned& val, ModInitList mods, float speed, unsigned vmin, unsigned vmax, const char* fmt)
+bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
+	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
-bool PropEditInt(const char* label, int64_t& val, ModInitList mods, float speed, int64_t vmin, int64_t vmax, const char* fmt)
+bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
+	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
-bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, float speed, uint64_t vmin, uint64_t vmax, const char* fmt)
+bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditInt(ps.label, val, mods, speed, vmin, vmax, fmt);
+	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
-bool PropEditFloat(const char* label, float& val, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditFloat(ps.label, val, mods, speed, vmin, vmax, fmt);
+	return EditFloat(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
@@ -366,10 +407,10 @@ bool PropEditColor(const char* label, Color4b& val, ModInitList mods)
 	return EditColor(val, mods);
 }
 
-bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, float speed, float vmin, float vmax, const char* fmt)
+bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
-	return EditFloatVec(val, axes, mods, speed, vmin, vmax, fmt);
+	return EditFloatVec(val, axes, mods, cfg, range, fmt);
 }
 
 } // imm
