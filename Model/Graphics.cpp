@@ -886,7 +886,7 @@ Ray3f CameraBase::GetLocalRayEP(const Event& e, const Mat4f& world2local) const
 }
 
 
-OrbitCamera::OrbitCamera()
+OrbitCamera::OrbitCamera(bool rh) : rightHanded(rh)
 {
 	_UpdateViewMatrix();
 }
@@ -937,7 +937,7 @@ bool OrbitCamera::OnEvent(Event& e)
 
 void OrbitCamera::Rotate(float dx, float dy)
 {
-	yaw += dx;
+	yaw += dx * (rightHanded ? -1 : 1);
 	pitch += dy;
 	pitch = clamp(pitch, minPitch, maxPitch);
 
@@ -964,6 +964,16 @@ void OrbitCamera::Zoom(float delta)
 	_UpdateViewMatrix();
 }
 
+void OrbitCamera::ResetState()
+{
+	pivot = {};
+	yaw = 45;
+	pitch = 45;
+	distance = 1;
+
+	_UpdateViewMatrix();
+}
+
 void OrbitCamera::_UpdateViewMatrix()
 {
 	float cp = cosf(pitch * DEG2RAD);
@@ -971,7 +981,10 @@ void OrbitCamera::_UpdateViewMatrix()
 	float cy = cosf(yaw * DEG2RAD);
 	float sy = sinf(yaw * DEG2RAD);
 	Vec3f dir = { cy * cp, sy * cp, sp };
-	Mat4f vm = Mat4f::LookAtLH(pivot + dir * distance, pivot, { 0, 0, 1 });
+	Vec3f pos = pivot + dir * distance;
+	Mat4f vm = rightHanded
+		? Mat4f::LookAtRH(pos, pivot, { 0, 0, 1 })
+		: Mat4f::LookAtLH(pos, pivot, { 0, 0, 1 });
 
 	SetViewMatrix(vm);
 }

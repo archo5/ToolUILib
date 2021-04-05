@@ -158,6 +158,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="3DTests.cpp" />
     <ClCompile Include="AnimDemos.cpp" />
     <ClCompile Include="Benchmarks.cpp" />
     <ClCompile Include="CalculatorDemo.cpp" />

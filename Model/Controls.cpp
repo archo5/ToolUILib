@@ -1556,7 +1556,7 @@ void ZeroSepCStrOptionList::IterateElements(size_t from, size_t count, std::func
 
 void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
 {
-	const char** a = arr;
+	const char* const* a = arr;
 	for (size_t i = 0; i < from && i < size && *a; i++, a++);
 	for (size_t i = 0; i < count && i + from < size && *a; i++, a++)
 		fn(*a, i + from);

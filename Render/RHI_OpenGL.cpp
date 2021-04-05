@@ -216,6 +216,13 @@ void SetViewport(int x0, int y0, int x1, int y1)
 	curRTTHeight = y1; // TODO fix
 }
 
+void ApplyViewport()
+{
+	auto r = g_viewport;
+	int x0 = r.left, x1 = r.right, y0 = r.top, y1 = r.bottom;
+	GLCHK(glViewport(x0, y0, x1 - x0, y1 - y0));
+}
+
 void Clear(int r, int g, int b, int a)
 {
 	glClearColor(r / 255.f, g / 255.f, b / 255.f, a / 255.f);

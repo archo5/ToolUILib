@@ -312,12 +312,14 @@ struct CameraBase
 
 struct OrbitCamera : CameraBase
 {
-	OrbitCamera();
+	OrbitCamera(bool rh = false);
 	bool OnEvent(Event& e);
 
 	void Rotate(float dx, float dy);
 	void Pan(float dx, float dy);
 	void Zoom(float delta);
+
+	void ResetState();
 
 	void _UpdateViewMatrix();
 
@@ -328,7 +330,7 @@ struct OrbitCamera : CameraBase
 	float distance = 1;
 
 	// settings
-	float fieldOfView = 90; // the FOV to use for panning
+	bool rightHanded = false;
 	float minPitch = -85;
 	float maxPitch = 85;
 	float rotationSpeed = 0.5f; // degrees per pixel

@@ -16,6 +16,7 @@
     <ClCompile Include="DataStructureEditorTests.cpp" />
     <ClCompile Include="NodeGraphEditorDemo.cpp" />
     <ClCompile Include="MiscDemos.cpp" />
+    <ClCompile Include="3DTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

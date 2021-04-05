@@ -84,6 +84,7 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex
 void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IImage* tex, const AABB2f& texouter, const AABB2f& texinner);
 void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col);
 
+void ApplyScissor();
 bool PushScissorRect(int x0, int y0, int x1, int y1);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);

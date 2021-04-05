@@ -343,14 +343,16 @@ void Test_Sliders();
 void Test_SplitPane();
 void Test_Tabs();
 void Test_Scrollbars();
+void Test_Tooltip();
+void Test_Dropdown();
 void Test_ColorBlock();
 void Test_Image();
 void Test_ColorPicker();
+void Test_IMGUI();
+
 void Test_3DView();
 void Test_Gizmo();
-void Test_IMGUI();
-void Test_Tooltip();
-void Test_Dropdown();
+void Test_Quaternion();
 
 void Test_BasicEasingAnim();
 void Test_ThreadWorker();
@@ -430,10 +432,13 @@ static const TestEntry compoundTestEntries[] =
 	{ "Image", Test_Image },
 	{ "Color picker", Test_ColorPicker },
 	{},
+	{ "IMGUI test", Test_IMGUI },
+};
+static const TestEntry _3dTestEntries[] =
+{
 	{ "3D view", Test_3DView },
 	{ "Gizmo", Test_Gizmo },
-	{},
-	{ "IMGUI test", Test_IMGUI },
+	{ "Quaternion", Test_Quaternion },
 };
 static const TestEntry utilityTestEntries[] =
 {
@@ -493,6 +498,7 @@ static ExampleGroup exampleGroups[] =
 	{ "Core", coreTestEntries },
 	{ "Layout", layoutTestEntries },
 	{ "Compound", compoundTestEntries },
+	{ "3D", _3dTestEntries },
 	{ "Utility", utilityTestEntries },
 	{ "DS Edit", dseditTestEntries },
 	{ "Benchmark", benchmarkEntries },

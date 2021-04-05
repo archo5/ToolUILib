@@ -558,13 +558,13 @@ struct NullTerminated {};
 
 struct CStrArrayOptionList : CStrOptionList
 {
-	const char** arr = nullptr;
+	const char* const* arr = nullptr;
 	size_t size = SIZE_MAX;
 
-	CStrArrayOptionList(const char** a, NullTerminated) : arr(a) {}
+	CStrArrayOptionList(const char* const* a, NullTerminated) : arr(a) {}
 	template <size_t N>
-	CStrArrayOptionList(const char* (&a)[N]) : arr(a), size(N) {}
-	CStrArrayOptionList(size_t sz, const char** a) : arr(a), size(sz) {}
+	CStrArrayOptionList(const char* const (&a)[N]) : arr(a), size(N) {}
+	CStrArrayOptionList(size_t sz, const char* const* a) : arr(a), size(sz) {}
 
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 };

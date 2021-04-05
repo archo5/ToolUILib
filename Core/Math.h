@@ -13,7 +13,7 @@ namespace ui {
 constexpr float PI = 3.14159f;
 constexpr float PI2 = 3.14159f * 2;
 constexpr float DEG2RAD = 3.14159f / 180;
-constexpr float RAD2DEG = 180 * 3.14159f;
+constexpr float RAD2DEG = 180 / 3.14159f;
 
 
 inline float lerp(float a, float b, float s) { return a + (b - a) * s; }

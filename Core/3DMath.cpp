@@ -4,6 +4,83 @@
 
 namespace ui {
 
+Quat Quat::Normalized() const
+{
+	float lsq = x * x + y * y + z * z + w * w;
+	if (lsq == 0)
+		return { 0, 0, 0, 0 };
+	float il = 1.0f / sqrtf(lsq);
+	return { x * il, y * il, z * il, w * il };
+}
+
+Quat Quat::operator * (const Quat& o) const
+{
+	const Quat& a = *this;
+	const Quat& b = o;
+	return
+	{
+		a.x * b.w + a.y * b.z - a.z * b.y + a.w * b.x,
+		-a.x * b.z + a.y * b.w + a.z * b.x + a.w * b.y,
+		a.x * b.y - a.y * b.x + a.z * b.w + a.w * b.z,
+		-a.x * b.x - a.y * b.y - a.z * b.z + a.w * b.w,
+	};
+}
+
+Vec3f Quat::ToEulerAnglesZYX() const
+{
+	float sinX = 2 * (w * x + y * z);
+	float cosX = 1 - 2 * (x * x + y * y);
+	float angleX = atan2f(sinX, cosX);
+
+	float sinY = 2 * (w * y - z * x);
+	float angleY = asinf(clamp(sinY, -1.0f, 1.0f));
+
+	float sinZ = 2 * (w * z + x * y);
+	float cosZ = 1 - 2 * (y * y + z * z);
+	float angleZ = atan2f(sinZ, cosZ);
+
+	return Vec3f(angleX, angleY, angleZ) * RAD2DEG;
+}
+
+Quat Quat::Identity()
+{
+	return { 0, 0, 0, 1 };
+}
+
+Quat Quat::RotateAxisAngle(const Vec3f& axis, float angle)
+{
+	float har = angle * DEG2RAD * 0.5f;
+	float c = cosf(har);
+	float s = sinf(har);
+	return { s * axis.x, s * axis.y, s * axis.z, c };
+}
+
+Quat Quat::RotateX(float angle)
+{
+	return RotateAxisAngle({ 1, 0, 0 }, angle);
+}
+
+Quat Quat::RotateY(float angle)
+{
+	return RotateAxisAngle({ 0, 1, 0 }, angle);
+}
+
+Quat Quat::RotateZ(float angle)
+{
+	return RotateAxisAngle({ 0, 0, 1 }, angle);
+}
+
+Quat Quat::RotateEulerAnglesXYZ(const Vec3f& angles)
+{
+	return RotateX(angles.x) * RotateY(angles.y) * RotateZ(angles.z);
+}
+
+Quat Quat::RotateEulerAnglesZYX(const Vec3f& angles)
+{
+	return RotateZ(angles.z) * RotateY(angles.y) * RotateX(angles.x);
+}
+
+
 Mat4f Mat4f::Translate(float x, float y, float z)
 {
 	return
@@ -84,6 +161,40 @@ Mat4f Mat4f::RotateAxisAngle(const Vec3f& axis, float a)
 	};
 }
 
+Mat4f Mat4f::Rotate(const Quat& q)
+{
+	float xx = q.x * q.x;
+	float yy = q.y * q.y;
+	float zz = q.z * q.z;
+	float xy = q.x * q.y;
+	float xz = q.x * q.z;
+	float yz = q.y * q.z;
+	float xw = q.x * q.w;
+	float yw = q.y * q.w;
+	float zw = q.z * q.w;
+
+	float m00 = 1 - 2 * (yy + zz);
+	float m11 = 1 - 2 * (xx + zz);
+	float m22 = 1 - 2 * (xx + yy);
+
+	float m10 = 2 * (xy - zw);
+	float m01 = 2 * (xy + zw);
+
+	float m20 = 2 * (xz + yw);
+	float m02 = 2 * (xz - yw);
+
+	float m21 = 2 * (yz - xw);
+	float m12 = 2 * (yz + xw);
+
+	return
+	{
+		m00, m10, m20, 0,
+		m01, m11, m21, 0,
+		m02, m12, m22, 0,
+		0, 0, 0, 1,
+	};
+}
+
 Mat4f Mat4f::LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up)
 {
 	auto z = dir.Normalized();
@@ -101,17 +212,7 @@ Mat4f Mat4f::LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up)
 
 Mat4f Mat4f::LookAtDirRH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up)
 {
-	auto z = -dir.Normalized();
-	auto x = Vec3Cross(up, z).Normalized();
-	auto y = Vec3Cross(z, x);
-
-	return
-	{
-		x.x, y.x, z.x, 0,
-		x.y, y.y, z.y, 0,
-		x.z, y.z, z.z, 0,
-		Vec3Dot(x, pos), Vec3Dot(y, pos), Vec3Dot(z, pos), 1,
-	};
+	return LookAtDirLH(pos, -dir, up);
 }
 
 Mat4f Mat4f::PerspectiveExtLH(float xscale, float yscale, float znear, float zfar)
@@ -197,6 +298,20 @@ Vec3f Mat4f::GetScale() const
 Mat4f Mat4f::GetRotationMatrix() const
 {
 	return RemoveTranslation().RemoveScale();
+}
+
+Quat Mat4f::GetRotationQuaternion() const
+{
+	auto mr = GetRotationMatrix();
+	Quat q;
+	q.x = sqrtf(max(0.0f, 1 + mr.m[0][0] - mr.m[1][1] - mr.m[2][2])) * 0.5f;
+	q.y = sqrtf(max(0.0f, 1 - mr.m[0][0] + mr.m[1][1] - mr.m[2][2])) * 0.5f;
+	q.z = sqrtf(max(0.0f, 1 - mr.m[0][0] - mr.m[1][1] + mr.m[2][2])) * 0.5f;
+	q.w = sqrtf(max(0.0f, 1 + mr.m[0][0] + mr.m[1][1] + mr.m[2][2])) * 0.5f;
+	q.x = copysignf(q.x, mr.m[2][1] - mr.m[1][2]);
+	q.y = copysignf(q.y, mr.m[0][2] - mr.m[2][0]);
+	q.z = copysignf(q.z, mr.m[1][0] - mr.m[0][1]);
+	return q;
 }
 
 Mat4f Mat4f::RemoveTranslation() const

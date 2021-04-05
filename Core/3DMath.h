@@ -9,17 +9,14 @@
 
 namespace ui {
 
-enum DoNotInitializeTag
-{
-	DoNotInitialize
-};
+struct DoNotInitialize {};
 
 
 struct Vec3f
 {
 	float x, y, z;
 
-	UI_FORCEINLINE Vec3f(DoNotInitializeTag) {}
+	UI_FORCEINLINE Vec3f(DoNotInitialize) {}
 	UI_FORCEINLINE Vec3f() : x(0), y(0), z(0) {}
 	UI_FORCEINLINE Vec3f(float f) : x(f), y(f), z(f) {}
 	UI_FORCEINLINE Vec3f(float ax, float ay) : x(ax), y(ay), z(0) {}
@@ -90,6 +87,40 @@ struct Vec4f
 UI_FORCEINLINE Vec4f V4(const Vec3f& v, float w) { return { v.x, v.y, v.z, w }; }
 
 
+struct Quat
+{
+	float x, y, z, w;
+
+	Quat(DoNotInitialize) {}
+	Quat() : x(0), y(0), z(0), w(1) {}
+	UI_FORCEINLINE Quat(float ax, float ay, float az, float aw) : x(ax), y(ay), z(az), w(aw) {}
+
+	Quat Normalized() const;
+	UI_FORCEINLINE Quat Inverted() const { return { -x, -y, -z, w }; }
+
+	Quat operator * (const Quat& o) const;
+	Vec3f ToEulerAnglesZYX() const;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Quat");
+		OnField(oi, "x", x);
+		OnField(oi, "y", y);
+		OnField(oi, "z", z);
+		OnField(oi, "w", w);
+		oi.EndObject();
+	}
+
+	static Quat Identity();
+	static Quat RotateAxisAngle(const Vec3f& axis, float angle);
+	static Quat RotateX(float angle);
+	static Quat RotateY(float angle);
+	static Quat RotateZ(float angle);
+	static Quat RotateEulerAnglesXYZ(const Vec3f& angles);
+	static Quat RotateEulerAnglesZYX(const Vec3f& angles);
+};
+
+
 struct Mat4f
 {
 	union
@@ -127,6 +158,7 @@ struct Mat4f
 	static Mat4f RotateY(float a);
 	static Mat4f RotateZ(float a);
 	static Mat4f RotateAxisAngle(const Vec3f& axis, float a);
+	static Mat4f Rotate(const Quat& q);
 
 	UI_FORCEINLINE static Mat4f LookAtLH(const Vec3f& pos, const Vec3f& tgt, const Vec3f& up) { return LookAtDirLH(pos, tgt - pos, up); }
 	static Mat4f LookAtDirLH(const Vec3f& pos, const Vec3f& dir, const Vec3f& up);
@@ -213,6 +245,7 @@ struct Mat4f
 	Vec3f GetScale() const;
 
 	Mat4f GetRotationMatrix() const;
+	Quat GetRotationQuaternion() const;
 	Mat4f RemoveTranslation() const;
 	Mat4f RemoveScale() const;
 };

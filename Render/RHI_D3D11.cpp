@@ -680,6 +680,11 @@ void SetViewport(int x0, int y0, int x1, int y1)
 	_SetViewport(g_viewport);
 }
 
+void ApplyViewport()
+{
+	_SetViewport(g_viewport);
+}
+
 void Clear(int r, int g, int b, int a)
 {
 	Color4f col = Color4b(r, g, b, a);

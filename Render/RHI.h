@@ -73,6 +73,7 @@ void DetachListener(IRHIListener*);
 void BeginFrame(RenderContext* RC);
 void EndFrame(RenderContext* RC);
 
+void ApplyViewport();
 void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);
 
