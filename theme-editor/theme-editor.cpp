@@ -117,7 +117,7 @@ struct TE_MainPreviewNode : Buildable
 #endif
 				auto& rs = tmpl->renderSettings;
 				rs.layer->Render(canvas, tmpl->GetRenderContext());
-				auto img = draw::ImageCreateFromCanvas(canvas);
+				auto img = draw::ImageCreateFromCanvas(canvas, draw::TexFlags::NoFilter);
 				if (g_previewMode == TEPM_Original)
 				{
 					Make<ImageElement>()
@@ -213,7 +213,7 @@ struct TE_ImageEditorNode : Buildable
 							MakeWithText<BoxElement>(ncr->name) + SetPadding(5);
 						else
 							EditNCRef(co.ncref);
-						imm::EditColor(co.color, { SetWidth(40) });
+						imm::EditColor(co.color, false, { SetWidth(40) });
 					};
 
 					if (imm::Button("Add override"))

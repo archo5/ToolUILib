@@ -21,6 +21,7 @@ struct Vec3f
 	UI_FORCEINLINE Vec3f(float f) : x(f), y(f), z(f) {}
 	UI_FORCEINLINE Vec3f(float ax, float ay) : x(ax), y(ay), z(0) {}
 	UI_FORCEINLINE Vec3f(float ax, float ay, float az) : x(ax), y(ay), z(az) {}
+	UI_FORCEINLINE Vec3f(Vec2f v, float az = 0) : x(v.x), y(v.y), z(az) {}
 
 	UI_FORCEINLINE Vec3f operator + (const Vec3f& o) const { return { x + o.x, y + o.y, z + o.z }; }
 	UI_FORCEINLINE Vec3f operator - (const Vec3f& o) const { return { x - o.x, y - o.y, z - o.z }; }
@@ -52,6 +53,8 @@ struct Vec3f
 		float q = 1.0f / sqrtf(lsq);
 		return { x * q, y * q, z * q };
 	}
+
+	UI_FORCEINLINE Vec2f ToVec2() const { return { x, y }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{

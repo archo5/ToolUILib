@@ -135,6 +135,7 @@ struct NativeWindowBase
 	bool IsDebugDrawEnabled();
 	void SetDebugDrawEnabled(bool enabled);
 
+	void Rebuild();
 	void InvalidateAll();
 
 	void SetDefaultCursor(DefaultCursor cur);

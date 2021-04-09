@@ -707,8 +707,12 @@ struct IMGUITest : ui::Buildable
 			ui::imm::PropEditFloat("multiplier", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });
 		}
 		{
-			ui::imm::PropEditColor("color B", colorValB);
-			ui::imm::PropEditColor("color F", colorValF);
+			ui::imm::PropEditColor("color B (Delayed)", colorValB, true);
+			ui::imm::PropEditColor("color F (Delayed)", colorValF, true);
+		}
+		{
+			ui::imm::PropEditColor("color B (Immediate)", colorValB, false);
+			ui::imm::PropEditColor("color F (Immediate)", colorValF, false);
 		}
 	}
 

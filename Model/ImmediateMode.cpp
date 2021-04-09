@@ -292,9 +292,11 @@ bool EditString(const char* text, const std::function<void(const char*)>& retfn,
 	return changed;
 }
 
-bool EditColor(Color4f& val, ModInitList mods)
+bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 {
-	auto& ced = Make<ColorEdit>();
+	auto& ced = delayed
+		? (IColorEdit&)Make<ColorEdit>()
+		: (IColorEdit&)Make<ColorEditRT>();
 	for (auto& mod : mods)
 		mod->Apply(&ced);
 	bool changed = false;
@@ -306,7 +308,7 @@ bool EditColor(Color4f& val, ModInitList mods)
 		changed = true;
 	}
 	else
-		ced.SetColor(val);
+		ced.SetColorAny(val);
 	ced.HandleEvent(EventType::Change) = [&ced](Event&)
 	{
 		ced.flags |= UIObject_IsEdited;
@@ -315,10 +317,10 @@ bool EditColor(Color4f& val, ModInitList mods)
 	return changed;
 }
 
-bool EditColor(Color4b& val, ModInitList mods)
+bool EditColor(Color4b& val, bool delayed, ModInitList mods)
 {
 	Color4f tmp = val;
-	if (EditColor(tmp, mods))
+	if (EditColor(tmp, delayed, mods))
 	{
 		val = tmp;
 		return true;
@@ -395,16 +397,16 @@ bool PropEditString(const char* label, const char* text, const std::function<voi
 	return EditString(text, retfn, mods);
 }
 
-bool PropEditColor(const char* label, Color4f& val, ModInitList mods)
+bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
-	return EditColor(val, mods);
+	return EditColor(val, delayed, mods);
 }
 
-bool PropEditColor(const char* label, Color4b& val, ModInitList mods)
+bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
-	return EditColor(val, mods);
+	return EditColor(val, delayed, mods);
 }
 
 bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)

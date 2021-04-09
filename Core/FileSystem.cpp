@@ -12,6 +12,8 @@ namespace ui {
 
 std::string PathGetParent(StringView path)
 {
+	while (path.ends_with("/"))
+		path = path.substr(0, path.size() - 1);
 	if (path == ".." || path.ends_with("/.."))
 		return to_string(path, "/..");
 	if (path == "." || path == "")
@@ -50,13 +52,33 @@ std::string PathGetAbsolute(StringView path)
 	return PathJoin(cwd, path);
 }
 
+std::string PathGetRelativeTo(StringView path, StringView relativeTo)
+{
+	auto abspath = PathGetAbsolute(path);
+	auto absrelto = PathGetAbsolute(relativeTo);
+	if (!StringView(abspath).ends_with("/"))
+		abspath.push_back('/');
+	if (!StringView(absrelto).ends_with("/"))
+		absrelto.push_back('/');
+	std::string backtrack;
+	while (absrelto.size() > 1)
+	{
+		if (StringView(abspath).starts_with(absrelto))
+			return ui::to_string(backtrack, StringView(abspath).substr(absrelto.size()).until_last("/"));
+		backtrack += "../";
+		absrelto = PathGetParent(absrelto);
+		absrelto.push_back('/');
+	}
+	return abspath;
+}
+
 bool PathIsRelativeTo(StringView path, StringView relativeTo)
 {
 	auto abspath = PathGetAbsolute(path);
 	auto absrelto = PathGetAbsolute(relativeTo);
-	if (StringView(abspath).ends_with("/"))
+	if (!StringView(abspath).ends_with("/"))
 		abspath.push_back('/');
-	if (StringView(absrelto).ends_with("/"))
+	if (!StringView(absrelto).ends_with("/"))
 		absrelto.push_back('/');
 	return StringView(abspath).starts_with(absrelto);
 }

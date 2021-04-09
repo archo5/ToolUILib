@@ -71,6 +71,8 @@ struct ImageElement : UIElement
 
 struct HueSatPicker : UIElement
 {
+	static constexpr bool Persistent = true;
+
 	void OnInit() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
@@ -239,18 +241,36 @@ struct ColorPickerWindow : NativeDialogWindow
 	MultiFormatColor _color;
 };
 
-struct ColorEdit : Buildable
+struct IColorEdit : Buildable
 {
+	virtual const MultiFormatColor& GetColor() const = 0;
+	virtual void SetColorAny(const MultiFormatColor& c) = 0;
+};
+
+struct ColorEdit : IColorEdit
+{
+	MultiFormatColor _color;
+
 	void Build() override;
 
-	const MultiFormatColor& GetColor() const { return _color; }
-	ColorEdit& SetColor(const MultiFormatColor& c)
-	{
-		_color = c;
-		return *this;
-	}
+	const MultiFormatColor& GetColor() const override { return _color; }
+	void SetColorAny(const MultiFormatColor& c) override { SetColor(c); }
 
+	ColorEdit& SetColor(const MultiFormatColor& c);
+};
+
+struct ColorEditRT : IColorEdit
+{
 	MultiFormatColor _color;
+	struct ColorPickerWindowRT* _rtWindow = nullptr;
+
+	void Build() override;
+	void OnDestroy() override;
+
+	const MultiFormatColor& GetColor() const override { return _color; }
+	void SetColorAny(const MultiFormatColor& c) override { SetColor(c); }
+
+	ColorEditRT& SetColor(const MultiFormatColor& c);
 };
 
 struct View2D : UIElement
@@ -314,6 +334,7 @@ struct OrbitCamera : CameraBase
 {
 	OrbitCamera(bool rh = false);
 	bool OnEvent(Event& e);
+	void SerializeState(IObjectIterator& oi, const FieldInfo& FI);
 
 	void Rotate(float dx, float dy);
 	void Pan(float dx, float dy);

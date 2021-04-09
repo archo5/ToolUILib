@@ -748,6 +748,66 @@ void ColorEdit::Build()
 	});
 }
 
+ColorEdit& ColorEdit::SetColor(const MultiFormatColor& c)
+{
+	_color = c;
+	return *this;
+}
+
+
+struct ColorPickerWindowRT : NativeWindowBase
+{
+	ColorPickerWindowRT()
+	{
+		SetTitle("Color picker");
+		SetSize(500, 300);
+	}
+	void OnBuild() override
+	{
+		auto& picker = Make<ColorPicker>().SetColor(_editor->GetColor());
+		picker.HandleEvent(EventType::Change) = [this, &picker](Event& e)
+		{
+			_editor->_color = picker.GetColor();
+			e.context->OnChange(_editor);
+			e.context->OnCommit(_editor);
+		};
+		Make<DefaultOverlayBuilder>();
+	}
+
+	ColorEditRT* _editor = nullptr;
+};
+
+
+void ColorEditRT::Build()
+{
+	auto& cib = Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
+	cib.SetFlag(UIObject_DB_Button, true);
+	cib + AddEventHandler(EventType::Click, [this](Event& e)
+	{
+		if (e.GetButton() == MouseButton::Left)
+		{
+			if (!_rtWindow)
+				_rtWindow = new ColorPickerWindowRT;
+			_rtWindow->_editor = this;
+			_rtWindow->SetVisible(true);
+		}
+	});
+}
+
+void ColorEditRT::OnDestroy()
+{
+	delete _rtWindow;
+	_rtWindow = nullptr;
+}
+
+ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
+{
+	_color = c;
+	if (_rtWindow)
+		_rtWindow->Rebuild();
+	return *this;
+}
+
 
 void View2D::OnPaint()
 {
@@ -933,6 +993,18 @@ bool OrbitCamera::OnEvent(Event& e)
 		return true;
 	}
 	return false;
+}
+
+void OrbitCamera::SerializeState(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "OrbitCamera(state)");
+
+	OnField(oi, "pivot", pivot);
+	OnField(oi, "yaw", yaw);
+	OnField(oi, "pitch", pitch);
+	OnField(oi, "distance", distance);
+
+	oi.EndObject();
 }
 
 void OrbitCamera::Rotate(float dx, float dy)

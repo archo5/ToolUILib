@@ -80,6 +80,8 @@ template <class T> struct Range
 {
 	Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
 
+	bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
+
 	T min, max;
 };
 

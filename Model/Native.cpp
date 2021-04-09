@@ -1012,6 +1012,14 @@ void NativeWindowBase::SetDebugDrawEnabled(bool enabled)
 	_impl->debugDrawEnabled = enabled;
 }
 
+void NativeWindowBase::Rebuild()
+{
+	// don't rebuild if the first build hasn't happened yet
+	// TODO rebuild always and clear the flag?
+	if (!_impl->firstShow && _impl->GetContainer().rootBuildable)
+		_impl->GetContainer().rootBuildable->Rebuild();
+}
+
 void NativeWindowBase::InvalidateAll()
 {
 	if (!_impl->AddToInvalidationList())
