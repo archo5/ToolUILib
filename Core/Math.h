@@ -24,6 +24,11 @@ template <class T> struct Vec2
 {
 	T x, y;
 
+	Vec2(DoNotInitialize) {}
+	Vec2() : x(0), y(0) {}
+	Vec2(T v) : x(v), y(v) {}
+	Vec2(T ax, T ay) : x(ax), y(ay) {}
+
 	UI_FORCEINLINE Vec2 operator + (const Vec2& o) const { return { x + o.x, y + o.y }; }
 	UI_FORCEINLINE Vec2 operator - (const Vec2& o) const { return { x - o.x, y - o.y }; }
 	UI_FORCEINLINE Vec2 operator * (T f) const { return { x * f, y * f }; }

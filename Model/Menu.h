@@ -85,18 +85,32 @@ struct MenuItemCollection
 	};
 
 	Entry* CreateEntry(StringView path, int priority);
-	std::function<void()>& Add(StringView path, bool disabled = false, bool checked = false, int priority = 0)
+	std::function<void()>& Add(StringView path, bool disabled = false, bool checked = false, int priorityTweak = 0)
 	{
-		Entry* E = CreateEntry(path, basePriority + priority);
+		Entry* E = CreateEntry(path, basePriority + priorityTweak);
 		E->checked = checked;
 		E->disabled = disabled;
 		return E->function;
+	}
+	std::function<void()>& AddNext(StringView path, bool disabled = false, bool checked = false)
+	{
+		basePriority++;
+		auto& fn = Add(path, disabled, checked);
+		basePriority++;
 	}
 	void Clear()
 	{
 		root.~Entry();
 		new (&root) Entry;
 		basePriority = 0;
+	}
+	void NewOrderedSet()
+	{
+		basePriority += 1;
+	}
+	void NewSection()
+	{
+		basePriority += SEPARATOR_THRESHOLD;
 	}
 	void StartNew()
 	{

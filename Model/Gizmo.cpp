@@ -537,7 +537,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	{
 		switch (e.shortCode)
 		{
-		case 1 /* Esc */:
+		case KSC_Escape:
 			if (_selectedPart != GizmoAction::None)
 			{
 				_selectedPart = GizmoAction::None;
@@ -549,7 +549,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 
-		case 34 /* G */:
+		case KSC_G:
 			if (detectsKeys)
 			{
 				Start(GizmoAction::MoveScreenPlane, _lastCursorPos, cam, editable);
@@ -557,7 +557,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				return true;
 			}
 			break;
-		case 0x13 /* R */:
+		case KSC_R:
 			if (detectsKeys)
 			{
 				Start(GizmoAction::RotateScreenAxis, _lastCursorPos, cam, editable);
@@ -565,7 +565,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				return true;
 			}
 			break;
-		case 31 /* S */:
+		case KSC_S:
 			if (detectsKeys)
 			{
 				Start(GizmoAction::ScaleUniform, _lastCursorPos, cam, editable);
@@ -574,7 +574,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 
-		case 0x2D /* X */:
+		case KSC_X:
 			if (detectsKeys && _selectedPart != GizmoAction::None)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_X, (e.GetModifierKeys() & MK_Shift) != 0);
@@ -582,7 +582,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				return true;
 			}
 			break;
-		case 0x15 /* Y */:
+		case KSC_Y:
 			if (detectsKeys && _selectedPart != GizmoAction::None)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Y, (e.GetModifierKeys() & MK_Shift) != 0);
@@ -590,7 +590,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				return true;
 			}
 			break;
-		case 0x2C /* Z */:
+		case KSC_Z:
 			if (detectsKeys && _selectedPart != GizmoAction::None)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Z, (e.GetModifierKeys() & MK_Shift) != 0);
@@ -1051,7 +1051,7 @@ void Gizmo::Render(const CameraBase& cam, float size, GizmoSizeMode sizeMode)
 		Vec3f pos = _xf.TransformPoint({ 0, 0, 0 });
 		const auto& pm = cam.GetProjectionMatrix();
 		float fovQ = pm.m[1][1];
-		float q = max(0.00001f, cam.GetViewMatrix().TransformPoint(pos).z / fovQ);
+		float q = max(0.00001f, fabsf(cam.GetViewMatrix().TransformPoint(pos).z / fovQ));
 		size *= q;
 		if (sizeMode == GizmoSizeMode::ViewPixels)
 			size /= cam.GetWindowRect().GetHeight();

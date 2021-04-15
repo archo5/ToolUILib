@@ -1,5 +1,8 @@
 
 #pragma once
+
+#include "Platform.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <type_traits>
@@ -93,12 +96,13 @@ struct HashMap
 		_destruct_free();
 	}
 
-	__forceinline size_t size() const { return _count; }
-	__forceinline size_t capacity() const { return _capacity; }
-	__forceinline Iterator begin() { return { this, 0 }; }
-	__forceinline Iterator end() { return { this, _count }; }
-	__forceinline ConstIterator begin() const { return { this, 0 }; }
-	__forceinline ConstIterator end() const { return { this, _count }; }
+	UI_FORCEINLINE bool empty() const { return _count == 0; }
+	UI_FORCEINLINE size_t size() const { return _count; }
+	UI_FORCEINLINE size_t capacity() const { return _capacity; }
+	UI_FORCEINLINE Iterator begin() { return { this, 0 }; }
+	UI_FORCEINLINE Iterator end() { return { this, _count }; }
+	UI_FORCEINLINE ConstIterator begin() const { return { this, 0 }; }
+	UI_FORCEINLINE ConstIterator end() const { return { this, _count }; }
 
 	void dealloc()
 	{
@@ -225,11 +229,11 @@ struct HashMap
 		_capacity = capacity;
 	}
 
-	__forceinline size_t _advance(size_t pos) const
+	UI_FORCEINLINE size_t _advance(size_t pos) const
 	{
 		return (pos + 1) & (_hashCap - 1);
 	}
-	__forceinline size_t _find_htidx(const K& key) const
+	UI_FORCEINLINE size_t _find_htidx(const K& key) const
 	{
 		if (!_count)
 			return SIZE_MAX;
@@ -251,7 +255,7 @@ struct HashMap
 		}
 		return SIZE_MAX;
 	}
-	__forceinline size_t _find_pos(const K& key, size_t def) const
+	UI_FORCEINLINE size_t _find_pos(const K& key, size_t def) const
 	{
 		size_t i = _find_htidx(key);
 		return i != SIZE_MAX ? _hashTable[i] : def;
@@ -279,20 +283,20 @@ struct HashMap
 				return 0;
 		}
 	}
-	__forceinline Iterator find(const K& key)
+	UI_FORCEINLINE Iterator find(const K& key)
 	{
 		return { this, _find_pos(key, _count) };
 	}
-	__forceinline ConstIterator find(const K& key) const
+	UI_FORCEINLINE ConstIterator find(const K& key) const
 	{
 		return { this, _find_pos(key, _count) };
 	}
-	__forceinline const V& get(const K& key, const V& def = {}) const
+	UI_FORCEINLINE const V& get(const K& key, const V& def = {}) const
 	{
 		auto pos = _find_pos(key, SIZE_MAX);
 		return pos != SIZE_MAX ? _values[pos] : def;
 	}
-	__forceinline bool contains(const K& key) const
+	UI_FORCEINLINE bool contains(const K& key) const
 	{
 		return _find_pos(key, SIZE_MAX) != SIZE_MAX;
 	}

@@ -9,8 +9,6 @@
 
 namespace ui {
 
-struct DoNotInitialize {};
-
 
 struct Vec3f
 {
@@ -42,6 +40,7 @@ struct Vec3f
 	UI_FORCEINLINE Vec3f operator - () const { return { -x, -y, -z }; }
 
 	UI_FORCEINLINE bool operator == (const Vec3f& o) const { return x == o.x && y == o.y && z == o.z; }
+	UI_FORCEINLINE bool operator != (const Vec3f& o) const { return x != o.x || y != o.y || z != o.z; }
 
 	UI_FORCEINLINE float LengthSq() const { return x * x + y * y + z * z; }
 	UI_FORCEINLINE float Length() const { return sqrtf(LengthSq()); }
@@ -104,6 +103,9 @@ struct Quat
 	Quat operator * (const Quat& o) const;
 	Vec3f ToEulerAnglesZYX() const;
 
+	UI_FORCEINLINE bool operator == (const Quat& o) const { return x == o.x && y == o.y && z == o.z && w == o.w; }
+	UI_FORCEINLINE bool operator != (const Quat& o) const { return x != o.x || y != o.y || z != o.z || w != o.w; }
+
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		oi.BeginObject(FI, "Quat");
@@ -122,6 +124,18 @@ struct Quat
 	static Quat RotateEulerAnglesXYZ(const Vec3f& angles);
 	static Quat RotateEulerAnglesZYX(const Vec3f& angles);
 };
+
+inline Quat QuatNLerp(const Quat& a, const Quat& b, float s)
+{
+	return Quat
+	{
+		lerp(a.x, b.x, s),
+		lerp(a.y, b.y, s),
+		lerp(a.z, b.z, s),
+		lerp(a.w, b.w, s),
+	}
+	.Normalized();
+}
 
 
 struct Mat4f
@@ -290,7 +304,7 @@ inline RayPlaneIntersectResult RayPlaneIntersect(const Vec3f& pos, const Vec3f& 
 inline Ray3f GetCameraRay(const Mat4f& invVP, float x, float y)
 {
 	Vec3f p0 = { x, y, 0 };
-	Vec3f p1 = { x, y, 1 };
+	Vec3f p1 = { x, y, 0.5f };
 	p0 = invVP.TransformPoint(p0);
 	p1 = invVP.TransformPoint(p1);
 	return { p0, (p1 - p0).Normalized() };

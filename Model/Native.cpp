@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <ShlObj.h>
 
 #include <algorithm>
 #undef min
@@ -290,6 +291,24 @@ Color4b GetColorAtScreenPos(Point2i pos)
 void ShowErrorMessage(StringView title, StringView text)
 {
 	::MessageBoxW(nullptr, UTF8toWCHAR(text).c_str(), UTF8toWCHAR(title).c_str(), MB_ICONERROR);
+}
+
+void BrowseToFile(StringView path)
+{
+	COMInit cominit;
+	if (cominit.success)
+	{
+		auto absPath = PathGetAbsolute(path);
+		for (auto& c : absPath)
+			if (c == '/')
+				c = '\\';
+		if (auto* idl = ::ILCreateFromPathW(UTF8toWCHAR(absPath).c_str()))
+		{
+			SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
+
+			::ILFree(idl);
+		}
+	}
 }
 
 } // platform
@@ -1314,6 +1333,20 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			return TRUE;
 		}
 		break;
+	case WM_SETFOCUS:
+		if (auto* win = GetNativeWindow(hWnd))
+		{
+			win->GetOwner()->OnFocusReceived();
+			return TRUE;
+		}
+		break;
+	case WM_KILLFOCUS:
+		if (auto* win = GetNativeWindow(hWnd))
+		{
+			win->GetOwner()->OnFocusLost();
+			return TRUE;
+		}
+		break;
 	case WM_MOUSEMOVE:
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnMouseMove({ float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam)) }, GetModifierKeys());
@@ -1407,7 +1440,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			uint16_t numRepeats = lParam & 0xffff;
 			auto M = GetModifierKeys();
-			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, (lParam >> 16) & 0xff, M, (lParam & (1U << 31)) != 0U, numRepeats);
+			uint8_t origScanCode = (lParam >> 16) & 0xff;
+			uint8_t extMask = lParam & (1 << 24) ? 0x80 : 0;
+			uint8_t scanCode = origScanCode | extMask;
+			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, scanCode, M, (lParam & (1U << 31)) != 0U, numRepeats);
 			if (message == WM_KEYDOWN)
 			{
 				switch (wParam)

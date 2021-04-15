@@ -383,19 +383,23 @@ void EventSystem::_UpdateCursor(UIObject* hoverObj)
 	}
 }
 
-void EventSystem::_UpdateTooltip()
+void EventSystem::_UpdateTooltip(Point2f cursorPos)
 {
+#if 0
 	if (Tooltip::IsSet())
 		return;
-
+#endif
+	Tooltip::ClearChangedFlag();
 	Event ev(this, hoverObj, EventType::Tooltip);
+	ev.position = cursorPos;
 	UIObject* obj = ev.target;
 	while (obj && !ev.IsPropagationStopped())
 	{
 		obj->_DoEvent(ev);
-		if (Tooltip::IsSet())
+		if (Tooltip::WasChanged())
 		{
 			tooltipObj = obj;
+			Tooltip::ClearChangedFlag();
 			Notify(DCT_TooltipChanged);
 			break;
 		}
@@ -448,8 +452,8 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 			Tooltip::Unset();
 			Notify(DCT_TooltipChanged);
 		}
+		_UpdateTooltip(cursorPos);
 	}
-	_UpdateTooltip();
 
 	prevMousePos = cursorPos;
 
@@ -694,22 +698,35 @@ DragDropData* DragDrop::GetData(const char* type)
 
 
 static Tooltip::BuildFunc g_curTooltipBuildFn;
+static bool g_tooltipChanged;
 
 DataCategoryTag DCT_TooltipChanged[1];
 
 void Tooltip::Set(const BuildFunc& f)
 {
 	g_curTooltipBuildFn = f;
+	g_tooltipChanged = true;
 }
 
 void Tooltip::Unset()
 {
 	g_curTooltipBuildFn = {};
+	g_tooltipChanged = true;
 }
 
 bool Tooltip::IsSet()
 {
 	return !!g_curTooltipBuildFn;
+}
+
+bool Tooltip::WasChanged()
+{
+	return g_tooltipChanged;
+}
+
+void Tooltip::ClearChangedFlag()
+{
+	g_tooltipChanged = false;
 }
 
 void Tooltip::Build()

@@ -10,6 +10,8 @@
 
 namespace ui {
 
+struct DoNotInitialize {};
+
 template <class T> UI_FORCEINLINE T min(T a, T b) { return a < b ? a : b; }
 template <class T> UI_FORCEINLINE T max(T a, T b) { return a > b ? a : b; }
 template <class T> UI_FORCEINLINE T clamp(T x, T vmin, T vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }

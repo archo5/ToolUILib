@@ -6,6 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
+#include <objbase.h>
 
 
 namespace ui {
@@ -50,5 +51,21 @@ static void NormalizePath(T& cont)
 		if (c == '\\')
 			c = '/';
 }
+
+struct COMInit
+{
+	bool success = false;
+
+	COMInit()
+	{
+		if (SUCCEEDED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)))
+			success = true;
+	}
+	~COMInit()
+	{
+		if (success)
+			::CoUninitialize();
+	}
+};
 
 } // ui

@@ -56,6 +56,7 @@ struct TableView : Buildable
 {
 	TableView();
 	~TableView();
+	void OnInit() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 	void OnSerialize(IDataSerializer& s) override;

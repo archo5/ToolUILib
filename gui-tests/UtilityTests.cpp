@@ -169,6 +169,9 @@ struct OSCommunicationTest : ui::Buildable
 
 		if (ui::imm::Button("Show error message"))
 			ui::platform::ShowErrorMessage("Error", "Message");
+
+		if (ui::imm::Button("Browse to file"))
+			ui::platform::BrowseToFile("gui-theme2.tga");
 	}
 
 	ui::AnimationCallbackRequester animReq;

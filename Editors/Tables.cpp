@@ -156,15 +156,19 @@ struct TableViewImpl
 TableView::TableView()
 {
 	_impl = new TableViewImpl;
-	styleProps = Theme::current->tableBase;
-	cellStyle = Theme::current->tableCell;
-	rowHeaderStyle = Theme::current->tableRowHeader;
-	colHeaderStyle = Theme::current->tableColHeader;
 }
 
 TableView::~TableView()
 {
 	delete _impl;
+}
+
+void TableView::OnInit()
+{
+	styleProps = Theme::current->tableBase;
+	cellStyle = Theme::current->tableCell;
+	rowHeaderStyle = Theme::current->tableRowHeader;
+	colHeaderStyle = Theme::current->tableColHeader;
 }
 
 void TableView::OnPaint()

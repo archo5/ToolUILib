@@ -3,6 +3,8 @@
 
 #include "../Core/Math.h"
 
+#include "Keyboard.h"
+
 #include <vector>
 #include <functional>
 
@@ -13,24 +15,6 @@ struct NativeWindowBase;
 struct Buildable;
 struct Overlays;
 extern struct DataCategoryTag DCT_MouseMoved[1];
-
-enum ModifierKeyFlags
-{
-	MK_LeftCtrl = 1 << 0,
-	MK_LeftShift = 1 << 1,
-	MK_LeftAlt = 1 << 2,
-	MK_LeftWin = 1 << 3,
-
-	MK_RightCtrl = 1 << 4,
-	MK_RightShift = 1 << 5,
-	MK_RightAlt = 1 << 6,
-	MK_RightWin = 1 << 7,
-
-	MK_Ctrl = 0x11 << 0,
-	MK_Shift = 0x11 << 1,
-	MK_Alt = 0x11 << 2,
-	MK_Win = 0x11 << 3,
-};
 
 struct UIObject;
 struct UIElement;
@@ -233,7 +217,7 @@ struct EventSystem
 	void MoveClickTo(UIObject* obj, MouseButton btn = MouseButton::Left);
 	void _UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
-	void _UpdateTooltip();
+	void _UpdateTooltip(Point2f cursorPos);
 	void OnMouseMove(Point2f cursorPos, uint8_t mod);
 	void OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod);
 	void OnMouseScroll(Vec2f delta);
@@ -387,6 +371,8 @@ struct Tooltip
 	static void Set(const BuildFunc& f);
 	static void Unset();
 	static bool IsSet();
+	static bool WasChanged();
+	static void ClearChangedFlag();
 	static void Build();
 };
 

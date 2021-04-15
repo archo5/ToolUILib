@@ -663,6 +663,14 @@ struct MainWindow : ui::NativeMainWindow
 	{
 		ui::Make<TEST>();
 	}
+	void OnFocusReceived() override
+	{
+		puts("FOCUS - received");
+	}
+	void OnFocusLost() override
+	{
+		puts("FOCUS - lost");
+	}
 };
 
 int uimain(int argc, char* argv[])

@@ -261,6 +261,7 @@ uint64_t GetFileModTimeUTC(StringView path)
 	HANDLE hfile = CreateFileW(UTF8toWCHAR(path).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (!hfile)
 		return 0;
+	UI_DEFER(CloseHandle(hfile));
 	FILETIME t;
 	if (!::GetFileTime(hfile, nullptr, nullptr, &t))
 		return 0;

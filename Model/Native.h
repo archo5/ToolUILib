@@ -21,6 +21,7 @@ uint32_t GetDoubleClickTime();
 Point2i GetCursorScreenPos();
 Color4b GetColorAtScreenPos(Point2i pos);
 void ShowErrorMessage(StringView title, StringView text);
+void BrowseToFile(StringView path);
 } // platform
 
 
@@ -99,6 +100,9 @@ struct NativeWindowBase
 	virtual void OnBuild() = 0;
 	virtual void OnClose();
 	//void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
+
+	virtual void OnFocusReceived() {}
+	virtual void OnFocusLost() {}
 
 	std::string GetTitle();
 	void SetTitle(StringView title);
@@ -225,6 +229,12 @@ public:
 	static void Quit(int code = 0);
 	static void OpenInspector(NativeWindowBase* window = nullptr, UIObject* obj = nullptr);
 
+	template <class F>
+	static void PushEvent(F&& f)
+	{
+		_GetEventQueue().Push(std::move(f));
+		_SignalEvent();
+	}
 	template <class F>
 	static void PushEvent(UIObject* obj, F&& f)
 	{

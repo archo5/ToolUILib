@@ -217,6 +217,9 @@
     <ClInclude Include="Core\RefCounted.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Model\Keyboard.h">
+      <Filter>Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
