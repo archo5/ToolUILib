@@ -202,6 +202,7 @@ void EventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg
 
 void EventSystem::SetKeyboardFocus(UIObject* o)
 {
+	wasFocusSet = true;
 	if (focusObj == o)
 		return;
 
@@ -465,6 +466,8 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 {
 	int id = int(which);
 
+	wasFocusSet = false;
+
 	Event ev(this, hoverObj, EventType::ButtonDown);
 	ev.shortCode = id;
 	ev.position = cursorPos;
@@ -478,6 +481,9 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		clickObj[id] = hoverObj;
 		clickStartPositions[id] = cursorPos;
 		BubblingEvent(ev);
+
+		if (!wasFocusSet)
+			SetKeyboardFocus(nullptr);
 	}
 	else
 	{

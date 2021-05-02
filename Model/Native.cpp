@@ -3,6 +3,7 @@
 #include <windowsx.h>
 #include <shellapi.h>
 #include <ShlObj.h>
+#include <hidusage.h>
 
 #include <algorithm>
 #undef min
@@ -271,6 +272,20 @@ Point2i GetCursorScreenPos()
 	if (::GetCursorPos(&p))
 		return { p.x, p.y };
 	return { -1, -1 };
+}
+
+static bool g_requestedRawMouseInput = false;
+void RequestRawMouseInput()
+{
+	if (g_requestedRawMouseInput)
+		return;
+	RAWINPUTDEVICE rid = {};
+	{
+		rid.usUsagePage = HID_USAGE_PAGE_GENERIC;
+		rid.usUsage = HID_USAGE_GENERIC_MOUSE;
+	}
+	if (::RegisterRawInputDevices(&rid, 1, sizeof(rid)))
+		g_requestedRawMouseInput = true;
 }
 
 Color4b GetColorAtScreenPos(Point2i pos)
@@ -1104,7 +1119,7 @@ void AnimationRequester::BeginAnimation()
 		return;
 	if (g_animRequesters.size() == 0)
 	{
-		g_animReqTimerID = ::SetTimer(nullptr, 0, 16, AnimTimerProc);
+		g_animReqTimerID = ::SetTimer(nullptr, 0, 1, AnimTimerProc);
 		timeBeginPeriod(1);
 	}
 	g_animRequesters.insert(this, true);
@@ -1122,6 +1137,28 @@ void AnimationRequester::EndAnimation()
 		timeEndPeriod(1);
 	}
 	_animating = false;
+}
+
+
+static IntrusiveLinkedList<RawMouseInputRequester> g_rawMouseInputRequesters;
+
+void RawMouseInputRequester::BeginRawMouseInput()
+{
+	if (!_requesting)
+	{
+		platform::RequestRawMouseInput();
+		g_rawMouseInputRequesters.AddToEnd(this);
+		_requesting = true;
+	}
+}
+
+void RawMouseInputRequester::EndRawMouseInput()
+{
+	if (_requesting)
+	{
+		_requesting = false;
+		g_rawMouseInputRequesters.Remove(this);
+	}
 }
 
 
@@ -1345,6 +1382,54 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			win->GetOwner()->OnFocusLost();
 			return TRUE;
+		}
+		break;
+	case WM_INPUT:
+		if (g_rawMouseInputRequesters.HasAny())
+		{
+			RAWINPUT ri = {};
+			UINT size = sizeof(ri);
+			UINT ret = ::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &ri, &size, sizeof(ri.header));
+			if (ret != size)
+				return 0;
+			if (ri.header.dwType == RIM_TYPEMOUSE)
+			{
+				int dx = ri.data.mouse.lLastX;
+				int dy = ri.data.mouse.lLastY;
+
+				if ((ri.data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE) == MOUSE_MOVE_ABSOLUTE)
+				{
+					static int prevAbsX = -1;
+					static int prevAbsY = -1;
+
+					bool isVirtualDesktop = (ri.data.mouse.usFlags & MOUSE_VIRTUAL_DESKTOP) == MOUSE_VIRTUAL_DESKTOP;
+
+					int width = GetSystemMetrics(isVirtualDesktop ? SM_CXVIRTUALSCREEN : SM_CXSCREEN);
+					int height = GetSystemMetrics(isVirtualDesktop ? SM_CYVIRTUALSCREEN : SM_CYSCREEN);
+
+					int absoluteX = int((ri.data.mouse.lLastX / 65535.0f) * width);
+					int absoluteY = int((ri.data.mouse.lLastY / 65535.0f) * height);
+
+					if (prevAbsX >= 0 && prevAbsY >= 0)
+					{
+						dx = absoluteX - prevAbsX;
+						dy = absoluteY - prevAbsY;
+					}
+
+					prevAbsX = absoluteX;
+					prevAbsY = absoluteY;
+				}
+				//printf("dx=%d dy=%d flags=%04X\n", dx, dy, ri.data.mouse.usFlags);
+
+				if (dx || dy)
+				{
+					for (auto* n = g_rawMouseInputRequesters._first; n; n = n->_next)
+					{
+						n->OnRawInputEvent(dx, dy);
+					}
+				}
+			}
+			return 0;
 		}
 		break;
 	case WM_MOUSEMOVE:

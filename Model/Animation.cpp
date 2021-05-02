@@ -66,12 +66,12 @@ void AnimPlayer::OnAnimationFrame()
 
 void SequenceAnimation::Reset(IAnimState* asrw)
 {
-	_curAnim = -1;
+	_curAnim = SIZE_MAX;
 }
 
 float SequenceAnimation::Advance(float dt, IAnimState* asrw)
 {
-	if (_curAnim < 0)
+	if (_curAnim == SIZE_MAX)
 	{
 		_curAnim = 0;
 		if (!animations.empty())

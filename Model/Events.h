@@ -247,6 +247,7 @@ struct EventSystem
 
 	bool dragEventAttempted = false;
 	bool dragEventInProgress = false;
+	bool wasFocusSet = false;
 };
 
 enum class SubUIDragState

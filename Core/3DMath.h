@@ -99,6 +99,7 @@ struct Quat
 
 	Quat Normalized() const;
 	UI_FORCEINLINE Quat Inverted() const { return { -x, -y, -z, w }; }
+	UI_FORCEINLINE Quat operator - () const { return { -x, -y, -z, -w }; }
 
 	Quat operator * (const Quat& o) const;
 	Vec3f ToEulerAnglesZYX() const;
@@ -125,8 +126,13 @@ struct Quat
 	static Quat RotateEulerAnglesZYX(const Vec3f& angles);
 };
 
-inline Quat QuatNLerp(const Quat& a, const Quat& b, float s)
+inline float QuatDot(const Quat& a, const Quat& b)
 {
+	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+inline Quat QuatNLerp(const Quat& a, const Quat& b1, float s)
+{
+	Quat b = QuatDot(a, b1) >= 0 ? b1 : -b1;
 	return Quat
 	{
 		lerp(a.x, b.x, s),
@@ -135,6 +141,31 @@ inline Quat QuatNLerp(const Quat& a, const Quat& b, float s)
 		lerp(a.w, b.w, s),
 	}
 	.Normalized();
+}
+inline Quat QuatSLerp(const Quat& a, const Quat& b1, float s)
+{
+	float dot = QuatDot(a, b1);
+	Quat b = dot >= 0 ? b1 : -b1;
+	float fl, fr;
+	if (fabsf(dot) < 0.99999f)
+	{
+		float a = acosf(dot);
+		float rsa = 1.0f / sinf(a);
+		fl = sinf((1 - s) * a) * rsa;
+		fr = sinf(s * a) * rsa;
+	}
+	else
+	{
+		fl = 1 - s;
+		fr = s;
+	}
+	return Quat
+	{
+		a.x * fl + b.x * fr,
+		a.y * fl + b.y * fr,
+		a.z * fl + b.z * fr,
+		a.w * fl + b.w * fr,
+	};
 }
 
 

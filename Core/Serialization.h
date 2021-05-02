@@ -172,14 +172,14 @@ struct JSONLinearReader
 	bool HasMoreArrayElements();
 	size_t GetCurrentArraySize();
 	Entry* FindEntry(const char* key);
-	std::string ReadString(const char* key, const std::string& def = "");
-	bool ReadBool(const char* key, bool def = false);
-	int ReadInt(const char* key, int def = 0);
-	unsigned ReadUInt(const char* key, unsigned def = 0);
-	int64_t ReadInt64(const char* key, int64_t def = 0);
-	uint64_t ReadUInt64(const char* key, uint64_t def = 0);
-	double ReadFloat(const char* key, double def = 0);
-	void BeginArray(const char* key);
+	Optional<std::string> ReadString(const char* key);
+	Optional<bool> ReadBool(const char* key);
+	Optional<int> ReadInt(const char* key);
+	Optional<unsigned> ReadUInt(const char* key);
+	Optional<int64_t> ReadInt64(const char* key);
+	Optional<uint64_t> ReadUInt64(const char* key);
+	Optional<double> ReadFloat(const char* key);
+	bool BeginArray(const char* key);
 	void EndArray();
 	bool BeginDict(const char* key);
 	void EndDict();
@@ -250,7 +250,7 @@ struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinType
 	{
 		BeginDict(FI.name);
 		if (outName)
-			*outName = ReadString("__");
+			*outName = ReadString("__").GetValueOrDefault({});
 	}
 	void EndObject() override
 	{
@@ -270,27 +270,33 @@ struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinType
 
 	void OnFieldBool(const FieldInfo& FI, bool& val) override
 	{
-		val = ReadBool(FI.name);
+		if (auto v = ReadBool(FI.name))
+			val = v.GetValue();
 	}
 	void OnFieldS64(const FieldInfo& FI, int64_t& val) override
 	{
-		val = ReadInt64(FI.name);
+		if (auto v = ReadInt64(FI.name))
+			val = v.GetValue();
 	}
 	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override
 	{
-		val = ReadUInt64(FI.name);
+		if (auto v = ReadUInt64(FI.name))
+			val = v.GetValue();
 	}
 	void OnFieldF64(const FieldInfo& FI, double& val) override
 	{
-		val = ReadFloat(FI.name);
+		if (auto v = ReadFloat(FI.name))
+			val = v.GetValue();
 	}
 	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override
 	{
-		brw.Assign(ReadString(FI.name));
+		if (auto v = ReadString(FI.name))
+			brw.Assign(v.GetValue());
 	}
 	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override
 	{
-		brw.Assign(Base16Decode(ReadString(FI.name)));
+		if (auto v = ReadString(FI.name))
+			brw.Assign(Base16Decode(v.GetValue()));
 	}
 };
 

@@ -787,7 +787,7 @@ struct CircleList
 
 	CircleList(Point2f center, float radius)
 	{
-		size_t size = radius * 3.14159f;
+		auto size = size_t(radius * 3.14159f);
 		if (size < 3)
 			size = 3;
 		if (size > 4096)

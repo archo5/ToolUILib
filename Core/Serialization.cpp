@@ -745,7 +745,7 @@ JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 	return nullptr;
 }
 
-std::string JSONLinearReader::ReadString(const char* key, const std::string& def)
+Optional<std::string> JSONLinearReader::ReadString(const char* key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -758,10 +758,10 @@ std::string JSONLinearReader::ReadString(const char* key, const std::string& def
 		if (e->type == json_type_false)
 			return "false";
 	}
-	return def;
+	return {};
 }
 
-bool JSONLinearReader::ReadBool(const char* key, bool def)
+Optional<bool> JSONLinearReader::ReadBool(const char* key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -770,20 +770,20 @@ bool JSONLinearReader::ReadBool(const char* key, bool def)
 		if (e->type == json_type_false)
 			return false;
 	}
-	return def;
+	return {};
 }
 
-int JSONLinearReader::ReadInt(const char* key, int def)
+Optional<int> JSONLinearReader::ReadInt(const char* key)
 {
-	return ReadInt64(key, def);
+	return ReadInt64(key).StaticCast<int>();
 }
 
-unsigned JSONLinearReader::ReadUInt(const char* key, unsigned def)
+Optional<unsigned> JSONLinearReader::ReadUInt(const char* key)
 {
-	return ReadUInt64(key, def);
+	return ReadUInt64(key).StaticCast<unsigned>();
 }
 
-int64_t JSONLinearReader::ReadInt64(const char* key, int64_t def)
+Optional<int64_t> JSONLinearReader::ReadInt64(const char* key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -792,10 +792,10 @@ int64_t JSONLinearReader::ReadInt64(const char* key, int64_t def)
 			return strtoll(n->number, nullptr, 10);
 		}
 	}
-	return def;
+	return {};
 }
 
-uint64_t JSONLinearReader::ReadUInt64(const char* key, uint64_t def)
+Optional<uint64_t> JSONLinearReader::ReadUInt64(const char* key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -804,10 +804,10 @@ uint64_t JSONLinearReader::ReadUInt64(const char* key, uint64_t def)
 			return strtoull(n->number, nullptr, 10);
 		}
 	}
-	return def;
+	return {};
 }
 
-double JSONLinearReader::ReadFloat(const char* key, double def)
+Optional<double> JSONLinearReader::ReadFloat(const char* key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -816,10 +816,10 @@ double JSONLinearReader::ReadFloat(const char* key, double def)
 			return strtod(n->number, nullptr);
 		}
 	}
-	return def;
+	return {};
 }
 
-void JSONLinearReader::BeginArray(const char* key)
+bool JSONLinearReader::BeginArray(const char* key)
 {
 	auto* e = FindEntry(key);
 	_stack.push_back({});
@@ -828,6 +828,7 @@ void JSONLinearReader::BeginArray(const char* key)
 		if (auto* a = json_value_as_array(e))
 			_stack.back() = { e, a->start };
 	}
+	return !!e;
 }
 
 void JSONLinearReader::EndArray()

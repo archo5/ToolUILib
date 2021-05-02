@@ -864,7 +864,8 @@ void ScrollArea::OnPaint()
 	auto cr = GetContentRect();
 	float w = cr.GetWidth();
 	auto sbvr = cr;
-	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
+	sbvr.x0 = cr.x1;
+	sbvr.x1 = sbvr.x0 + ResolveUnits(sbv.GetWidth(), w);
 	sbv.OnPaint({ this, sbvr, cr.GetHeight(), estContentSize.y, yoff });
 }
 
@@ -873,7 +874,8 @@ void ScrollArea::OnEvent(Event& e)
 	auto cr = GetContentRect();
 	float w = cr.GetWidth();
 	auto sbvr = cr;
-	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
+	sbvr.x0 = cr.x1;
+	sbvr.x1 = sbvr.x0 + ResolveUnits(sbv.GetWidth(), w);
 	ScrollbarData info = { this, sbvr, cr.GetHeight(), estContentSize.y, yoff };
 
 	if (e.type == EventType::MouseScroll)
@@ -887,7 +889,13 @@ void ScrollArea::OnEvent(Event& e)
 
 void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	estContentSize.y = CalcEstimatedHeight(containerSize, EstSizeType::Exact);
+	auto realContSize = containerSize;
+
+	bool hasVScroll = estContentSize.y > rect.GetHeight();
+	float vScrollWidth = ResolveUnits(sbv.GetWidth(), rect.GetWidth());
+	//if (hasVScroll)
+		realContSize.x -= vScrollWidth;
+	estContentSize.y = CalcEstimatedHeight(realContSize, EstSizeType::Exact);
 	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
 	if (yoff > maxYOff)
 		yoff = maxYOff;
@@ -895,8 +903,10 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	UIRect r = rect;
 	r.y0 -= yoff;
 	r.y1 -= yoff;
+	//if (hasVScroll)
+		r.x1 -= vScrollWidth;
 
-	UIElement::OnLayout(r, containerSize);
+	UIElement::OnLayout(r, realContSize);
 
 	finalRectC.y0 += yoff;
 	finalRectC.y1 += yoff;
@@ -904,6 +914,11 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	finalRectCP.y1 += yoff;
 	finalRectCPB.y0 += yoff;
 	finalRectCPB.y1 += yoff;
+	//if (hasVScroll)
+	{
+		finalRectCP.x1 += vScrollWidth;
+		finalRectCPB.x1 += vScrollWidth;
+	}
 }
 
 void ScrollArea::OnSerialize(IDataSerializer& s)
@@ -1359,7 +1374,7 @@ void Textbox::EraseSelection()
 	}
 }
 
-int Textbox::_FindCursorPos(float vpx)
+size_t Textbox::_FindCursorPos(float vpx)
 {
 	auto r = GetContentRect();
 	// TODO kerning

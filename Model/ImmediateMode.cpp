@@ -182,7 +182,7 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		dragObj->SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 		dragObj->HandleEvent() = [val, cfg = cfg, range, &tb, fb](Event& e)
 		{
-			if (tb.IsInputDisabled())
+			if (tb.IsInputDisabled() || e.target->IsChildOrSame(&tb))
 				return;
 			if (e.type == EventType::MouseMove && e.target->IsPressed() && e.delta.x != 0)
 			{

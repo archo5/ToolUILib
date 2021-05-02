@@ -20,11 +20,11 @@ struct FieldInfo
 	const char* name = nullptr;
 	uint32_t flags = 0;
 
-	FieldInfo() {}
-	FieldInfo(const char* nm, uint32_t f = 0) : name(nm), flags(f) {}
+	UI_FORCEINLINE FieldInfo() {}
+	UI_FORCEINLINE FieldInfo(const char* nm, uint32_t f = 0) : name(nm), flags(f) {}
 
-	bool NeedObject() const { return name != nullptr; }
-	const char* GetNameOrEmptyStr() const { return name ? name : ""; }
+	UI_FORCEINLINE bool NeedObject() const { return name != nullptr; }
+	UI_FORCEINLINE const char* GetNameOrEmptyStr() const { return name ? name : ""; }
 };
 
 // is the data format binary-optimized

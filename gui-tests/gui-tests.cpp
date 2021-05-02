@@ -320,6 +320,7 @@ struct DataEditor : ui::Buildable
 
 void Test_RenderingPrimitives();
 void Test_KeyboardEvents();
+void Test_RawMouseEvents();
 void Test_OpenClose();
 void Test_AnimationRequest();
 void Test_ElementReset();
@@ -391,6 +392,7 @@ static const TestEntry coreTestEntries[] =
 	{ "Primitives", Test_RenderingPrimitives },
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },
+	{ "[Raw] Mouse", Test_RawMouseEvents },
 	{},
 	{ "- Basic logic -" },
 	{ "Open/Close", Test_OpenClose },
@@ -641,11 +643,11 @@ struct RHIListener : ui::rhi::IRHIListener
 	}
 	void OnBeginFrame(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		PrintPointers("begin frame", ip);
+		//PrintPointers("begin frame", ip);
 	}
 	void OnEndFrame(const ui::rhi::RHIInternalPointers& ip) override
 	{
-		PrintPointers("end frame", ip);
+		//PrintPointers("end frame", ip);
 	}
 }
 g_rl;

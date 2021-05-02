@@ -282,14 +282,16 @@ void UIContainer::_Destroy(UIObject* obj)
 
 void UIContainer::_Pop()
 {
-	objectStack[objectStackSize - 1]->OnCompleteStructure();
-	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
 	_lastCreated = objectStack[objectStackSize - 1];
 	if (objChildStack[objectStackSize - 1])
 	{
 		// remove leftover children
 		DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
 	}
+
+	objectStack[objectStackSize - 1]->OnCompleteStructure();
+	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
+
 	objectStackSize--;
 }
 

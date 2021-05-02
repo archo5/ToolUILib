@@ -52,7 +52,7 @@ struct SequenceAnimation : Animation
 
 	std::vector<AnimPtr> animations;
 
-	int _curAnim = -1;
+	size_t _curAnim = SIZE_MAX;
 };
 
 struct ParallelAnimation : Animation

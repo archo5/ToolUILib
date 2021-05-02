@@ -453,7 +453,7 @@ struct Textbox : UIElement
 	void EnterText(const char* str);
 	void EraseSelection();
 
-	int _FindCursorPos(float vpx);
+	size_t _FindCursorPos(float vpx);
 
 	const std::string& GetText() const { return _text; }
 	Textbox& SetText(StringView s);
@@ -475,8 +475,8 @@ struct Textbox : UIElement
 
 	std::string _text;
 	std::string _placeholder;
-	int startCursor = 0;
-	int endCursor = 0;
+	size_t startCursor = 0;
+	size_t endCursor = 0;
 	bool showCaretState = false;
 	float accumulator = 0;
 };

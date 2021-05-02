@@ -138,10 +138,42 @@ void Test_RenderingPrimitives()
 }
 
 
-struct KeyboardEventsTest : ui::Buildable
+struct EventsTest : ui::Buildable
 {
 	static constexpr unsigned MAX_MESSAGES = 50;
 
+	std::string msgBuf[MAX_MESSAGES];
+	unsigned writePos = 0;
+
+	void WriteMsg(const char* fmt, ...)
+	{
+		char buf[1024];
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(buf, 1024, fmt, args);
+		va_end(args);
+		msgBuf[writePos++] = buf;
+		writePos %= MAX_MESSAGES;
+	}
+
+	void OnPaint() override
+	{
+		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
+		for (unsigned i = 0; i < MAX_MESSAGES; i++)
+		{
+			unsigned idx = (MAX_MESSAGES * 2 + writePos - i - 1) % MAX_MESSAGES;
+			ui::draw::TextLine(font, 12, 0, finalRectC.y1 - i * 12, msgBuf[idx], ui::Color4f::White());
+		}
+	}
+	void Build() override
+	{
+		*this + ui::SetWidth(ui::Coord::Percent(100));
+		*this + ui::SetHeight(ui::Coord::Percent(100));
+	}
+};
+
+struct KeyboardEventsTest : EventsTest
+{
 	KeyboardEventsTest()
 	{
 		SetFlag(ui::UIObject_IsFocusable, true);
@@ -179,38 +211,22 @@ struct KeyboardEventsTest : ui::Buildable
 				e.GetModifierKeys());
 		}
 	}
-	void OnPaint() override
-	{
-		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
-		for (unsigned i = 0; i < MAX_MESSAGES; i++)
-		{
-			unsigned idx = (MAX_MESSAGES * 2 + writePos - i - 1) % MAX_MESSAGES;
-			ui::draw::TextLine(font, 12, 0, finalRectC.y1 - i * 12, msgBuf[idx], ui::Color4f::White());
-		}
-	}
-	void Build() override
-	{
-		*this + ui::SetWidth(ui::Coord::Percent(100));
-		*this + ui::SetHeight(ui::Coord::Percent(100));
-	}
-
-	void WriteMsg(const char* fmt, ...)
-	{
-		char buf[1024];
-		va_list args;
-		va_start(args, fmt);
-		vsnprintf(buf, 1024, fmt, args);
-		va_end(args);
-		msgBuf[writePos++] = buf;
-		writePos %= MAX_MESSAGES;
-	}
-
-	std::string msgBuf[MAX_MESSAGES];
-	unsigned writePos = 0;
 };
 void Test_KeyboardEvents()
 {
 	ui::Make<KeyboardEventsTest>();
+}
+
+struct RawMouseEventsTest : EventsTest, ui::RawMouseInputRequester
+{
+	void OnRawInputEvent(float dx, float dy) override
+	{
+		WriteMsg("raw mouse event: dx=%g dy=%g", dx, dy);
+	}
+};
+void Test_RawMouseEvents()
+{
+	ui::Make<RawMouseEventsTest>();
 }
 
 

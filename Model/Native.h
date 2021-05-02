@@ -19,6 +19,7 @@ namespace platform {
 uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
 Point2i GetCursorScreenPos();
+void RequestRawMouseInput();
 Color4b GetColorAtScreenPos(Point2i pos);
 void ShowErrorMessage(StringView title, StringView text);
 void BrowseToFile(StringView path);
@@ -215,6 +216,67 @@ struct AnimationCallbackRequester : AnimationRequester
 	}
 
 	std::function<void()> callback;
+};
+
+template <class T>
+struct IntrusiveLinkedList
+{
+	T* _first = nullptr;
+	T* _last = nullptr;
+
+	bool HasAny() const { return _first; }
+
+	void AddToStart(T* node)
+	{
+		assert(node->_prev == nullptr && node->_next == nullptr);
+		node->_next = _first;
+		if (_first)
+			_first->_prev = node;
+		_first = node;
+		if (!_last)
+			_last = node;
+	}
+	void AddToEnd(T* node)
+	{
+		assert(node->_prev == nullptr && node->_next == nullptr);
+		node->_prev = _last;
+		if (_last)
+			_last->_next = node;
+		_last = node;
+		if (!_first)
+			_first = node;
+	}
+	void Remove(T* node)
+	{
+		if (node->_prev)
+			node->_prev->_next = node->_next;
+		else if (_first == node)
+			_first = _first->_next;
+
+		if (node->_next)
+			node->_next->_prev = node->_prev;
+		else if (_last == node)
+			_last = _last->_prev;
+	}
+};
+
+template <class T>
+struct IntrusiveLinkedListNode
+{
+	T* _prev = nullptr;
+	T* _next = nullptr;
+};
+
+struct RawMouseInputRequester : IntrusiveLinkedListNode<RawMouseInputRequester>
+{
+	bool _requesting = false;
+
+	RawMouseInputRequester(bool initial = true) { if (initial) BeginRawMouseInput(); }
+	~RawMouseInputRequester() { EndRawMouseInput(); }
+	void BeginRawMouseInput();
+	void EndRawMouseInput();
+
+	virtual void OnRawInputEvent(float dx, float dy) = 0;
 };
 
 struct Inspector;

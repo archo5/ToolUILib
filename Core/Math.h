@@ -18,6 +18,40 @@ constexpr float RAD2DEG = 180 / 3.14159f;
 
 inline float lerp(float a, float b, float s) { return a + (b - a) * s; }
 inline float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
+inline float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
+
+
+inline float AngleNormalize360(float a)
+{
+	a = fmodf(a, 360);
+	if (a < 0)
+		a += 360;
+	return a;
+}
+inline float AngleNormalize180(float a)
+{
+	a = fmodf(a, 360);
+	if (a < -180)
+		a += 360;
+	else if (a > 180)
+		a -= 360;
+	return a;
+}
+inline float AngleDiff(float from, float to)
+{
+	return AngleNormalize180(to - from);
+}
+inline float AngleLerp(float a, float b, float s)
+{
+	return a + AngleDiff(a, b) * s;
+}
+inline float AngleMoveTowards(float cur, float tgt, float maxdist)
+{
+	float diff = AngleDiff(cur, tgt);
+	float dsign = sign(diff);
+	float dabs = fabsf(diff);
+	return cur + dsign * min(dabs, maxdist);
+}
 
 
 template <class T> struct Vec2
