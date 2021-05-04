@@ -444,6 +444,23 @@ void Test_Scrollbars()
 }
 
 
+struct TextboxTest : ui::Buildable
+{
+	void Build() override
+	{
+		ui::Text("Single line / selection (read only)");
+		ui::Make<ui::Textbox>().SetText("test 3.14 abc").SetInputDisabled(true);
+
+		ui::Text("Single line / editing");
+		ui::Make<ui::Textbox>().SetText("test 3.14 abc");
+	}
+};
+void Test_Textbox()
+{
+	ui::Make<TextboxTest>();
+}
+
+
 struct ColorBlockTest : ui::Buildable
 {
 	void Build() override

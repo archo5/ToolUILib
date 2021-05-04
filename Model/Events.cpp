@@ -414,7 +414,11 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 	if (moved)
 	{
 		for (int i = 0; i < 5; i++)
+		{
 			clickCounts[i] = 0;
+			mouseBtnPressCounts[i] = 0;
+			mouseBtnReleaseCounts[i] = 0;
+		}
 	}
 
 #if 0
@@ -465,6 +469,7 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
 {
 	int id = int(which);
+	uint32_t t = platform::GetTimeMs();
 
 	wasFocusSet = false;
 
@@ -475,6 +480,12 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 	if (down)
 	{
+		unsigned mouseBtnPressCount = (t - mouseBtnPressLastTimes[id] < platform::GetDoubleClickTime() ? mouseBtnPressCounts[id] : 0) + 1;
+		mouseBtnPressLastTimes[id] = t;
+		mouseBtnPressCounts[id] = mouseBtnPressCount;
+
+		ev.numRepeats = mouseBtnPressCount - 1;
+
 		for (auto* p = hoverObj; p; p = p->parent)
 			p->flags |= _UIObject_IsClicked_First << id;
 
@@ -492,13 +503,12 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 		if (clickObj[id] == hoverObj)
 		{
-			uint32_t t = platform::GetTimeMs();
 			unsigned clickCount = (t - clickLastTimes[id] < platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
 			clickLastTimes[id] = t;
 			clickCounts[id] = clickCount;
 
 			ev.type = EventType::Click;
-			ev.numRepeats = clickCount;
+			ev.numRepeats = clickCount - 1;
 			ev._stopPropagation = false;
 			BubblingEvent(ev);
 
@@ -558,6 +568,12 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 			}
 			dragEventAttempted = false;
 		}
+
+		unsigned mouseBtnReleaseCount = (t - mouseBtnReleaseLastTimes[id] < platform::GetDoubleClickTime() ? mouseBtnReleaseCounts[id] : 0) + 1;
+		mouseBtnReleaseLastTimes[id] = t;
+		mouseBtnReleaseCounts[id] = mouseBtnReleaseCount;
+
+		ev.numRepeats = mouseBtnReleaseCount - 1;
 
 		ev.type = EventType::ButtonUp;
 		ev._stopPropagation = false;

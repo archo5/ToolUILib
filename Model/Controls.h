@@ -475,9 +475,12 @@ struct Textbox : UIElement
 
 	std::string _text;
 	std::string _placeholder;
+	size_t _origStartCursor = 0;
 	size_t startCursor = 0;
 	size_t endCursor = 0;
 	bool showCaretState = false;
+	bool _hadFocusOnFirstClick = false;
+	unsigned _lastPressRepeatCount = 0;
 	float accumulator = 0;
 };
 

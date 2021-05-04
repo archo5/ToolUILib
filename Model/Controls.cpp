@@ -1169,22 +1169,49 @@ static size_t NextWord(StringView str, size_t pos)
 	return pos;
 }
 
+static void UpdateSelection(Textbox& tb, Event& e, bool start)
+{
+	if (start)
+	{
+		tb._lastPressRepeatCount = e.numRepeats;
+		tb._origStartCursor = tb._FindCursorPos(e.position.x);
+		if (e.numRepeats == 0)
+			tb._hadFocusOnFirstClick = tb.IsFocused();
+	}
+	unsigned mode = (tb._lastPressRepeatCount + (tb._hadFocusOnFirstClick ? 0 : 2)) % 3;
+	if (mode != 2)
+	{
+		tb.startCursor = tb._origStartCursor;
+		tb.endCursor = tb._FindCursorPos(e.position.x);
+		if (mode == 1)
+		{
+			tb.startCursor = PrevWord(tb._text, tb.startCursor);
+			tb.endCursor = NextWord(tb._text, tb.endCursor);
+		}
+	}
+	else
+	{
+		tb.startCursor = 0;
+		tb.endCursor = tb._text.size();
+	}
+}
+
 void Textbox::OnEvent(Event& e)
 {
 	if (e.type == EventType::ButtonDown)
 	{
 		if (e.GetButton() == MouseButton::Left)
-			startCursor = endCursor = _FindCursorPos(e.position.x);
+			UpdateSelection(*this, e, true);
 	}
 	else if (e.type == EventType::ButtonUp)
 	{
 		if (e.GetButton() == MouseButton::Left)
-			endCursor = _FindCursorPos(e.position.x);
+			UpdateSelection(*this, e, false);
 	}
 	else if (e.type == EventType::MouseMove)
 	{
 		if (IsClicked(0))
-			endCursor = _FindCursorPos(e.position.x);
+			UpdateSelection(*this, e, false);
 	}
 	else if (e.type == EventType::SetCursor)
 	{
@@ -1193,14 +1220,16 @@ void Textbox::OnEvent(Event& e)
 	}
 	else if (e.type == EventType::Timer)
 	{
+#if 0
 		showCaretState = !showCaretState;
 		if (IsFocused())
 			e.context->SetTimer(this, 0.5f);
+#endif
 	}
 	else if (e.type == EventType::GotFocus)
 	{
 		showCaretState = true;
-		e.context->SetTimer(this, 0.5f);
+		//e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == EventType::LostFocus)
 	{

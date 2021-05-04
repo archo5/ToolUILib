@@ -238,6 +238,10 @@ struct EventSystem
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
 	Point2f clickStartPositions[5] = {};
+	unsigned mouseBtnPressCounts[5] = {};
+	uint32_t mouseBtnPressLastTimes[5] = {};
+	unsigned mouseBtnReleaseCounts[5] = {};
+	uint32_t mouseBtnReleaseLastTimes[5] = {};
 	UIObject* focusObj = nullptr;
 	UIObject* lastFocusObj = nullptr;
 	std::vector<TimerData> pendingTimers;

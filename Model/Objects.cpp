@@ -143,15 +143,6 @@ void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 			}
 		}
 
-		if (HasFlags(f, UIObject_DB_FocusOnLeftClick))
-		{
-			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
-			{
-				e.context->SetKeyboardFocus(this);
-				e.StopPropagation();
-			}
-		}
-
 		if (HasFlags(f, UIObject_DB_CaptureMouseOnLeftClick))
 		{
 			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
@@ -171,6 +162,15 @@ void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 				flags &= ~UIObject_IsPressedMouse;
 				e.StopPropagation();
 			}
+		}
+	}
+
+	if (HasFlags(f, UIObject_DB_FocusOnLeftClick))
+	{
+		if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
+		{
+			e.context->SetKeyboardFocus(this);
+			e.StopPropagation();
 		}
 	}
 }
