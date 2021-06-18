@@ -86,7 +86,7 @@ void StateToggleVisualBase::OnPaint()
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
 		info.checkState = st->GetState();
-	styleProps->paint_func(info);
+	styleProps->background_painter->Paint(info);
 
 	PaintChildren();
 }
@@ -138,12 +138,12 @@ ProgressBar::ProgressBar()
 
 void ProgressBar::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	PaintInfo cinfo(this);
 	cinfo.rect = cinfo.rect.ShrinkBy(GetMarginRect(completionBarStyle, cinfo.rect.GetWidth()));
 	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
-	completionBarStyle->paint_func(cinfo);
+	completionBarStyle->background_painter->Paint(cinfo);
 
 	PaintChildren();
 }
@@ -159,13 +159,13 @@ void Slider::OnInit()
 
 void Slider::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	// track
 	PaintInfo trkinfo(this);
 	float w = trkinfo.rect.GetWidth();
 	trkinfo.rect = trkinfo.rect.ShrinkBy(GetMarginRect(trackStyle, w));
-	trackStyle->paint_func(trkinfo);
+	trackStyle->background_painter->Paint(trkinfo);
 
 	// track fill
 	trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
@@ -173,12 +173,12 @@ void Slider::OnPaint()
 	auto prethumb = trkinfo.rect;
 
 	trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));
-	trackFillStyle->paint_func(trkinfo);
+	trackFillStyle->background_painter->Paint(trkinfo);
 
 	// thumb
 	prethumb.x0 = prethumb.x1;
 	trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
-	thumbStyle->paint_func(trkinfo);
+	thumbStyle->background_painter->Paint(trkinfo);
 
 	PaintChildren();
 }
@@ -421,7 +421,7 @@ void LabeledProperty::OnInit()
 
 void LabeledProperty::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	if (!_labelText.empty())
 	{
@@ -577,7 +577,7 @@ static void CheckSplits(SplitPane* sp)
 
 void SplitPane::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 	PaintChildren();
 
 	PaintInfo info(this);
@@ -592,7 +592,7 @@ void SplitPane::OnPaint()
 				info.state |= PS_Hover;
 			if (_splitUI.IsPressed(ii))
 				info.state |= PS_Down;
-			vertSepStyle->paint_func(info);
+			vertSepStyle->background_painter->Paint(info);
 		}
 	}
 	else
@@ -606,7 +606,7 @@ void SplitPane::OnPaint()
 				info.state |= PS_Hover;
 			if (_splitUI.IsPressed(ii))
 				info.state |= PS_Down;
-			horSepStyle->paint_func(info);
+			horSepStyle->background_painter->Paint(info);
 		}
 	}
 }
@@ -791,7 +791,7 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 	PaintInfo vsinfo;
 	vsinfo.obj = info.owner;
 	vsinfo.rect = info.rect;
-	trackVStyle->paint_func(vsinfo);
+	trackVStyle->background_painter->Paint(vsinfo);
 
 	vsinfo.rect = GetThumbRect(info);
 	vsinfo.state = 0;
@@ -804,7 +804,7 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 		if (uiState.IsPressed(0))
 			vsinfo.state |= PS_Down;
 	}
-	thumbVStyle->paint_func(vsinfo);
+	thumbVStyle->background_painter->Paint(vsinfo);
 }
 
 void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
@@ -857,7 +857,7 @@ ScrollArea::ScrollArea()
 
 void ScrollArea::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	PaintChildren();
 
@@ -940,7 +940,7 @@ TabButtonList::TabButtonList()
 
 void TabButtonList::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	if (auto* g = FindParentOfType<TabGroup>())
 	{
@@ -975,7 +975,7 @@ void TabButtonBase::OnPaint()
 	PaintInfo info(this);
 	if (IsSelected())
 		info.checkState = 1;
-	styleProps->paint_func(info);
+	styleProps->background_painter->Paint(info);
 	PaintChildren();
 }
 
@@ -1000,7 +1000,7 @@ TabPanel::TabPanel()
 
 void TabPanel::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	if (auto* g = FindParentOfType<TabGroup>())
 		if (g->_activeBtn)
@@ -1019,7 +1019,7 @@ Textbox::Textbox()
 void Textbox::OnPaint()
 {
 	// background
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	{
 		auto r = GetContentRect();
@@ -1462,7 +1462,7 @@ void CollapsibleTreeNode::OnPaint()
 		info.state |= PS_Hover;
 	if (open)
 		info.checkState = 1;
-	styleProps->paint_func(info);
+	styleProps->background_painter->Paint(info);
 	PaintChildren();
 }
 

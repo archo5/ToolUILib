@@ -138,6 +138,66 @@ void Test_RenderingPrimitives()
 }
 
 
+struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
+{
+    ui::StyleBlockRef buttonStyle;
+    ui::StyleBlockRef checkboxStyle;
+    ui::StyleBlockRef radioBtnStyle;
+
+    void OnInit() override
+    {
+        buttonStyle = ui::Theme::current->button;
+        checkboxStyle = ui::Theme::current->checkbox;
+        radioBtnStyle = ui::Theme::current->radioButton;
+        BeginAnimation();
+    }
+    void OnPaint() override
+    {
+        ui::PaintInfo pi(this);
+        constexpr int W = 10;
+        constexpr int H = 10;
+        for (int yi = 0; yi < 100; yi++)
+        {
+            float y = yi * H;
+            for (int xi = 0; xi < 16; xi++)
+            {
+                float x = xi * W;
+                pi.state = xi;
+                pi.rect = { x, y, x + W, y + H };
+                buttonStyle->background_painter->Paint(pi);
+            }
+            for (int xi = 0; xi < 16; xi++)
+            {
+                float x = (xi + 16) * W;
+                pi.state = xi;
+                pi.rect = { x, y, x + W, y + H };
+                checkboxStyle->background_painter->Paint(pi);
+            }
+            for (int xi = 0; xi < 16; xi++)
+            {
+                float x = (xi + 32) * W;
+                pi.state = xi;
+                pi.rect = { x, y, x + W, y + H };
+                radioBtnStyle->background_painter->Paint(pi);
+            }
+        }
+    }
+    void Build() override
+    {
+        *this + ui::SetWidth(1000);
+        *this + ui::SetHeight(1000);
+    }
+    void OnAnimationFrame() override
+    {
+        GetNativeWindow()->InvalidateAll();
+    }
+};
+void Test_StylePainting()
+{
+    ui::Make<StylePaintingTest>();
+}
+
+
 struct EventsTest : ui::Buildable
 {
 	static constexpr unsigned MAX_MESSAGES = 50;
@@ -374,7 +434,7 @@ struct SubUITest : ui::Buildable
 	void OnPaint() override
 	{
 		ui::PaintInfo info(this);
-		ui::Theme::current->textBoxBase->paint_func(info);
+		ui::Theme::current->textBoxBase->background_painter->Paint(info);
 		auto r = finalRectC;
 
 		ui::draw::RectCol(r.x0, r.y0, r.x0 + 50, r.y0 + 50, PickColor(0, { 0, 0, 1, 0.5f }, { 0, 1, 0, 0.5f }, { 1, 0, 0, 0.5f }));

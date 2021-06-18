@@ -17,7 +17,7 @@ struct SubUIBenchmark : ui::Buildable
 	void OnPaint() override
 	{
 		ui::PaintInfo info(this);
-		ui::Theme::current->textBoxBase->paint_func(info);
+		ui::Theme::current->textBoxBase->background_painter->Paint(info);
 		auto r = finalRectC;
 
 		for (uint16_t pid = 0; pid < points.size(); pid++)

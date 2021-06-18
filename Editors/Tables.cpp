@@ -44,7 +44,7 @@ void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect a
 
 void MessageLogView::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
@@ -173,7 +173,7 @@ void TableView::OnInit()
 
 void TableView::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
@@ -214,7 +214,7 @@ void TableView::OnPaint()
 
 	if (enableRowHeader)
 	{
-	// - row header
+		// - row header
 		draw::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
 		// background:
 		for (size_t r = minR; r < maxR; r++)
@@ -226,7 +226,7 @@ void TableView::OnPaint()
 				RC.x0 + rhw,
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			rowHeaderStyle->paint_func(info);
+			rowHeaderStyle->background_painter->Paint(info);
 		}
 		// text:
 		for (size_t r = minR; r < maxR; r++)
@@ -256,7 +256,7 @@ void TableView::OnPaint()
 			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		colHeaderStyle->paint_func(info);
+		colHeaderStyle->background_painter->Paint(info);
 	}
 	// text:
 	for (size_t c = 0; c < nc; c++)
@@ -292,7 +292,7 @@ void TableView::OnPaint()
 				info.state |= PS_Hover;
 			else
 				info.state &= ~PS_Hover;
-			cellStyle->paint_func(info);
+			cellStyle->background_painter->Paint(info);
 		}
 	}
 	// text:
@@ -594,7 +594,7 @@ TreeView::~TreeView()
 
 void TreeView::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	int chh = 20;
 	int h = 20;
@@ -616,7 +616,7 @@ void TreeView::OnPaint()
 			RC.x0 + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		colHeaderStyle->paint_func(info);
+		colHeaderStyle->background_painter->Paint(info);
 	}
 
 	// text
@@ -654,7 +654,7 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 			ps.x + _impl->colEnds[c + 1],
 			ps.y + h,
 		};
-		cellStyle->paint_func(ps.info);
+		cellStyle->background_painter->Paint(ps.info);
 	}
 
 	// text

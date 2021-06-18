@@ -130,6 +130,133 @@ void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 }
 
 
+struct ThemeElementPainter : IPainter
+{
+	static constexpr int MAX_ELEMENTS = 16;
+	EThemeElement elements[MAX_ELEMENTS] = {};
+
+	ThemeElementPainter() {}
+	ThemeElementPainter(EThemeElement e) { SetAll(e); }
+	ThemeElementPainter* SetAll(EThemeElement e)
+	{
+		for (int i = 0; i < MAX_ELEMENTS; i++)
+			elements[i] = e;
+		return this;
+	}
+	ThemeElementPainter* SetNormalDisabled(EThemeElement normal, EThemeElement disabled)
+	{
+		for (int i = 0; i < MAX_ELEMENTS; i++)
+			elements[i] = i & PS_Disabled ? disabled : normal;
+		return this;
+	}
+	ThemeElementPainter* SetNormalHoverPressedDisabled(EThemeElement normal, EThemeElement hover, EThemeElement pressed, EThemeElement disabled)
+	{
+		for (int i = 0; i < MAX_ELEMENTS; i++)
+		{
+			elements[i] =
+				i & PS_Disabled ? disabled : 
+				i & PS_Down ? pressed :
+				i & PS_Hover ? hover :
+				normal;
+		}
+		return this;
+	}
+	void Paint(const PaintInfo& info) override
+	{
+		auto r = info.rect;
+		DrawThemeElement(elements[info.state & (MAX_ELEMENTS - 1)], r.x0, r.y0, r.x1, r.y1);
+	}
+};
+
+struct CheckButtonThemeElementPainter : IPainter
+{
+	void Paint(const PaintInfo& info) override
+	{
+		auto r = info.rect;
+		DrawThemeElement(
+			info.IsDisabled() ? TE_ButtonDisabled :
+			info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
+			info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
+		if (info.IsFocused())
+			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+	}
+};
+
+struct CheckableThemeElementPainter : IPainter
+{
+	EThemeElement elNormal;
+	EThemeElement elHover;
+	EThemeElement elPressed;
+	EThemeElement elDisabled;
+
+	EThemeElement elChecked;
+	EThemeElement elCheckedDisabled;
+	EThemeElement elIndChecked;
+	EThemeElement elIndCheckedDisabled;
+
+	CheckableThemeElementPainter* InitCheckbox()
+	{
+		elNormal = TE_CheckBgrNormal;
+		elHover = TE_CheckBgrHover;
+		elPressed = TE_CheckBgrPressed;
+		elDisabled = TE_CheckBgrDisabled;
+
+		elChecked = TE_CheckMark;
+		elCheckedDisabled = TE_CheckMarkDisabled;
+		elIndChecked = TE_CheckInd;
+		elIndCheckedDisabled = TE_CheckIndDisabled;
+		return this;
+	}
+	CheckableThemeElementPainter* InitRadioButton()
+	{
+		elNormal = TE_RadioBgrNormal;
+		elHover = TE_RadioBgrHover;
+		elPressed = TE_RadioBgrPressed;
+		elDisabled = TE_RadioBgrDisabled;
+
+		elChecked = TE_RadioMark;
+		elCheckedDisabled = TE_RadioMarkDisabled;
+		elIndChecked = TE_RadioMark;
+		elIndCheckedDisabled = TE_RadioMarkDisabled;
+		return this;
+	}
+
+	void Paint(const PaintInfo& info) override
+	{
+		auto r = info.rect;
+		float w = min(r.GetWidth(), r.GetHeight());
+		bool disabled = info.IsDisabled();
+		DrawThemeElement(
+			disabled ? elDisabled :
+			info.IsDown() ? elPressed :
+			info.IsHovered() ? elHover : elNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
+		if (info.checkState == 1)
+			DrawThemeElement(disabled ? elCheckedDisabled : elChecked, r.x0, r.y0, r.x0 + w, r.y0 + w);
+		else if (info.checkState)
+			DrawThemeElement(disabled ? elIndCheckedDisabled : elIndChecked, r.x0, r.y0, r.x0 + w, r.y0 + w);
+		if (info.IsFocused())
+			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
+	}
+};
+
+struct BorderRectanglePainter : IPainter
+{
+	Color4b backgroundColor;
+	Color4b borderColor;
+
+	BorderRectanglePainter(Color4b bgcol, Color4b bordercol) : backgroundColor(bgcol), borderColor(bordercol) {}
+	void Paint(const PaintInfo& info) override
+	{
+		auto r = info.rect;
+		draw::RectCol(r.x0, r.y0, r.x1, r.y1, backgroundColor);
+		draw::RectCol(r.x0, r.y0, r.x1, r.y0 + 1, borderColor);
+		draw::RectCol(r.x0, r.y0, r.x0 + 1, r.y1, borderColor);
+		draw::RectCol(r.x0, r.y1 - 1, r.x1, r.y1, borderColor);
+		draw::RectCol(r.x1 - 1, r.y0, r.x1, r.y1, borderColor);
+	}
+};
+
+
 struct DefaultTheme : Theme
 {
 	StyleBlock dtObject;
@@ -213,9 +340,7 @@ struct DefaultTheme : Theme
 	{
 		StyleAccessor a(&dtObject);
 		PreventHeapDelete(a);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.object = a.block;
 	}
 	void CreateText()
@@ -224,9 +349,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::InlineBlock());
 		a.SetBoxSizing(BoxSizing::ContentBox);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.text = a.block;
 	}
 	void CreateProperty()
@@ -235,9 +358,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::StackExpand());
 		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.property = a.block;
 	}
 	void CreatePropLabel()
@@ -245,9 +366,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtPropLabel);
 		PreventHeapDelete(a);
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
 	}
 	void CreatePanel()
@@ -256,11 +375,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetMargin(2);
 		a.SetPadding(6);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
 		defaultTheme.panel = a.block;
 	}
 	void CreateHeader()
@@ -269,7 +384,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetFontWeight(FontWeight::Bold);
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info) {});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.header = a.block;
 	}
 	void CreateButton()
@@ -282,16 +397,7 @@ struct DefaultTheme : Theme
 		a.SetHAlign(HAlign::Center);
 		a.SetWidth(Coord::Fraction(1));
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(
-				info.IsDisabled() ? TE_ButtonDisabled :
-				info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
-				info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-		});
+		a.SetBackgroundPainter(new CheckButtonThemeElementPainter);
 		defaultTheme.button = a.block;
 	}
 	void CreateCheckbox()
@@ -303,21 +409,7 @@ struct DefaultTheme : Theme
 		//a.SetHeight(Coord::Percent(12));
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			float w = min(r.GetWidth(), r.GetHeight());
-			DrawThemeElement(
-				info.IsDisabled() ? TE_CheckBgrDisabled :
-				info.IsDown() ? TE_CheckBgrPressed :
-				info.IsHovered() ? TE_CheckBgrHover : TE_CheckBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			if (info.checkState == 1)
-				DrawThemeElement(info.IsDisabled() ? TE_CheckMarkDisabled : TE_CheckMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			else if (info.checkState)
-				DrawThemeElement(info.IsDisabled() ? TE_CheckIndDisabled : TE_CheckInd, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
-		});
+		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitCheckbox());
 		defaultTheme.checkbox = a.block;
 	}
 	void CreateRadioButton()
@@ -332,19 +424,7 @@ struct DefaultTheme : Theme
 		//a.SetHeight(GetFontHeight());
 		a.SetPadding(5);
 		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			float w = min(r.GetWidth(), r.GetHeight());
-			DrawThemeElement(
-				info.IsDisabled() ? TE_RadioBgrDisabled :
-				info.IsDown() ? TE_RadioBgrPressed :
-				info.IsHovered() ? TE_RadioBgrHover : TE_RadioBgrNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			if (info.IsChecked())
-				DrawThemeElement(info.IsDisabled() ? TE_RadioMarkDisabled : TE_RadioMark, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
-		});
+		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitRadioButton());
 		defaultTheme.radioButton = a.block;
 	}
 	void CreateSelectable()
@@ -355,7 +435,7 @@ struct DefaultTheme : Theme
 		a.SetStackingDirection(StackingDirection::LeftToRight);
 		a.SetWidth(Coord::Fraction(1));
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (info.IsChecked() || info.IsDown() || info.IsHovered())
@@ -371,7 +451,7 @@ struct DefaultTheme : Theme
 			}
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-		});
+		}));
 		defaultTheme.selectable = a.block;
 	}
 	void CreateCollapsibleTreeNode()
@@ -384,14 +464,14 @@ struct DefaultTheme : Theme
 		a.SetLayout(layouts::InlineBlock());
 		a.SetWidth(GetFontHeight() + 5 + 5);
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			float w = min(r.GetWidth(), r.GetHeight());
 			DrawThemeElement(info.IsHovered() ?
 				info.IsChecked() ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
 				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		});
+		}));
 		defaultTheme.collapsibleTreeNode = a.block;
 	}
 	void CreateTextBoxBase()
@@ -402,13 +482,13 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetWidth(Coord::Fraction(1));
 		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-		});
+		}));
 		defaultTheme.textBoxBase = a.block;
 	}
 	void CreateListBox()
@@ -417,11 +497,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::Stack());
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
 		defaultTheme.listBox = a.block;
 	}
 	void CreateProgressBarBase()
@@ -430,11 +506,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetWidth(Coord::Percent(100));
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
 		defaultTheme.progressBarBase = a.block;
 	}
 	void CreateProgressBarCompletion()
@@ -443,11 +515,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::InlineBlock());
 		a.SetMargin(2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_ButtonNormal, TE_ButtonDisabled));
 		defaultTheme.progressBarCompletion = a.block;
 	}
 	void CreateSliderHBase()
@@ -456,9 +524,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPaddingTop(20);
 		a.SetWidth(Coord::Fraction(1));
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.sliderHBase = a.block;
 	}
 	void CreateSliderHTrack()
@@ -466,7 +532,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtSliderHTrack);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -475,7 +541,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
-		});
+		}));
 		defaultTheme.sliderHTrack = a.block;
 	}
 	void CreateSliderHTrackFill()
@@ -483,7 +549,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtSliderHTrackFill);
 		PreventHeapDelete(a);
 		a.SetMargin(8);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			if (r.GetWidth() > 0)
@@ -492,7 +558,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
-		});
+		}));
 		defaultTheme.sliderHTrackFill = a.block;
 	}
 	void CreateSliderHThumb()
@@ -500,15 +566,8 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtSliderHThumb);
 		PreventHeapDelete(a);
 		a.SetPadding(6, 4);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(
-				info.IsDown() ? TE_ButtonPressed :
-				info.IsHovered() ? TE_ButtonHover :
-				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
-				r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
+			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
 		defaultTheme.sliderHThumb = a.block;
 	}
 	void CreateScrollVTrack()
@@ -517,11 +576,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetWidth(20);
 		a.SetPadding(2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
 		defaultTheme.scrollVTrack = a.block;
 	}
 	void CreateScrollVThumb()
@@ -529,15 +584,8 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtScrollVThumb);
 		PreventHeapDelete(a);
 		a.SetMinHeight(16);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(
-				info.IsDown() ? TE_ButtonPressed :
-				info.IsHovered() ? TE_ButtonHover :
-				info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal,
-				r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
+			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
 		defaultTheme.scrollVThumb = a.block;
 	}
 	void CreateTabGroup()
@@ -545,9 +593,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtTabGroup);
 		PreventHeapDelete(a);
 		a.SetMargin(2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.tabGroup = a.block;
 	}
 	void CreateTabList()
@@ -557,9 +603,7 @@ struct DefaultTheme : Theme
 		a.SetPadding(0, 4);
 		a.SetLayout(layouts::Stack());
 		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.tabList = a.block;
 	}
 	void CreateTabButton()
@@ -568,13 +612,13 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(5);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			auto r = info.rect;
 			DrawThemeElement(
 				info.IsDown() || info.IsChecked() ? TE_TabSelected :
 				info.IsHovered() ? TE_TabHover : TE_TabNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		}));
 		defaultTheme.tabButton = a.block;
 	}
 	void CreateTabPanel()
@@ -584,11 +628,7 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetWidth(Coord::Percent(100));
 		a.SetMarginTop(-2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_TabPanel, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_TabPanel));
 		defaultTheme.tabPanel = a.block;
 	}
 	void CreateTableBase()
@@ -597,11 +637,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetPadding(5);
 		a.SetWidth(Coord::Percent(100));
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_TextboxNormal));
 		defaultTheme.tableBase = a.block;
 	}
 	void CreateTableCell()
@@ -609,7 +645,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtTableCell);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const PaintInfo& info)
+		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
 		{
 			Color4f colContents;
 			if (info.IsChecked())
@@ -631,7 +667,7 @@ struct DefaultTheme : Theme
 			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
 			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
 			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
-		});
+		}));
 		defaultTheme.tableCell = a.block;
 	}
 	void CreateTableRowHeader()
@@ -639,15 +675,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtTableRowHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
-			Color4f colEdge(0.2f, 0.2f, 0.2f);
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
-		});
+		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
 		defaultTheme.tableRowHeader = a.block;
 	}
 	void CreateTableColHeader()
@@ -655,15 +683,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtTableColHeader);
 		PreventHeapDelete(a);
 		a.SetPadding(1, 2);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, Color4f(0.1f, 0.1f, 0.1f));
-			Color4f colEdge(0.2f, 0.2f, 0.2f);
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
-		});
+		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
 		defaultTheme.tableColHeader = a.block;
 	}
 	void CreateColorBlock()
@@ -674,11 +694,7 @@ struct DefaultTheme : Theme
 		a.SetHeight(20);
 		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(3);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
 		defaultTheme.colorBlock = a.block;
 	}
 	void CreateColorInspectBlock()
@@ -689,11 +705,7 @@ struct DefaultTheme : Theme
 		a.SetHeight(20);
 		a.SetLayout(layouts::InlineBlock());
 		a.SetPadding(3);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_Panel, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
 		defaultTheme.colorInspectBlock = a.block;
 	}
 	void CreateImage()
@@ -701,9 +713,7 @@ struct DefaultTheme : Theme
 		StyleAccessor a(&dtImage);
 		PreventHeapDelete(a);
 		a.SetLayout(layouts::InlineBlock());
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-		});
+		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.image = a.block;
 	}
 	void CreateSelectorContainer()
@@ -719,11 +729,7 @@ struct DefaultTheme : Theme
 		PreventHeapDelete(a);
 		a.SetWidth(16);
 		a.SetHeight(16);
-		a.SetPaintFunc([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(TE_Selector16, r.x0, r.y0, r.x1, r.y1);
-		});
+		a.SetBackgroundPainter(new ThemeElementPainter(TE_Selector16));
 		defaultTheme.selector = a.block;
 	}
 

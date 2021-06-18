@@ -244,7 +244,7 @@ void UIObject::UnregisterAsOverlay()
 
 void UIObject::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 	PaintChildren();
 }
 
@@ -857,7 +857,7 @@ void TextElement::OnPaint()
 
 	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
@@ -879,7 +879,7 @@ void Placeholder::OnPaint()
 
 	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;

@@ -329,7 +329,7 @@ void ProcGraphEditor::OnEvent(Event& e)
 
 void ProcGraphEditor::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	if (!drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();

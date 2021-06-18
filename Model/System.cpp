@@ -435,7 +435,7 @@ void InlineFrame::OnEvent(Event& ev)
 
 void InlineFrame::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	if (frameContents &&
 		frameContents->container.rootBuildable)

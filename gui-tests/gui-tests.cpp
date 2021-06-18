@@ -319,6 +319,7 @@ struct DataEditor : ui::Buildable
 
 
 void Test_RenderingPrimitives();
+void Test_StylePainting();
 void Test_KeyboardEvents();
 void Test_RawMouseEvents();
 void Test_OpenClose();
@@ -391,6 +392,7 @@ static const TestEntry coreTestEntries[] =
 	{},
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
+	{ "Style painting", Test_StylePainting },
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },
 	{ "[Raw] Mouse", Test_RawMouseEvents },

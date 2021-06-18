@@ -18,13 +18,7 @@ void MeshEditorWindowNode::Build()
 				view3d + ui::SetWidth(ui::Coord::Percent(100));
 				view3d + ui::SetHeight(ui::Coord::Percent(100));
 				view3d + ui::SetLayout(ui::layouts::EdgeSlice());
-				auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
-				view3d.GetStyle().SetPaintFunc([bgr](const ui::PaintInfo& info)
-				{
-					auto r = info.rect;
-
-					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
-				});
+				view3d.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
 				{

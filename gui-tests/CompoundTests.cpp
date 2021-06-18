@@ -232,6 +232,15 @@ void Test_PropertyList()
 
 struct SlidersTest : ui::Buildable
 {
+	struct MyGradientPainter : ui::IPainter
+	{
+		void Paint(const ui::PaintInfo& info) override
+		{
+			auto r = info.rect;
+			ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
+		}
+	};
+
 	void Build() override
 	{
 		static float sldval0 = 0.63f;
@@ -252,13 +261,11 @@ struct SlidersTest : ui::Buildable
 		{
 			auto& s = ui::Make<ui::Slider>().Init(sldval3, { 0, 1 });
 			ui::StyleAccessor a = s.GetTrackStyle();
-			a.SetPaintFunc([fn{ a.GetPaintFunc() }](const ui::PaintInfo& info)
-			{
-				fn(info);
-				auto r = info.rect;
-				ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
-			});
-			s.GetTrackFillStyle().SetPaintFunc([](const ui::PaintInfo& info) {});
+			auto lp = ui::LayerPainter::Create();
+			lp->layers.push_back(a.GetBackgroundPainter());
+			lp->layers.push_back(new MyGradientPainter);
+			a.SetBackgroundPainter(lp);
+			s.GetTrackFillStyle().SetBackgroundPainter(ui::EmptyPainter::Get());
 		}
 		ui::Property::End();
 

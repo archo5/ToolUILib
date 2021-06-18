@@ -4,6 +4,7 @@
 #include "../Core/Math.h"
 #include "../Core/String.h"
 #include "../Core/Image.h"
+#include "../Core/RefCounted.h"
 
 #include <vector>
 #include <functional>
@@ -342,6 +343,7 @@ struct Coord
 	static Coord Fraction(float f) { return Coord(f, CoordTypeUnit::Fraction); }
 };
 
+
 enum PaintInfoItemState
 {
 	PS_Hover = 1 << 0,
@@ -366,13 +368,47 @@ struct PaintInfo
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
-using PaintFunction = std::function<void(const PaintInfo&)>;
-inline bool operator == (const PaintFunction& a, const PaintFunction& b)
+struct IPainter : RefCountedST
 {
-	// cannot compare two instances in practice
-	// even if the underlying function pointer is the same, data may be different
-	return false;
-}
+	virtual void Paint(const PaintInfo&) = 0;
+};
+using PainterHandle = RCHandle<IPainter>;
+
+struct EmptyPainter : IPainter
+{
+	void Paint(const PaintInfo&) override;
+	static EmptyPainter* Get();
+private:
+	EmptyPainter();
+};
+
+struct CheckerboardPainter : IPainter
+{
+	void Paint(const PaintInfo&) override;
+	static CheckerboardPainter* Get();
+private:
+	CheckerboardPainter();
+};
+
+struct LayerPainter : IPainter
+{
+	std::vector<PainterHandle> layers;
+
+	void Paint(const PaintInfo&) override;
+	static RCHandle<LayerPainter> Create();
+};
+
+template <class F>
+struct FunctionPainterT : IPainter
+{
+	F func;
+
+	FunctionPainterT(F&& f) : func(std::move(f)) {}
+	void Paint(const PaintInfo& info) override { func(info); }
+};
+
+template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(std::move(f)); }
+
 
 struct PropChange
 {
@@ -436,7 +472,7 @@ struct StyleBlock
 	ILayout* layout = nullptr;
 	IPlacement* placement = nullptr;
 
-	PaintFunction paint_func;
+	PainterHandle background_painter;
 
 	Presence presence = Presence::Undefined;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
@@ -537,8 +573,8 @@ public:
 	IPlacement* GetPlacement() const;
 	void SetPlacement(IPlacement* v);
 
-	PaintFunction GetPaintFunc() const;
-	void SetPaintFunc(const PaintFunction& f);
+	PainterHandle GetBackgroundPainter() const;
+	void SetBackgroundPainter(const PainterHandle& h);
 
 
 	StackingDirection GetStackingDirection() const;

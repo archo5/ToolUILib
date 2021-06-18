@@ -90,14 +90,7 @@ void TabImages::Build()
 				auto& img = ui::Make<ui::ImageElement>();
 				img + ui::SetWidth(ui::Coord::Percent(100));
 				img + ui::SetHeight(ui::Coord::Percent(100));
-				img.GetStyle().SetPaintFunc([](const ui::PaintInfo& info)
-				{
-					auto bgr = ui::Theme::current->GetImage(ui::ThemeImage::CheckerboardBackground);
-
-					auto r = info.rect;
-
-					ui::draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
-				});
+				img.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				img.SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
 				img.SetScaleMode(ui::ScaleMode::Fit);
 				ui::Pop();

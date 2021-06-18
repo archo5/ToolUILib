@@ -1,5 +1,6 @@
 
 #include "Layout.h"
+#include "Theme.h"
 
 #include "Native.h"
 #include "Objects.h"
@@ -404,6 +405,56 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 }
 
 
+void EmptyPainter::Paint(const PaintInfo&)
+{
+	// do nothing
+}
+
+EmptyPainter* EmptyPainter::Get()
+{
+	static EmptyPainter ep;
+	return &ep;
+}
+
+EmptyPainter::EmptyPainter()
+{
+	AddRef();
+}
+
+
+void CheckerboardPainter::Paint(const PaintInfo& info)
+{
+	auto bgr = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
+
+	auto r = info.rect;
+
+	draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+}
+
+CheckerboardPainter* CheckerboardPainter::Get()
+{
+	static CheckerboardPainter ep;
+	return &ep;
+}
+
+CheckerboardPainter::CheckerboardPainter()
+{
+	AddRef();
+}
+
+
+void LayerPainter::Paint(const PaintInfo& info)
+{
+	for (const auto& h : layers)
+		h->Paint(info);
+}
+
+RCHandle<LayerPainter> LayerPainter::Create()
+{
+	return new LayerPainter;
+}
+
+
 void StyleBlock::MergeDirect(const StyleBlock& o)
 {
 	//if (display == Display::Undefined) display = o.display;
@@ -599,14 +650,14 @@ void StyleAccessor::SetPlacement(IPlacement* v)
 	AccSet(*this, offsetof(StyleBlock, placement), v);
 }
 
-PaintFunction StyleAccessor::GetPaintFunc() const
+PainterHandle StyleAccessor::GetBackgroundPainter() const
 {
-	return block->paint_func;
+	return block->background_painter;
 }
 
-void StyleAccessor::SetPaintFunc(const PaintFunction& f)
+void StyleAccessor::SetBackgroundPainter(const PainterHandle& h)
 {
-	AccSet(*this, offsetof(StyleBlock, paint_func), f);
+	AccSet(*this, offsetof(StyleBlock, background_painter), h);
 }
 
 

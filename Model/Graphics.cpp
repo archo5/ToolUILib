@@ -17,7 +17,7 @@ void ColorBlock::OnInit()
 
 void ColorBlock::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	auto r = GetContentRect();
 
@@ -40,7 +40,7 @@ void ColorInspectBlock::OnInit()
 
 void ColorInspectBlock::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	auto r = GetContentRect();
 
@@ -134,7 +134,7 @@ void ImageElement::OnPaint()
 			_image = draw::ImageLoadFromFile(_delayLoadPath, draw::TexFlags::None);
 		}
 
-		styleProps->paint_func(this);
+		styleProps->background_painter->Paint(this);
 
 		if (_bgImage)
 		{
@@ -241,7 +241,7 @@ void HueSatPicker::OnPaint()
 	sy = roundf(sy - sh / 2);
 	PaintInfo info(this);
 	info.rect = { sx, sy, sx + sw, sy + sh };
-	selectorStyle->paint_func(info);
+	selectorStyle->background_painter->Paint(info);
 
 	PaintChildren();
 }
@@ -315,7 +315,7 @@ void ColorCompPicker2D::OnPaint()
 	sy = roundf(sy - sh / 2);
 	PaintInfo info(this);
 	info.rect = { sx, sy, sx + sw, sy + sh };
-	selectorStyle->paint_func(info);
+	selectorStyle->background_painter->Paint(info);
 
 	PaintChildren();
 }
@@ -537,13 +537,13 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._hue, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, sat{ _color._sat }, val{ _color._val }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, sat{ _color._sat }, val{ _color._val }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					for (int i = 0; i < 6; i++)
 						DrawHGradQuad(RectHSlice(info.rect, i, 6), Color4f::HSV(i / 6.0f, sat, val), Color4f::HSV((i + 1) / 6.0f, sat, val));
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._hue) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End();
@@ -554,12 +554,12 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._sat, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, val{ _color._val }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, hue{ _color._hue }, val{ _color._val }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, 0, val), Color4f::HSV(hue, 1, val));
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._sat) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End();
@@ -570,12 +570,12 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._val, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, hue{ _color._hue }, sat{ _color._sat }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, hue{ _color._hue }, sat{ _color._sat }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, sat, 0), Color4f::HSV(hue, sat, 1));
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._val) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
 			Property::End();
@@ -586,12 +586,12 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._rgba.r, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					DrawHGradQuad(info.rect, { 0, col.g, col.b }, { 1, col.g, col.b });
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.r) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End();
@@ -602,12 +602,12 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._rgba.g, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, 0, col.b }, { col.r, 1, col.b });
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.g) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End();
@@ -618,12 +618,12 @@ void ColorPicker::Build()
 				auto& sl = Make<Slider>().Init(_color._rgba.b, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
-				a.SetPaintFunc([fn{ a.GetPaintFunc() }, col{ _color._rgba }](const PaintInfo& info)
+				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
 				{
-					fn(info);
+					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, col.g, 0 }, { col.r, col.g, 1 });
-				});
-				sl.GetTrackFillStyle().SetPaintFunc([](const PaintInfo& info) {});
+				}));
+				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.b) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
 			Property::End();
@@ -811,7 +811,7 @@ ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
 
 void View2D::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	auto r = finalRectC;
 	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
@@ -827,7 +827,7 @@ void View2D::OnPaint()
 
 void View3D::OnPaint()
 {
-	styleProps->paint_func(this);
+	styleProps->background_painter->Paint(this);
 
 	auto r = finalRectC;
 	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))

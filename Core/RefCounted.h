@@ -45,6 +45,8 @@ public:
 template <class T>
 class RCHandle
 {
+	template<typename> friend class RCHandle;
+
 	T* _ptr;
 
 public:
@@ -61,6 +63,17 @@ public:
 			_ptr->AddRef();
 	}
 	RCHandle(RCHandle&& o) : _ptr(o._ptr)
+	{
+		o._ptr = nullptr;
+	}
+	template <class OT>
+	RCHandle(const RCHandle<OT>& o) : _ptr(o._ptr)
+	{
+		if (_ptr)
+			_ptr->AddRef();
+	}
+	template <class OT>
+	RCHandle(RCHandle<OT>&& o) : _ptr(o._ptr)
 	{
 		o._ptr = nullptr;
 	}
@@ -107,6 +120,31 @@ public:
 		}
 		return *this;
 	}
+	template <class OT>
+	RCHandle& operator = (const RCHandle<OT>& o)
+	{
+		if (_ptr != o._ptr)
+		{
+			if (_ptr)
+				_ptr->Release();
+			_ptr = o._ptr;
+			if (_ptr)
+				_ptr->AddRef();
+		}
+		return *this;
+	}
+	template <class OT>
+	RCHandle& operator = (RCHandle<OT>&& o)
+	{
+		if (this != &o)
+		{
+			if (_ptr)
+				_ptr->Release();
+			_ptr = o._ptr;
+			o._ptr = nullptr;
+		}
+		return *this;
+	}
 
 	void Release()
 	{
@@ -129,5 +167,7 @@ public:
 	bool operator != (const RCHandle& o) const { return _ptr != o._ptr; }
 #endif
 };
+
+template <class T> inline RCHandle<T> AsRCHandle(T* ptr) { return ptr; }
 
 } // ui
