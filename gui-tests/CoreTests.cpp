@@ -342,6 +342,85 @@ void Test_OpenClose()
 }
 
 
+struct AppendMixTest : ui::Buildable
+{
+	enum Mode
+	{
+		Nothing,
+		Inline,
+		Append1,
+		Append2,
+	};
+	Mode mode = Nothing;
+
+	ui::TextElement* append1;
+	ui::TextElement* append2;
+
+	void OnInit() override
+	{
+		append1 = new ui::TextElement;
+		append1->system = system;
+		append1->SetText("append one");
+
+		append2 = new ui::TextElement;
+		append2->system = system;
+		append2->SetText("append two");
+	}
+
+	void OnDestroy() override
+	{
+		delete append1;
+		delete append2;
+	}
+
+	void Build() override
+	{
+		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Nothing).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Make<ui::RadioButtonIcon>();
+		ui::Text("Nothing");
+		ui::Pop();
+
+		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Inline).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Make<ui::RadioButtonIcon>();
+		ui::Text("Inline");
+		ui::Pop();
+
+		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Append1).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Make<ui::RadioButtonIcon>();
+		ui::Text("Append (1)");
+		ui::Pop();
+
+		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Append2).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Make<ui::RadioButtonIcon>();
+		ui::Text("Append (2)");
+		ui::Pop();
+
+		ui::Push<ui::Panel>();
+
+		switch (mode)
+		{
+		case Nothing:
+			break;
+		case Inline:
+			ui::Text("inline");
+			break;
+		case Append1:
+			ui::Append(append1);
+			break;
+		case Append2:
+			ui::Append(append2);
+			break;
+		}
+
+		ui::Pop();
+	}
+};
+void Test_AppendMix()
+{
+	ui::Make<AppendMixTest>();
+}
+
+
 struct AnimationRequestTest : ui::Buildable
 {
 	AnimationRequestTest()

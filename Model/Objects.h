@@ -69,6 +69,7 @@ enum UIObjectFlags
 	UIObject_NoPaint = 1 << 24,
 	UIObject_DB_RebuildOnChange = 1 << 25,
 	UIObject_ClipChildren = 1 << 26,
+	UIObject_BuildAlloc = 1 << 27,
 
 	UIObject_DB__Defaults = 0,
 };

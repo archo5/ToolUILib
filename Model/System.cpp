@@ -130,7 +130,10 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 		buildStack.OnDestroy(cur);
 		nextFrameBuildStack.OnDestroy(cur);
 		layoutStack.OnDestroy(cur);
-		delete cur;
+		if (cur->flags & UIObject_BuildAlloc)
+			delete cur;
+		else
+			cur->parent = nullptr;
 	}
 }
 
@@ -293,6 +296,40 @@ void UIContainer::_Pop()
 	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
 
 	objectStackSize--;
+}
+
+void UIContainer::_AllocReplace(UIObject* obj)
+{
+	if (obj == objChildStack[objectStackSize - 1])
+	{
+		// continue the match streak
+		UI_DEBUG_FLOW(puts("/// match streak ///"));
+		objChildStack[objectStackSize - 1] = obj->next;
+		lastIsNew = false;
+	}
+	else
+	{
+		UI_DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
+		if (objChildStack[objectStackSize - 1])
+		{
+			// delete all buildables starting from this child, the match streak is gone
+			DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
+		}
+		UI_DEBUG_FLOW(puts(">>> new element >>>"));
+		Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
+		objChildStack[objectStackSize - 1] = nullptr;
+		lastIsNew = true;
+	}
+	obj->OnInit();
+	_lastCreated = obj;
+}
+
+void UIContainer::Append(UIObject* o)
+{
+	_AllocReplace(o);
+	// TODO needed?
+	_Push(o, false);
+	_Pop();
 }
 
 NativeWindowBase* UIContainer::GetNativeWindow() const

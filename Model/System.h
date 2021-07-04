@@ -60,7 +60,7 @@ struct UIContainer
 	void DeleteObjectsStartingFrom(UIObject* obj);
 	template<class T> T* AllocIfDifferent(UIObject* obj)
 	{
-		if (obj && typeid(*obj) == typeid(T))
+		if (obj && typeid(*obj) == typeid(T) && (obj->flags & UIObject_BuildAlloc))
 		{
 			auto* t = static_cast<T*>(obj);
 			t->UnregisterAsOverlay();
@@ -87,6 +87,7 @@ struct UIContainer
 				t->_SerializePersistent(drs);
 				// in case these flags have been set by ctor
 				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInBuildStack);
+				t->flags |= UIObject_BuildAlloc;
 			}
 
 			if (buildable)
@@ -96,6 +97,7 @@ struct UIContainer
 			return t;
 		}
 		auto* p = new T();
+		p->flags |= UIObject_BuildAlloc;
 		p->system = owner;
 		p->_OnChangeStyle();
 		return p;
@@ -116,6 +118,8 @@ struct UIContainer
 	void _Push(UIObject* obj, bool isCurBuildable);
 	void _Destroy(UIObject* obj);
 	void _Pop();
+	void _AllocReplace(UIObject* obj);
+	void Append(UIObject* o);
 	void Pop()
 	{
 		assert(objectStackSize > 1);
@@ -175,28 +179,7 @@ struct UIContainer
 		//if (objChildStack[objectStackSize - 1])
 		//	printf("%s\n", typeid(*objChildStack[objectStackSize - 1]).name());
 		T* obj = AllocIfDifferent<T>(objChildStack[objectStackSize - 1]);
-		if (obj == objChildStack[objectStackSize - 1])
-		{
-			// continue the match streak
-			UI_DEBUG_FLOW(puts("/// match streak ///"));
-			objChildStack[objectStackSize - 1] = obj->next;
-			lastIsNew = false;
-		}
-		else
-		{
-			UI_DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
-			if (objChildStack[objectStackSize - 1])
-			{
-				// delete all buildables starting from this child, the match streak is gone
-				DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
-			}
-			UI_DEBUG_FLOW(puts(">>> new element >>>"));
-			Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
-			objChildStack[objectStackSize - 1] = nullptr;
-			lastIsNew = true;
-		}
-		obj->OnInit();
-		_lastCreated = obj;
+		_AllocReplace(obj);
 		return obj;
 	}
 	BoxElement& PushBox() { return Push<BoxElement>(); }
@@ -277,9 +260,13 @@ template <class T, class = typename T::IsElement> inline T& MakeWithTextf(const 
 	va_end(args);
 	return ret;
 }
-template <class T, class = typename T::IsElement> T& Push()
+template <class T, class = typename T::IsElement> inline T& Push()
 {
 	return UIContainer::GetCurrent()->Push<T>();
+}
+inline void Append(UIObject* o)
+{
+	UIContainer::GetCurrent()->Append(o);
 }
 BoxElement& PushBox();
 TextElement& Text(StringView s);
