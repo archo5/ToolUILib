@@ -94,6 +94,9 @@
     <ClCompile Include="Render\RHI_Internal.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Editors\CurveEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -219,6 +222,9 @@
     </ClInclude>
     <ClInclude Include="Model\Keyboard.h">
       <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\CurveEditor.h">
+      <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

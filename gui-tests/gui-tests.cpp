@@ -367,6 +367,7 @@ void Test_FileSelectionWindow();
 void Test_SequenceEditors();
 void Test_TreeEditors();
 void Test_MessageLogView();
+void Test_CurveEditor();
 
 void Benchmark_SubUI();
 void Test_TableView();
@@ -472,6 +473,7 @@ static const TestEntry dseditTestEntries[] =
 	{ "- Fully virtualized (single UI element for all items) -" },
 	{ "Table view", Test_TableView },
 	{ "Message log view", Test_MessageLogView },
+	{ "Curve editor", Test_CurveEditor },
 };
 static const TestEntry benchmarkEntries[] =
 {

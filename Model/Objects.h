@@ -209,10 +209,10 @@ struct UIObject
 	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	Range2f GetEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	Range2f GetEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	virtual Range2f GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
-	virtual Range2f GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
+	Rangef GetEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	Rangef GetEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
+	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
 	void _PerformPlacement(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
@@ -317,8 +317,8 @@ struct UIObject
 	// size cache
 	uint32_t _cacheFrameWidth = {};
 	uint32_t _cacheFrameHeight = {};
-	Range2f _cacheValueWidth = { 0, 0 };
-	Range2f _cacheValueHeight = { 0, 0 };
+	Rangef _cacheValueWidth = { 0, 0 };
+	Rangef _cacheValueHeight = { 0, 0 };
 };
 
 struct UIElement : UIObject

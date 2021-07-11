@@ -16,9 +16,9 @@ constexpr float DEG2RAD = 3.14159f / 180;
 constexpr float RAD2DEG = 180 / 3.14159f;
 
 
-inline float lerp(float a, float b, float s) { return a + (b - a) * s; }
-inline float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
-inline float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
+UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }
+UI_FORCEINLINE float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
+UI_FORCEINLINE float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
 
 
 inline float AngleNormalize360(float a)
@@ -104,6 +104,7 @@ using Point2f = Vec2<float>;
 using Point2i = Vec2<int>;
 
 template <class T> UI_FORCEINLINE T Vec2Dot(const Vec2<T>& a, const Vec2<T>& b) { return a.x * b.x + a.y * b.y; }
+UI_FORCEINLINE Vec2f Vec2fLerp(Vec2f a, Vec2f b, float q) { return a * (1 - q) + b * q; }
 
 template <class T> struct Size2
 {
@@ -119,18 +120,27 @@ template <class T> struct Range
 {
 	Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
 
-	bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
+	UI_FORCEINLINE T GetWidth() const { return max - min; }
+	UI_FORCEINLINE bool IsValid() const { return min <= max; }
+	UI_FORCEINLINE bool Contains(float v) const { return v >= min && v < max; }
+	UI_FORCEINLINE bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
+	UI_FORCEINLINE Range Intersect(const Range& o) const { return { ::ui::max(min, o.min), ::ui::min(max, o.max) }; }
 
 	T min, max;
 };
 
-using Range2f = Range<float>;
+using Rangef = Range<float>;
 
 
 template<class T> struct AABB2
 {
 	T x0, y0, x1, y1;
 
+	static constexpr T MIN_VALUE = std::numeric_limits<T>::lowest();
+	static constexpr T MAX_VALUE = std::numeric_limits<T>::max();
+
+	UI_FORCEINLINE static AABB2 Empty() { return { MAX_VALUE, MAX_VALUE, MIN_VALUE, MIN_VALUE }; }
+	UI_FORCEINLINE static AABB2 All() { return { MIN_VALUE, MIN_VALUE, MAX_VALUE, MAX_VALUE }; }
 	UI_FORCEINLINE static AABB2 UniformBorder(T v) { return { v, v, v, v }; }
 	UI_FORCEINLINE static AABB2 FromPoint(T x, T y) { return { x, y, x, y }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(T x, T y, T e) { return { x - e, y - e, x + e, y + e }; }
@@ -143,13 +153,21 @@ template<class T> struct AABB2
 	UI_FORCEINLINE Size2<T> GetSize() const { return { GetWidth(), GetHeight() }; }
 	UI_FORCEINLINE Vec2<T> GetMin() const { return { x0, y0 }; }
 	UI_FORCEINLINE Vec2<T> GetMax() const { return { x1, y1 }; }
+	UI_FORCEINLINE bool IsValid() const { return x0 <= x1 && y0 <= y1; }
 	UI_FORCEINLINE bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
 	UI_FORCEINLINE bool Contains(Vec2<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }
-	UI_FORCEINLINE bool Intersects(const AABB2& o) const { return x0 <= o.x1 && o.x0 <= x1 && y0 <= o.y1 && o.y0 <= y1; }
+	UI_FORCEINLINE bool Overlaps(const AABB2& o) const { return x0 <= o.x1 && o.x0 <= x1 && y0 <= o.y1 && o.y0 <= y1; }
+	UI_FORCEINLINE AABB2 Intersect(const AABB2& o) const { return { max(x0, o.x0), max(y0, o.y0), min(x1, o.x1), min(y1, o.y1) }; }
 	UI_FORCEINLINE AABB2 ExtendBy(const AABB2& ext) const { return { x0 - ext.x0, y0 - ext.y0, x1 + ext.x1, y1 + ext.y1 }; }
 	UI_FORCEINLINE AABB2 ShrinkBy(const AABB2& ext) const { return { x0 + ext.x0, y0 + ext.y0, x1 - ext.x1, y1 - ext.y1 }; }
 	UI_FORCEINLINE AABB2 MoveBy(float dx, float dy) const { return { x0 + dx, y0 + dy, x1 + dx, y1 + dy }; }
+	UI_FORCEINLINE AABB2 Include(const AABB2& o) const { return { min(x0, o.x0), min(y0, o.y0), max(x1, o.x1), max(y1, o.y1) }; }
+	UI_FORCEINLINE AABB2 Include(const Vec2<T>& o) const { return { min(x0, o.x), min(y0, o.y), max(x1, o.x), max(y1, o.y) }; }
 	UI_FORCEINLINE AABB2 operator * (T f) const { return { x0 * f, y0 * f, x1 * f, y1 * f }; }
+	UI_FORCEINLINE Vec2<T> Lerp(Vec2<T> q) const { return { lerp(x0, x1, q.x), lerp(y0, y1, q.y) }; }
+	UI_FORCEINLINE Vec2<T> LerpFlipY(Vec2<T> q) const { return { lerp(x0, x1, q.x), lerp(y1, y0, q.y) }; }
+	UI_FORCEINLINE Vec2<T> InverseLerp(Vec2<T> p) const { return { invlerp(x0, x1, p.x), invlerp(y0, y1, p.y) }; }
+	UI_FORCEINLINE Vec2<T> InverseLerpFlipY(Vec2<T> p) const { return { invlerp(x0, x1, p.x), invlerp(y1, y0, p.y) }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{

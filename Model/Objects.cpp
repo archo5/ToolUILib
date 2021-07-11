@@ -253,7 +253,7 @@ void UIObject::Paint()
 	if (!_CanPaint())
 		return;
 
-	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Intersects(finalRectCPB)))
+	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(finalRectCPB)))
 		return;
 
 	OnPaint();
@@ -266,7 +266,7 @@ void UIObject::PaintChildren()
 
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
-		draw::PushScissorRect(finalRectC.x0, finalRectC.y0, finalRectC.x1, finalRectC.y1);
+		draw::PushScissorRect(finalRectC.Cast<int>());
 
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		ch->Paint();
@@ -292,7 +292,7 @@ float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType typ
 	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
-Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef UIObject::GetEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -332,7 +332,7 @@ Range2f UIObject::GetEstimatedWidth(const Size2f& containerSize, EstSizeType typ
 	return { size, maxsize };
 }
 
-Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef UIObject::GetEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	auto style = GetStyle();
 	float size = 0;
@@ -372,7 +372,7 @@ Range2f UIObject::GetEstimatedHeight(const Size2f& containerSize, EstSizeType ty
 	return { size, maxsize };
 }
 
-Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
@@ -402,7 +402,7 @@ Range2f UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType
 	return s;
 }
 
-Range2f UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };

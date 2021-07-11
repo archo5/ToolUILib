@@ -262,9 +262,17 @@ enum class SubUIDragState
 	Stop,
 };
 
+template <class T> struct SubUIValueHelper
+{
+	static constexpr T GetNullValue()
+	{
+		return ~(T)0;
+	}
+};
+
 template <class T> struct SubUI
 {
-	static constexpr T NoValue = ~(T)0;
+	static constexpr T NoValue = SubUIValueHelper<T>::GetNullValue();
 
 	bool IsAnyHovered() const { return _hovered != NoValue; }
 	bool IsAnyPressed() const { return _pressed != NoValue; }
@@ -308,6 +316,32 @@ template <class T> struct SubUI
 		else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered == id)
 		{
 			_pressed = id;
+			return SubUIDragState::Start;
+		}
+		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
+		{
+			_pressed = NoValue;
+			return SubUIDragState::Stop;
+		}
+		else if (e.type == EventType::Click && e.GetButton() == MouseButton::Left)
+		{
+			if (_pressed != NoValue)
+				e.StopPropagation(); // eat invalid event
+		}
+		return SubUIDragState::None;
+	}
+	SubUIDragState GlobalDragOnEvent(T id, Event& e)
+	{
+		if (e.type == EventType::MouseMove)
+		{
+			if (id != NoValue)
+				_hovered = id;
+			if (_pressed != NoValue)
+				return SubUIDragState::Move;
+		}
+		else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered != NoValue)
+		{
+			_pressed = _hovered;
 			return SubUIDragState::Start;
 		}
 		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)

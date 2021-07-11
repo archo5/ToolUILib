@@ -727,7 +727,8 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 	size_t ncols = w <= 1 ? 3 : 4;
 
 	std::vector<rhi::Vertex> verts;
-	verts.reserve(size * ncols);
+	verts.resize(size * ncols);
+	auto* vdest = verts.data();
 	for (size_t i = 0; i < size; i++)
 	{
 		Point2f p0 = points[i];
@@ -744,37 +745,38 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 		if (w <= 1)
 		{
 			auto t = t_avg * w * q;
-			verts.push_back(ColorVert(p0 + t, colA0));
-			verts.push_back(ColorVert(p0, colM));
-			verts.push_back(ColorVert(p0 - t, colA0));
+			*vdest++ = ColorVert(p0 + t, colA0);
+			*vdest++ = ColorVert(p0, colM);
+			*vdest++ = ColorVert(p0 - t, colA0);
 		}
 		else
 		{
 			auto t0 = t_avg * (w + 1) * 0.5f * q;
 			auto t1 = t_avg * (w - 1) * 0.5f * q;
-			verts.push_back(ColorVert(p0 + t0, colA0));
-			verts.push_back(ColorVert(p0 + t1, col));
-			verts.push_back(ColorVert(p0 - t1, col));
-			verts.push_back(ColorVert(p0 - t0, colA0));
+			*vdest++ = ColorVert(p0 + t0, colA0);
+			*vdest++ = ColorVert(p0 + t1, col);
+			*vdest++ = ColorVert(p0 - t1, col);
+			*vdest++ = ColorVert(p0 - t0, colA0);
 		}
 
 		t_prev = t_next;
 	}
 
 	std::vector<uint16_t> indices;
-	indices.reserve((size - 1) * (ncols - 1) * 6);
+	indices.resize((closed ? size : size - 1) * (ncols - 1) * 6);
+	uint16_t* idest = indices.data();
 	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
 	{
 		size_t i1 = (i + 1) % size;
 		for (size_t j = 0; j + 1 < ncols; j++)
 		{
-			indices.push_back(uint16_t(i * ncols + j));
-			indices.push_back(uint16_t(i1 * ncols + j));
-			indices.push_back(uint16_t(i1 * ncols + j + 1));
+			*idest++ = uint16_t(i * ncols + j);
+			*idest++ = uint16_t(i1 * ncols + j);
+			*idest++ = uint16_t(i1 * ncols + j + 1);
 
-			indices.push_back(uint16_t(i1 * ncols + j + 1));
-			indices.push_back(uint16_t(i * ncols + j + 1));
-			indices.push_back(uint16_t(i * ncols + j));
+			*idest++ = uint16_t(i1 * ncols + j + 1);
+			*idest++ = uint16_t(i * ncols + j + 1);
+			*idest++ = uint16_t(i * ncols + j);
 		}
 	}
 
@@ -787,12 +789,13 @@ struct CircleList
 
 	CircleList(Point2f center, float radius)
 	{
-		auto size = size_t(radius * 3.14159f);
+		auto size = size_t(max(radius, 0.0f) * 3.14159f);
 		if (size < 3)
 			size = 3;
 		if (size > 4096)
 			size = 4096;
 
+		points.reserve(size);
 		for (size_t i = 0; i < size; i++)
 		{
 			float a = i * 3.14159f * 2 / size;
@@ -944,17 +947,18 @@ void ApplyScissor()
 	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }
 
-bool PushScissorRect(int x0, int y0, int x1, int y1)
+bool PushScissorRect(const AABB2i& rect)
 {
 	int i = scissorCount++;
-	AABB2i r = scissorStack[i - 1];
-	if (r.x0 < x0) r.x0 = x0;
-	if (r.x1 > x1) r.x1 = x1;
-	if (r.y0 < y0) r.y0 = y0;
-	if (r.y1 > y1) r.y1 = y1;
+	AABB2i r = scissorStack[i - 1].Intersect(rect);
 	scissorStack[i] = r;
 	ApplyScissor();
 	return r.x0 < r.x1 && r.y0 < r.y1;
+}
+
+bool PushScissorRect(int x0, int y0, int x1, int y1)
+{
+	return PushScissorRect({ x0, y0, x1, y1 });
 }
 
 void PopScissorRect()

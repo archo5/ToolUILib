@@ -63,7 +63,7 @@ void MessageLogView::OnPaint()
 	if (maxMsg > numMsgs)
 		maxMsg = numMsgs;
 
-	draw::PushScissorRect(RC.x0, RC.y0, RC.x1, RC.y1);
+	draw::PushScissorRect(RC.Cast<int>());
 	for (size_t msgIdx = minMsg; msgIdx < maxMsg; msgIdx++)
 	{
 		UIRect rect =

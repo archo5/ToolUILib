@@ -439,7 +439,7 @@ void LabeledProperty::OnPaint()
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
 		// TODO optimize scissor (shared across labels)
-		draw::PushScissorRect(cr.x0, cr.y0, cr.x1, cr.y1);
+		draw::PushScissorRect(cr.Cast<int>());
 		draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
 		draw::PopScissorRect();
 	}
@@ -703,12 +703,12 @@ void SplitPane::OnSerialize(IDataSerializer& s)
 		s << v;
 }
 
-Range2f SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Range2f SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	return { containerSize.y, containerSize.y };
 }

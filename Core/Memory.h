@@ -1,6 +1,7 @@
 
 #pragma once
 #include <assert.h>
+#include <initializer_list>
 
 
 namespace ui {
@@ -10,6 +11,7 @@ struct ArrayView
 {
 	ArrayView() : _data(nullptr), _size(0) {}
 	ArrayView(const T* data, size_t size) : _data(data), _size(size) {}
+	ArrayView(const std::initializer_list<T>& src) : _data(src.begin()), _size(src.size()) {}
 	template <size_t N>
 	ArrayView(const T(&arr)[N]) : _data(arr), _size(N) {}
 	template <class U>

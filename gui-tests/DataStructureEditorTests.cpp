@@ -4,6 +4,7 @@
 #include <time.h>
 #include <deque>
 #include "../Editors/TreeEditor.h"
+#include "../Editors/CurveEditor.h"
 
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
@@ -747,4 +748,47 @@ struct MessageLogViewTest : ui::Buildable
 void Test_MessageLogView()
 {
 	ui::Make<MessageLogViewTest>();
+}
+
+
+struct CurveEditorTest : ui::Buildable
+{
+	void OnInit() override
+	{
+		basicLinear01Curve.points =
+		{
+			{ 0.0f, 0.3f },
+			{ 1.3f, 0.7f },
+			{ 3.0f, 0.0f },
+		};
+
+		sequence01Curve.points =
+		{
+			{ 0, 0, 0, ui::Sequence01Curve::Mode::Hold, 0 },
+			{ 1, 1, 1, ui::Sequence01Curve::Mode::SinglePowerCurve, 0 },
+		};
+	}
+	void Build() override
+	{
+		auto& ce = ui::Make<ui::CurveEditorElement>();
+		ce.GetStyle().SetHeight(50);
+		ce.curves = &basicLinear01Curve;
+		ce.viewport = { 0, 0, 5, 1 };
+
+		auto& ce3 = ui::Make<ui::CurveEditorElement>();
+		ce3.GetStyle().SetHeight(50);
+		ce3.curves = &sequence01Curve;
+		ce3.viewport = { 0, 0, 5, 1 };
+
+		auto& ce2 = ui::Make<ui::CurveEditorElement>();
+		ce2.GetStyle().SetHeight(200);
+		ce2.curves = &cubicNormalizedRemapCurve;
+	}
+	ui::BasicLinear01Curve basicLinear01Curve;
+	ui::Sequence01Curve sequence01Curve;
+	ui::CubicNormalizedRemapCurve cubicNormalizedRemapCurve;
+};
+void Test_CurveEditor()
+{
+	ui::Make<CurveEditorTest>();
 }

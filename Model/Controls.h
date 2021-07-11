@@ -316,8 +316,8 @@ struct SplitPane : UIElement
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnSerialize(IDataSerializer& s) override;
-	Range2f GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
-	Range2f GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);

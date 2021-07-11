@@ -126,7 +126,7 @@ void ImageElement::OnInit()
 void ImageElement::OnPaint()
 {
 	auto c = GetContentRect();
-	if (draw::GetCurrentScissorRectF().Intersects(c))
+	if (draw::GetCurrentScissorRectF().Overlaps(c))
 	{
 		if (_tryDelayLoad)
 		{
@@ -814,7 +814,7 @@ void View2D::OnPaint()
 	styleProps->background_painter->Paint(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
+	if (draw::PushScissorRect(r.Cast<int>()))
 	{
 		if (onPaint)
 			onPaint(r);
@@ -830,7 +830,7 @@ void View3D::OnPaint()
 	styleProps->background_painter->Paint(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r.x0, r.y0, r.x1, r.y1))
+	if (draw::PushScissorRect(r.Cast<int>()))
 	{
 		rhi::Begin3DMode(r.Cast<int>());
 
