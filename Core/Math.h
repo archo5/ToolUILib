@@ -10,10 +10,11 @@
 
 namespace ui {
 
-constexpr float PI = 3.14159f;
-constexpr float PI2 = 3.14159f * 2;
-constexpr float DEG2RAD = 3.14159f / 180;
-constexpr float RAD2DEG = 180 / 3.14159f;
+constexpr float E = 2.7182817f;
+constexpr float PI = 3.1415927f;
+constexpr float PI2 = 3.1415927f * 2;
+constexpr float DEG2RAD = PI / 180;
+constexpr float RAD2DEG = 180 / PI;
 
 
 UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }

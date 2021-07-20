@@ -661,6 +661,9 @@ struct RHIListener : ui::rhi::IRHIListener
 g_rl;
 
 
+// force linking of tests
+// namespace ui { extern struct TestMathExpr g_tests; void q() { printf("%p\n", &ui::g_tests); } } // - MathExpr
+
 
 void EarlyTest()
 {

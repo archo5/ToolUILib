@@ -19,6 +19,8 @@ static inline bool IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' 
 static inline bool IsDigit(char c) { return c >= '0' && c <= '9'; }
 static inline bool IsHexDigit(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 static inline bool IsAlphaNum(char c) { return IsAlpha(c) || IsDigit(c); }
+static inline char ToLower(char c) { return c >= 'A' && c <= 'Z' ? c | 0x20 : c; }
+static inline char ToUpper(char c) { return c >= 'a' && c <= 'z' ? c & ~0x20 : c; }
 
 
 struct StringView
@@ -50,6 +52,23 @@ struct StringView
 		return _size == o._size
 			? 0
 			: _size < o._size ? -1 : 1;
+	}
+
+	bool equal_to_ci(const StringView& o) const
+	{
+		if (_size != o._size)
+			return false;
+		for (size_t i = 0; i < _size; i++)
+		{
+			if (_data[i] != o._data[i])
+			{
+				char low1 = ToLower(_data[i]);
+				char low2 = ToLower(o._data[i]);
+				if (low1 != low2)
+					return false;
+			}
+		}
+		return true;
 	}
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const

@@ -139,6 +139,7 @@
     <ClCompile Include="Core\ContainerTests.cpp" />
     <ClCompile Include="Core\FileSystem.cpp" />
     <ClCompile Include="Core\Font.cpp" />
+    <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="Core\HashTable.h" />
     <ClInclude Include="Core\Image.h" />
     <ClInclude Include="Core\Math.h" />
+    <ClInclude Include="Core\MathExpr.h" />
     <ClInclude Include="Core\Memory.h" />
     <ClInclude Include="Core\ObjectIteration.h" />
     <ClInclude Include="Core\Platform.h" />
