@@ -446,4 +446,58 @@ void CurveEditorElement::OnPaint()
 	_ui.Render({ viewport, GetContentRect(), &settings }, curves);
 }
 
+
+void Sequence01Curve::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
+{
+	float newX = p.x;
+	float newY = clamp(p.y, 0.0f, 1.0f);
+
+	auto& dp = points[pointid];
+	dp.posY = newY;
+
+	float prevX = pointid > 0 ? points[pointid - 1].posX : 0;
+	dp.deltaX = newX - prevX;
+	if (dp.deltaX < 0)
+		dp.deltaX = 0;
+	dp.posX = prevX + dp.deltaX;
+
+	for (uint32_t i = pointid + 1; i < uint32_t(points.size()); i++)
+	{
+		points[i].posX = points[i - 1].posX + points[i].deltaX;
+	}
+}
+
+static float DoPowerCurve(float q, float tweak)
+{
+	return tweak >= 0
+		? 1 - powf(1 - q, exp2(tweak))
+		: powf(q, exp2(-tweak));
+}
+
+Vec2f Sequence01Curve::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
+{
+	auto& p0 = points[firstpointid];
+	auto& p1 = points[firstpointid + 1];
+	float retX = lerp(p0.posX, p1.posX, q);
+	switch (p1.mode)
+	{
+	case Mode::Hold:
+		q = 0;
+		break;
+	case Mode::SinglePowerCurve:
+		q = DoPowerCurve(q, p1.tweak);
+		break;
+	case Mode::DoublePowerCurve:
+		q = DoPowerCurve(fabsf(q * 2 - 1), p1.tweak) * sign(q * 2 - 1) * 0.5f + 0.5f;
+		break;
+	case Mode::SawWave:
+		q = fmodf(q * (1.0f + floorf(fabsf(p1.tweak))) * 0.99999f, 1.0f);
+		if (p1.tweak < 0)
+			q = 1 - q;
+		break;
+	}
+	float retY = lerp(p0.posY, p1.posY, q);
+	return { retX, retY };
+}
+
 } // ui

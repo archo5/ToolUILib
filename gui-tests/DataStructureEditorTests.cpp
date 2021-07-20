@@ -766,6 +766,8 @@ struct CurveEditorTest : ui::Buildable
 		{
 			{ 0, 0, 0, ui::Sequence01Curve::Mode::Hold, 0 },
 			{ 1, 1, 1, ui::Sequence01Curve::Mode::SinglePowerCurve, 0 },
+			{ 1, 2, 0, ui::Sequence01Curve::Mode::DoublePowerCurve, 0 },
+			{ 1, 3, 1, ui::Sequence01Curve::Mode::SawWave, 0 },
 		};
 	}
 	void Build() override

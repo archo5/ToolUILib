@@ -185,6 +185,8 @@ struct Sequence01Curve : ICurves
 	{
 		Hold,
 		SinglePowerCurve,
+		DoublePowerCurve,
+		SawWave,
 	};
 	struct Point
 	{
@@ -206,44 +208,8 @@ struct Sequence01Curve : ICurves
 	{
 		return { points[pointid].posX, points[pointid].posY };
 	}
-	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override
-	{
-		float newX = p.x;
-		float newY = clamp(p.y, 0.0f, 1.0f);
-
-		auto& dp = points[pointid];
-		dp.posY = newY;
-
-		float prevX = pointid > 0 ? points[pointid - 1].posX : 0;
-		dp.deltaX = newX - prevX;
-		if (dp.deltaX < 0)
-			dp.deltaX = 0;
-		dp.posX = prevX + dp.deltaX;
-
-		for (uint32_t i = pointid + 1; i < uint32_t(points.size()); i++)
-		{
-			points[i].posX = points[i - 1].posX + points[i].deltaX;
-		}
-	}
-	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
-	{
-		auto& p0 = points[firstpointid];
-		auto& p1 = points[firstpointid + 1];
-		float retX = lerp(p0.posX, p1.posX, q);
-		switch (p1.mode)
-		{
-		case Mode::Hold:
-			q = 0;
-			break;
-		case Mode::SinglePowerCurve:
-			q = p1.tweak >= 0
-				? 1 - powf(1 - q, exp2(p1.tweak))
-				: powf(q, exp2(-p1.tweak));
-			break;
-		}
-		float retY = lerp(p0.posY, p1.posY, q);
-		return { retX, retY };
-	}
+	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override;
+	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override;
 
 	bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) override { return true; }
 	Vec2f GetSliceMidpoint(uint32_t curveid, uint32_t sliceid) override
