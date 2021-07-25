@@ -17,6 +17,7 @@
     <ClCompile Include="NodeGraphEditorDemo.cpp" />
     <ClCompile Include="MiscDemos.cpp" />
     <ClCompile Include="3DTests.cpp" />
+    <ClCompile Include="AnimatedPatternEditorDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

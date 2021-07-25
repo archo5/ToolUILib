@@ -122,7 +122,7 @@ struct StringView
 	}
 	size_t find_first_at(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const
 	{
-		for (size_t i = from; i <= _size - sub._size; i++)
+		for (size_t i = from; i + sub._size <= _size; i++)
 			if (memcmp(&_data[i], sub._data, sub._size) == 0)
 				return i;
 		return def;

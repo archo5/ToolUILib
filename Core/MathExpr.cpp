@@ -98,6 +98,13 @@ struct MathExprData
 
 	float* stack = nullptr;
 
+	// for cloning only
+	size_t numConstants;
+	size_t numCodeBytes;
+	size_t numVars;
+	size_t numVarNameBytes;
+	size_t stackSize;
+
 	float Eval(IMathExprDataSource* src)
 	{
 		// load variables
@@ -263,11 +270,14 @@ struct MathExprData
 	{
 		constants = new float[arg_constants.size()];
 		memcpy(constants, arg_constants.data(), sizeof(*constants) * arg_constants.size());
+		numConstants = arg_constants.size();
 
 		code = new uint8_t[arg_instructions.size()];
 		memcpy(code, arg_instructions.data(), sizeof(*code) * arg_instructions.size());
+		numCodeBytes = arg_instructions.size();
 
 		varMem = new float[arg_variables.size()];
+		numVars = arg_variables.size();
 
 		size_t totalVarNameLen = 1;
 		for (const auto& v : arg_variables)
@@ -283,8 +293,36 @@ struct MathExprData
 			}
 			*cvn++ = 0;
 		}
+		numVarNameBytes = totalVarNameLen;
 
 		stack = new float[arg_maxTempStackSize];
+		stackSize = arg_maxTempStackSize;
+	}
+
+	MathExprData(const MathExprData& o)
+	{
+		numConstants = o.numConstants;
+		constants = new float[numConstants];
+		memcpy(constants, o.constants, sizeof(*constants) * numConstants);
+
+		numCodeBytes = o.numCodeBytes;
+		code = new uint8_t[numCodeBytes];
+		memcpy(code, o.code, sizeof(*code) * numCodeBytes);
+
+		numVars = o.numVars;
+		varMem = new float[numVars];
+
+		numVarNameBytes = o.numVarNameBytes;
+		varNames = new char[numVarNameBytes];
+		memcpy(varNames, o.varNames, o.numVarNameBytes);
+
+		stackSize = o.stackSize;
+		stack = new float[stackSize];
+	}
+
+	MathExprData* Clone()
+	{
+		return new MathExprData(*this);
 	}
 
 	struct Compiler
@@ -837,9 +875,34 @@ MathExpr::MathExpr() : _data(nullptr)
 {
 }
 
+MathExpr::MathExpr(const MathExpr& o)
+{
+	_data = o._data ? static_cast<MathExprData*>(o._data)->Clone() : nullptr;
+}
+
+MathExpr::MathExpr(MathExpr&& o) : _data(o._data)
+{
+	o._data = nullptr;
+}
+
 MathExpr::~MathExpr()
 {
 	delete static_cast<MathExprData*>(_data);
+}
+
+MathExpr& MathExpr::operator = (const MathExpr& o)
+{
+	delete static_cast<MathExprData*>(_data);
+	_data = o._data ? static_cast<MathExprData*>(o._data)->Clone() : nullptr;
+	return *this;
+}
+
+MathExpr& MathExpr::operator = (MathExpr&& o)
+{
+	delete static_cast<MathExprData*>(_data);
+	_data = o._data;
+	o._data = nullptr;
+	return *this;
 }
 
 bool MathExpr::Compile(const char* str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)

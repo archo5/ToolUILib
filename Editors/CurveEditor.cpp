@@ -3,19 +3,19 @@
 
 namespace ui {
 
-Range<uint32_t> ICurves::ExpandForCurves(Range<uint32_t> src, uint32_t max)
+Range<uint32_t> ICurveView::ExpandForCurves(Range<uint32_t> src, uint32_t max)
 {
 	if (src.min > 0)
 		src.min--;
 	if (src.max < max)
 		src.max++;
 	// exclude last point (for which there is no matching curve)
-	if (src.max == max)
+	if (src.max == max && max)
 		src.max--;
 	return src;
 }
 
-AABB2f ICurves::GetPreferredViewport(bool includeTangents)
+AABB2f ICurveView::GetPreferredViewport(bool includeTangents)
 {
 	AABB2f bbox = AABB2f::Empty();
 	for (uint32_t cid = 0, numcurves = GetCurveCount(); cid < numcurves; cid++)
@@ -25,7 +25,7 @@ AABB2f ICurves::GetPreferredViewport(bool includeTangents)
 	return bbox;
 }
 
-AABB2f ICurves::GetPreferredCurveViewport(bool includeTangents, uint32_t curveid, Range<uint32_t> pointRange)
+AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, uint32_t curveid, Range<uint32_t> pointRange)
 {
 	if (!(GetFeatures() & Tangents))
 		includeTangents = false;
@@ -42,7 +42,7 @@ AABB2f ICurves::GetPreferredCurveViewport(bool includeTangents, uint32_t curveid
 	return bbox;
 }
 
-Range<uint32_t> ICurves::ExpandForTangents(uint32_t curveid, Range<uint32_t> src)
+Range<uint32_t> ICurveView::ExpandForTangents(uint32_t curveid, Range<uint32_t> src)
 {
 	if (src.min > 0)
 		src.min--;
@@ -51,11 +51,21 @@ Range<uint32_t> ICurves::ExpandForTangents(uint32_t curveid, Range<uint32_t> src
 	return src;
 }
 
-int ICurves::GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut)
+int ICurveView::GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut)
 {
 	if (maxOut < 2)
 		return 0;
-	for (int i = 0; i < maxOut; i++)
+	int imin = 0;
+	int imax = maxOut;
+	if (qrange.min == 0)
+	{
+		out[imin++] = GetPoint(curveid, firstpointid);
+	}
+	if (qrange.max == 1)
+	{
+		out[--imax] = GetPoint(curveid, firstpointid + 1);
+	}
+	for (int i = imin; i < imax; i++)
 	{
 		float f = float(i) / float(maxOut - 1);
 		float q = lerp(qrange.min, qrange.max, f);
@@ -64,9 +74,9 @@ int ICurves::GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Ran
 	return maxOut;
 }
 
-int ICurves::GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, AABB2f vp, float winWidth, Vec2f* out, int maxOut)
+int ICurveView::GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, AABB2f vp, float winWidth, Vec2f* out, int maxOut)
 {
-	if (winWidth <= 0 || !vp.IsValid())
+	if (winWidth <= 0 || !vp.IsValid() || GetPointCount(curveid) < 2)
 		return 0;
 	Rangef vpRange = { vp.x0, vp.x1 };
 	auto p0 = GetPoint(curveid, firstpointid);
@@ -80,7 +90,7 @@ int ICurves::GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, 
 	return GetCurvePointsForRange(curveid, firstpointid, { qmin, qmax }, out, maxOut);
 }
 
-Vec2f ICurves::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
+Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
 {
 	Vec2f p = {};
 	switch (cpid.pointType)
@@ -101,7 +111,7 @@ Vec2f ICurves::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
 	return input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
 }
 
-void ICurves::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp)
+void ICurveView::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp)
 {
 	Vec2f p = input.viewport.LerpFlipY(input.winRect.InverseLerp(sp));
 	switch (cpid.pointType)
@@ -121,7 +131,7 @@ void ICurves::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, V
 	}
 }
 
-uint32_t ICurves::_FixPointOrder(uint32_t curveid, uint32_t pointid)
+uint32_t ICurveView::_FixPointOrder(uint32_t curveid, uint32_t pointid)
 {
 	while (pointid > 0 && GetPoint(curveid, pointid).x < GetPoint(curveid, pointid - 1).x)
 	{
@@ -137,7 +147,7 @@ uint32_t ICurves::_FixPointOrder(uint32_t curveid, uint32_t pointid)
 	return pointid;
 }
 
-void ICurves::_SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1)
+void ICurveView::_SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1)
 {
 	auto tmp = GetPoint(curveid, p0);
 	SetPoint(curveid, p0, GetPoint(curveid, p1));
@@ -155,7 +165,7 @@ void ICurves::_SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1)
 	}
 }
 
-CurvePointID ICurves::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
+CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 {
 	uint32_t numCurves = GetCurveCount();
 	auto vp = input.viewport;
@@ -239,7 +249,7 @@ CurvePointID ICurves::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 	return SubUIValueHelper<CurvePointID>::GetNullValue();
 }
 
-void ICurves::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
+void ICurveView::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 {
 	auto vp = input.viewport;
 	auto col = GetCurveColor(curveid);
@@ -247,7 +257,7 @@ void ICurves::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 
 	// include adjacent points for edge curves
 	pointRange = ExpandForCurves(pointRange, GetPointCount(curveid));
-	if (pointRange.max == GetPointCount(curveid))
+	if (pointRange.max == GetPointCount(curveid) && pointRange.max)
 		pointRange.max--;
 
 	constexpr int MAX_CURVE_POINTS = 1024;
@@ -262,7 +272,7 @@ void ICurves::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 	}
 }
 
-void ICurves::DrawCurvePointsType(const CurveEditorInput& input, const CurveEditorState& state, uint32_t curveid, CurvePointType type, Range<uint32_t> pointRange)
+void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveEditorState& state, uint32_t curveid, CurvePointType type, Range<uint32_t> pointRange)
 {
 	auto col = GetCurveColor(curveid);
 	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
@@ -304,7 +314,7 @@ void ICurves::DrawCurvePointsType(const CurveEditorInput& input, const CurveEdit
 	}
 }
 
-void ICurves::DrawAllPoints(const CurveEditorInput& input, const CurveEditorState& state)
+void ICurveView::DrawAllPoints(const CurveEditorInput& input, const CurveEditorState& state)
 {
 	uint32_t numCurves = GetCurveCount();
 	auto vp = input.viewport;
@@ -337,7 +347,7 @@ void ICurves::DrawAllPoints(const CurveEditorInput& input, const CurveEditorStat
 	}
 }
 
-void ICurves::DrawAllTangentLines(const CurveEditorInput& input, const CurveEditorState& state)
+void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveEditorState& state)
 {
 	uint32_t numCurves = GetCurveCount();
 	auto vp = input.viewport;
@@ -377,7 +387,7 @@ void ICurves::DrawAllTangentLines(const CurveEditorInput& input, const CurveEdit
 	}
 }
 
-void ICurves::DrawAll(const CurveEditorInput& input, const CurveEditorState& state)
+void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& state)
 {
 	uint32_t numCurves = GetCurveCount();
 	auto vp = input.viewport;
@@ -402,7 +412,7 @@ void ICurves::DrawAll(const CurveEditorInput& input, const CurveEditorState& sta
 }
 
 
-bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurves* curves, Event& e)
+bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, Event& e)
 {
 	uiState.InitOnEvent(e);
 	auto ret = uiState.GlobalDragOnEvent(curves->HitTest(input, e.position), e);
@@ -421,7 +431,7 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurves* curves, Even
 	return false;
 }
 
-void CurveEditorUI::Render(const CurveEditorInput& input, ICurves* curves)
+void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 {
 	if (!curves)
 		return;
@@ -437,35 +447,22 @@ void CurveEditorElement::OnInit()
 
 void CurveEditorElement::OnEvent(Event& e)
 {
-	if (_ui.OnEvent({ viewport, GetContentRect(), &settings }, curves, e))
+	if (_ui.OnEvent({ viewport, GetContentRect(), &settings }, curveView, e))
 		e.StopPropagation();
 }
 
 void CurveEditorElement::OnPaint()
 {
-	_ui.Render({ viewport, GetContentRect(), &settings }, curves);
+	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
 }
 
-
-void Sequence01Curve::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
+void CurveEditorElement::OnSerialize(IDataSerializer& s)
 {
-	float newX = p.x;
-	float newY = clamp(p.y, 0.0f, 1.0f);
-
-	auto& dp = points[pointid];
-	dp.posY = newY;
-
-	float prevX = pointid > 0 ? points[pointid - 1].posX : 0;
-	dp.deltaX = newX - prevX;
-	if (dp.deltaX < 0)
-		dp.deltaX = 0;
-	dp.posX = prevX + dp.deltaX;
-
-	for (uint32_t i = pointid + 1; i < uint32_t(points.size()); i++)
-	{
-		points[i].posX = points[i - 1].posX + points[i].deltaX;
-	}
+	s << _ui.dragOff;
+	s << _ui.uiState._hovered;
+	s << _ui.uiState._pressed;
 }
+
 
 static float DoPowerCurve(float q, float tweak)
 {
@@ -474,29 +471,76 @@ static float DoPowerCurve(float q, float tweak)
 		: powf(q, exp2(-tweak));
 }
 
-Vec2f Sequence01Curve::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
+float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q)
 {
-	auto& p0 = points[firstpointid];
-	auto& p1 = points[firstpointid + 1];
-	float retX = lerp(p0.posX, p1.posX, q);
 	switch (p1.mode)
 	{
-	case Mode::Hold:
+	case Sequence01Curve::Mode::Hold:
 		q = 0;
 		break;
-	case Mode::SinglePowerCurve:
+	case Sequence01Curve::Mode::SinglePowerCurve:
 		q = DoPowerCurve(q, p1.tweak);
 		break;
-	case Mode::DoublePowerCurve:
+	case Sequence01Curve::Mode::DoublePowerCurve:
 		q = DoPowerCurve(fabsf(q * 2 - 1), p1.tweak) * sign(q * 2 - 1) * 0.5f + 0.5f;
 		break;
-	case Mode::SawWave:
+	case Sequence01Curve::Mode::SawWave:
 		q = fmodf(q * (1.0f + floorf(fabsf(p1.tweak))) * 0.99999f, 1.0f);
 		if (p1.tweak < 0)
 			q = 1 - q;
 		break;
 	}
-	float retY = lerp(p0.posY, p1.posY, q);
+	return lerp(p0.posY, p1.posY, q);
+}
+
+float Sequence01Curve::Evaluate(float t)
+{
+	if (points.empty())
+		return 0;
+
+	if (t <= points[0].posX)
+		return points[0].posY;
+
+	// TODO optimize
+	for (size_t i = 1; i < points.size(); i++)
+	{
+		if (points[i].posX >= t)
+		{
+			auto& p0 = points[i - 1];
+			auto& p1 = points[i];
+			return EvaluateSegment(p0, p1, invlerp(p0.posX, p1.posX, t));
+		}
+	}
+	return points.back().posY;
+}
+
+
+void Sequence01CurveView::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
+{
+	float newX = p.x;
+	float newY = clamp(p.y, 0.0f, 1.0f);
+
+	auto& dp = curve->points[pointid];
+	dp.posY = newY;
+
+	float prevX = pointid > 0 ? curve->points[pointid - 1].posX : 0;
+	dp.deltaX = newX - prevX;
+	if (dp.deltaX < 0)
+		dp.deltaX = 0;
+	dp.posX = prevX + dp.deltaX;
+
+	for (uint32_t i = pointid + 1; i < uint32_t(curve->points.size()); i++)
+	{
+		curve->points[i].posX = curve->points[i - 1].posX + curve->points[i].deltaX;
+	}
+}
+
+Vec2f Sequence01CurveView::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
+{
+	auto& p0 = curve->points[firstpointid];
+	auto& p1 = curve->points[firstpointid + 1];
+	float retX = lerp(p0.posX, p1.posX, q);
+	float retY = curve->EvaluateSegment(p0, p1, q);
 	return { retX, retY };
 }
 

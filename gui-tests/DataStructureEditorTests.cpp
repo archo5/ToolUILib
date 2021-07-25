@@ -774,17 +774,21 @@ struct CurveEditorTest : ui::Buildable
 	{
 		auto& ce = ui::Make<ui::CurveEditorElement>();
 		ce.GetStyle().SetHeight(50);
-		ce.curves = &basicLinear01Curve;
+		ce.curveView = &basicLinear01Curve;
 		ce.viewport = { 0, 0, 5, 1 };
 
 		auto& ce3 = ui::Make<ui::CurveEditorElement>();
 		ce3.GetStyle().SetHeight(50);
-		ce3.curves = &sequence01Curve;
+		auto* s01cv = ui::BuildAlloc<ui::Sequence01CurveView>();
+		s01cv->curve = &sequence01Curve;
+		ce3.curveView = s01cv;
 		ce3.viewport = { 0, 0, 5, 1 };
 
 		auto& ce2 = ui::Make<ui::CurveEditorElement>();
 		ce2.GetStyle().SetHeight(200);
-		ce2.curves = &cubicNormalizedRemapCurve;
+		auto* cnrcv = ui::BuildAlloc<ui::CubicNormalizedRemapCurveView>();
+		cnrcv->curve = &cubicNormalizedRemapCurve;
+		ce2.curveView = cnrcv;
 	}
 	ui::BasicLinear01Curve basicLinear01Curve;
 	ui::Sequence01Curve sequence01Curve;

@@ -22,7 +22,11 @@ struct MathExpr
 	void* _data;
 
 	MathExpr();
+	MathExpr(const MathExpr&);
+	MathExpr(MathExpr&&);
 	~MathExpr();
+	MathExpr& operator = (const MathExpr&);
+	MathExpr& operator = (MathExpr&&);
 
 	bool Compile(const char* str, IMathExprDataSource* src = nullptr, IMathExprErrorOutput* errOut = nullptr);
 	float Evaluate(IMathExprDataSource* src = nullptr);

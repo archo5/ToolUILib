@@ -695,6 +695,9 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 
 void SplitPane::OnSerialize(IDataSerializer& s)
 {
+	s << _splitUI._hovered;
+	s << _splitUI._pressed;
+	s << _dragOff;
 	s << _splitsSet;
 	auto size = _splits.size();
 	s << size;

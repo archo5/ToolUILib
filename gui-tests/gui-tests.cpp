@@ -377,6 +377,7 @@ void Demo_SettingsWindow();
 void Demo_BasicTreeNodeEdit();
 void Demo_CompactTreeNodeEdit();
 void Demo_ScriptTree();
+void Demo_AnimatedPatternEditor();
 void Demo_NodeGraphEditor();
 void Demo_TrackEditor();
 void Demo_SlidingHighlightAnim();
@@ -489,6 +490,7 @@ static const TestEntry demoEntries[] =
 	{ "Tree", Demo_BasicTreeNodeEdit },
 	{ "Inline tree", Demo_CompactTreeNodeEdit },
 	{ "Script tree", Demo_ScriptTree },
+	{ "Animated pattern editor", Demo_AnimatedPatternEditor },
 	{ "Track editor demo", Demo_TrackEditor },
 	{},
 	{ "- Animations -" },

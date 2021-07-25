@@ -62,7 +62,7 @@ struct CurveEditorState
 	Vec2f dragOff;
 };
 
-struct ICurves
+struct ICurveView
 {
 	static Range<uint32_t> ExpandForCurves(Range<uint32_t> src, uint32_t max);
 
@@ -137,8 +137,8 @@ struct ICurves
 
 struct CurveEditorUI : CurveEditorState
 {
-	bool OnEvent(const CurveEditorInput& input, ICurves* curves, Event& e);
-	void Render(const CurveEditorInput& input, ICurves* curves);
+	bool OnEvent(const CurveEditorInput& input, ICurveView* curves, Event& e);
+	void Render(const CurveEditorInput& input, ICurveView* curves);
 };
 
 struct CurveEditorElement : UIElement
@@ -146,15 +146,16 @@ struct CurveEditorElement : UIElement
 	void OnInit() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
+	void OnSerialize(IDataSerializer& s) override;
 
 	CurveEditorUI _ui;
-	ICurves* curves = nullptr;
+	ICurveView* curveView = nullptr;
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
 };
 
 
-struct BasicLinear01Curve : ICurves
+struct BasicLinear01Curve : ICurveView
 {
 	std::vector<Vec2f> points;
 
@@ -179,7 +180,7 @@ struct BasicLinear01Curve : ICurves
 	}
 };
 
-struct Sequence01Curve : ICurves
+struct Sequence01Curve
 {
 	enum class Mode
 	{
@@ -199,14 +200,22 @@ struct Sequence01Curve : ICurves
 
 	std::vector<Point> points;
 
+	float EvaluateSegment(const Point& p0, const Point& p1, float q);
+	float Evaluate(float t);
+};
+
+struct Sequence01CurveView : ICurveView
+{
+	Sequence01Curve* curve = nullptr;
+
 	uint32_t GetFeatures() override { return SliceMidpoints; }
 
 	uint32_t GetCurveCount() override { return 1; }
-	uint32_t GetPointCount(uint32_t) override { return points.size(); }
+	uint32_t GetPointCount(uint32_t) override { return curve->points.size(); }
 
 	Vec2f GetPoint(uint32_t, uint32_t pointid) override
 	{
-		return { points[pointid].posX, points[pointid].posY };
+		return { curve->points[pointid].posX, curve->points[pointid].posY };
 	}
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override;
 	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override;
@@ -214,33 +223,18 @@ struct Sequence01Curve : ICurves
 	bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) override { return true; }
 	Vec2f GetSliceMidpoint(uint32_t curveid, uint32_t sliceid) override
 	{
-		return { 0.5f, points[sliceid + 1].tweak };
+		return { 0.5f, curve->points[sliceid + 1].tweak };
 	}
 	void SetSliceMidpoint(uint32_t curveid, uint32_t sliceid, Vec2f p) override
 	{
-		points[sliceid + 1].tweak = p.y;
+		curve->points[sliceid + 1].tweak = p.y;
 	}
 };
 
-struct CubicNormalizedRemapCurve : ICurves
+struct CubicNormalizedRemapCurve
 {
 	Vec2f t0r = { 1.0f / 3.0f, 0.0f / 3.0f };
 	Vec2f t1l = { 1.0f / 3.0f, 0.0f / 3.0f };
-
-	uint32_t GetFeatures() override { return Tangents; }
-
-	uint32_t GetCurveCount() override { return 1; }
-	uint32_t GetPointCount(uint32_t) override { return 2; }
-
-	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return pointid == 0 ? Vec2f(0, 0) : Vec2f(1, 1); }
-	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override {}
-
-	virtual bool HasLeftTangent(uint32_t, uint32_t pointid) { return pointid == 1; }
-	virtual Vec2f GetLeftTangentPoint(uint32_t, uint32_t) { return Vec2f(1, 1) - t1l; }
-	virtual void SetLeftTangentPoint(uint32_t, uint32_t, Vec2f p) { t1l = Vec2f(1 - clamp(p.x, 0.0f, 1.0f), 1 - p.y); }
-	virtual bool HasRightTangent(uint32_t, uint32_t pointid) { return pointid == 0; }
-	virtual Vec2f GetRightTangentPoint(uint32_t, uint32_t) { return t0r; }
-	virtual void SetRightTangentPoint(uint32_t, uint32_t, Vec2f p) { t0r = { clamp(p.x, 0.0f, 1.0f), p.y }; }
 
 	static float cubiclerp(float x0, float x1, float x2, float x3, float q)
 	{
@@ -251,10 +245,8 @@ struct CubicNormalizedRemapCurve : ICurves
 		float x123 = lerp(x12, x23, q);
 		return lerp(x012, x123, q);
 	}
-	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
+	float InterpolateSlow(float q)
 	{
-		float oq = q;
-
 		float x1 = t0r.x;
 		float x2 = 1 - t1l.x;
 		float y1 = t0r.y;
@@ -273,7 +265,32 @@ struct CubicNormalizedRemapCurve : ICurves
 		}
 		q = (search.min + search.max) * 0.5f;
 
-		return { oq, cubiclerp(0, y1, y2, 1, q) };
+		return cubiclerp(0, y1, y2, 1, q);
+	}
+};
+
+struct CubicNormalizedRemapCurveView : ICurveView
+{
+	CubicNormalizedRemapCurve* curve = nullptr;
+
+	uint32_t GetFeatures() override { return Tangents; }
+
+	uint32_t GetCurveCount() override { return 1; }
+	uint32_t GetPointCount(uint32_t) override { return 2; }
+
+	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return pointid == 0 ? Vec2f(0, 0) : Vec2f(1, 1); }
+	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override {}
+
+	virtual bool HasLeftTangent(uint32_t, uint32_t pointid) { return pointid == 1; }
+	virtual Vec2f GetLeftTangentPoint(uint32_t, uint32_t) { return Vec2f(1, 1) - curve->t1l; }
+	virtual void SetLeftTangentPoint(uint32_t, uint32_t, Vec2f p) { curve->t1l = Vec2f(1 - clamp(p.x, 0.0f, 1.0f), 1 - p.y); }
+	virtual bool HasRightTangent(uint32_t, uint32_t pointid) { return pointid == 0; }
+	virtual Vec2f GetRightTangentPoint(uint32_t, uint32_t) { return curve->t0r; }
+	virtual void SetRightTangentPoint(uint32_t, uint32_t, Vec2f p) { curve->t0r = { clamp(p.x, 0.0f, 1.0f), p.y }; }
+
+	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
+	{
+		return { q, curve->InterpolateSlow(q) };
 	}
 };
 
