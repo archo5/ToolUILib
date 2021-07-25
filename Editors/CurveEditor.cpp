@@ -3,6 +3,75 @@
 
 namespace ui {
 
+void GridAxisSettings::Draw(AABB2f viewport, AABB2f winRect, bool vertical)
+{
+	if (baseUnit == 0)
+		return;
+
+	float winRange = vertical ? winRect.GetHeight() : winRect.GetWidth();
+	float viewMin = vertical ? viewport.y0 : viewport.x0;
+	float viewMax = vertical ? viewport.y1 : viewport.x1;
+	float viewRange = viewMax - viewMin;
+	if (winRange == 0 || viewRange == 0)
+		return;
+
+	float unitWin = baseUnit * winRange / viewRange;
+	bool enableLine1 = unitWin >= minPixelDist;
+	bool enableLine2 = unitWin * line2Period >= minPixelDist;
+	int actualLine3Period = line3Period;
+	while (unitWin * actualLine3Period < minPixelDist)
+		actualLine3Period *= 2;
+
+	int firstLine, lastLine, step;
+	if (!enableLine1 && !enableLine2)
+	{
+		// all are line3
+		firstLine = ceil(viewMin / (baseUnit * actualLine3Period)) * actualLine3Period;
+		lastLine = floor(viewMax / (baseUnit * actualLine3Period)) * actualLine3Period;
+		step = actualLine3Period;
+	}
+	else
+	{
+		firstLine = ceil(viewMin / baseUnit);
+		lastLine = floor(viewMax / baseUnit);
+		step = 1;
+	}
+
+	for (int i = firstLine; i <= lastLine; i += step)
+	{
+		Color4b col;
+		if (line3Color.a && (i % actualLine3Period) == 0)
+			col = line3Color;
+		else if (enableLine2 && line2Color.a && (i % line2Period) == 0)
+			col = line2Color;
+		else if (enableLine1 && line1Color.a)
+			col = line1Color;
+		else
+			col = { 0 };
+
+		if (col.a)
+		{
+			if (vertical)
+			{
+				float y = lerp(winRect.y0, winRect.y1, invlerp(viewport.y1, viewport.y0, i));
+				draw::AALineCol(winRect.x0, y, winRect.x1, y, 1, col);
+			}
+			else
+			{
+				float x = lerp(winRect.x0, winRect.x1, invlerp(viewport.x0, viewport.x1, i));
+				draw::AALineCol(x, winRect.y0, x, winRect.y1, 1, col);
+			}
+		}
+	}
+}
+
+void GridSettings::Draw(AABB2f viewport, AABB2f winRect)
+{
+	x.Draw(viewport, winRect, false);
+	y.Draw(viewport, winRect, true);
+}
+
+
 Range<uint32_t> ICurveView::ExpandForCurves(Range<uint32_t> src, uint32_t max)
 {
 	if (src.min > 0)
@@ -114,6 +183,8 @@ Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpi
 void ICurveView::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp)
 {
 	Vec2f p = input.viewport.LerpFlipY(input.winRect.InverseLerp(sp));
+	if (float snapX = input.settings->snapX)
+		p.x = roundf(p.x / snapX) * snapX;
 	switch (cpid.pointType)
 	{
 	case CPT_Point:
@@ -453,6 +524,7 @@ void CurveEditorElement::OnEvent(Event& e)
 
 void CurveEditorElement::OnPaint()
 {
+	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
 }
 

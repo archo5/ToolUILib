@@ -6,11 +6,35 @@
 
 namespace ui {
 
+// TODO move Grid
+struct GridAxisSettings
+{
+	float baseUnit = 1; // 0 disables the grid
+	float minPixelDist = 10;
+	// line1Period = 1
+	uint16_t line2Period = 2; // period = 0 disables the line
+	uint16_t line3Period = 5;
+	Color4b line1Color = Color4b(100, 100); // alpha=0 disables rendering
+	Color4b line2Color = Color4b(120, 100);
+	Color4b line3Color = Color4b(200, 100);
+
+	void Draw(AABB2f viewport, AABB2f winRect, bool vertical);
+};
+
+struct GridSettings
+{
+	GridAxisSettings x;
+	GridAxisSettings y;
+
+	void Draw(AABB2f viewport, AABB2f winRect);
+};
+
 struct CurveEditorSettings
 {
 	// to prevent init lists silently zeroing future members
 	CurveEditorSettings() {}
 
+	float snapX = 0;
 	float pointRadius = 5;
 	float tangentLineThickness = 1;
 };
@@ -152,6 +176,7 @@ struct CurveEditorElement : UIElement
 	ICurveView* curveView = nullptr;
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
+	GridSettings gridSettings;
 };
 
 
