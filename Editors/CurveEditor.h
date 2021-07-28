@@ -70,6 +70,11 @@ struct CurvePointID
 		return curveID == o.curveID && pointType == o.pointType && pointID == o.pointID;
 	}
 	bool operator != (const CurvePointID& o) const { return !(*this == o); }
+
+	bool IsValid() const
+	{
+		return !(curveID == 0x3fffffff && pointType == CPT_Midpoint && pointID == UINT32_MAX);
+	}
 };
 
 template<> struct SubUIValueHelper<CurvePointID>
@@ -83,7 +88,8 @@ template<> struct SubUIValueHelper<CurvePointID>
 struct CurveEditorState
 {
 	SubUI<CurvePointID> uiState;
-	Vec2f dragOff;
+	Vec2f dragPointStart;
+	Vec2f dragCursorStart;
 };
 
 struct ICurveView
@@ -125,16 +131,12 @@ struct ICurveView
 	virtual Vec2f GetRightTangentPoint(uint32_t curveid, uint32_t pointid) { return {}; }
 	virtual void SetRightTangentPoint(uint32_t curveid, uint32_t pointid, Vec2f p) {}
 
-	enum class SliceMode
-	{
-		Empty, // no additional modification
-		Modifier, // option to modify a parameter of the slice via vertical dragging
-		ModMoveX, // same as before + ability to move on the X axis
-	};
 	virtual bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) { return false; }
 	// slice midpoint coordinates: x = lerp factor, y = modifier (screen pixel units)
 	virtual Vec2f GetSliceMidpoint(uint32_t curveid, uint32_t sliceid) { return { 0.5f, 0 }; }
 	virtual void SetSliceMidpoint(uint32_t curveid, uint32_t sliceid, Vec2f p) {}
+	virtual float GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid) { return 1; }
+	virtual Vec2f GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid);
 
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
@@ -142,6 +144,8 @@ struct ICurveView
 	void _SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1);
 
 	virtual CurvePointID HitTest(const CurveEditorInput& input, Vec2f cursorPos);
+	virtual void OnEvent(const CurveEditorInput& input, Event& e) {}
+
 	virtual void DrawCurve(const CurveEditorInput& input, uint32_t curveid);
 	virtual void DrawCurvePointsType(
 		const CurveEditorInput& input,
@@ -213,6 +217,7 @@ struct Sequence01Curve
 		SinglePowerCurve,
 		DoublePowerCurve,
 		SawWave,
+		PulseWave,
 	};
 	struct Point
 	{
@@ -227,6 +232,9 @@ struct Sequence01Curve
 
 	float EvaluateSegment(const Point& p0, const Point& p1, float q);
 	float Evaluate(float t);
+
+	void RemovePoint(size_t i);
+	void AddPoint(Vec2f pos);
 };
 
 struct Sequence01CurveView : ICurveView
@@ -254,6 +262,10 @@ struct Sequence01CurveView : ICurveView
 	{
 		curve->points[sliceid + 1].tweak = p.y;
 	}
+	float GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid) override;
+	Vec2f GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid) override;
+
+	void OnEvent(const CurveEditorInput& input, Event& e) override;
 };
 
 struct CubicNormalizedRemapCurve
@@ -317,6 +329,8 @@ struct CubicNormalizedRemapCurveView : ICurveView
 	{
 		return { q, curve->InterpolateSlow(q) };
 	}
+
+	void OnEvent(const CurveEditorInput& input, Event& e) override;
 };
 
 } // ui

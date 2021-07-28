@@ -97,6 +97,7 @@ struct MenuItemCollection
 		basePriority++;
 		auto& fn = Add(path, disabled, checked);
 		basePriority++;
+		return fn;
 	}
 	void Clear()
 	{

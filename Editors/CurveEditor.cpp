@@ -1,6 +1,9 @@
 
 #include "CurveEditor.h"
 
+#include "../Model/Menu.h"
+
+
 namespace ui {
 
 void GridAxisSettings::Draw(AABB2f viewport, AABB2f winRect, bool vertical)
@@ -159,6 +162,12 @@ int ICurveView::GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointi
 	return GetCurvePointsForRange(curveid, firstpointid, { qmin, qmax }, out, maxOut);
 }
 
+Vec2f ICurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
+{
+	auto p = GetSliceMidpoint(curveid, sliceid);
+	return GetInterpolatedPoint(curveid, sliceid, p.x);
+}
+
 Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
 {
 	Vec2f p = {};
@@ -269,8 +278,7 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 				if (HasSliceMidpoint(cid, pid))
 				{
-					Vec2f p = GetSliceMidpoint(cid, pid);
-					p = GetInterpolatedPoint(cid, pid, p.x);
+					Vec2f p = GetSliceMidpointPosition(cid, pid);
 					p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_Midpoint, pid };
@@ -354,8 +362,7 @@ void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveE
 		case CPT_Midpoint:
 			if (!HasSliceMidpoint(curveid, pid))
 				continue;
-			p = GetSliceMidpoint(curveid, pid);
-			p = GetInterpolatedPoint(curveid, pid, p.x);
+			p = GetSliceMidpointPosition(curveid, pid);
 			break;
 		case CPT_LTangent:
 			if (!HasLeftTangent(curveid, pid))
@@ -491,14 +498,24 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 	switch (ret)
 	{
 	case SubUIDragState::Start:
-		dragOff = curves->GetScreenPoint(input, uiState._pressed) - e.position;
+		dragPointStart = curves->GetScreenPoint(input, uiState._pressed);
+		dragCursorStart = e.position;
 		break;
-	case SubUIDragState::Move:
-		curves->SetScreenPoint(input, uiState._pressed, e.position + dragOff);
-		if (uiState._pressed.pointType == CPT_Point)
-			uiState._pressed.pointID = curves->_FixPointOrder(uiState._pressed.curveID, uiState._pressed.pointID);
-		break;
+	case SubUIDragState::Move: {
+		auto pid = uiState._pressed;
+
+		float q = 1;
+		if (pid.pointType == CPT_Midpoint)
+			q = curves->GetSliceMidpointVertDragFactor(pid.curveID, pid.pointID);
+
+		curves->SetScreenPoint(input, pid, dragPointStart + (e.position - dragCursorStart) * q);
+
+		if (pid.pointType == CPT_Point)
+			pid.pointID = curves->_FixPointOrder(pid.curveID, pid.pointID);
+
+		break; }
 	}
+	curves->OnEvent(input, e);
 	return false;
 }
 
@@ -530,7 +547,8 @@ void CurveEditorElement::OnPaint()
 
 void CurveEditorElement::OnSerialize(IDataSerializer& s)
 {
-	s << _ui.dragOff;
+	s << _ui.dragPointStart;
+	s << _ui.dragCursorStart;
 	s << _ui.uiState._hovered;
 	s << _ui.uiState._pressed;
 }
@@ -547,19 +565,25 @@ float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q
 {
 	switch (p1.mode)
 	{
-	case Sequence01Curve::Mode::Hold:
+	case Mode::Hold:
 		q = 0;
 		break;
-	case Sequence01Curve::Mode::SinglePowerCurve:
+	case Mode::SinglePowerCurve:
 		q = DoPowerCurve(q, p1.tweak);
 		break;
-	case Sequence01Curve::Mode::DoublePowerCurve:
+	case Mode::DoublePowerCurve:
 		q = DoPowerCurve(fabsf(q * 2 - 1), p1.tweak) * sign(q * 2 - 1) * 0.5f + 0.5f;
 		break;
-	case Sequence01Curve::Mode::SawWave:
+	case Mode::SawWave:
 		q = fmodf(q * (1.0f + floorf(fabsf(p1.tweak))) * 0.99999f, 1.0f);
 		if (p1.tweak < 0)
 			q = 1 - q;
+		break;
+	case Mode::PulseWave:
+		q = fmodf(q * (1.0f + floorf(fabsf(p1.tweak))) * 0.99999f, 1.0f);
+		if (p1.tweak < 0)
+			q = 1 - q;
+		q = q > 0.5f ? 1 : 0;
 		break;
 	}
 	return lerp(p0.posY, p1.posY, q);
@@ -584,6 +608,36 @@ float Sequence01Curve::Evaluate(float t)
 		}
 	}
 	return points.back().posY;
+}
+
+void Sequence01Curve::RemovePoint(size_t i)
+{
+	points.erase(points.begin() + i);
+	if (i > 0)
+		points[i].deltaX = points[i].posX - points[i - 1].posX;
+	else
+		points[i].deltaX = points[i].posX;
+}
+
+void Sequence01Curve::AddPoint(Vec2f pos)
+{
+	size_t before = 0;
+	while (before < points.size() && points[before].posX <= pos.x)
+		before++;
+
+	Sequence01Curve::Point p = {};
+	if (!points.empty())
+		p = before < points.size() ? points[before] : points.back();
+	p.posX = pos.x;
+	p.posY = clamp(pos.y, 0.0f, 1.0f);
+
+	points.insert(points.begin() + before, p);
+	if (before > 0)
+		points[before].deltaX = points[before].posX - points[before - 1].posX;
+	if (before + 1 < points.size())
+		points[before + 1].deltaX = points[before + 1].posX - points[before].posX;
+	if (before == 0 && points.size() > 1)
+		points[before + 1].mode = Mode::SinglePowerCurve;
 }
 
 
@@ -614,6 +668,95 @@ Vec2f Sequence01CurveView::GetInterpolatedPoint(uint32_t, uint32_t firstpointid,
 	float retX = lerp(p0.posX, p1.posX, q);
 	float retY = curve->EvaluateSegment(p0, p1, q);
 	return { retX, retY };
+}
+
+float Sequence01CurveView::GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid)
+{
+	auto& p0 = curve->points[sliceid];
+	auto& p1 = curve->points[sliceid + 1];
+	if (p1.mode == Sequence01Curve::Mode::SinglePowerCurve)
+		return p0.posY < p1.posY ? 1 : -1;
+	return 1;
+}
+
+Vec2f Sequence01CurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
+{
+	auto& p0 = curve->points[sliceid];
+	auto& p1 = curve->points[sliceid + 1];
+	switch (p1.mode)
+	{
+	case Sequence01Curve::Mode::SawWave:
+	case Sequence01Curve::Mode::PulseWave:
+		return { (p0.posX + p1.posX) * 0.5f, (p0.posY + p1.posY) * 0.5f };
+	default:
+		return ICurveView::GetSliceMidpointPosition(curveid, sliceid);
+	}
+}
+
+void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
+{
+	using Mode = Sequence01Curve::Mode;
+	if (e.type == EventType::ContextMenu)
+	{
+		auto hp = HitTest(input, e.position);
+		auto& cm = ContextMenu::Get();
+		if (hp.IsValid())
+		{
+			if (hp.pointType == CPT_Point)
+			{
+				cm.AddNext("Delete point") = [this, hp]()
+				{
+					curve->RemovePoint(hp.pointID);
+				};
+				cm.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+
+				auto& p = curve->points[hp.pointID];
+				cm.AddNext("Set to 0") = [this, &p]() { p.posY = 0; };
+				cm.AddNext("Set to 1") = [this, &p]() { p.posY = 1; };
+			}
+			if (hp.pointType == CPT_Midpoint)
+			{
+				cm.AddNext("Reset tweak value") = [this, hp]()
+				{
+					auto& pts = curve->points;
+					pts[hp.pointID + 1].tweak = 0;
+				};
+				cm.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+
+				auto& p = curve->points[hp.pointID + 1];
+#define UI_SETMODE(NAME, NEWMODE) cm.AddNext(NAME, false, p.mode == NEWMODE) = [this, &p]() { p.mode = NEWMODE; };
+				UI_SETMODE("Hold", Mode::Hold);
+				UI_SETMODE("Single power curve", Mode::SinglePowerCurve);
+				UI_SETMODE("Double power curve", Mode::DoublePowerCurve);
+				UI_SETMODE("Saw wave", Mode::SawWave);
+				UI_SETMODE("Pulse wave", Mode::PulseWave);
+#undef UI_SETMODE
+			}
+		}
+		else
+		{
+			Vec2f cwp = input.viewport.LerpFlipY(input.winRect.InverseLerp(e.position));
+			if (float s = input.settings->snapX)
+				cwp.x = roundf(cwp.x / s) * s;
+			cm.AddNext("Add") = [this, cwp]()
+			{
+				curve->AddPoint(cwp);
+			};
+		}
+	}
+}
+
+
+void CubicNormalizedRemapCurveView::OnEvent(const CurveEditorInput& input, Event& e)
+{
+	if (e.type == EventType::ContextMenu)
+	{
+		auto& cm = ContextMenu::Get();
+		cm.Add("Reset") = [this]()
+		{
+			*curve = CubicNormalizedRemapCurve();
+		};
+	}
 }
 
 } // ui
