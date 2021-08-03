@@ -677,7 +677,7 @@ struct MathExprData
 								memcpy(bfr, name.data(), name.size());
 								bfr[name.size()] = 0;
 
-								fid = src->FindFunction(bfr, &expArgs);
+								fid = src->FindFunction(bfr, expArgs);
 							}
 							if (fid != IMathExprDataSource::NOT_FOUND)
 							{
@@ -979,7 +979,7 @@ struct TestMathExpr
 					return 0;
 				return NOT_FOUND;
 			}
-			ID FindFunction(const char* name, int* outNumArgs) override
+			ID FindFunction(const char* name, int& outNumArgs) override
 			{
 				if (IsNameEqualTo(name, "ff"))
 					return 0;
@@ -1082,11 +1082,11 @@ struct TestMathExpr
 			if (IsNameEqualTo(name, "two")) return 1;
 			return NOT_FOUND;
 		}
-		ID FindFunction(const char* name, int* outNumArgs) override
+		ID FindFunction(const char* name, int& outNumArgs) override
 		{
-			if (IsNameEqualTo(name, "zeroargs")) { *outNumArgs = 0; return 0; }
-			if (IsNameEqualTo(name, "onearg")) { *outNumArgs = 1; return 1; }
-			if (IsNameEqualTo(name, "twoargs")) { *outNumArgs = 2; return 2; }
+			if (IsNameEqualTo(name, "zeroargs")) { outNumArgs = 0; return 0; }
+			if (IsNameEqualTo(name, "onearg")) { outNumArgs = 1; return 1; }
+			if (IsNameEqualTo(name, "twoargs")) { outNumArgs = 2; return 2; }
 			return NOT_FOUND;
 		}
 		float GetVariable(ID id) override

@@ -18,7 +18,7 @@ struct IMathExprDataSource
 	static bool IsNameEqualTo(const char* name, const char* name2);
 
 	virtual ID FindVariable(const char* name) { return NOT_FOUND; }
-	virtual ID FindFunction(const char* name, int* outNumArgs) { return NOT_FOUND; }
+	virtual ID FindFunction(const char* name, int& outNumArgs) { return NOT_FOUND; }
 	virtual float GetVariable(ID id) { return 0; }
 	virtual float CallFunction(ID id, const float* args, int numArgs) { return 0; }
 };
