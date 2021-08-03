@@ -190,6 +190,8 @@ struct JSONLinearReader
 
 std::string Base16Encode(const void* src, size_t size);
 std::string Base16Decode(StringView src, bool* valid = nullptr);
+std::string Base64Encode(const void* src, size_t size, const char* endChars = "+/", bool pad = true);
+std::string Base64Decode(StringView src, const char* endChars = "+/", bool needPadding = false, bool* valid = nullptr);
 
 struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
 {

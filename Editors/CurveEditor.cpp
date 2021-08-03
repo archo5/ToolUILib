@@ -15,7 +15,7 @@ void GridAxisSettings::Draw(AABB2f viewport, AABB2f winRect, bool vertical)
 	float viewMin = vertical ? viewport.y0 : viewport.x0;
 	float viewMax = vertical ? viewport.y1 : viewport.x1;
 	float viewRange = viewMax - viewMin;
-	if (winRange == 0 || viewRange == 0)
+	if (winRange <= 0 || viewRange <= 0)
 		return;
 
 	float unitWin = baseUnit * winRange / viewRange;

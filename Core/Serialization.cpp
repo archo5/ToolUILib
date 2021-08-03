@@ -888,5 +888,189 @@ std::string Base16Decode(StringView src, bool* valid)
 	return tmp;
 }
 
+static void B64GenAlphabet(char* alphabet, const char* endChars)
+{
+	memcpy(alphabet, "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "abcdefghijklmnopqrstuvwxyz" "0123456789", 62);
+	alphabet[62] = endChars && *endChars ? *endChars++ : '+';
+	alphabet[63] = endChars && *endChars ? *endChars : '/';
+}
+
+static uint8_t B64Decode(char c, char c62, char c63)
+{
+	if (c == c62)
+		return 62;
+	if (c == c63)
+		return 63;
+	if (c == '=')
+		return 0;
+	if (c >= 'A' && c <= 'Z')
+		return c - 'A';
+	if (c >= 'a' && c <= 'z')
+		return c - 'a' + 26;
+	if (c >= '0' && c <= '9')
+		return c - '0' + 52;
+	return 0xff;
+}
+
+std::string Base64Encode(const void* src, size_t size, const char* endChars, bool pad)
+{
+	char alphabet[64];
+	B64GenAlphabet(alphabet, endChars);
+
+	std::string tmp;
+	tmp.reserve((size + 2) / 3 * 4);
+
+	size_t rem = size % 3;
+	auto* srcu = (const uint8_t*)src;
+	auto* srcend = srcu + (size / 3 * 3);
+
+	uint32_t mem;
+	for (auto* s = srcu; s != srcend; s += 3)
+	{
+		mem = (uint32_t(s[0]) << 16) | (uint32_t(s[1]) << 8) | s[2];
+		tmp.push_back(alphabet[(mem >> 18) & 0x3f]);
+		tmp.push_back(alphabet[(mem >> 12) & 0x3f]);
+		tmp.push_back(alphabet[(mem >> 6) & 0x3f]);
+		tmp.push_back(alphabet[mem & 0x3f]);
+	}
+	switch (rem)
+	{
+	case 0:
+		break;
+	case 1:
+		mem = (uint32_t(srcend[0]) << 16);
+		tmp.push_back(alphabet[(mem >> 18) & 0x3f]);
+		tmp.push_back(alphabet[(mem >> 12) & 0x3f]);
+		if (pad)
+		{
+			tmp.push_back('=');
+			tmp.push_back('=');
+		}
+		break;
+	case 2:
+		mem = (uint32_t(srcend[0]) << 16) | (uint32_t(srcend[1]) << 8);
+		tmp.push_back(alphabet[(mem >> 18) & 0x3f]);
+		tmp.push_back(alphabet[(mem >> 12) & 0x3f]);
+		tmp.push_back(alphabet[(mem >> 6) & 0x3f]);
+		if (pad)
+		{
+			tmp.push_back('=');
+		}
+		break;
+	}
+	return tmp;
+}
+
+std::string Base64Decode(StringView src, const char* endChars, bool needPadding, bool* valid)
+{
+	if (needPadding && (src.size() % 4 != 0))
+	{
+		if (valid)
+			*valid = false;
+		return {};
+	}
+
+	while (!src.empty() && src.last() == '=')
+		src = src.substr(0, src.size() - 1);
+	if (src.size() == 1)
+	{
+		if (valid)
+			*valid = false;
+		return {};
+	}
+
+	std::string tmp;
+	tmp.reserve((src.size() + 3) / 4 * 3);
+
+	char c62 = endChars && *endChars ? *endChars++ : '+';
+	char c63 = endChars && *endChars ? *endChars : '/';
+
+	while (src.size() >= 4)
+	{
+		uint8_t v0 = B64Decode(src[0], c62, c63);
+		uint8_t v1 = B64Decode(src[1], c62, c63);
+		uint8_t v2 = B64Decode(src[2], c62, c63);
+		uint8_t v3 = B64Decode(src[3], c62, c63);
+		if (v0 == 0xff || v1 == 0xff || v2 == 0xff || v3 == 0xff)
+		{
+			if (valid)
+				*valid = false;
+			return {};
+		}
+		// 33333322 22221111 11000000
+		uint8_t b0 = (v0 << 2) | (v1 >> 4);
+		uint8_t b1 = (v1 << 4) | (v2 >> 2);
+		uint8_t b2 = (v2 << 6) | v3;
+		tmp.push_back(b0);
+		tmp.push_back(b1);
+		tmp.push_back(b2);
+		src = src.substr(4);
+	}
+
+	if (src.size() == 2)
+	{
+		uint8_t v0 = B64Decode(src[0], c62, c63);
+		uint8_t v1 = B64Decode(src[1], c62, c63);
+		if (v0 == 0xff || v1 == 0xff)
+		{
+			if (valid)
+				*valid = false;
+			return {};
+		}
+		uint8_t b0 = (v0 << 2) | (v1 >> 4);
+		tmp.push_back(b0);
+	}
+	else if (src.size() == 3)
+	{
+		uint8_t v0 = B64Decode(src[0], c62, c63);
+		uint8_t v1 = B64Decode(src[1], c62, c63);
+		uint8_t v2 = B64Decode(src[2], c62, c63);
+		if (v0 == 0xff || v1 == 0xff || v2 == 0xff)
+		{
+			if (valid)
+				*valid = false;
+			return {};
+		}
+		uint8_t b0 = (v0 << 2) | (v1 >> 4);
+		uint8_t b1 = (v1 << 4) | (v2 >> 2);
+		tmp.push_back(b0);
+		tmp.push_back(b1);
+	}
+
+	if (valid)
+		*valid = true;
+	return tmp;
+}
+
+
+#if 0
+#include <stdio.h>
+#include <stdlib.h>
+#define ASSERT_EQUAL(xref, x) if ((xref) != (x)) \
+	printf("%d: ERROR (%s exp. %s): [%zu]\"%s\" is not [%zu]\"%s\"\n", \
+		__LINE__, #x, #xref, (x).size(), (x).c_str(), (xref).size(), (xref).c_str());
+struct TestSerialization
+{
+	TestSerialization()
+	{
+		TestBase64();
+		exit(0);
+	}
+
+	void TestBase64()
+	{
+		// one-way
+		ASSERT_EQUAL(std::string("AA=="), Base64Encode("\0", 1));
+		ASSERT_EQUAL(std::string("Y2F0"), Base64Encode("cat", 3));
+		ASSERT_EQUAL(std::string("Y2F0cw=="), Base64Encode("cats", 4));
+
+		// roundtrip
+		ASSERT_EQUAL(std::string("\0", 1), Base64Decode(Base64Encode("\0", 1)));
+		ASSERT_EQUAL(std::string("cat"), Base64Decode(Base64Encode("cat", 3)));
+		ASSERT_EQUAL(std::string("cats"), Base64Decode(Base64Encode("cats", 4)));
+	}
+}
+g_tests;
+#endif
 
 } // ui

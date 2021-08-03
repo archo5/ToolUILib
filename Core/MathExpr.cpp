@@ -888,20 +888,27 @@ MathExpr::MathExpr(MathExpr&& o) : _data(o._data)
 MathExpr::~MathExpr()
 {
 	delete static_cast<MathExprData*>(_data);
+	_data = nullptr;
 }
 
 MathExpr& MathExpr::operator = (const MathExpr& o)
 {
-	delete static_cast<MathExprData*>(_data);
-	_data = o._data ? static_cast<MathExprData*>(o._data)->Clone() : nullptr;
+	if (this != &o)
+	{
+		delete static_cast<MathExprData*>(_data);
+		_data = o._data ? static_cast<MathExprData*>(o._data)->Clone() : nullptr;
+	}
 	return *this;
 }
 
 MathExpr& MathExpr::operator = (MathExpr&& o)
 {
-	delete static_cast<MathExprData*>(_data);
-	_data = o._data;
-	o._data = nullptr;
+	if (this != &o)
+	{
+		delete static_cast<MathExprData*>(_data);
+		_data = o._data;
+		o._data = nullptr;
+	}
 	return *this;
 }
 
@@ -929,7 +936,7 @@ float MathExpr::Evaluate(IMathExprDataSource* src)
 #include <stdio.h>
 #include <stdlib.h>
 #define ASSERT_EQUAL(xref, x) if ((xref) != (x)) \
-    printf("%d: ERROR (%s exp. %s): %s is not %s\n", __LINE__, #x, #xref, (x) ? "true" : "false", (xref) ? "true" : "false");
+	printf("%d: ERROR (%s exp. %s): %s is not %s\n", __LINE__, #x, #xref, (x) ? "true" : "false", (xref) ? "true" : "false");
 #define ASSERT_NEAR(a, b) if (fabsf(float(a) - float(b)) > 0.0001f) \
 	printf("%d: ERROR (%s near %s): %g is not near %g\n", __LINE__, #a, #b, float(a), float(b))
 struct TestMathExpr
@@ -965,6 +972,11 @@ struct TestMathExpr
 				static const char* vars[] = { "qq", nullptr };
 				return vars;
 			}
+			const char** GetFunctionNames() override
+			{
+				static const char* fns[] = { "ff", nullptr };
+				return fns;
+			}
 		} qqvarsrc;
 		ASSERT_EQUAL(true, MathExpr().Compile("qq", &qqvarsrc));
 
@@ -992,6 +1004,12 @@ struct TestMathExpr
 		ASSERT_EQUAL(true, MathExpr().Compile("sin(1)", nullptr));
 		ASSERT_EQUAL(true, MathExpr().Compile("max(1,2)", nullptr));
 		ASSERT_EQUAL(true, MathExpr().Compile("lerp(1,2,0.5)", nullptr));
+
+		// function with variable args
+		ASSERT_EQUAL(true, MathExpr().Compile("qq+lerp(qq,qq,qq)", &qqvarsrc));
+
+		// unfinished expr
+		ASSERT_EQUAL(false, MathExpr().Compile("32+lerp(0,1,ff(", &qqvarsrc));
 	}
 
 	struct ErrorCollector : IMathExprErrorOutput

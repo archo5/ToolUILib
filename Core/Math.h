@@ -112,6 +112,14 @@ template <class T> struct Size2
 	T x, y;
 
 	template <class U> UI_FORCEINLINE Size2<U> Cast() const { return { U(x), U(y) }; }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Size2");
+		OnField(oi, "x", x);
+		OnField(oi, "y", y);
+		oi.EndObject();
+	}
 };
 
 using Size2f = Size2<float>;
