@@ -21,26 +21,14 @@ struct DefaultErrorOutput : IMathExprErrorOutput
 };
 static DefaultErrorOutput g_defErrOut;
 
-static const char* EMPTY_LIST[] = { nullptr };
+bool IMathExprDataSource::IsNameEqualTo(const char* name, const char* name2)
+{
+	return StringView(name).equal_to_ci(name2);
+}
+
 
 struct DummyMathExprDataSource : IMathExprDataSource
 {
-	const char** GetVariableNames() override
-	{
-		return EMPTY_LIST;
-	}
-	const char** GetFunctionNames() override
-	{
-		return EMPTY_LIST;
-	}
-	float GetVariable(const char* name)
-	{
-		return 0;
-	}
-	float CallFunction(const char* name, const float* args, int numArgs)
-	{
-		return 0;
-	}
 };
 static DummyMathExprDataSource g_dummyEval;
 
@@ -49,8 +37,10 @@ struct MathExprData
 	enum Instr
 	{
 		PushConst, // push constant on stack, increment push marker
-		PushVar, // push variable [id] on stack using source index
-		FuncCall, // call a function [#args, inline name], replacing arguments with the return value
+		PushVar, // push variable on stack [1-byte index] in variable ID array
+		PushVar16, // push variable on stack [2-byte index] in variable ID array
+		FuncCall, // call a function [#args, 1-byte ID], replacing arguments with the return value
+		FuncCall16, // call a function [#args, 2-byte ID], replacing arguments with the return value
 		Return, // finish the evaluation and return the topmost value on stack
 		// unary ops
 		Negate,
@@ -61,6 +51,13 @@ struct MathExprData
 		Div,
 		Mod, // also func
 		Pow, // also func
+		// binary cmp ops
+		IfEQ,
+		IfNE,
+		IfGT,
+		IfGE,
+		IfLT,
+		IfLE,
 		// one arg functions
 		Abs,
 		Sign,
@@ -72,8 +69,10 @@ struct MathExprData
 		Frac,
 
 		Sqrt,
+		LogE,
 		Log2,
 		Log10,
+		ExpE,
 		Exp2,
 
 		Sin,
@@ -89,20 +88,20 @@ struct MathExprData
 		Clamp,
 		Lerp,
 		InvLerp,
+		LerpC,
+		InvLerpC,
 	};
 
 	float* constants = nullptr;
 	uint8_t* code = nullptr;
 	float* varMem = nullptr;
-	char* varNames = nullptr;
+	uint16_t* varIDs = nullptr;
 
 	float* stack = nullptr;
 
-	// for cloning only
 	size_t numConstants;
 	size_t numCodeBytes;
 	size_t numVars;
-	size_t numVarNameBytes;
 	size_t stackSize;
 
 	float Eval(IMathExprDataSource* src)
@@ -110,9 +109,9 @@ struct MathExprData
 		// load variables
 		{
 			float* curVarMem = varMem;
-			for (char* curVar = varNames; *curVar; curVar += strlen(curVar) + 1)
+			for (size_t i = 0; i < numVars; i++)
 			{
-				*curVarMem++ = src->GetVariable(curVar);
+				*curVarMem++ = src->GetVariable(varIDs[i]);
 			}
 		}
 
@@ -129,32 +128,32 @@ struct MathExprData
 			case PushVar:
 				*++stackLast = varMem[*ip++];
 				break;
+			case PushVar16:
+				*++stackLast = varMem[ip[0] | (uint16_t(ip[1]) << 8)];
+				ip += 2;
+				break;
+
 			case FuncCall: {
 				uint8_t numArgs = *ip++;
-				char* name = (char*)ip;
-				ip += strlen(name) + 1;
+				uint16_t id = *ip++;
 				stackLast -= numArgs - 1;
-				*stackLast = src->CallFunction(name, stackLast, numArgs);
+				*stackLast = src->CallFunction(id, stackLast, numArgs);
+				break; }
+			case FuncCall16: {
+				uint8_t numArgs = *ip++;
+				uint16_t id = *ip++;
+				id |= uint16_t(*ip++) << 8;
+				stackLast -= numArgs - 1;
+				*stackLast = src->CallFunction(id, stackLast, numArgs);
 				break; }
 			case Return:
 				return *stackLast;
 
-			case Negate:
-				*stackLast = -*stackLast;
-				break;
+			case Negate: *stackLast = -*stackLast; break;
 
-			case Add:
-				stackLast--;
-				*stackLast += stackLast[1];
-				break;
-			case Sub:
-				stackLast--;
-				*stackLast -= stackLast[1];
-				break;
-			case Mul:
-				stackLast--;
-				*stackLast *= stackLast[1];
-				break;
+			case Add: stackLast--; *stackLast += stackLast[1]; break;
+			case Sub: stackLast--; *stackLast -= stackLast[1]; break;
+			case Mul: stackLast--; *stackLast *= stackLast[1]; break;
 			case Div:
 				stackLast--;
 				if (stackLast[1] == 0)
@@ -167,67 +166,44 @@ struct MathExprData
 					return 0;
 				*stackLast = fmodf(stackLast[0], stackLast[1]);
 				break;
-
-			case Abs:
-				*stackLast = fabsf(*stackLast);
-				break;
-			case Sign:
-				*stackLast = sign(*stackLast);
+			case Pow:
+				stackLast--;
+				*stackLast = powf(stackLast[0], stackLast[1]);
 				break;
 
-			case Round:
-				*stackLast = roundf(*stackLast);
-				break;
-			case Floor:
-				*stackLast = floorf(*stackLast);
-				break;
-			case Ceil:
-				*stackLast = ceilf(*stackLast);
-				break;
-			case Int:
-				*stackLast = float(int(*stackLast));
-				break;
+			case IfEQ: stackLast--; *stackLast = stackLast[0] == stackLast[1]; break;
+			case IfNE: stackLast--; *stackLast = stackLast[0] != stackLast[1]; break;
+			case IfGT: stackLast--; *stackLast = stackLast[0] > stackLast[1]; break;
+			case IfGE: stackLast--; *stackLast = stackLast[0] >= stackLast[1]; break;
+			case IfLT: stackLast--; *stackLast = stackLast[0] < stackLast[1]; break;
+			case IfLE: stackLast--; *stackLast = stackLast[0] <= stackLast[1]; break;
+
+			case Abs: *stackLast = fabsf(*stackLast); break;
+			case Sign: *stackLast = sign(*stackLast); break;
+
+			case Round: *stackLast = roundf(*stackLast); break;
+			case Floor: *stackLast = floorf(*stackLast); break;
+			case Ceil: *stackLast = ceilf(*stackLast); break;
+			case Int: *stackLast = float(int(*stackLast)); break;
 			case Frac: {
 				float dummy;
 				*stackLast = modf(*stackLast, &dummy);
 				break; }
 
-			case Sqrt:
-				*stackLast = sqrtf(*stackLast);
-				break;
-			case Log2:
-				*stackLast = log2f(*stackLast);
-				break;
-			case Log10:
-				*stackLast = log10f(*stackLast);
-				break;
-			case Exp2:
-				*stackLast = exp2f(*stackLast);
-				break;
+			case Sqrt: *stackLast = sqrtf(*stackLast); break;
+			case LogE: *stackLast = logf(*stackLast); break;
+			case Log2: *stackLast = log2f(*stackLast); break;
+			case Log10: *stackLast = log10f(*stackLast); break;
+			case ExpE: *stackLast = expf(*stackLast); break;
+			case Exp2: *stackLast = exp2f(*stackLast); break;
 
-			case Sin:
-				*stackLast = sinf(*stackLast);
-				break;
-			case Cos:
-				*stackLast = cosf(*stackLast);
-				break;
-			case Tan:
-				*stackLast = tanf(*stackLast);
-				break;
-			case ArcSin:
-				*stackLast = asinf(*stackLast);
-				break;
-			case ArcCos:
-				*stackLast = acosf(*stackLast);
-				break;
-			case ArcTan:
-				*stackLast = atanf(*stackLast);
-				break;
+			case Sin: *stackLast = sinf(*stackLast); break;
+			case Cos: *stackLast = cosf(*stackLast); break;
+			case Tan: *stackLast = tanf(*stackLast); break;
+			case ArcSin: *stackLast = asinf(*stackLast); break;
+			case ArcCos: *stackLast = acosf(*stackLast); break;
+			case ArcTan: *stackLast = atanf(*stackLast); break;
 
-			case Pow:
-				stackLast--;
-				*stackLast = powf(stackLast[0], stackLast[1]);
-				break;
 			case Min:
 				stackLast--;
 				*stackLast = min(stackLast[0], stackLast[1]);
@@ -249,6 +225,14 @@ struct MathExprData
 				stackLast -= 2;
 				*stackLast = invlerp(stackLast[0], stackLast[1], stackLast[2]);
 				break;
+			case LerpC:
+				stackLast -= 2;
+				*stackLast = lerp(stackLast[0], stackLast[1], clamp(stackLast[2], 0.0f, 1.0f));
+				break;
+			case InvLerpC:
+				stackLast -= 2;
+				*stackLast = clamp(invlerp(stackLast[0], stackLast[1], stackLast[2]), 0.0f, 1.0f);
+				break;
 			}
 		}
 	}
@@ -256,7 +240,7 @@ struct MathExprData
 	~MathExprData()
 	{
 		delete[] stack;
-		delete[] varNames;
+		delete[] varIDs;
 		delete[] varMem;
 		delete[] code;
 		delete[] constants;
@@ -265,7 +249,7 @@ struct MathExprData
 	MathExprData(
 		const std::vector<float>& arg_constants,
 		const std::vector<uint8_t>& arg_instructions,
-		const std::vector<StringView>& arg_variables,
+		const std::vector<uint16_t>& arg_variables,
 		size_t arg_maxTempStackSize)
 	{
 		constants = new float[arg_constants.size()];
@@ -277,23 +261,9 @@ struct MathExprData
 		numCodeBytes = arg_instructions.size();
 
 		varMem = new float[arg_variables.size()];
+		varIDs = new uint16_t[arg_variables.size()];
+		memcpy(varIDs, arg_variables.data(), sizeof(*varIDs) * arg_variables.size());
 		numVars = arg_variables.size();
-
-		size_t totalVarNameLen = 1;
-		for (const auto& v : arg_variables)
-			totalVarNameLen += v.size() + 1;
-		varNames = new char[totalVarNameLen];
-		{
-			char* cvn = varNames;
-			for (const auto& v : arg_variables)
-			{
-				memcpy(cvn, v.data(), v.size());
-				cvn += v.size();
-				*cvn++ = 0;
-			}
-			*cvn++ = 0;
-		}
-		numVarNameBytes = totalVarNameLen;
 
 		stack = new float[arg_maxTempStackSize];
 		stackSize = arg_maxTempStackSize;
@@ -311,10 +281,8 @@ struct MathExprData
 
 		numVars = o.numVars;
 		varMem = new float[numVars];
-
-		numVarNameBytes = o.numVarNameBytes;
-		varNames = new char[numVarNameBytes];
-		memcpy(varNames, o.varNames, o.numVarNameBytes);
+		varIDs = new uint16_t[numVars];
+		memcpy(varIDs, o.varIDs, sizeof(*varIDs) * numVars);
 
 		stackSize = o.stackSize;
 		stack = new float[stackSize];
@@ -351,7 +319,7 @@ struct MathExprData
 			uint8_t expArgCount = UINT8_MAX;
 			bool canPushArg = true;
 			uint16_t realArgCount = 0;
-			StringView funcName;
+			IMathExprDataSource::ID funcID = UINT16_MAX;
 			StringView refText;
 		};
 		struct Scope
@@ -361,14 +329,13 @@ struct MathExprData
 
 		std::vector<float> constants;
 		std::vector<uint8_t> instructions;
-		std::vector<StringView> foundVars;
+		std::vector<uint16_t> foundVars;
 		std::vector<Op> opStack;
 		size_t maxTempStackSize = 0;
 		size_t curTempStackSize = 0;
 
 		const char* start;
-		const char** variables;
-		const char** functions;
+		IMathExprDataSource* src;
 		IMathExprErrorOutput* errOut;
 
 		MathExprData* CreateExpr()
@@ -454,17 +421,21 @@ struct MathExprData
 			if (op.realOp == UINT8_MAX) // if op is not real
 				return;
 #ifdef MATHEXPR_DEBUG
-			printf("> Op[%d]%.*s expargs=%d realargs=%d\n", op.realOp, int(op.funcName.size()), op.funcName.data(), op.expArgCount, op.realArgCount);
+			printf("> Op[%d]%.*s expargs=%d realargs=%d\n", op.realOp, int(op.refText.size()), op.refText.data(), op.expArgCount, op.realArgCount);
 #endif
 			assert(curTempStackSize >= op.realArgCount);
 			TSSOp(op.realArgCount);
-			instructions.push_back(op.realOp);
 			if (op.realOp == FuncCall)
 			{
+				instructions.push_back(op.funcID > UINT8_MAX ? FuncCall16 : FuncCall);
 				instructions.push_back(uint8_t(op.realArgCount));
-				for (char ch : op.funcName)
-					instructions.push_back(ch);
-				instructions.push_back(0);
+				instructions.push_back(op.funcID & 0xff);
+				if (op.funcID > UINT8_MAX)
+					instructions.push_back(op.funcID >> 8);
+			}
+			else
+			{
+				instructions.push_back(op.realOp);
 			}
 		}
 
@@ -510,12 +481,12 @@ struct MathExprData
 			opStack.push_back({ op, curPrecedence, op, expArgs });
 		}
 
-		void AddFuncCallToStack(uint8_t realOp, uint8_t expArgs, StringView funcName, StringView refText)
+		void AddFuncCallToStack(uint8_t realOp, uint8_t expArgs, IMathExprDataSource::ID funcID, StringView refText)
 		{
 			uint8_t op = TMP_LParen;
 			uint8_t curPrecedence = GetOpPrecedence(op);
 			Op v = { op, curPrecedence, realOp, expArgs };
-			v.funcName = funcName;
+			v.funcID = funcID;
 			v.refText = refText;
 			opStack.push_back(v);
 		}
@@ -533,6 +504,13 @@ struct MathExprData
 				{ "mod", 2, Mod },
 				{ "pow", 2, Pow },
 
+				{ "ifeq", 2, IfEQ },
+				{ "ifne", 2, IfNE },
+				{ "ifgt", 2, IfGT },
+				{ "ifge", 2, IfGE },
+				{ "iflt", 2, IfLT },
+				{ "ifle", 2, IfLE },
+
 				{ "abs", 1, Abs },
 				{ "sign", 1, Sign },
 
@@ -543,8 +521,10 @@ struct MathExprData
 				{ "frac", 1, Frac },
 
 				{ "sqrt", 1, Sqrt },
+				{ "log", 1, LogE },
 				{ "log2", 1, Log2 },
 				{ "log10", 1, Log10 },
+				{ "exp", 1, ExpE },
 				{ "exp2", 1, Exp2 },
 
 				{ "sin", 1, Sin },
@@ -563,13 +543,15 @@ struct MathExprData
 				{ "clamp", 3, Clamp },
 				{ "lerp", 3, Lerp },
 				{ "invlerp", 3, InvLerp },
+				{ "lerpc", 3, LerpC },
+				{ "invlerpc", 3, InvLerpC },
 			};
 
 			for (const auto& fn : builtInFuncs)
 			{
 				if (name.equal_to_ci(fn.name))
 				{
-					AddFuncCallToStack(fn.op, fn.numArgs, fn.name, name);
+					AddFuncCallToStack(fn.op, fn.numArgs, UINT16_MAX, name);
 					return true;
 				}
 			}
@@ -686,16 +668,22 @@ struct MathExprData
 						// function
 						if (!TryBuiltInFunc(name))
 						{
-							bool found = false;
-							for (auto** cf = functions; *cf; cf++)
+							int expArgs = -1;
+							IMathExprDataSource::ID fid = IMathExprDataSource::NOT_FOUND;
+
+							char bfr[256];
+							if (name.size() < sizeof(bfr) - 1)
 							{
-								if (name.equal_to_ci(*cf))
-								{
-									found = true;
-									AddFuncCallToStack(FuncCall, UINT8_MAX, *cf, name);
-								}
+								memcpy(bfr, name.data(), name.size());
+								bfr[name.size()] = 0;
+
+								fid = src->FindFunction(bfr, &expArgs);
 							}
-							if (!found)
+							if (fid != IMathExprDataSource::NOT_FOUND)
+							{
+								AddFuncCallToStack(FuncCall, expArgs >= 0 ? expArgs : UINT8_MAX, fid, name);
+							}
+							else
 								return Error(name, "function not found: %.*s", int(name.size()), name.data());
 						}
 					}
@@ -704,24 +692,47 @@ struct MathExprData
 						// variable
 						if (!TryBuiltInConst(name))
 						{
-							bool found = false;
-							for (auto** cv = variables; *cv; cv++)
+							IMathExprDataSource::ID vid = IMathExprDataSource::NOT_FOUND;
+
+							char bfr[256];
+							if (name.size() < sizeof(bfr) - 1)
 							{
-								if (name.equal_to_ci(*cv))
-								{
-									found = true;
-									if (foundVars.size() == 0xff)
-									{
-										return Error(name, "variable limit (255) reached");
-									}
-									foundVars.push_back(*cv);
-									instructions.push_back(PushVar);
-									instructions.push_back(uint8_t(foundVars.size() - 1));
-									TSSPush();
-									LastScopePushValue();
-								}
+								memcpy(bfr, name.data(), name.size());
+								bfr[name.size()] = 0;
+
+								vid = src->FindVariable(bfr);
 							}
-							if (!found)
+							if (vid != IMathExprDataSource::NOT_FOUND)
+							{
+								size_t at = SIZE_MAX;
+								for (size_t i = 0; i < foundVars.size(); i++)
+								{
+									if (foundVars[i] == vid)
+									{
+										at = i;
+										break;
+									}
+								}
+								if (at == SIZE_MAX)
+								{
+									at = foundVars.size();
+									foundVars.push_back(vid);
+								}
+								if (at > UINT8_MAX)
+								{
+									instructions.push_back(PushVar16);
+									instructions.push_back(at & 0xff);
+									instructions.push_back((at >> 8) & 0xff);
+								}
+								else
+								{
+									instructions.push_back(PushVar);
+									instructions.push_back(at & 0xff);
+								}
+								TSSPush();
+								LastScopePushValue();
+							}
+							else
 								return Error(name, "variable not found: %.*s", int(name.size()), name.data());
 						}
 					}
@@ -805,7 +816,7 @@ struct MathExprData
 								// negate operator
 								AddOpToStack(Negate, 1);
 								opStack.back().realArgCount = 1;
-								opStack.back().funcName = "<negate>";
+								opStack.back().refText = dbgText;
 								LastScopePushValue();
 							}
 						}
@@ -829,7 +840,7 @@ struct MathExprData
 					}
 					AddOpToStack(op, 2);
 					opStack.back().realArgCount = 2;
-					opStack.back().funcName = dbgText;
+					opStack.back().refText = dbgText;
 					LastScopePushValue();
 				}
 				else
@@ -856,12 +867,11 @@ struct MathExprData
 		}
 	};
 
-	static MathExprData* Compile(const char* str, const char** variables, const char** functions, IMathExprErrorOutput* errOut)
+	static MathExprData* Compile(const char* str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
 	{
 		Compiler C;
 		C.start = str;
-		C.variables = variables ? variables : EMPTY_LIST;
-		C.functions = functions ? functions : EMPTY_LIST;
+		C.src = src ? src : &g_dummyEval;
 		C.errOut = errOut ? errOut : &g_defErrOut;
 		if (C.Compile(str))
 		{
@@ -915,11 +925,7 @@ MathExpr& MathExpr::operator = (MathExpr&& o)
 bool MathExpr::Compile(const char* str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
 {
 	delete static_cast<MathExprData*>(_data);
-	_data = MathExprData::Compile(
-		str,
-		src ? src->GetVariableNames() : nullptr,
-		src ? src->GetFunctionNames() : nullptr,
-		errOut);
+	_data = MathExprData::Compile(str, src, errOut);
 	return !!_data;
 }
 
@@ -967,15 +973,17 @@ struct TestMathExpr
 		// valid variable
 		struct DS_QQVar : IMathExprDataSource
 		{
-			const char** GetVariableNames() override
+			ID FindVariable(const char* name) override
 			{
-				static const char* vars[] = { "qq", nullptr };
-				return vars;
+				if (IsNameEqualTo(name, "qq"))
+					return 0;
+				return NOT_FOUND;
 			}
-			const char** GetFunctionNames() override
+			ID FindFunction(const char* name, int* outNumArgs) override
 			{
-				static const char* fns[] = { "ff", nullptr };
-				return fns;
+				if (IsNameEqualTo(name, "ff"))
+					return 0;
+				return NOT_FOUND;
 			}
 		} qqvarsrc;
 		ASSERT_EQUAL(true, MathExpr().Compile("qq", &qqvarsrc));
@@ -1068,33 +1076,37 @@ struct TestMathExpr
 	}
 	struct Data : IMathExprDataSource
 	{
-		const char** GetVariableNames() override
+		ID FindVariable(const char* name) override
 		{
-			static const char* names[] = { "one", "two", nullptr };
-			return names;
+			if (IsNameEqualTo(name, "one")) return 0;
+			if (IsNameEqualTo(name, "two")) return 1;
+			return NOT_FOUND;
 		}
-		const char** GetFunctionNames() override
+		ID FindFunction(const char* name, int* outNumArgs) override
 		{
-			static const char* names[] = { "zeroargs", "onearg", "twoargs", nullptr };
-			return names;
+			if (IsNameEqualTo(name, "zeroargs")) { *outNumArgs = 0; return 0; }
+			if (IsNameEqualTo(name, "onearg")) { *outNumArgs = 1; return 1; }
+			if (IsNameEqualTo(name, "twoargs")) { *outNumArgs = 2; return 2; }
+			return NOT_FOUND;
 		}
-		float GetVariable(const char* name) override
+		float GetVariable(ID id) override
 		{
-			if (!strcmp(name, "one"))
-				return 1;
-			if (!strcmp(name, "two"))
-				return 2;
-			return 0;
+			switch (id)
+			{
+			case 0: return 1;
+			case 1: return 2;
+			default: return 0;
+			}
 		}
-		float CallFunction(const char* name, const float* args, int numArgs) override
+		float CallFunction(ID id, const float* args, int numArgs) override
 		{
-			if (!strcmp(name, "zeroargs") && numArgs == 0)
-				return 123;
-			if (!strcmp(name, "onearg") && numArgs == 1)
-				return args[0] * 5;
-			if (!strcmp(name, "twoargs") && numArgs == 2)
-				return args[0] + args[1];
-			return 0;
+			switch (id)
+			{
+			case 0: return 123;
+			case 1: return args[0] * 5;
+			case 2: return args[0] + args[1];
+			default: return 0;
+			}
 		}
 	};
 	float EvalWithData(const char* expr)

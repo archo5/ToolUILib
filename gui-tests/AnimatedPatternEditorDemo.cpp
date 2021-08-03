@@ -13,31 +13,6 @@ static DataCategoryTag DCT_AnimPatternChanged[1];
 
 static constexpr int NUM_CURVES = 16;
 
-struct VariableAndFunctionNames
-{
-	std::vector<const char*> variables;
-	std::vector<const char*> functions;
-	char stralloc[1024];
-	char* allp = stralloc;
-
-	VariableAndFunctionNames()
-	{
-		variables.push_back("t"); // = returns the current time in steps
-		variables.push_back("numSteps");
-		variables.push_back("duration");
-		variables.push_back("width");
-		variables.push_back("height");
-		for (int i = 0; i < NUM_CURVES; i++)
-		{
-			variables.push_back(allp); // curve# = returns the curve value at the current time, as if calling curve#(t)
-			functions.push_back(allp); // curve#(t) = returns the curve value at the specified time
-			allp += sprintf(allp, "curve%d", i) + 1;
-		}
-		variables.push_back(nullptr);
-	}
-};
-static VariableAndFunctionNames g_vfn;
-
 
 struct APGlobalSettings
 {
@@ -66,6 +41,16 @@ struct APGlobalSettings
 
 struct APMathExprDataSource : IMathExprDataSource
 {
+	enum Variables
+	{
+		T,
+		ImageRes,
+		NumSteps,
+		Duration,
+		Curve0,
+		Curve15 = Curve0 + NUM_CURVES - 1,
+	};
+
 	float t = 0;
 	float evalCurves[NUM_CURVES] = {};
 	APGlobalSettings* settings = nullptr;
@@ -76,36 +61,34 @@ struct APMathExprDataSource : IMathExprDataSource
 			evalCurves[i] = settings->curves[i].Evaluate(t);
 	}
 
-	const char** GetVariableNames() override
+	ID FindVariable(const char* name) override
 	{
-		return g_vfn.variables.data();
-	}
-	const char** GetFunctionNames() override
-	{
-		return g_vfn.functions.data();
-	}
-	float GetVariable(const char* name) override
-	{
-		if (!strcmp(name, "t"))
-			return t;
-		if (!strcmp(name, "width") || !strcmp(name, "height"))
-			return settings->imageRes;
-		if (!strcmp(name, "numSteps"))
-			return settings->numSteps;
-		if (!strcmp(name, "duration"))
-			return settings->duration;
-		if (!strncmp(name, "curve", 5))
+		if (IsNameEqualTo(name, "t")) return T;
+		if (IsNameEqualTo(name, "width") ||
+			IsNameEqualTo(name, "height")) return ImageRes;
+		if (IsNameEqualTo(name, "numSteps")) return NumSteps;
+		if (IsNameEqualTo(name, "duration")) return Duration;
+		for (int i = 0; i < NUM_CURVES; i++)
 		{
-			int pos = atoi(name + 5);
-			if (pos < 0 || pos >= NUM_CURVES)
-				return 0;
-			return evalCurves[pos];
+			char cmp[7] = "curve0";
+			cmp[5] = "0123456789ABCDEF"[i];
+			if (IsNameEqualTo(name, cmp)) return Curve0 + i;
 		}
-		return 0;
+		return NOT_FOUND;
 	}
-	float CallFunction(const char* name, const float* args, int numArgs) override
+	float GetVariable(ID id) override
 	{
-		return 0;
+		switch (id)
+		{
+		case T: return t;
+		case ImageRes: return settings->imageRes;
+		case NumSteps: return settings->numSteps;
+		case Duration: return settings->duration;
+		default:
+			if (id >= Curve0 && id <= Curve15)
+				return evalCurves[id - Curve0];
+			return 0;
+		}
 	}
 };
 
