@@ -937,6 +937,41 @@ float MathExpr::Evaluate(IMathExprDataSource* src)
 	return static_cast<MathExprData*>(_data)->Eval(src ? src : &g_dummyEval);
 }
 
+bool MathExpr::IsConstant() const
+{
+	if (!_data)
+		return true;
+	auto& src = *static_cast<MathExprData*>(_data);
+	if (src.numConstants != 1)
+		return false;
+	if (src.numCodeBytes != 2 ||
+		src.code[0] != MathExprData::PushConst ||
+		src.code[1] != MathExprData::Return)
+		return false;
+	return true;
+}
+
+bool MathExpr::IsConstant(float cmp) const
+{
+	float tmp;
+	return GetConstant(tmp) && tmp == cmp;
+}
+
+bool MathExpr::GetConstant(float& val) const
+{
+	if (!_data)
+	{
+		val = 0;
+		return true;
+	}
+	if (IsConstant())
+	{
+		val = static_cast<MathExprData*>(_data)->constants[0];
+		return true;
+	}
+	return false;
+}
+
 
 #if 0
 #include <stdio.h>

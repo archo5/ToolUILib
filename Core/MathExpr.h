@@ -36,6 +36,10 @@ struct MathExpr
 
 	bool Compile(const char* str, IMathExprDataSource* src = nullptr, IMathExprErrorOutput* errOut = nullptr);
 	float Evaluate(IMathExprDataSource* src = nullptr);
+
+	bool IsConstant() const;
+	bool IsConstant(float cmp) const;
+	bool GetConstant(float& val) const;
 };
 
 } // ui
