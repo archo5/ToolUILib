@@ -578,7 +578,49 @@ static void CheckSplits(SplitPane* sp)
 void SplitPane::OnPaint()
 {
 	styleProps->background_painter->Paint(this);
-	PaintChildren();
+
+	if (firstChild)
+	{
+		size_t split = 0;
+		if (!_verticalSplit)
+		{
+			float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
+			float prevEdge = finalRectC.x0;
+			for (auto* ch = firstChild; ch; ch = ch->next)
+			{
+				UIRect r = finalRectC;
+				auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
+				split++;
+				r.x0 = prevEdge;
+				r.x1 = sr.x0;
+
+				if (draw::PushScissorRect(r.Cast<int>()))
+					ch->Paint();
+				draw::PopScissorRect();
+
+				prevEdge = sr.x1;
+			}
+		}
+		else
+		{
+			float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
+			float prevEdge = finalRectC.y0;
+			for (auto* ch = firstChild; ch; ch = ch->next)
+			{
+				UIRect r = finalRectC;
+				auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
+				split++;
+				r.y0 = prevEdge;
+				r.y1 = sr.y0;
+
+				if (draw::PushScissorRect(r.Cast<int>()))
+					ch->Paint();
+				draw::PopScissorRect();
+
+				prevEdge = sr.y1;
+			}
+		}
+	}
 
 	PaintInfo info(this);
 	if (!_verticalSplit)
