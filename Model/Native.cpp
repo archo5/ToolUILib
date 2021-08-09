@@ -1803,11 +1803,12 @@ int RealMain()
 	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	std::vector<std::string> args;
 	std::vector<char*> argp;
+	args.reserve(argc);
+	argp.reserve(argc);
 	for (int i = 0; i < argc; i++)
-	{
 		args.push_back(ui::WCHARtoUTF8(argv[i]));
+	for (int i = 0; i < argc; i++)
 		argp.push_back(const_cast<char*>(args[i].c_str()));
-	}
 	LocalFree(argv);
 
 	GlobalResources grsrc;
