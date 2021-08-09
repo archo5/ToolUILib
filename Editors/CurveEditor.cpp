@@ -554,6 +554,24 @@ void CurveEditorElement::OnSerialize(IDataSerializer& s)
 }
 
 
+void Sequence01Curve::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Sequence01Curve::Point");
+
+	OnField(oi, "deltaX", deltaX);
+	OnField(oi, "posX", posX);
+	OnField(oi, "posY", posY);
+	OnFieldEnumInt(oi, "mode", mode);
+	OnField(oi, "tweak", tweak);
+
+	oi.EndObject();
+}
+
+void Sequence01Curve::SerializeData(IObjectIterator& oi)
+{
+	OnField(oi, "points", points);
+}
+
 static float DoPowerCurve(float q, float tweak)
 {
 	return tweak >= 0

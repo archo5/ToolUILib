@@ -226,9 +226,13 @@ struct Sequence01Curve
 		float posY;
 		Mode mode = Mode::SinglePowerCurve;
 		float tweak = 0;
+
+		void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 	};
 
 	std::vector<Point> points;
+
+	void SerializeData(IObjectIterator& oi);
 
 	float EvaluateSegment(const Point& p0, const Point& p1, float q);
 	float Evaluate(float t);

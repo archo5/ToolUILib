@@ -664,6 +664,7 @@ struct MathExprData
 					if (it.first_char_is([](char c) { return c == '('; }))
 					{
 						it.take_char();
+						curTokenType = TTLParen;
 
 						// function
 						if (!TryBuiltInFunc(name))
@@ -1053,6 +1054,9 @@ struct TestMathExpr
 
 		// unfinished expr
 		ASSERT_EQUAL(false, MathExpr().Compile("32+lerp(0,1,ff(", &qqvarsrc));
+
+		// bug 1
+		ASSERT_EQUAL(true, MathExpr().Compile("64+lerp(-8,8,qq)", &qqvarsrc));
 	}
 
 	struct ErrorCollector : IMathExprErrorOutput
