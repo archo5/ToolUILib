@@ -1720,6 +1720,20 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 
+ArrayView<char> LoadThemeResource()
+{
+	HRSRC hrsrc = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(50), RT_RCDATA);
+	if (!hrsrc)
+		return {};
+	HGLOBAL hglobal = LoadResource(nullptr, hrsrc);
+	if (!hglobal)
+		return {};
+	char* data = (char*)LockResource(hglobal);
+	size_t size = SizeofResource(nullptr, hrsrc);
+	return { data, size };
+}
+
+
 } // ui
 
 
@@ -1733,6 +1747,8 @@ void InitializeWin32()
 	wc.lpfnWndProc = ui::WindowProc;
 	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hIcon = LoadIcon(GetModuleHandle(nullptr), "MAINICON");
+	wc.hIconSm = LoadIcon(GetModuleHandle(nullptr), "MAINICON");
 	wc.hbrBackground = GetStockBrush(BLACK_BRUSH);
 	wc.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClassExW(&wc);

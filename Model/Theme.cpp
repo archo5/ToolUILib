@@ -40,6 +40,41 @@ static unsigned char* LoadTGA(const char* img, int size[2])
 	return out;
 }
 
+ArrayView<char> LoadThemeResource();
+static unsigned char* LoadThemeTGASys(int size[2])
+{
+	ArrayView<char> data = LoadThemeResource();
+	if (data.empty())
+		return nullptr;
+	size_t p = 0;
+	char idlen = data[p++];
+	assert(idlen == 0); // no id
+	char cmtype = data[p++];
+	assert(cmtype == 0); // no colormap
+	char imgtype = data[p++];
+	assert(imgtype == 2); // only uncompressed true color image supported
+	p += 5;
+
+	p += 4;
+	short fsize[2];
+	memcpy(fsize, &data[p], 4);
+	p += 4;
+	char bpp = data[p++];
+	char imgdesc = data[p++];
+
+	size[0] = fsize[0];
+	size[1] = fsize[1];
+	unsigned char* out = new unsigned char[fsize[0] * fsize[1] * 4];
+	for (int i = 0; i < fsize[0] * fsize[1]; i++)
+	{
+		out[i * 4 + 2] = data[p++];
+		out[i * 4 + 1] = data[p++];
+		out[i * 4 + 0] = data[p++];
+		out[i * 4 + 3] = data[p++];
+	}
+	return out;
+}
+
 Sprite g_themeSprites[TE__COUNT] =
 {
 #if 1
@@ -763,7 +798,9 @@ struct DefaultTheme : Theme
 void InitTheme()
 {
 	int size[2];
-	auto* data = LoadTGA("gui-theme2.tga", size);
+	auto* data = LoadThemeTGASys(size);
+	if (!data)
+		data = LoadTGA("gui-theme2.tga", size);
 	for (int i = 0; i < TE__COUNT; i++)
 	{
 		auto& s = g_themeSprites[i];
