@@ -82,6 +82,7 @@ struct MathExprData
 		ArcCos,
 		ArcTan,
 		// two arg functions
+		ArcTan2,
 		Min,
 		Max,
 		// three arg functions
@@ -204,6 +205,10 @@ struct MathExprData
 			case ArcCos: *stackLast = acosf(*stackLast); break;
 			case ArcTan: *stackLast = atanf(*stackLast); break;
 
+			case ArcTan2:
+				stackLast--;
+				*stackLast = atan2f(stackLast[0], stackLast[1]);
+				break;
 			case Min:
 				stackLast--;
 				*stackLast = min(stackLast[0], stackLast[1]);
@@ -331,6 +336,7 @@ struct MathExprData
 		std::vector<uint8_t> instructions;
 		std::vector<uint16_t> foundVars;
 		std::vector<Op> opStack;
+		int constStreak = 0;
 		size_t maxTempStackSize = 0;
 		size_t curTempStackSize = 0;
 
@@ -410,6 +416,7 @@ struct MathExprData
 #ifdef MATHEXPR_DEBUG
 			printf("> PushConst %g\n", v);
 #endif
+			constStreak++;
 			constants.push_back(v);
 			instructions.push_back(PushConst);
 			TSSPush();
@@ -427,6 +434,7 @@ struct MathExprData
 			TSSOp(op.realArgCount);
 			if (op.realOp == FuncCall)
 			{
+				constStreak = 0;
 				instructions.push_back(op.funcID > UINT8_MAX ? FuncCall16 : FuncCall);
 				instructions.push_back(uint8_t(op.realArgCount));
 				instructions.push_back(op.funcID & 0xff);
@@ -435,8 +443,103 @@ struct MathExprData
 			}
 			else
 			{
-				instructions.push_back(op.realOp);
+				if (constStreak >= op.realArgCount)
+				{
+					EvalConstOp(op.realOp, op.realArgCount);
+				}
+				else
+				{
+					constStreak = 0;
+					instructions.push_back(op.realOp);
+				}
 			}
+		}
+
+		void EvalConstOp(uint8_t op, uint16_t realArgCount)
+		{
+			constStreak -= realArgCount;
+			for (uint16_t i = 0; i < realArgCount; i++)
+				instructions.pop_back();
+
+			const float* cd = constants.data() + constants.size() - realArgCount;
+			float ret = 0;
+			switch (op)
+			{
+			case Negate: ret = -cd[0]; break;
+
+			case Add: ret = cd[0] + cd[1]; break;
+			case Sub: ret = cd[0] - cd[1]; break;
+			case Mul: ret = cd[0] * cd[1]; break;
+			case Div:
+				if (cd[1])
+					ret = cd[0] / cd[1];
+				else
+					ret = 0;
+				break;
+			case Mod:
+				if (cd[1])
+					ret = fmodf(cd[0], cd[1]);
+				else
+					ret = 0;
+				break;
+			case Pow:
+				ret = powf(cd[0], cd[1]);
+				break;
+				
+			case IfEQ: ret = cd[0] == cd[1] ? 1.0f : 0.0f; break;
+			case IfNE: ret = cd[0] != cd[1] ? 1.0f : 0.0f; break;
+			case IfGT: ret = cd[0] > cd[1] ? 1.0f : 0.0f; break;
+			case IfGE: ret = cd[0] >= cd[1] ? 1.0f : 0.0f; break;
+			case IfLT: ret = cd[0] < cd[1] ? 1.0f : 0.0f; break;
+			case IfLE: ret = cd[0] <= cd[1] ? 1.0f : 0.0f; break;
+
+			case Abs: ret = fabsf(cd[0]); break;
+			case Sign: ret = sign(cd[0]); break;
+
+			case Round: ret = roundf(cd[0]); break;
+			case Floor: ret = floorf(cd[0]); break;
+			case Ceil: ret = ceilf(cd[0]); break;
+			case Int: ret = float(int(cd[0])); break;
+			case Frac: {
+				float dummy;
+				ret = modf(cd[0], &dummy);
+				break; }
+
+			case Sqrt: ret = sqrtf(cd[0]); break;
+			case LogE: ret = logf(cd[0]); break;
+			case Log2: ret = log2f(cd[0]); break;
+			case Log10: ret = log10f(cd[0]); break;
+			case ExpE: ret = expf(cd[0]); break;
+			case Exp2: ret = exp2f(cd[0]); break;
+
+			case Sin: ret = sinf(cd[0]); break;
+			case Cos: ret = cosf(cd[0]); break;
+			case Tan: ret = tanf(cd[0]); break;
+			case ArcSin: ret = asinf(cd[0]); break;
+			case ArcCos: ret = acosf(cd[0]); break;
+			case ArcTan: ret = atanf(cd[0]); break;
+
+			case ArcTan2: ret = atan2f(cd[0], cd[1]); break;
+			case Min: ret = min(cd[0], cd[1]); break;
+			case Max: ret = max(cd[0], cd[1]); break;
+				
+			case Clamp: ret = clamp(cd[0], cd[1], cd[2]); break;
+			case Lerp: ret = lerp(cd[0], cd[1], cd[2]); break;
+			case InvLerp: ret = invlerp(cd[0], cd[1], cd[2]); break;
+			case LerpC: ret = lerp(cd[0], cd[1], clamp(cd[2], 0.0f, 1.0f)); break;
+			case InvLerpC: ret = clamp(invlerp(cd[0], cd[1], cd[2]), 0.0f, 1.0f); break;
+
+			default:
+				assert(!"unknown op");
+				break;
+			}
+
+			for (uint16_t i = 0; i < realArgCount; i++)
+				constants.pop_back();
+
+			constStreak++;
+			constants.push_back(ret);
+			instructions.push_back(PushConst);
 		}
 
 		void FinishScope()
@@ -537,6 +640,8 @@ struct MathExprData
 				{ "atan", 1, ArcTan },
 				{ "arctan", 1, ArcTan },
 
+				{ "atan2", 2, ArcTan2 },
+				{ "arctan2", 2, ArcTan2 },
 				{ "min", 2, Min },
 				{ "max", 2, Max },
 
@@ -719,6 +824,7 @@ struct MathExprData
 									at = foundVars.size();
 									foundVars.push_back(vid);
 								}
+								constStreak = 0;
 								if (at > UINT8_MAX)
 								{
 									instructions.push_back(PushVar16);
