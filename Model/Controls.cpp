@@ -1274,6 +1274,8 @@ void Textbox::OnEvent(Event& e)
 	else if (e.type == EventType::GotFocus)
 	{
 		showCaretState = true;
+		startCursor = 0;
+		endCursor = _text.size();
 		//e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == EventType::LostFocus)
@@ -1412,7 +1414,9 @@ void Textbox::OnEvent(Event& e)
 
 void Textbox::OnSerialize(IDataSerializer& s)
 {
-	s << startCursor << endCursor << showCaretState << accumulator;
+	s << _origStartCursor << startCursor << endCursor << showCaretState;
+	s << _hadFocusOnFirstClick << _lastPressRepeatCount;
+	s << accumulator;
 
 	uint32_t len = _text.size();
 	s << len;
