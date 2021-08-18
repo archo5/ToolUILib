@@ -1104,13 +1104,18 @@ void NativeWindowNode::OnLayout(const UIRect& rect, const Size2f& containerSize)
 
 static HashMap<AnimationRequester*, bool> g_animRequesters;
 static UINT_PTR g_animReqTimerID;
+static bool g_inAnimTimerProc;
 
 static void CALLBACK AnimTimerProc(HWND, UINT, UINT_PTR, DWORD)
 {
+	if (g_inAnimTimerProc)
+		return;
+	g_inAnimTimerProc = true;
 	for (auto& kvp : g_animRequesters)
 	{
 		kvp.key->OnAnimationFrame();
 	}
+	g_inAnimTimerProc = false;
 }
 
 void AnimationRequester::BeginAnimation()

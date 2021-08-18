@@ -665,16 +665,10 @@ struct MathExprData
 
 		bool TryBuiltInConst(StringView name)
 		{
-			if (name.equal_to_ci("pi"))
-			{
-				PushValue(PI);
-				return true;
-			}
-			if (name.equal_to_ci("e"))
-			{
-				PushValue(E);
-				return true;
-			}
+			if (name.equal_to_ci("pi")) { PushValue(PI); return true; }
+			if (name.equal_to_ci("e")) { PushValue(E); return true; }
+			if (name.equal_to_ci("deg2rad")) { PushValue(DEG2RAD); return true; }
+			if (name.equal_to_ci("rad2deg")) { PushValue(RAD2DEG); return true; }
 			return false;
 		}
 
