@@ -271,6 +271,7 @@ inline bool operator < (const StringView& a, const StringView& b) { return a.com
 inline bool operator > (const StringView& a, const StringView& b) { return a.compare(b) > 0; }
 inline bool operator <= (const StringView& a, const StringView& b) { return a.compare(b) <= 0; }
 inline bool operator >= (const StringView& a, const StringView& b) { return a.compare(b) >= 0; }
+inline std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
 
 } // ui
 namespace std {
