@@ -315,6 +315,15 @@ struct MathExprData
 		{
 			TMP_LParen = 255,
 		};
+		enum BuiltInFuncFlags
+		{
+			BIF_Degrees = 0x80,
+		};
+		static bool HasDegreeArg(uint8_t op)
+		{
+			op &= ~BIF_Degrees;
+			return op == Sin || op == Cos || op == Tan;
+		}
 
 		struct Op
 		{
@@ -450,7 +459,23 @@ struct MathExprData
 				else
 				{
 					constStreak = 0;
-					instructions.push_back(op.realOp);
+
+					bool degArg = HasDegreeArg(op.realOp);
+					if ((op.realOp & BIF_Degrees) != 0 && degArg)
+					{
+						constants.push_back(DEG2RAD);
+						instructions.push_back(PushConst);
+						instructions.push_back(Mul);
+					}
+
+					instructions.push_back(op.realOp & ~BIF_Degrees);
+
+					if ((op.realOp & BIF_Degrees) != 0 && !degArg)
+					{
+						constants.push_back(RAD2DEG);
+						instructions.push_back(PushConst);
+						instructions.push_back(Mul);
+					}
 				}
 			}
 		}
@@ -463,7 +488,10 @@ struct MathExprData
 
 			const float* cd = constants.data() + constants.size() - realArgCount;
 			float ret = 0;
-			switch (op)
+			bool deg = (op & BIF_Degrees) != 0;
+			float ARGMUL = deg ? DEG2RAD : 1;
+			float RETMUL = deg ? RAD2DEG : 1;
+			switch (op & ~BIF_Degrees)
 			{
 			case Negate: ret = -cd[0]; break;
 
@@ -512,14 +540,14 @@ struct MathExprData
 			case ExpE: ret = expf(cd[0]); break;
 			case Exp2: ret = exp2f(cd[0]); break;
 
-			case Sin: ret = sinf(cd[0]); break;
-			case Cos: ret = cosf(cd[0]); break;
-			case Tan: ret = tanf(cd[0]); break;
-			case ArcSin: ret = asinf(cd[0]); break;
-			case ArcCos: ret = acosf(cd[0]); break;
-			case ArcTan: ret = atanf(cd[0]); break;
+			case Sin: ret = sinf(cd[0] * ARGMUL); break;
+			case Cos: ret = cosf(cd[0] * ARGMUL); break;
+			case Tan: ret = tanf(cd[0] * ARGMUL); break;
+			case ArcSin: ret = asinf(cd[0]) * RETMUL; break;
+			case ArcCos: ret = acosf(cd[0]) * RETMUL; break;
+			case ArcTan: ret = atanf(cd[0]) * RETMUL; break;
 
-			case ArcTan2: ret = atan2f(cd[0], cd[1]); break;
+			case ArcTan2: ret = atan2f(cd[0], cd[1]) * RETMUL; break;
 			case Min: ret = min(cd[0], cd[1]); break;
 			case Max: ret = max(cd[0], cd[1]); break;
 				
@@ -633,15 +661,28 @@ struct MathExprData
 				{ "sin", 1, Sin },
 				{ "cos", 1, Cos },
 				{ "tan", 1, Tan },
+				{ "sind", 1, Sin | BIF_Degrees },
+				{ "cosd", 1, Cos | BIF_Degrees },
+				{ "tand", 1, Tan | BIF_Degrees },
+
 				{ "asin", 1, ArcSin },
 				{ "arcsin", 1, ArcSin },
 				{ "acos", 1, ArcCos },
 				{ "arccos", 1, ArcCos },
 				{ "atan", 1, ArcTan },
 				{ "arctan", 1, ArcTan },
+				{ "asind", 1, ArcSin | BIF_Degrees },
+				{ "arcsind", 1, ArcSin | BIF_Degrees },
+				{ "acosd", 1, ArcCos | BIF_Degrees },
+				{ "arccosd", 1, ArcCos | BIF_Degrees },
+				{ "atand", 1, ArcTan | BIF_Degrees },
+				{ "arctand", 1, ArcTan | BIF_Degrees },
 
 				{ "atan2", 2, ArcTan2 },
 				{ "arctan2", 2, ArcTan2 },
+				{ "atan2d", 2, ArcTan2 | BIF_Degrees },
+				{ "arctan2d", 2, ArcTan2 | BIF_Degrees },
+
 				{ "min", 2, Min },
 				{ "max", 2, Max },
 
@@ -657,6 +698,7 @@ struct MathExprData
 				if (name.equal_to_ci(fn.name))
 				{
 					AddFuncCallToStack(fn.op, fn.numArgs, UINT16_MAX, name);
+
 					return true;
 				}
 			}
@@ -1077,10 +1119,22 @@ bool MathExpr::GetConstant(float& val) const
 #if 0
 #include <stdio.h>
 #include <stdlib.h>
-#define ASSERT_EQUAL(xref, x) if ((xref) != (x)) \
-	printf("%d: ERROR (%s exp. %s): %s is not %s\n", __LINE__, #x, #xref, (x) ? "true" : "false", (xref) ? "true" : "false");
-#define ASSERT_NEAR(a, b) if (fabsf(float(a) - float(b)) > 0.0001f) \
-	printf("%d: ERROR (%s near %s): %g is not near %g\n", __LINE__, #a, #b, float(a), float(b))
+static void Impl_AssertEqual(bool xref, bool x, int line, const char* sxref, const char* sx)
+{
+	if (xref != x)
+	{
+		printf("%d: ERROR (%s exp. %s): %s is not %s\n", line, sx, sxref, x ? "true" : "false", xref ? "true" : "false");
+	}
+}
+static void Impl_AssertNear(float a, float b, int line, const char* sa, const char* sb)
+{
+	if (fabsf(float(a) - float(b)) > 0.0001f)
+	{
+		printf("%d: ERROR (%s near %s): %g is not near %g\n", line, sa, sb, a, b);
+	}
+}
+#define ASSERT_EQUAL(xref, x) Impl_AssertEqual(xref, x, __LINE__, #xref, #x)
+#define ASSERT_NEAR(a, b) Impl_AssertNear(a, b, __LINE__, #a, #b)
 struct TestMathExpr
 {
 	TestMathExpr()
@@ -1215,10 +1269,15 @@ struct TestMathExpr
 	}
 	struct Data : IMathExprDataSource
 	{
+		enum
+		{
+			VOne,
+			VTwo,
+		};
 		ID FindVariable(const char* name) override
 		{
-			if (IsNameEqualTo(name, "one")) return 0;
-			if (IsNameEqualTo(name, "two")) return 1;
+			if (IsNameEqualTo(name, "one")) return VOne;
+			if (IsNameEqualTo(name, "two")) return VTwo;
 			return NOT_FOUND;
 		}
 		ID FindFunction(const char* name, int& outNumArgs) override
@@ -1232,8 +1291,8 @@ struct TestMathExpr
 		{
 			switch (id)
 			{
-			case 0: return 1;
-			case 1: return 2;
+			case VOne: return 1;
+			case VTwo: return 2;
 			default: return 0;
 			}
 		}
@@ -1301,7 +1360,7 @@ struct TestMathExpr
 
 		// functions
 		ASSERT_NEAR(sinf(1), Eval("sin(1)"));
-		ASSERT_NEAR(max(1, 2), Eval("max(1,2)"));
+		ASSERT_NEAR(max(1.0f, 2.0f), Eval("max(1,2)"));
 		ASSERT_NEAR(lerp(1, 2, 0.5f), Eval("lerp(1,2,0.5)"));
 
 		// custom variables
@@ -1315,6 +1374,12 @@ struct TestMathExpr
 		ASSERT_NEAR(123, EvalWithData("zeroargs()"));
 		ASSERT_NEAR(55, EvalWithData("onearg(1+10)"));
 		ASSERT_NEAR(444, EvalWithData("twoargs(123,321)"));
+
+		// degree versions
+		ASSERT_NEAR(64 + sinf(90 * DEG2RAD) * 16, Eval("64+sind(90)*16"));
+		ASSERT_NEAR(64 + sinf(90 * DEG2RAD) * 16, EvalWithData("64+sind(90*one)*16"));
+		ASSERT_NEAR(64 + asinf(1) * RAD2DEG * 16, Eval("64+asind(1)*16"));
+		ASSERT_NEAR(64 + asinf(1) * RAD2DEG * 16, EvalWithData("64+asind(one)*16"));
 	}
 }
 g_tests;

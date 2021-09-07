@@ -602,7 +602,13 @@ float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q
 		if (p1.tweak < 0)
 			q = 1 - q;
 		q = q > 0.5f ? 1 : 0;
-		break;
+	case Mode::Steps: {
+		float count = (1.0f + floorf(fabsf(p1.tweak))) * 0.99999f;
+		if (p1.tweak >= 0)
+			q = floorf(q * (count + 1)) / count;
+		else
+			q = (floorf(q * count) + 1.0f) / (count + 1.0f);
+		break; }
 	}
 	return lerp(p0.posY, p1.posY, q);
 }
@@ -705,6 +711,7 @@ Vec2f Sequence01CurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t s
 	{
 	case Sequence01Curve::Mode::SawWave:
 	case Sequence01Curve::Mode::PulseWave:
+	case Sequence01Curve::Mode::Steps:
 		return { (p0.posX + p1.posX) * 0.5f, (p0.posY + p1.posY) * 0.5f };
 	default:
 		return ICurveView::GetSliceMidpointPosition(curveid, sliceid);
@@ -748,6 +755,7 @@ void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
 				UI_SETMODE("Double power curve", Mode::DoublePowerCurve);
 				UI_SETMODE("Saw wave", Mode::SawWave);
 				UI_SETMODE("Pulse wave", Mode::PulseWave);
+				UI_SETMODE("Steps", Mode::Steps);
 #undef UI_SETMODE
 			}
 		}

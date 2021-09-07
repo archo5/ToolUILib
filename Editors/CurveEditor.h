@@ -218,6 +218,7 @@ struct Sequence01Curve
 		DoublePowerCurve,
 		SawWave,
 		PulseWave,
+		Steps,
 	};
 	struct Point
 	{
