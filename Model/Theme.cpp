@@ -4,6 +4,28 @@
 
 namespace ui {
 
+static HashMap<StringView, uint32_t> g_staticIDs;
+
+StaticID::StaticID(const char* name) : _name(name), _id(GetCount()++)
+{
+	g_staticIDs.insert(_name, _id);
+}
+
+uint32_t& StaticID::GetCount()
+{
+	static uint32_t count;
+	return count;
+}
+
+
+StaticID sid_button("ui/core/button");
+StaticID sid_button_padding("ui/core/button:padding");
+StaticID sid_selectable("ui/core/selectable");
+StaticID sid_selectable_padding("ui/core/selectable:padding");
+StaticID sid_listbox("ui/core/listbox");
+StaticID sid_listbox_padding("ui/core/listbox:padding");
+
+
 Theme* Theme::current;
 
 
@@ -291,6 +313,27 @@ struct BorderRectanglePainter : IPainter
 	}
 };
 
+struct SelectablePainter : IPainter
+{
+	void Paint(const PaintInfo& info) override
+	{
+		auto r = info.rect;
+		if (info.IsChecked() || info.IsDown() || info.IsHovered())
+		{
+			Color4b col;
+			if (info.IsChecked())
+				col = Color4f(0.6f, 0.04f, 0.0f);
+			else if (info.IsDown())
+				col = Color4f(0, 0, 0, 0.5f);
+			else if (info.IsHovered())
+				col = Color4f(1, 1, 1, 0.2f);
+			draw::RectCol(r.x0, r.y0, r.x1, r.y1, col);
+		}
+		if (info.IsFocused())
+			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+	}
+};
+
 
 struct DefaultTheme : Theme
 {
@@ -328,6 +371,9 @@ struct DefaultTheme : Theme
 	StyleBlock dtImage;
 	StyleBlock dtSelectorContainer;
 	StyleBlock dtSelector;
+
+	PainterHandle selectablePainter;
+	PainterHandle listBoxPainter;
 
 	DefaultTheme()
 	{
@@ -470,24 +516,10 @@ struct DefaultTheme : Theme
 		a.SetStackingDirection(StackingDirection::LeftToRight);
 		a.SetWidth(Coord::Fraction(1));
 		a.SetPadding(5);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			if (info.IsChecked() || info.IsDown() || info.IsHovered())
-			{
-				Color4b col;
-				if (info.IsChecked())
-					col = Color4f(0.6f, 0.04f, 0.0f);
-				else if (info.IsDown())
-					col = Color4f(0, 0, 0, 0.5f);
-				else if (info.IsHovered())
-					col = Color4f(1, 1, 1, 0.2f);
-				draw::RectCol(r.x0, r.y0, r.x1, r.y1, col);
-			}
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-		}));
+		a.SetBackgroundPainter(new SelectablePainter());
 		defaultTheme.selectable = a.block;
+
+		selectablePainter = new SelectablePainter();
 	}
 	void CreateCollapsibleTreeNode()
 	{
@@ -534,6 +566,8 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
 		defaultTheme.listBox = a.block;
+
+		listBoxPainter = (new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled);
 	}
 	void CreateProgressBarBase()
 	{
@@ -766,6 +800,35 @@ struct DefaultTheme : Theme
 		a.SetHeight(16);
 		a.SetBackgroundPainter(new ThemeElementPainter(TE_Selector16));
 		defaultTheme.selector = a.block;
+	}
+
+	IPainter* GetPainter(const StaticID& id) override
+	{
+		if (id == sid_button) return button->background_painter;
+		if (id == sid_selectable) return selectablePainter;
+		if (id == sid_listbox) return listBoxPainter;
+		return nullptr;
+	}
+	AABB2i GetIntRect(const StaticID& id) override
+	{
+		if (id == sid_button_padding) return AABB2i::UniformBorder(5);
+		if (id == sid_selectable_padding) return AABB2i::UniformBorder(5);
+		if (id == sid_listbox_padding) return AABB2i::UniformBorder(5);
+		return {};
+	}
+	LayoutSettings GetLayoutSettings(const StaticID& id) override
+	{
+		if (id == sid_button) return { layouts::Stack(), StackingDirection::LeftToRight, Edge::Undefined, BoxSizing::Undefined, HAlign::Center };
+		if (id == sid_selectable) return { layouts::Stack(), StackingDirection::LeftToRight, Edge::Undefined, BoxSizing::Undefined, HAlign::Undefined };
+		if (id == sid_listbox) return { layouts::Stack(), StackingDirection::TopDown, Edge::Undefined, BoxSizing::Undefined, HAlign::Undefined };
+		return {};
+	}
+	StyleBlockRef GetStyle(const StaticID& id) override
+	{
+		if (id == sid_button) return button;
+		if (id == sid_selectable) return selectable;
+		if (id == sid_listbox) return listBox;
+		return object;
 	}
 
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];

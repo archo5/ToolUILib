@@ -6,6 +6,8 @@
 #include "../Core/Image.h"
 #include "../Core/RefCounted.h"
 
+#include "../Render/Render.h"
+
 #include <vector>
 #include <functional>
 
@@ -117,10 +119,10 @@ enum class StackingDirection : uint8_t
 	Undefined,
 	Inherit,
 
+	LeftToRight,
 	TopDown,
 	RightToLeft,
 	BottomUp,
-	LeftToRight,
 };
 
 enum class Edge : uint8_t
@@ -128,10 +130,10 @@ enum class Edge : uint8_t
 	Undefined,
 	Inherit,
 
+	Left,
 	Top,
 	Right,
 	Bottom,
-	Left,
 };
 
 enum class BoxSizing : uint8_t
@@ -152,6 +154,15 @@ enum class HAlign : uint8_t
 	Center,
 	Right,
 	Justify,
+};
+
+struct LayoutSettings
+{
+	ILayout* layout;
+	StackingDirection stackingDirection;
+	Edge edge;
+	BoxSizing boxSizing;
+	HAlign horizontalAlignment;
 };
 
 enum class FontWeight : int16_t
@@ -341,6 +352,8 @@ struct Coord
 	static const Coord Undefined() { return {}; }
 	static Coord Percent(float p) { return Coord(p, CoordTypeUnit::Percent); }
 	static Coord Fraction(float f) { return Coord(f, CoordTypeUnit::Fraction); }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
 
@@ -350,6 +363,7 @@ enum PaintInfoItemState
 	PS_Down = 1 << 1,
 	PS_Disabled = 1 << 2,
 	PS_Focused = 1 << 3,
+	PS_Checked = 1 << 4,
 };
 
 struct PaintInfo
@@ -364,13 +378,14 @@ struct PaintInfo
 	bool IsHovered() const { return (state & PS_Hover) != 0; }
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
-	bool IsChecked() const { return checkState != 0; }
+	bool IsChecked() const { return (state & PS_Checked) != 0; }
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
 struct IPainter : RefCountedST
 {
 	virtual void Paint(const PaintInfo&) = 0;
+	virtual Vec2i GetChildPaintOffset() { return {}; }
 };
 using PainterHandle = RCHandle<IPainter>;
 
@@ -395,19 +410,59 @@ struct LayerPainter : IPainter
 	std::vector<PainterHandle> layers;
 
 	void Paint(const PaintInfo&) override;
+	Vec2i GetChildPaintOffset() override;
 	static RCHandle<LayerPainter> Create();
 };
 
-template <class F>
-struct FunctionPainterT : IPainter
+struct ConditionalPainter : IPainter
 {
-	F func;
+	PainterHandle painter;
+	uint8_t condition = 0;
 
-	FunctionPainterT(F&& f) : func(std::move(f)) {}
-	void Paint(const PaintInfo& info) override { func(info); }
+	void Paint(const PaintInfo&) override;
+	Vec2i GetChildPaintOffset() override;
 };
 
-template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(std::move(f)); }
+struct SelectFirstPainter : IPainter
+{
+	struct Item
+	{
+		PainterHandle painter;
+		uint8_t condition = 0;
+	};
+
+	std::vector<Item> items;
+
+	void Paint(const PaintInfo&) override;
+	Vec2i GetChildPaintOffset() override;
+};
+
+struct ImageSetPainter : IPainter
+{
+	draw::ImageSetHandle imageSet;
+	int shrink = 0;
+
+	void Paint(const PaintInfo&) override;
+	Vec2i GetChildPaintOffset() override;
+};
+
+template <class PF, class CPOF>
+struct FunctionPainterT : IPainter
+{
+	PF paintFunc;
+	CPOF childPaintOffsetFunc;
+
+	FunctionPainterT(PF&& pf, CPOF& cpof) : paintFunc(std::move(pf)), childPaintOffsetFunc(std::move(cpof)) {}
+	void Paint(const PaintInfo& info) override { paintFunc(info); }
+	Vec2i GetChildPaintOffset() override { return childPaintOffsetFunc(); }
+};
+
+template <class PF, class CPOF> inline PainterHandle CreateFunctionPainter(PF&& pf, CPOF&& cpof) {
+	return new FunctionPainterT<PF, CPOF>(std::move(pf), std::move(cpof)); }
+template <class PF> inline PainterHandle CreateFunctionPainter(PF&& pf, Vec2i cpo) {
+	return CreateFunctionPainter(std::move(pf), [cpo]() { return cpo; }); }
+template <class PF> inline PainterHandle CreateFunctionPainter(PF&& pf) {
+	return CreateFunctionPainter(std::move(pf), []() -> Vec2i { return {}; }); }
 
 
 struct PropChange
@@ -669,6 +724,16 @@ public:
 	void SetPadding(Coord tb, Coord lr) { SetPadding(tb, lr, tb, lr); }
 	void SetPadding(Coord t, Coord lr, Coord b) { SetPadding(t, lr, b, lr); }
 	void SetPadding(Coord t, Coord r, Coord b, Coord l);
+
+
+	void ApplyLayoutSettings(const LayoutSettings& ls)
+	{
+		SetLayout(ls.layout);
+		SetStackingDirection(ls.stackingDirection);
+		SetEdge(ls.edge);
+		SetBoxSizing(ls.boxSizing);
+		SetHAlign(ls.horizontalAlignment);
+	}
 
 
 	StyleBlock* block;

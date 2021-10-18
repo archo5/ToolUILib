@@ -169,6 +169,7 @@
     <ClCompile Include="Model\Objects.cpp" />
     <ClCompile Include="Model\System.cpp" />
     <ClCompile Include="Model\Theme.cpp" />
+    <ClCompile Include="Model\ThemeData.cpp" />
     <ClCompile Include="Render\RHI.cpp" />
     <ClCompile Include="Render\RHI_D3D11.cpp" />
     <ClCompile Include="Render\RHI_OpenGL.cpp">
@@ -219,6 +220,7 @@
     <ClInclude Include="Model\Objects.h" />
     <ClInclude Include="Model\System.h" />
     <ClInclude Include="Model\Theme.h" />
+    <ClInclude Include="Model\ThemeData.h" />
     <ClInclude Include="Render\RHI.h" />
     <ClInclude Include="Render\Primitives.h" />
     <ClInclude Include="Render\Render.h" />

@@ -7,11 +7,25 @@ namespace ui {
 
 // TODO refactor
 
+struct StaticID
+{
+	const char* _name;
+	uint32_t _id;
+
+	StaticID(const char* name);
+	UI_FORCEINLINE bool operator == (const StaticID& o) const { return _id == o._id; }
+	UI_FORCEINLINE bool operator != (const StaticID& o) const { return _id != o._id; }
+
+	static uint32_t& GetCount();
+};
+
 struct Sprite
 {
 	int ox0, oy0, ox1, oy1;
 	int bx0, by0, bx1, by1;
 };
+
+extern StaticID sid_button;
 
 enum EThemeElement
 {
@@ -113,6 +127,10 @@ struct Theme
 	StyleBlockRef selectorContainer;
 	StyleBlockRef selector;
 
+	virtual IPainter* GetPainter(const StaticID& id) = 0;
+	virtual AABB2i GetIntRect(const StaticID& id) = 0;
+	virtual LayoutSettings GetLayoutSettings(const StaticID& id) = 0;
+	virtual StyleBlockRef GetStyle(const StaticID& id) = 0;
 	virtual draw::ImageHandle GetImage(ThemeImage ti) = 0;
 
 	static Theme* current;

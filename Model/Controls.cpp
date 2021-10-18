@@ -20,9 +20,10 @@ void Header::OnInit()
 }
 
 
+extern StaticID sid_button;
 Button::Button()
 {
-	styleProps = Theme::current->button;
+	styleProps = Theme::current->GetStyle(sid_button);
 	SetFlag(UIObject_DB_Button, true);
 }
 
@@ -116,16 +117,18 @@ StateButtonSkin::StateButtonSkin()
 }
 
 
+extern StaticID sid_listbox;
 ListBox::ListBox()
 {
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	SetFlag(UIObject_ClipChildren, true);
 }
 
 
+extern StaticID sid_selectable;
 void Selectable::OnInit()
 {
-	SetStyle(Theme::current->selectable);
+	SetStyle(Theme::current->GetStyle(sid_selectable));
 	SetFlag(UIObject_DB_Selectable, true);
 }
 
@@ -1768,14 +1771,14 @@ OverlayInfoFrame::OverlayInfoFrame()
 
 TooltipFrame::TooltipFrame()
 {
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 
 
 DragDropDataFrame::DragDropDataFrame()
 {
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 

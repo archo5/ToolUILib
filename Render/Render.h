@@ -59,6 +59,20 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::No
 
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags = TexFlags::Packed);
 
+struct ImageSet : RefCountedST
+{
+	struct Entry
+	{
+		draw::ImageHandle image;
+		bool sliced = false;
+		AABB2f innerUV = {};
+		AABB2f edgeWidth = {};
+	};
+
+	std::vector<Entry> entries;
+};
+using ImageSetHandle = RCHandle<ImageSet>;
+
 namespace internals {
 
 void InitResources();
