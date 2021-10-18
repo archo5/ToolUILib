@@ -148,6 +148,7 @@
     <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
+    <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Editors\CurveEditor.cpp" />
     <ClCompile Include="Editors\EditCommon.cpp" />

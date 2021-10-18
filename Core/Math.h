@@ -101,6 +101,7 @@ template <class T> struct Vec2
 };
 
 using Vec2f = Vec2<float>;
+using Vec2i = Vec2<int>;
 using Point2f = Vec2<float>;
 using Point2i = Vec2<int>;
 

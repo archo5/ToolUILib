@@ -43,58 +43,17 @@ struct StringView
 	const char* end() const { return _data + _size; }
 	char operator [] (size_t pos) const { return _data[pos]; }
 
-	int compare(const StringView& o) const
-	{
-		size_t minSize = min(_size, o._size);
-		int diff = memcmp(_data, o._data, minSize);
-		if (diff != 0)
-			return diff;
-		return _size == o._size
-			? 0
-			: _size < o._size ? -1 : 1;
-	}
+	int compare(const StringView& o) const;
 
-	bool equal_to_ci(const StringView& o) const
-	{
-		if (_size != o._size)
-			return false;
-		for (size_t i = 0; i < _size; i++)
-		{
-			if (_data[i] != o._data[i])
-			{
-				char low1 = ToLower(_data[i]);
-				char low2 = ToLower(o._data[i]);
-				if (low1 != low2)
-					return false;
-			}
-		}
-		return true;
-	}
+	bool equal_to_ci(const StringView& o) const;
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{
 		assert(at <= _size);
 		return StringView(_data + at, min(_size - at, size));
 	}
-	StringView ltrim() const
-	{
-		StringView out = *this;
-		while (out._size && IsSpace(*out._data))
-		{
-			out._data++;
-			out._size--;
-		}
-		return out;
-	}
-	StringView rtrim() const
-	{
-		StringView out = *this;
-		while (out._size && IsSpace(out._data[out._size - 1]))
-		{
-			out._size--;
-		}
-		return out;
-	}
+	StringView ltrim() const;
+	StringView rtrim() const;
 	StringView trim() const
 	{
 		return ltrim().rtrim();
@@ -109,34 +68,9 @@ struct StringView
 		return _size >= sub._size && memcmp(_data + _size - sub._size, sub._data, sub._size) == 0;
 	}
 
-	int count(StringView sub, size_t maxpos = SIZE_MAX) const
-	{
-		int out = 0;
-		auto at = find_first_at(sub);
-		while (at < maxpos)
-		{
-			out++;
-			at = find_first_at(sub, at + 1);
-		}
-		return out;
-	}
-	size_t find_first_at(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const
-	{
-		for (size_t i = from; i + sub._size <= _size; i++)
-			if (memcmp(&_data[i], sub._data, sub._size) == 0)
-				return i;
-		return def;
-	}
-	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const
-	{
-		for (size_t i = min(_size - sub._size, from) + 1; i <= _size; )
-		{
-			i--;
-			if (memcmp(&_data[i], sub._data, sub._size) == 0)
-				return i;
-		}
-		return def;
-	}
+	int count(StringView sub, size_t maxpos = SIZE_MAX) const;
+	size_t find_first_at(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const;
+	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const;
 
 	StringView until_first(StringView sub) const
 	{
@@ -160,35 +94,32 @@ struct StringView
 		return substr(0, at);
 	}
 
-	void skip_c_whitespace(bool single_line_comments = true, bool multiline_comments = true)
-	{
-		bool found = true;
-		while (found)
-		{
-			found = false;
-			*this = ltrim();
-			if (single_line_comments && starts_with("//"))
-			{
-				found = true;
-				*this = after_first("\n");
-			}
-			if (multiline_comments && starts_with("/*"))
-			{
-				found = true;
-				*this = after_first("*/");
-			}
-		}
-	}
+	void skip_c_whitespace(bool single_line_comments = true, bool multiline_comments = true);
+
 	template <class F>
 	bool first_char_is(F f)
 	{
 		return _size != 0 && !!f(_data[0]);
+	}
+	bool first_char_equals(char c)
+	{
+		return _size && c == _data[0];
 	}
 	char take_char()
 	{
 		assert(_size);
 		_size--;
 		return *_data++;
+	}
+	bool take_if_equal(char c)
+	{
+		if (first_char_equals(c))
+		{
+			_data += 1;
+			_size -= 1;
+			return true;
+		}
+		return false;
 	}
 	bool take_if_equal(StringView s)
 	{
@@ -211,6 +142,9 @@ struct StringView
 		}
 		return StringView(start, _data - start);
 	}
+
+	double take_float64();
+	double to_float64() { return StringView(*this).take_float64(); }
 
 	const char* _data;
 	size_t _size;

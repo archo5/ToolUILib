@@ -13,7 +13,9 @@
 
 #ifdef _MSC_VER
 #define UI_FORCEINLINE __forceinline
-#pragma warning(error: 4714)
+# if defined(UI_CHECK_FORCEINLINE) || defined(NDEBUG)
+#  pragma warning(error: 4714)
+# endif
 #endif
 
 

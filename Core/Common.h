@@ -40,7 +40,7 @@ struct Optional
 	{
 		return _hasValue;
 	}
-	UI_FORCEINLINE T GetValue() const
+	UI_FORCEINLINE const T& GetValue() const
 	{
 		assert(_hasValue);
 		return _value;
