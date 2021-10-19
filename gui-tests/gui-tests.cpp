@@ -688,10 +688,8 @@ struct MainWindow : ui::NativeMainWindow
 	}
 };
 
-#include "../Model/ThemeData.h"
 int uimain(int argc, char* argv[])
 {
-	ui::LoadTheme("data/theme_default");
 	//EarlyTest();
 	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);

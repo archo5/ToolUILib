@@ -44,8 +44,8 @@
 			},
 			{
 				"__": "conditional",
-				"conditions": ["focused"],
-				"painter": { "__": "imgset", "imgset": "outline", "shrink": 1 }
+				"condition": ["focused"],
+				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
 			}
 		]
 	},

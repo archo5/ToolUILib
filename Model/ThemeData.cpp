@@ -300,6 +300,12 @@ ThemeDataHandle LoadTheme(StringView folder)
 		{
 			StyleBlockRef loaded = new StyleBlock;
 
+			std::string painterName;
+			OnField(u, "backgroundPainter", painterName);
+			auto pit = tld.loadedData->painters.find(painterName);
+			if (pit != tld.loadedData->painters.end())
+				loaded->background_painter = pit->value;
+
 			OnFieldEnumString(u, "presence", loaded->presence);
 			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
 			OnFieldEnumString(u, "edge", loaded->edge);
@@ -480,6 +486,7 @@ void RegisterPainters()
 	RegisterPainter("layer", LayerPainterCreateFunc);
 	RegisterPainter("conditional", ConditionalPainterCreateFunc);
 	RegisterPainter("select_first", SelectFirstPainterCreateFunc);
+	RegisterPainter("imgset", ImageSetPainterCreateFunc);
 }
 
 } // ui

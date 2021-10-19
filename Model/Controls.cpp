@@ -86,7 +86,11 @@ void StateToggleVisualBase::OnPaint()
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
+	{
 		info.checkState = st->GetState();
+		if (info.checkState)
+			info.state |= PS_Checked;
+	}
 	styleProps->background_painter->Paint(info);
 
 	PaintChildren();

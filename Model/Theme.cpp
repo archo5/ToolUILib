@@ -2,6 +2,9 @@
 #include "../Render/Render.h"
 #include "Theme.h"
 
+#include "ThemeData.h"
+
+
 namespace ui {
 
 static HashMap<StringView, uint32_t> g_staticIDs;
@@ -337,6 +340,8 @@ struct SelectablePainter : IPainter
 
 struct DefaultTheme : Theme
 {
+	ThemeDataHandle themeData;
+
 	StyleBlock dtObject;
 	StyleBlock dtText;
 	StyleBlock dtProperty;
@@ -377,6 +382,8 @@ struct DefaultTheme : Theme
 
 	DefaultTheme()
 	{
+		themeData = LoadTheme("data/theme_default");
+
 		CreateObject();
 		CreateText();
 		CreateProperty();
@@ -825,7 +832,7 @@ struct DefaultTheme : Theme
 	}
 	StyleBlockRef GetStyle(const StaticID& id) override
 	{
-		if (id == sid_button) return button;
+		if (id == sid_button) return themeData->styles["button"]; //button;
 		if (id == sid_selectable) return selectable;
 		if (id == sid_listbox) return listBox;
 		return object;

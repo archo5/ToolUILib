@@ -556,10 +556,13 @@ Vec2i SelectFirstPainter::GetChildPaintOffset()
 
 void ImageSetPainter::Paint(const PaintInfo& info)
 {
+	if (!imageSet)
+		return;
+
 	const auto& ise = imageSet->entries[0];
 
 	ui::AABB2f outer = info.rect;
-	outer.ShrinkBy(AABB2f::UniformBorder(shrink));
+	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
 	if (ise.sliced)
 	{
 		ui::AABB2f inner = outer.ShrinkBy(ise.edgeWidth);
