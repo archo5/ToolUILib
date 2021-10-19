@@ -8,9 +8,10 @@
 
 namespace ui {
 
+extern StaticID sid_panel;
 Panel::Panel()
 {
-	styleProps = Theme::current->panel;
+	styleProps = Theme::current->GetStyle(sid_panel);
 }
 
 
@@ -117,7 +118,7 @@ TreeExpandIcon::TreeExpandIcon()
 
 StateButtonSkin::StateButtonSkin()
 {
-	styleProps = Theme::current->button;
+	styleProps = Theme::current->GetStyle(sid_button);
 }
 
 
@@ -490,9 +491,9 @@ LabeledProperty& LabeledProperty::SetText(StringView text)
 SplitPane::SplitPane()
 {
 	// TODO
-	vertSepStyle = Theme::current->button;
+	vertSepStyle = Theme::current->GetStyle(sid_button);
 	StyleAccessor(vertSepStyle, this).SetWidth(8);
-	horSepStyle = Theme::current->button;
+	horSepStyle = Theme::current->GetStyle(sid_button);
 	StyleAccessor(horSepStyle, this).SetHeight(8);
 }
 
@@ -1599,7 +1600,7 @@ void DropdownMenu::OnEvent(Event& e)
 void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
-	btn + ApplyStyle(Theme::current->button);
+	btn + ApplyStyle(Theme::current->GetStyle(sid_button));
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{

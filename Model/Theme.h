@@ -96,9 +96,7 @@ struct Theme
 	StyleBlockRef text;
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
-	StyleBlockRef panel;
 	StyleBlockRef header;
-	StyleBlockRef button;
 	StyleBlockRef checkbox;
 	StyleBlockRef radioButton;
 	StyleBlockRef selectable;

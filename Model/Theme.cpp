@@ -9,9 +9,13 @@ namespace ui {
 
 static HashMap<StringView, uint32_t> g_staticIDs;
 
-StaticID::StaticID(const char* name) : _name(name), _id(GetCount()++)
+StaticID::StaticID(const char* name) : _name(name)
 {
-	g_staticIDs.insert(_name, _id);
+	auto it = g_staticIDs.find(_name);
+	if (it.is_valid())
+		_id = it->value;
+	else
+		g_staticIDs.insert(_name, _id = GetCount()++);
 }
 
 uint32_t& StaticID::GetCount()
@@ -21,6 +25,7 @@ uint32_t& StaticID::GetCount()
 }
 
 
+StaticID sid_panel("ui/core/panel");
 StaticID sid_button("ui/core/button");
 StaticID sid_button_padding("ui/core/button:padding");
 StaticID sid_selectable("ui/core/selectable");
@@ -228,20 +233,6 @@ struct ThemeElementPainter : IPainter
 	}
 };
 
-struct CheckButtonThemeElementPainter : IPainter
-{
-	void Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		DrawThemeElement(
-			info.IsDisabled() ? TE_ButtonDisabled :
-			info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
-			info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-		if (info.IsFocused())
-			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-	}
-};
-
 struct CheckableThemeElementPainter : IPainter
 {
 	EThemeElement elNormal;
@@ -346,9 +337,7 @@ struct DefaultTheme : Theme
 	StyleBlock dtText;
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
-	StyleBlock dtPanel;
 	StyleBlock dtHeader;
-	StyleBlock dtButton;
 	StyleBlock dtCheckbox;
 	StyleBlock dtRadioButton;
 	StyleBlock dtSelectable;
@@ -388,9 +377,7 @@ struct DefaultTheme : Theme
 		CreateText();
 		CreateProperty();
 		CreatePropLabel();
-		CreatePanel();
 		CreateHeader();
-		CreateButton();
 		CreateCheckbox();
 		CreateRadioButton();
 		CreateSelectable();
@@ -457,15 +444,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
 	}
-	void CreatePanel()
-	{
-		StyleAccessor a(&dtPanel);
-		PreventHeapDelete(a);
-		a.SetMargin(2);
-		a.SetPadding(6);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.panel = a.block;
-	}
 	void CreateHeader()
 	{
 		StyleAccessor a(&dtHeader);
@@ -474,19 +452,6 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.header = a.block;
-	}
-	void CreateButton()
-	{
-		StyleAccessor a(&dtButton);
-		PreventHeapDelete(a);
-		//a.SetLayout(style::Layout::InlineBlock);
-		a.SetLayout(layouts::Stack());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetHAlign(HAlign::Center);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetPadding(5);
-		a.SetBackgroundPainter(new CheckButtonThemeElementPainter);
-		defaultTheme.button = a.block;
 	}
 	void CreateCheckbox()
 	{
@@ -811,7 +776,7 @@ struct DefaultTheme : Theme
 
 	IPainter* GetPainter(const StaticID& id) override
 	{
-		if (id == sid_button) return button->background_painter;
+		if (id == sid_button) return themeData->painters["button"];
 		if (id == sid_selectable) return selectablePainter;
 		if (id == sid_listbox) return listBoxPainter;
 		return nullptr;
@@ -832,7 +797,8 @@ struct DefaultTheme : Theme
 	}
 	StyleBlockRef GetStyle(const StaticID& id) override
 	{
-		if (id == sid_button) return themeData->styles["button"]; //button;
+		if (id == sid_panel) return themeData->styles["panel"];
+		if (id == sid_button) return themeData->styles["button"];
 		if (id == sid_selectable) return selectable;
 		if (id == sid_listbox) return listBox;
 		return object;

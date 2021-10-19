@@ -300,6 +300,17 @@ ThemeDataHandle LoadTheme(StringView folder)
 		{
 			StyleBlockRef loaded = new StyleBlock;
 
+			std::string layout;
+			OnField(u, "layout", layout);
+			if (layout == "stack")
+				loaded->layout = layouts::Stack();
+			else if (layout == "stack_expand")
+				loaded->layout = layouts::StackExpand();
+			else if (layout == "inline_block")
+				loaded->layout = layouts::InlineBlock();
+			else if (layout == "edge_slice")
+				loaded->layout = layouts::EdgeSlice();
+
 			std::string painterName;
 			OnField(u, "backgroundPainter", painterName);
 			auto pit = tld.loadedData->painters.find(painterName);
