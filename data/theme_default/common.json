@@ -1,5 +1,16 @@
 {
-	"outline:imgset": { "images": [{"path": "images/outline.png", "edge": 4 }] },
+	"outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] },
+
+	"property:style":
+	{
+		"layout": "stack_expand",
+		"stackingDirection": "LeftToRight"
+	},
+
+	"prop_label:style":
+	{
+		"padding": "5px"
+	},
 
 	"panel:style":
 	{
@@ -12,5 +23,58 @@
 		"__": "imgset",
 		"imgset": "panel"
 	},
-	"panel:imgset": { "images": [{"path": "images/panel.png", "edge": 5 }] }
+	"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 5 }] },
+
+	"listbox:style":
+	{
+		"layout": "stack",
+		"padding": "5px",
+		"backgroundPainter": "insetbox"
+	},
+
+	"progress_bar_base:style":
+	{
+		"padding": "5px",
+		"width": "100%",
+		"backgroundPainter": "insetbox"
+	},
+	"progress_bar_completion:style":
+	{
+		"layout": "inline_block",
+		"margin": "2px",
+		"backgroundPainter": "outsetbox"
+	},
+
+	"insetbox:painter":
+	{
+		"__": "select_first",
+		"painters":
+		[
+			{
+				"condition": ["disabled"],
+				"painter": { "__": "imgset", "imgset": "textbox.disabled" }
+			},
+			{
+				"painter": { "__": "imgset", "imgset": "textbox.normal" }
+			}
+		]
+	},
+
+	"outsetbox:painter":
+	{
+		"__": "select_first",
+		"painters":
+		[
+			{
+				"condition": ["disabled"],
+				"painter": { "__": "imgset", "imgset": "button.disabled" }
+			},
+			{
+				"painter": { "__": "imgset", "imgset": "button.normal" }
+			}
+		]
+	},
+
+	"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 5 }] },
+	"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 5 }] }
 }

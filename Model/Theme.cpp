@@ -25,13 +25,10 @@ uint32_t& StaticID::GetCount()
 }
 
 
-StaticID sid_panel("ui/core/panel");
-StaticID sid_button("ui/core/button");
-StaticID sid_button_padding("ui/core/button:padding");
-StaticID sid_selectable("ui/core/selectable");
-StaticID sid_selectable_padding("ui/core/selectable:padding");
-StaticID sid_listbox("ui/core/listbox");
-StaticID sid_listbox_padding("ui/core/listbox:padding");
+StaticID sid_panel("panel");
+StaticID sid_button("button");
+StaticID sid_selectable("selectable");
+StaticID sid_listbox("listbox");
 
 
 Theme* Theme::current;
@@ -307,27 +304,6 @@ struct BorderRectanglePainter : IPainter
 	}
 };
 
-struct SelectablePainter : IPainter
-{
-	void Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		if (info.IsChecked() || info.IsDown() || info.IsHovered())
-		{
-			Color4b col;
-			if (info.IsChecked())
-				col = Color4f(0.6f, 0.04f, 0.0f);
-			else if (info.IsDown())
-				col = Color4f(0, 0, 0, 0.5f);
-			else if (info.IsHovered())
-				col = Color4f(1, 1, 1, 0.2f);
-			draw::RectCol(r.x0, r.y0, r.x1, r.y1, col);
-		}
-		if (info.IsFocused())
-			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-	}
-};
-
 
 struct DefaultTheme : Theme
 {
@@ -340,12 +316,8 @@ struct DefaultTheme : Theme
 	StyleBlock dtHeader;
 	StyleBlock dtCheckbox;
 	StyleBlock dtRadioButton;
-	StyleBlock dtSelectable;
 	StyleBlock dtCollapsibleTreeNode;
 	StyleBlock dtTextBoxBase;
-	StyleBlock dtListBox;
-	StyleBlock dtProgressBarBase;
-	StyleBlock dtProgressBarCompletion;
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
@@ -360,14 +332,9 @@ struct DefaultTheme : Theme
 	StyleBlock dtTableCell;
 	StyleBlock dtTableRowHeader;
 	StyleBlock dtTableColHeader;
-	StyleBlock dtColorBlock;
-	StyleBlock dtColorInspectBlock;
 	StyleBlock dtImage;
 	StyleBlock dtSelectorContainer;
 	StyleBlock dtSelector;
-
-	PainterHandle selectablePainter;
-	PainterHandle listBoxPainter;
 
 	DefaultTheme()
 	{
@@ -380,12 +347,8 @@ struct DefaultTheme : Theme
 		CreateHeader();
 		CreateCheckbox();
 		CreateRadioButton();
-		CreateSelectable();
 		CreateCollapsibleTreeNode();
 		CreateTextBoxBase();
-		CreateListBox();
-		CreateProgressBarBase();
-		CreateProgressBarCompletion();
 		CreateSliderHBase();
 		CreateSliderHTrack();
 		CreateSliderHTrackFill();
@@ -400,8 +363,6 @@ struct DefaultTheme : Theme
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
-		CreateColorBlock();
-		CreateColorInspectBlock();
 		CreateImage();
 		CreateSelectorContainer();
 		CreateSelector();
@@ -480,19 +441,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitRadioButton());
 		defaultTheme.radioButton = a.block;
 	}
-	void CreateSelectable()
-	{
-		StyleAccessor a(&dtSelectable);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::Stack());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetPadding(5);
-		a.SetBackgroundPainter(new SelectablePainter());
-		defaultTheme.selectable = a.block;
-
-		selectablePainter = new SelectablePainter();
-	}
 	void CreateCollapsibleTreeNode()
 	{
 		StyleAccessor a(&dtCollapsibleTreeNode);
@@ -529,35 +477,6 @@ struct DefaultTheme : Theme
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
 		}));
 		defaultTheme.textBoxBase = a.block;
-	}
-	void CreateListBox()
-	{
-		StyleAccessor a(&dtListBox);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::Stack());
-		a.SetPadding(5);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
-		defaultTheme.listBox = a.block;
-
-		listBoxPainter = (new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled);
-	}
-	void CreateProgressBarBase()
-	{
-		StyleAccessor a(&dtProgressBarBase);
-		PreventHeapDelete(a);
-		a.SetPadding(5);
-		a.SetWidth(Coord::Percent(100));
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
-		defaultTheme.progressBarBase = a.block;
-	}
-	void CreateProgressBarCompletion()
-	{
-		StyleAccessor a(&dtProgressBarCompletion);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetMargin(2);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_ButtonNormal, TE_ButtonDisabled));
-		defaultTheme.progressBarCompletion = a.block;
 	}
 	void CreateSliderHBase()
 	{
@@ -727,28 +646,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
 		defaultTheme.tableColHeader = a.block;
 	}
-	void CreateColorBlock()
-	{
-		StyleAccessor a(&dtColorBlock);
-		PreventHeapDelete(a);
-		a.SetWidth(20);
-		a.SetHeight(20);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(3);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.colorBlock = a.block;
-	}
-	void CreateColorInspectBlock()
-	{
-		StyleAccessor a(&dtColorInspectBlock);
-		PreventHeapDelete(a);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetHeight(20);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(3);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.colorInspectBlock = a.block;
-	}
 	void CreateImage()
 	{
 		StyleAccessor a(&dtImage);
@@ -776,31 +673,19 @@ struct DefaultTheme : Theme
 
 	IPainter* GetPainter(const StaticID& id) override
 	{
-		if (id == sid_button) return themeData->painters["button"];
-		if (id == sid_selectable) return selectablePainter;
-		if (id == sid_listbox) return listBoxPainter;
-		return nullptr;
+		auto it = themeData->painters.find(id._name);
+		return it.is_valid() ? it->value : nullptr;
 	}
 	AABB2i GetIntRect(const StaticID& id) override
 	{
-		if (id == sid_button_padding) return AABB2i::UniformBorder(5);
-		if (id == sid_selectable_padding) return AABB2i::UniformBorder(5);
-		if (id == sid_listbox_padding) return AABB2i::UniformBorder(5);
-		return {};
-	}
-	LayoutSettings GetLayoutSettings(const StaticID& id) override
-	{
-		if (id == sid_button) return { layouts::Stack(), StackingDirection::LeftToRight, Edge::Undefined, BoxSizing::Undefined, HAlign::Center };
-		if (id == sid_selectable) return { layouts::Stack(), StackingDirection::LeftToRight, Edge::Undefined, BoxSizing::Undefined, HAlign::Undefined };
-		if (id == sid_listbox) return { layouts::Stack(), StackingDirection::TopDown, Edge::Undefined, BoxSizing::Undefined, HAlign::Undefined };
+		// TODO
 		return {};
 	}
 	StyleBlockRef GetStyle(const StaticID& id) override
 	{
-		if (id == sid_panel) return themeData->styles["panel"];
-		if (id == sid_button) return themeData->styles["button"];
-		if (id == sid_selectable) return selectable;
-		if (id == sid_listbox) return listBox;
+		auto it = themeData->styles.find(id._name);
+		if (it.is_valid())
+			return it->value;
 		return object;
 	}
 

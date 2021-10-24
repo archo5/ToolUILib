@@ -49,9 +49,9 @@
 			}
 		]
 	},
-	"button.normal:imgset": { "images": [{"path": "images/button-normal.png", "edge": 5 }] },
-	"button.hover:imgset": { "images": [{"path": "images/button-hover.png", "edge": 5 }] },
-	"button.pressed:imgset": { "images": [{"path": "images/button-pressed.png", "edge": 5 }] },
-	"button.disabled:imgset": { "images": [{"path": "images/button-disabled.png", "edge": 5 }] },
-	"button.down-disabled:imgset": { "images": [{"path": "images/button-down-disabled.png", "edge": 5 }] }
+	"button.normal:imgset": { "images": [{ "path": "images/button-normal.png", "edge": 5 }] },
+	"button.hover:imgset": { "images": [{ "path": "images/button-hover.png", "edge": 5 }] },
+	"button.pressed:imgset": { "images": [{ "path": "images/button-pressed.png", "edge": 5 }] },
+	"button.disabled:imgset": { "images": [{ "path": "images/button-disabled.png", "edge": 5 }] },
+	"button.down-disabled:imgset": { "images": [{ "path": "images/button-down-disabled.png", "edge": 5 }] }
 }

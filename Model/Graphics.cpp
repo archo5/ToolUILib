@@ -9,9 +9,10 @@
 namespace ui {
 
 
+static StaticID sid_color_block("color_block");
 void ColorBlock::OnInit()
 {
-	styleProps = Theme::current->colorBlock;
+	styleProps = Theme::current->GetStyle(sid_color_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 }
 
@@ -32,9 +33,10 @@ void ColorBlock::OnPaint()
 }
 
 
+static StaticID sid_color_inspect_block("color_inspect_block");
 void ColorInspectBlock::OnInit()
 {
-	styleProps = Theme::current->colorInspectBlock;
+	styleProps = Theme::current->GetStyle(sid_color_inspect_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 }
 

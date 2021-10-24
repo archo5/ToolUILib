@@ -138,10 +138,12 @@ void Selectable::OnInit()
 }
 
 
+static StaticID sid_progress_bar_base("progress_bar_base");
+static StaticID sid_progress_bar_completion("progress_bar_completion");
 ProgressBar::ProgressBar()
 {
-	styleProps = Theme::current->progressBarBase;
-	completionBarStyle = Theme::current->progressBarCompletion;
+	styleProps = Theme::current->GetStyle(sid_progress_bar_base);
+	completionBarStyle = Theme::current->GetStyle(sid_progress_bar_completion);
 }
 
 void ProgressBar::OnPaint()

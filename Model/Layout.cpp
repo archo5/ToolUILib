@@ -554,6 +554,19 @@ Vec2i SelectFirstPainter::GetChildPaintOffset()
 }
 
 
+void ColorFillPainter::Paint(const PaintInfo& info)
+{
+	ui::AABB2f outer = info.rect;
+	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
+	ui::draw::RectCol(outer.x0, outer.y0, outer.x1, outer.y1, color);
+}
+
+Vec2i ColorFillPainter::GetChildPaintOffset()
+{
+	return {};
+}
+
+
 void ImageSetPainter::Paint(const PaintInfo& info)
 {
 	if (!imageSet)

@@ -99,12 +99,8 @@ struct Theme
 	StyleBlockRef header;
 	StyleBlockRef checkbox;
 	StyleBlockRef radioButton;
-	StyleBlockRef selectable;
 	StyleBlockRef collapsibleTreeNode;
 	StyleBlockRef textBoxBase;
-	StyleBlockRef listBox;
-	StyleBlockRef progressBarBase;
-	StyleBlockRef progressBarCompletion;
 	StyleBlockRef sliderHBase;
 	StyleBlockRef sliderHTrack;
 	StyleBlockRef sliderHTrackFill;
@@ -119,15 +115,12 @@ struct Theme
 	StyleBlockRef tableCell;
 	StyleBlockRef tableRowHeader;
 	StyleBlockRef tableColHeader;
-	StyleBlockRef colorBlock;
-	StyleBlockRef colorInspectBlock;
 	StyleBlockRef image;
 	StyleBlockRef selectorContainer;
 	StyleBlockRef selector;
 
 	virtual IPainter* GetPainter(const StaticID& id) = 0;
 	virtual AABB2i GetIntRect(const StaticID& id) = 0;
-	virtual LayoutSettings GetLayoutSettings(const StaticID& id) = 0;
 	virtual StyleBlockRef GetStyle(const StaticID& id) = 0;
 	virtual draw::ImageHandle GetImage(ThemeImage ti) = 0;
 

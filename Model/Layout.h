@@ -156,15 +156,6 @@ enum class HAlign : uint8_t
 	Justify,
 };
 
-struct LayoutSettings
-{
-	ILayout* layout;
-	StackingDirection stackingDirection;
-	Edge edge;
-	BoxSizing boxSizing;
-	HAlign horizontalAlignment;
-};
-
 enum class FontWeight : int16_t
 {
 	Undefined = 0,
@@ -432,6 +423,15 @@ struct SelectFirstPainter : IPainter
 	};
 
 	std::vector<Item> items;
+
+	void Paint(const PaintInfo&) override;
+	Vec2i GetChildPaintOffset() override;
+};
+
+struct ColorFillPainter : IPainter
+{
+	Color4b color;
+	int shrink = 0;
 
 	void Paint(const PaintInfo&) override;
 	Vec2i GetChildPaintOffset() override;
@@ -724,16 +724,6 @@ public:
 	void SetPadding(Coord tb, Coord lr) { SetPadding(tb, lr, tb, lr); }
 	void SetPadding(Coord t, Coord lr, Coord b) { SetPadding(t, lr, b, lr); }
 	void SetPadding(Coord t, Coord r, Coord b, Coord l);
-
-
-	void ApplyLayoutSettings(const LayoutSettings& ls)
-	{
-		SetLayout(ls.layout);
-		SetStackingDirection(ls.stackingDirection);
-		SetEdge(ls.edge);
-		SetBoxSizing(ls.boxSizing);
-		SetHAlign(ls.horizontalAlignment);
-	}
 
 
 	StyleBlock* block;

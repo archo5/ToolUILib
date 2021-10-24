@@ -50,6 +50,41 @@ struct ThemeLoaderData : IThemeLoader
 		return it->value(this, curFile->unserializer);
 	}
 
+	Color4b LoadColor(const FieldInfo& FI) override
+	{
+		std::string text;
+		OnField(curFile->unserializer, FI, text);
+		StringView s = text;
+
+		if (s.starts_with("f:"))
+		{
+			// TODO locale
+			float tmp[4];
+			switch (sscanf(text.c_str(), "f:%g;%g;%g;%g", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
+			{
+			default: return Color4b::White();
+			case 1: return Color4f(tmp[0]);
+			case 2: return Color4f(tmp[0], tmp[1]);
+			case 3: return Color4f(tmp[0], tmp[1], tmp[2]);
+			case 4: return Color4f(tmp[0], tmp[1], tmp[2], tmp[3]);
+			}
+		}
+		if (s.starts_with("b:"))
+		{
+			unsigned tmp[4];
+			switch (sscanf(text.c_str(), "b:%u;%u;%u;%u", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
+			{
+			default: return Color4b::White();
+			case 1: return Color4b(tmp[0]);
+			case 2: return Color4b(tmp[0], tmp[1]);
+			case 3: return Color4b(tmp[0], tmp[1], tmp[2]);
+			case 4: return Color4b(tmp[0], tmp[1], tmp[2], tmp[3]);
+			}
+		}
+		// TODO refs
+		return Color4b::White();
+	}
+
 	draw::ImageSetHandle FindImageSet(const std::string& name)
 	{
 		return loadedData->imageSets.get(name, nullptr);
@@ -186,7 +221,8 @@ ThemeDataHandle LoadTheme(StringView folder)
 		{
 			auto tf = AsRCHandle(new ThemeFile);
 
-			tf->text = ReadTextFile(to_string(folder, "/", entry));
+			auto path = to_string(folder, "/", entry);
+			tf->text = ReadTextFile(path);
 
 			if (tf->unserializer.Parse(tf->text))
 			{
@@ -219,6 +255,10 @@ ThemeDataHandle LoadTheme(StringView folder)
 						}
 					}
 				}
+			}
+			else
+			{
+				printf("FAILED to parse %s\n", path.c_str());
 			}
 		}
 	}
@@ -316,6 +356,8 @@ ThemeDataHandle LoadTheme(StringView folder)
 			auto pit = tld.loadedData->painters.find(painterName);
 			if (pit != tld.loadedData->painters.end())
 				loaded->background_painter = pit->value;
+			else
+				loaded->background_painter = EmptyPainter::Get();
 
 			OnFieldEnumString(u, "presence", loaded->presence);
 			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
@@ -479,6 +521,17 @@ static IPainter* SelectFirstPainterCreateFunc(IThemeLoader* loader, IObjectItera
 	return p;
 }
 
+static IPainter* ColorFillPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
+{
+	auto* p = new ColorFillPainter;
+
+	p->color = loader->LoadColor("color");
+
+	OnField(OI, "shrink", p->shrink);
+
+	return p;
+}
+
 static IPainter* ImageSetPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
 {
 	auto* p = new ImageSetPainter;
@@ -497,6 +550,7 @@ void RegisterPainters()
 	RegisterPainter("layer", LayerPainterCreateFunc);
 	RegisterPainter("conditional", ConditionalPainterCreateFunc);
 	RegisterPainter("select_first", SelectFirstPainterCreateFunc);
+	RegisterPainter("color_fill", ColorFillPainterCreateFunc);
 	RegisterPainter("imgset", ImageSetPainterCreateFunc);
 }
 
