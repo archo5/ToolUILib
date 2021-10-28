@@ -136,59 +136,32 @@ struct LivenessToken
 	}
 };
 
-struct IDataSerializer
+// objects whose configuration can be reset without also resetting the state
+struct IPersistentObject
 {
-	virtual void Process(void* data, size_t size) = 0;
-	virtual bool IsWriter() = 0;
+	IPersistentObject* _next;
 
-	template <class T> IDataSerializer& operator << (T& val)
-	{
-		Process(&val, sizeof(val));
-		return *this;
-	}
+	virtual ~IPersistentObject() {}
+	virtual void PO_ResetConfiguration() {}
 };
 
-struct DataWriteSerializer : IDataSerializer
+struct PersistentObjectList
 {
-	DataWriteSerializer(char* _p) : p(_p) {}
-	void Process(void* data, size_t size) override
-	{
-		memcpy(p, data, size);
-		p += size;
-	}
-	bool IsWriter() override { return true; }
-
-	char* p;
+	IPersistentObject* _first = nullptr;
+	IPersistentObject** _cur = &_first;
 };
 
-struct DataReadSerializer : IDataSerializer
+struct UIObject : IPersistentObject
 {
-	DataReadSerializer(char* _p) : p(_p) {}
-	void Process(void* data, size_t size) override
-	{
-		memcpy(data, p, size);
-		p += size;
-	}
-	bool IsWriter() override { return false; }
-
-	char* p;
-};
-
-struct UIObject
-{
-	static constexpr bool Persistent = false;
-
 	UIObject();
 	virtual ~UIObject();
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
 	virtual void OnCompleteStructure() {}
 
-	virtual void OnSerialize(IDataSerializer&) {}
-	void _SerializePersistent(IDataSerializer& s);
-
+	void PO_ResetConfiguration() override;
+	void _InitReset();
 	virtual void OnReset() {}
-	void _Reset();
 
 	virtual void OnEvent(Event& e) {}
 	void _DoEvent(Event& e);
@@ -328,7 +301,9 @@ struct UIElement : UIObject
 
 struct TextElement : UIElement
 {
-	TextElement();
+	std::string text;
+
+	void OnReset() override;
 #if 0
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
@@ -354,8 +329,6 @@ struct TextElement : UIElement
 		text.assign(t.data(), t.size());
 		return *this;
 	}
-
-	std::string text;
 };
 
 struct BoxElement : UIElement
@@ -380,10 +353,10 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 
 struct Buildable : UIObject
 {
-	static constexpr bool Persistent = true;
-
 	~Buildable();
 	typedef char IsBuildable[2];
+
+	void PO_ResetConfiguration() override;
 
 	virtual void Build() = 0;
 	void Rebuild();

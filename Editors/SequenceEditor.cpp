@@ -25,13 +25,17 @@ void SequenceDragData::Build()
 }
 
 
-void SequenceItemElement::OnInit()
+void SequenceItemElement::OnReset()
 {
-	Selectable::OnInit();
+	Selectable::OnReset();
+
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
 	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
+
+	seqEd = nullptr;
+	num = 0;
 }
 
 void SequenceItemElement::OnEvent(Event& e)
@@ -160,9 +164,16 @@ void SequenceEditor::OnPaint()
 	}
 }
 
-void SequenceEditor::OnSerialize(IDataSerializer& s)
+void SequenceEditor::OnReset()
 {
-	_selImpl.OnSerialize(s);
+	Buildable::OnReset();
+
+	itemUICallback = {};
+	showDeleteButton = true;
+	_sequence = nullptr;
+	_selStorage = nullptr;
+	_ctxMenuSrc = nullptr;
+	_selImpl.OnReset();
 }
 
 void SequenceEditor::OnBuildItem(size_t idx, void* ptr)

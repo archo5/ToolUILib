@@ -408,11 +408,6 @@ struct TabsTest : ui::Buildable
 		ui::Pop();
 	}
 
-	void OnSerialize(ui::IDataSerializer& s)
-	{
-		s << tab1 << tab2;
-	}
-
 	int tab1 = 0, tab2 = 0;
 };
 void Test_Tabs()

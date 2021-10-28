@@ -43,7 +43,10 @@ struct BasicSelection : ISelectionStorage
 struct SelectionImplementation
 {
 	bool OnEvent(Event& e, ISelectionStorage* sel, uintptr_t hoverItem, bool hovering, bool onclick = false);
-	void OnSerialize(IDataSerializer& s);
+	void OnReset()
+	{
+		selectionMode = SelectionMode::None;
+	}
 
 	SelectionMode selectionMode = SelectionMode::None;
 	bool isClicked = false;

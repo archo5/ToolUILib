@@ -70,8 +70,10 @@ extern ui::DataCategoryTag DCT_HexViewerState[1];
 
 struct HexViewer : ui::UIElement
 {
-	HexViewer()
+	void OnReset() override
 	{
+		ui::UIElement::OnReset();
+
 		GetStyle().SetWidth(ui::Coord::Percent(100));
 		GetStyle().SetHeight(ui::Coord::Percent(100));
 	}

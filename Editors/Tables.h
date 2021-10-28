@@ -23,7 +23,7 @@ struct MessageLogView : Buildable
 {
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
-	void OnSerialize(IDataSerializer& s) override;
+	void OnReset() override;
 	void Build() override;
 
 	MessageLogDataSource* GetDataSource() const;
@@ -36,7 +36,7 @@ struct MessageLogView : Buildable
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 
-	MessageLogDataSource* _dataSource;
+	MessageLogDataSource* _dataSource = nullptr;
 };
 
 
@@ -56,10 +56,9 @@ struct TableView : Buildable
 {
 	TableView();
 	~TableView();
-	void OnInit() override;
+	void OnReset() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
-	void OnSerialize(IDataSerializer& s) override;
 	void Build() override;
 
 	TableDataSource* GetDataSource() const;
@@ -106,6 +105,7 @@ struct TreeView : Buildable
 
 	TreeView();
 	~TreeView();
+	void OnReset() override;
 	void OnPaint() override;
 	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
 	void OnEvent(Event& e) override;

@@ -17,6 +17,26 @@ static unsigned g_previewSlicedHeight = 32;
 
 struct TE_SlicedImageElement : UIElement
 {
+	draw::ImageHandle _image;
+	int _width = 0;
+	int _height = 0;
+	int _left = 0;
+	int _top = 0;
+	int _right = 0;
+	int _bottom = 0;
+
+	void OnReset() override
+	{
+		UIElement::OnReset();
+
+		_image = {};
+		_width = 0;
+		_height = 0;
+		_left = 0;
+		_top = 0;
+		_right = 0;
+		_bottom = 0;
+	}
 	void OnPaint() override
 	{
 		UIRect r = GetContentRect();
@@ -48,14 +68,6 @@ struct TE_SlicedImageElement : UIElement
 		_bottom = b;
 		return *this;
 	}
-
-	draw::ImageHandle _image;
-	int _width = 0;
-	int _height = 0;
-	int _left = 0;
-	int _top = 0;
-	int _right = 0;
-	int _bottom = 0;
 };
 
 struct TE_MainPreviewNode : Buildable

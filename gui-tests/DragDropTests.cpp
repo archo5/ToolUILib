@@ -512,8 +512,10 @@ struct DragConnectTest : ui::Buildable
 
 	struct Linkable : ui::Selectable
 	{
-		Linkable()
+		void OnReset() override
 		{
+			ui::Selectable::OnReset();
+
 			*this + ui::MakeDraggable();
 		}
 		void OnEvent(ui::Event& e) override

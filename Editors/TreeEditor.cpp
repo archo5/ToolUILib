@@ -8,13 +8,17 @@
 
 namespace ui {
 
-void TreeItemElement::OnInit()
+void TreeItemElement::OnReset()
 {
-	Selectable::OnInit();
+	Selectable::OnReset();
+
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
 	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
+
+	treeEd = nullptr;
+	path = {};
 }
 
 void TreeItemElement::OnEvent(Event& e)
@@ -123,9 +127,13 @@ void TreeEditor::OnPaint()
 	}
 }
 
-void TreeEditor::OnSerialize(IDataSerializer& s)
+void TreeEditor::OnReset()
 {
-	_selImpl.OnSerialize(s);
+	Buildable::OnReset();
+
+	showDeleteButton = true;
+	_tree = nullptr;
+	_selImpl.OnReset();
 }
 
 void TreeEditor::OnBuildChildList(TreePath& path)

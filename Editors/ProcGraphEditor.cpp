@@ -305,6 +305,16 @@ void ProcGraphEditor::Build()
 	//Pop();
 }
 
+void ProcGraphEditor::OnReset()
+{
+	Buildable::OnReset();
+
+	_graph = nullptr;
+	drawCurrentLinksOnTop = false;
+	drawPendingLinksOnTop = true;
+	linkExtension = 8.0f;
+}
+
 void ProcGraphEditor::OnEvent(Event& e)
 {
 	Buildable::OnEvent(e);

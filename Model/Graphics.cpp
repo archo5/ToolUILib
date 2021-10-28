@@ -9,10 +9,14 @@
 namespace ui {
 
 
-void ColorBlock::OnInit()
+void ColorBlock::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->colorBlock;
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
+
+	_color = Color4b::Black();
 }
 
 void ColorBlock::OnPaint()
@@ -32,10 +36,15 @@ void ColorBlock::OnPaint()
 }
 
 
-void ColorInspectBlock::OnInit()
+void ColorInspectBlock::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->colorInspectBlock;
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
+
+	_color = Color4b::Black();
+	alphaBarHeight = 2;
 }
 
 void ColorInspectBlock::OnPaint()
@@ -118,9 +127,19 @@ void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, float ax, float ay)
 }
 
 
-void ImageElement::OnInit()
+void ImageElement::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->image;
+
+	_image = {};
+	_scaleMode = ScaleMode::Fit;
+	_anchorX = 0.5f;
+	_anchorY = 0.5f;
+	_tryDelayLoad = false;
+	_delayLoadPath = {};
+	_bgImage = nullptr;
 }
 
 void ImageElement::OnPaint()
@@ -193,11 +212,16 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
-void HueSatPicker::OnInit()
+void HueSatPicker::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->selectorContainer;
 	selectorStyle = Theme::current->selector;
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+
+	_hue = 0;
+	_sat = 0;
 }
 
 void HueSatPicker::OnEvent(Event& e)
@@ -276,10 +300,16 @@ void ColorDragDropData::Build()
 }
 
 
-ColorCompPicker2D::ColorCompPicker2D()
+void ColorCompPicker2D::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->selectorContainer;
 	selectorStyle = Theme::current->selector;
+
+	_settings = {};
+	_x = 0;
+	_y = 0;
 }
 
 void ColorCompPicker2D::OnEvent(Event& e)
@@ -502,6 +532,13 @@ ColorPicker::SavedColors g_savedColors;
 ColorPicker::SavedColors& ColorPicker::GetSavedColors()
 {
 	return g_savedColors;
+}
+
+void ColorPicker::OnReset()
+{
+	Buildable::OnReset();
+
+	_color = {};
 }
 
 void ColorPicker::Build()
@@ -730,6 +767,13 @@ void ColorPickerWindow::OnBuild()
 }
 
 
+void ColorEdit::OnReset()
+{
+	IColorEdit::OnReset();
+
+	_color = {};
+}
+
 void ColorEdit::Build()
 {
 	auto& cib = Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
@@ -777,6 +821,13 @@ struct ColorPickerWindowRT : NativeWindowBase
 	ColorEditRT* _editor = nullptr;
 };
 
+
+void ColorEditRT::OnReset()
+{
+	IColorEdit::OnReset();
+
+	_color = {};
+}
 
 void ColorEditRT::Build()
 {

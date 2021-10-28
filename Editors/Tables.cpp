@@ -100,10 +100,12 @@ void MessageLogView::OnEvent(Event& e)
 		return;
 }
 
-void MessageLogView::OnSerialize(IDataSerializer& s)
+void MessageLogView::OnReset()
 {
-	s << yOff;
-	//selection.OnSerialize(s);
+	Buildable::OnReset();
+
+	_dataSource = nullptr;
+	scrollbarV.OnReset();
 }
 
 void MessageLogView::Build()
@@ -163,12 +165,21 @@ TableView::~TableView()
 	delete _impl;
 }
 
-void TableView::OnInit()
+void TableView::OnReset()
 {
+	Buildable::OnReset();
+
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
 	colHeaderStyle = Theme::current->tableColHeader;
+
+	enableRowHeader = true;
+	_impl->dataSource = nullptr;
+	_impl->selStorage = nullptr;
+	_impl->ctxMenuSrc = nullptr;
+	_impl->sel.OnReset();
+	scrollbarV.OnReset();
 }
 
 void TableView::OnPaint()
@@ -380,18 +391,6 @@ void TableView::OnEvent(Event& e)
 	}
 }
 
-void TableView::OnSerialize(IDataSerializer& s)
-{
-	s << _impl->firstColWidthCalc;
-	auto size = _impl->colEnds.size();
-	s << size;
-	_impl->colEnds.resize(size);
-	for (auto& v : _impl->colEnds)
-		s << v;
-	s << yOff;
-	_impl->sel.OnSerialize(s);
-}
-
 void TableView::Build()
 {
 }
@@ -581,15 +580,23 @@ struct TreeViewImpl
 TreeView::TreeView()
 {
 	_impl = new TreeViewImpl;
-	styleProps = Theme::current->tableBase;
-	cellStyle = Theme::current->tableCell;
-	expandButtonStyle = Theme::current->collapsibleTreeNode;
-	colHeaderStyle = Theme::current->tableColHeader;
 }
 
 TreeView::~TreeView()
 {
 	delete _impl;
+}
+
+void TreeView::OnReset()
+{
+	Buildable::OnReset();
+
+	styleProps = Theme::current->tableBase;
+	cellStyle = Theme::current->tableCell;
+	expandButtonStyle = Theme::current->collapsibleTreeNode;
+	colHeaderStyle = Theme::current->tableColHeader;
+
+	_impl->dataSource = nullptr;
 }
 
 void TreeView::OnPaint()

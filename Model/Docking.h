@@ -6,11 +6,10 @@
 namespace ui {
 
 struct FrameContents;
-class Dockable;
+struct Dockable;
 
-class DockingArea : public UIElement
+struct DockingArea : UIElement
 {
-public:
 	void SetDefaultLayout();
 
 private:
@@ -37,15 +36,13 @@ private:
 	std::vector<Window> _windows;
 };
 
-class Dockable : public Buildable
+struct Dockable : Buildable
 {
-public:
-	void OnInit() override;
-	void OnDestroy() override;
-
-private:
 	DockingArea* _area;
 	FrameContents* _contents;
+
+	void OnInit() override;
+	void OnDestroy() override;
 };
 
 }

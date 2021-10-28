@@ -19,35 +19,36 @@ enum class ScaleMode
 
 struct ColorBlock : UIElement
 {
-	void OnInit() override;
+	Color4b _color = Color4b::Black();
+	draw::ImageHandle _bgImage;
+
+	void OnReset() override;
 	void OnPaint() override;
 
 	Color4b GetColor() const { return _color; }
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
-
-	Color4b _color = Color4b::Black();
-	draw::ImageHandle _bgImage;
 };
 
 struct ColorInspectBlock : UIElement
 {
-	void OnInit() override;
+	Color4b _color = Color4b::Black();
+	draw::ImageHandle _bgImage;
+
+	// TODO styled
+	Coord alphaBarHeight = 2;
+
+	void OnReset() override;
 	void OnPaint() override;
 
 	Color4b GetColor() const { return _color; }
 	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
-
-	Color4b _color = Color4b::Black();
-	draw::ImageHandle _bgImage;
-
-	Coord alphaBarHeight = 2;
 };
 
 void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, float ax = 0.5f, float ay = 0.5f);
 
 struct ImageElement : UIElement
 {
-	void OnInit() override;
+	void OnReset() override;
 	void OnPaint() override;
 	void GetSize(Coord& outWidth, Coord& outHeight) override;
 
@@ -71,9 +72,7 @@ struct ImageElement : UIElement
 
 struct HueSatPicker : UIElement
 {
-	static constexpr bool Persistent = true;
-
-	void OnInit() override;
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
@@ -145,7 +144,7 @@ struct ColorDragDropData : DragDropData
 
 struct ColorCompPicker2D : UIElement
 {
-	ColorCompPicker2D();
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 
@@ -208,6 +207,7 @@ struct MultiFormatColor
 
 struct ColorPicker : Buildable
 {
+	void OnReset() override;
 	void Build() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
@@ -251,6 +251,7 @@ struct ColorEdit : IColorEdit
 {
 	MultiFormatColor _color;
 
+	void OnReset() override;
 	void Build() override;
 
 	const MultiFormatColor& GetColor() const override { return _color; }
@@ -264,6 +265,7 @@ struct ColorEditRT : IColorEdit
 	MultiFormatColor _color;
 	struct ColorPickerWindowRT* _rtWindow = nullptr;
 
+	void OnReset() override;
 	void Build() override;
 	void OnDestroy() override;
 
@@ -275,17 +277,32 @@ struct ColorEditRT : IColorEdit
 
 struct View2D : UIElement
 {
-	void OnPaint() override;
-
 	std::function<void(UIRect)> onPaint;
+
+	void OnReset() override
+	{
+		UIElement::OnReset();
+
+		onPaint = {};
+	}
+
+	void OnPaint() override;
 };
 
 struct View3D : UIElement
 {
-	void OnPaint() override;
-
 	std::function<void(UIRect)> onRender;
 	std::function<void(UIRect)> onPaintOverlay;
+
+	void OnReset() override
+	{
+		UIElement::OnReset();
+
+		onRender = {};
+		onPaintOverlay = {};
+	}
+
+	void OnPaint() override;
 };
 
 struct CameraBase

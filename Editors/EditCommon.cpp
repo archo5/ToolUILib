@@ -118,9 +118,4 @@ bool SelectionImplementation::OnEvent(Event& e, ISelectionStorage* sel, uintptr_
 	return selChanged;
 }
 
-void SelectionImplementation::OnSerialize(IDataSerializer& s)
-{
-	s << isClicked << _selStart << _selEnd;
-}
-
 } // ui

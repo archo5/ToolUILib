@@ -164,9 +164,23 @@ private:
 };
 
 
-class MenuItemElement : public UIElement
+struct MenuItemElement : UIElement
 {
-public:
+	std::string text;
+	bool isChecked = false;
+	bool isDisabled = false;
+	std::function<void()> onActivate;
+
+	void OnReset() override
+	{
+		UIElement::OnReset();
+
+		text = {};
+		isChecked = false;
+		isDisabled = false;
+		onActivate = {};
+	}
+
 	MenuItemElement& SetText(StringView text, StringView shortcut = {});
 	MenuItemElement& SetChecked(bool checked) { isChecked = checked; return *this; }
 	MenuItemElement& SetDisabled(bool disabled) { isDisabled = disabled; return *this; }
@@ -183,27 +197,18 @@ public:
 	{
 		return StringView(text).after_first("\t");
 	}
-
-	std::string text;
-	bool isChecked = false;
-	bool isDisabled = false;
-	std::function<void()> onActivate;
 };
 
-class MenuSeparatorElement : public UIElement
+struct MenuSeparatorElement : UIElement
 {
 };
 
-class MenuElement : public UIElement
+struct MenuElement : UIElement
 {
-public:
-	static constexpr bool Persistent = true;
-
 	virtual bool IsTopBar() { return false; }
 	void OnDestroy() override;
 	void OnCompleteStructure() override;
 
-private:
 	ArrayView<MenuItem> _AppendElements(UIObject* o);
 	std::string _GenerateItemUID();
 
@@ -212,9 +217,8 @@ private:
 	std::string _uid;
 };
 
-class MenuBarElement : public MenuElement
+struct MenuBarElement : MenuElement
 {
-public:
 	bool IsTopBar() override { return true; }
 };
 

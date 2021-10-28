@@ -32,23 +32,32 @@ UIObject::~UIObject()
 	UnregisterAsOverlay();
 }
 
-void UIObject::_SerializePersistent(IDataSerializer& s)
-{
-	s << system;
-	s << parent;
-	s << prev;
-	s << next;
-	s << firstChild;
-	s << lastChild;
-	s << flags;
-	OnSerialize(s);
-}
-
-void UIObject::_Reset()
+void UIObject::PO_ResetConfiguration()
 {
 	ClearEventHandlers();
 	UnregisterAsOverlay();
 	SetStyle(Theme::current->object);
+
+	auto origFlags = flags;
+	const uint32_t KEEP_MASK =
+		UIObject_IsInBuildStack |
+		UIObject_IsInLayoutStack |
+		UIObject_IsHovered |
+		UIObject_IsClickedAnyMask |
+		UIObject_IsEdited |
+		UIObject_IsPressedAny;
+	flags = UIObject_DB__Defaults | (origFlags & KEEP_MASK);
+
+	flags |= UIObject_BuildAlloc; // TODO remove once allocs are separate from tree
+
+	_InitReset();
+
+	// TODO needed?
+	_OnChangeStyle();
+}
+
+void UIObject::_InitReset()
+{
 	OnReset();
 }
 
@@ -831,9 +840,13 @@ NativeWindowBase* UIObject::GetNativeWindow() const
 }
 
 
-TextElement::TextElement()
+void TextElement::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->text;
+
+	text = {};
 }
 
 void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
@@ -1025,6 +1038,16 @@ Buildable::~Buildable()
 		_deferredDestructors.back()();
 		_deferredDestructors.pop_back();
 	}
+}
+
+void Buildable::PO_ResetConfiguration()
+{
+	decltype(_deferredDestructors) ddList;
+	std::swap(_deferredDestructors, ddList);
+
+	UIObject::PO_ResetConfiguration();
+
+	std::swap(_deferredDestructors, ddList);
 }
 
 void Buildable::Rebuild()

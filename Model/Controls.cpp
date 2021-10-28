@@ -8,27 +8,35 @@
 
 namespace ui {
 
-Panel::Panel()
+void Panel::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->panel;
 }
 
 
-void Header::OnInit()
+void Header::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->header;
 }
 
 
-Button::Button()
+void Button::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->button;
 	SetFlag(UIObject_DB_Button, true);
 }
 
 
-StateButtonBase::StateButtonBase()
+void StateButtonBase::OnReset()
 {
+	UIElement::OnReset();
+
 	SetFlag(UIObject_DB_Button, true);
 	GetStyle().SetLayout(layouts::InlineBlock());
 }
@@ -60,11 +68,6 @@ StateToggle& StateToggle::InitEditable(uint8_t state, uint8_t maxNumStates)
 	return *this;
 }
 
-void StateToggle::OnSerialize(IDataSerializer& s)
-{
-	s << _state << _maxNumStates;
-}
-
 StateToggle& StateToggle::SetState(uint8_t state)
 {
 	_state = state;
@@ -92,48 +95,63 @@ void StateToggleVisualBase::OnPaint()
 }
 
 
-CheckboxIcon::CheckboxIcon()
+void CheckboxIcon::OnReset()
 {
+	StateToggleVisualBase::OnReset();
+
 	styleProps = Theme::current->checkbox;
 }
 
 
-RadioButtonIcon::RadioButtonIcon()
+void RadioButtonIcon::OnReset()
 {
+	StateToggleVisualBase::OnReset();
+
 	styleProps = Theme::current->radioButton;
 }
 
 
-TreeExpandIcon::TreeExpandIcon()
+void TreeExpandIcon::OnReset()
 {
+	StateToggleVisualBase::OnReset();
+
 	styleProps = Theme::current->collapsibleTreeNode;
 }
 
 
-StateButtonSkin::StateButtonSkin()
+void StateButtonSkin::OnReset()
 {
+	StateToggleVisualBase::OnReset();
+
 	styleProps = Theme::current->button;
 }
 
 
-ListBox::ListBox()
+void ListBox::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->listBox;
 	SetFlag(UIObject_ClipChildren, true);
 }
 
 
-void Selectable::OnInit()
+void Selectable::OnReset()
 {
+	UIElement::OnReset();
+
 	SetStyle(Theme::current->selectable);
 	SetFlag(UIObject_DB_Selectable, true);
 }
 
 
-ProgressBar::ProgressBar()
+void ProgressBar::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->progressBarBase;
 	completionBarStyle = Theme::current->progressBarCompletion;
+	progress = 0.5f;
 }
 
 void ProgressBar::OnPaint()
@@ -149,12 +167,17 @@ void ProgressBar::OnPaint()
 }
 
 
-void Slider::OnInit()
+void Slider::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->sliderHBase;
 	trackStyle = Theme::current->sliderHTrack;
 	trackFillStyle = Theme::current->sliderHTrackFill;
 	thumbStyle = Theme::current->sliderHThumb;
+
+	_value = 0;
+	_limits = { 0, 1, 0 };
 }
 
 void Slider::OnPaint()
@@ -240,8 +263,10 @@ double Slider::ValueToQ(double v)
 }
 
 
-Property::Property()
+void Property::OnReset()
 {
+	UIElement::OnReset();
+
 	GetStyle().SetLayout(layouts::StackExpand());
 	GetStyle().SetStackingDirection(StackingDirection::LeftToRight);
 }
@@ -374,8 +399,13 @@ void Property::EditFloat4(const char* label, float* v)
 }
 
 
-void PropertyList::OnInit()
+void PropertyList::OnReset()
 {
+	UIElement::OnReset();
+
+	splitPos = Coord::Percent(40);
+	minSplitPos = 0;
+
 	_defaultLabelStyle = Theme::current->propLabel;
 }
 
@@ -412,11 +442,22 @@ void LabeledProperty::End()
 	Pop();
 }
 
+void LabeledProperty::OnReset()
+{
+	UIElement::OnReset();
+
+	SetStyle(Theme::current->property);
+	_labelStyle = {};
+
+	_labelText = {};
+	_isBrief = false;
+}
+
 void LabeledProperty::OnInit()
 {
-	SetStyle(Theme::current->property);
+	UIElement::OnInit();
+
 	_propList = FindParentOfType<PropertyList>();
-	_labelStyle = _propList ? _propList->_defaultLabelStyle : Theme::current->propLabel;
 }
 
 void LabeledProperty::OnPaint()
@@ -425,16 +466,22 @@ void LabeledProperty::OnPaint()
 
 	if (!_labelText.empty())
 	{
-		int size = int(GetFontSize(_labelStyle));
-		int weight = GetFontWeight(_labelStyle);
-		bool italic = GetFontIsItalic(_labelStyle);
-		Color4b color = GetTextColor(_labelStyle);
+		StyleBlock* labelStyle = _labelStyle;
+		if (!labelStyle && _propList)
+			labelStyle = _propList->_defaultLabelStyle;
+		if (!labelStyle)
+			labelStyle = Theme::current->propLabel;
+
+		int size = int(GetFontSize(labelStyle));
+		int weight = GetFontWeight(labelStyle);
+		bool italic = GetFontIsItalic(labelStyle);
+		Color4b color = GetTextColor(labelStyle);
 
 		auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
 		auto contPadRect = GetPaddingRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
-		auto labelPadRect = GetPaddingRect(_labelStyle, labelContRect.GetWidth());
+		auto labelPadRect = GetPaddingRect(labelStyle, labelContRect.GetWidth());
 		auto cr = labelContRect;
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
@@ -454,13 +501,19 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 	{
 		if (_isBrief)
 		{
-			int size = int(GetFontSize(_labelStyle));
-			int weight = GetFontWeight(_labelStyle);
-			bool italic = GetFontIsItalic(_labelStyle);
+			StyleBlock* labelStyle = _labelStyle;
+			if (!labelStyle && _propList)
+				labelStyle = _propList->_defaultLabelStyle;
+			if (!labelStyle)
+				labelStyle = Theme::current->propLabel;
+
+			int size = int(GetFontSize(labelStyle));
+			int weight = GetFontWeight(labelStyle);
+			bool italic = GetFontIsItalic(labelStyle);
 			auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
 
 			r.x0 += GetTextWidth(font, size, _labelText);
-			auto labelPadRect = GetPaddingRect(_labelStyle, 0);
+			auto labelPadRect = GetPaddingRect(labelStyle, 0);
 			r.x0 += labelPadRect.x0 + labelPadRect.x1;
 		}
 		else
@@ -477,6 +530,15 @@ LabeledProperty& LabeledProperty::SetText(StringView text)
 {
 	_labelText.assign(text.data(), text.size());
 	return *this;
+}
+
+StyleAccessor LabeledProperty::GetLabelStyle()
+{
+	if (!_labelStyle && _propList)
+		_labelStyle = _propList->_defaultLabelStyle;
+	if (!_labelStyle)
+		_labelStyle = Theme::current->propLabel;
+	return StyleAccessor(_labelStyle, this);
 }
 
 
@@ -735,17 +797,11 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 }
 
-void SplitPane::OnSerialize(IDataSerializer& s)
+void SplitPane::OnReset()
 {
-	s << _splitUI._hovered;
-	s << _splitUI._pressed;
-	s << _dragOff;
-	s << _splitsSet;
-	auto size = _splits.size();
-	s << size;
-	_splits.resize(size);
-	for (auto& v : _splits)
-		s << v;
+	UIElement::OnReset();
+
+	_verticalSplit = false;
 }
 
 Rangef SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
@@ -797,6 +853,11 @@ SplitPane* SplitPane::SetDirection(bool vertical)
 
 
 ScrollbarV::ScrollbarV()
+{
+	OnReset();
+}
+
+void ScrollbarV::OnReset()
 {
 	trackVStyle = Theme::current->scrollVTrack;
 	thumbVStyle = Theme::current->scrollVThumb;
@@ -966,20 +1027,27 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 }
 
-void ScrollArea::OnSerialize(IDataSerializer& s)
+void ScrollArea::OnReset()
 {
-	s << yoff;
+	UIElement::OnReset();
+
+	sbv.OnReset();
 }
 
 
-TabGroup::TabGroup()
+void TabGroup::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->tabGroup;
+	_activeBtn = nullptr;
 }
 
 
-TabButtonList::TabButtonList()
+void TabButtonList::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->tabList;
 }
 
@@ -1002,8 +1070,10 @@ void TabButtonList::OnPaint()
 }
 
 
-TabButtonBase::TabButtonBase()
+void TabButtonBase::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->tabButton;
 	SetFlag(UIObject_DB_Button, true);
 }
@@ -1038,8 +1108,10 @@ void TabButtonBase::OnEvent(Event& e)
 }
 
 
-TabPanel::TabPanel()
+void TabPanel::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->tabPanel;
 }
 
@@ -1055,10 +1127,13 @@ void TabPanel::OnPaint()
 }
 
 
-Textbox::Textbox()
+void Textbox::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->textBoxBase;
 	SetFlag(UIObjectFlags(UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick), true);
+	_placeholder = {};
 }
 
 void Textbox::OnPaint()
@@ -1412,19 +1487,6 @@ void Textbox::OnEvent(Event& e)
 	}
 }
 
-void Textbox::OnSerialize(IDataSerializer& s)
-{
-	s << _origStartCursor << startCursor << endCursor << showCaretState;
-	s << _hadFocusOnFirstClick << _lastPressRepeatCount;
-	s << accumulator;
-
-	uint32_t len = _text.size();
-	s << len;
-	_text.resize(len);
-	if (len)
-		s.Process(&_text[0], len);
-}
-
 StringView Textbox::GetSelectedText() const
 {
 	int min = startCursor < endCursor ? startCursor : endCursor;
@@ -1498,8 +1560,10 @@ Textbox& Textbox::Init(float& val)
 }
 
 
-CollapsibleTreeNode::CollapsibleTreeNode()
+void CollapsibleTreeNode::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->collapsibleTreeNode;
 }
 
@@ -1534,14 +1598,12 @@ void CollapsibleTreeNode::OnEvent(Event& e)
 	}
 }
 
-void CollapsibleTreeNode::OnSerialize(IDataSerializer& s)
-{
-	s << open;
-}
 
-
-void BackgroundBlocker::OnInit()
+void BackgroundBlocker::OnReset()
 {
+	UIElement::OnReset();
+
+	_fullScreenPlacement = {};
 	_fullScreenPlacement.fullScreenRelative = true;
 	RegisterAsOverlay(199.f);
 	GetStyle().SetPlacement(&_fullScreenPlacement);
@@ -1663,10 +1725,11 @@ void StringArrayOptionList::IterateElements(size_t from, size_t count, std::func
 }
 
 
-void DropdownMenuList::OnSerialize(IDataSerializer& s)
+void DropdownMenuList::OnReset()
 {
-	DropdownMenu::OnSerialize(s);
-	s << _selected;
+	DropdownMenu::OnReset();
+
+	_options = nullptr;
 }
 
 void DropdownMenuList::OnBuildButtonContents()
@@ -1766,15 +1829,19 @@ OverlayInfoFrame::OverlayInfoFrame()
 }
 
 
-TooltipFrame::TooltipFrame()
+void TooltipFrame::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->listBox;
 	GetStyle().SetPlacement(&placement);
 }
 
 
-DragDropDataFrame::DragDropDataFrame()
+void DragDropDataFrame::OnReset()
 {
+	UIElement::OnReset();
+
 	styleProps = Theme::current->listBox;
 	GetStyle().SetPlacement(&placement);
 }

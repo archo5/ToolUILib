@@ -527,8 +527,15 @@ void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 }
 
 
-void CurveEditorElement::OnInit()
+void CurveEditorElement::OnReset()
 {
+	UIElement::OnReset();
+
+	curveView = nullptr;
+	viewport = { 0, 0, 1, 1 };
+	settings = {};
+	gridSettings = {};
+
 	GetStyle().SetPadding(4);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 }
@@ -543,14 +550,6 @@ void CurveEditorElement::OnPaint()
 {
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
-}
-
-void CurveEditorElement::OnSerialize(IDataSerializer& s)
-{
-	s << _ui.dragPointStart;
-	s << _ui.dragCursorStart;
-	s << _ui.uiState._hovered;
-	s << _ui.uiState._pressed;
 }
 
 

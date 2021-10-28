@@ -2,6 +2,9 @@
 #include "../Render/Render.h"
 #include "Theme.h"
 
+#include "../Core/Font.h"
+
+
 namespace ui {
 
 Theme* Theme::current;

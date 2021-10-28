@@ -9,23 +9,23 @@ namespace ui {
 
 struct Panel : UIElement
 {
-	Panel();
+	void OnReset() override;
 };
 
 struct Header : UIElement
 {
-	void OnInit() override;
+	void OnReset() override;
 };
 
 struct Button : UIElement
 {
-	Button();
+	void OnReset() override;
 };
 
 
 struct StateButtonBase : UIElement
 {
-	StateButtonBase();
+	void OnReset() override;
 
 	virtual uint8_t GetState() const = 0;
 };
@@ -39,22 +39,23 @@ struct StateToggleBase : StateButtonBase
 
 struct StateToggle : StateToggleBase
 {
+	uint8_t _state = 0;
+	uint8_t _maxNumStates = 0;
+
 	StateToggle& InitReadOnly(uint8_t state);
 	StateToggle& InitEditable(uint8_t state, uint8_t maxNumStates = 2);
-
-	void OnSerialize(IDataSerializer& s) override;
 
 	uint8_t GetState() const override { return _state; }
 	StateToggle& SetState(uint8_t state);
 	bool OnActivate() override;
-
-	uint8_t _state = 0;
-	uint8_t _maxNumStates = 0;
 };
 
 template <class T>
 struct CheckboxFlagT : StateToggleBase
 {
+	T* _iptr = nullptr;
+	T _value = {};
+
 	CheckboxFlagT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
@@ -74,13 +75,20 @@ struct CheckboxFlagT : StateToggleBase
 		return true;
 	}
 
-	T* _iptr = nullptr;
-	T _value = {};
+	void OnReset() override
+	{
+		StateToggleBase::OnReset();
+
+		_iptr = nullptr;
+		_value = {};
+	}
 };
 
 template <>
 struct CheckboxFlagT<bool> : StateToggleBase
 {
+	bool* _bptr = nullptr;
+
 	CheckboxFlagT& Init(bool& bref)
 	{
 		_bptr = &bref;
@@ -96,12 +104,20 @@ struct CheckboxFlagT<bool> : StateToggleBase
 	}
 	uint8_t GetState() const override { return _bptr && *_bptr; }
 
-	bool* _bptr = nullptr;
+	void OnReset() override
+	{
+		StateToggleBase::OnReset();
+
+		_bptr = nullptr;
+	}
 };
 
 template <class T>
 struct RadioButtonT : StateToggleBase
 {
+	T* _iptr = nullptr;
+	T _value = {};
+
 	RadioButtonT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
@@ -118,8 +134,13 @@ struct RadioButtonT : StateToggleBase
 		return true;
 	}
 
-	T* _iptr = nullptr;
-	T _value = {};
+	void OnReset() override
+	{
+		StateToggleBase::OnReset();
+
+		_iptr = nullptr;
+		_value = {};
+	}
 };
 
 struct StateToggleVisualBase : UIElement
@@ -129,33 +150,33 @@ struct StateToggleVisualBase : UIElement
 
 struct CheckboxIcon : StateToggleVisualBase
 {
-	CheckboxIcon();
+	void OnReset() override;
 };
 
 struct RadioButtonIcon : StateToggleVisualBase
 {
-	RadioButtonIcon();
+	void OnReset() override;
 };
 
 struct TreeExpandIcon : StateToggleVisualBase
 {
-	TreeExpandIcon();
+	void OnReset() override;
 };
 
 struct StateButtonSkin : StateToggleVisualBase
 {
-	StateButtonSkin();
+	void OnReset() override;
 };
 
 
 struct ListBox : UIElement
 {
-	ListBox();
+	void OnReset() override;
 };
 
 struct Selectable : UIElement
 {
-	void OnInit() override;
+	void OnReset() override;
 	Selectable& Init(bool selected)
 	{
 		SetFlag(UIObject_IsChecked, selected);
@@ -165,11 +186,11 @@ struct Selectable : UIElement
 
 struct ProgressBar : UIElement
 {
-	ProgressBar();
-	void OnPaint() override;
-
 	StyleBlockRef completionBarStyle;
 	float progress = 0.5f;
+
+	void OnReset() override;
+	void OnPaint() override;
 };
 
 struct FloatLimits
@@ -181,7 +202,7 @@ struct FloatLimits
 
 struct Slider : UIElement
 {
-	void OnInit() override;
+	void OnReset() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 
@@ -242,7 +263,7 @@ struct Property : UIElement
 		UIObject* label;
 	};
 
-	Property();
+	void OnReset() override;
 	static void Begin(const char* label = nullptr);
 	static void End();
 
@@ -257,7 +278,7 @@ struct Property : UIElement
 
 struct PropertyList : UIElement
 {
-	void OnInit() override;
+	void OnReset() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
 
 	StyleAccessor GetDefaultLabelStyle() { return StyleAccessor(_defaultLabelStyle, this); }
@@ -289,6 +310,7 @@ struct LabeledProperty : UIElement
 	static LabeledProperty& Begin(const char* label = nullptr);
 	static void End();
 
+	void OnReset() override;
 	void OnInit() override;
 	void OnPaint() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
@@ -299,7 +321,7 @@ struct LabeledProperty : UIElement
 	bool IsBrief() const { return _isBrief; }
 	LabeledProperty& SetBrief(bool b) { _isBrief = b; return *this; }
 
-	StyleAccessor GetLabelStyle() { return StyleAccessor(_labelStyle, this); }
+	StyleAccessor GetLabelStyle();
 	LabeledProperty& SetLabelStyle(const StyleBlockRef& s) { _labelStyle = s; return *this; }
 
 	StyleBlockRef _labelStyle;
@@ -315,7 +337,7 @@ struct SplitPane : UIElement
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-	void OnSerialize(IDataSerializer& s) override;
+	void OnReset() override;
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 
@@ -343,6 +365,7 @@ struct ScrollbarData
 struct ScrollbarV
 {
 	ScrollbarV();
+	void OnReset();
 	Coord GetWidth();
 	UIRect GetThumbRect(const ScrollbarData& info);
 	void OnPaint(const ScrollbarData& info);
@@ -355,38 +378,35 @@ struct ScrollbarV
 	float dragStartCursorPos;
 };
 
-class ScrollArea : public UIElement
+struct ScrollArea : UIElement
 {
-public:
+	Size2f estContentSize = {};
+	float yoff = 0;
+	ScrollbarV sbv;
+
 	ScrollArea();
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-	void OnSerialize(IDataSerializer& s) override;
-
-	Size2f estContentSize = {};
-	float yoff = 0;
-	ScrollbarV sbv;
+	void OnReset() override;
 };
 
-class TabGroup : public UIElement
+struct TabGroup : UIElement
 {
-public:
-	TabGroup();
+	struct TabButtonBase* _activeBtn;
 
-	struct TabButtonBase* _activeBtn = nullptr;
+	void OnReset() override;
 };
 
-class TabButtonList : public UIElement
+struct TabButtonList : UIElement
 {
-public:
-	TabButtonList();
+	void OnReset() override;
 	void OnPaint() override;
 };
 
 struct TabButtonBase : UIElement
 {
-	TabButtonBase();
+	void OnReset() override;
 	void OnDestroy() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
@@ -411,6 +431,9 @@ struct TabButton : TabButtonBase
 template <class T>
 struct TabButtonT : TabButtonBase
 {
+	T* _iptr = nullptr;
+	T _value = {};
+
 	TabButtonT& Init(T& iref, T value)
 	{
 		_iptr = &iref;
@@ -430,23 +453,26 @@ struct TabButtonT : TabButtonBase
 	}
 	bool IsSelected() const override { return _iptr && *_iptr == _value; }
 
-	T* _iptr = nullptr;
-	T _value = {};
+	void OnReset() override
+	{
+		TabButtonBase::OnReset();
+
+		_iptr = nullptr;
+		_value = {};
+	}
 };
 
-class TabPanel : public UIElement
+struct TabPanel : UIElement
 {
-public:
-	TabPanel();
+	void OnReset() override;
 	void OnPaint() override;
 };
 
 struct Textbox : UIElement
 {
-	Textbox();
+	void OnReset() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
-	void OnSerialize(IDataSerializer& s) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
 	StringView GetSelectedText() const;
@@ -499,23 +525,22 @@ struct TextboxPlaceholder : Modifier
 
 struct CollapsibleTreeNode : UIElement
 {
-	CollapsibleTreeNode();
-	void OnPaint() override;
-	void OnEvent(Event& e) override;
-	void OnSerialize(IDataSerializer& s) override;
-
 	bool open = false;
 	bool _hovered = false;
+
+	void OnReset() override;
+	void OnPaint() override;
+	void OnEvent(Event& e) override;
 };
 
 
 struct BackgroundBlocker : UIElement
 {
-	void OnInit() override;
+	RectAnchoredPlacement _fullScreenPlacement;
+
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnButton();
-
-	RectAnchoredPlacement _fullScreenPlacement;
 };
 
 
@@ -582,8 +607,6 @@ struct StringArrayOptionList : CStrOptionList
 
 struct DropdownMenuList : DropdownMenu
 {
-	static constexpr bool Persistent = false;
-
 	OptionList* _options = nullptr;
 	uintptr_t _selected = UINTPTR_MAX;
 
@@ -591,7 +614,7 @@ struct DropdownMenuList : DropdownMenu
 	DropdownMenuList& SetSelected(uintptr_t s) { _selected = s; return *this; }
 	uintptr_t GetSelected() { return _selected; }
 
-	void OnSerialize(IDataSerializer& s) override;
+	void OnReset() override;
 	void OnBuildButtonContents() override;
 	void OnBuildMenuContents() override;
 
@@ -661,20 +684,28 @@ struct OverlayInfoFrame : UIElement
 
 struct TooltipFrame : OverlayInfoFrame
 {
-	TooltipFrame();
+	void OnReset() override;
 };
 
 struct DragDropDataFrame : OverlayInfoFrame
 {
-	DragDropDataFrame();
+	void OnReset() override;
 };
 
 struct DefaultOverlayBuilder : Buildable
 {
-	void Build() override;
-
 	bool drawTooltip = true;
 	bool drawDragDrop = true;
+
+	void OnReset() override
+	{
+		Buildable::OnReset();
+
+		drawTooltip = true;
+		drawDragDrop = true;
+	}
+
+	void Build() override;
 };
 
 } // ui

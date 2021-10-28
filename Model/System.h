@@ -62,44 +62,14 @@ struct UIContainer
 	{
 		if (obj && typeid(*obj) == typeid(T) && (obj->flags & UIObject_BuildAlloc))
 		{
-			auto* t = static_cast<T*>(obj);
-			t->UnregisterAsOverlay();
-
-			// TODO is there a way to optimize this?
-			auto* buildable = dynamic_cast<Buildable*>(obj);
-			decltype(buildable->_deferredDestructors) ddList;
-			if (buildable)
-				std::swap(buildable->_deferredDestructors, ddList);
-
-			if (T::Persistent)
-			{
-				t->_Reset();
-			}
-			else
-			{
-				char buf[1024];
-				DataWriteSerializer dws(buf);
-				t->_SerializePersistent(dws);
-				t->~T();
-				new (t) T();
-				auto origFlags = t->flags;
-				DataReadSerializer drs(buf);
-				t->_SerializePersistent(drs);
-				// in case these flags have been set by ctor
-				t->flags |= origFlags & (UIObject_IsInLayoutStack | UIObject_IsInBuildStack);
-				t->flags |= UIObject_BuildAlloc;
-			}
-
-			if (buildable)
-				std::swap(buildable->_deferredDestructors, ddList);
-
-			t->_OnChangeStyle();
-			return t;
+			obj->PO_ResetConfiguration();
+			return static_cast<T*>(obj);
 		}
 		auto* p = new T();
 		p->flags |= UIObject_BuildAlloc;
 		p->system = owner;
 		p->_OnChangeStyle();
+		p->PO_ResetConfiguration();
 		return p;
 	}
 	void AddToBuildStack(Buildable* n)

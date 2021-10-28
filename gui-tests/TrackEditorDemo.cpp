@@ -16,10 +16,15 @@ struct TrackEditorDemo : ui::Buildable
 
 		TrackEditor()
 		{
-			SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			items.push_back({ 100, 150, 50, 0, "Animation one" });
 			items.push_back({ 200, 350, 150, 0, "Sound effect two" });
 			items.push_back({ 120, 320, 200, 1, "Camera track" });
+		}
+		void OnReset() override
+		{
+			ui::UIElement::OnReset();
+
+			SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			GetStyle().SetHeight(160);
 		}
 		void OnPaint() override

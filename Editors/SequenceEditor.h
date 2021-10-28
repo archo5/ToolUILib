@@ -168,7 +168,7 @@ struct SequenceDragData : DragDropData
 
 struct SequenceItemElement : Selectable
 {
-	void OnInit() override;
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	virtual void ContextMenu();
 
@@ -183,7 +183,7 @@ struct SequenceEditor : Buildable
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
-	void OnSerialize(IDataSerializer& s) override;
+	void OnReset() override;
 
 	virtual void OnBuildItem(size_t idx, void* ptr);
 	virtual void OnBuildDeleteButton(size_t idx);

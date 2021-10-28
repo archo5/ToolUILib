@@ -171,16 +171,15 @@ struct CurveEditorUI : CurveEditorState
 
 struct CurveEditorElement : UIElement
 {
-	void OnInit() override;
-	void OnEvent(Event& e) override;
-	void OnPaint() override;
-	void OnSerialize(IDataSerializer& s) override;
-
 	CurveEditorUI _ui;
 	ICurveView* curveView = nullptr;
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
 	GridSettings gridSettings;
+
+	void OnReset() override;
+	void OnEvent(Event& e) override;
+	void OnPaint() override;
 };
 
 

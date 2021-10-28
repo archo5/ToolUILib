@@ -199,6 +199,7 @@ struct ProcGraphEditor_Node : Buildable
 struct ProcGraphEditor : Buildable
 {
 	void Build() override;
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
 

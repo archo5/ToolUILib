@@ -49,7 +49,7 @@ struct TreeDragData : DragDropData
 
 struct TreeItemElement : Selectable
 {
-	void OnInit() override;
+	void OnReset() override;
 	void OnEvent(Event& e) override;
 	virtual void ContextMenu();
 
@@ -64,7 +64,7 @@ struct TreeEditor : Buildable
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
-	void OnSerialize(IDataSerializer& s) override;
+	void OnReset() override;
 
 	virtual void OnBuildChildList(TreePath& path);
 	virtual void OnBuildList(TreePath& path);
@@ -83,7 +83,7 @@ struct TreeEditor : Buildable
 
 	bool showDeleteButton = true;
 
-	ITree* _tree;
+	ITree* _tree = nullptr;
 
 	TreePath _dragTargetLoc;
 	UIRect _dragTargetLine = {};
