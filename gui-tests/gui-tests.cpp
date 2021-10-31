@@ -107,6 +107,7 @@ struct DataEditor : ui::Buildable
 
 	void Build() override
 	{
+#if 0
 		ui::Push<ui::MenuBarElement>();
 		{
 			ui::Push<ui::MenuItemElement>().SetText("File");
@@ -126,6 +127,7 @@ struct DataEditor : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
+#endif
 
 		ui::MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
 		static float sldval = 0.63f;
@@ -522,6 +524,43 @@ struct TEST : ui::Buildable
 {
 	void Build() override
 	{
+#if 1
+		std::vector<ui::MenuItem> rootMenu;
+
+		for (const auto& group : exampleGroups)
+		{
+			rootMenu.push_back(ui::MenuItem(group.name));
+			for (auto& entry : group.entries)
+			{
+				if (!entry.func)
+				{
+					if (entry.name)
+						rootMenu.back().submenu.push_back(ui::MenuItem(entry.name, {}, true));
+					else
+						rootMenu.back().submenu.push_back(ui::MenuItem::Separator());
+					continue;
+				}
+
+				auto fn = [this, &entry]()
+				{
+					curTest = &entry;
+					GetNativeWindow()->SetTitle(entry.name);
+					Rebuild();
+				};
+				rootMenu.back().submenu.push_back(ui::MenuItem(entry.name, {}, false, curTest == &entry).Func(fn));
+			}
+		}
+
+		rootMenu.push_back(ui::MenuItem("Debug"));
+		{
+			rootMenu.back().submenu.push_back(ui::MenuItem("Rebuild always", {}, false, rebuildAlways).Func([this]() { rebuildAlways ^= true; Rebuild(); }));
+			rootMenu.back().submenu.push_back(ui::MenuItem("Dump layout").Func([this]() { DumpLayout(lastChild); }));
+			rootMenu.back().submenu.push_back(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
+				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); }));
+		}
+
+		Allocate<ui::TopMenu>(GetNativeWindow(), rootMenu);
+#else
 		ui::Push<ui::MenuBarElement>();
 
 		for (const auto& group : exampleGroups)
@@ -559,6 +598,7 @@ struct TEST : ui::Buildable
 		ui::Pop();
 
 		ui::Pop();
+#endif
 
 		if (curTest)
 			curTest->func();

@@ -329,6 +329,14 @@ struct TE_ThemeEditorNode : Buildable
 {
 	void Build() override
 	{
+#if 1
+		std::vector<MenuItem> topMenu;
+		topMenu.push_back(MenuItem("File"));
+		topMenu.back().submenu.push_back(MenuItem("New").Func([this]() { theme->Clear(); Rebuild(); }));
+		topMenu.back().submenu.push_back(MenuItem("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); }));
+		topMenu.back().submenu.push_back(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
+		Allocate<TopMenu>(GetNativeWindow(), topMenu);
+#else
 		Push<MenuBarElement>();
 		{
 			Push<MenuItemElement>().SetText("File");
@@ -340,6 +348,7 @@ struct TE_ThemeEditorNode : Buildable
 			Pop();
 		}
 		Pop();
+#endif
 
 		Push<TabGroup>() + SetHeight(Coord::Percent(100)) + SetLayout(layouts::EdgeSlice());
 		{

@@ -18,7 +18,7 @@ MenuItem::MenuItem(StringView text, StringView shortcut, bool disabled, bool che
 		this->text += "\t";
 		this->text.append(shortcut.data(), shortcut.size());
 	}
-	this->submenu = submenu;
+	this->submenu.assign(submenu.begin(), submenu.end());
 	this->isChecked = checked;
 	this->isDisabled = disabled;
 }
@@ -201,6 +201,18 @@ void Menu::_Unpack(ArrayView<MenuItem> miv, int parent)
 }
 
 
+TopMenu::TopMenu(NativeWindowBase* w, ArrayView<MenuItem> rootItems) :
+	_items(rootItems.begin(), rootItems.end()), _menu(_items, true), _window(w)
+{
+	_window->SetMenu(&_menu);
+}
+
+TopMenu::~TopMenu()
+{
+	//_window->SetMenu(nullptr);
+}
+
+#if 0
 MenuItemElement& MenuItemElement::SetText(StringView text, StringView shortcut)
 {
 	this->text.reserve(text.size() + (shortcut.empty() ? 0 : 1) + shortcut.size());
@@ -301,6 +313,6 @@ std::string MenuElement::_GenerateItemUID()
 	}
 	return ret;
 }
-
+#endif
 
 } // ui

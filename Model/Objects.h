@@ -157,7 +157,6 @@ struct UIObject : IPersistentObject
 	virtual ~UIObject();
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
-	virtual void OnCompleteStructure() {}
 
 	void _SetOwner(FrameContents* owner);
 	void _UnsetOwner();

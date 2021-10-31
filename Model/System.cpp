@@ -293,7 +293,6 @@ void UIContainer::_Pop()
 		DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
 	}
 
-	objectStack[objectStackSize - 1]->OnCompleteStructure();
 	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
 
 	objectStackSize--;

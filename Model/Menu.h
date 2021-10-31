@@ -50,7 +50,7 @@ struct MenuItem
 	}
 
 	std::string text;
-	ArrayView<MenuItem> submenu;
+	std::vector<MenuItem> submenu;
 	bool isSeparator = false;
 	bool isChecked = false;
 	bool isDisabled = false;
@@ -163,7 +163,17 @@ private:
 	void* impl;
 };
 
+struct TopMenu
+{
+	std::vector<MenuItem> _items;
+	Menu _menu;
+	NativeWindowBase* _window;
 
+	TopMenu(NativeWindowBase* w, ArrayView<MenuItem> rootItems);
+	~TopMenu();
+};
+
+#if 0
 struct MenuItemElement : UIElement
 {
 	std::string text;
@@ -221,6 +231,6 @@ struct MenuBarElement : MenuElement
 {
 	bool IsTopBar() override { return true; }
 };
-
+#endif
 
 } // ui

@@ -91,6 +91,25 @@ struct MainWindowContents : ui::Buildable
 			curMeshEditor->rootBuildable->Rebuild();
 		};
 
+#if 1
+		std::vector<ui::MenuItem> topMenu;
+		topMenu.push_back(ui::MenuItem("Save").Func([&]()
+		{
+			NamedTextSerializeWriter ntsw;
+			workspace.Save(ntsw);
+			ui::WriteTextFile(CUR_WORKSPACE, ntsw.data);
+		}));
+		topMenu.push_back(ui::MenuItem("Export script").Func([&]()
+		{
+			char bfr[256];
+			strcpy(bfr, CUR_WORKSPACE);
+			*strrchr(bfr, '.') = '\0';
+			strcat(bfr, ".py");
+			auto scr = ExportPythonScript(&workspace.desc);
+			ui::WriteTextFile(bfr, scr);
+		}));
+		Allocate<ui::TopMenu>(GetNativeWindow(), topMenu);
+#else
 		ui::Push<ui::MenuBarElement>();
 		ui::Make<ui::MenuItemElement>().SetText("Save").Func([&]()
 		{
@@ -108,6 +127,7 @@ struct MainWindowContents : ui::Buildable
 			ui::WriteTextFile(bfr, scr);
 		});
 		ui::Pop();
+#endif
 
 		ui::Push<ui::TabGroup>()
 			+ ui::SetLayout(ui::layouts::EdgeSlice())
