@@ -426,20 +426,9 @@ FrameContents::~FrameContents()
 	container.Free();
 }
 
-Buildable* FrameContents::_AllocRootImpl(BuildableAllocFunc* f)
+void FrameContents::BuildRoot(Buildable* B)
 {
-	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
-	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, &container);
-	auto* N = f();
-	container.rootBuildable = N;
-	return N;
-}
-
-void FrameContents::BuildRoot()
-{
-	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, this);
-	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, &container);
-	container._BuildUsing(container.rootBuildable);
+	container._BuildUsing(B);
 }
 
 
@@ -529,8 +518,9 @@ void InlineFrame::SetFrameContents(FrameContents* contents)
 void InlineFrame::CreateFrameContents(std::function<void()> buildFunc)
 {
 	auto* contents = new FrameContents();
-	contents->AllocRoot<BuildCallback>()->buildFunc = buildFunc;
-	contents->BuildRoot();
+	auto* cb = CreateUIObject<BuildCallback>();
+	cb->buildFunc = buildFunc;
+	contents->BuildRoot(cb);
 	SetFrameContents(contents);
 	ownsContents = true;
 }

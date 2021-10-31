@@ -775,13 +775,15 @@ struct FrameTest : ui::Buildable
 	{
 		frameContents[0] = new ui::FrameContents;
 		{
-			frameContents[0]->AllocRoot<Frame>()->name = "Frame A";
-			frameContents[0]->BuildRoot();
+			auto* f = ui::CreateUIObject<Frame>();
+			f->name = "Frame A";
+			frameContents[0]->BuildRoot(f);
 		}
 		frameContents[1] = new ui::FrameContents;
 		{
-			frameContents[1]->AllocRoot<Frame>()->name = "Frame B";
-			frameContents[1]->BuildRoot();
+			auto* f = ui::CreateUIObject<Frame>();
+			f->name = "Frame B";
+			frameContents[1]->BuildRoot(f);
 		}
 	}
 	void OnDestroy() override

@@ -139,7 +139,7 @@ struct LivenessToken
 // objects whose configuration can be reset without also resetting the state
 struct IPersistentObject
 {
-	IPersistentObject* _next;
+	IPersistentObject* _next = nullptr;
 
 	virtual ~IPersistentObject() {}
 	virtual void PO_ResetConfiguration() {}

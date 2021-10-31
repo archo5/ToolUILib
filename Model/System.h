@@ -67,8 +67,7 @@ struct UIContainer
 		}
 		auto* p = new T();
 		p->flags |= UIObject_BuildAlloc;
-		p->_OnChangeStyle();
-		p->PO_ResetConfiguration();
+		p->_InitReset();
 		return p;
 	}
 	void AddToBuildStack(Buildable* n)
@@ -282,11 +281,11 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
-typedef Buildable* BuildableAllocFunc();
-template <class T> inline Buildable* BuildableAlloc()
+template <class T> T* CreateUIObject()
 {
-	auto* ctx = UIContainer::GetCurrent();
-	return ctx->AllocIfDifferent<T>(ctx->rootBuildable);
+	auto* obj = new T;
+	obj->_InitReset();
+	return obj;
 }
 
 class InlineFrame;
@@ -294,12 +293,7 @@ struct FrameContents
 {
 	FrameContents();
 	~FrameContents();
-	template <class T> T* AllocRoot()
-	{
-		return static_cast<T*>(_AllocRootImpl(BuildableAlloc<T>));
-	}
-	Buildable* _AllocRootImpl(BuildableAllocFunc* f);
-	void BuildRoot();
+	void BuildRoot(Buildable* B);
 
 	UIContainer container;
 	EventSystem eventSystem;

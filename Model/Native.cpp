@@ -639,8 +639,9 @@ struct NativeWindow_Impl
 
 	void SetBuildFunc(std::function<void()> buildFunc)
 	{
-		system.AllocRoot<BuildCallback>()->buildFunc = buildFunc;
-		system.BuildRoot();
+		auto* cb = CreateUIObject<BuildCallback>();
+		cb->buildFunc = buildFunc;
+		system.BuildRoot(cb);
 		system.eventSystem.RecomputeLayout();
 		GetOwner()->InvalidateAll();
 	}

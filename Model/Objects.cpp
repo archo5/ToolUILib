@@ -43,6 +43,7 @@ void UIObject::_SetOwner(FrameContents* owner)
 		system->overlays.Register(this, g_overlays.find(this)->value.depth);
 		g_overlays.erase(this);
 	}
+	_OnChangeStyle();
 	OnInit();
 }
 
@@ -76,9 +77,6 @@ void UIObject::PO_ResetConfiguration()
 	flags |= UIObject_BuildAlloc; // TODO remove once allocs are separate from tree
 
 	_InitReset();
-
-	// TODO needed?
-	_OnChangeStyle();
 }
 
 void UIObject::_InitReset()
@@ -768,7 +766,8 @@ void UIObject::SetStyle(StyleBlock* style)
 
 void UIObject::_OnChangeStyle()
 {
-	g_curSystem->container.layoutStack.Add(parent ? parent : this);
+	if (system)
+		system->container.layoutStack.Add(parent ? parent : this);
 }
 
 float UIObject::ResolveUnits(Coord coord, float ref)
