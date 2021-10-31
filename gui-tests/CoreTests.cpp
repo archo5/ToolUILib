@@ -312,7 +312,7 @@ struct OpenCloseTest : ui::Buildable
 		auto& cb = ui::Push<ui::StateToggle>().InitReadOnly(open);
 		ui::Make<ui::CheckboxIcon>();
 		ui::Pop();
-		cb.HandleEvent(ui::EventType::Activate) = [this, cb](ui::Event&) { open = !open; Rebuild(); };
+		cb.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = !open; Rebuild(); };
 
 		ui::MakeWithText<ui::Button>("Open").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = true; Rebuild(); };
 

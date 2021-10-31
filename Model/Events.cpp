@@ -101,6 +101,15 @@ void EventSystem::RecomputeLayout()
 		container->rootBuildable->OnLayout({ 0, 0, width, height }, { width, height });
 }
 
+static void RemoveTimer(std::vector<TimerData>& timers, size_t& i, size_t& count)
+{
+	if (i + 1 < timers.size())
+		std::swap(timers[i], timers.back());
+	timers.pop_back();
+	i--;
+	count--;
+}
+
 float EventSystem::ProcessTimers(float dt)
 {
 	float minTime = FLT_MAX;
@@ -109,68 +118,32 @@ float EventSystem::ProcessTimers(float dt)
 	{
 		auto& T = pendingTimers[i];
 		T.timeLeft -= dt;
+
+		if (!T.target)
+		{
+			RemoveTimer(pendingTimers, i, endOfInitialTimers);
+			continue;
+		}
+
 		if (T.timeLeft <= 0)
 		{
-			Event ev(this, T.target, EventType::Timer);
-			size_t sizeBefore = pendingTimers.size();
-			T.target->_DoEvent(ev);
-			bool added = pendingTimers.size() > sizeBefore;
+			auto Tcopy = T;
+			RemoveTimer(pendingTimers, i, endOfInitialTimers);
 
-			if (i + 1 < pendingTimers.size())
-				std::swap(T, pendingTimers.back());
-			pendingTimers.pop_back();
-			if (!added)
-			{
-				i--;
-				endOfInitialTimers--;
-			}
+			Event ev(this, Tcopy.target, EventType::Timer);
+			Tcopy.target->_DoEvent(ev);
 		}
 		else if (minTime > T.timeLeft)
 			minTime = T.timeLeft;
 	}
+	for (size_t i = endOfInitialTimers; i < pendingTimers.size(); i++)
+		minTime = min(minTime, pendingTimers[i].timeLeft);
 	return minTime;
 }
 
 void EventSystem::Repaint(UIObject* o)
 {
 	// TODO
-}
-
-void EventSystem::OnDestroy(UIObject* o)
-{
-#if 0
-	if (hoverObj == o)
-		hoverObj = nullptr;
-	if (dragHoverObj == o)
-		dragHoverObj = nullptr;
-#endif
-	if (mouseCaptureObj == o)
-		mouseCaptureObj = nullptr;
-	if (tooltipObj == o)
-	{
-		tooltipObj = nullptr;
-		Tooltip::Unset();
-		Notify(DCT_TooltipChanged);
-	}
-	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
-		if (clickObj[i] == o)
-			clickObj[i] = nullptr;
-#if 0
-	if (focusObj == o)
-		focusObj = nullptr;
-	if (lastFocusObj == o)
-		lastFocusObj = nullptr;
-#endif
-	for (size_t i = 0; i < pendingTimers.size(); i++)
-	{
-		if (pendingTimers[i].target == o)
-		{
-			if (i + 1 < pendingTimers.size())
-				std::swap(pendingTimers[i], pendingTimers.back());
-			pendingTimers.pop_back();
-			i--;
-		}
-	}
 }
 
 void EventSystem::OnActivate(UIObject* o)
@@ -311,7 +284,7 @@ UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 void EventSystem::MoveClickTo(UIObject* obj, MouseButton btn)
 {
 	int at = (int)btn;
-	if (auto* old = clickObj[at])
+	if (auto* old = clickObj[at].Get())
 	{
 		if (hoverObj == old)
 		{

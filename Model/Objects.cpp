@@ -33,6 +33,8 @@ UIObject::~UIObject()
 {
 	ClearEventHandlers();
 	UnregisterAsOverlay();
+
+	_livenessToken.SetAlive(false);
 }
 
 void UIObject::_SetOwner(FrameContents* owner)
@@ -44,6 +46,17 @@ void UIObject::_SetOwner(FrameContents* owner)
 		system->overlays.Register(this, g_overlays.find(this)->value.depth);
 		g_overlays.erase(this);
 	}
+
+	// TODO verify possibly inconsistent duplicate flags of states (if flag set)
+#if 0
+	for (UIObject* p = system->eventSystem.hoverObj; p; p = p->parent)
+		if (p == this)
+			flags |= UIObject_IsHovered;
+	for (int i = 0; i < 5; i++)
+		for (UIObject* p = system->eventSystem.clickObj[i]; p; p = p->parent)
+			if (p == this)
+				flags |= _UIObject_IsClicked_First << i;
+#endif
 
 	_OnChangeStyle();
 
@@ -86,6 +99,7 @@ void UIObject::PO_ResetConfiguration()
 		UIObject_IsHovered |
 		UIObject_IsClickedAnyMask |
 		UIObject_IsEdited |
+		UIObject_IsChecked |
 		UIObject_IsPressedAny;
 	flags = UIObject_DB__Defaults | (origFlags & KEEP_MASK);
 

@@ -126,7 +126,6 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 			objectStack[objectStackSize++] = n;
 
 		UI_DEBUG_FLOW(printf("    deleting %p\n", cur));
-		owner->eventSystem.OnDestroy(cur);
 		if (cur->flags & UIObject_BuildAlloc)
 			delete cur;
 		else
@@ -275,7 +274,6 @@ void UIContainer::_Push(UIObject* obj, bool isCurBuildable)
 void UIContainer::_Destroy(UIObject* obj)
 {
 	UI_DEBUG_FLOW(printf("    destroy %p\n", obj));
-	obj->_livenessToken.SetAlive(false);
 	obj->_UnsetOwner();
 	for (auto* ch = obj->firstChild; ch; ch = ch->next)
 		_Destroy(ch);
@@ -288,8 +286,6 @@ void UIContainer::_Pop()
 		// remove leftover children
 		DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
 	}
-
-	objectStack[objectStackSize - 1]->_livenessToken.SetAlive(true);
 
 	objectStackSize--;
 }

@@ -70,7 +70,7 @@ void MeshEditorWindowNode::Build()
 			tv.SetSelectionMode(ui::SelectionMode::Single);
 			ddiSrc.refilter = true;
 			tv.CalculateColumnWidths();
-			tv.HandleEvent(ui::EventType::SelectionChange) = [this, tv](ui::Event& e) { e.current->Rebuild(); };
+			tv.HandleEvent(ui::EventType::SelectionChange) = [this, &tv](ui::Event& e) { e.current->Rebuild(); };
 			tv.HandleEvent(ui::EventType::Click) = [this, &tv](ui::Event& e)
 			{
 				if (e.numRepeats == 2 && tv.GetHoverRow() != SIZE_MAX && ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)

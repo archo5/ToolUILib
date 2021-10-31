@@ -214,7 +214,10 @@ struct UIWeakPtr
 struct UIObject : IPersistentObject
 {
 	UIObject();
+	// prevent accidental copies
+	UIObject(const UIObject&) = delete;
 	virtual ~UIObject();
+
 	virtual void OnInit() {}
 	virtual void OnDestroy() {}
 

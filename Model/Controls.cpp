@@ -1340,18 +1340,19 @@ void Textbox::OnEvent(Event& e)
 	}
 	else if (e.type == EventType::Timer)
 	{
-#if 0
 		showCaretState = !showCaretState;
+		if (system) // TODO better check? needed?
+			GetNativeWindow()->InvalidateAll(); // TODO localized
 		if (IsFocused())
 			e.context->SetTimer(this, 0.5f);
-#endif
 	}
 	else if (e.type == EventType::GotFocus)
 	{
 		showCaretState = true;
+		GetNativeWindow()->InvalidateAll(); // TODO localized
 		startCursor = 0;
 		endCursor = _text.size();
-		//e.context->SetTimer(this, 0.5f);
+		e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == EventType::LostFocus)
 	{

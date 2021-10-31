@@ -9,7 +9,7 @@ namespace ui {
 
 struct TimerData
 {
-	UIObject* target;
+	UIWeakPtr<UIObject> target;
 	float timeLeft;
 	int id;
 };
@@ -23,7 +23,6 @@ struct EventSystem
 	float ProcessTimers(float dt);
 
 	void Repaint(UIObject* o);
-	void OnDestroy(UIObject* o);
 	void OnActivate(UIObject* o);
 	void OnCommit(UIObject* o);
 	void OnChange(UIObject* o);
@@ -60,9 +59,9 @@ struct EventSystem
 
 	UIWeakPtr<UIObject> hoverObj;
 	UIWeakPtr<UIObject> dragHoverObj;
-	UIObject* mouseCaptureObj = nullptr;
-	UIObject* tooltipObj = nullptr;
-	UIObject* clickObj[5] = {};
+	UIWeakPtr<UIObject> mouseCaptureObj = nullptr;
+	UIWeakPtr<UIObject> tooltipObj = nullptr; // TODO check if it resets when an element is deleted
+	UIWeakPtr<UIObject> clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
 	Point2f clickStartPositions[5] = {};
