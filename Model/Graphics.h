@@ -251,7 +251,6 @@ struct ColorEdit : IColorEdit
 {
 	MultiFormatColor _color;
 
-	void OnReset() override;
 	void Build() override;
 
 	const MultiFormatColor& GetColor() const override { return _color; }
@@ -265,7 +264,6 @@ struct ColorEditRT : IColorEdit
 	MultiFormatColor _color;
 	struct ColorPickerWindowRT* _rtWindow = nullptr;
 
-	void OnReset() override;
 	void Build() override;
 	void OnDestroy() override;
 

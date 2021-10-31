@@ -67,7 +67,6 @@ struct UIContainer
 		}
 		auto* p = new T();
 		p->flags |= UIObject_BuildAlloc;
-		p->system = owner;
 		p->_OnChangeStyle();
 		p->PO_ResetConfiguration();
 		return p;

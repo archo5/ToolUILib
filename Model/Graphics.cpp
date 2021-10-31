@@ -767,13 +767,6 @@ void ColorPickerWindow::OnBuild()
 }
 
 
-void ColorEdit::OnReset()
-{
-	IColorEdit::OnReset();
-
-	_color = {};
-}
-
 void ColorEdit::Build()
 {
 	auto& cib = Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
@@ -821,13 +814,6 @@ struct ColorPickerWindowRT : NativeWindowBase
 	ColorEditRT* _editor = nullptr;
 };
 
-
-void ColorEditRT::OnReset()
-{
-	IColorEdit::OnReset();
-
-	_color = {};
-}
 
 void ColorEditRT::Build()
 {

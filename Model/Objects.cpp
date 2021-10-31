@@ -12,6 +12,9 @@ extern uint32_t g_curLayoutFrame;
 extern FrameContents* g_curSystem;
 
 
+static HashMap<UIObject*, Overlays::Info> g_overlays;
+
+
 struct EventHandlerEntry
 {
 	EventHandlerEntry* next;
@@ -30,6 +33,28 @@ UIObject::~UIObject()
 {
 	ClearEventHandlers();
 	UnregisterAsOverlay();
+}
+
+void UIObject::_SetOwner(FrameContents* owner)
+{
+	system = owner;
+	if (flags & UIObject_IsOverlay)
+	{
+		system->overlays.Register(this, g_overlays.find(this)->value.depth);
+		g_overlays.erase(this);
+	}
+	OnInit();
+}
+
+void UIObject::_UnsetOwner()
+{
+	OnDestroy();
+	if (flags & UIObject_IsOverlay)
+	{
+		g_overlays.insert(this, system->overlays.mapped.find(this)->value);
+		system->overlays.Unregister(this);
+	}
+	system = nullptr;
 }
 
 void UIObject::PO_ResetConfiguration()
@@ -238,7 +263,10 @@ void UIObject::ClearEventHandlers()
 
 void UIObject::RegisterAsOverlay(float depth)
 {
-	system->overlays.Register(this, depth);
+	if (system)
+		system->overlays.Register(this, depth);
+	else
+		g_overlays.insert(this, { depth });
 	flags |= UIObject_IsOverlay;
 }
 
@@ -246,7 +274,10 @@ void UIObject::UnregisterAsOverlay()
 {
 	if (flags & UIObject_IsOverlay)
 	{
-		system->overlays.Unregister(this);
+		if (system)
+			system->overlays.Unregister(this);
+		else
+			g_overlays.erase(this);
 		flags &= ~UIObject_IsOverlay;
 	}
 }

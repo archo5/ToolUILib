@@ -126,7 +126,7 @@ void UIContainer::ProcessObjectDeleteStack(int first)
 			objectStack[objectStackSize++] = n;
 
 		UI_DEBUG_FLOW(printf("    deleting %p\n", cur));
-		cur->system->eventSystem.OnDestroy(cur);
+		owner->eventSystem.OnDestroy(cur);
 		buildStack.OnDestroy(cur);
 		nextFrameBuildStack.OnDestroy(cur);
 		layoutStack.OnDestroy(cur);
@@ -259,6 +259,7 @@ void UIContainer::ProcessLayoutStack()
 
 void UIContainer::_BuildUsing(Buildable* n)
 {
+	n->_SetOwner(owner);
 	rootBuildable = n;
 	assert(!buildStack.ContainsAny());
 	buildStack.ClearWithoutFlags(); // TODO: is this needed?
@@ -278,7 +279,7 @@ void UIContainer::_Destroy(UIObject* obj)
 {
 	UI_DEBUG_FLOW(printf("    destroy %p\n", obj));
 	obj->_livenessToken.SetAlive(false);
-	obj->OnDestroy();
+	obj->_UnsetOwner();
 	for (auto* ch = obj->firstChild; ch; ch = ch->next)
 		_Destroy(ch);
 }
@@ -320,7 +321,7 @@ void UIContainer::_AllocReplace(UIObject* obj)
 		objChildStack[objectStackSize - 1] = nullptr;
 		lastIsNew = true;
 	}
-	obj->OnInit();
+	obj->_SetOwner(owner);
 	_lastCreated = obj;
 }
 
