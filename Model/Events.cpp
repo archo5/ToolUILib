@@ -1,5 +1,6 @@
 
 #include "Events.h"
+#include "EventSystem.h" // TODO refactor?
 #include "Objects.h"
 #include "Menu.h"
 #include "Native.h"
@@ -137,10 +138,12 @@ void EventSystem::Repaint(UIObject* o)
 
 void EventSystem::OnDestroy(UIObject* o)
 {
+#if 0
 	if (hoverObj == o)
 		hoverObj = nullptr;
 	if (dragHoverObj == o)
 		dragHoverObj = nullptr;
+#endif
 	if (mouseCaptureObj == o)
 		mouseCaptureObj = nullptr;
 	if (tooltipObj == o)
@@ -152,10 +155,12 @@ void EventSystem::OnDestroy(UIObject* o)
 	for (size_t i = 0; i < sizeof(clickObj) / sizeof(clickObj[0]); i++)
 		if (clickObj[i] == o)
 			clickObj[i] = nullptr;
+#if 0
 	if (focusObj == o)
 		focusObj = nullptr;
 	if (lastFocusObj == o)
 		lastFocusObj = nullptr;
+#endif
 	for (size_t i = 0; i < pendingTimers.size(); i++)
 	{
 		if (pendingTimers[i].target == o)
@@ -332,7 +337,7 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, Event& e, uint32_t fl)
 	o->_DoEvent(e);
 }
 
-void EventSystem::_UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
+void EventSystem::_UpdateHoverObj(UIWeakPtr<UIObject>& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
 {
 	auto* tgt = dragEvents ?
 		DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(cursorPos) :
@@ -344,7 +349,7 @@ void EventSystem::_UpdateHoverObj(UIObject*& curHoverObj, Point2f cursorPos, uin
 
 	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
 
-	auto* o = curHoverObj;
+	auto* o = curHoverObj.Get();
 	while (o && (!tgt || !tgt->IsChildOrSame(o)))
 	{
 		o->flags &= ~hoverFlag;
@@ -486,7 +491,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 		ev.numRepeats = mouseBtnPressCount - 1;
 
-		for (auto* p = hoverObj; p; p = p->parent)
+		for (auto* p = hoverObj.Get(); p; p = p->parent)
 			p->flags |= _UIObject_IsClicked_First << id;
 
 		clickObj[id] = hoverObj;

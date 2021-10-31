@@ -235,6 +235,9 @@
     <ClInclude Include="Core\MathExpr.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Model\EventSystem.h">
+      <Filter>Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

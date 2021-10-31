@@ -209,6 +209,7 @@
     <ClInclude Include="Model\Controls.h" />
     <ClInclude Include="Model\Docking.h" />
     <ClInclude Include="Model\Events.h" />
+    <ClInclude Include="Model\EventSystem.h" />
     <ClInclude Include="Model\Gizmo.h" />
     <ClInclude Include="Model\Graphics.h" />
     <ClInclude Include="Model\ImmediateMode.h" />

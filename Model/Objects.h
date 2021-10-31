@@ -198,6 +198,19 @@ struct PersistentObjectList
 	}
 };
 
+template <class T>
+struct UIWeakPtr
+{
+	LivenessToken _token;
+	T* _obj = nullptr;
+
+	UI_FORCEINLINE UIWeakPtr() {}
+	UI_FORCEINLINE UIWeakPtr(T* o) : _obj(o) { if (o) _token = o->GetLivenessToken(); }
+	UI_FORCEINLINE T* Get() const { return _token.IsAlive() ? _obj : nullptr; }
+	UI_FORCEINLINE T* operator -> () const { return Get(); }
+	UI_FORCEINLINE operator T* () const { return Get(); }
+};
+
 struct UIObject : IPersistentObject
 {
 	UIObject();
