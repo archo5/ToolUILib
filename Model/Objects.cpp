@@ -38,36 +38,51 @@ UIObject::~UIObject()
 void UIObject::_SetOwner(FrameContents* owner)
 {
 	system = owner;
+
 	if (flags & UIObject_IsOverlay)
 	{
 		system->overlays.Register(this, g_overlays.find(this)->value.depth);
 		g_overlays.erase(this);
 	}
+
 	_OnChangeStyle();
+
 	OnInit();
 }
 
 void UIObject::_UnsetOwner()
 {
 	OnDestroy();
+
+	// remove from build/layout stacks
+	system->container.buildStack.OnDestroy(this);
+	system->container.nextFrameBuildStack.OnDestroy(this);
+	system->container.layoutStack.OnDestroy(this);
+	flags &= ~(UIObject_IsInBuildStack | UIObject_IsInLayoutStack);
+
 	if (flags & UIObject_IsOverlay)
 	{
 		g_overlays.insert(this, system->overlays.mapped.find(this)->value);
 		system->overlays.Unregister(this);
 	}
+
 	system = nullptr;
 }
 
 void UIObject::PO_ResetConfiguration()
 {
 	ClearEventHandlers();
+
+	// before detaching from frame to avoid a transfer
 	UnregisterAsOverlay();
+
+	if (system)
+		_UnsetOwner();
+
 	SetStyle(Theme::current->object);
 
 	auto origFlags = flags;
 	const uint32_t KEEP_MASK =
-		UIObject_IsInBuildStack |
-		UIObject_IsInLayoutStack |
 		UIObject_IsHovered |
 		UIObject_IsClickedAnyMask |
 		UIObject_IsEdited |

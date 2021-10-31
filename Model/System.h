@@ -173,7 +173,6 @@ struct UIContainer
 	}
 
 	bool LastIsNew() const { return lastIsNew; }
-	UIObject* GetLastCreated() const { return _lastCreated; }
 
 	NativeWindowBase* GetNativeWindow() const;
 	Buildable* GetCurrentBuildable() const { return _curBuildable; }
@@ -181,7 +180,6 @@ struct UIContainer
 	FrameContents* owner = nullptr;
 	Buildable* rootBuildable = nullptr;
 	Buildable* _curBuildable = nullptr;
-	UIObject* _lastCreated = nullptr;
 	int debugpad1 = 0;
 	//UIElement* elementStack[128];
 	//int debugpad2 = 0;

@@ -265,7 +265,7 @@ struct ColorEditRT : IColorEdit
 	struct ColorPickerWindowRT* _rtWindow = nullptr;
 
 	void Build() override;
-	void OnDestroy() override;
+	~ColorEditRT();
 
 	const MultiFormatColor& GetColor() const override { return _color; }
 	void SetColorAny(const MultiFormatColor& c) override { SetColor(c); }
