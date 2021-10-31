@@ -281,13 +281,6 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
-template <class T> T* CreateUIObject()
-{
-	auto* obj = new T;
-	obj->_InitReset();
-	return obj;
-}
-
 class InlineFrame;
 struct FrameContents
 {

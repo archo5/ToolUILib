@@ -147,8 +147,55 @@ struct IPersistentObject
 
 struct PersistentObjectList
 {
-	IPersistentObject* _first = nullptr;
-	IPersistentObject** _cur = &_first;
+	IPersistentObject* _firstPO = nullptr;
+	IPersistentObject** _curPO = nullptr;
+
+	void DeleteAll()
+	{
+		_curPO = &_firstPO;
+		DeleteRemaining();
+		_firstPO = nullptr;
+	}
+
+	void BeginAllocations()
+	{
+		_curPO = &_firstPO;
+	}
+
+	void EndAllocations()
+	{
+		DeleteRemaining();
+	}
+
+	void DeleteRemaining()
+	{
+		IPersistentObject* next;
+		for (auto* cur = *_curPO; cur; cur = next)
+		{
+			next = cur->_next;
+			delete cur;
+		}
+		_curPO = nullptr;
+	}
+
+	template <class T> T* TryNext()
+	{
+		auto*& cur = *_curPO;
+		if (cur && typeid(*cur) == typeid(T))
+		{
+			cur->PO_ResetConfiguration();
+			_curPO = &cur->_next;
+			return static_cast<T*>(cur);
+		}
+		return nullptr;
+	}
+
+	void AddNext(IPersistentObject* po)
+	{
+		DeleteRemaining();
+		*_curPO = po;
+		_curPO = &po->_next;
+	}
 };
 
 struct UIObject : IPersistentObject
@@ -205,6 +252,14 @@ struct UIObject : IPersistentObject
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && (!GetStyle().GetPlacement() || GetStyle().GetPlacement()->applyOnLayout); }
+
+	void DetachAll();
+	void DetachParent();
+	void DetachChildren();
+	void InsertPrevious(UIObject* obj);
+	void InsertNext(UIObject* obj);
+	void PrependChild(UIObject* obj);
+	void AppendChild(UIObject* obj);
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
@@ -295,6 +350,13 @@ struct UIObject : IPersistentObject
 	Rangef _cacheValueWidth = { 0, 0 };
 	Rangef _cacheValueHeight = { 0, 0 };
 };
+
+template <class T> T* CreateUIObject()
+{
+	auto* obj = new T;
+	obj->_InitReset();
+	return obj;
+}
 
 struct UIElement : UIObject
 {

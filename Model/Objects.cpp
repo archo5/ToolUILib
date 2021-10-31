@@ -623,6 +623,112 @@ void UIObject::SetFlag(UIObjectFlags flag, bool set)
 		flags &= ~flag;
 }
 
+
+void UIObject::DetachAll()
+{
+	DetachParent();
+	DetachChildren();
+}
+
+void UIObject::DetachParent()
+{
+	if (prev)
+		prev->next = next;
+	else if (parent)
+		parent->firstChild = next;
+
+	if (next)
+		next->prev = prev;
+	else if (parent)
+		parent->lastChild = prev;
+
+	parent = nullptr;
+	prev = nullptr;
+	next = nullptr;
+}
+
+void UIObject::DetachChildren()
+{
+	UIObject* next;
+	for (auto* ch = firstChild; ch; ch = next)
+	{
+		next = ch->next;
+
+		ch->parent = nullptr;
+		ch->prev = nullptr;
+		ch->next = nullptr;
+	}
+	firstChild = nullptr;
+	lastChild = nullptr;
+}
+
+void UIObject::InsertPrevious(UIObject* obj)
+{
+	if (prev == obj)
+		return;
+
+	obj->DetachParent();
+	obj->prev = prev;
+	obj->next = this;
+	obj->parent = parent;
+
+	auto* origPrev = prev;
+	prev = obj;
+	if (origPrev)
+		origPrev->next = obj;
+	else
+		parent->firstChild = obj;
+}
+
+void UIObject::InsertNext(UIObject* obj)
+{
+	if (next == obj)
+		return;
+
+	obj->DetachParent();
+	obj->prev = this;
+	obj->next = next;
+	obj->parent = parent;
+
+	auto* origNext = next;
+	next = obj;
+	if (origNext)
+		origNext->prev = obj;
+	else
+		parent->lastChild = obj;
+}
+
+void UIObject::PrependChild(UIObject* obj)
+{
+	if (firstChild == obj)
+		return;
+
+	if (firstChild)
+		firstChild->InsertPrevious(obj);
+	else
+	{
+		firstChild = obj;
+		lastChild = obj;
+		obj->parent = this;
+	}
+}
+
+void UIObject::AppendChild(UIObject* obj)
+{
+	if (lastChild == obj)
+		return;
+
+	if (lastChild)
+		lastChild->InsertNext(obj);
+	else
+	{
+		firstChild = obj;
+		lastChild = obj;
+		obj->parent = this;
+	}
+}
+
+
 bool UIObject::IsChildOf(UIObject* obj) const
 {
 	for (auto* p = parent; p; p = p->parent)
