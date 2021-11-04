@@ -149,6 +149,7 @@ void UIContainer::DeleteObjectsStartingFrom(UIObject* obj)
 	ProcessObjectDeleteStack(first);
 }
 
+double hqtime();
 void UIContainer::ProcessBuildStack()
 {
 	if (buildStack.ContainsAny())
@@ -158,6 +159,8 @@ void UIContainer::ProcessBuildStack()
 	}
 	else
 		return;
+
+	double t = hqtime();
 
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
 	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, this);
@@ -206,6 +209,8 @@ void UIContainer::ProcessBuildStack()
 
 	buildStack.Swap(nextFrameBuildStack);
 	_lastBuildFrameID++;
+
+	printf("build time: %g\n", hqtime() - t);
 }
 
 void UIContainer::ProcessLayoutStack()

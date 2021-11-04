@@ -68,3 +68,19 @@ void Benchmark_SubUI()
 	ui::Make<SubUIBenchmark>();
 }
 
+
+struct BuildManyElementsBenchmark : ui::Buildable
+{
+	void Build() override
+	{
+		for (int i = 0; i < 100000; i++)
+		{
+			ui::Make<ui::BoxElement>();
+		}
+	}
+};
+void Benchmark_BuildManyElements()
+{
+	ui::Make<BuildManyElementsBenchmark>();
+}
+

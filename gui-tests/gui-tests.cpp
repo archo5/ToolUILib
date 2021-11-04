@@ -372,6 +372,7 @@ void Test_MessageLogView();
 void Test_CurveEditor();
 
 void Benchmark_SubUI();
+void Benchmark_BuildManyElements();
 void Test_TableView();
 
 void Demo_Calculator();
@@ -480,7 +481,8 @@ static const TestEntry dseditTestEntries[] =
 };
 static const TestEntry benchmarkEntries[] =
 {
-	{ "SubUI benchmark", Benchmark_SubUI },
+	{ "SubUI", Benchmark_SubUI },
+	{ "Build many elements", Benchmark_BuildManyElements },
 };
 static const TestEntry demoEntries[] =
 {
