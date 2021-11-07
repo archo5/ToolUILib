@@ -831,7 +831,7 @@ void ColorEditRT::Build()
 	});
 }
 
-ColorEditRT::~ColorEditRT()
+void ColorEditRT::OnDisable()
 {
 	delete _rtWindow;
 	_rtWindow = nullptr;
