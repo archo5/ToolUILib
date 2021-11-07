@@ -453,9 +453,9 @@ void LabeledProperty::OnReset()
 	_isBrief = false;
 }
 
-void LabeledProperty::OnInit()
+void LabeledProperty::OnEnterTree()
 {
-	UIElement::OnInit();
+	UIElement::OnEnterTree();
 
 	_propList = FindParentOfType<PropertyList>();
 }
@@ -1078,8 +1078,10 @@ void TabButtonBase::OnReset()
 	SetFlag(UIObject_DB_Button, true);
 }
 
-void TabButtonBase::OnDestroy()
+void TabButtonBase::OnExitTree()
 {
+	UIElement::OnExitTree();
+
 	if (auto* g = FindParentOfType<TabGroup>())
 		if (g->_activeBtn == this)
 			g->_activeBtn = nullptr;

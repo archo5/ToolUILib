@@ -512,6 +512,11 @@ struct DragConnectTest : ui::Buildable
 
 	struct Linkable : ui::Selectable
 	{
+		Linkable()
+		{
+			flags |= ui::UIObject_NeedsTreeUpdates;
+		}
+
 		void OnReset() override
 		{
 			ui::Selectable::OnReset();
@@ -565,7 +570,7 @@ struct DragConnectTest : ui::Buildable
 				ui::ContextMenu::Get().Add("Unlink") = [this]() { UnlinkAll(); };
 			}
 		}
-		void OnDestroy() override
+		void OnExitTree() override
 		{
 			if (auto* p = FindParentOfType<DragConnectTest>())
 			{

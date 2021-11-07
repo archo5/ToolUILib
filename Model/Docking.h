@@ -41,8 +41,13 @@ struct Dockable : Buildable
 	DockingArea* _area;
 	FrameContents* _contents;
 
-	void OnInit() override;
-	void OnDestroy() override;
+	Dockable()
+	{
+		flags |= UIObject_NeedsTreeUpdates;
+	}
+
+	void OnEnterTree() override;
+	void OnExitTree() override;
 };
 
 }

@@ -7,7 +7,7 @@
 
 struct MeshEditorWindowNode : ui::Buildable
 {
-	void OnInit() override
+	void OnEnable() override
 	{
 		GetNativeWindow()->SetTitle("Mesh Resource Editor");
 		GetNativeWindow()->SetSize(1200, 800);

@@ -310,8 +310,13 @@ struct LabeledProperty : UIElement
 	static LabeledProperty& Begin(const char* label = nullptr);
 	static void End();
 
+	LabeledProperty()
+	{
+		flags |= UIObject_NeedsTreeUpdates;
+	}
+
 	void OnReset() override;
-	void OnInit() override;
+	void OnEnterTree() override;
 	void OnPaint() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
 
@@ -406,8 +411,13 @@ struct TabButtonList : UIElement
 
 struct TabButtonBase : UIElement
 {
+	TabButtonBase()
+	{
+		flags |= UIObject_NeedsTreeUpdates;
+	}
+
 	void OnReset() override;
-	void OnDestroy() override;
+	void OnExitTree() override;
 	void OnPaint() override;
 	void OnEvent(Event& e) override;
 

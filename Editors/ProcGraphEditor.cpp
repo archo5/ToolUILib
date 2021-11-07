@@ -107,7 +107,7 @@ void ProcGraphEditor_NodePin::OnPaint()
 #endif
 }
 
-void ProcGraphEditor_NodePin::OnDestroy()
+void ProcGraphEditor_NodePin::OnExitTree()
 {
 	_UnregisterPin();
 }

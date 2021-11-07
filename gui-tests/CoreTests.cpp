@@ -150,7 +150,7 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 		checkboxStyle = ui::Theme::current->checkbox;
 		radioBtnStyle = ui::Theme::current->radioButton;
 	}
-	void OnInit() override
+	void OnEnable() override
 	{
 		BeginAnimation();
 	}
@@ -242,7 +242,7 @@ struct KeyboardEventsTest : EventsTest
 		SetFlag(ui::UIObject_IsFocusable, true);
 		SetFlag(ui::UIObject_DB_FocusOnLeftClick, true);
 	}
-	void OnInit() override
+	void OnEnable() override
 	{
 		system->eventSystem.SetKeyboardFocus(this);
 	}
@@ -302,6 +302,17 @@ struct OpenCloseTest : ui::Buildable
 		int val;
 	};
 
+	struct EDLogger : ui::UIElement
+	{
+		void OnEnable() override
+		{
+			puts("STATE: enabled");
+		}
+		void OnDisable() override
+		{
+			puts("STATE: disabled");
+		}
+	};
 	void Build() override
 	{
 		static int counter = 0;
@@ -320,6 +331,7 @@ struct OpenCloseTest : ui::Buildable
 
 		if (open)
 		{
+			ui::Make<EDLogger>();
 			ui::Push<ui::Panel>();
 			ui::Text("It is open!");
 			auto s = ui::MakeWithText<ui::BoxElement>("Different text").GetStyle();
@@ -355,7 +367,7 @@ struct AppendMixTest : ui::Buildable
 	ui::TextElement* append1;
 	ui::TextElement* append2;
 
-	void OnInit() override
+	void OnEnable() override
 	{
 		append1 = new ui::TextElement;
 		append1->system = system;
@@ -366,7 +378,7 @@ struct AppendMixTest : ui::Buildable
 		append2->SetText("append two");
 	}
 
-	void OnDestroy() override
+	void OnDisable() override
 	{
 		delete append1;
 		delete append2;
@@ -771,7 +783,7 @@ struct FrameTest : ui::Buildable
 		const char* name = "unknown";
 	};
 
-	void OnInit() override
+	void OnEnable() override
 	{
 		frameContents[0] = new ui::FrameContents;
 		{
@@ -786,7 +798,7 @@ struct FrameTest : ui::Buildable
 			frameContents[1]->BuildRoot(f);
 		}
 	}
-	void OnDestroy() override
+	void OnDisable() override
 	{
 		delete frameContents[0];
 		delete frameContents[1];

@@ -32,14 +32,18 @@ UIObject::UIObject()
 UIObject::~UIObject()
 {
 	ClearEventHandlers();
-	UnregisterAsOverlay();
-
-	_livenessToken.SetAlive(false);
 }
 
-void UIObject::_SetOwner(FrameContents* owner)
+void UIObject::_AttachToFrameContents(FrameContents* owner)
 {
-	system = owner;
+	if (!system)
+	{
+		system = owner;
+
+		OnEnable();
+	}
+
+	system->container.pendingDeactivationSet.RemoveIfFound(this);
 
 	if (flags & UIObject_IsOverlay)
 	{
@@ -58,20 +62,26 @@ void UIObject::_SetOwner(FrameContents* owner)
 				flags |= _UIObject_IsClicked_First << i;
 #endif
 
+	if (flags & UIObject_NeedsTreeUpdates)
+		OnEnterTree();
+
+	flags |= UIObject_IsInTree;
+
 	_OnChangeStyle();
 
-	OnInit();
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_AttachToFrameContents(owner);
 }
 
-void UIObject::_UnsetOwner()
+void UIObject::_DetachFromFrameContents()
 {
-	OnDestroy();
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_DetachFromFrameContents();
 
-	// remove from build/layout stacks
-	system->container.buildStack.OnDestroy(this);
-	system->container.nextFrameBuildStack.OnDestroy(this);
+	OnDisable();
+
 	system->container.layoutStack.OnDestroy(this);
-	flags &= ~(UIObject_IsInBuildStack | UIObject_IsInLayoutStack);
+	system->container.pendingDeactivationSet.RemoveIfFound(this);
 
 	if (flags & UIObject_IsOverlay)
 	{
@@ -82,6 +92,27 @@ void UIObject::_UnsetOwner()
 	system = nullptr;
 }
 
+void UIObject::_DetachFromTree()
+{
+	if (!(flags & UIObject_IsInTree))
+		return;
+
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_DetachFromTree();
+
+	if (flags & UIObject_NeedsTreeUpdates)
+		OnExitTree();
+
+	// remove from build/layout sets
+	system->container.buildStack.OnDestroy(this);
+	system->container.nextFrameBuildStack.OnDestroy(this);
+	system->container.layoutStack.OnDestroy(this);
+	flags &= ~(UIObject_IsInBuildStack | UIObject_IsInLayoutStack | UIObject_IsInTree);
+
+	// add to deactivation set
+	system->container.pendingDeactivationSet.InsertIfMissing(this);
+}
+
 void UIObject::PO_ResetConfiguration()
 {
 	ClearEventHandlers();
@@ -89,8 +120,7 @@ void UIObject::PO_ResetConfiguration()
 	// before detaching from frame to avoid a transfer
 	UnregisterAsOverlay();
 
-	if (system)
-		_UnsetOwner();
+	DetachAll();
 
 	SetStyle(Theme::current->object);
 
@@ -100,12 +130,22 @@ void UIObject::PO_ResetConfiguration()
 		UIObject_IsClickedAnyMask |
 		UIObject_IsEdited |
 		UIObject_IsChecked |
-		UIObject_IsPressedAny;
+		UIObject_IsPressedAny |
+		UIObject_NeedsTreeUpdates;
 	flags = UIObject_DB__Defaults | (origFlags & KEEP_MASK);
 
-	flags |= UIObject_BuildAlloc; // TODO remove once allocs are separate from tree
-
 	_InitReset();
+}
+
+void UIObject::PO_BeforeDelete()
+{
+	UnregisterAsOverlay();
+	DetachAll();
+
+	if (system)
+		_DetachFromFrameContents();
+
+	_livenessToken.SetAlive(false);
 }
 
 void UIObject::_InitReset()
@@ -655,20 +695,26 @@ void UIObject::SetFlag(UIObjectFlags flag, bool set)
 
 void UIObject::DetachAll()
 {
-	DetachParent();
 	DetachChildren();
+	DetachParent();
 }
 
 void UIObject::DetachParent()
 {
+	if (!parent)
+		return;
+
+	if (system)
+		_DetachFromTree();
+
 	if (prev)
 		prev->next = next;
-	else if (parent)
+	else
 		parent->firstChild = next;
 
 	if (next)
 		next->prev = prev;
-	else if (parent)
+	else
 		parent->lastChild = prev;
 
 	parent = nullptr;
@@ -676,16 +722,26 @@ void UIObject::DetachParent()
 	next = nullptr;
 }
 
-void UIObject::DetachChildren()
+void UIObject::DetachChildren(bool recursive)
 {
 	UIObject* next;
 	for (auto* ch = firstChild; ch; ch = next)
 	{
 		next = ch->next;
 
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
 		ch->parent = nullptr;
 		ch->prev = nullptr;
 		ch->next = nullptr;
+		if (next)
+			next->prev = nullptr;
+		firstChild = next;
 	}
 	firstChild = nullptr;
 	lastChild = nullptr;
@@ -707,6 +763,9 @@ void UIObject::InsertPrevious(UIObject* obj)
 		origPrev->next = obj;
 	else
 		parent->firstChild = obj;
+
+	if (system)
+		obj->_AttachToFrameContents(system);
 }
 
 void UIObject::InsertNext(UIObject* obj)
@@ -725,6 +784,9 @@ void UIObject::InsertNext(UIObject* obj)
 		origNext->prev = obj;
 	else
 		parent->lastChild = obj;
+
+	if (system)
+		obj->_AttachToFrameContents(system);
 }
 
 void UIObject::PrependChild(UIObject* obj)
@@ -735,11 +797,7 @@ void UIObject::PrependChild(UIObject* obj)
 	if (firstChild)
 		firstChild->InsertPrevious(obj);
 	else
-	{
-		firstChild = obj;
-		lastChild = obj;
-		obj->parent = this;
-	}
+		_AddFirstChild(obj);
 }
 
 void UIObject::AppendChild(UIObject* obj)
@@ -750,11 +808,19 @@ void UIObject::AppendChild(UIObject* obj)
 	if (lastChild)
 		lastChild->InsertNext(obj);
 	else
-	{
-		firstChild = obj;
-		lastChild = obj;
-		obj->parent = this;
-	}
+		_AddFirstChild(obj);
+}
+
+void UIObject::_AddFirstChild(UIObject* obj)
+{
+	obj->DetachParent();
+
+	firstChild = obj;
+	lastChild = obj;
+	obj->parent = this;
+
+	if (system)
+		obj->_AttachToFrameContents(system);
 }
 
 
@@ -901,7 +967,7 @@ void UIObject::SetStyle(StyleBlock* style)
 
 void UIObject::_OnChangeStyle()
 {
-	if (system)
+	if (system && (flags & UIObject_IsInTree))
 		system->container.layoutStack.Add(parent ? parent : this);
 }
 

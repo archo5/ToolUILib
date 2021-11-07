@@ -753,7 +753,7 @@ void Test_MessageLogView()
 
 struct CurveEditorTest : ui::Buildable
 {
-	void OnInit() override
+	void OnEnable() override
 	{
 		basicLinear01Curve.points =
 		{

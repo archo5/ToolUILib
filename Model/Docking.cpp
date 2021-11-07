@@ -11,13 +11,13 @@ void DockingArea::UnregisterDockable(Dockable* d)
 {
 }
 
-void Dockable::OnInit()
+void Dockable::OnEnterTree()
 {
 	_area = FindParentOfType<DockingArea>();
 	_area->RegisterDockable(this);
 }
 
-void Dockable::OnDestroy()
+void Dockable::OnExitTree()
 {
 	_area->UnregisterDockable(this);
 }

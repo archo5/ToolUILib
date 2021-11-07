@@ -23,7 +23,7 @@
 
 struct MainWindowContents : ui::Buildable
 {
-	void OnInit() override
+	void OnEnable() override
 	{
 		GetNativeWindow()->SetTitle("Binary Data Analysis Tool");
 		GetNativeWindow()->SetSize(1200, 800);

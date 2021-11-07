@@ -13,22 +13,6 @@
 
 namespace ui {
 
-template<class T> void Node_AddChild(T* node, T* ch)
-{
-	assert(ch->parent == nullptr);
-	ch->parent = node;
-	if (!node->firstChild)
-	{
-		node->firstChild = node->lastChild = ch;
-	}
-	else
-	{
-		ch->prev = node->lastChild;
-		node->lastChild->next = ch;
-		node->lastChild = ch;
-	}
-}
-
 struct UIObjectDirtyStack
 {
 	UIObjectDirtyStack(uint32_t f) : flag(f) {}
@@ -54,23 +38,54 @@ struct UIObjectDirtyStack
 	uint32_t flag;
 };
 
+struct UIObjectPendingDeactivationSet
+{
+	std::vector<UIObject*> _data;
+
+	void InsertIfMissing(UIObject* obj)
+	{
+		if (obj->_pendingDeactivationSetPos != UINT32_MAX)
+			return;
+		Insert(obj);
+	}
+	void Insert(UIObject* obj)
+	{
+		obj->_pendingDeactivationSetPos = _data.size();
+		_data.push_back(obj);
+	}
+	void RemoveIfFound(UIObject* obj)
+	{
+		if (obj->_pendingDeactivationSetPos == UINT32_MAX)
+			return;
+		Remove(obj);
+	}
+	void Remove(UIObject* obj)
+	{
+		auto pos = obj->_pendingDeactivationSetPos;
+		obj->_pendingDeactivationSetPos = UINT32_MAX;
+
+		if (pos + 1 < _data.size())
+		{
+			_data[pos] = _data.back();
+			_data[pos]->_pendingDeactivationSetPos = pos;
+		}
+		_data.pop_back();
+	}
+	void Flush()
+	{
+		while (!_data.empty())
+		{
+			UIObject* obj = _data.back();
+			obj->_DetachFromFrameContents();
+		}
+		assert(_data.empty() && "some object continues to add itself to the pending deactivation set!");
+	}
+};
+
 struct UIContainer
 {
 	void Free();
-	void ProcessObjectDeleteStack(int first = 0);
-	void DeleteObjectsStartingFrom(UIObject* obj);
-	template<class T> T* AllocIfDifferent(UIObject* obj)
-	{
-		if (obj && typeid(*obj) == typeid(T) && (obj->flags & UIObject_BuildAlloc))
-		{
-			obj->PO_ResetConfiguration();
-			return static_cast<T*>(obj);
-		}
-		auto* p = new T();
-		p->flags |= UIObject_BuildAlloc;
-		p->_InitReset();
-		return p;
-	}
+
 	void AddToBuildStack(Buildable* n)
 	{
 		UI_DEBUG_FLOW(printf("add %p to build stack\n", n));
@@ -84,11 +99,12 @@ struct UIContainer
 
 	void _BuildUsing(Buildable* n);
 
-	void _Push(UIObject* obj, bool isCurBuildable);
-	void _Destroy(UIObject* obj);
+	void Append(UIObject* obj)
+	{
+		objectStack[objectStackSize - 1]->AppendChild(obj);
+	}
+	void _Push(UIObject* obj);
 	void _Pop();
-	void _AllocReplace(UIObject* obj);
-	void Append(UIObject* o);
 	void Pop()
 	{
 		assert(objectStackSize > 1);
@@ -100,14 +116,16 @@ struct UIContainer
 		T* obj = _Alloc<T>();
 		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
 		UI_DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
+		Append(obj);
 		AddToBuildStack(obj);
 		return *obj;
 	}
 	template<class T, class = typename T::IsElement> T& Make(decltype(char()) = 0)
 	{
-		auto& ret = Push<T>();
-		Pop();
-		return ret;
+		auto* obj = _Alloc<T>();
+		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
+		Append(obj);
+		return *obj;
 	}
 
 	template<class T, class = typename T::IsElement> T& MakeWithText(StringView text)
@@ -139,25 +157,27 @@ struct UIContainer
 	{
 		auto* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
-		_Push(obj, false);
+		Append(obj);
+		_Push(obj);
 		return *obj;
 	}
 	template<class T> T* _Alloc()
 	{
-		//printf("%p\n", objChildStack[objectStackSize - 1]);
-		//if (objChildStack[objectStackSize - 1])
-		//	printf("%s\n", typeid(*objChildStack[objectStackSize - 1]).name());
-		T* obj = AllocIfDifferent<T>(objChildStack[objectStackSize - 1]);
-		_AllocReplace(obj);
+		T* obj = _curObjectList->TryNext<T>();
+		lastIsNew = obj == nullptr;
+		if (!obj)
+		{
+			obj = CreateUIObject<T>();
+			_curObjectList->AddNext(obj);
+		}
 		return obj;
 	}
 	BoxElement& PushBox() { return Push<BoxElement>(); }
 
 	TextElement& Text(StringView s)
 	{
-		auto& T = Push<TextElement>();
+		auto& T = Make<TextElement>();
 		T.SetText(s);
-		Pop();
 		return T;
 	}
 	TextElement& TextVA(const char* fmt, va_list args)
@@ -181,20 +201,17 @@ struct UIContainer
 	FrameContents* owner = nullptr;
 	Buildable* rootBuildable = nullptr;
 	Buildable* _curBuildable = nullptr;
+	PersistentObjectList* _curObjectList = nullptr;
 	int debugpad1 = 0;
-	//UIElement* elementStack[128];
-	//int debugpad2 = 0;
 	UIObject* objectStack[1024];
 	int debugpad4 = 0;
-	UIObject* objChildStack[1024];
-	//Buildable* currentBuildable;
-	//int elementStackSize = 0;
 	int objectStackSize = 0;
 	uint64_t _lastBuildFrameID = 1;
 
 	UIObjectDirtyStack buildStack{ UIObject_IsInBuildStack };
 	UIObjectDirtyStack nextFrameBuildStack{ UIObject_IsInBuildStack };
 	UIObjectDirtyStack layoutStack{ UIObject_IsInLayoutStack };
+	UIObjectPendingDeactivationSet pendingDeactivationSet;
 
 	bool lastIsNew = false;
 
@@ -298,7 +315,7 @@ class InlineFrame : public Buildable
 {
 public:
 
-	void OnDestroy() override;
+	void OnDisable() override;
 	void OnEvent(Event& ev) override;
 	void OnPaint() override;
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;

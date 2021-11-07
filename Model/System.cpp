@@ -108,45 +108,10 @@ void UIContainer::Free()
 {
 	if (rootBuildable)
 	{
-		_Destroy(rootBuildable);
-		objectStack[0] = rootBuildable;
-		objectStackSize = 1;
-		ProcessObjectDeleteStack();
+		rootBuildable->_DetachFromFrameContents();
+		DeleteUIObject(rootBuildable);
 		rootBuildable = nullptr;
 	}
-}
-
-void UIContainer::ProcessObjectDeleteStack(int first)
-{
-	while (objectStackSize > first)
-	{
-		auto* cur = objectStack[--objectStackSize];
-
-		for (auto* n = cur->firstChild; n != nullptr; n = n->next)
-			objectStack[objectStackSize++] = n;
-
-		UI_DEBUG_FLOW(printf("    deleting %p\n", cur));
-		if (cur->flags & UIObject_BuildAlloc)
-			delete cur;
-		else
-			cur->parent = nullptr;
-	}
-}
-
-void UIContainer::DeleteObjectsStartingFrom(UIObject* obj)
-{
-	_Destroy(obj);
-
-	obj->parent->lastChild = obj->prev;
-	if (obj->prev)
-		obj->prev->next = nullptr;
-	else
-		obj->parent->firstChild = nullptr;
-
-	int first = objectStackSize;
-	for (auto* o = obj; o; o = o->next)
-		objectStack[objectStackSize++] = o;
-	ProcessObjectDeleteStack(first);
 }
 
 double hqtime();
@@ -172,7 +137,9 @@ void UIContainer::ProcessBuildStack()
 		Buildable* currentBuildable = static_cast<Buildable*>(buildStack.Pop());
 
 		objectStackSize = 0;
-		_Push(currentBuildable, true);
+		_Push(currentBuildable);
+		_curObjectList = &currentBuildable->_objList;
+		_curObjectList->BeginAllocations();
 
 		UI_DEBUG_FLOW(printf("building %s\n", typeid(*currentBuildable).name()));
 		_curBuildable = currentBuildable;
@@ -185,6 +152,8 @@ void UIContainer::ProcessBuildStack()
 		decltype(Buildable::_deferredDestructors) oldDDs;
 		std::swap(oldDDs, currentBuildable->_deferredDestructors);
 
+		currentBuildable->DetachChildren();
+
 		currentBuildable->Build();
 
 		while (oldDDs.size())
@@ -193,6 +162,8 @@ void UIContainer::ProcessBuildStack()
 			oldDDs.pop_back();
 		}
 
+		_curObjectList->EndAllocations();
+		_curObjectList = nullptr;
 		_curBuildable = nullptr;
 
 		if (objectStackSize > 1)
@@ -209,6 +180,8 @@ void UIContainer::ProcessBuildStack()
 
 	buildStack.Swap(nextFrameBuildStack);
 	_lastBuildFrameID++;
+
+	pendingDeactivationSet.Flush();
 
 	printf("build time: %g\n", hqtime() - t);
 }
@@ -260,72 +233,28 @@ void UIContainer::ProcessLayoutStack()
 
 void UIContainer::_BuildUsing(Buildable* n)
 {
-	n->_SetOwner(owner);
+	n->_AttachToFrameContents(owner);
+
 	rootBuildable = n;
+
 	assert(!buildStack.ContainsAny());
 	buildStack.ClearWithoutFlags(); // TODO: is this needed?
+
 	AddToBuildStack(rootBuildable);
+
 	ProcessBuildStack();
 	ProcessLayoutStack();
 }
 
-void UIContainer::_Push(UIObject* obj, bool isCurBuildable)
+void UIContainer::_Push(UIObject* obj)
 {
 	objectStack[objectStackSize] = obj;
-	objChildStack[objectStackSize] = obj->firstChild;
 	objectStackSize++;
-}
-
-void UIContainer::_Destroy(UIObject* obj)
-{
-	UI_DEBUG_FLOW(printf("    destroy %p\n", obj));
-	obj->_UnsetOwner();
-	for (auto* ch = obj->firstChild; ch; ch = ch->next)
-		_Destroy(ch);
 }
 
 void UIContainer::_Pop()
 {
-	if (objChildStack[objectStackSize - 1])
-	{
-		// remove leftover children
-		DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
-	}
-
 	objectStackSize--;
-}
-
-void UIContainer::_AllocReplace(UIObject* obj)
-{
-	if (obj == objChildStack[objectStackSize - 1])
-	{
-		// continue the match streak
-		UI_DEBUG_FLOW(puts("/// match streak ///"));
-		objChildStack[objectStackSize - 1] = obj->next;
-		lastIsNew = false;
-	}
-	else
-	{
-		UI_DEBUG_FLOW(objectStack[objectStackSize - 1]->dump());
-		if (objChildStack[objectStackSize - 1])
-		{
-			// delete all buildables starting from this child, the match streak is gone
-			DeleteObjectsStartingFrom(objChildStack[objectStackSize - 1]);
-		}
-		UI_DEBUG_FLOW(puts(">>> new element >>>"));
-		Node_AddChild<UIObject>(objectStack[objectStackSize - 1], obj);
-		objChildStack[objectStackSize - 1] = nullptr;
-		lastIsNew = true;
-	}
-	obj->_SetOwner(owner);
-}
-
-void UIContainer::Append(UIObject* o)
-{
-	_AllocReplace(o);
-	// TODO needed?
-	_Push(o, false);
-	_Pop();
 }
 
 NativeWindowBase* UIContainer::GetNativeWindow() const
@@ -428,7 +357,7 @@ void FrameContents::BuildRoot(Buildable* B)
 }
 
 
-void InlineFrame::OnDestroy()
+void InlineFrame::OnDisable()
 {
 	if (ownsContents && frameContents)
 	{

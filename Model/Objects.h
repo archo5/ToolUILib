@@ -69,7 +69,8 @@ enum UIObjectFlags
 	UIObject_NoPaint = 1 << 24,
 	UIObject_DB_RebuildOnChange = 1 << 25,
 	UIObject_ClipChildren = 1 << 26,
-	UIObject_BuildAlloc = 1 << 27,
+	UIObject_IsInTree = 1 << 27,
+	UIObject_NeedsTreeUpdates = 1 << 28,
 
 	UIObject_DB__Defaults = 0,
 };
@@ -143,12 +144,27 @@ struct IPersistentObject
 
 	virtual ~IPersistentObject() {}
 	virtual void PO_ResetConfiguration() {}
+	virtual void PO_BeforeDelete() {}
 };
+
+inline void DeletePersistentObject(IPersistentObject* obj)
+{
+	if (obj)
+	{
+		obj->PO_BeforeDelete();
+		delete obj;
+	}
+}
 
 struct PersistentObjectList
 {
 	IPersistentObject* _firstPO = nullptr;
 	IPersistentObject** _curPO = nullptr;
+
+	~PersistentObjectList()
+	{
+		DeleteAll();
+	}
 
 	void DeleteAll()
 	{
@@ -160,11 +176,15 @@ struct PersistentObjectList
 	void BeginAllocations()
 	{
 		_curPO = &_firstPO;
+		// reset all
+		for (auto* cur = _firstPO; cur; cur = cur->_next)
+			cur->PO_ResetConfiguration();
 	}
 
 	void EndAllocations()
 	{
 		DeleteRemaining();
+		_curPO = nullptr;
 	}
 
 	void DeleteRemaining()
@@ -173,9 +193,9 @@ struct PersistentObjectList
 		for (auto* cur = *_curPO; cur; cur = next)
 		{
 			next = cur->_next;
-			delete cur;
+			DeletePersistentObject(cur);
 		}
-		_curPO = nullptr;
+		*_curPO = nullptr;
 	}
 
 	template <class T> T* TryNext()
@@ -183,7 +203,8 @@ struct PersistentObjectList
 		auto*& cur = *_curPO;
 		if (cur && typeid(*cur) == typeid(T))
 		{
-			cur->PO_ResetConfiguration();
+			// already reset in BeginAllocations
+			//cur->PO_ResetConfiguration();
 			_curPO = &cur->_next;
 			return static_cast<T*>(cur);
 		}
@@ -218,13 +239,17 @@ struct UIObject : IPersistentObject
 	UIObject(const UIObject&) = delete;
 	virtual ~UIObject();
 
-	virtual void OnInit() {}
-	virtual void OnDestroy() {}
+	virtual void OnEnable() {}
+	virtual void OnDisable() {}
+	virtual void OnEnterTree() {}
+	virtual void OnExitTree() {}
 
-	void _SetOwner(FrameContents* owner);
-	void _UnsetOwner();
+	void _AttachToFrameContents(FrameContents* owner);
+	void _DetachFromFrameContents();
+	void _DetachFromTree();
 
 	void PO_ResetConfiguration() override;
+	void PO_BeforeDelete() override;
 	void _InitReset();
 	virtual void OnReset() {}
 
@@ -271,11 +296,12 @@ struct UIObject : IPersistentObject
 
 	void DetachAll();
 	void DetachParent();
-	void DetachChildren();
+	void DetachChildren(bool recursive = false);
 	void InsertPrevious(UIObject* obj);
 	void InsertNext(UIObject* obj);
 	void PrependChild(UIObject* obj);
 	void AppendChild(UIObject* obj);
+	void _AddFirstChild(UIObject* obj);
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
@@ -337,17 +363,18 @@ struct UIObject : IPersistentObject
 
 	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
 
-	uint32_t flags = UIObject_DB__Defaults;
-	UIObject* parent = nullptr;
-	UIObject* firstChild = nullptr;
-	UIObject* lastChild = nullptr;
-	UIObject* prev = nullptr;
-	UIObject* next = nullptr;
+	uint32_t flags = UIObject_DB__Defaults; // @ 16
+	uint32_t _pendingDeactivationSetPos = UINT32_MAX; // @ 20
+	ui::FrameContents* system = nullptr; // @ 24
+	UIObject* parent = nullptr; // @ 32
+	UIObject* firstChild = nullptr; // @ 40
+	UIObject* lastChild = nullptr; // @ 48
+	UIObject* next = nullptr; // @56
+	UIObject* prev = nullptr; // @64
 
 	ui::EventHandlerEntry* _firstEH = nullptr;
 	ui::EventHandlerEntry* _lastEH = nullptr;
 
-	ui::FrameContents* system = nullptr;
 	StyleBlockRef styleProps;
 	LivenessToken _livenessToken;
 
@@ -367,11 +394,16 @@ struct UIObject : IPersistentObject
 	Rangef _cacheValueHeight = { 0, 0 };
 };
 
-template <class T> T* CreateUIObject()
+template <class T> inline T* CreateUIObject()
 {
 	auto* obj = new T;
 	obj->_InitReset();
 	return obj;
+}
+
+inline void DeleteUIObject(UIObject* obj)
+{
+	DeletePersistentObject(obj);
 }
 
 struct UIElement : UIObject
@@ -464,6 +496,7 @@ struct Buildable : UIObject
 		return obj;
 	}
 
+	PersistentObjectList _objList;
 	Subscription* _firstSub = nullptr;
 	Subscription* _lastSub = nullptr;
 	uint64_t _lastBuildFrameID = 0;

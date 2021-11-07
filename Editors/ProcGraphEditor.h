@@ -152,10 +152,15 @@ struct ProcGraphLinkDragDropData : DragDropData
 
 struct ProcGraphEditor_NodePin : Buildable
 {
+	ProcGraphEditor_NodePin()
+	{
+		flags |= UIObject_NeedsTreeUpdates;
+	}
+
 	void Build() override;
 	void OnEvent(Event& e) override;
 	void OnPaint() override;
-	void OnDestroy() override;
+	void OnExitTree() override;
 
 	void Init(IProcGraph* graph, IProcGraph::Node* node, uintptr_t pin, bool isOutput);
 
