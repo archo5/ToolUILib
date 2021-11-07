@@ -341,6 +341,16 @@ void GlobalInit()
 		nullptr,
 		&g_ctx));
 
+	// try to improve latency
+	{
+		IDXGIDevice1* dxgiDevice1 = nullptr;
+		if (SUCCEEDED(g_dev->QueryInterface(__uuidof(IDXGIDevice1), (void**)&dxgiDevice1)) && dxgiDevice1)
+		{
+			dxgiDevice1->SetMaximumFrameLatency(1);
+			dxgiDevice1->Release();
+		}
+	}
+
 	IDXGIDevice* dxgiDevice = nullptr;
 	D3DCHK(g_dev->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice));
 

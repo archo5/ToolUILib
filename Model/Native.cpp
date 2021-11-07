@@ -1619,6 +1619,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return TRUE;
 	case WM_ERASEBKGND:
 		return FALSE;
+	case WM_PAINT:
+		if (auto* window = GetNativeWindow(hWnd))
+		{
+			window->Redraw(false);
+		}
+		break;
 	case WM_SIZE:
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
@@ -1653,28 +1659,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		if (auto* window = GetNativeWindow(hWnd))
 			if (window->sysMoveSizeState == MSST_Unknown)
 				window->sysMoveSizeState = MSST_Move;
-		break;
-	case WM_SIZING:
-		if (auto* window = GetNativeWindow(hWnd))
-		{
-			//auto r = *(RECT*)lParam;
-			RECT r = {};
-			GetClientRect(hWnd, &r);
-			auto w = r.right - r.left;
-			auto h = r.bottom - r.top;
-			rhi::SetViewport(0, 0, w, h);
-			draw::_ResetScissorRectStack(0, 0, w, h);
-			auto& evsys = window->GetEventSys();
-			if (w != evsys.width || h != evsys.height)
-			{
-				Notify(DCT_ResizeWindow, window->GetOwner());
-			}
-			evsys.width = w;
-			evsys.height = h;
-			evsys.RecomputeLayout();
-			window->GetOwner()->InvalidateAll();
-			window->Redraw(true);
-		}
 		break;
 	case WM_COMMAND:
 		if (auto* window = GetNativeWindow(hWnd))
