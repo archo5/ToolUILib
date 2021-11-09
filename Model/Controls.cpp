@@ -1119,13 +1119,44 @@ void TabPanel::OnReset()
 
 void TabPanel::OnPaint()
 {
-	styleProps->background_painter->Paint(this);
-
 	if (auto* g = FindParentOfType<TabGroup>())
+	{
 		if (g->_activeBtn)
+		{
+			auto panelRect = GetPaddingRect();
+			auto btnRect = g->_activeBtn->FindParentOfType<TabButtonList>()->GetContentRect();
+
+			PaintInfo pi(this);
+
+			// currently only supports overlap at the top
+			if (panelRect.Overlaps(btnRect) && btnRect.y1 > panelRect.y0 && btnRect.y0 < panelRect.y0)
+			{
+				draw::PushScissorRect(panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1);
+				styleProps->background_painter->Paint(pi);
+				draw::PopScissorRect();
+
+				draw::PushScissorRect(btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1);
+				styleProps->background_painter->Paint(pi);
+				draw::PopScissorRect();
+
+				draw::PushScissorRect(btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1);
+				styleProps->background_painter->Paint(pi);
+				draw::PopScissorRect();
+			}
+			else
+			{
+				styleProps->background_painter->Paint(pi);
+			}
+
 			g->_activeBtn->Paint();
 
-	PaintChildren();
+			PaintChildren();
+
+			return;
+		}
+	}
+
+	UIElement::OnPaint();
 }
 
 
