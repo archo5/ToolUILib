@@ -22,6 +22,11 @@ struct Button : UIElement
 	void OnReset() override;
 };
 
+struct NEWButton : ContentElement
+{
+	void OnReset() override;
+};
+
 
 struct StateButtonBase : UIElement
 {

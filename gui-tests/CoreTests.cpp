@@ -327,13 +327,23 @@ struct OpenCloseTest : ui::Buildable
 
 		ui::MakeWithText<ui::Button>("Open").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = true; Rebuild(); };
 
-		ui::MakeWithText<ui::Button>("Close").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
+		//ui::MakeWithText<ui::Button>("Close").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
+		auto& clbtn = ui::Make<ui::NEWButton>();
+		auto* clcnt = ui::AllocPersistent<ui::TextContent>();
+		clcnt->SetText("Close");
+		clbtn.SetContent(clcnt);
+		clbtn.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
 
 		if (open)
 		{
 			ui::Make<EDLogger>();
 			ui::Push<ui::Panel>();
-			ui::Text("It is open!");
+
+			//ui::Text("It is open!");
+			auto* content = ui::AllocPersistent<ui::TextContent>();
+			content->SetText("It is open!");
+			ui::Make<ui::ContentElement>().SetContent(content);
+
 			auto s = ui::MakeWithText<ui::BoxElement>("Different text").GetStyle();
 			s.SetFontSize(16);
 			s.SetFontWeight(ui::FontWeight::Bold);

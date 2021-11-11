@@ -1108,6 +1108,44 @@ void TextElement::OnPaint()
 	PaintChildren();
 }
 
+void TextContent::PO_ResetConfiguration()
+{
+	text = {};
+}
+
+Size2i TextContent::GetSize(const StyleBlock* style)
+{
+	// TODO simplify
+	Coord cs = style->font_size;
+	if (!cs.IsDefined() || cs.unit == CoordTypeUnit::Inherit)
+		cs = 12;
+	int size = int(cs.value);
+	int weight = int(style->font_weight <= FontWeight::Undefined ? FontWeight::Normal : style->font_weight);
+	bool italic = style->font_style == FontStyle::Italic;
+
+	auto* font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	return { int(ceilf(GetTextWidth(font, size, text))), size };
+}
+
+void TextContent::OnPaint(const StyleBlock* style, const PaintInfo& info)
+{
+	// TODO simplify
+	Coord cs = style->font_size;
+	if (!cs.IsDefined() || cs.unit == CoordTypeUnit::Inherit)
+		cs = 12;
+	int size = int(cs.value);
+	int weight = int(style->font_weight <= FontWeight::Undefined ? FontWeight::Normal : style->font_weight);
+	bool italic = style->font_style == FontStyle::Italic;
+	Color4b color = style->text_color.color;
+
+	auto* font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+
+	auto r = info.rect;
+	float w = r.x1 - r.x0;
+	draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+}
+
 void Placeholder::OnPaint()
 {
 	draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, Color4b(0, 127));

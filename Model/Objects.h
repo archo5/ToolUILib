@@ -219,6 +219,12 @@ struct PersistentObjectList
 	}
 };
 
+struct UIContent : IPersistentObject
+{
+	virtual Size2i GetSize(const StyleBlock* style) = 0;
+	virtual void OnPaint(const StyleBlock* style, const PaintInfo& info) = 0;
+};
+
 template <class T>
 struct UIWeakPtr
 {
@@ -411,6 +417,34 @@ struct UIElement : UIObject
 	typedef char IsElement[1];
 };
 
+struct ContentElement : UIElement
+{
+	UIContent* _content = nullptr;
+
+	void OnReset() override
+	{
+		_content = nullptr;
+	}
+	void GetSize(Coord& outWidth, Coord& outHeight) override
+	{
+		auto size = _content->GetSize(styleProps);
+		outWidth = size.x;
+		outHeight = size.y;
+	}
+	void OnPaint() override
+	{
+		PaintInfo info(this);
+		styleProps->background_painter->Paint(info);
+
+		info.rect = GetContentRect();
+		_content->OnPaint(styleProps, info);
+
+		PaintChildren();
+	}
+
+	void SetContent(UIContent* c) { _content = c; }
+};
+
 struct TextElement : UIElement
 {
 	std::string text;
@@ -441,6 +475,17 @@ struct TextElement : UIElement
 		text.assign(t.data(), t.size());
 		return *this;
 	}
+};
+
+struct TextContent : UIContent
+{
+	std::string text;
+
+	void PO_ResetConfiguration() override;
+	Size2i GetSize(const StyleBlock* style) override;
+	void OnPaint(const StyleBlock* style, const PaintInfo& info) override;
+
+	void SetText(StringView t) { text.assign(t.data(), t.size()); }
 };
 
 struct BoxElement : UIElement

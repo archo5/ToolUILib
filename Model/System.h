@@ -172,6 +172,16 @@ struct UIContainer
 		}
 		return obj;
 	}
+	template<class T> T* AllocPersistent()
+	{
+		T* obj = _curObjectList->TryNext<T>();
+		if (!obj)
+		{
+			obj = new T();
+			_curObjectList->AddNext(obj);
+		}
+		return obj;
+	}
 	BoxElement& PushBox() { return Push<BoxElement>(); }
 
 	TextElement& Text(StringView s)
@@ -259,6 +269,10 @@ TextElement& Textf(const char* fmt, ...);
 template <class T, class... Args> T* BuildAlloc(Args&&... args)
 {
 	return UIContainer::GetCurrent()->GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
+}
+template <class T> T* AllocPersistent()
+{
+	return UIContainer::GetCurrent()->AllocPersistent<T>();
 }
 void RebuildCurrent();
 Buildable* GetCurrentBuildable();

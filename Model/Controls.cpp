@@ -33,6 +33,15 @@ void Button::OnReset()
 }
 
 
+void NEWButton::OnReset()
+{
+	UIElement::OnReset();
+
+	styleProps = Theme::current->button;
+	SetFlag(UIObject_DB_Button, true);
+}
+
+
 void StateButtonBase::OnReset()
 {
 	UIElement::OnReset();
