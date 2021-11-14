@@ -8,8 +8,9 @@ namespace ui {
 
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
-	int size = int(context->GetFontSize());
-	return size * GetNumLines();
+	auto* textStyle = context->FindTextStyle(context->styleProps);
+	auto info = context->GetFontInfo(textStyle);
+	return info.size * GetNumLines();
 }
 
 float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
@@ -27,24 +28,24 @@ float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
 
 void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect area)
 {
-	int size = int(context->GetFontSize());
-	int weight = context->GetFontWeight();
-	bool italic = context->GetFontIsItalic();
-	Color4b color = context->GetTextColor();
-	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+	auto* textStyle = context->FindTextStyle(context->styleProps);
+	auto info = context->GetFontInfo(textStyle);
+	Color4b color = textStyle->text_color.color;
+	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
 	size_t numLines = GetNumLines();
 	for (size_t i = 0; i < numLines; i++)
 	{
 		auto msgLine = GetMessage(msg, i);
-		draw::TextLine(font, size, area.x0, area.y0 + (i + 1) * size, msgLine, color);
+		draw::TextLine(font, info.size, area.x0, area.y0 + (i + 1) * info.size, msgLine, color);
 	}
 }
 
 
-void MessageLogView::OnPaint()
+void MessageLogView::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
@@ -79,7 +80,7 @@ void MessageLogView::OnPaint()
 
 	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), numMsgs * htMsg, yOff });
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void MessageLogView::OnEvent(Event& e)
@@ -103,6 +104,8 @@ void MessageLogView::OnEvent(Event& e)
 void MessageLogView::OnReset()
 {
 	Buildable::OnReset();
+
+	flags |= UIObject_SetsChildTextStyle;
 
 	_dataSource = nullptr;
 	scrollbarV.OnReset();
@@ -169,6 +172,7 @@ void TableView::OnReset()
 {
 	Buildable::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
@@ -182,14 +186,14 @@ void TableView::OnReset()
 	scrollbarV.OnReset();
 }
 
-void TableView::OnPaint()
+void TableView::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	PaintInfo info(this);
+	ph.PaintBackground(info);
 
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
-
-	PaintInfo info(this);
 
 	auto RC = GetContentRect();
 
@@ -328,7 +332,7 @@ void TableView::OnPaint()
 
 	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), chh + nr * h, yOff });
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void TableView::OnEvent(Event& e)
@@ -591,6 +595,8 @@ void TreeView::OnReset()
 {
 	Buildable::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
+
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
 	expandButtonStyle = Theme::current->collapsibleTreeNode;
@@ -599,9 +605,10 @@ void TreeView::OnReset()
 	_impl->dataSource = nullptr;
 }
 
-void TreeView::OnPaint()
+void TreeView::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	int chh = 20;
 	int h = 20;
@@ -643,7 +650,7 @@ void TreeView::OnPaint()
 	for (size_t i = 0, n = _impl->dataSource->GetChildCount(TreeDataSource::ROOT); i < n; i++)
 		_PaintOne(_impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)

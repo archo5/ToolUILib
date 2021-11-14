@@ -19,9 +19,10 @@ void ColorBlock::OnReset()
 	_color = Color4b::Black();
 }
 
-void ColorBlock::OnPaint()
+void ColorBlock::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 
@@ -32,7 +33,7 @@ void ColorBlock::OnPaint()
 
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 
@@ -47,9 +48,10 @@ void ColorInspectBlock::OnReset()
 	alphaBarHeight = 2;
 }
 
-void ColorInspectBlock::OnPaint()
+void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 
@@ -75,7 +77,7 @@ void ColorInspectBlock::OnPaint()
 		draw::RectCol(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, Color4b::Black());
 	}
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 
@@ -142,8 +144,10 @@ void ImageElement::OnReset()
 	_bgImage = nullptr;
 }
 
-void ImageElement::OnPaint()
+void ImageElement::OnPaint(const UIPaintContext& ctx)
 {
+	UIPaintHelper ph;
+
 	auto c = GetContentRect();
 	if (draw::GetCurrentScissorRectF().Overlaps(c))
 	{
@@ -153,7 +157,7 @@ void ImageElement::OnPaint()
 			_image = draw::ImageLoadFromFile(_delayLoadPath, draw::TexFlags::None);
 		}
 
-		styleProps->background_painter->Paint(this);
+		ph.PaintBackground(this);
 
 		if (_bgImage)
 		{
@@ -162,7 +166,7 @@ void ImageElement::OnPaint()
 		DrawImage(c, _image, _scaleMode, _anchorX, _anchorY);
 	}
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void ImageElement::GetSize(Coord& outWidth, Coord& outHeight)
@@ -243,8 +247,11 @@ void HueSatPicker::OnEvent(Event& e)
 	}
 }
 
-void HueSatPicker::OnPaint()
+void HueSatPicker::OnPaint(const UIPaintContext& ctx)
 {
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
+
 	auto cr = GetContentRect();
 	int tgtw = int(min(cr.GetWidth(), cr.GetHeight()));
 	cr.x1 = cr.x0 + tgtw;
@@ -267,7 +274,7 @@ void HueSatPicker::OnPaint()
 	info.rect = { sx, sy, sx + sw, sy + sh };
 	selectorStyle->background_painter->Paint(info);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void HueSatPicker::_RegenerateBackground(int w)
@@ -326,8 +333,11 @@ void ColorCompPicker2D::OnEvent(Event& e)
 	}
 }
 
-void ColorCompPicker2D::OnPaint()
+void ColorCompPicker2D::OnPaint(const UIPaintContext& ctx)
 {
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
+
 	auto cr = GetContentRect();
 	int tgtw = int(cr.GetWidth());
 	int tgth = int(cr.GetHeight());
@@ -347,7 +357,7 @@ void ColorCompPicker2D::OnPaint()
 	info.rect = { sx, sy, sx + sw, sy + sh };
 	selectorStyle->background_painter->Paint(info);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void ColorCompPicker2D::_RegenerateBackground(int w, int h)
@@ -579,6 +589,7 @@ void ColorPicker::Build()
 					prev->Paint(info);
 					for (int i = 0; i < 6; i++)
 						DrawHGradQuad(RectHSlice(info.rect, i, 6), Color4f::HSV(i / 6.0f, sat, val), Color4f::HSV((i + 1) / 6.0f, sat, val));
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._hue) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -595,6 +606,7 @@ void ColorPicker::Build()
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, 0, val), Color4f::HSV(hue, 1, val));
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._sat) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -611,6 +623,7 @@ void ColorPicker::Build()
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, sat, 0), Color4f::HSV(hue, sat, 1));
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._val) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -627,6 +640,7 @@ void ColorPicker::Build()
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { 0, col.g, col.b }, { 1, col.g, col.b });
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.r) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
@@ -643,6 +657,7 @@ void ColorPicker::Build()
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, 0, col.b }, { col.r, 1, col.b });
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.g) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
@@ -659,6 +674,7 @@ void ColorPicker::Build()
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, col.g, 0 }, { col.r, col.g, 1 });
+					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.b) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
@@ -846,9 +862,10 @@ ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
 }
 
 
-void View2D::OnPaint()
+void View2D::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	auto r = finalRectC;
 	if (draw::PushScissorRect(r.Cast<int>()))
@@ -858,13 +875,14 @@ void View2D::OnPaint()
 	}
 	draw::PopScissorRect();
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 
-void View3D::OnPaint()
+void View3D::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	auto r = finalRectC;
 	if (draw::PushScissorRect(r.Cast<int>()))
@@ -881,7 +899,7 @@ void View3D::OnPaint()
 	}
 	draw::PopScissorRect();
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 

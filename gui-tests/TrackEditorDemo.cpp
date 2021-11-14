@@ -27,7 +27,7 @@ struct TrackEditorDemo : ui::Buildable
 			SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			GetStyle().SetHeight(160);
 		}
-		void OnPaint() override
+		void OnPaint(const ui::UIPaintContext& ctx) override
 		{
 			for (int i = 0; i < 4; i++)
 			{

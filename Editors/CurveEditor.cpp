@@ -537,7 +537,7 @@ void CurveEditorElement::OnReset()
 	gridSettings = {};
 
 	GetStyle().SetPadding(4);
-	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
+	flags |= UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
 }
 
 void CurveEditorElement::OnEvent(Event& e)
@@ -546,10 +546,15 @@ void CurveEditorElement::OnEvent(Event& e)
 		e.StopPropagation();
 }
 
-void CurveEditorElement::OnPaint()
+void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 {
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
+
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
+
+	ph.PaintChildren(this, ctx);
 }
 
 

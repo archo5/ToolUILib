@@ -179,7 +179,7 @@ struct CurveEditorElement : UIElement
 
 	void OnReset() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 

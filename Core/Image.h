@@ -31,19 +31,20 @@ static char hexchar(uint8_t v)
 
 struct Color4b
 {
-	static Color4b Zero() { return { 0 }; }
-	static Color4b Black() { return { 0, 255 }; }
-	static Color4b White() { return { 255 }; }
+	UI_FORCEINLINE static Color4b Zero() { return { 0 }; }
+	UI_FORCEINLINE static Color4b Black() { return { 0, 255 }; }
+	UI_FORCEINLINE static Color4b White() { return { 255 }; }
 
-	Color4b() : r(255), g(255), b(255), a(255) {}
-	Color4b(uint8_t f) : r(f), g(f), b(f), a(f) {}
-	Color4b(uint8_t gray, uint8_t alpha) : r(gray), g(gray), b(gray), a(alpha) {}
-	Color4b(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) : r(red), g(green), b(blue), a(alpha) {}
+	UI_FORCEINLINE Color4b(DoNotInitialize) {}
+	UI_FORCEINLINE Color4b() : r(255), g(255), b(255), a(255) {}
+	UI_FORCEINLINE Color4b(uint8_t f) : r(f), g(f), b(f), a(f) {}
+	UI_FORCEINLINE Color4b(uint8_t gray, uint8_t alpha) : r(gray), g(gray), b(gray), a(alpha) {}
+	UI_FORCEINLINE Color4b(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) : r(red), g(green), b(blue), a(alpha) {}
 
-	bool operator == (const Color4b& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
+	UI_FORCEINLINE bool operator == (const Color4b& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
-	bool IsOpaque() const { return a == 255; }
-	Color4b GetOpaque() const { return { r, g, b, 255 }; }
+	UI_FORCEINLINE bool IsOpaque() const { return a == 255; }
+	UI_FORCEINLINE Color4b GetOpaque() const { return { r, g, b, 255 }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
@@ -228,6 +229,14 @@ struct Canvas
 	uint32_t _width = 0;
 	uint32_t _height = 0;
 	uint32_t* _pixels = nullptr;
+};
+
+
+struct Vertex
+{
+	float x, y;
+	float u, v;
+	Color4b col;
 };
 
 } // ui

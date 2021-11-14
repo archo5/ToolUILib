@@ -116,9 +116,9 @@ void TreeEditor::OnEvent(Event& e)
 	}
 }
 
-void TreeEditor::OnPaint()
+void TreeEditor::OnPaint(const UIPaintContext& ctx)
 {
-	Buildable::OnPaint();
+	Buildable::OnPaint(ctx);
 
 	if (!_dragTargetLoc.empty())
 	{

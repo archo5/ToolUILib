@@ -37,7 +37,7 @@ struct TE_SlicedImageElement : UIElement
 		_right = 0;
 		_bottom = 0;
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		UIRect r = GetContentRect();
 		float iw = _image->GetWidth();

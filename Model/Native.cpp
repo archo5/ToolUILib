@@ -687,12 +687,13 @@ struct NativeWindow_Impl
 
 		//GL::Clear(20, 40, 80, 255);
 		rhi::Clear(0x25, 0x25, 0x25, 255);
+		UIPaintContext pc;
 		if (cont.rootBuildable)
-			cont.rootBuildable->OnPaint();
+			cont.rootBuildable->OnPaint(pc);
 
 		system.overlays.UpdateSorted();
 		for (auto& ovr : system.overlays.sorted)
-			ovr.obj->OnPaint();
+			ovr.obj->OnPaint(pc);
 
 #if 0
 		draw::RectTex(20, 120, 256 + 20, 128 + 120, g_themeTexture);
@@ -1217,7 +1218,7 @@ struct Inspector : NativeDialogWindow
 			}
 		}
 
-		void OnPaint() override
+		void OnPaint(const UIPaintContext& ctx) override
 		{
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = GetFontHeight();

@@ -103,6 +103,12 @@ struct UIContainer
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
 	}
+	void Append(Buildable* obj)
+	{
+		objectStack[objectStackSize - 1]->AppendChild(obj);
+		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
+		AddToBuildStack(obj);
+	}
 	void _Push(UIObject* obj);
 	void _Pop();
 	void Pop()
@@ -111,19 +117,10 @@ struct UIContainer
 		_Pop();
 		UI_DEBUG_FLOW(printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name()));
 	}
-	template<class T, class = typename T::IsBuildable> T& Make(decltype(bool()) = 0)
+	template<class T> T& Make()
 	{
 		T* obj = _Alloc<T>();
-		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
 		UI_DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
-		Append(obj);
-		AddToBuildStack(obj);
-		return *obj;
-	}
-	template<class T, class = typename T::IsElement> T& Make(decltype(char()) = 0)
-	{
-		auto* obj = _Alloc<T>();
-		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
 		Append(obj);
 		return *obj;
 	}
@@ -220,11 +217,7 @@ struct UIContainer
 
 
 void Pop();
-template <class T, class = typename T::IsBuildable> inline T& Make(decltype(bool()) = 0)
-{
-	return UIContainer::GetCurrent()->Make<T>();
-}
-template <class T, class = typename T::IsElement> inline T& Make(decltype(char()) = 0)
+template <class T> inline T& Make()
 {
 	return UIContainer::GetCurrent()->Make<T>();
 }
@@ -249,6 +242,10 @@ template <class T, class = typename T::IsElement> inline T& Push()
 	return UIContainer::GetCurrent()->Push<T>();
 }
 inline void Append(UIObject* o)
+{
+	UIContainer::GetCurrent()->Append(o);
+}
+inline void Append(Buildable* o)
 {
 	UIContainer::GetCurrent()->Append(o);
 }
@@ -317,7 +314,7 @@ public:
 
 	void OnDisable() override;
 	void OnEvent(Event& ev) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayoutChanged() override;

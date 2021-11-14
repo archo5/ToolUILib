@@ -63,7 +63,7 @@ struct TreeEditor : Buildable
 {
 	void Build() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnReset() override;
 
 	virtual void OnBuildChildList(TreePath& path);

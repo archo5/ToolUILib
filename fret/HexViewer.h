@@ -81,7 +81,7 @@ struct HexViewer : ui::UIElement
 	{
 	}
 	void OnEvent(ui::Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const ui::UIPaintContext& ctx) override;
 
 	ui::UIRect GetByteRect(uint64_t pos);
 

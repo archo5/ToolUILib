@@ -71,6 +71,7 @@ enum UIObjectFlags
 	UIObject_ClipChildren = 1 << 26,
 	UIObject_IsInTree = 1 << 27,
 	UIObject_NeedsTreeUpdates = 1 << 28,
+	UIObject_SetsChildTextStyle = 1 << 29,
 
 	UIObject_DB__Defaults = 0,
 };
@@ -232,6 +233,26 @@ struct UIWeakPtr
 	UI_FORCEINLINE operator T* () const { return Get(); }
 };
 
+struct UIPaintContext
+{
+	Color4b textColor;
+
+	UI_FORCEINLINE UIPaintContext() {}
+	UI_FORCEINLINE UIPaintContext(DoNotInitialize) : textColor(DoNotInitialize{}) {}
+	UIPaintContext(const UIPaintContext&, Color4b arg_textColor)
+	{
+		textColor = arg_textColor;
+	}
+};
+
+struct FontInfo
+{
+	const char* nameOrFamily;
+	int size;
+	short weight;
+	bool italic;
+};
+
 struct UIObject : IPersistentObject
 {
 	UIObject();
@@ -266,9 +287,9 @@ struct UIObject : IPersistentObject
 	void RegisterAsOverlay(float depth = 0);
 	void UnregisterAsOverlay();
 
-	virtual void OnPaint();
-	void Paint();
-	void PaintChildren();
+	virtual void OnPaint(const UIPaintContext& ctx);
+	void Paint(const UIPaintContext& ctx);
+	void PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa);
 	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
@@ -353,10 +374,9 @@ struct UIObject : IPersistentObject
 	UIRect GetPaddingRect() const { return finalRectCP; }
 	UIRect GetBorderRect() const { return finalRectCPB; }
 
-	float GetFontSize(StyleBlock* styleOverride = nullptr);
-	int GetFontWeight(StyleBlock* styleOverride = nullptr);
-	bool GetFontIsItalic(StyleBlock* styleOverride = nullptr);
-	ui::Color4b GetTextColor(StyleBlock* styleOverride = nullptr);
+	UI_FORCEINLINE StyleBlock* FindTextStyle(StyleBlock* first) const { return first ? first : _FindClosestParentTextStyle(); }
+	StyleBlock* _FindClosestParentTextStyle() const;
+	FontInfo GetFontInfo(StyleBlock* textStyle);
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
@@ -392,6 +412,34 @@ struct UIObject : IPersistentObject
 	uint32_t _cacheFrameHeight = {};
 	Rangef _cacheValueWidth = { 0, 0 };
 	Rangef _cacheValueHeight = { 0, 0 };
+};
+
+struct UIPaintHelper
+{
+	ContentPaintAdvice cpa;
+
+	void PaintBackground(UIObject* obj)
+	{
+		if (obj->styleProps->background_painter)
+			cpa = obj->styleProps->background_painter->Paint(obj);
+	}
+	void PaintBackground(const PaintInfo& info)
+	{
+		if (info.obj->styleProps->background_painter)
+			cpa = info.obj->styleProps->background_painter->Paint(info);
+	}
+
+	void PaintChildren(UIObject* obj, const UIPaintContext& ctx)
+	{
+		obj->PaintChildren(ctx, cpa);
+	}
+
+	static void Paint(const PaintInfo& info, const UIPaintContext& ctx)
+	{
+		UIPaintHelper ph;
+		ph.PaintBackground(info);
+		ph.PaintChildren(const_cast<UIObject*>(info.obj), ctx);
+	}
 };
 
 template <class T> inline T* CreateUIObject()
@@ -434,7 +482,7 @@ struct TextElement : UIElement
 	}
 #endif
 	void GetSize(Coord& outWidth, Coord& outHeight) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	TextElement& SetText(StringView t)
 	{
@@ -449,7 +497,7 @@ struct BoxElement : UIElement
 
 struct Placeholder : UIElement
 {
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct Subscription;

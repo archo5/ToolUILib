@@ -153,9 +153,9 @@ void SequenceEditor::OnEvent(Event& e)
 	}
 }
 
-void SequenceEditor::OnPaint()
+void SequenceEditor::OnPaint(const UIPaintContext& ctx)
 {
-	Buildable::OnPaint();
+	Buildable::OnPaint(ctx);
 
 	if (_dragTargetPos < SIZE_MAX)
 	{

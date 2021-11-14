@@ -35,9 +35,9 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 			animReq.BeginAnimation();
 		}
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 
 		auto r = GetCurrentRect();
 		r = r.ShrinkBy(ui::AABB2f::UniformBorder(1));
@@ -138,9 +138,9 @@ struct ButtonPressHighlightDemo : ui::Buildable
 		AddActivationAnim(ui::MakeWithText<ui::Button>("Press me"));
 		AddActivationAnim(ui::MakeWithText<ui::Button>("...or me"));
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 		for (const auto& anim : anims)
 		{
 			float dist = anim->player.GetVariable("dist");
@@ -158,5 +158,72 @@ struct ButtonPressHighlightDemo : ui::Buildable
 void Demo_ButtonPressHighlight()
 {
 	ui::Make<ButtonPressHighlightDemo>();
+}
+
+
+struct FancyButtonDemo : ui::Buildable
+{
+	struct FancyButtonPainter : ui::IPainter
+	{
+		ui::ContentPaintAdvice Paint(const ui::PaintInfo& info) override
+		{
+			// the storage can be extended to support more than one simultaneous animation
+			static uint32_t lastClickTime = ui::platform::GetTimeMs() - 1000;
+			static ui::Vec2f lastClickPos;
+			static ui::AnimationCallbackRequester lastClickAnimReq;
+			auto* w = info.obj->system->nativeWindow;
+			lastClickAnimReq.callback = [w]() { w->InvalidateAll(); };
+
+			auto cp = info.obj->system->eventSystem.prevMousePos;
+			uint32_t timeDiff = ui::platform::GetTimeMs() - lastClickTime;
+			bool animating = timeDiff < 1000;
+
+			if (info.IsDown())
+			{
+				lastClickPos = cp;
+				lastClickTime = ui::platform::GetTimeMs();
+			}
+			else lastClickAnimReq.SetAnimating(animating);
+
+			auto r = info.rect;
+			ui::Color4b color(200, 40, 0);
+			if (info.IsDown())
+				color = ui::Color4b(160, 20, 0);
+			else if (info.IsHovered())
+				color = ui::Color4b(220, 80, 40);
+
+			float off = info.IsDown() ? 2 : 4;
+			float offtop = info.IsDown() ? 2 : 0;
+			ui::draw::RectCol(r.x0, r.y0 + offtop, r.x1, r.y1, color);
+			ui::draw::RectCol(r.x0, r.y1 - off, r.x1, r.y1, ui::Color4b(40, 5, 0));
+
+			ui::draw::PushScissorRect(r.ShrinkBy({ 0, offtop, 0, off }).Cast<int>());
+
+			if (!info.IsDown() && animating)
+				ui::draw::AACircleLineCol(lastClickPos, timeDiff * 0.001f * 200, timeDiff * 0.001f * 90, ui::Color4b(255, 100 * ui::invlerp(1000, 0, timeDiff)));
+
+			ui::draw::PopScissorRect();
+
+			ui::ContentPaintAdvice cpa;
+			if (info.IsDown())
+				cpa.offset.y += 2;
+			return cpa;
+		}
+	};
+
+	void Build() override
+	{
+		*this + ui::SetPadding(30);
+
+		auto& btn = ui::Push<ui::Button>();
+		btn.GetStyle().SetBackgroundPainter(new FancyButtonPainter());
+		btn.GetStyle().SetPadding(5, 5, 9);
+		ui::Text("Fancy button");
+		ui::Pop();
+	}
+};
+void Demo_FancyButton()
+{
+	ui::Make<FancyButtonDemo>();
 }
 

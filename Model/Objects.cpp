@@ -349,13 +349,19 @@ void UIObject::UnregisterAsOverlay()
 	}
 }
 
-void UIObject::OnPaint()
+struct VertexShifter
 {
-	styleProps->background_painter->Paint(this);
-	PaintChildren();
+	draw::VertexTransformCallback prev;
+	Vec2f offset;
+};
+
+void UIObject::OnPaint(const UIPaintContext& ctx)
+{
+	auto cpa = styleProps->background_painter->Paint(this);
+	PaintChildren(ctx, cpa);
 }
 
-void UIObject::Paint()
+void UIObject::Paint(const UIPaintContext& ctx)
 {
 	if (!_CanPaint())
 		return;
@@ -363,10 +369,10 @@ void UIObject::Paint()
 	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(finalRectCPB)))
 		return;
 
-	OnPaint();
+	OnPaint(ctx);
 }
 
-void UIObject::PaintChildren()
+void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa)
 {
 	if (!firstChild)
 		return;
@@ -375,8 +381,42 @@ void UIObject::PaintChildren()
 	if (clipChildren)
 		draw::PushScissorRect(finalRectC.Cast<int>());
 
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->Paint();
+	UIPaintContext subctx(DoNotInitialize{});
+	auto* pctx = &ctx;
+	if (flags & UIObject_SetsChildTextStyle)
+	{
+		subctx = UIPaintContext(ctx, cpa.textColor);
+		pctx = &subctx;
+	}
+
+	if (cpa.offset != Vec2f())
+	{
+		VertexShifter vsh;
+		vsh.offset = cpa.offset;
+
+		draw::VertexTransformFunction* vtf = [](void* userdata, Vertex* vertices, size_t count)
+		{
+			auto* data = static_cast<VertexShifter*>(userdata);
+			for (auto* v = vertices, *vend = vertices + count; v != vend; v++)
+			{
+				v->x += data->offset.x;
+				v->y += data->offset.y;
+			}
+
+			data->prev.Call(vertices, count);
+		};
+		vsh.prev = draw::SetVertexTransformCallback({ &vsh, vtf });
+
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			ch->Paint(*pctx);
+
+		draw::SetVertexTransformCallback(vsh.prev);
+	}
+	else
+	{
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			ch->Paint(*pctx);
+	}
 
 	if (clipChildren)
 		draw::PopScissorRect();
@@ -1009,60 +1049,23 @@ UIRect UIObject::GetPaddingRect(StyleBlock* style, float ref)
 	};
 }
 
-float UIObject::GetFontSize(StyleBlock* styleOverride)
+StyleBlock* UIObject::_FindClosestParentTextStyle() const
 {
-	Coord c;
-	if (styleOverride)
-		c = styleOverride->font_size;
-	for (auto* p = this; p && (c.unit == CoordTypeUnit::Undefined || c.unit == CoordTypeUnit::Inherit); p = p->parent)
+	for (auto* p = parent; p; p = p->parent)
 	{
-		c = p->GetStyle().GetFontSize();
+		if ((p->flags & UIObject_SetsChildTextStyle) && p->styleProps)
+			return p->styleProps;
 	}
-	if (!c.IsDefined() || c.unit == CoordTypeUnit::Inherit)
-		c = 12;
-	return ResolveUnits(c, GetContentRect().GetWidth());
+	return Theme::current->text;
 }
 
-int UIObject::GetFontWeight(StyleBlock* styleOverride)
+FontInfo UIObject::GetFontInfo(StyleBlock* textStyle)
 {
-	auto w = FontWeight::Undefined;
-	if (styleOverride)
-		w = styleOverride->font_weight;
-	for (auto* p = this; p && (w == FontWeight::Undefined || w == FontWeight::Inherit); p = p->parent)
-	{
-		w = p->GetStyle().GetFontWeight();
-	}
-	if (w == FontWeight::Undefined || w == FontWeight::Inherit)
-		w = FontWeight::Normal;
-	return int(w);
-}
+	int size = textStyle->font_size.unit == CoordTypeUnit::Pixels ? textStyle->font_size.value : GetFontHeight();
+	short weight = short(textStyle->font_weight > FontWeight::Undefined ? textStyle->font_weight : FontWeight::Normal);
+	bool italic = textStyle->font_style == FontStyle::Italic;
 
-bool UIObject::GetFontIsItalic(StyleBlock* styleOverride)
-{
-	auto s = FontStyle::Undefined;
-	if (styleOverride)
-		s = styleOverride->font_style;
-	for (auto* p = this; p && (s == FontStyle::Undefined || s == FontStyle::Inherit); p = p->parent)
-	{
-		s = p->GetStyle().GetFontStyle();
-	}
-	if (s == FontStyle::Undefined || s == FontStyle::Inherit)
-		s = FontStyle::Normal;
-	return s == FontStyle::Italic;
-}
-
-Color4b UIObject::GetTextColor(StyleBlock* styleOverride)
-{
-	StyleColor c;
-	if (styleOverride)
-		c = styleOverride->text_color;
-	for (auto* p = this; p && c.inherit; p = p->parent)
-	{
-		c = p->GetStyle().GetTextColor();
-	}
-	if (c.inherit)
-		c = Color4b::White();
-	return c.color;
+	return { FONT_FAMILY_SANS_SERIF, size, weight, italic };
 }
 
 NativeWindowBase* UIObject::GetNativeWindow() const
@@ -1082,33 +1085,36 @@ void TextElement::OnReset()
 
 void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
 {
-	int size = int(GetFontSize());
-	int weight = GetFontWeight();
-	bool italic = GetFontIsItalic();
+	// TODO can we nullify styleProps?
+	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
+	auto info = GetFontInfo(style);
 
-	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
-	outWidth = ceilf(GetTextWidth(font, size, text));
-	outHeight = size;
+	outWidth = ceilf(GetTextWidth(font, info.size, text));
+	outHeight = info.size;
 }
 
-void TextElement::OnPaint()
+void TextElement::OnPaint(const UIPaintContext& ctx)
 {
-	int size = int(GetFontSize());
-	int weight = GetFontWeight();
-	bool italic = GetFontIsItalic();
-	Color4b color = GetTextColor();
+	// TODO can we nullify styleProps?
+	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
+	auto info = GetFontInfo(style);
+	Color4b color = style->text_color.color;
 
-	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
+
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
-	PaintChildren();
+	draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+
+	ph.PaintChildren(this, ctx);
 }
 
-void Placeholder::OnPaint()
+void Placeholder::OnPaint(const UIPaintContext& ctx)
 {
 	draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, Color4b(0, 127));
 	draw::RectCutoutCol(finalRectCPB, finalRectCPB.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
@@ -1116,21 +1122,20 @@ void Placeholder::OnPaint()
 	char text[32];
 	snprintf(text, sizeof(text), "%gx%g", finalRectCPB.GetWidth(), finalRectCPB.GetHeight());
 
-	int size = int(GetFontSize());
-	int weight = GetFontWeight();
-	bool italic = GetFontIsItalic();
-	Color4b color = GetTextColor();
+	auto info = GetFontInfo(styleProps);
+	Color4b color = styleProps->text_color.color;
 
-	auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	float tw = GetTextWidth(font, size, text);
-	draw::TextLine(font, size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+	float tw = GetTextWidth(font, info.size, text);
+	draw::TextLine(font, info.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 

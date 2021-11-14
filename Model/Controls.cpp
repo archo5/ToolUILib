@@ -12,6 +12,7 @@ void Panel::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->panel;
 }
 
@@ -20,6 +21,7 @@ void Header::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->header;
 }
 
@@ -28,8 +30,8 @@ void Button::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->button;
-	SetFlag(UIObject_DB_Button, true);
 }
 
 
@@ -37,7 +39,7 @@ void StateButtonBase::OnReset()
 {
 	UIElement::OnReset();
 
-	SetFlag(UIObject_DB_Button, true);
+	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
 	GetStyle().SetLayout(layouts::InlineBlock());
 }
 
@@ -83,15 +85,16 @@ bool StateToggle::OnActivate()
 }
 
 
-void StateToggleVisualBase::OnPaint()
+void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 {
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
 		info.checkState = st->GetState();
-	styleProps->background_painter->Paint(info);
 
-	PaintChildren();
+	info.obj = this;
+
+	UIPaintHelper::Paint(info, ctx);
 }
 
 
@@ -140,8 +143,8 @@ void Selectable::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
 	SetStyle(Theme::current->selectable);
-	SetFlag(UIObject_DB_Selectable, true);
 }
 
 
@@ -149,21 +152,23 @@ void ProgressBar::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->progressBarBase;
 	completionBarStyle = Theme::current->progressBarCompletion;
 	progress = 0.5f;
 }
 
-void ProgressBar::OnPaint()
+void ProgressBar::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	PaintInfo cinfo(this);
 	cinfo.rect = cinfo.rect.ShrinkBy(GetMarginRect(completionBarStyle, cinfo.rect.GetWidth()));
 	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
 	completionBarStyle->background_painter->Paint(cinfo);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 
@@ -171,6 +176,7 @@ void Slider::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->sliderHBase;
 	trackStyle = Theme::current->sliderHTrack;
 	trackFillStyle = Theme::current->sliderHTrackFill;
@@ -180,9 +186,10 @@ void Slider::OnReset()
 	_limits = { 0, 1, 0 };
 }
 
-void Slider::OnPaint()
+void Slider::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	// track
 	PaintInfo trkinfo(this);
@@ -203,7 +210,7 @@ void Slider::OnPaint()
 	trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
 	thumbStyle->background_painter->Paint(trkinfo);
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 void Slider::OnEvent(Event& e)
@@ -446,6 +453,7 @@ void LabeledProperty::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	SetStyle(Theme::current->property);
 	_labelStyle = {};
 
@@ -460,24 +468,19 @@ void LabeledProperty::OnEnterTree()
 	_propList = FindParentOfType<PropertyList>();
 }
 
-void LabeledProperty::OnPaint()
+void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	if (!_labelText.empty())
 	{
-		StyleBlock* labelStyle = _labelStyle;
-		if (!labelStyle && _propList)
-			labelStyle = _propList->_defaultLabelStyle;
-		if (!labelStyle)
-			labelStyle = Theme::current->propLabel;
+		StyleBlock* labelStyle = FindCurrentLabelStyle();
 
-		int size = int(GetFontSize(labelStyle));
-		int weight = GetFontWeight(labelStyle);
-		bool italic = GetFontIsItalic(labelStyle);
-		Color4b color = GetTextColor(labelStyle);
+		auto info = GetFontInfo(labelStyle);
+		Color4b color = labelStyle->text_color.color;
 
-		auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+		auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
 		auto contPadRect = GetPaddingRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
@@ -487,11 +490,11 @@ void LabeledProperty::OnPaint()
 
 		// TODO optimize scissor (shared across labels)
 		draw::PushScissorRect(cr.Cast<int>());
-		draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
+		draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
 		draw::PopScissorRect();
 	}
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
@@ -501,18 +504,12 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 	{
 		if (_isBrief)
 		{
-			StyleBlock* labelStyle = _labelStyle;
-			if (!labelStyle && _propList)
-				labelStyle = _propList->_defaultLabelStyle;
-			if (!labelStyle)
-				labelStyle = Theme::current->propLabel;
+			StyleBlock* labelStyle = FindCurrentLabelStyle();
 
-			int size = int(GetFontSize(labelStyle));
-			int weight = GetFontWeight(labelStyle);
-			bool italic = GetFontIsItalic(labelStyle);
-			auto font = GetFontByFamily(FONT_FAMILY_SANS_SERIF, weight, italic);
+			auto info = GetFontInfo(labelStyle);
+			auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
-			r.x0 += GetTextWidth(font, size, _labelText);
+			r.x0 += GetTextWidth(font, info.size, _labelText);
 			auto labelPadRect = GetPaddingRect(labelStyle, 0);
 			r.x0 += labelPadRect.x0 + labelPadRect.x1;
 		}
@@ -532,12 +529,19 @@ LabeledProperty& LabeledProperty::SetText(StringView text)
 	return *this;
 }
 
+StyleBlock* LabeledProperty::FindCurrentLabelStyle() const
+{
+	if (_labelStyle)
+		return _labelStyle;
+	if (_propList && _propList->_defaultLabelStyle)
+		return _propList->_defaultLabelStyle;
+	return Theme::current->propLabel;
+}
+
 StyleAccessor LabeledProperty::GetLabelStyle()
 {
-	if (!_labelStyle && _propList)
-		_labelStyle = _propList->_defaultLabelStyle;
 	if (!_labelStyle)
-		_labelStyle = Theme::current->propLabel;
+		_labelStyle = FindCurrentLabelStyle();
 	return StyleAccessor(_labelStyle, this);
 }
 
@@ -637,9 +641,10 @@ static void CheckSplits(SplitPane* sp)
 	}
 }
 
-void SplitPane::OnPaint()
+void SplitPane::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	if (firstChild)
 	{
@@ -657,7 +662,7 @@ void SplitPane::OnPaint()
 				r.x1 = sr.x0;
 
 				if (draw::PushScissorRect(r.Cast<int>()))
-					ch->Paint();
+					ch->Paint(ctx);
 				draw::PopScissorRect();
 
 				prevEdge = sr.x1;
@@ -676,7 +681,7 @@ void SplitPane::OnPaint()
 				r.y1 = sr.y0;
 
 				if (draw::PushScissorRect(r.Cast<int>()))
-					ch->Paint();
+					ch->Paint(ctx);
 				draw::PopScissorRect();
 
 				prevEdge = sr.y1;
@@ -961,11 +966,9 @@ ScrollArea::ScrollArea()
 	SetFlag(UIObject_ClipChildren, true);
 }
 
-void ScrollArea::OnPaint()
+void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
-
-	PaintChildren();
+	UIElement::OnPaint(ctx);
 
 	auto cr = GetContentRect();
 	float w = cr.GetWidth();
@@ -1051,22 +1054,23 @@ void TabButtonList::OnReset()
 	styleProps = Theme::current->tabList;
 }
 
-void TabButtonList::OnPaint()
+void TabButtonList::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	if (auto* g = FindParentOfType<TabGroup>())
 	{
 		for (UIObject* ch = firstChild; ch; ch = ch->next)
 		{
 			if (auto* p = dynamic_cast<TabButtonBase*>(ch))
-				if (p->IsSelected())
+				if (p == g->_activeBtn)
 					continue;
-			ch->OnPaint();
+			ch->OnPaint(ctx);
 		}
 	}
 	else
-		PaintChildren();
+		ph.PaintChildren(this, ctx);
 }
 
 
@@ -1074,8 +1078,8 @@ void TabButtonBase::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->tabButton;
-	SetFlag(UIObject_DB_Button, true);
 }
 
 void TabButtonBase::OnExitTree()
@@ -1087,13 +1091,13 @@ void TabButtonBase::OnExitTree()
 			g->_activeBtn = nullptr;
 }
 
-void TabButtonBase::OnPaint()
+void TabButtonBase::OnPaint(const UIPaintContext& ctx)
 {
 	PaintInfo info(this);
 	if (IsSelected())
 		info.checkState = 1;
-	styleProps->background_painter->Paint(info);
-	PaintChildren();
+
+	UIPaintHelper::Paint(info, ctx);
 }
 
 void TabButtonBase::OnEvent(Event& e)
@@ -1114,11 +1118,13 @@ void TabPanel::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->tabPanel;
 }
 
-void TabPanel::OnPaint()
+void TabPanel::OnPaint(const UIPaintContext& ctx)
 {
+	UIPaintHelper ph;
 	if (auto* g = FindParentOfType<TabGroup>())
 	{
 		if (g->_activeBtn)
@@ -1132,31 +1138,31 @@ void TabPanel::OnPaint()
 			if (panelRect.Overlaps(btnRect) && btnRect.y1 > panelRect.y0 && btnRect.y0 < panelRect.y0)
 			{
 				draw::PushScissorRect(panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1);
-				styleProps->background_painter->Paint(pi);
+				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 
 				draw::PushScissorRect(btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1);
-				styleProps->background_painter->Paint(pi);
+				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 
 				draw::PushScissorRect(btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1);
-				styleProps->background_painter->Paint(pi);
+				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 			}
 			else
 			{
-				styleProps->background_painter->Paint(pi);
+				ph.PaintBackground(pi);
 			}
 
-			g->_activeBtn->Paint();
+			g->_activeBtn->Paint(ctx);
 
-			PaintChildren();
+			ph.PaintChildren(this, ctx);
 
 			return;
 		}
 	}
 
-	UIElement::OnPaint();
+	UIElement::OnPaint(ctx);
 }
 
 
@@ -1164,15 +1170,15 @@ void Textbox::OnReset()
 {
 	UIElement::OnReset();
 
+	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->textBoxBase;
-	SetFlag(UIObjectFlags(UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick), true);
 	_placeholder = {};
 }
 
-void Textbox::OnPaint()
+void Textbox::OnPaint(const UIPaintContext& ctx)
 {
-	// background
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	{
 		auto r = GetContentRect();
@@ -1201,7 +1207,7 @@ void Textbox::OnPaint()
 		}
 	}
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 static size_t PrevChar(StringView str, size_t pos)
@@ -1601,7 +1607,7 @@ void CollapsibleTreeNode::OnReset()
 	styleProps = Theme::current->collapsibleTreeNode;
 }
 
-void CollapsibleTreeNode::OnPaint()
+void CollapsibleTreeNode::OnPaint(const UIPaintContext& ctx)
 {
 	PaintInfo info(this);
 	info.state &= ~PS_Hover;
@@ -1609,8 +1615,8 @@ void CollapsibleTreeNode::OnPaint()
 		info.state |= PS_Hover;
 	if (open)
 		info.checkState = 1;
-	styleProps->background_painter->Paint(info);
-	PaintChildren();
+
+	UIPaintHelper::Paint(info, ctx);
 }
 
 void CollapsibleTreeNode::OnEvent(Event& e)

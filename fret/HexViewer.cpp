@@ -436,7 +436,7 @@ void HexViewer::OnEvent(ui::Event& e)
 	}
 }
 
-void HexViewer::OnPaint()
+void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 {
 	int W = state->byteWidth;
 

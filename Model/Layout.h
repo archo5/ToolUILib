@@ -368,15 +368,21 @@ struct PaintInfo
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
+struct ContentPaintAdvice
+{
+	Color4b textColor;
+	Vec2f offset;
+};
+
 struct IPainter : RefCountedST
 {
-	virtual void Paint(const PaintInfo&) = 0;
+	virtual ContentPaintAdvice Paint(const PaintInfo&) = 0;
 };
 using PainterHandle = RCHandle<IPainter>;
 
 struct EmptyPainter : IPainter
 {
-	void Paint(const PaintInfo&) override;
+	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static EmptyPainter* Get();
 private:
 	EmptyPainter();
@@ -384,7 +390,7 @@ private:
 
 struct CheckerboardPainter : IPainter
 {
-	void Paint(const PaintInfo&) override;
+	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static CheckerboardPainter* Get();
 private:
 	CheckerboardPainter();
@@ -394,7 +400,7 @@ struct LayerPainter : IPainter
 {
 	std::vector<PainterHandle> layers;
 
-	void Paint(const PaintInfo&) override;
+	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static RCHandle<LayerPainter> Create();
 };
 
@@ -404,7 +410,7 @@ struct FunctionPainterT : IPainter
 	F func;
 
 	FunctionPainterT(F&& f) : func(std::move(f)) {}
-	void Paint(const PaintInfo& info) override { func(info); }
+	ContentPaintAdvice Paint(const PaintInfo& info) override { return func(info); }
 };
 
 template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(std::move(f)); }
@@ -513,7 +519,7 @@ class StyleBlockRef
 {
 public:
 	StyleBlockRef() : block(nullptr) {}
-	StyleBlockRef(StyleBlock* b) : block(b) { b->_refCount++;  }
+	StyleBlockRef(StyleBlock* b) : block(b) { if (b) b->_refCount++;  }
 	StyleBlockRef(const StyleBlockRef& b) : block(b.block) { if (block) block->_refCount++; }
 	StyleBlockRef(StyleBlockRef&& b) : block(b.block) { b.block = nullptr; }
 	~StyleBlockRef() { if (block) block->_Release(); }

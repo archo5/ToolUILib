@@ -384,15 +384,16 @@ void InlineFrame::OnEvent(Event& ev)
 	Buildable::OnEvent(ev);
 }
 
-void InlineFrame::OnPaint()
+void InlineFrame::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	if (frameContents &&
 		frameContents->container.rootBuildable)
-		frameContents->container.rootBuildable->OnPaint();
+		frameContents->container.rootBuildable->OnPaint({ ctx, {} });
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 }
 
 float InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

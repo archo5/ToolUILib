@@ -14,7 +14,7 @@ struct SubUIBenchmark : ui::Buildable
 			}
 		}
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::PaintInfo info(this);
 		ui::Theme::current->textBoxBase->background_painter->Paint(info);

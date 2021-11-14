@@ -21,7 +21,7 @@ struct MessageLogDataSource
 
 struct MessageLogView : Buildable
 {
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnReset() override;
 	void Build() override;
@@ -57,7 +57,7 @@ struct TableView : Buildable
 	TableView();
 	~TableView();
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void Build() override;
 
@@ -106,7 +106,7 @@ struct TreeView : Buildable
 	TreeView();
 	~TreeView();
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
 	void OnEvent(Event& e) override;
 	void Build() override;

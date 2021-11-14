@@ -84,6 +84,21 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex
 void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IImage* tex, const AABB2f& texouter, const AABB2f& texinner);
 void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col);
 
+typedef void VertexTransformFunction(void* userdata, Vertex* vertices, size_t count);
+struct VertexTransformCallback
+{
+	void* userdata = nullptr;
+	VertexTransformFunction* func = nullptr;
+
+	UI_FORCEINLINE void Call(Vertex* vertices, size_t count)
+	{
+		if (func)
+			func(userdata, vertices, count);
+	}
+};
+// returns the previous callback
+VertexTransformCallback SetVertexTransformCallback(VertexTransformCallback cb);
+
 void ApplyScissor();
 bool PushScissorRect(const AABB2i& rect);
 bool PushScissorRect(int x0, int y0, int x1, int y1);

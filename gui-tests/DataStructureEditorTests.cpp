@@ -628,13 +628,26 @@ struct MessageLogViewTest : ui::Buildable
 
 	MessageLogViewTest()
 	{
+		mlvRData.msgs = &messages;
+		mlvIData.msgs = &messages;
+
+		mlvR._InitReset();
+		mlvI._InitReset();
+
+		mlvR.SetDataSource(&mlvRData);
+		mlvI.SetDataSource(&mlvIData);
+
+		mlvR + ui::SetHeight(ui::Coord::Percent(100));
+		mlvI + ui::SetHeight(ui::Coord::Percent(100));
+
+		// TODO: scrolling to end in ctor results in scrolling a page or so too far - should probably fix that?
 		AddMessages(2345);
 	}
 
 	void AddMessages(int n)
 	{
-		bool isAtEndR = mlvRtoken.IsAlive() && mlvR->IsAtEnd();
-		bool isAtEndI = mlvItoken.IsAlive() && mlvI->IsAtEnd();
+		bool isAtEndR = mlvR.IsAtEnd();
+		bool isAtEndI = mlvI.IsAtEnd();
 
 		static const char* words[10] =
 		{
@@ -663,9 +676,14 @@ struct MessageLogViewTest : ui::Buildable
 		}
 
 		if (isAtEndR)
-			mlvR->ScrollToEnd();
+			mlvR.ScrollToEnd();
 		if (isAtEndI)
-			mlvI->ScrollToEnd();
+			mlvI.ScrollToEnd();
+	}
+
+	void OnEnable() override
+	{
+		Buildable::OnEnable();
 	}
 
 	void Build() override
@@ -699,15 +717,7 @@ struct MessageLogViewTest : ui::Buildable
 				ui::Push<ui::ListBox>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
-					auto* rds = Allocate<MLV_R>();
-					rds->msgs = &messages;
-					auto& mlv = ui::Make<ui::MessageLogView>();
-					mlv + ui::SetHeight(ui::Coord::Percent(100));
-					mlv.GetLivenessToken();
-					mlv.SetDataSource(rds);
-
-					mlvR = &mlv;
-					mlvRtoken = mlv.GetLivenessToken();
+					ui::Append(&mlvR);
 				}
 				ui::Pop();
 			}
@@ -722,14 +732,7 @@ struct MessageLogViewTest : ui::Buildable
 				ui::Push<ui::ListBox>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
-					auto* rds = Allocate<MLV_I>();
-					rds->msgs = &messages;
-					auto& mlv = ui::Make<ui::MessageLogView>();
-					mlv + ui::SetHeight(ui::Coord::Percent(100));
-					mlv.SetDataSource(rds);
-
-					mlvI = &mlv;
-					mlvItoken = mlv.GetLivenessToken();
+					ui::Append(&mlvI);
 				}
 				ui::Pop();
 			}
@@ -740,10 +743,10 @@ struct MessageLogViewTest : ui::Buildable
 
 	std::vector<Message> messages;
 
-	ui::LivenessToken mlvRtoken;
-	ui::MessageLogView* mlvR;
-	ui::LivenessToken mlvItoken;
-	ui::MessageLogView* mlvI;
+	MLV_R mlvRData;
+	MLV_I mlvIData;
+	ui::MessageLogView mlvR;
+	ui::MessageLogView mlvI;
 };
 void Test_MessageLogView()
 {

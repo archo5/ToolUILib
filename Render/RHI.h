@@ -7,6 +7,8 @@
 namespace ui {
 namespace rhi {
 
+using Vertex = ::ui::Vertex;
+
 struct Stats
 {
 	uint64_t num_SetTexture;
@@ -16,13 +18,6 @@ struct Stats
 	Stats operator - (const Stats& o) const;
 
 	static Stats Get();
-};
-
-struct Vertex
-{
-	float x, y;
-	float u, v;
-	Color4b col;
 };
 
 struct RHIInternalPointers

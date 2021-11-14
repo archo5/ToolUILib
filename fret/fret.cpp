@@ -37,9 +37,9 @@ struct MainWindowContents : ui::Buildable
 		//files.push_back(new REFile("tree.mesh"));
 		//files.push_back(new REFile("arch.tar"));
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 
 		if (curFileView && curFileView->curHexViewer && curTable)
 		{

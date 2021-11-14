@@ -479,6 +479,8 @@ void Flush()
 
 } // internals
 
+VertexTransformCallback g_curVertXFormCB;
+
 static void DebugOffScale(rhi::Vertex* verts, size_t count, float x, float y, float s)
 {
 	for (size_t i = 0; i < count; i++)
@@ -496,6 +498,7 @@ float SCALE = 4;
 
 void IndexedTriangles(IImage* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
+	g_curVertXFormCB.Call(verts, num_vertices);
 #if DEBUG_SUBPIXEL
 	DebugOffScale(verts, num_vertices, XOFF, YOFF, SCALE);//10, 200, 4);
 #endif
@@ -936,6 +939,15 @@ void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col)
 
 	IndexedTriangles(nullptr, verts, 8, indices, 24);
 }
+
+
+VertexTransformCallback SetVertexTransformCallback(VertexTransformCallback cb)
+{
+	auto prev = g_curVertXFormCB;
+	g_curVertXFormCB = cb;
+	return prev;
+}
+
 
 static AABB2i scissorStack[100];
 static int scissorCount = 1;

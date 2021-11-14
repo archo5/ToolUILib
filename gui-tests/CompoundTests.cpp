@@ -234,10 +234,11 @@ struct SlidersTest : ui::Buildable
 {
 	struct MyGradientPainter : ui::IPainter
 	{
-		void Paint(const ui::PaintInfo& info) override
+		ui::ContentPaintAdvice Paint(const ui::PaintInfo& info) override
 		{
 			auto r = info.rect;
 			ui::draw::RectGradH(r.x0, r.y0, r.x1, r.y1, ui::Color4f(0, 0, 0), ui::Color4f(1, 0, 0));
+			return {};
 		}
 	};
 

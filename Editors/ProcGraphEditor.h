@@ -159,7 +159,7 @@ struct ProcGraphEditor_NodePin : Buildable
 
 	void Build() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnExitTree() override;
 
 	void Init(IProcGraph* graph, IProcGraph::Node* node, uintptr_t pin, bool isOutput);
@@ -183,6 +183,11 @@ using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::
 struct ProcGraphEditor_Node : Buildable
 {
 	void Build() override;
+	void OnReset() override
+	{
+		Buildable::OnReset();
+		flags |= UIObject_SetsChildTextStyle;
+	}
 	void OnEvent(Event& e) override;
 
 	void Init(IProcGraph* graph, IProcGraph::Node* node, Point2f vOff);
@@ -206,7 +211,7 @@ struct ProcGraphEditor : Buildable
 	void Build() override;
 	void OnReset() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	void Init(IProcGraph* graph);
 

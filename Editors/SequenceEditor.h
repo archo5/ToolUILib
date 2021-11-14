@@ -182,7 +182,7 @@ struct SequenceEditor : Buildable
 {
 	void Build() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnReset() override;
 
 	virtual void OnBuildItem(size_t idx, void* ptr);

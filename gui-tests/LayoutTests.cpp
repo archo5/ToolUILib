@@ -231,9 +231,9 @@ struct SizeTest : ui::Buildable
 		std::function<std::string()> func;
 	};
 
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 		for (const auto& t : tests)
 		{
 			auto res = t.func();

@@ -20,7 +20,7 @@ struct RenderingPrimitives : ui::Buildable
 		stretchTestImg = ui::draw::ImageCreateRGBA8(2, 2, cols, ui::draw::TexFlags::Packed);
 		fileTestImg = ui::draw::ImageLoadFromFile("gui-theme2.tga");
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::Color4b col = ui::Color4f(1, 0.5f, 0);
 		ui::Color4b colO = ui::Color4f(0, 1, 0.5f, 0.5f);
@@ -154,7 +154,7 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 	{
 		BeginAnimation();
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::PaintInfo pi(this);
 		constexpr int W = 10;
@@ -219,7 +219,7 @@ struct EventsTest : ui::Buildable
 		writePos %= MAX_MESSAGES;
 	}
 
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
 		for (unsigned i = 0; i < MAX_MESSAGES; i++)
@@ -325,16 +325,24 @@ struct OpenCloseTest : ui::Buildable
 		ui::Pop();
 		cb.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = !open; Rebuild(); };
 
-		ui::MakeWithText<ui::Button>("Open").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = true; Rebuild(); };
+		auto& openBtn = ui::MakeWithText<ui::Button>("Open");
+		openBtn.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = true; Rebuild(); };
 
-		ui::MakeWithText<ui::Button>("Close").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
+		auto& closeBtn = ui::MakeWithText<ui::Button>("Close");
+		closeBtn.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
+
+		(open ? closeBtn : openBtn).GetStyle().SetFontWeight(ui::FontWeight::Bold);
+		(open ? closeBtn : openBtn).GetStyle().SetTextColor(ui::Color4f(0.1f, 0.9f, 0.5f));
+		(!open ? closeBtn : openBtn).GetStyle().SetTextColor(ui::Color4f(0.7f, 1.0f));
 
 		if (open)
 		{
 			ui::Make<EDLogger>();
 			ui::Push<ui::Panel>();
 			ui::Text("It is open!");
-			auto s = ui::MakeWithText<ui::BoxElement>("Different text").GetStyle();
+			auto& box = ui::MakeWithText<ui::BoxElement>("Different text");
+			box.flags |= ui::UIObject_SetsChildTextStyle;
+			auto s = box.GetStyle();
 			s.SetFontSize(16);
 			s.SetFontWeight(ui::FontWeight::Bold);
 			s.SetFontStyle(ui::FontStyle::Italic);
@@ -369,19 +377,19 @@ struct AppendMixTest : ui::Buildable
 
 	void OnEnable() override
 	{
-		append1 = new ui::TextElement;
+		append1 = ui::CreateUIObject<ui::TextElement>();
 		append1->system = system;
 		append1->SetText("append one");
 
-		append2 = new ui::TextElement;
+		append2 = ui::CreateUIObject<ui::TextElement>();
 		append2->system = system;
 		append2->SetText("append two");
 	}
 
 	void OnDisable() override
 	{
-		delete append1;
-		delete append2;
+		ui::DeleteUIObject(append1);
+		ui::DeleteUIObject(append2);
 	}
 
 	void Build() override
@@ -451,9 +459,9 @@ struct AnimationRequestTest : ui::Buildable
 		ui::Pop();
 		cb.HandleEvent(ui::EventType::Activate) = [this, &cb](ui::Event&) { animReq.SetAnimating(!animReq.IsAnimating()); Rebuild(); };
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 
 		static uint32_t start = ui::platform::GetTimeMs();
 		float cx = 100;
@@ -521,7 +529,7 @@ struct SubUITest : ui::Buildable
 			return hovered;
 		return normal;
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::PaintInfo info(this);
 		ui::Theme::current->textBoxBase->background_painter->Paint(info);
@@ -615,7 +623,7 @@ struct HighElementCountTest : ui::Buildable
 {
 	struct DummyElement : ui::UIElement
 	{
-		void OnPaint() override
+		void OnPaint(const ui::UIPaintContext& ctx) override
 		{
 			auto r = GetContentRect();
 			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));

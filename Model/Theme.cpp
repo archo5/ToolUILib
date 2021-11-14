@@ -199,16 +199,17 @@ struct ThemeElementPainter : IPainter
 		}
 		return this;
 	}
-	void Paint(const PaintInfo& info) override
+	ContentPaintAdvice Paint(const PaintInfo& info) override
 	{
 		auto r = info.rect;
 		DrawThemeElement(elements[info.state & (MAX_ELEMENTS - 1)], r.x0, r.y0, r.x1, r.y1);
+		return {};
 	}
 };
 
 struct CheckButtonThemeElementPainter : IPainter
 {
-	void Paint(const PaintInfo& info) override
+	ContentPaintAdvice Paint(const PaintInfo& info) override
 	{
 		auto r = info.rect;
 		DrawThemeElement(
@@ -217,6 +218,10 @@ struct CheckButtonThemeElementPainter : IPainter
 			info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
 		if (info.IsFocused())
 			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+		ContentPaintAdvice ret;
+		if (info.IsDown())
+			ret.offset = { 0, 1 };
+		return ret;
 	}
 };
 
@@ -259,7 +264,7 @@ struct CheckableThemeElementPainter : IPainter
 		return this;
 	}
 
-	void Paint(const PaintInfo& info) override
+	ContentPaintAdvice Paint(const PaintInfo& info) override
 	{
 		auto r = info.rect;
 		float w = min(r.GetWidth(), r.GetHeight());
@@ -274,6 +279,7 @@ struct CheckableThemeElementPainter : IPainter
 			DrawThemeElement(disabled ? elIndCheckedDisabled : elIndChecked, r.x0, r.y0, r.x0 + w, r.y0 + w);
 		if (info.IsFocused())
 			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
+		return {};
 	}
 };
 
@@ -283,7 +289,7 @@ struct BorderRectanglePainter : IPainter
 	Color4b borderColor;
 
 	BorderRectanglePainter(Color4b bgcol, Color4b bordercol) : backgroundColor(bgcol), borderColor(bordercol) {}
-	void Paint(const PaintInfo& info) override
+	ContentPaintAdvice Paint(const PaintInfo& info) override
 	{
 		auto r = info.rect;
 		draw::RectCol(r.x0, r.y0, r.x1, r.y1, backgroundColor);
@@ -291,6 +297,7 @@ struct BorderRectanglePainter : IPainter
 		draw::RectCol(r.x0, r.y0, r.x0 + 1, r.y1, borderColor);
 		draw::RectCol(r.x0, r.y1 - 1, r.x1, r.y1, borderColor);
 		draw::RectCol(r.x1 - 1, r.y0, r.x1, r.y1, borderColor);
+		return {};
 	}
 };
 
@@ -489,6 +496,7 @@ struct DefaultTheme : Theme
 			}
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.selectable = a.block;
 	}
@@ -509,6 +517,7 @@ struct DefaultTheme : Theme
 			DrawThemeElement(info.IsHovered() ?
 				info.IsChecked() ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
 				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.collapsibleTreeNode = a.block;
 	}
@@ -526,6 +535,7 @@ struct DefaultTheme : Theme
 			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
 			if (info.IsFocused())
 				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.textBoxBase = a.block;
 	}
@@ -579,6 +589,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.sliderHTrack = a.block;
 	}
@@ -596,6 +607,7 @@ struct DefaultTheme : Theme
 				r = r.ExtendBy(UIRect::UniformBorder(3));
 				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
 			}
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.sliderHTrackFill = a.block;
 	}
@@ -656,6 +668,7 @@ struct DefaultTheme : Theme
 			DrawThemeElement(
 				info.IsDown() || info.IsChecked() ? TE_TabSelected :
 				info.IsHovered() ? TE_TabHover : TE_TabNormal, r.x0, r.y0, r.x1, r.y1);
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.tabButton = a.block;
 	}
@@ -705,6 +718,7 @@ struct DefaultTheme : Theme
 			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
 			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
 			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
+			return ContentPaintAdvice{};
 		}));
 		defaultTheme.tableCell = a.block;
 	}

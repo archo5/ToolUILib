@@ -419,9 +419,9 @@ struct TreeNodeReorderTest : ui::Buildable
 			}
 		}
 	}
-	void OnPaint()
+	void OnPaint(const ui::UIPaintContext& ctx)
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 
 		if (hasDragTarget)
 		{
@@ -627,9 +627,9 @@ struct DragConnectTest : ui::Buildable
 
 		ui::Pop();
 	}
-	void OnPaint() override
+	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		ui::Buildable::OnPaint();
+		ui::Buildable::OnPaint(ctx);
 
 		for (int link : links)
 		{

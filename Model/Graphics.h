@@ -23,7 +23,7 @@ struct ColorBlock : UIElement
 	draw::ImageHandle _bgImage;
 
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	Color4b GetColor() const { return _color; }
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
@@ -38,7 +38,7 @@ struct ColorInspectBlock : UIElement
 	Coord alphaBarHeight = 2;
 
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	Color4b GetColor() const { return _color; }
 	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
@@ -49,7 +49,7 @@ void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, fl
 struct ImageElement : UIElement
 {
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void GetSize(Coord& outWidth, Coord& outHeight) override;
 
 	ImageElement& SetImage(draw::IImage* img);
@@ -74,7 +74,7 @@ struct HueSatPicker : UIElement
 {
 	void OnReset() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	HueSatPicker& Init(float& hue, float& sat)
 	{
@@ -146,7 +146,7 @@ struct ColorCompPicker2D : UIElement
 {
 	void OnReset() override;
 	void OnEvent(Event& e) override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	ColorCompPicker2DSettings GetSettings() const { return _settings; }
 	ColorCompPicker2D& SetSettings(const ColorCompPicker2DSettings& s) { _settings = s; return *this; }
@@ -284,7 +284,7 @@ struct View2D : UIElement
 		onPaint = {};
 	}
 
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct View3D : UIElement
@@ -300,7 +300,7 @@ struct View3D : UIElement
 		onPaintOverlay = {};
 	}
 
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct CameraBase

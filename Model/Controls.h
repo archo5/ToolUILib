@@ -145,7 +145,7 @@ struct RadioButtonT : StateToggleBase
 
 struct StateToggleVisualBase : UIElement
 {
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct CheckboxIcon : StateToggleVisualBase
@@ -190,7 +190,7 @@ struct ProgressBar : UIElement
 	float progress = 0.5f;
 
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct FloatLimits
@@ -203,7 +203,7 @@ struct FloatLimits
 struct Slider : UIElement
 {
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
 	double PosToQ(double x);
@@ -317,7 +317,7 @@ struct LabeledProperty : UIElement
 
 	void OnReset() override;
 	void OnEnterTree() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
 
 	StringView GetText() const { return _labelText; }
@@ -326,6 +326,7 @@ struct LabeledProperty : UIElement
 	bool IsBrief() const { return _isBrief; }
 	LabeledProperty& SetBrief(bool b) { _isBrief = b; return *this; }
 
+	StyleBlock* FindCurrentLabelStyle() const;
 	StyleAccessor GetLabelStyle();
 	LabeledProperty& SetLabelStyle(const StyleBlockRef& s) { _labelStyle = s; return *this; }
 
@@ -339,7 +340,7 @@ struct LabeledProperty : UIElement
 struct SplitPane : UIElement
 {
 	SplitPane();
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnReset() override;
@@ -390,7 +391,7 @@ struct ScrollArea : UIElement
 	ScrollbarV sbv;
 
 	ScrollArea();
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnReset() override;
@@ -406,7 +407,7 @@ struct TabGroup : UIElement
 struct TabButtonList : UIElement
 {
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct TabButtonBase : UIElement
@@ -418,7 +419,7 @@ struct TabButtonBase : UIElement
 
 	void OnReset() override;
 	void OnExitTree() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
 	virtual void OnSelect() {}
@@ -475,13 +476,13 @@ struct TabButtonT : TabButtonBase
 struct TabPanel : UIElement
 {
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 };
 
 struct Textbox : UIElement
 {
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
@@ -539,7 +540,7 @@ struct CollapsibleTreeNode : UIElement
 	bool _hovered = false;
 
 	void OnReset() override;
-	void OnPaint() override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 };
 

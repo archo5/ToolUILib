@@ -405,9 +405,10 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 }
 
 
-void EmptyPainter::Paint(const PaintInfo&)
+ContentPaintAdvice EmptyPainter::Paint(const PaintInfo&)
 {
 	// do nothing
+	return {};
 }
 
 EmptyPainter* EmptyPainter::Get()
@@ -422,13 +423,15 @@ EmptyPainter::EmptyPainter()
 }
 
 
-void CheckerboardPainter::Paint(const PaintInfo& info)
+ContentPaintAdvice CheckerboardPainter::Paint(const PaintInfo& info)
 {
 	auto bgr = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 
 	auto r = info.rect;
 
 	draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
+
+	return {};
 }
 
 CheckerboardPainter* CheckerboardPainter::Get()
@@ -443,10 +446,12 @@ CheckerboardPainter::CheckerboardPainter()
 }
 
 
-void LayerPainter::Paint(const PaintInfo& info)
+ContentPaintAdvice LayerPainter::Paint(const PaintInfo& info)
 {
+	ContentPaintAdvice ret;
 	for (const auto& h : layers)
-		h->Paint(info);
+		ret = h->Paint(info);
+	return ret;
 }
 
 RCHandle<LayerPainter> LayerPainter::Create()

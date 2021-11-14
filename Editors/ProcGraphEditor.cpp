@@ -94,9 +94,9 @@ void ProcGraphEditor_NodePin::OnEvent(Event& e)
 	}
 }
 
-void ProcGraphEditor_NodePin::OnPaint()
+void ProcGraphEditor_NodePin::OnPaint(const UIPaintContext& ctx)
 {
-	Buildable::OnPaint();
+	Buildable::OnPaint(ctx);
 
 #if 0
 	auto c = _graph->GetPinColor(_pin);
@@ -337,16 +337,17 @@ void ProcGraphEditor::OnEvent(Event& e)
 	}
 }
 
-void ProcGraphEditor::OnPaint()
+void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
 {
-	styleProps->background_painter->Paint(this);
+	UIPaintHelper ph;
+	ph.PaintBackground(this);
 
 	if (!drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();
 	if (!drawPendingLinksOnTop)
 		OnDrawPendingLinks();
 
-	PaintChildren();
+	ph.PaintChildren(this, ctx);
 
 	if (drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();

@@ -385,6 +385,7 @@ void Demo_NodeGraphEditor();
 void Demo_TrackEditor();
 void Demo_SlidingHighlightAnim();
 void Demo_ButtonPressHighlight();
+void Demo_FancyButton();
 
 
 struct TestEntry
@@ -500,6 +501,7 @@ static const TestEntry demoEntries[] =
 	{ "- Animations -" },
 	{ "Sliding highlight anim", Demo_SlidingHighlightAnim },
 	{ "Button press highlight", Demo_ButtonPressHighlight },
+	{ "Fancy button", Demo_FancyButton },
 	// TODO fix/redistribute
 	//{ "Data editor", []() { ui::Make<DataEditor>(); } },
 };
