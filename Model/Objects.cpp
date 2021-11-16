@@ -383,9 +383,14 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 
 	UIPaintContext subctx(DoNotInitialize{});
 	auto* pctx = &ctx;
-	if (flags & UIObject_SetsChildTextStyle)
+	if ((flags & UIObject_SetsChildTextStyle) || cpa.HasTextColor())
 	{
-		subctx = UIPaintContext(ctx, cpa.textColor);
+		Color4b col;
+		if (cpa.HasTextColor())
+			col = cpa.GetTextColor();
+		else
+			col = styleProps->text_color.color;
+		subctx = UIPaintContext(ctx, col);
 		pctx = &subctx;
 	}
 
@@ -1100,7 +1105,6 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 	// TODO can we nullify styleProps?
 	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
 	auto info = GetFontInfo(style);
-	Color4b color = style->text_color.color;
 
 	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
@@ -1109,7 +1113,7 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+	draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -1123,7 +1127,6 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	snprintf(text, sizeof(text), "%gx%g", finalRectCPB.GetWidth(), finalRectCPB.GetHeight());
 
 	auto info = GetFontInfo(styleProps);
-	Color4b color = styleProps->text_color.color;
 
 	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
 
@@ -1133,7 +1136,7 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	float tw = GetTextWidth(font, info.size, text);
-	draw::TextLine(font, info.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, color);
+	draw::TextLine(font, info.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }

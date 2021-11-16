@@ -370,8 +370,17 @@ struct PaintInfo
 
 struct ContentPaintAdvice
 {
-	Color4b textColor;
+	bool _hasTextColor = false;
+	Color4b _textColor;
 	Vec2f offset;
+
+	bool HasTextColor() const { return _hasTextColor; }
+	Color4b GetTextColor() const { return _textColor; }
+	void SetTextColor(Color4b col)
+	{
+		_hasTextColor = true;
+		_textColor = col;
+	}
 };
 
 struct IPainter : RefCountedST

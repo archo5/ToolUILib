@@ -205,8 +205,14 @@ struct FancyButtonDemo : ui::Buildable
 			ui::draw::PopScissorRect();
 
 			ui::ContentPaintAdvice cpa;
+			cpa.SetTextColor({ 240, 240, 240 });
+			if (info.IsHovered())
+				cpa.SetTextColor({ 255, 255, 255 });
 			if (info.IsDown())
+			{
 				cpa.offset.y += 2;
+				cpa.SetTextColor({ 180, 130, 120 });
+			}
 			return cpa;
 		}
 	};
