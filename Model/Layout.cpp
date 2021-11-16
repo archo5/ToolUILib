@@ -585,6 +585,11 @@ StyleBlock* StyleBlock::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fc
 	return copy;
 }
 
+Font* StyleBlock::GetFont()
+{
+	return _cachedFont.GetCachedFont(FONT_FAMILY_SANS_SERIF, int(font_weight), font_style == FontStyle::Italic);
+}
+
 
 StyleAccessor::StyleAccessor(StyleBlock* b) : block(b), blkref(nullptr), owner(nullptr)
 {
@@ -727,22 +732,22 @@ void StyleAccessor::SetFontStyle(FontStyle v)
 	AccSet(*this, offsetof(StyleBlock, font_style), v);
 }
 
-Coord StyleAccessor::GetFontSize() const
+int StyleAccessor::GetFontSize() const
 {
 	return block->font_size;
 }
 
-void StyleAccessor::SetFontSize(Coord v)
+void StyleAccessor::SetFontSize(int v)
 {
 	AccSet(*this, offsetof(StyleBlock, font_size), v);
 }
 
-StyleColor StyleAccessor::GetTextColor() const
+Color4b StyleAccessor::GetTextColor() const
 {
 	return block->text_color;
 }
 
-void StyleAccessor::SetTextColor(StyleColor v)
+void StyleAccessor::SetTextColor(Color4b v)
 {
 	AccSet(*this, offsetof(StyleBlock, text_color), v);
 }

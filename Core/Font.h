@@ -29,6 +29,16 @@ namespace draw {
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color);
 } // draw
 
+struct CachedFontRef
+{
+	Font* _cachedFont = nullptr;
+	std::string _cacheKeyNameOrFamily;
+	int _cacheKeyWeight = 0;
+	bool _cacheKeyItalic = false;
+
+	Font* GetCachedFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
+};
+
 void InitFont();
 void FreeFont();
 float GetTextWidth(const char* text, size_t num = SIZE_MAX);

@@ -252,6 +252,22 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 } // draw
 
 
+Font* CachedFontRef::GetCachedFont(const char* nameOrFamily, int weight, bool italic)
+{
+	if (_cachedFont &&
+		_cacheKeyNameOrFamily == nameOrFamily &&
+		_cacheKeyWeight == weight &&
+		_cacheKeyItalic == italic)
+		return _cachedFont;
+
+	_cachedFont = GetFont(nameOrFamily, weight, italic);
+	_cacheKeyNameOrFamily = nameOrFamily;
+	_cacheKeyWeight = weight;
+	_cacheKeyItalic = italic;
+	return _cachedFont;
+}
+
+
 // TODO
 Font* g_font;
 

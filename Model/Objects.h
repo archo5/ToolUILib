@@ -245,14 +245,6 @@ struct UIPaintContext
 	}
 };
 
-struct FontInfo
-{
-	const char* nameOrFamily;
-	int size;
-	short weight;
-	bool italic;
-};
-
 struct UIObject : IPersistentObject
 {
 	UIObject();
@@ -376,7 +368,6 @@ struct UIObject : IPersistentObject
 
 	UI_FORCEINLINE StyleBlock* FindTextStyle(StyleBlock* first) const { return first ? first : _FindClosestParentTextStyle(); }
 	StyleBlock* _FindClosestParentTextStyle() const;
-	FontInfo GetFontInfo(StyleBlock* textStyle);
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }

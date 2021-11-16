@@ -389,7 +389,7 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 		if (cpa.HasTextColor())
 			col = cpa.GetTextColor();
 		else
-			col = styleProps->text_color.color;
+			col = styleProps->text_color;
 		subctx = UIPaintContext(ctx, col);
 		pctx = &subctx;
 	}
@@ -1064,15 +1064,6 @@ StyleBlock* UIObject::_FindClosestParentTextStyle() const
 	return Theme::current->text;
 }
 
-FontInfo UIObject::GetFontInfo(StyleBlock* textStyle)
-{
-	int size = textStyle->font_size.unit == CoordTypeUnit::Pixels ? textStyle->font_size.value : GetFontHeight();
-	short weight = short(textStyle->font_weight > FontWeight::Undefined ? textStyle->font_weight : FontWeight::Normal);
-	bool italic = textStyle->font_style == FontStyle::Italic;
-
-	return { FONT_FAMILY_SANS_SERIF, size, weight, italic };
-}
-
 NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
@@ -1092,28 +1083,24 @@ void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
 {
 	// TODO can we nullify styleProps?
 	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
-	auto info = GetFontInfo(style);
+	auto* font = style->GetFont();
 
-	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
-
-	outWidth = ceilf(GetTextWidth(font, info.size, text));
-	outHeight = info.size;
+	outWidth = ceilf(GetTextWidth(font, style->font_size, text));
+	outHeight = style->font_size;
 }
 
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
 	// TODO can we nullify styleProps?
 	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
-	auto info = GetFontInfo(style);
-
-	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
+	auto* font = style->GetFont();
 
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
+	draw::TextLine(font, style->font_size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -1126,17 +1113,15 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	char text[32];
 	snprintf(text, sizeof(text), "%gx%g", finalRectCPB.GetWidth(), finalRectCPB.GetHeight());
 
-	auto info = GetFontInfo(styleProps);
-
-	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
+	auto* font = styleProps->GetFont();
 
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	float tw = GetTextWidth(font, info.size, text);
-	draw::TextLine(font, info.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
+	float tw = GetTextWidth(font, styleProps->font_size, text);
+	draw::TextLine(font, styleProps->font_size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }

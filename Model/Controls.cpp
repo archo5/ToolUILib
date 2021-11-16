@@ -477,10 +477,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 	{
 		StyleBlock* labelStyle = FindCurrentLabelStyle();
 
-		auto info = GetFontInfo(labelStyle);
-		Color4b color = labelStyle->text_color.color;
-
-		auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
+		auto* font = labelStyle->GetFont();
 
 		auto contPadRect = GetPaddingRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
@@ -490,7 +487,12 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 
 		// TODO optimize scissor (shared across labels)
 		draw::PushScissorRect(cr.Cast<int>());
-		draw::TextLine(font, info.size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _labelText, color);
+		draw::TextLine(
+			font,
+			labelStyle->font_size,
+			r.x0, r.y1 - (r.y1 - r.y0 - labelStyle->font_size) / 2,
+			_labelText,
+			labelStyle->text_color);
 		draw::PopScissorRect();
 	}
 
@@ -506,10 +508,9 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 		{
 			StyleBlock* labelStyle = FindCurrentLabelStyle();
 
-			auto info = GetFontInfo(labelStyle);
-			auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
+			auto* font = labelStyle->GetFont();
 
-			r.x0 += GetTextWidth(font, info.size, _labelText);
+			r.x0 += GetTextWidth(font, labelStyle->font_size, _labelText);
 			auto labelPadRect = GetPaddingRect(labelStyle, 0);
 			r.x0 += labelPadRect.x0 + labelPadRect.x1;
 		}

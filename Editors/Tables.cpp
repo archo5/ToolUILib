@@ -9,8 +9,7 @@ namespace ui {
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
 	auto* textStyle = context->FindTextStyle(context->styleProps);
-	auto info = context->GetFontInfo(textStyle);
-	return info.size * GetNumLines();
+	return textStyle->font_size * GetNumLines();
 }
 
 float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
@@ -29,15 +28,18 @@ float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
 void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect area)
 {
 	auto* textStyle = context->FindTextStyle(context->styleProps);
-	auto info = context->GetFontInfo(textStyle);
-	Color4b color = textStyle->text_color.color;
-	auto font = GetFont(info.nameOrFamily, info.weight, info.italic);
+	auto* font = textStyle->GetFont();
 
 	size_t numLines = GetNumLines();
 	for (size_t i = 0; i < numLines; i++)
 	{
 		auto msgLine = GetMessage(msg, i);
-		draw::TextLine(font, info.size, area.x0, area.y0 + (i + 1) * info.size, msgLine, color);
+		draw::TextLine(
+			font,
+			textStyle->font_size,
+			area.x0, area.y0 + (i + 1) * textStyle->font_size,
+			msgLine,
+			textStyle->text_color);
 	}
 }
 
@@ -254,7 +256,12 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
 			rect = rect.ShrinkBy(padRH);
-			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetRowName(r).c_str(), 1, 1, 1);
+			draw::TextLine(
+				rowHeaderStyle->GetFont(),
+				rowHeaderStyle->font_size,
+				rect.x0, (rect.y0 + rect.y1 + rowHeaderStyle->font_size) / 2,
+				_impl->dataSource->GetRowName(r).c_str(),
+				rowHeaderStyle->text_color);
 		}
 		draw::PopScissorRect();
 	}
@@ -284,7 +291,12 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			RC.y0 + chh,
 		};
 		rect = rect.ShrinkBy(padCH);
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
+		draw::TextLine(
+			colHeaderStyle->GetFont(),
+			colHeaderStyle->font_size,
+			rect.x0, (rect.y0 + rect.y1 + colHeaderStyle->font_size) / 2,
+			_impl->dataSource->GetColName(c).c_str(),
+			colHeaderStyle->text_color);
 	}
 	draw::PopScissorRect();
 

@@ -5,6 +5,7 @@
 #include "../Core/String.h"
 #include "../Core/Image.h"
 #include "../Core/RefCounted.h"
+#include "../Core/Font.h"
 
 #include <vector>
 #include <functional>
@@ -154,11 +155,8 @@ enum class HAlign : uint8_t
 	Justify,
 };
 
-enum class FontWeight : int16_t
+enum class FontWeight : uint16_t
 {
-	Undefined = 0,
-	Inherit = -1,
-
 	Thin = 100,
 	ExtraLight = 200,
 	Light = 300,
@@ -172,9 +170,6 @@ enum class FontWeight : int16_t
 
 enum class FontStyle : uint8_t
 {
-	Undefined,
-	Inherit,
-
 	Normal,
 	Italic,
 };
@@ -309,20 +304,6 @@ enum class CoordTypeUnit
 	Pixels,
 	Percent,
 	Fraction,
-};
-
-struct StyleColor
-{
-	Color4b color;
-	bool inherit = true;
-
-	StyleColor() {}
-	StyleColor(Color4b col) : color(col), inherit(false) {}
-	StyleColor(Color4f col) : color(col), inherit(false) {}
-	bool operator == (const StyleColor& o) const
-	{
-		return inherit == o.inherit && (inherit || color == o.color);
-	}
 };
 
 struct Coord
@@ -484,6 +465,8 @@ struct StyleBlock
 	StyleBlock* _firstChild = nullptr;
 	StyleBlock* _lastChild = nullptr;
 
+	CachedFontRef _cachedFont;
+
 	ILayout* layout = nullptr;
 	IPlacement* placement = nullptr;
 
@@ -495,10 +478,10 @@ struct StyleBlock
 	BoxSizing box_sizing = BoxSizing::Undefined;
 	HAlign h_align = HAlign::Undefined;
 
-	FontWeight font_weight = FontWeight::Inherit;
-	FontStyle font_style = FontStyle::Inherit;
-	Coord font_size;
-	StyleColor text_color;
+	FontWeight font_weight = FontWeight::Normal;
+	FontStyle font_style = FontStyle::Normal;
+	int font_size = 12;
+	Color4b text_color;
 
 	Coord width;
 	Coord height;
@@ -521,6 +504,8 @@ struct StyleBlock
 	Coord padding_bottom;
 
 	InstanceCounter<g_numStyleBlocks> _ic;
+
+	Font* GetFont();
 };
 static_assert(sizeof(StyleBlock) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
 
@@ -611,11 +596,11 @@ public:
 	FontStyle GetFontStyle() const;
 	void SetFontStyle(FontStyle v);
 
-	Coord GetFontSize() const;
-	void SetFontSize(Coord v);
+	int GetFontSize() const;
+	void SetFontSize(int v);
 
-	StyleColor GetTextColor() const;
-	void SetTextColor(StyleColor v);
+	Color4b GetTextColor() const;
+	void SetTextColor(Color4b v);
 
 
 	Coord GetWidth() const;
