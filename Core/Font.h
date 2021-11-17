@@ -39,10 +39,4 @@ struct CachedFontRef
 	Font* GetCachedFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
 };
 
-void InitFont();
-void FreeFont();
-float GetTextWidth(const char* text, size_t num = SIZE_MAX);
-float GetFontHeight();
-void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a = 1);
-
 } // ui

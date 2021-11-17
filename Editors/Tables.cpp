@@ -8,18 +8,21 @@ namespace ui {
 
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
-	auto* textStyle = context->FindTextStyle(context->styleProps);
+	StyleBlock* textStyle = context->styleProps;
 	return textStyle->font_size * GetNumLines();
 }
 
 float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
 {
+	StyleBlock* textStyle = context->styleProps;
+	auto* font = textStyle->GetFont();
+
 	float maxW = 0;
 	size_t numLines = GetNumLines();
 	for (size_t i = 0; i < numLines; i++)
 	{
 		auto msgLine = GetMessage(msg, i);
-		float w = GetTextWidth(msgLine.c_str(), msgLine.size());
+		float w = GetTextWidth(font, textStyle->font_size, msgLine);
 		maxW = max(maxW, w);
 	}
 	return maxW;
@@ -27,7 +30,7 @@ float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
 
 void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect area)
 {
-	auto* textStyle = context->FindTextStyle(context->styleProps);
+	StyleBlock* textStyle = context->styleProps;
 	auto* font = textStyle->GetFont();
 
 	size_t numLines = GetNumLines();
@@ -246,6 +249,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			rowHeaderStyle->background_painter->Paint(info);
 		}
 		// text:
+		auto* rowHeaderFont = rowHeaderStyle->GetFont();
 		for (size_t r = minR; r < maxR; r++)
 		{
 			UIRect rect =
@@ -257,10 +261,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			};
 			rect = rect.ShrinkBy(padRH);
 			draw::TextLine(
-				rowHeaderStyle->GetFont(),
+				rowHeaderFont,
 				rowHeaderStyle->font_size,
 				rect.x0, (rect.y0 + rect.y1 + rowHeaderStyle->font_size) / 2,
-				_impl->dataSource->GetRowName(r).c_str(),
+				_impl->dataSource->GetRowName(r),
 				rowHeaderStyle->text_color);
 		}
 		draw::PopScissorRect();
@@ -281,6 +285,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		colHeaderStyle->background_painter->Paint(info);
 	}
 	// text:
+	auto* colHeaderFont = colHeaderStyle->GetFont();
 	for (size_t c = 0; c < nc; c++)
 	{
 		UIRect rect =
@@ -292,10 +297,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		};
 		rect = rect.ShrinkBy(padCH);
 		draw::TextLine(
-			colHeaderStyle->GetFont(),
+			colHeaderFont,
 			colHeaderStyle->font_size,
 			rect.x0, (rect.y0 + rect.y1 + colHeaderStyle->font_size) / 2,
-			_impl->dataSource->GetColName(c).c_str(),
+			_impl->dataSource->GetColName(c),
 			colHeaderStyle->text_color);
 	}
 	draw::PopScissorRect();
@@ -323,6 +328,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		}
 	}
 	// text:
+	auto* cellFont = cellStyle->GetFont();
 	for (size_t r = minR; r < maxR; r++)
 	{
 		for (size_t c = 0; c < nc; c++)
@@ -335,7 +341,12 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
 			rect = rect.ShrinkBy(padC);
-			DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(r, c).c_str(), 1, 1, 1);
+			draw::TextLine(
+				cellFont,
+				cellStyle->font_size,
+				rect.x0, (rect.y0 + rect.y1 + cellStyle->font_size) / 2,
+				_impl->dataSource->GetText(r, c),
+				cellStyle->text_color);
 		}
 	}
 	draw::PopScissorRect();
@@ -473,22 +484,24 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 	if (includeHeader)
 	{
+		auto* rowHeaderFont = rowHeaderStyle->GetFont();
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetColName(c);
-			float w = GetTextWidth(text.c_str()) + padCH.x0 + padCH.x1;
+			float w = GetTextWidth(rowHeaderFont, rowHeaderStyle->font_size, text) + padCH.x0 + padCH.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
 	}
 
+	auto* cellFont = cellStyle->GetFont();
 	for (size_t i = 0, n = _impl->dataSource->GetNumRows(); i < n; i++)
 	{
 		_impl->dataSource->OnBeginReadRows(i, i + 1);
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetText(i, c);
-			float w = GetTextWidth(text.c_str()) + padC.x0 + padC.x1;
+			float w = GetTextWidth(cellFont, cellStyle->font_size, text) + padC.x0 + padC.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
@@ -646,6 +659,7 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 	}
 
 	// text
+	auto* colHeaderFont = colHeaderStyle->GetFont();
 	for (int c = 0; c < nc; c++)
 	{
 		UIRect rect =
@@ -655,7 +669,12 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 			RC.x0 + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetColName(c).c_str(), 1, 1, 1);
+		draw::TextLine(
+			colHeaderFont,
+			colHeaderStyle->font_size,
+			rect.x0, (rect.y0 + rect.y1 + colHeaderStyle->font_size) / 2,
+			_impl->dataSource->GetColName(c),
+			colHeaderStyle->text_color);
 	}
 
 	PaintState ps = { info, nc, RC.x0, RC.y0 + chh };
@@ -684,6 +703,7 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 	}
 
 	// text
+	auto* cellFont = cellStyle->GetFont();
 	for (int c = 0; c < ps.nc; c++)
 	{
 		UIRect rect =
@@ -695,7 +715,12 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 		};
 		if (c == 0)
 			rect.x0 += tab * lvl;
-		DrawTextLine(rect.x0, (rect.y0 + rect.y1 + GetFontHeight()) / 2, _impl->dataSource->GetText(id, c).c_str(), 1, 1, 1);
+		draw::TextLine(
+			cellFont,
+			cellStyle->font_size,
+			rect.x0, (rect.y0 + rect.y1 + cellStyle->font_size) / 2,
+			_impl->dataSource->GetText(id, c),
+			cellStyle->text_color);
 	}
 
 	ps.y += h;
@@ -752,6 +777,9 @@ void TreeView::CalculateColumnWidths(bool firstTimeOnly)
 	std::vector<float> colWidths;
 	colWidths.resize(nc, 0.0f);
 
+	auto* cellFont = cellStyle->GetFont();
+	auto cellFontSize = cellStyle->font_size;
+
 	struct Entry
 	{
 		uintptr_t id;
@@ -771,7 +799,7 @@ void TreeView::CalculateColumnWidths(bool firstTimeOnly)
 			for (size_t c = 0; c < nc; c++)
 			{
 				std::string text = _impl->dataSource->GetText(chid, c);
-				float w = GetTextWidth(text.c_str());
+				float w = GetTextWidth(cellFont, cellFontSize, text);
 				if (c == 0)
 					w += tab * E.lev;
 				if (colWidths[c] < w)

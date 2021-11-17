@@ -267,35 +267,4 @@ Font* CachedFontRef::GetCachedFont(const char* nameOrFamily, int weight, bool it
 	return _cachedFont;
 }
 
-
-// TODO
-Font* g_font;
-
-void InitFont()
-{
-	g_font = GetFont(FONT_FAMILY_SANS_SERIF, FONT_WEIGHT_NORMAL, false);
-}
-
-void FreeFont()
-{
-	delete g_font;
-	g_font = nullptr;
-	g_loadedFonts.dealloc();
-}
-
-float GetTextWidth(const char* text, size_t num)
-{
-	return GetTextWidth(g_font, GetFontHeight(), num == SIZE_MAX ? StringView(text) : StringView(text, num));
-}
-
-float GetFontHeight()
-{
-	return 12;
-}
-
-void DrawTextLine(float x, float y, const char* text, float r, float g, float b, float a)
-{
-	draw::TextLine(g_font, GetFontHeight(), x, y, text, Color4f(r, g, b, a));
-}
-
 } // ui

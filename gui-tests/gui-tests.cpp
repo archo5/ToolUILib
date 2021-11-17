@@ -296,7 +296,7 @@ struct DataEditor : ui::Buildable
 				+ ui::SetLayout(ui::layouts::StackExpand())
 				+ ui::Set(ui::StackingDirection::LeftToRight);
 			ui::Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
-			ui::Text(items[editing].name.c_str());
+			ui::Text(items[editing].name);
 			if (ui::imm::Button("Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))
 			{
 				editing = SIZE_MAX;

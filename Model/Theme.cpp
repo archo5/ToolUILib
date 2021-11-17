@@ -3,6 +3,7 @@
 #include "Theme.h"
 
 #include "../Core/Font.h"
+static float GetFontHeight() { return 12; } // TODO remove
 
 
 namespace ui {

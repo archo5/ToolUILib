@@ -458,18 +458,18 @@ struct TextElement : UIElement
 #if 0
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
-		return ceilf(GetTextWidth(text.c_str()));
+		return ceilf(GetTextWidth(styleProps->GetFont(), styleProps->font_size, text));
 	}
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
-		return GetFontHeight();
+		return styleProps->font_size;
 	}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
 		finalRectCP = finalRectCPB = rect;
 		finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
-		//finalRect.x1 = finalRect.x0 + GetTextWidth(text)
-		//finalRect.y1 = finalRect.y0 + GetFontHeight();
+		//finalRect.x1 = finalRect.x0 + GetTextWidth(styleProps->GetFont(), styleProps->font_size, text)
+		//finalRect.y1 = finalRect.y0 + styleProps->font_size;
 	}
 #endif
 	void GetSize(Coord& outWidth, Coord& outHeight) override;

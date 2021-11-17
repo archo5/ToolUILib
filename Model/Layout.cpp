@@ -58,7 +58,7 @@ struct InlineBlockLayout : ILayout
 	}
 	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
-		float size = GetFontHeight();
+		float size = curObj->styleProps->font_size;
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 		return size;

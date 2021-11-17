@@ -603,7 +603,6 @@ struct NativeWindow_Impl
 		if (!g_rsrcUsers)
 		{
 			draw::internals::InitResources();
-			InitFont();
 			InitTheme();
 		}
 		g_rsrcUsers++;
@@ -618,7 +617,6 @@ struct NativeWindow_Impl
 		if (--g_rsrcUsers == 0)
 		{
 			FreeTheme();
-			FreeFont();
 			draw::internals::FreeResources();
 		}
 
@@ -700,7 +698,7 @@ struct NativeWindow_Impl
 		DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
 		DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
 		DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
-		DrawTextLine(32, 32, "Test text", 1, 1, 1);
+		draw::TextLine(GetFont(FONT_FAMILY_SANS_SERIF), 12, 32, 32, "Test text", Color4b::White());
 #endif
 
 		if (debugDrawEnabled)
@@ -1196,21 +1194,21 @@ struct Inspector : NativeDialogWindow
 
 		void PaintObject(UIObject* obj, int x, int& y)
 		{
-			int h = GetFontHeight();
-
 			if (obj == insp->selObj)
 			{
-				draw::RectCol(0, y, 400, y + h, Color4f(0.5f, 0, 0));
+				draw::RectCol(0, y, 400, y + styleProps->font_size, Color4f(0.5f, 0, 0));
 			}
 
-			y += h;
-			DrawTextLine(x, y, CleanName(typeid(*obj).name()), 1, 1, 1);
+			auto* font = styleProps->GetFont();
+
+			y += styleProps->font_size;
+			draw::TextLine(font, styleProps->font_size, x, y, CleanName(typeid(*obj).name()), Color4b::White());
 			char bfr[1024];
 			auto& fr = obj->finalRectC;
 			snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-			DrawTextLine(300, y, bfr, 1, 1, 1);
+			draw::TextLine(font, styleProps->font_size, 300, y, bfr, Color4b::White());
 			if (obj->GetStyle().GetLayout())
-				DrawTextLine(400, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), 1, 1, 1);
+				draw::TextLine(font, styleProps->font_size, 400, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
 
 			for (auto* ch = obj->firstChild; ch; ch = ch->next)
 			{
@@ -1220,13 +1218,15 @@ struct Inspector : NativeDialogWindow
 
 		void OnPaint(const UIPaintContext& ctx) override
 		{
+			auto* font = styleProps->GetFont();
+
 			auto& c = insp->selWindow->_impl->GetContainer();
-			int y = GetFontHeight();
-			DrawTextLine(0, y, "Name", 1, 1, 1, 0.6f);
-			DrawTextLine(300, y, "Rect", 1, 1, 1, 0.6f);
-			DrawTextLine(400, y, "Layout", 1, 1, 1, 0.6f);
+			int y = styleProps->font_size;
+			draw::TextLine(font, styleProps->font_size, 0, y, "Name", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 300, y, "Rect", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 400, y, "Layout", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
-			//DrawTextLine(10, 10, "inspector", 1, 1, 1);
+			//draw::TextLine(font, styleProps->font_size, 10, 10, "inspector", Color4b::White());
 		}
 
 		void OnEvent(Event& e) override

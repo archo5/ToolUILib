@@ -1182,11 +1182,14 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	{
+		auto* font = styleProps->GetFont();
+		int size = styleProps->font_size;
+
 		auto r = GetContentRect();
 		if (!_placeholder.empty() && !IsFocused() && _text.empty())
-			DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _placeholder.c_str(), 1, 1, 1, 0.5f);
+			draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - size) / 2, _placeholder, Color4b(255, 128));
 		if (!_text.empty())
-			DrawTextLine(r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, _text.c_str(), 1, 1, 1);
+			draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - size) / 2, _text, Color4b::White());
 
 		if (IsFocused())
 		{
@@ -1194,15 +1197,15 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 			{
 				int minpos = startCursor < endCursor ? startCursor : endCursor;
 				int maxpos = startCursor > endCursor ? startCursor : endCursor;
-				float x0 = GetTextWidth(_text.c_str(), minpos);
-				float x1 = GetTextWidth(_text.c_str(), maxpos);
+				float x0 = GetTextWidth(font, size, StringView(_text).substr(0, minpos));
+				float x1 = GetTextWidth(font, size, StringView(_text).substr(0, maxpos));
 
 				draw::RectCol(r.x0 + x0, r.y0, r.x0 + x1, r.y1, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
 			}
 
 			if (showCaretState)
 			{
-				float x = GetTextWidth(_text.c_str(), endCursor);
+				float x = GetTextWidth(font, size, StringView(_text).substr(0, endCursor));
 				draw::RectCol(r.x0 + x, r.y0, r.x0 + x + 1, r.y1, Color4b::White());
 			}
 		}
@@ -1562,7 +1565,7 @@ size_t Textbox::_FindCursorPos(float vpx)
 	float x = r.x0;
 	for (size_t i = 0; i < _text.size(); i++)
 	{
-		float lw = GetTextWidth(&_text[i], 1);
+		float lw = GetTextWidth(styleProps->GetFont(), styleProps->font_size, StringView(_text).substr(i, 1));
 		if (vpx < x + lw * 0.5f)
 			return i;
 		x += lw;
@@ -1625,7 +1628,7 @@ void CollapsibleTreeNode::OnEvent(Event& e)
 	if (e.type == EventType::MouseEnter || e.type == EventType::MouseMove)
 	{
 		auto r = GetPaddingRect();
-		float h = GetFontHeight();
+		float h = styleProps->font_size;
 		_hovered = e.position.x >= r.x0 && e.position.x < r.x0 + h && e.position.y >= r.y0 && e.position.y < r.y0 + h;
 	}
 	if (e.type == EventType::MouseLeave)

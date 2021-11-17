@@ -1100,7 +1100,7 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, style->font_size, r.x0, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
+	draw::TextLine(font, style->font_size, r.x0, r.y1 - (r.y1 - r.y0 - style->font_size) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -1121,7 +1121,7 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	float tw = GetTextWidth(font, styleProps->font_size, text);
-	draw::TextLine(font, styleProps->font_size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - GetFontHeight()) / 2, text, ctx.textColor);
+	draw::TextLine(font, styleProps->font_size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - styleProps->font_size) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
