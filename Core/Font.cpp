@@ -46,9 +46,9 @@ struct GlyphValue
 	draw::ImageHandle img;
 	uint16_t w;
 	uint16_t h;
-	float xoff;
-	float yoff;
-	float xadv;
+	int16_t xoff;
+	int16_t yoff;
+	int16_t xadv;
 };
 
 struct Font
@@ -104,9 +104,9 @@ struct Font
 			stbtt_GetGlyphBitmapBox(&info, glyphID, scale, scale, &x0, &y0, &x1, &y1);
 
 			gv = &sctx.glyphMap[codepoint];
-			gv->xadv = xadv * scale;
-			gv->xoff = float(x0);
-			gv->yoff = float(y0);
+			gv->xadv = int16_t(roundf(xadv * scale));
+			gv->xoff = int16_t(x0);
+			gv->yoff = int16_t(y0);
 			gv->w = x1 - x0;
 			gv->h = y1 - y0;
 		}
@@ -226,26 +226,28 @@ Font* GetFont(const char* nameOrFamily, int weight, bool italic)
 float GetTextWidth(Font* font, int size, StringView text)
 {
 	auto& sctx = font->GetSizeContext(size);
-	float out = 0;
+	int out = 0;
 	for (char c : text)
 	{
-		out += font->FindGlyph(sctx, (uint8_t)c, false).xadv;
+		out += int(roundf(font->FindGlyph(sctx, (uint8_t)c, false).xadv));
 	}
-	return out;
+	return float(out);
 }
 
 namespace draw {
 
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color)
 {
+	int ix = int(roundf(x));
+	int iy = int(roundf(y));
 	auto& sctx = font->GetSizeContext(size);
 	for (char ch : text)
 	{
 		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);
-		gv.xoff = roundf(gv.xoff + x);
-		gv.yoff = roundf(gv.yoff + y);
-		draw::RectColTex(gv.xoff, gv.yoff, gv.xoff + gv.w, gv.yoff + gv.h, color, gv.img);
-		x += gv.xadv;
+		int x0 = gv.xoff + ix;
+		int y0 = gv.yoff + iy;
+		draw::RectColTex(float(x0), float(y0), float(x0 + gv.w), float(y0 + gv.h), color, gv.img);
+		ix += gv.xadv;
 	}
 }
 

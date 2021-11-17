@@ -587,7 +587,7 @@ StyleBlock* StyleBlock::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fc
 
 Font* StyleBlock::GetFont()
 {
-	return _cachedFont.GetCachedFont(FONT_FAMILY_SANS_SERIF, int(font_weight), font_style == FontStyle::Italic);
+	return _cachedFont.GetCachedFont(font_family.c_str(), int(font_weight), font_style == FontStyle::Italic);
 }
 
 
@@ -711,6 +711,16 @@ void StyleAccessor::SetHAlign(HAlign a)
 	AccSet(*this, offsetof(StyleBlock, h_align), a);
 }
 
+
+const std::string& StyleAccessor::GetFontFamily() const
+{
+	return block->font_family;
+}
+
+void StyleAccessor::SetFontFamily(const std::string& v)
+{
+	AccSet(*this, offsetof(StyleBlock, font_family), v);
+}
 
 FontWeight StyleAccessor::GetFontWeight() const
 {

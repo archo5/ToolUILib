@@ -74,6 +74,7 @@ struct HexViewer : ui::UIElement
 	{
 		ui::UIElement::OnReset();
 
+		GetStyle().SetFontFamily(ui::FONT_FAMILY_MONOSPACE);
 		GetStyle().SetWidth(ui::Coord::Percent(100));
 		GetStyle().SetHeight(ui::Coord::Percent(100));
 	}

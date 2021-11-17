@@ -478,6 +478,7 @@ struct StyleBlock
 	BoxSizing box_sizing = BoxSizing::Undefined;
 	HAlign h_align = HAlign::Undefined;
 
+	std::string font_family = FONT_FAMILY_SANS_SERIF;
 	FontWeight font_weight = FontWeight::Normal;
 	FontStyle font_style = FontStyle::Normal;
 	int font_size = 12;
@@ -507,7 +508,7 @@ struct StyleBlock
 
 	Font* GetFont();
 };
-static_assert(sizeof(StyleBlock) < 268 + (sizeof(void*) - 4) * 20, "style block getting too big?");
+static_assert(sizeof(StyleBlock) < 300 + (sizeof(void*) - 4) * 20, "style block getting too big?");
 
 class StyleBlockRef
 {
@@ -589,6 +590,9 @@ public:
 	HAlign GetHAlign() const;
 	void SetHAlign(HAlign a);
 
+
+	const std::string& GetFontFamily() const;
+	void SetFontFamily(const std::string& v);
 
 	FontWeight GetFontWeight() const;
 	void SetFontWeight(FontWeight v);

@@ -344,6 +344,7 @@ struct OpenCloseTest : ui::Buildable
 			box.flags |= ui::UIObject_SetsChildTextStyle;
 			auto s = box.GetStyle();
 			s.SetFontSize(16);
+			s.SetFontFamily(ui::FONT_FAMILY_SERIF);
 			s.SetFontWeight(ui::FontWeight::Bold);
 			s.SetFontStyle(ui::FontStyle::Italic);
 			s.SetTextColor(ui::Color4f(1.0f, 0.1f, 0.0f));
