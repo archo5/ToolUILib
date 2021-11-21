@@ -445,8 +445,6 @@ struct PropFuncs
 struct StyleBlock
 {
 	~StyleBlock();
-	void MergeDirect(const StyleBlock& o);
-	void MergeParent(const StyleBlock& o);
 	void _Release();
 
 	StyleBlock* _GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fcopy, const void* ref);
@@ -499,10 +497,11 @@ struct StyleBlock
 	Coord margin_right;
 	Coord margin_top;
 	Coord margin_bottom;
-	Coord padding_left;
-	Coord padding_right;
-	Coord padding_top;
-	Coord padding_bottom;
+	float padding_left = 0;
+	float padding_right = 0;
+	float padding_top = 0;
+	float padding_bottom = 0;
+	UI_FORCEINLINE UIRect GetPaddingRect() const { return { padding_left, padding_top, padding_right, padding_bottom }; }
 
 	InstanceCounter<g_numStyleBlocks> _ic;
 
@@ -657,22 +656,22 @@ public:
 	void SetMargin(Coord t, Coord r, Coord b, Coord l);
 
 
-	Coord GetPaddingLeft() const;
-	void SetPaddingLeft(Coord v);
+	float GetPaddingLeft() const;
+	void SetPaddingLeft(float v);
 
-	Coord GetPaddingRight() const;
-	void SetPaddingRight(Coord v);
+	float GetPaddingRight() const;
+	void SetPaddingRight(float v);
 
-	Coord GetPaddingTop() const;
-	void SetPaddingTop(Coord v);
+	float GetPaddingTop() const;
+	void SetPaddingTop(float v);
 
-	Coord GetPaddingBottom() const;
-	void SetPaddingBottom(Coord v);
+	float GetPaddingBottom() const;
+	void SetPaddingBottom(float v);
 
-	void SetPadding(Coord v) { SetPadding(v, v, v, v); }
-	void SetPadding(Coord tb, Coord lr) { SetPadding(tb, lr, tb, lr); }
-	void SetPadding(Coord t, Coord lr, Coord b) { SetPadding(t, lr, b, lr); }
-	void SetPadding(Coord t, Coord r, Coord b, Coord l);
+	void SetPadding(float v) { SetPadding(v, v, v, v); }
+	void SetPadding(float tb, float lr) { SetPadding(tb, lr, tb, lr); }
+	void SetPadding(float t, float lr, float b) { SetPadding(t, lr, b, lr); }
+	void SetPadding(float t, float r, float b, float l);
 
 
 	StyleBlock* block;

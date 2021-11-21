@@ -202,14 +202,14 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	auto RC = GetContentRect();
 
-	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
-	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+	auto padCH = colHeaderStyle->GetPaddingRect();
+	auto padC = cellStyle->GetPaddingRect();
 
 	UIRect padRH = {};
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		padRH = rowHeaderStyle->GetPaddingRect();
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
@@ -364,13 +364,13 @@ void TableView::OnEvent(Event& e)
 
 	auto RC = GetContentRect();
 
-	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
-	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+	auto padCH = colHeaderStyle->GetPaddingRect();
+	auto padC = cellStyle->GetPaddingRect();
 
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		auto padRH = rowHeaderStyle->GetPaddingRect();
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
@@ -479,8 +479,8 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	colWidths.resize(nc, 0.0f);
 
 	auto RC = GetContentRect();
-	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
-	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+	auto padCH = colHeaderStyle->GetPaddingRect();
+	auto padC = cellStyle->GetPaddingRect();
 
 	if (includeHeader)
 	{
@@ -521,13 +521,13 @@ size_t TableView::GetRowAt(float y)
 {
 	auto RC = GetContentRect();
 
-	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
-	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+	auto padCH = colHeaderStyle->GetPaddingRect();
+	auto padC = cellStyle->GetPaddingRect();
 
 	float rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		auto padRH = rowHeaderStyle->GetPaddingRect();
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
@@ -554,13 +554,13 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 
 	auto RC = GetContentRect();
 
-	auto padCH = GetPaddingRect(colHeaderStyle, RC.GetWidth());
-	auto padC = GetPaddingRect(cellStyle, RC.GetWidth());
+	auto padCH = colHeaderStyle->GetPaddingRect();
+	auto padC = cellStyle->GetPaddingRect();
 
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = GetPaddingRect(rowHeaderStyle, RC.GetWidth());
+		auto padRH = rowHeaderStyle->GetPaddingRect();
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}

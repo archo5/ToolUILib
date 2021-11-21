@@ -732,7 +732,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
 {
-	return GetPaddingRect(styleProps, expTgtRect.GetWidth());
+	return styleProps->GetPaddingRect();
 }
 
 void UIObject::SetFlag(UIObjectFlags flag, bool set)
@@ -1046,17 +1046,6 @@ UIRect UIObject::GetMarginRect(StyleBlock* style, float ref)
 		ResolveUnits(style->margin_top, ref),
 		ResolveUnits(style->margin_right, ref),
 		ResolveUnits(style->margin_bottom, ref),
-	};
-}
-
-UIRect UIObject::GetPaddingRect(StyleBlock* style, float ref)
-{
-	return
-	{
-		ResolveUnits(style->padding_left, ref),
-		ResolveUnits(style->padding_top, ref),
-		ResolveUnits(style->padding_right, ref),
-		ResolveUnits(style->padding_bottom, ref),
 	};
 }
 

@@ -362,7 +362,6 @@ struct UIObject : IPersistentObject
 
 	float ResolveUnits(Coord coord, float ref);
 	UIRect GetMarginRect(StyleBlock* style, float ref);
-	UIRect GetPaddingRect(StyleBlock* style, float ref);
 
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
@@ -638,11 +637,11 @@ UI_COORD_VALUE_PROXY(SetMaxHeight);
 
 struct SetPadding : Modifier
 {
-	Coord _l, _r, _t, _b;
-	SetPadding(const Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
-	SetPadding(const Coord& v, const Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
-	SetPadding(const Coord& t, const Coord& lr, const Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	SetPadding(const Coord& t, const Coord& r, const Coord& b, const Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
+	float _l, _r, _t, _b;
+	SetPadding(float c) : _l(c), _r(c), _t(c), _b(c) {}
+	SetPadding(float v, float h) : _l(h), _r(h), _t(v), _b(v) {}
+	SetPadding(float t, float lr, float b) : _l(lr), _r(lr), _t(t), _b(b) {}
+	SetPadding(float t, float r, float b, float l) : _l(l), _r(r), _t(t), _b(b) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
 };
 

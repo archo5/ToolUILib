@@ -22,7 +22,7 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	float xo = 0, yo = 0;
 	if (useContentBox)
 	{
-		auto pr = curObj->GetPaddingRect(curObj->styleProps, contSize.x);
+		auto pr = curObj->styleProps->GetPaddingRect();
 		xo = pr.x0;
 		yo = pr.y0;
 		w -= pr.x0 + pr.x1;
@@ -460,64 +460,6 @@ RCHandle<LayerPainter> LayerPainter::Create()
 }
 
 
-void StyleBlock::MergeDirect(const StyleBlock& o)
-{
-	//if (display == Display::Undefined) display = o.display;
-	//if (position == Position::Undefined) position = o.position;
-	if (layout == nullptr) layout = o.layout;
-	if (stacking_direction == StackingDirection::Undefined) stacking_direction = o.stacking_direction;
-	if (edge == Edge::Undefined) edge = o.edge;
-	if (box_sizing == BoxSizing::Undefined) box_sizing = o.box_sizing;
-
-	if (!width.IsDefined()) width = o.width;
-	if (!height.IsDefined()) height = o.height;
-	if (!min_width.IsDefined()) min_width = o.min_width;
-	if (!min_height.IsDefined()) min_height = o.min_height;
-	if (!max_width.IsDefined()) max_width = o.max_width;
-	if (!max_height.IsDefined()) max_height = o.max_height;
-
-	if (!left.IsDefined()) left = o.left;
-	if (!right.IsDefined()) right = o.right;
-	if (!top.IsDefined()) top = o.top;
-	if (!bottom.IsDefined()) bottom = o.bottom;
-	if (!margin_left.IsDefined()) margin_left = o.margin_left;
-	if (!margin_right.IsDefined()) margin_right = o.margin_right;
-	if (!margin_top.IsDefined()) margin_top = o.margin_top;
-	if (!margin_bottom.IsDefined()) margin_bottom = o.margin_bottom;
-	if (!padding_left.IsDefined()) padding_left = o.padding_left;
-	if (!padding_right.IsDefined()) padding_right = o.padding_right;
-	if (!padding_top.IsDefined()) padding_top = o.padding_top;
-	if (!padding_bottom.IsDefined()) padding_bottom = o.padding_bottom;
-}
-
-void StyleBlock::MergeParent(const StyleBlock& o)
-{
-	//if (layout == Layout::Inherit) layout = o.layout;
-	if (stacking_direction == StackingDirection::Inherit) stacking_direction = o.stacking_direction;
-	if (edge == Edge::Inherit) edge = o.edge;
-	if (box_sizing == BoxSizing::Inherit) box_sizing = o.box_sizing;
-
-	if (width.unit == CoordTypeUnit::Inherit) width = o.width;
-	if (height.unit == CoordTypeUnit::Inherit) height = o.height;
-	if (min_width.unit == CoordTypeUnit::Inherit) min_width = o.min_width;
-	if (min_height.unit == CoordTypeUnit::Inherit) min_height = o.min_height;
-	if (max_width.unit == CoordTypeUnit::Inherit) max_width = o.max_width;
-	if (max_height.unit == CoordTypeUnit::Inherit) max_height = o.max_height;
-
-	if (left.unit == CoordTypeUnit::Inherit) left = o.left;
-	if (right.unit == CoordTypeUnit::Inherit) right = o.right;
-	if (top.unit == CoordTypeUnit::Inherit) top = o.top;
-	if (bottom.unit == CoordTypeUnit::Inherit) bottom = o.bottom;
-	if (margin_left.unit == CoordTypeUnit::Inherit) margin_left = o.margin_left;
-	if (margin_right.unit == CoordTypeUnit::Inherit) margin_right = o.margin_right;
-	if (margin_top.unit == CoordTypeUnit::Inherit) margin_top = o.margin_top;
-	if (margin_bottom.unit == CoordTypeUnit::Inherit) margin_bottom = o.margin_bottom;
-	if (padding_left.unit == CoordTypeUnit::Inherit) padding_left = o.padding_left;
-	if (padding_right.unit == CoordTypeUnit::Inherit) padding_right = o.padding_right;
-	if (padding_top.unit == CoordTypeUnit::Inherit) padding_top = o.padding_top;
-	if (padding_bottom.unit == CoordTypeUnit::Inherit) padding_bottom = o.padding_bottom;
-}
-
 StyleBlock::~StyleBlock()
 {
 	for (auto* ch = _firstChild; ch; ch = ch->_next)
@@ -919,47 +861,47 @@ void StyleAccessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
 	AccSet(*this, offsetof(StyleBlock, margin_left), l);
 }
 
-Coord StyleAccessor::GetPaddingLeft() const
+float StyleAccessor::GetPaddingLeft() const
 {
 	return block->padding_left;
 }
 
-void StyleAccessor::SetPaddingLeft(Coord v)
+void StyleAccessor::SetPaddingLeft(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, padding_left), v);
 }
 
-Coord StyleAccessor::GetPaddingRight() const
+float StyleAccessor::GetPaddingRight() const
 {
 	return block->padding_right;
 }
 
-void StyleAccessor::SetPaddingRight(Coord v)
+void StyleAccessor::SetPaddingRight(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, padding_right), v);
 }
 
-Coord StyleAccessor::GetPaddingTop() const
+float StyleAccessor::GetPaddingTop() const
 {
 	return block->padding_top;
 }
 
-void StyleAccessor::SetPaddingTop(Coord v)
+void StyleAccessor::SetPaddingTop(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, padding_top), v);
 }
 
-Coord StyleAccessor::GetPaddingBottom() const
+float StyleAccessor::GetPaddingBottom() const
 {
 	return block->padding_bottom;
 }
 
-void StyleAccessor::SetPaddingBottom(Coord v)
+void StyleAccessor::SetPaddingBottom(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, padding_bottom), v);
 }
 
-void StyleAccessor::SetPadding(Coord t, Coord r, Coord b, Coord l)
+void StyleAccessor::SetPadding(float t, float r, float b, float l)
 {
 	// TODO?
 #if 0

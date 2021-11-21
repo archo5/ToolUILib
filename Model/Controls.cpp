@@ -198,16 +198,16 @@ void Slider::OnPaint(const UIPaintContext& ctx)
 	trackStyle->background_painter->Paint(trkinfo);
 
 	// track fill
-	trkinfo.rect = trkinfo.rect.ShrinkBy(GetPaddingRect(trackStyle, w));
+	trkinfo.rect = trkinfo.rect.ShrinkBy(trackStyle->GetPaddingRect());
 	trkinfo.rect.x1 = round(lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(_value)));
 	auto prethumb = trkinfo.rect;
 
-	trkinfo.rect = trkinfo.rect.ExtendBy(GetPaddingRect(trackFillStyle, w));
+	trkinfo.rect = trkinfo.rect.ExtendBy(trackFillStyle->GetPaddingRect());
 	trackFillStyle->background_painter->Paint(trkinfo);
 
 	// thumb
 	prethumb.x0 = prethumb.x1;
-	trkinfo.rect = prethumb.ExtendBy(GetPaddingRect(thumbStyle, w));
+	trkinfo.rect = prethumb.ExtendBy(thumbStyle->GetPaddingRect());
 	thumbStyle->background_painter->Paint(trkinfo);
 
 	ph.PaintChildren(this, ctx);
@@ -237,7 +237,7 @@ double Slider::PosToQ(double x)
 	auto rect = GetPaddingRect();
 	float w = rect.GetWidth();
 	rect = rect.ShrinkBy(GetMarginRect(trackStyle, w));
-	rect = rect.ShrinkBy(GetPaddingRect(trackStyle, w));
+	rect = rect.ShrinkBy(trackStyle->GetPaddingRect());
 	float fw = rect.GetWidth();
 	return clamp(fw ? float(x - rect.x0) / fw : 0, 0.0f, 1.0f);
 }
@@ -481,7 +481,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 
 		auto contPadRect = GetPaddingRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
-		auto labelPadRect = GetPaddingRect(labelStyle, labelContRect.GetWidth());
+		auto labelPadRect = labelStyle->GetPaddingRect();
 		auto cr = labelContRect;
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
@@ -511,7 +511,7 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 			auto* font = labelStyle->GetFont();
 
 			r.x0 += GetTextWidth(font, labelStyle->font_size, _labelText);
-			auto labelPadRect = GetPaddingRect(labelStyle, 0);
+			auto labelPadRect = labelStyle->GetPaddingRect();
 			r.x0 += labelPadRect.x0 + labelPadRect.x1;
 		}
 		else
@@ -768,7 +768,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 
 	finalRectCPB = rect;
 	finalRectCP = finalRectCPB; // TODO
-	finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
+	finalRectC = finalRectCP.ShrinkBy(styleProps->GetPaddingRect());
 
 	size_t split = 0;
 	if (!_verticalSplit)
@@ -876,7 +876,7 @@ Coord ScrollbarV::GetWidth()
 
 static UIRect sbv_GetTrackRect(const ScrollbarData& info, StyleBlock* trackVStyle)
 {
-	return info.rect.ShrinkBy(info.owner->GetPaddingRect(trackVStyle, info.rect.GetWidth()));
+	return info.rect.ShrinkBy(trackVStyle->GetPaddingRect());
 }
 
 UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
