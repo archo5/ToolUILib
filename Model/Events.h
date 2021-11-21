@@ -151,6 +151,7 @@ struct Event
 	EventType type;
 
 	Point2f position;
+	Point2f topLevelPosition;
 	Vec2f delta;
 
 	uint32_t longCode = 0;

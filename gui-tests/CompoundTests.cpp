@@ -435,6 +435,14 @@ struct TransformContainerTest : ui::Buildable
 			y = 0;
 			scale = 1;
 		}
+		ui::Point2f LocalToChildPoint(ui::Point2f pos) const override
+		{
+			auto cr = GetContentRect();
+			pos -= { cr.x0, cr.y0 };
+			pos /= scale;
+			pos -= { x, y };
+			return pos;
+		}
 		float CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override
 		{
 			return UIElement::CalcEstimatedWidth(containerSize / scale, type) * scale;

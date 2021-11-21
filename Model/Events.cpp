@@ -82,6 +82,18 @@ EventSystem::EventSystem()
 		val = platform::GetTimeMs();
 }
 
+static Point2f ResolvePos(Point2f p, UIObject* o)
+{
+	if (!o->parent)
+		return p;
+	return o->LocalToChildPoint(ResolvePos(p, o->parent));
+}
+
+static void UpdateEventPosition(Event& e, UIObject* cur)
+{
+	e.position = ResolvePos(e.topLevelPosition, cur);
+}
+
 void EventSystem::BubblingEvent(Event& e, UIObject* tgt, bool stopOnDisabled)
 {
 	UIObject* obj = e.target;
@@ -89,6 +101,7 @@ void EventSystem::BubblingEvent(Event& e, UIObject* tgt, bool stopOnDisabled)
 	{
 		if (stopOnDisabled && obj->IsInputDisabled())
 			break;
+		UpdateEventPosition(e, obj);
 		obj->_DoEvent(e);
 		obj = obj->parent;
 	}
@@ -264,6 +277,8 @@ UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 	if (!o || !o->Contains(pos))
 		return nullptr;
 
+	pos = o->LocalToChildPoint(pos);
+
 	bool found = true;
 	while (found)
 	{
@@ -272,6 +287,7 @@ UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 		{
 			if (ch->Contains(pos))
 			{
+				pos = ch->LocalToChildPoint(pos);
 				o = ch;
 				found = true;
 				break;
@@ -306,6 +322,7 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, Event& e, uint32_t fl)
 
 	o->flags |= fl;
 	e.target = o;
+	UpdateEventPosition(e, o);
 	e._stopPropagation = false;
 	o->_DoEvent(e);
 }
@@ -317,7 +334,7 @@ void EventSystem::_UpdateHoverObj(UIWeakPtr<UIObject>& curHoverObj, Point2f curs
 		mouseCaptureObj ? mouseCaptureObj : FindObjectAtPosition(cursorPos);
 
 	Event ev(this, curHoverObj, dragEvents ? EventType::DragLeave : EventType::MouseLeave);
-	ev.position = cursorPos;
+	ev.topLevelPosition = cursorPos;
 	ev.modifiers = mod;
 
 	uint32_t hoverFlag = dragEvents ? UIObject_DragHovered : UIObject_IsHovered;
@@ -325,6 +342,7 @@ void EventSystem::_UpdateHoverObj(UIWeakPtr<UIObject>& curHoverObj, Point2f curs
 	auto* o = curHoverObj.Get();
 	while (o && (!tgt || !tgt->IsChildOrSame(o)))
 	{
+		UpdateEventPosition(ev, o);
 		o->flags &= ~hoverFlag;
 		ev._stopPropagation = false;
 		o->_DoEvent(ev);
@@ -370,10 +388,11 @@ void EventSystem::_UpdateTooltip(Point2f cursorPos)
 #endif
 	Tooltip::ClearChangedFlag();
 	Event ev(this, hoverObj, EventType::Tooltip);
-	ev.position = cursorPos;
+	ev.topLevelPosition = cursorPos;
 	UIObject* obj = ev.target;
 	while (obj && !ev.IsPropagationStopped())
 	{
+		UpdateEventPosition(ev, obj);
 		obj->_DoEvent(ev);
 		if (Tooltip::WasChanged())
 		{
@@ -453,7 +472,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 
 	Event ev(this, hoverObj, EventType::ButtonDown);
 	ev.shortCode = id;
-	ev.position = cursorPos;
+	ev.topLevelPosition = cursorPos;
 	ev.modifiers = mod;
 
 	if (down)
@@ -500,6 +519,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 					UIObject* obj = ev.target;
 					while (obj != nullptr && !ev.IsPropagationStopped())
 					{
+						UpdateEventPosition(ev, obj);
 						obj->_DoEvent(ev);
 						obj = obj->parent;
 						CM.basePriority += MenuItemCollection::BASE_ADVANCE;

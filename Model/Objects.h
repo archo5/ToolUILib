@@ -294,10 +294,12 @@ struct UIObject : IPersistentObject
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
 	virtual UIRect CalcPaddingRect(const UIRect& expTgtRect);
+
 	virtual bool Contains(Point2f pos) const
 	{
 		return GetBorderRect().Contains(pos);
 	}
+	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
 
 	void SetFlag(UIObjectFlags flag, bool set);
 	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
