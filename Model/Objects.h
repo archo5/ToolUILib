@@ -361,7 +361,6 @@ struct UIObject : IPersistentObject
 	void _OnChangeStyle();
 
 	float ResolveUnits(Coord coord, float ref);
-	UIRect GetMarginRect(StyleBlock* style, float ref);
 
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
@@ -647,11 +646,11 @@ struct SetPadding : Modifier
 
 struct SetMargin : Modifier
 {
-	Coord _l, _r, _t, _b;
-	SetMargin(const Coord& c) : _l(c), _r(c), _t(c), _b(c) {}
-	SetMargin(const Coord& v, const Coord& h) : _l(h), _r(h), _t(v), _b(v) {}
-	SetMargin(const Coord& t, const Coord& lr, const Coord& b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	SetMargin(const Coord& t, const Coord& r, const Coord& b, const Coord& l) : _l(l), _r(r), _t(t), _b(b) {}
+	float _l, _r, _t, _b;
+	SetMargin(float c) : _l(c), _r(c), _t(c), _b(c) {}
+	SetMargin(float v, float h) : _l(h), _r(h), _t(v), _b(v) {}
+	SetMargin(float t, float lr, float b) : _l(lr), _r(lr), _t(t), _b(b) {}
+	SetMargin(float t, float r, float b, float l) : _l(l), _r(r), _t(t), _b(b) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetMargin(_t, _r, _b, _l); }
 };
 

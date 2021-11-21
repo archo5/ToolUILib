@@ -805,47 +805,47 @@ void StyleAccessor::SetBottom(Coord v)
 	AccSet(*this, offsetof(StyleBlock, bottom), v);
 }
 
-Coord StyleAccessor::GetMarginLeft() const
+float StyleAccessor::GetMarginLeft() const
 {
 	return block->margin_left;
 }
 
-void StyleAccessor::SetMarginLeft(Coord v)
+void StyleAccessor::SetMarginLeft(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, margin_left), v);
 }
 
-Coord StyleAccessor::GetMarginRight() const
+float StyleAccessor::GetMarginRight() const
 {
 	return block->margin_right;
 }
 
-void StyleAccessor::SetMarginRight(Coord v)
+void StyleAccessor::SetMarginRight(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, margin_right), v);
 }
 
-Coord StyleAccessor::GetMarginTop() const
+float StyleAccessor::GetMarginTop() const
 {
 	return block->margin_top;
 }
 
-void StyleAccessor::SetMarginTop(Coord v)
+void StyleAccessor::SetMarginTop(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, margin_top), v);
 }
 
-Coord StyleAccessor::GetMarginBottom() const
+float StyleAccessor::GetMarginBottom() const
 {
 	return block->margin_bottom;
 }
 
-void StyleAccessor::SetMarginBottom(Coord v)
+void StyleAccessor::SetMarginBottom(float v)
 {
 	AccSet(*this, offsetof(StyleBlock, margin_bottom), v);
 }
 
-void StyleAccessor::SetMargin(Coord t, Coord r, Coord b, Coord l)
+void StyleAccessor::SetMargin(float t, float r, float b, float l)
 {
 	// TODO?
 #if 0

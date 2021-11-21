@@ -651,7 +651,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 	auto max_height = style.GetMaxHeight();
 	auto box_sizing = style.GetBoxSizing();
 
-	UIRect Mrect = GetMarginRect(style.block, rect.GetWidth());
+	UIRect Mrect = style.block->GetMarginRect();
 	UIRect Prect = CalcPaddingRect(rect);
 	UIRect Arect =
 	{
@@ -1036,17 +1036,6 @@ float UIObject::ResolveUnits(Coord coord, float ref)
 	default:
 		return 0;
 	}
-}
-
-UIRect UIObject::GetMarginRect(StyleBlock* style, float ref)
-{
-	return
-	{
-		ResolveUnits(style->margin_left, ref),
-		ResolveUnits(style->margin_top, ref),
-		ResolveUnits(style->margin_right, ref),
-		ResolveUnits(style->margin_bottom, ref),
-	};
 }
 
 StyleBlock* UIObject::_FindClosestParentTextStyle() const

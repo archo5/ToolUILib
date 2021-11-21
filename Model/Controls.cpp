@@ -164,7 +164,7 @@ void ProgressBar::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	PaintInfo cinfo(this);
-	cinfo.rect = cinfo.rect.ShrinkBy(GetMarginRect(completionBarStyle, cinfo.rect.GetWidth()));
+	cinfo.rect = cinfo.rect.ShrinkBy(completionBarStyle->GetMarginRect());
 	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
 	completionBarStyle->background_painter->Paint(cinfo);
 
@@ -193,8 +193,7 @@ void Slider::OnPaint(const UIPaintContext& ctx)
 
 	// track
 	PaintInfo trkinfo(this);
-	float w = trkinfo.rect.GetWidth();
-	trkinfo.rect = trkinfo.rect.ShrinkBy(GetMarginRect(trackStyle, w));
+	trkinfo.rect = trkinfo.rect.ShrinkBy(trackStyle->GetMarginRect());
 	trackStyle->background_painter->Paint(trkinfo);
 
 	// track fill
@@ -235,8 +234,7 @@ void Slider::OnEvent(Event& e)
 double Slider::PosToQ(double x)
 {
 	auto rect = GetPaddingRect();
-	float w = rect.GetWidth();
-	rect = rect.ShrinkBy(GetMarginRect(trackStyle, w));
+	rect = rect.ShrinkBy(trackStyle->GetMarginRect());
 	rect = rect.ShrinkBy(trackStyle->GetPaddingRect());
 	float fw = rect.GetWidth();
 	return clamp(fw ? float(x - rect.x0) / fw : 0, 0.0f, 1.0f);

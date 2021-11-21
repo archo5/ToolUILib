@@ -493,10 +493,11 @@ struct StyleBlock
 	Coord right;
 	Coord top;
 	Coord bottom;
-	Coord margin_left;
-	Coord margin_right;
-	Coord margin_top;
-	Coord margin_bottom;
+	float margin_left = 0;
+	float margin_right = 0;
+	float margin_top = 0;
+	float margin_bottom = 0;
+	UI_FORCEINLINE UIRect GetMarginRect() const { return { margin_left, margin_top, margin_right, margin_bottom }; }
 	float padding_left = 0;
 	float padding_right = 0;
 	float padding_top = 0;
@@ -638,22 +639,22 @@ public:
 	void SetBottom(Coord v);
 
 
-	Coord GetMarginLeft() const;
-	void SetMarginLeft(Coord v);
+	float GetMarginLeft() const;
+	void SetMarginLeft(float v);
 
-	Coord GetMarginRight() const;
-	void SetMarginRight(Coord v);
+	float GetMarginRight() const;
+	void SetMarginRight(float v);
 
-	Coord GetMarginTop() const;
-	void SetMarginTop(Coord v);
+	float GetMarginTop() const;
+	void SetMarginTop(float v);
 
-	Coord GetMarginBottom() const;
-	void SetMarginBottom(Coord v);
+	float GetMarginBottom() const;
+	void SetMarginBottom(float v);
 
-	void SetMargin(Coord v) { SetMargin(v, v, v, v); }
-	void SetMargin(Coord tb, Coord lr) { SetMargin(tb, lr, tb, lr); }
-	void SetMargin(Coord t, Coord lr, Coord b) { SetMargin(t, lr, b, lr); }
-	void SetMargin(Coord t, Coord r, Coord b, Coord l);
+	void SetMargin(float v) { SetMargin(v, v, v, v); }
+	void SetMargin(float tb, float lr) { SetMargin(tb, lr, tb, lr); }
+	void SetMargin(float t, float lr, float b) { SetMargin(t, lr, b, lr); }
+	void SetMargin(float t, float r, float b, float l);
 
 
 	float GetPaddingLeft() const;
