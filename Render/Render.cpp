@@ -949,28 +949,76 @@ VertexTransformCallback SetVertexTransformCallback(VertexTransformCallback cb)
 }
 
 
-static AABB2i scissorStack[100];
+struct ScissorRectStackEntry
+{
+	AABB2i raw;
+	AABB2f input;
+};
+
+static float g_scissorRectResScale = 1;
+static Vec2f g_scissorRectOffset;
+static ScissorRectStackEntry scissorStack[100];
 static int scissorCount = 1;
 
 void ApplyScissor()
 {
 	_Flush();
-	AABB2i r = scissorStack[scissorCount - 1];
+	AABB2i r = scissorStack[scissorCount - 1].raw;
 	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }
 
-bool PushScissorRect(const AABB2i& rect)
+
+float GetScissorRectResolutionScale()
 {
-	int i = scissorCount++;
-	AABB2i r = scissorStack[i - 1].Intersect(rect);
-	scissorStack[i] = r;
-	ApplyScissor();
-	return r.x0 < r.x1 && r.y0 < r.y1;
+	return g_scissorRectResScale;
 }
 
-bool PushScissorRect(int x0, int y0, int x1, int y1)
+float SetScissorRectResolutionScale(float nsrrs)
 {
-	return PushScissorRect({ x0, y0, x1, y1 });
+	float r = g_scissorRectResScale;
+	g_scissorRectResScale = nsrrs;
+	return r;
+}
+
+float MultiplyScissorRectResolutionScale(float nsrrs)
+{
+	return SetScissorRectResolutionScale(g_scissorRectResScale * nsrrs);
+}
+
+Vec2f GetScissorRectOffset()
+{
+	return g_scissorRectOffset;
+}
+
+Vec2f SetScissorRectOffset(Vec2f o)
+{
+	auto r = g_scissorRectOffset;
+	g_scissorRectOffset = o;
+	return r;
+}
+
+Vec2f AddScissorRectOffset(Vec2f o)
+{
+	return SetScissorRectOffset(g_scissorRectOffset + o);
+}
+
+
+void PushScissorRectRaw(const AABB2i& screen, const AABB2f& virt)
+{
+	int i = scissorCount++;
+	scissorStack[i] = { screen, virt };
+	ApplyScissor();
+}
+
+bool PushScissorRect(const AABB2f& rect)
+{
+	auto xrect = (rect * g_scissorRectResScale).MoveBy(g_scissorRectOffset.x, g_scissorRectOffset.y);
+
+	AABB2i r = scissorStack[scissorCount - 1].input.Intersect(xrect).Cast<int>();
+
+	PushScissorRectRaw(r, rect);
+
+	return r.x0 < r.x1 && r.y0 < r.y1;
 }
 
 void PopScissorRect()
@@ -981,14 +1029,15 @@ void PopScissorRect()
 
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1)
 {
-	scissorStack[0] = { x0, y0, x1, y1 };
+	AABB2i rect = { x0, y0, x1, y1 };
+	scissorStack[0] = { rect, rect.Cast<float>() };
 	scissorCount = 1;
 	ApplyScissor();
 }
 
 AABB2f GetCurrentScissorRectF()
 {
-	return scissorStack[scissorCount - 1].Cast<float>();
+	return scissorStack[scissorCount - 1].input;
 }
 
 } // draw

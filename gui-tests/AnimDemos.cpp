@@ -197,7 +197,7 @@ struct FancyButtonDemo : ui::Buildable
 			ui::draw::RectCol(r.x0, r.y0 + offtop, r.x1, r.y1, color);
 			ui::draw::RectCol(r.x0, r.y1 - off, r.x1, r.y1, ui::Color4b(40, 5, 0));
 
-			ui::draw::PushScissorRect(r.ShrinkBy({ 0, offtop, 0, off }).Cast<int>());
+			ui::draw::PushScissorRect(r.ShrinkBy({ 0, offtop, 0, off }));
 
 			if (!info.IsDown() && animating)
 				ui::draw::AACircleLineCol(lastClickPos, timeDiff * 0.001f * 200, timeDiff * 0.001f * 90, ui::Color4b(255, 100 * ui::invlerp(1000, 0, timeDiff)));

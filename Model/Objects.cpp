@@ -379,7 +379,13 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
-		draw::PushScissorRect(finalRectC.Cast<int>());
+	{
+		if (!draw::PushScissorRect(finalRectC))
+		{
+			draw::PopScissorRect();
+			return;
+		}
+	}
 
 	UIPaintContext subctx(DoNotInitialize{});
 	auto* pctx = &ctx;

@@ -486,7 +486,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
 		// TODO optimize scissor (shared across labels)
-		draw::PushScissorRect(cr.Cast<int>());
+		draw::PushScissorRect(cr);
 		draw::TextLine(
 			font,
 			labelStyle->font_size,
@@ -662,7 +662,7 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 				r.x0 = prevEdge;
 				r.x1 = sr.x0;
 
-				if (draw::PushScissorRect(r.Cast<int>()))
+				if (draw::PushScissorRect(r))
 					ch->Paint(ctx);
 				draw::PopScissorRect();
 
@@ -681,7 +681,7 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 				r.y0 = prevEdge;
 				r.y1 = sr.y0;
 
-				if (draw::PushScissorRect(r.Cast<int>()))
+				if (draw::PushScissorRect(r))
 					ch->Paint(ctx);
 				draw::PopScissorRect();
 
@@ -1138,15 +1138,15 @@ void TabPanel::OnPaint(const UIPaintContext& ctx)
 			// currently only supports overlap at the top
 			if (panelRect.Overlaps(btnRect) && btnRect.y1 > panelRect.y0 && btnRect.y0 < panelRect.y0)
 			{
-				draw::PushScissorRect(panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1);
+				draw::PushScissorRect(UIRect{ panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1 });
 				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 
-				draw::PushScissorRect(btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1);
+				draw::PushScissorRect(UIRect{ btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1 });
 				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 
-				draw::PushScissorRect(btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1);
+				draw::PushScissorRect(UIRect{ btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1 });
 				ph.PaintBackground(pi);
 				draw::PopScissorRect();
 			}

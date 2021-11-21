@@ -868,7 +868,7 @@ void View2D::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r.Cast<int>()))
+	if (draw::PushScissorRect(r))
 	{
 		if (onPaint)
 			onPaint(r);
@@ -885,7 +885,7 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r.Cast<int>()))
+	if (draw::PushScissorRect(r))
 	{
 		rhi::Begin3DMode(r.Cast<int>());
 

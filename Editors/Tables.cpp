@@ -69,7 +69,7 @@ void MessageLogView::OnPaint(const UIPaintContext& ctx)
 	if (maxMsg > numMsgs)
 		maxMsg = numMsgs;
 
-	draw::PushScissorRect(RC.Cast<int>());
+	draw::PushScissorRect(RC);
 	for (size_t msgIdx = minMsg; msgIdx < maxMsg; msgIdx++)
 	{
 		UIRect rect =
@@ -235,7 +235,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	if (enableRowHeader)
 	{
 		// - row header
-		draw::PushScissorRect(RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1);
+		draw::PushScissorRect(UIRect{ RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1 });
 		// background:
 		for (size_t r = minR; r < maxR; r++)
 		{
@@ -271,7 +271,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	}
 
 	// - column header
-	draw::PushScissorRect(RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh);
+	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh });
 	// background:
 	for (size_t c = 0; c < nc; c++)
 	{
@@ -306,7 +306,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	draw::PopScissorRect();
 
 	// - cells
-	draw::PushScissorRect(RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1);
+	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1 });
 	// background:
 	for (size_t r = minR; r < maxR; r++)
 	{

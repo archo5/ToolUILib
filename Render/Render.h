@@ -100,8 +100,17 @@ struct VertexTransformCallback
 VertexTransformCallback SetVertexTransformCallback(VertexTransformCallback cb);
 
 void ApplyScissor();
-bool PushScissorRect(const AABB2i& rect);
-bool PushScissorRect(int x0, int y0, int x1, int y1);
+
+float GetScissorRectResolutionScale();
+float SetScissorRectResolutionScale(float nsrrs);
+float MultiplyScissorRectResolutionScale(float nsrrs);
+
+Vec2f GetScissorRectOffset();
+Vec2f SetScissorRectOffset(Vec2f o);
+Vec2f AddScissorRectOffset(Vec2f o);
+
+void PushScissorRectRaw(const AABB2i& screen, const AABB2f& virt);
+bool PushScissorRect(const AABB2f& rect);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
 AABB2f GetCurrentScissorRectF();
