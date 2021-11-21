@@ -112,6 +112,9 @@ template <class T> struct Size2
 {
 	T x, y;
 
+	UI_FORCEINLINE Size2 operator * (T f) const { return { x * f, y * f }; }
+	UI_FORCEINLINE Size2 operator / (T f) const { return { x / f, y / f }; }
+
 	template <class U> UI_FORCEINLINE Size2<U> Cast() const { return { U(x), U(y) }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)

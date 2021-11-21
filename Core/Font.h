@@ -23,6 +23,10 @@ Font* GetFontByName(const char* name, int weight = FONT_WEIGHT_NORMAL, bool ital
 Font* GetFontByFamily(const char* family, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
 Font* GetFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
 
+float GetTextResolutionScale();
+float SetTextResolutionScale(float ntrs);
+float MultiplyTextResolutionScale(float ntrs);
+
 float GetTextWidth(Font* font, int size, StringView text);
 
 namespace draw {

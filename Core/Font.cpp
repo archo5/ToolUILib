@@ -223,13 +223,35 @@ Font* GetFont(const char* nameOrFamily, int weight, bool italic)
 	return GetFontByName(nameOrFamily, weight, italic);
 }
 
+
+static float g_textResScale = 1;
+
+float GetTextResolutionScale()
+{
+	return g_textResScale;
+}
+
+float SetTextResolutionScale(float ntrs)
+{
+	float r = g_textResScale;
+	g_textResScale = ntrs;
+	return r;
+}
+
+float MultiplyTextResolutionScale(float ntrs)
+{
+	return SetTextResolutionScale(g_textResScale * ntrs);
+}
+
+
 float GetTextWidth(Font* font, int size, StringView text)
 {
-	auto& sctx = font->GetSizeContext(size);
+	auto& sctx = font->GetSizeContext(size * g_textResScale);
+	float invScale = 1.0f / g_textResScale;
 	int out = 0;
 	for (char c : text)
 	{
-		out += int(roundf(font->FindGlyph(sctx, (uint8_t)c, false).xadv));
+		out += int(roundf(font->FindGlyph(sctx, (uint8_t)c, false).xadv * invScale));
 	}
 	return float(out);
 }
@@ -238,16 +260,18 @@ namespace draw {
 
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color)
 {
-	int ix = int(roundf(x));
-	int iy = int(roundf(y));
-	auto& sctx = font->GetSizeContext(size);
+	float scale = g_textResScale;
+	float invScale = 1.0f / scale;
+	x = roundf(x * scale) * invScale;
+	y = roundf(y * scale) * invScale;
+	auto& sctx = font->GetSizeContext(size * scale);
 	for (char ch : text)
 	{
 		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);
-		int x0 = gv.xoff + ix;
-		int y0 = gv.yoff + iy;
-		draw::RectColTex(float(x0), float(y0), float(x0 + gv.w), float(y0 + gv.h), color, gv.img);
-		ix += gv.xadv;
+		float x0 = gv.xoff * invScale + x;
+		float y0 = gv.yoff * invScale + y;
+		draw::RectColTex(x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale, color, gv.img);
+		x += roundf(gv.xadv) * invScale;
 	}
 }
 

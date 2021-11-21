@@ -347,6 +347,7 @@ void Test_PropertyList();
 void Test_Sliders();
 void Test_SplitPane();
 void Test_Tabs();
+void Test_TransformContainer();
 void Test_Scrollbars();
 void Test_Tooltip();
 void Test_Dropdown();
@@ -437,6 +438,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Sliders", Test_Sliders },
 	{ "Split pane", Test_SplitPane },
 	{ "Tabs", Test_Tabs },
+	{ "Transform container", Test_TransformContainer },
 	{ "Scrollbars", Test_Scrollbars },
 	{ "Tooltip", Test_Tooltip },
 	{ "Dropdown", Test_Dropdown },

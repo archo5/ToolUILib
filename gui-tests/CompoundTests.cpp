@@ -417,6 +417,119 @@ void Test_Tabs()
 }
 
 
+struct TransformContainerTest : ui::Buildable
+{
+	struct TransformElement : ui::UIElement
+	{
+		float x, y, scale;
+
+		void OnReset() override
+		{
+			UIElement::OnReset();
+
+			flags |= ui::UIObject_ClipChildren;
+
+			x = 0;
+			y = 0;
+			scale = 1;
+		}
+		float CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override
+		{
+			return UIElement::CalcEstimatedWidth(containerSize / scale, type) * scale;
+		}
+		float CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override
+		{
+			return UIElement::CalcEstimatedHeight(containerSize / scale, type) * scale;
+		}
+		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
+		{
+			auto srect = rect;
+			srect.x1 = (srect.x1 - srect.x0) / scale + srect.x0;
+			srect.y1 = (srect.y1 - srect.y0) / scale + srect.y0;
+			auto ssize = containerSize / scale;
+			float prevTRS = ui::MultiplyTextResolutionScale(scale);
+
+			UIElement::OnLayout(srect, ssize);
+
+			ui::SetTextResolutionScale(prevTRS);
+			finalRectC.x1 = (finalRectC.x1 - finalRectC.x0) * scale + finalRectC.x0;
+			finalRectC.y1 = (finalRectC.y1 - finalRectC.y0) * scale + finalRectC.y0;
+		}
+
+		ui::draw::VertexTransformCallback prevVTCB;
+		static void TransformVerts(void* userdata, ui::Vertex* vertices, size_t count)
+		{
+			auto* me = (TransformElement*)userdata;
+
+			auto cr = me->GetContentRect();
+			for (size_t i = 0; i < count; i++)
+			{
+				vertices[i].x = (vertices[i].x - cr.x0) * me->scale + me->x + cr.x0;
+				vertices[i].y = (vertices[i].y - cr.y0) * me->scale + me->y + cr.y0;
+			}
+
+			me->prevVTCB.Call(vertices, count);
+		}
+		void OnPaint(const ui::UIPaintContext& ctx) override
+		{
+			ui::draw::VertexTransformCallback cb = { this, TransformVerts };
+			prevVTCB = ui::draw::SetVertexTransformCallback(cb);
+			float prevTRS = ui::MultiplyTextResolutionScale(scale);
+
+			UIElement::OnPaint(ctx);
+
+			ui::SetTextResolutionScale(prevTRS);
+			ui::draw::SetVertexTransformCallback(prevVTCB);
+		}
+	};
+
+	float x = 0;
+	float y = 0;
+	float scale = 1;
+
+	void Build() override
+	{
+		{
+			ui::LabeledProperty::Scope lp("X");
+			ui::MakeWithText<ui::Button>("-") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { x -= 10; Rebuild(); });
+			ui::MakeWithTextf<ui::Header>("%g", x);
+			ui::MakeWithText<ui::Button>("+") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { x += 10; Rebuild(); });
+		}
+		{
+			ui::LabeledProperty::Scope lp("Y");
+			ui::MakeWithText<ui::Button>("-") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { y -= 10; Rebuild(); });
+			ui::MakeWithTextf<ui::Header>("%g", y);
+			ui::MakeWithText<ui::Button>("+") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { y += 10; Rebuild(); });
+		}
+		{
+			ui::LabeledProperty::Scope lp("Scale");
+			ui::MakeWithText<ui::Button>("-") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { scale -= 0.1f; Rebuild(); });
+			ui::MakeWithTextf<ui::Header>("%g", scale);
+			ui::MakeWithText<ui::Button>("+") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { scale += 0.1f; Rebuild(); });
+		}
+
+		ui::Push<ui::Panel>();
+		{
+			auto& te = ui::Push<TransformElement>();
+			te.x = x;
+			te.y = y;
+			te.scale = scale;
+			{
+				ui::MakeWithText<ui::Button>("One button");
+				ui::MakeWithText<ui::Button>("The second button");
+				ui::MakeWithText<ui::Button>("#3");
+			}
+			ui::Pop();
+		}
+		ui::Pop();
+	}
+};
+void Test_TransformContainer()
+{
+	ui::Make<TransformContainerTest>();
+}
+
+
 struct ScrollbarsTest : ui::Buildable
 {
 	int count = 20;
