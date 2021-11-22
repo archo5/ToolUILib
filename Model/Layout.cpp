@@ -351,8 +351,6 @@ struct EdgeSliceLayout : ILayout
 		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 		{
 			auto e = ch->GetStyle().GetEdge();
-			if (e == Edge::Undefined)
-				e = Edge::Top;
 			float d;
 			switch (e)
 			{
@@ -540,30 +538,6 @@ StyleAccessor::StyleAccessor(StyleBlock* b) : block(b), blkref(nullptr), owner(n
 StyleAccessor::StyleAccessor(StyleBlockRef& r, UIObject* o) : block(r), blkref(&r), owner(o)
 {
 }
-
-#if 0
-Display StyleAccessor::GetDisplay() const
-{
-	return obj->styleProps ? obj->styleProps->display : Display::Undefined;
-}
-
-void StyleAccessor::SetDisplay(Display display)
-{
-	CreateStyleBlock(obj);
-	obj->styleProps->display = display;
-}
-
-Position StyleAccessor::GetPosition() const
-{
-	return obj->styleProps ? obj->styleProps->position : Position::Undefined;
-}
-
-void StyleAccessor::SetPosition(Position position)
-{
-	CreateStyleBlock(obj);
-	obj->styleProps->position = position;
-}
-#endif
 
 template <class T> void AccSet(StyleAccessor& a, int off, T v)
 {
@@ -765,46 +739,6 @@ void StyleAccessor::SetMaxHeight(Coord v)
 	AccSet(*this, offsetof(StyleBlock, max_height), v);
 }
 
-Coord StyleAccessor::GetLeft() const
-{
-	return block->left;
-}
-
-void StyleAccessor::SetLeft(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, left), v);
-}
-
-Coord StyleAccessor::GetRight() const
-{
-	return block->right;
-}
-
-void StyleAccessor::SetRight(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, right), v);
-}
-
-Coord StyleAccessor::GetTop() const
-{
-	return block->top;
-}
-
-void StyleAccessor::SetTop(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, top), v);
-}
-
-Coord StyleAccessor::GetBottom() const
-{
-	return block->bottom;
-}
-
-void StyleAccessor::SetBottom(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, bottom), v);
-}
-
 float StyleAccessor::GetMarginLeft() const
 {
 	return block->margin_left;
@@ -915,100 +849,6 @@ void StyleAccessor::SetPadding(float t, float r, float b, float l)
 	AccSet(*this, offsetof(StyleBlock, padding_right), r);
 	AccSet(*this, offsetof(StyleBlock, padding_bottom), b);
 	AccSet(*this, offsetof(StyleBlock, padding_left), l);
-}
-
-
-// https://www.w3.org/TR/css-flexbox-1/#line-sizing
-void FlexLayout(UIObject* obj)
-{
-	// TODO 2 - available main and cross space for the flex items
-	float maxMain = FLT_MAX;
-	float maxCross = FLT_MAX;
-
-	// TODO 3 - flex base size and hypothetical main size of each item
-	struct ItemInfo
-	{
-		// initial (step 3)
-		UIObject* ptr;
-		float flexBaseSize;
-		float hypMainSize;
-		float outerMainPadding;
-		// step 6
-		bool frozen = false;
-		float targetMainSize;
-	};
-	std::vector<ItemInfo> items;
-
-	// TODO 4 - main size of the flex container
-	float mainSize = 0;
-
-	// TODO 5 - Collect flex items into flex lines
-	std::vector<int> flexLines;
-	flexLines.push_back(0);
-#if TODO
-	bool isSingleLine = obj->styleProps && obj->styleProps->IsEnum<style::FlexWrap>("flex-wrap", style::FlexWrap::NoWrap);
-	if (!isSingleLine)
-	{
-		float accum = 0;
-		for (int i = 0; i < int(items.size()); i++)
-		{
-			// TODO fragmenting
-			if (accum + items[i].hypMainSize + items[i].outerMainPadding > maxMain && flexLines.back() != i - 1)
-			{
-				flexLines.push_back(i);
-				accum = 0;
-			}
-			else
-				accum += items[i].hypMainSize + items[i].outerMainPadding;
-		}
-	}
-#endif
-	flexLines.push_back(int(items.size()));
-
-	// TODO 6 - Resolve the flexible lengths of all the flex items to find their used main size.
-	for (int i = 0; i + 1 < int(flexLines.size()); i++)
-	{
-		// 9.7-1
-		float outerHypotLineSum = 0;
-		for (int j = flexLines[i]; j < flexLines[i + 1]; j++)
-		{
-			outerHypotLineSum += items[j].hypMainSize + items[j].outerMainPadding;
-		}
-
-		// 9.7-2
-		int numFrozen = 0;
-		bool growLine = outerHypotLineSum < mainSize;
-		for (int j = flexLines[i]; j < flexLines[i + 1]; j++)
-		{
-			auto& I = items[j];
-			float factor = growLine ? 0.0f : 1.0f;
-#if TODO
-			if (I.ptr->styleProps)
-				I.ptr->styleProps->GetFloat(growLine ? "flex-grow" : "flex-shrink", factor);
-#endif
-			if (factor == 0 || (growLine ? I.flexBaseSize > I.hypMainSize : I.flexBaseSize < I.hypMainSize))
-			{
-				I.frozen = true;
-				numFrozen++;
-				I.targetMainSize = I.hypMainSize;
-			}
-		}
-
-		// 9.7-3
-		float initialFreeSpace = mainSize;
-		for (int j = flexLines[i]; j < flexLines[i + 1]; j++)
-		{
-			initialFreeSpace -= items[j].frozen ? items[j].targetMainSize : items[j].flexBaseSize;
-			initialFreeSpace -= items[j].outerMainPadding;
-		}
-
-		// 9.7-4
-		while (numFrozen < flexLines[i + 1] - flexLines[i]) // a
-		{
-		}
-	}
-
-	// TODO 7 - Determine the hypothetical cross size of each item
 }
 
 

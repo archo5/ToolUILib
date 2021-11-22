@@ -19,26 +19,11 @@ using UIRect = AABB2f;
 
 extern int g_numStyleBlocks;
 
-enum EnumKindID
-{
-	EK_Display,
-	EK_Position,
-	EK_FlexDirection,
-	EK_FlexWrap,
-	EK_JustifyContent,
-	EK_AlignItems,
-	EK_AlignSelf,
-	EK_AlignContent,
-};
-
 enum class Presence : uint8_t
 {
-	Undefined,
-	Inherit,
-
-	None,
+	Visible, // most common = 0
 	LayoutOnly,
-	Visible,
+	None,
 };
 /*
 enum class Layout : uint8_t
@@ -116,7 +101,6 @@ ILayout* EdgeSlice();
 enum class StackingDirection : uint8_t
 {
 	Undefined,
-	Inherit,
 
 	TopDown,
 	RightToLeft,
@@ -126,9 +110,6 @@ enum class StackingDirection : uint8_t
 
 enum class Edge : uint8_t
 {
-	Undefined,
-	Inherit,
-
 	Top,
 	Right,
 	Bottom,
@@ -138,7 +119,6 @@ enum class Edge : uint8_t
 enum class BoxSizing : uint8_t
 {
 	Undefined,
-	Inherit,
 
 	ContentBox,
 	BorderBox,
@@ -147,7 +127,6 @@ enum class BoxSizing : uint8_t
 enum class HAlign : uint8_t
 {
 	Undefined,
-	Inherit,
 
 	Left,
 	Center,
@@ -172,127 +151,6 @@ enum class FontStyle : uint8_t
 {
 	Normal,
 	Italic,
-};
-
-enum class Display
-{
-	Undefined,
-	Inherit,
-
-	None,
-	Block,
-	Inline,
-	Flex,
-	InlineFlex,
-	Grid,
-	InlineGrid,
-};
-struct Display_
-{
-	enum { _ID = EK_Display };
-	using _Value = Display;
-};
-
-enum class Position
-{
-	Undefined,
-	Inherit,
-
-	Static,
-	Relative,
-	Absolute,
-	Fixed,
-	Sticky,
-};
-struct Position_
-{
-	enum { _ID = EK_Position };
-	enum _Value
-	{
-		Static,
-		Relative,
-		Absolute,
-		Fixed,
-	};
-};
-
-struct FlexDirection
-{
-	enum { _ID = EK_FlexDirection };
-	enum _Value
-	{
-		Row,
-		RowReverse,
-		Column,
-		ColumnReverse,
-	};
-};
-
-struct FlexWrap
-{
-	enum { _ID = EK_FlexWrap };
-	enum _Value
-	{
-		NoWrap,
-		Wrap,
-		WrapReverse,
-	};
-};
-
-struct JustifyContent
-{
-	enum { _ID = EK_JustifyContent };
-	enum _Value
-	{
-		FlexStart,
-		FlexEnd,
-		Center,
-		SpaceBetween,
-		SpaceAround,
-		SpaceEvenly,
-	};
-};
-
-struct AlignItems
-{
-	enum { _ID = EK_AlignItems };
-	enum _Value
-	{
-		FlexStart,
-		FlexEnd,
-		Center,
-		Baseline,
-		Stretch,
-	};
-};
-
-struct AlignSelf
-{
-	enum { _ID = EK_AlignSelf };
-	enum _Value
-	{
-		FlexStart,
-		FlexEnd,
-		Center,
-		Baseline,
-		Stretch,
-		Auto,
-	};
-};
-
-struct AlignContent
-{
-	enum { _ID = EK_AlignContent };
-	enum _Value
-	{
-		FlexStart,
-		FlexEnd,
-		Center,
-		SpaceBetween,
-		SpaceAround,
-		SpaceEvenly,
-		Stretch,
-	};
 };
 
 enum class CoordTypeUnit
@@ -470,9 +328,9 @@ struct StyleBlock
 
 	PainterHandle background_painter;
 
-	Presence presence = Presence::Undefined;
+	Presence presence = Presence::Visible;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
-	Edge edge = Edge::Undefined;
+	Edge edge = Edge::Top;
 	BoxSizing box_sizing = BoxSizing::Undefined;
 	HAlign h_align = HAlign::Undefined;
 
@@ -489,10 +347,6 @@ struct StyleBlock
 	Coord max_width;
 	Coord max_height;
 
-	Coord left;
-	Coord right;
-	Coord top;
-	Coord bottom;
 	float margin_left = 0;
 	float margin_right = 0;
 	float margin_top = 0;
@@ -560,13 +414,6 @@ public:
 	explicit StyleAccessor(StyleBlockRef& r) = delete;
 	explicit StyleAccessor(StyleBlockRef& r, UIObject* o);
 
-#if 0
-	Display GetDisplay() const;
-	void SetDisplay(Display display);
-
-	Position GetPosition() const;
-	void SetPosition(Position position);
-#endif
 
 	ILayout* GetLayout() const;
 	void SetLayout(ILayout* v);
@@ -624,19 +471,6 @@ public:
 
 	Coord GetMaxHeight() const;
 	void SetMaxHeight(Coord v);
-
-
-	Coord GetLeft() const;
-	void SetLeft(Coord v);
-
-	Coord GetRight() const;
-	void SetRight(Coord v);
-
-	Coord GetTop() const;
-	void SetTop(Coord v);
-
-	Coord GetBottom() const;
-	void SetBottom(Coord v);
 
 
 	float GetMarginLeft() const;
