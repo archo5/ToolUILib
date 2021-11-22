@@ -528,6 +528,27 @@ static ExampleGroup exampleGroups[] =
 static bool rebuildAlways;
 struct TEST : ui::Buildable
 {
+	void OnEvent(ui::Event& e) override
+	{
+		ui::Buildable::OnEvent(e);
+
+		if (e.type == ui::EventType::KeyDown)
+		{
+			if (e.shortCode == ui::KSC_F6)
+			{
+				scalePercent += 10;
+				enableScale = true;
+				Rebuild();
+			}
+			if (e.shortCode == ui::KSC_F7)
+			{
+				if (scalePercent > 10)
+					scalePercent -= 10;
+				enableScale = true;
+				Rebuild();
+			}
+		}
+	}
 	void Build() override
 	{
 #if 1
@@ -563,6 +584,16 @@ struct TEST : ui::Buildable
 			rootMenu.back().submenu.push_back(ui::MenuItem("Dump layout").Func([this]() { DumpLayout(lastChild); }));
 			rootMenu.back().submenu.push_back(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); }));
+
+			rootMenu.back().submenu.push_back(ui::MenuItem::Separator());
+
+			rootMenu.back().submenu.push_back(ui::MenuItem("Enable scale", {}, false, enableScale).Func([this]() {
+				enableScale = !enableScale; Rebuild(); }));
+			rootMenu.back().submenu.push_back(ui::MenuItem(ui::Format("Scale: %d%%", scalePercent), {}, true));
+			rootMenu.back().submenu.push_back(ui::MenuItem("Increase scale by 10%", "F6").Func([this]() {
+				scalePercent += 10; enableScale = true; Rebuild(); }));
+			rootMenu.back().submenu.push_back(ui::MenuItem("Decrease scale by 10%", "F7").Func([this]() {
+				if (scalePercent > 10) scalePercent -= 10; enableScale = true; Rebuild(); }));
 		}
 
 		Allocate<ui::TopMenu>(GetNativeWindow(), rootMenu);
@@ -606,8 +637,17 @@ struct TEST : ui::Buildable
 		ui::Pop();
 #endif
 
+		if (enableScale)
+		{
+			auto& csoe = ui::Push<ui::ChildScaleOffsetElement>();
+			csoe.scale = scalePercent / 100.0f;
+		}
+
 		if (curTest)
 			curTest->func();
+
+		if (enableScale)
+			ui::Pop();
 
 		if (rebuildAlways)
 			Rebuild();
@@ -669,6 +709,9 @@ struct TEST : ui::Buildable
 	}
 
 	const TestEntry* curTest = nullptr;
+
+	bool enableScale = false;
+	int scalePercent = 100;
 };
 
 

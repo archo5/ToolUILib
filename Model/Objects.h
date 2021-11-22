@@ -491,6 +491,24 @@ struct Placeholder : UIElement
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
+struct ChildScaleOffsetElement : UIElement
+{
+	float x, y, scale;
+
+	ui::Size2f _childSize;
+	ui::draw::VertexTransformCallback _prevVTCB;
+
+	void OnReset() override;
+
+	static void TransformVerts(void* userdata, ui::Vertex* vertices, size_t count);
+	void OnPaint(const ui::UIPaintContext& ctx) override;
+
+	ui::Point2f LocalToChildPoint(ui::Point2f pos) const override;
+	float CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override;
+	float CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override;
+	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override;
+};
+
 struct Subscription;
 struct DataCategoryTag {};
 

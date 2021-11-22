@@ -419,124 +419,6 @@ void Test_Tabs()
 
 struct TransformContainerTest : ui::Buildable
 {
-	struct TransformElement : ui::UIElement
-	{
-		float x, y, scale;
-
-		ui::Size2f _childSize;
-
-		void OnReset() override
-		{
-			UIElement::OnReset();
-
-			flags |= ui::UIObject_ClipChildren;
-
-			x = 0;
-			y = 0;
-			scale = 1;
-		}
-		ui::Point2f LocalToChildPoint(ui::Point2f pos) const override
-		{
-			auto cr = GetContentRect();
-			pos -= { cr.x0, cr.y0 };
-			pos /= scale;
-			pos -= { x, y };
-			return pos;
-		}
-		float CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override
-		{
-			return UIElement::CalcEstimatedWidth(containerSize / scale, type) * scale;
-		}
-		float CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override
-		{
-			return UIElement::CalcEstimatedHeight(containerSize / scale, type) * scale;
-		}
-		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
-		{
-			auto srect = rect;
-			srect.x1 = (srect.x1 - srect.x0) / scale;
-			srect.y1 = (srect.y1 - srect.y0) / scale;
-			srect.x0 = 0;
-			srect.y0 = 0;
-			auto ssize = containerSize / scale;
-			float prevTRS = ui::MultiplyTextResolutionScale(scale);
-
-			UIElement::OnLayout(srect, ssize);
-
-			ui::SetTextResolutionScale(prevTRS);
-			auto pfr = finalRectC;
-			_childSize = pfr.GetSize();
-			finalRectC.x1 = (finalRectC.x1 - finalRectC.x0) * scale + rect.x0;
-			finalRectC.y1 = (finalRectC.y1 - finalRectC.y0) * scale + rect.y0;
-			finalRectC.x0 = rect.x0;
-			finalRectC.y0 = rect.y0;
-
-			finalRectCP.x0 += finalRectC.x0 - pfr.x0;
-			finalRectCP.y0 += finalRectC.y0 - pfr.y0;
-			finalRectCP.x1 += finalRectC.x1 - pfr.x1;
-			finalRectCP.y1 += finalRectC.y1 - pfr.y1;
-
-			finalRectCPB.x0 += finalRectC.x0 - pfr.x0;
-			finalRectCPB.y0 += finalRectC.y0 - pfr.y0;
-			finalRectCPB.x1 += finalRectC.x1 - pfr.x1;
-			finalRectCPB.y1 += finalRectC.y1 - pfr.y1;
-		}
-
-		ui::draw::VertexTransformCallback prevVTCB;
-		static void TransformVerts(void* userdata, ui::Vertex* vertices, size_t count)
-		{
-			auto* me = (TransformElement*)userdata;
-
-			auto cr = me->GetContentRect();
-			for (size_t i = 0; i < count; i++)
-			{
-				vertices[i].x = (vertices[i].x + me->x) * me->scale + cr.x0;
-				vertices[i].y = (vertices[i].y + me->y) * me->scale + cr.y0;
-			}
-
-			me->prevVTCB.Call(vertices, count);
-		}
-		void OnPaint(const ui::UIPaintContext& ctx) override
-		{
-			ui::draw::VertexTransformCallback cb = { this, TransformVerts };
-			prevVTCB = ui::draw::SetVertexTransformCallback(cb);
-			float prevTRS = ui::MultiplyTextResolutionScale(scale);
-
-			auto cr = GetContentRect();
-			float sroX = cr.x0;
-			float sroY = cr.y0;
-
-			auto prevSRRS = ui::draw::MultiplyScissorRectResolutionScale(scale);
-			auto prevSRO = ui::draw::AddScissorRectOffset({ sroX, sroY });
-
-			ui::UIPaintHelper ph;
-			ph.PaintBackground(this);
-
-			bool paintChildren = true;
-			bool clipChildren = !!(flags & ui::UIObject_ClipChildren);
-			if (clipChildren)
-			{
-				flags &= ~ui::UIObject_ClipChildren;
-				paintChildren = ui::draw::PushScissorRect({ 0, 0, _childSize.x, _childSize.y });
-			}
-
-			if (paintChildren)
-				ph.PaintChildren(this, ctx);
-
-			if (clipChildren)
-			{
-				ui::draw::PopScissorRect();
-				flags |= ui::UIObject_ClipChildren;
-			}
-
-			ui::draw::SetScissorRectOffset(prevSRO);
-			ui::draw::SetScissorRectResolutionScale(prevSRRS);
-
-			ui::SetTextResolutionScale(prevTRS);
-			ui::draw::SetVertexTransformCallback(prevVTCB);
-		}
-	};
-
 	float x = 0;
 	float y = 0;
 	float scale = 1;
@@ -564,7 +446,7 @@ struct TransformContainerTest : ui::Buildable
 
 		ui::Push<ui::Panel>();
 		{
-			auto& te = ui::Push<TransformElement>();
+			auto& te = ui::Push<ui::ChildScaleOffsetElement>();
 			te.x = x;
 			te.y = y;
 			te.scale = scale;
