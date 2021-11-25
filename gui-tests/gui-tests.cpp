@@ -640,7 +640,7 @@ struct TEST : ui::Buildable
 		if (enableScale)
 		{
 			auto& csoe = ui::Push<ui::ChildScaleOffsetElement>();
-			csoe.scale = scalePercent / 100.0f;
+			csoe.transform.scale = scalePercent / 100.0f;
 		}
 
 		if (curTest)

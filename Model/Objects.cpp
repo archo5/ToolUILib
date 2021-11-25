@@ -1115,49 +1115,46 @@ void ChildScaleOffsetElement::OnReset()
 {
 	UIElement::OnReset();
 
-	flags |= ui::UIObject_ClipChildren;
+	flags |= UIObject_ClipChildren;
 
-	x = 0;
-	y = 0;
-	scale = 1;
+	transform = {};
 }
 
-void ChildScaleOffsetElement::TransformVerts(void* userdata, ui::Vertex* vertices, size_t count)
+void ChildScaleOffsetElement::TransformVerts(void* userdata, Vertex* vertices, size_t count)
 {
 	auto* me = (ChildScaleOffsetElement*)userdata;
 
 	auto cr = me->GetContentRect();
 	for (size_t i = 0; i < count; i++)
 	{
-		vertices[i].x = (vertices[i].x + me->x) * me->scale + cr.x0;
-		vertices[i].y = (vertices[i].y + me->y) * me->scale + cr.y0;
+		vertices[i].x = me->transform.TransformX(vertices[i].x) + cr.x0;
+		vertices[i].y = me->transform.TransformY(vertices[i].y) + cr.y0;
 	}
 
 	me->_prevVTCB.Call(vertices, count);
 }
 
-void ChildScaleOffsetElement::OnPaint(const ui::UIPaintContext& ctx)
+void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 {
-	ui::draw::VertexTransformCallback cb = { this, TransformVerts };
-	_prevVTCB = ui::draw::SetVertexTransformCallback(cb);
-	float prevTRS = ui::MultiplyTextResolutionScale(scale);
+	draw::VertexTransformCallback cb = { this, TransformVerts };
+	_prevVTCB = draw::SetVertexTransformCallback(cb);
+	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
 	auto cr = GetContentRect();
 	float sroX = cr.x0;
 	float sroY = cr.y0;
 
-	auto prevSRRS = ui::draw::MultiplyScissorRectResolutionScale(scale);
-	auto prevSRO = ui::draw::AddScissorRectOffset({ sroX, sroY });
+	auto prevSRRT = draw::AddScissorRectResolutionTransform(transform.GetScaleOnly() * ScaleOffset2D(1, cr.x0, cr.y0));
 
-	ui::UIPaintHelper ph;
+	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	bool paintChildren = true;
-	bool clipChildren = !!(flags & ui::UIObject_ClipChildren);
+	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
 	{
-		flags &= ~ui::UIObject_ClipChildren;
-		paintChildren = ui::draw::PushScissorRect({ 0, 0, _childSize.x, _childSize.y });
+		flags &= ~UIObject_ClipChildren;
+		paintChildren = draw::PushScissorRect({ 0, 0, _childSize.x, _childSize.y });
 	}
 
 	if (paintChildren)
@@ -1165,53 +1162,51 @@ void ChildScaleOffsetElement::OnPaint(const ui::UIPaintContext& ctx)
 
 	if (clipChildren)
 	{
-		ui::draw::PopScissorRect();
-		flags |= ui::UIObject_ClipChildren;
+		draw::PopScissorRect();
+		flags |= UIObject_ClipChildren;
 	}
 
-	ui::draw::SetScissorRectOffset(prevSRO);
-	ui::draw::SetScissorRectResolutionScale(prevSRRS);
+	draw::SetScissorRectResolutionTransform(prevSRRT);
 
-	ui::SetTextResolutionScale(prevTRS);
-	ui::draw::SetVertexTransformCallback(_prevVTCB);
+	SetTextResolutionScale(prevTRS);
+	draw::SetVertexTransformCallback(_prevVTCB);
 }
 
-ui::Point2f ChildScaleOffsetElement::LocalToChildPoint(ui::Point2f pos) const
+Point2f ChildScaleOffsetElement::LocalToChildPoint(Point2f pos) const
 {
 	auto cr = GetContentRect();
 	pos -= { cr.x0, cr.y0 };
-	pos /= scale;
-	pos -= { x, y };
+	pos = transform.InverseTransformPoint(pos);
 	return pos;
 }
 
-float ChildScaleOffsetElement::CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type)
+float ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return UIElement::CalcEstimatedWidth(containerSize / scale, type) * scale;
+	return UIElement::CalcEstimatedWidth(containerSize / transform.scale, type) * transform.scale;
 }
 
-float ChildScaleOffsetElement::CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type)
+float ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return UIElement::CalcEstimatedHeight(containerSize / scale, type) * scale;
+	return UIElement::CalcEstimatedHeight(containerSize / transform.scale, type) * transform.scale;
 }
 
-void ChildScaleOffsetElement::OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize)
+void ChildScaleOffsetElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	auto srect = rect;
-	srect.x1 = (srect.x1 - srect.x0) / scale;
-	srect.y1 = (srect.y1 - srect.y0) / scale;
+	srect.x1 = (srect.x1 - srect.x0) / transform.scale;
+	srect.y1 = (srect.y1 - srect.y0) / transform.scale;
 	srect.x0 = 0;
 	srect.y0 = 0;
-	auto ssize = containerSize / scale;
-	float prevTRS = ui::MultiplyTextResolutionScale(scale);
+	auto ssize = containerSize / transform.scale;
+	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
 	UIElement::OnLayout(srect, ssize);
 
-	ui::SetTextResolutionScale(prevTRS);
+	SetTextResolutionScale(prevTRS);
 	auto pfr = finalRectC;
 	_childSize = pfr.GetSize();
-	finalRectC.x1 = (finalRectC.x1 - finalRectC.x0) * scale + rect.x0;
-	finalRectC.y1 = (finalRectC.y1 - finalRectC.y0) * scale + rect.y0;
+	finalRectC.x1 = (finalRectC.x1 - finalRectC.x0) * transform.scale + rect.x0;
+	finalRectC.y1 = (finalRectC.y1 - finalRectC.y0) * transform.scale + rect.y0;
 	finalRectC.x0 = rect.x0;
 	finalRectC.y0 = rect.y0;
 

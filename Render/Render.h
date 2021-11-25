@@ -101,13 +101,9 @@ VertexTransformCallback SetVertexTransformCallback(VertexTransformCallback cb);
 
 void ApplyScissor();
 
-float GetScissorRectResolutionScale();
-float SetScissorRectResolutionScale(float nsrrs);
-float MultiplyScissorRectResolutionScale(float nsrrs);
-
-Vec2f GetScissorRectOffset();
-Vec2f SetScissorRectOffset(Vec2f o);
-Vec2f AddScissorRectOffset(Vec2f o);
+ScaleOffset2D GetScissorRectResolutionTransform();
+ScaleOffset2D SetScissorRectResolutionTransform(ScaleOffset2D nsrrt);
+ScaleOffset2D AddScissorRectResolutionTransform(ScaleOffset2D nsrrt);
 
 void PushScissorRectRaw(const AABB2i& screen, const AABB2f& virt);
 bool PushScissorRect(const AABB2f& rect);

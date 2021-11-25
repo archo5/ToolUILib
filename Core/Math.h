@@ -199,4 +199,24 @@ template <class T> UI_FORCEINLINE AABB2<T> operator * (T f, const AABB2<T>& o) {
 using AABB2f = AABB2<float>;
 using AABB2i = AABB2<int>;
 
+
+struct ScaleOffset2D
+{
+	float scale, x, y;
+
+	UI_FORCEINLINE ScaleOffset2D() : scale(1), x(0), y(0) {}
+	UI_FORCEINLINE ScaleOffset2D(DoNotInitialize) {}
+	UI_FORCEINLINE ScaleOffset2D(float _scale, float _x = 0, float _y = 0) : scale(_scale), x(_x), y(_y) {}
+	UI_FORCEINLINE static ScaleOffset2D OffsetThenScale(float _x, float _y, float _scale) { return ScaleOffset2D(_scale, _x * _scale, _y * _scale); }
+
+	UI_FORCEINLINE ScaleOffset2D GetScaleOnly() { return { scale }; }
+
+	UI_FORCEINLINE float TransformX(float v) const { return v * scale + x; }
+	UI_FORCEINLINE float TransformY(float v) const { return v * scale + y; }
+	UI_FORCEINLINE Vec2f TransformPoint(Vec2f p) const { return { p.x * scale + x, p.y * scale + y }; }
+	UI_FORCEINLINE Vec2f InverseTransformPoint(Vec2f p) const { return { (p.x - x) / scale, (p.y - y) / scale }; }
+	UI_FORCEINLINE ScaleOffset2D operator * (const ScaleOffset2D& o) const { return { scale * o.scale, x * o.scale + o.x, y * o.scale + o.y }; }
+};
+UI_FORCEINLINE AABB2f operator * (const AABB2f& rect, const ScaleOffset2D& xf) { return { xf.TransformX(rect.x0), xf.TransformY(rect.y0), xf.TransformX(rect.x1), xf.TransformY(rect.y1) }; }
+
 } // ui

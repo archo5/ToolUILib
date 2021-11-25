@@ -447,9 +447,7 @@ struct TransformContainerTest : ui::Buildable
 		ui::Push<ui::Panel>();
 		{
 			auto& te = ui::Push<ui::ChildScaleOffsetElement>();
-			te.x = x;
-			te.y = y;
-			te.scale = scale;
+			te.transform = ui::ScaleOffset2D::OffsetThenScale(x, y, scale);
 			{
 				ui::MakeWithText<ui::Button>("One button");
 				ui::MakeWithText<ui::Button>("The second button");

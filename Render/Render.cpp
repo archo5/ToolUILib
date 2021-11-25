@@ -955,8 +955,7 @@ struct ScissorRectStackEntry
 	AABB2f input;
 };
 
-static float g_scissorRectResScale = 1;
-static Vec2f g_scissorRectOffset;
+static ScaleOffset2D g_scissorRectResTransform;
 static ScissorRectStackEntry scissorStack[100];
 static int scissorCount = 1;
 
@@ -968,38 +967,21 @@ void ApplyScissor()
 }
 
 
-float GetScissorRectResolutionScale()
+ScaleOffset2D GetScissorRectResolutionTransform()
 {
-	return g_scissorRectResScale;
+	return g_scissorRectResTransform;
 }
 
-float SetScissorRectResolutionScale(float nsrrs)
+ScaleOffset2D SetScissorRectResolutionTransform(ScaleOffset2D nsrrt)
 {
-	float r = g_scissorRectResScale;
-	g_scissorRectResScale = nsrrs;
+	auto r = g_scissorRectResTransform;
+	g_scissorRectResTransform = nsrrt;
 	return r;
 }
 
-float MultiplyScissorRectResolutionScale(float nsrrs)
+ScaleOffset2D AddScissorRectResolutionTransform(ScaleOffset2D nsrrt)
 {
-	return SetScissorRectResolutionScale(g_scissorRectResScale * nsrrs);
-}
-
-Vec2f GetScissorRectOffset()
-{
-	return g_scissorRectOffset;
-}
-
-Vec2f SetScissorRectOffset(Vec2f o)
-{
-	auto r = g_scissorRectOffset;
-	g_scissorRectOffset = o;
-	return r;
-}
-
-Vec2f AddScissorRectOffset(Vec2f o)
-{
-	return SetScissorRectOffset(g_scissorRectOffset + o);
+	return SetScissorRectResolutionTransform(nsrrt * g_scissorRectResTransform);
 }
 
 
@@ -1012,9 +994,9 @@ void PushScissorRectRaw(const AABB2i& screen, const AABB2f& virt)
 
 bool PushScissorRect(const AABB2f& rect)
 {
-	auto xrect = (rect * g_scissorRectResScale).MoveBy(g_scissorRectOffset.x, g_scissorRectOffset.y);
+	auto xrect = rect * g_scissorRectResTransform;
 
-	AABB2i r = scissorStack[scissorCount - 1].input.Intersect(xrect).Cast<int>();
+	AABB2i r = scissorStack[scissorCount - 1].raw.Intersect(xrect.Cast<int>());
 
 	PushScissorRectRaw(r, rect);
 
