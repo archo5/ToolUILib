@@ -97,14 +97,10 @@ struct Theme
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
 	StyleBlockRef header;
-	StyleBlockRef collapsibleTreeNode;
-	StyleBlockRef textBoxBase;
 	StyleBlockRef sliderHBase;
 	StyleBlockRef sliderHTrack;
 	StyleBlockRef sliderHTrackFill;
 	StyleBlockRef sliderHThumb;
-	StyleBlockRef scrollVTrack;
-	StyleBlockRef scrollVThumb;
 	StyleBlockRef tabGroup;
 	StyleBlockRef tabList;
 	StyleBlockRef tabButton;

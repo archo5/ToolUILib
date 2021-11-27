@@ -533,7 +533,7 @@ struct SubUITest : ui::Buildable
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::PaintInfo info(this);
-		ui::Theme::current->textBoxBase->background_painter->Paint(info);
+		ui::Theme::current->GetStyle("textbox")->background_painter->Paint(info);
 		auto r = finalRectC;
 
 		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);

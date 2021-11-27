@@ -9,89 +9,6 @@
 
 namespace ui {
 
-static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
-
-struct ThemeFile : RefCountedST
-{
-	std::string text;
-	JSONUnserializerObjectIterator unserializer;
-};
-using ThemeFileHandle = RCHandle<ThemeFile>;
-
-struct ThemeElementRef
-{
-	ThemeFileHandle file;
-	const char* key;
-};
-
-struct ThemeLoaderData : IThemeLoader
-{
-	std::vector<ThemeFileHandle> files;
-	HashMap<std::string, ThemeElementRef> imageSets;
-	HashMap<std::string, ThemeElementRef> painters;
-	HashMap<std::string, ThemeElementRef> styles;
-	ThemeDataHandle loadedData;
-
-	ThemeFileHandle curFile;
-
-	PainterHandle LoadPainter() override
-	{
-		if (!curFile)
-			return nullptr;
-
-		auto type = curFile->unserializer.ReadString("__");
-		if (!type.HasValue())
-			return nullptr;
-
-		auto it = g_painterCreateFuncs.find(type.GetValue());
-		if (!it.is_valid())
-			return nullptr;
-
-		return it->value(this, curFile->unserializer);
-	}
-
-	Color4b LoadColor(const FieldInfo& FI) override
-	{
-		std::string text;
-		OnField(curFile->unserializer, FI, text);
-		StringView s = text;
-
-		if (s.starts_with("f:"))
-		{
-			// TODO locale
-			float tmp[4];
-			switch (sscanf(text.c_str(), "f:%g;%g;%g;%g", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
-			{
-			default: return Color4b::White();
-			case 1: return Color4f(tmp[0]);
-			case 2: return Color4f(tmp[0], tmp[1]);
-			case 3: return Color4f(tmp[0], tmp[1], tmp[2]);
-			case 4: return Color4f(tmp[0], tmp[1], tmp[2], tmp[3]);
-			}
-		}
-		if (s.starts_with("b:"))
-		{
-			unsigned tmp[4];
-			switch (sscanf(text.c_str(), "b:%u;%u;%u;%u", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
-			{
-			default: return Color4b::White();
-			case 1: return Color4b(tmp[0]);
-			case 2: return Color4b(tmp[0], tmp[1]);
-			case 3: return Color4b(tmp[0], tmp[1], tmp[2]);
-			case 4: return Color4b(tmp[0], tmp[1], tmp[2], tmp[3]);
-			}
-		}
-		// TODO refs
-		return Color4b::White();
-	}
-
-	draw::ImageSetHandle FindImageSet(const std::string& name)
-	{
-		return loadedData->imageSets.get(name, nullptr);
-	}
-};
-
-
 template <class E> struct EnumKeys
 {
 	static E StringToValue(const char* name) = delete;
@@ -192,6 +109,198 @@ static const char* EnumKeys_FontStyle[] =
 	nullptr,
 };
 template <> struct EnumKeys<FontStyle> : EnumKeysStringList<FontStyle, EnumKeys_FontStyle> {};
+
+
+static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
+
+struct ThemeFile : RefCountedST
+{
+	std::string text;
+	JSONUnserializerObjectIterator unserializer;
+};
+using ThemeFileHandle = RCHandle<ThemeFile>;
+
+struct ThemeElementRef
+{
+	ThemeFileHandle file;
+	const char* key;
+};
+
+struct ThemeLoaderData : IThemeLoader
+{
+	std::vector<ThemeFileHandle> files;
+	HashMap<std::string, ThemeElementRef> imageSets;
+	HashMap<std::string, ThemeElementRef> painters;
+	HashMap<std::string, ThemeElementRef> styles;
+	ThemeDataHandle loadedData;
+
+	ThemeFileHandle curFile;
+
+	PainterHandle LoadPainter() override
+	{
+		if (!curFile)
+			return nullptr;
+
+		auto type = curFile->unserializer.ReadString("__");
+		if (!type.HasValue())
+			return nullptr;
+
+		auto it = g_painterCreateFuncs.find(type.GetValue());
+		if (!it.is_valid())
+			return nullptr;
+
+		return it->value(this, curFile->unserializer);
+	}
+
+	StyleBlockRef GetStyleBlock(const std::string& name)
+	{
+		auto it = loadedData->styles.find(name);
+		if (it.is_valid())
+			return it->value;
+
+		auto it2 = styles.find(name);
+		if (!it2.is_valid())
+		{
+			printf("Failed to find style: \"%s\"\n", name.c_str());
+			return nullptr;
+		}
+
+		return _LoadStyleBlock(name, it2->value);
+	}
+
+	StyleBlockRef _LoadStyleBlock(const std::string& styleKey, const ThemeElementRef& styleElemRef)
+	{
+		StyleBlockRef loaded;
+
+		auto& u = styleElemRef.file->unserializer;
+		u.BeginDict(styleElemRef.key);
+		{
+			std::string basedOn;
+			OnField(u, "basedOn", basedOn);
+			if (!basedOn.empty())
+				loaded = GetStyleBlock(basedOn);
+			if (!loaded)
+				loaded = new StyleBlock;
+
+			std::string layout;
+			OnField(u, "layout", layout);
+			if (layout == "stack")
+				loaded->layout = layouts::Stack();
+			else if (layout == "stack_expand")
+				loaded->layout = layouts::StackExpand();
+			else if (layout == "inline_block")
+				loaded->layout = layouts::InlineBlock();
+			else if (layout == "edge_slice")
+				loaded->layout = layouts::EdgeSlice();
+
+			std::string painterName;
+			OnField(u, "backgroundPainter", painterName);
+			auto pit = loadedData->painters.find(painterName);
+			if (pit != loadedData->painters.end())
+				loaded->background_painter = pit->value;
+			else
+				loaded->background_painter = EmptyPainter::Get();
+
+			OnFieldEnumString(u, "presence", loaded->presence);
+			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
+			OnFieldEnumString(u, "edge", loaded->edge);
+			OnFieldEnumString(u, "boxSizing", loaded->box_sizing);
+			OnFieldEnumString(u, "horAlign", loaded->h_align);
+
+			OnFieldEnumInt(u, "fontWeight", loaded->font_weight);
+			OnFieldEnumString(u, "fontStyle", loaded->font_style);
+			OnField(u, "fontSize", loaded->font_size);
+
+			OnField(u, "width", loaded->width);
+			OnField(u, "height", loaded->height);
+			OnField(u, "minWidth", loaded->min_width);
+			OnField(u, "minHeight", loaded->min_height);
+			OnField(u, "maxWidth", loaded->max_width);
+			OnField(u, "maxHeight", loaded->max_height);
+
+			if (u.IsUnserializer())
+			{
+				float f = 0;
+				OnField(u, "margin", f);
+				loaded->margin_left = f;
+				loaded->margin_top = f;
+				loaded->margin_right = f;
+				loaded->margin_bottom = f;
+			}
+			if (u.HasField("marginLeft"))
+				OnField(u, "marginLeft", loaded->margin_left);
+			if (u.HasField("marginTop"))
+				OnField(u, "marginTop", loaded->margin_top);
+			if (u.HasField("marginRight"))
+				OnField(u, "marginRight", loaded->margin_right);
+			if (u.HasField("marginBottom"))
+				OnField(u, "marginBottom", loaded->margin_bottom);
+
+			if (u.IsUnserializer())
+			{
+				float f = 0;
+				OnField(u, "padding", f);
+				loaded->padding_left = f;
+				loaded->padding_top = f;
+				loaded->padding_right = f;
+				loaded->padding_bottom = f;
+			}
+			if (u.HasField("paddingLeft"))
+				OnField(u, "paddingLeft", loaded->padding_left);
+			if (u.HasField("paddingTop"))
+				OnField(u, "paddingTop", loaded->padding_top);
+			if (u.HasField("paddingRight"))
+				OnField(u, "paddingRight", loaded->padding_right);
+			if (u.HasField("paddingBottom"))
+				OnField(u, "paddingBottom", loaded->padding_bottom);
+
+			loadedData->styles.insert(styleKey, loaded);
+		}
+		u.EndDict();
+
+		return loaded;
+	}
+
+	Color4b LoadColor(const FieldInfo& FI) override
+	{
+		std::string text;
+		OnField(curFile->unserializer, FI, text);
+		StringView s = text;
+
+		if (s.starts_with("f:"))
+		{
+			// TODO locale
+			float tmp[4];
+			switch (sscanf(text.c_str(), "f:%g;%g;%g;%g", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
+			{
+			default: return Color4b::White();
+			case 1: return Color4f(tmp[0]);
+			case 2: return Color4f(tmp[0], tmp[1]);
+			case 3: return Color4f(tmp[0], tmp[1], tmp[2]);
+			case 4: return Color4f(tmp[0], tmp[1], tmp[2], tmp[3]);
+			}
+		}
+		if (s.starts_with("b:"))
+		{
+			unsigned tmp[4];
+			switch (sscanf(text.c_str(), "b:%u;%u;%u;%u", &tmp[0], &tmp[1], &tmp[2], &tmp[3]))
+			{
+			default: return Color4b::White();
+			case 1: return Color4b(tmp[0]);
+			case 2: return Color4b(tmp[0], tmp[1]);
+			case 3: return Color4b(tmp[0], tmp[1], tmp[2]);
+			case 4: return Color4b(tmp[0], tmp[1], tmp[2], tmp[3]);
+			}
+		}
+		// TODO refs
+		return Color4b::White();
+	}
+
+	draw::ImageSetHandle FindImageSet(const std::string& name)
+	{
+		return loadedData->imageSets.get(name, nullptr);
+	}
+};
 
 
 void RegisterPainter(const char* type, PainterCreateFunc* createFunc)
@@ -326,86 +435,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 
 	for (auto& style : tld.styles)
 	{
-		auto& u = style.value.file->unserializer;
-		u.BeginDict(style.value.key);
-		{
-			StyleBlockRef loaded = new StyleBlock;
-
-			std::string layout;
-			OnField(u, "layout", layout);
-			if (layout == "stack")
-				loaded->layout = layouts::Stack();
-			else if (layout == "stack_expand")
-				loaded->layout = layouts::StackExpand();
-			else if (layout == "inline_block")
-				loaded->layout = layouts::InlineBlock();
-			else if (layout == "edge_slice")
-				loaded->layout = layouts::EdgeSlice();
-
-			std::string painterName;
-			OnField(u, "backgroundPainter", painterName);
-			auto pit = tld.loadedData->painters.find(painterName);
-			if (pit != tld.loadedData->painters.end())
-				loaded->background_painter = pit->value;
-			else
-				loaded->background_painter = EmptyPainter::Get();
-
-			OnFieldEnumString(u, "presence", loaded->presence);
-			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
-			OnFieldEnumString(u, "edge", loaded->edge);
-			OnFieldEnumString(u, "boxSizing", loaded->box_sizing);
-			OnFieldEnumString(u, "horAlign", loaded->h_align);
-
-			OnFieldEnumInt(u, "fontWeight", loaded->font_weight);
-			OnFieldEnumString(u, "fontStyle", loaded->font_style);
-			OnField(u, "fontSize", loaded->font_size);
-
-			OnField(u, "width", loaded->width);
-			OnField(u, "height", loaded->height);
-			OnField(u, "minWidth", loaded->min_width);
-			OnField(u, "minHeight", loaded->min_height);
-			OnField(u, "maxWidth", loaded->max_width);
-			OnField(u, "maxHeight", loaded->max_height);
-
-			if (u.IsUnserializer())
-			{
-				float f = 0;
-				OnField(u, "margin", f);
-				loaded->margin_left = f;
-				loaded->margin_top = f;
-				loaded->margin_right = f;
-				loaded->margin_bottom = f;
-			}
-			if (u.HasField("marginLeft"))
-				OnField(u, "marginLeft", loaded->margin_left);
-			if (u.HasField("marginTop"))
-				OnField(u, "marginTop", loaded->margin_top);
-			if (u.HasField("marginRight"))
-				OnField(u, "marginRight", loaded->margin_right);
-			if (u.HasField("marginBottom"))
-				OnField(u, "marginBottom", loaded->margin_bottom);
-
-			if (u.IsUnserializer())
-			{
-				float f = 0;
-				OnField(u, "padding", f);
-				loaded->padding_left = f;
-				loaded->padding_top = f;
-				loaded->padding_right = f;
-				loaded->padding_bottom = f;
-			}
-			if (u.HasField("paddingLeft"))
-				OnField(u, "paddingLeft", loaded->padding_left);
-			if (u.HasField("paddingTop"))
-				OnField(u, "paddingTop", loaded->padding_top);
-			if (u.HasField("paddingRight"))
-				OnField(u, "paddingRight", loaded->padding_right);
-			if (u.HasField("paddingBottom"))
-				OnField(u, "paddingBottom", loaded->padding_bottom);
-
-			tld.loadedData->styles.insert(style.key, loaded);
-		}
-		u.EndDict();
+		tld.GetStyleBlock(style.key);
 	}
 
 	return tld.loadedData;

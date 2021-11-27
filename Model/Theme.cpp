@@ -262,14 +262,10 @@ struct DefaultTheme : Theme
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
 	StyleBlock dtHeader;
-	StyleBlock dtCollapsibleTreeNode;
-	StyleBlock dtTextBoxBase;
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
 	StyleBlock dtSliderHThumb;
-	StyleBlock dtScrollVTrack;
-	StyleBlock dtScrollVThumb;
 	StyleBlock dtTabGroup;
 	StyleBlock dtTabList;
 	StyleBlock dtTabButton;
@@ -291,14 +287,10 @@ struct DefaultTheme : Theme
 		CreateProperty();
 		CreatePropLabel();
 		CreateHeader();
-		CreateCollapsibleTreeNode();
-		CreateTextBoxBase();
 		CreateSliderHBase();
 		CreateSliderHTrack();
 		CreateSliderHTrackFill();
 		CreateSliderHThumb();
-		CreateScrollVTrack();
-		CreateScrollVThumb();
 		CreateTabGroup();
 		CreateTabList();
 		CreateTabButton();
@@ -358,45 +350,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.header = a.block;
 	}
-	void CreateCollapsibleTreeNode()
-	{
-		StyleAccessor a(&dtCollapsibleTreeNode);
-		PreventHeapDelete(a);
-		//a.SetLayout(layouts::Stack());
-		//a.SetPadding(1);
-		//a.SetPaddingLeft(GetFontHeight());
-		a.SetLayout(layouts::InlineBlock());
-		a.SetWidth(GetFontHeight() + 5 + 5);
-		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			float w = min(r.GetWidth(), r.GetHeight());
-			DrawThemeElement(info.IsHovered() ?
-				info.IsChecked() ? TE_TreeTickOpenHover : TE_TreeTickClosedHover :
-				info.IsChecked() ? TE_TreeTickOpenNormal : TE_TreeTickClosedNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.collapsibleTreeNode = a.block;
-	}
-	void CreateTextBoxBase()
-	{
-		StyleAccessor a(&dtTextBoxBase);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(5);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal, r.x0, r.y0, r.x1, r.y1);
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.textBoxBase = a.block;
-	}
 	void CreateSliderHBase()
 	{
 		StyleAccessor a(&dtSliderHBase);
@@ -450,24 +403,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
 			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
 		defaultTheme.sliderHThumb = a.block;
-	}
-	void CreateScrollVTrack()
-	{
-		StyleAccessor a(&dtScrollVTrack);
-		PreventHeapDelete(a);
-		a.SetWidth(20);
-		a.SetPadding(2);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
-		defaultTheme.scrollVTrack = a.block;
-	}
-	void CreateScrollVThumb()
-	{
-		StyleAccessor a(&dtScrollVThumb);
-		PreventHeapDelete(a);
-		a.SetMinHeight(16);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
-			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
-		defaultTheme.scrollVThumb = a.block;
 	}
 	void CreateTabGroup()
 	{

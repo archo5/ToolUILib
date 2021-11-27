@@ -616,6 +616,7 @@ TreeView::~TreeView()
 	delete _impl;
 }
 
+static StaticID sid_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
 	Buildable::OnReset();
@@ -624,7 +625,7 @@ void TreeView::OnReset()
 
 	styleProps = Theme::current->tableBase;
 	cellStyle = Theme::current->tableCell;
-	expandButtonStyle = Theme::current->collapsibleTreeNode;
+	expandButtonStyle = Theme::current->GetStyle(sid_tree_expand);
 	colHeaderStyle = Theme::current->tableColHeader;
 
 	_impl->dataSource = nullptr;

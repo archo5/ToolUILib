@@ -45,6 +45,52 @@
 		"backgroundPainter": "outsetbox"
 	},
 
+	"scroll_v_track:style":
+	{
+		"width": "20px",
+		"padding": 2,
+		"backgroundPainter": "insetbox"
+	},
+	"scroll_v_thumb:style":
+	{
+		"minHeight": "16px",
+		"backgroundPainter": "button"
+	},
+
+	"textbox:style":
+	{
+		"width": "1fr",
+		"padding": 5,
+		"height": "22px",
+		"backgroundPainter": "textbox"
+	},
+
+	"textbox:painter":
+	{
+		"__": "layer",
+		"painters":
+		[
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["disabled"],
+						"painter": { "__": "imgset", "imgset": "textbox.disabled" }
+					},
+					{
+						"painter": { "__": "imgset", "imgset": "textbox.normal" }
+					}
+				]
+			},
+			{
+				"__": "conditional",
+				"condition": ["focused"],
+				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+			}
+		]
+	},
+
 	"insetbox:painter":
 	{
 		"__": "select_first",

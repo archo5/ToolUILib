@@ -123,11 +123,12 @@ void RadioButtonIcon::OnReset()
 }
 
 
+static StaticID sid_tree_expand("tree_expand");
 void TreeExpandIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->collapsibleTreeNode;
+	styleProps = Theme::current->GetStyle(sid_tree_expand);
 }
 
 
@@ -874,10 +875,12 @@ ScrollbarV::ScrollbarV()
 	OnReset();
 }
 
+static StaticID sid_scroll_v_track("scroll_v_track");
+static StaticID sid_scroll_v_thumb("scroll_v_thumb");
 void ScrollbarV::OnReset()
 {
-	trackVStyle = Theme::current->scrollVTrack;
-	thumbVStyle = Theme::current->scrollVThumb;
+	trackVStyle = Theme::current->GetStyle(sid_scroll_v_track);
+	thumbVStyle = Theme::current->GetStyle(sid_scroll_v_thumb);
 }
 
 Coord ScrollbarV::GetWidth()
@@ -1178,12 +1181,13 @@ void TabPanel::OnPaint(const UIPaintContext& ctx)
 }
 
 
+static StaticID sid_textbox("textbox");
 void Textbox::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->textBoxBase;
+	styleProps = Theme::current->GetStyle(sid_textbox);
 	_placeholder = {};
 }
 
@@ -1619,7 +1623,7 @@ void CollapsibleTreeNode::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->collapsibleTreeNode;
+	styleProps = Theme::current->GetStyle(sid_tree_expand);
 }
 
 void CollapsibleTreeNode::OnPaint(const UIPaintContext& ctx)
