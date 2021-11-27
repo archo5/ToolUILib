@@ -10,9 +10,9 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::imm::RadioButton(layout, 0, "No button", { ui::ApplyStyle(ui::Theme::current->button) });
-		ui::imm::RadioButton(layout, 1, "Left", { ui::ApplyStyle(ui::Theme::current->button) });
-		ui::imm::RadioButton(layout, 2, "Right", { ui::ApplyStyle(ui::Theme::current->button) });
+		ui::imm::RadioButton(layout, 0, "No button", {}, ui::imm::ButtonStateToggleSkin());
+		ui::imm::RadioButton(layout, 1, "Left", {}, ui::imm::ButtonStateToggleSkin());
+		ui::imm::RadioButton(layout, 2, "Right", {}, ui::imm::ButtonStateToggleSkin());
 
 		tgt = nullptr;
 		if (layout != 0)

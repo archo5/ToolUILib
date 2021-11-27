@@ -235,14 +235,14 @@ struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 
 struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 {
-	void OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
-	void OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
-	void OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
-	void OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
-	void OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
-	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
+	void OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int8_t>(tmp); }
+	void OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint8_t>(tmp); }
+	void OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int16_t>(tmp); }
+	void OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint16_t>(tmp); }
+	void OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int32_t>(tmp); }
+	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint32_t>(tmp); }
 
-	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); val = static_cast<typename std::remove_reference<decltype(val)>::type>(tmp); }
+	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); val = static_cast<float>(tmp); }
 };
 
 
