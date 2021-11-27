@@ -586,7 +586,7 @@ struct ImageTest : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::StyleBlockRef pbr = ui::Theme::current->panel;
+		ui::StyleBlockRef pbr = ui::Theme::current->GetStyle("panel");
 		ui::StyleAccessor pa(pbr, nullptr);
 		pa.SetLayout(ui::layouts::InlineBlock());
 		pa.SetPadding(4);

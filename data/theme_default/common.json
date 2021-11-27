@@ -9,13 +9,13 @@
 
 	"prop_label:style":
 	{
-		"padding": "5px"
+		"padding": 5
 	},
 
 	"panel:style":
 	{
-		"margin": "2px",
-		"padding": "6px",
+		"margin": 2,
+		"padding": 6,
 		"backgroundPainter": "panel"
 	},
 	"panel:painter":
@@ -28,20 +28,20 @@
 	"listbox:style":
 	{
 		"layout": "stack",
-		"padding": "5px",
+		"padding": 5,
 		"backgroundPainter": "insetbox"
 	},
 
 	"progress_bar_base:style":
 	{
-		"padding": "5px",
+		"padding": 5,
 		"width": "100%",
 		"backgroundPainter": "insetbox"
 	},
 	"progress_bar_completion:style":
 	{
 		"layout": "inline_block",
-		"margin": "2px",
+		"margin": 2,
 		"backgroundPainter": "outsetbox"
 	},
 

@@ -146,7 +146,7 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 
 	void OnReset() override
 	{
-		buttonStyle = ui::Theme::current->button;
+		buttonStyle = ui::Theme::current->GetStyle("button");
 		checkboxStyle = ui::Theme::current->checkbox;
 		radioBtnStyle = ui::Theme::current->radioButton;
 	}

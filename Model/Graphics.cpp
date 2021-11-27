@@ -9,11 +9,12 @@
 namespace ui {
 
 
+static StaticID sid_color_block("color_block");
 void ColorBlock::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->colorBlock;
+	styleProps = Theme::current->GetStyle(sid_color_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 
 	_color = Color4b::Black();
@@ -37,11 +38,12 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 }
 
 
+static StaticID sid_color_inspect_block("color_inspect_block");
 void ColorInspectBlock::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->colorInspectBlock;
+	styleProps = Theme::current->GetStyle(sid_color_inspect_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 
 	_color = Color4b::Black();

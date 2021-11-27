@@ -4,7 +4,7 @@
 		"layout": "stack",
 		"stackingDirection": "LeftToRight",
 		"width": "1fr",
-		"padding": "5px",
+		"padding": 5,
 		"backgroundPainter": "selectable"
 	},
 

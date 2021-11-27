@@ -3,7 +3,7 @@
 	{
 		"width": "20px",
 		"height": "20px",
-		"padding": "3px",
+		"padding": 3,
 		"layout": "inline_block",
 		"backgroundPainter": "panel"
 	},
@@ -11,7 +11,7 @@
 	{
 		"width": "1fr",
 		"height": "20px",
-		"padding": "3px",
+		"padding": 3,
 		"layout": "inline_block",
 		"backgroundPainter": "panel"
 	}

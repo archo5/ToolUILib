@@ -137,18 +137,15 @@ template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const Fiel
 
 static const char* EnumKeys_Presence[] =
 {
-	"",
-	"",
-	"None",
-	"LayoutOnly",
 	"Visible",
+	"LayoutOnly",
+	"None",
 	nullptr,
 };
 template <> struct EnumKeys<Presence> : EnumKeysStringList<Presence, EnumKeys_Presence> {};
 
 static const char* EnumKeys_StackingDirection[] =
 {
-	"",
 	"",
 	"LeftToRight",
 	"TopDown",
@@ -160,8 +157,6 @@ template <> struct EnumKeys<StackingDirection> : EnumKeysStringList<StackingDire
 
 static const char* EnumKeys_Edge[] =
 {
-	"",
-	"",
 	"left",
 	"top",
 	"right",
@@ -173,7 +168,6 @@ template <> struct EnumKeys<Edge> : EnumKeysStringList<Edge, EnumKeys_Edge> {};
 static const char* EnumKeys_BoxSizing[] =
 {
 	"",
-	"",
 	"ContentBox",
 	"BorderBox",
 	nullptr,
@@ -182,7 +176,6 @@ template <> struct EnumKeys<BoxSizing> : EnumKeysStringList<BoxSizing, EnumKeys_
 
 static const char* EnumKeys_HAlign[] =
 {
-	"",
 	"",
 	"left",
 	"center",
@@ -194,8 +187,6 @@ template <> struct EnumKeys<HAlign> : EnumKeysStringList<HAlign, EnumKeys_HAlign
 
 static const char* EnumKeys_FontStyle[] =
 {
-	"",
-	"",
 	"normal",
 	"italic",
 	nullptr,
@@ -523,6 +514,7 @@ static IPainter* ColorFillPainterCreateFunc(IThemeLoader* loader, IObjectIterato
 	p->color = loader->LoadColor("color");
 
 	OnField(OI, "shrink", p->shrink);
+	OnField(OI, "contentOffset", p->contentOffset);
 
 	return p;
 }
@@ -536,6 +528,7 @@ static IPainter* ImageSetPainterCreateFunc(IThemeLoader* loader, IObjectIterator
 	p->imageSet = loader->FindImageSet(imgset);
 
 	OnField(OI, "shrink", p->shrink);
+	OnField(OI, "contentOffset", p->contentOffset);
 
 	return p;
 }

@@ -34,7 +34,7 @@ struct TrackEditorDemo : ui::Buildable
 				ui::PaintInfo info(this);
 				info.rect.y0 += i * TRACK_HEIGHT;
 				info.rect.y1 = info.rect.y0 + TRACK_HEIGHT;
-				ui::Theme::current->listBox->background_painter->Paint(info);
+				ui::Theme::current->GetStyle("listbox")->background_painter->Paint(info);
 			}
 
 			uint32_t id = 0;
@@ -47,7 +47,7 @@ struct TrackEditorDemo : ui::Buildable
 					info.state |= ui::PS_Hover;
 				if (subui.IsPressed(id))
 					info.state |= ui::PS_Down;
-				ui::Theme::current->button->background_painter->Paint(info);
+				ui::Theme::current->GetStyle("button")->background_painter->Paint(info);
 				id++;
 			}
 

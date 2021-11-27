@@ -9,6 +9,18 @@ namespace ui {
 
 // TODO refactor
 
+struct StaticID
+{
+	const char* _name;
+	uint32_t _id;
+
+	StaticID(const char* name);
+	UI_FORCEINLINE bool operator == (const StaticID& o) const { return _id == o._id; }
+	UI_FORCEINLINE bool operator != (const StaticID& o) const { return _id != o._id; }
+
+	static uint32_t& GetCount();
+};
+
 struct Sprite
 {
 	int ox0, oy0, ox1, oy1;
@@ -84,17 +96,11 @@ struct Theme
 	StyleBlockRef text;
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
-	StyleBlockRef panel;
 	StyleBlockRef header;
-	StyleBlockRef button;
 	StyleBlockRef checkbox;
 	StyleBlockRef radioButton;
-	StyleBlockRef selectable;
 	StyleBlockRef collapsibleTreeNode;
 	StyleBlockRef textBoxBase;
-	StyleBlockRef listBox;
-	StyleBlockRef progressBarBase;
-	StyleBlockRef progressBarCompletion;
 	StyleBlockRef sliderHBase;
 	StyleBlockRef sliderHTrack;
 	StyleBlockRef sliderHTrackFill;
@@ -109,12 +115,13 @@ struct Theme
 	StyleBlockRef tableCell;
 	StyleBlockRef tableRowHeader;
 	StyleBlockRef tableColHeader;
-	StyleBlockRef colorBlock;
-	StyleBlockRef colorInspectBlock;
 	StyleBlockRef image;
 	StyleBlockRef selectorContainer;
 	StyleBlockRef selector;
 
+	virtual IPainter* GetPainter(const StaticID& id) = 0;
+	virtual AABB2i GetIntRect(const StaticID& id) = 0;
+	virtual StyleBlockRef GetStyle(const StaticID& id) = 0;
 	virtual draw::ImageHandle GetImage(ThemeImage ti) = 0;
 
 	static Theme* current;

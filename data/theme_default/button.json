@@ -5,7 +5,7 @@
 		"stackingDirection": "LeftToRight",
 		"horAlign": "center",
 		"width": "1fr",
-		"padding": "5px",
+		"padding": 5,
 		"backgroundPainter": "button"
 	},
 	"button:painter":
@@ -27,11 +27,11 @@
 					},
 					{
 						"condition": ["down"],
-						"painter": { "__": "imgset", "imgset": "button.pressed" }
+						"painter": { "__": "imgset", "imgset": "button.pressed", "contentOffset": { "y": 1 } }
 					},
 					{
 						"condition": ["checked"],
-						"painter": { "__": "imgset", "imgset": "button.pressed" }
+						"painter": { "__": "imgset", "imgset": "button.pressed", "contentOffset": { "y": 1 } }
 					},
 					{
 						"condition": ["hover"],

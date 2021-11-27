@@ -2,11 +2,37 @@
 #include "../Render/Render.h"
 #include "Theme.h"
 
+#include "ThemeData.h"
+
 #include "../Core/Font.h"
 static float GetFontHeight() { return 12; } // TODO remove
 
 
 namespace ui {
+
+static HashMap<StringView, uint32_t> g_staticIDs;
+
+StaticID::StaticID(const char* name) : _name(name)
+{
+	auto it = g_staticIDs.find(_name);
+	if (it.is_valid())
+		_id = it->value;
+	else
+		g_staticIDs.insert(_name, _id = GetCount()++);
+}
+
+uint32_t& StaticID::GetCount()
+{
+	static uint32_t count;
+	return count;
+}
+
+
+StaticID sid_panel("panel");
+StaticID sid_button("button");
+StaticID sid_selectable("selectable");
+StaticID sid_listbox("listbox");
+
 
 Theme* Theme::current;
 
@@ -208,24 +234,6 @@ struct ThemeElementPainter : IPainter
 	}
 };
 
-struct CheckButtonThemeElementPainter : IPainter
-{
-	ContentPaintAdvice Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		DrawThemeElement(
-			info.IsDisabled() ? TE_ButtonDisabled :
-			info.IsDown() || info.IsChecked() ? TE_ButtonPressed :
-			info.IsHovered() ? TE_ButtonHover : TE_ButtonNormal, r.x0, r.y0, r.x1, r.y1);
-		if (info.IsFocused())
-			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-		ContentPaintAdvice ret;
-		if (info.IsDown())
-			ret.offset = { 0, 1 };
-		return ret;
-	}
-};
-
 struct CheckableThemeElementPainter : IPainter
 {
 	EThemeElement elNormal;
@@ -305,21 +313,17 @@ struct BorderRectanglePainter : IPainter
 
 struct DefaultTheme : Theme
 {
+	ThemeDataHandle themeData;
+
 	StyleBlock dtObject;
 	StyleBlock dtText;
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
-	StyleBlock dtPanel;
 	StyleBlock dtHeader;
-	StyleBlock dtButton;
 	StyleBlock dtCheckbox;
 	StyleBlock dtRadioButton;
-	StyleBlock dtSelectable;
 	StyleBlock dtCollapsibleTreeNode;
 	StyleBlock dtTextBoxBase;
-	StyleBlock dtListBox;
-	StyleBlock dtProgressBarBase;
-	StyleBlock dtProgressBarCompletion;
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
@@ -334,29 +338,23 @@ struct DefaultTheme : Theme
 	StyleBlock dtTableCell;
 	StyleBlock dtTableRowHeader;
 	StyleBlock dtTableColHeader;
-	StyleBlock dtColorBlock;
-	StyleBlock dtColorInspectBlock;
 	StyleBlock dtImage;
 	StyleBlock dtSelectorContainer;
 	StyleBlock dtSelector;
 
 	DefaultTheme()
 	{
+		themeData = LoadTheme("data/theme_default");
+
 		CreateObject();
 		CreateText();
 		CreateProperty();
 		CreatePropLabel();
-		CreatePanel();
 		CreateHeader();
-		CreateButton();
 		CreateCheckbox();
 		CreateRadioButton();
-		CreateSelectable();
 		CreateCollapsibleTreeNode();
 		CreateTextBoxBase();
-		CreateListBox();
-		CreateProgressBarBase();
-		CreateProgressBarCompletion();
 		CreateSliderHBase();
 		CreateSliderHTrack();
 		CreateSliderHTrackFill();
@@ -371,8 +369,6 @@ struct DefaultTheme : Theme
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
-		CreateColorBlock();
-		CreateColorInspectBlock();
 		CreateImage();
 		CreateSelectorContainer();
 		CreateSelector();
@@ -415,15 +411,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
 	}
-	void CreatePanel()
-	{
-		StyleAccessor a(&dtPanel);
-		PreventHeapDelete(a);
-		a.SetMargin(2);
-		a.SetPadding(6);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.panel = a.block;
-	}
 	void CreateHeader()
 	{
 		StyleAccessor a(&dtHeader);
@@ -432,19 +419,6 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.header = a.block;
-	}
-	void CreateButton()
-	{
-		StyleAccessor a(&dtButton);
-		PreventHeapDelete(a);
-		//a.SetLayout(style::Layout::InlineBlock);
-		a.SetLayout(layouts::Stack());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetHAlign(HAlign::Center);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetPadding(5);
-		a.SetBackgroundPainter(new CheckButtonThemeElementPainter);
-		defaultTheme.button = a.block;
 	}
 	void CreateCheckbox()
 	{
@@ -472,34 +446,6 @@ struct DefaultTheme : Theme
 		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
 		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitRadioButton());
 		defaultTheme.radioButton = a.block;
-	}
-	void CreateSelectable()
-	{
-		StyleAccessor a(&dtSelectable);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::Stack());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetPadding(5);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			if (info.IsChecked() || info.IsDown() || info.IsHovered())
-			{
-				Color4b col;
-				if (info.IsChecked())
-					col = Color4f(0.6f, 0.04f, 0.0f);
-				else if (info.IsDown())
-					col = Color4f(0, 0, 0, 0.5f);
-				else if (info.IsHovered())
-					col = Color4f(1, 1, 1, 0.2f);
-				draw::RectCol(r.x0, r.y0, r.x1, r.y1, col);
-			}
-			if (info.IsFocused())
-				DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x1 + 1, r.y1 + 1);
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.selectable = a.block;
 	}
 	void CreateCollapsibleTreeNode()
 	{
@@ -539,33 +485,6 @@ struct DefaultTheme : Theme
 			return ContentPaintAdvice{};
 		}));
 		defaultTheme.textBoxBase = a.block;
-	}
-	void CreateListBox()
-	{
-		StyleAccessor a(&dtListBox);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::Stack());
-		a.SetPadding(5);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
-		defaultTheme.listBox = a.block;
-	}
-	void CreateProgressBarBase()
-	{
-		StyleAccessor a(&dtProgressBarBase);
-		PreventHeapDelete(a);
-		a.SetPadding(5);
-		a.SetWidth(Coord::Percent(100));
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_TextboxNormal, TE_TextboxDisabled));
-		defaultTheme.progressBarBase = a.block;
-	}
-	void CreateProgressBarCompletion()
-	{
-		StyleAccessor a(&dtProgressBarCompletion);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetMargin(2);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalDisabled(TE_ButtonNormal, TE_ButtonDisabled));
-		defaultTheme.progressBarCompletion = a.block;
 	}
 	void CreateSliderHBase()
 	{
@@ -739,28 +658,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
 		defaultTheme.tableColHeader = a.block;
 	}
-	void CreateColorBlock()
-	{
-		StyleAccessor a(&dtColorBlock);
-		PreventHeapDelete(a);
-		a.SetWidth(20);
-		a.SetHeight(20);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(3);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.colorBlock = a.block;
-	}
-	void CreateColorInspectBlock()
-	{
-		StyleAccessor a(&dtColorInspectBlock);
-		PreventHeapDelete(a);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetHeight(20);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(3);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Panel));
-		defaultTheme.colorInspectBlock = a.block;
-	}
 	void CreateImage()
 	{
 		StyleAccessor a(&dtImage);
@@ -784,6 +681,24 @@ struct DefaultTheme : Theme
 		a.SetHeight(16);
 		a.SetBackgroundPainter(new ThemeElementPainter(TE_Selector16));
 		defaultTheme.selector = a.block;
+	}
+
+	IPainter* GetPainter(const StaticID& id) override
+	{
+		auto it = themeData->painters.find(id._name);
+		return it.is_valid() ? it->value : nullptr;
+	}
+	AABB2i GetIntRect(const StaticID& id) override
+	{
+		// TODO
+		return {};
+	}
+	StyleBlockRef GetStyle(const StaticID& id) override
+	{
+		auto it = themeData->styles.find(id._name);
+		if (it.is_valid())
+			return it->value;
+		return object;
 	}
 
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];

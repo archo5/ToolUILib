@@ -225,6 +225,13 @@ struct ContentPaintAdvice
 		_hasTextColor = true;
 		_textColor = col;
 	}
+
+	void MergeOver(const ContentPaintAdvice& o)
+	{
+		if (o._hasTextColor)
+			SetTextColor(o._textColor);
+		offset += o.offset;
+	}
 };
 
 struct IPainter : RefCountedST
@@ -282,6 +289,7 @@ struct ColorFillPainter : IPainter
 {
 	Color4b color;
 	int shrink = 0;
+	Vec2f contentOffset;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
@@ -290,6 +298,7 @@ struct ImageSetPainter : IPainter
 {
 	draw::ImageSetHandle imageSet;
 	int shrink = 0;
+	Vec2f contentOffset;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };

@@ -8,12 +8,13 @@
 
 namespace ui {
 
+extern StaticID sid_panel;
 void Panel::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->panel;
+	styleProps = Theme::current->GetStyle(sid_panel);
 }
 
 
@@ -26,12 +27,13 @@ void Header::OnReset()
 }
 
 
+extern StaticID sid_button;
 void Button::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->button;
+	styleProps = Theme::current->GetStyle(sid_button);
 }
 
 
@@ -90,7 +92,11 @@ void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
+	{
 		info.checkState = st->GetState();
+		if (info.checkState)
+			info.state |= PS_Checked;
+	}
 
 	info.obj = this;
 
@@ -126,35 +132,39 @@ void StateButtonSkin::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->button;
+	styleProps = Theme::current->GetStyle(sid_button);
 }
 
 
+extern StaticID sid_listbox;
 void ListBox::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	SetFlag(UIObject_ClipChildren, true);
 }
 
 
+extern StaticID sid_selectable;
 void Selectable::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
-	SetStyle(Theme::current->selectable);
+	SetStyle(Theme::current->GetStyle(sid_selectable));
 }
 
 
+static StaticID sid_progress_bar_base("progress_bar_base");
+static StaticID sid_progress_bar_completion("progress_bar_completion");
 void ProgressBar::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->progressBarBase;
-	completionBarStyle = Theme::current->progressBarCompletion;
+	styleProps = Theme::current->GetStyle(sid_progress_bar_base);
+	completionBarStyle = Theme::current->GetStyle(sid_progress_bar_completion);
 	progress = 0.5f;
 }
 
@@ -548,9 +558,9 @@ StyleAccessor LabeledProperty::GetLabelStyle()
 SplitPane::SplitPane()
 {
 	// TODO
-	vertSepStyle = Theme::current->button;
+	vertSepStyle = Theme::current->GetStyle(sid_button);
 	StyleAccessor(vertSepStyle, this).SetWidth(8);
-	horSepStyle = Theme::current->button;
+	horSepStyle = Theme::current->GetStyle(sid_button);
 	StyleAccessor(horSepStyle, this).SetHeight(8);
 }
 
@@ -1696,7 +1706,7 @@ void DropdownMenu::OnEvent(Event& e)
 void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
-	btn + ApplyStyle(Theme::current->button);
+	btn + ApplyStyle(Theme::current->GetStyle(sid_button));
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{
@@ -1875,7 +1885,7 @@ void TooltipFrame::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 
@@ -1884,7 +1894,7 @@ void DragDropDataFrame::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->listBox;
+	styleProps = Theme::current->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 
