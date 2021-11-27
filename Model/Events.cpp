@@ -265,7 +265,7 @@ UIObject* EventSystem::FindObjectAtPosition(Point2f pos)
 	for (size_t i = overlays->sorted.size(); i > 0; )
 	{
 		i--;
-		if (auto* o = _FindObjectAtPosition(overlays->sorted[i].obj, pos))
+		if (auto* o = _FindObjectAtPosition(overlays->sorted[i].obj, ResolvePos(pos, overlays->sorted[i].obj)))
 			return o;
 	}
 	return _FindObjectAtPosition(container->rootBuildable, pos);

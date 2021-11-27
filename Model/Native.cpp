@@ -685,13 +685,12 @@ struct NativeWindow_Impl
 
 		//GL::Clear(20, 40, 80, 255);
 		rhi::Clear(0x25, 0x25, 0x25, 255);
-		UIPaintContext pc;
 		if (cont.rootBuildable)
-			cont.rootBuildable->OnPaint(pc);
+			cont.rootBuildable->RootPaint();
 
 		system.overlays.UpdateSorted();
 		for (auto& ovr : system.overlays.sorted)
-			ovr.obj->OnPaint(pc);
+			ovr.obj->RootPaint();
 
 #if 0
 		draw::RectTex(20, 120, 256 + 20, 128 + 120, g_themeTexture);

@@ -245,6 +245,12 @@ struct UIPaintContext
 	}
 };
 
+struct SingleChildPaintPtr
+{
+	SingleChildPaintPtr* next;
+	UIObject* child;
+};
+
 struct UIObject : IPersistentObject
 {
 	UIObject();
@@ -282,6 +288,9 @@ struct UIObject : IPersistentObject
 	virtual void OnPaint(const UIPaintContext& ctx);
 	void Paint(const UIPaintContext& ctx);
 	void PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa);
+	void RootPaint();
+	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
+
 	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
@@ -502,6 +511,7 @@ struct ChildScaleOffsetElement : UIElement
 
 	static void TransformVerts(void* userdata, Vertex* vertices, size_t count);
 	void OnPaint(const UIPaintContext& ctx) override;
+	void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx) override;
 
 	Point2f LocalToChildPoint(Point2f pos) const override;
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;

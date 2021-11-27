@@ -433,6 +433,36 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 		draw::PopScissorRect();
 }
 
+static void PaintBacktracker(UIObject* cur, SingleChildPaintPtr* next, const UIPaintContext& ctx)
+{
+	if (cur->parent)
+	{
+		SingleChildPaintPtr entry = { next, cur };
+		PaintBacktracker(cur->parent, &entry, ctx);
+	}
+	else
+	{
+		cur->OnPaintSingleChild(next, ctx);
+	}
+}
+
+void UIObject::RootPaint()
+{
+	UIPaintContext pc;
+	if (!parent)
+		OnPaint(pc);
+	else
+		PaintBacktracker(this, nullptr, pc);
+}
+
+void UIObject::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx)
+{
+	if (!next)
+		OnPaint(ctx);
+	else
+		next->child->OnPaintSingleChild(next->next, ctx);
+}
+
 float UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	auto layout = GetStyle().GetLayout();
@@ -1165,6 +1195,26 @@ void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 		flags |= UIObject_ClipChildren;
 	}
+
+	draw::SetScissorRectResolutionTransform(prevSRRT);
+
+	SetTextResolutionScale(prevTRS);
+	draw::SetVertexTransformCallback(_prevVTCB);
+}
+
+void ChildScaleOffsetElement::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx)
+{
+	draw::VertexTransformCallback cb = { this, TransformVerts };
+	_prevVTCB = draw::SetVertexTransformCallback(cb);
+	float prevTRS = MultiplyTextResolutionScale(transform.scale);
+
+	auto cr = GetContentRect();
+	float sroX = cr.x0;
+	float sroY = cr.y0;
+
+	auto prevSRRT = draw::AddScissorRectResolutionTransform(transform.GetScaleOnly() * ScaleOffset2D(1, cr.x0, cr.y0));
+
+	UIElement::OnPaintSingleChild(next, ctx);
 
 	draw::SetScissorRectResolutionTransform(prevSRRT);
 
