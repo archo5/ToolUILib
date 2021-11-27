@@ -103,6 +103,9 @@
     <ClCompile Include="Core\String.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Model\ThemeData.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -236,6 +239,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Model\EventSystem.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ThemeData.h">
       <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>

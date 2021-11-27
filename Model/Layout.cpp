@@ -387,6 +387,58 @@ ILayout* EdgeSlice() { return &g_edgeSliceLayout; }
 int g_numStyleBlocks;
 
 
+struct CoordBufferRW : IBufferRW
+{
+	Coord* coord;
+	mutable char buf[32];
+
+	void Assign(StringView sv) const
+	{
+		if (sv == "")
+			*coord = Coord::Undefined();
+		else if (sv == "auto")
+			*coord = Coord(0, CoordTypeUnit::Auto);
+		else if (sv == "inherit")
+			*coord = Coord(0, CoordTypeUnit::Inherit);
+		else
+		{
+			Coord c;
+			if (sv.ends_with("%"))
+				c.unit = CoordTypeUnit::Percent;
+			else if (sv.ends_with("fr"))
+				c.unit = CoordTypeUnit::Fraction;
+			else
+				c.unit = CoordTypeUnit::Pixels;
+			c.value = sv.to_float64();
+			*coord = c;
+		}
+	}
+	StringView Read() const
+	{
+		const char* type = "";
+		switch (coord->unit)
+		{
+		case CoordTypeUnit::Undefined: return "";
+		case CoordTypeUnit::Inherit: return "inherit";
+		case CoordTypeUnit::Auto: return "auto";
+
+		case CoordTypeUnit::Pixels: type = "px"; break;
+		case CoordTypeUnit::Percent: type = "%"; break;
+		case CoordTypeUnit::Fraction: type = "fr"; break;
+		}
+		snprintf(buf, sizeof(buf), "%g%s", coord->value, type);
+		return buf;
+	}
+};
+
+void Coord::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	CoordBufferRW rw;
+	rw.coord = this;
+	oi.OnFieldString(FI, rw);
+}
+
+
 PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 {
 	rect = o->GetPaddingRect();
@@ -399,7 +451,10 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 	if (o->IsFocused())
 		state |= PS_Focused;
 	if (o->flags & UIObject_IsChecked)
+	{
+		state |= PS_Checked;
 		checkState = 1;
+	}
 }
 
 
@@ -455,6 +510,59 @@ ContentPaintAdvice LayerPainter::Paint(const PaintInfo& info)
 RCHandle<LayerPainter> LayerPainter::Create()
 {
 	return new LayerPainter;
+}
+
+
+ContentPaintAdvice ConditionalPainter::Paint(const PaintInfo& info)
+{
+	if (painter && (condition & info.state) == condition)
+		return painter->Paint(info);
+	return {};
+}
+
+
+ContentPaintAdvice SelectFirstPainter::Paint(const PaintInfo& info)
+{
+	for (const auto& item : items)
+	{
+		if (item.painter && (item.condition & info.state) == item.condition)
+		{
+			return item.painter->Paint(info);
+		}
+	}
+	return {};
+}
+
+
+ContentPaintAdvice ColorFillPainter::Paint(const PaintInfo& info)
+{
+	ui::AABB2f outer = info.rect;
+	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
+	ui::draw::RectCol(outer.x0, outer.y0, outer.x1, outer.y1, color);
+	return {}; // TODO
+}
+
+
+ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
+{
+	if (!imageSet)
+		return {};
+
+	const auto& ise = imageSet->entries[0];
+
+	ui::AABB2f outer = info.rect;
+	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
+	if (ise.sliced)
+	{
+		ui::AABB2f inner = outer.ShrinkBy(ise.edgeWidth);
+
+		ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), ise.image, { 0, 0, 1, 1 }, ise.innerUV);
+	}
+	else
+	{
+		ui::draw::RectTex(outer.x0, outer.y0, outer.x1, outer.y1, ise.image);
+	}
+	return {}; // TODO
 }
 
 

@@ -1783,10 +1783,12 @@ void dumpallocinfo()
 }
 
 
+namespace ui { void RegisterPainters(); }
 struct GlobalResources
 {
 	GlobalResources()
 	{
+		ui::RegisterPainters();
 		InitializeWin32();
 		ui::rhi::GlobalInit();
 	}

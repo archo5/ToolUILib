@@ -7,6 +7,8 @@
 #include "../Core/RefCounted.h"
 #include "../Core/Font.h"
 
+#include "../Render/Render.h"
+
 #include <vector>
 #include <functional>
 
@@ -102,18 +104,18 @@ enum class StackingDirection : uint8_t
 {
 	Undefined,
 
+	LeftToRight,
 	TopDown,
 	RightToLeft,
 	BottomUp,
-	LeftToRight,
 };
 
 enum class Edge : uint8_t
 {
+	Left,
 	Top,
 	Right,
 	Bottom,
-	Left,
 };
 
 enum class BoxSizing : uint8_t
@@ -180,6 +182,8 @@ struct Coord
 	static const Coord Undefined() { return {}; }
 	static Coord Percent(float p) { return Coord(p, CoordTypeUnit::Percent); }
 	static Coord Fraction(float f) { return Coord(f, CoordTypeUnit::Fraction); }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
 
@@ -189,6 +193,7 @@ enum PaintInfoItemState
 	PS_Down = 1 << 1,
 	PS_Disabled = 1 << 2,
 	PS_Focused = 1 << 3,
+	PS_Checked = 1 << 4,
 };
 
 struct PaintInfo
@@ -203,7 +208,7 @@ struct PaintInfo
 	bool IsHovered() const { return (state & PS_Hover) != 0; }
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }
-	bool IsChecked() const { return checkState != 0; }
+	bool IsChecked() const { return (state & PS_Checked) != 0; }
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
@@ -250,6 +255,43 @@ struct LayerPainter : IPainter
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static RCHandle<LayerPainter> Create();
+};
+
+struct ConditionalPainter : IPainter
+{
+	PainterHandle painter;
+	uint8_t condition = 0;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
+struct SelectFirstPainter : IPainter
+{
+	struct Item
+	{
+		PainterHandle painter;
+		uint8_t condition = 0;
+	};
+
+	std::vector<Item> items;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
+struct ColorFillPainter : IPainter
+{
+	Color4b color;
+	int shrink = 0;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
+struct ImageSetPainter : IPainter
+{
+	draw::ImageSetHandle imageSet;
+	int shrink = 0;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
 template <class F>
