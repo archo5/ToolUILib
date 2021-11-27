@@ -147,8 +147,8 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 	void OnReset() override
 	{
 		buttonStyle = ui::Theme::current->GetStyle("button");
-		checkboxStyle = ui::Theme::current->checkbox;
-		radioBtnStyle = ui::Theme::current->radioButton;
+		checkboxStyle = ui::Theme::current->GetStyle("checkbox");
+		radioBtnStyle = ui::Theme::current->GetStyle("radio_button");
 	}
 	void OnEnable() override
 	{

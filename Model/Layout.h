@@ -278,6 +278,7 @@ struct SelectFirstPainter : IPainter
 	{
 		PainterHandle painter;
 		uint8_t condition = 0;
+		uint8_t checkState = 0xff;
 	};
 
 	std::vector<Item> items;

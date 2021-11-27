@@ -494,6 +494,7 @@ static IPainter* SelectFirstPainterCreateFunc(IThemeLoader* loader, IObjectItera
 		OI.BeginObject({}, "Item");
 		{
 			item.condition = ParseCondition(OI, "condition");
+			OnField(OI, "checkState", item.checkState);
 
 			OI.BeginObject("painter", "Painter");
 			item.painter = loader->LoadPainter();

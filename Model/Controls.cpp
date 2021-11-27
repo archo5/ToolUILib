@@ -99,24 +99,27 @@ void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 	}
 
 	info.obj = this;
+	info.rect = GetPaddingRect();
 
 	UIPaintHelper::Paint(info, ctx);
 }
 
 
+static StaticID sid_checkbox("checkbox");
 void CheckboxIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->checkbox;
+	styleProps = Theme::current->GetStyle(sid_checkbox);
 }
 
 
+static StaticID sid_radio_button("radio_button");
 void RadioButtonIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->radioButton;
+	styleProps = Theme::current->GetStyle(sid_radio_button);
 }
 
 

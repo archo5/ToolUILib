@@ -525,7 +525,9 @@ ContentPaintAdvice SelectFirstPainter::Paint(const PaintInfo& info)
 {
 	for (const auto& item : items)
 	{
-		if (item.painter && (item.condition & info.state) == item.condition)
+		if (item.painter &&
+			(item.condition & info.state) == item.condition &&
+			(item.checkState == 0xff || item.checkState == info.checkState))
 		{
 			return item.painter->Paint(info);
 		}

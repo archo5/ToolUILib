@@ -234,64 +234,6 @@ struct ThemeElementPainter : IPainter
 	}
 };
 
-struct CheckableThemeElementPainter : IPainter
-{
-	EThemeElement elNormal;
-	EThemeElement elHover;
-	EThemeElement elPressed;
-	EThemeElement elDisabled;
-
-	EThemeElement elChecked;
-	EThemeElement elCheckedDisabled;
-	EThemeElement elIndChecked;
-	EThemeElement elIndCheckedDisabled;
-
-	CheckableThemeElementPainter* InitCheckbox()
-	{
-		elNormal = TE_CheckBgrNormal;
-		elHover = TE_CheckBgrHover;
-		elPressed = TE_CheckBgrPressed;
-		elDisabled = TE_CheckBgrDisabled;
-
-		elChecked = TE_CheckMark;
-		elCheckedDisabled = TE_CheckMarkDisabled;
-		elIndChecked = TE_CheckInd;
-		elIndCheckedDisabled = TE_CheckIndDisabled;
-		return this;
-	}
-	CheckableThemeElementPainter* InitRadioButton()
-	{
-		elNormal = TE_RadioBgrNormal;
-		elHover = TE_RadioBgrHover;
-		elPressed = TE_RadioBgrPressed;
-		elDisabled = TE_RadioBgrDisabled;
-
-		elChecked = TE_RadioMark;
-		elCheckedDisabled = TE_RadioMarkDisabled;
-		elIndChecked = TE_RadioMark;
-		elIndCheckedDisabled = TE_RadioMarkDisabled;
-		return this;
-	}
-
-	ContentPaintAdvice Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		float w = min(r.GetWidth(), r.GetHeight());
-		bool disabled = info.IsDisabled();
-		DrawThemeElement(
-			disabled ? elDisabled :
-			info.IsDown() ? elPressed :
-			info.IsHovered() ? elHover : elNormal, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		if (info.checkState == 1)
-			DrawThemeElement(disabled ? elCheckedDisabled : elChecked, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		else if (info.checkState)
-			DrawThemeElement(disabled ? elIndCheckedDisabled : elIndChecked, r.x0, r.y0, r.x0 + w, r.y0 + w);
-		if (info.IsFocused())
-			DrawThemeElement(TE_Outline, r.x0 - 1, r.y0 - 1, r.x0 + w + 1, r.y0 + w + 1);
-		return {};
-	}
-};
-
 struct BorderRectanglePainter : IPainter
 {
 	Color4b backgroundColor;
@@ -320,8 +262,6 @@ struct DefaultTheme : Theme
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
 	StyleBlock dtHeader;
-	StyleBlock dtCheckbox;
-	StyleBlock dtRadioButton;
 	StyleBlock dtCollapsibleTreeNode;
 	StyleBlock dtTextBoxBase;
 	StyleBlock dtSliderHBase;
@@ -351,8 +291,6 @@ struct DefaultTheme : Theme
 		CreateProperty();
 		CreatePropLabel();
 		CreateHeader();
-		CreateCheckbox();
-		CreateRadioButton();
 		CreateCollapsibleTreeNode();
 		CreateTextBoxBase();
 		CreateSliderHBase();
@@ -419,33 +357,6 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.header = a.block;
-	}
-	void CreateCheckbox()
-	{
-		StyleAccessor a(&dtCheckbox);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		//a.SetWidth(Coord::Percent(12));
-		//a.SetHeight(Coord::Percent(12));
-		a.SetWidth(GetFontHeight() + 5 + 5);
-		a.SetHeight(GetFontHeight() + 5 + 5);
-		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitCheckbox());
-		defaultTheme.checkbox = a.block;
-	}
-	void CreateRadioButton()
-	{
-		StyleAccessor a(&dtRadioButton);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		//a.SetWidth(Coord::Percent(12));
-		//a.SetHeight(Coord::Percent(12));
-		a.SetWidth(GetFontHeight() + 5 + 5);
-		//a.SetMargin(5);
-		//a.SetHeight(GetFontHeight());
-		a.SetPadding(5);
-		a.SetPaddingLeft(GetFontHeight() + 5 + 5 + 5);
-		a.SetBackgroundPainter((new CheckableThemeElementPainter())->InitRadioButton());
-		defaultTheme.radioButton = a.block;
 	}
 	void CreateCollapsibleTreeNode()
 	{
