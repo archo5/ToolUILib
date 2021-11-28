@@ -692,14 +692,6 @@ struct NativeWindow_Impl
 		for (auto& ovr : system.overlays.sorted)
 			ovr.obj->RootPaint();
 
-#if 0
-		draw::RectTex(20, 120, 256 + 20, 128 + 120, g_themeTexture);
-		DrawThemeElement(TE_ButtonNormal, 300, 20, 380, 40);
-		DrawThemeElement(TE_ButtonPressed, 300, 40, 380, 60);
-		DrawThemeElement(TE_ButtonHover, 300, 60, 380, 80);
-		draw::TextLine(GetFont(FONT_FAMILY_SANS_SERIF), 12, 32, 32, "Test text", Color4b::White());
-#endif
-
 		if (debugDrawEnabled)
 		{
 			// debug draw

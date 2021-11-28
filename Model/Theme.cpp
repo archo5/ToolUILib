@@ -28,171 +28,7 @@ uint32_t& StaticID::GetCount()
 }
 
 
-StaticID sid_panel("panel");
-StaticID sid_button("button");
-StaticID sid_selectable("selectable");
-StaticID sid_listbox("listbox");
-
-
 Theme* Theme::current;
-
-
-static unsigned char* LoadTGA(const char* img, int size[2])
-{
-	FILE* f = fopen(img, "rb");
-	char idlen = getc(f);
-	assert(idlen == 0); // no id
-	char cmtype = getc(f);
-	assert(cmtype == 0); // no colormap
-	char imgtype = getc(f);
-	assert(imgtype == 2); // only uncompressed true color image supported
-	fseek(f, 5, SEEK_CUR); // skip colormap
-
-	fseek(f, 4, SEEK_CUR); // skip x/y origin
-	short fsize[2];
-	fread(&fsize, 2, 2, f); // x/y size
-	char bpp = getc(f);
-	char imgdesc = getc(f);
-
-	// image id here?
-	// colormap here?
-	// image data
-	size[0] = fsize[0];
-	size[1] = fsize[1];
-	unsigned char* out = new unsigned char[fsize[0] * fsize[1] * 4];
-	for (int i = 0; i < fsize[0] * fsize[1]; i++)
-	{
-		out[i * 4 + 2] = getc(f);
-		out[i * 4 + 1] = getc(f);
-		out[i * 4 + 0] = getc(f);
-		out[i * 4 + 3] = getc(f);
-	}
-	return out;
-}
-
-ArrayView<char> LoadThemeResource();
-static unsigned char* LoadThemeTGASys(int size[2])
-{
-	ArrayView<char> data = LoadThemeResource();
-	if (data.empty())
-		return nullptr;
-	size_t p = 0;
-	char idlen = data[p++];
-	assert(idlen == 0); // no id
-	char cmtype = data[p++];
-	assert(cmtype == 0); // no colormap
-	char imgtype = data[p++];
-	assert(imgtype == 2); // only uncompressed true color image supported
-	p += 5;
-
-	p += 4;
-	short fsize[2];
-	memcpy(fsize, &data[p], 4);
-	p += 4;
-	char bpp = data[p++];
-	char imgdesc = data[p++];
-
-	size[0] = fsize[0];
-	size[1] = fsize[1];
-	unsigned char* out = new unsigned char[fsize[0] * fsize[1] * 4];
-	for (int i = 0; i < fsize[0] * fsize[1]; i++)
-	{
-		out[i * 4 + 2] = data[p++];
-		out[i * 4 + 1] = data[p++];
-		out[i * 4 + 0] = data[p++];
-		out[i * 4 + 3] = data[p++];
-	}
-	return out;
-}
-
-Sprite g_themeSprites[TE__COUNT] =
-{
-#if 1
-	// button
-	{ 0, 0, 32, 32, 5, 5, 5, 5 },
-	{ 32, 0, 64, 32, 5, 5, 5, 5 },
-	{ 64, 0, 96, 32, 5, 5, 5, 5 },
-	{ 96, 0, 128, 32, 5, 5, 5, 5 },
-	{ 128, 0, 160, 32, 5, 5, 5, 5 },
-
-	// panel
-	{ 160, 0, 192, 32, 6, 6, 6, 6 },
-
-	// textbox
-	{ 192, 0, 224, 32, 5, 5, 5, 5 },
-	{ 224, 0, 256, 32, 5, 5, 5, 5 },
-
-	// checkbgr
-	{ 0, 32, 32, 64, 5, 5, 5, 5 },
-	{ 32, 32, 64, 64, 5, 5, 5, 5 },
-	{ 64, 32, 96, 64, 5, 5, 5, 5 },
-	{ 96, 32, 128, 64, 5, 5, 5, 5 },
-
-	// checkmarks
-	{ 128, 32, 160, 64, 5, 5, 5, 5 },
-	{ 160, 32, 192, 64, 5, 5, 5, 5 },
-	{ 192, 32, 224, 64, 5, 5, 5, 5 },
-	{ 224, 32, 256, 64, 5, 5, 5, 5 },
-
-	// radiobgr
-	{ 0, 64, 32, 96, 0, 0, 0, 0 },
-	{ 32, 64, 64, 96, 0, 0, 0, 0 },
-	{ 64, 64, 96, 96, 0, 0, 0, 0 },
-	{ 96, 64, 128, 96, 0, 0, 0, 0 },
-
-	// radiomark
-	{ 128, 64, 160, 96, 0, 0, 0, 0 },
-	{ 160, 64, 192, 96, 0, 0, 0, 0 },
-
-	// selector
-	{ 192, 64, 224, 96, 0, 0, 0, 0 },
-	{ 224, 64, 240, 80, 0, 0, 0, 0 },
-	{ 240, 64, 252, 76, 0, 0, 0, 0 },
-	// outline
-	{ 224, 80, 240, 96, 4, 4, 4, 4 },
-
-	// tab
-	{ 0, 96, 32, 128, 5, 5, 5, 5 },
-	{ 32, 96, 64, 128, 5, 5, 5, 5 },
-	{ 64, 96, 96, 128, 5, 5, 5, 5 },
-	{ 96, 96, 128, 128, 5, 5, 5, 5 },
-
-	// treetick
-	{ 128, 96, 160, 128, 0, 0, 0, 0 },
-	{ 160, 96, 192, 128, 0, 0, 0, 0 },
-	{ 192, 96, 224, 128, 0, 0, 0, 0 },
-	{ 224, 96, 256, 128, 0, 0, 0, 0 },
-
-#else
-	{ 0, 0, 64, 64, 5, 5, 5, 5 },
-	{ 64, 0, 128, 64, 5, 5, 5, 5 },
-	{ 128, 0, 192, 64, 5, 5, 5, 5 },
-
-	{ 192, 0, 224, 32, 5, 5, 5, 5 },
-	{ 224, 0, 256, 32, 5, 5, 5, 5 },
-	{ 192, 32, 224, 64, 5, 5, 5, 5 },
-	{ 224, 32, 256, 64, 5, 5, 5, 5 },
-#endif
-};
-
-ui::draw::ImageHandle g_themeImages[TE__COUNT];
-
-ui::AABB2f GetThemeElementBorderWidths(EThemeElement e)
-{
-	auto& s = g_themeSprites[e];
-	return { float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) };
-}
-
-void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
-{
-	const Sprite& s = g_themeSprites[e];
-	ui::AABB2f outer = { x0, y0, x1, y1 };
-	ui::AABB2f inner = outer.ShrinkBy({ float(s.bx0), float(s.by0), float(s.bx1), float(s.by1) });
-	float ifw = 1.0f / (s.ox1 - s.ox0), ifh = 1.0f / (s.oy1 - s.oy0);
-	int s_ix0 = s.bx0, s_iy0 = s.by0, s_ix1 = (s.ox1 - s.ox0) - s.bx1, s_iy1 = (s.oy1 - s.oy0) - s.by1;
-	ui::AABB2f texinner = { s_ix0 * ifw, s_iy0 * ifh, s_ix1 * ifw, s_iy1 * ifh };
-	ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), g_themeImages[e], { 0, 0, 1, 1 }, texinner);
-}
 
 
 struct DefaultTheme : Theme
@@ -203,9 +39,6 @@ struct DefaultTheme : Theme
 	StyleBlock dtText;
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
-	StyleBlock dtSliderHBase;
-	StyleBlock dtSliderHTrack;
-	StyleBlock dtSliderHTrackFill;
 	StyleBlock dtImage;
 
 	DefaultTheme()
@@ -265,17 +98,17 @@ struct DefaultTheme : Theme
 		defaultTheme.image = a.block;
 	}
 
-	IPainter* GetPainter(const StaticID& id) override
+	IPainter* GetPainter(const StaticID& id)
 	{
 		auto it = themeData->painters.find(id._name);
 		return it.is_valid() ? it->value : nullptr;
 	}
-	AABB2i GetIntRect(const StaticID& id) override
+	AABB2i GetIntRect(const StaticID& id)
 	{
 		// TODO
 		return {};
 	}
-	StyleBlockRef GetStyle(const StaticID& id) override
+	StyleBlockRef GetStyle(const StaticID& id)
 	{
 		auto it = themeData->styles.find(id._name);
 		if (it.is_valid())
@@ -284,7 +117,7 @@ struct DefaultTheme : Theme
 	}
 
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];
-	draw::ImageHandle GetImage(ThemeImage ti) override
+	draw::ImageHandle GetImage(ThemeImage ti)
 	{
 		auto& cpos = cache[int(ti)];
 		if (cpos)
@@ -312,22 +145,6 @@ struct DefaultTheme : Theme
 
 void InitTheme()
 {
-	int size[2];
-	auto* data = LoadThemeTGASys(size);
-	if (!data)
-		data = LoadTGA("gui-theme2.tga", size);
-	for (int i = 0; i < TE__COUNT; i++)
-	{
-		auto& s = g_themeSprites[i];
-		g_themeImages[i] = ui::draw::ImageCreateRGBA8(
-			s.ox1 - s.ox0,
-			s.oy1 - s.oy0,
-			size[0] * 4,
-			&data[(s.ox0 + s.oy0 * size[0]) * 4],
-			draw::TexFlags::Packed);
-	}
-	delete[] data;
-
 	Theme::current = new DefaultTheme;
 }
 
@@ -335,9 +152,6 @@ void FreeTheme()
 {
 	delete static_cast<DefaultTheme*>(Theme::current);
 	Theme::current = nullptr;
-
-	for (auto& tex : g_themeImages)
-		tex = nullptr;
 }
 
 } // ui

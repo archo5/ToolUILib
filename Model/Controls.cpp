@@ -8,7 +8,7 @@
 
 namespace ui {
 
-extern StaticID sid_panel;
+static StaticID sid_panel("panel");
 void Panel::OnReset()
 {
 	UIElement::OnReset();
@@ -28,7 +28,7 @@ void Header::OnReset()
 }
 
 
-extern StaticID sid_button;
+static StaticID sid_button("button");
 void Button::OnReset()
 {
 	UIElement::OnReset();
@@ -137,7 +137,7 @@ void StateButtonSkin::OnReset()
 }
 
 
-extern StaticID sid_listbox;
+static StaticID sid_listbox("listbox");
 void ListBox::OnReset()
 {
 	UIElement::OnReset();
@@ -147,7 +147,7 @@ void ListBox::OnReset()
 }
 
 
-extern StaticID sid_selectable;
+static StaticID sid_selectable("selectable");
 void Selectable::OnReset()
 {
 	UIElement::OnReset();
