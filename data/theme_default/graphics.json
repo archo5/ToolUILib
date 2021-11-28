@@ -14,5 +14,20 @@
 		"padding": 3,
 		"layout": "inline_block",
 		"backgroundPainter": "panel"
-	}
+	},
+
+	"selector_container:style":
+	{
+		"padding": 8
+	},
+	"selector:style":
+	{
+		"width": "16px",
+		"height": "16px",
+		"backgroundPainter": "selector-16"
+	},
+
+	"selector-16:painter": { "__": "imgset", "imgset": "selector-16" },
+
+	"selector-16:imgset": { "images": [{ "path": "images/selector-16.png" }] }
 }

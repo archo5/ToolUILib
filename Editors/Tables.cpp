@@ -319,7 +319,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			info.checkState = _impl->selStorage ? _impl->selStorage->GetSelectionState(r) : false;
+			info.SetChecked(_impl->selStorage ? _impl->selStorage->GetSelectionState(r) : false);
 			if (_impl->hoverRow == r)
 				info.state |= PS_Hover;
 			else

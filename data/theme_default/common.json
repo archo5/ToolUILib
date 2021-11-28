@@ -1,6 +1,12 @@
 {
 	"outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] },
 
+	"header:style":
+	{
+		"padding": 5,
+		"fontWeight": "bold"
+	},
+
 	"property:style":
 	{
 		"layout": "stack_expand",

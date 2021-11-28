@@ -18,12 +18,13 @@ void Panel::OnReset()
 }
 
 
+static StaticID sid_header("header");
 void Header::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->header;
+	styleProps = Theme::current->GetStyle(sid_header);
 }
 
 
@@ -92,11 +93,7 @@ void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
 	if (st)
-	{
-		info.checkState = st->GetState();
-		if (info.checkState)
-			info.state |= PS_Checked;
-	}
+		info.SetCheckState(st->GetState());
 
 	info.obj = this;
 	info.rect = GetPaddingRect();
@@ -1053,20 +1050,22 @@ void ScrollArea::OnReset()
 }
 
 
+static StaticID sid_tab_group("tab_group");
 void TabGroup::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->tabGroup;
+	styleProps = Theme::current->GetStyle(sid_tab_group);
 	_activeBtn = nullptr;
 }
 
 
+static StaticID sid_tab_list("tab_list");
 void TabButtonList::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->tabList;
+	styleProps = Theme::current->GetStyle(sid_tab_list);
 }
 
 void TabButtonList::OnPaint(const UIPaintContext& ctx)
@@ -1089,12 +1088,13 @@ void TabButtonList::OnPaint(const UIPaintContext& ctx)
 }
 
 
+static StaticID sid_tab_button("tab_button");
 void TabButtonBase::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->tabButton;
+	styleProps = Theme::current->GetStyle(sid_tab_button);
 }
 
 void TabButtonBase::OnExitTree()
@@ -1110,7 +1110,7 @@ void TabButtonBase::OnPaint(const UIPaintContext& ctx)
 {
 	PaintInfo info(this);
 	if (IsSelected())
-		info.checkState = 1;
+		info.SetChecked(true);
 
 	UIPaintHelper::Paint(info, ctx);
 }
@@ -1129,12 +1129,13 @@ void TabButtonBase::OnEvent(Event& e)
 }
 
 
+static StaticID sid_tab_panel("tab_panel");
 void TabPanel::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->tabPanel;
+	styleProps = Theme::current->GetStyle(sid_tab_panel);
 }
 
 void TabPanel::OnPaint(const UIPaintContext& ctx)
@@ -1633,7 +1634,7 @@ void CollapsibleTreeNode::OnPaint(const UIPaintContext& ctx)
 	if (_hovered)
 		info.state |= PS_Hover;
 	if (open)
-		info.checkState = 1;
+		info.SetChecked(true);
 
 	UIPaintHelper::Paint(info, ctx);
 }

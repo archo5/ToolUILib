@@ -261,22 +261,15 @@ struct DefaultTheme : Theme
 	StyleBlock dtText;
 	StyleBlock dtProperty;
 	StyleBlock dtPropLabel;
-	StyleBlock dtHeader;
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
 	StyleBlock dtSliderHThumb;
-	StyleBlock dtTabGroup;
-	StyleBlock dtTabList;
-	StyleBlock dtTabButton;
-	StyleBlock dtTabPanel;
 	StyleBlock dtTableBase;
 	StyleBlock dtTableCell;
 	StyleBlock dtTableRowHeader;
 	StyleBlock dtTableColHeader;
 	StyleBlock dtImage;
-	StyleBlock dtSelectorContainer;
-	StyleBlock dtSelector;
 
 	DefaultTheme()
 	{
@@ -286,22 +279,15 @@ struct DefaultTheme : Theme
 		CreateText();
 		CreateProperty();
 		CreatePropLabel();
-		CreateHeader();
 		CreateSliderHBase();
 		CreateSliderHTrack();
 		CreateSliderHTrackFill();
 		CreateSliderHThumb();
-		CreateTabGroup();
-		CreateTabList();
-		CreateTabButton();
-		CreateTabPanel();
 		CreateTableBase();
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
 		CreateImage();
-		CreateSelectorContainer();
-		CreateSelector();
 #define defaultTheme (*this) // TODO
 	}
 	void PreventHeapDelete(StyleAccessor& a)
@@ -340,15 +326,6 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
-	}
-	void CreateHeader()
-	{
-		StyleAccessor a(&dtHeader);
-		PreventHeapDelete(a);
-		a.SetFontWeight(FontWeight::Bold);
-		a.SetPadding(5);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.header = a.block;
 	}
 	void CreateSliderHBase()
 	{
@@ -403,50 +380,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
 			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
 		defaultTheme.sliderHThumb = a.block;
-	}
-	void CreateTabGroup()
-	{
-		StyleAccessor a(&dtTabGroup);
-		PreventHeapDelete(a);
-		a.SetMargin(2);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.tabGroup = a.block;
-	}
-	void CreateTabList()
-	{
-		StyleAccessor a(&dtTabList);
-		PreventHeapDelete(a);
-		a.SetPadding(0, 4);
-		a.SetLayout(layouts::Stack());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.tabList = a.block;
-	}
-	void CreateTabButton()
-	{
-		StyleAccessor a(&dtTabButton);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetPadding(5);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			DrawThemeElement(
-				info.IsDown() || info.IsChecked() ? TE_TabSelected :
-				info.IsHovered() ? TE_TabHover : TE_TabNormal, r.x0, r.y0, r.x1, r.y1);
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.tabButton = a.block;
-	}
-	void CreateTabPanel()
-	{
-		StyleAccessor a(&dtTabPanel);
-		PreventHeapDelete(a);
-		a.SetPadding(5);
-		a.SetWidth(Coord::Percent(100));
-		a.SetMarginTop(-2);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_TabPanel));
-		defaultTheme.tabPanel = a.block;
 	}
 	void CreateTableBase()
 	{
@@ -511,22 +444,6 @@ struct DefaultTheme : Theme
 		a.SetLayout(layouts::InlineBlock());
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.image = a.block;
-	}
-	void CreateSelectorContainer()
-	{
-		StyleAccessor a(&dtSelectorContainer);
-		PreventHeapDelete(a);
-		a.SetPadding(8);
-		defaultTheme.selectorContainer = a.block;
-	}
-	void CreateSelector()
-	{
-		StyleAccessor a(&dtSelector);
-		PreventHeapDelete(a);
-		a.SetWidth(16);
-		a.SetHeight(16);
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_Selector16));
-		defaultTheme.selector = a.block;
 	}
 
 	IPainter* GetPainter(const StaticID& id) override

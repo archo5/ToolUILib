@@ -205,6 +205,8 @@ struct PaintInfo
 
 	PaintInfo() {}
 	PaintInfo(const UIObject* o);
+	void SetChecked(bool checked);
+	void SetCheckState(uint8_t cs);
 	bool IsHovered() const { return (state & PS_Hover) != 0; }
 	bool IsDown() const { return (state & PS_Down) != 0; }
 	bool IsDisabled() const { return (state & PS_Disabled) != 0; }

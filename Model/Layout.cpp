@@ -457,6 +457,20 @@ PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 	}
 }
 
+void PaintInfo::SetChecked(bool checked)
+{
+	SetCheckState(checked);
+}
+
+void PaintInfo::SetCheckState(uint8_t cs)
+{
+	if (cs)
+		state |= PS_Checked;
+	else
+		state &= ~PS_Checked;
+	checkState = cs;
+}
+
 
 ContentPaintAdvice EmptyPainter::Paint(const PaintInfo&)
 {

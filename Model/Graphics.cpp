@@ -218,12 +218,14 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
+static StaticID sid_selector_container("selector_container");
+static StaticID sid_selector("selector");
 void HueSatPicker::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->selectorContainer;
-	selectorStyle = Theme::current->selector;
+	styleProps = Theme::current->GetStyle(sid_selector_container);
+	selectorStyle = Theme::current->GetStyle(sid_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
 	_hue = 0;
@@ -313,8 +315,8 @@ void ColorCompPicker2D::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->selectorContainer;
-	selectorStyle = Theme::current->selector;
+	styleProps = Theme::current->GetStyle(sid_selector_container);
+	selectorStyle = Theme::current->GetStyle(sid_selector);
 
 	_settings = {};
 	_x = 0;

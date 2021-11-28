@@ -46,6 +46,8 @@ template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const Fiel
 	std::string str;
 	if (!oi.IsUnserializer())
 		str = EnumKeys<E>::ValueToString(val);
+	if (oi.IsUnserializer() && !oi.HasField(FI.GetNameOrEmptyStr()))
+		return;
 	OnField(oi, FI, str);
 	if (oi.IsUnserializer())
 		val = EnumKeys<E>::StringToValue(str.c_str());
@@ -101,6 +103,39 @@ static const char* EnumKeys_HAlign[] =
 	nullptr,
 };
 template <> struct EnumKeys<HAlign> : EnumKeysStringList<HAlign, EnumKeys_HAlign> {};
+
+template <> struct EnumKeys<FontWeight>
+{
+	static FontWeight StringToValue(const char* name)
+	{
+		if (!strcmp(name, "thin")) return FontWeight::Thin;
+		if (!strcmp(name, "extraLight")) return FontWeight::ExtraLight;
+		if (!strcmp(name, "light")) return FontWeight::Light;
+		if (!strcmp(name, "normal")) return FontWeight::Normal;
+		if (!strcmp(name, "medium")) return FontWeight::Medium;
+		if (!strcmp(name, "semibold")) return FontWeight::Semibold;
+		if (!strcmp(name, "bold")) return FontWeight::Bold;
+		if (!strcmp(name, "extraBold")) return FontWeight::ExtraBold;
+		if (!strcmp(name, "black")) return FontWeight::Black;
+		return FontWeight::Normal;
+	}
+	static const char* ValueToString(FontWeight e)
+	{
+		switch (e)
+		{
+		case FontWeight::Thin: return "thin";
+		case FontWeight::ExtraLight: return "extraLight";
+		case FontWeight::Light: return "light";
+		case FontWeight::Normal: return "normal";
+		case FontWeight::Medium: return "medium";
+		case FontWeight::Semibold: return "semibold";
+		case FontWeight::Bold: return "bold";
+		case FontWeight::ExtraBold: return "extraBold";
+		case FontWeight::Black: return "black";
+		default: return "";
+		}
+	}
+};
 
 static const char* EnumKeys_FontStyle[] =
 {
@@ -207,7 +242,8 @@ struct ThemeLoaderData : IThemeLoader
 			OnFieldEnumString(u, "boxSizing", loaded->box_sizing);
 			OnFieldEnumString(u, "horAlign", loaded->h_align);
 
-			OnFieldEnumInt(u, "fontWeight", loaded->font_weight);
+			OnFieldEnumString(u, "fontWeight", loaded->font_weight);
+			//OnFieldEnumInt(u, "fontWeight", loaded->font_weight); -- may want to support both?
 			OnFieldEnumString(u, "fontStyle", loaded->font_style);
 			OnField(u, "fontSize", loaded->font_size);
 

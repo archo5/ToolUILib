@@ -96,22 +96,15 @@ struct Theme
 	StyleBlockRef text;
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
-	StyleBlockRef header;
 	StyleBlockRef sliderHBase;
 	StyleBlockRef sliderHTrack;
 	StyleBlockRef sliderHTrackFill;
 	StyleBlockRef sliderHThumb;
-	StyleBlockRef tabGroup;
-	StyleBlockRef tabList;
-	StyleBlockRef tabButton;
-	StyleBlockRef tabPanel;
 	StyleBlockRef tableBase;
 	StyleBlockRef tableCell;
 	StyleBlockRef tableRowHeader;
 	StyleBlockRef tableColHeader;
 	StyleBlockRef image;
-	StyleBlockRef selectorContainer;
-	StyleBlockRef selector;
 
 	virtual IPainter* GetPainter(const StaticID& id) = 0;
 	virtual AABB2i GetIntRect(const StaticID& id) = 0;
