@@ -173,10 +173,10 @@ TableView::~TableView()
 	delete _impl;
 }
 
-static StaticID sid_table_base("table_base");
-static StaticID sid_table_cell("table_cell");
-static StaticID sid_table_row_header("table_row_header");
-static StaticID sid_table_col_header("table_col_header");
+static StaticID_Style sid_table_base("table_base");
+static StaticID_Style sid_table_cell("table_cell");
+static StaticID_Style sid_table_row_header("table_row_header");
+static StaticID_Style sid_table_col_header("table_col_header");
 void TableView::OnReset()
 {
 	Buildable::OnReset();
@@ -620,7 +620,7 @@ TreeView::~TreeView()
 	delete _impl;
 }
 
-static StaticID sid_tree_expand("tree_expand");
+static StaticID_Style sid_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
 	Buildable::OnReset();

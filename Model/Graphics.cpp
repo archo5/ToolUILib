@@ -9,7 +9,7 @@
 namespace ui {
 
 
-static StaticID sid_color_block("color_block");
+static StaticID_Style sid_color_block("color_block");
 void ColorBlock::OnReset()
 {
 	UIElement::OnReset();
@@ -38,7 +38,7 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID sid_color_inspect_block("color_inspect_block");
+static StaticID_Style sid_color_inspect_block("color_inspect_block");
 void ColorInspectBlock::OnReset()
 {
 	UIElement::OnReset();
@@ -216,8 +216,8 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
-static StaticID sid_selector_container("selector_container");
-static StaticID sid_selector("selector");
+static StaticID_Style sid_selector_container("selector_container");
+static StaticID_Style sid_selector("selector");
 void HueSatPicker::OnReset()
 {
 	UIElement::OnReset();

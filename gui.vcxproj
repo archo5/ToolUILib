@@ -148,6 +148,7 @@
     <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
+    <ClCompile Include="Core\StaticID.cpp" />
     <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Editors\CurveEditor.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="Core\PropertyStore.h" />
     <ClInclude Include="Core\RefCounted.h" />
     <ClInclude Include="Core\Serialization.h" />
+    <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
     <ClInclude Include="Core\WindowsUtils.h" />

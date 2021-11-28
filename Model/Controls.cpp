@@ -8,7 +8,7 @@
 
 namespace ui {
 
-static StaticID sid_panel("panel");
+static StaticID_Style sid_panel("panel");
 void Panel::OnReset()
 {
 	UIElement::OnReset();
@@ -18,7 +18,7 @@ void Panel::OnReset()
 }
 
 
-static StaticID sid_header("header");
+static StaticID_Style sid_header("header");
 void Header::OnReset()
 {
 	UIElement::OnReset();
@@ -28,7 +28,7 @@ void Header::OnReset()
 }
 
 
-static StaticID sid_button("button");
+static StaticID_Style sid_button("button");
 void Button::OnReset()
 {
 	UIElement::OnReset();
@@ -102,7 +102,7 @@ void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID sid_checkbox("checkbox");
+static StaticID_Style sid_checkbox("checkbox");
 void CheckboxIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
@@ -111,7 +111,7 @@ void CheckboxIcon::OnReset()
 }
 
 
-static StaticID sid_radio_button("radio_button");
+static StaticID_Style sid_radio_button("radio_button");
 void RadioButtonIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
@@ -120,7 +120,7 @@ void RadioButtonIcon::OnReset()
 }
 
 
-static StaticID sid_tree_expand("tree_expand");
+static StaticID_Style sid_tree_expand("tree_expand");
 void TreeExpandIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
@@ -137,7 +137,7 @@ void StateButtonSkin::OnReset()
 }
 
 
-static StaticID sid_listbox("listbox");
+static StaticID_Style sid_listbox("listbox");
 void ListBox::OnReset()
 {
 	UIElement::OnReset();
@@ -147,7 +147,7 @@ void ListBox::OnReset()
 }
 
 
-static StaticID sid_selectable("selectable");
+static StaticID_Style sid_selectable("selectable");
 void Selectable::OnReset()
 {
 	UIElement::OnReset();
@@ -157,8 +157,8 @@ void Selectable::OnReset()
 }
 
 
-static StaticID sid_progress_bar_base("progress_bar_base");
-static StaticID sid_progress_bar_completion("progress_bar_completion");
+static StaticID_Style sid_progress_bar_base("progress_bar_base");
+static StaticID_Style sid_progress_bar_completion("progress_bar_completion");
 void ProgressBar::OnReset()
 {
 	UIElement::OnReset();
@@ -183,10 +183,10 @@ void ProgressBar::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID sid_slider_h_base("slider_h_base");
-static StaticID sid_slider_h_track("slider_h_track");
-static StaticID sid_slider_h_track_fill("slider_h_track_fill");
-static StaticID sid_slider_h_thumb("slider_h_thumb");
+static StaticID_Style sid_slider_h_base("slider_h_base");
+static StaticID_Style sid_slider_h_track("slider_h_track");
+static StaticID_Style sid_slider_h_track_fill("slider_h_track_fill");
+static StaticID_Style sid_slider_h_thumb("slider_h_thumb");
 void Slider::OnReset()
 {
 	UIElement::OnReset();
@@ -419,7 +419,7 @@ void Property::EditFloat4(const char* label, float* v)
 }
 
 
-static StaticID sid_prop_label("prop_label");
+static StaticID_Style sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {
 	UIElement::OnReset();
@@ -463,7 +463,7 @@ void LabeledProperty::End()
 	Pop();
 }
 
-static StaticID sid_property("property");
+static StaticID_Style sid_property("property");
 void LabeledProperty::OnReset()
 {
 	UIElement::OnReset();
@@ -878,8 +878,8 @@ ScrollbarV::ScrollbarV()
 	OnReset();
 }
 
-static StaticID sid_scroll_v_track("scroll_v_track");
-static StaticID sid_scroll_v_thumb("scroll_v_thumb");
+static StaticID_Style sid_scroll_v_track("scroll_v_track");
+static StaticID_Style sid_scroll_v_thumb("scroll_v_thumb");
 void ScrollbarV::OnReset()
 {
 	trackVStyle = Theme::current->GetStyle(sid_scroll_v_track);
@@ -1056,7 +1056,7 @@ void ScrollArea::OnReset()
 }
 
 
-static StaticID sid_tab_group("tab_group");
+static StaticID_Style sid_tab_group("tab_group");
 void TabGroup::OnReset()
 {
 	UIElement::OnReset();
@@ -1066,7 +1066,7 @@ void TabGroup::OnReset()
 }
 
 
-static StaticID sid_tab_list("tab_list");
+static StaticID_Style sid_tab_list("tab_list");
 void TabButtonList::OnReset()
 {
 	UIElement::OnReset();
@@ -1094,7 +1094,7 @@ void TabButtonList::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID sid_tab_button("tab_button");
+static StaticID_Style sid_tab_button("tab_button");
 void TabButtonBase::OnReset()
 {
 	UIElement::OnReset();
@@ -1135,7 +1135,7 @@ void TabButtonBase::OnEvent(Event& e)
 }
 
 
-static StaticID sid_tab_panel("tab_panel");
+static StaticID_Style sid_tab_panel("tab_panel");
 void TabPanel::OnReset()
 {
 	UIElement::OnReset();
@@ -1188,7 +1188,7 @@ void TabPanel::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID sid_textbox("textbox");
+static StaticID_Style sid_textbox("textbox");
 void Textbox::OnReset()
 {
 	UIElement::OnReset();

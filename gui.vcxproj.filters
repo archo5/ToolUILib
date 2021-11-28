@@ -106,6 +106,9 @@
     <ClCompile Include="Model\ThemeData.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Core\StaticID.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -243,6 +246,9 @@
     </ClInclude>
     <ClInclude Include="Model\ThemeData.h">
       <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\StaticID.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

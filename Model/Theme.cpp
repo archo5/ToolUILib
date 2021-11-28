@@ -7,24 +7,6 @@
 
 namespace ui {
 
-static HashMap<StringView, uint32_t> g_staticIDs;
-
-StaticID::StaticID(const char* name) : _name(name)
-{
-	auto it = g_staticIDs.find(_name);
-	if (it.is_valid())
-		_id = it->value;
-	else
-		g_staticIDs.insert(_name, _id = GetCount()++);
-}
-
-uint32_t& StaticID::GetCount()
-{
-	static uint32_t count;
-	return count;
-}
-
-
 Theme* Theme::current;
 
 
@@ -64,17 +46,17 @@ struct DefaultTheme : Theme
 		defaultTheme.text = a.block;
 	}
 
-	IPainter* GetPainter(const StaticID& id)
+	IPainter* GetPainter(const StaticID_Painter& id)
 	{
 		auto it = themeData->painters.find(id._name);
 		return it.is_valid() ? it->value : nullptr;
 	}
-	AABB2i GetIntRect(const StaticID& id)
+	AABB2i GetIntRect(const StaticID_IntRect& id)
 	{
 		// TODO
 		return {};
 	}
-	StyleBlockRef GetStyle(const StaticID& id)
+	StyleBlockRef GetStyle(const StaticID_Style& id)
 	{
 		auto it = themeData->styles.find(id._name);
 		if (it.is_valid())
