@@ -419,6 +419,7 @@ void Property::EditFloat4(const char* label, float* v)
 }
 
 
+static StaticID sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {
 	UIElement::OnReset();
@@ -426,7 +427,7 @@ void PropertyList::OnReset()
 	splitPos = Coord::Percent(40);
 	minSplitPos = 0;
 
-	_defaultLabelStyle = Theme::current->propLabel;
+	_defaultLabelStyle = Theme::current->GetStyle(sid_prop_label);
 }
 
 UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
@@ -462,12 +463,13 @@ void LabeledProperty::End()
 	Pop();
 }
 
+static StaticID sid_property("property");
 void LabeledProperty::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	SetStyle(Theme::current->property);
+	styleProps = Theme::current->GetStyle(sid_property);
 	_labelStyle = {};
 
 	_labelText = {};
@@ -549,7 +551,7 @@ StyleBlock* LabeledProperty::FindCurrentLabelStyle() const
 		return _labelStyle;
 	if (_propList && _propList->_defaultLabelStyle)
 		return _propList->_defaultLabelStyle;
-	return Theme::current->propLabel;
+	return Theme::current->GetStyle(sid_prop_label);
 }
 
 StyleAccessor LabeledProperty::GetLabelStyle()

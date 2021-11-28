@@ -4,9 +4,6 @@
 
 #include "ThemeData.h"
 
-#include "../Core/Font.h"
-static float GetFontHeight() { return 12; } // TODO remove
-
 
 namespace ui {
 
@@ -37,9 +34,6 @@ struct DefaultTheme : Theme
 
 	StyleBlock dtObject;
 	StyleBlock dtText;
-	StyleBlock dtProperty;
-	StyleBlock dtPropLabel;
-	StyleBlock dtImage;
 
 	DefaultTheme()
 	{
@@ -47,9 +41,6 @@ struct DefaultTheme : Theme
 
 		CreateObject();
 		CreateText();
-		CreateProperty();
-		CreatePropLabel();
-		CreateImage();
 #define defaultTheme (*this) // TODO
 	}
 	void PreventHeapDelete(StyleAccessor& a)
@@ -71,31 +62,6 @@ struct DefaultTheme : Theme
 		a.SetBoxSizing(BoxSizing::ContentBox);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.text = a.block;
-	}
-	void CreateProperty()
-	{
-		StyleAccessor a(&dtProperty);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::StackExpand());
-		a.SetStackingDirection(StackingDirection::LeftToRight);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.property = a.block;
-	}
-	void CreatePropLabel()
-	{
-		StyleAccessor a(&dtPropLabel);
-		PreventHeapDelete(a);
-		a.SetPadding(5);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.propLabel = a.block;
-	}
-	void CreateImage()
-	{
-		StyleAccessor a(&dtImage);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.image = a.block;
 	}
 
 	IPainter* GetPainter(const StaticID& id)

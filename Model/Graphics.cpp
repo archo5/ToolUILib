@@ -135,8 +135,6 @@ void ImageElement::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->image;
-
 	_image = {};
 	_scaleMode = ScaleMode::Fit;
 	_anchorX = 0.5f;

@@ -38,9 +38,6 @@ struct Theme
 	// TODO move out
 	StyleBlockRef object;
 	StyleBlockRef text;
-	StyleBlockRef property;
-	StyleBlockRef propLabel;
-	StyleBlockRef image;
 
 	virtual IPainter* GetPainter(const StaticID& id) = 0;
 	virtual AABB2i GetIntRect(const StaticID& id) = 0;

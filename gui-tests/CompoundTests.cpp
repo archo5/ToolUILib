@@ -592,11 +592,11 @@ struct ImageTest : ui::Buildable
 		pa.SetPadding(4);
 		pa.SetMargin(0);
 
-		ui::StyleBlockRef ibr = ui::Theme::current->image;
+		ui::StyleBlockRef ibr = ui::Theme::current->object;
 		ui::StyleAccessor ia(ibr, nullptr);
 		ia.SetHeight(25);
 
-		ui::StyleBlockRef ibr2 = ui::Theme::current->image;
+		ui::StyleBlockRef ibr2 = ui::Theme::current->object;
 		ui::StyleAccessor ia2(ibr2, nullptr);
 		ia2.SetWidth(25);
 
