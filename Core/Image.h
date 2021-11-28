@@ -31,13 +31,13 @@ static char hexchar(uint8_t v)
 
 struct Color4b
 {
-	UI_FORCEINLINE static Color4b Zero() { return { 0 }; }
+	UI_FORCEINLINE static Color4b Zero() { return { 0, 0 }; }
 	UI_FORCEINLINE static Color4b Black() { return { 0, 255 }; }
 	UI_FORCEINLINE static Color4b White() { return { 255 }; }
 
 	UI_FORCEINLINE Color4b(DoNotInitialize) {}
 	UI_FORCEINLINE Color4b() : r(255), g(255), b(255), a(255) {}
-	UI_FORCEINLINE Color4b(uint8_t f) : r(f), g(f), b(f), a(f) {}
+	UI_FORCEINLINE Color4b(uint8_t f) : r(f), g(f), b(f), a(255) {}
 	UI_FORCEINLINE Color4b(uint8_t gray, uint8_t alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	UI_FORCEINLINE Color4b(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255) : r(red), g(green), b(blue), a(alpha) {}
 
@@ -62,7 +62,7 @@ struct Color4b
 
 struct Color4f
 {
-	static Color4f Zero() { return { 0 }; }
+	static Color4f Zero() { return { 0, 0 }; }
 	static Color4f Black() { return { 0, 1 }; }
 	static Color4f White() { return { 1 }; }
 	static Color4f Hex(const char* hex, float a = 1)
@@ -121,7 +121,7 @@ struct Color4f
 	}
 
 	Color4f() : r(1), g(1), b(1), a(1) {}
-	Color4f(float f) : r(f), g(f), b(f), a(f) {}
+	Color4f(float f) : r(f), g(f), b(f), a(1) {}
 	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
 	Color4f(const Color4b& c) : r(c.r / 255.f), g(c.g / 255.f), b(c.b / 255.f), a(c.a / 255.f) {}

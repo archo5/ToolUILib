@@ -96,11 +96,6 @@ struct Theme
 	StyleBlockRef text;
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
-	StyleBlockRef sliderHTrack;
-	StyleBlockRef sliderHTrackFill;
-	StyleBlockRef tableCell;
-	StyleBlockRef tableRowHeader;
-	StyleBlockRef tableColHeader;
 	StyleBlockRef image;
 
 	virtual IPainter* GetPainter(const StaticID& id) = 0;

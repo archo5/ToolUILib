@@ -591,8 +591,10 @@ static IPainter* ColorFillPainterCreateFunc(IThemeLoader* loader, IObjectIterato
 	auto* p = new ColorFillPainter;
 
 	p->color = loader->LoadColor("color");
+	p->borderColor = loader->LoadColor("borderColor");
 
 	OnField(OI, "shrink", p->shrink);
+	OnField(OI, "borderWidth", p->borderWidth);
 	OnField(OI, "contentOffset", p->contentOffset);
 
 	return p;

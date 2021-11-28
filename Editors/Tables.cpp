@@ -174,15 +174,18 @@ TableView::~TableView()
 }
 
 static StaticID sid_table_base("table_base");
+static StaticID sid_table_cell("table_cell");
+static StaticID sid_table_row_header("table_row_header");
+static StaticID sid_table_col_header("table_col_header");
 void TableView::OnReset()
 {
 	Buildable::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	styleProps = Theme::current->GetStyle(sid_table_base);
-	cellStyle = Theme::current->tableCell;
-	rowHeaderStyle = Theme::current->tableRowHeader;
-	colHeaderStyle = Theme::current->tableColHeader;
+	cellStyle = Theme::current->GetStyle(sid_table_cell);
+	rowHeaderStyle = Theme::current->GetStyle(sid_table_row_header);
+	colHeaderStyle = Theme::current->GetStyle(sid_table_col_header);
 
 	enableRowHeader = true;
 	_impl->dataSource = nullptr;
@@ -624,10 +627,10 @@ void TreeView::OnReset()
 
 	flags |= UIObject_SetsChildTextStyle;
 
-	styleProps = Theme::current->GetStyle(sid_table_base);
-	cellStyle = Theme::current->tableCell;
+	styleProps = Theme::current->GetStyle(sid_table_base); // TODO separate styles for TreeView
+	cellStyle = Theme::current->GetStyle(sid_table_cell);
 	expandButtonStyle = Theme::current->GetStyle(sid_tree_expand);
-	colHeaderStyle = Theme::current->tableColHeader;
+	colHeaderStyle = Theme::current->GetStyle(sid_table_col_header);
 
 	_impl->dataSource = nullptr;
 }

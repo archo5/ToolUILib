@@ -552,9 +552,35 @@ ContentPaintAdvice SelectFirstPainter::Paint(const PaintInfo& info)
 
 ContentPaintAdvice ColorFillPainter::Paint(const PaintInfo& info)
 {
-	ui::AABB2f outer = info.rect;
-	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
-	ui::draw::RectCol(outer.x0, outer.y0, outer.x1, outer.y1, color);
+	AABB2f r = info.rect;
+	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
+
+	if (r.GetWidth() > 0 && r.GetHeight() > 0)
+	{
+		auto baseColor = color;
+		float w = borderWidth;
+		bool drawBorder = w > 0 && borderColor.a > 0;
+
+		if (borderWidth * 2 >= r.GetWidth() ||
+			borderWidth * 2 >= r.GetHeight())
+		{
+			drawBorder = false;
+			baseColor = borderColor;
+		}
+
+		if (drawBorder)
+		{
+			draw::RectCol(r.x0 + w, r.y0 + w, r.x1 - w, r.y1 - w, color);
+			draw::RectCol(r.x0, r.y0, r.x1, r.y0 + w, borderColor);
+			draw::RectCol(r.x0, r.y0, r.x0 + w, r.y1, borderColor);
+			draw::RectCol(r.x0, r.y1 - w, r.x1, r.y1, borderColor);
+			draw::RectCol(r.x1 - w, r.y0, r.x1, r.y1, borderColor);
+		}
+		else
+		{
+			draw::RectCol(r.x0, r.y0, r.x1, r.y1, baseColor);
+		}
+	}
 
 	ContentPaintAdvice cpa;
 	cpa.offset = contentOffset;
@@ -569,17 +595,21 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 
 	const auto& ise = imageSet->entries[0];
 
-	ui::AABB2f outer = info.rect;
-	outer = outer.ShrinkBy(AABB2f::UniformBorder(shrink));
-	if (ise.sliced)
-	{
-		ui::AABB2f inner = outer.ShrinkBy(ise.edgeWidth);
+	AABB2f r = info.rect;
+	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
 
-		ui::draw::RectColTex9Slice(outer, inner, ui::Color4b::White(), ise.image, { 0, 0, 1, 1 }, ise.innerUV);
-	}
-	else
+	if (r.GetWidth() > 0 && r.GetHeight() > 0)
 	{
-		ui::draw::RectTex(outer.x0, outer.y0, outer.x1, outer.y1, ise.image);
+		if (ise.sliced)
+		{
+			AABB2f inner = r.ShrinkBy(ise.edgeWidth);
+
+			draw::RectColTex9Slice(r, inner, color, ise.image, { 0, 0, 1, 1 }, ise.innerUV);
+		}
+		else
+		{
+			draw::RectColTex(r.x0, r.y0, r.x1, r.y1, color, ise.image);
+		}
 	}
 
 	ContentPaintAdvice cpa;

@@ -195,25 +195,6 @@ void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 }
 
 
-struct BorderRectanglePainter : IPainter
-{
-	Color4b backgroundColor;
-	Color4b borderColor;
-
-	BorderRectanglePainter(Color4b bgcol, Color4b bordercol) : backgroundColor(bgcol), borderColor(bordercol) {}
-	ContentPaintAdvice Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		draw::RectCol(r.x0, r.y0, r.x1, r.y1, backgroundColor);
-		draw::RectCol(r.x0, r.y0, r.x1, r.y0 + 1, borderColor);
-		draw::RectCol(r.x0, r.y0, r.x0 + 1, r.y1, borderColor);
-		draw::RectCol(r.x0, r.y1 - 1, r.x1, r.y1, borderColor);
-		draw::RectCol(r.x1 - 1, r.y0, r.x1, r.y1, borderColor);
-		return {};
-	}
-};
-
-
 struct DefaultTheme : Theme
 {
 	ThemeDataHandle themeData;
@@ -225,9 +206,6 @@ struct DefaultTheme : Theme
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
-	StyleBlock dtTableCell;
-	StyleBlock dtTableRowHeader;
-	StyleBlock dtTableColHeader;
 	StyleBlock dtImage;
 
 	DefaultTheme()
@@ -238,11 +216,6 @@ struct DefaultTheme : Theme
 		CreateText();
 		CreateProperty();
 		CreatePropLabel();
-		CreateSliderHTrack();
-		CreateSliderHTrackFill();
-		CreateTableCell();
-		CreateTableRowHeader();
-		CreateTableColHeader();
 		CreateImage();
 #define defaultTheme (*this) // TODO
 	}
@@ -282,89 +255,6 @@ struct DefaultTheme : Theme
 		a.SetPadding(5);
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
-	}
-	void CreateSliderHTrack()
-	{
-		StyleAccessor a(&dtSliderHTrack);
-		PreventHeapDelete(a);
-		a.SetMargin(8);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			if (r.GetWidth() > 0)
-			{
-				auto el = info.IsDisabled() ? TE_TextboxDisabled : TE_TextboxNormal;
-				r = r.ExtendBy(UIRect::UniformBorder(3));
-				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
-			}
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.sliderHTrack = a.block;
-	}
-	void CreateSliderHTrackFill()
-	{
-		StyleAccessor a(&dtSliderHTrackFill);
-		PreventHeapDelete(a);
-		a.SetMargin(8);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			auto r = info.rect;
-			if (r.GetWidth() > 0)
-			{
-				auto el = info.IsDisabled() ? TE_ButtonDisabled : TE_ButtonNormal;
-				r = r.ExtendBy(UIRect::UniformBorder(3));
-				DrawThemeElement(el, r.x0, r.y0, r.x1, r.y1);
-			}
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.sliderHTrackFill = a.block;
-	}
-	void CreateTableCell()
-	{
-		StyleAccessor a(&dtTableCell);
-		PreventHeapDelete(a);
-		a.SetPadding(1, 2);
-		a.SetBackgroundPainter(CreateFunctionPainter([](const PaintInfo& info)
-		{
-			Color4f colContents;
-			if (info.IsChecked())
-				colContents = { 0.45f, 0.05f, 0.0f };
-			else if (info.IsHovered())
-				colContents = { 0.25f, 0.05f, 0.0f };
-			else
-				colContents = { 0.05f, 0.05f, 0.05f };
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y1, colContents);
-
-			Color4f colEdge;
-			if (info.IsChecked())
-				colEdge = { 0.45f, 0.1f, 0.0f };
-			else if (info.IsHovered())
-				colEdge = { 0.25f, 0.1f, 0.05f };
-			else
-				colEdge = { 0.15f, 0.15f, 0.15f };
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x1, info.rect.y0 + 1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y0, info.rect.x0 + 1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x0, info.rect.y1 - 1, info.rect.x1, info.rect.y1, colEdge);
-			draw::RectCol(info.rect.x1 - 1, info.rect.y0, info.rect.x1, info.rect.y1, colEdge);
-			return ContentPaintAdvice{};
-		}));
-		defaultTheme.tableCell = a.block;
-	}
-	void CreateTableRowHeader()
-	{
-		StyleAccessor a(&dtTableRowHeader);
-		PreventHeapDelete(a);
-		a.SetPadding(1, 2);
-		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
-		defaultTheme.tableRowHeader = a.block;
-	}
-	void CreateTableColHeader()
-	{
-		StyleAccessor a(&dtTableColHeader);
-		PreventHeapDelete(a);
-		a.SetPadding(1, 2);
-		a.SetBackgroundPainter(new BorderRectanglePainter(Color4f(0.1f, 0.1f, 0.1f), Color4f(0.2f, 0.2f, 0.2f)));
-		defaultTheme.tableColHeader = a.block;
 	}
 	void CreateImage()
 	{

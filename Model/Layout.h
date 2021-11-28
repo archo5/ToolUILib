@@ -291,7 +291,9 @@ struct SelectFirstPainter : IPainter
 struct ColorFillPainter : IPainter
 {
 	Color4b color;
+	Color4b borderColor = Color4b::Zero();
 	int shrink = 0;
+	float borderWidth = 0;
 	Vec2f contentOffset;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
@@ -300,6 +302,7 @@ struct ColorFillPainter : IPainter
 struct ImageSetPainter : IPainter
 {
 	draw::ImageSetHandle imageSet;
+	Color4b color;
 	int shrink = 0;
 	Vec2f contentOffset;
 
