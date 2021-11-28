@@ -699,10 +699,10 @@ void JSONLinearReader::_Free()
 	}
 }
 
-bool JSONLinearReader::Parse(StringView all)
+bool JSONLinearReader::Parse(StringView all, unsigned flags)
 {
 	_Free();
-	_root = json_parse(all.data(), all.size());
+	_root = json_parse_ex(all.data(), all.size(), flags, nullptr, nullptr, nullptr);
 	_stack.push_back({ _root });
 	return !!_root;
 }

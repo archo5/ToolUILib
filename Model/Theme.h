@@ -96,11 +96,8 @@ struct Theme
 	StyleBlockRef text;
 	StyleBlockRef property;
 	StyleBlockRef propLabel;
-	StyleBlockRef sliderHBase;
 	StyleBlockRef sliderHTrack;
 	StyleBlockRef sliderHTrackFill;
-	StyleBlockRef sliderHThumb;
-	StyleBlockRef tableBase;
 	StyleBlockRef tableCell;
 	StyleBlockRef tableRowHeader;
 	StyleBlockRef tableColHeader;

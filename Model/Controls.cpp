@@ -183,15 +183,17 @@ void ProgressBar::OnPaint(const UIPaintContext& ctx)
 }
 
 
+static StaticID sid_slider_h_base("slider_h_base");
+static StaticID sid_slider_h_thumb("slider_h_thumb");
 void Slider::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->sliderHBase;
+	styleProps = Theme::current->GetStyle(sid_slider_h_base);
 	trackStyle = Theme::current->sliderHTrack;
 	trackFillStyle = Theme::current->sliderHTrackFill;
-	thumbStyle = Theme::current->sliderHThumb;
+	thumbStyle = Theme::current->GetStyle(sid_slider_h_thumb);
 
 	_value = 0;
 	_limits = { 0, 1, 0 };

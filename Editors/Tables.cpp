@@ -173,12 +173,13 @@ TableView::~TableView()
 	delete _impl;
 }
 
+static StaticID sid_table_base("table_base");
 void TableView::OnReset()
 {
 	Buildable::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->tableBase;
+	styleProps = Theme::current->GetStyle(sid_table_base);
 	cellStyle = Theme::current->tableCell;
 	rowHeaderStyle = Theme::current->tableRowHeader;
 	colHeaderStyle = Theme::current->tableColHeader;
@@ -623,7 +624,7 @@ void TreeView::OnReset()
 
 	flags |= UIObject_SetsChildTextStyle;
 
-	styleProps = Theme::current->tableBase;
+	styleProps = Theme::current->GetStyle(sid_table_base);
 	cellStyle = Theme::current->tableCell;
 	expandButtonStyle = Theme::current->GetStyle(sid_tree_expand);
 	colHeaderStyle = Theme::current->tableColHeader;

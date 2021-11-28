@@ -195,45 +195,6 @@ void DrawThemeElement(EThemeElement e, float x0, float y0, float x1, float y1)
 }
 
 
-struct ThemeElementPainter : IPainter
-{
-	static constexpr int MAX_ELEMENTS = 16;
-	EThemeElement elements[MAX_ELEMENTS] = {};
-
-	ThemeElementPainter() {}
-	ThemeElementPainter(EThemeElement e) { SetAll(e); }
-	ThemeElementPainter* SetAll(EThemeElement e)
-	{
-		for (int i = 0; i < MAX_ELEMENTS; i++)
-			elements[i] = e;
-		return this;
-	}
-	ThemeElementPainter* SetNormalDisabled(EThemeElement normal, EThemeElement disabled)
-	{
-		for (int i = 0; i < MAX_ELEMENTS; i++)
-			elements[i] = i & PS_Disabled ? disabled : normal;
-		return this;
-	}
-	ThemeElementPainter* SetNormalHoverPressedDisabled(EThemeElement normal, EThemeElement hover, EThemeElement pressed, EThemeElement disabled)
-	{
-		for (int i = 0; i < MAX_ELEMENTS; i++)
-		{
-			elements[i] =
-				i & PS_Disabled ? disabled : 
-				i & PS_Down ? pressed :
-				i & PS_Hover ? hover :
-				normal;
-		}
-		return this;
-	}
-	ContentPaintAdvice Paint(const PaintInfo& info) override
-	{
-		auto r = info.rect;
-		DrawThemeElement(elements[info.state & (MAX_ELEMENTS - 1)], r.x0, r.y0, r.x1, r.y1);
-		return {};
-	}
-};
-
 struct BorderRectanglePainter : IPainter
 {
 	Color4b backgroundColor;
@@ -264,8 +225,6 @@ struct DefaultTheme : Theme
 	StyleBlock dtSliderHBase;
 	StyleBlock dtSliderHTrack;
 	StyleBlock dtSliderHTrackFill;
-	StyleBlock dtSliderHThumb;
-	StyleBlock dtTableBase;
 	StyleBlock dtTableCell;
 	StyleBlock dtTableRowHeader;
 	StyleBlock dtTableColHeader;
@@ -279,11 +238,8 @@ struct DefaultTheme : Theme
 		CreateText();
 		CreateProperty();
 		CreatePropLabel();
-		CreateSliderHBase();
 		CreateSliderHTrack();
 		CreateSliderHTrackFill();
-		CreateSliderHThumb();
-		CreateTableBase();
 		CreateTableCell();
 		CreateTableRowHeader();
 		CreateTableColHeader();
@@ -327,15 +283,6 @@ struct DefaultTheme : Theme
 		a.SetBackgroundPainter(EmptyPainter::Get());
 		defaultTheme.propLabel = a.block;
 	}
-	void CreateSliderHBase()
-	{
-		StyleAccessor a(&dtSliderHBase);
-		PreventHeapDelete(a);
-		a.SetPaddingTop(20);
-		a.SetWidth(Coord::Fraction(1));
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.sliderHBase = a.block;
-	}
 	void CreateSliderHTrack()
 	{
 		StyleAccessor a(&dtSliderHTrack);
@@ -371,24 +318,6 @@ struct DefaultTheme : Theme
 			return ContentPaintAdvice{};
 		}));
 		defaultTheme.sliderHTrackFill = a.block;
-	}
-	void CreateSliderHThumb()
-	{
-		StyleAccessor a(&dtSliderHThumb);
-		PreventHeapDelete(a);
-		a.SetPadding(6, 4);
-		a.SetBackgroundPainter((new ThemeElementPainter())->SetNormalHoverPressedDisabled(
-			TE_ButtonNormal, TE_ButtonHover, TE_ButtonPressed, TE_ButtonDisabled));
-		defaultTheme.sliderHThumb = a.block;
-	}
-	void CreateTableBase()
-	{
-		StyleAccessor a(&dtTableBase);
-		PreventHeapDelete(a);
-		a.SetPadding(5);
-		a.SetWidth(Coord::Percent(100));
-		a.SetBackgroundPainter(new ThemeElementPainter(TE_TextboxNormal));
-		defaultTheme.tableBase = a.block;
 	}
 	void CreateTableCell()
 	{

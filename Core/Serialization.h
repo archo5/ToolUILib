@@ -155,6 +155,41 @@ struct JSONLinearWriter
 	std::vector<bool> _inArray;
 };
 
+enum JSONParseFlags
+{
+	JPF_Default = 0,
+	JPF_AllowTrailingComma = 0x1,
+	JPF_AllowUnquotedKeys = 0x2,
+	JPF_AllowGlobalObject = 0x4,
+	JPF_AllowEqualsInObject = 0x8,
+	JPF_AllowNoCommas = 0x10,
+	JPF_AllowCStyleComments = 0x20,
+	JPF_AllowSingleQuotedStrings = 0x100,
+	JPF_AllowHexadecimalNumbers = 0x200,
+	JPF_AllowLeadingPlusSign = 0x400,
+	JPF_AllowLeadingOrTrailingDecimalPoint = 0x800,
+	JPF_AllowInfAndNan = 0x1000,
+	JPF_AllowMultiLineStrings = 0x2000,
+
+	JPF_AllowSimplifiedJson = (
+		JPF_AllowTrailingComma |
+		JPF_AllowUnquotedKeys |
+		JPF_AllowGlobalObject |
+		JPF_AllowEqualsInObject |
+		JPF_AllowNoCommas),
+	JPF_AllowJson5 = (
+		JPF_AllowTrailingComma |
+		JPF_AllowUnquotedKeys |
+		JPF_AllowCStyleComments |
+		JPF_AllowSingleQuotedStrings |
+		JPF_AllowHexadecimalNumbers |
+		JPF_AllowLeadingPlusSign |
+		JPF_AllowLeadingOrTrailingDecimalPoint |
+		JPF_AllowInfAndNan |
+		JPF_AllowMultiLineStrings),
+	JPF_AllowAll = JPF_AllowSimplifiedJson | JPF_AllowJson5,
+};
+
 struct JSONLinearReader
 {
 	using Entry = json_value_s;
@@ -167,7 +202,7 @@ struct JSONLinearReader
 	~JSONLinearReader();
 	void _Free();
 
-	bool Parse(StringView all);
+	bool Parse(StringView all, unsigned flags = JPF_Default);
 
 	bool HasMoreArrayElements();
 	size_t GetCurrentArraySize();

@@ -1,0 +1,11 @@
+"slider_h_base:style":
+{
+	paddingTop = 20
+	width = "1fr"
+}
+"slider_h_thumb:style":
+{
+	paddingV = 6
+	paddingH = 4
+	backgroundPainter = "button"
+}

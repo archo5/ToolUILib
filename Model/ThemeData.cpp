@@ -281,6 +281,18 @@ struct ThemeLoaderData : IThemeLoader
 				loaded->padding_right = f;
 				loaded->padding_bottom = f;
 			}
+			if (u.HasField("paddingH"))
+			{
+				float p = 0;
+				OnField(u, "paddingH", p);
+				loaded->padding_left = loaded->padding_right = p;
+			}
+			if (u.HasField("paddingV"))
+			{
+				float p = 0;
+				OnField(u, "paddingV", p);
+				loaded->padding_top = loaded->padding_bottom = p;
+			}
 			if (u.HasField("paddingLeft"))
 				OnField(u, "paddingLeft", loaded->padding_left);
 			if (u.HasField("paddingTop"))
@@ -360,7 +372,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 			auto path = to_string(folder, "/", entry);
 			tf->text = ReadTextFile(path);
 
-			if (tf->unserializer.Parse(tf->text))
+			if (tf->unserializer.Parse(tf->text, JPF_AllowAll))
 			{
 				tld.files.push_back(tf);
 
