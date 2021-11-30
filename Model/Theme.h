@@ -26,7 +26,6 @@ using StaticID_Style = StaticID<StyleBlock>;
 struct Theme
 {
 	virtual IPainter* GetPainter(const StaticID_Painter& id) = 0;
-	virtual AABB2i GetIntRect(const StaticID_IntRect& id) = 0;
 	virtual StyleBlockRef GetStyle(const StaticID_Style& id) = 0;
 	virtual draw::ImageHandle GetImage(ThemeImage ti) = 0;
 

@@ -146,6 +146,70 @@ static const char* EnumKeys_FontStyle[] =
 template <> struct EnumKeys<FontStyle> : EnumKeysStringList<FontStyle, EnumKeys_FontStyle> {};
 
 
+draw::ImageSetHandle ThemeData::FindImageSetByName(const std::string& name)
+{
+	auto it = imageSets.find(name);
+	if (it.is_valid())
+		return it->value;
+	return {};
+}
+
+PainterHandle ThemeData::FindPainterByName(const std::string& name)
+{
+	auto it = painters.find(name);
+	if (it.is_valid())
+		return it->value;
+	return {};
+}
+
+StyleBlockRef ThemeData::FindStyleByName(const std::string& name)
+{
+	auto it = styles.find(name);
+	if (it.is_valid())
+		return it->value;
+	return {};
+}
+
+static size_t CalcNewSize(size_t curSize, size_t curMaxCount)
+{
+	if (curMaxCount <= curSize)
+		return curSize;
+	return curSize + curMaxCount;
+}
+
+template <class TC, class TID> TC& GetCacheSlot(std::vector<TC>& cache, const StaticID<TID>& id)
+{
+	size_t newSize = CalcNewSize(cache.size(), StaticID<TID>::GetCount());
+	if (cache.size() < newSize)
+		cache.resize(newSize);
+	return cache[id._id];
+}
+
+draw::ImageSetHandle ThemeData::GetImageSet(const StaticID_ImageSet& id)
+{
+	auto& slot = GetCacheSlot(_cachedImageSets, id);
+	if (!slot)
+		slot = FindImageSetByName(id._name);
+	return slot;
+}
+
+PainterHandle ThemeData::GetPainter(const StaticID_Painter& id, bool returnDefaultIfMissing)
+{
+	auto& slot = GetCacheSlot(_cachedPainters, id);
+	if (!slot)
+		slot = FindPainterByName(id._name);
+	return slot ? slot : returnDefaultIfMissing ? EmptyPainter::Get() : nullptr;
+}
+
+StyleBlockRef ThemeData::GetStyle(const StaticID_Style& id, bool returnDefaultIfMissing)
+{
+	auto& slot = GetCacheSlot(_cachedStyles, id);
+	if (!slot)
+		slot = FindStyleByName(id._name);
+	return slot ? slot : returnDefaultIfMissing ? GetObjectStyle() : nullptr;
+}
+
+
 static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
 
 struct ThemeFile : RefCountedST

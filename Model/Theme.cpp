@@ -21,20 +21,11 @@ struct DefaultTheme : Theme
 
 	IPainter* GetPainter(const StaticID_Painter& id)
 	{
-		auto it = themeData->painters.find(id._name);
-		return it.is_valid() ? it->value : nullptr;
-	}
-	AABB2i GetIntRect(const StaticID_IntRect& id)
-	{
-		// TODO
-		return {};
+		return themeData->GetPainter(id);
 	}
 	StyleBlockRef GetStyle(const StaticID_Style& id)
 	{
-		auto it = themeData->styles.find(id._name);
-		if (it.is_valid())
-			return it->value;
-		return GetObjectStyle();
+		return themeData->GetStyle(id);
 	}
 
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];
