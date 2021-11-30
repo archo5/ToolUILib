@@ -14,36 +14,9 @@ struct DefaultTheme : Theme
 {
 	ThemeDataHandle themeData;
 
-	StyleBlock dtObject;
-	StyleBlock dtText;
-
 	DefaultTheme()
 	{
 		themeData = LoadTheme("data/theme_default");
-
-		CreateObject();
-		CreateText();
-#define defaultTheme (*this) // TODO
-	}
-	void PreventHeapDelete(StyleAccessor& a)
-	{
-		a.block->_refCount++;
-	}
-	void CreateObject()
-	{
-		StyleAccessor a(&dtObject);
-		PreventHeapDelete(a);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.object = a.block;
-	}
-	void CreateText()
-	{
-		StyleAccessor a(&dtText);
-		PreventHeapDelete(a);
-		a.SetLayout(layouts::InlineBlock());
-		a.SetBoxSizing(BoxSizing::ContentBox);
-		a.SetBackgroundPainter(EmptyPainter::Get());
-		defaultTheme.text = a.block;
 	}
 
 	IPainter* GetPainter(const StaticID_Painter& id)
@@ -61,7 +34,7 @@ struct DefaultTheme : Theme
 		auto it = themeData->styles.find(id._name);
 		if (it.is_valid())
 			return it->value;
-		return object;
+		return GetObjectStyle();
 	}
 
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];

@@ -1012,4 +1012,35 @@ void StyleAccessor::SetPadding(float t, float r, float b, float l)
 }
 
 
+static StyleBlockRef g_objectStyle;
+static StyleBlockRef g_textStyle;
+
+void _InitStyles()
+{
+	g_objectStyle = new StyleBlock;
+	g_objectStyle->background_painter = EmptyPainter::Get();
+
+	g_textStyle = new StyleBlock;
+	g_textStyle->layout = layouts::InlineBlock();
+	g_textStyle->box_sizing = BoxSizing::ContentBox;
+	g_textStyle->background_painter = EmptyPainter::Get();
+}
+
+void _FreeStyles()
+{
+	g_objectStyle = nullptr;
+	g_textStyle = nullptr;
+}
+
+StyleBlockRef GetObjectStyle()
+{
+	return g_objectStyle;
+}
+
+StyleBlockRef GetTextStyle()
+{
+	return g_textStyle;
+}
+
+
 } // ui

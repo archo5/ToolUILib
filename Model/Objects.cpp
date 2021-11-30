@@ -26,7 +26,7 @@ struct EventHandlerEntry
 
 UIObject::UIObject()
 {
-	SetStyle(Theme::current->object);
+	SetStyle(GetObjectStyle());
 }
 
 UIObject::~UIObject()
@@ -122,7 +122,7 @@ void UIObject::PO_ResetConfiguration()
 
 	DetachAll();
 
-	SetStyle(Theme::current->object);
+	SetStyle(GetObjectStyle());
 
 	auto origFlags = flags;
 	const uint32_t KEEP_MASK =
@@ -1075,7 +1075,7 @@ StyleBlock* UIObject::_FindClosestParentTextStyle() const
 		if ((p->flags & UIObject_SetsChildTextStyle) && p->styleProps)
 			return p->styleProps;
 	}
-	return Theme::current->text;
+	return GetTextStyle();
 }
 
 NativeWindowBase* UIObject::GetNativeWindow() const
@@ -1088,7 +1088,7 @@ void TextElement::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->text;
+	styleProps = GetTextStyle();
 
 	text = {};
 }
@@ -1096,7 +1096,7 @@ void TextElement::OnReset()
 void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
 {
 	// TODO can we nullify styleProps?
-	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
+	auto* style = styleProps != GetTextStyle() ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
 	auto* font = style->GetFont();
 
 	outWidth = ceilf(GetTextWidth(font, style->font_size, text));
@@ -1106,7 +1106,7 @@ void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
 	// TODO can we nullify styleProps?
-	auto* style = styleProps != Theme::current->text ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
+	auto* style = styleProps != GetTextStyle() ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
 	auto* font = style->GetFont();
 
 	UIPaintHelper ph;

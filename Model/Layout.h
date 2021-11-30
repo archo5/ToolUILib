@@ -571,6 +571,7 @@ public:
 	UIObject* owner;
 };
 
-void FlexLayout(UIObject* obj);
+StyleBlockRef GetObjectStyle();
+StyleBlockRef GetTextStyle();
 
 } // ui

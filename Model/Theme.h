@@ -25,11 +25,6 @@ using StaticID_Style = StaticID<StyleBlock>;
 
 struct Theme
 {
-	// core controls
-	// TODO move out
-	StyleBlockRef object;
-	StyleBlockRef text;
-
 	virtual IPainter* GetPainter(const StaticID_Painter& id) = 0;
 	virtual AABB2i GetIntRect(const StaticID_IntRect& id) = 0;
 	virtual StyleBlockRef GetStyle(const StaticID_Style& id) = 0;
