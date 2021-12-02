@@ -14,7 +14,7 @@ void ColorBlock::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_color_block);
+	styleProps = GetCurrentTheme()->GetStyle(sid_color_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 
 	_color = Color4b::Black();
@@ -43,7 +43,7 @@ void ColorInspectBlock::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_color_inspect_block);
+	styleProps = GetCurrentTheme()->GetStyle(sid_color_inspect_block);
 	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
 
 	_color = Color4b::Black();
@@ -222,8 +222,8 @@ void HueSatPicker::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_selector_container);
-	selectorStyle = Theme::current->GetStyle(sid_selector);
+	styleProps = GetCurrentTheme()->GetStyle(sid_selector_container);
+	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
 	_hue = 0;
@@ -313,8 +313,8 @@ void ColorCompPicker2D::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_selector_container);
-	selectorStyle = Theme::current->GetStyle(sid_selector);
+	styleProps = GetCurrentTheme()->GetStyle(sid_selector_container);
+	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
 
 	_settings = {};
 	_x = 0;

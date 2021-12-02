@@ -182,10 +182,10 @@ void TableView::OnReset()
 	Buildable::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_table_base);
-	cellStyle = Theme::current->GetStyle(sid_table_cell);
-	rowHeaderStyle = Theme::current->GetStyle(sid_table_row_header);
-	colHeaderStyle = Theme::current->GetStyle(sid_table_col_header);
+	styleProps = GetCurrentTheme()->GetStyle(sid_table_base);
+	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
+	rowHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_row_header);
+	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);
 
 	enableRowHeader = true;
 	_impl->dataSource = nullptr;
@@ -627,10 +627,10 @@ void TreeView::OnReset()
 
 	flags |= UIObject_SetsChildTextStyle;
 
-	styleProps = Theme::current->GetStyle(sid_table_base); // TODO separate styles for TreeView
-	cellStyle = Theme::current->GetStyle(sid_table_cell);
-	expandButtonStyle = Theme::current->GetStyle(sid_tree_expand);
-	colHeaderStyle = Theme::current->GetStyle(sid_table_col_header);
+	styleProps = GetCurrentTheme()->GetStyle(sid_table_base); // TODO separate styles for TreeView
+	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
+	expandButtonStyle = GetCurrentTheme()->GetStyle(sid_tree_expand);
+	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);
 
 	_impl->dataSource = nullptr;
 }

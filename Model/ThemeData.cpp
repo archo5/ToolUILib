@@ -209,6 +209,17 @@ StyleBlockRef ThemeData::GetStyle(const StaticID_Style& id, bool returnDefaultIf
 	return slot ? slot : returnDefaultIfMissing ? GetObjectStyle() : nullptr;
 }
 
+static ThemeDataHandle g_curTheme;
+ThemeData* GetCurrentTheme()
+{
+	return g_curTheme;
+}
+
+void SetCurrentTheme(ThemeData* theme)
+{
+	g_curTheme = theme;
+}
+
 
 static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
 

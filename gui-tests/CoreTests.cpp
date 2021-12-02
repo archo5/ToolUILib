@@ -146,9 +146,9 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 
 	void OnReset() override
 	{
-		buttonStyle = ui::Theme::current->GetStyle("button");
-		checkboxStyle = ui::Theme::current->GetStyle("checkbox");
-		radioBtnStyle = ui::Theme::current->GetStyle("radio_button");
+		buttonStyle = ui::GetCurrentTheme()->FindStyleByName("button");
+		checkboxStyle = ui::GetCurrentTheme()->FindStyleByName("checkbox");
+		radioBtnStyle = ui::GetCurrentTheme()->FindStyleByName("radio_button");
 	}
 	void OnEnable() override
 	{
@@ -533,7 +533,7 @@ struct SubUITest : ui::Buildable
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::PaintInfo info(this);
-		ui::Theme::current->GetStyle("textbox")->background_painter->Paint(info);
+		ui::GetCurrentTheme()->FindStyleByName("textbox")->background_painter->Paint(info);
 		auto r = finalRectC;
 
 		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);

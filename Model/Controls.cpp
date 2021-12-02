@@ -14,7 +14,7 @@ void Panel::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_panel);
+	styleProps = GetCurrentTheme()->GetStyle(sid_panel);
 }
 
 
@@ -24,7 +24,7 @@ void Header::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_header);
+	styleProps = GetCurrentTheme()->GetStyle(sid_header);
 }
 
 
@@ -34,7 +34,7 @@ void Button::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_button);
+	styleProps = GetCurrentTheme()->GetStyle(sid_button);
 }
 
 
@@ -107,7 +107,7 @@ void CheckboxIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_checkbox);
+	styleProps = GetCurrentTheme()->GetStyle(sid_checkbox);
 }
 
 
@@ -116,7 +116,7 @@ void RadioButtonIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_radio_button);
+	styleProps = GetCurrentTheme()->GetStyle(sid_radio_button);
 }
 
 
@@ -125,7 +125,7 @@ void TreeExpandIcon::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_tree_expand);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tree_expand);
 }
 
 
@@ -133,7 +133,7 @@ void StateButtonSkin::OnReset()
 {
 	StateToggleVisualBase::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_button);
+	styleProps = GetCurrentTheme()->GetStyle(sid_button);
 }
 
 
@@ -142,7 +142,7 @@ void ListBox::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_listbox);
+	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
 	SetFlag(UIObject_ClipChildren, true);
 }
 
@@ -153,7 +153,7 @@ void Selectable::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
-	SetStyle(Theme::current->GetStyle(sid_selectable));
+	SetStyle(GetCurrentTheme()->GetStyle(sid_selectable));
 }
 
 
@@ -164,8 +164,8 @@ void ProgressBar::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_progress_bar_base);
-	completionBarStyle = Theme::current->GetStyle(sid_progress_bar_completion);
+	styleProps = GetCurrentTheme()->GetStyle(sid_progress_bar_base);
+	completionBarStyle = GetCurrentTheme()->GetStyle(sid_progress_bar_completion);
 	progress = 0.5f;
 }
 
@@ -192,10 +192,10 @@ void Slider::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_slider_h_base);
-	trackStyle = Theme::current->GetStyle(sid_slider_h_track);
-	trackFillStyle = Theme::current->GetStyle(sid_slider_h_track_fill);
-	thumbStyle = Theme::current->GetStyle(sid_slider_h_thumb);
+	styleProps = GetCurrentTheme()->GetStyle(sid_slider_h_base);
+	trackStyle = GetCurrentTheme()->GetStyle(sid_slider_h_track);
+	trackFillStyle = GetCurrentTheme()->GetStyle(sid_slider_h_track_fill);
+	thumbStyle = GetCurrentTheme()->GetStyle(sid_slider_h_thumb);
 
 	_value = 0;
 	_limits = { 0, 1, 0 };
@@ -427,7 +427,7 @@ void PropertyList::OnReset()
 	splitPos = Coord::Percent(40);
 	minSplitPos = 0;
 
-	_defaultLabelStyle = Theme::current->GetStyle(sid_prop_label);
+	_defaultLabelStyle = GetCurrentTheme()->GetStyle(sid_prop_label);
 }
 
 UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
@@ -469,7 +469,7 @@ void LabeledProperty::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_property);
+	styleProps = GetCurrentTheme()->GetStyle(sid_property);
 	_labelStyle = {};
 
 	_labelText = {};
@@ -551,7 +551,7 @@ StyleBlock* LabeledProperty::FindCurrentLabelStyle() const
 		return _labelStyle;
 	if (_propList && _propList->_defaultLabelStyle)
 		return _propList->_defaultLabelStyle;
-	return Theme::current->GetStyle(sid_prop_label);
+	return GetCurrentTheme()->GetStyle(sid_prop_label);
 }
 
 StyleAccessor LabeledProperty::GetLabelStyle()
@@ -565,9 +565,9 @@ StyleAccessor LabeledProperty::GetLabelStyle()
 SplitPane::SplitPane()
 {
 	// TODO
-	vertSepStyle = Theme::current->GetStyle(sid_button);
+	vertSepStyle = GetCurrentTheme()->GetStyle(sid_button);
 	StyleAccessor(vertSepStyle, this).SetWidth(8);
-	horSepStyle = Theme::current->GetStyle(sid_button);
+	horSepStyle = GetCurrentTheme()->GetStyle(sid_button);
 	StyleAccessor(horSepStyle, this).SetHeight(8);
 }
 
@@ -882,8 +882,8 @@ static StaticID_Style sid_scroll_v_track("scroll_v_track");
 static StaticID_Style sid_scroll_v_thumb("scroll_v_thumb");
 void ScrollbarV::OnReset()
 {
-	trackVStyle = Theme::current->GetStyle(sid_scroll_v_track);
-	thumbVStyle = Theme::current->GetStyle(sid_scroll_v_thumb);
+	trackVStyle = GetCurrentTheme()->GetStyle(sid_scroll_v_track);
+	thumbVStyle = GetCurrentTheme()->GetStyle(sid_scroll_v_thumb);
 }
 
 Coord ScrollbarV::GetWidth()
@@ -1061,7 +1061,7 @@ void TabGroup::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_tab_group);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tab_group);
 	_activeBtn = nullptr;
 }
 
@@ -1071,7 +1071,7 @@ void TabButtonList::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_tab_list);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tab_list);
 }
 
 void TabButtonList::OnPaint(const UIPaintContext& ctx)
@@ -1100,7 +1100,7 @@ void TabButtonBase::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_tab_button);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tab_button);
 }
 
 void TabButtonBase::OnExitTree()
@@ -1141,7 +1141,7 @@ void TabPanel::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_tab_panel);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tab_panel);
 }
 
 void TabPanel::OnPaint(const UIPaintContext& ctx)
@@ -1194,7 +1194,7 @@ void Textbox::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
-	styleProps = Theme::current->GetStyle(sid_textbox);
+	styleProps = GetCurrentTheme()->GetStyle(sid_textbox);
 	_placeholder = {};
 }
 
@@ -1630,7 +1630,7 @@ void CollapsibleTreeNode::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_tree_expand);
+	styleProps = GetCurrentTheme()->GetStyle(sid_tree_expand);
 }
 
 void CollapsibleTreeNode::OnPaint(const UIPaintContext& ctx)
@@ -1720,7 +1720,7 @@ void DropdownMenu::OnEvent(Event& e)
 void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
-	btn + ApplyStyle(Theme::current->GetStyle(sid_button));
+	btn + ApplyStyle(GetCurrentTheme()->GetStyle(sid_button));
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{
@@ -1899,7 +1899,7 @@ void TooltipFrame::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_listbox);
+	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 
@@ -1908,7 +1908,7 @@ void DragDropDataFrame::OnReset()
 {
 	UIElement::OnReset();
 
-	styleProps = Theme::current->GetStyle(sid_listbox);
+	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
 	GetStyle().SetPlacement(&placement);
 }
 

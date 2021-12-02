@@ -16,6 +16,7 @@
 #include "System.h"
 #include "Menu.h"
 #include "Theme.h"
+#include "ThemeData.h"
 
 #include "../Render/RHI.h"
 #include "../Render/Render.h"
@@ -607,6 +608,8 @@ struct NativeWindow_Impl
 		{
 			draw::internals::InitResources();
 			_InitStyles();
+			if (!GetCurrentTheme())
+				SetCurrentTheme(LoadTheme("data/theme_default"));
 			InitTheme();
 		}
 		g_rsrcUsers++;
@@ -621,6 +624,7 @@ struct NativeWindow_Impl
 		if (--g_rsrcUsers == 0)
 		{
 			FreeTheme();
+			SetCurrentTheme(nullptr);
 			_FreeStyles();
 			draw::internals::FreeResources();
 		}

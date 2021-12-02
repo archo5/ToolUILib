@@ -17,7 +17,7 @@ struct StaticID
 	const char* _name;
 	uint32_t _id;
 
-	UI_FORCEINLINE StaticID(const char* name) : _name(name)
+	UI_FORCEINLINE explicit StaticID(const char* name) : _name(name)
 	{
 		_id = StaticIDStorage_Alloc(GetStorage(), name);
 	}

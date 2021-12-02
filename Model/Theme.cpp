@@ -1,8 +1,5 @@
 
-#include "../Render/Render.h"
 #include "Theme.h"
-
-#include "ThemeData.h"
 
 
 namespace ui {
@@ -12,22 +9,6 @@ Theme* Theme::current;
 
 struct DefaultTheme : Theme
 {
-	ThemeDataHandle themeData;
-
-	DefaultTheme()
-	{
-		themeData = LoadTheme("data/theme_default");
-	}
-
-	IPainter* GetPainter(const StaticID_Painter& id)
-	{
-		return themeData->GetPainter(id);
-	}
-	StyleBlockRef GetStyle(const StaticID_Style& id)
-	{
-		return themeData->GetStyle(id);
-	}
-
 	draw::ImageHandle cache[(int)ThemeImage::_COUNT];
 	draw::ImageHandle GetImage(ThemeImage ti)
 	{

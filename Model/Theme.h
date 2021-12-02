@@ -1,9 +1,6 @@
 
 #pragma once
-#include "Layout.h"
-
-#include "../Core/StaticID.h"
-#include "../Render/Render.h"
+#include "ThemeData.h"
 
 
 namespace ui {
@@ -19,14 +16,8 @@ enum class ThemeImage
 	_COUNT,
 };
 
-using StaticID_Painter = StaticID<IPainter>;
-using StaticID_IntRect = StaticID<AABB2i>;
-using StaticID_Style = StaticID<StyleBlock>;
-
 struct Theme
 {
-	virtual IPainter* GetPainter(const StaticID_Painter& id) = 0;
-	virtual StyleBlockRef GetStyle(const StaticID_Style& id) = 0;
 	virtual draw::ImageHandle GetImage(ThemeImage ti) = 0;
 
 	static Theme* current;

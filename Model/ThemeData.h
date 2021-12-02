@@ -40,6 +40,10 @@ struct ThemeData : RefCountedST
 };
 using ThemeDataHandle = RCHandle<ThemeData>;
 
+ThemeData* GetCurrentTheme();
+void SetCurrentTheme(ThemeData* theme);
+
+
 typedef IPainter* PainterCreateFunc(IThemeLoader*, IObjectIterator&);
 
 void RegisterPainter(const char* type, PainterCreateFunc* createFunc);
