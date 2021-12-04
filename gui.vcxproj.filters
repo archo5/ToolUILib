@@ -100,11 +100,11 @@
     <ClCompile Include="Core\String.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Model\ThemeData.cpp">
-      <Filter>Model</Filter>
-    </ClCompile>
     <ClCompile Include="Core\StaticID.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Theme.cpp">
+      <Filter>Model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -238,11 +238,11 @@
     <ClInclude Include="Model\EventSystem.h">
       <Filter>Model</Filter>
     </ClInclude>
-    <ClInclude Include="Model\ThemeData.h">
-      <Filter>Model</Filter>
-    </ClInclude>
     <ClInclude Include="Core\StaticID.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Theme.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
