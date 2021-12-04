@@ -1717,10 +1717,12 @@ void DropdownMenu::OnEvent(Event& e)
 	}
 }
 
+static StaticID_Style sid_dropdown_button("dropdown_button");
+static StaticID_Style sid_dropdown_button_icon("dropdown_button_icon");
 void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
-	btn + ApplyStyle(GetCurrentTheme()->GetStyle(sid_button));
+	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
 	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
 	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
 	{
@@ -1730,9 +1732,10 @@ void DropdownMenu::OnBuildButton()
 		Rebuild();
 	};
 
+	Make<BoxElement>().SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
+
 	OnBuildButtonContents();
 
-	Text(HasFlags(UIObject_IsChecked) ? "/\\" : "\\/") + SetMargin(0, 0, 0, 5);
 	Pop();
 }
 
