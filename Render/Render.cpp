@@ -403,6 +403,139 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 }
 
 
+ImageSetSizeMode g_imageSetSizeModes[3] =
+{
+	ImageSetSizeMode::NearestScaleDown,
+	ImageSetSizeMode::NearestScaleDown,
+	ImageSetSizeMode::NearestScaleDown,
+};
+
+static inline ImageSetSizeMode GetFinalSizeMode(ImageSetType type, ImageSetSizeMode mode)
+{
+	if (mode == ImageSetSizeMode::Default)
+		mode = g_imageSetSizeModes[unsigned(type)];
+	return mode;
+}
+
+ImageSet::Entry* ImageSet::FindEntryForSize(Size2f size)
+{
+	auto mode = GetFinalSizeMode(type, sizeMode);
+
+	Entry* last = entries.empty() ? nullptr : &entries.front();
+	if (mode == ImageSetSizeMode::NearestScaleUp || mode == ImageSetSizeMode::NearestNoScale)
+	{
+		for (size_t i = 0; i < entries.size(); i++)
+		{
+			auto& e = entries[i];
+			if (e.image->GetWidth() > size.x || e.image->GetHeight() > size.y)
+				break;
+			last = &entries[i];
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < entries.size(); i++)
+		{
+			auto& e = entries[i];
+			last = &e;
+			if (e.image->GetWidth() >= size.x && e.image->GetHeight() >= size.y)
+				break;
+		}
+	}
+	return last;
+}
+
+ImageSet::Entry* ImageSet::FindEntryForEdgeWidth(AABB2f edgeWidth)
+{
+	// TODO
+	return entries.empty() ? nullptr : &entries[0];
+}
+
+void ImageSet::_DrawAsIcon(AABB2f rect, Color4b color)
+{
+	if (auto* e = FindEntryForSize(rect.GetSize()))
+	{
+		rect = RectGenFit(rect, baseSize);
+		draw::RectColTex(rect.x0, rect.y0, rect.x1, rect.y1, color, e->image);
+	}
+}
+
+void ImageSet::_DrawAsSliced(AABB2f rect, Color4b color)
+{
+	if (auto* e = FindEntryForEdgeWidth(baseEdgeWidth))
+	{
+		AABB2f inner = rect.ShrinkBy(baseEdgeWidth);
+
+		draw::RectColTex9Slice(rect, inner, color, e->image, { 0, 0, 1, 1 }, e->innerUV);
+	}
+}
+
+void ImageSet::_DrawAsPattern(AABB2f rect, Color4b color)
+{
+	if (auto* e = FindEntryForSize(baseSize))
+	{
+		draw::RectColTex(
+			rect.x0, rect.y0, rect.x1, rect.y1,
+			color,
+			e->image,
+			0, 0, rect.GetWidth() / baseSize.x, rect.GetHeight() / baseSize.y);
+	}
+}
+
+void ImageSet::_DrawAsRawImage(AABB2f rect, Color4b color)
+{
+	if (auto* e = FindEntryForSize(rect.GetSize()))
+	{
+		draw::RectColTex(rect.x0, rect.y0, rect.x1, rect.y1, color, e->image);
+	}
+}
+
+void ImageSet::Draw(AABB2f rect, Color4b color)
+{
+	if (rect.GetWidth() <= 0 || rect.GetHeight() <= 0)
+		return;
+	switch (type)
+	{
+	case ImageSetType::Icon:
+		_DrawAsIcon(rect, color);
+		break;
+	case ImageSetType::Sliced:
+		_DrawAsSliced(rect, color);
+		break;
+	case ImageSetType::Pattern:
+		_DrawAsPattern(rect, color);
+		break;
+	case ImageSetType::RawImage:
+		_DrawAsRawImage(rect, color);
+		break;
+	}
+}
+
+ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type)
+{
+	auto i = unsigned(type);
+	assert(i < 3);
+	return g_imageSetSizeModes[i];
+}
+
+void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode)
+{
+	auto i = unsigned(type);
+	assert(i < 3);
+	if (sizeMode == ImageSetSizeMode::Default)
+		sizeMode = ImageSetSizeMode::NearestScaleDown;
+	g_imageSetSizeModes[i] = sizeMode;
+}
+
+void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode)
+{
+	if (sizeMode == ImageSetSizeMode::Default)
+		sizeMode = ImageSetSizeMode::NearestScaleDown;
+	for (auto& m : g_imageSetSizeModes)
+		m = sizeMode;
+}
+
+
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
 static rhi::Vertex g_bufVertices[MAX_VERTICES];
@@ -841,14 +974,29 @@ void RectTex(float x0, float y0, float x1, float y1, IImage* tex)
 	RectColTex(x0, y0, x1, y1, Color4b::White(), tex, 0, 0, 1, 1);
 }
 
+void RectTex(const AABB2f& r, IImage* tex)
+{
+	RectColTex(r.x0, r.y0, r.x1, r.y1, Color4b::White(), tex, 0, 0, 1, 1);
+}
+
 void RectTex(float x0, float y0, float x1, float y1, IImage* tex, float u0, float v0, float u1, float v1)
 {
 	RectColTex(x0, y0, x1, y1, Color4b::White(), tex, u0, v0, u1, v1);
 }
 
+void RectTex(const AABB2f& r, IImage* tex, const AABB2f& uv)
+{
+	RectColTex(r.x0, r.y0, r.x1, r.y1, Color4b::White(), tex, uv.x0, uv.y0, uv.x1, uv.y1);
+}
+
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex)
 {
 	RectColTex(x0, y0, x1, y1, col, tex, 0, 0, 1, 1);
+}
+
+void RectColTex(const AABB2f& r, Color4b col, IImage* tex)
+{
+	RectColTex(r.x0, r.y0, r.x1, r.y1, col, tex, 0, 0, 1, 1);
 }
 
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex, float u0, float v0, float u1, float v1)
@@ -863,6 +1011,11 @@ void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex
 	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
 
 	IndexedTriangles(tex, verts, 4, indices, 6);
+}
+
+void RectColTex(const AABB2f& r, Color4b col, IImage* tex, const AABB2f& uv)
+{
+	RectColTex(r.x0, r.y0, r.x1, r.y1, col, tex, uv.x0, uv.y0, uv.x1, uv.y1);
 }
 
 void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IImage* tex, const AABB2f& texouter, const AABB2f& texinner)

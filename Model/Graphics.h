@@ -20,7 +20,7 @@ enum class ScaleMode
 struct ColorBlock : UIElement
 {
 	Color4b _color = Color4b::Black();
-	draw::ImageHandle _bgImage;
+	draw::ImageSetHandle _bgImageSet;
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
@@ -32,7 +32,7 @@ struct ColorBlock : UIElement
 struct ColorInspectBlock : UIElement
 {
 	Color4b _color = Color4b::Black();
-	draw::ImageHandle _bgImage;
+	draw::ImageSetHandle _bgImageSet;
 
 	// TODO styled
 	Coord alphaBarHeight = 2;
@@ -44,7 +44,7 @@ struct ColorInspectBlock : UIElement
 	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
 };
 
-void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, float ax = 0.5f, float ay = 0.5f);
+void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, Vec2f placement = { 0.5f, 0.5f });
 
 struct ImageElement : UIElement
 {
@@ -67,7 +67,7 @@ struct ImageElement : UIElement
 	bool _tryDelayLoad = false;
 	std::string _delayLoadPath;
 
-	draw::ImageHandle _bgImage;
+	draw::ImageSetHandle _bgImageSet;
 };
 
 struct HueSatPicker : UIElement

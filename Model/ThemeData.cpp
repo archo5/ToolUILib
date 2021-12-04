@@ -495,6 +495,39 @@ ThemeDataHandle LoadTheme(StringView folder)
 		{
 			auto loaded = AsRCHandle(new draw::ImageSet);
 
+			bool hasBaseType = false;
+			bool hasBaseEdge = false;
+			if (auto edge = u.ReadFloat("edge"))
+			{
+				loaded->baseEdgeWidth = AABB2f::UniformBorder(float(edge.GetValue()));
+				loaded->type = draw::ImageSetType::Sliced;
+
+				hasBaseType = true;
+				hasBaseEdge = true;
+			}
+
+			if (auto size = u.ReadFloat("size"))
+				loaded->baseSize = { float(size.GetValue()), float(size.GetValue()) };
+
+			if (auto sizeX = u.ReadFloat("sizeX"))
+				loaded->baseSize.x = float(sizeX.GetValue());
+
+			if (auto sizeY = u.ReadFloat("sizeY"))
+				loaded->baseSize.y = float(sizeY.GetValue());
+
+			if (auto type = u.ReadString("type"))
+			{
+				if (type.GetValue() == "icon")
+					loaded->type = draw::ImageSetType::Icon;
+				else if (type.GetValue() == "sliced")
+					loaded->type = draw::ImageSetType::Sliced;
+				else if (type.GetValue() == "pattern")
+					loaded->type = draw::ImageSetType::Pattern;
+				else if (type.GetValue() == "raw")
+					loaded->type = draw::ImageSetType::RawImage;
+				hasBaseType = true;
+			}
+
 			size_t count = u.BeginArray(0, "images");
 			for (size_t i = 0; i < count; i++)
 			{
@@ -505,24 +538,28 @@ ThemeDataHandle LoadTheme(StringView folder)
 					if (auto path = u.ReadString("path"))
 					{
 						auto fullpath = to_string(folder, "/", path.GetValue());
-						e.image = draw::ImageLoadFromFile(fullpath);
+						draw::TexFlags flags =
+							loaded->type == draw::ImageSetType::Pattern
+							? draw::TexFlags::Repeat
+							: draw::TexFlags::Packed;
+						e.image = draw::ImageLoadFromFile(fullpath, flags);
 					}
 					if (auto edge = u.ReadInt("edge"))
+					{
 						e.edgeWidth = AABB2f::UniformBorder(float(edge.GetValue()));
+						if (!hasBaseType)
+							loaded->type = draw::ImageSetType::Sliced;
+						if (!hasBaseEdge)
+							loaded->baseEdgeWidth = e.edgeWidth;
+					}
 
 					if (e.image)
 					{
-						if (e.edgeWidth.x0 == 0 &&
-							e.edgeWidth.y0 == 0 &&
-							e.edgeWidth.x1 == 0 &&
-							e.edgeWidth.y1 == 0)
+						if (e.edgeWidth.x0 != 0 ||
+							e.edgeWidth.y0 != 0 ||
+							e.edgeWidth.x1 != 0 ||
+							e.edgeWidth.y1 != 0)
 						{
-							e.sliced = false;
-							e.innerUV = { 0, 0, 1, 1 };
-						}
-						else
-						{
-							e.sliced = true;
 							float iw = 1.0f / e.image->GetWidth();
 							float ih = 1.0f / e.image->GetHeight();
 							e.innerUV.x0 = e.edgeWidth.x0 * iw;

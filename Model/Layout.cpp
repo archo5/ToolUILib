@@ -1,6 +1,6 @@
 
 #include "Layout.h"
-#include "Theme.h"
+#include "ThemeData.h"
 
 #include "Native.h"
 #include "Objects.h"
@@ -490,14 +490,10 @@ EmptyPainter::EmptyPainter()
 }
 
 
+static StaticID_ImageSet sid_bgr_checkerboard("bgr-checkerboard");
 ContentPaintAdvice CheckerboardPainter::Paint(const PaintInfo& info)
 {
-	auto bgr = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
-
-	auto r = info.rect;
-
-	draw::RectTex(r.x0, r.y0, r.x1, r.y1, bgr, 0, 0, r.GetWidth() / bgr->GetWidth(), r.GetHeight() / bgr->GetHeight());
-
+	GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard)->Draw(info.rect);
 	return {};
 }
 
@@ -598,19 +594,7 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 	AABB2f r = info.rect;
 	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
 
-	if (r.GetWidth() > 0 && r.GetHeight() > 0)
-	{
-		if (ise.sliced)
-		{
-			AABB2f inner = r.ShrinkBy(ise.edgeWidth);
-
-			draw::RectColTex9Slice(r, inner, color, ise.image, { 0, 0, 1, 1 }, ise.innerUV);
-		}
-		else
-		{
-			draw::RectColTex(r.x0, r.y0, r.x1, r.y1, color, ise.image);
-		}
-	}
+	imageSet->Draw(r, color);
 
 	ContentPaintAdvice cpa;
 	cpa.offset = contentOffset;

@@ -115,6 +115,8 @@ template <class T> struct Size2
 	UI_FORCEINLINE Size2 operator * (T f) const { return { x * f, y * f }; }
 	UI_FORCEINLINE Size2 operator / (T f) const { return { x / f, y / f }; }
 
+	float GetAspectRatio() const { return y == 0 ? 1 : float(x) / float(y); }
+
 	template <class U> UI_FORCEINLINE Size2<U> Cast() const { return { U(x), U(y) }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
@@ -198,6 +200,55 @@ template <class T> UI_FORCEINLINE AABB2<T> operator * (T f, const AABB2<T>& o) {
 
 using AABB2f = AABB2<float>;
 using AABB2i = AABB2<int>;
+
+// TODO to cpp file?
+inline AABB2f RectGenCentered(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
+	float x = space.x0 + (space.GetWidth() - size.x) * placement.x;
+	float y = space.y0 + (space.GetHeight() - size.y) * placement.y;
+	if (roundPos)
+	{
+		x = roundf(x);
+		y = roundf(y);
+	}
+	return { x, y, x + size.x, y + size.y };
+}
+
+inline AABB2f RectGenFit(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
+	float iasp = size.GetAspectRatio();
+	Size2f scaledSize = space.GetSize();
+	float rasp = space.GetSize().GetAspectRatio();
+	if (iasp > rasp) // matched width, adjust height
+		scaledSize.y = scaledSize.x / iasp;
+	else
+		scaledSize.x = scaledSize.y * iasp;
+	return RectGenCentered(space, scaledSize, placement, roundPos);
+}
+
+inline AABB2f RectGenFill(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
+	float iasp = size.GetAspectRatio();
+	Size2f scaledSize = space.GetSize();
+	float rasp = space.GetSize().GetAspectRatio();
+	if (iasp < rasp) // matched width, adjust height
+		scaledSize.y = scaledSize.x / iasp;
+	else
+		scaledSize.x = scaledSize.y * iasp;
+	return RectGenCentered(space, scaledSize, placement, roundPos);
+}
+
+inline AABB2f RectInvLerp(AABB2f space, AABB2f input)
+{
+	auto size = space.GetSize();
+	return
+	{
+		(input.x0 - space.x0) / size.x,
+		(input.y0 - space.y0) / size.y,
+		(input.x1 - space.x0) / size.x,
+		(input.y1 - space.y0) / size.y,
+	};
+}
 
 
 struct ScaleOffset2D

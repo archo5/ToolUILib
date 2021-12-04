@@ -28,9 +28,6 @@
     <ClCompile Include="Model\Docking.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="Model\Theme.cpp">
-      <Filter>Model</Filter>
-    </ClCompile>
     <ClCompile Include="Render\Render.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -146,9 +143,6 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Model\Docking.h">
-      <Filter>Model</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\Theme.h">
       <Filter>Model</Filter>
     </ClInclude>
     <ClInclude Include="Render\Render.h">

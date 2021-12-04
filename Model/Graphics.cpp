@@ -1,6 +1,6 @@
 
 #include "Graphics.h"
-#include "Theme.h"
+#include "ThemeData.h"
 #include "Controls.h"
 #include "System.h"
 #include "../Render/RHI.h"
@@ -10,12 +10,13 @@ namespace ui {
 
 
 static StaticID_Style sid_color_block("color_block");
+static StaticID_ImageSet sid_bgr_checkerboard("bgr-checkerboard");
 void ColorBlock::OnReset()
 {
 	UIElement::OnReset();
 
 	styleProps = GetCurrentTheme()->GetStyle(sid_color_block);
-	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
+	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
 
 	_color = Color4b::Black();
 }
@@ -29,7 +30,7 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 
 	if (!_color.IsOpaque())
 	{
-		draw::RectTex(r.x0, r.y0, r.x1, r.y1, _bgImage, 0, 0, r.GetWidth() / _bgImage->GetWidth(), r.GetHeight() / _bgImage->GetHeight());
+		_bgImageSet->Draw(r);
 	}
 
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
@@ -44,7 +45,7 @@ void ColorInspectBlock::OnReset()
 	UIElement::OnReset();
 
 	styleProps = GetCurrentTheme()->GetStyle(sid_color_inspect_block);
-	_bgImage = Theme::current->GetImage(ThemeImage::CheckerboardBackground);
+	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
 
 	_color = Color4b::Black();
 	alphaBarHeight = 2;
@@ -63,7 +64,7 @@ void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 
 	if (!_color.IsOpaque())
 	{
-		draw::RectTex(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, _bgImage, 0, 0, r_rt.GetWidth() / _bgImage->GetWidth(), r_rt.GetHeight() / _bgImage->GetHeight());
+		_bgImageSet->Draw(r_rt);
 	}
 
 	draw::RectCol(r_lf.x0, r_lf.y0, r_lf.x1, r_lf.y1, _color.GetOpaque());
@@ -83,48 +84,27 @@ void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 }
 
 
-void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, float ax, float ay)
+void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, Vec2f placement)
 {
 	if (img && img->GetWidth() && img->GetHeight() && c.GetWidth() && c.GetHeight())
 	{
 		switch (sm)
 		{
 		case ScaleMode::None: {
-			float w = img->GetWidth(), h = img->GetHeight();
-			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
-			draw::RectTex(x, y, x + w, y + h, img);
+			UIRect f = RectGenCentered(c, img->GetSizeF(), placement);
+			draw::RectTex(f, img);
 			break; }
 		case ScaleMode::Stretch:
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, img);
+			draw::RectTex(c, img);
 			break;
 		case ScaleMode::Fit: {
-			float iasp = img->GetWidth() / (float)img->GetHeight();
-			float w = c.GetWidth(), h = c.GetHeight();
-			float rasp = w / h;
-			if (iasp > rasp) // matched width, adjust height
-				h = w / iasp;
-			else
-				w = h * iasp;
-			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
-			draw::RectTex(x, y, x + w, y + h, img);
+			UIRect f = RectGenFit(c, img->GetSizeF(), placement, false);
+			draw::RectTex(f, img);
 			break; }
 		case ScaleMode::Fill: {
-			float iasp = img->GetWidth() / (float)img->GetHeight();
-			float w = c.GetWidth(), h = c.GetHeight();
-			float rasp = w / h;
-			if (iasp < rasp) // matched width, adjust height
-				h = w / iasp;
-			else
-				w = h * iasp;
-			float x = roundf(c.x0 + (c.GetWidth() - w) * ax);
-			float y = roundf(c.y0 + (c.GetHeight() - h) * ay);
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, img,
-				(c.x0 - x) / w,
-				(c.y0 - y) / h,
-				(c.x1 - x) / w,
-				(c.y1 - y) / h);
+			auto f = RectGenFill(c, img->GetSizeF(), placement, false);
+			f = RectInvLerp(f, c);
+			draw::RectTex(c, img, f);
 			break; }
 		}
 	}
@@ -141,7 +121,7 @@ void ImageElement::OnReset()
 	_anchorY = 0.5f;
 	_tryDelayLoad = false;
 	_delayLoadPath = {};
-	_bgImage = nullptr;
+	_bgImageSet = nullptr;
 }
 
 void ImageElement::OnPaint(const UIPaintContext& ctx)
@@ -159,11 +139,11 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 
 		ph.PaintBackground(this);
 
-		if (_bgImage)
+		if (_bgImageSet)
 		{
-			draw::RectTex(c.x0, c.y0, c.x1, c.y1, _bgImage, 0, 0, c.GetWidth() / _bgImage->GetWidth(), c.GetHeight() / _bgImage->GetHeight());
+			_bgImageSet->Draw(c);
 		}
-		DrawImage(c, _image, _scaleMode, _anchorX, _anchorY);
+		DrawImage(c, _image, _scaleMode, { _anchorX, _anchorY });
 	}
 
 	ph.PaintChildren(this, ctx);
@@ -211,7 +191,7 @@ ImageElement& ImageElement::SetScaleMode(ScaleMode sm, float ax, float ay)
 
 ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 {
-	_bgImage = enabled ? Theme::current->GetImage(ThemeImage::CheckerboardBackground) : nullptr;
+	_bgImageSet = enabled ? GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard) : nullptr;
 	return *this;
 }
 

@@ -129,4 +129,11 @@
 
 	"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 5 }] },
 	"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 5 }] }
+
+	"bgr-checkerboard:imgset":
+	{
+		type = "pattern"
+		size = 16
+		images = [{ path = "images/bgr-checkerboard.png", edge = 5 }]
+	}
 }
