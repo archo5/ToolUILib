@@ -382,12 +382,12 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 	if (flags != TexFlags::Packed)
 		flags = flags & ~TexFlags::Packed;
 
-	auto fileData = ReadBinaryFile(path);
-	if (fileData.empty())
+	auto frr = ReadBinaryFile(path);
+	if (!frr.data)
 		return nullptr; // TODO return default?
 
 	int w = 0, h = 0, n = 0;
-	auto* imgData = stbi_load_from_memory((const stbi_uc*)fileData.data(), fileData.size(), &w, &h, &n, 4);
+	auto* imgData = stbi_load_from_memory((const stbi_uc*)frr.data->GetData(), frr.data->GetSize(), &w, &h, &n, 4);
 	if (!imgData)
 		return nullptr;
 	UI_DEFER(stbi_image_free(imgData));

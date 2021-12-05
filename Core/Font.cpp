@@ -66,8 +66,8 @@ struct Font
 
 	bool LoadFromPath(const char* path)
 	{
-		data = ReadBinaryFile(path);
-		if (data.empty())
+		data = ReadBinaryFile(path).data;
+		if (!data)
 			return false;
 
 		return InitFromMemory();
@@ -75,7 +75,9 @@ struct Font
 
 	bool InitFromMemory()
 	{
-		if (!stbtt_InitFont(&info, (const unsigned char*)data.data(), 0))
+		if (!data)
+			return false;
+		if (!stbtt_InitFont(&info, (const unsigned char*)data->GetData(), 0))
 			return false;
 		return true;
 	}
@@ -125,7 +127,7 @@ struct Font
 	}
 
 	FontKey key;
-	std::string data;
+	BufferHandle data;
 	stbtt_fontinfo info;
 	HashMap<int, SizeContext> sizes;
 };
@@ -156,7 +158,7 @@ int CALLBACK _FontEnumCallback(const LOGFONTA* lf, const TEXTMETRICA* ntm, DWORD
 	return 1;
 }
 
-static std::string FindFontDataByName(const char* name, int weight, bool italic)
+static BufferHandle FindFontDataByName(const char* name, int weight, bool italic)
 {
 	FontEnumData fed = { weight, italic };
 	HDC dc = GetDC(nullptr);
@@ -164,12 +166,13 @@ static std::string FindFontDataByName(const char* name, int weight, bool italic)
 	HFONT font = CreateFontIndirectA(&fed.outFont);
 	SelectObject(dc, font);
 	DWORD reqSize = GetFontData(dc, 0, 0, nullptr, 0);
-	std::string data;
-	data.resize(reqSize);
-	DWORD readSize = GetFontData(dc, 0, 0, &data[0], reqSize);
-	data.resize(readSize);
+
+	auto ret = AsRCHandle(new OwnedMemoryBuffer);
+	ret->Alloc(reqSize);
+	DWORD readSize = GetFontData(dc, 0, 0, ret->data, reqSize);
+	ret->size = readSize;
 	ReleaseDC(nullptr, dc);
-	return data;
+	return ret;
 }
 
 static Font* FindExistingFont(const FontKey& key)

@@ -2,9 +2,48 @@
 #pragma once
 
 #include "String.h"
+#include "RefCounted.h"
 
 
 namespace ui {
+
+enum class IOResult : uint8_t
+{
+	Success = 0,
+	Unknown,
+	FileNotFound,
+};
+
+struct IBuffer : RefCountedMT
+{
+	virtual void* GetData() const = 0;
+	virtual size_t GetSize() const = 0;
+
+	StringView GetStringView() const { return { static_cast<const char*>(GetData()), GetSize() }; }
+};
+using BufferHandle = RCHandle<IBuffer>;
+
+struct OwnedMemoryBuffer : IBuffer
+{
+	void* data = nullptr;
+	size_t size = 0;
+
+	~OwnedMemoryBuffer() { delete[] data; }
+
+	void* GetData() const override { return data; }
+	size_t GetSize() const override { return size; }
+
+	void Alloc(size_t s)
+	{
+		data = new char[s];
+	}
+};
+
+struct FileReadResult
+{
+	IOResult result;
+	BufferHandle data;
+};
 
 // returns an empty string if root was passed
 std::string PathGetParent(StringView path);
@@ -14,9 +53,9 @@ std::string PathGetAbsolute(StringView path);
 std::string PathGetRelativeTo(StringView path, StringView relativeTo);
 bool PathIsRelativeTo(StringView path, StringView relativeTo);
 
-std::string ReadTextFile(StringView path);
+FileReadResult ReadTextFile(StringView path);
 bool WriteTextFile(StringView path, StringView text);
-std::string ReadBinaryFile(StringView path);
+FileReadResult ReadBinaryFile(StringView path);
 bool WriteBinaryFile(StringView path, const void* data, size_t size);
 
 bool DirectoryExists(StringView path);
@@ -27,16 +66,6 @@ bool CreateMissingParentDirectories(StringView path);
 std::string GetWorkingDirectory();
 bool SetWorkingDirectory(StringView sv);
 
-struct DirectoryIterator
-{
-	struct DirectoryIteratorImpl* _impl;
-
-	DirectoryIterator(StringView path);
-	~DirectoryIterator();
-
-	bool GetNext(std::string& retFile);
-};
-
 enum FileAttributes
 {
 	FA_Exists = 1 << 0,
@@ -45,5 +74,44 @@ enum FileAttributes
 };
 unsigned GetFileAttributes(StringView path);
 uint64_t GetFileModTimeUTC(StringView path);
+
+// TODO allow single user only
+struct IDirectoryIterator : RefCountedST
+{
+	virtual bool GetNext(std::string& retFile) = 0;
+};
+using DirectoryIteratorHandle = RCHandle<IDirectoryIterator>;
+DirectoryIteratorHandle CreateDirectoryIterator(StringView path);
+
+
+struct NullDirectoryIterator : IDirectoryIterator
+{
+	bool GetNext(std::string&) override
+	{
+		return false;
+	}
+};
+
+
+struct IFileSystem : RefCountedST
+{
+	virtual FileReadResult ReadTextFile(StringView path) = 0;
+	virtual FileReadResult ReadBinaryFile(StringView path) = 0;
+	virtual DirectoryIteratorHandle CreateDirectoryIterator(StringView path) = 0;
+};
+using FileSystemHandle = RCHandle<IFileSystem>;
+
+struct FileSystemSequence : IFileSystem
+{
+	std::vector<FileSystemHandle> fileSystems;
+
+	FileReadResult ReadTextFile(StringView path) override;
+	FileReadResult ReadBinaryFile(StringView path) override;
+	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override;
+};
+
+FileSystemSequence* FSGetDefault();
+IFileSystem* FSGetCurrent();
+void FSSetCurrent(IFileSystem* fs);
 
 } // ui

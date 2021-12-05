@@ -84,25 +84,37 @@ bool PathIsRelativeTo(StringView path, StringView relativeTo)
 }
 
 
-static std::string ReadFile(StringView path, const char* mode)
+static IOResult IOErrorFromErrno()
+{
+	switch (errno)
+	{
+	case ENOENT: return IOResult::FileNotFound;
+	default: return IOResult::Unknown;
+	}
+}
+
+static FileReadResult ReadFile(StringView path, const char* mode)
 {
 	FILE* f = fopen(CStr<MAX_PATH>(path), mode);
 	if (!f)
-		return {};
-	std::string data;
+		return { IOErrorFromErrno() };
+
+	RCHandle<OwnedMemoryBuffer> ret = new OwnedMemoryBuffer;
 	fseek(f, 0, SEEK_END);
 	if (auto s = ftell(f))
 	{
-		data.resize(s);
+		ret->Alloc(s);
+
 		fseek(f, 0, SEEK_SET);
-		s = fread(&data[0], 1, s, f);
-		data.resize(s);
+		s = fread(ret->data, 1, s, f);
+		ret->size = s;
 	}
 	fclose(f);
-	return data;
+
+	return { IOResult::Success, ret };
 }
 
-std::string ReadTextFile(StringView path)
+FileReadResult ReadTextFile(StringView path)
 {
 	return ReadFile(path, "r");
 }
@@ -117,7 +129,7 @@ bool WriteTextFile(StringView path, StringView text)
 	return success;
 }
 
-std::string ReadBinaryFile(StringView path)
+FileReadResult ReadBinaryFile(StringView path)
 {
 	return ReadFile(path, "rb");
 }
@@ -187,59 +199,60 @@ bool SetWorkingDirectory(StringView sv)
 }
 
 
-struct DirectoryIteratorImpl
+struct DirectoryIteratorImpl : IDirectoryIterator
 {
 	std::wstring path;
 	WIN32_FIND_DATAW findData = {};
 	HANDLE handle = nullptr;
 
+	DirectoryIteratorImpl(StringView srcPath)
+	{
+		path = UTF8toWCHAR(srcPath);
+		path.append(L"/*");
+	}
 	~DirectoryIteratorImpl()
 	{
 		if (handle)
 			FindClose(handle);
 	}
+
+	bool GetNext(std::string& retFile) override;
 };
 
-DirectoryIterator::DirectoryIterator(StringView path) : _impl(new DirectoryIteratorImpl)
+bool DirectoryIteratorImpl::GetNext(std::string& retFile)
 {
-	_impl->path = UTF8toWCHAR(path);
-	_impl->path.append(L"/*");
-}
-
-DirectoryIterator::~DirectoryIterator()
-{
-	delete _impl;
-}
-
-bool DirectoryIterator::GetNext(std::string& retFile)
-{
-	if (_impl->path.empty())
+	if (path.empty())
 		return false;
 
 	bool success;
 	for (;;)
 	{
-		if (_impl->handle == nullptr)
+		if (handle == nullptr)
 		{
-			_impl->handle = FindFirstFileW(_impl->path.c_str(), &_impl->findData);
-			success = _impl->handle != nullptr;
+			handle = FindFirstFileW(path.c_str(), &findData);
+			success = handle != nullptr;
 		}
 		else
-			success = FindNextFileW(_impl->handle, &_impl->findData) != FALSE;
+			success = FindNextFileW(handle, &findData) != FALSE;
 
 		if (!success)
 			break;
 
-		if (wcscmp(_impl->findData.cFileName, L".") != 0 &&
-			wcscmp(_impl->findData.cFileName, L"..") != 0)
+		if (wcscmp(findData.cFileName, L".") != 0 &&
+			wcscmp(findData.cFileName, L"..") != 0)
 			break; // found an actual entry
 	}
 
 	if (!success)
 		return false;
 
-	retFile = WCHARtoUTF8(_impl->findData.cFileName);
+	retFile = WCHARtoUTF8(findData.cFileName);
 	return true;
+}
+
+DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
+{
+	return new DirectoryIteratorImpl(path);
 }
 
 
@@ -270,5 +283,100 @@ uint64_t GetFileModTimeUTC(StringView path)
 	uli.LowPart = t.dwLowDateTime;
 	return uli.QuadPart / 10000; // to milliseconds
 }
+
+
+FileReadResult FileSystemSequence::ReadTextFile(StringView path)
+{
+	FileReadResult ret;
+	for (auto& fs : fileSystems)
+	{
+		ret = fs->ReadTextFile(path);
+		if (ret.result == IOResult::Success)
+			return ret;
+	}
+	return ret;
+}
+
+FileReadResult FileSystemSequence::ReadBinaryFile(StringView path)
+{
+	FileReadResult ret;
+	for (auto& fs : fileSystems)
+	{
+		ret = fs->ReadBinaryFile(path);
+		if (ret.result == IOResult::Success)
+			return ret;
+	}
+	return ret;
+}
+
+struct AllFileSystemIterator : IDirectoryIterator
+{
+	std::string path;
+	RCHandle<FileSystemSequence> fs;
+	size_t curNum = 0;
+	DirectoryIteratorHandle cdi;
+
+	bool GetNext(std::string& retFile) override
+	{
+		for (;;)
+		{
+			if (cdi)
+			{
+				if (cdi->GetNext(retFile))
+					return true;
+				else
+					cdi = nullptr;
+			}
+			else
+			{
+				if (curNum >= fs->fileSystems.size())
+					return false;
+				cdi = fs->fileSystems[curNum++]->CreateDirectoryIterator(path);
+			}
+		}
+	}
+};
+
+DirectoryIteratorHandle FileSystemSequence::CreateDirectoryIterator(StringView path)
+{
+	auto* it = new AllFileSystemIterator;
+	it->path.assign(path.data(), path.size());
+	it->fs = this;
+	return it;
+}
+
+
+static FileSystemHandle g_currentFS;
+static RCHandle<FileSystemSequence> g_mainFS;
+
+FileSystemSequence* FSGetDefault()
+{
+	return g_mainFS;
+}
+
+IFileSystem* FSGetCurrent()
+{
+	return g_currentFS;
+}
+
+void FSSetCurrent(IFileSystem* fs)
+{
+	g_currentFS = fs;
+}
+
+struct FSInitFree
+{
+	FSInitFree()
+	{
+		g_mainFS = new FileSystemSequence;
+		g_currentFS = g_mainFS;
+	}
+	~FSInitFree()
+	{
+		g_currentFS = nullptr;
+		g_mainFS = nullptr;
+	}
+}
+g_FSInitializer;
 
 } // ui

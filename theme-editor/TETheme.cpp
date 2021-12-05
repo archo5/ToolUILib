@@ -460,8 +460,8 @@ void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 void TE_Theme::LoadFromFile(const char* path)
 {
-	auto data = ReadTextFile(path);
-	if (data.empty())
+	auto frr = ReadTextFile(path);
+	if (!frr.data)
 	{
 		platform::ShowErrorMessage("Theme Editor", Format("Failed to load theme data from %s", path));
 		return;
@@ -469,7 +469,7 @@ void TE_Theme::LoadFromFile(const char* path)
 
 	JSONUnserializerObjectIterator r;
 	r.unserializeStorage = this;
-	if (!r.Parse(data))
+	if (!r.Parse(frr.data->GetStringView()))
 	{
 		platform::ShowErrorMessage("Theme Editor", Format("Failed to read theme data in %s, it may be corrupted", path));
 		return;

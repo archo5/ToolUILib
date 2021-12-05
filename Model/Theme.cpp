@@ -225,7 +225,7 @@ static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
 
 struct ThemeFile : RefCountedST
 {
-	std::string text;
+	BufferHandle text;
 	JSONUnserializerObjectIterator unserializer;
 };
 using ThemeFileHandle = RCHandle<ThemeFile>;
@@ -436,18 +436,22 @@ ThemeDataHandle LoadTheme(StringView folder)
 {
 	ThemeLoaderData tld;
 
-	DirectoryIterator di(folder);
+	auto dih = CreateDirectoryIterator(folder);
 	std::string entry;
-	while (di.GetNext(entry))
+	while (dih->GetNext(entry))
 	{
 		if (StringView(entry).ends_with(".json"))
 		{
 			auto tf = AsRCHandle(new ThemeFile);
 
 			auto path = to_string(folder, "/", entry);
-			tf->text = ReadTextFile(path);
+			auto frr = ReadTextFile(path);
+			if (!frr.data)
+				continue;
 
-			if (tf->unserializer.Parse(tf->text, JPF_AllowAll))
+			tf->text = frr.data;
+
+			if (tf->unserializer.Parse(tf->text->GetStringView(), JPF_AllowAll))
 			{
 				tld.files.push_back(tf);
 
