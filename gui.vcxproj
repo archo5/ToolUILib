@@ -180,6 +180,7 @@
     </ClCompile>
     <ClCompile Include="Render\Primitives.cpp" />
     <ClCompile Include="Render\Render.cpp" />
+    <ClCompile Include="ThirdParty\miniz.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
@@ -227,6 +228,8 @@
     <ClInclude Include="Render\Render.h" />
     <ClCompile Include="Render\RHI_Internal.cpp" />
     <ClInclude Include="ThirdParty\json.h" />
+    <ClInclude Include="ThirdParty\miniz.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
     <ClInclude Include="ThirdParty\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\stb_truetype.h" />
   </ItemGroup>

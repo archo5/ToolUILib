@@ -2,6 +2,7 @@
 #pragma once
 
 #include "String.h"
+#include "HashTable.h"
 #include "RefCounted.h"
 
 
@@ -23,15 +24,18 @@ struct IBuffer : RefCountedMT
 };
 using BufferHandle = RCHandle<IBuffer>;
 
-struct OwnedMemoryBuffer : IBuffer
+struct BasicMemoryBuffer : IBuffer
 {
 	void* data = nullptr;
 	size_t size = 0;
 
-	~OwnedMemoryBuffer() { delete[] data; }
-
 	void* GetData() const override { return data; }
 	size_t GetSize() const override { return size; }
+};
+
+struct OwnedMemoryBuffer : BasicMemoryBuffer
+{
+	~OwnedMemoryBuffer() { delete[] data; }
 
 	void Alloc(size_t s)
 	{
@@ -111,6 +115,8 @@ struct FileSourceSequence : IFileSource
 };
 
 FileSourceHandle CreateFileSystemSource(StringView rootPath);
+FileSourceHandle CreateZipFileSource(StringView path);
+FileSourceHandle CreateZipFileMemorySource(BufferHandle memory);
 
 
 FileSourceSequence* FSGetDefault();

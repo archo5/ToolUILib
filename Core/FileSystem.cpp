@@ -3,6 +3,8 @@
 
 #include "WindowsUtils.h"
 
+#include "../ThirdParty/miniz.h"
+
 
 #undef CreateDirectory
 #undef GetFileAttributes
@@ -379,6 +381,156 @@ struct FileSystemSource : IFileSource
 FileSourceHandle CreateFileSystemSource(StringView rootPath)
 {
 	return new FileSystemSource(rootPath);
+}
+
+
+struct ZipFileSource : IFileSource
+{
+	struct Entry
+	{
+		mz_uint id = -1;
+		bool dir = false;
+		std::vector<std::string> dirEntries;
+	};
+
+	mz_zip_archive arch;
+	BufferHandle memory;
+	HashMap<std::string, Entry> fileMap;
+
+	~ZipFileSource()
+	{
+		mz_zip_reader_end(&arch);
+	}
+
+	Entry& InsertEntry(const std::string& name)
+	{
+		auto parent = PathGetParent(name);
+		if (parent != "" && parent != ".")
+		{
+			auto& pe = InsertEntry(parent);
+			pe.dir = true;
+			pe.dirEntries.push_back(name);
+		}
+		return fileMap[name];
+	}
+
+	void Init()
+	{
+		auto numFiles = mz_zip_reader_get_num_files(&arch);
+		for (mz_uint i = 0; i < numFiles; i++)
+		{
+			char name[MZ_ZIP_MAX_ARCHIVE_FILENAME_SIZE + 1];
+			auto written = mz_zip_reader_get_filename(&arch, i, name, MZ_ZIP_MAX_ARCHIVE_FILENAME_SIZE + 1);
+			if (written >= 2 &&
+				name[written - 2] == '/')
+				name[written - 2] = 0;
+
+			Entry& e = InsertEntry(name);
+			e.id = i;
+			e.dir = mz_zip_reader_is_file_a_directory(&arch, i);
+		}
+	}
+
+	static size_t NormalizeNewlines(char* data, size_t size)
+	{
+		char* start = data;
+		char* end = data + size;
+		char* dstdata = data;
+		for (; data != end; data++, dstdata++)
+		{
+			if (*data == '\r')
+			{
+				if (data + 1 != end && data[1] == '\n')
+				{
+					dstdata--;
+					continue;
+				}
+				else
+				{
+					*dstdata = '\n';
+				}
+			}
+			else
+				*dstdata = *data;
+		}
+		return dstdata - start;
+	}
+
+	FileReadResult ReadTextFile(StringView path)
+	{
+		auto res = ReadBinaryFile(path);
+		if (res.data)
+		{
+			static_cast<OwnedMemoryBuffer*>(&*res.data)->size = NormalizeNewlines(static_cast<char*>(res.data->GetData()), res.data->GetSize());
+		}
+		return res;
+	}
+	FileReadResult ReadBinaryFile(StringView path)
+	{
+		auto it = fileMap.find(to_string(path));
+		if (it.is_valid() && it->value.dir == false && it->value.id != mz_uint(-1))
+		{
+			mz_zip_archive_file_stat s;
+			if (mz_zip_reader_file_stat(&arch, it->value.id, &s))
+			{
+				auto buf = AsRCHandle(new OwnedMemoryBuffer);
+				size_t fileSize = mz_uint(s.m_uncomp_size);
+				buf->size = fileSize;
+				buf->Alloc(fileSize);
+				if (mz_zip_reader_extract_to_mem_no_alloc(&arch, it->value.id, buf->data, buf->size, 0, nullptr, 0))
+					return { IOResult::Success, buf };
+			}
+		}
+		return { IOResult::FileNotFound };
+	}
+
+	struct DirIter : IDirectoryIterator
+	{
+		RCHandle<ZipFileSource> zfs;
+		Entry* entry = nullptr;
+		size_t at = 0;
+
+		bool GetNext(std::string& retFile)
+		{
+			if (at < entry->dirEntries.size())
+			{
+				retFile = entry->dirEntries[at++];
+				return true;
+			}
+			return false;
+		}
+	};
+	DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
+	{
+		auto it = fileMap.find(to_string(path));
+		if (it.is_valid() && it->value.dir)
+		{
+			auto ret = AsRCHandle(new DirIter);
+			ret->zfs = this;
+			ret->entry = &it->value;
+			return ret;
+		}
+		return new NullDirectoryIterator;
+	}
+};
+
+FileSourceHandle CreateZipFileSource(StringView path)
+{
+	auto h = AsRCHandle(new ZipFileSource);
+	mz_zip_zero_struct(&h->arch);
+	mz_zip_reader_init_file(&h->arch, CStr<MAX_PATH>(path), 0);
+	h->Init();
+	return h;
+}
+
+FileSourceHandle CreateZipFileMemorySource(BufferHandle memory)
+{
+	auto h = AsRCHandle(new ZipFileSource);
+	h->memory = memory;
+	mz_zip_zero_struct(&h->arch);
+	mz_zip_reader_init_mem(&h->arch, memory->GetData(), memory->GetSize(), 0);
+	h->Init();
+	return h;
 }
 
 
