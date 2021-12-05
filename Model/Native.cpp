@@ -1253,6 +1253,24 @@ struct Inspector : NativeDialogWindow
 };
 
 
+BufferHandle LoadEmbeddedData()
+{
+	HRSRC hrsrc = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(50), RT_RCDATA);
+	if (!hrsrc)
+		return {};
+	HGLOBAL hglobal = LoadResource(nullptr, hrsrc);
+	if (!hglobal)
+		return {};
+	char* data = (char*)LockResource(hglobal);
+	size_t size = SizeofResource(nullptr, hrsrc);
+
+	auto mbh = AsRCHandle(new BasicMemoryBuffer);
+	mbh->data = data;
+	mbh->size = size;
+	return mbh;
+}
+
+
 extern void SubscriptionTable_Init();
 extern void SubscriptionTable_Free();
 
@@ -1272,6 +1290,9 @@ Application::Application(int argc, char* argv[])
 		// TODO pipeline for avoiding this?
 		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource("data"));
 	}
+
+	if (auto embData = LoadEmbeddedData())
+		FSGetDefault()->fileSystems.push_back(CreateZipFileMemorySource(embData));
 
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
@@ -1713,21 +1734,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	return DefWindowProcW(hWnd, message, wParam, lParam);
 }
-
-
-ArrayView<char> LoadThemeResource()
-{
-	HRSRC hrsrc = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(50), RT_RCDATA);
-	if (!hrsrc)
-		return {};
-	HGLOBAL hglobal = LoadResource(nullptr, hrsrc);
-	if (!hglobal)
-		return {};
-	char* data = (char*)LockResource(hglobal);
-	size_t size = SizeofResource(nullptr, hrsrc);
-	return { data, size };
-}
-
 
 } // ui
 

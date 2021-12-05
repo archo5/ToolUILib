@@ -37,8 +37,12 @@ struct ThemeData : RefCountedST
 	draw::ImageSetHandle GetImageSet(const StaticID_ImageSet& id);
 	PainterHandle GetPainter(const StaticID_Painter& id, bool returnDefaultIfMissing = true);
 	StyleBlockRef GetStyle(const StaticID_Style& id, bool returnDefaultIfMissing = true);
+
+	void LoadTheme(StringView folder);
 };
 using ThemeDataHandle = RCHandle<ThemeData>;
+
+ThemeDataHandle LoadTheme(StringView folder);
 
 ThemeData* GetCurrentTheme();
 void SetCurrentTheme(ThemeData* theme);
@@ -47,7 +51,5 @@ void SetCurrentTheme(ThemeData* theme);
 typedef IPainter* PainterCreateFunc(IThemeLoader*, IObjectIterator&);
 
 void RegisterPainter(const char* type, PainterCreateFunc* createFunc);
-
-ThemeDataHandle LoadTheme(StringView folder);
 
 } // ui

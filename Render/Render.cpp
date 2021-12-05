@@ -455,7 +455,10 @@ void ImageSet::_DrawAsIcon(AABB2f rect, Color4b color)
 {
 	if (auto* e = FindEntryForSize(rect.GetSize()))
 	{
-		rect = RectGenFit(rect, baseSize);
+		if (sizeMode == ImageSetSizeMode::NearestNoScale)
+			rect = RectGenCentered(rect, e->image->GetSizeF());
+		else
+			rect = RectGenFit(rect, baseSize);
 		draw::RectColTex(rect.x0, rect.y0, rect.x1, rect.y1, color, e->image);
 	}
 }

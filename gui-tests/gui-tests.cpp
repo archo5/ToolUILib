@@ -322,6 +322,7 @@ struct DataEditor : ui::Buildable
 
 void Test_RenderingPrimitives();
 void Test_StylePainting();
+void Test_ImageSetSizing();
 void Test_KeyboardEvents();
 void Test_RawMouseEvents();
 void Test_OpenClose();
@@ -401,6 +402,7 @@ static const TestEntry coreTestEntries[] =
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
 	{ "Style painting", Test_StylePainting },
+	{ "Image set sizing", Test_ImageSetSizing },
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },
 	{ "[Raw] Mouse", Test_RawMouseEvents },
@@ -782,6 +784,7 @@ int uimain(int argc, char* argv[])
 	//EarlyTest();
 	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);
+	ui::FSGetDefault()->fileSystems.push_back(ui::CreateFileSystemSource("gui-tests/rsrc"));
 	MainWindow mw;
 	mw.SetVisible(true);
 	return app.Run();

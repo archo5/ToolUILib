@@ -201,6 +201,46 @@ void Test_StylePainting()
 }
 
 
+struct ImageSetSizingTest : ui::Buildable
+{
+	ui::draw::ImageSetHandle icon;
+
+	void OnReset() override
+	{
+		icon = new ui::draw::ImageSet;
+		icon->baseSize = { 32, 32 };
+		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss32.png") });
+		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss64.png") });
+		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss96.png") });
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		using namespace ui::draw;
+		float y = 0;
+		for (auto mode : { ImageSetSizeMode::NearestScaleDown, ImageSetSizeMode::NearestScaleUp, ImageSetSizeMode::NearestNoScale })
+		{
+			icon->sizeMode = mode;
+			float x = 0;
+			for (float i = 32; i < 96 + 8; i += 16)
+			{
+				icon->Draw({ x, y, x + i, y + i });
+				x += i;
+			}
+			y += 96;
+		}
+	}
+	void Build() override
+	{
+		*this + ui::SetWidth(1000);
+		*this + ui::SetHeight(1000);
+	}
+};
+void Test_ImageSetSizing()
+{
+	ui::Make<ImageSetSizingTest>();
+}
+
+
 struct EventsTest : ui::Buildable
 {
 	static constexpr unsigned MAX_MESSAGES = 50;

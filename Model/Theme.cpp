@@ -425,14 +425,7 @@ struct ThemeLoaderData : IThemeLoader
 	}
 };
 
-
-void RegisterPainter(const char* type, PainterCreateFunc* createFunc)
-{
-	g_painterCreateFuncs.insert(type, createFunc);
-}
-
-
-ThemeDataHandle LoadTheme(StringView folder)
+void ThemeData::LoadTheme(StringView folder)
 {
 	ThemeLoaderData tld;
 
@@ -490,7 +483,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 		}
 	}
 
-	tld.loadedData = new ThemeData;
+	tld.loadedData = this;
 
 	for (auto& imgSet : tld.imageSets)
 	{
@@ -601,8 +594,19 @@ ThemeDataHandle LoadTheme(StringView folder)
 	{
 		tld.GetStyleBlock(style.key);
 	}
+}
 
-	return tld.loadedData;
+ThemeDataHandle LoadTheme(StringView folder)
+{
+	auto theme = AsRCHandle(new ThemeData);
+	theme->LoadTheme(folder);
+	return theme;
+}
+
+
+void RegisterPainter(const char* type, PainterCreateFunc* createFunc)
+{
+	g_painterCreateFuncs.insert(type, createFunc);
 }
 
 
