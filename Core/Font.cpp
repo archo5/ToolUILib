@@ -66,7 +66,7 @@ struct Font
 
 	bool LoadFromPath(const char* path)
 	{
-		data = ReadBinaryFile(path).data;
+		data = FSReadBinaryFile(path).data;
 		if (!data)
 			return false;
 

@@ -382,7 +382,7 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 	if (flags != TexFlags::Packed)
 		flags = flags & ~TexFlags::Packed;
 
-	auto frr = ReadBinaryFile(path);
+	auto frr = FSReadBinaryFile(path);
 	if (!frr.data)
 		return nullptr; // TODO return default?
 

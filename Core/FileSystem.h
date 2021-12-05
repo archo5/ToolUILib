@@ -93,25 +93,32 @@ struct NullDirectoryIterator : IDirectoryIterator
 };
 
 
-struct IFileSystem : RefCountedST
+struct IFileSource : RefCountedST
 {
 	virtual FileReadResult ReadTextFile(StringView path) = 0;
 	virtual FileReadResult ReadBinaryFile(StringView path) = 0;
 	virtual DirectoryIteratorHandle CreateDirectoryIterator(StringView path) = 0;
 };
-using FileSystemHandle = RCHandle<IFileSystem>;
+using FileSourceHandle = RCHandle<IFileSource>;
 
-struct FileSystemSequence : IFileSystem
+struct FileSourceSequence : IFileSource
 {
-	std::vector<FileSystemHandle> fileSystems;
+	std::vector<FileSourceHandle> fileSystems;
 
 	FileReadResult ReadTextFile(StringView path) override;
 	FileReadResult ReadBinaryFile(StringView path) override;
 	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override;
 };
 
-FileSystemSequence* FSGetDefault();
-IFileSystem* FSGetCurrent();
-void FSSetCurrent(IFileSystem* fs);
+FileSourceHandle CreateFileSystemSource(StringView rootPath);
+
+
+FileSourceSequence* FSGetDefault();
+IFileSource* FSGetCurrent();
+void FSSetCurrent(IFileSource* fs);
+
+inline FileReadResult FSReadTextFile(StringView path) { return FSGetCurrent()->ReadTextFile(path); }
+inline FileReadResult FSReadBinaryFile(StringView path) { return FSGetCurrent()->ReadBinaryFile(path); }
+inline DirectoryIteratorHandle FSCreateDirectoryIterator(StringView path) { return FSGetCurrent()->CreateDirectoryIterator(path); }
 
 } // ui

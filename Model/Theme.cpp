@@ -436,7 +436,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 {
 	ThemeLoaderData tld;
 
-	auto dih = CreateDirectoryIterator(folder);
+	auto dih = FSCreateDirectoryIterator(folder);
 	std::string entry;
 	while (dih->GetNext(entry))
 	{
@@ -445,7 +445,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 			auto tf = AsRCHandle(new ThemeFile);
 
 			auto path = to_string(folder, "/", entry);
-			auto frr = ReadTextFile(path);
+			auto frr = FSReadTextFile(path);
 			if (!frr.data)
 				continue;
 

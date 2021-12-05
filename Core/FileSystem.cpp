@@ -285,7 +285,7 @@ uint64_t GetFileModTimeUTC(StringView path)
 }
 
 
-FileReadResult FileSystemSequence::ReadTextFile(StringView path)
+FileReadResult FileSourceSequence::ReadTextFile(StringView path)
 {
 	FileReadResult ret;
 	for (auto& fs : fileSystems)
@@ -297,7 +297,7 @@ FileReadResult FileSystemSequence::ReadTextFile(StringView path)
 	return ret;
 }
 
-FileReadResult FileSystemSequence::ReadBinaryFile(StringView path)
+FileReadResult FileSourceSequence::ReadBinaryFile(StringView path)
 {
 	FileReadResult ret;
 	for (auto& fs : fileSystems)
@@ -309,10 +309,10 @@ FileReadResult FileSystemSequence::ReadBinaryFile(StringView path)
 	return ret;
 }
 
-struct AllFileSystemIterator : IDirectoryIterator
+struct AllFileSourceIterator : IDirectoryIterator
 {
 	std::string path;
-	RCHandle<FileSystemSequence> fs;
+	RCHandle<FileSourceSequence> fs;
 	size_t curNum = 0;
 	DirectoryIteratorHandle cdi;
 
@@ -337,29 +337,65 @@ struct AllFileSystemIterator : IDirectoryIterator
 	}
 };
 
-DirectoryIteratorHandle FileSystemSequence::CreateDirectoryIterator(StringView path)
+DirectoryIteratorHandle FileSourceSequence::CreateDirectoryIterator(StringView path)
 {
-	auto* it = new AllFileSystemIterator;
+	auto* it = new AllFileSourceIterator;
 	it->path.assign(path.data(), path.size());
 	it->fs = this;
 	return it;
 }
 
 
-static FileSystemHandle g_currentFS;
-static RCHandle<FileSystemSequence> g_mainFS;
+struct FileSystemSource : IFileSource
+{
+	std::string rootPath;
 
-FileSystemSequence* FSGetDefault()
+	FileSystemSource(StringView root)
+	{
+		rootPath = PathGetAbsolute(root);
+	}
+
+	std::string GetRealPath(StringView path)
+	{
+		if (PathIsAbsolute(path))
+			return { path.data(), path.size() };
+		return PathJoin(rootPath, path);
+	}
+
+	FileReadResult ReadTextFile(StringView path)
+	{
+		return ui::ReadTextFile(GetRealPath(path));
+	}
+	FileReadResult ReadBinaryFile(StringView path)
+	{
+		return ui::ReadBinaryFile(GetRealPath(path));
+	}
+	DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
+	{
+		return ui::CreateDirectoryIterator(GetRealPath(path));
+	}
+};
+
+FileSourceHandle CreateFileSystemSource(StringView rootPath)
+{
+	return new FileSystemSource(rootPath);
+}
+
+
+static FileSourceHandle g_currentFS;
+static RCHandle<FileSourceSequence> g_mainFS;
+
+FileSourceSequence* FSGetDefault()
 {
 	return g_mainFS;
 }
 
-IFileSystem* FSGetCurrent()
+IFileSource* FSGetCurrent()
 {
 	return g_currentFS;
 }
 
-void FSSetCurrent(IFileSystem* fs)
+void FSSetCurrent(IFileSource* fs)
 {
 	g_currentFS = fs;
 }
@@ -368,7 +404,7 @@ struct FSInitFree
 {
 	FSInitFree()
 	{
-		g_mainFS = new FileSystemSequence;
+		g_mainFS = new FileSourceSequence;
 		g_currentFS = g_mainFS;
 	}
 	~FSInitFree()

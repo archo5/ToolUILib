@@ -608,7 +608,7 @@ struct NativeWindow_Impl
 			draw::internals::InitResources();
 			_InitStyles();
 			if (!GetCurrentTheme())
-				SetCurrentTheme(LoadTheme("data/theme_default"));
+				SetCurrentTheme(LoadTheme("theme_default"));
 		}
 		g_rsrcUsers++;
 
@@ -1265,6 +1265,13 @@ Application::Application(int argc, char* argv[])
 {
 	assert(_instance == nullptr);
 	_instance = this;
+
+	if (FSGetDefault()->fileSystems.empty())
+	{
+		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource(PathJoin(PathGetParent(argv[0]), "data")));
+		// TODO pipeline for avoiding this?
+		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource("data"));
+	}
 
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
