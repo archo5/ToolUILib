@@ -608,7 +608,7 @@ struct NativeWindow_Impl
 			draw::internals::InitResources();
 			_InitStyles();
 			if (!GetCurrentTheme())
-				SetCurrentTheme(LoadTheme("theme_default"));
+				SetCurrentTheme(LoadTheme("theme_dark2"));
 		}
 		g_rsrcUsers++;
 

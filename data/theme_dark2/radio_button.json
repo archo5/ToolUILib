@@ -1,0 +1,63 @@
+{
+	"radio_button:style":
+	{
+		"width": "22px",
+		"height": "22px",
+		"backgroundPainter": "radio_button"
+	},
+	"radio_button:painter":
+	{
+		"__": "layer",
+		"painters":
+		[
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["disabled"],
+						"painter": { "__": "imgset", "imgset": "radiobgr.disabled" }
+					},
+					{
+						"condition": ["down"],
+						"painter": { "__": "imgset", "imgset": "radiobgr.pressed", "contentOffset": { "y": 1 } }
+					},
+					{
+						"condition": ["hover"],
+						"painter": { "__": "imgset", "imgset": "radiobgr.hover" }
+					},
+					{
+						"painter": { "__": "imgset", "imgset": "radiobgr.normal" }
+					}
+				]
+			},
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["checked", "disabled"],
+						"painter": { "__": "imgset", "imgset": "radiotick.disabled" }
+					},
+					{
+						"condition": ["checked"],
+						"painter": { "__": "imgset", "imgset": "radiotick.normal" }
+					}
+				]
+			},
+			{
+				"__": "conditional",
+				"condition": ["focused"],
+				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+			}
+		]
+	},
+
+	"radiobgr.normal:imgset": { "images": [{ "path": "images/radiobgr-normal.png" }] },
+	"radiobgr.hover:imgset": { "images": [{ "path": "images/radiobgr-hover.png" }] },
+	"radiobgr.pressed:imgset": { "images": [{ "path": "images/radiobgr-pressed.png" }] },
+	"radiobgr.disabled:imgset": { "images": [{ "path": "images/radiobgr-disabled.png" }] },
+
+	"radiotick.normal:imgset": { "images": [{ "path": "images/radiotick-normal.png" }] },
+	"radiotick.disabled:imgset": { "images": [{ "path": "images/radiotick-disabled.png" }] }
+}

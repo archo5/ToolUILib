@@ -1,0 +1,29 @@
+"dropdown_button:style":
+{
+	layout = "edge_slice"
+	horAlign = "center"
+	width = "1fr"
+	padding = 5
+	height = 22
+	backgroundPainter = "button"
+}
+
+"dropdown_button_icon:style":
+{
+	width = "10px"
+	height = "10px"
+	marginTop = 2
+	marginLeft = 5
+	edge = "right"
+	backgroundPainter = "dropdown_button_icon"
+}
+
+"dropdown_button_icon:painter":
+{
+	__ = "imgset", imgset = "dropdown-icon"
+}
+
+"dropdown-icon:imgset":
+{
+	images = [{ path = "images/dropdown-icon.png" }]
+}

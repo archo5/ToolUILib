@@ -1,0 +1,57 @@
+{
+	"tab_group:style":
+	{
+		"margin": 2
+	},
+	"tab_list:style":
+	{
+		"paddingLeft": 4,
+		"paddingRight": 4,
+		"layout": "stack",
+		"stackingDirection": "LeftToRight"
+	},
+	"tab_button:style":
+	{
+		"layout": "inline_block",
+		"stackingDirection": "LeftToRight",
+		"padding": 5,
+		"backgroundPainter": "tab_button"
+	},
+	"tab_panel:style":
+	{
+		"width": "100%",
+		"marginTop": -2,
+		"padding": 5,
+		"backgroundPainter": "tab_panel"
+	},
+
+	"tab_button:painter":
+	{
+		"__": "select_first",
+		"painters":
+		[
+			{
+				"condition": ["down"],
+				"painter": { "__": "imgset", "imgset": "tabbutton.selected" }
+			},
+			{
+				"condition": ["checked"],
+				"painter": { "__": "imgset", "imgset": "tabbutton.selected" }
+			},
+			{
+				"condition": ["hover"],
+				"painter": { "__": "imgset", "imgset": "tabbutton.hover" }
+			},
+			{
+				"painter": { "__": "imgset", "imgset": "tabbutton.normal" }
+			}
+		]
+	},
+
+	"tab_panel:painter": { "__": "imgset", "imgset": "tabpanel" },
+
+	"tabbutton.normal:imgset": { "images": [{ "path": "images/tabbutton-normal.png", "edge": 5 }] },
+	"tabbutton.hover:imgset": { "images": [{ "path": "images/tabbutton-hover.png", "edge": 5 }] },
+	"tabbutton.selected:imgset": { "images": [{ "path": "images/tabbutton-selected.png", "edge": 5 }] },
+	"tabpanel:imgset": { "images": [{ "path": "images/tabpanel.png", "edge": 5 }] }
+}

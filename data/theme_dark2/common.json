@@ -29,7 +29,7 @@
 		"__": "imgset",
 		"imgset": "panel"
 	},
-	"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 5 }] },
+	"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 3 }] },
 
 	"listbox:style":
 	{
@@ -127,8 +127,8 @@
 		]
 	},
 
-	"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 5 }] },
-	"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 5 }] }
+	"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 4 }] },
+	"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 4 }] }
 
 	"bgr-checkerboard:imgset":
 	{

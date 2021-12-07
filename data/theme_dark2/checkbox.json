@@ -1,0 +1,76 @@
+{
+	"checkbox:style":
+	{
+		"width": "22px",
+		"height": "22px",
+		"backgroundPainter": "checkbox"
+	},
+	"checkbox:painter":
+	{
+		"__": "layer",
+		"painters":
+		[
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["disabled"],
+						"painter": { "__": "imgset", "imgset": "checkbgr.disabled" }
+					},
+					{
+						"condition": ["down"],
+						"painter": { "__": "imgset", "imgset": "checkbgr.pressed", "contentOffset": { "y": 1 } }
+					},
+					{
+						"condition": ["hover"],
+						"painter": { "__": "imgset", "imgset": "checkbgr.hover" }
+					},
+					{
+						"painter": { "__": "imgset", "imgset": "checkbgr.normal" }
+					}
+				]
+			},
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["checked", "disabled"],
+						"checkState": 1,
+						"painter": { "__": "imgset", "imgset": "checktick.disabled" }
+					},
+					{
+						"condition": ["checked"],
+						"checkState": 1,
+						"painter": { "__": "imgset", "imgset": "checktick.normal" }
+					},
+					{
+						"condition": ["checked", "disabled"],
+						"painter": { "__": "imgset", "imgset": "checkind.disabled" }
+					},
+					{
+						"condition": ["checked"],
+						"painter": { "__": "imgset", "imgset": "checkind.normal" }
+					}
+				]
+			},
+			{
+				"__": "conditional",
+				"condition": ["focused"],
+				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+			}
+		]
+	},
+
+	"checkbgr.normal:imgset": { "images": [{ "path": "images/checkbgr-normal.png", "edge": 4 }] },
+	"checkbgr.hover:imgset": { "images": [{ "path": "images/checkbgr-hover.png", "edge": 4 }] },
+	"checkbgr.pressed:imgset": { "images": [{ "path": "images/checkbgr-pressed.png", "edge": 4 }] },
+	"checkbgr.disabled:imgset": { "images": [{ "path": "images/checkbgr-disabled.png", "edge": 4 }] },
+
+	"checktick.normal:imgset": { "images": [{ "path": "images/checktick-normal.png" }] },
+	"checktick.disabled:imgset": { "images": [{ "path": "images/checktick-disabled.png" }] },
+
+	"checkind.normal:imgset": { "images": [{ "path": "images/checkind-normal.png" }] },
+	"checkind.disabled:imgset": { "images": [{ "path": "images/checkind-disabled.png" }] }
+}

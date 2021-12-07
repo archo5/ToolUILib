@@ -1,0 +1,57 @@
+{
+	"button:style":
+	{
+		"layout": "stack",
+		"stackingDirection": "LeftToRight",
+		"horAlign": "center",
+		"width": "1fr",
+		"padding": 5,
+		"backgroundPainter": "button"
+	},
+	"button:painter":
+	{
+		"__": "layer",
+		"painters":
+		[
+			{
+				"__": "select_first",
+				"painters":
+				[
+					{
+						"condition": ["disabled"],
+						"painter": { "__": "imgset", "imgset": "button.disabled" }
+					},
+					{
+						"condition": ["down", "disabled"],
+						"painter": { "__": "imgset", "imgset": "button.down-disabled" }
+					},
+					{
+						"condition": ["down"],
+						"painter": { "__": "imgset", "imgset": "button.pressed", "contentOffset": { "y": 1 } }
+					},
+					{
+						"condition": ["checked"],
+						"painter": { "__": "imgset", "imgset": "button.pressed", "contentOffset": { "y": 1 } }
+					},
+					{
+						"condition": ["hover"],
+						"painter": { "__": "imgset", "imgset": "button.hover" }
+					},
+					{
+						"painter": { "__": "imgset", "imgset": "button.normal" }
+					}
+				]
+			},
+			{
+				"__": "conditional",
+				"condition": ["focused"],
+				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+			}
+		]
+	},
+	"button.normal:imgset": { "images": [{ "path": "images/button-normal.png", "edge": 3 }] },
+	"button.hover:imgset": { "images": [{ "path": "images/button-hover.png", "edge": 3 }] },
+	"button.pressed:imgset": { "images": [{ "path": "images/button-pressed.png", "edge": 3 }] },
+	"button.disabled:imgset": { "images": [{ "path": "images/button-disabled.png", "edge": 3 }] },
+	"button.down-disabled:imgset": { "images": [{ "path": "images/button-down-disabled.png", "edge": 3 }] }
+}
