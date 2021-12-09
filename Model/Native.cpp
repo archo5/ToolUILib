@@ -579,6 +579,8 @@ static int g_rsrcUsers = 0;
 void _InitStyles();
 void _FreeStyles();
 
+static StaticID_Color sid_color_clear("clear");
+
 struct NativeWindow_Impl
 {
 	void Init(NativeWindowBase* owner)
@@ -689,8 +691,8 @@ struct NativeWindow_Impl
 		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
 		draw::internals::OnBeginDrawFrame();
 
-		//GL::Clear(20, 40, 80, 255);
-		rhi::Clear(0x25, 0x25, 0x25, 255);
+		auto clearColor = GetCurrentTheme()->GetBackgroundColor(sid_color_clear);
+		rhi::Clear(clearColor.r, clearColor.g, clearColor.b, 255);
 		if (cont.rootBuildable)
 			cont.rootBuildable->RootPaint();
 

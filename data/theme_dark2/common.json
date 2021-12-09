@@ -1,139 +1,141 @@
+"background:color" = "b:25;255"
+"foreground:color" = "b:255"
+"clear:color" = "b:25;255"
+
+"outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] }
+
+"header:style":
 {
-	"outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] },
+	"padding": 5,
+	"fontWeight": "bold"
+}
 
-	"header:style":
-	{
-		"padding": 5,
-		"fontWeight": "bold"
-	},
+"property:style":
+{
+	"layout": "stack_expand",
+	"stackingDirection": "LeftToRight"
+}
 
-	"property:style":
-	{
-		"layout": "stack_expand",
-		"stackingDirection": "LeftToRight"
-	},
+"prop_label:style":
+{
+	"padding": 5
+}
 
-	"prop_label:style":
-	{
-		"padding": 5
-	},
+"panel:style":
+{
+	"margin": 2,
+	"padding": 6,
+	"backgroundPainter": "panel"
+}
+"panel:painter":
+{
+	"__": "imgset",
+	"imgset": "panel"
+}
+"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 3 }] }
 
-	"panel:style":
-	{
-		"margin": 2,
-		"padding": 6,
-		"backgroundPainter": "panel"
-	},
-	"panel:painter":
-	{
-		"__": "imgset",
-		"imgset": "panel"
-	},
-	"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 3 }] },
+"listbox:style":
+{
+	"layout": "stack",
+	"padding": 5,
+	"backgroundPainter": "insetbox"
+}
 
-	"listbox:style":
-	{
-		"layout": "stack",
-		"padding": 5,
-		"backgroundPainter": "insetbox"
-	},
+"progress_bar_base:style":
+{
+	"padding": 5,
+	"width": "100%",
+	"backgroundPainter": "insetbox"
+}
+"progress_bar_completion:style":
+{
+	"layout": "inline_block",
+	"margin": 2,
+	"backgroundPainter": "outsetbox"
+}
 
-	"progress_bar_base:style":
-	{
-		"padding": 5,
-		"width": "100%",
-		"backgroundPainter": "insetbox"
-	},
-	"progress_bar_completion:style":
-	{
-		"layout": "inline_block",
-		"margin": 2,
-		"backgroundPainter": "outsetbox"
-	},
+"scroll_v_track:style":
+{
+	"width": "20px",
+	"padding": 2,
+	"backgroundPainter": "insetbox"
+}
+"scroll_v_thumb:style":
+{
+	"minHeight": "16px",
+	"backgroundPainter": "button"
+}
 
-	"scroll_v_track:style":
-	{
-		"width": "20px",
-		"padding": 2,
-		"backgroundPainter": "insetbox"
-	},
-	"scroll_v_thumb:style":
-	{
-		"minHeight": "16px",
-		"backgroundPainter": "button"
-	},
+"textbox:style":
+{
+	"width": "1fr",
+	"padding": 5,
+	"height": "22px",
+	"backgroundPainter": "textbox"
+}
 
-	"textbox:style":
-	{
-		"width": "1fr",
-		"padding": 5,
-		"height": "22px",
-		"backgroundPainter": "textbox"
-	},
+"textbox:painter":
+{
+	"__": "layer",
+	"painters":
+	[
+		{
+			"__": "select_first",
+			"painters":
+			[
+				{
+					"condition": ["disabled"],
+					"painter": { "__": "imgset", "imgset": "textbox.disabled" }
+				},
+				{
+					"painter": { "__": "imgset", "imgset": "textbox.normal" }
+				}
+			]
+		},
+		{
+			"__": "conditional",
+			"condition": ["focused"],
+			"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+		}
+	]
+}
 
-	"textbox:painter":
-	{
-		"__": "layer",
-		"painters":
-		[
-			{
-				"__": "select_first",
-				"painters":
-				[
-					{
-						"condition": ["disabled"],
-						"painter": { "__": "imgset", "imgset": "textbox.disabled" }
-					},
-					{
-						"painter": { "__": "imgset", "imgset": "textbox.normal" }
-					}
-				]
-			},
-			{
-				"__": "conditional",
-				"condition": ["focused"],
-				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
-			}
-		]
-	},
+"insetbox:painter":
+{
+	"__": "select_first",
+	"painters":
+	[
+		{
+			"condition": ["disabled"],
+			"painter": { "__": "imgset", "imgset": "textbox.disabled" }
+		},
+		{
+			"painter": { "__": "imgset", "imgset": "textbox.normal" }
+		}
+	]
+}
 
-	"insetbox:painter":
-	{
-		"__": "select_first",
-		"painters":
-		[
-			{
-				"condition": ["disabled"],
-				"painter": { "__": "imgset", "imgset": "textbox.disabled" }
-			},
-			{
-				"painter": { "__": "imgset", "imgset": "textbox.normal" }
-			}
-		]
-	},
+"outsetbox:painter":
+{
+	"__": "select_first",
+	"painters":
+	[
+		{
+			"condition": ["disabled"],
+			"painter": { "__": "imgset", "imgset": "button.disabled" }
+		},
+		{
+			"painter": { "__": "imgset", "imgset": "button.normal" }
+		}
+	]
+}
 
-	"outsetbox:painter":
-	{
-		"__": "select_first",
-		"painters":
-		[
-			{
-				"condition": ["disabled"],
-				"painter": { "__": "imgset", "imgset": "button.disabled" }
-			},
-			{
-				"painter": { "__": "imgset", "imgset": "button.normal" }
-			}
-		]
-	},
+"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 4 }] }
+"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 4 }] }
 
-	"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 4 }] },
-	"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 4 }] }
-
-	"bgr-checkerboard:imgset":
-	{
-		type = "pattern"
-		size = 16
-		images = [{ path = "images/bgr-checkerboard.png" }]
-	}
+"bgr-checkerboard:imgset":
+{
+	type = "pattern"
+	size = 16
+	images = [{ path = "images/bgr-checkerboard.png" }]
 }

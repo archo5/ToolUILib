@@ -146,6 +146,14 @@ static const char* EnumKeys_FontStyle[] =
 template <> struct EnumKeys<FontStyle> : EnumKeysStringList<FontStyle, EnumKeys_FontStyle> {};
 
 
+Optional<Color4b> ThemeData::FindColorByName(const std::string& name)
+{
+	auto it = colors.find(name);
+	if (it.is_valid())
+		return it->value;
+	return {};
+}
+
 draw::ImageSetHandle ThemeData::FindImageSetByName(const std::string& name)
 {
 	auto it = imageSets.find(name);
@@ -183,6 +191,34 @@ template <class TC, class TID> TC& GetCacheSlot(std::vector<TC>& cache, const St
 	if (cache.size() < newSize)
 		cache.resize(newSize);
 	return cache[id._id];
+}
+
+Optional<Color4b> ThemeData::GetColor(const StaticID_Color& id)
+{
+	auto& slot = GetCacheSlot(_cachedColors, id);
+	if (!slot.HasValue())
+		slot = FindColorByName(id._name);
+	return slot;
+}
+
+static StaticID_Color sid_color_background("background");
+Color4b ThemeData::GetBackgroundColor(const StaticID_Color& id)
+{
+	if (auto col = GetColor(id))
+		return col.GetValue();
+	if (auto col = GetColor(sid_color_background))
+		return col.GetValue();
+	return { 0 };
+}
+
+static StaticID_Color sid_color_foreground("foreground");
+Color4b ThemeData::GetForegroundColor(const StaticID_Color& id)
+{
+	if (auto col = GetColor(id))
+		return col.GetValue();
+	if (auto col = GetColor(sid_color_foreground))
+		return col.GetValue();
+	return { 255 };
 }
 
 draw::ImageSetHandle ThemeData::GetImageSet(const StaticID_ImageSet& id)
@@ -239,6 +275,7 @@ struct ThemeElementRef
 struct ThemeLoaderData : IThemeLoader
 {
 	std::vector<ThemeFileHandle> files;
+	HashMap<std::string, ThemeElementRef> colors;
 	HashMap<std::string, ThemeElementRef> imageSets;
 	HashMap<std::string, ThemeElementRef> painters;
 	HashMap<std::string, ThemeElementRef> styles;
@@ -457,6 +494,11 @@ void ThemeData::LoadTheme(StringView folder)
 						for (auto* el = obj->start; el; el = el->next)
 						{
 							StringView name(el->name->string, el->name->string_size);
+							if (name.ends_with(":color"))
+							{
+								auto key = to_string(name.substr(0, name.find_last_at(":color")));
+								tld.colors.insert(key, { tf, el->name->string });
+							}
 							if (name.ends_with(":imgset"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":imgset")));
@@ -484,6 +526,17 @@ void ThemeData::LoadTheme(StringView folder)
 	}
 
 	tld.loadedData = this;
+
+	for (auto& col : tld.colors)
+	{
+		auto& u = col.value.file->unserializer;
+		tld.curFile = col.value.file;
+
+		auto loaded = tld.LoadColor(col.value.key);
+		tld.loadedData->colors.insert(col.key, loaded);
+
+		tld.curFile = nullptr;
+	}
 
 	for (auto& imgSet : tld.imageSets)
 	{
