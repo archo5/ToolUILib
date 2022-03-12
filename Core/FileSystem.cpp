@@ -12,6 +12,13 @@
 
 namespace ui {
 
+std::string PathFromSystem(StringView path)
+{
+	auto pcopy = to_string(path);
+	NormalizePath(pcopy);
+	return pcopy;
+}
+
 std::string PathGetParent(StringView path)
 {
 	while (path.ends_with("/"))

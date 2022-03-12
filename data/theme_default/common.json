@@ -139,4 +139,3 @@
 	size = 16
 	images = [{ path = "images/bgr-checkerboard.png" }]
 }
-}

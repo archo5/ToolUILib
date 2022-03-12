@@ -1288,7 +1288,7 @@ Application::Application(int argc, char* argv[])
 
 	if (FSGetDefault()->fileSystems.empty())
 	{
-		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource(PathJoin(PathGetParent(argv[0]), "data")));
+		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource(PathJoin(PathGetParent(PathFromSystem(argv[0])), "data")));
 		// TODO pipeline for avoiding this?
 		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource("data"));
 	}

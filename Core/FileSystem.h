@@ -50,6 +50,7 @@ struct FileReadResult
 };
 
 // returns an empty string if root was passed
+std::string PathFromSystem(StringView path);
 std::string PathGetParent(StringView path);
 std::string PathJoin(StringView a, StringView b);
 bool PathIsAbsolute(StringView path);
