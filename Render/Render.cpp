@@ -376,7 +376,7 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags)
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 {
 	auto it = g_imageTextures.find(path);
-	if (it.is_valid() && static_cast<ImageImpl*>(it->value)->flags == flags)
+	if (it.is_valid() && static_cast<ImageImpl*>(it->value)->flags == flags && (flags & TexFlags::NoCache) == TexFlags::None)
 		return it->value;
 
 	if (flags != TexFlags::Packed)
@@ -398,7 +398,8 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 
 	auto* impl = static_cast<ImageImpl*>(img.get_ptr());
 	impl->path = to_string(path);
-	g_imageTextures[impl->path] = impl;
+	if ((flags & TexFlags::NoCache) == TexFlags::None)
+		g_imageTextures[impl->path] = impl;
 	return impl;
 }
 

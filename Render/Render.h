@@ -22,6 +22,7 @@ enum class TexFlags : uint8_t
 	NoFilter = 1 << 0,
 	Repeat = 1 << 1,
 	Packed = 1 << 2,
+	NoCache = 1 << 3,
 };
 inline TexFlags operator | (TexFlags a, TexFlags b)
 {
