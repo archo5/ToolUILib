@@ -212,7 +212,7 @@ struct DirectoryIteratorImpl : IDirectoryIterator
 {
 	std::wstring path;
 	WIN32_FIND_DATAW findData = {};
-	HANDLE handle = nullptr;
+	HANDLE handle = INVALID_HANDLE_VALUE;
 
 	DirectoryIteratorImpl(StringView srcPath)
 	{
@@ -221,7 +221,7 @@ struct DirectoryIteratorImpl : IDirectoryIterator
 	}
 	~DirectoryIteratorImpl()
 	{
-		if (handle)
+		if (handle != INVALID_HANDLE_VALUE)
 			FindClose(handle);
 	}
 
@@ -236,10 +236,10 @@ bool DirectoryIteratorImpl::GetNext(std::string& retFile)
 	bool success;
 	for (;;)
 	{
-		if (handle == nullptr)
+		if (handle == INVALID_HANDLE_VALUE)
 		{
 			handle = FindFirstFileW(path.c_str(), &findData);
-			success = handle != nullptr;
+			success = handle != INVALID_HANDLE_VALUE;
 		}
 		else
 			success = FindNextFileW(handle, &findData) != FALSE;
