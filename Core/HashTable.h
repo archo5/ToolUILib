@@ -75,6 +75,41 @@ struct HashMap
 	}
 	HashMap(HashMap&& o)
 	{
+		_move_from(o);
+	}
+	HashMap& operator = (const HashMap& o)
+	{
+		if (this == &o)
+			return *this;
+		clear();
+		reserve(o._count);
+		for (EntryRef e : o)
+			insert(e.key, e.value);
+		return *this;
+	}
+	HashMap& operator = (HashMap&& o)
+	{
+		if (this == &o)
+			return *this;
+		_destruct_free();
+		_move_from(o);
+		return *this;
+	}
+	~HashMap()
+	{
+		_destruct_free();
+	}
+
+	UI_FORCEINLINE bool empty() const { return _count == 0; }
+	UI_FORCEINLINE size_t size() const { return _count; }
+	UI_FORCEINLINE size_t capacity() const { return _capacity; }
+	UI_FORCEINLINE Iterator begin() { return { this, 0 }; }
+	UI_FORCEINLINE Iterator end() { return { this, _count }; }
+	UI_FORCEINLINE ConstIterator begin() const { return { this, 0 }; }
+	UI_FORCEINLINE ConstIterator end() const { return { this, _count }; }
+
+	void _move_from(HashMap& o)
+	{
 		_hashTable = o._hashTable;
 		_hashCap = o._hashCap;
 		_hashes = o._hashes;
@@ -91,19 +126,6 @@ struct HashMap
 		o._count = 0;
 		o._capacity = 0;
 	}
-	~HashMap()
-	{
-		_destruct_free();
-	}
-
-	UI_FORCEINLINE bool empty() const { return _count == 0; }
-	UI_FORCEINLINE size_t size() const { return _count; }
-	UI_FORCEINLINE size_t capacity() const { return _capacity; }
-	UI_FORCEINLINE Iterator begin() { return { this, 0 }; }
-	UI_FORCEINLINE Iterator end() { return { this, _count }; }
-	UI_FORCEINLINE ConstIterator begin() const { return { this, 0 }; }
-	UI_FORCEINLINE ConstIterator end() const { return { this, _count }; }
-
 	void dealloc()
 	{
 		_destruct_free();
