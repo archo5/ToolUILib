@@ -75,7 +75,7 @@ struct StringView
 	StringView until_first(StringView sub) const
 	{
 		size_t at = find_first_at(sub);
-		return at < SIZE_MAX ? substr(0, at) : StringView();
+		return at < SIZE_MAX ? substr(0, at) : *this;
 	}
 	StringView after_first(StringView sub) const
 	{

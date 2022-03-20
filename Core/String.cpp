@@ -147,7 +147,7 @@ double StringView::take_float64()
 
 	_size = end - _data;
 
-	return ret;
+	return ret * sign;
 }
 
 } // ui
