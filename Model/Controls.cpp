@@ -1723,14 +1723,17 @@ void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
 	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
-	btn.SetFlag(UIObject_IsChecked, HasFlags(UIObject_IsChecked));
-	btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
+	btn.flags |= flags & (UIObject_IsChecked | UIObject_IsDisabled);
+	if (!(flags & UIObject_IsDisabled))
 	{
-		if (e.GetButton() != MouseButton::Left)
-			return;
-		SetFlag(UIObject_IsChecked, true);
-		Rebuild();
-	};
+		btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
+		{
+			if (e.GetButton() != MouseButton::Left)
+				return;
+			SetFlag(UIObject_IsChecked, true);
+			Rebuild();
+		};
+	}
 
 	Make<BoxElement>().SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
 

@@ -82,6 +82,12 @@ struct UIObjectPendingDeactivationSet
 	}
 };
 
+namespace imm
+{
+bool GetEnabled();
+bool SetEnabled(bool);
+}
+
 struct UIContainer
 {
 	void Free();
@@ -106,6 +112,8 @@ struct UIContainer
 	void Append(Buildable* obj)
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
+		if (!imm::GetEnabled())
+			obj->flags |= UIObject_IsDisabled;
 		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
 		AddToBuildStack(obj);
 	}

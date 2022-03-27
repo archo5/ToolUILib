@@ -136,6 +136,8 @@ void UIContainer::ProcessBuildStack()
 	{
 		Buildable* currentBuildable = static_cast<Buildable*>(buildStack.Pop());
 
+		bool oldEnabled = imm::SetEnabled(!(currentBuildable->flags & UIObject_IsDisabled));
+
 		objectStackSize = 0;
 		_Push(currentBuildable);
 		_curObjectList = &currentBuildable->_objList;
@@ -176,6 +178,8 @@ void UIContainer::ProcessBuildStack()
 		}
 
 		_Pop(); // root
+
+		imm::SetEnabled(oldEnabled);
 	}
 
 	buildStack.Swap(nextFrameBuildStack);
