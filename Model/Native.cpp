@@ -1182,12 +1182,15 @@ struct Inspector : NativeDialogWindow
 
 		void Build() override {}
 
-		static const char* CleanName(const char* name)
+		static StringView CleanName(StringView name)
 		{
-			if (strncmp(name, "struct ", 7) == 0) name += 7;
-			if (strncmp(name, "class ", 6) == 0) name += 6;
-			if (strncmp(name, "ui::", 4) == 0) name += 4;
-			if (strncmp(name, "layouts::", 9) == 0) name += 9;
+			if (name.starts_with("struct ")) name = name.substr(7);
+			if (name.starts_with("class ")) name = name.substr(6);
+			if (name.starts_with("ui::")) name = name.substr(4);
+			if (name.starts_with("layouts::")) name = name.substr(9);
+
+			if (name.ends_with("Layout")) name = name.substr(0, name.size() - 6);
+
 			return name;
 		}
 
@@ -1195,19 +1198,28 @@ struct Inspector : NativeDialogWindow
 		{
 			if (obj == insp->selObj)
 			{
-				draw::RectCol(0, y, 400, y + styleProps->font_size, Color4f(0.5f, 0, 0));
+				draw::RectCol(0, y, 9999, y + styleProps->font_size, Color4f(0.5f, 0, 0));
 			}
 
 			auto* font = styleProps->GetFont();
 
-			y += styleProps->font_size;
+			y += styleProps->font_size - 1;
 			draw::TextLine(font, styleProps->font_size, x, y, CleanName(typeid(*obj).name()), Color4b::White());
-			char bfr[1024];
-			auto& fr = obj->finalRectC;
-			snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-			draw::TextLine(font, styleProps->font_size, 300, y, bfr, Color4b::White());
 			if (obj->GetStyle().GetLayout())
-				draw::TextLine(font, styleProps->font_size, 400, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
+				draw::TextLine(font, styleProps->font_size, 300, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
+			char bfr[1024];
+			{
+				auto& fr = obj->finalRectC;
+				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
+				draw::TextLine(font, styleProps->font_size, 400, y, bfr, Color4b::White());
+			}
+			{
+				auto& fr = obj->finalRectCP;
+				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
+				draw::TextLine(font, styleProps->font_size, 600, y, bfr, Color4b::White());
+			}
+
+			y++;
 
 			for (auto* ch = obj->firstChild; ch; ch = ch->next)
 			{
@@ -1222,8 +1234,9 @@ struct Inspector : NativeDialogWindow
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = styleProps->font_size;
 			draw::TextLine(font, styleProps->font_size, 0, y, "Name", Color4b(255, 153));
-			draw::TextLine(font, styleProps->font_size, 300, y, "Rect", Color4b(255, 153));
-			draw::TextLine(font, styleProps->font_size, 400, y, "Layout", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 300, y, "Layout", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 400, y, "Content rect", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 600, y, "Padding rect", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
 			//draw::TextLine(font, styleProps->font_size, 10, 10, "inspector", Color4b::White());
 		}
