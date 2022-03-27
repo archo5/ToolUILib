@@ -1196,27 +1196,29 @@ struct Inspector : NativeDialogWindow
 
 		void PaintObject(UIObject* obj, int x, int& y)
 		{
+			auto* font = styleProps->GetFont();
+			int fontSize = styleProps->font_size;
+
 			if (obj == insp->selObj)
 			{
-				draw::RectCol(0, y, 9999, y + styleProps->font_size, Color4f(0.5f, 0, 0));
+				draw::RectCol(0, y, 9999, y + fontSize, Color4f(0.5f, 0, 0));
 			}
 
-			auto* font = styleProps->GetFont();
-
-			y += styleProps->font_size - 1;
-			draw::TextLine(font, styleProps->font_size, x, y, CleanName(typeid(*obj).name()), Color4b::White());
+			y += fontSize - 1;
+			draw::TextLine(font, fontSize, x, y, Format("%p", obj), Color4b::White());
+			draw::TextLine(font, fontSize, x + 60, y, CleanName(typeid(*obj).name()), Color4b::White());
 			if (obj->GetStyle().GetLayout())
-				draw::TextLine(font, styleProps->font_size, 300, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
+				draw::TextLine(font, fontSize, 300, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
 			char bfr[1024];
 			{
 				auto& fr = obj->finalRectC;
 				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-				draw::TextLine(font, styleProps->font_size, 400, y, bfr, Color4b::White());
+				draw::TextLine(font, fontSize, 400, y, bfr, Color4b::White());
 			}
 			{
 				auto& fr = obj->finalRectCP;
 				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-				draw::TextLine(font, styleProps->font_size, 600, y, bfr, Color4b::White());
+				draw::TextLine(font, fontSize, 600, y, bfr, Color4b::White());
 			}
 
 			y++;
@@ -1233,7 +1235,7 @@ struct Inspector : NativeDialogWindow
 
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = styleProps->font_size;
-			draw::TextLine(font, styleProps->font_size, 0, y, "Name", Color4b(255, 153));
+			draw::TextLine(font, styleProps->font_size, 0, y, "Address / Name", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 300, y, "Layout", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 400, y, "Content rect", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 600, y, "Padding rect", Color4b(255, 153));

@@ -8,7 +8,7 @@ struct EdgeSliceTest : ui::Buildable
 	{
 		auto s = ui::Push<ui::Panel>().GetStyle();
 		s.SetLayout(ui::layouts::EdgeSlice());
-		s.SetBoxSizing(ui::BoxSizing::BorderBox);
+		s.SetBoxSizing(ui::BoxSizingTarget::Height, ui::BoxSizing::BorderBox);
 		s.SetMargin(0);
 		s.SetHeight(ui::Coord::Percent(100));
 
@@ -235,12 +235,17 @@ struct SizeTest : ui::Buildable
 	{
 		ui::Buildable::OnPaint(ctx);
 		auto* font = styleProps->GetFont();
+		int fsize = styleProps->font_size;
+		float ypos = fsize;
 		for (const auto& t : tests)
 		{
 			auto res = t.func();
 			if (res.size())
 			{
-				ui::draw::TextLine(font, styleProps->font_size, t.obj->finalRectC.x1, t.obj->finalRectC.y1, res, ui::Color4b(255, 0, 0));
+				float textw = ui::GetTextWidth(font, fsize, res);
+				ui::draw::LineCol(t.obj->finalRectC.x1, t.obj->finalRectC.y0, finalRectC.x1 - textw, ypos - fsize / 2, 1, ui::Color4b(255, 0, 0));
+				ui::draw::TextLine(font, fsize, finalRectC.x1 - textw, ypos, res, ui::Color4b(255, 0, 0));
+				ypos += fsize;
 			}
 		}
 	}
@@ -265,7 +270,7 @@ struct SizeTest : ui::Buildable
 
 		TestContentSize(ui::Text("Testing text element size"), CalcTestTextWidth("Testing text element size"), GetTestFontHeight());
 
-		ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::PushBox() + ui::SetLayout(ui::layouts::Stack()) + ui::Set(ui::StackingDirection::LeftToRight);
 		{
 			auto& txt1 = ui::Text("Text size + padding") + ui::SetPadding(5);
 			TestContentSize(txt1, CalcTestTextWidth("Text size + padding"), GetTestFontHeight());
@@ -284,7 +289,7 @@ struct SizeTest : ui::Buildable
 		ui::Pop();
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizing::BorderBox);
+			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 			ui::Text("Testing text in box [border]");
 			ui::Pop();
 			TestContentSize(box, CalcTestTextWidth("Testing text in box [border]"), GetTestFontHeight());
@@ -292,7 +297,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizing::ContentBox);
+			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
 			ui::Text("Testing text in box [content]");
 			ui::Pop();
 			TestContentSize(box, CalcTestTextWidth("Testing text in box [content]"), GetTestFontHeight());
@@ -308,7 +313,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizing::BorderBox);
+			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 			ui::Text("Testing text in box +W [border]");
 			ui::Pop();
 			TestContentSize(box, 140 - 10, GetTestFontHeight());
@@ -316,7 +321,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizing::ContentBox);
+			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
 			ui::Text("Testing text in box +W [content]");
 			ui::Pop();
 			TestContentSize(box, 140, GetTestFontHeight());
@@ -338,18 +343,18 @@ struct SizeTest : ui::Buildable
 		}
 		{
 			auto& box = ui::Make<SizedBox>() + ui::SetWidth(50) + ui::SetPadding(2, 7, 8, 3);
-			TestContentSize(box, 40, 30);
-			TestFullSize(box, 50, 40);
-			TestFullEstSize(box, 50, 40);
+			TestContentSize(box, 40, 40);
+			TestFullSize(box, 50, 50);
+			TestFullEstSize(box, 50, 50);
 		}
 		{
-			auto& box = ui::Make<SizedBox>() + ui::SetBoxSizing(ui::BoxSizing::BorderBox) + ui::SetWidth(50) + ui::SetPadding(2, 7, 8, 3);
-			TestContentSize(box, 40, 30);
-			TestFullSize(box, 50, 40);
-			TestFullEstSize(box, 50, 40);
+			auto& box = ui::Make<SizedBox>() + ui::SetWidth(ui::BoxSizing::BorderBox, 50) + ui::SetPadding(2, 7, 8, 3);
+			TestContentSize(box, 40, 40);
+			TestFullSize(box, 50, 50);
+			TestFullEstSize(box, 50, 50);
 		}
 		{
-			auto& box = ui::Make<SizedBox>() + ui::SetBoxSizing(ui::BoxSizing::ContentBox) + ui::SetHeight(30) + ui::SetPadding(2, 7, 8, 3);
+			auto& box = ui::Make<SizedBox>() + ui::SetHeight(ui::BoxSizing::ContentBox, 30) + ui::SetPadding(2, 7, 8, 3);
 			TestContentSize(box, 40, 30);
 			TestFullSize(box, 50, 40);
 			TestFullEstSize(box, 50, 40);

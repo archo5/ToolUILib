@@ -98,7 +98,7 @@ void TreeEditor::Build()
 {
 	auto s = Push<ListBox>().GetStyle();
 	s.SetMinHeight(22);
-	s.SetBoxSizing(BoxSizing::ContentBox);
+	s.SetBoxSizing(BoxSizingTarget::MinHeight, BoxSizing::ContentBox);
 
 	TreePath path;
 	OnBuildList(path);

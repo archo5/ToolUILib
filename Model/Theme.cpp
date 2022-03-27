@@ -351,7 +351,7 @@ struct ThemeLoaderData : IThemeLoader
 			OnFieldEnumString(u, "presence", loaded->presence);
 			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
 			OnFieldEnumString(u, "edge", loaded->edge);
-			OnFieldEnumString(u, "boxSizing", loaded->box_sizing);
+			//OnFieldEnumString(u, "boxSizing", loaded->box_sizing); // --------------- TODO -----------------------
 			OnFieldEnumString(u, "horAlign", loaded->h_align);
 
 			OnFieldEnumString(u, "fontWeight", loaded->font_weight);

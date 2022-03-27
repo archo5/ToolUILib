@@ -684,7 +684,7 @@ struct DragDropTest : ui::Buildable
 
 		auto s = ui::Push<ui::Panel>().GetStyle();
 		s.SetWidth(ui::Coord::Percent(50));
-		s.SetBoxSizing(ui::BoxSizing::BorderBox);
+		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 
 		ui::Make<FileReceiverTest>();
 		ui::Make<TransferCountablesTest>();
@@ -695,7 +695,7 @@ struct DragDropTest : ui::Buildable
 
 		s = ui::Push<ui::Panel>().GetStyle();
 		s.SetWidth(ui::Coord::Percent(50));
-		s.SetBoxSizing(ui::BoxSizing::BorderBox);
+		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 
 		ui::Make<DragElementTest>();
 		ui::Make<DragConnectTest>();

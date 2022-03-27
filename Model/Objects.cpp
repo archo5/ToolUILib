@@ -473,117 +473,74 @@ float UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type
 
 float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	float size = 0;
 	auto layout = GetStyle().GetLayout();
 	if (layout == nullptr)
 		layout = layouts::Stack();
 	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
-Rangef UIObject::GetEstimatedWidth(const Size2f& containerSize, EstSizeType type)
-{
-	auto style = GetStyle();
-	float size = 0;
-
-	auto width = style.GetWidth();
-	if (!width.IsDefined())
-	{
-		auto height = Coord::Undefined();
-		GetSize(width, height);
-	}
-
-	float maxsize = FLT_MAX;
-	if (width.IsDefined())
-	{
-		size = maxsize = ResolveUnits(width, containerSize.x);
-	}
-	else
-	{
-		size = CalcEstimatedWidth(containerSize, type);
-	}
-
-	auto min_width = style.GetMinWidth();
-	if (min_width.IsDefined())
-	{
-		float w = ResolveUnits(min_width, containerSize.x);
-		size = max(size, w);
-		maxsize = max(maxsize, w);
-	}
-
-	auto max_width = style.GetMaxWidth();
-	if (max_width.IsDefined())
-	{
-		maxsize = ResolveUnits(max_width, containerSize.x);
-		size = min(size, maxsize);
-	}
-
-	return { size, maxsize };
-}
-
-Rangef UIObject::GetEstimatedHeight(const Size2f& containerSize, EstSizeType type)
-{
-	auto style = GetStyle();
-	float size = 0;
-
-	auto height = style.GetHeight();
-	if (!height.IsDefined())
-	{
-		auto width = Coord::Undefined();
-		GetSize(width, height);
-	}
-
-	float maxsize = FLT_MAX;
-	if (height.IsDefined())
-	{
-		size = maxsize = ResolveUnits(height, containerSize.y);
-	}
-	else
-	{
-		size = CalcEstimatedHeight(containerSize, type);
-	}
-
-	auto min_height = style.GetMinHeight();
-	if (min_height.IsDefined())
-	{
-		float h = ResolveUnits(min_height, containerSize.y);
-		size = max(size, h);
-		maxsize = max(maxsize, h);
-	}
-
-	auto max_height = style.GetMaxHeight();
-	if (max_height.IsDefined())
-	{
-		maxsize = ResolveUnits(max_height, containerSize.y);
-		size = min(size, maxsize);
-	}
-
-	return { size, maxsize };
-}
-
+// on box sizing:
+// - each settable width/height value has its own box sizing value
+//   - this value determines whether margin/padding are applied to that size:
+//     - ContentBox = apply padding and margin
+//     - BorderBox = apply margin
+// - margin can be merged between elements inside a layout
+//   (TODO do we need it in the element instead of the layout config? don't have a layout config atm)
+// - min/max sizes apply regardless of whether they're calculated or set
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
+
 	auto style = GetStyle();
-	auto s = GetEstimatedWidth(containerSize, type);
-	auto box_sizing = style.GetBoxSizing();
+
 	auto width = style.GetWidth();
+	Coord customCalcWidth;
 	if (!width.IsDefined())
 	{
 		auto height = Coord::Undefined();
-		GetSize(width, height);
+		GetSize(customCalcWidth, height);
+	}
+	auto minWidth = style.GetMinWidth();
+	auto maxWidth = style.GetMaxWidth();
+
+	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
+	float addM = style.GetMarginLeft() + style.GetMarginRight();
+	float addtbl[3] = { addM, addM + addP, addM };
+
+	float resW;
+	if (width.IsDefined())
+	{
+		resW = ResolveUnits(width, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::Width))];
+	}
+	else if (customCalcWidth.IsDefined())
+	{
+		resW = ResolveUnits(customCalcWidth, containerSize.x) + addP + addM;
+	}
+	else
+	{
+		Size2f contSizeShrunk = containerSize;
+		contSizeShrunk.x -= addP + addM;
+		contSizeShrunk.y -= style.GetPaddingTop() + style.GetPaddingBottom() + style.GetMarginTop() + style.GetMarginBottom();
+		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP + addM;
 	}
 
-	float w_add = ResolveUnits(style.GetMarginLeft(), containerSize.x) + ResolveUnits(style.GetMarginRight(), containerSize.x);
-	if (box_sizing == BoxSizing::ContentBox || !width.IsDefined())
+	if (minWidth.IsDefined())
 	{
-		w_add += ResolveUnits(style.GetPaddingLeft(), containerSize.x) + ResolveUnits(style.GetPaddingRight(), containerSize.x);
+		float resMinW = ResolveUnits(minWidth, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MinWidth))];
+		resW = max(resW, resMinW);
 	}
-	s.min += w_add;
-	if (s.max < FLT_MAX)
-		s.max += w_add;
+
+	float resMaxW = width.IsDefined() ? resW : FLT_MAX;
+	if (maxWidth.IsDefined())
+	{
+		resMaxW = ResolveUnits(maxWidth, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MaxWidth))];
+		resW = min(resW, resMaxW);
+	}
+
+	Rangef s = { resW, resMaxW };
 
 	_cacheFrameWidth = g_curLayoutFrame;
 	_cacheValueWidth = s;
@@ -596,24 +553,54 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 		return { 0, FLT_MAX };
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
+
 	auto style = GetStyle();
-	auto s = GetEstimatedHeight(containerSize, type);
-	auto box_sizing = style.GetBoxSizing();
+
 	auto height = style.GetHeight();
+	Coord customCalcHeight;
 	if (!height.IsDefined())
 	{
 		auto width = Coord::Undefined();
-		GetSize(width, height);
+		GetSize(width, customCalcHeight);
+	}
+	auto minHeight = style.GetMinHeight();
+	auto maxHeight = style.GetMaxHeight();
+
+	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
+	float addM = style.GetMarginTop() + style.GetMarginBottom();
+	float addtbl[3] = { addM, addM + addP, addM };
+
+	float resH;
+	if (height.IsDefined())
+	{
+		resH = ResolveUnits(height, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::Height))];
+	}
+	else if (customCalcHeight.IsDefined())
+	{
+		resH = ResolveUnits(customCalcHeight, containerSize.y) + addP + addM;
+	}
+	else
+	{
+		Size2f contSizeShrunk = containerSize;
+		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight() + style.GetMarginLeft() + style.GetMarginRight();
+		contSizeShrunk.y -= addP + addM;
+		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP + addM;
 	}
 
-	float h_add = ResolveUnits(style.GetMarginTop(), containerSize.y) + ResolveUnits(style.GetMarginBottom(), containerSize.y);
-	if (box_sizing == BoxSizing::ContentBox || !height.IsDefined())
+	if (minHeight.IsDefined())
 	{
-		h_add += ResolveUnits(style.GetPaddingTop(), containerSize.y) + ResolveUnits(style.GetPaddingBottom(), containerSize.y);
+		float resMinH = ResolveUnits(minHeight, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MinHeight))];
+		resH = max(resH, resMinH);
 	}
-	s.min += h_add;
-	if (s.max < FLT_MAX)
-		s.max += h_add;
+
+	float resMaxH = height.IsDefined() ? resH : FLT_MAX;
+	if (maxHeight.IsDefined())
+	{
+		resMaxH = ResolveUnits(maxHeight, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MaxHeight))];
+		resH = min(resH, resMaxH);
+	}
+
+	Rangef s = { resH, resMaxH };
 
 	_cacheFrameHeight = g_curLayoutFrame;
 	_cacheValueHeight = s;
@@ -666,20 +653,15 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 	auto width = style.GetWidth();
 	if (width.unit == CoordTypeUnit::Fraction)
 		width = rect.GetWidth();
-	if (!width.IsDefined())
-		width = swidth;
 
 	auto height = style.GetHeight();
 	if (height.unit == CoordTypeUnit::Fraction)
 		height = rect.GetHeight();
-	if (!height.IsDefined())
-		height = sheight;
 
 	auto min_width = style.GetMinWidth();
 	auto min_height = style.GetMinHeight();
 	auto max_width = style.GetMaxWidth();
 	auto max_height = style.GetMaxHeight();
-	auto box_sizing = style.GetBoxSizing();
 
 	UIRect Mrect = style.block->GetMarginRect();
 	UIRect Prect = CalcPaddingRect(rect);
@@ -707,16 +689,18 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 	if (placement)
 		state.finalContentRect = inrect;
 
-	if (width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
+	if (swidth.IsDefined() || width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
 	{
+		float padX = Prect.x0 + Prect.x1;
 		float orig = state.finalContentRect.GetWidth();
-		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) : orig;
+		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::Width) != BoxSizing::ContentBox ? padX : 0)
+			: swidth.IsDefined() ? ResolveUnits(swidth, containerSize.x)
+			: orig;
 		if (min_width.IsDefined())
-			tgt = max(tgt, ResolveUnits(min_width, containerSize.x));
+			tgt = max(tgt, ResolveUnits(min_width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::MinWidth) != BoxSizing::ContentBox ? padX : 0));
 		if (max_width.IsDefined())
-			tgt = min(tgt, ResolveUnits(max_width, containerSize.x));
-		if (box_sizing != BoxSizing::ContentBox)
-			tgt -= Prect.x0 + Prect.x1;
+			tgt = min(tgt, ResolveUnits(max_width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::MaxWidth) != BoxSizing::ContentBox ? padX : 0));
+
 		if (tgt != orig)
 		{
 			if (orig)
@@ -729,16 +713,18 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 				state.finalContentRect.x1 += tgt;
 		}
 	}
-	if (height.IsDefined() || min_height.IsDefined() || max_height.IsDefined())
+	if (sheight.IsDefined() || height.IsDefined() || min_height.IsDefined() || max_height.IsDefined())
 	{
+		float padY = Prect.y0 + Prect.y1;
 		float orig = state.finalContentRect.GetHeight();
-		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) : orig;
+		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::Height) != BoxSizing::ContentBox ? padY : 0)
+			: sheight.IsDefined() ? ResolveUnits(sheight, containerSize.y)
+			: orig;
 		if (min_height.IsDefined())
-			tgt = max(tgt, ResolveUnits(min_height, containerSize.y));
+			tgt = max(tgt, ResolveUnits(min_height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::MinHeight) != BoxSizing::ContentBox ? padY : 0));
 		if (max_height.IsDefined())
-			tgt = min(tgt, ResolveUnits(max_height, containerSize.y));
-		if (box_sizing != BoxSizing::ContentBox)
-			tgt -= Prect.y0 + Prect.y1;
+			tgt = min(tgt, ResolveUnits(max_height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::MaxHeight) != BoxSizing::ContentBox ? padY : 0));
+
 		if (tgt != orig)
 		{
 			if (orig)

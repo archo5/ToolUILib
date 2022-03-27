@@ -857,6 +857,22 @@ struct DropdownTest : ui::Buildable
 			ui::Text("immediate mode");
 			ui::imm::DropdownMenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
 			ui::imm::DropdownMenuList(selPtrReal, Allocate<TypeInfoOptions>());
+
+			ui::Push<ui::PropertyList>();
+			{
+				ui::Push<ui::LabeledProperty>().SetText("label 1");
+				ui::Make<SpecificDropdownMenu>();
+				ui::Pop();
+			}
+			ui::Pop();
+
+			ui::Push<ui::LabeledProperty>().SetText("label 2");
+			ui::Make<SpecificDropdownMenu>();
+			ui::Pop();
+
+			ui::Property::Begin("label 3");
+			ui::Make<SpecificDropdownMenu>();
+			ui::Property::End();
 		}
 		ui::Pop();
 	}

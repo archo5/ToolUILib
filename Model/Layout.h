@@ -120,10 +120,20 @@ enum class Edge : uint8_t
 
 enum class BoxSizing : uint8_t
 {
-	Undefined,
+	Undefined, // TODO remove
 
 	ContentBox,
 	BorderBox,
+};
+
+enum class BoxSizingTarget : uint8_t
+{
+	Width,
+	Height,
+	MinWidth,
+	MinHeight,
+	MaxWidth,
+	MaxHeight,
 };
 
 enum class HAlign : uint8_t
@@ -388,7 +398,7 @@ struct StyleBlock
 	Presence presence = Presence::Visible;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	Edge edge = Edge::Top;
-	BoxSizing box_sizing = BoxSizing::Undefined;
+	uint32_t boxSizing = 0;
 	HAlign h_align = HAlign::Undefined;
 
 	std::string font_family = FONT_FAMILY_SANS_SERIF;
@@ -488,8 +498,8 @@ public:
 	Edge GetEdge() const;
 	void SetEdge(Edge v);
 
-	BoxSizing GetBoxSizing() const;
-	void SetBoxSizing(BoxSizing v);
+	BoxSizing GetBoxSizing(BoxSizingTarget t) const;
+	void SetBoxSizing(BoxSizingTarget t, BoxSizing v);
 
 	HAlign GetHAlign() const;
 	void SetHAlign(HAlign a);

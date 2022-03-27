@@ -154,7 +154,7 @@ struct MainWindowContents : ui::Buildable
 
 				ui::Push<ui::TabPanel>() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 				{
-					ui::Push<ui::Panel>() + ui::SetBoxSizing(ui::BoxSizing::BorderBox) + ui::SetHeight(ui::Coord::Percent(100));
+					ui::Push<ui::Panel>() + ui::SetHeight(ui::Coord::Percent(100));
 					{
 						//ui::Make<FileStructureViewer2>()->ds = f->ds;
 						auto& sp = ui::Push<ui::SplitPane>();

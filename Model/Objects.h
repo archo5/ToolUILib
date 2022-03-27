@@ -294,8 +294,6 @@ struct UIObject : IPersistentObject
 	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	Rangef GetEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	Rangef GetEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
@@ -639,26 +637,36 @@ inline SetEdge Set(Edge edge) { return edge; }
 
 struct SetBoxSizing : Modifier
 {
+	BoxSizingTarget _bst;
 	BoxSizing _bs;
-	SetBoxSizing(BoxSizing bs) : _bs(bs) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetBoxSizing(_bs); }
+	SetBoxSizing(BoxSizingTarget bst, BoxSizing bs) : _bst(bst), _bs(bs) {}
+	void Apply(UIObject* obj) const override { obj->GetStyle().SetBoxSizing(_bst, _bs); }
 };
-inline SetBoxSizing Set(BoxSizing bs) { return bs; }
+inline SetBoxSizing Set(BoxSizingTarget bst, BoxSizing bs) { return { bst, bs }; }
 
 #define UI_COORD_VALUE_PROXY(name) \
-struct name : Modifier \
+struct _Set##name##Only : Modifier \
 { \
 	Coord _c; \
-	name(const Coord& c) : _c(c) {} \
-	void Apply(UIObject* obj) const override { obj->GetStyle().name(_c); } \
-}
+	_Set##name##Only(const Coord& c) : _c(c) {} \
+	void Apply(UIObject* obj) const override { obj->GetStyle().Set##name(_c); } \
+}; \
+struct _Set##name : Modifier \
+{ \
+	BoxSizing _s; \
+	Coord _c; \
+	_Set##name(BoxSizing s, const Coord& c) : _s(s), _c(c) {} \
+	void Apply(UIObject* obj) const override { auto s = obj->GetStyle(); s.Set##name(_c); s.SetBoxSizing(BoxSizingTarget::name, _s); } \
+}; \
+inline _Set##name##Only Set##name(const Coord& c) { return { c }; } \
+inline _Set##name Set##name(BoxSizing s, const Coord& c) { return { s, c }; }
 
-UI_COORD_VALUE_PROXY(SetWidth);
-UI_COORD_VALUE_PROXY(SetHeight);
-UI_COORD_VALUE_PROXY(SetMinWidth);
-UI_COORD_VALUE_PROXY(SetMinHeight);
-UI_COORD_VALUE_PROXY(SetMaxWidth);
-UI_COORD_VALUE_PROXY(SetMaxHeight);
+UI_COORD_VALUE_PROXY(Width);
+UI_COORD_VALUE_PROXY(Height);
+UI_COORD_VALUE_PROXY(MinWidth);
+UI_COORD_VALUE_PROXY(MinHeight);
+UI_COORD_VALUE_PROXY(MaxWidth);
+UI_COORD_VALUE_PROXY(MaxHeight);
 
 #undef UI_COORD_VALUE_PROXY
 

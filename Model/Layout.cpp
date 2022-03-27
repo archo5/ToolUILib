@@ -751,14 +751,17 @@ void StyleAccessor::SetEdge(Edge v)
 	AccSet(*this, offsetof(StyleBlock, edge), v);
 }
 
-BoxSizing StyleAccessor::GetBoxSizing() const
+BoxSizing StyleAccessor::GetBoxSizing(BoxSizingTarget t) const
 {
-	return block->box_sizing;
+	return BoxSizing((block->boxSizing >> (unsigned(t) << 1)) & 3);
 }
 
-void StyleAccessor::SetBoxSizing(BoxSizing v)
+void StyleAccessor::SetBoxSizing(BoxSizingTarget t, BoxSizing v)
 {
-	AccSet(*this, offsetof(StyleBlock, box_sizing), v);
+	auto f = block->boxSizing;
+	f &= ~(3 << (unsigned(t) << 1));
+	f |= (unsigned(v) << (unsigned(t) << 1));
+	AccSet(*this, offsetof(StyleBlock, boxSizing), f);
 }
 
 HAlign StyleAccessor::GetHAlign() const
@@ -1006,7 +1009,6 @@ void _InitStyles()
 
 	g_textStyle = new StyleBlock;
 	g_textStyle->layout = layouts::InlineBlock();
-	g_textStyle->box_sizing = BoxSizing::ContentBox;
 	g_textStyle->background_painter = EmptyPainter::Get();
 }
 
