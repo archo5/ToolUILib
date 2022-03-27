@@ -375,7 +375,7 @@ struct ScrollbarV
 	Coord GetWidth();
 	UIRect GetThumbRect(const ScrollbarData& info);
 	void OnPaint(const ScrollbarData& info);
-	void OnEvent(const ScrollbarData& info, Event& e);
+	bool OnEvent(const ScrollbarData& info, Event& e);
 
 	StyleBlockRef trackVStyle;
 	StyleBlockRef thumbVStyle;
@@ -390,7 +390,6 @@ struct ScrollArea : UIElement
 	float yoff = 0;
 	ScrollbarV sbv;
 
-	ScrollArea();
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;

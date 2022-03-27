@@ -936,7 +936,7 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 	thumbVStyle->background_painter->Paint(vsinfo);
 }
 
-void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
+bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 {
 	uiState.InitOnEvent(e);
 
@@ -945,11 +945,13 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 
 	float maxOff = max(contentSize - viewportSize, 0.0f);
 
+	bool contentOffsetChanged = false;
 	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
 	{
 	case SubUIDragState::Start:
 		dragStartContentOff = info.contentOff;
 		dragStartCursorPos = e.position.y;
+		e.context->CaptureMouse(info.owner);
 		e.StopPropagation();
 		break;
 	case SubUIDragState::Move: {
@@ -962,27 +964,33 @@ void ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 		thumbSize = max(thumbSize, minH);
 
 		float trackRange = trackRect.GetHeight() - thumbSize;
-
-		float dragSpeed = (contentSize - viewportSize) / trackRange;
-		info.contentOff = min(maxOff, max(0.0f, dragStartContentOff + (e.position.y - dragStartCursorPos) * dragSpeed));
+		if (trackRange > 0)
+		{
+			float dragSpeed = (contentSize - viewportSize) / trackRange;
+			info.contentOff = dragStartContentOff + (e.position.y - dragStartCursorPos) * dragSpeed;
+			contentOffsetChanged = true;
+		}
 		e.StopPropagation();
 		break; }
 	case SubUIDragState::Stop:
+		if (e.context->GetMouseCapture() == info.owner)
+			e.context->ReleaseMouse();
 		e.StopPropagation();
 		break;
 	}
 
 	if (e.type == EventType::MouseScroll)
 	{
-		info.contentOff = min(maxOff, max(0.0f, info.contentOff - e.delta.y));
+		info.contentOff -= e.delta.y;
+		contentOffsetChanged = true;
 	}
+	if (contentOffsetChanged)
+	{
+		info.contentOff = max(0.0f, min(maxOff, info.contentOff));
+	}
+	return contentOffsetChanged;
 }
 
-
-ScrollArea::ScrollArea()
-{
-	SetFlag(UIObject_ClipChildren, true);
-}
 
 void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
@@ -1005,13 +1013,11 @@ void ScrollArea::OnEvent(Event& e)
 	sbvr.x1 = sbvr.x0 + ResolveUnits(sbv.GetWidth(), w);
 	ScrollbarData info = { this, sbvr, cr.GetHeight(), estContentSize.y, yoff };
 
-	if (e.type == EventType::MouseScroll)
+	if (sbv.OnEvent(info, e))
 	{
-		yoff -= e.delta.y / 4;
-		yoff = min(max(info.contentSize - info.viewportSize, 0.0f), max(0.0f, yoff));
+		yoff = info.contentOff;
 		_OnChangeStyle();
 	}
-	sbv.OnEvent(info, e);
 }
 
 void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -1052,6 +1058,7 @@ void ScrollArea::OnReset()
 {
 	UIElement::OnReset();
 
+	SetFlag(UIObject_ClipChildren, true);
 	sbv.OnReset();
 }
 
