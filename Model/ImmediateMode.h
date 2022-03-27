@@ -9,6 +9,9 @@ namespace ui {
 namespace imm {
 
 
+bool GetEnabled();
+bool SetEnabled(bool newValue);
+
 struct IStateToggleSkin
 {
 	virtual void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const = 0;

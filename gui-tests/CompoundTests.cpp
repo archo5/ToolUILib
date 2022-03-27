@@ -659,10 +659,17 @@ void Test_ColorPicker()
 }
 
 
+static bool imguiTestDisableAll;
 struct IMGUITest : ui::Buildable
 {
 	void Build() override
 	{
+		ui::LabeledProperty::Begin("All disabled");
+		ui::imm::EditBool(imguiTestDisableAll, nullptr);
+		ui::LabeledProperty::End();
+
+		bool oldEnabled = ui::imm::SetEnabled(!imguiTestDisableAll);
+
 		ui::LabeledProperty::Begin("buttons");
 		if (ui::imm::Button("working button"))
 			puts("working button");
@@ -781,6 +788,8 @@ struct IMGUITest : ui::Buildable
 			ui::imm::PropEditColor("color B (Immediate)", colorValB, false);
 			ui::imm::PropEditColor("color F (Immediate)", colorValF, false);
 		}
+
+		ui::imm::SetEnabled(oldEnabled);
 	}
 
 	bool boolVal = true;

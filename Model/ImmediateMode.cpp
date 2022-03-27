@@ -8,6 +8,21 @@
 namespace ui {
 namespace imm {
 
+static bool g_enabled = true;
+
+bool GetEnabled()
+{
+	return g_enabled;
+}
+
+bool SetEnabled(bool newValue)
+{
+	bool old = g_enabled;
+	g_enabled = newValue;
+	return old;
+}
+
+
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	Make<CheckboxIcon>();
@@ -38,6 +53,8 @@ bool Button(const char* text, ModInitList mods)
 {
 	auto& btn = MakeWithText<ui::Button>(text);
 	btn.flags |= UIObject_DB_IMEdit;
+	if (!GetEnabled())
+		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
 	bool clicked = false;
@@ -57,6 +74,8 @@ bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggl
 	Pop();
 
 	cb.flags |= UIObject_DB_IMEdit;
+	if (!GetEnabled())
+		cb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&cb);
 	bool edited = false;
@@ -87,6 +106,8 @@ bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateTo
 	Pop();
 
 	rb.flags |= UIObject_DB_IMEdit;
+	if (!GetEnabled())
+		rb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&rb);
 	bool edited = false;
@@ -151,6 +172,8 @@ float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON)
 template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
 	auto& tb = Make<Textbox>();
+	if (!GetEnabled())
+		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&tb);
 
@@ -272,6 +295,8 @@ bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig
 bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	auto& tb = Make<Textbox>();
+	if (!GetEnabled())
+		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&tb);
 	bool changed = false;
@@ -297,6 +322,8 @@ bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
+	if (!GetEnabled())
+		ced.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&ced);
 	bool changed = false;

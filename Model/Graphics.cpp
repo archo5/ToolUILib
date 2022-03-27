@@ -771,7 +771,7 @@ void ColorEdit::Build()
 	cib.SetFlag(UIObject_DB_Button, true);
 	cib + AddEventHandler(EventType::Click, [this](Event& e)
 	{
-		if (e.GetButton() == MouseButton::Left)
+		if (e.GetButton() == MouseButton::Left && !IsInputDisabled())
 		{
 			ColorPickerWindow cpw;
 			cpw.SetColor(_color);
@@ -819,7 +819,7 @@ void ColorEditRT::Build()
 	cib.SetFlag(UIObject_DB_Button, true);
 	cib + AddEventHandler(EventType::Click, [this](Event& e)
 	{
-		if (e.GetButton() == MouseButton::Left)
+		if (e.GetButton() == MouseButton::Left && !IsInputDisabled())
 		{
 			if (!_rtWindow)
 				_rtWindow = new ColorPickerWindowRT;
