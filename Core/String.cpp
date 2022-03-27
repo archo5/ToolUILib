@@ -143,7 +143,19 @@ double StringView::take_float64()
 		}
 	}
 
-	// TODO exponent
+	if (_data + 2 < end && _data[0] == 'e' && (_data[1] == '+' || _data[1] == '-') && _data[2] >= '0' && _data[2] <= '9')
+	{
+		double esign = _data[1] == '+' ? 1 : -1;
+		_data += 2;
+		double exp = 0;
+		while (_data != end && *_data >= '0' && *_data <= '9')
+		{
+			exp *= 10;
+			exp += *_data - '0';
+			_data++;
+		}
+		ret *= pow(10, exp * esign);
+	}
 
 	_size = end - _data;
 

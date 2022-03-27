@@ -144,7 +144,9 @@ struct StringView
 	}
 
 	double take_float64();
-	double to_float64() { return StringView(*this).take_float64(); }
+	UI_FORCEINLINE double to_float64() { return StringView(*this).take_float64(); }
+	UI_FORCEINLINE float take_float32() { return (float)take_float64(); }
+	UI_FORCEINLINE float to_float32() { return (float)StringView(*this).take_float64(); }
 
 	const char* _data;
 	size_t _size;
