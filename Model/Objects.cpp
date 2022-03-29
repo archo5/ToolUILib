@@ -479,6 +479,14 @@ float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType typ
 	return layout->CalcEstimatedHeight(this, containerSize, type);
 }
 
+void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
+{
+	auto layout = GetStyle().GetLayout();
+	if (layout == nullptr)
+		layout = layouts::Stack();
+	layout->OnLayout(this, inrect, state);
+}
+
 // on box sizing:
 // - each settable width/height value has its own box sizing value
 //   - this value determines whether margin/padding are applied to that size:
@@ -680,11 +688,8 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 		rect.y1 - Arect.y1,
 	};
 
-	auto layout = style.GetLayout();
-	if (layout == nullptr)
-		layout = layouts::Stack();
 	LayoutState state = { inrect, { inrect.x0, inrect.y0 } };
-	layout->OnLayout(this, inrect, state);
+	CalcLayout(inrect, state);
 
 	if (placement)
 		state.finalContentRect = inrect;
@@ -1272,7 +1277,7 @@ void EdgeSliceLayoutElement::OnReset()
 	_slots.clear();
 }
 
-void EdgeSliceLayoutElement::OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize)
+void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	auto subr = rect;
 	subr = subr.ShrinkBy(styleProps->GetPaddingRect());
@@ -1285,23 +1290,23 @@ void EdgeSliceLayoutElement::OnLayout(const ui::UIRect& rect, const ui::Size2f& 
 		float d;
 		switch (e)
 		{
-		case ui::Edge::Top:
-			d = ch->GetFullEstimatedHeight(subr.GetSize(), ui::EstSizeType::Expanding).min;
+		case Edge::Top:
+			d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
 			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
 			subr.y0 += d;
 			break;
-		case ui::Edge::Bottom:
-			d = ch->GetFullEstimatedHeight(subr.GetSize(), ui::EstSizeType::Expanding).min;
+		case Edge::Bottom:
+			d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
 			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
 			subr.y1 -= d;
 			break;
-		case ui::Edge::Left:
-			d = ch->GetFullEstimatedWidth(subr.GetSize(), ui::EstSizeType::Expanding).min;
+		case Edge::Left:
+			d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
 			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
 			subr.x0 += d;
 			break;
-		case ui::Edge::Right:
-			d = ch->GetFullEstimatedWidth(subr.GetSize(), ui::EstSizeType::Expanding).min;
+		case Edge::Right:
+			d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
 			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
 			subr.x1 -= d;
 			break;

@@ -4,6 +4,8 @@
 #include "FileReaders.h"
 #include "ImageParsers.h"
 
+#include "../Model/WIP.h"
+
 
 ui::DataCategoryTag DCT_Struct[1];
 ui::DataCategoryTag DCT_CurStructInst[1];
@@ -60,7 +62,7 @@ void DataDesc::EditStructuralItems()
 
 		if (curInst)
 		{
-			ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			if (ui::imm::Button("Drop cache"))
 			{
 				curInst->cachedFields.clear();
@@ -265,7 +267,7 @@ void DataDesc::EditInstance()
 			for (size_t i = 0; i < S.fields.size(); i++)
 			{
 				auto desc = SI->GetFieldDescLazy(i, &incomplete);
-				ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+				ui::Push<ui::StackExpandLTRLayoutElement>();
 				ui::Text(desc) + ui::SetPadding(5);
 
 				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
@@ -528,7 +530,7 @@ void DataDesc::EditField()
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{
 					auto& SA = F.structArgs[i];
-					ui::PushBox() + ui::SetLayout(ui::layouts::StackExpand()) + ui::Set(ui::StackingDirection::LeftToRight);
+					ui::Push<ui::StackExpandLTRLayoutElement>();
 					ui::imm::PropEditString("\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
 					ui::imm::PropEditString("\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
 					ui::imm::PropEditInt("\bOffset", SA.intVal);

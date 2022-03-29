@@ -5,6 +5,8 @@
 #include "System.h"
 #include "../Render/RHI.h"
 
+#include "WIP.h"
+
 
 namespace ui {
 
@@ -537,9 +539,7 @@ void ColorPicker::Build()
 {
 	*this + RebuildOnChange();
 
-	PushBox()
-		+ SetLayout(layouts::StackExpand())
-		+ Set(StackingDirection::LeftToRight);
+	Push<StackExpandLTRLayoutElement>();
 	{
 		// left side
 		PushBox()
@@ -691,7 +691,7 @@ void ColorPicker::Build()
 
 				PushBox();
 
-				PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight) + SetHeight(22);
+				Push<StackExpandLTRLayoutElement>() + SetHeight(22);
 				Make<BoxElement>() + SetWidth(Coord::Fraction(1));
 				Text("Hex:") + SetHeight(22);
 				Make<Textbox>().Init(_color.hex) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });

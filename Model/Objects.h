@@ -324,6 +324,7 @@ struct UIObject : IPersistentObject
 	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	virtual void CalcLayout(const UIRect& inrect, LayoutState& state);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
@@ -548,14 +549,14 @@ struct ChildScaleOffsetElement : UIElement
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
-struct EdgeSliceLayoutElement : ui::UIElement
+struct EdgeSliceLayoutElement : UIElement
 {
 	struct Slot
 	{
-		UIWeakPtr<ui::UIObject> element;
-		ui::Edge edge = ui::Edge::Top;
+		UIWeakPtr<UIObject> element;
+		Edge edge = Edge::Top;
 	};
-	static ui::TempEditable<Slot> GetSlotTemplate()
+	static TempEditable<Slot> GetSlotTemplate()
 	{
 		return { &_slotTemplate };
 	}
@@ -563,17 +564,17 @@ struct EdgeSliceLayoutElement : ui::UIElement
 
 	std::vector<Slot> _slots;
 
-	ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
 		return containerSize.x;
 	}
-	ui::Rangef GetFullEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
 		return containerSize.y;
 	}
 	void OnReset() override;
-	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override;
-	void CustomAppendChild(ui::UIObject* obj) override
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void CustomAppendChild(UIObject* obj) override
 	{
 		AppendChild(obj);
 		Slot slot = _slotTemplate;

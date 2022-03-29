@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../Model/WIP.h"
+
 
 struct StateButtonsTest : ui::Buildable
 {
@@ -205,9 +207,8 @@ struct PropertyListTest : ui::Buildable
 			ui::Text("test 3 elevated");
 			ui::Pop();
 
-			auto s = ui::Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)").GetStyle();
-			s.SetLayout(ui::layouts::StackExpand());
-			s.SetStackingDirection(ui::StackingDirection::LeftToRight);
+			ui::Push<ui::LabeledProperty>().SetText("and 4 (brief sublabels)");
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{
 				ui::Push<ui::LabeledProperty>().SetText("X").SetBrief(true);
 				ui::MakeWithText<ui::Button>("A");
@@ -217,6 +218,7 @@ struct PropertyListTest : ui::Buildable
 				ui::MakeWithText<ui::Button>("B");
 				ui::Pop();
 			}
+			ui::Pop();
 			ui::Pop();
 		}
 		ui::Pop();
@@ -538,9 +540,7 @@ struct ColorBlockTest : ui::Buildable
 		ui::Push<ui::Panel>()
 			+ ui::SetPadding(3);
 		{
-			ui::PushBox()
-				+ ui::SetLayout(ui::layouts::StackExpand())
-				+ ui::Set(ui::StackingDirection::LeftToRight);
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{
 				ui::Make<ui::ColorBlock>().SetColor(C.GetOpaque())
 					+ ui::SetPadding(0)

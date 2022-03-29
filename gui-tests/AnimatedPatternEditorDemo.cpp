@@ -5,6 +5,8 @@
 #include "../Editors/TreeEditor.h"
 #include "../Editors/CurveEditor.h"
 
+#include "../Model/WIP.h"
+
 
 using namespace ui;
 
@@ -340,7 +342,7 @@ struct AnimPattern : ITree
 
 	void PreviewUI()
 	{
-		PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
+		Push<StackExpandLTRLayoutElement>();
 		MakeWithText<Header>("Preview") + SetWidth(Coord::Fraction(0));
 		if (imm::Button(playing ? "Pause" : "Play", { SetWidth(Coord::Fraction(0)) }))
 			SetPlaying(!playing);
@@ -361,7 +363,7 @@ struct AnimPattern : ITree
 
 		if (selectedLayer)
 		{
-			PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
+			Push<StackExpandLTRLayoutElement>();
 			MakeWithText<Header>(Format("Properties - %s", selectedLayer->ItemName()));
 			MakeWithText<Button>("X") + ui::AddEventHandler(EventType::Activate, [this](Event&) { selectedLayer = nullptr; Notify(DCT_AnimPatternChanged); });
 			Pop();

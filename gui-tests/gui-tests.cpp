@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "../Render/RHI.h"
 
+#include "../Model/WIP.h"
+
 
 ui::DataCategoryTag DCT_ItemSelection[1];
 struct DataEditor : ui::Buildable
@@ -292,9 +294,7 @@ struct DataEditor : ui::Buildable
 		}
 		else
 		{
-			ui::PushBox()
-				+ ui::SetLayout(ui::layouts::StackExpand())
-				+ ui::Set(ui::StackingDirection::LeftToRight);
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
 			ui::Text(items[editing].name);
 			if (ui::imm::Button("Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))

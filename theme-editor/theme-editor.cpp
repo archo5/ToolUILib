@@ -3,6 +3,8 @@
 #include "TENodes.h"
 #include "TETheme.h"
 
+#include "../Model/WIP.h"
+
 
 enum TE_PreviewMode
 {
@@ -191,7 +193,7 @@ struct TE_ImageEditorNode : Buildable
 	{
 		PushBox();
 		{
-			PushBox() + SetLayout(layouts::StackExpand()) + Set(StackingDirection::LeftToRight);
+			Push<StackExpandLTRLayoutElement>();
 			{
 				imm::EditBool(img->expanded, nullptr, { SetWidth(Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
 				if (imm::RadioButtonRaw(tmpl->curPreviewImage == img, "P", { SetWidth(Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))

@@ -269,11 +269,6 @@ struct Property : UIElement
 
 	static UIObject& Label(const char* label);
 	static UIObject& MinLabel(const char* label);
-
-	static void EditFloat(const char* label, float* v);
-	static void EditFloat2(const char* label, float* v);
-	static void EditFloat3(const char* label, float* v);
-	static void EditFloat4(const char* label, float* v);
 };
 
 struct PropertyList : UIElement
