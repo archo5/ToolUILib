@@ -335,7 +335,7 @@ struct RenameDialog : ui::NativeDialogWindow
 	}
 	void OnBuild() override
 	{
-		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetPadding(16);
+		ui::Push<ui::EdgeSliceLayoutElement>() + ui::SetPadding(16);
 		ui::imm::PropEditString("New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
 		ui::Make<ui::BoxElement>() + ui::SetHeight(16);

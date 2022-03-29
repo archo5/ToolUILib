@@ -9,12 +9,12 @@ void TabImages::Build()
 {
 	auto& spstr = ui::Push<ui::SplitPane>();
 	{
-		ui::PushBox();
+		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		workspace->ddimgSrc.Edit();
 
 		auto& tv = ui::Make<ui::TableView>();
-		tv + ui::SetLayout(ui::layouts::EdgeSlice());
+		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&workspace->ddimgSrc);
 		tv.SetSelectionStorage(&workspace->ddimgSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);

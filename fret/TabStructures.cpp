@@ -12,7 +12,7 @@ void TabStructures::Build()
 
 	auto& spstr = ui::Push<ui::SplitPane>();
 	{
-		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		workspace->ddiSrc.Edit();
 
@@ -30,7 +30,7 @@ void TabStructures::Build()
 
 		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
-		tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
+		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&workspace->ddiSrc);
 		tv.SetSelectionStorage(&workspace->ddiSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);
@@ -80,7 +80,7 @@ void TabStructures::Build()
 		ui::Pop();
 	}
 	{
-		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 		workspace->desc.EditStructuralItems();
 		ui::Pop();
 	}

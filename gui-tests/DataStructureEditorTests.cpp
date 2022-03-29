@@ -556,7 +556,7 @@ struct TableViewTest : ui::Buildable
 {
 	void Build() override
 	{
-		GetStyle().SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		{
 			ui::Property::Scope ps("\bSelection type:");
@@ -572,6 +572,8 @@ struct TableViewTest : ui::Buildable
 		tv.SetSelectionStorage(&g_randomNumbers);
 		tv.SetDataSource(&g_randomNumbers);
 		tv.SetContextMenuSource(&g_infoDumpCMS);
+
+		ui::Pop();
 	}
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;

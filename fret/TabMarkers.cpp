@@ -10,12 +10,12 @@ void TabMarkers::Build()
 	auto* f = of->ddFile;
 	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		ui::Text("Marked items") + ui::SetPadding(5);
 		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
-		tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
+		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&f->mdSrc);
 		tv.SetSelectionStorage(&f->mdSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);
@@ -57,7 +57,7 @@ void TabMarkers::Build()
 
 		ui::Pop();
 
-		ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 		if (f->mdSrc.selected < f->markerData.markers.size())
 		{
 			auto& MIE = ui::Make<MarkedItemEditor>();

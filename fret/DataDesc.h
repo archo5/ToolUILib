@@ -154,10 +154,6 @@ struct DataDescImageSource : ui::TableDataSource, ui::ISelectionStorage
 
 struct CachedImage
 {
-	~CachedImage()
-	{
-		delete curImg;
-	}
 	ui::draw::ImageHandle GetImage(const DataDesc::Image& imgDesc)
 	{
 		if (curImg)
@@ -178,6 +174,6 @@ struct CachedImage
 		return curImg;
 	}
 
-	ui::draw::ImageHandle curImg = nullptr;
+	ui::draw::ImageHandle curImg;
 	DataDesc::Image curImgDesc;
 };

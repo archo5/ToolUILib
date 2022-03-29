@@ -878,6 +878,11 @@ void UIObject::AppendChild(UIObject* obj)
 		_AddFirstChild(obj);
 }
 
+void UIObject::CustomAppendChild(UIObject* obj)
+{
+	AppendChild(obj);
+}
+
 void UIObject::_AddFirstChild(UIObject* obj)
 {
 	obj->DetachParent();
@@ -1255,6 +1260,54 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect, const Size2f& contain
 	finalRectCPB.y0 += finalRectC.y0 - pfr.y0;
 	finalRectCPB.x1 += finalRectC.x1 - pfr.x1;
 	finalRectCPB.y1 += finalRectC.y1 - pfr.y1;
+}
+
+
+EdgeSliceLayoutElement::Slot EdgeSliceLayoutElement::_slotTemplate;
+
+void EdgeSliceLayoutElement::OnReset()
+{
+	UIElement::OnReset();
+
+	_slots.clear();
+}
+
+void EdgeSliceLayoutElement::OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize)
+{
+	auto subr = rect;
+	subr = subr.ShrinkBy(styleProps->GetPaddingRect());
+	for (const auto& slot : _slots)
+	{
+		auto* ch = slot.element.Get();
+		if (!ch)
+			continue;
+		auto e = slot.edge;
+		float d;
+		switch (e)
+		{
+		case ui::Edge::Top:
+			d = ch->GetFullEstimatedHeight(subr.GetSize(), ui::EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
+			subr.y0 += d;
+			break;
+		case ui::Edge::Bottom:
+			d = ch->GetFullEstimatedHeight(subr.GetSize(), ui::EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
+			subr.y1 -= d;
+			break;
+		case ui::Edge::Left:
+			d = ch->GetFullEstimatedWidth(subr.GetSize(), ui::EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
+			subr.x0 += d;
+			break;
+		case ui::Edge::Right:
+			d = ch->GetFullEstimatedWidth(subr.GetSize(), ui::EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
+			subr.x1 -= d;
+			break;
+		}
+	}
+	finalRectC = finalRectCP = finalRectCPB = rect;
 }
 
 

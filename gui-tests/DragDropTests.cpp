@@ -612,17 +612,23 @@ struct DragConnectTest : ui::Buildable
 		ui::Text("Drag connect");
 
 		ui::Push<ui::ListBox>()
-			+ ui::SetLayout(ui::layouts::EdgeSlice())
 			+ ui::SetHeight(60);
 
-		ui::PushBox().GetStyle().SetEdge(ui::Edge::Left);
+		ui::Push<ui::EdgeSliceLayoutElement>();
+		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
+
+		tmpl->edge = ui::Edge::Left;
+		ui::PushBox();
 		ui::MakeWithText<Linkable>("left A").Init(false, 0);
 		ui::MakeWithText<Linkable>("left B").Init(false, 1);
 		ui::Pop();
 
-		ui::PushBox().GetStyle().SetEdge(ui::Edge::Right);
+		tmpl->edge = ui::Edge::Right;
+		ui::PushBox();
 		ui::MakeWithText<Linkable>("right A").Init(true, 2);
 		ui::MakeWithText<Linkable>("right B").Init(true, 3);
+		ui::Pop();
+
 		ui::Pop();
 
 		ui::Pop();

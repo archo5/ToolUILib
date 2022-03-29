@@ -7,15 +7,23 @@ struct EdgeSliceTest : ui::Buildable
 	void Build() override
 	{
 		auto s = ui::Push<ui::Panel>().GetStyle();
-		s.SetLayout(ui::layouts::EdgeSlice());
 		s.SetBoxSizing(ui::BoxSizingTarget::Height, ui::BoxSizing::BorderBox);
 		s.SetMargin(0);
 		s.SetHeight(ui::Coord::Percent(100));
 
-		ui::MakeWithText<ui::Button>("Top").GetStyle().SetEdge(ui::Edge::Top);
-		ui::MakeWithText<ui::Button>("Right").GetStyle().SetEdge(ui::Edge::Right);
-		ui::MakeWithText<ui::Button>("Bottom").GetStyle().SetEdge(ui::Edge::Bottom);
-		ui::MakeWithText<ui::Button>("Left").GetStyle().SetEdge(ui::Edge::Left);
+		ui::Push<ui::EdgeSliceLayoutElement>();
+
+		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
+		tmpl->edge = ui::Edge::Top;
+		ui::MakeWithText<ui::Button>("Top");
+		tmpl->edge = ui::Edge::Right;
+		ui::MakeWithText<ui::Button>("Right");
+		tmpl->edge = ui::Edge::Bottom;
+		ui::MakeWithText<ui::Button>("Bottom");
+		tmpl->edge = ui::Edge::Left;
+		ui::MakeWithText<ui::Button>("Left");
+
+		ui::Pop();
 
 		ui::Pop();
 	}

@@ -471,7 +471,7 @@ struct ScrollbarsTest : ui::Buildable
 
 	void Build() override
 	{
-		GetStyle().SetLayout(ui::layouts::EdgeSlice());
+		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		ui::imm::PropEditInt("\bCount", count);
 		ui::imm::PropEditBool("\bExpanding", expanding);
@@ -484,6 +484,8 @@ struct ScrollbarsTest : ui::Buildable
 
 		for (int i = 0; i < count; i++)
 			ui::Textf("Inside scroll area [%d]", i);
+
+		ui::Pop();
 
 		ui::Pop();
 	}

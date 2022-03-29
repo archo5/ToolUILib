@@ -92,7 +92,7 @@ struct TE_MainPreviewNode : Buildable
 
 		if (tmpl->renderSettings.layer)
 		{
-			PushBox() + SetLayout(layouts::EdgeSlice());
+			Push<EdgeSliceLayoutElement>();
 			{
 				PushBox() + Set(StackingDirection::LeftToRight);
 				{

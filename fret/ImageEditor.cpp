@@ -52,7 +52,7 @@ void ImageEditorWindowNode::Build()
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();
-			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
+			tv + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);

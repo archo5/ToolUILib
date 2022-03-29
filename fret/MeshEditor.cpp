@@ -17,13 +17,15 @@ void MeshEditorWindowNode::Build()
 				auto& view3d = ui::Push<ui::View3D>();
 				view3d + ui::SetWidth(ui::Coord::Percent(100));
 				view3d + ui::SetHeight(ui::Coord::Percent(100));
-				view3d + ui::SetLayout(ui::layouts::EdgeSlice());
 				view3d.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
 				{
+					ui::Push<ui::EdgeSliceLayoutElement>();
+
+					auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
+					tmpl->edge = ui::Edge::Left;
 					ui::Push<ui::ListBox>()
-						+ ui::Set(ui::Edge::Left)
 						+ ui::SetWidth(200);
 					{
 						ui::imm::PropEditBool("Alpha blend", alphaBlend);
@@ -34,8 +36,8 @@ void MeshEditorWindowNode::Build()
 					}
 					ui::Pop();
 
+					tmpl->edge = ui::Edge::Right;
 					ui::PushBox()
-						+ ui::Set(ui::Edge::Right)
 						+ ui::SetWidth(200);
 					{
 						if (ui::imm::Button("Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
@@ -43,6 +45,8 @@ void MeshEditorWindowNode::Build()
 							ReloadMesh();
 						}
 					}
+					ui::Pop();
+
 					ui::Pop();
 				}
 				ui::Pop();
@@ -64,7 +68,7 @@ void MeshEditorWindowNode::Build()
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();
-			tv + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
+			tv + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);

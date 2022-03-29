@@ -107,11 +107,11 @@ struct UIContainer
 
 	void Append(UIObject* obj)
 	{
-		objectStack[objectStackSize - 1]->AppendChild(obj);
+		objectStack[objectStackSize - 1]->CustomAppendChild(obj);
 	}
 	void Append(Buildable* obj)
 	{
-		objectStack[objectStackSize - 1]->AppendChild(obj);
+		objectStack[objectStackSize - 1]->CustomAppendChild(obj);
 		if (!imm::GetEnabled())
 			obj->flags |= UIObject_IsDisabled;
 		obj->_lastBuildFrameID = _lastBuildFrameID - 1;

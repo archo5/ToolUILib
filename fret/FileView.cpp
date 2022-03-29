@@ -11,7 +11,7 @@
 
 void FileView::Build()
 {
-	ui::PushBox() + ui::SetLayout(ui::layouts::EdgeSlice());
+	ui::Push<ui::EdgeSliceLayoutElement>();
 
 	ui::PushBox();
 	{

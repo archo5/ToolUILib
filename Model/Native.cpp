@@ -1229,6 +1229,19 @@ struct Inspector : NativeDialogWindow
 			}
 		}
 
+		Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+		{
+			return containerSize.x;
+		}
+		Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+		{
+			return containerSize.y;
+		}
+		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
+		{
+			finalRectC = finalRectCP = finalRectCPB = rect;
+		}
+
 		void OnPaint(const UIPaintContext& ctx) override
 		{
 			auto* font = styleProps->GetFont();
@@ -1251,7 +1264,6 @@ struct Inspector : NativeDialogWindow
 	void OnBuild() override
 	{
 		ui = &Make<InspectorUI>();
-		*ui + SetLayout(layouts::EdgeSlice());
 		ui->insp = this;
 	}
 

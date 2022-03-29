@@ -568,13 +568,13 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 		{
 			auto& vsp = Push<SplitPane>();
 			{
-				PushBox() + SetLayout(layouts::EdgeSlice());
+				Push<EdgeSliceLayoutElement>();
 				{
 					animPattern.PreviewUI();
 				}
 				Pop();
 
-				PushBox() + SetLayout(layouts::EdgeSlice());
+				Push<EdgeSliceLayoutElement>();
 				{
 					animPattern.CurveEditorUI();
 				}
@@ -586,7 +586,7 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 
 			auto& vsp2 = Push<SplitPane>();
 			{
-				PushBox() + SetLayout(layouts::EdgeSlice());
+				Push<EdgeSliceLayoutElement>();
 				{
 					animPattern.PropertyUI();
 				}

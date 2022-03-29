@@ -36,6 +36,36 @@ struct Buildable; // logical item
 using EventFunc = std::function<void(Event& e)>;
 
 
+template <class T>
+struct TempEditable
+{
+	using Type = T;
+
+	Type* _current;
+	Type _backup;
+
+	UI_FORCEINLINE Type* operator -> () const { return _current; }
+	UI_FORCEINLINE TempEditable(Type* cur) : _current(cur), _backup(*cur) {}
+	UI_FORCEINLINE TempEditable(TempEditable&& o) : _current(o._current), _backup(o._backup) { o._current = nullptr; }
+	TempEditable(const TempEditable&) = delete;
+	UI_FORCEINLINE TempEditable& operator = (TempEditable&& o)
+	{
+		if (this == &o)
+			return *this;
+		_current = o._current;
+		_backup = o._backup;
+		o._current = nullptr;
+		return *this;
+	}
+	TempEditable& operator = (const TempEditable& o) = delete;
+	UI_FORCEINLINE ~TempEditable()
+	{
+		if (_current)
+			*_current = _backup;
+	}
+};
+
+
 enum UIObjectFlags
 {
 	UIObject_IsInBuildStack = 1 << 0,
@@ -323,6 +353,7 @@ struct UIObject : IPersistentObject
 	void InsertNext(UIObject* obj);
 	void PrependChild(UIObject* obj);
 	void AppendChild(UIObject* obj);
+	virtual void CustomAppendChild(UIObject* obj);
 	void _AddFirstChild(UIObject* obj);
 
 	bool IsChildOf(UIObject* obj) const;
@@ -515,6 +546,40 @@ struct ChildScaleOffsetElement : UIElement
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+};
+
+struct EdgeSliceLayoutElement : ui::UIElement
+{
+	struct Slot
+	{
+		UIWeakPtr<ui::UIObject> element;
+		ui::Edge edge = ui::Edge::Top;
+	};
+	static ui::TempEditable<Slot> GetSlotTemplate()
+	{
+		return { &_slotTemplate };
+	}
+	static Slot _slotTemplate;
+
+	std::vector<Slot> _slots;
+
+	ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
+	{
+		return containerSize.x;
+	}
+	ui::Rangef GetFullEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
+	{
+		return containerSize.y;
+	}
+	void OnReset() override;
+	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override;
+	void CustomAppendChild(ui::UIObject* obj) override
+	{
+		AppendChild(obj);
+		Slot slot = _slotTemplate;
+		slot.element = obj;
+		_slots.push_back(slot);
+	}
 };
 
 struct Subscription;
