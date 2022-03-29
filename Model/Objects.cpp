@@ -1277,9 +1277,9 @@ void EdgeSliceLayoutElement::OnReset()
 	_slots.clear();
 }
 
-void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
 {
-	auto subr = rect;
+	auto subr = inrect;
 	subr = subr.ShrinkBy(styleProps->GetPaddingRect());
 	for (const auto& slot : _slots)
 	{
@@ -1312,7 +1312,7 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 			break;
 		}
 	}
-	finalRectC = finalRectCP = finalRectCPB = rect;
+	state.finalContentRect = inrect;
 }
 
 

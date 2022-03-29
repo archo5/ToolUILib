@@ -710,8 +710,7 @@ struct MessageLogViewTest : ui::Buildable
 			//+ ui::SetHeight(ui::Coord::Percent(50));
 			+ ui::SetHeight(200);
 		{
-			ui::PushBox()
-				+ ui::SetLayout(ui::layouts::EdgeSlice())
+			ui::Push<ui::EdgeSliceLayoutElement>()
 				+ ui::SetWidth(ui::Coord::Percent(50))
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
@@ -725,8 +724,7 @@ struct MessageLogViewTest : ui::Buildable
 			}
 			ui::Pop();
 
-			ui::PushBox()
-				+ ui::SetLayout(ui::layouts::EdgeSlice())
+			ui::Push<ui::EdgeSliceLayoutElement>()
 				+ ui::SetWidth(ui::Coord::Percent(50))
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{

@@ -564,16 +564,16 @@ struct EdgeSliceLayoutElement : UIElement
 
 	std::vector<Slot> _slots;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return containerSize.x;
 	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		return containerSize.y;
 	}
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 	void OnReset() override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void CustomAppendChild(UIObject* obj) override
 	{
 		AppendChild(obj);
