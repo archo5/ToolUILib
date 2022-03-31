@@ -717,11 +717,11 @@ struct ZeroRebuildTest : ui::Buildable
 		else
 			puts("Should not happen!");
 
-		ui::Property::Begin("Show?");
+		ui::LabeledProperty::Begin("Show?");
 		cbShow = &ui::Push<ui::StateToggle>().InitEditable(show);
 		ui::Make<ui::CheckboxIcon>();
 		ui::Pop();
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		*cbShow + ui::AddEventHandler(ui::EventType::Change, [this](ui::Event& e) { show = cbShow->GetState(); OnShowChange(); });
 		ui::MakeWithText<ui::Button>("Show")

@@ -1280,7 +1280,7 @@ void EdgeSliceLayoutElement::OnReset()
 void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
 {
 	auto subr = inrect;
-	subr = subr.ShrinkBy(styleProps->GetPaddingRect());
+	//subr = subr.ShrinkBy(styleProps->GetPaddingRect());
 	for (const auto& slot : _slots)
 	{
 		auto* ch = slot.element.Get();

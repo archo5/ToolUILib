@@ -112,34 +112,34 @@ void HighlightSettings::EditUI()
 {
 	ui::imm::PropEditBool("Exclude zeroes", excludeZeroes);
 
-	ui::Property::Begin("float32");
+	ui::LabeledProperty::Begin("float32");
 	ui::imm::PropEditBool(nullptr, enableFloat32);
 	ui::imm::PropEditFloat("\bMin", minFloat32, {}, 0.01f);
 	ui::imm::PropEditFloat("\bMax", maxFloat32);
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
-	ui::Property::Begin("int16");
+	ui::LabeledProperty::Begin("int16");
 	ui::imm::PropEditBool(nullptr, enableInt16);
 	ui::imm::PropEditInt("\bMin", minInt16);
 	ui::imm::PropEditInt("\bMax", maxInt16);
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
-	ui::Property::Begin("int32");
+	ui::LabeledProperty::Begin("int32");
 	ui::imm::PropEditBool(nullptr, enableInt32);
 	ui::imm::PropEditInt("\bMin", minInt32);
 	ui::imm::PropEditInt("\bMax", maxInt32);
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
-	ui::Property::Begin("ASCII");
+	ui::LabeledProperty::Begin("ASCII");
 	ui::imm::PropEditBool(nullptr, enableASCII);
 	ui::imm::PropEditInt("\bMin chars", minASCIIChars, {}, 1, { 1, 128 });
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
-	ui::Property::Begin("Near file size");
+	ui::LabeledProperty::Begin("Near file size");
 	ui::imm::PropEditBool("\bu32", enableNearFileSize32);
 	ui::imm::PropEditBool("\bu64", enableNearFileSize64);
 	ui::imm::PropEditFloat("\bPercent", nearFileSizePercent, {}, 0.1f, { 0, 100 });
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
 	ui::Text("Custom int32") + ui::SetPadding(25, 5, 5);
 

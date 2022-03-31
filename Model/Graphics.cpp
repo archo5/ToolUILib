@@ -560,7 +560,7 @@ void ColorPicker::Build()
 		//	PushBox() + SetPadding(8);
 			//Text("HSV");
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("H") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._hue, limit);
@@ -576,9 +576,9 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._hue) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("S") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._sat, limit);
@@ -593,9 +593,9 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._sat) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("V") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._val, limit);
@@ -610,9 +610,9 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._val) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("R") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.r, limit);
@@ -627,9 +627,9 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.r) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("G") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.g, limit);
@@ -644,9 +644,9 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.g) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("B") + SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.b, limit);
@@ -661,17 +661,17 @@ void ColorPicker::Build()
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
 				Make<Textbox>().Init(_color._rgba.b) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Text("A") + SetWidth(10);
 				Make<Slider>().Init(_color._rgba.a, limit);
 				Make<Textbox>().Init(_color._rgba.a) + SetWidth(50);
 			}
-			Property::End();
+			Pop();
 
-			Property::Begin();
+			Push<StackExpandLTRLayoutElement>();
 			{
 				Push<Panel>()
 					+ Set(StackingDirection::LeftToRight)
@@ -716,7 +716,7 @@ void ColorPicker::Build()
 
 				Pop();
 			}
-			Property::End();
+			Pop();
 
 		//	Pop();
 		}
@@ -724,9 +724,7 @@ void ColorPicker::Build()
 	}
 	Pop();
 
-	PushBox()
-		+ SetLayout(layouts::InlineBlock())
-		+ Set(StackingDirection::LeftToRight)
+	Push<WrapperLTRLayoutElement>()
 		+ SetPadding(8);
 	{
 		auto& sc = GetSavedColors();

@@ -249,17 +249,17 @@ struct SlidersTest : ui::Buildable
 		static float sldval0 = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval0, { 0, 1 });
 
-		ui::Property::Begin("Slider 1: 0-2 step=0");
+		ui::LabeledProperty::Begin("Slider 1: 0-2 step=0");
 		static float sldval1 = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval1, { 0, 2 });
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Slider 2: 0-2 step=0.1");
+		ui::LabeledProperty::Begin("Slider 2: 0-2 step=0.1");
 		static float sldval2 = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 });
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Slider 3: custom track bg");
+		ui::LabeledProperty::Begin("Slider 3: custom track bg");
 		static float sldval3 = 0.63f;
 		{
 			auto& s = ui::Make<ui::Slider>().Init(sldval3, { 0, 1 });
@@ -270,13 +270,13 @@ struct SlidersTest : ui::Buildable
 			a.SetBackgroundPainter(lp);
 			s.GetTrackFillStyle().SetBackgroundPainter(ui::EmptyPainter::Get());
 		}
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Slider 4: vert stretched");
+		ui::LabeledProperty::Begin("Slider 4: vert stretched");
 		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::SetHeight(40);
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Color picker parts");
+		ui::LabeledProperty::Begin("Color picker parts");
 		static float hue = 0.6f, sat = 0.3f, val = 0.8f;
 		{
 			auto s = ui::Make<ui::HueSatPicker>().Init(hue, sat).GetStyle();
@@ -288,7 +288,7 @@ struct SlidersTest : ui::Buildable
 			s.SetWidth(120);
 			s.SetHeight(100);
 		}
-		ui::Property::End();
+		ui::LabeledProperty::End();
 	}
 };
 void Test_Sliders()

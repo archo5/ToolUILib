@@ -342,7 +342,7 @@ struct RenameDialog : ui::NativeDialogWindow
 
 		ui::Make<ui::BoxElement>() + ui::SetHeight(16);
 
-		ui::Property::Begin();
+		ui::Push<ui::StackExpandLTRLayoutElement>();
 		if (ui::imm::Button("OK", { ui::SetHeight(30) }))
 		{
 			rename = true;
@@ -354,7 +354,7 @@ struct RenameDialog : ui::NativeDialogWindow
 			rename = false;
 			SetVisible(false);
 		}
-		ui::Property::End();
+		ui::Pop();
 		ui::Pop();
 	}
 
@@ -469,12 +469,11 @@ void DataDesc::EditStruct()
 			ui::Pop();
 
 			ui::Text("Resource") + ui::SetPadding(5);
-			ui::Property::Begin();
-			ui::Text("Type:") + ui::SetPadding(5);
+			ui::LabeledProperty::Begin("\bType:");
 			ui::imm::RadioButton(S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(S.resource.type, DDStructResourceType::Mesh, "Mesh", {}, ui::imm::ButtonStateToggleSkin());
-			ui::Property::End();
+			ui::LabeledProperty::End();
 
 			if (S.resource.type == DDStructResourceType::Image)
 			{
@@ -1170,17 +1169,17 @@ struct StructsDropdownMenu : ui::DropdownMenu
 
 void DataDescInstanceSource::Edit()
 {
-	ui::Property::Begin("Filter by struct");
+	ui::LabeledProperty::Begin("Filter by struct");
 	if (ui::imm::EditBool(filterStructEnable, nullptr))
 		refilter = true;
 	if (ui::imm::DropdownMenuList(filterStruct, ui::BuildAlloc<StructOptions>(dataDesc)))
 		refilter = true;
 	ui::imm::PropEditInt("\bBytes", showBytes, {}, {}, { 0, 128 });
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
 	if (!filterStructEnable || !filterStruct)
 	{
-		ui::Property::Scope ps("Hide structs");
+		ui::LabeledProperty::Scope ps("Hide structs");
 		if (ui::imm::EditBool(filterHideStructsEnable, nullptr))
 			refilter = true;
 		auto& ddm = ui::Make<StructsDropdownMenu>();
@@ -1193,13 +1192,13 @@ void DataDescInstanceSource::Edit()
 		};
 	}
 
-	ui::Property::Begin("Filter by file");
+	ui::LabeledProperty::Begin("Filter by file");
 	if (ui::imm::EditBool(filterFileEnable, nullptr))
 		refilter = true;
 	if (ui::imm::DropdownMenuList(filterFile, ui::BuildAlloc<FileOptions>(dataDesc)))
 		refilter = true;
 	ui::imm::PropEditBool("\bFollow", filterFileFollow);
-	ui::Property::End();
+	ui::LabeledProperty::End();
 
 	if (EditCreationReason("Filter by creation reason", filterCreationReason))
 		refilter = true;

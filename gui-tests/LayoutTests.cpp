@@ -302,7 +302,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5);
 			ui::Text("Testing text in box");
 			ui::Pop();
 			TestContentSize(box, CalcTestTextWidth("Testing text in box"), GetTestFontHeight());
@@ -312,7 +312,7 @@ struct SizeTest : ui::Buildable
 		ui::Pop();
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 			ui::Text("Testing text in box [border]");
 			ui::Pop();
 			TestContentSize(box, CalcTestTextWidth("Testing text in box [border]"), GetTestFontHeight());
@@ -320,7 +320,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
 			ui::Text("Testing text in box [content]");
 			ui::Pop();
 			TestContentSize(box, CalcTestTextWidth("Testing text in box [content]"), GetTestFontHeight());
@@ -328,7 +328,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140);
 			ui::Text("Testing text in box +W");
 			ui::Pop();
 			TestContentSize(box, 140 - 10, GetTestFontHeight());
@@ -336,7 +336,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
 			ui::Text("Testing text in box +W [border]");
 			ui::Pop();
 			TestContentSize(box, 140 - 10, GetTestFontHeight());
@@ -344,7 +344,7 @@ struct SizeTest : ui::Buildable
 		}
 
 		{
-			auto& box = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock()) + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
+			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
 			ui::Text("Testing text in box +W [content]");
 			ui::Pop();
 			TestContentSize(box, 140, GetTestFontHeight());

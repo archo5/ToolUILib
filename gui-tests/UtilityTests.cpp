@@ -11,7 +11,7 @@ struct BasicEasingAnimTest : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::Property::Begin("Control");
+		ui::LabeledProperty::Begin("Control");
 		if (ui::imm::Button("Play"))
 		{
 			animPlayer.SetVariable("test", 0);
@@ -22,7 +22,7 @@ struct BasicEasingAnimTest : ui::Buildable
 			animPlayer.StopAnim(anim);
 		}
 		ui::MakeWithText<ui::Panel>(std::to_string(animPlayer.GetVariable("test")));
-		ui::Property::End();
+		ui::LabeledProperty::End();
 		sliderVal = animPlayer.GetVariable("test");
 		ui::Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });
 	}
@@ -192,7 +192,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::imm::PropText("Current working directory", ui::GetWorkingDirectory().c_str());
 
 		ui::Text("Inputs");
-		ui::Property::Begin("Filters");
+		ui::LabeledProperty::Begin("Filters");
 		ui::PushBox();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
@@ -207,18 +207,18 @@ struct FileSelectionWindowTest : ui::Buildable
 				fsw.filters.push_back({});
 		}
 		ui::Pop();
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		ui::imm::PropEditString("Default extension", fsw.defaultExt.c_str(), [&](const char* s) { fsw.defaultExt = s; });
 		ui::imm::PropEditString("Title", fsw.title.c_str(), [&](const char* s) { fsw.title = s; });
-		ui::Property::Begin("Options");
+		ui::LabeledProperty::Begin("Options");
 		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::imm::ButtonStateToggleSkin());
 		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::imm::ButtonStateToggleSkin());
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		ui::Text("Inputs / outputs");
 		ui::imm::PropEditString("Current directory", fsw.currentDir.c_str(), [&](const char* s) { fsw.currentDir = s; });
-		ui::Property::Begin("Selected files");
+		ui::LabeledProperty::Begin("Selected files");
 		ui::PushBox();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
@@ -232,15 +232,15 @@ struct FileSelectionWindowTest : ui::Buildable
 				fsw.selectedFiles.push_back({});
 		}
 		ui::Pop();
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		ui::Text("Controls");
-		ui::Property::Begin("Open file selection window");
+		ui::LabeledProperty::Begin("Open file selection window");
 		if (ui::imm::Button("Open"))
 			Show(false);
 		if (ui::imm::Button("Save"))
 			Show(true);
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		ui::Text("Outputs");
 		ui::imm::PropText("Last returned value", lastRet);

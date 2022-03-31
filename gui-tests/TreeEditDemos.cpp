@@ -3,6 +3,8 @@
 
 #include "../Editors/TreeEditor.h"
 
+#include "../Model/WIP.h"
+
 
 static ui::DataCategoryTag DCT_Node[1];
 struct BasicTreeNodeEditDemo : ui::Buildable
@@ -193,28 +195,28 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 	void Build() override
 	{
-		ui::Property::Begin("Expression:");
+		ui::LabeledProperty::Begin("Expression:");
 
-		ui::PushBox() + ui::SetLayout(ui::layouts::Stack()) + ui::SetWidth(ui::Coord::Percent(100));
+		ui::Push<ui::StackTopDownLayoutElement>();
 		NodeUI(root);
 		ui::Pop();
 
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Variables:");
+		ui::LabeledProperty::Begin("Variables:");
 		ui::PushBox();
 
 		Variable* del = nullptr;
 		for (auto& v : variables)
 		{
-			ui::Property::Begin();
+			ui::LabeledProperty::Begin();
 			if (ui::imm::Button("X", { ui::SetWidth(20) }))
 			{
 				del = &v;
 			}
 			ui::imm::PropEditString("\bName", v.name.c_str(), [&v](const char* s) { v.name = s; });
 			ui::imm::PropEditInt("\bValue", v.value);
-			ui::Property::End();
+			ui::LabeledProperty::End();
 		}
 
 		if (del)
@@ -229,9 +231,9 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		}
 
 		ui::Pop();
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
-		ui::Property::Begin("Computed value:");
+		ui::LabeledProperty::Begin("Computed value:");
 
 		if (root)
 		{
@@ -246,7 +248,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		else
 			ui::Text("- no expression -");
 
-		ui::Property::End();
+		ui::LabeledProperty::End();
 	}
 
 	std::vector<Variable> variables{ { "test", 5 } };

@@ -16,7 +16,7 @@ void TabStructures::Build()
 
 		workspace->ddiSrc.Edit();
 
-		ui::Property::Begin();
+		ui::LabeledProperty::Begin();
 		ui::Text("Instances") + ui::SetPadding(5);
 		if (ui::imm::Button("Expand all instances"))
 		{
@@ -26,7 +26,7 @@ void TabStructures::Build()
 		{
 			workspace->desc.DeleteAllInstances(workspace->ddiSrc.filterFile, workspace->ddiSrc.filterStruct);
 		}
-		ui::Property::End();
+		ui::LabeledProperty::End();
 
 		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;

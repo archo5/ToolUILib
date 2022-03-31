@@ -5,6 +5,37 @@
 
 namespace ui {
 
+struct StackTopDownLayoutElement : UIElement
+{
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
+		return size;
+	}
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
+		return size;
+	}
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override
+	{
+		// put items one after another in the indicated direction
+		// container size adapts to child elements in stacking direction, and to parent in the other
+		float p = inrect.y0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
+			ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
+			p += h;
+		}
+		state.finalContentRect = { inrect.x0, inrect.y0, inrect.x1, p };
+	}
+};
+
 struct StackExpandLTRLayoutElement : UIElement
 {
 	struct Slot
@@ -104,6 +135,40 @@ struct StackExpandLTRLayoutElement : UIElement
 		Slot slot = _slotTemplate;
 		slot.element = obj;
 		_slots.push_back(slot);
+	}
+};
+
+struct WrapperLTRLayoutElement : UIElement
+{
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		return size;
+	}
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+		return size;
+	}
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override
+	{
+		auto contSize = inrect.GetSize();
+		float p = inrect.x0;
+		float y0 = inrect.y0;
+		float maxH = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
+			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
+			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
+			p += w;
+			maxH = max(maxH, h);
+		}
+		state.finalContentRect = { inrect.x0, inrect.y0, p, y0 + maxH };
 	}
 };
 
