@@ -537,8 +537,7 @@ static float SplitWidthAsQ(SplitPane* sp)
 
 static void CheckSplits(SplitPane* sp)
 {
-	// TODO optimize
-	size_t cc = sp->CountChildrenImmediate() - 1;
+	size_t cc = sp->_children.size() - 1;
 	size_t oldsize = sp->_splits.size();
 	if (oldsize < cc)
 	{
@@ -566,14 +565,14 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
-	if (firstChild)
+	if (!_children.empty())
 	{
 		size_t split = 0;
 		if (!_verticalSplit)
 		{
 			float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
 			float prevEdge = finalRectC.x0;
-			for (auto* ch = firstChild; ch; ch = ch->next)
+			for (auto* ch : _children)
 			{
 				UIRect r = finalRectC;
 				auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
@@ -592,7 +591,7 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 		{
 			float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
 			float prevEdge = finalRectC.y0;
-			for (auto* ch = firstChild; ch; ch = ch->next)
+			for (auto* ch : _children)
 			{
 				UIRect r = finalRectC;
 				auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
@@ -642,6 +641,11 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 
 void SplitPane::OnEvent(Event& e)
 {
+	// event while building, understanding of children is incomplete
+	if (UIContainer::GetCurrent() &&
+		GetCurrentBuildable())
+		return;
+
 	CheckSplits(this);
 
 	_splitUI.InitOnEvent(e);
@@ -694,7 +698,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	{
 		float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
 		float prevEdge = finalRectC.x0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
+		for (auto* ch : _children)
 		{
 			UIRect r = finalRectC;
 			auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
@@ -709,7 +713,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	{
 		float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
 		float prevEdge = finalRectC.y0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
+		for (auto* ch : _children)
 		{
 			UIRect r = finalRectC;
 			auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
@@ -727,6 +731,75 @@ void SplitPane::OnReset()
 	UIElement::OnReset();
 
 	_verticalSplit = false;
+	_children.clear();
+}
+
+void SplitPane::RemoveChildImpl(UIObject* ch)
+{
+	for (size_t i = 0; i < _children.size(); i++)
+	{
+		if (_children[i] == ch)
+		{
+			_children.erase(_children.begin() + i);
+			break;
+		}
+	}
+}
+
+void SplitPane::DetachChildren(bool recursive)
+{
+	for (size_t i = 0; i < _children.size(); i++)
+	{
+		auto* ch = _children[i];
+
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
+		ch->parent = nullptr;
+	}
+	_children.clear();
+}
+
+void SplitPane::CustomAppendChild(UIObject* obj)
+{
+	obj->DetachParent();
+
+	obj->parent = this;
+	_children.push_back(obj);
+
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+UIObject* SplitPane::FindLastChildContainingPos(Point2f pos) const
+{
+	for (size_t i = _children.size(); i > 0; )
+	{
+		i--;
+		if (_children[i]->Contains(pos))
+			return _children[i];
+	}
+	return nullptr;
+}
+
+void SplitPane::_AttachToFrameContents(FrameContents* owner)
+{
+	UIElement::_AttachToFrameContents(owner);
+
+	for (auto* ch : _children)
+		ch->_AttachToFrameContents(owner);
+}
+
+void SplitPane::_DetachFromFrameContents()
+{
+	for (auto* ch : _children)
+		ch->_DetachFromFrameContents();
+
+	UIElement::_DetachFromFrameContents();
 }
 
 Rangef SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)

@@ -339,6 +339,12 @@ struct SplitPane : UIElement
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnReset() override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
+	void CustomAppendChild(UIObject* obj) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override;
 
@@ -347,6 +353,7 @@ struct SplitPane : UIElement
 
 	StyleBlockRef vertSepStyle; // for horizontal splitting
 	StyleBlockRef horSepStyle; // for vertical splitting
+	std::vector<UIObject*> _children;
 	std::vector<float> _splits;
 	bool _splitsSet = false;
 	bool _verticalSplit = false;

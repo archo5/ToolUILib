@@ -349,19 +349,17 @@ struct UIObject : IPersistentObject
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && (!GetStyle().GetPlacement() || GetStyle().GetPlacement()->applyOnLayout); }
 
+	virtual void RemoveChildImpl(UIObject* ch);
 	void DetachAll();
 	void DetachParent();
-	void DetachChildren(bool recursive = false);
-	void InsertPrevious(UIObject* obj);
+	virtual void DetachChildren(bool recursive = false);
 	void InsertNext(UIObject* obj);
-	void PrependChild(UIObject* obj);
 	void AppendChild(UIObject* obj);
 	virtual void CustomAppendChild(UIObject* obj);
 	void _AddFirstChild(UIObject* obj);
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
-	int CountChildrenImmediate() const;
 	int GetDepth() const
 	{
 		int out = 0;
@@ -575,6 +573,8 @@ struct EdgeSliceLayoutElement : UIElement
 	}
 	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 	void OnReset() override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
 	void CustomAppendChild(UIObject* obj) override;
 	void PaintChildrenImpl(const UIPaintContext& ctx) override;
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;

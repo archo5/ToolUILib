@@ -780,6 +780,22 @@ void UIObject::SetFlag(UIObjectFlags flag, bool set)
 }
 
 
+void UIObject::RemoveChildImpl(UIObject* ch)
+{
+	if (ch->prev)
+		ch->prev->next = ch->next;
+	else
+		firstChild = ch->next;
+
+	if (ch->next)
+		ch->next->prev = ch->prev;
+	else
+		lastChild = ch->prev;
+
+	ch->prev = nullptr;
+	ch->next = nullptr;
+}
+
 void UIObject::DetachAll()
 {
 	DetachChildren();
@@ -794,19 +810,9 @@ void UIObject::DetachParent()
 	if (system)
 		_DetachFromTree();
 
-	if (prev)
-		prev->next = next;
-	else
-		parent->firstChild = next;
-
-	if (next)
-		next->prev = prev;
-	else
-		parent->lastChild = prev;
+	parent->RemoveChildImpl(this);
 
 	parent = nullptr;
-	prev = nullptr;
-	next = nullptr;
 }
 
 void UIObject::DetachChildren(bool recursive)
@@ -834,27 +840,6 @@ void UIObject::DetachChildren(bool recursive)
 	lastChild = nullptr;
 }
 
-void UIObject::InsertPrevious(UIObject* obj)
-{
-	if (prev == obj)
-		return;
-
-	obj->DetachParent();
-	obj->prev = prev;
-	obj->next = this;
-	obj->parent = parent;
-
-	auto* origPrev = prev;
-	prev = obj;
-	if (origPrev)
-		origPrev->next = obj;
-	else
-		parent->firstChild = obj;
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
 void UIObject::InsertNext(UIObject* obj)
 {
 	if (next == obj)
@@ -874,17 +859,6 @@ void UIObject::InsertNext(UIObject* obj)
 
 	if (system)
 		obj->_AttachToFrameContents(system);
-}
-
-void UIObject::PrependChild(UIObject* obj)
-{
-	if (firstChild == obj)
-		return;
-
-	if (firstChild)
-		firstChild->InsertPrevious(obj);
-	else
-		_AddFirstChild(obj);
 }
 
 void UIObject::AppendChild(UIObject* obj)
@@ -927,14 +901,6 @@ bool UIObject::IsChildOf(UIObject* obj) const
 bool UIObject::IsChildOrSame(UIObject* obj) const
 {
 	return obj == this || IsChildOf(obj);
-}
-
-int UIObject::CountChildrenImmediate() const
-{
-	int o = 0;
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		o += 1;
-	return o;
 }
 
 UIObject* UIObject::GetPrevInOrder()
@@ -1320,6 +1286,36 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 		}
 	}
 	state.finalContentRect = inrect;
+}
+
+void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i].element == ch)
+		{
+			_slots.erase(_slots.begin() + i);
+			break;
+		}
+	}
+}
+
+void EdgeSliceLayoutElement::DetachChildren(bool recursive)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		auto* ch = _slots[i].element.Get();
+
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
+		ch->parent = nullptr;
+	}
+	_slots.clear();
 }
 
 void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
