@@ -374,8 +374,9 @@ void UIObject::Paint(const UIPaintContext& ctx)
 
 void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa)
 {
-	if (!firstChild)
-		return;
+	// TODO
+	//if (!firstChild)
+	//	return;
 
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
@@ -418,19 +419,23 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 		};
 		vsh.prev = draw::SetVertexTransformCallback({ &vsh, vtf });
 
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			ch->Paint(*pctx);
+		PaintChildrenImpl(*pctx);
 
 		draw::SetVertexTransformCallback(vsh.prev);
 	}
 	else
 	{
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			ch->Paint(*pctx);
+		PaintChildrenImpl(*pctx);
 	}
 
 	if (clipChildren)
 		draw::PopScissorRect();
+}
+
+void UIObject::PaintChildrenImpl(const UIPaintContext& ctx)
+{
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->Paint(ctx);
 }
 
 static void PaintBacktracker(UIObject* cur, SingleChildPaintPtr* next, const UIPaintContext& ctx)
@@ -756,6 +761,16 @@ UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
 	return styleProps->GetPaddingRect();
 }
 
+UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
+{
+	for (auto* ch = lastChild; ch; ch = ch->prev)
+	{
+		if (ch->Contains(pos))
+			return ch;
+	}
+	return nullptr;
+}
+
 void UIObject::SetFlag(UIObjectFlags flag, bool set)
 {
 	if (set)
@@ -919,14 +934,6 @@ int UIObject::CountChildrenImmediate() const
 	int o = 0;
 	for (auto* ch = firstChild; ch; ch = ch->next)
 		o += 1;
-	return o;
-}
-
-int UIObject::CountChildrenRecursive() const
-{
-	int o = 0;
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		o += 1 + ch->CountChildrenRecursive();
 	return o;
 }
 
@@ -1313,6 +1320,56 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 		}
 	}
 	state.finalContentRect = inrect;
+}
+
+void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
+{
+	obj->DetachParent();
+
+	obj->parent = this;
+	Slot slot = _slotTemplate;
+	slot.element = obj;
+	_slots.push_back(slot);
+
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+void EdgeSliceLayoutElement::PaintChildrenImpl(const UIPaintContext& ctx)
+{
+	for (auto& slot : _slots)
+		if (auto* ch = slot.element.Get())
+			ch->Paint(ctx);
+}
+
+UIObject* EdgeSliceLayoutElement::FindLastChildContainingPos(Point2f pos) const
+{
+	for (size_t i = _slots.size(); i > 0; )
+	{
+		i--;
+		if (auto* ch = _slots[i].element.Get())
+			if (ch->Contains(pos))
+				return ch;
+	}
+	return nullptr;
+}
+
+void EdgeSliceLayoutElement::_AttachToFrameContents(FrameContents* owner)
+{
+	UIElement::_AttachToFrameContents(owner);
+
+	for (auto& slot : _slots)
+		if (auto* ch = slot.element.Get())
+			ch->_AttachToFrameContents(owner);
+}
+
+void EdgeSliceLayoutElement::_DetachFromFrameContents()
+{
+	for (auto& slot : _slots)
+		if (auto* ch = slot.element.Get())
+			ch->_DetachFromFrameContents();
+
+	UIElement::_DetachFromFrameContents();
 }
 
 

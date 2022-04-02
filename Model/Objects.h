@@ -293,8 +293,8 @@ struct UIObject : IPersistentObject
 	virtual void OnEnterTree() {}
 	virtual void OnExitTree() {}
 
-	void _AttachToFrameContents(FrameContents* owner);
-	void _DetachFromFrameContents();
+	virtual void _AttachToFrameContents(FrameContents* owner);
+	virtual void _DetachFromFrameContents();
 	void _DetachFromTree();
 
 	void PO_ResetConfiguration() override;
@@ -318,6 +318,7 @@ struct UIObject : IPersistentObject
 	virtual void OnPaint(const UIPaintContext& ctx);
 	void Paint(const UIPaintContext& ctx);
 	void PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa);
+	virtual void PaintChildrenImpl(const UIPaintContext& ctx);
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
@@ -338,6 +339,7 @@ struct UIObject : IPersistentObject
 		return GetBorderRect().Contains(pos);
 	}
 	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
+	virtual UIObject* FindLastChildContainingPos(Point2f pos) const;
 
 	void SetFlag(UIObjectFlags flag, bool set);
 	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
@@ -360,7 +362,6 @@ struct UIObject : IPersistentObject
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
 	int CountChildrenImmediate() const;
-	int CountChildrenRecursive() const;
 	int GetDepth() const
 	{
 		int out = 0;
@@ -574,13 +575,11 @@ struct EdgeSliceLayoutElement : UIElement
 	}
 	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 	void OnReset() override;
-	void CustomAppendChild(UIObject* obj) override
-	{
-		AppendChild(obj);
-		Slot slot = _slotTemplate;
-		slot.element = obj;
-		_slots.push_back(slot);
-	}
+	void CustomAppendChild(UIObject* obj) override;
+	void PaintChildrenImpl(const UIPaintContext& ctx) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
 };
 
 struct Subscription;

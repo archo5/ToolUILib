@@ -279,20 +279,10 @@ UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 
 	pos = o->LocalToChildPoint(pos);
 
-	bool found = true;
-	while (found)
+	while (auto* ch = o->FindLastChildContainingPos(pos))
 	{
-		found = false;
-		for (auto* ch = o->lastChild; ch; ch = ch->prev)
-		{
-			if (ch->Contains(pos))
-			{
-				pos = ch->LocalToChildPoint(pos);
-				o = ch;
-				found = true;
-				break;
-			}
-		}
+		pos = ch->LocalToChildPoint(pos);
+		o = ch;
 	}
 	return o;
 }

@@ -179,8 +179,12 @@ struct StackLayout : ILayout
 			if (ha != HAlign::Undefined && ha != HAlign::Left)
 			{
 				float tw = 0;
+				int cc = 0;
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
+				{
 					tw += ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
+					cc++;
+				}
 				float diff = inrect.GetWidth() - tw;
 				switch (ha)
 				{
@@ -191,7 +195,6 @@ struct StackLayout : ILayout
 					p += diff;
 					break;
 				case HAlign::Justify: {
-					auto cc = curObj->CountChildrenImmediate();
 					if (cc > 1)
 						xw += diff / (cc - 1);
 					else
