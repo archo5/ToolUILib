@@ -212,6 +212,11 @@ template <class T> struct SubUI
 		if (e.type == EventType::MouseLeave)
 			_hovered = NoValue;
 	}
+	void FinalizeOnEvent(Event& e)
+	{
+		if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
+			_pressed = NoValue;
+	}
 
 	bool ButtonOnEvent(T id, const AABB2f& r, Event& e)
 	{
@@ -223,8 +228,6 @@ template <class T> struct SubUI
 		else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered == id)
 			_pressed = id;
 		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
-			_pressed = NoValue;
-		else if (e.type == EventType::Activate)
 			if (_pressed == id && _hovered == id)
 				return true;
 		return false;

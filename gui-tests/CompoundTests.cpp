@@ -409,6 +409,51 @@ struct TabsTest : ui::Buildable
 			}
 		}
 		ui::Pop();
+
+		// ------------- NEW ----------------
+		auto& tp1 = ui::Push<ui::TabbedPanel>();
+		tp1.AddTab({ "First tab", 0 });
+		tp1.AddTab({ "Second tab", 1 });
+		tp1.SetActiveTabByUID(tab1);
+		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event&)
+		{
+			tab1 = int(tp1.GetCurrentTabUID(0));
+		};
+		{
+			ui::PushBox().SetVisible(tp1.GetCurrentTabUID() == 0);
+			{
+				ui::Text("Contents of the first tab (SetVisible)");
+			}
+			ui::Pop();
+
+			ui::PushBox().SetVisible(tp1.GetCurrentTabUID() == 1);
+			{
+				ui::Text("Contents of the second tab (SetVisible)");
+			}
+			ui::Pop();
+		}
+		ui::Pop();
+
+		auto& tp2 = ui::Push<ui::TabbedPanel>();
+		tp2.AddTab({ "First tab", 0 });
+		tp2.AddTab({ "Second tab", 1 });
+		tp2.SetActiveTabByUID(tab2);
+		tp2.HandleEvent(&tp2, ui::EventType::Change) = [this, &tp2](ui::Event&)
+		{
+			tab2 = int(tp2.GetCurrentTabUID(0));
+		};
+		{
+			if (tab2 == 0)
+			{
+				ui::Text("Contents of the first tab (conditional build)");
+			}
+
+			if (tab2 == 1)
+			{
+				ui::Text("Contents of the second tab (conditional build)");
+			}
+		}
+		ui::Pop();
 	}
 
 	int tab1 = 0, tab2 = 0;

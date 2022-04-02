@@ -18,6 +18,8 @@
 #include "TabStructures.h"
 #include "TabImages.h"
 
+#include "../Model/WIP.h"
+
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 
@@ -166,21 +168,19 @@ struct MainWindowContents : ui::Buildable
 							curFileView = &fv;
 
 							// right
-							ui::Push<ui::TabGroup>()
-								+ ui::SetLayout(ui::layouts::EdgeSlice())
-								+ ui::SetHeight(ui::Coord::Percent(100));
+							auto& tp = ui::Push<ui::TabbedPanel>();
 							{
-								ui::Push<ui::TabButtonList>();
-								ui::MakeWithText<ui::TabButtonT<SubtabType>>("Inspect").Init(workspace.curSubtab, SubtabType::Inspect);
-								ui::MakeWithText<ui::TabButtonT<SubtabType>>("Highlights").Init(workspace.curSubtab, SubtabType::Highlights);
-								ui::MakeWithText<ui::TabButtonT<SubtabType>>("Markers").Init(workspace.curSubtab, SubtabType::Markers);
-								ui::MakeWithText<ui::TabButtonT<SubtabType>>("Structures").Init(workspace.curSubtab, SubtabType::Structures);
-								ui::MakeWithText<ui::TabButtonT<SubtabType>>("Images").Init(workspace.curSubtab, SubtabType::Images);
-								ui::Pop();
+								tp.AddTab({ "Inspect", uintptr_t(SubtabType::Inspect) });
+								tp.AddTab({ "Highlights", uintptr_t(SubtabType::Highlights) });
+								tp.AddTab({ "Markers", uintptr_t(SubtabType::Markers) });
+								tp.AddTab({ "Structures", uintptr_t(SubtabType::Structures) });
+								tp.AddTab({ "Images", uintptr_t(SubtabType::Images) });
 
-								ui::Push<ui::TabPanel>()
-									+ ui::SetLayout(ui::layouts::EdgeSlice())
-									+ ui::SetHeight(ui::Coord::Percent(100));
+								tp.SetActiveTabByUID(uintptr_t(workspace.curSubtab));
+								tp.HandleEvent(&tp, ui::EventType::Commit) = [this, &tp](ui::Event&)
+								{
+									workspace.curSubtab = SubtabType(tp.GetCurrentTabUID(0));
+								};
 
 								if (workspace.curSubtab == SubtabType::Inspect)
 								{
@@ -210,9 +210,6 @@ struct MainWindowContents : ui::Buildable
 								{
 									ui::Make<TabImages>().workspace = &workspace;
 								}
-
-								// tab panel
-								ui::Pop();
 							}
 							ui::Pop();
 						}

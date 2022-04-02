@@ -40,10 +40,10 @@
 			},
 			{
 				"condition": ["hover"],
-				"painter": { "__": "imgset", "imgset": "tabbutton.hover" }
+				"painter": { "__": "imgset", "imgset": "tabbutton.hover", "contentOffset": { "x": 0, "y": 1 } }
 			},
 			{
-				"painter": { "__": "imgset", "imgset": "tabbutton.normal" }
+				"painter": { "__": "imgset", "imgset": "tabbutton.normal", "contentOffset": { "x": 0, "y": 1 } }
 			}
 		]
 	},

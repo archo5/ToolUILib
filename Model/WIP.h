@@ -172,4 +172,72 @@ struct WrapperLTRLayoutElement : UIElement
 	}
 };
 
+struct TabbedPanel : StackTopDownLayoutElement
+{
+	struct Tab
+	{
+		std::string text;
+		uintptr_t uid = UINTPTR_MAX;
+	};
+
+	std::vector<Tab> _tabs;
+	size_t _curTabNum = 0;
+	SubUI<uint32_t> _tabUI;
+
+	StyleBlockRef panelStyle;
+	StyleBlockRef tabButtonStyle;
+	float tabHeight = 22;
+	float tabButtonOverlap = 2;
+	float tabButtonYOffsetInactive = 1;
+	bool rebuildOnChange = true;
+
+	void AddTab(const Tab& tab)
+	{
+		_tabs.push_back(tab);
+	}
+	uintptr_t GetCurrentTabUID(uintptr_t def = UINTPTR_MAX) const
+	{
+		return _curTabNum < _tabs.size() ? _tabs[_curTabNum].uid : def;
+	}
+	bool SetActiveTabByUID(uintptr_t uid)
+	{
+		for (auto& tab : _tabs)
+		{
+			if (tab.uid == uid)
+			{
+				_curTabNum = &tab - &_tabs.front();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void OnReset() override;
+	void OnPaint(const UIPaintContext& ctx) override;
+	void OnEvent(Event& e) override;
+
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		return StackTopDownLayoutElement::CalcEstimatedWidth(containerSize, type)
+			+ panelStyle->padding_left
+			+ panelStyle->padding_right;
+	}
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		return StackTopDownLayoutElement::CalcEstimatedHeight(containerSize, type)
+			+ panelStyle->padding_top
+			+ panelStyle->padding_bottom
+			+ tabHeight
+			- tabButtonOverlap;
+	}
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override
+	{
+		auto subr = inrect;
+		subr.y0 += tabHeight - tabButtonOverlap;
+		subr = subr.ShrinkBy(panelStyle->GetPaddingRect());
+		StackTopDownLayoutElement::CalcLayout(subr, state);
+		state.finalContentRect = inrect;
+	}
+};
+
 } // ui
