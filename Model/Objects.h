@@ -493,7 +493,7 @@ struct TextElement : UIElement
 	std::string text;
 
 	void OnReset() override;
-#if 0
+#if 1
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(styleProps->GetFont(), styleProps->font_size, text));
@@ -502,12 +502,22 @@ struct TextElement : UIElement
 	{
 		return styleProps->font_size;
 	}
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override
 	{
-		finalRectCP = finalRectCPB = rect;
-		finalRectC = finalRectCP.ShrinkBy(GetPaddingRect(styleProps, rect.GetWidth()));
-		//finalRect.x1 = finalRect.x0 + GetTextWidth(styleProps->GetFont(), styleProps->font_size, text)
-		//finalRect.y1 = finalRect.y0 + styleProps->font_size;
+		state.finalContentRect = inrect;
+	}
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		auto ret = UIElement::GetFullEstimatedWidth(containerSize, type, forParentLayout);
+		ret.max = ret.min;
+		return ret;
+		//return CalcEstimatedWidth(containerSize, type) + styleProps->padding_left + styleProps->padding_right;
+	}
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		auto ret = UIElement::GetFullEstimatedHeight(containerSize, type, forParentLayout);
+		ret.max = ret.min;
+		return ret;
 	}
 #endif
 	void GetSize(Coord& outWidth, Coord& outHeight) override;

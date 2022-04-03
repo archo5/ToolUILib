@@ -212,6 +212,19 @@ struct TabbedPanel : StackTopDownLayoutElement
 		return false;
 	}
 
+	template <class E> void AddEnumTab(StringView name, E value)
+	{
+		_tabs.push_back({ to_string(name), uintptr_t(value) });
+	}
+	template <class E> E GetCurrentTabEnumValue(E def = E(0)) const
+	{
+		return E(GetCurrentTabUID(uintptr_t(def)));
+	}
+	template <class E> bool SetActiveTabByEnumValue(E value)
+	{
+		return SetActiveTabByUID(uintptr_t(value));
+	}
+
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;

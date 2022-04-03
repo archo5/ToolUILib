@@ -693,60 +693,11 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 		rect.y1 - Arect.y1,
 	};
 
-	LayoutState state = { inrect, { inrect.x0, inrect.y0 } };
+	LayoutState state = { inrect };
 	CalcLayout(inrect, state);
 
 	if (placement)
 		state.finalContentRect = inrect;
-
-	if (swidth.IsDefined() || width.IsDefined() || min_width.IsDefined() || max_width.IsDefined())
-	{
-		float padX = Prect.x0 + Prect.x1;
-		float orig = state.finalContentRect.GetWidth();
-		float tgt = width.IsDefined() ? ResolveUnits(width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::Width) != BoxSizing::ContentBox ? padX : 0)
-			: swidth.IsDefined() ? ResolveUnits(swidth, containerSize.x)
-			: orig;
-		if (min_width.IsDefined())
-			tgt = max(tgt, ResolveUnits(min_width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::MinWidth) != BoxSizing::ContentBox ? padX : 0));
-		if (max_width.IsDefined())
-			tgt = min(tgt, ResolveUnits(max_width, containerSize.x) - (style.GetBoxSizing(BoxSizingTarget::MaxWidth) != BoxSizing::ContentBox ? padX : 0));
-
-		if (tgt != orig)
-		{
-			if (orig)
-			{
-				float scale = tgt / orig;
-				state.finalContentRect.x0 = state.scaleOrigin.x + (state.finalContentRect.x0 - state.scaleOrigin.x) * scale;
-				state.finalContentRect.x1 = state.scaleOrigin.x + (state.finalContentRect.x1 - state.scaleOrigin.x) * scale;
-			}
-			else
-				state.finalContentRect.x1 += tgt;
-		}
-	}
-	if (sheight.IsDefined() || height.IsDefined() || min_height.IsDefined() || max_height.IsDefined())
-	{
-		float padY = Prect.y0 + Prect.y1;
-		float orig = state.finalContentRect.GetHeight();
-		float tgt = height.IsDefined() ? ResolveUnits(height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::Height) != BoxSizing::ContentBox ? padY : 0)
-			: sheight.IsDefined() ? ResolveUnits(sheight, containerSize.y)
-			: orig;
-		if (min_height.IsDefined())
-			tgt = max(tgt, ResolveUnits(min_height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::MinHeight) != BoxSizing::ContentBox ? padY : 0));
-		if (max_height.IsDefined())
-			tgt = min(tgt, ResolveUnits(max_height, containerSize.y) - (style.GetBoxSizing(BoxSizingTarget::MaxHeight) != BoxSizing::ContentBox ? padY : 0));
-
-		if (tgt != orig)
-		{
-			if (orig)
-			{
-				float scale = tgt / orig;
-				state.finalContentRect.y0 = state.scaleOrigin.y + (state.finalContentRect.y0 - state.scaleOrigin.y) * scale;
-				state.finalContentRect.y1 = state.scaleOrigin.y + (state.finalContentRect.y1 - state.scaleOrigin.y) * scale;
-			}
-			else
-				state.finalContentRect.y1 += tgt;
-		}
-	}
 
 	finalRectC = state.finalContentRect;
 	finalRectCP = state.finalContentRect.ExtendBy(Prect);

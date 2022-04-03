@@ -44,7 +44,6 @@ enum class Layout : uint8_t
 struct LayoutState
 {
 	UIRect finalContentRect;
-	Point2f scaleOrigin;
 };
 
 enum class EstSizeType

@@ -77,7 +77,6 @@ struct InlineBlockLayout : ILayout
 			p += w;
 			maxH = max(maxH, h);
 		}
-		state.finalContentRect = { inrect.x0, inrect.y0, p, y0 + maxH };
 	}
 }
 g_inlineBlockLayout;
@@ -148,7 +147,6 @@ struct StackLayout : ILayout
 				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
 				p += h;
 			}
-			state.finalContentRect = { inrect.x0, inrect.y0, inrect.x1, p };
 			break; }
 		case StackingDirection::RightToLeft: {
 			float p = inrect.x1;
@@ -158,8 +156,6 @@ struct StackLayout : ILayout
 				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
 				p -= w;
 			}
-			state.finalContentRect = { p, inrect.y0, inrect.x1, inrect.y1 };
-			state.scaleOrigin.x = inrect.x1;
 			break; }
 		case StackingDirection::BottomUp: {
 			float p = inrect.y1;
@@ -169,8 +165,6 @@ struct StackLayout : ILayout
 				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p }, inrect.GetSize());
 				p -= h;
 			}
-			state.finalContentRect = { inrect.x0, p, inrect.x1, inrect.y1 };
-			state.scaleOrigin.y = inrect.y1;
 			break; }
 		case StackingDirection::LeftToRight: {
 			float p = inrect.x0;
@@ -209,7 +203,6 @@ struct StackLayout : ILayout
 				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
 				p += w + xw;
 			}
-			state.finalContentRect = { inrect.x0, inrect.y0, p - xw, inrect.y1 };
 			break; }
 		}
 	}
@@ -329,7 +322,6 @@ struct StackExpandLayout : ILayout
 				item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
 				p += item.w;
 			}
-			state.finalContentRect = { inrect.x0, inrect.y0, max(inrect.x1, p), inrect.y1 };
 			break; }
 		}
 	}

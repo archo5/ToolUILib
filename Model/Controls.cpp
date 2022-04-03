@@ -1707,7 +1707,8 @@ void DropdownMenu::OnBuildButton()
 {
 	auto& btn = PushBox();
 	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
-	btn.flags |= flags & (UIObject_IsChecked | UIObject_IsDisabled);
+	btn.flags |= flags & UIObject_IsDisabled;
+	btn.SetFlag(UIObject_IsChecked, !!(flags & UIObject_IsChecked));
 	if (!(flags & UIObject_IsDisabled))
 	{
 		btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
