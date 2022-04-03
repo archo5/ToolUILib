@@ -131,32 +131,29 @@ struct MainWindowContents : ui::Buildable
 		ui::Pop();
 #endif
 
-		ui::Push<ui::TabGroup>()
-			+ ui::SetLayout(ui::layouts::EdgeSlice())
-			+ ui::SetHeight(ui::Coord::Percent(100));
+		auto& tpFiles = ui::Push<ui::TabbedPanel>();
+		tpFiles + ui::SetHeight(ui::Coord::Percent(100));
+		tpFiles.showCloseButton = true;
 		{
-			ui::Push<ui::TabButtonList>();
-			{
-				int nf = 0;
-				for (auto* f : workspace.openedFiles)
-				{
-					ui::Push<ui::TabButtonT<int>>().Init(workspace.curOpenedFile, nf++);
-					ui::Text(f->ddFile->name);
-					ui::MakeWithText<ui::Button>("X");
-					ui::Pop();
-				}
-			}
-			ui::Pop();
-
 			int nf = 0;
+			for (auto* f : workspace.openedFiles)
+			{
+				tpFiles.AddTab({ f->ddFile->name, uintptr_t(nf++) });
+			}
+			tpFiles.SetActiveTabByUID(workspace.curOpenedFile);
+			tpFiles.HandleEvent(&tpFiles, ui::EventType::Commit) = [this, &tpFiles](ui::Event&)
+			{
+				workspace.curOpenedFile = tpFiles.GetCurrentTabUID(0);
+			};
+
+			nf = 0;
 			for (auto* of : workspace.openedFiles)
 			{
 				if (workspace.curOpenedFile != nf++)
 					continue;
 
-				ui::Push<ui::TabPanel>() + ui::SetLayout(ui::layouts::EdgeSlice()) + ui::SetHeight(ui::Coord::Percent(100));
 				{
-					ui::Push<ui::Panel>() + ui::SetHeight(ui::Coord::Percent(100));
+					ui::Push<ui::Panel>();
 					{
 						//ui::Make<FileStructureViewer2>()->ds = f->ds;
 						auto& sp = ui::Push<ui::SplitPane>();
@@ -218,7 +215,6 @@ struct MainWindowContents : ui::Buildable
 					}
 					ui::Pop();
 				}
-				ui::Pop();
 			}
 		}
 		ui::Pop();

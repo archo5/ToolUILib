@@ -435,6 +435,7 @@ struct TabsTest : ui::Buildable
 		ui::Pop();
 
 		auto& tp2 = ui::Push<ui::TabbedPanel>();
+		tp2.showCloseButton = true;
 		tp2.AddTab({ "First tab", 0 });
 		tp2.AddTab({ "Second tab", 1 });
 		tp2.SetActiveTabByUID(tab2);

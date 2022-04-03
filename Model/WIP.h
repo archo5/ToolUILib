@@ -186,9 +186,14 @@ struct TabbedPanel : StackTopDownLayoutElement
 
 	StyleBlockRef panelStyle;
 	StyleBlockRef tabButtonStyle;
+	StyleBlockRef tabCloseButtonStyle;
 	float tabHeight = 22;
 	float tabButtonOverlap = 2;
 	float tabButtonYOffsetInactive = 1;
+	float tabInnerButtonMargin = 4;
+
+	bool showCloseButton = false;
+	std::function<void(size_t, uintptr_t)> onClose;
 	bool rebuildOnChange = true;
 
 	void AddTab(const Tab& tab)
@@ -229,28 +234,9 @@ struct TabbedPanel : StackTopDownLayoutElement
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		return StackTopDownLayoutElement::CalcEstimatedWidth(containerSize, type)
-			+ panelStyle->padding_left
-			+ panelStyle->padding_right;
-	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		return StackTopDownLayoutElement::CalcEstimatedHeight(containerSize, type)
-			+ panelStyle->padding_top
-			+ panelStyle->padding_bottom
-			+ tabHeight
-			- tabButtonOverlap;
-	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
-	{
-		auto subr = inrect;
-		subr.y0 += tabHeight - tabButtonOverlap;
-		subr = subr.ShrinkBy(panelStyle->GetPaddingRect());
-		StackTopDownLayoutElement::CalcLayout(subr, state);
-		state.finalContentRect = inrect;
-	}
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 };
 
 } // ui
