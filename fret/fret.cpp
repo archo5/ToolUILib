@@ -153,7 +153,7 @@ struct MainWindowContents : ui::Buildable
 					continue;
 
 				{
-					ui::Push<ui::Panel>();
+					//ui::Push<ui::Panel>();
 					{
 						//ui::Make<FileStructureViewer2>()->ds = f->ds;
 						auto& sp = ui::Push<ui::SplitPane>();
@@ -213,7 +213,7 @@ struct MainWindowContents : ui::Buildable
 						sp.SetSplits({ 0.3f });
 						ui::Pop();
 					}
-					ui::Pop();
+					//ui::Pop();
 				}
 			}
 		}

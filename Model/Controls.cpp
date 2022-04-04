@@ -5,6 +5,8 @@
 #include "Native.h"
 #include "Theme.h"
 
+#include "WIP.h"
+
 
 namespace ui {
 
@@ -656,11 +658,16 @@ void SplitPane::OnEvent(Event& e)
 			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectH(this, i), e))
 			{
 			case SubUIDragState::Start:
+				e.context->CaptureMouse(this);
 				_dragOff = SplitQToX(this, _splits[i]) - e.position.x;
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitXToQ(this, e.position.x + _dragOff);
 				_OnChangeStyle();
+				break;
+			case SubUIDragState::Stop:
+				if (e.context->GetMouseCapture() == this)
+					e.context->ReleaseMouse();
 				break;
 			}
 		}
@@ -669,11 +676,16 @@ void SplitPane::OnEvent(Event& e)
 			switch (_splitUI.DragOnEvent(uint16_t(i), GetSplitRectV(this, i), e))
 			{
 			case SubUIDragState::Start:
+				e.context->CaptureMouse(this);
 				_dragOff = SplitQToY(this, _splits[i]) - e.position.y;
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitYToQ(this, e.position.y + _dragOff);
 				_OnChangeStyle();
+				break;
+			case SubUIDragState::Stop:
+				if (e.context->GetMouseCapture() == this)
+					e.context->ReleaseMouse();
 				break;
 			}
 		}
@@ -683,6 +695,7 @@ void SplitPane::OnEvent(Event& e)
 		e.context->SetDefaultCursor(_verticalSplit ? DefaultCursor::ResizeRow : DefaultCursor::ResizeCol);
 		e.StopPropagation();
 	}
+	_splitUI.FinalizeOnEvent(e);
 }
 
 void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -1705,7 +1718,7 @@ static StaticID_Style sid_dropdown_button("dropdown_button");
 static StaticID_Style sid_dropdown_button_icon("dropdown_button_icon");
 void DropdownMenu::OnBuildButton()
 {
-	auto& btn = PushBox();
+	auto& btn = Push<StackLTRLayoutElement>();
 	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
 	btn.flags |= flags & UIObject_IsDisabled;
 	btn.SetFlag(UIObject_IsChecked, !!(flags & UIObject_IsChecked));
@@ -1720,7 +1733,12 @@ void DropdownMenu::OnBuildButton()
 		};
 	}
 
-	Make<BoxElement>().SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
+	auto& icon = Make<BoxElement>();
+	icon.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
+	auto* pap = Allocate<PointAnchoredPlacement>();
+	pap->anchor = { 1, 0 };
+	pap->pivot = { 0, 0 };
+	icon.GetStyle().SetPlacement(pap);
 
 	OnBuildButtonContents();
 

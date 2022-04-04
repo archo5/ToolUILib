@@ -5,6 +5,36 @@
 
 namespace ui {
 
+struct StackLTRLayoutElement : UIElement
+{
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		return size;
+	}
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		float size = 0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+		return size;
+	}
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override
+	{
+		// put items one after another in the indicated direction
+		// container size adapts to child elements in stacking direction, and to parent in the other
+		float p = inrect.x0;
+		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
+			ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
+			p += w;
+		}
+	}
+};
+
 struct StackTopDownLayoutElement : UIElement
 {
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
@@ -32,7 +62,6 @@ struct StackTopDownLayoutElement : UIElement
 			ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
 			p += h;
 		}
-		state.finalContentRect = { inrect.x0, inrect.y0, inrect.x1, p };
 	}
 };
 
@@ -123,7 +152,6 @@ struct StackExpandLTRLayoutElement : UIElement
 			item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
 			p += item.w;
 		}
-		state.finalContentRect = { inrect.x0, inrect.y0, max(inrect.x1, p), inrect.y1 };
 	}
 	void OnReset() override
 	{
@@ -168,7 +196,6 @@ struct WrapperLTRLayoutElement : UIElement
 			p += w;
 			maxH = max(maxH, h);
 		}
-		state.finalContentRect = { inrect.x0, inrect.y0, p, y0 + maxH };
 	}
 };
 
@@ -234,6 +261,7 @@ struct TabbedPanel : StackTopDownLayoutElement
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
+	Size2f GetReducedContainerSize(Size2f size);
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void CalcLayout(const UIRect& inrect, LayoutState& state) override;

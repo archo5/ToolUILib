@@ -337,8 +337,6 @@ struct ThemeLoaderData : IThemeLoader
 				loaded->layout = layouts::StackExpand();
 			else if (layout == "inline_block")
 				loaded->layout = layouts::InlineBlock();
-			else if (layout == "edge_slice")
-				loaded->layout = layouts::EdgeSlice();
 
 			std::string painterName;
 			OnField(u, "backgroundPainter", painterName);

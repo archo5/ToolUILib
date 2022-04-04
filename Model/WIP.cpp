@@ -17,9 +17,6 @@ void TabbedPanel::OnReset()
 {
 	StackTopDownLayoutElement::OnReset();
 
-	// TODO fix SubUI to work without the button flag?
-	flags |= UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | UIObject_DB_Button;
-
 	_tabs.clear();
 	//_curTabNum = 0;
 	panelStyle = GetCurrentTheme()->GetStyle(sid_tab_panel);
@@ -175,9 +172,16 @@ void TabbedPanel::OnEvent(Event& e)
 	_tabUI.FinalizeOnEvent(e);
 }
 
+Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
+{
+	size.x -= panelStyle->padding_left + panelStyle->padding_right;
+	size.y -= panelStyle->padding_top + panelStyle->padding_bottom + tabHeight - tabButtonOverlap;
+	return size;
+}
+
 float TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return StackTopDownLayoutElement::CalcEstimatedWidth(containerSize, type)
+	return StackTopDownLayoutElement::CalcEstimatedWidth(GetReducedContainerSize(containerSize), type)
 		+ panelStyle->padding_left
 		+ panelStyle->padding_right
 		+ (showCloseButton ? tabInnerButtonMargin + tabCloseButtonStyle->width.value : 0);
@@ -185,7 +189,7 @@ float TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType t
 
 float TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return StackTopDownLayoutElement::CalcEstimatedHeight(containerSize, type)
+	return StackTopDownLayoutElement::CalcEstimatedHeight(GetReducedContainerSize(containerSize), type)
 		+ panelStyle->padding_top
 		+ panelStyle->padding_bottom
 		+ tabHeight

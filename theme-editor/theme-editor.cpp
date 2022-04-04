@@ -352,8 +352,17 @@ struct TE_ThemeEditorNode : Buildable
 		Pop();
 #endif
 
-		Push<TabGroup>() + SetHeight(Coord::Percent(100)) + SetLayout(layouts::EdgeSlice());
+		//auto& tp = Push<TabbedPanel>();
+		Push<TabGroup>() + SetHeight(Coord::Percent(100));
 		{
+#if 0
+			for (TE_Template* tmpl : theme->templates)
+				tp.AddEnumTab(tmpl->name, tmpl);
+			tp.SetActiveTabByEnumValue(theme->curTemplate);
+			tp.HandleEvent(&tp, EventType::Change) = [this](Event&)
+			{
+			};
+#endif
 			Push<TabButtonList>();
 			{
 				for (TE_Template* tmpl : theme->templates)
@@ -361,9 +370,11 @@ struct TE_ThemeEditorNode : Buildable
 					Push<TabButtonT<TE_Template*>>().Init(theme->curTemplate, tmpl);
 					if (editNameTemplate != tmpl)
 					{
-						Text(tmpl->name).HandleEvent(EventType::Click) = [this, tmpl](Event& e)
+						auto& txt = Text(tmpl->name);
+						txt.flags |= UIObject_DB_CaptureMouseOnLeftClick;
+						txt.HandleEvent(EventType::Click) = [this, tmpl](Event& e)
 						{
-							if (e.numRepeats == 2)
+							if (e.numRepeats == 1)
 							{
 								editNameTemplate = tmpl;
 								Rebuild();
