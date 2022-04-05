@@ -958,13 +958,17 @@ struct DropdownTest : ui::Buildable
 			static bool flag1, flag2;
 
 			WPush<ui::CheckboxFlagT<bool>>().Init(flag1);
+			WPush<ui::StackExpandLTRLayoutElement>();
 			WMake<ui::CheckboxIcon>();
 			WText("Option 1") + ui::SetPadding(5);
 			WPop();
+			WPop();
 
 			WPush<ui::CheckboxFlagT<bool>>().Init(flag2);
+			WPush<ui::StackExpandLTRLayoutElement>();
 			WMake<ui::CheckboxIcon>();
 			WText("Option 2") + ui::SetPadding(5);
+			WPop();
 			WPop();
 		}
 	};

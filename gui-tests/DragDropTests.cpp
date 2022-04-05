@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../Model/WIP.h"
+
 
 struct FileReceiverTest : ui::Buildable
 {
@@ -241,6 +243,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			ui::PushBox();
 
 			ui::Push<ui::Selectable>().Init(selectedNodes.count(N))
+				+ ui::SetPadding(0)
 				+ ui::MakeDraggable()
 				+ ui::AddEventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
 			{
@@ -272,6 +275,7 @@ struct TreeNodeReorderTest : ui::Buildable
 					Rebuild();
 				}
 			});
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 
 			ui::PushBox() + ui::SetWidth(level * 12);
 			ui::Pop();
@@ -281,6 +285,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			ui::Pop();
 
 			ui::Text(N->name);
+			ui::Pop();
 			ui::Pop();
 
 			if (N->open)
@@ -401,7 +406,7 @@ struct TreeNodeReorderTest : ui::Buildable
 				{
 					auto& arr = E.node->parent ? E.node->parent->children : rootNodes;
 					auto it = std::find_first_of(arr.begin(), arr.end(), &E.node, &E.node + 1);
-					if (E.node->parent == dragTargetCont && (it - arr.begin()) < dragTargetInsertBefore)
+					if (E.node->parent == dragTargetCont && (it - arr.begin()) < ptrdiff_t(dragTargetInsertBefore))
 					{
 						dragTargetInsertBefore--;
 					}

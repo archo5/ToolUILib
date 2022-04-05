@@ -381,11 +381,8 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
 	{
-		if (!draw::PushScissorRect(finalRectC))
-		{
-			draw::PopScissorRect();
+		if (!draw::PushScissorRectIfNotEmpty(finalRectC))
 			return;
-		}
 	}
 
 	UIPaintContext subctx(DoNotInitialize{});
@@ -1000,6 +997,41 @@ StyleBlock* UIObject::_FindClosestParentTextStyle() const
 NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
+}
+
+
+Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
+{
+	size.x -= styleProps->padding_left + styleProps->padding_right;
+	size.y -= styleProps->padding_top + styleProps->padding_bottom;
+	return size;
+}
+
+Rangef PaddedWrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	Rangef range = firstChild->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout);
+	float pad = styleProps->padding_left + styleProps->padding_right;
+	range.min += pad;
+	if (range.max < FLT_MAX)
+		range.max += pad;
+	return range;
+}
+
+Rangef PaddedWrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	Rangef range = firstChild->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout);
+	float pad = styleProps->padding_top + styleProps->padding_bottom;
+	range.min += pad;
+	if (range.max < FLT_MAX)
+		range.max += pad;
+	return range;
+}
+
+void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	firstChild->PerformLayout(rect.ShrinkBy(styleProps->GetPaddingRect()), GetReducedContainerSize(containerSize));
+	finalRectC = firstChild->finalRectCP;
+	finalRectCP = finalRectC.ExtendBy(styleProps->GetPaddingRect());
 }
 
 

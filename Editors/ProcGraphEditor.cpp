@@ -22,7 +22,6 @@ void ProcGraphEditor_NodePin::Build()
 	_sel = &Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
-	*_sel + Set(StackingDirection::TopDown);
 
 	if (!_pin.isOutput && !_graph->IsPinLinked(_pin))
 	{
@@ -262,6 +261,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 		}
 	});
 
+	Push<StackExpandLTRLayoutElement>();
 	bool hasPreview = _graph->HasPreview(_node);
 	if (hasPreview)
 	{
@@ -270,6 +270,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
 	Text(_graph->GetNodeName(_node)) + SetPadding(5, hasPreview ? 0 : 5, 5, 5);
+	Pop();
 	Pop();
 }
 

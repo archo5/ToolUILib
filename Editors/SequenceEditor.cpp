@@ -3,6 +3,8 @@
 
 #include "../Model/Menu.h"
 
+#include "../Model/WIP.h"
+
 
 namespace ui {
 
@@ -31,7 +33,6 @@ void SequenceItemElement::OnReset()
 
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
-	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
 
 	seqEd = nullptr;
@@ -125,20 +126,28 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 void SequenceEditor::Build()
 {
 	Push<ListBox>();
+	Push<StackTopDownLayoutElement>();
 
 	_sequence->IterateElements(0, [this](size_t idx, void* ptr)
 	{
 		Push<SequenceItemElement>().Init(this, idx);
 
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
+			Push<StackExpandLTRLayoutElement>();
+
 		OnBuildItem(idx, ptr);
 
-		if (showDeleteButton)
-			OnBuildDeleteButton(idx);
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::DeleteButton) == EditorItemContentsLayoutPreset::DeleteButton)
+			OnBuildDeleteButton();
+
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
+			Pop();
 
 		Pop();
 		return true;
 	});
 
+	Pop();
 	Pop();
 }
 
@@ -169,7 +178,7 @@ void SequenceEditor::OnReset()
 	Buildable::OnReset();
 
 	itemUICallback = {};
-	showDeleteButton = true;
+	itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 	_sequence = nullptr;
 	_selStorage = nullptr;
 	_ctxMenuSrc = nullptr;
@@ -182,11 +191,15 @@ void SequenceEditor::OnBuildItem(size_t idx, void* ptr)
 		itemUICallback(this, idx, ptr);
 }
 
-void SequenceEditor::OnBuildDeleteButton(size_t idx)
+void SequenceEditor::OnBuildDeleteButton()
 {
 	auto& delBtn = MakeWithText<Button>("X");
 	delBtn + SetWidth(20);
-	delBtn + AddEventHandler(EventType::Activate, [this, idx](Event& e) { GetSequence()->Remove(idx); _OnEdit(e.current); });
+	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event& e)
+	{
+		GetSequence()->Remove(delBtn.FindParentOfType<SequenceItemElement>()->num);
+		_OnEdit(e.current);
+	});
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)

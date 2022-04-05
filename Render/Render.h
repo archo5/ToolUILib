@@ -159,6 +159,7 @@ ScaleOffset2D AddScissorRectResolutionTransform(ScaleOffset2D nsrrt);
 
 void PushScissorRectRaw(const AABB2i& screen, const AABB2f& virt);
 bool PushScissorRect(const AABB2f& rect);
+bool PushScissorRectIfNotEmpty(const AABB2f& rect);
 void PopScissorRect();
 void _ResetScissorRectStack(int x0, int y0, int x1, int y1);
 AABB2f GetCurrentScissorRectF();

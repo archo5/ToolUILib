@@ -181,7 +181,7 @@ struct TE_ImageEditorNode : Buildable
 
 		auto& imged = Make<SequenceEditor>();
 		imged + SetHeight(Coord::Percent(100));
-		imged.showDeleteButton = false;
+		imged.itemLayoutPreset = EditorItemContentsLayoutPreset::None;
 		imged.SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
 		imged.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 		{
@@ -191,7 +191,7 @@ struct TE_ImageEditorNode : Buildable
 
 	void EditImage(TE_Image* img, SequenceEditor* se, size_t idx, void* ptr)
 	{
-		PushBox();
+		Push<StackTopDownLayoutElement>();
 		{
 			Push<StackExpandLTRLayoutElement>();
 			{
@@ -201,7 +201,7 @@ struct TE_ImageEditorNode : Buildable
 					tmpl->SetCurPreviewImage(img);
 				}
 				imm::EditString(img->name.c_str(), [&img](const char* v) { img->name = v; });
-				se->OnBuildDeleteButton(idx);
+				se->OnBuildDeleteButton();
 			}
 			Pop();
 

@@ -13,6 +13,20 @@ struct IListContextMenuSource
 	virtual void FillListContextMenu(MenuItemCollection& mic) = 0;
 };
 
+enum class EditorItemContentsLayoutPreset : uint8_t
+{
+	None = 0,
+	DeleteButton = 0x80,
+	MASK = uint8_t(~DeleteButton),
+	StackExpandLTR = 1,
+	StackExpandLTRWithDeleteButton = StackExpandLTR | DeleteButton,
+};
+
+inline EditorItemContentsLayoutPreset operator & (EditorItemContentsLayoutPreset a, EditorItemContentsLayoutPreset b)
+{
+	return EditorItemContentsLayoutPreset(uint8_t(a) & uint8_t(b));
+}
+
 enum class SelectionMode : uint8_t
 {
 	None,

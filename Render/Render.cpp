@@ -1160,6 +1160,18 @@ bool PushScissorRect(const AABB2f& rect)
 	return r.x0 < r.x1 && r.y0 < r.y1;
 }
 
+bool PushScissorRectIfNotEmpty(const AABB2f& rect)
+{
+	auto xrect = rect * g_scissorRectResTransform;
+
+	AABB2i r = scissorStack[scissorCount - 1].raw.Intersect(xrect.Cast<int>());
+
+	bool notEmpty = r.x0 < r.x1 && r.y0 < r.y1;
+	if (notEmpty)
+		PushScissorRectRaw(r, rect);
+	return notEmpty;
+}
+
 void PopScissorRect()
 {
 	scissorCount--;

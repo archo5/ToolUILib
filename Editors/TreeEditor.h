@@ -80,8 +80,7 @@ struct TreeEditor : Buildable
 	void _OnDragDrop(TreeDragData* tdd);
 
 	std::function<void(TreeEditor* te, TreePathRef path, void* data)> itemUICallback;
-
-	bool showDeleteButton = true;
+	EditorItemContentsLayoutPreset itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 
 	ITree* _tree = nullptr;
 

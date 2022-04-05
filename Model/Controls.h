@@ -23,25 +23,11 @@ struct Button : UIElement
 };
 
 
-struct StateButtonBase : UIElement
+struct StateButtonBase : WrapperElement
 {
 	void OnReset() override;
 
 	virtual uint8_t GetState() const = 0;
-
-	ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
-	{
-		return firstChild->GetFullEstimatedWidth(containerSize, type, forParentLayout);
-	}
-	ui::Rangef GetFullEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
-	{
-		return firstChild->GetFullEstimatedHeight(containerSize, type, forParentLayout);
-	}
-	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
-	{
-		firstChild->PerformLayout(rect, containerSize);
-		finalRectCP = finalRectC = firstChild->finalRectCP;
-	}
 };
 
 struct StateToggleBase : StateButtonBase
@@ -188,7 +174,7 @@ struct ListBox : UIElement
 	void OnReset() override;
 };
 
-struct Selectable : UIElement
+struct Selectable : PaddedWrapperElement
 {
 	void OnReset() override;
 	Selectable& Init(bool selected)

@@ -3,6 +3,8 @@
 
 #include "../Model/Menu.h"
 
+#include "../Model/WIP.h"
+
 #include <algorithm>
 
 
@@ -14,7 +16,6 @@ void TreeItemElement::OnReset()
 
 	SetFlag(UIObject_DB_Draggable, true);
 	auto s = GetStyle();
-	s.SetLayout(layouts::StackExpand());
 	s.SetPadding(0, 0, 0, 16);
 
 	treeEd = nullptr;
@@ -99,10 +100,12 @@ void TreeEditor::Build()
 	auto s = Push<ListBox>().GetStyle();
 	s.SetMinHeight(22);
 	s.SetBoxSizing(BoxSizingTarget::MinHeight, BoxSizing::ContentBox);
+	Push<StackTopDownLayoutElement>();
 
 	TreePath path;
 	OnBuildList(path);
 
+	Pop();
 	Pop();
 }
 
@@ -131,7 +134,8 @@ void TreeEditor::OnReset()
 {
 	Buildable::OnReset();
 
-	showDeleteButton = true;
+	itemUICallback = {};
+	itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 	_tree = nullptr;
 	_selImpl.OnReset();
 }
@@ -154,10 +158,16 @@ void TreeEditor::OnBuildList(TreePath& path)
 
 		Push<TreeItemElement>().Init(this, path);
 
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
+			Push<StackExpandLTRLayoutElement>();
+
 		OnBuildItem(path, data);
 
-		if (showDeleteButton)
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::DeleteButton) == EditorItemContentsLayoutPreset::DeleteButton)
 			OnBuildDeleteButton();
+
+		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
+			Pop();
 
 		Pop();
 

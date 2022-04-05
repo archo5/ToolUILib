@@ -186,7 +186,7 @@ struct SequenceEditor : Buildable
 	void OnReset() override;
 
 	virtual void OnBuildItem(size_t idx, void* ptr);
-	virtual void OnBuildDeleteButton(size_t idx);
+	virtual void OnBuildDeleteButton();
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
@@ -199,8 +199,7 @@ struct SequenceEditor : Buildable
 	void _OnEdit(UIObject* who);
 
 	std::function<void(SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
-
-	bool showDeleteButton = true;
+	EditorItemContentsLayoutPreset itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 
 	ISequence* _sequence = nullptr;
 	ISelectionStorage* _selStorage = nullptr;

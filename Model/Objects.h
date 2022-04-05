@@ -486,6 +486,32 @@ struct UIElement : UIObject
 	typedef char IsElement[1];
 };
 
+// TODO: slowly port to these and use custom [single] child storage
+struct WrapperElement : UIElement
+{
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		return firstChild->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+	}
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		return firstChild->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+	}
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
+	{
+		firstChild->PerformLayout(rect, containerSize);
+		finalRectCP = finalRectC = firstChild->finalRectCP;
+	}
+};
+
+struct PaddedWrapperElement : UIElement
+{
+	Size2f GetReducedContainerSize(Size2f size);
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+};
+
 struct TextElement : UIElement
 {
 	std::string text;

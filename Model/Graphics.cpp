@@ -848,12 +848,12 @@ void View2D::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r))
+	if (draw::PushScissorRectIfNotEmpty(r))
 	{
 		if (onPaint)
 			onPaint(r);
+		draw::PopScissorRect();
 	}
-	draw::PopScissorRect();
 
 	ph.PaintChildren(this, ctx);
 }
@@ -865,7 +865,7 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 	ph.PaintBackground(this);
 
 	auto r = finalRectC;
-	if (draw::PushScissorRect(r))
+	if (draw::PushScissorRectIfNotEmpty(r))
 	{
 		rhi::Begin3DMode(r.Cast<int>());
 
@@ -876,8 +876,9 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 
 		if (onPaintOverlay)
 			onPaintOverlay(r);
+
+		draw::PopScissorRect();
 	}
-	draw::PopScissorRect();
 
 	ph.PaintChildren(this, ctx);
 }

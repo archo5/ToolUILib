@@ -366,14 +366,16 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		auto r = labelContRect.ShrinkBy(labelPadRect);
 
 		// TODO optimize scissor (shared across labels)
-		draw::PushScissorRect(cr);
-		draw::TextLine(
-			font,
-			labelStyle->font_size,
-			r.x0, r.y1 - (r.y1 - r.y0 - labelStyle->font_size) / 2,
-			_labelText,
-			labelStyle->text_color);
-		draw::PopScissorRect();
+		if (draw::PushScissorRectIfNotEmpty(cr))
+		{
+			draw::TextLine(
+				font,
+				labelStyle->font_size,
+				r.x0, r.y1 - (r.y1 - r.y0 - labelStyle->font_size) / 2,
+				_labelText,
+				labelStyle->text_color);
+			draw::PopScissorRect();
+		}
 	}
 
 	ph.PaintChildren(this, ctx);
@@ -541,9 +543,11 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 				r.x0 = prevEdge;
 				r.x1 = sr.x0;
 
-				if (draw::PushScissorRect(r))
+				if (draw::PushScissorRectIfNotEmpty(r))
+				{
 					ch->Paint(ctx);
-				draw::PopScissorRect();
+					draw::PopScissorRect();
+				}
 
 				prevEdge = sr.x1;
 			}
@@ -560,9 +564,11 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 				r.y0 = prevEdge;
 				r.y1 = sr.y0;
 
-				if (draw::PushScissorRect(r))
+				if (draw::PushScissorRectIfNotEmpty(r))
+				{
 					ch->Paint(ctx);
-				draw::PopScissorRect();
+					draw::PopScissorRect();
+				}
 
 				prevEdge = sr.y1;
 			}
