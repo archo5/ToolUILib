@@ -260,31 +260,6 @@ struct Slider : UIElement
 };
 
 
-struct Property : UIElement
-{
-	struct Scope
-	{
-		Scope(const char* lblstr = nullptr)
-		{
-			Begin();
-			label = lblstr ? &Label(lblstr) : nullptr;
-		}
-		~Scope()
-		{
-			End();
-		}
-
-		UIObject* label;
-	};
-
-	void OnReset() override;
-	static void Begin(const char* label = nullptr);
-	static void End();
-
-	static UIObject& Label(const char* label);
-	static UIObject& MinLabel(const char* label);
-};
-
 struct PropertyList : UIElement
 {
 	void OnReset() override;

@@ -284,46 +284,6 @@ double Slider::ValueToQ(double v)
 }
 
 
-void Property::OnReset()
-{
-	UIElement::OnReset();
-
-	GetStyle().SetLayout(layouts::StackExpand());
-	GetStyle().SetStackingDirection(StackingDirection::LeftToRight);
-}
-
-void Property::Begin(const char* label)
-{
-	Push<Property>();
-	if (label)
-	{
-		Label(label);
-	}
-}
-
-void Property::End()
-{
-	Pop();
-}
-
-UIObject& Property::Label(const char* label)
-{
-	if (*label == '\b')
-		return MinLabel(label + 1);
-	return Text(label)
-		+ SetPadding(5)
-		+ SetMinWidth(100)
-		+ SetWidth(Coord::Percent(30));
-}
-
-UIObject& Property::MinLabel(const char* label)
-{
-	return Text(label)
-		+ SetPadding(5)
-		+ SetWidth(Coord::Fraction(0));
-}
-
-
 static StaticID_Style sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {

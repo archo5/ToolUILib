@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "MeshScript.h"
 
+#include "../Model/WIP.h"
+
 
 ui::DataCategoryTag DCT_MeshScriptChanged[1];
 
@@ -224,8 +226,9 @@ void MeshScript::EditUI()
 		tree.SetTree(this);
 		tree.itemUICallback = [this](ui::TreeEditor*, ui::TreePathRef path, void* data)
 		{
-			ui::Property::Scope ps;
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			FindNode(path).Get()->InlineEditUI();
+			ui::Pop();
 		};
 
 		ui::PushBox();

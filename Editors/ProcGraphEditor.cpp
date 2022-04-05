@@ -8,6 +8,9 @@
 #include "../Model/System.h"
 #include "../Model/Theme.h"
 
+#include "../Model/WIP.h"
+
+
 namespace ui {
 
 DataCategoryTag DCT_EditProcGraph[1];
@@ -19,16 +22,22 @@ void ProcGraphEditor_NodePin::Build()
 	_sel = &Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
-	*_sel + Set(!_pin.isOutput ? StackingDirection::LeftToRight : StackingDirection::RightToLeft);
-
-	Text(_graph->GetPinName(_pin));
+	*_sel + Set(StackingDirection::TopDown);
 
 	if (!_pin.isOutput && !_graph->IsPinLinked(_pin))
 	{
 		// TODO not implemented right->left
-		*_sel + SetLayout(layouts::StackExpand());
+		Push<StackExpandLTRLayoutElement>();
+
+		Text(_graph->GetPinName(_pin));
 
 		_graph->InputPinEditorUI(_pin);
+
+		Pop();
+	}
+	else
+	{
+		Text(_graph->GetPinName(_pin));
 	}
 
 	Pop();

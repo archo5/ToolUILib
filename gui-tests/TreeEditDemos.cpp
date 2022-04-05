@@ -112,8 +112,8 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI() override
 		{
-			auto& lbl = ui::Property::Label("\b#");
-			ui::imm::EditInt(&lbl, number, { ui::SetWidth(50) });
+			ui::LabeledProperty::Scope s("\b#");
+			ui::imm::EditInt(s.label, number, { ui::SetWidth(50) });
 		}
 		int Compute(ComputeInfo&) override { return number; }
 	};
@@ -123,8 +123,10 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI() override
 		{
-			auto& lbl = ui::Property::Label("\bName:");
+			WPush<ui::StackLTRLayoutElement>();
+			WText("Name:") + ui::SetPadding(5);
 			ui::imm::EditString(name.c_str(), [this](const char* s) { name = s; }, { ui::SetWidth(50) });
+			WPop();
 		}
 		int Compute(ComputeInfo& cinfo) override
 		{

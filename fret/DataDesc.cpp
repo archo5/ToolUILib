@@ -161,11 +161,10 @@ void DataDesc::EditInstance()
 			ui::imm::PropEditBool("Use remaining size", SI->remainingCountIsSize);
 			ui::imm::PropEditInt(SI->remainingCountIsSize ? "Remaining size" : "Remaining count", SI->remainingCount);
 
-			ui::Property::Begin();
-			auto& lbl = ui::Property::Label("Size override");
+			ui::LabeledProperty::Begin("Size override");
 			ui::imm::EditBool(SI->sizeOverrideEnable, nullptr);
-			ui::imm::EditInt(&lbl, SI->sizeOverrideValue);
-			ui::Property::End();
+			ui::imm::PropEditInt("\bSize:", SI->sizeOverrideValue);
+			ui::LabeledProperty::End();
 		}
 
 		ui::Text("Arguments") + ui::SetPadding(5);

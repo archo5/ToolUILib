@@ -141,7 +141,7 @@ struct StateButtonsTest : ui::Buildable
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Property::Scope ps;
+				ui::Push<ui::StackExpandLTRLayoutElement>();
 
 				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
 				MakeContents("r1a", i);
@@ -149,6 +149,8 @@ struct StateButtonsTest : ui::Buildable
 
 				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
 				MakeContents("r1b", i);
+				ui::Pop();
+
 				ui::Pop();
 			}
 		}
@@ -160,7 +162,7 @@ struct StateButtonsTest : ui::Buildable
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Property::Scope ps;
+				ui::Push<ui::StackExpandLTRLayoutElement>();
 
 				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
 				MakeContents("r2a", i);
@@ -168,6 +170,8 @@ struct StateButtonsTest : ui::Buildable
 
 				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
 				MakeContents("r2b", i);
+				ui::Pop();
+
 				ui::Pop();
 			}
 		}
@@ -925,10 +929,6 @@ struct DropdownTest : ui::Buildable
 			WPush<ui::LabeledProperty>().SetText("label 2");
 			WMake<SpecificDropdownMenu>();
 			WPop();
-
-			ui::Property::Begin("label 3");
-			WMake<SpecificDropdownMenu>();
-			ui::Property::End();
 		}
 		WPop();
 	}

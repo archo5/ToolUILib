@@ -4,6 +4,8 @@
 #include "Graphics.h"
 #include "System.h"
 
+#include "WIP.h"
+
 
 namespace ui {
 namespace imm {
@@ -25,16 +27,28 @@ bool SetEnabled(bool newValue)
 
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	Make<CheckboxIcon>();
 	if (!text.empty())
+	{
+		Push<StackExpandLTRLayoutElement>();
+		Make<CheckboxIcon>();
 		Text(text) + SetPadding(4);
+		Pop();
+	}
+	else
+		Make<CheckboxIcon>();
 }
 
 void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	Make<RadioButtonIcon>();
 	if (!text.empty())
+	{
+		Push<StackExpandLTRLayoutElement>();
+		Make<RadioButtonIcon>();
 		Text(text) + SetPadding(4);
+		Pop();
+	}
+	else
+		Make<RadioButtonIcon>();
 }
 
 void ButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
@@ -44,9 +58,15 @@ void ButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView te
 
 void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	Make<TreeExpandIcon>();
 	if (!text.empty())
+	{
+		Push<StackExpandLTRLayoutElement>();
+		Make<TreeExpandIcon>();
 		Text(text) + SetPadding(4);
+		Pop();
+	}
+	else
+		Make<TreeExpandIcon>();
 }
 
 bool Button(const char* text, ModInitList mods)

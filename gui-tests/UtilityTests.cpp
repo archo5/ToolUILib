@@ -146,7 +146,7 @@ struct OSCommunicationTest : ui::Buildable
 	void Build() override
 	{
 		{
-			ui::Property::Scope ps("\bClipboard");
+			ui::LabeledProperty::Scope ps("\bClipboard");
 			bool hasText = ui::Clipboard::HasText();
 			ui::imm::EditBool(hasText, nullptr, { ui::Enable(false) });
 			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });

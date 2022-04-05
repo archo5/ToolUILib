@@ -6,6 +6,8 @@
 #include "../Editors/TreeEditor.h"
 #include "../Editors/CurveEditor.h"
 
+#include "../Model/WIP.h"
+
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
 {
@@ -67,7 +69,7 @@ struct SequenceEditorsTest : ui::Buildable
 		ui::Pop();
 
 		{
-			ui::Property::Scope ps("\bSelection type:");
+			ui::LabeledProperty::Scope ps("\bSelection type:");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
@@ -453,7 +455,7 @@ struct TreeEditorsTest : ui::Buildable
 	void Build() override
 	{
 		{
-			ui::Property::Scope ps;
+			WPush<ui::StackExpandLTRLayoutElement>();
 			if (ui::imm::Button("Default"))
 			{
 				cpaTree.SetDefault();
@@ -489,28 +491,29 @@ struct TreeEditorsTest : ui::Buildable
 				cpaTree.SetBranchy(8);
 				cvaTree.SetBranchy(8);
 			}
+			WPop();
 		};
 
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
-		ui::Text("child pointer array:");
+		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		WText("child pointer array:");
 		TreeEdit(&cpaTree);
-		ui::Pop();
+		WPop();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
-		ui::Text("child value array:");
+		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		WText("child value array:");
 		TreeEdit(&cvaTree);
-		ui::Pop();
+		WPop();
 
-		ui::Pop();
+		WPop();
 
-		ui::Make<ui::DefaultOverlayBuilder>();
+		WMake<ui::DefaultOverlayBuilder>();
 	}
 
 	void TreeEdit(ui::ITree* itree)
 	{
-		ui::Make<ui::TreeEditor>()
+		WMake<ui::TreeEditor>()
 			.SetTree(itree)
 			.itemUICallback = [](ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
@@ -523,7 +526,7 @@ struct TreeEditorsTest : ui::Buildable
 };
 void Test_TreeEditors()
 {
-	ui::Make<TreeEditorsTest>();
+	WMake<TreeEditorsTest>();
 }
 
 
@@ -559,7 +562,7 @@ struct TableViewTest : ui::Buildable
 		ui::Push<ui::EdgeSliceLayoutElement>();
 
 		{
-			ui::Property::Scope ps("\bSelection type:");
+			ui::LabeledProperty::Scope ps("\bSelection type:");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
 			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
@@ -690,8 +693,8 @@ struct MessageLogViewTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackExpandLTRLayoutElement>();
 		{
-			ui::Property::Scope ps;
 			if (ui::imm::Button("Clear"))
 				messages.clear();
 			if (ui::imm::Button("Add 1 line"))
@@ -705,6 +708,7 @@ struct MessageLogViewTest : ui::Buildable
 			if (ui::imm::Button("Add 10K"))
 				AddMessages(10000);
 		};
+		WPop();
 		ui::PushBox()
 			+ ui::Set(ui::StackingDirection::LeftToRight)
 			//+ ui::SetHeight(ui::Coord::Percent(50));
