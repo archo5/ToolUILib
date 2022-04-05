@@ -95,7 +95,6 @@ namespace layouts {
 ILayout* InlineBlock();
 ILayout* Stack();
 ILayout* StackExpand();
-ILayout* EdgeSlice();
 
 }
 

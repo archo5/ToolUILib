@@ -6,31 +6,31 @@ struct EdgeSliceTest : ui::Buildable
 {
 	void Build() override
 	{
-		auto s = ui::Push<ui::Panel>().GetStyle();
+		auto s = WPush<ui::Panel>().GetStyle();
 		s.SetBoxSizing(ui::BoxSizingTarget::Height, ui::BoxSizing::BorderBox);
 		s.SetMargin(0);
 		s.SetHeight(ui::Coord::Percent(100));
 
-		ui::Push<ui::EdgeSliceLayoutElement>();
+		WPush<ui::EdgeSliceLayoutElement>();
 
 		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
 		tmpl->edge = ui::Edge::Top;
-		ui::MakeWithText<ui::Button>("Top");
+		WMakeWithText<ui::Button>("Top");
 		tmpl->edge = ui::Edge::Right;
-		ui::MakeWithText<ui::Button>("Right");
+		WMakeWithText<ui::Button>("Right");
 		tmpl->edge = ui::Edge::Bottom;
-		ui::MakeWithText<ui::Button>("Bottom");
+		WMakeWithText<ui::Button>("Bottom");
 		tmpl->edge = ui::Edge::Left;
-		ui::MakeWithText<ui::Button>("Left");
+		WMakeWithText<ui::Button>("Left");
 
-		ui::Pop();
+		WPop();
 
-		ui::Pop();
+		WPop();
 	}
 };
 void Test_EdgeSlice()
 {
-	ui::Make<EdgeSliceTest>();
+	WMake<EdgeSliceTest>();
 }
 
 
@@ -121,7 +121,6 @@ struct LayoutNestComboTest : ui::Buildable
 		case 6:
 		case 7:
 		case 8:
-			s.SetLayout(ui::layouts::EdgeSlice());
 			break;
 		}
 

@@ -565,50 +565,50 @@ struct ColorBlockTest : ui::Buildable
 {
 	void Build() override
 	{
-		ui::Text("Default color block");
-		ui::Make<ui::ColorBlock>().SetColor(colorA);
-		ui::Make<ui::ColorBlock>().SetColor(colorB);
+		WText("Default color block");
+		WMake<ui::ColorBlock>().SetColor(colorA);
+		WMake<ui::ColorBlock>().SetColor(colorB);
 
-		ui::Text("Without edge");
-		ui::Make<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
-		ui::Make<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
+		WText("Without edge");
+		WMake<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
+		WMake<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
 
-		ui::Text("Custom size");
-		ui::Make<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
-		ui::Make<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
+		WText("Custom size");
+		WMake<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
+		WMake<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
 
-		ui::Text("Color inspect block");
-		ui::Make<ui::ColorInspectBlock>().SetColor(colorA);
-		ui::Make<ui::ColorInspectBlock>().SetColor(colorB);
+		WText("Color inspect block");
+		WMake<ui::ColorInspectBlock>().SetColor(colorA);
+		WMake<ui::ColorInspectBlock>().SetColor(colorB);
 
-		ui::Text("Assembled");
+		WText("Assembled");
 		auto C = colorB;
-		ui::Push<ui::Panel>()
+		WPush<ui::Panel>()
 			+ ui::SetPadding(3);
 		{
-			ui::Push<ui::StackExpandLTRLayoutElement>();
+			WPush<ui::StackExpandLTRLayoutElement>();
 			{
-				ui::Make<ui::ColorBlock>().SetColor(C.GetOpaque())
+				WMake<ui::ColorBlock>().SetColor(C.GetOpaque())
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(50));
-				ui::Make<ui::ColorBlock>().SetColor(C)
+				WMake<ui::ColorBlock>().SetColor(C)
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(50));
 			}
-			ui::Pop();
-			ui::Push<ui::ColorBlock>().SetColor(ui::Color4b::Black())
+			WPop();
+			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black())
 				+ ui::SetPadding(0)
 				+ ui::SetWidth(ui::Coord::Percent(100))
 				+ ui::SetHeight(4);
 			{
-				ui::Make<ui::ColorBlock>().SetColor(ui::Color4b::White())
+				WMake<ui::ColorBlock>().SetColor(ui::Color4b::White())
 					+ ui::SetPadding(0)
 					+ ui::SetWidth(ui::Coord::Percent(100.f * C.a / 255.f))
 					+ ui::SetHeight(4);
 			}
-			ui::Pop();
+			WPop();
 		}
-		ui::Pop();
+		WPop();
 	}
 
 	ui::Color4b colorA = { 240, 180, 120, 255 };
@@ -616,7 +616,7 @@ struct ColorBlockTest : ui::Buildable
 };
 void Test_ColorBlock()
 {
-	ui::Make<ColorBlockTest>();
+	WMake<ColorBlockTest>();
 }
 
 
@@ -653,27 +653,27 @@ struct ImageTest : ui::Buildable
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			ui::Push<ui::Panel>().SetStyle(pbr);
+			WPush<ui::Panel>().SetStyle(pbr);
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					ui::Push<ui::Panel>().SetStyle(pbr);
-					ui::Make<ui::ImageElement>()
+					WPush<ui::Panel>().SetStyle(pbr);
+					WMake<ui::ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
 						.SetStyle(mode / 3 ? ibr2 : ibr);
-					ui::Pop();
+					WPop();
 				}
 			}
 
-			ui::Text(scaleModeNames[mode % 3]);
+			WText(scaleModeNames[mode % 3]);
 
-			ui::Pop();
+			WPop();
 		}
 
-		ui::Make<ui::ImageElement>()
+		WMake<ui::ImageElement>()
 			.SetImage(img)
 			+ ui::SetWidth(50)
 			+ ui::SetHeight(50);
@@ -683,7 +683,7 @@ struct ImageTest : ui::Buildable
 };
 void Test_Image()
 {
-	ui::Make<ImageTest>();
+	WMake<ImageTest>();
 }
 
 
@@ -692,18 +692,18 @@ struct ColorPickerTest : ui::Buildable
 {
 	void Build() override
 	{
-		auto& cp = ui::Make<ui::ColorPicker>().SetColor(colorPickerTestCol);
+		auto& cp = WMake<ui::ColorPicker>().SetColor(colorPickerTestCol);
 		cp.HandleEvent(ui::EventType::Change) = [&cp](ui::Event& e)
 		{
 			colorPickerTestCol = cp.GetColor().GetRGBA();
 		};
 
-		ui::Make<ui::DefaultOverlayBuilder>();
+		WMake<ui::DefaultOverlayBuilder>();
 	}
 };
 void Test_ColorPicker()
 {
-	ui::Make<ColorPickerTest>();
+	WMake<ColorPickerTest>();
 }
 
 
@@ -891,50 +891,50 @@ struct DropdownTest : ui::Buildable
 	void Build() override
 	{
 		*this + ui::Set(ui::StackingDirection::LeftToRight);
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
 		{
-			ui::Make<SpecificDropdownMenu>();
+			WMake<SpecificDropdownMenu>();
 
-			ui::Text("[zssl] unlimited options");
+			WText("[zssl] unlimited options");
 			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
-			ui::Text("[zssl] limited options");
+			WText("[zssl] limited options");
 			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>(2, "First\0Second"));
 
 			static const char* options[] = { "First", "Second", "Third", nullptr };
 
-			ui::Text("[sa] unlimited options");
+			WText("[sa] unlimited options");
 			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(options));
-			ui::Text("[sa] limited options");
+			WText("[sa] limited options");
 			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(2, options));
 
-			ui::Text("custom pointer options");
+			WText("custom pointer options");
 			MenuList(selPtr, Allocate<TypeInfoOptions>());
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(33));
+		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
 		{
-			ui::Text("immediate mode");
+			WText("immediate mode");
 			ui::imm::DropdownMenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
 			ui::imm::DropdownMenuList(selPtrReal, Allocate<TypeInfoOptions>());
 
-			ui::Push<ui::PropertyList>();
+			WPush<ui::PropertyList>();
 			{
-				ui::Push<ui::LabeledProperty>().SetText("label 1");
-				ui::Make<SpecificDropdownMenu>();
-				ui::Pop();
+				WPush<ui::LabeledProperty>().SetText("label 1");
+				WMake<SpecificDropdownMenu>();
+				WPop();
 			}
-			ui::Pop();
+			WPop();
 
-			ui::Push<ui::LabeledProperty>().SetText("label 2");
-			ui::Make<SpecificDropdownMenu>();
-			ui::Pop();
+			WPush<ui::LabeledProperty>().SetText("label 2");
+			WMake<SpecificDropdownMenu>();
+			WPop();
 
 			ui::Property::Begin("label 3");
-			ui::Make<SpecificDropdownMenu>();
+			WMake<SpecificDropdownMenu>();
 			ui::Property::End();
 		}
-		ui::Pop();
+		WPop();
 	}
 
 	void MenuList(uintptr_t& sel, ui::OptionList* list)
@@ -955,21 +955,21 @@ struct DropdownTest : ui::Buildable
 	{
 		void OnBuildButtonContents() override
 		{
-			ui::Text("Menu");
+			WText("Menu");
 		}
 		void OnBuildMenuContents() override
 		{
 			static bool flag1, flag2;
 
-			ui::Push<ui::CheckboxFlagT<bool>>().Init(flag1);
-			ui::Make<ui::CheckboxIcon>();
-			ui::Text("Option 1") + ui::SetPadding(5);
-			ui::Pop();
+			WPush<ui::CheckboxFlagT<bool>>().Init(flag1);
+			WMake<ui::CheckboxIcon>();
+			WText("Option 1") + ui::SetPadding(5);
+			WPop();
 
-			ui::Push<ui::CheckboxFlagT<bool>>().Init(flag2);
-			ui::Make<ui::CheckboxIcon>();
-			ui::Text("Option 2") + ui::SetPadding(5);
-			ui::Pop();
+			WPush<ui::CheckboxFlagT<bool>>().Init(flag2);
+			WMake<ui::CheckboxIcon>();
+			WText("Option 2") + ui::SetPadding(5);
+			WPop();
 		}
 	};
 
@@ -993,12 +993,12 @@ struct DropdownTest : ui::Buildable
 		}
 		void BuildElement(const void* ptr, uintptr_t id, bool list)
 		{
-			ui::Text(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
+			WText(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
 		}
 	};
 };
 void Test_Dropdown()
 {
-	ui::Make<DropdownTest>();
+	WMake<DropdownTest>();
 }
 

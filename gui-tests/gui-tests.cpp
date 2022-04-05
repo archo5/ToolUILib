@@ -583,6 +583,7 @@ struct TEST : ui::Buildable
 		rootMenu.push_back(ui::MenuItem("Debug"));
 		{
 			rootMenu.back().submenu.push_back(ui::MenuItem("Rebuild always", {}, false, rebuildAlways).Func([this]() { rebuildAlways ^= true; Rebuild(); }));
+			rootMenu.back().submenu.push_back(ui::MenuItem("Add wrappers", {}, false, GetWrapperSetting()).Func([this]() { GetWrapperSetting() ^= true; Rebuild(); }));
 			rootMenu.back().submenu.push_back(ui::MenuItem("Dump layout").Func([this]() { DumpLayout(lastChild); }));
 			rootMenu.back().submenu.push_back(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); }));

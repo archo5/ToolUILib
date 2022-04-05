@@ -329,53 +329,6 @@ struct StackExpandLayout : ILayout
 g_stackExpandLayout;
 ILayout* StackExpand() { return &g_stackExpandLayout; }
 
-
-struct EdgeSliceLayout : ILayout
-{
-	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
-	{
-		return containerSize.x;
-	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
-	{
-		return containerSize.y;
-	}
-	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
-	{
-		auto subr = inrect;
-		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-		{
-			auto e = ch->GetStyle().GetEdge();
-			float d;
-			switch (e)
-			{
-			case Edge::Top:
-				d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
-				subr.y0 += d;
-				break;
-			case Edge::Bottom:
-				d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
-				subr.y1 -= d;
-				break;
-			case Edge::Left:
-				d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
-				subr.x0 += d;
-				break;
-			case Edge::Right:
-				d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
-				subr.x1 -= d;
-				break;
-			}
-		}
-	}
-}
-g_edgeSliceLayout;
-ILayout* EdgeSlice() { return &g_edgeSliceLayout; }
-
 } // layouts
 
 
@@ -1003,7 +956,6 @@ void _InitStyles()
 	g_objectStyle->background_painter = EmptyPainter::Get();
 
 	g_textStyle = new StyleBlock;
-	g_textStyle->layout = layouts::InlineBlock();
 	g_textStyle->background_painter = EmptyPainter::Get();
 }
 
