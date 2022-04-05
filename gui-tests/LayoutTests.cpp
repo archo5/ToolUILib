@@ -115,12 +115,13 @@ struct LayoutNestComboTest : ui::Buildable
 			s.SetStackingDirection(ui::StackingDirection::RightToLeft);
 			break;
 		case 4:
-			s.SetLayout(ui::layouts::InlineBlock());
+			// inline block
 			break;
 		case 5:
 		case 6:
 		case 7:
 		case 8:
+			// edge slice
 			break;
 		}
 

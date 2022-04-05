@@ -47,41 +47,6 @@ void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 
 namespace layouts {
 
-struct InlineBlockLayout : ILayout
-{
-	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
-	{
-		float size = 0;
-		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-		return size;
-	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
-	{
-		float size = curObj->styleProps->font_size;
-		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-		return size;
-	}
-	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
-	{
-		auto contSize = inrect.GetSize();
-		float p = inrect.x0;
-		float y0 = inrect.y0;
-		float maxH = 0;
-		for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-		{
-			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
-			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
-			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
-			p += w;
-			maxH = max(maxH, h);
-		}
-	}
-}
-g_inlineBlockLayout;
-ILayout* InlineBlock() { return &g_inlineBlockLayout; }
-
 struct StackLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)

@@ -92,7 +92,6 @@ struct RectAnchoredPlacement : IPlacement
 
 namespace layouts {
 
-ILayout* InlineBlock();
 ILayout* Stack();
 ILayout* StackExpand();
 

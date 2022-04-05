@@ -31,6 +31,10 @@ struct The3DViewTest : ui::Buildable
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
+				auto* leftCorner = ui::BuildAlloc<ui::PointAnchoredPlacement>();
+				leftCorner->SetAnchorAndPivot({ 0, 0 });
+				ui::PushBox() + ui::SetPlacement(leftCorner);
+
 				ui::Text("Overlay text");
 				ui::Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
 				ui::MakeWithText<ui::Button>("Reset")
@@ -39,10 +43,10 @@ struct The3DViewTest : ui::Buildable
 					bool rh = camera.rightHanded;
 					camera = {};
 					camera.rightHanded = rh;
-				})
-					+ ui::SetWidth(40)
-					+ ui::SetLayout(ui::layouts::InlineBlock()); // TODO FIX
+				});
 				ui::imm::PropEditBool("\bRight-handed", camera.rightHanded);
+
+				ui::Pop();
 			}
 			ui::Pop();
 		}

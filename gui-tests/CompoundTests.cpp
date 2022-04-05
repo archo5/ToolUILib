@@ -634,12 +634,6 @@ struct ImageTest : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::StyleBlockRef pbr = ui::GetCurrentTheme()->FindStyleByName("panel");
-		ui::StyleAccessor pa(pbr, nullptr);
-		pa.SetLayout(ui::layouts::InlineBlock());
-		pa.SetPadding(4);
-		pa.SetMargin(0);
-
 		ui::StyleBlockRef ibr = ui::GetObjectStyle();
 		ui::StyleAccessor ia(ibr, nullptr);
 		ia.SetHeight(25);
@@ -653,13 +647,14 @@ struct ImageTest : ui::Buildable
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			WPush<ui::Panel>().SetStyle(pbr);
+			WPush<ui::Panel>() + ui::SetPadding(4) + ui::SetMargin(0);
+			WPush<ui::WrapperLTRLayoutElement>();
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					WPush<ui::Panel>().SetStyle(pbr);
+					WPush<ui::Panel>() + ui::SetPadding(4) + ui::SetMargin(0);
 					WMake<ui::ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
@@ -670,6 +665,7 @@ struct ImageTest : ui::Buildable
 
 			WText(scaleModeNames[mode % 3]);
 
+			WPop();
 			WPop();
 		}
 

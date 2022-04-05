@@ -12,7 +12,7 @@
 	},
 	"tab_button:style":
 	{
-		"layout": "inline_block",
+		"layout": "stack",
 		"stackingDirection": "LeftToRight",
 		"padding": 5,
 		"backgroundPainter": "tab_button"

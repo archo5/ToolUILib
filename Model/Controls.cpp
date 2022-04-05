@@ -45,7 +45,6 @@ void StateButtonBase::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	GetStyle().SetLayout(layouts::InlineBlock());
 }
 
 

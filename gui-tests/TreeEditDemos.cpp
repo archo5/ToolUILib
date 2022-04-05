@@ -142,11 +142,13 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI() override
 		{
-			ui::Push<ui::Panel>() + ui::SetPadding(2) + ui::SetLayout(ui::layouts::InlineBlock());
+			WPush<ui::Panel>() + ui::SetPadding(2);
+			WPush<ui::StackLTRLayoutElement>();
 			NodeUI(a);
-			ui::Text(Name()) + ui::SetPadding(5);
+			WText(Name()) + ui::SetPadding(5);
 			NodeUI(b);
-			ui::Pop();
+			WPop();
+			WPop();
 		}
 		int Compute(ComputeInfo& cinfo) override
 		{
@@ -256,7 +258,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 };
 void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
 {
-	auto& b = ui::PushBox() + ui::SetLayout(ui::layouts::InlineBlock());
+	auto& b = WPush<ui::WrapperLTRLayoutElement>();
 	if (node)
 	{
 		b.HandleEvent(ui::EventType::ContextMenu) = [&node](ui::Event& e)
@@ -268,7 +270,7 @@ void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
 	}
 	else
 	{
-		if (ui::imm::Button("+", { ui::SetLayout(ui::layouts::InlineBlock()) }))
+		if (ui::imm::Button("+"))
 		{
 			ui::MenuItem items[] =
 			{
@@ -283,7 +285,7 @@ void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
 			menu.Show(&b);
 		}
 	}
-	ui::Pop();
+	WPop();
 }
 void Demo_CompactTreeNodeEdit()
 {

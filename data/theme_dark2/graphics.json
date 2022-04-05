@@ -3,7 +3,8 @@
 	width = "20px"
 	height = "20px"
 	padding = 3
-	layout = "inline_block"
+	layout = "stack"
+	stackingDirection = "LeftToRight"
 	backgroundPainter = "panel"
 }
 "color_inspect_block:style":
@@ -11,7 +12,8 @@
 	width = "1fr"
 	height = "20px"
 	padding = 3
-	layout = "inline_block"
+	layout = "stack"
+	stackingDirection = "LeftToRight"
 	backgroundPainter = "panel"
 }
 
