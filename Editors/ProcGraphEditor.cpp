@@ -101,9 +101,9 @@ void ProcGraphEditor_NodePin::OnPaint(const UIPaintContext& ctx)
 #if 0
 	auto c = _graph->GetPinColor(_pin);
 	if (_pin.isOutput)
-		draw::RectCol(finalRectCPB.x1 - 2, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, c);
+		draw::RectCol(finalRectCP.x1 - 2, finalRectCP.y0, finalRectCP.x1, finalRectCP.y1, c);
 	else
-		draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x0 + 2, finalRectCPB.y1, c);
+		draw::RectCol(finalRectCP.x0, finalRectCP.y0, finalRectCP.x0 + 2, finalRectCP.y1, c);
 #endif
 }
 
@@ -501,8 +501,8 @@ Point2f ProcGraphEditor::GetPinPos(ProcGraphEditor_NodePin* P)
 {
 	return
 	{
-		!P->_pin.isOutput ? P->finalRectCPB.x0 : P->finalRectCPB.x1,
-		(P->finalRectCPB.y0 + P->finalRectCPB.y1) * 0.5f,
+		!P->_pin.isOutput ? P->finalRectCP.x0 : P->finalRectCP.x1,
+		(P->finalRectCP.y0 + P->finalRectCP.y1) * 0.5f,
 	};
 }
 

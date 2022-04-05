@@ -46,7 +46,7 @@ struct TESTWrapper : ui::UIElement
 	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
 	{
 		firstChild->PerformLayout(rect, containerSize);
-		finalRectCPB = finalRectCP = finalRectC = firstChild->finalRectCPB;
+		finalRectCP = finalRectC = firstChild->finalRectCP;
 	}
 };
 

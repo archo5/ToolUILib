@@ -482,7 +482,7 @@ void DebugDrawSelf(UIObject* o)
 	auto pl = o->ResolveUnits(s.GetPaddingLeft(), w), pr = o->ResolveUnits(s.GetPaddingRight(), w),
 		pt = o->ResolveUnits(s.GetPaddingTop(), w), pb = o->ResolveUnits(s.GetPaddingBottom(), w);
 	float bl = 1, br = 1, bt = 1, bb = 1;
-	auto r = o->GetBorderRect();
+	auto r = o->GetPaddingRect();
 
 	// padding
 	draw::RectCutoutCol(r, o->GetPaddingRect(), Color4f(0.5f, 0.6f, 0.9f, a));
@@ -1097,7 +1097,7 @@ void NativeMainWindow::OnClose()
 
 void NativeWindowNode::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	finalRectC = finalRectCP = finalRectCPB = {};
+	finalRectC = finalRectCP = {};
 }
 
 
@@ -1239,7 +1239,7 @@ struct Inspector : NativeDialogWindow
 		}
 		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
 		{
-			finalRectC = finalRectCP = finalRectCPB = rect;
+			finalRectC = finalRectCP = rect;
 		}
 
 		void OnPaint(const UIPaintContext& ctx) override

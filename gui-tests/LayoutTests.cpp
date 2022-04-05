@@ -406,7 +406,7 @@ struct SizeTest : ui::Buildable
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{
-			return TestSize(obj->finalRectCPB, w, h);
+			return TestSize(obj->finalRectCP, w, h);
 		};
 		tests.push_back({ &obj, fn });
 	}
@@ -415,7 +415,7 @@ struct SizeTest : ui::Buildable
 	{
 		auto fn = [obj{ &obj }, x]()->std::string
 		{
-			auto r = obj->finalRectCPB;
+			auto r = obj->finalRectCP;
 			if (fabsf(r.x0 - x) > 0.0001f)
 			{
 				return ui::Format("expected x %g - got %g", x, r.x0);

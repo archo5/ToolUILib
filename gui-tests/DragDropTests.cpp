@@ -297,7 +297,7 @@ struct TreeNodeReorderTest : ui::Buildable
 		Node* N = nodes[i];
 
 		hasDragTarget = true;
-		ui::UIRect& R = e.current->finalRectCPB;
+		ui::UIRect& R = e.current->finalRectCP;
 		if (e.position.y < ui::lerp(R.y0, R.y1, 0.25f))
 		{
 			// above
@@ -672,8 +672,8 @@ struct DragConnectTest : ui::Buildable
 	{
 		return
 		{
-			L->_right ? L->finalRectCPB.x0 : L->finalRectCPB.x1,
-			(L->finalRectCPB.y0 + L->finalRectCPB.y1) * 0.5f,
+			L->_right ? L->finalRectCP.x0 : L->finalRectCP.x1,
+			(L->finalRectCP.y0 + L->finalRectCP.y1) * 0.5f,
 		};
 	}
 

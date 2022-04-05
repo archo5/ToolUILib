@@ -336,7 +336,7 @@ struct UIObject : IPersistentObject
 
 	virtual bool Contains(Point2f pos) const
 	{
-		return GetBorderRect().Contains(pos);
+		return GetPaddingRect().Contains(pos);
 	}
 	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
 	virtual UIObject* FindLastChildContainingPos(Point2f pos) const;
@@ -402,7 +402,6 @@ struct UIObject : IPersistentObject
 
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
-	UIRect GetBorderRect() const { return finalRectCPB; }
 
 	UI_FORCEINLINE StyleBlock* FindTextStyle(StyleBlock* first) const { return first ? first : _FindClosestParentTextStyle(); }
 	StyleBlock* _FindClosestParentTextStyle() const;
@@ -427,10 +426,9 @@ struct UIObject : IPersistentObject
 	StyleBlockRef styleProps;
 	LivenessToken _livenessToken;
 
-	// final layout rectangles: C=content, P=padding, B=border
+	// final layout rectangles: C=content, P=padding
 	UIRect finalRectC = {};
 	UIRect finalRectCP = {};
-	UIRect finalRectCPB = {};
 
 	// previous layout input argument cache
 	UIRect lastLayoutInputRect = {};

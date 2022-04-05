@@ -203,7 +203,7 @@ void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 			if (e.type == EventType::MouseMove)
 			{
 				if (e.context->GetMouseCapture() == this) // TODO separate flag for this!
-					SetFlag(UIObject_IsPressedMouse, finalRectCPB.Contains(e.position));
+					SetFlag(UIObject_IsPressedMouse, finalRectCP.Contains(e.position));
 				//e.StopPropagation();
 			}
 			if (e.type == EventType::KeyAction && e.GetKeyAction() == KeyAction::ActivateDown)
@@ -366,7 +366,7 @@ void UIObject::Paint(const UIPaintContext& ctx)
 	if (!_CanPaint())
 		return;
 
-	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(finalRectCPB)))
+	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(finalRectCP)))
 		return;
 
 	OnPaint(ctx);
@@ -701,7 +701,6 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 	finalRectC = state.finalContentRect;
 	finalRectCP = state.finalContentRect.ExtendBy(Prect);
-	finalRectCPB = finalRectCP; // no border yet
 
 	for (UIObject* ch = firstChild; ch; ch = ch->next)
 		ch->_PerformPlacement(finalRectC, finalRectC.GetSize());
@@ -1041,11 +1040,11 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 void Placeholder::OnPaint(const UIPaintContext& ctx)
 {
-	draw::RectCol(finalRectCPB.x0, finalRectCPB.y0, finalRectCPB.x1, finalRectCPB.y1, Color4b(0, 127));
-	draw::RectCutoutCol(finalRectCPB, finalRectCPB.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
+	draw::RectCol(finalRectCP.x0, finalRectCP.y0, finalRectCP.x1, finalRectCP.y1, Color4b(0, 127));
+	draw::RectCutoutCol(finalRectCP, finalRectCP.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
 
 	char text[32];
-	snprintf(text, sizeof(text), "%gx%g", finalRectCPB.GetWidth(), finalRectCPB.GetHeight());
+	snprintf(text, sizeof(text), "%gx%g", finalRectCP.GetWidth(), finalRectCP.GetHeight());
 
 	auto* font = styleProps->GetFont();
 
@@ -1184,11 +1183,6 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect, const Size2f& contain
 	finalRectCP.y0 += finalRectC.y0 - pfr.y0;
 	finalRectCP.x1 += finalRectC.x1 - pfr.x1;
 	finalRectCP.y1 += finalRectC.y1 - pfr.y1;
-
-	finalRectCPB.x0 += finalRectC.x0 - pfr.x0;
-	finalRectCPB.y0 += finalRectC.y0 - pfr.y0;
-	finalRectCPB.x1 += finalRectC.x1 - pfr.x1;
-	finalRectCPB.y1 += finalRectC.y1 - pfr.y1;
 }
 
 

@@ -73,8 +73,8 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 	ui::AABB2f GetTargetRect()
 	{
 		if (tgt)
-			return tgt->GetBorderRect();
-		auto r = GetBorderRect();
+			return tgt->GetPaddingRect();
+		auto r = GetPaddingRect();
 		r.y1 = r.y0;
 		return r;
 	}
@@ -105,7 +105,7 @@ struct ButtonPressHighlightDemo : ui::Buildable
 	void PlayActivationAnim(ui::Button& button)
 	{
 		std::unique_ptr<ActivationAnimData> aad(new ActivationAnimData);
-		aad->baseRect = button.finalRectCPB;
+		aad->baseRect = button.finalRectCP;
 		aad->player.onAnimUpdate = [this]() { GetNativeWindow()->InvalidateAll(); };
 
 		ui::AnimPtr activationAnim = new ui::ParallelAnimation

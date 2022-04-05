@@ -702,8 +702,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	CheckSplits(this);
 
-	finalRectCPB = rect;
-	finalRectCP = finalRectCPB; // TODO
+	finalRectCP = rect;
 	finalRectC = finalRectCP.ShrinkBy(styleProps->GetPaddingRect());
 
 	size_t split = 0;
@@ -1035,12 +1034,9 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	finalRectC.y1 += yoff;
 	finalRectCP.y0 += yoff;
 	finalRectCP.y1 += yoff;
-	finalRectCPB.y0 += yoff;
-	finalRectCPB.y1 += yoff;
 	//if (hasVScroll)
 	{
 		finalRectCP.x1 += vScrollWidth;
-		finalRectCPB.x1 += vScrollWidth;
 	}
 }
 
