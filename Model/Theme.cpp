@@ -333,8 +333,6 @@ struct ThemeLoaderData : IThemeLoader
 			OnField(u, "layout", layout);
 			if (layout == "stack")
 				loaded->layout = layouts::Stack();
-			else if (layout == "stack_expand")
-				loaded->layout = layouts::StackExpand();
 
 			std::string painterName;
 			OnField(u, "backgroundPainter", painterName);

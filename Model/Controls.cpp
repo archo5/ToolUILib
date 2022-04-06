@@ -307,7 +307,7 @@ UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
 }
 
 
-LabeledProperty& LabeledProperty::Begin(const char* label)
+LabeledProperty& LabeledProperty::Begin(const char* label, ContentLayoutType layout)
 {
 	auto& lp = Push<LabeledProperty>();
 	if (label)
@@ -320,21 +320,23 @@ LabeledProperty& LabeledProperty::Begin(const char* label)
 		else
 			lp.SetText(label);
 	}
+	if (layout == StackExpandLTR)
+		Push<StackExpandLTRLayoutElement>();
 	return lp;
 }
 
-void LabeledProperty::End()
+void LabeledProperty::End(ContentLayoutType layout)
 {
+	if (layout == StackExpandLTR)
+		Pop();
 	Pop();
 }
 
-static StaticID_Style sid_property("property");
 void LabeledProperty::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_property);
 	_labelStyle = {};
 
 	_labelText = {};

@@ -10,12 +10,6 @@
 	"fontWeight": "bold"
 }
 
-"property:style":
-{
-	"layout": "stack_expand",
-	"stackingDirection": "LeftToRight"
-}
-
 "prop_label:style":
 {
 	"padding": 5

@@ -697,7 +697,7 @@ struct TEST : ui::Buildable
 			printf("  ");
 		auto* lo = glo(o);
 		printf("%s  -%s", cln(typeid(*o).name()), cln(typeid(*lo).name()));
-		if (lo == ui::layouts::Stack() || lo == ui::layouts::StackExpand())
+		if (lo == ui::layouts::Stack())
 			printf(":%s", dir(o->GetStyle()));
 		printf(" w=%s", costr(o->GetStyle().GetWidth()));
 		printf(" h=%s", costr(o->GetStyle().GetHeight()));

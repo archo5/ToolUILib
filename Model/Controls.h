@@ -263,22 +263,29 @@ struct PropertyList : UIElement
 
 struct LabeledProperty : UIElement
 {
+	enum ContentLayoutType
+	{
+		OneElement,
+		StackExpandLTR,
+	};
+
 	struct Scope
 	{
-		Scope(const char* lblstr = nullptr)
+		ContentLayoutType layoutType;
+		UIObject* label;
+
+		Scope(const char* lblstr = nullptr, ContentLayoutType layout = StackExpandLTR) : layoutType(layout)
 		{
-			label = &Begin(lblstr);
+			label = &Begin(lblstr, layoutType);
 		}
 		~Scope()
 		{
-			End();
+			End(layoutType);
 		}
-
-		UIObject* label;
 	};
 
-	static LabeledProperty& Begin(const char* label = nullptr);
-	static void End();
+	static LabeledProperty& Begin(const char* label = nullptr, ContentLayoutType layout = StackExpandLTR);
+	static void End(ContentLayoutType layout = StackExpandLTR);
 
 	LabeledProperty()
 	{

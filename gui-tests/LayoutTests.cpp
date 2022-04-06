@@ -176,7 +176,6 @@ struct StackingLayoutVariationsTest : ui::Buildable
 
 		if (mode == 0)
 		{
-			//{ auto s = ui::Push<ui::Panel>().GetStyle(); s.SetLayout(ui::layouts::StackExpand()); s.SetStackingDirection(ui::StackingDirection::LeftToRight); }
 			ui::Push<ui::Panel>();
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
