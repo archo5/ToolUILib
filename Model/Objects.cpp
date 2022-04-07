@@ -467,26 +467,17 @@ void UIObject::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContex
 
 float UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	auto layout = GetStyle().GetLayout();
-	if (layout == nullptr)
-		layout = layouts::Stack();
-	return layout->CalcEstimatedWidth(this, containerSize, type);
+	return layouts::Stack()->CalcEstimatedWidth(this, containerSize, type);
 }
 
 float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	auto layout = GetStyle().GetLayout();
-	if (layout == nullptr)
-		layout = layouts::Stack();
-	return layout->CalcEstimatedHeight(this, containerSize, type);
+	return layouts::Stack()->CalcEstimatedHeight(this, containerSize, type);
 }
 
 void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
 {
-	auto layout = GetStyle().GetLayout();
-	if (layout == nullptr)
-		layout = layouts::Stack();
-	layout->OnLayout(this, inrect, state);
+	layouts::Stack()->OnLayout(this, inrect, state);
 }
 
 // on box sizing:

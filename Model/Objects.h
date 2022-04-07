@@ -704,13 +704,6 @@ struct ApplyStyle : Modifier
 	void Apply(UIObject* obj) const override { obj->SetStyle(_style); }
 };
 
-struct SetLayout : Modifier
-{
-	ILayout* _layout;
-	SetLayout(ILayout* layout) : _layout(layout) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetLayout(_layout); }
-};
-
 struct SetPlacement : Modifier
 {
 	IPlacement* _placement;

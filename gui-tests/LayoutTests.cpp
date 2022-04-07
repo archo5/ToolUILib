@@ -101,20 +101,16 @@ struct LayoutNestComboTest : ui::Buildable
 		switch (layout)
 		{
 		case 0:
-			s.SetLayout(ui::layouts::Stack());
-			s.SetStackingDirection(ui::StackingDirection::TopDown);
+			// stack top down
 			break;
 		case 1:
-			s.SetLayout(ui::layouts::Stack());
-			s.SetStackingDirection(ui::StackingDirection::LeftToRight);
+			// stack LTR
 			break;
 		case 2:
-			s.SetLayout(ui::layouts::Stack());
-			s.SetStackingDirection(ui::StackingDirection::BottomUp);
+			// stack bottom up
 			break;
 		case 3:
-			s.SetLayout(ui::layouts::Stack());
-			s.SetStackingDirection(ui::StackingDirection::RightToLeft);
+			// stack RTL
 			break;
 		case 4:
 			// inline block

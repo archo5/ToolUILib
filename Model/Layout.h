@@ -386,7 +386,6 @@ struct StyleBlock
 
 	CachedFontRef _cachedFont;
 
-	ILayout* layout = nullptr;
 	IPlacement* placement = nullptr;
 
 	PainterHandle background_painter;
@@ -477,9 +476,6 @@ public:
 	explicit StyleAccessor(StyleBlockRef& r) = delete;
 	explicit StyleAccessor(StyleBlockRef& r, UIObject* o);
 
-
-	ILayout* GetLayout() const;
-	void SetLayout(ILayout* v);
 
 	IPlacement* GetPlacement() const;
 	void SetPlacement(IPlacement* v);

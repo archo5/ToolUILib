@@ -18,7 +18,6 @@ struct DataEditor : ui::Buildable
 	{
 		ItemButton()
 		{
-			GetStyle().SetLayout(ui::layouts::Stack());
 			//GetStyle().SetMargin(32);
 		}
 		void Build() override
@@ -190,7 +189,6 @@ struct DataEditor : ui::Buildable
 					void OnBuild() override
 					{
 						auto s = ui::Push<ui::Panel>().GetStyle();
-						s.SetLayout(ui::layouts::Stack());
 						s.SetStackingDirection(ui::StackingDirection::RightToLeft);
 						if (ui::imm::Button("X"))
 							OnClose();
@@ -663,11 +661,6 @@ struct TEST : ui::Buildable
 			s += sizeof("ui::layouts::") - 1;
 		return s;
 	}
-	static const ui::ILayout* glo(UIObject* o)
-	{
-		auto* lo = o->GetStyle().GetLayout();
-		return lo ? lo : ui::layouts::Stack();
-	}
 	static const char* dir(const ui::StyleAccessor& a)
 	{
 		static const char* names[] = { "-", "Inh", "T-B", "R-L", "B-T", "L-R" };
@@ -693,10 +686,8 @@ struct TEST : ui::Buildable
 	{
 		for (int i = 0; i < lev; i++)
 			printf("  ");
-		auto* lo = glo(o);
-		printf("%s  -%s", cln(typeid(*o).name()), cln(typeid(*lo).name()));
-		if (lo == ui::layouts::Stack())
-			printf(":%s", dir(o->GetStyle()));
+		printf("%s", cln(typeid(*o).name()));
+		printf(":%s", dir(o->GetStyle()));
 		printf(" w=%s", costr(o->GetStyle().GetWidth()));
 		printf(" h=%s", costr(o->GetStyle().GetHeight()));
 		auto cr = o->GetContentRect();

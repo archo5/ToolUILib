@@ -329,11 +329,6 @@ struct ThemeLoaderData : IThemeLoader
 			if (!loaded)
 				loaded = new StyleBlock;
 
-			std::string layout;
-			OnField(u, "layout", layout);
-			if (layout == "stack")
-				loaded->layout = layouts::Stack();
-
 			std::string painterName;
 			OnField(u, "backgroundPainter", painterName);
 			auto pit = loadedData->painters.find(painterName);

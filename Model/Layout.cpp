@@ -494,16 +494,6 @@ template <class T> void AccSet(StyleAccessor& a, int off, T v)
 		a.owner->_OnChangeStyle();
 }
 
-ILayout* StyleAccessor::GetLayout() const
-{
-	return block->layout;
-}
-
-void StyleAccessor::SetLayout(ILayout* v)
-{
-	AccSet(*this, offsetof(StyleBlock, layout), v);
-}
-
 IPlacement* StyleAccessor::GetPlacement() const
 {
 	return block->placement;

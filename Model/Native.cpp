@@ -1207,8 +1207,6 @@ struct Inspector : NativeDialogWindow
 			y += fontSize - 1;
 			draw::TextLine(font, fontSize, x, y, Format("%p", obj), Color4b::White());
 			draw::TextLine(font, fontSize, x + 60, y, CleanName(typeid(*obj).name()), Color4b::White());
-			if (obj->GetStyle().GetLayout())
-				draw::TextLine(font, fontSize, 300, y, CleanName(typeid(*obj->GetStyle().GetLayout()).name()), Color4b::White());
 			char bfr[1024];
 			{
 				auto& fr = obj->finalRectC;
@@ -1249,7 +1247,6 @@ struct Inspector : NativeDialogWindow
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = styleProps->font_size;
 			draw::TextLine(font, styleProps->font_size, 0, y, "Address / Name", Color4b(255, 153));
-			draw::TextLine(font, styleProps->font_size, 300, y, "Layout", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 400, y, "Content rect", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 600, y, "Padding rect", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
