@@ -12,7 +12,7 @@ void SequenceDragData::Build()
 {
 	if (scope->itemUICallback)
 	{
-		PushBox() + SetWidth(width);
+		Push<StackTopDownLayoutElement>() + SetWidth(width);
 		scope->GetSequence()->IterateElements(at, [this](size_t idx, void* ptr)
 		{
 			scope->itemUICallback(scope, idx, ptr);

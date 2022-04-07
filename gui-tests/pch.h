@@ -10,11 +10,16 @@
 
 #include "../GUI.h"
 
+#include "../Model/WIP.h"
+
+
 inline ui::RadioButtonT<int>& BasicRadioButton(const char* text, int& iref, int val)
 {
 	auto& rb = ui::Push<ui::RadioButtonT<int>>().Init(iref, val);
+	ui::Push<ui::StackLTRLayoutElement>();
 	ui::Make<ui::RadioButtonIcon>();
 	ui::Text(text) + ui::SetPadding(4);
+	ui::Pop();
 	ui::Pop();
 	return rb;
 }

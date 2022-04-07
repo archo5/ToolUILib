@@ -9,11 +9,12 @@
 #include "Workspace.h"
 
 
+static bool viewSettingsOpen = false;
 void FileView::Build()
 {
 	ui::Push<ui::EdgeSliceLayoutElement>();
 
-	ui::PushBox();
+	ui::Push<ui::StackTopDownLayoutElement>();
 	{
 		char buf[256];
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
@@ -40,12 +41,10 @@ void FileView::Build()
 	}
 	ui::Pop();
 
-	ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
-	auto& vs = ui::MakeWithText<ui::CollapsibleTreeNode>("View settings");
-	ui::Pop();
+	ui::imm::EditBool(viewSettingsOpen, "View settings", {}, ui::imm::TreeStateToggleSkin());
 
-	ui::PushBox(); // tree stabilization box
-	if (vs.open)
+	ui::Push<ui::StackTopDownLayoutElement>(); // tree stabilization box
+	if (viewSettingsOpen)
 	{
 		ui::imm::PropEditInt("Width", of->hexViewerState.byteWidth, {}, {}, { 1, 256 });
 		ui::imm::PropEditInt("Position", of->hexViewerState.basePos);

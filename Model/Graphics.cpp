@@ -542,7 +542,7 @@ void ColorPicker::Build()
 	Push<StackExpandLTRLayoutElement>();
 	{
 		// left side
-		PushBox()
+		Push<StackTopDownLayoutElement>()
 			+ SetWidth(Coord::Fraction(0)); // TODO any way to make this unnecessary?
 		{
 			auto& hsp = Make<HueSatPicker>().Init(_color._hue, _color._sat)
@@ -555,9 +555,9 @@ void ColorPicker::Build()
 		FloatLimits limit = { 0, 1 };
 
 		// right side
-		PushBox() + SetPadding(8);
+		Push<StackTopDownLayoutElement>() + SetPadding(8);
 		{
-		//	PushBox() + SetPadding(8);
+		//	Push<StackTopDownLayoutElement>() + SetPadding(8);
 			//Text("HSV");
 
 			Push<StackExpandLTRLayoutElement>();
@@ -674,7 +674,6 @@ void ColorPicker::Build()
 			Push<StackExpandLTRLayoutElement>();
 			{
 				Push<Panel>()
-					+ Set(StackingDirection::LeftToRight)
 					+ SetPadding(3)
 					+ MakeDraggable([this](Event& e) { DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
 					+ AddEventHandler(EventType::DragDrop, [this](Event& e)
@@ -685,11 +684,13 @@ void ColorPicker::Build()
 						e.context->OnChange(this);
 					}
 				});
+				Push<StackLTRLayoutElement>();
 				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
 				Make<ColorBlock>().SetColor(_color.GetRGBA()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
 				Pop();
+				Pop();
 
-				PushBox();
+				Push<StackTopDownLayoutElement>();
 
 				Push<StackExpandLTRLayoutElement>() + SetHeight(22);
 				Make<BoxElement>() + SetWidth(Coord::Fraction(1));

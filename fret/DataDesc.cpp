@@ -4,8 +4,6 @@
 #include "FileReaders.h"
 #include "ImageParsers.h"
 
-#include "../Model/WIP.h"
-
 
 ui::DataCategoryTag DCT_Struct[1];
 ui::DataCategoryTag DCT_CurStructInst[1];
@@ -82,7 +80,7 @@ void DataDesc::EditStructuralItems()
 		}
 	}
 
-	ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+	ui::Push<ui::StackExpandLTRLayoutElement>();
 	ui::Text("Edit:") + ui::SetPadding(5);
 	ui::imm::RadioButton(editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
 	ui::imm::RadioButton(editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
@@ -244,7 +242,7 @@ void DataDesc::EditInstance()
 				}
 			}
 
-			ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+			ui::Push<ui::StackLTRLayoutElement>();
 			{
 				if (size != F_NO_VALUE)
 				{
@@ -365,7 +363,7 @@ void DataDesc::EditStruct()
 {
 	if (auto* SI = curInst)
 	{
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::Text("Struct:") + ui::SetPadding(5);
 		ui::Text(SI->def->name) + ui::SetPadding(5);
 		if (ui::imm::Button("Rename"))

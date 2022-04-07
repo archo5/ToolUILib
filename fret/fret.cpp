@@ -18,8 +18,6 @@
 #include "TabStructures.h"
 #include "TabImages.h"
 
-#include "../Model/WIP.h"
-
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 

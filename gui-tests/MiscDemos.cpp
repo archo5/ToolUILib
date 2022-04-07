@@ -59,7 +59,7 @@ struct SettingsWindowDemo : ui::Buildable
 
 		ui::Pop();
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::StringView lastGroup;
 		for (auto& entry : entries)

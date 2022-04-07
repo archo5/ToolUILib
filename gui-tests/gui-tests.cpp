@@ -2,8 +2,6 @@
 #include "pch.h"
 #include "../Render/RHI.h"
 
-#include "../Model/WIP.h"
-
 
 ui::DataCategoryTag DCT_ItemSelection[1];
 struct DataEditor : ui::Buildable

@@ -6,8 +6,6 @@
 #include "../Editors/TreeEditor.h"
 #include "../Editors/CurveEditor.h"
 
-#include "../Model/WIP.h"
-
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
 {
@@ -51,7 +49,7 @@ struct SequenceEditorsTest : ui::Buildable
 {
 	void Build() override
 	{
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 
 		if (ui::imm::Button("Reset"))
 		{
@@ -66,7 +64,7 @@ struct SequenceEditorsTest : ui::Buildable
 		if (ui::imm::Button("10000 values"))
 			AdjustSizeAll(10000);
 
-		ui::Pop();
+		WPop();
 
 		{
 			ui::LabeledProperty::Scope ps("\bSelection type:");
@@ -77,31 +75,31 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imm::EditBool(setSelectionStorage, "Storage");
 		}
 
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
 		ui::Text("std::vector<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ui::Pop();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
 		ui::Text("std::list<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ui::Pop();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
 		ui::Text("std::deque<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ui::Pop();
 
-		ui::PushBox() + ui::SetWidth(ui::Coord::Percent(25));
+		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
 		ui::Text("int[5]:");
 		SeqEdit(Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
 		ui::Pop();
 
-		ui::Pop();
+		WPop();
 
-		ui::Make<ui::DefaultOverlayBuilder>();
+		WMake<ui::DefaultOverlayBuilder>();
 	}
 
 	void SeqEdit(ui::ISequence* seq, ui::ISelectionStorage* sel)
@@ -709,8 +707,7 @@ struct MessageLogViewTest : ui::Buildable
 				AddMessages(10000);
 		};
 		WPop();
-		ui::PushBox()
-			+ ui::Set(ui::StackingDirection::LeftToRight)
+		WPush<ui::StackLTRLayoutElement>()
 			//+ ui::SetHeight(ui::Coord::Percent(50));
 			+ ui::SetHeight(200);
 		{
@@ -742,7 +739,7 @@ struct MessageLogViewTest : ui::Buildable
 			}
 			ui::Pop();
 		}
-		ui::Pop();
+		WPop();
 	}
 
 	std::vector<Message> messages;

@@ -3,8 +3,6 @@
 
 #include "../Editors/TreeEditor.h"
 
-#include "../Model/WIP.h"
-
 
 static ui::DataCategoryTag DCT_Node[1];
 struct BasicTreeNodeEditDemo : ui::Buildable
@@ -208,7 +206,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		ui::LabeledProperty::End();
 
 		ui::LabeledProperty::Begin("Variables:");
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		Variable* del = nullptr;
 		for (auto& v : variables)
@@ -503,7 +501,7 @@ struct ScriptTreeDemo : ui::Buildable
 			};
 			te.HandleEvent(ui::EventType::SelectionChange) = [this](ui::Event&) { Rebuild(); };
 
-			ui::PushBox();
+			ui::Push<ui::StackTopDownLayoutElement>();
 			{
 				if (tree.selected)
 				{

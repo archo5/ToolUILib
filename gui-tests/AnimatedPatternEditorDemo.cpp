@@ -5,8 +5,6 @@
 #include "../Editors/TreeEditor.h"
 #include "../Editors/CurveEditor.h"
 
-#include "../Model/WIP.h"
-
 
 using namespace ui;
 
@@ -382,7 +380,7 @@ struct AnimPattern : ITree
 
 	void CurveEditorUI()
 	{
-		PushBox() + Set(StackingDirection::LeftToRight);
+		Push<StackLTRLayoutElement>();
 		MakeWithText<Header>("Curves");
 
 		for (int i = 0; i < NUM_CURVES; i++)
@@ -594,7 +592,7 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 				}
 				Pop();
 
-				PushBox();
+				Push<StackTopDownLayoutElement>();
 				{
 					MakeWithText<Header>("Layers");
 

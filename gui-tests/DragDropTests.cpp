@@ -1,8 +1,6 @@
 
 #include "pch.h"
 
-#include "../Model/WIP.h"
-
 
 struct FileReceiverTest : ui::Buildable
 {
@@ -47,9 +45,9 @@ struct TransferCountablesTest : ui::Buildable
 
 	void Build() override
 	{
-		ui::Text("Transfer countables");
+		WText("Transfer countables");
 
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < 3; i++)
 		{
 			auto& btn = ui::MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
@@ -88,7 +86,7 @@ struct TransferCountablesTest : ui::Buildable
 				}
 			};
 		}
-		ui::Pop();
+		WPop();
 	}
 
 	int slots[3] = { 5, 2, 0 };
@@ -240,7 +238,7 @@ struct TreeNodeReorderTest : ui::Buildable
 		for (size_t i = 0; i < nodes.size(); i++)
 		{
 			Node* N = nodes[i];
-			ui::PushBox();
+			ui::Push<ui::StackTopDownLayoutElement>();
 
 			ui::Push<ui::Selectable>().Init(selectedNodes.count(N))
 				+ ui::SetPadding(0)
@@ -277,7 +275,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			});
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 
-			ui::PushBox() + ui::SetWidth(level * 12);
+			ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(level * 12);
 			ui::Pop();
 
 			ui::Push<ui::CheckboxFlagT<bool>>().Init(N->open) + ui::RebuildOnChange();
@@ -290,7 +288,7 @@ struct TreeNodeReorderTest : ui::Buildable
 
 			if (N->open)
 			{
-				ui::PushBox();
+				ui::Push<ui::StackTopDownLayoutElement>();
 				BuildNodeList(N, N->children, level + 1);
 				ui::Pop();
 			}
@@ -623,13 +621,13 @@ struct DragConnectTest : ui::Buildable
 		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
 
 		tmpl->edge = ui::Edge::Left;
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::MakeWithText<Linkable>("left A").Init(false, 0);
 		ui::MakeWithText<Linkable>("left B").Init(false, 1);
 		ui::Pop();
 
 		tmpl->edge = ui::Edge::Right;
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::MakeWithText<Linkable>("right A").Init(true, 2);
 		ui::MakeWithText<Linkable>("right B").Init(true, 3);
 		ui::Pop();
@@ -691,7 +689,7 @@ struct DragDropTest : ui::Buildable
 {
 	void Build() override
 	{
-		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 
 		auto s = ui::Push<ui::Panel>().GetStyle();
 		s.SetWidth(ui::Coord::Percent(50));
@@ -711,7 +709,7 @@ struct DragDropTest : ui::Buildable
 		ui::Make<DragElementTest>();
 		ui::Make<DragConnectTest>();
 
-		ui::Pop();
+		WPop();
 
 		ui::Make<ui::DefaultOverlayBuilder>();
 	}

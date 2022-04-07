@@ -11,6 +11,8 @@
 #include <sstream>
 #include "../GUI.h"
 
+#include "../Model/WIP.h"
+
 enum GlobalEvents
 {
 	GlobalEvent_OpenImage,

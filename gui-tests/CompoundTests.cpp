@@ -1,8 +1,6 @@
 
 #include "pch.h"
 
-#include "../Model/WIP.h"
-
 
 struct StateButtonsTest : ui::Buildable
 {
@@ -36,6 +34,7 @@ struct StateButtonsTest : ui::Buildable
 
 	void MakeContents(const char* text, int row)
 	{
+		WPush<ui::StackExpandLTRLayoutElement>();
 		switch (row)
 		{
 		case 0:
@@ -73,109 +72,112 @@ struct StateButtonsTest : ui::Buildable
 			s.SetFontStyle(stb->GetState() > 1 ? ui::FontStyle::Italic : ui::FontStyle::Normal);
 			break; }
 		}
+		WPop();
 	}
 
 	void Build() override
 	{
 		constexpr int NUM_STYLES = 8;
 
-		GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ui::Text("CB activate");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(cb1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { cb1 = !cb1; Rebuild(); };
+				(stb = &WPush<ui::StateToggle>().InitReadOnly(cb1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { cb1 = !cb1; Rebuild(); };
 				MakeContents("one", i);
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ui::Text("CB int.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto& cbbs = ui::Push<ui::StateToggle>().InitEditable(cb1, 2);
+				auto& cbbs = WPush<ui::StateToggle>().InitEditable(cb1, 2);
 				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb1 = cbbs.GetState(); Rebuild(); };
 				MakeContents("two", i);
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ui::Text("CB ext.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				*(stb = &ui::Push<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
+				*(stb = &WPush<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
 				MakeContents("three", i);
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(15));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
 		{
 			ui::Text("CB int.3-state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				auto& cbbs = ui::Push<ui::StateToggle>().InitEditable(cb3state, 3);
+				auto& cbbs = WPush<ui::StateToggle>().InitEditable(cb3state, 3);
 				(stb = &cbbs)->HandleEvent(ui::EventType::Change) = [this, &cbbs](ui::Event&) { cb3state = cbbs.GetState(); Rebuild(); };
 				MakeContents("four", i);
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
 			ui::Text("RB activate");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Push<ui::StackExpandLTRLayoutElement>();
+				WPush<ui::StackExpandLTRLayoutElement>();
 
-				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
+				(stb = &WPush<ui::StateToggle>().InitReadOnly(rb1 == 0))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 0; Rebuild(); };
 				MakeContents("r1a", i);
-				ui::Pop();
+				WPop();
 
-				(stb = &ui::Push<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
+				(stb = &WPush<ui::StateToggle>().InitReadOnly(rb1 == 1))->HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { rb1 = 1; Rebuild(); };
 				MakeContents("r1b", i);
-				ui::Pop();
+				WPop();
 
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
 
-		ui::PushBox().GetStyle().SetWidth(ui::Coord::Percent(20));
+		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(20));
 		{
 			ui::Text("RB ext.state");
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				ui::Push<ui::StackExpandLTRLayoutElement>();
+				WPush<ui::StackExpandLTRLayoutElement>();
 
-				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
+				*(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
 				MakeContents("r2a", i);
-				ui::Pop();
+				WPop();
 
-				*(stb = &ui::Push<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
+				*(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
 				MakeContents("r2b", i);
-				ui::Pop();
+				WPop();
 
-				ui::Pop();
+				WPop();
 			}
 		}
-		ui::Pop();
+		WPop();
+
+		WPop();
 	}
 
 	ui::StateToggleBase* stb = nullptr;
@@ -205,7 +207,7 @@ struct PropertyListTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("test 2");
 		ui::Pop();
 
-		ui::PushBox().GetStyle().SetPaddingLeft(32);
+		ui::Push<ui::StackTopDownLayoutElement>().GetStyle().SetPaddingLeft(32);
 		{
 			ui::Push<ui::LabeledProperty>().SetText("also 3");
 			ui::Text("test 3 elevated");
@@ -424,13 +426,13 @@ struct TabsTest : ui::Buildable
 			tab1 = int(tp1.GetCurrentTabUID(0));
 		};
 		{
-			ui::PushBox().SetVisible(tp1.GetCurrentTabUID() == 0);
+			ui::Push<ui::StackTopDownLayoutElement>().SetVisible(tp1.GetCurrentTabUID() == 0);
 			{
 				ui::Text("Contents of the first tab (SetVisible)");
 			}
 			ui::Pop();
 
-			ui::PushBox().SetVisible(tp1.GetCurrentTabUID() == 1);
+			ui::Push<ui::StackTopDownLayoutElement>().SetVisible(tp1.GetCurrentTabUID() == 1);
 			{
 				ui::Text("Contents of the second tab (SetVisible)");
 			}
@@ -890,7 +892,7 @@ struct DropdownTest : ui::Buildable
 
 	void Build() override
 	{
-		*this + ui::Set(ui::StackingDirection::LeftToRight);
+		WPush<ui::StackLTRLayoutElement>();
 		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
 		{
 			WMake<SpecificDropdownMenu>();
@@ -930,6 +932,7 @@ struct DropdownTest : ui::Buildable
 			WMake<SpecificDropdownMenu>();
 			WPop();
 		}
+		WPop();
 		WPop();
 	}
 

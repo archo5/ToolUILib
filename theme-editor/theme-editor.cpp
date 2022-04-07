@@ -82,7 +82,7 @@ struct TE_MainPreviewNode : Buildable
 		Subscribe(DCT_EditProcGraph);
 		Subscribe(DCT_EditProcGraphNode);
 
-		PushBox() + Set(StackingDirection::LeftToRight);
+		Push<StackExpandLTRLayoutElement>();
 		{
 			Text("Preview") + SetPadding(5);
 			if (tmpl->curPreviewImage && imm::Button("Reset to template"))
@@ -96,7 +96,7 @@ struct TE_MainPreviewNode : Buildable
 		{
 			Push<EdgeSliceLayoutElement>();
 			{
-				PushBox() + Set(StackingDirection::LeftToRight);
+				Push<StackExpandLTRLayoutElement>();
 				{
 					imm::RadioButton(g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
 					imm::RadioButton(g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
@@ -104,7 +104,7 @@ struct TE_MainPreviewNode : Buildable
 				Pop();
 				if (g_previewMode == TEPM_Original)
 				{
-					PushBox() + Set(StackingDirection::LeftToRight);
+					Push<StackExpandLTRLayoutElement>();
 					{
 						imm::RadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
 						imm::RadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
@@ -166,7 +166,7 @@ struct TE_ImageEditorNode : Buildable
 	{
 		Subscribe(DCT_ChangeActiveImage);
 
-		PushBox() + Set(StackingDirection::LeftToRight);
+		Push<StackLTRLayoutElement>();
 		{
 			Text("Images") + SetPadding(5);
 			if (imm::Button("Add"))
@@ -284,7 +284,7 @@ struct TE_TemplateEditorNode : Buildable
 			ien.theme = theme;
 			ien.tmpl = tmpl;
 
-			PushBox();
+			Push<StackTopDownLayoutElement>();
 			{
 				auto& vsp = Push<SplitPane>();
 				{

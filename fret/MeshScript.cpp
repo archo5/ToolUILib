@@ -2,8 +2,6 @@
 #include "pch.h"
 #include "MeshScript.h"
 
-#include "../Model/WIP.h"
-
 
 ui::DataCategoryTag DCT_MeshScriptChanged[1];
 

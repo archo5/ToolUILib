@@ -680,11 +680,11 @@ struct HighElementCountTest : ui::Buildable
 	};
 	void Build() override
 	{
-		ui::PushBox();// + ui::StackingDirection(ui::StackingDirection::LeftToRight); TODO FIX
+		WPush<ui::StackLTRLayoutElement>();
 		BasicRadioButton("no styles", styleMode, 0) + ui::RebuildOnChange();
 		BasicRadioButton("same style", styleMode, 1) + ui::RebuildOnChange();
 		BasicRadioButton("different styles", styleMode, 2) + ui::RebuildOnChange();
-		ui::Pop();
+		WPop();
 
 		for (int i = 0; i < 1000; i++)
 		{

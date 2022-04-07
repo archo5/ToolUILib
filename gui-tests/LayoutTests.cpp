@@ -85,13 +85,15 @@ struct LayoutNestComboTest : ui::Buildable
 
 	void LayoutUI(int& layout)
 	{
-		ui::Push<ui::Panel>().GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
+		WPush<ui::Panel>();
+		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < layoutCount; i++)
 		{
 			BasicRadioButton2(layoutShortNames[i], layout, i) + ui::RebuildOnChange();
 		}
-		ui::Text(layoutLongNames[layout]);
-		ui::Pop();
+		WText(layoutLongNames[layout]);
+		WPop();
+		WPop();
 	}
 
 	void SetLayout(ui::StyleAccessor s, int layout, int parentLayout)
@@ -148,8 +150,6 @@ void Test_LayoutNestCombo()
 }
 
 
-#include "../Model/WIP.h"
-
 struct StackingLayoutVariationsTest : ui::Buildable
 {
 	void Build() override
@@ -166,13 +166,15 @@ struct StackingLayoutVariationsTest : ui::Buildable
 		};
 		constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
 
-		ui::Push<ui::Panel>().GetStyle().SetStackingDirection(ui::StackingDirection::LeftToRight);
+		WPush<ui::Panel>();
+		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < layoutCount; i++)
 		{
 			BasicRadioButton2(layoutShortNames[i], mode, i) + ui::RebuildOnChange();
 		}
-		ui::Text(layoutLongNames[mode]);
-		ui::Pop();
+		WText(layoutLongNames[mode]);
+		WPop();
+		WPop();
 
 		if (mode == 0)
 		{
@@ -222,10 +224,12 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			{ auto s = ui::Push<ui::Panel>().GetStyle(); s.SetLayout(ui::layouts::Stack()); s.SetStackingDirection(ui::StackingDirection::LeftToRight); }
+			WPush<ui::Panel>();
+			WPush<ui::StackLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
-			ui::Pop();
+			WPop();
+			WPop();
 		}
 	}
 };
@@ -292,7 +296,7 @@ struct SizeTest : ui::Buildable
 
 		TestContentSize(ui::Text("Testing text element size"), CalcTestTextWidth("Testing text element size"), GetTestFontHeight());
 
-		ui::PushBox() + ui::SetLayout(ui::layouts::Stack()) + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::Push<ui::StackLTRLayoutElement>();
 		{
 			auto& txt1 = ui::Text("Text size + padding") + ui::SetPadding(5);
 			TestContentSize(txt1, CalcTestTextWidth("Text size + padding"), GetTestFontHeight());
@@ -350,7 +354,7 @@ struct SizeTest : ui::Buildable
 			TestFullSize(box, 140 + 10, GetTestFontHeight() + 10);
 		}
 
-		ui::PushBox() + ui::Set(ui::StackingDirection::LeftToRight);
+		ui::Push<ui::StackLTRLayoutElement>();
 		{
 			auto& box = ui::Make<SizedBox>();
 			TestContentSize(box, 40, 40);
@@ -461,9 +465,11 @@ struct PlacementTest : ui::Buildable
 		*this + ui::SetPadding(20);
 
 		ui::Text("Expandable menu example:");
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::imm::EditBool(open, nullptr, { ui::MakeOverlay(open, 1.0f) });
+		ui::Pop();
 
 		if (open)
 		{
@@ -488,7 +494,7 @@ struct PlacementTest : ui::Buildable
 
 		ui::Text("Autocomplete example:");
 		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::imm::EditString(text.c_str(),
 			[this](const char* v) { text = v; }, {
 			ui::AddEventHandler(ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),

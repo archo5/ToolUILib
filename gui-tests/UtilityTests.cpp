@@ -193,7 +193,7 @@ struct FileSelectionWindowTest : ui::Buildable
 
 		ui::Text("Inputs");
 		ui::LabeledProperty::Begin("Filters");
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
 			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.filters)>>(fsw.filters));
@@ -219,7 +219,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::Text("Inputs / outputs");
 		ui::imm::PropEditString("Current directory", fsw.currentDir.c_str(), [&](const char* s) { fsw.currentDir = s; });
 		ui::LabeledProperty::Begin("Selected files");
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
 			se.SetSequence(Allocate<ui::StdSequence<decltype(fsw.selectedFiles)>>(fsw.selectedFiles));
