@@ -27,7 +27,8 @@ void MeshEditorWindowNode::Build()
 					tmpl->edge = ui::Edge::Left;
 					ui::Push<ui::StackTopDownLayoutElement>()
 						+ ui::SetWidth(200);
-					ui::Push<ui::ListBox>();
+					ui::Push<ui::ListBoxFrame>();
+					ui::Push<ui::StackTopDownLayoutElement>();
 					{
 						ui::imm::PropEditBool("Alpha blend", alphaBlend);
 						ui::imm::PropEditBool("Cull", cull);
@@ -35,6 +36,7 @@ void MeshEditorWindowNode::Build()
 						ui::imm::PropEditBool("Draw wireframe", drawWireframe);
 						ui::imm::PropEditColor("Wire color", wireColor);
 					}
+					ui::Pop();
 					ui::Pop();
 					ui::Pop();
 

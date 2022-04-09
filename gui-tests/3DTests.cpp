@@ -33,7 +33,7 @@ struct The3DViewTest : ui::Buildable
 			{
 				auto* leftCorner = ui::BuildAlloc<ui::PointAnchoredPlacement>();
 				leftCorner->SetAnchorAndPivot({ 0, 0 });
-				ui::PushBox() + ui::SetPlacement(leftCorner);
+				ui::Push<ui::StackTopDownLayoutElement>() + ui::SetPlacement(leftCorner);
 
 				ui::Text("Overlay text");
 				ui::Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });

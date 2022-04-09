@@ -174,6 +174,11 @@ struct ListBox : UIElement
 	void OnReset() override;
 };
 
+struct ListBoxFrame : PaddedWrapperElement
+{
+	void OnReset() override;
+};
+
 struct Selectable : PaddedWrapperElement
 {
 	void OnReset() override;
@@ -515,16 +520,6 @@ struct TextboxPlaceholder : Modifier
 		if (auto* tb = dynamic_cast<Textbox*>(obj))
 			tb->SetPlaceholder(placeholder);
 	}
-};
-
-struct CollapsibleTreeNode : UIElement
-{
-	bool open = false;
-	bool _hovered = false;
-
-	void OnReset() override;
-	void OnPaint(const UIPaintContext& ctx) override;
-	void OnEvent(Event& e) override;
 };
 
 

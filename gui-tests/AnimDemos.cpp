@@ -17,7 +17,9 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 		tgt = nullptr;
 		if (layout != 0)
 		{
-			ui::PushBox() + ui::Set(layout == 1 ? ui::StackingDirection::LeftToRight : ui::StackingDirection::RightToLeft);
+			ui::Push<ui::EdgeSliceLayoutElement>() + ui::SetHeight(100);
+			auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
+			tmpl->edge = layout == 1 ? ui::Edge::Left : ui::Edge::Right;
 			tgt = &ui::MakeWithText<ui::Button>(layout == 1 ? "Left" : "Right button");
 			ui::Pop();
 		}

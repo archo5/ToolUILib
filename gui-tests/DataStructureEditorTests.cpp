@@ -634,23 +634,29 @@ struct MessageLogViewTest : ui::Buildable
 		mlvRData.msgs = &messages;
 		mlvIData.msgs = &messages;
 
-		mlvR._InitReset();
-		mlvI._InitReset();
+		mlvR = ui::CreateUIObject<ui::MessageLogView>();
+		mlvI = ui::CreateUIObject<ui::MessageLogView>();
 
-		mlvR.SetDataSource(&mlvRData);
-		mlvI.SetDataSource(&mlvIData);
+		mlvR->SetDataSource(&mlvRData);
+		mlvI->SetDataSource(&mlvIData);
 
-		mlvR + ui::SetHeight(ui::Coord::Percent(100));
-		mlvI + ui::SetHeight(ui::Coord::Percent(100));
+		*mlvR + ui::SetHeight(ui::Coord::Percent(100));
+		*mlvI + ui::SetHeight(ui::Coord::Percent(100));
 
 		// TODO: scrolling to end in ctor results in scrolling a page or so too far - should probably fix that?
 		AddMessages(2345);
 	}
 
+	~MessageLogViewTest()
+	{
+		ui::DeleteUIObject(mlvR);
+		ui::DeleteUIObject(mlvI);
+	}
+
 	void AddMessages(int n)
 	{
-		bool isAtEndR = mlvR.IsAtEnd();
-		bool isAtEndI = mlvI.IsAtEnd();
+		bool isAtEndR = mlvR->IsAtEnd();
+		bool isAtEndI = mlvI->IsAtEnd();
 
 		static const char* words[10] =
 		{
@@ -679,9 +685,9 @@ struct MessageLogViewTest : ui::Buildable
 		}
 
 		if (isAtEndR)
-			mlvR.ScrollToEnd();
+			mlvR->ScrollToEnd();
 		if (isAtEndI)
-			mlvI.ScrollToEnd();
+			mlvI->ScrollToEnd();
 	}
 
 	void OnEnable() override
@@ -716,10 +722,10 @@ struct MessageLogViewTest : ui::Buildable
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
 				ui::Text("single line");
-				ui::Push<ui::ListBox>()
+				ui::Push<ui::ListBoxFrame>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
-					ui::Append(&mlvR);
+					ui::Append(mlvR);
 				}
 				ui::Pop();
 			}
@@ -730,10 +736,10 @@ struct MessageLogViewTest : ui::Buildable
 				+ ui::SetHeight(ui::Coord::Percent(100));
 			{
 				ui::Text("two lines, custom drawing");
-				ui::Push<ui::ListBox>()
+				ui::Push<ui::ListBoxFrame>()
 					;// +ui::Height(ui::Coord::Percent(100));
 				{
-					ui::Append(&mlvI);
+					ui::Append(mlvI);
 				}
 				ui::Pop();
 			}
@@ -746,8 +752,8 @@ struct MessageLogViewTest : ui::Buildable
 
 	MLV_R mlvRData;
 	MLV_I mlvIData;
-	ui::MessageLogView mlvR;
-	ui::MessageLogView mlvI;
+	ui::MessageLogView* mlvR;
+	ui::MessageLogView* mlvI;
 };
 void Test_MessageLogView()
 {

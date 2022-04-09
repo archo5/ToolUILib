@@ -68,7 +68,6 @@ static const char* EnumKeys_StackingDirection[] =
 	"",
 	"LeftToRight",
 	"TopDown",
-	"RightToLeft",
 	nullptr,
 };
 template <> struct EnumKeys<StackingDirection> : EnumKeysStringList<StackingDirection, EnumKeys_StackingDirection> {};

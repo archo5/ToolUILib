@@ -63,7 +63,6 @@ struct StackLayout : ILayout
 				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
 		case StackingDirection::LeftToRight:
-		case StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 			break;
@@ -84,7 +83,6 @@ struct StackLayout : ILayout
 				size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 			break;
 		case StackingDirection::LeftToRight:
-		case StackingDirection::RightToLeft:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 			break;
@@ -109,15 +107,6 @@ struct StackLayout : ILayout
 				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
 				p += h;
-			}
-			break; }
-		case StackingDirection::RightToLeft: {
-			float p = inrect.x1;
-			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
-				p -= w;
 			}
 			break; }
 		case StackingDirection::LeftToRight: {

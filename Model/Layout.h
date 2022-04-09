@@ -102,7 +102,6 @@ enum class StackingDirection : uint8_t
 
 	LeftToRight,
 	TopDown,
-	RightToLeft,
 };
 
 enum class Edge : uint8_t

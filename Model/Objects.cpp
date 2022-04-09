@@ -1020,9 +1020,10 @@ Rangef PaddedWrapperElement::GetFullEstimatedHeight(const Size2f& containerSize,
 
 void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	firstChild->PerformLayout(rect.ShrinkBy(styleProps->GetPaddingRect()), GetReducedContainerSize(containerSize));
+	auto padRect = styleProps->GetPaddingRect();
+	firstChild->PerformLayout(rect.ShrinkBy(padRect), GetReducedContainerSize(containerSize));
 	finalRectC = firstChild->finalRectCP;
-	finalRectCP = finalRectC.ExtendBy(styleProps->GetPaddingRect());
+	finalRectCP = finalRectC.ExtendBy(padRect);
 }
 
 

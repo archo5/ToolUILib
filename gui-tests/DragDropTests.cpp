@@ -8,7 +8,7 @@ struct FileReceiverTest : ui::Buildable
 	{
 		ui::Text("File receiver");
 
-		ui::Push<ui::ListBox>().HandleEvent(ui::EventType::DragDrop) = [this](ui::Event& e)
+		ui::Push<ui::ListBoxFrame>().HandleEvent(ui::EventType::DragDrop) = [this](ui::Event& e)
 		{
 			if (auto* ddd = static_cast<ui::DragDropFiles*>(ui::DragDrop::GetData(ui::DragDropFiles::NAME)))
 			{
@@ -16,6 +16,7 @@ struct FileReceiverTest : ui::Buildable
 				Rebuild();
 			}
 		};
+		ui::Push<ui::StackTopDownLayoutElement>();
 		if (filePaths.empty())
 		{
 			ui::Text("Drop files here");
@@ -27,6 +28,7 @@ struct FileReceiverTest : ui::Buildable
 				ui::Text(path);
 			}
 		}
+		ui::Pop();
 		ui::Pop();
 	}
 
@@ -106,7 +108,8 @@ struct SlideReorderTest : ui::Buildable
 	{
 		ui::Text("Slide-reorder (instant)");
 
-		ui::Push<ui::ListBox>();
+		ui::Push<ui::ListBoxFrame>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		for (int i = 0; i < 4; i++)
 		{
 			bool dragging = false;
@@ -152,6 +155,7 @@ struct SlideReorderTest : ui::Buildable
 			ui::Textf("item %d%s", iids[i], dragging ? " [dragging]" : "");
 			ui::Pop();
 		}
+		ui::Pop();
 		ui::Pop();
 	}
 
@@ -229,8 +233,10 @@ struct TreeNodeReorderTest : ui::Buildable
 	{
 		ui::Text("Tree node reorder with preview");
 
-		ui::Push<ui::ListBox>();
+		ui::Push<ui::ListBoxFrame>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		BuildNodeList(nullptr, rootNodes, 0);
+		ui::Pop();
 		ui::Pop();
 	}
 	void BuildNodeList(Node* cont, std::vector<Node*>& nodes, int level)

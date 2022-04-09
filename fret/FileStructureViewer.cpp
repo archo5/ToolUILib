@@ -166,6 +166,7 @@ void FileStructureViewer::Build()
 				openness.push_back(false);
 			if (curLevel == openLevel)
 			{
+#if 0 // CLEAN THIS UP
 				auto& item = ui::Push<ui::CollapsibleTreeNode>();
 				if (ui::LastIsNew())
 					item.open = openness[id];
@@ -174,6 +175,7 @@ void FileStructureViewer::Build()
 
 				if (item.open)
 					openLevel++;
+#endif
 				ui::Text(sp.name.c_str());
 			}
 			curLevel++;

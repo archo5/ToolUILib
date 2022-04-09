@@ -148,6 +148,14 @@ void ListBox::OnReset()
 }
 
 
+void ListBoxFrame::OnReset()
+{
+	PaddedWrapperElement::OnReset();
+
+	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
+}
+
+
 static StaticID_Style sid_selectable("selectable");
 void Selectable::OnReset()
 {
@@ -1586,45 +1594,6 @@ Textbox& Textbox::Init(float& val)
 }
 
 
-void CollapsibleTreeNode::OnReset()
-{
-	UIElement::OnReset();
-
-	styleProps = GetCurrentTheme()->GetStyle(sid_tree_expand);
-}
-
-void CollapsibleTreeNode::OnPaint(const UIPaintContext& ctx)
-{
-	PaintInfo info(this);
-	info.state &= ~PS_Hover;
-	if (_hovered)
-		info.state |= PS_Hover;
-	if (open)
-		info.SetChecked(true);
-
-	UIPaintHelper::Paint(info, ctx);
-}
-
-void CollapsibleTreeNode::OnEvent(Event& e)
-{
-	if (e.type == EventType::MouseEnter || e.type == EventType::MouseMove)
-	{
-		auto r = GetPaddingRect();
-		float h = styleProps->font_size;
-		_hovered = e.position.x >= r.x0 && e.position.x < r.x0 + h && e.position.y >= r.y0 && e.position.y < r.y0 + h;
-	}
-	if (e.type == EventType::MouseLeave)
-	{
-		_hovered = false;
-	}
-	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left && _hovered)
-	{
-		open = !open;
-		e.GetTargetBuildable()->Rebuild();
-	}
-}
-
-
 void BackgroundBlocker::OnReset()
 {
 	UIElement::OnReset();
@@ -1721,9 +1690,11 @@ void DropdownMenu::OnBuildMenuWithLayout()
 UIObject& DropdownMenu::OnBuildMenu()
 {
 	auto& ret = Push<ListBox>();
+	Push<StackTopDownLayoutElement>();
 
 	OnBuildMenuContents();
 
+	Pop();
 	Pop();
 	return ret;
 }

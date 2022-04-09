@@ -121,7 +121,7 @@ struct TE_MainPreviewNode : Buildable
 					Pop();
 				}
 
-				Push<ListBox>() + SetHeight(Coord::Percent(95)); // TODO
+				Push<ListBoxFrame>();
 
 				Canvas canvas;
 #if 0
@@ -272,7 +272,7 @@ struct TE_TemplateEditorNode : Buildable
 	{
 		auto& hsp = Push<SplitPane>();
 		{
-			Push<ListBox>();
+			Push<ListBoxFrame>();
 			{
 				auto& pge = Make<ProcGraphEditor>();
 				pge + SetHeight(Coord::Percent(100));
@@ -331,26 +331,12 @@ struct TE_ThemeEditorNode : Buildable
 {
 	void Build() override
 	{
-#if 1
 		std::vector<MenuItem> topMenu;
 		topMenu.push_back(MenuItem("File"));
 		topMenu.back().submenu.push_back(MenuItem("New").Func([this]() { theme->Clear(); Rebuild(); }));
 		topMenu.back().submenu.push_back(MenuItem("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); }));
 		topMenu.back().submenu.push_back(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
 		Allocate<TopMenu>(GetNativeWindow(), topMenu);
-#else
-		Push<MenuBarElement>();
-		{
-			Push<MenuItemElement>().SetText("File");
-			{
-				Make<MenuItemElement>().SetText("New").Func([this]() { theme->Clear(); Rebuild(); });
-				Make<MenuItemElement>().SetText("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); });
-				Make<MenuItemElement>().SetText("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); });
-			}
-			Pop();
-		}
-		Pop();
-#endif
 
 		//auto& tp = Push<TabbedPanel>();
 		Push<TabGroup>() + SetHeight(Coord::Percent(100));

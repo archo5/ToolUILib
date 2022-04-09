@@ -537,6 +537,7 @@ struct PlacementTest : ui::Buildable
 		if (showDropdown)
 		{
 			auto& lb = ui::Push<ui::ListBox>();
+			ui::Push<ui::StackTopDownLayoutElement>();
 			lb.RegisterAsOverlay();
 			auto* pap = Allocate<ui::PointAnchoredPlacement>();
 			pap->anchor = { 0, 1 };
@@ -556,6 +557,7 @@ struct PlacementTest : ui::Buildable
 			if (curSelection >= curOptionCount)
 				curSelection = 0;
 
+			ui::Pop();
 			ui::Pop();
 		}
 		ui::Pop();

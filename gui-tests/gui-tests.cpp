@@ -106,28 +106,6 @@ struct DataEditor : ui::Buildable
 
 	void Build() override
 	{
-#if 0
-		ui::Push<ui::MenuBarElement>();
-		{
-			ui::Push<ui::MenuItemElement>().SetText("File");
-			{
-				ui::Make<ui::MenuItemElement>().SetText("New", "Ctrl+N");
-				ui::Make<ui::MenuItemElement>().SetText("Open", "Ctrl+O");
-				ui::Make<ui::MenuItemElement>().SetText("Save", "Ctrl+S");
-				ui::Make<ui::MenuSeparatorElement>();
-				ui::Make<ui::MenuItemElement>().SetText("Quit", "Ctrl+Q");
-			}
-			ui::Pop();
-			ui::Push<ui::MenuItemElement>().SetText("Help");
-			{
-				ui::Make<ui::MenuItemElement>().SetText("Documentation", "F1");
-				ui::Make<ui::MenuItemElement>().SetText("About");
-			}
-			ui::Pop();
-		}
-		ui::Pop();
-#endif
-
 		ui::MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
 		static float sldval = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval, { 0, 2, 0.1 });
@@ -188,14 +166,15 @@ struct DataEditor : ui::Buildable
 					}
 					void OnBuild() override
 					{
-						auto s = ui::Push<ui::Panel>().GetStyle();
-						s.SetStackingDirection(ui::StackingDirection::RightToLeft);
+						ui::Push<ui::Panel>();
+						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
 						if (ui::imm::Button("X"))
 							OnClose();
 						if (ui::imm::Button("[]"))
 							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized);
 						if (ui::imm::Button("_"))
 							SetState(ui::WindowState::Minimized);
+						ui::Pop();
 						ui::Pop();
 
 						ui::Push<ui::Panel>();
@@ -235,7 +214,7 @@ struct DataEditor : ui::Buildable
 
 		static bool lbsel0 = false;
 		static bool lbsel1 = true;
-		ui::Push<ui::ListBox>();
+		ui::Push<ui::ListBoxFrame>();
 		ui::Push<ui::ScrollArea>();
 		ui::MakeWithText<ui::Selectable>("Item 1").Init(lbsel0);
 		ui::MakeWithText<ui::Selectable>("Item two").Init(lbsel1);
@@ -250,41 +229,6 @@ struct DataEditor : ui::Buildable
 			for (size_t i = 0; i < items.size(); i++)
 			{
 				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
-			}
-			ui::Pop();
-
-			auto& r1 = ui::Push<ui::CollapsibleTreeNode>();
-			ui::Text("root item 1");
-			if (r1.open)
-			{
-				ui::Text("- data under root item 1");
-				auto& r1c1 = ui::Push<ui::CollapsibleTreeNode>();
-				ui::Text("child 1");
-				if (r1c1.open)
-				{
-					auto& r1c1c1 = ui::Push<ui::CollapsibleTreeNode>();
-					ui::Text("subchild 1");
-					ui::Pop();
-				}
-				ui::Pop();
-
-				auto& r1c2 = ui::Push<ui::CollapsibleTreeNode>();
-				ui::Text("child 2");
-				if (r1c2.open)
-				{
-					auto& r1c2c1 = ui::Push<ui::CollapsibleTreeNode>();
-					ui::Text("subchild 1");
-					ui::Pop();
-				}
-				ui::Pop();
-			}
-			ui::Pop();
-
-			auto& r2 = ui::Push<ui::CollapsibleTreeNode>();
-			ui::Text("root item 2");
-			if (r2.open)
-			{
-				ui::Text("- data under root item 2");
 			}
 			ui::Pop();
 		}

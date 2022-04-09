@@ -37,7 +37,8 @@ struct SettingsWindowDemo : ui::Buildable
 	{
 		auto& sp = ui::Push<ui::SplitPane>();
 
-		ui::Push<ui::ListBox>();
+		ui::Push<ui::ListBoxFrame>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::imm::EditString(search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
 
@@ -58,6 +59,7 @@ struct SettingsWindowDemo : ui::Buildable
 		}
 
 		ui::Pop();
+		ui::Pop();
 
 		ui::Push<ui::StackTopDownLayoutElement>();
 
@@ -72,12 +74,16 @@ struct SettingsWindowDemo : ui::Buildable
 			if (entry.group != lastGroup)
 			{
 				if (lastGroup.size())
+				{
 					ui::Pop();
+					ui::Pop();
+				}
 
 				if (entry.group.size())
 				{
 					ui::Text(entry.group);
-					ui::Push<ui::ListBox>();
+					ui::Push<ui::ListBoxFrame>();
+					ui::Push<ui::StackTopDownLayoutElement>();
 				}
 				lastGroup = entry.group;
 			}
@@ -85,7 +91,10 @@ struct SettingsWindowDemo : ui::Buildable
 			entry.editFunc(settings);
 		}
 		if (lastGroup.size())
+		{
 			ui::Pop();
+			ui::Pop();
+		}
 
 		ui::Pop();
 
