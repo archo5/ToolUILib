@@ -25,8 +25,9 @@ void MeshEditorWindowNode::Build()
 
 					auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
 					tmpl->edge = ui::Edge::Left;
-					ui::Push<ui::ListBox>()
+					ui::Push<ui::StackTopDownLayoutElement>()
 						+ ui::SetWidth(200);
+					ui::Push<ui::ListBox>();
 					{
 						ui::imm::PropEditBool("Alpha blend", alphaBlend);
 						ui::imm::PropEditBool("Cull", cull);
@@ -35,9 +36,10 @@ void MeshEditorWindowNode::Build()
 						ui::imm::PropEditColor("Wire color", wireColor);
 					}
 					ui::Pop();
+					ui::Pop();
 
 					tmpl->edge = ui::Edge::Right;
-					ui::PushBox()
+					ui::Push<ui::StackTopDownLayoutElement>()
 						+ ui::SetWidth(200);
 					{
 						if (ui::imm::Button("Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
@@ -53,7 +55,7 @@ void MeshEditorWindowNode::Build()
 			}
 			ui::Pop();
 
-			ui::PushBox();
+			ui::Push<ui::StackTopDownLayoutElement>();
 			if (structDef)
 			{
 				mesh->script.EditUI();
@@ -64,7 +66,7 @@ void MeshEditorWindowNode::Build()
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();

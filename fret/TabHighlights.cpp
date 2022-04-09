@@ -9,13 +9,13 @@ void TabHighlights::Build()
 {
 	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::Text("Highlighted items") + ui::SetPadding(5);
 
 		ui::Pop();
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		of->highlightSettings.EditUI();
 		ui::Pop();
 	}

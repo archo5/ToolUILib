@@ -59,7 +59,6 @@ struct StackLayout : ILayout
 		switch (dir)
 		{
 		case StackingDirection::TopDown:
-		case StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
@@ -81,7 +80,6 @@ struct StackLayout : ILayout
 		switch (dir)
 		{
 		case StackingDirection::TopDown:
-		case StackingDirection::BottomUp:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 			break;
@@ -120,15 +118,6 @@ struct StackLayout : ILayout
 				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ p - w, inrect.y0, p, inrect.y1 }, inrect.GetSize());
 				p -= w;
-			}
-			break; }
-		case StackingDirection::BottomUp: {
-			float p = inrect.y1;
-			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ inrect.x0, p - h, inrect.x1, p }, inrect.GetSize());
-				p -= h;
 			}
 			break; }
 		case StackingDirection::LeftToRight: {
@@ -523,16 +512,6 @@ StackingDirection StyleAccessor::GetStackingDirection() const
 void StyleAccessor::SetStackingDirection(StackingDirection v)
 {
 	AccSet(*this, offsetof(StyleBlock, stacking_direction), v);
-}
-
-Edge StyleAccessor::GetEdge() const
-{
-	return block->edge;
-}
-
-void StyleAccessor::SetEdge(Edge v)
-{
-	AccSet(*this, offsetof(StyleBlock, edge), v);
 }
 
 BoxSizing StyleAccessor::GetBoxSizing(BoxSizingTarget t) const

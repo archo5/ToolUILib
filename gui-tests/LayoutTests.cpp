@@ -126,16 +126,16 @@ struct LayoutNestComboTest : ui::Buildable
 		switch (parentLayout)
 		{
 		case 5:
-			s.SetEdge(ui::Edge::Top);
+			// set edge to ui::Edge::Top
 			break;
 		case 6:
-			s.SetEdge(ui::Edge::Left);
+			// set edge to ui::Edge::Left
 			break;
 		case 7:
-			s.SetEdge(ui::Edge::Bottom);
+			// set edge to ui::Edge::Bottom
 			break;
 		case 8:
-			s.SetEdge(ui::Edge::Right);
+			// set edge to ui::Edge::Right
 			break;
 		}
 	}

@@ -1,6 +1,9 @@
 
 #include "../GUI.h"
 
+#include "../Model/WIP.h"
+
+
 struct Vec3
 {
 	float x, y, z;
@@ -382,7 +385,7 @@ struct InspectorView : ui::Buildable
 		ui::Push<ui::PropertyList>();
 
 		ui::Text("Camera");
-		auto& cameraBox = ui::PushBox();
+		auto& cameraBox = ui::Push<ui::StackTopDownLayoutElement>();
 		ui::imm::PropEditFloat("FOV", cameraFOV);
 		ui::imm::PropEditFloatVec("Position", &cameraPos.x);
 		ui::imm::PropEditFloatVec("Direction", &cameraDir.x);

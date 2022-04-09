@@ -12,7 +12,7 @@ void TabInspect::Build()
 
 	auto& spmkr = ui::Push<ui::SplitPane>();
 	{
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto pos = of->hexViewerState.hoverByte;
 		if (of->hexViewerState.selectionStart != UINT64_MAX)
@@ -58,7 +58,7 @@ void TabInspect::Build()
 
 		ui::Pop();
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("Settings") + ui::SetPadding(5);
 		ui::Pop();
 	}

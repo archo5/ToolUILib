@@ -69,20 +69,9 @@ static const char* EnumKeys_StackingDirection[] =
 	"LeftToRight",
 	"TopDown",
 	"RightToLeft",
-	"BottomUp",
 	nullptr,
 };
 template <> struct EnumKeys<StackingDirection> : EnumKeysStringList<StackingDirection, EnumKeys_StackingDirection> {};
-
-static const char* EnumKeys_Edge[] =
-{
-	"left",
-	"top",
-	"right",
-	"bottom",
-	nullptr,
-};
-template <> struct EnumKeys<Edge> : EnumKeysStringList<Edge, EnumKeys_Edge> {};
 
 static const char* EnumKeys_BoxSizing[] =
 {
@@ -339,7 +328,6 @@ struct ThemeLoaderData : IThemeLoader
 
 			OnFieldEnumString(u, "presence", loaded->presence);
 			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
-			OnFieldEnumString(u, "edge", loaded->edge);
 			//OnFieldEnumString(u, "boxSizing", loaded->box_sizing); // --------------- TODO -----------------------
 			OnFieldEnumString(u, "horAlign", loaded->h_align);
 

@@ -719,14 +719,6 @@ struct SetStackingDirection : Modifier
 };
 inline SetStackingDirection Set(StackingDirection dir) { return dir; }
 
-struct SetEdge : Modifier
-{
-	Edge _edge;
-	SetEdge(Edge edge) : _edge(edge) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetEdge(_edge); }
-};
-inline SetEdge Set(Edge edge) { return edge; }
-
 struct SetBoxSizing : Modifier
 {
 	BoxSizingTarget _bst;

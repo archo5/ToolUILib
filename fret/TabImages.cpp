@@ -95,7 +95,7 @@ void TabImages::Build()
 				img.SetScaleMode(ui::ScaleMode::Fit);
 				ui::Pop();
 			}
-			ui::PushBox();
+			ui::Push<ui::StackTopDownLayoutElement>();
 			workspace->desc.EditImageItems();
 			ui::Pop();
 		}

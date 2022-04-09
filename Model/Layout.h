@@ -103,7 +103,6 @@ enum class StackingDirection : uint8_t
 	LeftToRight,
 	TopDown,
 	RightToLeft,
-	BottomUp,
 };
 
 enum class Edge : uint8_t
@@ -392,7 +391,6 @@ struct StyleBlock
 
 	Presence presence = Presence::Visible;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
-	Edge edge = Edge::Top;
 	uint32_t boxSizing = 0;
 	HAlign h_align = HAlign::Undefined;
 
@@ -486,9 +484,6 @@ public:
 
 	StackingDirection GetStackingDirection() const;
 	void SetStackingDirection(StackingDirection v);
-
-	Edge GetEdge() const;
-	void SetEdge(Edge v);
 
 	BoxSizing GetBoxSizing(BoxSizingTarget t) const;
 	void SetBoxSizing(BoxSizingTarget t, BoxSizing v);

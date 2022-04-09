@@ -21,7 +21,7 @@ void ImageEditorWindowNode::Build()
 			}
 			ui::Pop();
 
-			ui::PushBox();
+			ui::Push<ui::StackTopDownLayoutElement>();
 			if (structDef)
 			{
 				EditImageFormat("Format", image->format);
@@ -48,7 +48,7 @@ void ImageEditorWindowNode::Build()
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();

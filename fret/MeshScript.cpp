@@ -229,7 +229,7 @@ void MeshScript::EditUI()
 			ui::Pop();
 		};
 
-		ui::PushBox();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		if (auto selNode = selected.lock())
 		{
 			selNode->FullEditUI();
