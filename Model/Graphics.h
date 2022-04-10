@@ -287,14 +287,14 @@ struct View2D : UIElement
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct View3D : UIElement
+struct View3D : FillerElement
 {
 	std::function<void(UIRect)> onRender;
 	std::function<void(UIRect)> onPaintOverlay;
 
 	void OnReset() override
 	{
-		UIElement::OnReset();
+		FillerElement::OnReset();
 
 		onRender = {};
 		onPaintOverlay = {};

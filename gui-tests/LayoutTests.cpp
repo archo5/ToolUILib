@@ -463,18 +463,23 @@ struct PlacementTest : ui::Buildable
 		ui::Text("Expandable menu example:");
 		ui::Push<ui::StackTopDownLayoutElement>();
 
+		auto* ple = &ui::Push<ui::PlacementLayoutElement>();
+
 		ui::Push<ui::StackLTRLayoutElement>();
 		ui::imm::EditBool(open, nullptr, { ui::MakeOverlay(open, 1.0f) });
 		ui::Pop();
 
 		if (open)
 		{
-			auto& lb = ui::Push<ui::ListBox>();
-			lb.RegisterAsOverlay();
-			auto* pap = Allocate<ui::PointAnchoredPlacement>();
+			auto* pap = ui::BuildAlloc<ui::PointAnchoredPlacement>();
 			pap->SetAnchorAndPivot({ 0, 0 });
 			pap->bias = { -5, -5 };
-			lb.GetStyle().SetPlacement(pap);
+
+			auto tmpl = ple->GetSlotTemplate();
+			tmpl->placement = pap;
+			tmpl->measure = false;
+
+			ui::Push<ui::ListBox>() + ui::MakeOverlay();
 
 			// room for checkbox
 			ui::Make<ui::BoxElement>() + ui::SetWidth(25) + ui::SetHeight(25);
@@ -487,10 +492,12 @@ struct PlacementTest : ui::Buildable
 		}
 
 		ui::Pop();
+		ui::Pop();
 
 		ui::Text("Autocomplete example:");
 		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
 		ui::Push<ui::StackTopDownLayoutElement>();
+		ple = &ui::Push<ui::PlacementLayoutElement>();
 		ui::imm::EditString(text.c_str(),
 			[this](const char* v) { text = v; }, {
 			ui::AddEventHandler(ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),
@@ -536,12 +543,15 @@ struct PlacementTest : ui::Buildable
 			});
 		if (showDropdown)
 		{
-			auto& lb = ui::Push<ui::ListBox>();
-			ui::Push<ui::StackTopDownLayoutElement>();
-			lb.RegisterAsOverlay();
 			auto* pap = Allocate<ui::PointAnchoredPlacement>();
 			pap->anchor = { 0, 1 };
-			lb.GetStyle().SetPlacement(pap);
+
+			auto tmpl = ple->GetSlotTemplate();
+			tmpl->placement = pap;
+			tmpl->measure = false;
+
+			ui::Push<ui::ListBox>() + ui::MakeOverlay();
+			ui::Push<ui::StackTopDownLayoutElement>();
 
 			int num = 0;
 			for (int i = 0; i < 7; i++)
@@ -561,9 +571,13 @@ struct PlacementTest : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
+		ui::Pop();
 
 		ui::Text("Self-based placement example:");
-		ui::MakeWithText<ui::Button>("This should not cover the entire parent").GetStyle().SetPlacement(&buttonPlacement);
+		auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+		tmpl->placement = &buttonPlacement;
+		ui::MakeWithText<ui::Button>("This should not cover the entire parent");
+		ui::Pop();
 		ui::imm::PropEditFloatVec("Anchor", &buttonPlacement.anchor.x0, "LTRB", {}, 0.01f);
 		ui::imm::PropEditFloatVec("Bias", &buttonPlacement.bias.x0, "LTRB");
 	}

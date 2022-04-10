@@ -16,9 +16,8 @@ struct The3DViewTest : ui::Buildable
 	};
 	void Build() override
 	{
-		ui::Push<ui::Panel>()
-			+ ui::SetMargin(0)
-			+ ui::SetHeight(ui::Coord::Percent(100));
+		TEMP_LAYOUT_MODE = FILLER;
+		ui::Push<ui::PanelFrame>();
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -29,11 +28,14 @@ struct The3DViewTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
-			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
+				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+				tmpl->measure = false;
+
 				auto* leftCorner = ui::BuildAlloc<ui::PointAnchoredPlacement>();
 				leftCorner->SetAnchorAndPivot({ 0, 0 });
-				ui::Push<ui::StackTopDownLayoutElement>() + ui::SetPlacement(leftCorner);
+				tmpl->placement = leftCorner;
+				ui::Push<ui::StackTopDownLayoutElement>();
 
 				ui::Text("Overlay text");
 				ui::Make<ui::ColorBlock>().SetColor({ 100, 0, 200, 255 });
@@ -46,6 +48,7 @@ struct The3DViewTest : ui::Buildable
 				});
 				ui::imm::PropEditBool("\bRight-handed", camera.rightHanded);
 
+				ui::Pop();
 				ui::Pop();
 			}
 			ui::Pop();
@@ -171,9 +174,8 @@ struct GizmoTest : ui::Buildable
 	};
 	void Build() override
 	{
-		ui::Push<ui::Panel>()
-			+ ui::SetMargin(0)
-			+ ui::SetHeight(ui::Coord::Percent(100));
+		TEMP_LAYOUT_MODE = FILLER;
+		ui::Push<ui::PanelFrame>();
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -186,11 +188,15 @@ struct GizmoTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
-			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
+				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+				tmpl->measure = false;
+
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
-				ui::Push<ui::Panel>() + ui::SetWidth(120) + ui::SetPlacement(leftTop);
+				tmpl->placement = leftTop;
+				ui::Push<ui::Panel>() + ui::SetWidth(120);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
@@ -206,10 +212,13 @@ struct GizmoTest : ui::Buildable
 					ui::Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::SetPadding(5);
 				}
 				ui::Pop();
+				ui::Pop();
 
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
-				ui::Push<ui::Panel>() + ui::SetWidth(180) + ui::SetPlacement(rightTop);
+				tmpl->placement = rightTop;
+				ui::Push<ui::Panel>() + ui::SetWidth(180);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Gizmo");
 					ui::imm::PropEditFloat("Size", gizmoSize, {}, {}, { 0.001f, 200.0f });
@@ -226,6 +235,9 @@ struct GizmoTest : ui::Buildable
 						ui::imm::RadioButton(gizmo.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
 					}
 				}
+				ui::Pop();
+				ui::Pop();
+
 				ui::Pop();
 			}
 			ui::Pop();
@@ -328,9 +340,8 @@ struct QuaternionTest : ui::Buildable
 	};
 	void Build() override
 	{
-		ui::Push<ui::Panel>()
-			+ ui::SetMargin(0)
-			+ ui::SetHeight(ui::Coord::Percent(100));
+		TEMP_LAYOUT_MODE = FILLER;
+		ui::Push<ui::PanelFrame>();
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -341,11 +352,15 @@ struct QuaternionTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
-			v + ui::SetHeight(ui::Coord::Percent(100));
 			{
+				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+				tmpl->measure = false;
+
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
-				ui::Push<ui::Panel>() + ui::SetWidth(200) + ui::SetPlacement(leftTop);
+				tmpl->placement = leftTop;
+				ui::Push<ui::Panel>() + ui::SetWidth(200);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
@@ -353,10 +368,13 @@ struct QuaternionTest : ui::Buildable
 					ui::imm::PropEditBool("Use mtx", useMtx);
 				}
 				ui::Pop();
+				ui::Pop();
 
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
-				ui::Push<ui::Panel>() + ui::SetWidth(240) + ui::SetPlacement(rightTop);
+				tmpl->placement = rightTop;
+				ui::Push<ui::Panel>() + ui::SetWidth(240);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					auto q1 = GetQuat();
 					ui::Textf("q1=%g;%g;%g;%g", q1.x, q1.y, q1.z, q1.w);
@@ -368,6 +386,9 @@ struct QuaternionTest : ui::Buildable
 					auto q3 = ui::Quat::RotateEulerAnglesZYX(a2);
 					ui::Textf("q3=%g;%g;%g;%g", q3.x, q3.y, q3.z, q3.w);
 				}
+				ui::Pop();
+				ui::Pop();
+
 				ui::Pop();
 			}
 			ui::Pop();

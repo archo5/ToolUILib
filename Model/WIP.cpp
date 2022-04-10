@@ -9,6 +9,138 @@ namespace ui {
 StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
 
+PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
+
+Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	Rangef r(0);
+	for (auto& slot : _slots)
+	{
+		if (slot.measure)
+		{
+			auto cr = slot._element->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+			r = r.Intersect(cr);
+		}
+	}
+	return r;
+}
+
+Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	Rangef r(0);
+	for (auto& slot : _slots)
+	{
+		if (slot.measure)
+		{
+			auto cr = slot._element->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+			r = r.Intersect(cr);
+		}
+	}
+	return r;
+}
+
+void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	UIRect contRect = rect;
+	for (auto& slot : _slots)
+	{
+		UIRect r = rect;
+		if (slot.placement)
+		{
+			if (slot.placement->fullScreenRelative)
+				r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
+			slot.placement->OnApplyPlacement(slot._element, r);
+		}
+		contRect = contRect.Include(r);
+		slot._element->PerformLayout(r, containerSize);
+	}
+	finalRectC = finalRectCP = contRect;
+}
+
+void PlacementLayoutElement::OnReset()
+{
+	UIElement::OnReset();
+
+	_slots.clear();
+}
+
+void PlacementLayoutElement::RemoveChildImpl(UIObject* ch)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i]._element == ch)
+		{
+			_slots.erase(_slots.begin() + i);
+			break;
+		}
+	}
+}
+
+void PlacementLayoutElement::DetachChildren(bool recursive)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		auto* ch = _slots[i]._element;
+
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
+		ch->parent = nullptr;
+	}
+	_slots.clear();
+}
+
+void PlacementLayoutElement::CustomAppendChild(UIObject* obj)
+{
+	obj->DetachParent();
+
+	obj->parent = this;
+	Slot slot = _slotTemplate;
+	slot._element = obj;
+	_slots.push_back(slot);
+
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+void PlacementLayoutElement::PaintChildrenImpl(const UIPaintContext& ctx)
+{
+	for (auto& slot : _slots)
+		slot._element->Paint(ctx);
+}
+
+UIObject* PlacementLayoutElement::FindLastChildContainingPos(Point2f pos) const
+{
+	for (size_t i = _slots.size(); i > 0; )
+	{
+		i--;
+		if (_slots[i]._element->Contains(pos))
+			return _slots[i]._element;
+	}
+	return nullptr;
+}
+
+void PlacementLayoutElement::_AttachToFrameContents(FrameContents* owner)
+{
+	UIElement::_AttachToFrameContents(owner);
+
+	for (auto& slot : _slots)
+		slot._element->_AttachToFrameContents(owner);
+}
+
+void PlacementLayoutElement::_DetachFromFrameContents()
+{
+	for (auto& slot : _slots)
+		slot._element->_DetachFromFrameContents();
+
+	UIElement::_DetachFromFrameContents();
+}
+
+
 static StaticID_Style sid_tab_panel("tab_panel");
 static StaticID_Style sid_tab_button("tab_button");
 static StaticID_Style sid_tab_close_button("tab_close_button");

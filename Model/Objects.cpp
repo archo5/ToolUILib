@@ -490,6 +490,9 @@ void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
 // - min/max sizes apply regardless of whether they're calculated or set
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
+	if (TEMP_LAYOUT_MODE)
+		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef(0);
+
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
 	if (g_curLayoutFrame == _cacheFrameWidth)
@@ -550,6 +553,9 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 
 Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
+	if (TEMP_LAYOUT_MODE)
+		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef(0);
+
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
 		return { 0, FLT_MAX };
 	if (g_curLayoutFrame == _cacheFrameHeight)
@@ -630,6 +636,18 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 {
 	lastLayoutInputRect = inRect;
 	lastLayoutInputCSize = containerSize;
+
+	if (TEMP_LAYOUT_MODE)
+	{
+		finalRectC = finalRectCP = inRect;
+		if (firstChild)
+		{
+			firstChild->PerformLayout(inRect, containerSize);
+			if (TEMP_LAYOUT_MODE == WRAPPER)
+				finalRectC = finalRectCP = firstChild->finalRectCP;
+		}
+		return;
+	}
 
 	auto style = GetStyle();
 
@@ -1027,6 +1045,23 @@ void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerS
 }
 
 
+Size2f PaddedFillerElement::GetReducedContainerSize(Size2f size)
+{
+	size.x -= styleProps->padding_left + styleProps->padding_right;
+	size.y -= styleProps->padding_top + styleProps->padding_bottom;
+	return size;
+}
+
+void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	auto padRect = styleProps->GetPaddingRect();
+	auto inRect = rect.ShrinkBy(padRect);
+	firstChild->PerformLayout(inRect, GetReducedContainerSize(containerSize));
+	finalRectC = inRect;
+	finalRectCP = rect;
+}
+
+
 void TextElement::OnReset()
 {
 	UIElement::OnReset();
@@ -1225,9 +1260,7 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 	//subr = subr.ShrinkBy(styleProps->GetPaddingRect());
 	for (const auto& slot : _slots)
 	{
-		auto* ch = slot.element.Get();
-		if (!ch)
-			continue;
+		auto* ch = slot._element;
 		auto e = slot.edge;
 		float d;
 		switch (e)
@@ -1261,7 +1294,7 @@ void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)
 {
 	for (size_t i = 0; i < _slots.size(); i++)
 	{
-		if (_slots[i].element == ch)
+		if (_slots[i]._element == ch)
 		{
 			_slots.erase(_slots.begin() + i);
 			break;
@@ -1273,7 +1306,7 @@ void EdgeSliceLayoutElement::DetachChildren(bool recursive)
 {
 	for (size_t i = 0; i < _slots.size(); i++)
 	{
-		auto* ch = _slots[i].element.Get();
+		auto* ch = _slots[i]._element;
 
 		if (recursive)
 			ch->DetachChildren(true);
@@ -1293,7 +1326,7 @@ void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
 
 	obj->parent = this;
 	Slot slot = _slotTemplate;
-	slot.element = obj;
+	slot._element = obj;
 	_slots.push_back(slot);
 
 	if (system)
@@ -1303,8 +1336,7 @@ void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
 void EdgeSliceLayoutElement::PaintChildrenImpl(const UIPaintContext& ctx)
 {
 	for (auto& slot : _slots)
-		if (auto* ch = slot.element.Get())
-			ch->Paint(ctx);
+		slot._element->Paint(ctx);
 }
 
 UIObject* EdgeSliceLayoutElement::FindLastChildContainingPos(Point2f pos) const
@@ -1312,9 +1344,8 @@ UIObject* EdgeSliceLayoutElement::FindLastChildContainingPos(Point2f pos) const
 	for (size_t i = _slots.size(); i > 0; )
 	{
 		i--;
-		if (auto* ch = _slots[i].element.Get())
-			if (ch->Contains(pos))
-				return ch;
+		if (_slots[i]._element->Contains(pos))
+			return _slots[i]._element;
 	}
 	return nullptr;
 }
@@ -1324,15 +1355,13 @@ void EdgeSliceLayoutElement::_AttachToFrameContents(FrameContents* owner)
 	UIElement::_AttachToFrameContents(owner);
 
 	for (auto& slot : _slots)
-		if (auto* ch = slot.element.Get())
-			ch->_AttachToFrameContents(owner);
+		slot._element->_AttachToFrameContents(owner);
 }
 
 void EdgeSliceLayoutElement::_DetachFromFrameContents()
 {
 	for (auto& slot : _slots)
-		if (auto* ch = slot.element.Get())
-			ch->_DetachFromFrameContents();
+		slot._element->_DetachFromFrameContents();
 
 	UIElement::_DetachFromFrameContents();
 }

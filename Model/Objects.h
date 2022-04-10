@@ -63,6 +63,10 @@ struct TempEditable
 		if (_current)
 			*_current = _backup;
 	}
+	UI_FORCEINLINE void Revert()
+	{
+		*_current = _backup;
+	}
 };
 
 
@@ -412,6 +416,9 @@ struct UIObject : IPersistentObject
 	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
 
 	uint32_t flags = UIObject_DB__Defaults; // @ 16
+#define WRAPPER 1
+#define FILLER 2
+	uint8_t TEMP_LAYOUT_MODE = 0;
 	uint32_t _pendingDeactivationSetPos = UINT32_MAX; // @ 20
 	ui::FrameContents* system = nullptr; // @ 24
 	UIObject* parent = nullptr; // @ 32
@@ -499,8 +506,12 @@ struct WrapperElement : UIElement
 	}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
-		firstChild->PerformLayout(rect, containerSize);
-		finalRectCP = finalRectC = firstChild->finalRectCP;
+		if (firstChild)
+		{
+			firstChild->PerformLayout(rect, containerSize);
+			finalRectCP = finalRectC = firstChild->finalRectCP;
+		}
+		else finalRectCP = finalRectC = rect;
 	}
 };
 
@@ -509,6 +520,32 @@ struct PaddedWrapperElement : UIElement
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+};
+
+struct FillerElement : UIElement
+{
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		return containerSize.x;
+	}
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		return containerSize.y;
+	}
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
+	{
+		if (firstChild)
+			firstChild->PerformLayout(rect, containerSize);
+		finalRectCP = finalRectC = rect;
+	}
+};
+
+struct PaddedFillerElement : UIElement
+{
+	Size2f GetReducedContainerSize(Size2f size);
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.x; }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.y; }
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
@@ -586,7 +623,7 @@ struct EdgeSliceLayoutElement : UIElement
 {
 	struct Slot
 	{
-		UIWeakPtr<UIObject> element;
+		UIObject* _element = nullptr;
 		Edge edge = Edge::Top;
 	};
 	static TempEditable<Slot> GetSlotTemplate()

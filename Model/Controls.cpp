@@ -20,6 +20,15 @@ void Panel::OnReset()
 }
 
 
+void PanelFrame::OnReset()
+{
+	PaddedWrapperElement::OnReset();
+
+	flags |= UIObject_SetsChildTextStyle;
+	styleProps = GetCurrentTheme()->GetStyle(sid_panel);
+}
+
+
 static StaticID_Style sid_header("header");
 void Header::OnReset()
 {
@@ -1790,7 +1799,7 @@ void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 }
 
 
-void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
+void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
 {
 	auto contSize = curObj->GetNativeWindow()->GetSize();
 
@@ -1833,17 +1842,11 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 }
 
 
-OverlayInfoFrame::OverlayInfoFrame()
-{
-}
-
-
 void TooltipFrame::OnReset()
 {
 	UIElement::OnReset();
 
 	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
-	GetStyle().SetPlacement(&placement);
 }
 
 
@@ -1852,7 +1855,6 @@ void DragDropDataFrame::OnReset()
 	UIElement::OnReset();
 
 	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
-	GetStyle().SetPlacement(&placement);
 }
 
 
@@ -1860,6 +1862,10 @@ void DefaultOverlayBuilder::Build()
 {
 	if (drawTooltip || drawDragDrop)
 		Subscribe(DCT_MouseMoved);
+
+	auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+	tmpl->measure = false;
+	tmpl->placement = &placement;
 
 	if (drawTooltip)
 	{
@@ -1885,6 +1891,8 @@ void DefaultOverlayBuilder::Build()
 			}
 		}
 	}
+
+	Pop();
 }
 
 

@@ -11,7 +11,7 @@
 
 namespace ui {
 
-void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
+void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
 {
 	UIRect parentRect = outRect;
 	Size2f contSize = parentRect.GetSize();
@@ -34,7 +34,7 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	outRect = { x, y, x + w, y + h };
 }
 
-void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
+void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
 {
 	UIRect parentRect = outRect;
 

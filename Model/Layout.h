@@ -61,14 +61,14 @@ struct ILayout
 
 struct IPlacement
 {
-	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) = 0;
+	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const = 0;
 	bool applyOnLayout = false;
 	bool fullScreenRelative = false;
 };
 
 struct PointAnchoredPlacement : IPlacement
 {
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 
 	void SetAnchorAndPivot(Point2f p)
 	{
@@ -84,7 +84,7 @@ struct PointAnchoredPlacement : IPlacement
 
 struct RectAnchoredPlacement : IPlacement
 {
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 
 	UIRect anchor = { 0, 0, 1, 1 };
 	UIRect bias = { 0, 0, 0, 0 };

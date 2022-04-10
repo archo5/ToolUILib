@@ -199,6 +199,36 @@ struct WrapperLTRLayoutElement : UIElement
 	}
 };
 
+struct PlacementLayoutElement : UIElement
+{
+	struct Slot
+	{
+		UIObject* _element = nullptr;
+		const IPlacement* placement = nullptr;
+		bool measure = true;
+	};
+	static TempEditable<Slot> GetSlotTemplate()
+	{
+		return { &_slotTemplate };
+	}
+	static Slot _slotTemplate;
+
+	std::vector<Slot> _slots;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+
+	void OnReset() override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
+	void CustomAppendChild(UIObject* obj) override;
+	void PaintChildrenImpl(const UIPaintContext& ctx) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+};
+
 struct TabbedPanel : StackTopDownLayoutElement
 {
 	struct Tab

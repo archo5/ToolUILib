@@ -12,6 +12,11 @@ struct Panel : UIElement
 	void OnReset() override;
 };
 
+struct PanelFrame : PaddedWrapperElement
+{
+	void OnReset() override;
+};
+
 struct Header : UIElement
 {
 	void OnReset() override;
@@ -662,13 +667,11 @@ template <class T> bool PropDropdownMenuList(const char* label, T& val, OptionLi
 
 struct OverlayInfoPlacement : IPlacement
 {
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) override;
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 };
 
 struct OverlayInfoFrame : UIElement
 {
-	OverlayInfoFrame();
-	OverlayInfoPlacement placement;
 };
 
 struct TooltipFrame : OverlayInfoFrame
@@ -685,6 +688,7 @@ struct DefaultOverlayBuilder : Buildable
 {
 	bool drawTooltip = true;
 	bool drawDragDrop = true;
+	OverlayInfoPlacement placement;
 
 	void OnReset() override
 	{
