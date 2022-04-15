@@ -19,6 +19,7 @@ DataCategoryTag DCT_EditProcGraphNode[1];
 
 void ProcGraphEditor_NodePin::Build()
 {
+	auto& ple = Push<PlacementLayoutElement>();
 	_sel = &Push<Selectable>();
 	*this + MakeDraggable();
 	*_sel + MakeDraggable();
@@ -41,14 +42,18 @@ void ProcGraphEditor_NodePin::Build()
 
 	Pop();
 
-	auto& cb = Make<ColorBlock>();
-	cb.SetColor(_graph->GetPinColor(_pin));
-	cb + SetWidth(BoxSizing::ContentBox, 4) + SetHeight(BoxSizing::ContentBox, 6);
+	auto tmpl = ple.GetSlotTemplate();
+	tmpl->measure = false;
 	auto* pap = Allocate<PointAnchoredPlacement>();
 	pap->pivot = { _pin.isOutput ? 0.f : 1.f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
 	pap->useContentBox = true;
-	cb.GetStyle().SetPlacement(pap);
+	tmpl->placement = pap;
+	auto& cb = Make<ColorBlock>();
+	cb.SetColor(_graph->GetPinColor(_pin));
+	cb + SetWidth(BoxSizing::ContentBox, 4) + SetHeight(BoxSizing::ContentBox, 6);
+
+	Pop();
 }
 
 void ProcGraphEditor_NodePin::OnEvent(Event& e)
@@ -232,17 +237,13 @@ void ProcGraphEditor_Node::Init(IProcGraph* graph, IProcGraph::Node* node, Point
 
 void ProcGraphEditor_Node::OnBuildTitleBar()
 {
-	auto* placement = Allocate<PointAnchoredPlacement>();
-	placement->bias = _graph->GetNodePosition(_node) + _viewOffset;
-	GetStyle().SetPlacement(placement);
-
 	auto& sel = Push<Selectable>().Init(_isDragging);
 	sel.GetStyle().SetFontWeight(FontWeight::Bold);
 	sel.GetStyle().SetFontStyle(FontStyle::Italic);
 	sel
 		+ SetPadding(0)
 		+ MakeDraggable()
-		+ AddEventHandler([this, placement](Event& e)
+		+ AddEventHandler([this](Event& e)
 	{
 		if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 		{
@@ -255,9 +256,8 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 		if (e.type == EventType::MouseMove && _isDragging)
 		{
 			Point2f newPos = _dragStartPos + e.position - _dragStartMouse;
-			placement->bias = newPos + _viewOffset;
 			_graph->SetNodePosition(_node, newPos);
-			_OnChangeStyle();
+			parent->_OnChangeStyle();
 		}
 	});
 
@@ -345,6 +345,19 @@ void ProcGraphEditor::OnEvent(Event& e)
 		viewOffset = origVPos + e.position - origMPos;
 		Rebuild();
 	}
+}
+
+void ProcGraphEditor::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	for (auto* ch = firstChild; ch; ch = ch->next)
+	{
+		auto* N = static_cast<ProcGraphEditor_Node*>(ch);
+		auto pos = _graph->GetNodePosition(N->_node) + viewOffset + rect.GetMin();
+		auto wr = N->GetFullEstimatedWidth(containerSize, ui::EstSizeType::Expanding);
+		auto hr = N->GetFullEstimatedHeight(containerSize, ui::EstSizeType::Expanding);
+		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min }, containerSize);
+	}
+	finalRectC = finalRectCP = rect;
 }
 
 void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)

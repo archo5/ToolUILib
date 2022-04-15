@@ -211,6 +211,9 @@ struct ProcGraphEditor : Buildable
 	void Build() override;
 	void OnReset() override;
 	void OnEvent(Event& e) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.x; }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.y; }
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
 	void Init(IProcGraph* graph);
