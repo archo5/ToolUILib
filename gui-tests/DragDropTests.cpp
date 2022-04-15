@@ -457,13 +457,14 @@ struct DragElementTest : ui::Buildable
 		ui::Text("Drag element");
 
 		ui::Push<ui::ListBox>() + ui::SetHeight(100);
+		auto& ple = ui::Push<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
 
-		auto& tp = ui::Push<ui::TabPanel>();
-		auto s = tp.GetStyle(); // for style only
-		s.SetWidth(ui::Coord::Undefined());
 		drelPlacement = Allocate<ui::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
-		s.SetPlacement(drelPlacement);
+		tmpl->placement = drelPlacement;
+		auto& tp = ui::Push<ui::TabPanel>(); // for style only
+		tp + ui::SetWidth(ui::Coord::Undefined());
 		ui::MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::AddEventHandler([this, &tp](ui::Event& e)
 		{
 			if (e.type == ui::EventType::ButtonDown && e.GetButton() == ui::MouseButton::Left)
@@ -486,6 +487,7 @@ struct DragElementTest : ui::Buildable
 		ui::Text("the other part") + ui::SetPadding(5);
 		ui::Pop();
 
+		ui::Pop();
 		ui::Pop();
 	}
 

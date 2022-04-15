@@ -1607,10 +1607,7 @@ void BackgroundBlocker::OnReset()
 {
 	UIElement::OnReset();
 
-	_fullScreenPlacement = {};
-	_fullScreenPlacement.fullScreenRelative = true;
 	RegisterAsOverlay(199.f);
-	GetStyle().SetPlacement(&_fullScreenPlacement);
 }
 
 void BackgroundBlocker::OnEvent(Event& e)
@@ -1624,6 +1621,12 @@ void BackgroundBlocker::OnEvent(Event& e)
 			OnButton();
 		SetFlag(UIObject_IsChecked, true);
 	}
+}
+
+void BackgroundBlocker::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	UIRect r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
+	finalRectC = finalRectCP = r;
 }
 
 void BackgroundBlocker::OnButton()

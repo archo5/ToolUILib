@@ -530,10 +530,13 @@ struct TextboxPlaceholder : Modifier
 
 struct BackgroundBlocker : UIElement
 {
-	RectAnchoredPlacement _fullScreenPlacement;
-
 	void OnReset() override;
 	void OnEvent(Event& e) override;
+
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return 0; }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return 0; }
+
 	void OnButton();
 };
 
