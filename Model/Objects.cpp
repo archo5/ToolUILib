@@ -153,6 +153,19 @@ void UIObject::_InitReset()
 	OnReset();
 }
 
+void UIObject::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = uintptr_t(firstChild);
+}
+
+UIObject* UIObject::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	UIObject* ret = reinterpret_cast<UIObject*>(data.data0);
+	if (ret)
+		data.data0 = uintptr_t(ret->next);
+	return ret;
+}
+
 void UIObject::_DoEvent(Event& e)
 {
 	e.current = this;
@@ -291,7 +304,7 @@ EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
 	eh->next = nullptr;
 	eh->target = target;
 	eh->type = type;
-	eh->isLocal = system->container._curBuildable == this;
+	eh->isLocal = system && system->container._curBuildable == this;
 	_lastEH = eh;
 	return eh->func;
 }
@@ -931,7 +944,7 @@ bool UIObject::IsClicked(int button) const
 
 bool UIObject::IsFocused() const
 {
-	return this == system->eventSystem.focusObj;
+	return system && this == system->eventSystem.focusObj;
 }
 
 bool UIObject::IsVisible() const
@@ -1009,6 +1022,94 @@ NativeWindowBase* UIObject::GetNativeWindow() const
 }
 
 
+void UIObjectSingleChild::OnReset()
+{
+	UIObject::OnReset();
+
+	_child = nullptr;
+}
+
+void UIObjectSingleChild::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = 0;
+}
+
+UIObject* UIObjectSingleChild::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	if (data.data0 > 0)
+		return nullptr;
+	data.data0 = 1;
+	return _child;
+}
+
+void UIObjectSingleChild::RemoveChildImpl(UIObject* ch)
+{
+	if (_child == ch)
+		_child = nullptr;
+}
+
+void UIObjectSingleChild::DetachChildren(bool recursive)
+{
+	if (_child)
+	{
+		if (recursive)
+			_child->DetachChildren(true);
+
+		if (system)
+			_child->_DetachFromTree();
+
+		_child->parent = nullptr;
+		_child = nullptr;
+	}
+}
+
+void UIObjectSingleChild::CustomAppendChild(UIObject* obj)
+{
+	if (_child)
+	{
+		puts("WARNING: child already added to a single-child element!");
+		return;
+	}
+
+	obj->DetachParent();
+
+	obj->parent = this;
+	_child = obj;
+
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+void UIObjectSingleChild::PaintChildrenImpl(const UIPaintContext& ctx)
+{
+	if (_child)
+		_child->Paint(ctx);
+}
+
+UIObject* UIObjectSingleChild::FindLastChildContainingPos(Point2f pos) const
+{
+	if (_child && _child->Contains(pos))
+		return _child;
+	return nullptr;
+}
+
+void UIObjectSingleChild::_AttachToFrameContents(FrameContents* owner)
+{
+	UIObject::_AttachToFrameContents(owner);
+
+	if (_child)
+		_child->_AttachToFrameContents(owner);
+}
+
+void UIObjectSingleChild::_DetachFromFrameContents()
+{
+	if (_child)
+		_child->_DetachFromFrameContents();
+
+	UIObject::_DetachFromFrameContents();
+}
+
+
 Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
 {
 	size.x -= styleProps->padding_left + styleProps->padding_right;
@@ -1018,30 +1119,31 @@ Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
 
 Rangef PaddedWrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	Rangef range = firstChild->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout);
 	float pad = styleProps->padding_left + styleProps->padding_right;
-	range.min += pad;
-	if (range.max < FLT_MAX)
-		range.max += pad;
-	return range;
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef(0)).Add(pad);
 }
 
 Rangef PaddedWrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	Rangef range = firstChild->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout);
 	float pad = styleProps->padding_top + styleProps->padding_bottom;
-	range.min += pad;
-	if (range.max < FLT_MAX)
-		range.max += pad;
-	return range;
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef(0)).Add(pad);
 }
 
 void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	auto padRect = styleProps->GetPaddingRect();
-	firstChild->PerformLayout(rect.ShrinkBy(padRect), GetReducedContainerSize(containerSize));
-	finalRectC = firstChild->finalRectCP;
-	finalRectCP = finalRectC.ExtendBy(padRect);
+	auto padsub = rect.ShrinkBy(padRect);
+	if (_child)
+	{
+		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		finalRectC = _child->finalRectCP;
+		finalRectCP = finalRectC.ExtendBy(padRect);
+	}
+	else
+	{
+		finalRectCP = rect;
+		finalRectC = padsub;
+	}
 }
 
 
@@ -1056,7 +1158,8 @@ void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSi
 {
 	auto padRect = styleProps->GetPaddingRect();
 	auto inRect = rect.ShrinkBy(padRect);
-	firstChild->PerformLayout(inRect, GetReducedContainerSize(containerSize));
+	if (_child)
+		_child->PerformLayout(inRect, GetReducedContainerSize(containerSize));
 	finalRectC = inRect;
 	finalRectCP = rect;
 }
@@ -1252,6 +1355,18 @@ void EdgeSliceLayoutElement::OnReset()
 	UIElement::OnReset();
 
 	_slots.clear();
+}
+
+void EdgeSliceLayoutElement::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = 0;
+}
+
+UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	if (data.data0 >= _slots.size())
+		return nullptr;
+	return _slots[data.data0++]._element;
 }
 
 void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)

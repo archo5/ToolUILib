@@ -64,6 +64,18 @@ void PlacementLayoutElement::OnReset()
 	_slots.clear();
 }
 
+void PlacementLayoutElement::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = 0;
+}
+
+UIObject* PlacementLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	if (data.data0 >= _slots.size())
+		return nullptr;
+	return _slots[data.data0++]._element;
+}
+
 void PlacementLayoutElement::RemoveChildImpl(UIObject* ch)
 {
 	for (size_t i = 0; i < _slots.size(); i++)
@@ -147,7 +159,7 @@ static StaticID_Style sid_tab_close_button("tab_close_button");
 
 void TabbedPanel::OnReset()
 {
-	StackTopDownLayoutElement::OnReset();
+	UIObjectSingleChild::OnReset();
 
 	_tabs.clear();
 	//_curTabNum = 0;
@@ -311,30 +323,35 @@ Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-float TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	return StackTopDownLayoutElement::CalcEstimatedWidth(GetReducedContainerSize(containerSize), type)
+	float pad = 
 		+ panelStyle->padding_left
 		+ panelStyle->padding_right
 		+ (showCloseButton ? tabInnerButtonMargin + tabCloseButtonStyle->width.value : 0);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef(0)).Add(pad);
 }
 
-float TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	return StackTopDownLayoutElement::CalcEstimatedHeight(GetReducedContainerSize(containerSize), type)
+	float pad =
 		+ panelStyle->padding_top
 		+ panelStyle->padding_bottom
 		+ tabHeight
 		- tabButtonOverlap;
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef(0)).Add(pad);
 }
 
-void TabbedPanel::CalcLayout(const UIRect& inrect, LayoutState& state)
+void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	auto subr = inrect;
+	auto subr = rect;
 	subr.y0 += tabHeight - tabButtonOverlap;
 	subr = subr.ShrinkBy(panelStyle->GetPaddingRect());
-	StackTopDownLayoutElement::CalcLayout(subr, state);
-	state.finalContentRect = inrect;
+	if (_child)
+	{
+		_child->PerformLayout(subr, subr.GetSize());
+	}
+	finalRectC = finalRectCP = rect;
 }
 
 } // ui

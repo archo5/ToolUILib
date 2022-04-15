@@ -97,14 +97,14 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 
 void TreeEditor::Build()
 {
-	auto s = Push<ListBox>().GetStyle();
-	s.SetMinHeight(22);
-	s.SetBoxSizing(BoxSizingTarget::MinHeight, BoxSizing::ContentBox);
+	Push<ListBoxFrame>();
+	Push<SizeConstraintElement>().SetMinHeight(22);
 	Push<StackTopDownLayoutElement>();
 
 	TreePath path;
 	OnBuildList(path);
 
+	Pop();
 	Pop();
 	Pop();
 }

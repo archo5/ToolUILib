@@ -331,6 +331,8 @@ struct SplitPane : UIElement
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 	void OnReset() override;
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
 	void CustomAppendChild(UIObject* obj) override;

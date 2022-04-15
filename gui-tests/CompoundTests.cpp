@@ -426,6 +426,7 @@ struct TabsTest : ui::Buildable
 			tab1 = int(tp1.GetCurrentTabUID(0));
 		};
 		{
+			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::Push<ui::StackTopDownLayoutElement>().SetVisible(tp1.GetCurrentTabUID() == 0);
 			{
 				ui::Text("Contents of the first tab (SetVisible)");
@@ -436,6 +437,7 @@ struct TabsTest : ui::Buildable
 			{
 				ui::Text("Contents of the second tab (SetVisible)");
 			}
+			ui::Pop();
 			ui::Pop();
 		}
 		ui::Pop();

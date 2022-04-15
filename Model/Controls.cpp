@@ -51,7 +51,7 @@ void Button::OnReset()
 
 void StateButtonBase::OnReset()
 {
-	UIElement::OnReset();
+	WrapperElement::OnReset();
 
 	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
 }
@@ -168,7 +168,7 @@ void ListBoxFrame::OnReset()
 static StaticID_Style sid_selectable("selectable");
 void Selectable::OnReset()
 {
-	UIElement::OnReset();
+	PaddedWrapperElement::OnReset();
 
 	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
 	SetStyle(GetCurrentTheme()->GetStyle(sid_selectable));
@@ -728,6 +728,18 @@ void SplitPane::OnReset()
 
 	_verticalSplit = false;
 	_children.clear();
+}
+
+void SplitPane::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = 0;
+}
+
+UIObject* SplitPane::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	if (data.data0 >= _children.size())
+		return nullptr;
+	return _children[data.data0++];
 }
 
 void SplitPane::RemoveChildImpl(UIObject* ch)

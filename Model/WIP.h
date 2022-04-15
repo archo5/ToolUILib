@@ -220,6 +220,8 @@ struct PlacementLayoutElement : UIElement
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	void OnReset() override;
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
 	void CustomAppendChild(UIObject* obj) override;
@@ -229,7 +231,7 @@ struct PlacementLayoutElement : UIElement
 	void _DetachFromFrameContents() override;
 };
 
-struct TabbedPanel : StackTopDownLayoutElement
+struct TabbedPanel : UIObjectSingleChild
 {
 	struct Tab
 	{
@@ -292,9 +294,9 @@ struct TabbedPanel : StackTopDownLayoutElement
 	void OnEvent(Event& e) override;
 
 	Size2f GetReducedContainerSize(Size2f size);
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
 } // ui

@@ -479,15 +479,17 @@ struct PlacementTest : ui::Buildable
 			tmpl->placement = pap;
 			tmpl->measure = false;
 
-			ui::Push<ui::ListBox>() + ui::MakeOverlay();
+			ui::Push<ui::ListBoxFrame>() + ui::MakeOverlay();
+			ui::Push<ui::StackTopDownLayoutElement>();
 
-			// room for checkbox
-			ui::Make<ui::BoxElement>() + ui::SetWidth(25) + ui::SetHeight(25);
+			// room for checkbox & spread width a bit
+			ui::Make<ui::BoxElement>() + ui::SetWidth(100) + ui::SetHeight(25);
 
 			ui::Text("opened");
 			ui::imm::PropEditBool("One", one);
 			ui::imm::PropEditInt("Two", two);
 
+			ui::Pop();
 			ui::Pop();
 		}
 
@@ -550,7 +552,7 @@ struct PlacementTest : ui::Buildable
 			tmpl->placement = pap;
 			tmpl->measure = false;
 
-			ui::Push<ui::ListBox>() + ui::MakeOverlay();
+			ui::Push<ui::ListBoxFrame>() + ui::MakeOverlay();
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			int num = 0;

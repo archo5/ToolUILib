@@ -456,7 +456,8 @@ struct DragElementTest : ui::Buildable
 	{
 		ui::Text("Drag element");
 
-		ui::Push<ui::ListBox>() + ui::SetHeight(100);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(100);
+		ui::Push<ui::ListBoxFrame>();
 		auto& ple = ui::Push<ui::PlacementLayoutElement>();
 		auto tmpl = ple.GetSlotTemplate();
 
@@ -485,10 +486,11 @@ struct DragElementTest : ui::Buildable
 			}
 		});
 		ui::Text("the other part") + ui::SetPadding(5);
-		ui::Pop();
+		ui::Pop(); // TabPanel
 
-		ui::Pop();
-		ui::Pop();
+		ui::Pop(); // PlacementLayoutElement
+		ui::Pop(); // ListBoxFrame
+		ui::Pop(); // SizeConstraintElement
 	}
 
 	ui::PointAnchoredPlacement* drelPlacement = nullptr;
@@ -622,8 +624,8 @@ struct DragConnectTest : ui::Buildable
 	{
 		ui::Text("Drag connect");
 
-		ui::Push<ui::ListBox>()
-			+ ui::SetHeight(60);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(60);
+		ui::Push<ui::ListBoxFrame>();
 
 		ui::Push<ui::EdgeSliceLayoutElement>();
 		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
@@ -642,6 +644,7 @@ struct DragConnectTest : ui::Buildable
 
 		ui::Pop();
 
+		ui::Pop();
 		ui::Pop();
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
@@ -699,27 +702,33 @@ struct DragDropTest : ui::Buildable
 	{
 		WPush<ui::StackLTRLayoutElement>();
 
-		auto s = ui::Push<ui::Panel>().GetStyle();
+		auto s = WPush<ui::Panel>().GetStyle();
 		s.SetWidth(ui::Coord::Percent(50));
 		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<FileReceiverTest>();
 		ui::Make<TransferCountablesTest>();
 		ui::Make<SlideReorderTest>();
 		ui::Make<TreeNodeReorderTest>();
 
-		ui::Pop();
+		WPop(); // StackTopDownLayoutElement
+		WPop(); // Panel
 
-		s = ui::Push<ui::Panel>().GetStyle();
+		s = WPush<ui::Panel>().GetStyle();
 		s.SetWidth(ui::Coord::Percent(50));
 		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<DragElementTest>();
 		ui::Make<DragConnectTest>();
 
-		WPop();
+		WPop(); // StackTopDownLayoutElement
+		WPop(); // Panel
 
-		ui::Make<ui::DefaultOverlayBuilder>();
+		WPop(); // StackLTRLayoutElement
+
+		WMake<ui::DefaultOverlayBuilder>();
 	}
 };
 void Test_DragDrop()

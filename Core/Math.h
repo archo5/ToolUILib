@@ -140,6 +140,15 @@ template <class T> struct Range
 	UI_FORCEINLINE bool Contains(float v) const { return v >= min && v < max; }
 	UI_FORCEINLINE bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
 	UI_FORCEINLINE Range Intersect(const Range& o) const { return { ::ui::max(min, o.min), ::ui::min(max, o.max) }; }
+	Range Add(float o)
+	{
+		Range r = *this;
+		if (r.min < FLT_MAX)
+			r.min += o;
+		if (r.max < FLT_MAX)
+			r.max += o;
+		return r;
+	}
 
 	T min, max;
 };

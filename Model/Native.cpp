@@ -1222,7 +1222,8 @@ struct Inspector : NativeDialogWindow
 
 			y++;
 
-			for (auto* ch = obj->firstChild; ch; ch = ch->next)
+			UIObjectIterator it(obj);
+			while (UIObject* ch = it.GetNext())
 			{
 				PaintObject(ch, x + TAB_W, y);
 			}

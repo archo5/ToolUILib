@@ -285,6 +285,11 @@ struct SingleChildPaintPtr
 	UIObject* child;
 };
 
+struct UIObjectIteratorData
+{
+	uintptr_t data0;
+};
+
 struct UIObject : IPersistentObject
 {
 	UIObject();
@@ -305,6 +310,9 @@ struct UIObject : IPersistentObject
 	void PO_BeforeDelete() override;
 	void _InitReset();
 	virtual void OnReset() {}
+
+	virtual void SlotIterator_Init(UIObjectIteratorData& data);
+	virtual UIObject* SlotIterator_GetNext(UIObjectIteratorData& data);
 
 	virtual void OnEvent(Event& e) {}
 	void _DoEvent(Event& e);
@@ -448,6 +456,21 @@ struct UIObject : IPersistentObject
 	Rangef _cacheValueHeight = { 0, 0 };
 };
 
+struct UIObjectIterator
+{
+	UIObject* _obj;
+	UIObjectIteratorData _data;
+
+	UIObjectIterator(UIObject* o) : _obj(o)
+	{
+		o->SlotIterator_Init(_data);
+	}
+	UIObject* GetNext()
+	{
+		return _obj->SlotIterator_GetNext(_data);
+	}
+};
+
 struct UIPaintHelper
 {
 	ContentPaintAdvice cpa;
@@ -488,34 +511,52 @@ inline void DeleteUIObject(UIObject* obj)
 	DeletePersistentObject(obj);
 }
 
+struct UIObjectSingleChild : UIObject
+{
+	typedef char IsElement[1];
+
+	UIObject* _child = nullptr;
+
+	void OnReset() override;
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
+	void CustomAppendChild(UIObject* obj) override;
+	void PaintChildrenImpl(const UIPaintContext& ctx) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+};
+
 struct UIElement : UIObject
 {
 	typedef char IsElement[1];
 };
 
 // TODO: slowly port to these and use custom [single] child storage
-struct WrapperElement : UIElement
+struct WrapperElement : UIObjectSingleChild
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		return firstChild->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+		return _child->GetFullEstimatedWidth(containerSize, type, forParentLayout);
 	}
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		return firstChild->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+		return _child->GetFullEstimatedHeight(containerSize, type, forParentLayout);
 	}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
-		if (firstChild)
+		if (_child)
 		{
-			firstChild->PerformLayout(rect, containerSize);
-			finalRectCP = finalRectC = firstChild->finalRectCP;
+			_child->PerformLayout(rect, containerSize);
+			finalRectCP = finalRectC = _child->finalRectCP;
 		}
 		else finalRectCP = finalRectC = rect;
 	}
 };
 
-struct PaddedWrapperElement : UIElement
+struct PaddedWrapperElement : UIObjectSingleChild
 {
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
@@ -523,7 +564,7 @@ struct PaddedWrapperElement : UIElement
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
-struct FillerElement : UIElement
+struct FillerElement : UIObjectSingleChild
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
@@ -535,18 +576,64 @@ struct FillerElement : UIElement
 	}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
-		if (firstChild)
-			firstChild->PerformLayout(rect, containerSize);
+		if (_child)
+			_child->PerformLayout(rect, containerSize);
 		finalRectCP = finalRectC = rect;
 	}
 };
 
-struct PaddedFillerElement : UIElement
+struct PaddedFillerElement : UIObjectSingleChild
 {
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.x; }
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.y; }
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+};
+
+struct SizeConstraintElement : WrapperElement
+{
+	Rangef widthRange = Rangef(0);
+	Rangef heightRange = Rangef(0);
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		if (widthRange.min >= widthRange.max)
+			return widthRange;
+		return WrapperElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(widthRange);
+	}
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{
+		if (heightRange.min >= heightRange.max)
+			return heightRange;
+		return WrapperElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(heightRange);
+	}
+
+	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = r; return *this; }
+	SizeConstraintElement& SetHeightRange(Rangef r) { heightRange = r; return *this; }
+
+	SizeConstraintElement& SetMinWidth(float w) { widthRange.min = w; return *this; }
+	SizeConstraintElement& SetMaxWidth(float w) { widthRange.max = w; return *this; }
+	SizeConstraintElement& SetMinHeight(float h) { heightRange.min = h; return *this; }
+	SizeConstraintElement& SetMaxHeight(float h) { heightRange.max = h; return *this; }
+
+	SizeConstraintElement& SetWidth(float w) { widthRange.min = w; widthRange.max = w; return *this; }
+	SizeConstraintElement& SetHeight(float h) { heightRange.min = h; heightRange.max = h; return *this; }
+	SizeConstraintElement& SetSize(float w, float h)
+	{
+		widthRange.min = w;
+		widthRange.max = w;
+		heightRange.min = h;
+		heightRange.max = h;
+		return *this;
+	}
+	SizeConstraintElement& SetSize(Size2f s)
+	{
+		widthRange.min = s.x;
+		widthRange.max = s.x;
+		heightRange.min = s.y;
+		heightRange.max = s.y;
+		return *this;
+	}
 };
 
 struct TextElement : UIElement
@@ -634,6 +721,8 @@ struct EdgeSliceLayoutElement : UIElement
 
 	std::vector<Slot> _slots;
 
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return containerSize.x;
