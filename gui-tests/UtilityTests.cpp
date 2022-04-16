@@ -156,15 +156,15 @@ struct OSCommunicationTest : ui::Buildable
 				ui::Clipboard::SetText(clipboardData);
 		}
 
-		ui::Textf("time (ms): %u, double click time (ms): %u",
+		ui::MakeWithTextf<ui::LabelFrame>("time (ms): %u, double click time (ms): %u",
 			unsigned(ui::platform::GetTimeMs()),
-			unsigned(ui::platform::GetDoubleClickTime())) + ui::SetPadding(5);
+			unsigned(ui::platform::GetDoubleClickTime()));
 
 		auto pt = ui::platform::GetCursorScreenPos();
 		auto col = ui::platform::GetColorAtScreenPos(pt);
-		ui::Textf("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
+		ui::MakeWithTextf<ui::LabelFrame>("cursor pos:[%d;%d] color:[%d;%d;%d;%d]",
 			pt.x, pt.y,
-			col.r, col.g, col.b, col.a) + ui::SetPadding(5);
+			col.r, col.g, col.b, col.a);
 		ui::Make<ui::ColorInspectBlock>().SetColor(col);
 
 		if (ui::imm::Button("Show error message"))

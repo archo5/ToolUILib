@@ -1178,6 +1178,8 @@ struct Inspector : NativeDialogWindow
 	struct InspectorUI : Buildable
 	{
 		static constexpr int TAB_W = 10;
+		float scrollPos = 0;
+		float scrollMax = FLT_MAX;
 
 		Inspector* insp;
 
@@ -1200,24 +1202,29 @@ struct Inspector : NativeDialogWindow
 			auto* font = styleProps->GetFont();
 			int fontSize = styleProps->font_size;
 
+			float ys = y - scrollPos;
 			if (obj == insp->selObj)
 			{
-				draw::RectCol(0, y, 9999, y + fontSize, Color4f(0.5f, 0, 0));
+				draw::RectCol(0, ys, 9999, ys + fontSize, Color4f(0.5f, 0, 0));
 			}
 
 			y += fontSize - 1;
-			draw::TextLine(font, fontSize, x, y, Format("%p", obj), Color4b::White());
-			draw::TextLine(font, fontSize, x + 60, y, CleanName(typeid(*obj).name()), Color4b::White());
-			char bfr[1024];
+			ys = y - scrollPos;
+			if (ys >= fontSize * 2 - 1)
 			{
-				auto& fr = obj->finalRectC;
-				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-				draw::TextLine(font, fontSize, 400, y, bfr, Color4b::White());
-			}
-			{
-				auto& fr = obj->finalRectCP;
-				snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-				draw::TextLine(font, fontSize, 600, y, bfr, Color4b::White());
+				draw::TextLine(font, fontSize, x, ys, Format("%p", obj), Color4b::White());
+				draw::TextLine(font, fontSize, x + 60, ys, CleanName(typeid(*obj).name()), Color4b::White());
+				char bfr[1024];
+				{
+					auto& fr = obj->finalRectC;
+					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
+					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White());
+				}
+				{
+					auto& fr = obj->finalRectCP;
+					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
+					draw::TextLine(font, fontSize, 600, ys, bfr, Color4b::White());
+				}
 			}
 
 			y++;
@@ -1252,11 +1259,17 @@ struct Inspector : NativeDialogWindow
 			draw::TextLine(font, styleProps->font_size, 400, y, "Content rect", Color4b(255, 153));
 			draw::TextLine(font, styleProps->font_size, 600, y, "Padding rect", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
+			scrollMax = y;
 			//draw::TextLine(font, styleProps->font_size, 10, 10, "inspector", Color4b::White());
 		}
 
 		void OnEvent(Event& e) override
 		{
+			if (e.type == EventType::MouseScroll)
+			{
+				scrollPos = clamp(scrollPos - e.delta.y, 0.0f, scrollMax);
+				system->nativeWindow->InvalidateAll();
+			}
 		}
 	};
 

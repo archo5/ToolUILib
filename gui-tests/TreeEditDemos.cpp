@@ -505,12 +505,12 @@ struct ScriptTreeDemo : ui::Buildable
 			{
 				if (tree.selected)
 				{
-					ui::Text(typeid(*tree.selected).name()) + ui::SetPadding(5);
+					ui::MakeWithText<ui::LabelFrame>(typeid(*tree.selected).name());
 					tree.selected->ItemUI();
 				}
 				else
 				{
-					ui::Text("No node selected...") + ui::SetPadding(5);
+					ui::MakeWithText<ui::LabelFrame>("No node selected...");
 				}
 			}
 			ui::Pop();

@@ -7,11 +7,17 @@ namespace ui {
 
 struct StackLTRLayoutElement : UIElement
 {
+	float paddingBetweenElements = 0;
+
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		float size = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
+		{
+			if (ch != firstChild)
+				size += paddingBetweenElements;
 			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		}
 		return size;
 	}
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
@@ -30,9 +36,11 @@ struct StackLTRLayoutElement : UIElement
 		{
 			float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 			ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
-			p += w;
+			p += w + paddingBetweenElements;
 		}
 	}
+
+	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
 struct StackTopDownLayoutElement : UIElement

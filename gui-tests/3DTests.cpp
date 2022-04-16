@@ -195,7 +195,8 @@ struct GizmoTest : ui::Buildable
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
-				ui::Push<ui::Panel>() + ui::SetWidth(120);
+				ui::Push<ui::SizeConstraintElement>().SetWidth(120);
+				ui::Push<ui::Panel>();
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -213,11 +214,13 @@ struct GizmoTest : ui::Buildable
 				}
 				ui::Pop();
 				ui::Pop();
+				ui::Pop();
 
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
-				ui::Push<ui::Panel>() + ui::SetWidth(180);
+				ui::Push<ui::SizeConstraintElement>().SetWidth(180);
+				ui::Push<ui::Panel>();
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Gizmo");
@@ -235,6 +238,7 @@ struct GizmoTest : ui::Buildable
 						ui::imm::RadioButton(gizmo.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
 					}
 				}
+				ui::Pop();
 				ui::Pop();
 				ui::Pop();
 
@@ -359,7 +363,8 @@ struct QuaternionTest : ui::Buildable
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
-				ui::Push<ui::Panel>() + ui::SetWidth(200);
+				ui::Push<ui::SizeConstraintElement>().SetWidth(200);
+				ui::Push<ui::Panel>();
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -369,11 +374,13 @@ struct QuaternionTest : ui::Buildable
 				}
 				ui::Pop();
 				ui::Pop();
+				ui::Pop();
 
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
-				ui::Push<ui::Panel>() + ui::SetWidth(240);
+				ui::Push<ui::SizeConstraintElement>().SetWidth(240);
+				ui::Push<ui::Panel>();
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					auto q1 = GetQuat();
@@ -386,6 +393,7 @@ struct QuaternionTest : ui::Buildable
 					auto q3 = ui::Quat::RotateEulerAnglesZYX(a2);
 					ui::Textf("q3=%g;%g;%g;%g", q3.x, q3.y, q3.z, q3.w);
 				}
+				ui::Pop();
 				ui::Pop();
 				ui::Pop();
 

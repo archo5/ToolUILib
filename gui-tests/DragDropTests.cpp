@@ -485,7 +485,7 @@ struct DragElementTest : ui::Buildable
 				tp._OnChangeStyle(); // TODO?
 			}
 		});
-		ui::Text("the other part") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("the other part");
 		ui::Pop(); // TabPanel
 
 		ui::Pop(); // PlacementLayoutElement

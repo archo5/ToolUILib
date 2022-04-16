@@ -19,12 +19,11 @@ struct MessageLogDataSource
 	virtual void OnDrawMessage(UIObject* context, size_t msg, UIRect area);
 };
 
-struct MessageLogView : Buildable
+struct MessageLogView : FillerElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnReset() override;
-	void Build() override;
 
 	MessageLogDataSource* GetDataSource() const;
 	void SetDataSource(MessageLogDataSource* src);
@@ -52,14 +51,13 @@ struct TableDataSource
 	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
 };
 
-struct TableView : Buildable
+struct TableView : PaddedFillerElement
 {
 	TableView();
 	~TableView();
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
-	void Build() override;
 
 	TableDataSource* GetDataSource() const;
 	void SetDataSource(TableDataSource* src);
@@ -99,7 +97,7 @@ struct TreeDataSource
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
 };
 
-struct TreeView : Buildable
+struct TreeView : FillerElement
 {
 	struct PaintState;
 
@@ -109,7 +107,6 @@ struct TreeView : Buildable
 	void OnPaint(const UIPaintContext& ctx) override;
 	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
 	void OnEvent(Event& e) override;
-	void Build() override;
 
 	TreeDataSource* GetDataSource() const;
 	void SetDataSource(TreeDataSource* src);

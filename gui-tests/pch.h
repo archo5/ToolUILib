@@ -18,7 +18,7 @@ inline ui::RadioButtonT<int>& BasicRadioButton(const char* text, int& iref, int 
 	auto& rb = ui::Push<ui::RadioButtonT<int>>().Init(iref, val);
 	ui::Push<ui::StackLTRLayoutElement>();
 	ui::Make<ui::RadioButtonIcon>();
-	ui::Text(text) + ui::SetPadding(4);
+	ui::MakeWithText<ui::LabelFrame>(text);
 	ui::Pop();
 	ui::Pop();
 	return rb;

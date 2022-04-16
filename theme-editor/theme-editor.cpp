@@ -17,7 +17,7 @@ static unsigned g_previewZoomPercent = 100;
 static unsigned g_previewSlicedWidth = 128;
 static unsigned g_previewSlicedHeight = 32;
 
-struct TE_SlicedImageElement : UIElement
+struct TE_SlicedImageElement : ui::FillerElement
 {
 	draw::ImageHandle _image;
 	int _width = 0;
@@ -29,7 +29,7 @@ struct TE_SlicedImageElement : UIElement
 
 	void OnReset() override
 	{
-		UIElement::OnReset();
+		FillerElement::OnReset();
 
 		_image = {};
 		_width = 0;
@@ -78,13 +78,16 @@ struct TE_MainPreviewNode : Buildable
 
 	void Build() override
 	{
+		TEMP_LAYOUT_MODE = FILLER;
 		Subscribe(DCT_NodePreviewInvalidated);
 		Subscribe(DCT_EditProcGraph);
 		Subscribe(DCT_EditProcGraphNode);
 
+		Push<EdgeSliceLayoutElement>();
+
 		Push<StackExpandLTRLayoutElement>();
 		{
-			Text("Preview") + SetPadding(5);
+			MakeWithText<LabelFrame>("Preview");
 			if (tmpl->curPreviewImage && imm::Button("Reset to template"))
 			{
 				tmpl->SetCurPreviewImage(nullptr);
@@ -94,7 +97,6 @@ struct TE_MainPreviewNode : Buildable
 
 		if (tmpl->renderSettings.layer)
 		{
-			Push<EdgeSliceLayoutElement>();
 			{
 				Push<StackExpandLTRLayoutElement>();
 				{
@@ -145,15 +147,14 @@ struct TE_MainPreviewNode : Buildable
 					Make<TE_SlicedImageElement>()
 						.SetImage(img)
 						.SetTargetSize(g_previewSlicedWidth, g_previewSlicedHeight)
-						.SetBorderSizes(rs.l, rs.t, rs.r, rs.b)
-						+ SetWidth(Coord::Percent(100))
-						+ SetHeight(Coord::Percent(100));
+						.SetBorderSizes(rs.l, rs.t, rs.r, rs.b);
 				}
 
 				Pop();
 			}
-			Pop();
 		}
+
+		Pop();
 	}
 };
 
@@ -168,7 +169,7 @@ struct TE_ImageEditorNode : Buildable
 
 		Push<StackLTRLayoutElement>();
 		{
-			Text("Images") + SetPadding(5);
+			MakeWithText<LabelFrame>("Images");
 			if (imm::Button("Add"))
 			{
 				auto img = std::make_shared<TE_Image>();
@@ -180,7 +181,6 @@ struct TE_ImageEditorNode : Buildable
 		Pop();
 
 		auto& imged = Make<SequenceEditor>();
-		imged + SetHeight(Coord::Percent(100));
 		imged.itemLayoutPreset = EditorItemContentsLayoutPreset::None;
 		imged.SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
 		imged.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
@@ -224,7 +224,7 @@ struct TE_ImageEditorNode : Buildable
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);
 						if (auto ncr = co.ncref.lock())
-							MakeWithText<BoxElement>(ncr->name) + SetPadding(5);
+							MakeWithText<LabelFrame>(ncr->name);
 						else
 							EditNCRef(co.ncref);
 						imm::EditColor(co.color, false, { SetWidth(40) });
@@ -275,7 +275,6 @@ struct TE_TemplateEditorNode : Buildable
 			Push<ListBoxFrame>();
 			{
 				auto& pge = Make<ProcGraphEditor>();
-				pge + SetHeight(Coord::Percent(100));
 				pge.Init(tmpl);
 			}
 			Pop();
@@ -304,7 +303,6 @@ struct TE_TemplateEditorNode : Buildable
 						if (showColors)
 						{
 							auto& ced = Make<SequenceEditor>();
-							ced + SetHeight(Coord::Percent(100));
 							ced.SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
 							ced.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 							{
@@ -339,7 +337,7 @@ struct TE_ThemeEditorNode : Buildable
 		Allocate<TopMenu>(GetNativeWindow(), topMenu);
 
 		//auto& tp = Push<TabbedPanel>();
-		Push<TabGroup>() + SetHeight(Coord::Percent(100));
+		Push<TabGroup>();
 		{
 #if 0
 			for (TE_Template* tmpl : theme->templates)
@@ -395,10 +393,9 @@ struct TE_ThemeEditorNode : Buildable
 
 			if (theme->curTemplate)
 			{
-				Push<TabPanel>() + SetHeight(Coord::Percent(100));
+				Push<TabPanel>();
 				{
 					auto& pen = Make<TE_TemplateEditorNode>();
-					pen + SetHeight(Coord::Percent(100));
 					pen.theme = theme;
 					pen.tmpl = theme->curTemplate;
 				}
@@ -422,7 +419,6 @@ struct ThemeEditorMainWindow : NativeMainWindow
 	void OnBuild() override
 	{
 		auto& ten = Make<TE_ThemeEditorNode>();
-		ten + SetHeight(Coord::Percent(100));
 		ten.theme = &theme;
 
 		Make<DefaultOverlayBuilder>();

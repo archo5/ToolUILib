@@ -340,7 +340,7 @@ struct TabsTest : ui::Buildable
 			ui::Push<ui::TabButtonList>();
 			{
 				ui::Push<ui::TabButtonT<int>>().Init(tab1, 0);
-				ui::Text("First tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("First tab");
 				ui::MakeWithText<ui::Button>("button");
 				ui::Pop();
 
@@ -352,7 +352,7 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ui::Text("Second tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("Second tab");
 				ui::MakeWithText<ui::Button>("button");
 				ui::Pop();
 			}
@@ -384,12 +384,12 @@ struct TabsTest : ui::Buildable
 						Rebuild();
 					}
 				};
-				ui::Text("First tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("First tab");
 				ui::MakeWithText<ui::Button>("button");
 				ui::Pop();
 
 				ui::Push<ui::TabButtonT<int>>().Init(tab2, 1);
-				ui::Text("Second tab") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("Second tab");
 				ui::MakeWithText<ui::Button>("button");
 				ui::Pop();
 			}
@@ -574,6 +574,8 @@ struct ColorBlockTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		WText("Default color block");
 		WMake<ui::ColorBlock>().SetColor(colorA);
 		WMake<ui::ColorBlock>().SetColor(colorB);
@@ -583,8 +585,12 @@ struct ColorBlockTest : ui::Buildable
 		WMake<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
 
 		WText("Custom size");
-		WMake<ui::ColorBlock>().SetColor(colorA) + ui::SetWidth(200) + ui::SetHeight(40);
-		WMake<ui::ColorBlock>().SetColor(colorB) + ui::SetWidth(200) + ui::SetHeight(40);
+		WPush<ui::SizeConstraintElement>().SetSize(200, 40);
+		WMake<ui::ColorBlock>().SetColor(colorA);
+		WPop();
+		WPush<ui::SizeConstraintElement>().SetSize(200, 40);
+		WMake<ui::ColorBlock>().SetColor(colorB);
+		WPop();
 
 		WText("Color inspect block");
 		WMake<ui::ColorInspectBlock>().SetColor(colorA);
@@ -617,6 +623,8 @@ struct ColorBlockTest : ui::Buildable
 			}
 			WPop();
 		}
+		WPop();
+
 		WPop();
 	}
 

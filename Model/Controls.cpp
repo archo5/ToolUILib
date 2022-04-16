@@ -988,7 +988,7 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 
 void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
-	UIElement::OnPaint(ctx);
+	FillerElement::OnPaint(ctx);
 
 	auto cr = GetContentRect();
 	float w = cr.GetWidth();
@@ -1022,7 +1022,7 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	float vScrollWidth = ResolveUnits(sbv.GetWidth(), rect.GetWidth());
 	//if (hasVScroll)
 		realContSize.x -= vScrollWidth;
-	estContentSize.y = CalcEstimatedHeight(realContSize, EstSizeType::Exact);
+	estContentSize.y = _child ? _child->GetFullEstimatedHeight(realContSize, EstSizeType::Exact).min : 0;
 	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
 	if (yoff > maxYOff)
 		yoff = maxYOff;
@@ -1033,21 +1033,17 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	//if (hasVScroll)
 		r.x1 -= vScrollWidth;
 
-	UIElement::OnLayout(r, realContSize);
-
-	finalRectC.y0 += yoff;
-	finalRectC.y1 += yoff;
-	finalRectCP.y0 += yoff;
-	finalRectCP.y1 += yoff;
-	//if (hasVScroll)
-	{
-		finalRectCP.x1 += vScrollWidth;
-	}
+	auto crect = r;
+	crect.y1 = crect.y0 + estContentSize.y;
+	if (_child)
+		_child->PerformLayout(crect, realContSize);
+	finalRectCP = finalRectC = rect;
+	finalRectC.x1 -= vScrollWidth;
 }
 
 void ScrollArea::OnReset()
 {
-	UIElement::OnReset();
+	FillerElement::OnReset();
 
 	SetFlag(UIObject_ClipChildren, true);
 	sbv.OnReset();

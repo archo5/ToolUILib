@@ -1110,6 +1110,31 @@ void UIObjectSingleChild::_DetachFromFrameContents()
 }
 
 
+Rangef WrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	if (!_child)
+		return Rangef(0);
+	return _child->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+}
+
+Rangef WrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	if (!_child)
+		return Rangef(0);
+	return _child->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+}
+
+void WrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	if (_child)
+	{
+		_child->PerformLayout(rect, containerSize);
+		finalRectCP = finalRectC = _child->finalRectCP;
+	}
+	else finalRectCP = finalRectC = rect;
+}
+
+
 Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
 {
 	size.x -= styleProps->padding_left + styleProps->padding_right;

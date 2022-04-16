@@ -17,11 +17,13 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 		tgt = nullptr;
 		if (layout != 0)
 		{
-			ui::Push<ui::EdgeSliceLayoutElement>() + ui::SetHeight(100);
+			WPush<ui::SizeConstraintElement>().SetHeight(100);
+			WPush<ui::EdgeSliceLayoutElement>();
 			auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
 			tmpl->edge = layout == 1 ? ui::Edge::Left : ui::Edge::Right;
 			tgt = &ui::MakeWithText<ui::Button>(layout == 1 ? "Left" : "Right button");
-			ui::Pop();
+			WPop();
+			WPop();
 		}
 	}
 	void OnLayoutChanged() override
@@ -135,7 +137,6 @@ struct ButtonPressHighlightDemo : ui::Buildable
 	void Build() override
 	{
 		*this + ui::SetPadding(30);
-		*this + ui::SetHeight(ui::Coord::Percent(100));
 
 		AddActivationAnim(ui::MakeWithText<ui::Button>("Press me"));
 		AddActivationAnim(ui::MakeWithText<ui::Button>("...or me"));

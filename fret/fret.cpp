@@ -130,7 +130,6 @@ struct MainWindowContents : ui::Buildable
 #endif
 
 		auto& tpFiles = ui::Push<ui::TabbedPanel>();
-		tpFiles + ui::SetHeight(ui::Coord::Percent(100));
 		tpFiles.showCloseButton = true;
 		{
 			int nf = 0;

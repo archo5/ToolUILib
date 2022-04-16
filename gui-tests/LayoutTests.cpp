@@ -483,7 +483,7 @@ struct PlacementTest : ui::Buildable
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			// room for checkbox & spread width a bit
-			ui::Make<ui::BoxElement>() + ui::SetWidth(100) + ui::SetHeight(25);
+			ui::Make<ui::SizeConstraintElement>().SetSize(100, 25);
 
 			ui::Text("opened");
 			ui::imm::PropEditBool("One", one);

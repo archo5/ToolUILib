@@ -349,7 +349,6 @@ struct NodeGraphEditorDemo : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetHeight(ui::Coord::Percent(100));
 		ui::Make<ui::ProcGraphEditor>().Init(Allocate<GraphImpl>(&graph));
 	}
 

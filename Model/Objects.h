@@ -537,23 +537,9 @@ struct UIElement : UIObject
 // TODO: slowly port to these and use custom [single] child storage
 struct WrapperElement : UIObjectSingleChild
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{
-		return _child->GetFullEstimatedWidth(containerSize, type, forParentLayout);
-	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{
-		return _child->GetFullEstimatedHeight(containerSize, type, forParentLayout);
-	}
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
-	{
-		if (_child)
-		{
-			_child->PerformLayout(rect, containerSize);
-			finalRectCP = finalRectC = _child->finalRectCP;
-		}
-		else finalRectCP = finalRectC = rect;
-	}
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
 struct PaddedWrapperElement : UIObjectSingleChild

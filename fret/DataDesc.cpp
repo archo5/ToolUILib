@@ -337,20 +337,28 @@ struct RenameDialog : ui::NativeDialogWindow
 		ui::Push<ui::EdgeSliceLayoutElement>() + ui::SetPadding(16);
 		ui::imm::PropEditString("New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
-		ui::Make<ui::BoxElement>() + ui::SetHeight(16);
+		ui::Make<ui::SizeConstraintElement>().SetHeight(16);
 
 		ui::Push<ui::StackExpandLTRLayoutElement>();
-		if (ui::imm::Button("OK", { ui::SetHeight(30) }))
+
+		ui::Push<ui::SizeConstraintElement>().SetHeight(30);
+		if (ui::imm::Button("OK"))
 		{
 			rename = true;
 			SetVisible(false);
 		}
-		ui::Make<ui::BoxElement>() + ui::SetWidth(16);
-		if (ui::imm::Button("Cancel", { ui::SetHeight(30) }))
+		ui::Pop();
+
+		ui::Make<ui::SizeConstraintElement>().SetWidth(16);
+
+		ui::Push<ui::SizeConstraintElement>().SetHeight(30);
+		if (ui::imm::Button("Cancel"))
 		{
 			rename = false;
 			SetVisible(false);
 		}
+		ui::Pop();
+
 		ui::Pop();
 		ui::Pop();
 	}

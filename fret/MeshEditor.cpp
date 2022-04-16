@@ -15,8 +15,6 @@ void MeshEditorWindowNode::Build()
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& view3d = ui::Push<ui::View3D>();
-				view3d + ui::SetWidth(ui::Coord::Percent(100));
-				view3d + ui::SetHeight(ui::Coord::Percent(100));
 				view3d.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
@@ -68,11 +66,10 @@ void MeshEditorWindowNode::Build()
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ui::Push<ui::StackTopDownLayoutElement>();
+		ui::Push<ui::FillerElement>();
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();
-			tv + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);

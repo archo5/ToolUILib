@@ -15,7 +15,6 @@ void TabMarkers::Build()
 		ui::MakeWithText<ui::LabelFrame>("Marked items");
 		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
-		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetDataSource(&f->mdSrc);
 		tv.SetSelectionStorage(&f->mdSrc);
 		tv.SetSelectionMode(ui::SelectionMode::Single);

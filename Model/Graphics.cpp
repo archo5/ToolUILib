@@ -708,8 +708,15 @@ void ColorPicker::Build()
 					}
 				});
 				Push<StackLTRLayoutElement>();
-				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
-				Make<ColorBlock>().SetColor(_color.GetRGBA()) + SetWidth(50) + SetHeight(60) + SetPadding(0);
+
+				Push<SizeConstraintElement>().SetSize(50, 60);
+				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + SetPadding(0);
+				Pop();
+
+				Push<SizeConstraintElement>().SetSize(50, 60);
+				Make<ColorBlock>().SetColor(_color.GetRGBA()) + SetPadding(0);
+				Pop();
+
 				Pop();
 				Pop();
 

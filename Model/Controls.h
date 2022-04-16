@@ -385,7 +385,7 @@ struct ScrollbarV
 	float dragStartCursorPos;
 };
 
-struct ScrollArea : UIElement
+struct ScrollArea : FillerElement
 {
 	Size2f estContentSize = {};
 	float yoff = 0;

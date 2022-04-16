@@ -568,7 +568,6 @@ struct TableViewTest : ui::Buildable
 		}
 
 		auto& tv = ui::Make<ui::TableView>();
-		tv + ui::SetHeight(ui::Coord::Percent(100));
 		tv.SetSelectionMode(selectionType);
 		tv.SetSelectionStorage(&g_randomNumbers);
 		tv.SetDataSource(&g_randomNumbers);
@@ -639,9 +638,6 @@ struct MessageLogViewTest : ui::Buildable
 
 		mlvR->SetDataSource(&mlvRData);
 		mlvI->SetDataSource(&mlvIData);
-
-		*mlvR + ui::SetHeight(ui::Coord::Percent(100));
-		*mlvI + ui::SetHeight(ui::Coord::Percent(100));
 
 		// TODO: scrolling to end in ctor results in scrolling a page or so too far - should probably fix that?
 		AddMessages(2345);

@@ -108,16 +108,12 @@ void MessageLogView::OnEvent(Event& e)
 
 void MessageLogView::OnReset()
 {
-	Buildable::OnReset();
+	FillerElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 
 	_dataSource = nullptr;
 	scrollbarV.OnReset();
-}
-
-void MessageLogView::Build()
-{
 }
 
 MessageLogDataSource* MessageLogView::GetDataSource() const
@@ -179,7 +175,7 @@ static StaticID_Style sid_table_row_header("table_row_header");
 static StaticID_Style sid_table_col_header("table_col_header");
 void TableView::OnReset()
 {
-	Buildable::OnReset();
+	PaddedFillerElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	styleProps = GetCurrentTheme()->GetStyle(sid_table_base);
@@ -422,10 +418,6 @@ void TableView::OnEvent(Event& e)
 	}
 }
 
-void TableView::Build()
-{
-}
-
 TableDataSource* TableView::GetDataSource() const
 {
 	return _impl->dataSource;
@@ -623,7 +615,7 @@ TreeView::~TreeView()
 static StaticID_Style sid_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
-	Buildable::OnReset();
+	FillerElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 
@@ -743,10 +735,6 @@ void TreeView::OnEvent(Event& e)
 	{
 		e.context->SetKeyboardFocus(this);
 	}
-}
-
-void TreeView::Build()
-{
 }
 
 TreeDataSource* TreeView::GetDataSource() const

@@ -25,7 +25,7 @@ void ImageEditorWindowNode::Build()
 			if (structDef)
 			{
 				EditImageFormat("Format", image->format);
-				ui::Text("Conditional format overrides") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("Conditional format overrides");
 				ui::Push<ui::Panel>();
 				for (auto& FO : image->formatOverrides)
 				{
@@ -48,11 +48,10 @@ void ImageEditorWindowNode::Build()
 		sp2.SetDirection(true);
 		sp2.SetSplits({ 0.6f });
 
-		ui::Push<ui::StackTopDownLayoutElement>();
+		ui::Push<ui::FillerElement>();
 		if (ddiSrc.dataDesc)
 		{
 			auto& tv = ui::Make<ui::TableView>();
-			tv + ui::SetHeight(ui::Coord::Percent(100));
 			tv.SetDataSource(&ddiSrc);
 			tv.SetSelectionStorage(&ddiSrc);
 			tv.SetSelectionMode(ui::SelectionMode::Single);
