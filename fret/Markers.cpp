@@ -540,7 +540,7 @@ void MarkerDataSource::SetSelectionState(uintptr_t item, bool sel)
 void MarkedItemEditor::Build()
 {
 	Subscribe(DCT_Marker, marker);
-	ui::Text("Marker");
+	ui::MakeWithText<ui::LabelFrame>("Marker");
 
 	ui::Push<ui::Panel>();
 	ui::imm::DropdownMenuList(marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));

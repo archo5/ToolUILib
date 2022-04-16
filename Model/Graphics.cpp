@@ -287,7 +287,9 @@ void HueSatPicker::_RegenerateBackground(int w)
 
 void ColorDragDropData::Build()
 {
-	Make<ColorInspectBlock>().SetColor(color) + SetWidth(40) + SetPadding(0);
+	Push<SizeConstraintElement>().SetWidth(40);
+	Make<ColorInspectBlock>().SetColor(color) + SetPadding(0);
+	Pop();
 }
 
 
@@ -562,7 +564,7 @@ void ColorPicker::Build()
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("H") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("H").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._hue, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -574,13 +576,16 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._hue) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._hue) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("S") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("S").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._sat, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -591,13 +596,16 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._sat) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._sat) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("V") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("V").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._val, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -608,13 +616,16 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._val) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._val) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("R") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("R").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.r, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -625,13 +636,16 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._rgba.r) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._rgba.r) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("G") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("G").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.g, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -642,13 +656,16 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._rgba.g) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._rgba.g) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("B") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("B").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.b, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
 				StyleAccessor a = sl.GetTrackStyle();
@@ -659,15 +676,21 @@ void ColorPicker::Build()
 					return ContentPaintAdvice{};
 				}));
 				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
-				Make<Textbox>().Init(_color._rgba.b) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._rgba.b) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
+				Pop();
 			}
 			Pop();
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Text("A") + SetWidth(10);
+				MakeWithText<SizeConstraintElement>("A").SetWidth(10);
 				Make<Slider>().Init(_color._rgba.a, limit);
-				Make<Textbox>().Init(_color._rgba.a) + SetWidth(50);
+
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color._rgba.a);
+				Pop();
 			}
 			Pop();
 
@@ -692,10 +715,12 @@ void ColorPicker::Build()
 
 				Push<StackTopDownLayoutElement>();
 
-				Push<StackExpandLTRLayoutElement>() + SetHeight(22);
+				Push<StackExpandLTRLayoutElement>();
 				Make<BoxElement>() + SetWidth(Coord::Fraction(1));
-				Text("Hex:") + SetHeight(22);
-				Make<Textbox>().Init(_color.hex) + SetWidth(50) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });
+				MakeWithText<SizeConstraintElement>("Hex:").SetHeight(22);
+				Push<SizeConstraintElement>().SetWidth(50);
+				Make<Textbox>().Init(_color.hex) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });
+				Pop();
 				Pop();
 
 				auto& pick = MakeWithText<Button>("Pick");

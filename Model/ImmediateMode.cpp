@@ -31,7 +31,7 @@ void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView 
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<CheckboxIcon>();
-		Text(text) + SetPadding(4);
+		MakeWithText<LabelFrame>(text);
 		Pop();
 	}
 	else
@@ -44,7 +44,7 @@ void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringVi
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<RadioButtonIcon>();
-		Text(text) + SetPadding(4);
+		MakeWithText<LabelFrame>(text);
 		Pop();
 	}
 	else
@@ -62,7 +62,7 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<TreeExpandIcon>();
-		Text(text) + SetPadding(4);
+		MakeWithText<LabelFrame>(text);
 		Pop();
 	}
 	else
@@ -391,7 +391,7 @@ bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConf
 void PropText(const char* label, const char* text, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
-	auto& ctrl = Text(text) + SetPadding(5);
+	auto& ctrl = MakeWithText<LabelFrame>(text);
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
 }

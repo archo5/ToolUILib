@@ -12,7 +12,7 @@ void TabMarkers::Build()
 	{
 		ui::Push<ui::EdgeSliceLayoutElement>();
 
-		ui::Text("Marked items") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Marked items");
 		auto& tv = ui::Make<ui::TableView>();
 		curTable = &tv;
 		tv + ui::SetHeight(ui::Coord::Percent(100));

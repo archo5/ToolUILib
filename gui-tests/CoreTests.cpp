@@ -128,8 +128,6 @@ struct RenderingPrimitives : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetWidth(1000);
-		*this + ui::SetHeight(1000);
 	}
 };
 void Test_RenderingPrimitives()
@@ -187,8 +185,6 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 	}
 	void Build() override
 	{
-		*this + ui::SetWidth(1000);
-		*this + ui::SetHeight(1000);
 	}
 	void OnAnimationFrame() override
 	{
@@ -231,8 +227,6 @@ struct ImageSetSizingTest : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetWidth(1000);
-		*this + ui::SetHeight(1000);
 	}
 };
 void Test_ImageSetSizing()
@@ -270,8 +264,6 @@ struct EventsTest : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetWidth(ui::Coord::Percent(100));
-		*this + ui::SetHeight(ui::Coord::Percent(100));
 	}
 };
 
@@ -493,8 +485,6 @@ struct AnimationRequestTest : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetWidth(200);
-		*this + ui::SetHeight(200);
 		auto& cb = ui::Push<ui::StateToggle>().InitReadOnly(animReq.IsAnimating());
 		ui::Make<ui::CheckboxIcon>();
 		ui::Pop();
@@ -528,9 +518,10 @@ struct ElementResetTest : ui::Buildable
 	{
 		if (first)
 		{
+			ui::Push<ui::SizeConstraintElement>().SetWidth(300);
 			ui::MakeWithText<ui::Button>("First")
-				+ ui::SetWidth(300)
 				+ ui::AddEventHandler(ui::EventType::Click, [this](ui::Event&) { first = false; Rebuild(); });
+			ui::Pop();
 
 			auto& tb = ui::Make<ui::Textbox>();
 			tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[0] = tb.GetText(); });
@@ -538,9 +529,10 @@ struct ElementResetTest : ui::Buildable
 		}
 		else
 		{
+			ui::Push<ui::SizeConstraintElement>().SetHeight(30);
 			ui::MakeWithText<ui::Button>("Second")
-				+ ui::SetHeight(30)
 				+ ui::AddEventHandler(ui::EventType::Click, [this](ui::Event&) { first = true; Rebuild(); });
+			ui::Pop();
 
 			auto& tb = ui::Make<ui::Textbox>();
 			tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[1] = tb.GetText(); });
@@ -680,6 +672,7 @@ struct HighElementCountTest : ui::Buildable
 	};
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
 		BasicRadioButton("no styles", styleMode, 0) + ui::RebuildOnChange();
 		BasicRadioButton("same style", styleMode, 1) + ui::RebuildOnChange();
@@ -698,6 +691,7 @@ struct HighElementCountTest : ui::Buildable
 		}
 
 		printf("# blocks: %d\n", ui::g_numStyleBlocks);
+		WPop();
 	}
 	int styleMode;
 };

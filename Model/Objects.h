@@ -595,18 +595,9 @@ struct SizeConstraintElement : WrapperElement
 	Rangef widthRange = Rangef(0);
 	Rangef heightRange = Rangef(0);
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{
-		if (widthRange.min >= widthRange.max)
-			return widthRange;
-		return WrapperElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(widthRange);
-	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{
-		if (heightRange.min >= heightRange.max)
-			return heightRange;
-		return WrapperElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(heightRange);
-	}
+	void OnReset() override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 
 	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = r; return *this; }
 	SizeConstraintElement& SetHeightRange(Rangef r) { heightRange = r; return *this; }

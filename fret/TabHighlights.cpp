@@ -11,7 +11,7 @@ void TabHighlights::Build()
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		ui::Text("Highlighted items") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Highlighted items");
 
 		ui::Pop();
 

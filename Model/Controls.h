@@ -7,6 +7,11 @@
 
 namespace ui {
 
+struct LabelFrame : PaddedWrapperElement
+{
+	void OnReset() override;
+};
+
 struct Panel : UIElement
 {
 	void OnReset() override;

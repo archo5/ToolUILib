@@ -189,8 +189,9 @@ void TreeEditor::OnBuildItem(TreePathRef path, void* data)
 
 void TreeEditor::OnBuildDeleteButton()
 {
+	Push<SizeConstraintElement>().SetWidth(20);
 	auto& delBtn = MakeWithText<Button>("X");
-	delBtn + SetWidth(20);
+	Pop();
 	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event&)
 	{
 		GetTree()->Remove(delBtn.FindParentOfType<TreeItemElement>()->path);

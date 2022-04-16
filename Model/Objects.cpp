@@ -1165,6 +1165,28 @@ void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSi
 }
 
 
+void SizeConstraintElement::OnReset()
+{
+	WrapperElement::OnReset();
+	widthRange = Rangef(0);
+	heightRange = Rangef(0);
+}
+
+Rangef SizeConstraintElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	if (widthRange.min >= widthRange.max)
+		return widthRange;
+	return WrapperElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(widthRange);
+}
+
+Rangef SizeConstraintElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	if (heightRange.min >= heightRange.max)
+		return heightRange;
+	return WrapperElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(heightRange);
+}
+
+
 void TextElement::OnReset()
 {
 	UIElement::OnReset();

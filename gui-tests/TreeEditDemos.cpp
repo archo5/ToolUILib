@@ -122,7 +122,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		void UI() override
 		{
 			WPush<ui::StackLTRLayoutElement>();
-			WText("Name:") + ui::SetPadding(5);
+			WMakeWithText<ui::LabelFrame>("Name:");
 			ui::imm::EditString(name.c_str(), [this](const char* s) { name = s; }, { ui::SetWidth(50) });
 			WPop();
 		}
@@ -145,7 +145,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			WPush<ui::Panel>() + ui::SetPadding(2);
 			WPush<ui::StackLTRLayoutElement>();
 			NodeUI(a);
-			WText(Name()) + ui::SetPadding(5);
+			WMakeWithText<ui::LabelFrame>(Name());
 			NodeUI(b);
 			WPop();
 			WPop();

@@ -10,6 +10,16 @@
 
 namespace ui {
 
+static StaticID_Style sid_prop_label("prop_label");
+void LabelFrame::OnReset()
+{
+	PaddedWrapperElement::OnReset();
+
+	flags |= UIObject_SetsChildTextStyle;
+	styleProps = GetCurrentTheme()->GetStyle(sid_prop_label); // TODO: do we need another style?
+}
+
+
 static StaticID_Style sid_panel("panel");
 void Panel::OnReset()
 {
@@ -301,7 +311,6 @@ double Slider::ValueToQ(double v)
 }
 
 
-static StaticID_Style sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {
 	UIElement::OnReset();

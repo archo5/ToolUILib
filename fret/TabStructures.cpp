@@ -17,7 +17,7 @@ void TabStructures::Build()
 		workspace->ddiSrc.Edit();
 
 		ui::LabeledProperty::Begin();
-		ui::Text("Instances") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Instances");
 		if (ui::imm::Button("Expand all instances"))
 		{
 			workspace->desc.ExpandAllInstances(workspace->ddiSrc.filterFile);

@@ -12,12 +12,14 @@ void SequenceDragData::Build()
 {
 	if (scope->itemUICallback)
 	{
-		Push<StackTopDownLayoutElement>() + SetWidth(width);
+		Push<SizeConstraintElement>().SetWidth(width);
+		Push<StackTopDownLayoutElement>();
 		scope->GetSequence()->IterateElements(at, [this](size_t idx, void* ptr)
 		{
 			scope->itemUICallback(scope, idx, ptr);
 			return false;
 		});
+		Pop();
 		Pop();
 	}
 	else
@@ -193,8 +195,9 @@ void SequenceEditor::OnBuildItem(size_t idx, void* ptr)
 
 void SequenceEditor::OnBuildDeleteButton()
 {
+	Push<SizeConstraintElement>().SetWidth(20);
 	auto& delBtn = MakeWithText<Button>("X");
-	delBtn + SetWidth(20);
+	Pop();
 	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event& e)
 	{
 		GetSequence()->Remove(delBtn.FindParentOfType<SequenceItemElement>()->num);

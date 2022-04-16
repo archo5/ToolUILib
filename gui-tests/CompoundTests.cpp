@@ -39,15 +39,15 @@ struct StateButtonsTest : ui::Buildable
 		{
 		case 0:
 			ui::Make<ui::CheckboxIcon>();
-			ui::Text(text) + ui::SetPadding(4); // TODO consistent padding from theme?
+			ui::MakeWithText<ui::LabelFrame>(text);
 			break;
 		case 1:
 			ui::Make<ui::RadioButtonIcon>();
-			ui::Text(text) + ui::SetPadding(4);
+			ui::MakeWithText<ui::LabelFrame>(text);
 			break;
 		case 2:
 			ui::Make<ui::TreeExpandIcon>();
-			ui::Text(text) + ui::SetPadding(4);
+			ui::MakeWithText<ui::LabelFrame>(text);
 			break;
 		case 3:
 			ui::MakeWithText<ui::StateButtonSkin>(text);
@@ -57,7 +57,7 @@ struct StateButtonsTest : ui::Buildable
 			break;
 		case 5:
 			ui::Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));
-			ui::Text(text) + ui::SetPadding(4);
+			ui::MakeWithText<ui::LabelFrame>(text);
 			break;
 		case 6:
 			ui::MakeWithText<ui::ColorBlock>(text)
@@ -65,8 +65,7 @@ struct StateButtonsTest : ui::Buildable
 				+ ui::SetWidth(ui::Coord::Undefined());
 			break;
 		case 7: {
-			auto s = ui::Text(text).GetStyle();
-			s.SetPadding(5);
+			auto s = ui::MakeWithText<ui::LabelFrame>(text).GetStyle();
 			s.SetTextColor(GetStateColor(stb->GetState()));
 			s.SetFontWeight(stb->GetState() == 1 ? ui::FontWeight::Bold : ui::FontWeight::Normal);
 			s.SetFontStyle(stb->GetState() > 1 ? ui::FontStyle::Italic : ui::FontStyle::Normal);
@@ -527,23 +526,25 @@ struct ScrollbarsTest : ui::Buildable
 
 	void Build() override
 	{
-		ui::Push<ui::EdgeSliceLayoutElement>();
+		WPush<ui::EdgeSliceLayoutElement>();
 
 		ui::imm::PropEditInt("\bCount", count);
 		ui::imm::PropEditBool("\bExpanding", expanding);
 
-		auto& sa = ui::Push<ui::ScrollArea>();
+		auto& sc = WPush<ui::SizeConstraintElement>();
 		if (!expanding)
-			sa + ui::SetWidth(300) + ui::SetHeight(200);
-		else
-			sa + ui::SetHeight(ui::Coord::Percent(100));
+			sc.SetSize(300, 200);
+		WPush<ui::ScrollArea>();
+		WPush<ui::StackTopDownLayoutElement>();
 
 		for (int i = 0; i < count; i++)
 			ui::Textf("Inside scroll area [%d]", i);
 
-		ui::Pop();
+		WPop();
+		WPop();
+		WPop();
 
-		ui::Pop();
+		WPop();
 	}
 };
 void Test_Scrollbars()
@@ -677,10 +678,9 @@ struct ImageTest : ui::Buildable
 			WPop();
 		}
 
-		WMake<ui::ImageElement>()
-			.SetImage(img)
-			+ ui::SetWidth(50)
-			+ ui::SetHeight(50);
+		WPush<ui::SizeConstraintElement>().SetSize(50, 50);
+		WMake<ui::ImageElement>().SetImage(img);
+		WPop();
 	}
 
 	ui::draw::ImageHandle img;
@@ -781,7 +781,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
-			ui::Text("int: " + std::to_string(intVal)) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
 			ui::LabeledProperty::End();
 		}
 		{
@@ -792,7 +792,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
-			ui::Text("uint: " + std::to_string(uintVal)) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
 			ui::LabeledProperty::End();
 		}
 		{
@@ -803,7 +803,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
-			ui::Text("int64: " + std::to_string(int64Val)) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
 			ui::LabeledProperty::End();
 		}
 		{
@@ -814,7 +814,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
-			ui::Text("uint64: " + std::to_string(uint64Val)) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));
 			ui::LabeledProperty::End();
 		}
 		{
@@ -825,7 +825,7 @@ struct IMGUITest : ui::Buildable
 			if (ui::imm::PropEditFloat("\bdisabled", tmp, { ui::Enable(false) }, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
 
-			ui::Text("float: " + std::to_string(floatVal)) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
 			ui::LabeledProperty::End();
 		}
 		{
@@ -965,14 +965,14 @@ struct DropdownTest : ui::Buildable
 			WPush<ui::CheckboxFlagT<bool>>().Init(flag1);
 			WPush<ui::StackExpandLTRLayoutElement>();
 			WMake<ui::CheckboxIcon>();
-			WText("Option 1") + ui::SetPadding(5);
+			WMakeWithText<ui::LabelFrame>("Option 1");
 			WPop();
 			WPop();
 
 			WPush<ui::CheckboxFlagT<bool>>().Init(flag2);
 			WPush<ui::StackExpandLTRLayoutElement>();
 			WMake<ui::CheckboxIcon>();
-			WText("Option 2") + ui::SetPadding(5);
+			WMakeWithText<ui::LabelFrame>("Option 2");
 			WPop();
 			WPop();
 		}

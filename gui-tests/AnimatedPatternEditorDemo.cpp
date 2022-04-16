@@ -146,7 +146,7 @@ struct APLayer
 	virtual const char* ItemName() = 0;
 	virtual void InlineUI()
 	{
-		Text(ItemName()) + SetPadding(5);
+		MakeWithText<ui::LabelFrame>(ItemName());
 	}
 	virtual void FullUI()
 	{

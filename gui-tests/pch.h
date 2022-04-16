@@ -90,5 +90,6 @@ template <class E> inline E& WMakeWithText(ui::StringView s)
 {
 	auto& e = WPush<E>();
 	WText(s);
+	WPop();
 	return e;
 }

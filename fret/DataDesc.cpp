@@ -81,7 +81,7 @@ void DataDesc::EditStructuralItems()
 	}
 
 	ui::Push<ui::StackExpandLTRLayoutElement>();
-	ui::Text("Edit:") + ui::SetPadding(5);
+	ui::MakeWithText<ui::LabelFrame>("Edit:");
 	ui::imm::RadioButton(editMode, 0, "instance", {}, ui::imm::ButtonStateToggleSkin());
 	ui::imm::RadioButton(editMode, 1, "struct", {}, ui::imm::ButtonStateToggleSkin());
 	ui::imm::RadioButton(editMode, 2, "field", {}, ui::imm::ButtonStateToggleSkin());
@@ -165,7 +165,7 @@ void DataDesc::EditInstance()
 			ui::LabeledProperty::End();
 		}
 
-		ui::Text("Arguments") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Arguments");
 		ui::Push<ui::Panel>();
 
 		auto* argSeq = ui::BuildAlloc<ui::StdSequence<decltype(SI->args)>>(SI->args);
@@ -246,16 +246,16 @@ void DataDesc::EditInstance()
 			{
 				if (size != F_NO_VALUE)
 				{
-					ui::Textf("Data (size=%" PRId64 ")", size) + ui::SetPadding(5);
+					ui::MakeWithTextf<ui::LabelFrame>("Data (size=%" PRId64 ")", size);
 				}
 				else
 				{
-					ui::Text("Data (size=") + ui::SetPadding(5);
+					ui::MakeWithText<ui::LabelFrame>("Data (size=");
 					{
 						if (ui::imm::Button("?"))
 							SI->GetSize();
 					}
-					ui::Text(")") + ui::SetPadding(5);
+					ui::MakeWithText<ui::LabelFrame>(")");
 				}
 			}
 			ui::Pop();
@@ -265,7 +265,7 @@ void DataDesc::EditInstance()
 			{
 				auto desc = SI->GetFieldDescLazy(i, &incomplete);
 				ui::Push<ui::StackExpandLTRLayoutElement>();
-				ui::Text(desc) + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>(desc);
 
 				if (FindStructByName(S.fields[i].type) && SI->IsFieldPresent(i, true) == OptionalBool::True)
 				{
@@ -364,8 +364,8 @@ void DataDesc::EditStruct()
 	if (auto* SI = curInst)
 	{
 		ui::Push<ui::StackLTRLayoutElement>();
-		ui::Text("Struct:") + ui::SetPadding(5);
-		ui::Text(SI->def->name) + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Struct:");
+		ui::MakeWithText<ui::LabelFrame>(SI->def->name);
 		if (ui::imm::Button("Rename"))
 		{
 			RenameDialog rd(SI->def->name);
@@ -404,7 +404,7 @@ void DataDesc::EditStruct()
 			ui::imm::PropEditInt("Size", S.size);
 			ui::imm::PropEditString("Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
-			ui::Text("Parameters") + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("Parameters");
 			ui::Push<ui::Panel>();
 
 			auto* paramSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.params)>>(S.params);
@@ -425,7 +425,7 @@ void DataDesc::EditStruct()
 			}
 			ui::Pop();
 
-			ui::Text("Fields") + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("Fields");
 			ui::Push<ui::Panel>();
 
 			auto* fieldSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.fields)>>(S.fields);
@@ -446,14 +446,16 @@ void DataDesc::EditStruct()
 					F.count);
 				if (!S.serialized)
 					snprintf(info + cc, 128 - cc, " @%" PRId64, F.off);
-				ui::MakeWithText<ui::BoxElement>(info) + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>(info);
 
-				if (ui::imm::Button("Edit", { ui::SetWidth(50) }))
+				ui::Push<ui::SizeConstraintElement>().SetWidth(50);
+				if (ui::imm::Button("Edit"))
 				{
 					editMode = 2;
 					curField = idx;
 					N->Rebuild();
 				}
+				ui::Pop();
 			};
 
 			if (ui::imm::Button("Add"))
@@ -465,7 +467,7 @@ void DataDesc::EditStruct()
 			}
 			ui::Pop();
 
-			ui::Text("Resource") + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>("Resource");
 			ui::LabeledProperty::Begin("\bType:");
 			ui::imm::RadioButton(S.resource.type, DDStructResourceType::None, "None", {}, ui::imm::ButtonStateToggleSkin());
 			ui::imm::RadioButton(S.resource.type, DDStructResourceType::Image, "Image", {}, ui::imm::ButtonStateToggleSkin());
@@ -521,7 +523,7 @@ void DataDesc::EditField()
 				ui::imm::PropEditBool("Individual computed offsets", F.individualComputedOffsets);
 				ui::imm::PropEditBool("Read until 0", F.readUntil0);
 
-				ui::Text("Struct arguments") + ui::SetPadding(5);
+				ui::MakeWithText<ui::LabelFrame>("Struct arguments");
 				ui::Push<ui::Panel>();
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{

@@ -59,7 +59,7 @@ void TabInspect::Build()
 		ui::Pop();
 
 		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("Settings") + ui::SetPadding(5);
+		ui::MakeWithText<ui::LabelFrame>("Settings");
 		ui::Pop();
 	}
 	ui::Pop();
