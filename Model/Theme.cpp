@@ -9,6 +9,14 @@
 
 namespace ui {
 
+struct ThemeFile : RefCountedST
+{
+	BufferHandle text;
+	JSONUnserializerObjectIterator unserializer;
+};
+using ThemeFileHandle = RCHandle<ThemeFile>;
+
+
 template <class E> struct EnumKeys
 {
 	static E StringToValue(const char* name) = delete;
@@ -157,6 +165,58 @@ StyleBlockRef ThemeData::FindStyleByName(const std::string& name)
 	return {};
 }
 
+static void InitStruct(ThemeData::CustomStructData& csd, IThemeStructLoader* loader)
+{
+	csd.structLoader = loader;
+	JSONUnserializerObjectIterator oi;
+	oi.Parse("{}");
+	oi.BeginObject({}, loader->GetName());
+	csd.defaultInstance = loader->ReadStruct(oi);
+}
+
+static ThemeData::CustomStructData& GetStructData(ThemeData& td, IThemeStructLoader* loader)
+{
+	if (loader->id >= td._cachedStructs.size())
+	{
+		td._cachedStructs.resize(loader->id + 1);
+		auto csd = new ThemeData::CustomStructData;
+		InitStruct(*csd, loader);
+		td._cachedStructs[loader->id] = csd;
+	}
+	return *td._cachedStructs[loader->id];
+}
+
+void* LoadStructFromSource(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader, const std::string& name)
+{
+	auto key = to_string(name, ":", loader->GetName());
+	auto it = td._customStructSources.find(key);
+	if (it.is_valid())
+	{
+		auto* tf = static_cast<ThemeFile*>(it->value.get_ptr());
+		tf->unserializer.BeginObject(it->key.c_str(), loader->GetName());
+		void* data = loader->ReadStruct(tf->unserializer);
+		tf->unserializer.EndObject();
+
+		csd.instances.insert(name, data);
+		return data;
+	}
+	return nullptr;
+}
+
+void* ThemeData::_FindStructByNameImpl(IThemeStructLoader* loader, const std::string& name)
+{
+	auto& csd = GetStructData(*this, loader);
+
+	auto it = csd.instances.find(name);
+	if (it.is_valid())
+		return it->value;
+
+	if (auto* data = LoadStructFromSource(*this, csd, loader, name))
+		return data;
+
+	return nullptr;
+}
+
 static size_t CalcNewSize(size_t curSize, size_t curMaxCount)
 {
 	if (curMaxCount <= curSize)
@@ -224,6 +284,35 @@ StyleBlockRef ThemeData::GetStyle(const StaticID_Style& id, bool returnDefaultIf
 	return slot ? slot : returnDefaultIfMissing ? GetObjectStyle() : nullptr;
 }
 
+void* ThemeData::_GetStructImpl(IThemeStructLoader* loader, const char* name, uint32_t id, bool returnDefaultIfMissing)
+{
+	auto& csd = GetStructData(*this, loader);
+
+	if (id < csd.cachedInstances.size() && csd.cachedInstances[id])
+		return csd.cachedInstances[id];
+
+	if (id >= csd.cachedInstances.size())
+		csd.cachedInstances.resize(id + 1, nullptr);
+
+	auto it = csd.instances.find(name);
+	if (it.is_valid())
+	{
+		csd.cachedInstances[id] = it->value;
+		return it->value;
+	}
+
+	if (auto* data = LoadStructFromSource(*this, csd, loader, name))
+	{
+		csd.cachedInstances[id] = data;
+		return data;
+	}
+
+	if (returnDefaultIfMissing)
+		return csd.defaultInstance;
+
+	return nullptr;
+}
+
 static ThemeDataHandle g_curTheme;
 ThemeData* GetCurrentTheme()
 {
@@ -237,13 +326,6 @@ void SetCurrentTheme(ThemeData* theme)
 
 
 static HashMap<std::string, PainterCreateFunc*> g_painterCreateFuncs;
-
-struct ThemeFile : RefCountedST
-{
-	BufferHandle text;
-	JSONUnserializerObjectIterator unserializer;
-};
-using ThemeFileHandle = RCHandle<ThemeFile>;
 
 struct ThemeElementRef
 {
@@ -463,20 +545,24 @@ void ThemeData::LoadTheme(StringView folder)
 								auto key = to_string(name.substr(0, name.find_last_at(":color")));
 								tld.colors.insert(key, { tf, el->name->string });
 							}
-							if (name.ends_with(":imgset"))
+							else if (name.ends_with(":imgset"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":imgset")));
 								tld.imageSets.insert(key, { tf, el->name->string });
 							}
-							if (name.ends_with(":painter"))
+							else if (name.ends_with(":painter"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":painter")));
 								tld.painters.insert(key, { tf, el->name->string });
 							}
-							if (name.ends_with(":style"))
+							else if (name.ends_with(":style"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":style")));
 								tld.styles.insert(key, { tf, el->name->string });
+							}
+							else
+							{
+								_customStructSources.insert(el->name->string, tf);
 							}
 						}
 					}

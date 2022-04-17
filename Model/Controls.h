@@ -3,9 +3,56 @@
 
 #include "Objects.h"
 #include "System.h"
+#include "../Core/StaticID.h"
 
 
 namespace ui {
+
+struct FrameStyle
+{
+	static constexpr const char* NAME = "FrameStyle";
+
+	AABB2f padding;
+	PainterHandle backgroundPainter;
+
+	void Serialize(IObjectIterator& oi);
+};
+
+template <class T> struct PaddingStyleMixin
+{
+	UI_FORCEINLINE AABB2f& GetPadding() { return static_cast<T*>(this)->style.padding; }
+	UI_FORCEINLINE const AABB2f& GetPadding() const { return const_cast<PaddingStyleMixin*>(this)->GetPadding(); }
+
+	UI_FORCEINLINE T& SetPadding(float w) { GetPadding() = UIRect::UniformBorder(w); return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(float x, float y) { GetPadding() = { x, y, x, y }; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(float l, float t, float r, float b) { GetPadding() = { l, t, r, b }; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(const UIRect& r) { GetPadding() = r; return *static_cast<T*>(this); }
+
+	UI_FORCEINLINE T& SetPaddingLeft(float p) { GetPadding().x0 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingTop(float p) { GetPadding().y0 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingRight(float p) { GetPadding().x1 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingBottom(float p) { GetPadding().y1 = p; return *static_cast<T*>(this); }
+};
+
+enum class DefaultFrameStyle
+{
+	GroupBox,
+};
+
+struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
+{
+	FrameStyle style;
+
+	void OnReset() override;
+	void OnPaint(const UIPaintContext& ctx) override;
+	Size2f GetReducedContainerSize(Size2f size);
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+
+	FrameElement& SetStyle(const StaticID<FrameStyle>& id);
+	FrameElement& SetDefaultStyle(DefaultFrameStyle style);
+};
 
 struct LabelFrame : PaddedWrapperElement
 {
@@ -13,11 +60,6 @@ struct LabelFrame : PaddedWrapperElement
 };
 
 struct Panel : UIElement
-{
-	void OnReset() override;
-};
-
-struct PanelFrame : PaddedWrapperElement
 {
 	void OnReset() override;
 };

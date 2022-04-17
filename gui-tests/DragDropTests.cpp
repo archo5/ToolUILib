@@ -718,7 +718,7 @@ struct DragDropTest : ui::Buildable
 
 		tmpl->placement = &parts[0];
 		WPush<ui::StackTopDownLayoutElement>();
-		WPush<ui::PanelFrame>();
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<FileReceiverTest>();
@@ -727,19 +727,19 @@ struct DragDropTest : ui::Buildable
 		ui::Make<TreeNodeReorderTest>();
 
 		WPop(); // StackTopDownLayoutElement
-		WPop(); // PanelFrame
+		WPop(); // FrameElement
 		WPop(); // StackTopDownLayoutElement
 
 		tmpl->placement = &parts[1];
 		WPush<ui::StackTopDownLayoutElement>();
-		WPush<ui::PanelFrame>();
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<DragElementTest>();
 		ui::Make<DragConnectTest>();
 
 		WPop(); // StackTopDownLayoutElement
-		WPop(); // PanelFrame
+		WPop(); // FrameElement
 		WPop(); // StackTopDownLayoutElement
 
 		WPop(); // PlacementLayoutElement

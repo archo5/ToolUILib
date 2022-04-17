@@ -10,6 +10,93 @@
 
 namespace ui {
 
+void FrameStyle::Serialize(/*IThemeLoader* tl, */IObjectIterator& oi) // TODO
+{
+	//tl->OnFieldAABB(oi, "padding", padding);
+	//tl->OnFieldPainter(oi, "backgroundPainter", backgroundPainter);
+
+	float shared = 0;
+	OnField(oi, "padding", shared);
+	padding = AABB2f::UniformBorder(shared);
+	OnField(oi, "paddingLeft", padding.x0);
+	OnField(oi, "paddingRight", padding.x1);
+	OnField(oi, "paddingTop", padding.y0);
+	OnField(oi, "paddingBottom", padding.y1);
+
+	std::string bpname;
+	OnField(oi, "backgroundPainter", bpname);
+	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
+}
+
+
+void FrameElement::OnReset()
+{
+	UIObjectSingleChild::OnReset();
+
+	flags |= UIObject_SetsChildTextStyle;
+	style = {};
+}
+
+void FrameElement::OnPaint(const UIPaintContext& ctx)
+{
+	UIPaintHelper ph;
+	if (style.backgroundPainter)
+		ph.cpa = style.backgroundPainter->Paint(this);
+	ph.PaintChildren(this, ctx);
+}
+
+Size2f FrameElement::GetReducedContainerSize(Size2f size)
+{
+	size.x -= style.padding.x0 + style.padding.x1;
+	size.y -= style.padding.y0 + style.padding.y1;
+	return size;
+}
+
+Rangef FrameElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = style.padding.x0 + style.padding.x1;
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+Rangef FrameElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = style.padding.y0 + style.padding.y1;
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	auto padsub = rect.ShrinkBy(style.padding);
+	if (_child)
+	{
+		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		finalRectC = _child->finalRectCP;
+		finalRectCP = finalRectC.ExtendBy(style.padding);
+	}
+	else
+	{
+		finalRectCP = rect;
+		finalRectC = padsub;
+	}
+}
+
+FrameElement& FrameElement::SetStyle(const StaticID<FrameStyle>& id)
+{
+	style = *GetCurrentTheme()->GetStruct<FrameStyle>(id);
+	return *this;
+}
+
+static StaticID<FrameStyle> sid_framestyle_panel("group_box");
+FrameElement& FrameElement::SetDefaultStyle(DefaultFrameStyle style)
+{
+	switch (style)
+	{
+	case DefaultFrameStyle::GroupBox: return SetStyle(sid_framestyle_panel);
+	}
+	return *this;
+}
+
+
 static StaticID_Style sid_prop_label("prop_label");
 void LabelFrame::OnReset()
 {
@@ -24,15 +111,6 @@ static StaticID_Style sid_panel("panel");
 void Panel::OnReset()
 {
 	UIElement::OnReset();
-
-	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_panel);
-}
-
-
-void PanelFrame::OnReset()
-{
-	PaddedWrapperElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	styleProps = GetCurrentTheme()->GetStyle(sid_panel);

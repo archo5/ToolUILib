@@ -17,7 +17,7 @@ struct The3DViewTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::PanelFrame>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -175,7 +175,7 @@ struct GizmoTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::PanelFrame>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -345,7 +345,7 @@ struct QuaternionTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::PanelFrame>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);

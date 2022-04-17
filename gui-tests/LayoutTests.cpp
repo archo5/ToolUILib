@@ -6,7 +6,7 @@ struct EdgeSliceTest : ui::Buildable
 {
 	void Build() override
 	{
-		WPush<ui::PanelFrame>();
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 
 		WPush<ui::EdgeSliceLayoutElement>();
 

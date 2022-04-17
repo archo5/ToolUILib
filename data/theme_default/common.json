@@ -15,6 +15,12 @@
 	"padding": 5
 }
 
+"group_box:FrameStyle":
+{
+	padding = 6
+	backgroundPainter = "panel"
+}
+
 "panel:style":
 {
 	"margin": 2,
