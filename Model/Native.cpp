@@ -497,7 +497,9 @@ void DebugDrawSelf(UIObject* o)
 void DebugDraw(UIObject* o)
 {
 	DebugDrawSelf(o);
-	for (auto* ch = o->firstChild; ch; ch = ch->next)
+
+	UIObjectIterator it(o);
+	while (auto* ch = it.GetNext())
 		DebugDraw(ch);
 }
 
@@ -1238,11 +1240,11 @@ struct Inspector : NativeDialogWindow
 
 		Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 		{
-			return containerSize.x;
+			return Rangef::Exact(containerSize.x);
 		}
 		Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 		{
-			return containerSize.y;
+			return Rangef::Exact(containerSize.y);
 		}
 		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
 		{

@@ -524,12 +524,11 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
 	float addM = style.GetMarginLeft() + style.GetMarginRight();
-	float addtbl[3] = { addM, addM + addP, addM };
 
 	float resW;
 	if (width.IsDefined())
 	{
-		resW = ResolveUnits(width, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::Width))];
+		resW = ResolveUnits(width, containerSize.x) + addM;
 	}
 	else if (customCalcWidth.IsDefined())
 	{
@@ -545,7 +544,7 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 
 	if (minWidth.IsDefined())
 	{
-		float resMinW = ResolveUnits(minWidth, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MinWidth))];
+		float resMinW = ResolveUnits(minWidth, containerSize.x) + addM;
 		resW = max(resW, resMinW);
 	}
 
@@ -581,12 +580,11 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
 	float addM = style.GetMarginTop() + style.GetMarginBottom();
-	float addtbl[3] = { addM, addM + addP, addM };
 
 	float resH;
 	if (height.IsDefined())
 	{
-		resH = ResolveUnits(height, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::Height))];
+		resH = ResolveUnits(height, containerSize.y) + addM;
 	}
 	else if (customCalcHeight.IsDefined())
 	{
@@ -602,7 +600,7 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 
 	if (minHeight.IsDefined())
 	{
-		float resMinH = ResolveUnits(minHeight, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MinHeight))];
+		float resMinH = ResolveUnits(minHeight, containerSize.y) + addM;
 		resH = max(resH, resMinH);
 	}
 

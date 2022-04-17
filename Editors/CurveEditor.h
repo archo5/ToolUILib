@@ -169,7 +169,7 @@ struct CurveEditorUI : CurveEditorState
 	void Render(const CurveEditorInput& input, ICurveView* curves);
 };
 
-struct CurveEditorElement : UIElement
+struct CurveEditorElement : FillerElement
 {
 	CurveEditorUI _ui;
 	ICurveView* curveView = nullptr;

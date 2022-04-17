@@ -54,9 +54,6 @@ struct SubUIBenchmark : ui::Buildable
 	}
 	void Build() override
 	{
-		GetStyle().SetPadding(3);
-		GetStyle().SetWidth(820);
-		GetStyle().SetHeight(820);
 	}
 
 	ui::SubUI<uint16_t> subui;

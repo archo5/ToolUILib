@@ -539,10 +539,13 @@ void MarkerDataSource::SetSelectionState(uintptr_t item, bool sel)
 
 void MarkedItemEditor::Build()
 {
+	ui::Push<ui::EdgeSliceLayoutElement>();
+
 	Subscribe(DCT_Marker, marker);
 	ui::MakeWithText<ui::LabelFrame>("Marker");
 
-	ui::Push<ui::Panel>();
+	ui::Push<ui::PanelFrame>();
+	ui::Push<ui::StackTopDownLayoutElement>();
 	ui::imm::DropdownMenuList(marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
 	ui::imm::PropEditInt("Offset", marker->at);
 	ui::imm::PropEditInt("Count", marker->count);
@@ -557,8 +560,10 @@ void MarkedItemEditor::Build()
 	ui::imm::PropEditBool("Exclude zeroes", marker->excludeZeroes);
 	ui::imm::PropEditString("Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
 	ui::Pop();
+	ui::Pop();
 
-	ui::Push<ui::Panel>();
+	ui::Push<ui::PanelFrame>();
+	ui::Push<ui::EdgeSliceLayoutElement>();
 	if (ui::imm::Button("Analyze"))
 	{
 		analysisData.results.clear();
@@ -630,10 +635,10 @@ void MarkedItemEditor::Build()
 	if (analysisData.results.size())
 	{
 		auto& tbl = ui::Make<ui::TableView>();
-		tbl.GetStyle().SetHeight(analysisData.results.size() * 24 + 32);
 		tbl.SetDataSource(&analysisData);
 		tbl.CalculateColumnWidths();
 	}
+	ui::Pop();
 	ui::Pop();
 }
 

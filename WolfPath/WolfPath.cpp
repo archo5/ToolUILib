@@ -275,8 +275,7 @@ struct RenderView : ui::Buildable
 		Subscribe(DCT_CameraEdited);
 
 		imageEl = &ui::Make<ui::ImageElement>();
-		imageEl->GetStyle().SetWidth(ui::Coord::Percent(100));
-		imageEl->GetStyle().SetHeight(ui::Coord::Percent(100));
+		imageEl->SetLayoutMode(ui::ImageLayoutMode::Fill);
 		imageEl->SetScaleMode(ui::ScaleMode::Stretch);
 		imageEl->SetImage(image);
 	}

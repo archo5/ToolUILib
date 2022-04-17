@@ -80,8 +80,7 @@ struct ThreadedImageRenderingTest : ui::Buildable
 		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
 
 		auto& img = ui::Make<ui::ImageElement>();
-		img.GetStyle().SetWidth(ui::Coord::Percent(100));
-		img.GetStyle().SetHeight(ui::Coord::Percent(100));
+		img.SetLayoutMode(ui::ImageLayoutMode::Fill);
 		img.SetScaleMode(ui::ScaleMode::Fill);
 		img.SetImage(image);
 

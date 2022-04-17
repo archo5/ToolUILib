@@ -529,7 +529,7 @@ void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 
 void CurveEditorElement::OnReset()
 {
-	UIElement::OnReset();
+	FillerElement::OnReset();
 
 	curveView = nullptr;
 	viewport = { 0, 0, 1, 1 };

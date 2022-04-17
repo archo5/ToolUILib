@@ -142,10 +142,12 @@ void TreeEditor::OnReset()
 
 void TreeEditor::OnBuildChildList(TreePath& path)
 {
-	Push<StackTopDownLayoutElement>().GetStyle().SetPaddingLeft(8);
+	Push<PaddingElement>().SetPaddingLeft(8);
+	Push<StackTopDownLayoutElement>();
 
 	OnBuildList(path);
 
+	Pop();
 	Pop();
 }
 

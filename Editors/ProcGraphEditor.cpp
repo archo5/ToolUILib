@@ -308,12 +308,7 @@ void ProcGraphEditor::Build()
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
-	*this + SetHeight(Coord::Percent(100));
-	//*Push<ListBox>() + Height(Coord::Percent(100));
-
 	OnBuildNodes();
-
-	//Pop();
 }
 
 void ProcGraphEditor::OnReset()

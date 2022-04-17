@@ -144,7 +144,6 @@ struct FileStructureViewer2 : ui::Buildable
 	void Build() override
 	{
 		auto& trv = ui::Make<ui::TreeView>();
-		trv.GetStyle().SetHeight(ui::Coord::Percent(100));
 		trv.SetDataSource(ds);
 		trv.CalculateColumnWidths();
 	}

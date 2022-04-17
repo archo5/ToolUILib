@@ -47,8 +47,11 @@ static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
 
 struct SequenceEditorsTest : ui::Buildable
 {
+	ui::RectAnchoredPlacement parts[4];
+
 	void Build() override
 	{
+		WPush<ui::EdgeSliceLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
 
 		if (ui::imm::Button("Reset"))
@@ -75,29 +78,44 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imm::EditBool(setSelectionStorage, "Storage");
 		}
 
-		WPush<ui::StackLTRLayoutElement>();
+		for (int i = 0; i < 4; i++)
+		{
+			parts[i].anchor.x0 = i / 4.0f;
+			parts[i].anchor.x1 = (i + 1) / 4.0f;
+		}
 
-		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
+		tmpl->placement = &parts[0];
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::vector<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ui::Pop();
 
-		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
+		tmpl->placement = &parts[1];
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::list<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ui::Pop();
 
-		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
+		tmpl->placement = &parts[2];
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::deque<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ui::Pop();
 
-		ui::Push<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(25));
+		tmpl->placement = &parts[3];
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("int[5]:");
 		SeqEdit(Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
 		ui::Pop();
 
-		WPop();
+		WPop(); // PlacementLayoutElement
+		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
 	}
@@ -450,8 +468,11 @@ struct Tree : ui::ITree
 
 struct TreeEditorsTest : ui::Buildable
 {
+	ui::RectAnchoredPlacement parts[2];
+
 	void Build() override
 	{
+		WPush<ui::EdgeSliceLayoutElement>();
 		{
 			WPush<ui::StackExpandLTRLayoutElement>();
 			if (ui::imm::Button("Default"))
@@ -492,19 +513,32 @@ struct TreeEditorsTest : ui::Buildable
 			WPop();
 		};
 
-		WPush<ui::StackLTRLayoutElement>();
+		for (int i = 0; i < 2; i++)
+		{
+			parts[i].anchor.x0 = i / 3.0f;
+			parts[i].anchor.x1 = (i + 1) / 3.0f;
+		}
 
-		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
+		tmpl->placement = &parts[0];
+		WPush<ui::StackTopDownLayoutElement>();
 		WText("child pointer array:");
 		TreeEdit(&cpaTree);
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		tmpl->placement = &parts[1];
+		WPush<ui::StackTopDownLayoutElement>();
 		WText("child value array:");
 		TreeEdit(&cvaTree);
 		WPop();
 
-		WPop();
+		WPop(); // PlacementLayoutElement
+		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
 	}
@@ -628,8 +662,17 @@ struct MessageLogViewTest : ui::Buildable
 		}
 	};
 
+	ui::RectAnchoredPlacement parts[2];
+
 	MessageLogViewTest()
 	{
+		for (int i = 0; i < 2; i++)
+		{
+			parts[i].anchor.x0 = i / 2.0f;
+			parts[i].anchor.x1 = (i + 1) / 2.0f;
+			parts[i].anchor.y1 = 0.5f;
+		}
+
 		mlvRData.msgs = &messages;
 		mlvIData.msgs = &messages;
 
@@ -693,6 +736,8 @@ struct MessageLogViewTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::EdgeSliceLayoutElement>();
+
 		WPush<ui::StackExpandLTRLayoutElement>();
 		{
 			if (ui::imm::Button("Clear"))
@@ -709,17 +754,19 @@ struct MessageLogViewTest : ui::Buildable
 				AddMessages(10000);
 		};
 		WPop();
-		WPush<ui::StackLTRLayoutElement>()
-			//+ ui::SetHeight(ui::Coord::Percent(50));
-			+ ui::SetHeight(200);
+
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
 		{
-			ui::Push<ui::EdgeSliceLayoutElement>()
-				+ ui::SetWidth(ui::Coord::Percent(50))
-				+ ui::SetHeight(ui::Coord::Percent(100));
+			tmpl->placement = &parts[0];
+			ui::Push<ui::EdgeSliceLayoutElement>();
 			{
 				ui::Text("single line");
-				ui::Push<ui::ListBoxFrame>()
-					;// +ui::Height(ui::Coord::Percent(100));
+				ui::Push<ui::ListBoxFrame>();
 				{
 					ui::Append(mlvR);
 				}
@@ -727,13 +774,11 @@ struct MessageLogViewTest : ui::Buildable
 			}
 			ui::Pop();
 
-			ui::Push<ui::EdgeSliceLayoutElement>()
-				+ ui::SetWidth(ui::Coord::Percent(50))
-				+ ui::SetHeight(ui::Coord::Percent(100));
+			tmpl->placement = &parts[1];
+			ui::Push<ui::EdgeSliceLayoutElement>();
 			{
 				ui::Text("two lines, custom drawing");
-				ui::Push<ui::ListBoxFrame>()
-					;// +ui::Height(ui::Coord::Percent(100));
+				ui::Push<ui::ListBoxFrame>();
 				{
 					ui::Append(mlvI);
 				}
@@ -741,7 +786,9 @@ struct MessageLogViewTest : ui::Buildable
 			}
 			ui::Pop();
 		}
-		WPop();
+
+		WPop(); // PlacementLayoutElement
+		WPop(); // EdgeSliceLayoutElement
 	}
 
 	std::vector<Message> messages;
@@ -778,20 +825,23 @@ struct CurveEditorTest : ui::Buildable
 	}
 	void Build() override
 	{
-		auto& ce = ui::Make<ui::CurveEditorElement>();
-		ce.GetStyle().SetHeight(50);
+		WPush<ui::SizeConstraintElement>().SetHeight(50);
+		auto& ce = WMake<ui::CurveEditorElement>();
+		WPop();
 		ce.curveView = &basicLinear01Curve;
 		ce.viewport = { 0, 0, 5, 1 };
 
+		WPush<ui::SizeConstraintElement>().SetHeight(50);
 		auto& ce3 = ui::Make<ui::CurveEditorElement>();
-		ce3.GetStyle().SetHeight(50);
+		WPop();
 		auto* s01cv = ui::BuildAlloc<ui::Sequence01CurveView>();
 		s01cv->curve = &sequence01Curve;
 		ce3.curveView = s01cv;
 		ce3.viewport = { 0, 0, 5, 1 };
 
+		WPush<ui::SizeConstraintElement>().SetHeight(200);
 		auto& ce2 = ui::Make<ui::CurveEditorElement>();
-		ce2.GetStyle().SetHeight(200);
+		WPop();
 		auto* cnrcv = ui::BuildAlloc<ui::CubicNormalizedRemapCurveView>();
 		cnrcv->curve = &cubicNormalizedRemapCurve;
 		ce2.curveView = cnrcv;

@@ -731,7 +731,7 @@ void ColorPicker::Build()
 
 			Push<StackExpandLTRLayoutElement>();
 			{
-				Push<Panel>()
+				Push<PanelFrame>()
 					+ SetPadding(3)
 					+ MakeDraggable([this](Event& e) { DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
 					+ AddEventHandler(EventType::DragDrop, [this](Event& e)

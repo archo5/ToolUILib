@@ -74,13 +74,25 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 	}
 
+	ui::RectAnchoredPlacement parts[6];
 	void Build() override
 	{
 		constexpr int NUM_STYLES = 8;
 
-		WPush<ui::StackLTRLayoutElement>();
+		parts[0].anchor.x1 = parts[1].anchor.x0 = 0.15f;
+		parts[1].anchor.x1 = parts[2].anchor.x0 = 0.3f;
+		parts[2].anchor.x1 = parts[3].anchor.x0 = 0.45f;
+		parts[3].anchor.x1 = parts[4].anchor.x0 = 0.6f;
+		parts[4].anchor.x1 = parts[5].anchor.x0 = 0.8f;
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
+		tmpl->placement = &parts[0];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB activate");
 
@@ -93,7 +105,8 @@ struct StateButtonsTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
+		tmpl->placement = &parts[1];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB int.state");
 
@@ -107,7 +120,8 @@ struct StateButtonsTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
+		tmpl->placement = &parts[2];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB ext.state");
 
@@ -120,7 +134,8 @@ struct StateButtonsTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(15));
+		tmpl->placement = &parts[3];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB int.3-state");
 
@@ -134,7 +149,8 @@ struct StateButtonsTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(20));
+		tmpl->placement = &parts[4];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("RB activate");
 
@@ -155,7 +171,8 @@ struct StateButtonsTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>().GetStyle().SetWidth(ui::Coord::Percent(20));
+		tmpl->placement = &parts[5];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("RB ext.state");
 
@@ -306,9 +323,6 @@ struct SplitPaneTest : ui::Buildable
 {
 	void Build() override
 	{
-		GetStyle().SetWidth(ui::Coord::Percent(100));
-		GetStyle().SetHeight(ui::Coord::Percent(100));
-
 		ui::Push<ui::SplitPane>();
 
 		ui::MakeWithText<ui::Panel>("Pane A");
@@ -601,26 +615,44 @@ struct ColorBlockTest : ui::Buildable
 		WPush<ui::Panel>()
 			+ ui::SetPadding(3);
 		{
-			WPush<ui::StackExpandLTRLayoutElement>();
-			{
-				WMake<ui::ColorBlock>().SetColor(C.GetOpaque())
-					+ ui::SetPadding(0)
-					+ ui::SetWidth(ui::Coord::Percent(50));
-				WMake<ui::ColorBlock>().SetColor(C)
-					+ ui::SetPadding(0)
-					+ ui::SetWidth(ui::Coord::Percent(50));
-			}
+			auto& ple = WPush<ui::PlacementLayoutElement>();
+			auto tmpl = ple.GetSlotTemplate();
+
+			WPush<ui::SizeConstraintElement>().SetHeight(20);
+			WMake<ui::FillerElement>();
 			WPop();
+			tmpl->measure = false;
+
+			auto* partOC = Allocate<ui::RectAnchoredPlacement>();
+			partOC->anchor.x1 = 0.5f;
+			partOC->bias.y1 = -4;
+			tmpl->placement = partOC;
+			WMake<ui::ColorBlock>().SetColor(C.GetOpaque())
+				+ ui::SetPadding(0);
+
+			auto* partC = Allocate<ui::RectAnchoredPlacement>();
+			partC->anchor.x0 = 0.5f;
+			partC->bias.y1 = -4;
+			tmpl->placement = partC;
+			WMake<ui::ColorBlock>().SetColor(C)
+				+ ui::SetPadding(0);
+
+			auto* partOA = Allocate<ui::RectAnchoredPlacement>();
+			partOA->anchor.x1 = C.a / 255.f;
+			partOA->anchor.y0 = 1;
+			partOA->bias.y0 = -4;
+			tmpl->placement = partOA;
+			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White())
+				+ ui::SetPadding(0);
+
+			auto* partTA = Allocate<ui::RectAnchoredPlacement>();
+			partTA->anchor.x0 = C.a / 255.f;
+			partTA->anchor.y0 = 1;
+			partTA->bias.y0 = -4;
+			tmpl->placement = partTA;
 			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black())
-				+ ui::SetPadding(0)
-				+ ui::SetWidth(ui::Coord::Percent(100))
-				+ ui::SetHeight(4);
-			{
-				WMake<ui::ColorBlock>().SetColor(ui::Color4b::White())
-					+ ui::SetPadding(0)
-					+ ui::SetWidth(ui::Coord::Percent(100.f * C.a / 255.f))
-					+ ui::SetHeight(4);
-			}
+				+ ui::SetPadding(0);
+
 			WPop();
 		}
 		WPop();
@@ -896,14 +928,27 @@ void Test_Tooltip()
 
 struct DropdownTest : ui::Buildable
 {
+	ui::RectAnchoredPlacement parts[2];
 	uintptr_t sel3opts = 1;
 	uintptr_t selPtr = uintptr_t(&typeid(ui::Buildable));
 	const type_info* selPtrReal = &typeid(ui::Buildable);
 
 	void Build() override
 	{
-		WPush<ui::StackLTRLayoutElement>();
-		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		for (int i = 0; i < 2; i++)
+		{
+			parts[i].anchor.x0 = i / 3.f;
+			parts[i].anchor.x1 = (i + 1) / 3.f;
+		}
+
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
+		tmpl->placement = &parts[0];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WMake<SpecificDropdownMenu>();
 
@@ -924,7 +969,8 @@ struct DropdownTest : ui::Buildable
 		}
 		WPop();
 
-		WPush<ui::StackTopDownLayoutElement>() + ui::SetWidth(ui::Coord::Percent(33));
+		tmpl->placement = &parts[1];
+		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WText("immediate mode");
 			ui::imm::DropdownMenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
@@ -943,6 +989,7 @@ struct DropdownTest : ui::Buildable
 			WPop();
 		}
 		WPop();
+
 		WPop();
 	}
 

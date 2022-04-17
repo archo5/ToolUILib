@@ -525,7 +525,6 @@ struct TEST : ui::Buildable
 		{
 			rootMenu.back().submenu.push_back(ui::MenuItem("Rebuild always", {}, false, rebuildAlways).Func([this]() { rebuildAlways ^= true; Rebuild(); }));
 			rootMenu.back().submenu.push_back(ui::MenuItem("Add wrappers", {}, false, GetWrapperSetting()).Func([this]() { GetWrapperSetting() ^= true; Rebuild(); }));
-			rootMenu.back().submenu.push_back(ui::MenuItem("Dump layout").Func([this]() { DumpLayout(lastChild); }));
 			rootMenu.back().submenu.push_back(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); }));
 
@@ -595,54 +594,6 @@ struct TEST : ui::Buildable
 
 		if (rebuildAlways)
 			Rebuild();
-	}
-
-	static const char* cln(const char* s)
-	{
-		auto* ss = strchr(s, ' ');
-		if (ss)
-			s = ss + 1;
-		if (strncmp(s, "ui::layouts::", sizeof("ui::layouts::") - 1) == 0)
-			s += sizeof("ui::layouts::") - 1;
-		return s;
-	}
-	static const char* dir(const ui::StyleAccessor& a)
-	{
-		static const char* names[] = { "-", "Inh", "T-B", "R-L", "B-T", "L-R" };
-		return names[(int)a.GetStackingDirection()];
-	}
-	static const char* ctu(ui::CoordTypeUnit u)
-	{
-		static const char* names[] = { "undefined", "inherit", "auto", "px", "%", "fr" };
-		return names[(int)u];
-	}
-	static const char* costr(const ui::Coord& c)
-	{
-		static char buf[128];
-		auto* us = ctu(c.unit);
-		if (c.unit == ui::CoordTypeUnit::Undefined ||
-			c.unit == ui::CoordTypeUnit::Inherit ||
-			c.unit == ui::CoordTypeUnit::Auto)
-			return us;
-		snprintf(buf, 128, "%g%s", c.value, us);
-		return buf;
-	}
-	static void DumpLayout(UIObject* o, int lev = 0)
-	{
-		for (int i = 0; i < lev; i++)
-			printf("  ");
-		printf("%s", cln(typeid(*o).name()));
-		printf(":%s", dir(o->GetStyle()));
-		printf(" w=%s", costr(o->GetStyle().GetWidth()));
-		printf(" h=%s", costr(o->GetStyle().GetHeight()));
-		auto cr = o->GetContentRect();
-		printf(" [%g;%g - %g;%g]", cr.x0, cr.y0, cr.x1, cr.y1);
-		puts("");
-
-		for (auto* ch = o->firstChild; ch; ch = ch->next)
-		{
-			DumpLayout(ch, lev + 1);
-		}
 	}
 
 	const TestEntry* curTest = nullptr;

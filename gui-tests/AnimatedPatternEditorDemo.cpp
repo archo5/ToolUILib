@@ -395,7 +395,6 @@ struct AnimPattern : ITree
 		auto* cv = BuildAlloc<Sequence01CurveView>();
 		cv->curve = &globalSettings.curves[curCurve];
 		auto& ced = Make<CurveEditorElement>();
-		ced + SetHeight(Coord::Percent(100));
 		ced.curveView = cv;
 		ced.viewport = { 0, 0, float(globalSettings.numSteps), 1 };
 		ced.settings.snapX = 1;

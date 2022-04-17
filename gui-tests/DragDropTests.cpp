@@ -700,13 +700,25 @@ struct DragConnectTest : ui::Buildable
 
 struct DragDropTest : ui::Buildable
 {
+	ui::RectAnchoredPlacement parts[2];
+
 	void Build() override
 	{
-		WPush<ui::StackLTRLayoutElement>();
+		for (int i = 0; i < 2; i++)
+		{
+			parts[i].anchor.x0 = i / 2.f;
+			parts[i].anchor.x1 = (i + 1) / 2.f;
+		}
 
-		auto s = WPush<ui::Panel>().GetStyle();
-		s.SetWidth(ui::Coord::Percent(50));
-		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+		auto& ple = WPush<ui::PlacementLayoutElement>();
+		auto tmpl = ple.GetSlotTemplate();
+
+		WMake<ui::FillerElement>();
+		tmpl->measure = false;
+
+		tmpl->placement = &parts[0];
+		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::PanelFrame>();
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<FileReceiverTest>();
@@ -715,20 +727,22 @@ struct DragDropTest : ui::Buildable
 		ui::Make<TreeNodeReorderTest>();
 
 		WPop(); // StackTopDownLayoutElement
-		WPop(); // Panel
+		WPop(); // PanelFrame
+		WPop(); // StackTopDownLayoutElement
 
-		s = WPush<ui::Panel>().GetStyle();
-		s.SetWidth(ui::Coord::Percent(50));
-		s.SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
+		tmpl->placement = &parts[1];
+		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::PanelFrame>();
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<DragElementTest>();
 		ui::Make<DragConnectTest>();
 
 		WPop(); // StackTopDownLayoutElement
-		WPop(); // Panel
+		WPop(); // PanelFrame
+		WPop(); // StackTopDownLayoutElement
 
-		WPop(); // StackLTRLayoutElement
+		WPop(); // PlacementLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
 	}

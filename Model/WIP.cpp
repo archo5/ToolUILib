@@ -94,6 +94,10 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 			slot.placement->OnApplyPlacement(slot._element, r);
 		}
 		//contRect = contRect.Include(r);
+		r.x0 = roundf(r.x0);
+		r.y0 = roundf(r.y0);
+		r.x1 = roundf(r.x1);
+		r.y1 = roundf(r.y1);
 		slot._element->PerformLayout(r, containerSize);
 	}
 	finalRectC = finalRectCP = contRect;

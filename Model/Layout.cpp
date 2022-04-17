@@ -503,19 +503,6 @@ void StyleAccessor::SetStackingDirection(StackingDirection v)
 	AccSet(*this, offsetof(StyleBlock, stacking_direction), v);
 }
 
-BoxSizing StyleAccessor::GetBoxSizing(BoxSizingTarget t) const
-{
-	return BoxSizing((block->boxSizing >> (unsigned(t) << 1)) & 3);
-}
-
-void StyleAccessor::SetBoxSizing(BoxSizingTarget t, BoxSizing v)
-{
-	auto f = block->boxSizing;
-	f &= ~(3 << (unsigned(t) << 1));
-	f |= (unsigned(v) << (unsigned(t) << 1));
-	AccSet(*this, offsetof(StyleBlock, boxSizing), f);
-}
-
 HAlign StyleAccessor::GetHAlign() const
 {
 	return block->h_align;

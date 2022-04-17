@@ -639,9 +639,6 @@ struct SubUITest : ui::Buildable
 	}
 	void Build() override
 	{
-		GetStyle().SetPadding(3);
-		GetStyle().SetWidth(100);
-		GetStyle().SetHeight(100);
 	}
 
 	ui::SubUI<uint8_t> subui;
@@ -673,21 +670,10 @@ struct HighElementCountTest : ui::Buildable
 	void Build() override
 	{
 		WPush<ui::StackTopDownLayoutElement>();
-		WPush<ui::StackLTRLayoutElement>();
-		BasicRadioButton("no styles", styleMode, 0) + ui::RebuildOnChange();
-		BasicRadioButton("same style", styleMode, 1) + ui::RebuildOnChange();
-		BasicRadioButton("different styles", styleMode, 2) + ui::RebuildOnChange();
-		WPop();
 
 		for (int i = 0; i < 1000; i++)
 		{
 			auto& el = ui::Make<DummyElement>();
-			switch (styleMode)
-			{
-			case 0: break;
-			case 1: el + ui::SetWidth(200); break;
-			case 2: el + ui::SetWidth(100 + i * 0.02f); break;
-			}
 		}
 
 		printf("# blocks: %d\n", ui::g_numStyleBlocks);

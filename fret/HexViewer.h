@@ -68,18 +68,13 @@ struct HexViewerState
 };
 extern ui::DataCategoryTag DCT_HexViewerState[1];
 
-struct HexViewer : ui::UIElement
+struct HexViewer : ui::FillerElement
 {
 	void OnReset() override
 	{
-		ui::UIElement::OnReset();
+		ui::FillerElement::OnReset();
 
 		GetStyle().SetFontFamily(ui::FONT_FAMILY_MONOSPACE);
-		GetStyle().SetWidth(ui::Coord::Percent(100));
-		GetStyle().SetHeight(ui::Coord::Percent(100));
-	}
-	~HexViewer()
-	{
 	}
 	void OnEvent(ui::Event& e) override;
 	void OnPaint(const ui::UIPaintContext& ctx) override;

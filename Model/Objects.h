@@ -807,15 +807,6 @@ struct SetPlacement : Modifier
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPlacement(_placement); }
 };
 
-struct SetBoxSizing : Modifier
-{
-	BoxSizingTarget _bst;
-	BoxSizing _bs;
-	SetBoxSizing(BoxSizingTarget bst, BoxSizing bs) : _bst(bst), _bs(bs) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetBoxSizing(_bst, _bs); }
-};
-inline SetBoxSizing Set(BoxSizingTarget bst, BoxSizing bs) { return { bst, bs }; }
-
 #define UI_COORD_VALUE_PROXY(name) \
 struct _Set##name##Only : Modifier \
 { \
@@ -823,15 +814,7 @@ struct _Set##name##Only : Modifier \
 	_Set##name##Only(const Coord& c) : _c(c) {} \
 	void Apply(UIObject* obj) const override { obj->GetStyle().Set##name(_c); } \
 }; \
-struct _Set##name : Modifier \
-{ \
-	BoxSizing _s; \
-	Coord _c; \
-	_Set##name(BoxSizing s, const Coord& c) : _s(s), _c(c) {} \
-	void Apply(UIObject* obj) const override { auto s = obj->GetStyle(); s.Set##name(_c); s.SetBoxSizing(BoxSizingTarget::name, _s); } \
-}; \
 inline _Set##name##Only Set##name(const Coord& c) { return { c }; } \
-inline _Set##name Set##name(BoxSizing s, const Coord& c) { return { s, c }; }
 
 UI_COORD_VALUE_PROXY(Width);
 UI_COORD_VALUE_PROXY(Height);

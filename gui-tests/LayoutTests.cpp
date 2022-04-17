@@ -6,10 +6,7 @@ struct EdgeSliceTest : ui::Buildable
 {
 	void Build() override
 	{
-		auto s = WPush<ui::Panel>().GetStyle();
-		s.SetBoxSizing(ui::BoxSizingTarget::Height, ui::BoxSizing::BorderBox);
-		s.SetMargin(0);
-		s.SetHeight(ui::Coord::Percent(100));
+		WPush<ui::PanelFrame>();
 
 		WPush<ui::EdgeSliceLayoutElement>();
 
