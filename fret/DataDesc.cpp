@@ -278,11 +278,13 @@ void DataDesc::EditInstance()
 				}
 				ui::Pop();
 			}
+
+			ui::Push<ui::SizeConstraintElement>().SetHeight(200);
 			auto& tv = ui::Make<ui::TableView>();
-			tv + ui::SetHeight(200);
 			tv.enableRowHeader = false;
 			tv.SetDataSource(data);
 			tv.CalculateColumnWidths();
+			ui::Pop();
 
 			if (incomplete && ui::imm::Button("Load completely"))
 			{

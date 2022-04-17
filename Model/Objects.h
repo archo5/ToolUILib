@@ -554,11 +554,11 @@ struct FillerElement : UIObjectSingleChild
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		return containerSize.x;
+		return Rangef::Exact(containerSize.x);
 	}
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		return containerSize.y;
+		return Rangef::Exact(containerSize.y);
 	}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
 	{
@@ -800,27 +800,12 @@ struct Enable : Modifier
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
 };
 
-struct ApplyStyle : Modifier
-{
-	StyleBlock* _style;
-	ApplyStyle(StyleBlock* style) : _style(style) {}
-	void Apply(UIObject* obj) const override { obj->SetStyle(_style); }
-};
-
 struct SetPlacement : Modifier
 {
 	IPlacement* _placement;
 	SetPlacement(IPlacement* placement) : _placement(placement) {}
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPlacement(_placement); }
 };
-
-struct SetStackingDirection : Modifier
-{
-	StackingDirection _dir;
-	SetStackingDirection(StackingDirection dir) : _dir(dir) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetStackingDirection(_dir); }
-};
-inline SetStackingDirection Set(StackingDirection dir) { return dir; }
 
 struct SetBoxSizing : Modifier
 {
@@ -852,8 +837,6 @@ UI_COORD_VALUE_PROXY(Width);
 UI_COORD_VALUE_PROXY(Height);
 UI_COORD_VALUE_PROXY(MinWidth);
 UI_COORD_VALUE_PROXY(MinHeight);
-UI_COORD_VALUE_PROXY(MaxWidth);
-UI_COORD_VALUE_PROXY(MaxHeight);
 
 #undef UI_COORD_VALUE_PROXY
 

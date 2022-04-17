@@ -126,8 +126,6 @@ enum class BoxSizingTarget : uint8_t
 	Height,
 	MinWidth,
 	MinHeight,
-	MaxWidth,
-	MaxHeight,
 };
 
 enum class HAlign : uint8_t
@@ -403,8 +401,6 @@ struct StyleBlock
 	Coord height;
 	Coord min_width;
 	Coord min_height;
-	Coord max_width;
-	Coord max_height;
 
 	float margin_left = 0;
 	float margin_right = 0;
@@ -518,12 +514,6 @@ public:
 
 	Coord GetMinHeight() const;
 	void SetMinHeight(Coord v);
-
-	Coord GetMaxWidth() const;
-	void SetMaxWidth(Coord v);
-
-	Coord GetMaxHeight() const;
-	void SetMaxHeight(Coord v);
 
 
 	float GetMarginLeft() const;

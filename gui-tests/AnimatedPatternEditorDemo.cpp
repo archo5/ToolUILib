@@ -351,8 +351,7 @@ struct AnimPattern : ITree
 		Make<ImageElement>()
 			.SetImage(image)
 			.SetAlphaBackgroundEnabled(true)
-			+ SetWidth(Coord::Percent(100))
-			+ SetHeight(Coord::Percent(100));
+			.SetLayoutMode(ImageLayoutMode::Fill);
 	}
 
 	void PropertyUI()

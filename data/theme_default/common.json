@@ -123,6 +123,12 @@
 	]
 }
 
+"proc_graph_node:style":
+{
+	padding = 5
+	backgroundPainter = "tab_panel"
+}
+
 "textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 5 }] }
 "textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 5 }] }
 

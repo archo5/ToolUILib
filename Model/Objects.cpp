@@ -521,7 +521,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 		GetSize(customCalcWidth, height);
 	}
 	auto minWidth = style.GetMinWidth();
-	auto maxWidth = style.GetMaxWidth();
 
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
 	float addM = style.GetMarginLeft() + style.GetMarginRight();
@@ -551,11 +550,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	}
 
 	float resMaxW = width.IsDefined() ? resW : FLT_MAX;
-	if (maxWidth.IsDefined())
-	{
-		resMaxW = ResolveUnits(maxWidth, containerSize.x) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MaxWidth))];
-		resW = min(resW, resMaxW);
-	}
 
 	Rangef s = { resW, resMaxW };
 
@@ -584,7 +578,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 		GetSize(width, customCalcHeight);
 	}
 	auto minHeight = style.GetMinHeight();
-	auto maxHeight = style.GetMaxHeight();
 
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
 	float addM = style.GetMarginTop() + style.GetMarginBottom();
@@ -614,11 +607,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	}
 
 	float resMaxH = height.IsDefined() ? resH : FLT_MAX;
-	if (maxHeight.IsDefined())
-	{
-		resMaxH = ResolveUnits(maxHeight, containerSize.y) + addtbl[unsigned(style.GetBoxSizing(BoxSizingTarget::MaxHeight))];
-		resH = min(resH, resMaxH);
-	}
 
 	Rangef s = { resH, resMaxH };
 
@@ -681,19 +669,6 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 		}
 		placement->OnApplyPlacement(this, rect);
 	}
-
-	auto width = style.GetWidth();
-	if (width.unit == CoordTypeUnit::Fraction)
-		width = rect.GetWidth();
-
-	auto height = style.GetHeight();
-	if (height.unit == CoordTypeUnit::Fraction)
-		height = rect.GetHeight();
-
-	auto min_width = style.GetMinWidth();
-	auto min_height = style.GetMinHeight();
-	auto max_width = style.GetMaxWidth();
-	auto max_height = style.GetMaxHeight();
 
 	UIRect Mrect = style.block->GetMarginRect();
 	UIRect Prect = CalcPaddingRect(rect);

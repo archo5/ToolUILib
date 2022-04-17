@@ -618,26 +618,6 @@ void StyleAccessor::SetMinHeight(Coord v)
 	AccSet(*this, offsetof(StyleBlock, min_height), v);
 }
 
-Coord StyleAccessor::GetMaxWidth() const
-{
-	return block->max_width;
-}
-
-void StyleAccessor::SetMaxWidth(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, max_width), v);
-}
-
-Coord StyleAccessor::GetMaxHeight() const
-{
-	return block->max_height;
-}
-
-void StyleAccessor::SetMaxHeight(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, max_height), v);
-}
-
 float StyleAccessor::GetMarginLeft() const
 {
 	return block->margin_left;

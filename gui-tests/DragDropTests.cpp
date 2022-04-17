@@ -450,6 +450,7 @@ struct TreeNodeReorderTest : ui::Buildable
 };
 
 
+static ui::StaticID_Style sid_proc_graph_node("proc_graph_node");
 struct DragElementTest : ui::Buildable
 {
 	void Build() override
@@ -464,8 +465,9 @@ struct DragElementTest : ui::Buildable
 		drelPlacement = Allocate<ui::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
 		tmpl->placement = drelPlacement;
-		auto& tp = ui::Push<ui::TabPanel>(); // for style only
-		tp + ui::SetWidth(ui::Coord::Undefined());
+		auto& tp = ui::Push<ui::PaddedWrapperElement>();
+		tp.SetStyle(ui::GetCurrentTheme()->GetStyle(sid_proc_graph_node));
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::AddEventHandler([this, &tp](ui::Event& e)
 		{
 			if (e.type == ui::EventType::ButtonDown && e.GetButton() == ui::MouseButton::Left)
@@ -486,7 +488,8 @@ struct DragElementTest : ui::Buildable
 			}
 		});
 		ui::MakeWithText<ui::LabelFrame>("the other part");
-		ui::Pop(); // TabPanel
+		ui::Pop(); // StackTopDownLayoutElement
+		ui::Pop(); // PaddedWrapperElement(proc_graph_node)
 
 		ui::Pop(); // PlacementLayoutElement
 		ui::Pop(); // ListBoxFrame

@@ -177,7 +177,6 @@ struct UIContainer
 		}
 		return obj;
 	}
-	BoxElement& PushBox() { return Push<BoxElement>(); }
 
 	TextElement& Text(StringView s)
 	{
@@ -257,7 +256,6 @@ inline void Append(Buildable* o)
 {
 	UIContainer::GetCurrent()->Append(o);
 }
-BoxElement& PushBox();
 TextElement& Text(StringView s);
 TextElement& TextVA(const char* fmt, va_list args);
 TextElement& Textf(const char* fmt, ...);

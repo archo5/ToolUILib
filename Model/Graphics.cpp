@@ -151,13 +151,39 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 	ph.PaintChildren(this, ctx);
 }
 
-void ImageElement::GetSize(Coord& outWidth, Coord& outHeight)
+Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	if (_image)
+	switch (_layoutMode)
 	{
-		outWidth = _image->GetWidth();
-		outHeight = _image->GetHeight();
+	case ImageLayoutMode::PreferredExact:
+		return Rangef::Exact(_image ? _image->GetWidth() : 0);
+	case ImageLayoutMode::PreferredMin:
+		return Rangef(_image ? _image->GetWidth() : 0);
+	case ImageLayoutMode::Fill:
+		return Rangef::Exact(containerSize.x);
+	default:
+		return Rangef(0);
 	}
+}
+
+Rangef ImageElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	switch (_layoutMode)
+	{
+	case ImageLayoutMode::PreferredExact:
+		return Rangef::Exact(_image ? _image->GetHeight() : 0);
+	case ImageLayoutMode::PreferredMin:
+		return Rangef(_image ? _image->GetHeight() : 0);
+	case ImageLayoutMode::Fill:
+		return Rangef::Exact(containerSize.y);
+	default:
+		return Rangef(0);
+	}
+}
+
+void ImageElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	finalRectC = finalRectCP = rect;
 }
 
 ImageElement& ImageElement::SetImage(draw::IImage* img)
@@ -188,6 +214,13 @@ ImageElement& ImageElement::SetScaleMode(ScaleMode sm, float ax, float ay)
 	_scaleMode = sm;
 	_anchorX = ax;
 	_anchorY = ay;
+	return *this;
+}
+
+ImageElement& ImageElement::SetLayoutMode(ImageLayoutMode mode)
+{
+	_layoutMode = mode;
+	_OnChangeStyle();
 	return *this;
 }
 

@@ -87,8 +87,7 @@ void TabImages::Build()
 			{
 				ui::Push<ui::Panel>();
 				auto& img = ui::Make<ui::ImageElement>();
-				img + ui::SetWidth(ui::Coord::Percent(100));
-				img + ui::SetHeight(ui::Coord::Percent(100));
+				img.SetLayoutMode(ui::ImageLayoutMode::Fill);
 				img.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				img.SetImage(workspace->cachedImg.GetImage(workspace->desc.images[workspace->desc.curImage]));
 				img.SetScaleMode(ui::ScaleMode::Fit);

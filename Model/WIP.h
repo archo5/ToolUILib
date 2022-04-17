@@ -87,6 +87,8 @@ struct StackExpandLTRLayoutElement : UIElement
 
 	std::vector<Slot> _slots;
 
+	float paddingBetweenElements = 0;
+
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		if (type == EstSizeType::Expanding)
@@ -95,6 +97,8 @@ struct StackExpandLTRLayoutElement : UIElement
 			for (auto& slot : _slots)
 				if (auto* ch = slot.element.Get())
 					size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+			if (_slots.size() >= 2)
+				size += paddingBetweenElements * (_slots.size() - 1);
 			return size;
 		}
 		else
@@ -135,6 +139,8 @@ struct StackExpandLTRLayoutElement : UIElement
 			sum += s.min;
 			frsum += fr;
 		}
+		if (_slots.size() >= 2)
+			sum += paddingBetweenElements * (_slots.size() - 1);
 		std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
 		{
 			const auto& a = items[ia];
@@ -158,7 +164,7 @@ struct StackExpandLTRLayoutElement : UIElement
 		for (const auto& item : items)
 		{
 			item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
-			p += item.w;
+			p += item.w + paddingBetweenElements;
 		}
 	}
 	void OnReset() override
@@ -172,6 +178,8 @@ struct StackExpandLTRLayoutElement : UIElement
 		slot.element = obj;
 		_slots.push_back(slot);
 	}
+
+	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
 struct WrapperLTRLayoutElement : UIElement

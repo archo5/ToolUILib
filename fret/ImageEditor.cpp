@@ -13,8 +13,7 @@ void ImageEditorWindowNode::Build()
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& img = ui::Make<ui::ImageElement>();
-				img + ui::SetWidth(ui::Coord::Percent(100));
-				img + ui::SetHeight(ui::Coord::Percent(100));
+				img.SetLayoutMode(ui::ImageLayoutMode::Fill);
 				img.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				img.SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
 				img.SetScaleMode(ui::ScaleMode::Fit);

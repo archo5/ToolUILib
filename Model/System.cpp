@@ -277,11 +277,6 @@ void Pop()
 	return g_curContainer->Pop();
 }
 
-BoxElement& PushBox()
-{
-	return g_curContainer->PushBox();
-}
-
 TextElement& Text(StringView s)
 {
 	return g_curContainer->Text(s);

@@ -23,8 +23,8 @@ void MeshEditorWindowNode::Build()
 
 					auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
 					tmpl->edge = ui::Edge::Left;
-					ui::Push<ui::StackTopDownLayoutElement>()
-						+ ui::SetWidth(200);
+					ui::Push<ui::SizeConstraintElement>().SetWidth(200);
+					ui::Push<ui::StackTopDownLayoutElement>();
 					ui::Push<ui::ListBoxFrame>();
 					ui::Push<ui::StackTopDownLayoutElement>();
 					{
@@ -37,16 +37,18 @@ void MeshEditorWindowNode::Build()
 					ui::Pop();
 					ui::Pop();
 					ui::Pop();
+					ui::Pop();
 
 					tmpl->edge = ui::Edge::Right;
-					ui::Push<ui::StackTopDownLayoutElement>()
-						+ ui::SetWidth(200);
+					ui::Push<ui::SizeConstraintElement>().SetWidth(200);
+					ui::Push<ui::StackTopDownLayoutElement>();
 					{
 						if (ui::imm::Button("Load mesh", { ui::Enable(ddiSrc.dataDesc && ddiSrc.dataDesc->curInst) }))
 						{
 							ReloadMesh();
 						}
 					}
+					ui::Pop();
 					ui::Pop();
 
 					ui::Pop();

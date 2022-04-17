@@ -210,7 +210,7 @@ struct GizmoTest : ui::Buildable
 					}
 
 					auto pos = xf.TransformPoint({ 0, 0, 0 });
-					ui::Textf("pos=%g;%g;%g", pos.x, pos.y, pos.z) + ui::SetPadding(5);
+					ui::MakeWithTextf<ui::LabelFrame>("pos=%g;%g;%g", pos.x, pos.y, pos.z);
 				}
 				ui::Pop();
 				ui::Pop();

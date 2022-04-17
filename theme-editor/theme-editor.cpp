@@ -139,8 +139,7 @@ struct TE_MainPreviewNode : Buildable
 					Make<ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(g_previewScaleMode)
-						+ SetWidth(Coord::Percent(100))
-						+ SetHeight(Coord::Percent(100));
+						.SetLayoutMode(ImageLayoutMode::Fill);
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{

@@ -133,7 +133,8 @@ using Size2i = Size2<int>;
 
 template <class T> struct Range
 {
-	Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
+	UI_FORCEINLINE Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
+	UI_FORCEINLINE static Range Exact(float v) { return { v, v }; }
 
 	UI_FORCEINLINE T GetWidth() const { return max - min; }
 	UI_FORCEINLINE bool IsValid() const { return min <= max; }

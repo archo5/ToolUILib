@@ -17,6 +17,13 @@ enum class ScaleMode
 	Fill, // the whole rectangle is covered by some part of the image, aspect is preserved
 };
 
+enum class ImageLayoutMode
+{
+	PreferredExact,
+	PreferredMin,
+	Fill,
+};
+
 struct ColorBlock : UIElement
 {
 	Color4b _color = Color4b::Black();
@@ -50,17 +57,21 @@ struct ImageElement : UIElement
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	void GetSize(Coord& outWidth, Coord& outHeight) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	ImageElement& SetImage(draw::IImage* img);
 	ImageElement& SetPath(StringView path);
 	ImageElement& SetDelayLoadPath(StringView path);
 	// range: 0-1 (0.5 = middle)
 	ImageElement& SetScaleMode(ScaleMode sm, float ax = 0.5f, float ay = 0.5f);
+	ImageElement& SetLayoutMode(ImageLayoutMode mode);
 	ImageElement& SetAlphaBackgroundEnabled(bool enabled);
 
 	draw::ImageHandle _image;
 	ScaleMode _scaleMode = ScaleMode::Fit;
+	ImageLayoutMode _layoutMode = ImageLayoutMode::PreferredExact;
 	float _anchorX = 0.5f;
 	float _anchorY = 0.5f;
 

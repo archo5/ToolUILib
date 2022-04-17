@@ -175,15 +175,14 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 }
 
 
+static StaticID_Style sid_proc_graph_node("proc_graph_node");
 void ProcGraphEditor_Node::Build()
 {
+	TEMP_LAYOUT_MODE = WRAPPER;
 	Subscribe(DCT_EditProcGraphNode, _node);
 
-	auto s = GetStyle(); // for style only
-	s.SetWidth(Coord::Undefined());
-	s.SetMinWidth(100);
-
-	Push<TabPanel>() + SetWidth(Coord::Undefined()) + SetMargin(0);
+	Push<PaddedWrapperElement>().SetStyle(GetCurrentTheme()->GetStyle(sid_proc_graph_node));
+	Push<StackTopDownLayoutElement>();
 
 	OnBuildTitleBar();
 	OnBuildOutputPins();
@@ -191,6 +190,7 @@ void ProcGraphEditor_Node::Build()
 	OnBuildEditor();
 	OnBuildInputPins();
 
+	Pop();
 	Pop();
 }
 
