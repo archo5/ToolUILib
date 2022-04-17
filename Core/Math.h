@@ -131,10 +131,21 @@ template <class T> struct Size2
 using Size2f = Size2<float>;
 using Size2i = Size2<int>;
 
+struct All {};
+
 template <class T> struct Range
 {
-	UI_FORCEINLINE Range(T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max()) : min(_min), max(_max) {}
+	using Limits = std::numeric_limits<T>;
+
+	T min, max;
+
+	UI_FORCEINLINE Range(DoNotInitialize) {}
+	UI_FORCEINLINE Range(All) : min(Limits::lowest()), max(Limits::max()) {}
+	UI_FORCEINLINE Range(T _min, T _max) : min(_min), max(_max) {}
+	UI_FORCEINLINE static Range AtLeast(float v) { return { v, Limits::max() }; }
+	UI_FORCEINLINE static Range AtMost(float v) { return { Limits::lowest(), v }; }
 	UI_FORCEINLINE static Range Exact(float v) { return { v, v }; }
+	UI_FORCEINLINE static Range All() { return { Limits::lowest(), Limits::max() }; }
 
 	UI_FORCEINLINE T GetWidth() const { return max - min; }
 	UI_FORCEINLINE bool IsValid() const { return min <= max; }
@@ -150,8 +161,6 @@ template <class T> struct Range
 			r.max += o;
 		return r;
 	}
-
-	T min, max;
 };
 
 using Rangef = Range<float>;

@@ -49,9 +49,10 @@ void ProcGraphEditor_NodePin::Build()
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
 	pap->useContentBox = true;
 	tmpl->placement = pap;
-	auto& cb = Make<ColorBlock>();
+	auto& cb = Push<ColorBlock>();
+	Make<SizeConstraintElement>().SetSize(4, 6);
 	cb.SetColor(_graph->GetPinColor(_pin));
-	cb + SetWidth(BoxSizing::ContentBox, 4) + SetHeight(BoxSizing::ContentBox, 6);
+	Pop();
 
 	Pop();
 }
@@ -269,7 +270,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 		imm::EditBool(showPreview, nullptr);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
-	Text(_graph->GetNodeName(_node)) + SetPadding(5, hasPreview ? 0 : 5, 5, 5);
+	MakeWithText<LabelFrame>(_graph->GetNodeName(_node));
 	Pop();
 	Pop();
 }

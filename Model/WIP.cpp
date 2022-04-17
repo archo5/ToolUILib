@@ -6,6 +6,48 @@
 
 namespace ui {
 
+void PaddingElement::OnReset()
+{
+	UIObjectSingleChild::OnReset();
+	padding = {};
+}
+
+Size2f PaddingElement::GetReducedContainerSize(Size2f size)
+{
+	size.x -= padding.x0 + padding.x1;
+	size.y -= padding.y0 + padding.y1;
+	return size;
+}
+
+Rangef PaddingElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = padding.x0 + padding.x1;
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+Rangef PaddingElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = padding.y0 + padding.y1;
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+void PaddingElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	auto padsub = rect.ShrinkBy(padding);
+	if (_child)
+	{
+		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		finalRectC = _child->finalRectCP;
+		finalRectCP = finalRectC.ExtendBy(padding);
+	}
+	else
+	{
+		finalRectCP = rect;
+		finalRectC = padsub;
+	}
+}
+
+
 StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
 
@@ -13,7 +55,7 @@ PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
 Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	Rangef r(0);
+	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
 		if (slot.measure)
@@ -27,7 +69,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize
 
 Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	Rangef r(0);
+	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
 		if (slot.measure)
@@ -51,7 +93,7 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 				r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
 			slot.placement->OnApplyPlacement(slot._element, r);
 		}
-		contRect = contRect.Include(r);
+		//contRect = contRect.Include(r);
 		slot._element->PerformLayout(r, containerSize);
 	}
 	finalRectC = finalRectCP = contRect;
@@ -329,7 +371,7 @@ Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeTy
 		+ panelStyle->padding_left
 		+ panelStyle->padding_right
 		+ (showCloseButton ? tabInnerButtonMargin + tabCloseButtonStyle->width.value : 0);
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
@@ -339,7 +381,7 @@ Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeT
 		+ panelStyle->padding_bottom
 		+ tabHeight
 		- tabButtonOverlap;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)

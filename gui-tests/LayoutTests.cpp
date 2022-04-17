@@ -237,16 +237,6 @@ void Test_StackingLayoutVariations()
 
 struct SizeTest : ui::Buildable
 {
-	struct SizedBox : ui::Placeholder
-	{
-		void GetSize(ui::Coord& outWidth, ui::Coord& outHeight) override
-		{
-			outWidth = w;
-			outHeight = h;
-		}
-		int w = 40;
-		int h = 40;
-	};
 	struct Test
 	{
 		UIObject* obj;
@@ -265,8 +255,8 @@ struct SizeTest : ui::Buildable
 			if (res.size())
 			{
 				float textw = ui::GetTextWidth(font, fsize, res);
-				ui::draw::LineCol(t.obj->finalRectC.x1, t.obj->finalRectC.y0, finalRectC.x1 - textw, ypos - fsize / 2, 1, ui::Color4b(255, 0, 0));
-				ui::draw::TextLine(font, fsize, finalRectC.x1 - textw, ypos, res, ui::Color4b(255, 0, 0));
+				ui::draw::LineCol(t.obj->finalRectCP.x1, t.obj->finalRectCP.y0, finalRectCP.x1 - textw, ypos - fsize / 2, 1, ui::Color4b(255, 0, 0));
+				ui::draw::TextLine(font, fsize, finalRectCP.x1 - textw, ypos, res, ui::Color4b(255, 0, 0));
 				ypos += fsize;
 			}
 		}
@@ -287,100 +277,30 @@ struct SizeTest : ui::Buildable
 
 	void Build() override
 	{
+		ui::Push<ui::StackTopDownLayoutElement>();
+
 		tests.clear();
 		ui::Text("Any errors will be drawn next to the element in red");
 
-		TestContentSize(ui::Text("Testing text element size"), CalcTestTextWidth("Testing text element size"), GetTestFontHeight());
+		TestSize(ui::Text("Testing text element size"), CalcTestTextWidth("Testing text element size"), GetTestFontHeight());
 
 		ui::Push<ui::StackLTRLayoutElement>();
 		{
-			auto& txt1 = ui::Text("Text size + padding") + ui::SetPadding(5);
-			TestContentSize(txt1, CalcTestTextWidth("Text size + padding"), GetTestFontHeight());
-			TestFullSize(txt1, CalcTestTextWidth("Text size + padding") + 10, GetTestFontHeight() + 10);
-			TestFullEstSize(txt1, CalcTestTextWidth("Text size + padding") + 10, GetTestFontHeight() + 10);
+			auto& txt1 = ui::MakeWithText<ui::PaddingElement>("Text size + padding");
+			txt1.SetPadding(5);
+			TestSize(txt1, CalcTestTextWidth("Text size + padding") + 10, GetTestFontHeight() + 10);
+			TestEstSize(txt1, CalcTestTextWidth("Text size + padding") + 10, GetTestFontHeight() + 10);
 		}
 
 		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5);
-			ui::Text("Testing text in box");
+			auto& box = ui::Push<ui::WrapperElement>();
+			ui::Text("Testing text in wrapper");
 			ui::Pop();
-			TestContentSize(box, CalcTestTextWidth("Testing text in box"), GetTestFontHeight());
-			TestFullSize(box, CalcTestTextWidth("Testing text in box") + 10, GetTestFontHeight() + 10);
-			TestFullX(box, CalcTestTextWidth("Text size + padding") + 10);
+			TestSize(box, CalcTestTextWidth("Testing text in wrapper"), GetTestFontHeight());
+			TestX(box, CalcTestTextWidth("Text size + padding") + 10);
 		}
 		ui::Pop();
 
-		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
-			ui::Text("Testing text in box [border]");
-			ui::Pop();
-			TestContentSize(box, CalcTestTextWidth("Testing text in box [border]"), GetTestFontHeight());
-			TestFullSize(box, CalcTestTextWidth("Testing text in box [border]") + 10, GetTestFontHeight() + 10);
-		}
-
-		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
-			ui::Text("Testing text in box [content]");
-			ui::Pop();
-			TestContentSize(box, CalcTestTextWidth("Testing text in box [content]"), GetTestFontHeight());
-			TestFullSize(box, CalcTestTextWidth("Testing text in box [content]") + 10, GetTestFontHeight() + 10);
-		}
-
-		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140);
-			ui::Text("Testing text in box +W");
-			ui::Pop();
-			TestContentSize(box, 140 - 10, GetTestFontHeight());
-			TestFullSize(box, 140, GetTestFontHeight() + 10);
-		}
-
-		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::BorderBox);
-			ui::Text("Testing text in box +W [border]");
-			ui::Pop();
-			TestContentSize(box, 140 - 10, GetTestFontHeight());
-			TestFullSize(box, 140, GetTestFontHeight() + 10);
-		}
-
-		{
-			auto& box = ui::Push<ui::WrapperLTRLayoutElement>() + ui::SetPadding(5) + ui::SetWidth(140) + ui::SetBoxSizing(ui::BoxSizingTarget::Width, ui::BoxSizing::ContentBox);
-			ui::Text("Testing text in box +W [content]");
-			ui::Pop();
-			TestContentSize(box, 140, GetTestFontHeight());
-			TestFullSize(box, 140 + 10, GetTestFontHeight() + 10);
-		}
-
-		ui::Push<ui::StackLTRLayoutElement>();
-		{
-			auto& box = ui::Make<SizedBox>();
-			TestContentSize(box, 40, 40);
-			TestFullSize(box, 40, 40);
-			TestFullEstSize(box, 40, 40);
-		}
-		{
-			auto& box = ui::Make<SizedBox>() + ui::SetWidth(50);
-			TestContentSize(box, 50, 40);
-			TestFullSize(box, 50, 40);
-			TestFullEstSize(box, 50, 40);
-		}
-		{
-			auto& box = ui::Make<SizedBox>() + ui::SetWidth(50) + ui::SetPadding(2, 7, 8, 3);
-			TestContentSize(box, 40, 40);
-			TestFullSize(box, 50, 50);
-			TestFullEstSize(box, 50, 50);
-		}
-		{
-			auto& box = ui::Make<SizedBox>() + ui::SetWidth(ui::BoxSizing::BorderBox, 50) + ui::SetPadding(2, 7, 8, 3);
-			TestContentSize(box, 40, 40);
-			TestFullSize(box, 50, 50);
-			TestFullEstSize(box, 50, 50);
-		}
-		{
-			auto& box = ui::Make<SizedBox>() + ui::SetHeight(ui::BoxSizing::ContentBox, 30) + ui::SetPadding(2, 7, 8, 3);
-			TestContentSize(box, 40, 30);
-			TestFullSize(box, 50, 40);
-			TestFullEstSize(box, 50, 40);
-		}
 		ui::Pop();
 	}
 
@@ -393,16 +313,7 @@ struct SizeTest : ui::Buildable
 		return {};
 	}
 
-	void TestContentSize(UIObject& obj, float w, float h)
-	{
-		auto fn = [obj{ &obj }, w, h]()->std::string
-		{
-			return TestSize(obj->finalRectC, w, h);
-		};
-		tests.push_back({ &obj, fn });
-	}
-
-	void TestFullSize(UIObject& obj, float w, float h)
+	void TestSize(UIObject& obj, float w, float h)
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{
@@ -411,7 +322,7 @@ struct SizeTest : ui::Buildable
 		tests.push_back({ &obj, fn });
 	}
 
-	void TestFullX(UIObject& obj, float x)
+	void TestX(UIObject& obj, float x)
 	{
 		auto fn = [obj{ &obj }, x]()->std::string
 		{
@@ -425,7 +336,7 @@ struct SizeTest : ui::Buildable
 		tests.push_back({ &obj, fn });
 	}
 
-	void TestFullEstSize(UIObject& obj, float w, float h)
+	void TestEstSize(UIObject& obj, float w, float h)
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{
@@ -458,10 +369,10 @@ struct PlacementTest : ui::Buildable
 	}
 	void Build() override
 	{
-		*this + ui::SetPadding(20);
+		ui::Push<ui::PaddingElement>().SetPadding(20);
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::Text("Expandable menu example:");
-		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto* ple = &ui::Push<ui::PlacementLayoutElement>();
 
@@ -494,11 +405,9 @@ struct PlacementTest : ui::Buildable
 		}
 
 		ui::Pop();
-		ui::Pop();
 
 		ui::Text("Autocomplete example:");
 		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
-		ui::Push<ui::StackTopDownLayoutElement>();
 		ple = &ui::Push<ui::PlacementLayoutElement>();
 		ui::imm::EditString(text.c_str(),
 			[this](const char* v) { text = v; }, {
@@ -573,7 +482,6 @@ struct PlacementTest : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
-		ui::Pop();
 
 		ui::Text("Self-based placement example:");
 		auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
@@ -582,6 +490,9 @@ struct PlacementTest : ui::Buildable
 		ui::Pop();
 		ui::imm::PropEditFloatVec("Anchor", &buttonPlacement.anchor.x0, "LTRB", {}, 0.01f);
 		ui::imm::PropEditFloatVec("Bias", &buttonPlacement.bias.x0, "LTRB");
+
+		ui::Pop();
+		ui::Pop();
 	}
 
 	bool open = false;

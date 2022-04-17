@@ -136,10 +136,12 @@ struct ButtonPressHighlightDemo : ui::Buildable
 
 	void Build() override
 	{
-		*this + ui::SetPadding(30);
+		ui::Push<ui::PaddingElement>().SetPadding(30);
 
 		AddActivationAnim(ui::MakeWithText<ui::Button>("Press me"));
 		AddActivationAnim(ui::MakeWithText<ui::Button>("...or me"));
+
+		ui::Pop();
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
@@ -222,12 +224,14 @@ struct FancyButtonDemo : ui::Buildable
 
 	void Build() override
 	{
-		*this + ui::SetPadding(30);
+		ui::Push<ui::PaddingElement>().SetPadding(30);
 
 		auto& btn = ui::Push<ui::Button>();
 		btn.GetStyle().SetBackgroundPainter(new FancyButtonPainter());
 		btn.GetStyle().SetPadding(5, 5, 9);
 		ui::Text("Fancy button");
+		ui::Pop();
+
 		ui::Pop();
 	}
 };

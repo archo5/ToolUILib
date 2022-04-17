@@ -53,7 +53,7 @@ struct StateButtonsTest : ui::Buildable
 			ui::MakeWithText<ui::StateButtonSkin>(text);
 			break;
 		case 4:
-			ui::Text(GetStateText(stb->GetState()) + text) + ui::SetPadding(5);
+			ui::MakeWithText<ui::LabelFrame>(GetStateText(stb->GetState()) + text);
 			break;
 		case 5:
 			ui::Make<ui::ColorBlock>().SetColor(GetStateColor(stb->GetState()));

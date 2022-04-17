@@ -158,11 +158,11 @@ Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeT
 	case ImageLayoutMode::PreferredExact:
 		return Rangef::Exact(_image ? _image->GetWidth() : 0);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef(_image ? _image->GetWidth() : 0);
+		return Rangef::AtLeast(_image ? _image->GetWidth() : 0);
 	case ImageLayoutMode::Fill:
 		return Rangef::Exact(containerSize.x);
 	default:
-		return Rangef(0);
+		return Rangef::AtLeast(0);
 	}
 }
 
@@ -173,11 +173,11 @@ Rangef ImageElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSize
 	case ImageLayoutMode::PreferredExact:
 		return Rangef::Exact(_image ? _image->GetHeight() : 0);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef(_image ? _image->GetHeight() : 0);
+		return Rangef::AtLeast(_image ? _image->GetHeight() : 0);
 	case ImageLayoutMode::Fill:
 		return Rangef::Exact(containerSize.y);
 	default:
-		return Rangef(0);
+		return Rangef::AtLeast(0);
 	}
 }
 
@@ -590,9 +590,11 @@ void ColorPicker::Build()
 		FloatLimits limit = { 0, 1 };
 
 		// right side
-		Push<StackTopDownLayoutElement>() + SetPadding(8);
+		Push<PaddingElement>().SetPadding(8);
+		Push<StackTopDownLayoutElement>();
 		{
-		//	Push<StackTopDownLayoutElement>() + SetPadding(8);
+		//	Push<PaddingElement>().SetPadding(8);
+		//	Push<StackTopDownLayoutElement>();
 			//Text("HSV");
 
 			Push<StackExpandLTRLayoutElement>();
@@ -785,13 +787,15 @@ void ColorPicker::Build()
 			Pop();
 
 		//	Pop();
+		//	Pop();
 		}
+		Pop();
 		Pop();
 	}
 	Pop();
 
-	Push<WrapperLTRLayoutElement>()
-		+ SetPadding(8);
+	Push<PaddingElement>().SetPadding(8);
+	Push<WrapperLTRLayoutElement>();
 	{
 		auto& sc = GetSavedColors();
 		for (int i = 0; i < 16; i++)
@@ -808,6 +812,7 @@ void ColorPicker::Build()
 			});
 		}
 	}
+	Pop();
 	Pop();
 }
 

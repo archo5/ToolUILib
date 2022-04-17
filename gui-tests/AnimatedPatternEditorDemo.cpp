@@ -356,7 +356,8 @@ struct AnimPattern : ITree
 
 	void PropertyUI()
 	{
-		Push<ScrollArea>() + SetHeight(Coord::Percent(100));
+		Push<ScrollArea>();
+		Push<StackTopDownLayoutElement>();
 
 		if (selectedLayer)
 		{
@@ -374,6 +375,7 @@ struct AnimPattern : ITree
 			globalSettings.UI();
 		}
 
+		Pop();
 		Pop();
 	}
 

@@ -336,7 +336,8 @@ struct RenameDialog : ui::NativeDialogWindow
 	}
 	void OnBuild() override
 	{
-		ui::Push<ui::EdgeSliceLayoutElement>() + ui::SetPadding(16);
+		ui::Push<ui::PaddingElement>().SetPadding(16);
+		ui::Push<ui::EdgeSliceLayoutElement>();
 		ui::imm::PropEditString("New name:", newName.c_str(), [this](const char* s) { newName = s; });
 
 		ui::Make<ui::SizeConstraintElement>().SetHeight(16);
@@ -360,6 +361,8 @@ struct RenameDialog : ui::NativeDialogWindow
 			SetVisible(false);
 		}
 		ui::Pop();
+
+		ui::Pop(); // StackExpandLTRLayoutElement
 
 		ui::Pop();
 		ui::Pop();
@@ -505,7 +508,7 @@ void DataDesc::EditStruct()
 		}
 		else
 		{
-			ui::Text("-- NOT FOUND --") + ui::SetPadding(10);
+			ui::MakeWithText<ui::PaddingElement>("-- NOT FOUND --").SetPadding(10);
 		}
 	}
 }

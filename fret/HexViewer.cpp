@@ -141,7 +141,9 @@ void HighlightSettings::EditUI()
 	ui::imm::PropEditFloat("\bPercent", nearFileSizePercent, {}, 0.1f, { 0, 100 });
 	ui::LabeledProperty::End();
 
-	ui::Text("Custom int32") + ui::SetPadding(25, 5, 5);
+	ui::Push<ui::PaddingElement>().SetPaddingTop(20);
+	ui::MakeWithText<ui::LabelFrame>("Custom int32");
+	ui::Pop();
 
 	auto& seqEd = ui::Make<ui::SequenceEditor>();
 	seqEd.SetSequence(ui::BuildAlloc<ui::StdSequence<decltype(customInt32)>>(customInt32));

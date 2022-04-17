@@ -571,15 +571,15 @@ struct FillerElement : UIObjectSingleChild
 struct PaddedFillerElement : UIObjectSingleChild
 {
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.x; }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return containerSize.y; }
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::Exact(containerSize.x); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::Exact(containerSize.y); }
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
 struct SizeConstraintElement : WrapperElement
 {
-	Rangef widthRange = Rangef(0);
-	Rangef heightRange = Rangef(0);
+	Rangef widthRange = Rangef::AtLeast(0);
+	Rangef heightRange = Rangef::AtLeast(0);
 
 	void OnReset() override;
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;

@@ -504,10 +504,10 @@ void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef(0);
+		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
 
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
-		return { 0, FLT_MAX };
+		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
 
@@ -561,10 +561,10 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef(0);
+		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
 
 	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
-		return { 0, FLT_MAX };
+		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
 
@@ -1088,14 +1088,14 @@ void UIObjectSingleChild::_DetachFromFrameContents()
 Rangef WrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!_child)
-		return Rangef(0);
+		return Rangef::AtLeast(0);
 	return _child->GetFullEstimatedWidth(containerSize, type, forParentLayout);
 }
 
 Rangef WrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (!_child)
-		return Rangef(0);
+		return Rangef::AtLeast(0);
 	return _child->GetFullEstimatedHeight(containerSize, type, forParentLayout);
 }
 
@@ -1120,13 +1120,13 @@ Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
 Rangef PaddedWrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	float pad = styleProps->padding_left + styleProps->padding_right;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
 }
 
 Rangef PaddedWrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	float pad = styleProps->padding_top + styleProps->padding_bottom;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -1168,8 +1168,8 @@ void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSi
 void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();
-	widthRange = Rangef(0);
-	heightRange = Rangef(0);
+	widthRange = Rangef::AtLeast(0);
+	heightRange = Rangef::AtLeast(0);
 }
 
 Rangef SizeConstraintElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)

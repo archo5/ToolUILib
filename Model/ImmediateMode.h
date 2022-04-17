@@ -93,32 +93,32 @@ struct DragConfig
 	float GetSnap(uint8_t modifierKeys) const;
 };
 
-bool EditInt(UIObject* dragObj, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = {}, const char* fmt = "%d");
-bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = {}, const char* fmt = "%u");
-bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = {}, const char* fmt = "%" PRId64);
-bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = {}, const char* fmt = "%" PRIu64);
-bool EditFloat(UIObject* dragObj, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = {}, const char* fmt = "%g");
+bool EditInt(UIObject* dragObj, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
+bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
+bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
+bool EditFloat(UIObject* dragObj, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
 bool EditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
 bool EditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
 
 // length of `val` = length of `axes`
-bool EditFloatVec(float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = {}, const char* fmt = "%g");
+bool EditFloatVec(float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 void PropText(const char* label, const char* text, ModInitList mods = {});
 bool PropButton(const char* label, const char* text, ModInitList mods = {});
 bool PropEditBool(const char* label, bool& val, ModInitList mods = {});
-bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = {}, const char* fmt = "%d");
-bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = {}, const char* fmt = "%u");
-bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = {}, const char* fmt = "%" PRId64);
-bool PropEditInt(const char* label, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = {}, const char* fmt = "%" PRIu64);
-bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = {}, const char* fmt = "%g");
+bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
+bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
+bool PropEditInt(const char* label, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
+bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
 bool PropEditColor(const char* label, Color4f& val, bool delayed = false, ModInitList mods = {});
 bool PropEditColor(const char* label, Color4b& val, bool delayed = false, ModInitList mods = {});
 
 // length of `val` = length of `axes`
-bool PropEditFloatVec(const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = {}, const char* fmt = "%g");
+bool PropEditFloatVec(const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 } // imm
 } // ui
