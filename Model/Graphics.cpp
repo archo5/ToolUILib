@@ -11,13 +11,44 @@
 namespace ui {
 
 
-static StaticID_Style sid_color_block("color_block");
+Rangef PreferredSizeLayout::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	switch (_layoutMode)
+	{
+	case ImageLayoutMode::PreferredExact:
+		return Rangef::Exact(GetSize().x);
+	case ImageLayoutMode::PreferredMin:
+		return Rangef::AtLeast(GetSize().x);
+	case ImageLayoutMode::Fill:
+		return Rangef::Exact(containerSize.x);
+	default:
+		return Rangef::AtLeast(0);
+	}
+}
+
+Rangef PreferredSizeLayout::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	switch (_layoutMode)
+	{
+	case ImageLayoutMode::PreferredExact:
+		return Rangef::Exact(GetSize().y);
+	case ImageLayoutMode::PreferredMin:
+		return Rangef::AtLeast(GetSize().y);
+	case ImageLayoutMode::Fill:
+		return Rangef::Exact(containerSize.y);
+	default:
+		return Rangef::AtLeast(0);
+	}
+}
+
+
+static StaticID<FrameStyle> sid_framestyle_color_block("color_block");
 static StaticID_ImageSet sid_bgr_checkerboard("bgr-checkerboard");
 void ColorBlock::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_color_block);
+	frameStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_color_block);
 	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
 
 	_color = Color4b::Black();
@@ -26,9 +57,10 @@ void ColorBlock::OnReset()
 void ColorBlock::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 
-	auto r = GetContentRect();
+	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
 
 	if (!_color.IsOpaque())
 	{
@@ -745,13 +777,8 @@ void ColorPicker::Build()
 				});
 				Push<StackLTRLayoutElement>();
 
-				Push<SizeConstraintElement>().SetSize(50, 60);
-				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()) + SetPadding(0);
-				Pop();
-
-				Push<SizeConstraintElement>().SetSize(50, 60);
-				Make<ColorBlock>().SetColor(_color.GetRGBA()) + SetPadding(0);
-				Pop();
+				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()).SetSize(50, 60).RemoveStyle();
+				Make<ColorBlock>().SetColor(_color.GetRGBA()).SetSize(50, 60).RemoveStyle();
 
 				Pop();
 				Pop();

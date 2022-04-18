@@ -6,6 +6,9 @@
 #include "../Core/3DMath.h"
 #include "../Render/Render.h"
 
+// TODO?
+#include "Controls.h" // for FrameElement and nothing else
+
 
 namespace ui {
 
@@ -24,13 +27,35 @@ enum class ImageLayoutMode
 	Fill,
 };
 
-struct ColorBlock : UIElement
+struct PreferredSizeLayout
+{
+	ImageLayoutMode _layoutMode = ImageLayoutMode::PreferredExact;
+
+	virtual Size2f GetSize() = 0;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout);
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout);
+};
+
+struct ColorBlock : FrameElement, PreferredSizeLayout
 {
 	Color4b _color = Color4b::Black();
 	draw::ImageSetHandle _bgImageSet;
 
+	// TODO styled
+	Size2f size = { 14, 14 };
+
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
+
+	Size2f GetSize() override { return size; }
+	ColorBlock& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }
+	ColorBlock& SetSize(float x, float y) { size = { x, y }; _OnChangeStyle(); return *this; }
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Color4b GetColor() const { return _color; }
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }

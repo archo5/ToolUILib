@@ -34,44 +34,44 @@ void FrameElement::OnReset()
 	UIObjectSingleChild::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	style = {};
+	frameStyle = {};
 }
 
 void FrameElement::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	if (style.backgroundPainter)
-		ph.cpa = style.backgroundPainter->Paint(this);
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 	ph.PaintChildren(this, ctx);
 }
 
 Size2f FrameElement::GetReducedContainerSize(Size2f size)
 {
-	size.x -= style.padding.x0 + style.padding.x1;
-	size.y -= style.padding.y0 + style.padding.y1;
+	size.x -= frameStyle.padding.x0 + frameStyle.padding.x1;
+	size.y -= frameStyle.padding.y0 + frameStyle.padding.y1;
 	return size;
 }
 
 Rangef FrameElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float pad = style.padding.x0 + style.padding.x1;
+	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
 	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
 }
 
 Rangef FrameElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float pad = style.padding.y0 + style.padding.y1;
+	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	auto padsub = rect.ShrinkBy(style.padding);
+	auto padsub = rect.ShrinkBy(frameStyle.padding);
 	if (_child)
 	{
 		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
 		finalRectC = _child->finalRectCP;
-		finalRectCP = finalRectC.ExtendBy(style.padding);
+		finalRectCP = finalRectC.ExtendBy(frameStyle.padding);
 	}
 	else
 	{
@@ -80,9 +80,15 @@ void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 }
 
+FrameElement& FrameElement::RemoveStyle()
+{
+	frameStyle = {};
+	return *this;
+}
+
 FrameElement& FrameElement::SetStyle(const StaticID<FrameStyle>& id)
 {
-	style = *GetCurrentTheme()->GetStruct<FrameStyle>(id);
+	frameStyle = *GetCurrentTheme()->GetStruct<FrameStyle>(id);
 	return *this;
 }
 

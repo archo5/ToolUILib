@@ -20,18 +20,20 @@ struct FrameStyle
 
 template <class T> struct PaddingStyleMixin
 {
-	UI_FORCEINLINE AABB2f& GetPadding() { return static_cast<T*>(this)->style.padding; }
-	UI_FORCEINLINE const AABB2f& GetPadding() const { return const_cast<PaddingStyleMixin*>(this)->GetPadding(); }
+private:
+	UI_FORCEINLINE AABB2f& _GetPadding() { return static_cast<T*>(this)->GetPadding(); }
+public:
+	UI_FORCEINLINE const AABB2f& GetPadding() const { return const_cast<PaddingStyleMixin*>(this)->_GetPadding(); }
 
-	UI_FORCEINLINE T& SetPadding(float w) { GetPadding() = UIRect::UniformBorder(w); return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPadding(float x, float y) { GetPadding() = { x, y, x, y }; return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPadding(float l, float t, float r, float b) { GetPadding() = { l, t, r, b }; return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPadding(const UIRect& r) { GetPadding() = r; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(float w) { _GetPadding() = UIRect::UniformBorder(w); return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(float x, float y) { _GetPadding() = { x, y, x, y }; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(float l, float t, float r, float b) { _GetPadding() = { l, t, r, b }; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPadding(const UIRect& r) { _GetPadding() = r; return *static_cast<T*>(this); }
 
-	UI_FORCEINLINE T& SetPaddingLeft(float p) { GetPadding().x0 = p; return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPaddingTop(float p) { GetPadding().y0 = p; return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPaddingRight(float p) { GetPadding().x1 = p; return *static_cast<T*>(this); }
-	UI_FORCEINLINE T& SetPaddingBottom(float p) { GetPadding().y1 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingLeft(float p) { _GetPadding().x0 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingTop(float p) { _GetPadding().y0 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingRight(float p) { _GetPadding().x1 = p; return *static_cast<T*>(this); }
+	UI_FORCEINLINE T& SetPaddingBottom(float p) { _GetPadding().y1 = p; return *static_cast<T*>(this); }
 };
 
 enum class DefaultFrameStyle
@@ -41,7 +43,10 @@ enum class DefaultFrameStyle
 
 struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 {
-	FrameStyle style;
+	FrameStyle frameStyle;
+
+	// for PaddingStyleMixin
+	UI_FORCEINLINE AABB2f& GetPadding() { return frameStyle.padding; }
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
@@ -50,6 +55,7 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
+	FrameElement& RemoveStyle();
 	FrameElement& SetStyle(const StaticID<FrameStyle>& id);
 	FrameElement& SetDefaultStyle(DefaultFrameStyle style);
 };

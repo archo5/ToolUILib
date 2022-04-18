@@ -595,8 +595,8 @@ struct ColorBlockTest : ui::Buildable
 		WMake<ui::ColorBlock>().SetColor(colorB);
 
 		WText("Without edge");
-		WMake<ui::ColorBlock>().SetColor(colorA) + ui::SetPadding(0);
-		WMake<ui::ColorBlock>().SetColor(colorB) + ui::SetPadding(0);
+		WMake<ui::ColorBlock>().SetColor(colorA).RemoveStyle();
+		WMake<ui::ColorBlock>().SetColor(colorB).RemoveStyle();
 
 		WText("Custom size");
 		WPush<ui::SizeConstraintElement>().SetSize(200, 40);
@@ -626,31 +626,27 @@ struct ColorBlockTest : ui::Buildable
 			partOC->anchor.x1 = 0.5f;
 			partOC->bias.y1 = -4;
 			tmpl->placement = partOC;
-			WMake<ui::ColorBlock>().SetColor(C.GetOpaque())
-				+ ui::SetPadding(0);
+			WMake<ui::ColorBlock>().SetColor(C.GetOpaque()).RemoveStyle();
 
 			auto* partC = Allocate<ui::RectAnchoredPlacement>();
 			partC->anchor.x0 = 0.5f;
 			partC->bias.y1 = -4;
 			tmpl->placement = partC;
-			WMake<ui::ColorBlock>().SetColor(C)
-				+ ui::SetPadding(0);
+			WMake<ui::ColorBlock>().SetColor(C).RemoveStyle();
 
 			auto* partOA = Allocate<ui::RectAnchoredPlacement>();
 			partOA->anchor.x1 = C.a / 255.f;
 			partOA->anchor.y0 = 1;
 			partOA->bias.y0 = -4;
 			tmpl->placement = partOA;
-			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White())
-				+ ui::SetPadding(0);
+			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White()).RemoveStyle();
 
 			auto* partTA = Allocate<ui::RectAnchoredPlacement>();
 			partTA->anchor.x0 = C.a / 255.f;
 			partTA->anchor.y0 = 1;
 			partTA->bias.y0 = -4;
 			tmpl->placement = partTA;
-			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black())
-				+ ui::SetPadding(0);
+			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveStyle();
 
 			WPop();
 		}
@@ -682,14 +678,6 @@ struct ImageTest : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::StyleBlockRef ibr = ui::GetObjectStyle();
-		ui::StyleAccessor ia(ibr, nullptr);
-		ia.SetHeight(25);
-
-		ui::StyleBlockRef ibr2 = ui::GetObjectStyle();
-		ui::StyleAccessor ia2(ibr2, nullptr);
-		ia2.SetWidth(25);
-
 		ui::ScaleMode scaleModes[3] = { ui::ScaleMode::Stretch, ui::ScaleMode::Fit, ui::ScaleMode::Fill };
 		const char* scaleModeNames[3] = { "Stretch", "Fit", "Fill" };
 
@@ -703,10 +691,15 @@ struct ImageTest : ui::Buildable
 				for (int x = -1; x <= 1; x++)
 				{
 					WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
+					auto& sc = WPush<ui::SizeConstraintElement>();
+					if (mode / 3)
+						sc.SetWidth(25);
+					else
+						sc.SetHeight(25);
 					WMake<ui::ImageElement>()
 						.SetImage(img)
-						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)
-						.SetStyle(mode / 3 ? ibr2 : ibr);
+						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f);
+					WPop();
 					WPop();
 				}
 			}

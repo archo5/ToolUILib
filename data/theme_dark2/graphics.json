@@ -1,10 +1,6 @@
-"color_block:style":
+"color_block:FrameStyle":
 {
-	width = "20px"
-	height = "20px"
 	padding = 3
-	layout = "stack"
-	stackingDirection = "LeftToRight"
 	backgroundPainter = "panel"
 }
 "color_inspect_block:style":

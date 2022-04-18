@@ -37,7 +37,7 @@ struct StackLTRLayoutElement : UIElement
 		{
 			if (ch != firstChild)
 				size += paddingBetweenElements;
-			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
 		}
 		return size;
 	}
@@ -55,8 +55,10 @@ struct StackLTRLayoutElement : UIElement
 		float p = inrect.x0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 		{
-			float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
+			float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Exact).min;
+			Rangef hr = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding);
+			float h = clamp(inrect.y1 - inrect.y0, hr.min, hr.max);
+			ch->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h }, inrect.GetSize());
 			p += w + paddingBetweenElements;
 		}
 	}
@@ -77,7 +79,7 @@ struct StackTopDownLayoutElement : UIElement
 	{
 		float size = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
-			size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
+			size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
 		return size;
 	}
 	void CalcLayout(const UIRect& inrect, LayoutState& state) override
@@ -87,8 +89,10 @@ struct StackTopDownLayoutElement : UIElement
 		float p = inrect.y0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 		{
-			float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
+			Rangef wr = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
+			float w = clamp(inrect.x1 - inrect.x0, wr.min, wr.max);
+			float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Exact).min;
+			ch->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h }, inrect.GetSize());
 			p += h;
 		}
 	}
