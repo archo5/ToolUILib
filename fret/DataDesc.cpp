@@ -37,7 +37,8 @@ static bool advancedAccess = false;
 static MathExprObj testQuery;
 void DataDesc::EditStructuralItems()
 {
-	ui::Push<ui::Panel>();
+	ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+	ui::Push<ui::StackTopDownLayoutElement>();
 
 	ui::imm::PropEditBool("Advanced access", advancedAccess);
 	if (advancedAccess)
@@ -100,6 +101,7 @@ void DataDesc::EditStructuralItems()
 		EditField();
 	}
 
+	ui::Pop();
 	ui::Pop();
 }
 
@@ -166,7 +168,8 @@ void DataDesc::EditInstance()
 		}
 
 		ui::MakeWithText<ui::LabelFrame>("Arguments");
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto* argSeq = ui::BuildAlloc<ui::StdSequence<decltype(SI->args)>>(SI->args);
 		auto& argEditor = ui::Make<ui::SequenceEditor>();
@@ -184,6 +187,7 @@ void DataDesc::EditInstance()
 			SI->args.push_back({ "unnamed", 0 });
 			ui::RebuildCurrent();
 		}
+		ui::Pop();
 		ui::Pop();
 
 		if (SI->def)
@@ -418,7 +422,8 @@ void DataDesc::EditStruct()
 			ui::imm::PropEditString("Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
 			ui::MakeWithText<ui::LabelFrame>("Parameters");
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 
 			auto* paramSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.params)>>(S.params);
 			auto& paramEditor = ui::Make<ui::SequenceEditor>();
@@ -437,9 +442,11 @@ void DataDesc::EditStruct()
 				ui::RebuildCurrent();
 			}
 			ui::Pop();
+			ui::Pop();
 
 			ui::MakeWithText<ui::LabelFrame>("Fields");
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 
 			auto* fieldSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.fields)>>(S.fields);
 			auto& fieldEditor = ui::Make<ui::SequenceEditor>();
@@ -478,6 +485,7 @@ void DataDesc::EditStruct()
 				curField = S.fields.size() - 1;
 				ui::RebuildCurrent();
 			}
+			ui::Pop();
 			ui::Pop();
 
 			ui::MakeWithText<ui::LabelFrame>("Resource");
@@ -537,7 +545,8 @@ void DataDesc::EditField()
 				ui::imm::PropEditBool("Read until 0", F.readUntil0);
 
 				ui::MakeWithText<ui::LabelFrame>("Struct arguments");
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{
 					auto& SA = F.structArgs[i];
@@ -556,6 +565,7 @@ void DataDesc::EditField()
 					F.structArgs.push_back({ "unnamed", "", 0 });
 				}
 				ui::Pop();
+				ui::Pop();
 
 				ui::imm::PropEditString("Condition", F.condition.expr.c_str(), [&F](const char* v) { F.condition.SetExpr(v); });
 				ui::imm::PropEditString("Elem.cond.",
@@ -571,7 +581,8 @@ void DataDesc::EditImageItems()
 {
 	if (curImage < images.size())
 	{
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto& I = images[curImage];
 
@@ -585,6 +596,7 @@ void DataDesc::EditImageItems()
 		if (chg)
 			ui::RebuildCurrent();
 
+		ui::Pop();
 		ui::Pop();
 	}
 }

@@ -155,7 +155,8 @@ struct DataEditor : ui::Buildable
 		nw.GetWindow()->SetTitle("Subwindow A");
 		auto buildFunc = []()
 		{
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			auto onClick = []()
 			{
 				struct DialogTest : ui::NativeDialogWindow
@@ -166,7 +167,7 @@ struct DataEditor : ui::Buildable
 					}
 					void OnBuild() override
 					{
-						ui::Push<ui::Panel>();
+						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
 						if (ui::imm::Button("X"))
 							OnClose();
@@ -177,7 +178,7 @@ struct DataEditor : ui::Buildable
 						ui::Pop();
 						ui::Pop();
 
-						ui::Push<ui::Panel>();
+						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Make<ItemButton>().Init("Test", [this]() { OnClose(); });
 						ui::Pop();
 					}
@@ -188,6 +189,7 @@ struct DataEditor : ui::Buildable
 			ui::Make<ItemButton>().Init("Only a button", []() {});
 			ui::Make<ItemButton>().Init("Only another button (dialog)", onClick);
 			ui::Pop();
+			ui::Pop();
 		};
 		nw.GetWindow()->SetBuildFunc(buildFunc);
 		nw.GetWindow()->SetVisible(true);
@@ -197,12 +199,14 @@ struct DataEditor : ui::Buildable
 		auto& frm = ui::Make<ui::InlineFrame>();
 		auto frf = []()
 		{
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::MakeWithText<ui::Button>("In-frame button");
 			static int cur = 1;
 			BasicRadioButton("Zero", cur, 0);
 			BasicRadioButton2("One", cur, 1);
 			BasicRadioButton2("Two", cur, 2);
+			ui::Pop();
 			ui::Pop();
 		};
 		frm.CreateFrameContents(frf);
@@ -225,11 +229,13 @@ struct DataEditor : ui::Buildable
 		if (editing == SIZE_MAX)
 		{
 			ui::Text("List");
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
 				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
 			}
+			ui::Pop();
 			ui::Pop();
 		}
 		else
@@ -277,7 +283,6 @@ void Test_Frames();
 void Test_DialogWindow();
 
 void Test_EdgeSlice();
-void Test_LayoutNestCombo();
 void Test_StackingLayoutVariations();
 void Test_Size();
 void Test_Placement();
@@ -364,7 +369,6 @@ static const TestEntry coreTestEntries[] =
 static const TestEntry layoutTestEntries[] =
 {
 	{ "Edge slice", Test_EdgeSlice },
-	{ "Layout nesting combos", Test_LayoutNestCombo },
 	{ "Stacking layout variations", Test_StackingLayoutVariations },
 	{ "Sizing", Test_Size },
 	{ "Placement", Test_Placement },

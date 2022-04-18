@@ -24,7 +24,8 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 		void Build() override
 		{
 			Subscribe(DCT_Node, tgt);
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 
 			if (parent)
 			{
@@ -38,7 +39,8 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 
 			ui::imm::PropEditString("Name", tgt->name.c_str(), [this](const char* v) { tgt->name = v; });
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::Text("Children");
 
 			for (size_t i = 0; i < tgt->children.size(); i++)
@@ -51,7 +53,9 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 			AddButton(tgt->children.size());
 
 			ui::Pop();
+			ui::Pop();
 
+			ui::Pop();
 			ui::Pop();
 		}
 
@@ -142,7 +146,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI() override
 		{
-			WPush<ui::Panel>() + ui::SetPadding(2);
+			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(2);
 			WPush<ui::StackLTRLayoutElement>();
 			NodeUI(a);
 			WMakeWithText<ui::LabelFrame>(Name());

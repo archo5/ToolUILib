@@ -107,16 +107,6 @@ void LabelFrame::OnReset()
 }
 
 
-static StaticID_Style sid_panel("panel");
-void Panel::OnReset()
-{
-	UIElement::OnReset();
-
-	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_panel);
-}
-
-
 static StaticID_Style sid_header("header");
 void Header::OnReset()
 {

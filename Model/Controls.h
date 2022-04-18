@@ -59,11 +59,6 @@ struct LabelFrame : PaddedWrapperElement
 	void OnReset() override;
 };
 
-struct Panel : UIElement
-{
-	void OnReset() override;
-};
-
 struct Header : UIElement
 {
 	void OnReset() override;

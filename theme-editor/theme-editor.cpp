@@ -206,11 +206,14 @@ struct TE_ImageEditorNode : Buildable
 
 			if (img->expanded)
 			{
-				Push<Panel>().HandleEvent() = [this](Event& e)
+				Push<FrameElement>()
+					.SetDefaultStyle(DefaultFrameStyle::GroupBox)
+					.HandleEvent() = [this](Event& e)
 				{
 					if (e.type == EventType::Change || e.type == EventType::Commit || e.type == EventType::IMChange)
 						tmpl->InvalidateAllNodes();
 				};
+				Push<StackTopDownLayoutElement>();
 				{
 					auto& ovr = img->overrides[theme->curVariation];
 					if (!ovr)
@@ -253,6 +256,7 @@ struct TE_ImageEditorNode : Buildable
 						Menu(items).Show(this);
 					}
 				}
+				Pop();
 				Pop();
 			}
 		}

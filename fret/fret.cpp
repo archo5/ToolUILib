@@ -150,7 +150,7 @@ struct MainWindowContents : ui::Buildable
 					continue;
 
 				{
-					//ui::Push<ui::Panel>();
+					//ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 					{
 						//ui::Make<FileStructureViewer2>()->ds = f->ds;
 						auto& sp = ui::Push<ui::SplitPane>();

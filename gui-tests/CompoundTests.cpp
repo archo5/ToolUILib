@@ -325,14 +325,14 @@ struct SplitPaneTest : ui::Buildable
 	{
 		ui::Push<ui::SplitPane>();
 
-		ui::MakeWithText<ui::Panel>("Pane A");
-		ui::MakeWithText<ui::Panel>("Pane B");
+		ui::MakeWithText<ui::FrameElement>("Pane A").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane B").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 
 		ui::Push<ui::SplitPane>().SetDirection(true);
 
-		ui::MakeWithText<ui::Panel>("Pane C");
-		ui::MakeWithText<ui::Panel>("Pane D");
-		ui::MakeWithText<ui::Panel>("Pane E");
+		ui::MakeWithText<ui::FrameElement>("Pane C").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane D").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane E").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 
 		ui::Pop();
 
@@ -513,7 +513,7 @@ struct TransformContainerTest : ui::Buildable
 			ui::MakeWithText<ui::Button>("+") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { scale += 0.1f; Rebuild(); });
 		}
 
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& te = ui::Push<ui::ChildScaleOffsetElement>();
 			te.transform = ui::ScaleOffset2D::OffsetThenScale(x, y, scale);
@@ -612,8 +612,7 @@ struct ColorBlockTest : ui::Buildable
 
 		WText("Assembled");
 		auto C = colorB;
-		WPush<ui::Panel>()
-			+ ui::SetPadding(3);
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(3);
 		{
 			auto& ple = WPush<ui::PlacementLayoutElement>();
 			auto tmpl = ple.GetSlotTemplate();
@@ -696,14 +695,14 @@ struct ImageTest : ui::Buildable
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			WPush<ui::Panel>() + ui::SetPadding(4) + ui::SetMargin(0);
+			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
 			WPush<ui::WrapperLTRLayoutElement>();
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					WPush<ui::Panel>() + ui::SetPadding(4) + ui::SetMargin(0);
+					WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
 					WMake<ui::ImageElement>()
 						.SetImage(img)
 						.SetScaleMode(scaleModes[mode % 3], x * 0.5f + 0.5f, y * 0.5f + 0.5f)

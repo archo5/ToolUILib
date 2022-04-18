@@ -9,7 +9,7 @@ void ImageEditorWindowNode::Build()
 	{
 		auto& sp2 = ui::Push<ui::SplitPane>();
 		{
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& img = ui::Make<ui::ImageElement>();
@@ -25,7 +25,8 @@ void ImageEditorWindowNode::Build()
 			{
 				EditImageFormat("Format", image->format);
 				ui::MakeWithText<ui::LabelFrame>("Conditional format overrides");
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::StackTopDownLayoutElement>();
 				for (auto& FO : image->formatOverrides)
 				{
 					EditImageFormat("Format", FO.format);
@@ -35,6 +36,7 @@ void ImageEditorWindowNode::Build()
 				{
 					image->formatOverrides.push_back({});
 				}
+				ui::Pop();
 				ui::Pop();
 				ui::imm::PropEditString("Image offset", image->imgOff.expr.c_str(), [this](const char* v) { image->imgOff.SetExpr(v); });
 				ui::imm::PropEditString("Palette offset", image->palOff.expr.c_str(), [this](const char* v) { image->palOff.SetExpr(v); });

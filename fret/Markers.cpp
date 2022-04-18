@@ -649,12 +649,14 @@ void MarkedItemsList::Build()
 	ui::Text("Edit marked items");
 	for (auto& m : markerData->markers)
 	{
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::imm::PropDropdownMenuList("Type", m.type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
 		ui::imm::PropEditInt("Offset", m.at);
 		ui::imm::PropEditInt("Count", m.count);
 		ui::imm::PropEditInt("Repeats", m.repeats);
 		ui::imm::PropEditInt("Stride", m.stride);
+		ui::Pop();
 		ui::Pop();
 	}
 }

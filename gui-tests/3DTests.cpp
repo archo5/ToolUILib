@@ -196,7 +196,7 @@ struct GizmoTest : ui::Buildable
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(120);
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -220,7 +220,7 @@ struct GizmoTest : ui::Buildable
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(180);
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Gizmo");
@@ -364,7 +364,7 @@ struct QuaternionTest : ui::Buildable
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(200);
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -380,7 +380,7 @@ struct QuaternionTest : ui::Buildable
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(240);
-				ui::Push<ui::Panel>();
+				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					auto q1 = GetQuat();

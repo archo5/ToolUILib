@@ -31,118 +31,6 @@ void Test_EdgeSlice()
 }
 
 
-static const char* layoutShortNames[] =
-{
-	"ST", "SL", "SB", "SR",
-	"IB",
-	"ET", "EL", "EB", "ER",
-};
-static const char* layoutLongNames[] =
-{
-	"Stack top-down",
-	"Stack left-to-right",
-	"Stack bottom-up",
-	"Stack right-to-left",
-	"Inline block",
-	"Edge top child",
-	"Edge left child",
-	"Edge bottom child",
-	"Edge right child",
-};
-constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
-
-struct LayoutNestComboTest : ui::Buildable
-{
-	void Build() override
-	{
-		static int parentLayout = 0;
-		static int childLayout = 0;
-
-		LayoutUI(parentLayout);
-		LayoutUI(childLayout);
-
-		SetLayout(ui::Push<ui::Panel>().GetStyle(), parentLayout, -1);
-		{
-			SetLayout(ui::Push<ui::Panel>().GetStyle(), childLayout, parentLayout);
-			{
-				ui::Text("[c 1A]");
-				ui::Text("[c 1B]");
-			}
-			ui::Pop();
-
-			SetLayout(ui::Push<ui::Panel>().GetStyle(), childLayout, parentLayout);
-			{
-				ui::Text("[c 2A]");
-				ui::Text("[c 2B]");
-			}
-			ui::Pop();
-		}
-		ui::Pop();
-	}
-
-	void LayoutUI(int& layout)
-	{
-		WPush<ui::Panel>();
-		WPush<ui::StackLTRLayoutElement>();
-		for (int i = 0; i < layoutCount; i++)
-		{
-			BasicRadioButton2(layoutShortNames[i], layout, i) + ui::RebuildOnChange();
-		}
-		WText(layoutLongNames[layout]);
-		WPop();
-		WPop();
-	}
-
-	void SetLayout(ui::StyleAccessor s, int layout, int parentLayout)
-	{
-		switch (layout)
-		{
-		case 0:
-			// stack top down
-			break;
-		case 1:
-			// stack LTR
-			break;
-		case 2:
-			// stack bottom up
-			break;
-		case 3:
-			// stack RTL
-			break;
-		case 4:
-			// inline block
-			break;
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-			// edge slice
-			break;
-		}
-
-		switch (parentLayout)
-		{
-		case 5:
-			// set edge to ui::Edge::Top
-			break;
-		case 6:
-			// set edge to ui::Edge::Left
-			break;
-		case 7:
-			// set edge to ui::Edge::Bottom
-			break;
-		case 8:
-			// set edge to ui::Edge::Right
-			break;
-		}
-	}
-};
-void Test_LayoutNestCombo()
-{
-	ui::Make<LayoutNestComboTest>();
-}
-
-
 struct StackingLayoutVariationsTest : ui::Buildable
 {
 	void Build() override
@@ -159,7 +47,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 		};
 		constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
 
-		WPush<ui::Panel>();
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < layoutCount; i++)
 		{
@@ -171,14 +59,14 @@ struct StackingLayoutVariationsTest : ui::Buildable
 
 		if (mode == 0)
 		{
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One").GetStyle().SetWidth(100);
 			ui::MakeWithText<ui::Button>("Another one");
@@ -186,7 +74,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one").GetStyle().SetWidth(100);
@@ -194,7 +82,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
@@ -202,7 +90,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One").GetStyle().SetMinWidth(50);
 			ui::MakeWithText<ui::Button>("Another one").GetStyle().SetMinWidth(100);
@@ -210,14 +98,14 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{ auto s = ui::MakeWithText<ui::Button>("One").GetStyle(); s.SetMinWidth(100); s.SetWidth(ui::Coord::Percent(30)); }
 			ui::MakeWithText<ui::Button>("Another one");
 			ui::Pop();
 			ui::Pop();
 
-			WPush<ui::Panel>();
+			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::StackLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");

@@ -289,7 +289,7 @@ struct GraphImpl : ui::IProcGraph
 	}
 	void PreviewUI(Node*)
 	{
-		ui::MakeWithText<ui::Panel>("Preview");
+		ui::MakeWithText<ui::FrameElement>("Preview").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 	}
 
 	bool CanDeleteNode(Node*) override { return true; }

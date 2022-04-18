@@ -350,7 +350,8 @@ struct OpenCloseTest : ui::Buildable
 		static int counter = 0;
 		Allocate<AllocTest>(++counter);
 
-		ui::Push<ui::Panel>();
+		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::StackTopDownLayoutElement>();
 
 		auto& cb = ui::Push<ui::StateToggle>().InitReadOnly(open);
 		ui::Make<ui::CheckboxIcon>();
@@ -370,7 +371,8 @@ struct OpenCloseTest : ui::Buildable
 		if (open)
 		{
 			ui::Make<EDLogger>();
-			ui::Push<ui::Panel>();
+			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			WPush<ui::StackTopDownLayoutElement>();
 			ui::Text("It is open!");
 			auto& box = ui::MakeWithText<ui::BoxElement>("Different text");
 			box.flags |= ui::UIObject_SetsChildTextStyle;
@@ -380,10 +382,12 @@ struct OpenCloseTest : ui::Buildable
 			s.SetFontWeight(ui::FontWeight::Bold);
 			s.SetFontStyle(ui::FontStyle::Italic);
 			s.SetTextColor(ui::Color4f(1.0f, 0.1f, 0.0f));
-			ui::Pop();
+			WPop();
+			WPop();
 		}
 
-		ui::Pop();
+		WPop();
+		WPop();
 	}
 
 	bool open = false;
@@ -427,27 +431,37 @@ struct AppendMixTest : ui::Buildable
 
 	void Build() override
 	{
+		ui::Push<ui::StackTopDownLayoutElement>();
+
 		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Nothing).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::Make<ui::RadioButtonIcon>();
 		ui::Text("Nothing");
 		ui::Pop();
+		ui::Pop();
 
 		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Inline).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::Make<ui::RadioButtonIcon>();
 		ui::Text("Inline");
 		ui::Pop();
+		ui::Pop();
 
 		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Append1).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::Make<ui::RadioButtonIcon>();
 		ui::Text("Append (1)");
 		ui::Pop();
+		ui::Pop();
 
 		ui::Push<ui::RadioButtonT<Mode>>().Init(mode, Append2).HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { Rebuild(); };
+		ui::Push<ui::StackLTRLayoutElement>();
 		ui::Make<ui::RadioButtonIcon>();
 		ui::Text("Append (2)");
 		ui::Pop();
+		ui::Pop();
 
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 
 		switch (mode)
 		{
@@ -464,6 +478,7 @@ struct AppendMixTest : ui::Buildable
 			break;
 		}
 
+		ui::Pop();
 		ui::Pop();
 	}
 };
@@ -709,7 +724,8 @@ struct ZeroRebuildTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("Hide")
 			+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = false; OnShowChange(); });
 
-		showable = &ui::Push<ui::Panel>();
+		showable = &ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::StackTopDownLayoutElement>();
 		contentLabel = &ui::Text("Contents: " + text);
 		tbText = &ui::Make<ui::Textbox>().SetText(text);
 		*tbText + ui::AddEventHandler(ui::EventType::Change, [this](ui::Event& e)
@@ -718,6 +734,7 @@ struct ZeroRebuildTest : ui::Buildable
 			contentLabel->SetText("Contents: " + text);
 		});
 		ui::Pop();
+		ui::Pop();
 
 		OnShowChange();
 	}
@@ -725,7 +742,7 @@ struct ZeroRebuildTest : ui::Buildable
 	void OnShowChange()
 	{
 		cbShow->SetState(show);
-		showable->GetStyle().SetHeight(show ? ui::Coord::Undefined() : ui::Coord(0));
+		showable->SetVisible(show);
 	}
 
 	ui::StateToggle* cbShow;
@@ -749,13 +766,15 @@ struct GlobalEventsTest : ui::Buildable
 		void Build() override
 		{
 			Subscribe(dct);
-			ui::Push<ui::Panel>();
+			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			count++;
 			char bfr[64];
 			snprintf(bfr, 64, "%s: %d", name, count);
 			ui::Text(bfr);
 			infofn(bfr);
 			ui::Text(bfr);
+			ui::Pop();
 			ui::Pop();
 		}
 		const char* name;
@@ -837,14 +856,16 @@ struct FrameTest : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::Push<ui::Panel>();
+		ui::Push<ui::StackTopDownLayoutElement>();
+
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		inlineFrames[0] = &ui::Make<ui::InlineFrame>();
 		ui::Pop();
 
 		ui::MakeWithText<ui::Button>("Place 1 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 0); });
 		ui::MakeWithText<ui::Button>("Place 2 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 0); });
 
-		ui::Push<ui::Panel>();
+		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		inlineFrames[1] = &ui::Make<ui::InlineFrame>();
 		ui::Pop();
 
@@ -853,6 +874,8 @@ struct FrameTest : ui::Buildable
 
 		ui::MakeWithText<ui::Button>("Place 1 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 1); });
 		ui::MakeWithText<ui::Button>("Place 2 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 1); });
+
+		ui::Pop();
 	}
 	void Set(int contID, int frameID)
 	{

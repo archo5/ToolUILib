@@ -931,6 +931,7 @@ void UIObject::SetVisible(bool v)
 		flags &= ~UIObject_IsHidden;
 	else
 		flags |= UIObject_IsHidden;
+	_OnChangeStyle();
 }
 
 bool UIObject::IsInputDisabled() const
