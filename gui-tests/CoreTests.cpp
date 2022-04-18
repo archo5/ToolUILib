@@ -859,18 +859,19 @@ struct FrameTest : ui::Buildable
 		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(32);
 		inlineFrames[0] = &ui::Make<ui::InlineFrame>();
+		ui::Pop();
 		ui::Pop();
 
 		ui::MakeWithText<ui::Button>("Place 1 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 0); });
 		ui::MakeWithText<ui::Button>("Place 2 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 0); });
 
 		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(32);
 		inlineFrames[1] = &ui::Make<ui::InlineFrame>();
 		ui::Pop();
-
-		for (int i = 0; i < 2; i++)
-			*inlineFrames[i] + ui::SetHeight(32);
+		ui::Pop();
 
 		ui::MakeWithText<ui::Button>("Place 1 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 1); });
 		ui::MakeWithText<ui::Button>("Place 2 in 2") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 1); });

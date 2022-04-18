@@ -4,7 +4,7 @@
 
 struct TrackEditorDemo : ui::Buildable
 {
-	struct TrackEditor : ui::UIElement
+	struct TrackEditor : ui::FillerElement
 	{
 		static constexpr float TRACK_HEIGHT = 40;
 		struct Item
@@ -22,10 +22,9 @@ struct TrackEditorDemo : ui::Buildable
 		}
 		void OnReset() override
 		{
-			ui::UIElement::OnReset();
+			ui::FillerElement::OnReset();
 
 			SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
-			GetStyle().SetHeight(160);
 		}
 		void OnPaint(const ui::UIPaintContext& ctx) override
 		{

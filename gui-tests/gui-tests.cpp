@@ -16,15 +16,10 @@ struct DataEditor : ui::Buildable
 
 	struct ItemButton : ui::Buildable
 	{
-		ItemButton()
-		{
-			//GetStyle().SetMargin(32);
-		}
 		void Build() override
 		{
 			static int wat = 0;
 			auto& b = ui::Push<ui::Button>();
-			b.GetStyle().SetWidth(ui::Coord::Percent(100));
 			//b.SetInputDisabled(wat++ % 2);
 			ui::Text(name);
 			ui::Pop();
@@ -106,6 +101,8 @@ struct DataEditor : ui::Buildable
 
 	void Build() override
 	{
+		ui::Push<ui::StackTopDownLayoutElement>();
+
 		ui::MakeWithText<ui::ProgressBar>("Processing...").progress = 0.37f;
 		static float sldval = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval, { 0, 2, 0.1 });
@@ -120,9 +117,10 @@ struct DataEditor : ui::Buildable
 			std::string GetText(size_t row, size_t col) { return "R" + std::to_string(row) + "C" + std::to_string(col); }
 		};
 		static TableDS tblds;
-		auto* tbl = ui::Make<ui::TableView>();
-		tbl->SetDataSource(&tblds);
-		tbl->GetStyle().SetHeight(90);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(90);
+		auto& tbl = ui::Make<ui::TableView>();
+		tbl.SetDataSource(&tblds);
+		ui::Pop();
 #endif
 
 #if 1
@@ -145,9 +143,10 @@ struct DataEditor : ui::Buildable
 			std::string GetText(uintptr_t id, size_t col) { return "ID" + std::to_string(id) + "C" + std::to_string(col); }
 		};
 		static TreeDS treeds;
+		ui::Push<ui::SizeConstraintElement>().SetHeight(90);
 		auto& trv = ui::Make<ui::TreeView>();
 		trv.SetDataSource(&treeds);
-		trv.GetStyle().SetHeight(90);
+		ui::Pop();
 #endif
 
 #if 1
@@ -167,6 +166,8 @@ struct DataEditor : ui::Buildable
 					}
 					void OnBuild() override
 					{
+						ui::Push<ui::EdgeSliceLayoutElement>();
+
 						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
 						if (ui::imm::Button("X"))
@@ -180,6 +181,8 @@ struct DataEditor : ui::Buildable
 
 						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Make<ItemButton>().Init("Test", [this]() { OnClose(); });
+						ui::Pop();
+
 						ui::Pop();
 					}
 				} dlg;
@@ -196,6 +199,8 @@ struct DataEditor : ui::Buildable
 #endif
 
 #if 1
+		ui::Push<ui::SizeConstraintElement>().SetMinWidth(100).SetMinHeight(100);
+		ui::Push<ui::PaddingElement>().SetPadding(4);
 		auto& frm = ui::Make<ui::InlineFrame>();
 		auto frf = []()
 		{
@@ -210,18 +215,20 @@ struct DataEditor : ui::Buildable
 			ui::Pop();
 		};
 		frm.CreateFrameContents(frf);
-		auto frs = frm.GetStyle();
-		frs.SetPadding(4);
-		frs.SetMinWidth(100);
-		frs.SetMinHeight(100);
+		ui::Pop();
+		ui::Pop();
 #endif
 
 		static bool lbsel0 = false;
 		static bool lbsel1 = true;
+		ui::Push<ui::SizeConstraintElement>().SetHeight(50);
 		ui::Push<ui::ListBoxFrame>();
 		ui::Push<ui::ScrollArea>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::MakeWithText<ui::Selectable>("Item 1").Init(lbsel0);
 		ui::MakeWithText<ui::Selectable>("Item two").Init(lbsel1);
+		ui::Pop();
+		ui::Pop();
 		ui::Pop();
 		ui::Pop();
 
@@ -241,9 +248,9 @@ struct DataEditor : ui::Buildable
 		else
 		{
 			ui::Push<ui::StackExpandLTRLayoutElement>();
-			ui::Text("Item:") + ui::SetPadding(5) + ui::SetWidth(ui::Coord::Fraction(0));
+			ui::MakeWithText<ui::LabelFrame>("Item:") + ui::SetWidth(ui::Coord::Fraction(0));
 			ui::Text(items[editing].name);
-			if (ui::imm::Button("Go back", { ui::SetWidth(ui::Coord::Fraction(0)) }))
+			if (ui::imm::Button("Go back", { ui::SetWidth(80) }))
 			{
 				editing = SIZE_MAX;
 				ui::Notify(DCT_ItemSelection);
@@ -253,6 +260,8 @@ struct DataEditor : ui::Buildable
 			ui::imm::PropEditString("Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });
 			ui::imm::PropEditBool("Enable", items[editing].enable);
 		}
+
+		ui::Pop();
 	}
 
 	size_t editing = SIZE_MAX;

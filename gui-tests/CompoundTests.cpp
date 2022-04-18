@@ -212,6 +212,7 @@ struct PropertyListTest : ui::Buildable
 	void Build() override
 	{
 		ui::Push<ui::PropertyList>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::Push<ui::LabeledProperty>().SetText("label for 1");
 		ui::Text("test 1");
@@ -223,7 +224,8 @@ struct PropertyListTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("test 2");
 		ui::Pop();
 
-		ui::Push<ui::StackTopDownLayoutElement>().GetStyle().SetPaddingLeft(32);
+		ui::Push<ui::PaddingElement>().SetPaddingLeft(32);
+		ui::Push<ui::StackTopDownLayoutElement>();
 		{
 			ui::Push<ui::LabeledProperty>().SetText("also 3");
 			ui::Text("test 3 elevated");
@@ -244,7 +246,9 @@ struct PropertyListTest : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
+		ui::Pop();
 
+		ui::Pop();
 		ui::Pop();
 	}
 };
@@ -295,20 +299,18 @@ struct SlidersTest : ui::Buildable
 		ui::LabeledProperty::End();
 
 		ui::LabeledProperty::Begin("Slider 4: vert stretched");
-		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 }) + ui::SetHeight(40);
+		ui::Push<ui::SizeConstraintElement>().SetHeight(40);
+		ui::Make<ui::Slider>().Init(sldval2, { 0, 2, 0.1 });
+		ui::Pop();
 		ui::LabeledProperty::End();
 
 		ui::LabeledProperty::Begin("Color picker parts");
 		static float hue = 0.6f, sat = 0.3f, val = 0.8f;
 		{
-			auto s = ui::Make<ui::HueSatPicker>().Init(hue, sat).GetStyle();
-			s.SetWidth(100);
-			s.SetHeight(100);
+			ui::Make<ui::HueSatPicker>().SetSize(100, 100).Init(hue, sat);
 		}
 		{
-			auto s = ui::Make<ui::ColorCompPicker2D>().Init(hue, sat).GetStyle();
-			s.SetWidth(120);
-			s.SetHeight(100);
+			ui::Make<ui::ColorCompPicker2D>().SetSize(120, 100).Init(hue, sat);
 		}
 		ui::LabeledProperty::End();
 	}

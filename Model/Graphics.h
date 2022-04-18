@@ -104,11 +104,23 @@ struct ImageElement : UIElement
 	draw::ImageSetHandle _bgImageSet;
 };
 
-struct HueSatPicker : UIElement
+struct HueSatPicker : FrameElement, PreferredSizeLayout
 {
+	Size2f size = { 256, 256 };
+
 	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext& ctx) override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
+
+	Size2f GetSize() override { return size; }
+	HueSatPicker& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }
+	HueSatPicker& SetSize(float x, float y) { size = { x, y }; _OnChangeStyle(); return *this; }
+	HueSatPicker& SetLayoutMode(ImageLayoutMode mode);
 
 	HueSatPicker& Init(float& hue, float& sat)
 	{
@@ -176,11 +188,23 @@ struct ColorDragDropData : DragDropData
 	Color4f color;
 };
 
-struct ColorCompPicker2D : UIElement
+struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
 {
+	Size2f size = { 256, 256 };
+
 	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext& ctx) override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
+
+	Size2f GetSize() override { return size; }
+	ColorCompPicker2D& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }
+	ColorCompPicker2D& SetSize(float x, float y) { size = { x, y }; _OnChangeStyle(); return *this; }
+	ColorCompPicker2D& SetLayoutMode(ImageLayoutMode mode);
 
 	ColorCompPicker2DSettings GetSettings() const { return _settings; }
 	ColorCompPicker2D& SetSettings(const ColorCompPicker2DSettings& s) { _settings = s; return *this; }

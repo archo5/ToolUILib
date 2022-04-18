@@ -270,13 +270,13 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
-static StaticID_Style sid_selector_container("selector_container");
+static StaticID<FrameStyle> sid_framestyle_selector_container("selector_container");
 static StaticID_Style sid_selector("selector");
 void HueSatPicker::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_selector_container);
+	SetStyle(sid_framestyle_selector_container);
 	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
@@ -333,6 +333,13 @@ void HueSatPicker::OnPaint(const UIPaintContext& ctx)
 	ph.PaintChildren(this, ctx);
 }
 
+HueSatPicker& HueSatPicker::SetLayoutMode(ImageLayoutMode mode)
+{
+	_layoutMode = mode;
+	_OnChangeStyle();
+	return *this;
+}
+
 void HueSatPicker::_RegenerateBackground(int w)
 {
 	int h = w;
@@ -367,10 +374,11 @@ void ColorDragDropData::Build()
 
 void ColorCompPicker2D::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_selector_container);
+	SetStyle(sid_framestyle_selector_container);
 	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
+	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
 	_settings = {};
 	_x = 0;
@@ -416,6 +424,13 @@ void ColorCompPicker2D::OnPaint(const UIPaintContext& ctx)
 	selectorStyle->background_painter->Paint(info);
 
 	ph.PaintChildren(this, ctx);
+}
+
+ColorCompPicker2D& ColorCompPicker2D::SetLayoutMode(ImageLayoutMode mode)
+{
+	_layoutMode = mode;
+	_OnChangeStyle();
+	return *this;
 }
 
 void ColorCompPicker2D::_RegenerateBackground(int w, int h)
@@ -619,9 +634,7 @@ void ColorPicker::Build()
 		Push<StackTopDownLayoutElement>()
 			+ SetWidth(Coord::Fraction(0)); // TODO any way to make this unnecessary?
 		{
-			auto& hsp = Make<HueSatPicker>().Init(_color._hue, _color._sat)
-				+ SetWidth(240)
-				+ SetHeight(240);
+			auto& hsp = Make<HueSatPicker>().SetSize(240, 240).Init(_color._hue, _color._sat);
 			hsp.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 		}
 		Pop();

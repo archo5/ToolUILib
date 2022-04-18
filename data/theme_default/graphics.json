@@ -9,7 +9,7 @@
 	backgroundPainter = "panel"
 }
 
-"selector_container:style":
+"selector_container:FrameStyle":
 {
 	padding = 8
 }

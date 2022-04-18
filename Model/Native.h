@@ -184,8 +184,8 @@ class NativeWindowNode : public Buildable
 public:
 	void Build() override {}
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return Rangef::All(); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return Rangef::All(); }
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return Rangef::AtLeast(0); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout) override { return Rangef::AtLeast(0); }
 
 	NativeWindowBuildFunc* GetWindow() { return &_window; }
 
