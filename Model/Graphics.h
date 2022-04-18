@@ -22,8 +22,11 @@ enum class ScaleMode
 
 enum class ImageLayoutMode
 {
+	// require exact size
 	PreferredExact,
+	// allow stretching if the layout requires that
 	PreferredMin,
+	// always fill the available space
 	Fill,
 };
 
@@ -51,6 +54,7 @@ struct ColorBlock : FrameElement, PreferredSizeLayout
 	Size2f GetSize() override { return size; }
 	ColorBlock& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }
 	ColorBlock& SetSize(float x, float y) { size = { x, y }; _OnChangeStyle(); return *this; }
+	ColorBlock& SetLayoutMode(ImageLayoutMode mode);
 
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
@@ -61,19 +65,13 @@ struct ColorBlock : FrameElement, PreferredSizeLayout
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
 };
 
-struct ColorInspectBlock : UIElement
+struct ColorInspectBlock : ColorBlock
 {
-	Color4b _color = Color4b::Black();
-	draw::ImageSetHandle _bgImageSet;
-
 	// TODO styled
 	Coord alphaBarHeight = 2;
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-
-	Color4b GetColor() const { return _color; }
-	ColorInspectBlock& SetColor(Color4b col) { _color = col; return *this; }
 };
 
 void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, Vec2f placement = { 0.5f, 0.5f });

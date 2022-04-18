@@ -52,11 +52,16 @@ struct TransferCountablesTest : ui::Buildable
 		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < 3; i++)
 		{
-			auto& btn = ui::MakeWithText<ui::Button>("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
+			auto& btn = ui::Push<ui::Button>();
+			auto& pad = ui::Push<ui::PaddingElement>();
 			if (btn.flags & ui::UIObject_DragHovered)
 			{
-				btn + ui::SetPadding(4, 4, 10, 4);
+				pad.SetPadding(4, 4, 4, 10);
 			}
+			ui::Text("Slot " + std::to_string(i + 1) + ": " + std::to_string(slots[i]));
+			ui::Pop();
+			ui::Pop();
+
 			btn.SetInputDisabled(slots[i] == 0);
 			btn.HandleEvent() = [this, i](ui::Event& e)
 			{
@@ -247,7 +252,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			ui::Push<ui::Selectable>().Init(selectedNodes.count(N))
-				+ ui::SetPadding(0)
+				.SetPadding(0)
 				+ ui::MakeDraggable()
 				+ ui::AddEventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
 			{

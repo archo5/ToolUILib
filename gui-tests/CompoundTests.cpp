@@ -62,7 +62,7 @@ struct StateButtonsTest : ui::Buildable
 		case 6:
 			ui::MakeWithText<ui::ColorBlock>(text)
 				.SetColor(GetStateColorDark(stb->GetState()))
-				+ ui::SetWidth(ui::Coord::Undefined());
+				.SetLayoutMode(ui::ImageLayoutMode::PreferredMin);
 			break;
 		case 7: {
 			auto s = ui::MakeWithText<ui::LabelFrame>(text).GetStyle();

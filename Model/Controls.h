@@ -39,6 +39,7 @@ public:
 enum class DefaultFrameStyle
 {
 	GroupBox,
+	Selectable,
 };
 
 struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
@@ -232,7 +233,7 @@ struct ListBoxFrame : PaddedWrapperElement
 	void OnReset() override;
 };
 
-struct Selectable : PaddedWrapperElement
+struct Selectable : FrameElement
 {
 	void OnReset() override;
 	Selectable& Init(bool selected)

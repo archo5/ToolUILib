@@ -12,9 +12,7 @@ void TE_Node::Preview::Build()
 		.SetImage(node->GetImage(rcp))
 		.SetScaleMode(ScaleMode::Fit)
 		.SetAlphaBackgroundEnabled(true)
-		//+ SetWidth(Coord::Percent(100)) -- TODO fix
-		+ SetWidth(134)
-		;
+		.SetLayoutMode(ImageLayoutMode::PreferredMin);
 }
 
 void TE_Node::PreviewUI(TE_IRenderContextProvider* rcp)

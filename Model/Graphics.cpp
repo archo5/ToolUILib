@@ -48,7 +48,7 @@ void ColorBlock::OnReset()
 {
 	FrameElement::OnReset();
 
-	frameStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_color_block);
+	SetStyle(sid_framestyle_color_block);
 	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
 
 	_color = Color4b::Black();
@@ -72,25 +72,32 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 	ph.PaintChildren(this, ctx);
 }
 
+ColorBlock& ColorBlock::SetLayoutMode(ImageLayoutMode mode)
+{
+	_layoutMode = mode;
+	_OnChangeStyle();
+	return *this;
+}
 
-static StaticID_Style sid_color_inspect_block("color_inspect_block");
+
+static StaticID<FrameStyle> sid_framestyle_color_inspect_block("color_inspect_block");
 void ColorInspectBlock::OnReset()
 {
-	UIElement::OnReset();
+	ColorBlock::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_color_inspect_block);
-	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
-
-	_color = Color4b::Black();
+	SetStyle(sid_framestyle_color_inspect_block);
+	_layoutMode = ImageLayoutMode::PreferredMin;
+	size = { 34, 14 };
 	alphaBarHeight = 2;
 }
 
 void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 
-	auto r = GetContentRect();
+	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
 
 	float hbar = roundf(ResolveUnits(alphaBarHeight, r.GetWidth()));
 	UIRect r_lf = { r.x0, r.y0, roundf((r.x0 + r.x1) / 2), r.y1 - hbar };
@@ -352,8 +359,8 @@ void HueSatPicker::_RegenerateBackground(int w)
 
 void ColorDragDropData::Build()
 {
-	Push<SizeConstraintElement>().SetWidth(40);
-	Make<ColorInspectBlock>().SetColor(color) + SetPadding(0);
+	Push<SizeConstraintElement>().SetSize(40, 20);
+	Make<ColorInspectBlock>().SetColor(color).RemoveStyle();
 	Pop();
 }
 

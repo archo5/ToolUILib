@@ -45,12 +45,11 @@ void ProcGraphEditor_NodePin::Build()
 	auto tmpl = ple.GetSlotTemplate();
 	tmpl->measure = false;
 	auto* pap = Allocate<PointAnchoredPlacement>();
-	pap->pivot = { _pin.isOutput ? 0.f : 1.f, 0.5f };
+	pap->pivot = { _pin.isOutput ? 0.5f : 0.5f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
 	pap->useContentBox = true;
 	tmpl->placement = pap;
-	auto& cb = Push<ColorBlock>();
-	Make<SizeConstraintElement>().SetSize(4, 6);
+	auto& cb = Push<ColorBlock>().SetSize(4, 7);
 	cb.SetColor(_graph->GetPinColor(_pin));
 	Pop();
 
@@ -242,7 +241,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 	sel.GetStyle().SetFontWeight(FontWeight::Bold);
 	sel.GetStyle().SetFontStyle(FontStyle::Italic);
 	sel
-		+ SetPadding(0)
+		.SetPadding(0)
 		+ MakeDraggable()
 		+ AddEventHandler([this](Event& e)
 	{

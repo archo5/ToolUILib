@@ -15,8 +15,7 @@ void TreeItemElement::OnReset()
 	Selectable::OnReset();
 
 	SetFlag(UIObject_DB_Draggable, true);
-	auto s = GetStyle();
-	s.SetPadding(0, 0, 0, 16);
+	SetPadding(16, 0, 0, 0);
 
 	treeEd = nullptr;
 	path = {};

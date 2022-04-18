@@ -92,12 +92,14 @@ FrameElement& FrameElement::SetStyle(const StaticID<FrameStyle>& id)
 	return *this;
 }
 
-static StaticID<FrameStyle> sid_framestyle_panel("group_box");
+static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
+static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
 FrameElement& FrameElement::SetDefaultStyle(DefaultFrameStyle style)
 {
 	switch (style)
 	{
-	case DefaultFrameStyle::GroupBox: return SetStyle(sid_framestyle_panel);
+	case DefaultFrameStyle::GroupBox: return SetStyle(sid_framestyle_group_box);
+	case DefaultFrameStyle::Selectable: return SetStyle(sid_framestyle_selectable);
 	}
 	return *this;
 }
@@ -249,13 +251,12 @@ void ListBoxFrame::OnReset()
 }
 
 
-static StaticID_Style sid_selectable("selectable");
 void Selectable::OnReset()
 {
-	PaddedWrapperElement::OnReset();
+	FrameElement::OnReset();
 
 	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
-	SetStyle(GetCurrentTheme()->GetStyle(sid_selectable));
+	SetDefaultStyle(DefaultFrameStyle::Selectable);
 }
 
 

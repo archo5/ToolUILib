@@ -1,5 +1,5 @@
 {
-	"selectable:style":
+	"selectable:FrameStyle":
 	{
 		"padding": 5,
 		"backgroundPainter": "selectable"

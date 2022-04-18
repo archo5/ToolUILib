@@ -3,13 +3,9 @@
 	padding = 3
 	backgroundPainter = "panel"
 }
-"color_inspect_block:style":
+"color_inspect_block:FrameStyle":
 {
-	width = "1fr"
-	height = "20px"
 	padding = 3
-	layout = "stack"
-	stackingDirection = "LeftToRight"
 	backgroundPainter = "panel"
 }
 
