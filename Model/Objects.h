@@ -833,16 +833,6 @@ struct SetPadding : Modifier
 	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
 };
 
-struct SetMargin : Modifier
-{
-	float _l, _r, _t, _b;
-	SetMargin(float c) : _l(c), _r(c), _t(c), _b(c) {}
-	SetMargin(float v, float h) : _l(h), _r(h), _t(v), _b(v) {}
-	SetMargin(float t, float lr, float b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	SetMargin(float t, float r, float b, float l) : _l(l), _r(r), _t(t), _b(b) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetMargin(_t, _r, _b, _l); }
-};
-
 struct AddEventHandler : Modifier
 {
 	std::function<void(Event&)> _evfn;

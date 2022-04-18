@@ -36,7 +36,6 @@
 
 "listbox:style":
 {
-	"layout": "stack",
 	"padding": 5,
 	"backgroundPainter": "insetbox"
 }

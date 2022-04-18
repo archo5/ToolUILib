@@ -234,15 +234,6 @@ void StateButtonSkin::OnReset()
 
 
 static StaticID_Style sid_listbox("listbox");
-void ListBox::OnReset()
-{
-	UIElement::OnReset();
-
-	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
-	SetFlag(UIObject_ClipChildren, true);
-}
-
-
 void ListBoxFrame::OnReset()
 {
 	PaddedWrapperElement::OnReset();
@@ -1728,15 +1719,41 @@ void BackgroundBlocker::OnButton()
 }
 
 
+struct DropdownMenuPlacement : IPlacement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override
+	{
+		Rangef rw = curObj->GetFullEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
+		Rangef rh = curObj->GetFullEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
+
+		rw = rw.Intersect(Rangef::AtLeast(outRect.GetWidth()));
+
+		float x = outRect.x0;
+		float y = outRect.y1;
+		float w = rw.min;
+		float h = rh.min;
+
+		outRect = { x, y, x + w, y + h };
+	}
+};
+
+
 void DropdownMenu::Build()
 {
+	auto tmpl = Push<PlacementLayoutElement>().GetSlotTemplate();
+
 	OnBuildButton();
 
 	if (HasFlags(UIObject_IsChecked))
 	{
 		Make<BackgroundBlocker>();
+
+		tmpl->measure = false;
+		tmpl->placement = Allocate<DropdownMenuPlacement>();
 		OnBuildMenuWithLayout();
 	}
+
+	Pop();
 }
 
 void DropdownMenu::OnEvent(Event& e)
@@ -1784,16 +1801,12 @@ void DropdownMenu::OnBuildButton()
 void DropdownMenu::OnBuildMenuWithLayout()
 {
 	auto& list = OnBuildMenu();
-	auto* topLeftPlacement = Allocate<PointAnchoredPlacement>();
-	topLeftPlacement->anchor = { 0, 1 };
-	list + SetPlacement(topLeftPlacement);
 	list + MakeOverlay(200.f);
-	list + SetMinWidth(Coord::Percent(100));
 }
 
 UIObject& DropdownMenu::OnBuildMenu()
 {
-	auto& ret = Push<ListBox>();
+	auto& ret = Push<ListBoxFrame>();
 	Push<StackTopDownLayoutElement>();
 
 	OnBuildMenuContents();
@@ -1876,9 +1889,11 @@ void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 {
 	auto& opt = Push<Selectable>();
 	opt.Init(_selected == id);
+	Push<StackExpandLTRLayoutElement>(); // TODO always needed? maybe can manage with just one text element
 
 	_options->BuildElement(ptr, id, true);
 
+	Pop();
 	Pop();
 
 	opt + AddEventHandler(EventType::ButtonUp, [this, id](Event& e)

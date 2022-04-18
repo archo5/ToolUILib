@@ -610,19 +610,9 @@ float StyleAccessor::GetMarginLeft() const
 	return block->margin_left;
 }
 
-void StyleAccessor::SetMarginLeft(float v)
-{
-	AccSet(*this, offsetof(StyleBlock, margin_left), v);
-}
-
 float StyleAccessor::GetMarginRight() const
 {
 	return block->margin_right;
-}
-
-void StyleAccessor::SetMarginRight(float v)
-{
-	AccSet(*this, offsetof(StyleBlock, margin_right), v);
 }
 
 float StyleAccessor::GetMarginTop() const
@@ -630,35 +620,9 @@ float StyleAccessor::GetMarginTop() const
 	return block->margin_top;
 }
 
-void StyleAccessor::SetMarginTop(float v)
-{
-	AccSet(*this, offsetof(StyleBlock, margin_top), v);
-}
-
 float StyleAccessor::GetMarginBottom() const
 {
 	return block->margin_bottom;
-}
-
-void StyleAccessor::SetMarginBottom(float v)
-{
-	AccSet(*this, offsetof(StyleBlock, margin_bottom), v);
-}
-
-void StyleAccessor::SetMargin(float t, float r, float b, float l)
-{
-	// TODO?
-#if 0
-	GetOrCreate();
-	block->margin_top = t;
-	block->margin_right = r;
-	block->margin_bottom = b;
-	block->margin_left = l;
-#endif
-	AccSet(*this, offsetof(StyleBlock, margin_top), t);
-	AccSet(*this, offsetof(StyleBlock, margin_right), r);
-	AccSet(*this, offsetof(StyleBlock, margin_bottom), b);
-	AccSet(*this, offsetof(StyleBlock, margin_left), l);
 }
 
 float StyleAccessor::GetPaddingLeft() const

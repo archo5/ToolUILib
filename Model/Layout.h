@@ -497,21 +497,9 @@ public:
 
 
 	float GetMarginLeft() const;
-	void SetMarginLeft(float v);
-
 	float GetMarginRight() const;
-	void SetMarginRight(float v);
-
 	float GetMarginTop() const;
-	void SetMarginTop(float v);
-
 	float GetMarginBottom() const;
-	void SetMarginBottom(float v);
-
-	void SetMargin(float v) { SetMargin(v, v, v, v); }
-	void SetMargin(float tb, float lr) { SetMargin(tb, lr, tb, lr); }
-	void SetMargin(float t, float lr, float b) { SetMargin(t, lr, b, lr); }
-	void SetMargin(float t, float r, float b, float l);
 
 
 	float GetPaddingLeft() const;

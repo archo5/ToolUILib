@@ -223,11 +223,6 @@ struct StateButtonSkin : StateToggleVisualBase
 };
 
 
-struct ListBox : UIElement
-{
-	void OnReset() override;
-};
-
 struct ListBoxFrame : PaddedWrapperElement
 {
 	void OnReset() override;
