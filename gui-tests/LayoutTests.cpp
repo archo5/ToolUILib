@@ -68,7 +68,11 @@ struct StackingLayoutVariationsTest : ui::Buildable
 
 			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
-			ui::MakeWithText<ui::Button>("One").GetStyle().SetWidth(100);
+			{
+				ui::Push<ui::SizeConstraintElement>().SetWidth(100);
+				ui::MakeWithText<ui::Button>("One");
+				ui::Pop();
+			}
 			ui::MakeWithText<ui::Button>("Another one");
 			ui::MakeWithText<ui::Button>("The third");
 			ui::Pop();
@@ -77,7 +81,11 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
-			ui::MakeWithText<ui::Button>("Another one").GetStyle().SetWidth(100);
+			{
+				ui::Push<ui::SizeConstraintElement>().SetWidth(100);
+				ui::MakeWithText<ui::Button>("Another one");
+				ui::Pop();
+			}
 			ui::MakeWithText<ui::Button>("The third");
 			ui::Pop();
 			ui::Pop();
@@ -86,15 +94,31 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
-			ui::MakeWithText<ui::Button>("The third").GetStyle().SetWidth(100);
+			{
+				ui::Push<ui::SizeConstraintElement>().SetWidth(100);
+				ui::MakeWithText<ui::Button>("The third");
+				ui::Pop();
+			}
 			ui::Pop();
 			ui::Pop();
 
 			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
-			ui::MakeWithText<ui::Button>("One").GetStyle().SetMinWidth(50);
-			ui::MakeWithText<ui::Button>("Another one").GetStyle().SetMinWidth(100);
-			ui::MakeWithText<ui::Button>("The third").GetStyle().SetMinWidth(150);
+			{
+				ui::Push<ui::SizeConstraintElement>().SetMinWidth(50);
+				ui::MakeWithText<ui::Button>("One");
+				ui::Pop();
+			}
+			{
+				ui::Push<ui::SizeConstraintElement>().SetMinWidth(100);
+				ui::MakeWithText<ui::Button>("Another one");
+				ui::Pop();
+			}
+			{
+				ui::Push<ui::SizeConstraintElement>().SetMinWidth(150);
+				ui::MakeWithText<ui::Button>("The third");
+				ui::Pop();
+			}
 			ui::Pop();
 			ui::Pop();
 

@@ -335,27 +335,4 @@ private:
 	bool ownsContents = false;
 };
 
-
-inline const char* objtype(UIObject* obj)
-{
-	if (dynamic_cast<Buildable*>(obj))
-		return "buildable";
-	if (dynamic_cast<UIElement*>(obj))
-		return "element";
-	return "object";
-}
-
-inline void dumptree(UIObject* obj, int lev = 0)
-{
-	if (lev == 0) puts("");
-	for (int i = 0; i < lev; i++)
-		printf("  ");
-	printf("%s - %s\n", typeid(*obj).name(), objtype(obj));
-	for (UIObject* ch = obj->firstChild; ch; ch = ch->next)
-	{
-		dumptree(ch, lev + 1);
-	}
-	if (lev == 0) puts("");
-}
-
 } // ui

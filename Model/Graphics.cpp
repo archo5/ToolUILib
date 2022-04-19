@@ -631,13 +631,8 @@ void ColorPicker::Build()
 	Push<StackExpandLTRLayoutElement>();
 	{
 		// left side
-		Push<StackTopDownLayoutElement>()
-			+ SetWidth(Coord::Fraction(0)); // TODO any way to make this unnecessary?
-		{
-			auto& hsp = Make<HueSatPicker>().SetSize(240, 240).Init(_color._hue, _color._sat);
-			hsp.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-		}
-		Pop();
+		auto& hsp = Make<HueSatPicker>().SetSize(240, 240).Init(_color._hue, _color._sat);
+		hsp.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
 
 		FloatLimits limit = { 0, 1 };
 
@@ -783,6 +778,9 @@ void ColorPicker::Build()
 
 			Push<StackExpandLTRLayoutElement>();
 			{
+				auto tmpl = StackExpandLTRLayoutElement::GetSlotTemplate();
+
+				tmpl->DisableScaling();
 				Push<FrameElement>()
 					.SetDefaultStyle(DefaultFrameStyle::GroupBox)
 					.SetPadding(3)
@@ -803,10 +801,12 @@ void ColorPicker::Build()
 				Pop();
 				Pop();
 
+				Make<BoxElement>();
+
+				tmpl->DisableScaling();
 				Push<StackTopDownLayoutElement>();
 
 				Push<StackExpandLTRLayoutElement>();
-				Make<BoxElement>() + SetWidth(Coord::Fraction(1));
 				MakeWithText<SizeConstraintElement>("Hex:").SetHeight(22);
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color.hex) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHex(); });

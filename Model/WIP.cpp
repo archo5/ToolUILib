@@ -48,6 +48,81 @@ void PaddingElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 }
 
 
+StackLTRLayoutElement::Slot StackLTRLayoutElement::_slotTemplate;
+
+float StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	bool first = true;
+	for (auto& slot : _slots)
+	{
+		if (!first)
+			size += paddingBetweenElements;
+		else
+			first = false;
+		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
+	}
+	return size;
+}
+
+float StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+	return size;
+}
+
+void StackLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+{
+	// put items one after another in the indicated direction
+	// container size adapts to child elements in stacking direction, and to parent in the other
+	float p = inrect.x0;
+	for (auto& slot : _slots)
+	{
+		float w = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Exact).min;
+		Rangef hr = slot._obj->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding);
+		float h = clamp(inrect.y1 - inrect.y0, hr.min, hr.max);
+		slot._obj->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h }, inrect.GetSize());
+		p += w + paddingBetweenElements;
+	}
+}
+
+
+StackTopDownLayoutElement::Slot StackTopDownLayoutElement::_slotTemplate;
+
+float StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size = max(size, slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
+	return size;
+}
+
+float StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size += slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
+	return size;
+}
+
+void StackTopDownLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+{
+	// put items one after another in the indicated direction
+	// container size adapts to child elements in stacking direction, and to parent in the other
+	float p = inrect.y0;
+	for (auto& slot : _slots)
+	{
+		Rangef wr = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
+		float w = clamp(inrect.x1 - inrect.x0, wr.min, wr.max);
+		float h = slot._obj->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Exact).min;
+		slot._obj->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h }, inrect.GetSize());
+		p += h;
+	}
+}
+
+
 StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
 float StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -89,38 +164,40 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 	std::vector<int> sorted;
 	for (auto& slot : _slots)
 	{
-		auto* ch = slot._obj;
-		if (!ch)
-			continue;
-		auto s = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
-		auto sw = ch->GetStyle().GetWidth();
-		float fr = sw.unit == CoordTypeUnit::Fraction ? sw.value : 1;
-		items.push_back({ ch, s.min, s.max, s.min, fr });
+		auto s = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
+		auto sw = slot._obj->GetStyle().GetWidth();
+		items.push_back({ slot._obj, s.min, s.max, s.min, slot.fraction });
 		sorted.push_back(sorted.size());
 		sum += s.min;
-		frsum += fr;
+		frsum += slot.fraction;
 	}
 	if (_slots.size() >= 2)
 		sum += paddingBetweenElements * (_slots.size() - 1);
-	std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
+	if (frsum > 0)
 	{
-		const auto& a = items[ia];
-		const auto& b = items[ib];
-		return (a.maxw - a.minw) < (b.maxw - b.minw);
-	});
-	float leftover = max(inrect.GetWidth() - sum, 0.0f);
-	for (auto idx : sorted)
-	{
-		auto& item = items[idx];
-		float mylo = leftover * item.fr / frsum;
-		float w = item.minw + mylo;
-		if (w > item.maxw)
-			w = item.maxw;
-		w = roundf(w);
-		float actual_lo = w - item.minw;
-		leftover -= actual_lo;
-		frsum -= item.fr;
-		item.w = w;
+		std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
+		{
+			const auto& a = items[ia];
+			const auto& b = items[ib];
+			return (a.maxw - a.minw) < (b.maxw - b.minw);
+		});
+		float leftover = max(inrect.GetWidth() - sum, 0.0f);
+		for (auto idx : sorted)
+		{
+			auto& item = items[idx];
+			float mylo = leftover * item.fr / frsum;
+			float w = item.minw + mylo;
+			if (w > item.maxw)
+				w = item.maxw;
+			w = roundf(w);
+			float actual_lo = w - item.minw;
+			leftover -= actual_lo;
+			frsum -= item.fr;
+			item.w = w;
+
+			if (frsum <= 0)
+				break;
+		}
 	}
 	for (const auto& item : items)
 	{

@@ -147,12 +147,17 @@ struct OSCommunicationTest : ui::Buildable
 	{
 		{
 			ui::LabeledProperty::Scope ps("\bClipboard");
+			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 			bool hasText = ui::Clipboard::HasText();
 			ui::imm::EditBool(hasText, nullptr, { ui::Enable(false) });
 			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
-			if (ui::imm::Button("Read", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
+
+			tmpl->SetScaleWeight(0.1f);
+			if (ui::imm::Button("Read"))
 				clipboardData = ui::Clipboard::GetText();
-			if (ui::imm::Button("Write", { ui::SetWidth(ui::Coord::Fraction(0.1f)) }))
+
+			tmpl->SetScaleWeight(0.1f);
+			if (ui::imm::Button("Write"))
 				ui::Clipboard::SetText(clipboardData);
 		}
 

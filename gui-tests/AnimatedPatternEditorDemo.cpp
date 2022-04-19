@@ -340,9 +340,16 @@ struct AnimPattern : ITree
 	void PreviewUI()
 	{
 		Push<StackExpandLTRLayoutElement>();
-		MakeWithText<Header>("Preview") + SetWidth(Coord::Fraction(0));
-		if (imm::Button(playing ? "Pause" : "Play", { SetWidth(Coord::Fraction(0)) }))
+
+		auto tmpl = StackExpandLTRLayoutElement::GetSlotTemplate();
+
+		tmpl->DisableScaling();
+		MakeWithText<Header>("Preview");
+
+		tmpl->DisableScaling();
+		if (imm::Button(playing ? "Pause" : "Play"))
 			SetPlaying(!playing);
+
 		auto& slider = Make<Slider>().SetValue(curTime / globalSettings.duration);
 		slider + AddEventHandler(EventType::Change, [this, &slider](Event& e) { curTime = globalSettings.duration * slider.GetValue(); });
 		Pop();

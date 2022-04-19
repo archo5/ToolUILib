@@ -719,9 +719,9 @@ struct DragDropTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		tmpl->placement = &parts[0];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
@@ -736,6 +736,7 @@ struct DragDropTest : ui::Buildable
 		WPop(); // StackTopDownLayoutElement
 
 		tmpl->placement = &parts[1];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();

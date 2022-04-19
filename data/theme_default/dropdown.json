@@ -10,8 +10,6 @@
 {
 	width = "10px"
 	height = "10px"
-	marginTop = 2
-	marginLeft = 5
 	backgroundPainter = "dropdown_button_icon"
 }
 

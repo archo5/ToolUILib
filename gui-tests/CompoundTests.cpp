@@ -89,9 +89,9 @@ struct StateButtonsTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		tmpl->placement = &parts[0];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB activate");
@@ -106,6 +106,7 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[1];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB int.state");
@@ -121,6 +122,7 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[2];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB ext.state");
@@ -135,6 +137,7 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[3];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("CB int.3-state");
@@ -150,6 +153,7 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[4];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("RB activate");
@@ -172,6 +176,7 @@ struct StateButtonsTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[5];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::Text("RB ext.state");
@@ -622,18 +627,19 @@ struct ColorBlockTest : ui::Buildable
 			WPush<ui::SizeConstraintElement>().SetHeight(20);
 			WMake<ui::FillerElement>();
 			WPop();
-			tmpl->measure = false;
 
 			auto* partOC = Allocate<ui::RectAnchoredPlacement>();
 			partOC->anchor.x1 = 0.5f;
 			partOC->bias.y1 = -4;
 			tmpl->placement = partOC;
+			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(C.GetOpaque()).RemoveStyle();
 
 			auto* partC = Allocate<ui::RectAnchoredPlacement>();
 			partC->anchor.x0 = 0.5f;
 			partC->bias.y1 = -4;
 			tmpl->placement = partC;
+			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(C).RemoveStyle();
 
 			auto* partOA = Allocate<ui::RectAnchoredPlacement>();
@@ -641,6 +647,7 @@ struct ColorBlockTest : ui::Buildable
 			partOA->anchor.y0 = 1;
 			partOA->bias.y0 = -4;
 			tmpl->placement = partOA;
+			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White()).RemoveStyle();
 
 			auto* partTA = Allocate<ui::RectAnchoredPlacement>();
@@ -648,6 +655,7 @@ struct ColorBlockTest : ui::Buildable
 			partTA->anchor.y0 = 1;
 			partTA->bias.y0 = -4;
 			tmpl->placement = partTA;
+			tmpl->measure = false;
 			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveStyle();
 
 			WPop();
@@ -939,9 +947,9 @@ struct DropdownTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		tmpl->placement = &parts[0];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WMake<SpecificDropdownMenu>();
@@ -964,6 +972,7 @@ struct DropdownTest : ui::Buildable
 		WPop();
 
 		tmpl->placement = &parts[1];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WText("immediate mode");

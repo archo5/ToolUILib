@@ -194,11 +194,17 @@ struct TE_ImageEditorNode : Buildable
 		{
 			Push<StackExpandLTRLayoutElement>();
 			{
-				imm::EditBool(img->expanded, nullptr, { SetWidth(Coord::Fraction(0)) }, imm::TreeStateToggleSkin());
-				if (imm::RadioButtonRaw(tmpl->curPreviewImage == img, "P", { SetWidth(Coord::Fraction(0)) }, imm::ButtonStateToggleSkin()))
+				auto stmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
+
+				stmpl->DisableScaling();
+				imm::EditBool(img->expanded, nullptr, {}, imm::TreeStateToggleSkin());
+
+				stmpl->DisableScaling();
+				if (imm::RadioButtonRaw(tmpl->curPreviewImage == img, "P", {}, imm::ButtonStateToggleSkin()))
 				{
 					tmpl->SetCurPreviewImage(img);
 				}
+
 				imm::EditString(img->name.c_str(), [&img](const char* v) { img->name = v; });
 				se->OnBuildDeleteButton();
 			}

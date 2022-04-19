@@ -96,6 +96,8 @@ struct LayoutElement : UIElement
 		Slot slot = _slotTemplate;
 		slot._obj = obj;
 		_slots.push_back(slot);
+		// reset the template
+		_slotTemplate = {};
 
 		if (system)
 			obj->_AttachToFrameContents(system);
@@ -135,84 +137,49 @@ struct LayoutElement : UIElement
 	}
 };
 
-struct StackLTRLayoutElement : UIElement
+namespace _ {
+struct StackLTRLayoutElement_Slot
+{
+	UIObject* _obj = nullptr;
+};
+} // _
+
+struct StackLTRLayoutElement : LayoutElement<_::StackLTRLayoutElement_Slot>
 {
 	float paddingBetweenElements = 0;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			if (ch != firstChild)
-				size += paddingBetweenElements;
-			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
-		}
-		return size;
-	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-		return size;
-	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
-	{
-		// put items one after another in the indicated direction
-		// container size adapts to child elements in stacking direction, and to parent in the other
-		float p = inrect.x0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Exact).min;
-			Rangef hr = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding);
-			float h = clamp(inrect.y1 - inrect.y0, hr.min, hr.max);
-			ch->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h }, inrect.GetSize());
-			p += w + paddingBetweenElements;
-		}
-	}
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
-struct StackTopDownLayoutElement : UIElement
+namespace _ {
+struct StackTopDownLayoutElement_Slot
 {
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
-		return size;
-	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
-		return size;
-	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
-	{
-		// put items one after another in the indicated direction
-		// container size adapts to child elements in stacking direction, and to parent in the other
-		float p = inrect.y0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			Rangef wr = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
-			float w = clamp(inrect.x1 - inrect.x0, wr.min, wr.max);
-			float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Exact).min;
-			ch->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h }, inrect.GetSize());
-			p += h;
-		}
-	}
+	UIObject* _obj = nullptr;
+};
+} // _
+
+struct StackTopDownLayoutElement : LayoutElement<_::StackTopDownLayoutElement_Slot>
+{
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 };
 
 namespace _ {
 struct StackExpandLTRLayoutElement_Slot
 {
+	using T = StackExpandLTRLayoutElement_Slot;
+
 	UIObject* _obj = nullptr;
-	const IPlacement* placement = nullptr;
-	bool measure = true;
+	float fraction = 1;
+
+	T& DisableScaling() { fraction = 0; return *this; }
+	T& SetMaximumScaling() { fraction = FLT_MAX; return *this; }
+	T& SetScaleWeight(float f) { fraction = f; return *this; }
 };
 } // _
 

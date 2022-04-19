@@ -1771,6 +1771,8 @@ static StaticID_Style sid_dropdown_button("dropdown_button");
 static StaticID_Style sid_dropdown_button_icon("dropdown_button_icon");
 void DropdownMenu::OnBuildButton()
 {
+	auto& ple = Push<PlacementLayoutElement>();
+
 	auto& btn = Push<StackLTRLayoutElement>();
 	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
 	btn.flags |= flags & UIObject_IsDisabled;
@@ -1786,16 +1788,23 @@ void DropdownMenu::OnBuildButton()
 		};
 	}
 
-	auto& icon = Make<BoxElement>();
-	icon.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
-	auto* pap = Allocate<PointAnchoredPlacement>();
-	pap->anchor = { 1, 0 };
-	pap->pivot = { 0, 0 };
-	icon.GetStyle().SetPlacement(pap);
-
 	OnBuildButtonContents();
 
-	Pop();
+	Pop(); // StackLTRLayoutElement
+
+	auto tmpl = ple.GetSlotTemplate();
+
+	auto* pap = Allocate<PointAnchoredPlacement>();
+	pap->anchor = { 1, 0 };
+	pap->pivot = { 1, 0 };
+	pap->bias = { -5, 7 };
+	tmpl->placement = pap;
+	tmpl->measure = false;
+
+	auto& icon = Make<BoxElement>(); // TODO move to painter
+	icon.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
+
+	Pop(); // PlacementLayoutElement
 }
 
 void DropdownMenu::OnBuildMenuWithLayout()
@@ -1974,14 +1983,15 @@ void DefaultOverlayBuilder::Build()
 		Subscribe(DCT_MouseMoved);
 
 	auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
-	tmpl->measure = false;
-	tmpl->placement = &placement;
 
 	if (drawTooltip)
 	{
 		Subscribe(DCT_TooltipChanged);
 		if (Tooltip::IsSet())
 		{
+			tmpl->measure = false;
+			tmpl->placement = &placement;
+
 			Push<TooltipFrame>().RegisterAsOverlay();
 			Tooltip::Build();
 			Pop();
@@ -1995,6 +2005,9 @@ void DefaultOverlayBuilder::Build()
 		{
 			if (ddd->ShouldBuild())
 			{
+				tmpl->measure = false;
+				tmpl->placement = &placement;
+
 				Push<DragDropDataFrame>().RegisterAsOverlay();
 				ddd->Build();
 				Pop();

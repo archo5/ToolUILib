@@ -248,13 +248,17 @@ struct DataEditor : ui::Buildable
 		else
 		{
 			ui::Push<ui::StackExpandLTRLayoutElement>();
-			ui::MakeWithText<ui::LabelFrame>("Item:") + ui::SetWidth(ui::Coord::Fraction(0));
+			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
+			tmpl->DisableScaling();
+			ui::MakeWithText<ui::LabelFrame>("Item:");
 			ui::Text(items[editing].name);
-			if (ui::imm::Button("Go back", { ui::SetWidth(80) }))
+			ui::Push<ui::SizeConstraintElement>().SetWidth(80);
+			if (ui::imm::Button("Go back"))
 			{
 				editing = SIZE_MAX;
 				ui::Notify(DCT_ItemSelection);
 			}
+			ui::Pop();
 			ui::Pop();
 
 			ui::imm::PropEditString("Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });

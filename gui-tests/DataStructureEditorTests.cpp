@@ -88,27 +88,30 @@ struct SequenceEditorsTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		tmpl->placement = &parts[0];
+		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::vector<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ui::Pop();
 
 		tmpl->placement = &parts[1];
+		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::list<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ui::Pop();
 
 		tmpl->placement = &parts[2];
+		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::deque<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ui::Pop();
 
 		tmpl->placement = &parts[3];
+		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("int[5]:");
 		SeqEdit(Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
@@ -523,15 +526,16 @@ struct TreeEditorsTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		tmpl->placement = &parts[0];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		WText("child pointer array:");
 		TreeEdit(&cpaTree);
 		WPop();
 
 		tmpl->placement = &parts[1];
+		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
 		WText("child value array:");
 		TreeEdit(&cvaTree);
@@ -759,10 +763,10 @@ struct MessageLogViewTest : ui::Buildable
 		auto tmpl = ple.GetSlotTemplate();
 
 		WMake<ui::FillerElement>();
-		tmpl->measure = false;
 
 		{
 			tmpl->placement = &parts[0];
+			tmpl->measure = false;
 			ui::Push<ui::EdgeSliceLayoutElement>();
 			{
 				ui::Text("single line");
@@ -775,6 +779,7 @@ struct MessageLogViewTest : ui::Buildable
 			ui::Pop();
 
 			tmpl->placement = &parts[1];
+			tmpl->measure = false;
 			ui::Push<ui::EdgeSliceLayoutElement>();
 			{
 				ui::Text("two lines, custom drawing");

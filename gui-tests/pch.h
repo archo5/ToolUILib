@@ -38,22 +38,7 @@ inline bool& GetWrapperSetting()
 	return wrapperSetting;
 }
 
-struct TESTWrapper : ui::UIElement
-{
-	ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
-	{
-		return firstChild->GetFullEstimatedWidth(containerSize, type, forParentLayout);
-	}
-	ui::Rangef GetFullEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
-	{
-		return firstChild->GetFullEstimatedHeight(containerSize, type, forParentLayout);
-	}
-	void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
-	{
-		firstChild->PerformLayout(rect, containerSize);
-		finalRectCP = finalRectC = firstChild->finalRectCP;
-	}
-};
+using TESTWrapper = ui::WrapperElement;
 
 template <class E> inline E& WPush()
 {

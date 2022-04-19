@@ -30,11 +30,11 @@ struct The3DViewTest : ui::Buildable
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
-				tmpl->measure = false;
 
 				auto* leftCorner = ui::BuildAlloc<ui::PointAnchoredPlacement>();
 				leftCorner->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftCorner;
+				tmpl->measure = false;
 				ui::Push<ui::StackTopDownLayoutElement>();
 
 				ui::Text("Overlay text");
@@ -190,11 +190,11 @@ struct GizmoTest : ui::Buildable
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
-				tmpl->measure = false;
 
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
+				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(120);
 				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
@@ -219,6 +219,7 @@ struct GizmoTest : ui::Buildable
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
+				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(180);
 				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
@@ -358,11 +359,11 @@ struct QuaternionTest : ui::Buildable
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
-				tmpl->measure = false;
 
 				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
+				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(200);
 				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
@@ -379,6 +380,7 @@ struct QuaternionTest : ui::Buildable
 				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
+				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(240);
 				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
