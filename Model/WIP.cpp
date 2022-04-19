@@ -50,6 +50,85 @@ void PaddingElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 
 StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
+float StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	if (type == EstSizeType::Expanding)
+	{
+		float size = 0;
+		for (auto& slot : _slots)
+			size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		if (_slots.size() >= 2)
+			size += paddingBetweenElements * (_slots.size() - 1);
+		return size;
+	}
+	else
+		return containerSize.x;
+}
+
+float StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
+	return size;
+}
+
+void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+{
+	float p = inrect.x0;
+	float sum = 0, frsum = 0;
+	struct Item
+	{
+		UIObject* ch;
+		float minw;
+		float maxw;
+		float w;
+		float fr;
+	};
+	std::vector<Item> items;
+	std::vector<int> sorted;
+	for (auto& slot : _slots)
+	{
+		auto* ch = slot._obj;
+		if (!ch)
+			continue;
+		auto s = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
+		auto sw = ch->GetStyle().GetWidth();
+		float fr = sw.unit == CoordTypeUnit::Fraction ? sw.value : 1;
+		items.push_back({ ch, s.min, s.max, s.min, fr });
+		sorted.push_back(sorted.size());
+		sum += s.min;
+		frsum += fr;
+	}
+	if (_slots.size() >= 2)
+		sum += paddingBetweenElements * (_slots.size() - 1);
+	std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
+	{
+		const auto& a = items[ia];
+		const auto& b = items[ib];
+		return (a.maxw - a.minw) < (b.maxw - b.minw);
+	});
+	float leftover = max(inrect.GetWidth() - sum, 0.0f);
+	for (auto idx : sorted)
+	{
+		auto& item = items[idx];
+		float mylo = leftover * item.fr / frsum;
+		float w = item.minw + mylo;
+		if (w > item.maxw)
+			w = item.maxw;
+		w = roundf(w);
+		float actual_lo = w - item.minw;
+		leftover -= actual_lo;
+		frsum -= item.fr;
+		item.w = w;
+	}
+	for (const auto& item : items)
+	{
+		item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
+		p += item.w + paddingBetweenElements;
+	}
+}
+
 
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
@@ -60,7 +139,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._element->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+			auto cr = slot._obj->GetFullEstimatedWidth(containerSize, type, forParentLayout);
 			r = r.Intersect(cr);
 		}
 	}
@@ -74,7 +153,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSiz
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._element->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+			auto cr = slot._obj->GetFullEstimatedHeight(containerSize, type, forParentLayout);
 			r = r.Intersect(cr);
 		}
 	}
@@ -91,111 +170,16 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 		{
 			if (slot.placement->fullScreenRelative)
 				r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
-			slot.placement->OnApplyPlacement(slot._element, r);
+			slot.placement->OnApplyPlacement(slot._obj, r);
 		}
 		//contRect = contRect.Include(r);
 		r.x0 = roundf(r.x0);
 		r.y0 = roundf(r.y0);
 		r.x1 = roundf(r.x1);
 		r.y1 = roundf(r.y1);
-		slot._element->PerformLayout(r, containerSize);
+		slot._obj->PerformLayout(r, containerSize);
 	}
 	finalRectC = finalRectCP = contRect;
-}
-
-void PlacementLayoutElement::OnReset()
-{
-	UIElement::OnReset();
-
-	_slots.clear();
-}
-
-void PlacementLayoutElement::SlotIterator_Init(UIObjectIteratorData& data)
-{
-	data.data0 = 0;
-}
-
-UIObject* PlacementLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& data)
-{
-	if (data.data0 >= _slots.size())
-		return nullptr;
-	return _slots[data.data0++]._element;
-}
-
-void PlacementLayoutElement::RemoveChildImpl(UIObject* ch)
-{
-	for (size_t i = 0; i < _slots.size(); i++)
-	{
-		if (_slots[i]._element == ch)
-		{
-			_slots.erase(_slots.begin() + i);
-			break;
-		}
-	}
-}
-
-void PlacementLayoutElement::DetachChildren(bool recursive)
-{
-	for (size_t i = 0; i < _slots.size(); i++)
-	{
-		auto* ch = _slots[i]._element;
-
-		if (recursive)
-			ch->DetachChildren(true);
-
-		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
-		if (system)
-			ch->_DetachFromTree();
-
-		ch->parent = nullptr;
-	}
-	_slots.clear();
-}
-
-void PlacementLayoutElement::CustomAppendChild(UIObject* obj)
-{
-	obj->DetachParent();
-
-	obj->parent = this;
-	Slot slot = _slotTemplate;
-	slot._element = obj;
-	_slots.push_back(slot);
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
-void PlacementLayoutElement::PaintChildrenImpl(const UIPaintContext& ctx)
-{
-	for (auto& slot : _slots)
-		slot._element->Paint(ctx);
-}
-
-UIObject* PlacementLayoutElement::FindLastChildContainingPos(Point2f pos) const
-{
-	for (size_t i = _slots.size(); i > 0; )
-	{
-		i--;
-		if (_slots[i]._element->Contains(pos))
-			return _slots[i]._element;
-	}
-	return nullptr;
-}
-
-void PlacementLayoutElement::_AttachToFrameContents(FrameContents* owner)
-{
-	UIElement::_AttachToFrameContents(owner);
-
-	for (auto& slot : _slots)
-		slot._element->_AttachToFrameContents(owner);
-}
-
-void PlacementLayoutElement::_DetachFromFrameContents()
-{
-	for (auto& slot : _slots)
-		slot._element->_DetachFromFrameContents();
-
-	UIElement::_DetachFromFrameContents();
 }
 
 

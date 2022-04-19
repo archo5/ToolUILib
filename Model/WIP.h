@@ -26,6 +26,115 @@ struct PaddingElement : UIObjectSingleChild
 	PaddingElement& SetPaddingBottom(float p) { padding.y1 = p; return *this; }
 };
 
+template <class SlotT>
+struct LayoutElement : UIElement
+{
+	using Slot = SlotT;
+
+	static TempEditable<Slot> GetSlotTemplate()
+	{
+		return { &_slotTemplate };
+	}
+	static Slot _slotTemplate;
+
+	std::vector<Slot> _slots;
+
+	void OnReset() override
+	{
+		UIElement::OnReset();
+
+		_slots.clear();
+	}
+
+	void SlotIterator_Init(UIObjectIteratorData& data) override
+	{
+		data.data0 = 0;
+	}
+
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override
+	{
+		if (data.data0 >= _slots.size())
+			return nullptr;
+		return _slots[data.data0++]._obj;
+	}
+
+	void RemoveChildImpl(UIObject* ch) override
+	{
+		for (size_t i = 0; i < _slots.size(); i++)
+		{
+			if (_slots[i]._obj == ch)
+			{
+				_slots.erase(_slots.begin() + i);
+				break;
+			}
+		}
+	}
+
+	void DetachChildren(bool recursive) override
+	{
+		for (size_t i = 0; i < _slots.size(); i++)
+		{
+			auto* ch = _slots[i]._obj;
+
+			if (recursive)
+				ch->DetachChildren(true);
+
+			// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+			if (system)
+				ch->_DetachFromTree();
+
+			ch->parent = nullptr;
+		}
+		_slots.clear();
+	}
+
+	void CustomAppendChild(UIObject* obj) override
+	{
+		obj->DetachParent();
+
+		obj->parent = this;
+		Slot slot = _slotTemplate;
+		slot._obj = obj;
+		_slots.push_back(slot);
+
+		if (system)
+			obj->_AttachToFrameContents(system);
+	}
+
+	void PaintChildrenImpl(const UIPaintContext& ctx) override
+	{
+		for (auto& slot : _slots)
+			slot._obj->Paint(ctx);
+	}
+
+	UIObject* FindLastChildContainingPos(Point2f pos) const override
+	{
+		for (size_t i = _slots.size(); i > 0; )
+		{
+			i--;
+			if (_slots[i]._obj->Contains(pos))
+				return _slots[i]._obj;
+		}
+		return nullptr;
+	}
+
+	void _AttachToFrameContents(FrameContents* owner) override
+	{
+		UIElement::_AttachToFrameContents(owner);
+
+		for (auto& slot : _slots)
+			slot._obj->_AttachToFrameContents(owner);
+	}
+
+	void _DetachFromFrameContents() override
+	{
+		for (auto& slot : _slots)
+			slot._obj->_DetachFromFrameContents();
+
+		UIElement::_DetachFromFrameContents();
+	}
+};
+
 struct StackLTRLayoutElement : UIElement
 {
 	float paddingBetweenElements = 0;
@@ -98,111 +207,22 @@ struct StackTopDownLayoutElement : UIElement
 	}
 };
 
-struct StackExpandLTRLayoutElement : UIElement
+namespace _ {
+struct StackExpandLTRLayoutElement_Slot
 {
-	struct Slot
-	{
-		UIWeakPtr<UIObject> element;
-	};
-	static TempEditable<Slot> GetSlotTemplate()
-	{
-		return { &_slotTemplate };
-	}
-	static Slot _slotTemplate;
+	UIObject* _obj = nullptr;
+	const IPlacement* placement = nullptr;
+	bool measure = true;
+};
+} // _
 
-	std::vector<Slot> _slots;
-
+struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElement_Slot>
+{
 	float paddingBetweenElements = 0;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		if (type == EstSizeType::Expanding)
-		{
-			float size = 0;
-			for (auto& slot : _slots)
-				if (auto* ch = slot.element.Get())
-					size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-			if (_slots.size() >= 2)
-				size += paddingBetweenElements * (_slots.size() - 1);
-			return size;
-		}
-		else
-			return containerSize.x;
-	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto& slot : _slots)
-			if (auto* ch = slot.element.Get())
-				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
-		return size;
-	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
-	{
-		float p = inrect.x0;
-		float sum = 0, frsum = 0;
-		struct Item
-		{
-			UIObject* ch;
-			float minw;
-			float maxw;
-			float w;
-			float fr;
-		};
-		std::vector<Item> items;
-		std::vector<int> sorted;
-		for (auto& slot : _slots)
-		{
-			auto* ch = slot.element.Get();
-			if (!ch)
-				continue;
-			auto s = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
-			auto sw = ch->GetStyle().GetWidth();
-			float fr = sw.unit == CoordTypeUnit::Fraction ? sw.value : 1;
-			items.push_back({ ch, s.min, s.max, s.min, fr });
-			sorted.push_back(sorted.size());
-			sum += s.min;
-			frsum += fr;
-		}
-		if (_slots.size() >= 2)
-			sum += paddingBetweenElements * (_slots.size() - 1);
-		std::sort(sorted.begin(), sorted.end(), [&items](int ia, int ib)
-		{
-			const auto& a = items[ia];
-			const auto& b = items[ib];
-			return (a.maxw - a.minw) < (b.maxw - b.minw);
-		});
-		float leftover = max(inrect.GetWidth() - sum, 0.0f);
-		for (auto idx : sorted)
-		{
-			auto& item = items[idx];
-			float mylo = leftover * item.fr / frsum;
-			float w = item.minw + mylo;
-			if (w > item.maxw)
-				w = item.maxw;
-			w = roundf(w);
-			float actual_lo = w - item.minw;
-			leftover -= actual_lo;
-			frsum -= item.fr;
-			item.w = w;
-		}
-		for (const auto& item : items)
-		{
-			item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
-			p += item.w + paddingBetweenElements;
-		}
-	}
-	void OnReset() override
-	{
-		_slots.clear();
-	}
-	void CustomAppendChild(UIObject* obj) override
-	{
-		AppendChild(obj);
-		Slot slot = _slotTemplate;
-		slot.element = obj;
-		_slots.push_back(slot);
-	}
+	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
 
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
@@ -240,36 +260,20 @@ struct WrapperLTRLayoutElement : UIElement
 	}
 };
 
-struct PlacementLayoutElement : UIElement
+namespace _ {
+struct PlacementLayoutElement_Slot
 {
-	struct Slot
-	{
-		UIObject* _element = nullptr;
-		const IPlacement* placement = nullptr;
-		bool measure = true;
-	};
-	static TempEditable<Slot> GetSlotTemplate()
-	{
-		return { &_slotTemplate };
-	}
-	static Slot _slotTemplate;
+	UIObject* _obj = nullptr;
+	const IPlacement* placement = nullptr;
+	bool measure = true;
+};
+} // _
 
-	std::vector<Slot> _slots;
-
+struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
+{
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-
-	void OnReset() override;
-	void SlotIterator_Init(UIObjectIteratorData& data) override;
-	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
-	void RemoveChildImpl(UIObject* ch) override;
-	void DetachChildren(bool recursive) override;
-	void CustomAppendChild(UIObject* obj) override;
-	void PaintChildrenImpl(const UIPaintContext& ctx) override;
-	UIObject* FindLastChildContainingPos(Point2f pos) const override;
-	void _AttachToFrameContents(FrameContents* owner) override;
-	void _DetachFromFrameContents() override;
 };
 
 struct TabbedPanel : UIObjectSingleChild
