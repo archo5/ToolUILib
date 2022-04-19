@@ -472,16 +472,6 @@ template <class T> void AccSet(StyleAccessor& a, int off, T v)
 		a.owner->_OnChangeStyle();
 }
 
-IPlacement* StyleAccessor::GetPlacement() const
-{
-	return block->placement;
-}
-
-void StyleAccessor::SetPlacement(IPlacement* v)
-{
-	AccSet(*this, offsetof(StyleBlock, placement), v);
-}
-
 PainterHandle StyleAccessor::GetBackgroundPainter() const
 {
 	return block->background_painter;

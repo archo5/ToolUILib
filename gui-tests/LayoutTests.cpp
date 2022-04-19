@@ -122,12 +122,14 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
+#if 0 // TODO restore test when the advanced size constraint element will be implemented
 			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{ auto s = ui::MakeWithText<ui::Button>("One").GetStyle(); s.SetMinWidth(100); s.SetWidth(ui::Coord::Percent(30)); }
 			ui::MakeWithText<ui::Button>("Another one");
 			ui::Pop();
 			ui::Pop();
+#endif
 
 			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::StackLTRLayoutElement>();

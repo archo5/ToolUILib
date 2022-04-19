@@ -514,12 +514,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	auto style = GetStyle();
 
 	auto width = style.GetWidth();
-	Coord customCalcWidth;
-	if (!width.IsDefined())
-	{
-		auto height = Coord::Undefined();
-		GetSize(customCalcWidth, height);
-	}
 	auto minWidth = style.GetMinWidth();
 
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
@@ -529,10 +523,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	if (width.IsDefined())
 	{
 		resW = ResolveUnits(width, containerSize.x) + addM;
-	}
-	else if (customCalcWidth.IsDefined())
-	{
-		resW = ResolveUnits(customCalcWidth, containerSize.x) + addP + addM;
 	}
 	else
 	{
@@ -570,12 +560,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	auto style = GetStyle();
 
 	auto height = style.GetHeight();
-	Coord customCalcHeight;
-	if (!height.IsDefined())
-	{
-		auto width = Coord::Undefined();
-		GetSize(width, customCalcHeight);
-	}
 	auto minHeight = style.GetMinHeight();
 
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
@@ -585,10 +569,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	if (height.IsDefined())
 	{
 		resH = ResolveUnits(height, containerSize.y) + addM;
-	}
-	else if (customCalcHeight.IsDefined())
-	{
-		resH = ResolveUnits(customCalcHeight, containerSize.y) + addP + addM;
 	}
 	else
 	{
@@ -622,15 +602,6 @@ void UIObject::PerformLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 }
 
-void UIObject::_PerformPlacement(const UIRect& rect, const Size2f& containerSize)
-{
-	if (_NeedsLayout() && GetStyle().GetPlacement() && !GetStyle().GetPlacement()->applyOnLayout)
-	{
-		OnLayout(rect, containerSize);
-		OnLayoutChanged();
-	}
-}
-
 void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 {
 	lastLayoutInputRect = inRect;
@@ -650,23 +621,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 	auto style = GetStyle();
 
-	auto swidth = Coord::Undefined();
-	auto sheight = Coord::Undefined();
-	GetSize(swidth, sheight);
-
-	auto placement = style.GetPlacement();
 	UIRect rect = inRect;
-	if (placement)
-	{
-		if (!placement->applyOnLayout)
-		{
-			if (parent && !placement->fullScreenRelative)
-				rect = parent->GetContentRect();
-			else
-				rect = { 0, 0, system->eventSystem.width, system->eventSystem.height };
-		}
-		placement->OnApplyPlacement(this, rect);
-	}
 
 	UIRect Mrect = style.block->GetMarginRect();
 	UIRect Prect = CalcPaddingRect(rect);
@@ -688,14 +643,8 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 	LayoutState state = { inrect };
 	CalcLayout(inrect, state);
 
-	if (placement)
-		state.finalContentRect = inrect;
-
 	finalRectC = state.finalContentRect;
 	finalRectCP = state.finalContentRect.ExtendBy(Prect);
-
-	for (UIObject* ch = firstChild; ch; ch = ch->next)
-		ch->_PerformPlacement(finalRectC, finalRectC.GetSize());
 }
 
 UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
@@ -1193,16 +1142,6 @@ void TextElement::OnReset()
 	styleProps = GetTextStyle();
 
 	text = {};
-}
-
-void TextElement::GetSize(Coord& outWidth, Coord& outHeight)
-{
-	// TODO can we nullify styleProps?
-	auto* style = styleProps != GetTextStyle() ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
-	auto* font = style->GetFont();
-
-	outWidth = ceilf(GetTextWidth(font, style->font_size, text));
-	outHeight = style->font_size;
 }
 
 void TextElement::OnPaint(const UIPaintContext& ctx)

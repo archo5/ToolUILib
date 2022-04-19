@@ -115,7 +115,10 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		void UI() override
 		{
 			ui::LabeledProperty::Scope s("\b#");
-			ui::imm::EditInt(s.label, number, { ui::SetWidth(50) });
+
+			WPush<ui::SizeConstraintElement>().SetWidth(50);
+			ui::imm::EditInt(s.label, number);
+			WPop();
 		}
 		int Compute(ComputeInfo&) override { return number; }
 	};
@@ -127,7 +130,11 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		{
 			WPush<ui::StackLTRLayoutElement>();
 			WMakeWithText<ui::LabelFrame>("Name:");
-			ui::imm::EditString(name.c_str(), [this](const char* s) { name = s; }, { ui::SetWidth(50) });
+
+			WPush<ui::SizeConstraintElement>().SetWidth(50);
+			ui::imm::EditString(name.c_str(), [this](const char* s) { name = s; });
+			WPop();
+
 			WPop();
 		}
 		int Compute(ComputeInfo& cinfo) override
@@ -216,10 +223,14 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		for (auto& v : variables)
 		{
 			ui::LabeledProperty::Begin();
-			if (ui::imm::Button("X", { ui::SetWidth(20) }))
+
+			ui::Push<ui::SizeConstraintElement>().SetWidth(20);
+			if (ui::imm::Button("X"))
 			{
 				del = &v;
 			}
+			ui::Pop();
+
 			ui::imm::PropEditString("\bName", v.name.c_str(), [&v](const char* s) { v.name = s; });
 			ui::imm::PropEditInt("\bValue", v.value);
 			ui::LabeledProperty::End();

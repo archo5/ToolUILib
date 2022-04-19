@@ -554,10 +554,14 @@ void DataDesc::EditField()
 					ui::imm::PropEditString("\bName", SA.name.c_str(), [&SA](const char* v) { SA.name = v; });
 					ui::imm::PropEditString("\bSource", SA.src.c_str(), [&SA](const char* v) { SA.src = v; });
 					ui::imm::PropEditInt("\bOffset", SA.intVal);
-					if (ui::imm::Button("X", { ui::SetWidth(20) }))
+
+					ui::Push<ui::SizeConstraintElement>().SetWidth(20);
+					if (ui::imm::Button("X"))
 					{
 						F.structArgs.erase(F.structArgs.begin() + i);
 					}
+					ui::Pop();
+
 					ui::Pop();
 				}
 				if (ui::imm::Button("Add"))

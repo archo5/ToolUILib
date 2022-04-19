@@ -366,8 +366,6 @@ struct StyleBlock
 
 	CachedFontRef _cachedFont;
 
-	IPlacement* placement = nullptr;
-
 	PainterHandle background_painter;
 
 	Presence presence = Presence::Visible;
@@ -452,9 +450,6 @@ public:
 	explicit StyleAccessor(StyleBlockRef& r) = delete;
 	explicit StyleAccessor(StyleBlockRef& r, UIObject* o);
 
-
-	IPlacement* GetPlacement() const;
-	void SetPlacement(IPlacement* v);
 
 	PainterHandle GetBackgroundPainter() const;
 	void SetBackgroundPainter(const PainterHandle& h);

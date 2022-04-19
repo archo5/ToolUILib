@@ -676,10 +676,13 @@ struct HighElementCountTest : ui::Buildable
 			auto r = GetContentRect();
 			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));
 		}
-		void GetSize(ui::Coord& outWidth, ui::Coord& outHeight) override
+		ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
 		{
-			outWidth = 100;
-			outHeight = 1;
+			return ui::Rangef::Exact(100);
+		}
+		ui::Rangef GetFullEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type, bool forParentLayout = true) override
+		{
+			return ui::Rangef::Exact(1);
 		}
 	};
 	void Build() override

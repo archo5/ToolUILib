@@ -235,7 +235,10 @@ struct TE_ImageEditorNode : Buildable
 							MakeWithText<LabelFrame>(ncr->name);
 						else
 							EditNCRef(co.ncref);
-						imm::EditColor(co.color, false, { SetWidth(40) });
+
+						ui::Push<ui::SizeConstraintElement>().SetWidth(40);
+						imm::EditColor(co.color, false);
+						ui::Pop();
 					};
 
 					if (imm::Button("Add override"))
@@ -384,10 +387,13 @@ struct TE_ThemeEditorNode : Buildable
 								Rebuild();
 							}
 						};
+
+						Push<SizeConstraintElement>().SetWidth(100);
 						imm::EditString(
 							tmpl->name.c_str(),
 							[tmpl](const char* v) { tmpl->name = v; },
-							{ SetWidth(100), AddEventHandler(efn) });
+							{ AddEventHandler(efn) });
+						Pop();
 					}
 					Pop();
 				}

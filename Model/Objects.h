@@ -334,14 +334,12 @@ struct UIObject : IPersistentObject
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
-	virtual void GetSize(Coord& outWidth, Coord& outHeight) {}
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	virtual void CalcLayout(const UIRect& inrect, LayoutState& state);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
-	void _PerformPlacement(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
 	virtual UIRect CalcPaddingRect(const UIRect& expTgtRect);
@@ -359,7 +357,7 @@ struct UIObject : IPersistentObject
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
-	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden) && (!GetStyle().GetPlacement() || GetStyle().GetPlacement()->applyOnLayout); }
+	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden); }
 
 	virtual void RemoveChildImpl(UIObject* ch);
 	void DetachAll();
@@ -618,7 +616,8 @@ struct TextElement : UIElement
 	std::string text;
 
 	void OnReset() override;
-#if 1
+	void OnPaint(const UIPaintContext& ctx) override;
+
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return ceilf(GetTextWidth(styleProps->GetFont(), styleProps->font_size, text));
@@ -644,9 +643,6 @@ struct TextElement : UIElement
 		ret.max = ret.min;
 		return ret;
 	}
-#endif
-	void GetSize(Coord& outWidth, Coord& outHeight) override;
-	void OnPaint(const UIPaintContext& ctx) override;
 
 	TextElement& SetText(StringView t)
 	{
@@ -798,13 +794,6 @@ struct Enable : Modifier
 	bool _enable;
 	Enable(bool e) : _enable(e) {}
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
-};
-
-struct SetPlacement : Modifier
-{
-	IPlacement* _placement;
-	SetPlacement(IPlacement* placement) : _placement(placement) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetPlacement(_placement); }
 };
 
 #define UI_COORD_VALUE_PROXY(name) \
