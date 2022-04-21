@@ -251,29 +251,99 @@ void Selectable::OnReset()
 }
 
 
-static StaticID_Style sid_progress_bar_base("progress_bar_base");
-static StaticID_Style sid_progress_bar_completion("progress_bar_completion");
+void ProgressBarStyle::Serialize(/*IThemeLoader* tl, */IObjectIterator& oi) // TODO
+{
+	//tl->OnFieldAABB(oi, "padding", padding);
+	//tl->OnFieldPainter(oi, "backgroundPainter", backgroundPainter);
+
+	float shared = 0;
+	OnField(oi, "padding", shared);
+	padding = AABB2f::UniformBorder(shared);
+	OnField(oi, "paddingLeft", padding.x0);
+	OnField(oi, "paddingRight", padding.x1);
+	OnField(oi, "paddingTop", padding.y0);
+	OnField(oi, "paddingBottom", padding.y1);
+
+	shared = 0;
+	OnField(oi, "fillMargin", shared);
+	fillMargin = AABB2f::UniformBorder(shared);
+	OnField(oi, "fillMarginLeft", fillMargin.x0);
+	OnField(oi, "fillMarginRight", fillMargin.x1);
+	OnField(oi, "fillMarginTop", fillMargin.y0);
+	OnField(oi, "fillMarginBottom", fillMargin.y1);
+
+	std::string bpname;
+	OnField(oi, "backgroundPainter", bpname);
+	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
+
+	std::string fpname;
+	OnField(oi, "fillPainter", fpname);
+	fillPainter = GetCurrentTheme()->FindPainterByName(fpname);
+}
+
+static StaticID<ProgressBarStyle> sid_progress_bar_style("progress_bar");
 void ProgressBar::OnReset()
 {
-	UIElement::OnReset();
+	UIObjectSingleChild::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_progress_bar_base);
-	completionBarStyle = GetCurrentTheme()->GetStyle(sid_progress_bar_completion);
+	style = *GetCurrentTheme()->GetStruct(sid_progress_bar_style);
 	progress = 0.5f;
 }
 
 void ProgressBar::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
 
-	PaintInfo cinfo(this);
-	cinfo.rect = cinfo.rect.ShrinkBy(completionBarStyle->GetMarginRect());
-	cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
-	completionBarStyle->background_painter->Paint(cinfo);
+	if (style.backgroundPainter)
+	{
+		ph.cpa = style.backgroundPainter->Paint(this);
+	}
+
+	if (style.fillPainter)
+	{
+		PaintInfo cinfo(this);
+		cinfo.rect = cinfo.rect.ShrinkBy(style.fillMargin);
+		cinfo.rect.x1 = lerp(cinfo.rect.x0, cinfo.rect.x1, progress);
+		style.fillPainter->Paint(cinfo);
+	}
 
 	ph.PaintChildren(this, ctx);
+}
+
+Size2f ProgressBar::GetReducedContainerSize(Size2f size)
+{
+	size.x -= style.padding.x0 + style.padding.x1;
+	size.y -= style.padding.y0 + style.padding.y1;
+	return size;
+}
+
+Rangef ProgressBar::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = style.padding.x0 + style.padding.x1;
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+Rangef ProgressBar::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float pad = style.padding.y0 + style.padding.y1;
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+}
+
+void ProgressBar::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	auto padsub = rect.ShrinkBy(style.padding);
+	if (_child)
+	{
+		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		finalRectC = _child->finalRectCP;
+		finalRectCP = finalRectC.ExtendBy(style.padding);
+	}
+	else
+	{
+		finalRectCP = rect;
+		finalRectC = padsub;
+	}
 }
 
 
@@ -523,43 +593,56 @@ StyleAccessor LabeledProperty::GetLabelStyle()
 }
 
 
-SplitPane::SplitPane()
+void SeparatorLineStyle::Serialize(IObjectIterator& oi)
 {
-	// TODO
-	vertSepStyle = GetCurrentTheme()->GetStyle(sid_button);
-	StyleAccessor(vertSepStyle, this).SetWidth(8);
-	horSepStyle = GetCurrentTheme()->GetStyle(sid_button);
-	StyleAccessor(horSepStyle, this).SetHeight(8);
+	OnField(oi, "size", size);
+
+	std::string bpname;
+	OnField(oi, "backgroundPainter", bpname);
+	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
+}
+
+static StaticID<SeparatorLineStyle> sid_seplinestyle_hor("split_pane_separator_horizontal");
+static StaticID<SeparatorLineStyle> sid_seplinestyle_vert("split_pane_separator_vertical");
+void SplitPane::OnReset()
+{
+	UIElement::OnReset();
+
+	vertSepStyle = *GetCurrentTheme()->GetStruct(sid_seplinestyle_vert);
+	horSepStyle = *GetCurrentTheme()->GetStruct(sid_seplinestyle_hor);
+
+	_verticalSplit = false;
+	_children.clear();
 }
 
 static float SplitQToX(SplitPane* sp, float split)
 {
-	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
+	float hw = sp->vertSepStyle.size / 2;
 	return lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split);
 }
 
 static float SplitQToY(SplitPane* sp, float split)
 {
-	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
+	float hh = sp->horSepStyle.size / 2;
 	return lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split);
 }
 
 static float SplitXToQ(SplitPane* sp, float c)
 {
-	float hw = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth()) / 2;
+	float hw = sp->vertSepStyle.size / 2;
 	return sp->finalRectC.GetWidth() > hw * 2 ? (c - sp->finalRectC.x0 - hw) / (sp->finalRectC.GetWidth() - hw * 2) : 0;
 }
 
 static float SplitYToQ(SplitPane* sp, float c)
 {
-	float hh = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth()) / 2;
+	float hh = sp->horSepStyle.size / 2;
 	return sp->finalRectC.GetHeight() > hh * 2 ? (c - sp->finalRectC.y0 - hh) / (sp->finalRectC.GetHeight() - hh * 2) : 0;
 }
 
 static UIRect GetSplitRectH(SplitPane* sp, int which)
 {
 	float split = sp->_splits[which];
-	float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
+	float w = sp->vertSepStyle.size;
 	float hw = w / 2;
 	float x = roundf(lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split) - hw);
 	return { x, sp->finalRectC.y0, x + roundf(w), sp->finalRectC.y1 };
@@ -568,7 +651,7 @@ static UIRect GetSplitRectH(SplitPane* sp, int which)
 static UIRect GetSplitRectV(SplitPane* sp, int which)
 {
 	float split = sp->_splits[which];
-	float h = sp->ResolveUnits(sp->horSepStyle->height, sp->finalRectC.GetWidth());
+	float h = sp->horSepStyle.size;
 	float hh = h / 2;
 	float y = roundf(lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split) - hh);
 	return { sp->finalRectC.x0, y, sp->finalRectC.x1, y + roundf(h) };
@@ -580,14 +663,14 @@ static float SplitWidthAsQ(SplitPane* sp)
 	{
 		if (sp->finalRectC.GetWidth() == 0)
 			return 0;
-		float w = sp->ResolveUnits(sp->vertSepStyle->width, sp->finalRectC.GetWidth());
+		float w = sp->vertSepStyle.size;
 		return w / max(w, sp->finalRectC.GetWidth() - w);
 	}
 	else
 	{
 		if (sp->finalRectC.GetHeight() == 0)
 			return 0;
-		float w = sp->ResolveUnits(sp->vertSepStyle->height, sp->finalRectC.GetWidth());
+		float w = sp->horSepStyle.size;
 		return w / max(w, sp->finalRectC.GetHeight() - w);
 	}
 }
@@ -627,7 +710,7 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 		size_t split = 0;
 		if (!_verticalSplit)
 		{
-			float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
+			float splitWidth = vertSepStyle.size;
 			float prevEdge = finalRectC.x0;
 			for (auto* ch : _children)
 			{
@@ -648,7 +731,7 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 		}
 		else
 		{
-			float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
+			float splitHeight = horSepStyle.size;
 			float prevEdge = finalRectC.y0;
 			for (auto* ch : _children)
 			{
@@ -672,30 +755,36 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 	PaintInfo info(this);
 	if (!_verticalSplit)
 	{
-		for (size_t i = 0; i < _splits.size(); i++)
+		if (vertSepStyle.backgroundPainter)
 		{
-			auto ii = (uint16_t)i;
-			info.rect = GetSplitRectH(this, ii);
-			info.state &= ~(PS_Hover | PS_Down);
-			if (_splitUI.IsHovered(ii))
-				info.state |= PS_Hover;
-			if (_splitUI.IsPressed(ii))
-				info.state |= PS_Down;
-			vertSepStyle->background_painter->Paint(info);
+			for (size_t i = 0; i < _splits.size(); i++)
+			{
+				auto ii = (uint16_t)i;
+				info.rect = GetSplitRectH(this, ii);
+				info.state &= ~(PS_Hover | PS_Down);
+				if (_splitUI.IsHovered(ii))
+					info.state |= PS_Hover;
+				if (_splitUI.IsPressed(ii))
+					info.state |= PS_Down;
+				vertSepStyle.backgroundPainter->Paint(info);
+			}
 		}
 	}
 	else
 	{
-		for (size_t i = 0; i < _splits.size(); i++)
+		if (horSepStyle.backgroundPainter)
 		{
-			auto ii = (uint16_t)i;
-			info.rect = GetSplitRectV(this, ii);
-			info.state &= ~(PS_Hover | PS_Down);
-			if (_splitUI.IsHovered(ii))
-				info.state |= PS_Hover;
-			if (_splitUI.IsPressed(ii))
-				info.state |= PS_Down;
-			horSepStyle->background_painter->Paint(info);
+			for (size_t i = 0; i < _splits.size(); i++)
+			{
+				auto ii = (uint16_t)i;
+				info.rect = GetSplitRectV(this, ii);
+				info.state &= ~(PS_Hover | PS_Down);
+				if (_splitUI.IsHovered(ii))
+					info.state |= PS_Hover;
+				if (_splitUI.IsPressed(ii))
+					info.state |= PS_Down;
+				horSepStyle.backgroundPainter->Paint(info);
+			}
 		}
 	}
 }
@@ -767,7 +856,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	size_t split = 0;
 	if (!_verticalSplit)
 	{
-		float splitWidth = ResolveUnits(vertSepStyle->width, finalRectC.GetWidth());
+		float splitWidth = vertSepStyle.size;
 		float prevEdge = finalRectC.x0;
 		for (auto* ch : _children)
 		{
@@ -782,7 +871,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 	else
 	{
-		float splitHeight = ResolveUnits(horSepStyle->height, finalRectC.GetWidth());
+		float splitHeight = horSepStyle.size;
 		float prevEdge = finalRectC.y0;
 		for (auto* ch : _children)
 		{
@@ -795,14 +884,6 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 			prevEdge = sr.y1;
 		}
 	}
-}
-
-void SplitPane::OnReset()
-{
-	UIElement::OnReset();
-
-	_verticalSplit = false;
-	_children.clear();
 }
 
 void SplitPane::SlotIterator_Init(UIObjectIteratorData& data)

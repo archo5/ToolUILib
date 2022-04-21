@@ -13,6 +13,8 @@ struct IThemeStructLoader
 {
 	size_t id = 0;
 
+	static size_t AllocID();
+
 	virtual const char* GetName() const = 0;
 	virtual size_t GetSize() const = 0;
 	virtual void* ReadStruct(IObjectIterator&) = 0;
@@ -21,6 +23,7 @@ struct IThemeStructLoader
 
 template <class T> struct ThemeStructLoaderImpl : IThemeStructLoader
 {
+	ThemeStructLoaderImpl() { id = AllocID(); }
 	const char* GetName() const override { return T::NAME; }
 	size_t GetSize() const override { return sizeof(T); }
 	void* ReadStruct(IObjectIterator& oi) override

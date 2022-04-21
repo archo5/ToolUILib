@@ -238,14 +238,33 @@ struct Selectable : FrameElement
 	}
 };
 
-struct ProgressBar : UIElement
+
+struct ProgressBarStyle
 {
-	StyleBlockRef completionBarStyle;
+	static constexpr const char* NAME = "ProgressBarStyle";
+
+	AABB2f padding;
+	AABB2f fillMargin;
+	PainterHandle backgroundPainter;
+	PainterHandle fillPainter;
+
+	void Serialize(IObjectIterator& oi);
+};
+
+struct ProgressBar : UIObjectSingleChild
+{
+	ProgressBarStyle style;
 	float progress = 0.5f;
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
+
+	Size2f GetReducedContainerSize(Size2f size);
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
+
 
 struct FloatLimits
 {
@@ -368,13 +387,22 @@ struct LabeledProperty : UIElement
 };
 
 
+struct SeparatorLineStyle
+{
+	static constexpr const char* NAME = "SeparatorLineStyle";
+
+	float size = 8;
+	PainterHandle backgroundPainter;
+
+	void Serialize(IObjectIterator& oi);
+};
+
 struct SplitPane : UIElement
 {
-	SplitPane();
+	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-	void OnReset() override;
 	void SlotIterator_Init(UIObjectIteratorData& data) override;
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
@@ -389,8 +417,8 @@ struct SplitPane : UIElement
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
 
-	StyleBlockRef vertSepStyle; // for horizontal splitting
-	StyleBlockRef horSepStyle; // for vertical splitting
+	SeparatorLineStyle vertSepStyle; // for horizontal splitting
+	SeparatorLineStyle horSepStyle; // for vertical splitting
 	std::vector<UIObject*> _children;
 	std::vector<float> _splits;
 	bool _splitsSet = false;

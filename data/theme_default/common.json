@@ -40,16 +40,23 @@
 	"backgroundPainter": "insetbox"
 }
 
-"progress_bar_base:style":
+"split_pane_separator_horizontal:SeparatorLineStyle":
 {
-	"padding": 5,
-	"width": "100%",
-	"backgroundPainter": "insetbox"
+	size = 8
+	backgroundPainter = "button"
 }
-"progress_bar_completion:style":
+"split_pane_separator_vertical:SeparatorLineStyle":
 {
-	"margin": 2,
-	"backgroundPainter": "outsetbox"
+	size = 8
+	backgroundPainter = "button"
+}
+
+"progress_bar:ProgressBarStyle":
+{
+	padding = 5
+	fillMargin = 2
+	backgroundPainter = "insetbox"
+	fillPainter = "outsetbox"
 }
 
 "scroll_v_track:style":

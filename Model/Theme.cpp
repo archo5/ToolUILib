@@ -9,6 +9,12 @@
 
 namespace ui {
 
+size_t IThemeStructLoader::AllocID()
+{
+	static size_t v;
+	return v++;
+}
+
 struct ThemeFile : RefCountedST
 {
 	BufferHandle text;
