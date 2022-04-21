@@ -13,6 +13,56 @@ uint32_t g_curLayoutFrame = 0;
 DataCategoryTag DCT_MouseMoved[1];
 
 
+const char* EventTypeToBaseString(EventType type)
+{
+	switch (type)
+	{
+#define X(x) case EventType::x: return #x
+		X(Any);
+
+		X(Click);
+		X(Activate);
+		X(ContextMenu);
+		X(Change);
+		X(Commit);
+		X(IMChange);
+		X(BackgroundClick);
+		X(Paint);
+		X(Timer);
+		X(Tooltip);
+
+		X(MouseEnter);
+		X(MouseLeave);
+		X(MouseMove);
+		X(MouseScroll);
+		X(MouseCaptureChanged);
+		X(SetCursor);
+		X(ButtonDown);
+		X(ButtonUp);
+		X(DragStart);
+		X(DragEnd);
+		X(DragEnter);
+		X(DragLeave);
+		X(DragMove);
+		X(DragDrop);
+
+		X(GotFocus);
+		X(LostFocus);
+		X(KeyDown);
+		X(KeyUp);
+		X(KeyAction);
+		X(TextInput);
+		X(SelectionChange);
+#undef X
+
+	default:
+		if (type >= EventType::User)
+			return "User";
+		return "unknown";
+	}
+}
+
+
 Buildable* Event::GetTargetBuildable() const
 {
 	for (auto* t = target; t; t = t->parent)

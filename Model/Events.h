@@ -62,6 +62,7 @@ enum class EventType
 
 	User = 256,
 };
+const char* EventTypeToBaseString(EventType type);
 inline EventType UserEvent(int id)
 {
 	return EventType(int(EventType::User) + id);

@@ -437,8 +437,15 @@ struct TabsTest : ui::Buildable
 
 		// ------------- NEW ----------------
 		auto& tp1 = ui::Push<ui::TabbedPanel>();
-		tp1.AddTab({ "First tab", 0 });
-		tp1.AddTab({ "Second tab", 1 });
+		tp1.AddTextTab("First tab", 0);
+
+		auto& sltr = ui::PushNoAppend<ui::StackLTRLayoutElement>();
+		sltr.paddingBetweenElements = 4;
+		ui::MakeWithText<ui::LabelFrame>("Second tab");
+		ui::MakeWithText<ui::Button>("button");
+		ui::Pop();
+		tp1.AddUITab(&sltr, 1);
+
 		tp1.SetActiveTabByUID(tab1);
 		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event&)
 		{
@@ -463,8 +470,8 @@ struct TabsTest : ui::Buildable
 
 		auto& tp2 = ui::Push<ui::TabbedPanel>();
 		tp2.showCloseButton = true;
-		tp2.AddTab({ "First tab", 0 });
-		tp2.AddTab({ "Second tab", 1 });
+		tp2.AddTextTab("First tab", 0);
+		tp2.AddTextTab("Second tab", 1);
 		tp2.SetActiveTabByUID(tab2);
 		tp2.HandleEvent(&tp2, ui::EventType::Change) = [this, &tp2](ui::Event&)
 		{

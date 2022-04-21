@@ -306,7 +306,7 @@ struct UIObject : IPersistentObject
 
 	virtual void _AttachToFrameContents(FrameContents* owner);
 	virtual void _DetachFromFrameContents();
-	void _DetachFromTree();
+	virtual void _DetachFromTree();
 
 	void PO_ResetConfiguration() override;
 	void PO_BeforeDelete() override;

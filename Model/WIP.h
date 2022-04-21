@@ -248,7 +248,10 @@ struct TabbedPanel : UIObjectSingleChild
 	struct Tab
 	{
 		std::string text;
+		UIObject* obj = nullptr;
 		uintptr_t uid = UINTPTR_MAX;
+
+		float _contentWidth = 0;
 	};
 
 	std::vector<Tab> _tabs;
@@ -263,34 +266,20 @@ struct TabbedPanel : UIObjectSingleChild
 	float tabButtonYOffsetInactive = 1;
 	float tabInnerButtonMargin = 4;
 
+	UIObject* _tabBarExtension = nullptr;
 	bool showCloseButton = false;
 	std::function<void(size_t, uintptr_t)> onClose;
 	bool rebuildOnChange = true;
 
-	void AddTab(const Tab& tab)
-	{
-		_tabs.push_back(tab);
-	}
-	uintptr_t GetCurrentTabUID(uintptr_t def = UINTPTR_MAX) const
-	{
-		return _curTabNum < _tabs.size() ? _tabs[_curTabNum].uid : def;
-	}
-	bool SetActiveTabByUID(uintptr_t uid)
-	{
-		for (auto& tab : _tabs)
-		{
-			if (tab.uid == uid)
-			{
-				_curTabNum = &tab - &_tabs.front();
-				return true;
-			}
-		}
-		return false;
-	}
+	void SetTabBarExtension(UIObject* o);
+	void AddTextTab(StringView text, uintptr_t uid = UINTPTR_MAX);
+	void AddUITab(UIObject* obj, uintptr_t uid = UINTPTR_MAX);
+	uintptr_t GetCurrentTabUID(uintptr_t def = UINTPTR_MAX) const;
+	bool SetActiveTabByUID(uintptr_t uid);
 
 	template <class E> void AddEnumTab(StringView name, E value)
 	{
-		_tabs.push_back({ to_string(name), uintptr_t(value) });
+		AddTextTab(name, uintptr_t(value));
 	}
 	template <class E> E GetCurrentTabEnumValue(E def = E(0)) const
 	{
@@ -309,6 +298,14 @@ struct TabbedPanel : UIObjectSingleChild
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+	void _DetachFromTree() override;
 };
 
 } // ui

@@ -260,6 +260,64 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 }
 
 
+void TabbedPanel::SetTabBarExtension(UIObject* obj)
+{
+	if (_tabBarExtension == obj)
+		return;
+
+	if (_tabBarExtension)
+		_tabBarExtension->DetachParent();
+
+	_tabBarExtension = obj;
+
+	if (obj)
+	{
+		obj->DetachParent();
+		obj->parent = this;
+		if (system)
+			obj->_AttachToFrameContents(system);
+	}
+}
+
+void TabbedPanel::AddTextTab(StringView text, uintptr_t uid)
+{
+	Tab tab;
+	tab.text = to_string(text);
+	tab.uid = uid;
+	_tabs.push_back(tab);
+}
+
+void TabbedPanel::AddUITab(UIObject* obj, uintptr_t uid)
+{
+	Tab tab;
+	tab.obj = obj;
+	tab.uid = uid;
+	_tabs.push_back(tab);
+
+	obj->DetachParent();
+	obj->parent = this;
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+uintptr_t TabbedPanel::GetCurrentTabUID(uintptr_t def) const
+{
+	return _curTabNum < _tabs.size() ? _tabs[_curTabNum].uid : def;
+}
+
+bool TabbedPanel::SetActiveTabByUID(uintptr_t uid)
+{
+	for (auto& tab : _tabs)
+	{
+		if (tab.uid == uid)
+		{
+			_curTabNum = &tab - &_tabs.front();
+			return true;
+		}
+	}
+	return false;
+}
+
 static StaticID_Style sid_tab_panel("tab_panel");
 static StaticID_Style sid_tab_button("tab_button");
 static StaticID_Style sid_tab_close_button("tab_close_button");
@@ -269,6 +327,7 @@ void TabbedPanel::OnReset()
 	UIObjectSingleChild::OnReset();
 
 	_tabs.clear();
+	_tabBarExtension = nullptr;
 	//_curTabNum = 0;
 	panelStyle = GetCurrentTheme()->GetStyle(sid_tab_panel);
 	tabButtonStyle = GetCurrentTheme()->GetStyle(sid_tab_button);
@@ -293,7 +352,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 	{
 		size_t id = &tab - &_tabs.front();
 
-		float tw = GetTextWidth(tbFont, tbFontSize, tab.text);
+		float tw = tab._contentWidth;
 		float x1 = x0 + tw + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
 
 		if (showCloseButton)
@@ -333,15 +392,25 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 			pi.SetChecked(true);
 		auto cpa = tabButtonStyle->background_painter->Paint(pi);
 
-		draw::TextLine(tbFont, tbFontSize,
-			x0 + tabButtonStyle->padding_left + cpa.offset.x,
-			y0 + tabButtonStyle->padding_top + tbFontSize + cpa.offset.y,
-			tab.text,
-			cpa.HasTextColor() ? cpa.GetTextColor() : tabButtonStyle->text_color);
+		if (tab.obj)
+		{
+			tab.obj->Paint(ctx);
+		}
+		else
+		{
+			draw::TextLine(tbFont, tbFontSize,
+				x0 + tabButtonStyle->padding_left + cpa.offset.x,
+				y0 + tabButtonStyle->padding_top + tbFontSize + cpa.offset.y,
+				tab.text,
+				cpa.HasTextColor() ? cpa.GetTextColor() : tabButtonStyle->text_color);
+		}
 
 		x0 = x1;
 	}
 	btnRect.x1 = x0;
+
+	if (_tabBarExtension)
+		_tabBarExtension->Paint(ctx);
 
 	PaintInfo pi(this);
 	pi.rect.y0 += tabHeight - tabButtonOverlap;
@@ -377,7 +446,7 @@ void TabbedPanel::OnEvent(Event& e)
 	int tbFontSize = tabButtonStyle->font_size;
 	for (auto& tab : _tabs)
 	{
-		float tw = GetTextWidth(tbFont, tbFontSize, tab.text);
+		float tw = tab._contentWidth;
 		float x1 = x0 + tw + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
 		if (showCloseButton)
 		{
@@ -454,11 +523,159 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	auto subr = rect;
 	subr.y0 += tabHeight - tabButtonOverlap;
 	subr = subr.ShrinkBy(panelStyle->GetPaddingRect());
+
+	auto* tbFont = tabButtonStyle->GetFont();
+	int tbFontSize = tabButtonStyle->font_size;
+	auto cr = rect;
+	float x0 = cr.x0 + 4;
+	float x1 = cr.x1 - 4;
+	float y0 = cr.y0;
+	float y1 = y0 + tabHeight;
+	for (auto& tab : _tabs)
+	{
+		if (tab.obj)
+		{
+			tab._contentWidth = tab.obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
+		}
+		else
+		{
+			tab._contentWidth = GetTextWidth(tbFont, tbFontSize, tab.text);
+		}
+		if (tab.obj)
+		{
+			float xbase = x0 + tabButtonStyle->padding_left;
+			UIRect trect = { xbase, y0, xbase + tab._contentWidth, y1 };
+			tab.obj->PerformLayout(trect, trect.GetSize());
+		}
+
+		float tw = tab._contentWidth + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
+		if (showCloseButton)
+		{
+			tw += tabInnerButtonMargin + tabCloseButtonStyle->width.value;
+		}
+		x0 += tw;
+	}
+	if (_tabBarExtension)
+	{
+		UIRect xrect = { x0, y0, x1, y1 };
+		_tabBarExtension->PerformLayout(xrect, xrect.GetSize());
+	}
+
 	if (_child)
 	{
 		_child->PerformLayout(subr, subr.GetSize());
 	}
 	finalRectC = finalRectCP = rect;
+}
+
+UIObject* TabbedPanel::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	auto id = data.data0++;
+	for (auto& tab : _tabs)
+		if (tab.obj && id-- == 0)
+			return tab.obj;
+	if (_tabBarExtension && id-- == 0)
+		return _tabBarExtension;
+	if (_child && id-- == 0)
+		return _child;
+	return nullptr;
+}
+
+void TabbedPanel::RemoveChildImpl(UIObject* ch)
+{
+	if (_tabBarExtension == ch)
+	{
+		_tabBarExtension = nullptr;
+		return;
+	}
+
+	for (auto& tab : _tabs)
+	{
+		if (tab.obj == ch)
+		{
+			tab.obj = nullptr;
+			return;
+		}
+	}
+
+	UIObjectSingleChild::RemoveChildImpl(ch);
+}
+
+void TabbedPanel::DetachChildren(bool recursive)
+{
+	if (_tabBarExtension)
+	{
+		if (recursive)
+			_tabBarExtension->DetachChildren(true);
+		if (system)
+			_tabBarExtension->_DetachFromTree();
+		_tabBarExtension->parent = nullptr;
+	}
+	for (auto& tab : _tabs)
+	{
+		if (tab.obj)
+		{
+			if (recursive)
+				tab.obj->DetachChildren(true);
+			if (system)
+				tab.obj->_DetachFromTree();
+			tab.obj->parent = nullptr;
+		}
+	}
+
+	UIObjectSingleChild::DetachChildren(recursive);
+}
+
+UIObject* TabbedPanel::FindLastChildContainingPos(Point2f pos) const
+{
+	if (_tabBarExtension)
+		if (_tabBarExtension->Contains(pos))
+			return _tabBarExtension;
+
+	for (auto& tab : _tabs)
+		if (tab.obj && tab.obj->Contains(pos))
+			return tab.obj;
+
+	return UIObjectSingleChild::FindLastChildContainingPos(pos);
+}
+
+void TabbedPanel::_AttachToFrameContents(FrameContents* owner)
+{
+	UIObjectSingleChild::_AttachToFrameContents(owner);
+
+	for (auto& tab : _tabs)
+		if (tab.obj)
+			tab.obj->_AttachToFrameContents(owner);
+
+	if (_tabBarExtension)
+		_tabBarExtension->_AttachToFrameContents(owner);
+}
+
+void TabbedPanel::_DetachFromFrameContents()
+{
+	if (_tabBarExtension)
+		_tabBarExtension->_DetachFromFrameContents();
+
+	for (auto& tab : _tabs)
+		if (tab.obj)
+			tab.obj->_DetachFromFrameContents();
+
+	UIObjectSingleChild::_DetachFromFrameContents();
+}
+
+void TabbedPanel::_DetachFromTree()
+{
+	if (!(flags & UIObject_IsInTree))
+		return;
+
+	if (_tabBarExtension)
+		_tabBarExtension->_DetachFromTree();
+
+	for (auto& tab : _tabs)
+		if (tab.obj)
+			tab.obj->_DetachFromTree();
+
+	UIObjectSingleChild::_DetachFromTree();
 }
 
 } // ui

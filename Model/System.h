@@ -158,6 +158,13 @@ struct UIContainer
 		return ret;
 	}
 
+	template<class T, class = typename T::IsElement> T& PushNoAppend()
+	{
+		auto* obj = _Alloc<T>();
+		UI_DEBUG_FLOW(printf("  push-no-append [%d] %s\n", objectStackSize, typeid(*obj).name()));
+		_Push(obj);
+		return *obj;
+	}
 	template<class T, class = typename T::IsElement> T& Push()
 	{
 		auto* obj = _Alloc<T>();
@@ -243,6 +250,10 @@ template <class T, class = typename T::IsElement> inline T& MakeWithTextf(const 
 	auto& ret = UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
 	va_end(args);
 	return ret;
+}
+template <class T, class = typename T::IsElement> inline T& PushNoAppend()
+{
+	return UIContainer::GetCurrent()->PushNoAppend<T>();
 }
 template <class T, class = typename T::IsElement> inline T& Push()
 {

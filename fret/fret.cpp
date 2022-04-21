@@ -135,7 +135,7 @@ struct MainWindowContents : ui::Buildable
 			int nf = 0;
 			for (auto* f : workspace.openedFiles)
 			{
-				tpFiles.AddTab({ f->ddFile->name, uintptr_t(nf++) });
+				tpFiles.AddTextTab(f->ddFile->name, uintptr_t(nf++));
 			}
 			tpFiles.SetActiveTabByUID(workspace.curOpenedFile);
 			tpFiles.HandleEvent(&tpFiles, ui::EventType::Commit) = [this, &tpFiles](ui::Event&)
@@ -164,11 +164,11 @@ struct MainWindowContents : ui::Buildable
 							// right
 							auto& tp = ui::Push<ui::TabbedPanel>();
 							{
-								tp.AddTab({ "Inspect", uintptr_t(SubtabType::Inspect) });
-								tp.AddTab({ "Highlights", uintptr_t(SubtabType::Highlights) });
-								tp.AddTab({ "Markers", uintptr_t(SubtabType::Markers) });
-								tp.AddTab({ "Structures", uintptr_t(SubtabType::Structures) });
-								tp.AddTab({ "Images", uintptr_t(SubtabType::Images) });
+								tp.AddEnumTab("Inspect", SubtabType::Inspect);
+								tp.AddEnumTab("Highlights", SubtabType::Highlights);
+								tp.AddEnumTab("Markers", SubtabType::Markers);
+								tp.AddEnumTab("Structures", SubtabType::Structures);
+								tp.AddEnumTab("Images", SubtabType::Images);
 
 								tp.SetActiveTabByUID(uintptr_t(workspace.curSubtab));
 								tp.HandleEvent(&tp, ui::EventType::Commit) = [this, &tp](ui::Event&)

@@ -348,17 +348,76 @@ struct TE_ThemeEditorNode : Buildable
 		topMenu.back().submenu.push_back(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
 		Allocate<TopMenu>(GetNativeWindow(), topMenu);
 
-		//auto& tp = Push<TabbedPanel>();
+#if 1
+		auto& tp = Push<TabbedPanel>();
+		for (TE_Template* tmpl : theme->templates)
+		{
+			if (editNameTemplate != tmpl)
+			{
+				auto& w = PushNoAppend<WrapperElement>();
+				auto& txt = Text(tmpl->name);
+				//txt.flags |= UIObject_DB_CaptureMouseOnLeftClick;
+				txt.HandleEvent(EventType::Click) = [this, tmpl](Event& e)
+				{
+					if (e.numRepeats == 1)
+					{
+						editNameTemplate = tmpl;
+						Rebuild();
+					}
+				};
+				Pop();
+				tp.AddUITab(&w, uintptr_t(tmpl));
+			}
+			else
+			{
+				auto efn = [this](Event& e)
+				{
+					if (e.type == EventType::LostFocus)
+					{
+						editNameTemplate = nullptr;
+						Rebuild();
+					}
+				};
+
+				auto& w = PushNoAppend<WrapperElement>();
+				Push<SizeConstraintElement>().SetWidth(100);
+				imm::EditString(
+					tmpl->name.c_str(),
+					[tmpl](const char* v) { tmpl->name = v; },
+					{ AddEventHandler(efn) });
+				Pop();
+				Pop();
+				tp.AddUITab(&w, uintptr_t(tmpl));
+			}
+		}
+		tp.SetActiveTabByEnumValue(theme->curTemplate);
+		tp.HandleEvent(&tp, EventType::Change) = [this, &tp](Event&)
+		{
+			theme->curTemplate = tp.GetCurrentTabEnumValue<TE_Template*>();
+			Rebuild();
+		};
+
+		auto& w = PushNoAppend<StackLTRLayoutElement>();
+		if (imm::Button("+"))
+		{
+			auto* p = new TE_Template(theme);
+			p->name = "<name>";
+			theme->templates.push_back(p);
+			Rebuild();
+		}
+		Pop();
+		tp.SetTabBarExtension(&w);
+
+		if (theme->curTemplate)
+		{
+			auto& pen = Make<TE_TemplateEditorNode>();
+			pen.theme = theme;
+			pen.tmpl = theme->curTemplate;
+		}
+		Pop();
+#else
 		Push<TabGroup>();
 		{
-#if 0
-			for (TE_Template* tmpl : theme->templates)
-				tp.AddEnumTab(tmpl->name, tmpl);
-			tp.SetActiveTabByEnumValue(theme->curTemplate);
-			tp.HandleEvent(&tp, EventType::Change) = [this](Event&)
-			{
-			};
-#endif
 			Push<TabButtonList>();
 			{
 				for (TE_Template* tmpl : theme->templates)
@@ -418,6 +477,7 @@ struct TE_ThemeEditorNode : Buildable
 			}
 		}
 		Pop();
+#endif
 	}
 
 	TE_Theme* theme;
