@@ -649,15 +649,15 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("H").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._hue, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, sat{ _color._sat }, val{ _color._val }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, sat{ _color._sat }, val{ _color._val }](const PaintInfo& info)
 				{
-					prev->Paint(info);
+					if (prev)
+						prev->Paint(info);
 					for (int i = 0; i < 6; i++)
 						DrawHGradQuad(RectHSlice(info.rect, i, 6), Color4f::HSV(i / 6.0f, sat, val), Color4f::HSV((i + 1) / 6.0f, sat, val));
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._hue) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -670,14 +670,13 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("S").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._sat, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, hue{ _color._hue }, val{ _color._val }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, hue{ _color._hue }, val{ _color._val }](const PaintInfo& info)
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, 0, val), Color4f::HSV(hue, 1, val));
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._sat) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -690,14 +689,13 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("V").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._val, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateHSV(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, hue{ _color._hue }, sat{ _color._sat }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, hue{ _color._hue }, sat{ _color._sat }](const PaintInfo& info)
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, Color4f::HSV(hue, sat, 0), Color4f::HSV(hue, sat, 1));
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._val) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateHSV(); });
@@ -710,14 +708,13 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("R").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.r, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { 0, col.g, col.b }, { 1, col.g, col.b });
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._rgba.r) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
@@ -730,14 +727,13 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("G").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.g, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, 0, col.b }, { col.r, 1, col.b });
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._rgba.g) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });
@@ -750,14 +746,13 @@ void ColorPicker::Build()
 				MakeWithText<SizeConstraintElement>("B").SetWidth(10);
 				auto& sl = Make<Slider>().Init(_color._rgba.b, limit);
 				sl.HandleEvent(EventType::Change) = [this](Event&) { _color._UpdateRGB(); };
-				StyleAccessor a = sl.GetTrackStyle();
-				a.SetBackgroundPainter(CreateFunctionPainter([prev{ a.GetBackgroundPainter() }, col{ _color._rgba }](const PaintInfo& info)
+				sl.style.trackBasePainter = CreateFunctionPainter([prev{ sl.style.trackBasePainter }, col{ _color._rgba }](const PaintInfo& info)
 				{
 					prev->Paint(info);
 					DrawHGradQuad(info.rect, { col.r, col.g, 0 }, { col.r, col.g, 1 });
 					return ContentPaintAdvice{};
-				}));
-				sl.GetTrackFillStyle().SetBackgroundPainter(EmptyPainter::Get());
+				});
+				sl.style.trackFillPainter = EmptyPainter::Get();
 
 				Push<SizeConstraintElement>().SetWidth(50);
 				Make<Textbox>().Init(_color._rgba.b) + AddEventHandler(EventType::Change, [this](Event&) { _color._UpdateRGB(); });

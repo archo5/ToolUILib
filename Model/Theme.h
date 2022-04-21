@@ -9,6 +9,8 @@
 
 namespace ui {
 
+struct ThemeData;
+
 struct IThemeStructLoader
 {
 	size_t id = 0;
@@ -17,7 +19,7 @@ struct IThemeStructLoader
 
 	virtual const char* GetName() const = 0;
 	virtual size_t GetSize() const = 0;
-	virtual void* ReadStruct(IObjectIterator&) = 0;
+	virtual void* ReadStruct(ThemeData&, IObjectIterator&) = 0;
 	virtual void FreeStruct(void*) = 0;
 };
 
@@ -26,10 +28,10 @@ template <class T> struct ThemeStructLoaderImpl : IThemeStructLoader
 	ThemeStructLoaderImpl() { id = AllocID(); }
 	const char* GetName() const override { return T::NAME; }
 	size_t GetSize() const override { return sizeof(T); }
-	void* ReadStruct(IObjectIterator& oi) override
+	void* ReadStruct(ThemeData& curTheme, IObjectIterator& oi) override
 	{
 		T* data = new T;
-		data->Serialize(oi);
+		data->Serialize(curTheme, oi);
 		return data;
 	}
 	void FreeStruct(void* data) override { delete (T*)data; }
@@ -47,6 +49,9 @@ struct IThemeLoader
 	virtual Color4b LoadColor(const FieldInfo& FI) = 0;
 	virtual draw::ImageSetHandle FindImageSet(const std::string& name) = 0;
 };
+
+void OnFieldBorderBox(IObjectIterator& oi, const FieldInfo& FI, AABB2f& bbox);
+void OnFieldPainter(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, PainterHandle& ph);
 
 using StaticID_Color = StaticID<Color4b>;
 using StaticID_ImageSet = StaticID<draw::ImageSet>;

@@ -10,22 +10,10 @@
 
 namespace ui {
 
-void FrameStyle::Serialize(/*IThemeLoader* tl, */IObjectIterator& oi) // TODO
+void FrameStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 {
-	//tl->OnFieldAABB(oi, "padding", padding);
-	//tl->OnFieldPainter(oi, "backgroundPainter", backgroundPainter);
-
-	float shared = 0;
-	OnField(oi, "padding", shared);
-	padding = AABB2f::UniformBorder(shared);
-	OnField(oi, "paddingLeft", padding.x0);
-	OnField(oi, "paddingRight", padding.x1);
-	OnField(oi, "paddingTop", padding.y0);
-	OnField(oi, "paddingBottom", padding.y1);
-
-	std::string bpname;
-	OnField(oi, "backgroundPainter", bpname);
-	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
+	OnFieldBorderBox(oi, "padding", padding);
+	OnFieldPainter(oi, td, "backgroundPainter", backgroundPainter);
 }
 
 
@@ -251,34 +239,12 @@ void Selectable::OnReset()
 }
 
 
-void ProgressBarStyle::Serialize(/*IThemeLoader* tl, */IObjectIterator& oi) // TODO
+void ProgressBarStyle::Serialize(ThemeData& td, IObjectIterator& oi) // TODO
 {
-	//tl->OnFieldAABB(oi, "padding", padding);
-	//tl->OnFieldPainter(oi, "backgroundPainter", backgroundPainter);
-
-	float shared = 0;
-	OnField(oi, "padding", shared);
-	padding = AABB2f::UniformBorder(shared);
-	OnField(oi, "paddingLeft", padding.x0);
-	OnField(oi, "paddingRight", padding.x1);
-	OnField(oi, "paddingTop", padding.y0);
-	OnField(oi, "paddingBottom", padding.y1);
-
-	shared = 0;
-	OnField(oi, "fillMargin", shared);
-	fillMargin = AABB2f::UniformBorder(shared);
-	OnField(oi, "fillMarginLeft", fillMargin.x0);
-	OnField(oi, "fillMarginRight", fillMargin.x1);
-	OnField(oi, "fillMarginTop", fillMargin.y0);
-	OnField(oi, "fillMarginBottom", fillMargin.y1);
-
-	std::string bpname;
-	OnField(oi, "backgroundPainter", bpname);
-	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
-
-	std::string fpname;
-	OnField(oi, "fillPainter", fpname);
-	fillPainter = GetCurrentTheme()->FindPainterByName(fpname);
+	OnFieldBorderBox(oi, "padding", padding);
+	OnFieldBorderBox(oi, "fillMargin", fillMargin);
+	OnFieldPainter(oi, td, "backgroundPainter", backgroundPainter);
+	OnFieldPainter(oi, td, "fillPainter", fillPainter);
 }
 
 static StaticID<ProgressBarStyle> sid_progress_bar_style("progress_bar");
@@ -347,19 +313,26 @@ void ProgressBar::OnLayout(const UIRect& rect, const Size2f& containerSize)
 }
 
 
-static StaticID_Style sid_slider_h_base("slider_h_base");
-static StaticID_Style sid_slider_h_track("slider_h_track");
-static StaticID_Style sid_slider_h_track_fill("slider_h_track_fill");
-static StaticID_Style sid_slider_h_thumb("slider_h_thumb");
+void SliderStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	OnField(oi, "minSize", minSize);
+	OnField(oi, "trackSize", trackSize);
+	OnFieldBorderBox(oi, "trackMargin", trackMargin);
+	OnFieldBorderBox(oi, "trackFillMargin", trackFillMargin);
+	OnFieldBorderBox(oi, "thumbExtend", thumbExtend);
+	OnFieldPainter(oi, td, "backgroundPainter", backgroundPainter);
+	OnFieldPainter(oi, td, "trackBasePainter", trackBasePainter);
+	OnFieldPainter(oi, td, "trackFillPainter", trackFillPainter);
+	OnFieldPainter(oi, td, "thumbPainter", thumbPainter);
+}
+
+static StaticID<SliderStyle> sid_slider_style_hor("slider_style_horizontal");
 void Slider::OnReset()
 {
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_slider_h_base);
-	trackStyle = GetCurrentTheme()->GetStyle(sid_slider_h_track);
-	trackFillStyle = GetCurrentTheme()->GetStyle(sid_slider_h_track_fill);
-	thumbStyle = GetCurrentTheme()->GetStyle(sid_slider_h_thumb);
+	style = *GetCurrentTheme()->GetStruct(sid_slider_style_hor);
 
 	_value = 0;
 	_limits = { 0, 1, 0 };
@@ -368,25 +341,28 @@ void Slider::OnReset()
 void Slider::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	if (style.backgroundPainter)
+		ph.cpa = style.backgroundPainter->Paint(this);
 
 	// track
 	PaintInfo trkinfo(this);
-	trkinfo.rect = trkinfo.rect.ShrinkBy(trackStyle->GetMarginRect());
-	trackStyle->background_painter->Paint(trkinfo);
+	trkinfo.rect = trkinfo.rect.ShrinkBy(style.trackMargin);
+	if (style.trackBasePainter)
+		style.trackBasePainter->Paint(trkinfo);
 
 	// track fill
-	trkinfo.rect = trkinfo.rect.ShrinkBy(trackStyle->GetPaddingRect());
+	trkinfo.rect = trkinfo.rect.ShrinkBy(style.trackFillMargin);
 	trkinfo.rect.x1 = round(lerp(trkinfo.rect.x0, trkinfo.rect.x1, ValueToQ(_value)));
 	auto prethumb = trkinfo.rect;
 
-	trkinfo.rect = trkinfo.rect.ExtendBy(trackFillStyle->GetPaddingRect());
-	trackFillStyle->background_painter->Paint(trkinfo);
+	if (style.trackFillPainter)
+		style.trackFillPainter->Paint(trkinfo);
 
 	// thumb
 	prethumb.x0 = prethumb.x1;
-	trkinfo.rect = prethumb.ExtendBy(thumbStyle->GetPaddingRect());
-	thumbStyle->background_painter->Paint(trkinfo);
+	trkinfo.rect = prethumb.ExtendBy(style.thumbExtend);
+	if (style.thumbPainter)
+		style.thumbPainter->Paint(trkinfo);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -412,9 +388,7 @@ void Slider::OnEvent(Event& e)
 
 double Slider::PosToQ(double x)
 {
-	auto rect = GetPaddingRect();
-	rect = rect.ShrinkBy(trackStyle->GetMarginRect());
-	rect = rect.ShrinkBy(trackStyle->GetPaddingRect());
+	auto rect = finalRectCP.ShrinkBy(style.trackMargin);
 	float fw = rect.GetWidth();
 	return clamp(fw ? float(x - rect.x0) / fw : 0, 0.0f, 1.0f);
 }
@@ -593,13 +567,10 @@ StyleAccessor LabeledProperty::GetLabelStyle()
 }
 
 
-void SeparatorLineStyle::Serialize(IObjectIterator& oi)
+void SeparatorLineStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 {
 	OnField(oi, "size", size);
-
-	std::string bpname;
-	OnField(oi, "backgroundPainter", bpname);
-	backgroundPainter = GetCurrentTheme()->FindPainterByName(bpname);
+	OnFieldPainter(oi, td, "backgroundPainter", backgroundPainter);
 }
 
 static StaticID<SeparatorLineStyle> sid_seplinestyle_hor("split_pane_separator_horizontal");

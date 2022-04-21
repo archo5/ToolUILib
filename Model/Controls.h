@@ -15,7 +15,7 @@ struct FrameStyle
 	AABB2f padding;
 	PainterHandle backgroundPainter;
 
-	void Serialize(IObjectIterator& oi);
+	void Serialize(ThemeData& tl, IObjectIterator& oi);
 };
 
 template <class T> struct PaddingStyleMixin
@@ -248,7 +248,7 @@ struct ProgressBarStyle
 	PainterHandle backgroundPainter;
 	PainterHandle fillPainter;
 
-	void Serialize(IObjectIterator& oi);
+	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
 struct ProgressBar : UIObjectSingleChild
@@ -273,11 +273,37 @@ struct FloatLimits
 	double step = 0;
 };
 
+struct SliderStyle
+{
+	static constexpr const char* NAME = "SliderStyle";
+
+	float minSize = 20;
+	float trackSize = 0;
+	AABB2f trackMargin = AABB2f::UniformBorder(0);
+	AABB2f trackFillMargin = AABB2f::UniformBorder(0);
+	AABB2f thumbExtend = AABB2f::UniformBorder(0);
+	PainterHandle backgroundPainter;
+	PainterHandle trackBasePainter;
+	PainterHandle trackFillPainter;
+	PainterHandle thumbPainter;
+
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
 struct Slider : UIElement
 {
+	SliderStyle style;
+
+	double _value = 0;
+	FloatLimits _limits = { 0, 1, 0 };
+	float _mxoff = 0;
+
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::AtLeast(0); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::AtLeast(style.minSize); }
 
 	double PosToQ(double x);
 	double QToValue(double q);
@@ -303,19 +329,6 @@ struct Slider : UIElement
 		HandleEvent(EventType::Change) = [this, &vp](Event&) { vp = GetValue(); };
 		return *this;
 	}
-
-	StyleAccessor GetTrackStyle() { return StyleAccessor(trackStyle, this); }
-	StyleAccessor GetTrackFillStyle() { return StyleAccessor(trackFillStyle, this); }
-	StyleAccessor GetThumbStyle() { return StyleAccessor(thumbStyle, this); }
-
-	double _value = 0;
-	FloatLimits _limits = { 0, 1, 0 };
-
-	StyleBlockRef trackStyle;
-	StyleBlockRef trackFillStyle;
-	StyleBlockRef thumbStyle;
-
-	float _mxoff = 0;
 };
 
 
@@ -394,7 +407,7 @@ struct SeparatorLineStyle
 	float size = 8;
 	PainterHandle backgroundPainter;
 
-	void Serialize(IObjectIterator& oi);
+	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
 struct SplitPane : UIElement

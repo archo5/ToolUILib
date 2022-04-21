@@ -1,23 +1,15 @@
-"slider_h_base:style":
+
+"slider_style_horizontal:SliderStyle":
 {
-	paddingTop = 20
-	width = "1fr"
-}
-"slider_h_track:style":
-{
-	margin = 8
-	backgroundPainter = "slider_track"
-}
-"slider_h_track_fill:style":
-{
-	margin = 8
-	backgroundPainter = "slider_track_fill"
-}
-"slider_h_thumb:style":
-{
-	paddingV = 6
-	paddingH = 4
-	backgroundPainter = "button"
+	minSize = 20
+	trackSize = 0
+	trackMargin = 8
+	trackFillMargin = 0
+	thumbExtendH = 4
+	thumbExtendV = 6
+	trackBasePainter = "slider_track"
+	trackFillPainter = "slider_track_fill"
+	thumbPainter = "button"
 }
 
 // TODO replace with insetbox/outsetbox + shrink passthru painter?

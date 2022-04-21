@@ -294,12 +294,11 @@ struct SlidersTest : ui::Buildable
 		static float sldval3 = 0.63f;
 		{
 			auto& s = ui::Make<ui::Slider>().Init(sldval3, { 0, 1 });
-			ui::StyleAccessor a = s.GetTrackStyle();
 			auto lp = ui::LayerPainter::Create();
-			lp->layers.push_back(a.GetBackgroundPainter());
+			lp->layers.push_back(s.style.trackBasePainter);
 			lp->layers.push_back(new MyGradientPainter);
-			a.SetBackgroundPainter(lp);
-			s.GetTrackFillStyle().SetBackgroundPainter(ui::EmptyPainter::Get());
+			s.style.trackBasePainter = lp;
+			s.style.trackFillPainter = ui::EmptyPainter::Get();
 		}
 		ui::LabeledProperty::End();
 

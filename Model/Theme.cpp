@@ -67,6 +67,74 @@ template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const Fiel
 		val = EnumKeys<E>::StringToValue(str.c_str());
 }
 
+void OnFieldBorderBox(IObjectIterator& oi, const FieldInfo& FI, AABB2f& bbox)
+{
+	if (!oi.IsUnserializer())
+		return;
+
+	std::string name = FI.name;
+	FieldInfo FIcopy = FI;
+
+	float val = 0;
+	OnField(oi, FIcopy, val);
+	bbox = AABB2f::UniformBorder(val);
+
+	name = FI.name;
+	name += "H";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.x0 = bbox.x1 = val;
+
+	name = FI.name;
+	name += "V";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.y0 = bbox.y1 = val;
+
+	name = FI.name;
+	name += "Left";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.x0 = val;
+
+	name = FI.name;
+	name += "Right";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.x1 = val;
+
+	name = FI.name;
+	name += "Top";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.y0 = val;
+
+	name = FI.name;
+	name += "Bottom";
+	FIcopy.name = name.c_str();
+	val = NAN;
+	OnField(oi, FIcopy, val);
+	if (isfinite(val))
+		bbox.y1 = val;
+}
+
+void OnFieldPainter(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, PainterHandle& ph)
+{
+	std::string text;
+	OnField(oi, FI, text);
+	ph = td.FindPainterByName(text);
+}
+
 
 static const char* EnumKeys_Presence[] =
 {
@@ -171,13 +239,13 @@ StyleBlockRef ThemeData::FindStyleByName(const std::string& name)
 	return {};
 }
 
-static void InitStruct(ThemeData::CustomStructData& csd, IThemeStructLoader* loader)
+static void InitStruct(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader)
 {
 	csd.structLoader = loader;
 	JSONUnserializerObjectIterator oi;
 	oi.Parse("{}");
 	oi.BeginObject({}, loader->GetName());
-	csd.defaultInstance = loader->ReadStruct(oi);
+	csd.defaultInstance = loader->ReadStruct(td, oi);
 }
 
 static ThemeData::CustomStructData& GetStructData(ThemeData& td, IThemeStructLoader* loader)
@@ -186,7 +254,7 @@ static ThemeData::CustomStructData& GetStructData(ThemeData& td, IThemeStructLoa
 	{
 		td._cachedStructs.resize(loader->id + 1);
 		auto csd = new ThemeData::CustomStructData;
-		InitStruct(*csd, loader);
+		InitStruct(td, *csd, loader);
 		td._cachedStructs[loader->id] = csd;
 	}
 	return *td._cachedStructs[loader->id];
@@ -200,7 +268,7 @@ void* LoadStructFromSource(ThemeData& td, ThemeData::CustomStructData& csd, IThe
 	{
 		auto* tf = static_cast<ThemeFile*>(it->value.get_ptr());
 		tf->unserializer.BeginObject(it->key.c_str(), loader->GetName());
-		void* data = loader->ReadStruct(tf->unserializer);
+		void* data = loader->ReadStruct(td, tf->unserializer);
 		tf->unserializer.EndObject();
 
 		csd.instances.insert(name, data);
