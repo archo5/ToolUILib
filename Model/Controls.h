@@ -40,6 +40,7 @@ enum class DefaultFrameStyle
 {
 	GroupBox,
 	Selectable,
+	ListBox,
 };
 
 struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
@@ -56,9 +57,9 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
-	FrameElement& RemoveStyle();
-	FrameElement& SetStyle(const StaticID<FrameStyle>& id);
-	FrameElement& SetDefaultStyle(DefaultFrameStyle style);
+	FrameElement& RemoveFrameStyle();
+	FrameElement& SetFrameStyle(const StaticID<FrameStyle>& id);
+	FrameElement& SetDefaultFrameStyle(DefaultFrameStyle style);
 };
 
 struct LabelFrame : PaddedWrapperElement
@@ -223,7 +224,7 @@ struct StateButtonSkin : StateToggleVisualBase
 };
 
 
-struct ListBoxFrame : PaddedWrapperElement
+struct ListBoxFrame : FrameElement
 {
 	void OnReset() override;
 };

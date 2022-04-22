@@ -39,6 +39,20 @@ struct MessageLogView : FillerElement
 };
 
 
+struct TableStyle
+{
+	static constexpr const char* NAME = "TableStyle";
+
+	AABB2f cellPadding;
+	AABB2f rowHeaderPadding;
+	AABB2f colHeaderPadding;
+	PainterHandle cellBackgroundPainter;
+	PainterHandle rowHeaderBackgroundPainter;
+	PainterHandle colHeaderBackgroundPainter;
+
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
 struct TableDataSource
 {
 	virtual size_t GetNumRows() = 0;
@@ -51,8 +65,10 @@ struct TableDataSource
 	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
 };
 
-struct TableView : PaddedFillerElement
+struct TableView : FrameElement
 {
+	TableStyle style;
+
 	TableView();
 	~TableView();
 	void OnReset() override;
@@ -75,9 +91,11 @@ struct TableView : PaddedFillerElement
 	size_t GetHoverRow() const;
 
 	bool enableRowHeader = true;
+#if 1
 	StyleBlockRef cellStyle;
 	StyleBlockRef rowHeaderStyle;
 	StyleBlockRef colHeaderStyle;
+#endif
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 
@@ -97,7 +115,7 @@ struct TreeDataSource
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
 };
 
-struct TreeView : FillerElement
+struct TreeView : FrameElement
 {
 	struct PaintState;
 

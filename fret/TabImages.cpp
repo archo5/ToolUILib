@@ -85,7 +85,7 @@ void TabImages::Build()
 		{
 			if (workspace->desc.curImage < workspace->desc.images.size())
 			{
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				auto& img = ui::Make<ui::ImageElement>();
 				img.SetLayoutMode(ui::ImageLayoutMode::Fill);
 				img.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());

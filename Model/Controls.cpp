@@ -68,13 +68,13 @@ void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	}
 }
 
-FrameElement& FrameElement::RemoveStyle()
+FrameElement& FrameElement::RemoveFrameStyle()
 {
 	frameStyle = {};
 	return *this;
 }
 
-FrameElement& FrameElement::SetStyle(const StaticID<FrameStyle>& id)
+FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 {
 	frameStyle = *GetCurrentTheme()->GetStruct<FrameStyle>(id);
 	return *this;
@@ -82,12 +82,14 @@ FrameElement& FrameElement::SetStyle(const StaticID<FrameStyle>& id)
 
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
-FrameElement& FrameElement::SetDefaultStyle(DefaultFrameStyle style)
+static StaticID<FrameStyle> sid_framestyle_listbox("listbox");
+FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 {
 	switch (style)
 	{
-	case DefaultFrameStyle::GroupBox: return SetStyle(sid_framestyle_group_box);
-	case DefaultFrameStyle::Selectable: return SetStyle(sid_framestyle_selectable);
+	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
+	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
+	case DefaultFrameStyle::ListBox: return SetFrameStyle(sid_framestyle_listbox);
 	}
 	return *this;
 }
@@ -224,9 +226,9 @@ void StateButtonSkin::OnReset()
 static StaticID_Style sid_listbox("listbox");
 void ListBoxFrame::OnReset()
 {
-	PaddedWrapperElement::OnReset();
+	FrameElement::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
+	SetDefaultFrameStyle(DefaultFrameStyle::ListBox);
 }
 
 
@@ -235,7 +237,7 @@ void Selectable::OnReset()
 	FrameElement::OnReset();
 
 	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
-	SetDefaultStyle(DefaultFrameStyle::Selectable);
+	SetDefaultFrameStyle(DefaultFrameStyle::Selectable);
 }
 
 

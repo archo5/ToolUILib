@@ -1,8 +1,19 @@
-"table_base:style":
+"table_frame:FrameStyle":
 {
-	width = "100%"
 	padding = 5
 	backgroundPainter = "insetbox"
+}
+"table:TableStyle":
+{
+	cellPaddingV = 1
+	cellPaddingH = 2
+	cellBackgroundPainter = "table_cell"
+	rowHeaderPaddingV = 1
+	rowHeaderPaddingH = 2
+	rowHeaderBackgroundPainter = "table_header"
+	colHeaderPaddingV = 1
+	colHeaderPaddingH = 2
+	colHeaderBackgroundPainter = "table_header"
 }
 "table_cell:style":
 {

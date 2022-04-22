@@ -1320,11 +1320,16 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 	{
 		auto* ch = slot._element;
 		auto e = slot.edge;
+		Rangef r(DoNotInitialize{});
 		float d;
 		switch (e)
 		{
 		case Edge::Top:
-			d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
+			r = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding);
+			if (&slot == &_slots.back())
+				d = r.Clamp(subr.GetHeight());
+			else
+				d = r.min;
 			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
 			subr.y0 += d;
 			break;

@@ -9,7 +9,7 @@ void ImageEditorWindowNode::Build()
 	{
 		auto& sp2 = ui::Push<ui::SplitPane>();
 		{
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& img = ui::Make<ui::ImageElement>();
@@ -25,7 +25,7 @@ void ImageEditorWindowNode::Build()
 			{
 				EditImageFormat("Format", image->format);
 				ui::MakeWithText<ui::LabelFrame>("Conditional format overrides");
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				for (auto& FO : image->formatOverrides)
 				{

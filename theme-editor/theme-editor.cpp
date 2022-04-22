@@ -213,7 +213,7 @@ struct TE_ImageEditorNode : Buildable
 			if (img->expanded)
 			{
 				Push<FrameElement>()
-					.SetDefaultStyle(DefaultFrameStyle::GroupBox)
+					.SetDefaultFrameStyle(DefaultFrameStyle::GroupBox)
 					.HandleEvent() = [this](Event& e)
 				{
 					if (e.type == EventType::Change || e.type == EventType::Commit || e.type == EventType::IMChange)

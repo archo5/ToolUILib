@@ -37,7 +37,7 @@ static bool advancedAccess = false;
 static MathExprObj testQuery;
 void DataDesc::EditStructuralItems()
 {
-	ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+	ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 	ui::Push<ui::StackTopDownLayoutElement>();
 
 	ui::imm::PropEditBool("Advanced access", advancedAccess);
@@ -168,7 +168,7 @@ void DataDesc::EditInstance()
 		}
 
 		ui::MakeWithText<ui::LabelFrame>("Arguments");
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto* argSeq = ui::BuildAlloc<ui::StdSequence<decltype(SI->args)>>(SI->args);
@@ -422,7 +422,7 @@ void DataDesc::EditStruct()
 			ui::imm::PropEditString("Size source", S.sizeSrc.c_str(), [&S](const char* v) { S.sizeSrc = v; });
 
 			ui::MakeWithText<ui::LabelFrame>("Parameters");
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			auto* paramSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.params)>>(S.params);
@@ -445,7 +445,7 @@ void DataDesc::EditStruct()
 			ui::Pop();
 
 			ui::MakeWithText<ui::LabelFrame>("Fields");
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			auto* fieldSeq = ui::BuildAlloc<ui::StdSequence<decltype(S.fields)>>(S.fields);
@@ -545,7 +545,7 @@ void DataDesc::EditField()
 				ui::imm::PropEditBool("Read until 0", F.readUntil0);
 
 				ui::MakeWithText<ui::LabelFrame>("Struct arguments");
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				for (size_t i = 0; i < F.structArgs.size(); i++)
 				{
@@ -585,7 +585,7 @@ void DataDesc::EditImageItems()
 {
 	if (curImage < images.size())
 	{
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto& I = images[curImage];

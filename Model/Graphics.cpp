@@ -48,7 +48,7 @@ void ColorBlock::OnReset()
 {
 	FrameElement::OnReset();
 
-	SetStyle(sid_framestyle_color_block);
+	SetFrameStyle(sid_framestyle_color_block);
 	_bgImageSet = GetCurrentTheme()->GetImageSet(sid_bgr_checkerboard);
 
 	_color = Color4b::Black();
@@ -85,7 +85,7 @@ void ColorInspectBlock::OnReset()
 {
 	ColorBlock::OnReset();
 
-	SetStyle(sid_framestyle_color_inspect_block);
+	SetFrameStyle(sid_framestyle_color_inspect_block);
 	_layoutMode = ImageLayoutMode::PreferredMin;
 	size = { 34, 14 };
 	alphaBarHeight = 2;
@@ -276,7 +276,7 @@ void HueSatPicker::OnReset()
 {
 	FrameElement::OnReset();
 
-	SetStyle(sid_framestyle_selector_container);
+	SetFrameStyle(sid_framestyle_selector_container);
 	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
@@ -367,7 +367,7 @@ void HueSatPicker::_RegenerateBackground(int w)
 void ColorDragDropData::Build()
 {
 	Push<SizeConstraintElement>().SetSize(40, 20);
-	Make<ColorInspectBlock>().SetColor(color).RemoveStyle();
+	Make<ColorInspectBlock>().SetColor(color).RemoveFrameStyle();
 	Pop();
 }
 
@@ -376,7 +376,7 @@ void ColorCompPicker2D::OnReset()
 {
 	FrameElement::OnReset();
 
-	SetStyle(sid_framestyle_selector_container);
+	SetFrameStyle(sid_framestyle_selector_container);
 	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
@@ -777,7 +777,7 @@ void ColorPicker::Build()
 
 				tmpl->DisableScaling();
 				Push<FrameElement>()
-					.SetDefaultStyle(DefaultFrameStyle::GroupBox)
+					.SetDefaultFrameStyle(DefaultFrameStyle::GroupBox)
 					.SetPadding(3)
 					+ MakeDraggable([this](Event& e) { DragDrop::SetData(new ColorDragDropData(_color.GetRGBA())); })
 					+ AddEventHandler(EventType::DragDrop, [this](Event& e)
@@ -790,8 +790,8 @@ void ColorPicker::Build()
 				});
 				Push<StackLTRLayoutElement>();
 
-				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()).SetSize(50, 60).RemoveStyle();
-				Make<ColorBlock>().SetColor(_color.GetRGBA()).SetSize(50, 60).RemoveStyle();
+				Make<ColorBlock>().SetColor(_color.GetRGBA().GetOpaque()).SetSize(50, 60).RemoveFrameStyle();
+				Make<ColorBlock>().SetColor(_color.GetRGBA()).SetSize(50, 60).RemoveFrameStyle();
 
 				Pop();
 				Pop();

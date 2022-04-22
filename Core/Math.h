@@ -161,6 +161,7 @@ template <class T> struct Range
 			r.max += o;
 		return r;
 	}
+	UI_FORCEINLINE T Clamp(T val) { return clamp(val, min, max); }
 };
 
 using Rangef = Range<float>;

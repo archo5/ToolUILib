@@ -350,7 +350,7 @@ struct OpenCloseTest : ui::Buildable
 		static int counter = 0;
 		Allocate<AllocTest>(++counter);
 
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 
 		auto& cb = ui::Push<ui::StateToggle>().InitReadOnly(open);
@@ -371,7 +371,7 @@ struct OpenCloseTest : ui::Buildable
 		if (open)
 		{
 			ui::Make<EDLogger>();
-			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::StackTopDownLayoutElement>();
 			ui::Text("It is open!");
 			auto& box = ui::MakeWithText<ui::BoxElement>("Different text");
@@ -461,7 +461,7 @@ struct AppendMixTest : ui::Buildable
 		ui::Pop();
 		ui::Pop();
 
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 
 		switch (mode)
 		{
@@ -727,7 +727,7 @@ struct ZeroRebuildTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("Hide")
 			+ ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event& e) { show = false; OnShowChange(); });
 
-		showable = &ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		showable = &ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::StackTopDownLayoutElement>();
 		contentLabel = &ui::Text("Contents: " + text);
 		tbText = &ui::Make<ui::Textbox>().SetText(text);
@@ -769,7 +769,7 @@ struct GlobalEventsTest : ui::Buildable
 		void Build() override
 		{
 			Subscribe(dct);
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			count++;
 			char bfr[64];
@@ -861,7 +861,7 @@ struct FrameTest : ui::Buildable
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::SizeConstraintElement>().SetHeight(32);
 		inlineFrames[0] = &ui::Make<ui::InlineFrame>();
 		ui::Pop();
@@ -870,7 +870,7 @@ struct FrameTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("Place 1 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(0, 0); });
 		ui::MakeWithText<ui::Button>("Place 2 in 1") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { Set(1, 0); });
 
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::SizeConstraintElement>().SetHeight(32);
 		inlineFrames[1] = &ui::Make<ui::InlineFrame>();
 		ui::Pop();

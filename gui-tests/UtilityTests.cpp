@@ -22,7 +22,7 @@ struct BasicEasingAnimTest : ui::Buildable
 			animPlayer.StopAnim(anim);
 		}
 		ui::MakeWithText<ui::FrameElement>(std::to_string(animPlayer.GetVariable("test")))
-			.SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			.SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::LabeledProperty::End();
 		sliderVal = animPlayer.GetVariable("test");
 		ui::Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });

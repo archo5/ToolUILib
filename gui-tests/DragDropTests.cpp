@@ -723,7 +723,7 @@ struct DragDropTest : ui::Buildable
 		tmpl->placement = &parts[0];
 		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<FileReceiverTest>();
@@ -738,7 +738,7 @@ struct DragDropTest : ui::Buildable
 		tmpl->placement = &parts[1];
 		tmpl->measure = false;
 		WPush<ui::StackTopDownLayoutElement>();
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Make<DragElementTest>();

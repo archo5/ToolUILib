@@ -11,7 +11,7 @@ void MeshEditorWindowNode::Build()
 	{
 		auto& sp2 = ui::Push<ui::SplitPane>();
 		{
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
 				auto& view3d = ui::Push<ui::View3D>();

@@ -154,7 +154,7 @@ struct DataEditor : ui::Buildable
 		nw.GetWindow()->SetTitle("Subwindow A");
 		auto buildFunc = []()
 		{
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			auto onClick = []()
 			{
@@ -168,7 +168,7 @@ struct DataEditor : ui::Buildable
 					{
 						ui::Push<ui::EdgeSliceLayoutElement>();
 
-						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+						ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
 						if (ui::imm::Button("X"))
 							OnClose();
@@ -179,7 +179,7 @@ struct DataEditor : ui::Buildable
 						ui::Pop();
 						ui::Pop();
 
-						ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+						ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Make<ItemButton>().Init("Test", [this]() { OnClose(); });
 						ui::Pop();
 
@@ -204,7 +204,7 @@ struct DataEditor : ui::Buildable
 		auto& frm = ui::Make<ui::InlineFrame>();
 		auto frf = []()
 		{
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::MakeWithText<ui::Button>("In-frame button");
 			static int cur = 1;
@@ -236,7 +236,7 @@ struct DataEditor : ui::Buildable
 		if (editing == SIZE_MAX)
 		{
 			ui::Text("List");
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			for (size_t i = 0; i < items.size(); i++)
 			{

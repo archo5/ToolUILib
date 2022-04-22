@@ -331,14 +331,14 @@ struct SplitPaneTest : ui::Buildable
 	{
 		ui::Push<ui::SplitPane>();
 
-		ui::MakeWithText<ui::FrameElement>("Pane A").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
-		ui::MakeWithText<ui::FrameElement>("Pane B").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane A").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane B").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 
 		ui::Push<ui::SplitPane>().SetDirection(true);
 
-		ui::MakeWithText<ui::FrameElement>("Pane C").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
-		ui::MakeWithText<ui::FrameElement>("Pane D").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
-		ui::MakeWithText<ui::FrameElement>("Pane E").SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane C").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane D").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::MakeWithText<ui::FrameElement>("Pane E").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 
 		ui::Pop();
 
@@ -449,7 +449,7 @@ struct TransformContainerTest : ui::Buildable
 			ui::MakeWithText<ui::Button>("+") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { scale += 0.1f; Rebuild(); });
 		}
 
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& te = ui::Push<ui::ChildScaleOffsetElement>();
 			te.transform = ui::ScaleOffset2D::OffsetThenScale(x, y, scale);
@@ -531,8 +531,8 @@ struct ColorBlockTest : ui::Buildable
 		WMake<ui::ColorBlock>().SetColor(colorB);
 
 		WText("Without edge");
-		WMake<ui::ColorBlock>().SetColor(colorA).RemoveStyle();
-		WMake<ui::ColorBlock>().SetColor(colorB).RemoveStyle();
+		WMake<ui::ColorBlock>().SetColor(colorA).RemoveFrameStyle();
+		WMake<ui::ColorBlock>().SetColor(colorB).RemoveFrameStyle();
 
 		WText("Custom size");
 		WPush<ui::SizeConstraintElement>().SetSize(200, 40);
@@ -548,7 +548,7 @@ struct ColorBlockTest : ui::Buildable
 
 		WText("Assembled");
 		auto C = colorB;
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(3);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(3);
 		{
 			auto& ple = WPush<ui::PlacementLayoutElement>();
 			auto tmpl = ple.GetSlotTemplate();
@@ -562,14 +562,14 @@ struct ColorBlockTest : ui::Buildable
 			partOC->bias.y1 = -4;
 			tmpl->placement = partOC;
 			tmpl->measure = false;
-			WMake<ui::ColorBlock>().SetColor(C.GetOpaque()).RemoveStyle();
+			WMake<ui::ColorBlock>().SetColor(C.GetOpaque()).RemoveFrameStyle();
 
 			auto* partC = Allocate<ui::RectAnchoredPlacement>();
 			partC->anchor.x0 = 0.5f;
 			partC->bias.y1 = -4;
 			tmpl->placement = partC;
 			tmpl->measure = false;
-			WMake<ui::ColorBlock>().SetColor(C).RemoveStyle();
+			WMake<ui::ColorBlock>().SetColor(C).RemoveFrameStyle();
 
 			auto* partOA = Allocate<ui::RectAnchoredPlacement>();
 			partOA->anchor.x1 = C.a / 255.f;
@@ -577,7 +577,7 @@ struct ColorBlockTest : ui::Buildable
 			partOA->bias.y0 = -4;
 			tmpl->placement = partOA;
 			tmpl->measure = false;
-			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White()).RemoveStyle();
+			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White()).RemoveFrameStyle();
 
 			auto* partTA = Allocate<ui::RectAnchoredPlacement>();
 			partTA->anchor.x0 = C.a / 255.f;
@@ -585,7 +585,7 @@ struct ColorBlockTest : ui::Buildable
 			partTA->bias.y0 = -4;
 			tmpl->placement = partTA;
 			tmpl->measure = false;
-			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveStyle();
+			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveFrameStyle();
 
 			WPop();
 		}
@@ -622,14 +622,14 @@ struct ImageTest : ui::Buildable
 
 		for (int mode = 0; mode < 6; mode++)
 		{
-			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
 			WPush<ui::WrapperLTRLayoutElement>();
 
 			for (int y = -1; y <= 1; y++)
 			{
 				for (int x = -1; x <= 1; x++)
 				{
-					WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
+					WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(4);/*+ ui::SetMargin(0);*/
 					auto& sc = WPush<ui::SizeConstraintElement>();
 					if (mode / 3)
 						sc.SetWidth(25);

@@ -24,7 +24,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 		void Build() override
 		{
 			Subscribe(DCT_Node, tgt);
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			if (parent)
@@ -39,7 +39,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 
 			ui::imm::PropEditString("Name", tgt->name.c_str(), [this](const char* v) { tgt->name = v; });
 
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::Text("Children");
 
@@ -153,7 +153,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		void UI() override
 		{
-			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(2);
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox).SetPadding(2);
 			WPush<ui::StackLTRLayoutElement>();
 			NodeUI(a);
 			WMakeWithText<ui::LabelFrame>(Name());

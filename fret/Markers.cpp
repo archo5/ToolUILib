@@ -544,7 +544,7 @@ void MarkedItemEditor::Build()
 	Subscribe(DCT_Marker, marker);
 	ui::MakeWithText<ui::LabelFrame>("Marker");
 
-	ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+	ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 	ui::Push<ui::StackTopDownLayoutElement>();
 	ui::imm::DropdownMenuList(marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
 	ui::imm::PropEditInt("Offset", marker->at);
@@ -562,7 +562,7 @@ void MarkedItemEditor::Build()
 	ui::Pop();
 	ui::Pop();
 
-	ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+	ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 	ui::Push<ui::EdgeSliceLayoutElement>();
 	if (ui::imm::Button("Analyze"))
 	{
@@ -649,7 +649,7 @@ void MarkedItemsList::Build()
 	ui::Text("Edit marked items");
 	for (auto& m : markerData->markers)
 	{
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::imm::PropDropdownMenuList("Type", m.type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
 		ui::imm::PropEditInt("Offset", m.at);

@@ -148,6 +148,16 @@ void MessageLogView::ScrollToEnd()
 }
 
 
+void TableStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	OnFieldBorderBox(oi, "cellPadding", cellPadding);
+	OnFieldBorderBox(oi, "rowHeaderPadding", rowHeaderPadding);
+	OnFieldBorderBox(oi, "colHeaderPadding", colHeaderPadding);
+	OnFieldPainter(oi, td, "cellBackgroundPainter", cellBackgroundPainter);
+	OnFieldPainter(oi, td, "rowHeaderBackgroundPainter", rowHeaderBackgroundPainter);
+	OnFieldPainter(oi, td, "colHeaderBackgroundPainter", colHeaderBackgroundPainter);
+}
+
 struct TableViewImpl
 {
 	TableDataSource* dataSource = nullptr;
@@ -169,19 +179,23 @@ TableView::~TableView()
 	delete _impl;
 }
 
-static StaticID_Style sid_table_base("table_base");
+static StaticID<FrameStyle> sid_framestyle_table_frame("table_frame");
+static StaticID<TableStyle> sid_table_style("table");
 static StaticID_Style sid_table_cell("table_cell");
 static StaticID_Style sid_table_row_header("table_row_header");
 static StaticID_Style sid_table_col_header("table_col_header");
 void TableView::OnReset()
 {
-	PaddedFillerElement::OnReset();
+	FrameElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_table_base);
+	SetFrameStyle(sid_framestyle_table_frame);
+	style = *GetCurrentTheme()->GetStruct(sid_table_style);
+#if 1
 	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
 	rowHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_row_header);
 	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);
+#endif
 
 	enableRowHeader = true;
 	_impl->dataSource = nullptr;
@@ -195,21 +209,22 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
 	PaintInfo info(this);
-	ph.PaintBackground(info);
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(info);
 
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
 
 	auto RC = GetContentRect();
 
-	auto padCH = colHeaderStyle->GetPaddingRect();
-	auto padC = cellStyle->GetPaddingRect();
+	auto padCH = style.colHeaderPadding;
+	auto padC = style.cellPadding;
 
 	UIRect padRH = {};
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		padRH = rowHeaderStyle->GetPaddingRect();
+		padRH = style.rowHeaderPadding;
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
@@ -246,7 +261,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw,
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			rowHeaderStyle->background_painter->Paint(info);
+			style.rowHeaderBackgroundPainter->Paint(info);
 		}
 		// text:
 		auto* rowHeaderFont = rowHeaderStyle->GetFont();
@@ -282,7 +297,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		colHeaderStyle->background_painter->Paint(info);
+		style.colHeaderBackgroundPainter->Paint(info);
 	}
 	// text:
 	auto* colHeaderFont = colHeaderStyle->GetFont();
@@ -324,7 +339,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				info.state |= PS_Hover;
 			else
 				info.state &= ~PS_Hover;
-			cellStyle->background_painter->Paint(info);
+			style.cellBackgroundPainter->Paint(info);
 		}
 	}
 	// text:
@@ -364,13 +379,13 @@ void TableView::OnEvent(Event& e)
 
 	auto RC = GetContentRect();
 
-	auto padCH = colHeaderStyle->GetPaddingRect();
-	auto padC = cellStyle->GetPaddingRect();
+	auto padCH = style.colHeaderPadding;
+	auto padC = style.cellPadding;
 
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = rowHeaderStyle->GetPaddingRect();
+		auto padRH = style.rowHeaderPadding;
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
@@ -475,8 +490,8 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	colWidths.resize(nc, 0.0f);
 
 	auto RC = GetContentRect();
-	auto padCH = colHeaderStyle->GetPaddingRect();
-	auto padC = cellStyle->GetPaddingRect();
+	auto padCH = style.colHeaderPadding;
+	auto padC = style.cellPadding;
 
 	if (includeHeader)
 	{
@@ -517,13 +532,13 @@ size_t TableView::GetRowAt(float y)
 {
 	auto RC = GetContentRect();
 
-	auto padCH = colHeaderStyle->GetPaddingRect();
-	auto padC = cellStyle->GetPaddingRect();
+	auto padCH = style.colHeaderPadding;
+	auto padC = style.cellPadding;
 
 	float rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = rowHeaderStyle->GetPaddingRect();
+		auto padRH = style.rowHeaderPadding;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
 	float chh = 20 + padCH.y0 + padCH.y1;
@@ -550,13 +565,13 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 
 	auto RC = GetContentRect();
 
-	auto padCH = colHeaderStyle->GetPaddingRect();
-	auto padC = cellStyle->GetPaddingRect();
+	auto padCH = style.colHeaderPadding;
+	auto padC = style.cellPadding;
 
 	float rhw = 0, rhh = 0;
 	if (enableRowHeader)
 	{
-		auto padRH = rowHeaderStyle->GetPaddingRect();
+		auto padRH = style.rowHeaderPadding;
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
@@ -615,11 +630,12 @@ TreeView::~TreeView()
 static StaticID_Style sid_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
-	FillerElement::OnReset();
+	FrameElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_table_base); // TODO separate styles for TreeView
+	// TODO separate styles for TreeView
+	SetFrameStyle(sid_framestyle_table_frame);
 	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
 	expandButtonStyle = GetCurrentTheme()->GetStyle(sid_tree_expand);
 	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);

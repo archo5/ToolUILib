@@ -44,7 +44,7 @@ struct Calculator : ui::Buildable
 		auto* rap_result = Allocate<ui::RectAnchoredPlacement>();
 		rap_result->anchor = { 0, 0.1f, 1, 0.2f };
 		tmpl->placement = rap_result;
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Text("=" + ToString(Calculate()));
 		ui::Pop();
 

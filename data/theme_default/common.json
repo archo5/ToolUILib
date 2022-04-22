@@ -38,6 +38,11 @@
 	"padding": 5,
 	"backgroundPainter": "insetbox"
 }
+"listbox:FrameStyle":
+{
+	padding = 5
+	backgroundPainter = "insetbox"
+}
 
 "split_pane_separator_horizontal:SeparatorLineStyle":
 {

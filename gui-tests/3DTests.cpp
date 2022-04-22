@@ -17,7 +17,7 @@ struct The3DViewTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -175,7 +175,7 @@ struct GizmoTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -196,7 +196,7 @@ struct GizmoTest : ui::Buildable
 				tmpl->placement = leftTop;
 				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(120);
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -221,7 +221,7 @@ struct GizmoTest : ui::Buildable
 				tmpl->placement = rightTop;
 				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(180);
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Gizmo");
@@ -346,7 +346,7 @@ struct QuaternionTest : ui::Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
@@ -365,7 +365,7 @@ struct QuaternionTest : ui::Buildable
 				tmpl->placement = leftTop;
 				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(200);
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
@@ -382,7 +382,7 @@ struct QuaternionTest : ui::Buildable
 				tmpl->placement = rightTop;
 				tmpl->measure = false;
 				ui::Push<ui::SizeConstraintElement>().SetWidth(240);
-				ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					auto q1 = GetQuat();

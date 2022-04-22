@@ -6,7 +6,7 @@ struct EdgeSliceTest : ui::Buildable
 {
 	void Build() override
 	{
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 
 		WPush<ui::EdgeSliceLayoutElement>();
 
@@ -47,7 +47,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 		};
 		constexpr int layoutCount = sizeof(layoutShortNames) / sizeof(const char*);
 
-		WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < layoutCount; i++)
 		{
@@ -59,14 +59,14 @@ struct StackingLayoutVariationsTest : ui::Buildable
 
 		if (mode == 0)
 		{
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{
 				ui::Push<ui::SizeConstraintElement>().SetWidth(100);
@@ -78,7 +78,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			{
@@ -90,7 +90,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
@@ -102,7 +102,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{
 				ui::Push<ui::SizeConstraintElement>().SetMinWidth(50);
@@ -123,7 +123,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 
 #if 0 // TODO restore test when the advanced size constraint element will be implemented
-			ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackExpandLTRLayoutElement>();
 			{ auto s = ui::MakeWithText<ui::Button>("One").GetStyle(); s.SetMinWidth(100); s.SetWidth(ui::Coord::Percent(30)); }
 			ui::MakeWithText<ui::Button>("Another one");
@@ -131,7 +131,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			ui::Pop();
 #endif
 
-			WPush<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::StackLTRLayoutElement>();
 			ui::MakeWithText<ui::Button>("One");
 			ui::MakeWithText<ui::Button>("Another one");
