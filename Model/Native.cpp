@@ -475,13 +475,6 @@ void DebugDrawSelf(UIObject* o)
 {
 	float a = 0.2f;
 
-	auto s = o->GetStyle();
-	float w = o->finalRectC.x1 - o->finalRectC.x0;
-	auto ml = o->ResolveUnits(s.GetMarginLeft(), w), mr = o->ResolveUnits(s.GetMarginRight(), w),
-		mt = o->ResolveUnits(s.GetMarginTop(), w), mb = o->ResolveUnits(s.GetMarginBottom(), w);
-	auto pl = o->ResolveUnits(s.GetPaddingLeft(), w), pr = o->ResolveUnits(s.GetPaddingRight(), w),
-		pt = o->ResolveUnits(s.GetPaddingTop(), w), pb = o->ResolveUnits(s.GetPaddingBottom(), w);
-	float bl = 1, br = 1, bt = 1, bb = 1;
 	auto r = o->GetPaddingRect();
 
 	// padding
@@ -490,8 +483,6 @@ void DebugDrawSelf(UIObject* o)
 #if 1
 	draw::RectCutoutCol(r, r.ExtendBy(UIRect::UniformBorder(-1)), Color4f(0.5f, 0.9f, 0.6f, a));
 #endif
-	// margin
-	draw::RectCutoutCol(r, r.ExtendBy({ ml, mt, mr, mb }), Color4f(0.9f, 0.6f, 0.5f, a));
 }
 
 void DebugDraw(UIObject* o)

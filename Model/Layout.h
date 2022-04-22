@@ -383,11 +383,6 @@ struct StyleBlock
 	Coord min_width;
 	Coord min_height;
 
-	float margin_left = 0;
-	float margin_right = 0;
-	float margin_top = 0;
-	float margin_bottom = 0;
-	UI_FORCEINLINE UIRect GetMarginRect() const { return { margin_left, margin_top, margin_right, margin_bottom }; }
 	float padding_left = 0;
 	float padding_right = 0;
 	float padding_top = 0;
@@ -489,12 +484,6 @@ public:
 
 	Coord GetMinHeight() const;
 	void SetMinHeight(Coord v);
-
-
-	float GetMarginLeft() const;
-	float GetMarginRight() const;
-	float GetMarginTop() const;
-	float GetMarginBottom() const;
 
 
 	float GetPaddingLeft() const;

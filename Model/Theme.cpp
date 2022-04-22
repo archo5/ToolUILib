@@ -489,24 +489,6 @@ struct ThemeLoaderData : IThemeLoader
 			if (u.IsUnserializer())
 			{
 				float f = 0;
-				OnField(u, "margin", f);
-				loaded->margin_left = f;
-				loaded->margin_top = f;
-				loaded->margin_right = f;
-				loaded->margin_bottom = f;
-			}
-			if (u.HasField("marginLeft"))
-				OnField(u, "marginLeft", loaded->margin_left);
-			if (u.HasField("marginTop"))
-				OnField(u, "marginTop", loaded->margin_top);
-			if (u.HasField("marginRight"))
-				OnField(u, "marginRight", loaded->margin_right);
-			if (u.HasField("marginBottom"))
-				OnField(u, "marginBottom", loaded->margin_bottom);
-
-			if (u.IsUnserializer())
-			{
-				float f = 0;
 				OnField(u, "padding", f);
 				loaded->padding_left = f;
 				loaded->padding_top = f;

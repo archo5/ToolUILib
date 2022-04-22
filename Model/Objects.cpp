@@ -493,14 +493,6 @@ void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
 	layouts::Stack()->OnLayout(this, inrect, state);
 }
 
-// on box sizing:
-// - each settable width/height value has its own box sizing value
-//   - this value determines whether margin/padding are applied to that size:
-//     - ContentBox = apply padding and margin
-//     - BorderBox = apply margin
-// - margin can be merged between elements inside a layout
-//   (TODO do we need it in the element instead of the layout config? don't have a layout config atm)
-// - min/max sizes apply regardless of whether they're calculated or set
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	if (TEMP_LAYOUT_MODE)
@@ -517,24 +509,23 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	auto minWidth = style.GetMinWidth();
 
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
-	float addM = style.GetMarginLeft() + style.GetMarginRight();
 
 	float resW;
 	if (width.IsDefined())
 	{
-		resW = ResolveUnits(width, containerSize.x) + addM;
+		resW = ResolveUnits(width, containerSize.x);
 	}
 	else
 	{
 		Size2f contSizeShrunk = containerSize;
-		contSizeShrunk.x -= addP + addM;
-		contSizeShrunk.y -= style.GetPaddingTop() + style.GetPaddingBottom() + style.GetMarginTop() + style.GetMarginBottom();
-		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP + addM;
+		contSizeShrunk.x -= addP;
+		contSizeShrunk.y -= style.GetPaddingTop() + style.GetPaddingBottom();
+		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP;
 	}
 
 	if (minWidth.IsDefined())
 	{
-		float resMinW = ResolveUnits(minWidth, containerSize.x) + addM;
+		float resMinW = ResolveUnits(minWidth, containerSize.x);
 		resW = max(resW, resMinW);
 	}
 
@@ -563,24 +554,23 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	auto minHeight = style.GetMinHeight();
 
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
-	float addM = style.GetMarginTop() + style.GetMarginBottom();
 
 	float resH;
 	if (height.IsDefined())
 	{
-		resH = ResolveUnits(height, containerSize.y) + addM;
+		resH = ResolveUnits(height, containerSize.y);
 	}
 	else
 	{
 		Size2f contSizeShrunk = containerSize;
-		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight() + style.GetMarginLeft() + style.GetMarginRight();
-		contSizeShrunk.y -= addP + addM;
-		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP + addM;
+		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight();
+		contSizeShrunk.y -= addP;
+		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP;
 	}
 
 	if (minHeight.IsDefined())
 	{
-		float resMinH = ResolveUnits(minHeight, containerSize.y) + addM;
+		float resMinH = ResolveUnits(minHeight, containerSize.y);
 		resH = max(resH, resMinH);
 	}
 
@@ -623,15 +613,8 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 	UIRect rect = inRect;
 
-	UIRect Mrect = style.block->GetMarginRect();
 	UIRect Prect = CalcPaddingRect(rect);
-	UIRect Arect =
-	{
-		Mrect.x0 + Prect.x0,
-		Mrect.y0 + Prect.y0,
-		Mrect.x1 + Prect.x1,
-		Mrect.y1 + Prect.y1,
-	};
+	UIRect Arect = Prect;
 	UIRect inrect =
 	{
 		rect.x0 + Arect.x0,
