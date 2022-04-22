@@ -23,7 +23,6 @@
 
 "panel:style":
 {
-	"margin": 2,
 	"padding": 6,
 	"backgroundPainter": "panel"
 }

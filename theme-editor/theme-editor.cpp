@@ -348,7 +348,6 @@ struct TE_ThemeEditorNode : Buildable
 		topMenu.back().submenu.push_back(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
 		Allocate<TopMenu>(GetNativeWindow(), topMenu);
 
-#if 1
 		auto& tp = Push<TabbedPanel>();
 		for (TE_Template* tmpl : theme->templates)
 		{
@@ -415,69 +414,6 @@ struct TE_ThemeEditorNode : Buildable
 			pen.tmpl = theme->curTemplate;
 		}
 		Pop();
-#else
-		Push<TabGroup>();
-		{
-			Push<TabButtonList>();
-			{
-				for (TE_Template* tmpl : theme->templates)
-				{
-					Push<TabButtonT<TE_Template*>>().Init(theme->curTemplate, tmpl);
-					if (editNameTemplate != tmpl)
-					{
-						auto& txt = Text(tmpl->name);
-						txt.flags |= UIObject_DB_CaptureMouseOnLeftClick;
-						txt.HandleEvent(EventType::Click) = [this, tmpl](Event& e)
-						{
-							if (e.numRepeats == 1)
-							{
-								editNameTemplate = tmpl;
-								Rebuild();
-							}
-						};
-					}
-					else
-					{
-						auto efn = [this](Event& e)
-						{
-							if (e.type == EventType::LostFocus)
-							{
-								editNameTemplate = nullptr;
-								Rebuild();
-							}
-						};
-
-						Push<SizeConstraintElement>().SetWidth(100);
-						imm::EditString(
-							tmpl->name.c_str(),
-							[tmpl](const char* v) { tmpl->name = v; },
-							{ AddEventHandler(efn) });
-						Pop();
-					}
-					Pop();
-				}
-			}
-			if (imm::Button("+"))
-			{
-				auto* p = new TE_Template(theme);
-				p->name = "<name>";
-				theme->templates.push_back(p);
-			}
-			Pop();
-
-			if (theme->curTemplate)
-			{
-				Push<TabPanel>();
-				{
-					auto& pen = Make<TE_TemplateEditorNode>();
-					pen.theme = theme;
-					pen.tmpl = theme->curTemplate;
-				}
-				Pop();
-			}
-		}
-		Pop();
-#endif
 	}
 
 	TE_Theme* theme;

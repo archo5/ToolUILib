@@ -93,7 +93,6 @@ struct StackLayout : ILayout
 	{
 		// put items one after another in the indicated direction
 		// container size adapts to child elements in stacking direction, and to parent in the other
-		// margins are collapsed
 		auto style = curObj->GetStyle();
 		auto dir = style.GetStackingDirection();
 		if (dir == StackingDirection::Undefined)

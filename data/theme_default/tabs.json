@@ -1,26 +1,11 @@
 {
-	"tab_group:style":
-	{
-		"margin": 2
-	},
-	"tab_list:style":
-	{
-		"paddingLeft": 4,
-		"paddingRight": 4,
-		"layout": "stack",
-		"stackingDirection": "LeftToRight"
-	},
 	"tab_button:style":
 	{
-		"layout": "stack",
-		"stackingDirection": "LeftToRight",
 		"padding": 5,
 		"backgroundPainter": "tab_button"
 	},
 	"tab_panel:style":
 	{
-		"width": "100%",
-		"marginTop": -2,
 		"padding": 5,
 		"backgroundPainter": "tab_panel"
 	},

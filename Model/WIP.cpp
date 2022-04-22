@@ -165,7 +165,6 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 	for (auto& slot : _slots)
 	{
 		auto s = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
-		auto sw = slot._obj->GetStyle().GetWidth();
 		items.push_back({ slot._obj, s.min, s.max, s.min, slot.fraction });
 		sorted.push_back(sorted.size());
 		sum += s.min;

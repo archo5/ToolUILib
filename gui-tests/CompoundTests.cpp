@@ -355,87 +355,8 @@ struct TabsTest : ui::Buildable
 {
 	void Build() override
 	{
-		ui::Push<ui::TabGroup>();
-		{
-			ui::Push<ui::TabButtonList>();
-			{
-				ui::Push<ui::TabButtonT<int>>().Init(tab1, 0);
-				ui::MakeWithText<ui::LabelFrame>("First tab");
-				ui::MakeWithText<ui::Button>("button");
-				ui::Pop();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
-				ui::Push<ui::TabButton>().Init(tab1 == 1).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
-				{
-					if (e.target == e.current)
-					{
-						tab1 = 1;
-						Rebuild();
-					}
-				};
-				ui::MakeWithText<ui::LabelFrame>("Second tab");
-				ui::MakeWithText<ui::Button>("button");
-				ui::Pop();
-			}
-			ui::Pop();
-
-			ui::Push<ui::TabPanel>().SetVisible(tab1 == 0);
-			{
-				ui::Text("Contents of the first tab (SetVisible)");
-			}
-			ui::Pop();
-
-			ui::Push<ui::TabPanel>().SetVisible(tab1 == 1);
-			{
-				ui::Text("Contents of the second tab (SetVisible)");
-			}
-			ui::Pop();
-		}
-		ui::Pop();
-
-		ui::Push<ui::TabGroup>();
-		{
-			ui::Push<ui::TabButtonList>();
-			{
-				ui::Push<ui::TabButton>().Init(tab2 == 0).HandleEvent(ui::EventType::Activate) = [this](ui::Event& e)
-				{
-					if (e.target == e.current)
-					{
-						tab2 = 0;
-						Rebuild();
-					}
-				};
-				ui::MakeWithText<ui::LabelFrame>("First tab");
-				ui::MakeWithText<ui::Button>("button");
-				ui::Pop();
-
-				ui::Push<ui::TabButtonT<int>>().Init(tab2, 1);
-				ui::MakeWithText<ui::LabelFrame>("Second tab");
-				ui::MakeWithText<ui::Button>("button");
-				ui::Pop();
-			}
-			ui::Pop();
-
-			if (tab2 == 0)
-			{
-				ui::Push<ui::TabPanel>();
-				{
-					ui::Text("Contents of the first tab (conditional build)");
-				}
-				ui::Pop();
-			}
-
-			if (tab2 == 1)
-			{
-				ui::Push<ui::TabPanel>();
-				{
-					ui::Text("Contents of the second tab (conditional build)");
-				}
-				ui::Pop();
-			}
-		}
-		ui::Pop();
-
-		// ------------- NEW ----------------
 		auto& tp1 = ui::Push<ui::TabbedPanel>();
 		tp1.AddTextTab("First tab", 0);
 
@@ -488,7 +409,9 @@ struct TabsTest : ui::Buildable
 				ui::Text("Contents of the second tab (conditional build)");
 			}
 		}
-		ui::Pop();
+		ui::Pop(); // TabbedPanel
+
+		ui::Pop(); // StackTopDownLayoutElement
 	}
 
 	int tab1 = 0, tab2 = 0;
