@@ -103,6 +103,62 @@ FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 }
 
 
+void IconStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	OnField(oi, "width", size.x);
+	OnField(oi, "height", size.y);
+	OnFieldPainter(oi, td, "painter", painter);
+}
+
+void IconElement::OnReset()
+{
+	UIElement::OnReset();
+
+	style = {};
+}
+
+void IconElement::OnPaint(const UIPaintContext& ctx)
+{
+	if (style.painter)
+		style.painter->Paint(this);
+}
+
+Rangef IconElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	return Rangef::Exact(style.size.x);
+}
+
+Rangef IconElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	return Rangef::Exact(style.size.y);
+}
+
+void IconElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	finalRectCP = finalRectC = rect;
+}
+
+IconElement& IconElement::SetStyle(const StaticID<IconStyle>& id)
+{
+	style = *GetCurrentTheme()->GetStruct<IconStyle>(id);
+	return *this;
+}
+
+static StaticID<IconStyle> sid_iconstyle_checkbox("checkbox");
+static StaticID<IconStyle> sid_iconstyle_radio_button("radio_button");
+static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
+IconElement& IconElement::SetDefaultStyle(DefaultIconStyle style)
+{
+	switch (style)
+	{
+	case DefaultIconStyle::Checkbox: return SetStyle(sid_iconstyle_checkbox);
+	case DefaultIconStyle::RadioButton: return SetStyle(sid_iconstyle_radio_button);
+	case DefaultIconStyle::TreeExpand: return SetStyle(sid_iconstyle_tree_expand);
+	}
+	return *this;
+}
+
+
 void LabelFrame::OnReset()
 {
 	FrameElement::OnReset();
@@ -180,7 +236,24 @@ bool StateToggle::OnActivate()
 }
 
 
-void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
+void StateToggleIconBase::OnPaint(const UIPaintContext& ctx)
+{
+	if (!style.painter)
+		return;
+
+	StateButtonBase* st = FindParentOfType<StateButtonBase>();
+	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
+	if (st)
+		info.SetCheckState(st->GetState());
+
+	info.obj = this;
+	info.rect = GetPaddingRect();
+
+	style.painter->Paint(info);
+}
+
+
+void StateToggleFrameBase::OnPaint(const UIPaintContext& ctx)
 {
 	StateButtonBase* st = FindParentOfType<StateButtonBase>();
 	PaintInfo info(st ? static_cast<UIObject*>(st) : this);
@@ -194,36 +267,33 @@ void StateToggleVisualBase::OnPaint(const UIPaintContext& ctx)
 }
 
 
-static StaticID_Style sid_checkbox("checkbox");
 void CheckboxIcon::OnReset()
 {
-	StateToggleVisualBase::OnReset();
+	StateToggleIconBase::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_checkbox);
+	SetDefaultStyle(DefaultIconStyle::Checkbox);
 }
 
 
-static StaticID_Style sid_radio_button("radio_button");
 void RadioButtonIcon::OnReset()
 {
-	StateToggleVisualBase::OnReset();
+	StateToggleIconBase::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_radio_button);
+	SetDefaultStyle(DefaultIconStyle::RadioButton);
 }
 
 
-static StaticID_Style sid_tree_expand("tree_expand");
 void TreeExpandIcon::OnReset()
 {
-	StateToggleVisualBase::OnReset();
+	StateToggleIconBase::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_tree_expand);
+	SetDefaultStyle(DefaultIconStyle::TreeExpand);
 }
 
 
 void StateButtonSkin::OnReset()
 {
-	StateToggleVisualBase::OnReset();
+	StateToggleFrameBase::OnReset();
 
 	styleProps = GetCurrentTheme()->GetStyle(sid_button);
 }

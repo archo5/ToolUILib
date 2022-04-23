@@ -1,9 +1,9 @@
 {
-	"radio_button:style":
+	"radio_button:IconStyle":
 	{
-		"width": "22px",
-		"height": "22px",
-		"backgroundPainter": "radio_button"
+		width = 22
+		height = 22
+		painter = "radio_button"
 	},
 	"radio_button:painter":
 	{

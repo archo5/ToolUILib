@@ -15,7 +15,7 @@ struct FrameStyle
 	AABB2f padding;
 	PainterHandle backgroundPainter;
 
-	void Serialize(ThemeData& tl, IObjectIterator& oi);
+	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
 template <class T> struct PaddingStyleMixin
@@ -49,6 +49,7 @@ enum class DefaultFrameStyle
 
 struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 {
+	// avoiding naming conflicts with elements who might want to reuse FrameElement but add separate styling for the contents
 	FrameStyle frameStyle;
 
 	// for PaddingStyleMixin
@@ -64,6 +65,37 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	FrameElement& RemoveFrameStyle();
 	FrameElement& SetFrameStyle(const StaticID<FrameStyle>& id);
 	FrameElement& SetDefaultFrameStyle(DefaultFrameStyle style);
+};
+
+struct IconStyle
+{
+	static constexpr const char* NAME = "IconStyle";
+
+	Size2f size;
+	PainterHandle painter;
+
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
+enum class DefaultIconStyle
+{
+	Checkbox,
+	RadioButton,
+	TreeExpand,
+};
+
+struct IconElement : UIElement // TODO no children
+{
+	IconStyle style;
+
+	void OnReset() override;
+	void OnPaint(const UIPaintContext& ctx) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+
+	IconElement& SetStyle(const StaticID<IconStyle>& id);
+	IconElement& SetDefaultStyle(DefaultIconStyle style);
 };
 
 struct LabelFrame : FrameElement
@@ -202,27 +234,32 @@ struct RadioButtonT : StateToggleBase
 	}
 };
 
-struct StateToggleVisualBase : UIElement
+struct StateToggleIconBase : IconElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct CheckboxIcon : StateToggleVisualBase
+struct StateToggleFrameBase : UIElement
+{
+	void OnPaint(const UIPaintContext& ctx) override;
+};
+
+struct CheckboxIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct RadioButtonIcon : StateToggleVisualBase
+struct RadioButtonIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct TreeExpandIcon : StateToggleVisualBase
+struct TreeExpandIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct StateButtonSkin : StateToggleVisualBase
+struct StateButtonSkin : StateToggleFrameBase
 {
 	void OnReset() override;
 };

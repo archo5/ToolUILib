@@ -1027,6 +1027,7 @@ void WrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 }
 
 
+#if 0
 Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
 {
 	size.x -= styleProps->padding_left + styleProps->padding_right;
@@ -1080,6 +1081,7 @@ void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSi
 	finalRectC = inRect;
 	finalRectCP = rect;
 }
+#endif
 
 
 void SizeConstraintElement::OnReset()

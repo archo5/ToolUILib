@@ -529,15 +529,15 @@ void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 
 void CurveEditorElement::OnReset()
 {
-	PaddedFillerElement::OnReset();
+	FrameElement::OnReset();
 
 	curveView = nullptr;
 	viewport = { 0, 0, 1, 1 };
 	settings = {};
 	gridSettings = {};
 
-	GetStyle().SetPadding(4);
-	flags |= UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
+	SetDefaultFrameStyle(DefaultFrameStyle::ListBox); // TODO custom style
+	flags |= UIObject_DB_CaptureMouseOnLeftClick;
 }
 
 void CurveEditorElement::OnEvent(Event& e)

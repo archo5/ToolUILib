@@ -1,9 +1,9 @@
 {
-	"tree_expand:style":
+	"tree_expand:IconStyle":
 	{
-		"width": "22px",
-		"height": "22px",
-		"backgroundPainter": "tree_expand"
+		width = 22
+		height = 22
+		painter = "tree_expand"
 	},
 	"tree_expand:painter":
 	{

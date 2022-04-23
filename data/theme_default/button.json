@@ -4,7 +4,6 @@
 		"layout": "stack",
 		"stackingDirection": "LeftToRight",
 		"horAlign": "center",
-		"width": "1fr",
 		"padding": 5,
 		"backgroundPainter": "button"
 	},

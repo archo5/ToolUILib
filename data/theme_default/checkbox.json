@@ -1,9 +1,9 @@
 {
-	"checkbox:style":
+	"checkbox:IconStyle":
 	{
-		"width": "22px",
-		"height": "22px",
-		"backgroundPainter": "checkbox"
+		width = 22
+		height = 22
+		painter = "checkbox"
 	},
 	"checkbox:painter":
 	{

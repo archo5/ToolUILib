@@ -3,6 +3,8 @@
 
 #include "../Model/Objects.h"
 
+#include "../Model/Controls.h" // TODO: only for FrameElement
+
 
 namespace ui {
 
@@ -169,7 +171,7 @@ struct CurveEditorUI : CurveEditorState
 	void Render(const CurveEditorInput& input, ICurveView* curves);
 };
 
-struct CurveEditorElement : PaddedFillerElement
+struct CurveEditorElement : FrameElement
 {
 	CurveEditorUI _ui;
 	ICurveView* curveView = nullptr;

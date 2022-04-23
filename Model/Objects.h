@@ -542,6 +542,7 @@ struct WrapperElement : UIObjectSingleChild
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
+#if 0
 struct PaddedWrapperElement : UIObjectSingleChild
 {
 	Size2f GetReducedContainerSize(Size2f size);
@@ -549,6 +550,7 @@ struct PaddedWrapperElement : UIObjectSingleChild
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
+#endif
 
 struct FillerElement : UIObjectSingleChild
 {
@@ -568,6 +570,7 @@ struct FillerElement : UIObjectSingleChild
 	}
 };
 
+#if 0
 struct PaddedFillerElement : UIObjectSingleChild
 {
 	Size2f GetReducedContainerSize(Size2f size);
@@ -575,6 +578,7 @@ struct PaddedFillerElement : UIObjectSingleChild
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::Exact(containerSize.y); }
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
+#endif
 
 struct SizeConstraintElement : WrapperElement
 {
