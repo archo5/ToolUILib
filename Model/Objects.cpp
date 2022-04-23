@@ -506,7 +506,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	auto style = GetStyle();
 
 	auto width = style.GetWidth();
-	auto minWidth = style.GetMinWidth();
 
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
 
@@ -521,12 +520,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 		contSizeShrunk.x -= addP;
 		contSizeShrunk.y -= style.GetPaddingTop() + style.GetPaddingBottom();
 		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP;
-	}
-
-	if (minWidth.IsDefined())
-	{
-		float resMinW = ResolveUnits(minWidth, containerSize.x);
-		resW = max(resW, resMinW);
 	}
 
 	float resMaxW = width.IsDefined() ? resW : FLT_MAX;

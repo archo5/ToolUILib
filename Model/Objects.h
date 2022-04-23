@@ -771,7 +771,11 @@ struct Buildable : UIObject
 
 struct Modifier
 {
-	virtual void Apply(UIObject* obj) const = 0;
+	virtual void OnBeforeControlGroup() const {}
+	virtual void OnAfterControlGroup() const {}
+	virtual void OnBeforeControl() const {}
+	virtual void OnAfterControl() const {}
+	virtual void Apply(UIObject* obj) const {}
 };
 
 template <class T>
@@ -798,31 +802,7 @@ struct Enable : Modifier
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
 };
 
-#define UI_COORD_VALUE_PROXY(name) \
-struct _Set##name##Only : Modifier \
-{ \
-	Coord _c; \
-	_Set##name##Only(const Coord& c) : _c(c) {} \
-	void Apply(UIObject* obj) const override { obj->GetStyle().Set##name(_c); } \
-}; \
-inline _Set##name##Only Set##name(const Coord& c) { return { c }; } \
-
-UI_COORD_VALUE_PROXY(Width);
-UI_COORD_VALUE_PROXY(Height);
-UI_COORD_VALUE_PROXY(MinWidth);
-UI_COORD_VALUE_PROXY(MinHeight);
-
 #undef UI_COORD_VALUE_PROXY
-
-struct SetPadding : Modifier
-{
-	float _l, _r, _t, _b;
-	SetPadding(float c) : _l(c), _r(c), _t(c), _b(c) {}
-	SetPadding(float v, float h) : _l(h), _r(h), _t(v), _b(v) {}
-	SetPadding(float t, float lr, float b) : _l(lr), _r(lr), _t(t), _b(b) {}
-	SetPadding(float t, float r, float b, float l) : _l(l), _r(r), _t(t), _b(b) {}
-	void Apply(UIObject* obj) const override { obj->GetStyle().SetPadding(_t, _r, _b, _l); }
-};
 
 struct AddEventHandler : Modifier
 {

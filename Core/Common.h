@@ -20,6 +20,11 @@ template <class T> UI_FORCEINLINE T min(T a, T b) { return a < b ? a : b; }
 template <class T> UI_FORCEINLINE T max(T a, T b) { return a > b ? a : b; }
 template <class T> UI_FORCEINLINE T clamp(T x, T vmin, T vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }
 
+template <typename T> struct ReverseIterable { T& iterable; };
+template <typename T> inline auto begin(ReverseIterable<T> w) { return std::rbegin(w.iterable); }
+template <typename T> inline auto end(ReverseIterable<T> w) { return std::rend(w.iterable); }
+template <typename T> inline ReverseIterable<T> ReverseIterate(T&& iterable) { return { iterable }; }
+
 template <class T>
 struct Optional
 {

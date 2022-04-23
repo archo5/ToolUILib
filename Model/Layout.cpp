@@ -574,24 +574,9 @@ void StyleAccessor::SetHeight(Coord v)
 	AccSet(*this, offsetof(StyleBlock, height), v);
 }
 
-Coord StyleAccessor::GetMinWidth() const
-{
-	return block->min_width;
-}
-
-void StyleAccessor::SetMinWidth(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, min_width), v);
-}
-
 Coord StyleAccessor::GetMinHeight() const
 {
 	return block->min_height;
-}
-
-void StyleAccessor::SetMinHeight(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, min_height), v);
 }
 
 float StyleAccessor::GetPaddingLeft() const

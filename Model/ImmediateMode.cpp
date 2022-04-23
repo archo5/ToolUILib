@@ -71,6 +71,9 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 
 bool Button(const char* text, ModInitList mods)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& btn = MakeWithText<ui::Button>(text);
 	btn.flags |= UIObject_DB_IMEdit;
 	if (!GetEnabled())
@@ -84,11 +87,18 @@ bool Button(const char* text, ModInitList mods)
 		btn.flags &= ~UIObject_IsEdited;
 		btn._OnIMChange();
 	}
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return clicked;
 }
 
 bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& cb = Push<StateToggle>();
 	skin.BuildContents(cb, text ? text : StringView(), val);
 	Pop();
@@ -106,6 +116,10 @@ bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggl
 		cb._OnIMChange();
 	}
 	cb.InitReadOnly(val);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return edited;
 }
 
@@ -121,6 +135,9 @@ bool EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleS
 
 bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& rb = Push<StateToggle>();
 	skin.BuildContents(rb, text ? text : StringView(), val);
 	Pop();
@@ -138,6 +155,10 @@ bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateTo
 		rb._OnIMChange();
 	}
 	rb.InitReadOnly(val);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return edited;
 }
 
@@ -191,6 +212,9 @@ float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON)
 
 template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& tb = Make<Textbox>();
 	if (!GetEnabled())
 		tb.flags |= UIObject_IsDisabled;
@@ -284,6 +308,9 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		tb.RebuildContainer();
 	};
 
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return edited;
 }
 
@@ -314,6 +341,9 @@ bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig
 
 bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& tb = Make<Textbox>();
 	if (!GetEnabled())
 		tb.flags |= UIObject_IsDisabled;
@@ -334,11 +364,18 @@ bool EditString(const char* text, const std::function<void(const char*)>& retfn,
 		tb.flags |= UIObject_IsEdited;
 		tb.RebuildContainer();
 	};
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return changed;
 }
 
 bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
@@ -361,6 +398,10 @@ bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 		ced.flags |= UIObject_IsEdited;
 		ced.RebuildContainer();
 	};
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
 	return changed;
 }
 
@@ -377,6 +418,9 @@ bool EditColor(Color4b& val, bool delayed, ModInitList mods)
 
 bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
+	for (auto& mod : mods)
+		mod->OnBeforeControlGroup();
+
 	bool any = false;
 	char axisLabel[3] = "\b\0";
 	while (*axes)
@@ -384,6 +428,10 @@ bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConf
 		axisLabel[1] = *axes++;
 		any |= PropEditFloat(axisLabel, *val++, mods, cfg, range, fmt);
 	}
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControlGroup();
+
 	return any;
 }
 

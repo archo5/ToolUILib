@@ -6,6 +6,21 @@
 
 
 namespace ui {
+
+struct SetMinWidth : Modifier
+{
+	float w;
+	SetMinWidth(float _w) : w(_w) {}
+	void OnBeforeControl() const override
+	{
+		Push<SizeConstraintElement>().SetMinWidth(w);
+	}
+	void OnAfterControl() const override
+	{
+		Pop();
+	}
+};
+
 namespace imm {
 
 
