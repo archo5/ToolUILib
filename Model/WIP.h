@@ -243,6 +243,24 @@ struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
+struct TabbedPanelStyle
+{
+	static constexpr const char* NAME = "TabbedPanelStyle";
+
+	//float tabHeight = 22; // TODO autodetect?
+	float tabButtonOverlap = 2;
+	float tabButtonYOffsetInactive = 1;
+	float tabInnerButtonMargin = 4;
+	AABB2f tabButtonPadding = {};
+	PainterHandle tabButtonPainter;
+	AABB2f tabPanelPadding = {};
+	PainterHandle tabPanelPainter;
+	Size2f tabCloseButtonSize = {};
+	PainterHandle tabCloseButtonPainter;
+
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
 struct TabbedPanel : UIObjectSingleChild
 {
 	struct Tab
@@ -258,13 +276,9 @@ struct TabbedPanel : UIObjectSingleChild
 	size_t _curTabNum = 0;
 	SubUI<uint32_t> _tabUI;
 
-	StyleBlockRef panelStyle;
+	TabbedPanelStyle style;
 	StyleBlockRef tabButtonStyle;
-	StyleBlockRef tabCloseButtonStyle;
 	float tabHeight = 22;
-	float tabButtonOverlap = 2;
-	float tabButtonYOffsetInactive = 1;
-	float tabInnerButtonMargin = 4;
 
 	UIObject* _tabBarExtension = nullptr;
 	bool showCloseButton = false;

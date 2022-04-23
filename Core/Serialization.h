@@ -218,6 +218,8 @@ struct JSONLinearReader
 	void EndArray();
 	bool BeginDict(const char* key);
 	void EndDict();
+	void BeginEntry(Entry* E);
+	void EndEntry();
 
 	json_value_s* _root = nullptr;
 	std::vector<StackElement> _stack;

@@ -1,20 +1,18 @@
 {
-	"tab_button:style":
+	"tabbed_panel:TabbedPanelStyle":
 	{
-		"padding": 5,
-		"backgroundPainter": "tab_button"
-	},
-	"tab_panel:style":
-	{
-		"padding": 5,
-		"backgroundPainter": "tab_panel"
-	},
-	"tab_close_button:style":
-	{
-		"width": "12px",
-		"height": "12px",
-		"backgroundPainter": "tab_close_button"
-	},
+		tabButtonOverlap = 2
+		tabButtonYOffsetInactive = 1
+		tabInnerButtonMargin = 4
+		tabButtonPadding = 5
+		tabButtonPainter = "tab_button"
+		tabPanelPadding = 5
+		tabPanelPainter = "tab_panel"
+		tabCloseButtonWidth = 12
+		tabCloseButtonHeight = 12
+		tabCloseButtonPainter = "tab_close_button"
+	}
+	"tab_button:style": {}
 
 	"tab_button:painter":
 	{

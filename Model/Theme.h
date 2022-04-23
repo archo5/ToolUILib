@@ -45,7 +45,7 @@ template <class T> IThemeStructLoader* GetThemeStructLoader()
 
 struct IThemeLoader
 {
-	virtual PainterHandle LoadPainter() = 0;
+	virtual PainterHandle LoadPainter(const FieldInfo& FI) = 0;
 	virtual Color4b LoadColor(const FieldInfo& FI) = 0;
 	virtual draw::ImageSetHandle FindImageSet(const std::string& name) = 0;
 };

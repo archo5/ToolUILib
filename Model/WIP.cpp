@@ -259,6 +259,22 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 }
 
 
+void TabbedPanelStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	//OnField(oi, "tabHeight", tabHeight);
+	OnField(oi, "tabButtonOverlap", tabButtonOverlap);
+	OnField(oi, "tabButtonYOffsetInactive", tabButtonYOffsetInactive);
+	OnField(oi, "tabInnerButtonMargin", tabInnerButtonMargin);
+	OnFieldBorderBox(oi, "tabButtonPadding", tabButtonPadding);
+	OnFieldPainter(oi, td, "tabButtonPainter", tabButtonPainter);
+	OnFieldBorderBox(oi, "tabPanelPadding", tabPanelPadding);
+	OnFieldPainter(oi, td, "tabPanelPainter", tabPanelPainter);
+	OnField(oi, "tabCloseButtonWidth", tabCloseButtonSize.x);
+	OnField(oi, "tabCloseButtonHeight", tabCloseButtonSize.y);
+	OnFieldPainter(oi, td, "tabCloseButtonPainter", tabCloseButtonPainter);
+}
+
+
 void TabbedPanel::SetTabBarExtension(UIObject* obj)
 {
 	if (_tabBarExtension == obj)
@@ -317,22 +333,20 @@ bool TabbedPanel::SetActiveTabByUID(uintptr_t uid)
 	return false;
 }
 
-static StaticID_Style sid_tab_panel("tab_panel");
+static StaticID<TabbedPanelStyle> sid_tabbed_panel("tabbed_panel");
 static StaticID_Style sid_tab_button("tab_button");
-static StaticID_Style sid_tab_close_button("tab_close_button");
 
 void TabbedPanel::OnReset()
 {
 	UIObjectSingleChild::OnReset();
 
+	tabHeight = 22;
+	style = *GetCurrentTheme()->GetStruct(sid_tabbed_panel);
+	tabButtonStyle = GetCurrentTheme()->GetStyle(sid_tab_button);
+
 	_tabs.clear();
 	_tabBarExtension = nullptr;
 	//_curTabNum = 0;
-	panelStyle = GetCurrentTheme()->GetStyle(sid_tab_panel);
-	tabButtonStyle = GetCurrentTheme()->GetStyle(sid_tab_button);
-	tabCloseButtonStyle = GetCurrentTheme()->GetStyle(sid_tab_close_button);
-	tabHeight = 22;
-	tabButtonOverlap = 2;
 	rebuildOnChange = true;
 }
 
@@ -352,22 +366,22 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 		size_t id = &tab - &_tabs.front();
 
 		float tw = tab._contentWidth;
-		float x1 = x0 + tw + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
+		float x1 = x0 + tw + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
 
 		if (showCloseButton)
 		{
-			float cx0 = x0 + tabButtonStyle->padding_left + tw + tabInnerButtonMargin;
-			float cy0 = y0 + tabButtonStyle->padding_top;
+			float cx0 = x0 + style.tabButtonPadding.x0 + tw + style.tabInnerButtonMargin;
+			float cy0 = y0 + style.tabButtonPadding.y0;
 			if (id != _curTabNum)
-				cy0 += tabButtonYOffsetInactive;
-			x1 += tabInnerButtonMargin + tabCloseButtonStyle->width.value;
+				cy0 += style.tabButtonYOffsetInactive;
+			x1 += style.tabInnerButtonMargin + style.tabCloseButtonSize.x;
 			PaintInfo pi(this);
 			pi.rect =
 			{
 				cx0,
 				cy0,
-				cx0 + tabCloseButtonStyle->width.value,
-				cy0 + tabCloseButtonStyle->height.value
+				cx0 + style.tabCloseButtonSize.x,
+				cy0 + style.tabCloseButtonSize.y
 			};
 			pi.state = 0;
 			pi.checkState = 0;
@@ -375,7 +389,8 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 				pi.state |= PS_Hover;
 			if (_tabUI.IsPressed(id | (1 << 31)))
 				pi.state |= PS_Down;
-			tabCloseButtonStyle->background_painter->Paint(pi);
+			if (style.tabCloseButtonPainter)
+				style.tabCloseButtonPainter->Paint(pi);
 		}
 
 		UIRect tabButtonRect = { x0, y0, x1, y1 };
@@ -389,7 +404,9 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 			pi.state |= PS_Down;
 		if (id == _curTabNum)
 			pi.SetChecked(true);
-		auto cpa = tabButtonStyle->background_painter->Paint(pi);
+		ContentPaintAdvice cpa;
+		if (style.tabButtonPainter)
+			cpa = style.tabButtonPainter->Paint(pi);
 
 		if (tab.obj)
 		{
@@ -398,8 +415,8 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 		else
 		{
 			draw::TextLine(tbFont, tbFontSize,
-				x0 + tabButtonStyle->padding_left + cpa.offset.x,
-				y0 + tabButtonStyle->padding_top + tbFontSize + cpa.offset.y,
+				x0 + style.tabButtonPadding.x0 + cpa.offset.x,
+				y0 + style.tabButtonPadding.y0 + tbFontSize + cpa.offset.y,
 				tab.text,
 				cpa.HasTextColor() ? cpa.GetTextColor() : tabButtonStyle->text_color);
 		}
@@ -411,25 +428,28 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 	if (_tabBarExtension)
 		_tabBarExtension->Paint(ctx);
 
-	PaintInfo pi(this);
-	pi.rect.y0 += tabHeight - tabButtonOverlap;
-	auto panelRect = pi.rect;
-	if (tabButtonOverlap > 0 && btnRect.x1 < panelRect.x1)
+	if (style.tabPanelPainter)
 	{
-		draw::PushScissorRect(UIRect{ panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1 });
-		panelStyle->background_painter->Paint(pi);
-		draw::PopScissorRect();
+		PaintInfo pi(this);
+		pi.rect.y0 += tabHeight - style.tabButtonOverlap;
+		auto panelRect = pi.rect;
+		if (style.tabButtonOverlap > 0 && btnRect.x1 < panelRect.x1)
+		{
+			draw::PushScissorRect(UIRect{ panelRect.x0, panelRect.y0, btnRect.x0, panelRect.y1 });
+			style.tabPanelPainter->Paint(pi);
+			draw::PopScissorRect();
 
-		draw::PushScissorRect(UIRect{ btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1 });
-		panelStyle->background_painter->Paint(pi);
-		draw::PopScissorRect();
+			draw::PushScissorRect(UIRect{ btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1 });
+			style.tabPanelPainter->Paint(pi);
+			draw::PopScissorRect();
 
-		draw::PushScissorRect(UIRect{ btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1 });
-		panelStyle->background_painter->Paint(pi);
-		draw::PopScissorRect();
+			draw::PushScissorRect(UIRect{ btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1 });
+			style.tabPanelPainter->Paint(pi);
+			draw::PopScissorRect();
+		}
+		else
+			style.tabPanelPainter->Paint(pi);
 	}
-	else
-		panelStyle->background_painter->Paint(pi);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -446,10 +466,10 @@ void TabbedPanel::OnEvent(Event& e)
 	for (auto& tab : _tabs)
 	{
 		float tw = tab._contentWidth;
-		float x1 = x0 + tw + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
+		float x1 = x0 + tw + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
 		if (showCloseButton)
 		{
-			x1 += tabInnerButtonMargin + tabCloseButtonStyle->width.value;
+			x1 += style.tabInnerButtonMargin + style.tabCloseButtonSize.x;
 		}
 		UIRect tabButtonRect = { x0, y0, x1, y1 };
 
@@ -466,17 +486,17 @@ void TabbedPanel::OnEvent(Event& e)
 
 		if (showCloseButton)
 		{
-			float cx0 = x0 + tabButtonStyle->padding_left + tw + tabInnerButtonMargin;
-			float cy0 = y0 + tabButtonStyle->padding_top;
+			float cx0 = x0 + style.tabButtonPadding.x0 + tw + style.tabInnerButtonMargin;
+			float cy0 = y0 + style.tabButtonPadding.y0;
 			if (id != _curTabNum)
-				cy0 += tabButtonYOffsetInactive;
+				cy0 += style.tabButtonYOffsetInactive;
 			PaintInfo pi(this);
 			UIRect tabCloseButtonRect =
 			{
 				cx0,
 				cy0,
-				cx0 + tabCloseButtonStyle->width.value,
-				cy0 + tabCloseButtonStyle->height.value
+				cx0 + style.tabCloseButtonSize.x,
+				cy0 + style.tabCloseButtonSize.y
 			};
 			if (_tabUI.ButtonOnEvent(id | (1 << 31), tabCloseButtonRect, e))
 			{
@@ -493,35 +513,35 @@ void TabbedPanel::OnEvent(Event& e)
 
 Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
 {
-	size.x -= panelStyle->padding_left + panelStyle->padding_right;
-	size.y -= panelStyle->padding_top + panelStyle->padding_bottom + tabHeight - tabButtonOverlap;
+	size.x -= style.tabPanelPadding.x0 + style.tabPanelPadding.x1;
+	size.y -= style.tabPanelPadding.y0 + style.tabPanelPadding.y1 + tabHeight - style.tabButtonOverlap;
 	return size;
 }
 
 Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	float pad = 
-		+ panelStyle->padding_left
-		+ panelStyle->padding_right
-		+ (showCloseButton ? tabInnerButtonMargin + tabCloseButtonStyle->width.value : 0);
+		+ style.tabPanelPadding.x0
+		+ style.tabPanelPadding.x1
+		+ (showCloseButton ? style.tabInnerButtonMargin + style.tabCloseButtonSize.x : 0);
 	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
 	float pad =
-		+ panelStyle->padding_top
-		+ panelStyle->padding_bottom
+		+ style.tabPanelPadding.y0
+		+ style.tabPanelPadding.y1
 		+ tabHeight
-		- tabButtonOverlap;
+		- style.tabButtonOverlap;
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	auto subr = rect;
-	subr.y0 += tabHeight - tabButtonOverlap;
-	subr = subr.ShrinkBy(panelStyle->GetPaddingRect());
+	subr.y0 += tabHeight - style.tabButtonOverlap;
+	subr = subr.ShrinkBy(style.tabPanelPadding);
 
 	auto* tbFont = tabButtonStyle->GetFont();
 	int tbFontSize = tabButtonStyle->font_size;
@@ -542,15 +562,15 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 		}
 		if (tab.obj)
 		{
-			float xbase = x0 + tabButtonStyle->padding_left;
+			float xbase = x0 + style.tabButtonPadding.x0;
 			UIRect trect = { xbase, y0, xbase + tab._contentWidth, y1 };
 			tab.obj->PerformLayout(trect, trect.GetSize());
 		}
 
-		float tw = tab._contentWidth + tabButtonStyle->padding_left + tabButtonStyle->padding_right;
+		float tw = tab._contentWidth + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
 		if (showCloseButton)
 		{
-			tw += tabInnerButtonMargin + tabCloseButtonStyle->width.value;
+			tw += style.tabInnerButtonMargin + style.tabCloseButtonSize.x;
 		}
 		x0 += tw;
 	}

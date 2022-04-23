@@ -270,14 +270,32 @@ ImageElement& ImageElement::SetAlphaBackgroundEnabled(bool enabled)
 }
 
 
+void CursorStyle::Paint(UIObject* obj, Vec2f pos)
+{
+	if (!painter)
+		return;
+
+	PaintInfo pi(obj);
+	pi.rect = AABB2f::FromPoint(pos.x, pos.y).ExtendBy(expand);
+	painter->Paint(pi);
+}
+
+void CursorStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	OnFieldBorderBox(oi, "expand", expand);
+	OnFieldPainter(oi, td, "painter", painter);
+}
+
+
 static StaticID<FrameStyle> sid_framestyle_selector_container("selector_container");
-static StaticID_Style sid_selector("selector");
+static StaticID<CursorStyle> sid_cursorstyle_selector("selector");
 void HueSatPicker::OnReset()
 {
 	FrameElement::OnReset();
 
 	SetFrameStyle(sid_framestyle_selector_container);
-	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
+	selectorStyle = *GetCurrentTheme()->GetStruct(sid_cursorstyle_selector);
+
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
 	_hue = 0;
@@ -322,13 +340,7 @@ void HueSatPicker::OnPaint(const UIPaintContext& ctx)
 	float cy = cr.y0 + hw;
 	float sx = cx + sinf(_hue * 3.14159f * 2) * _sat * hw;
 	float sy = cy - cosf(_hue * 3.14159f * 2) * _sat * hw;
-	float sw = ResolveUnits(selectorStyle->width, cr.GetWidth());
-	float sh = ResolveUnits(selectorStyle->height, cr.GetWidth());
-	sx = roundf(sx - sw / 2);
-	sy = roundf(sy - sh / 2);
-	PaintInfo info(this);
-	info.rect = { sx, sy, sx + sw, sy + sh };
-	selectorStyle->background_painter->Paint(info);
+	selectorStyle.Paint(this, { roundf(sx), roundf(sy) });
 
 	ph.PaintChildren(this, ctx);
 }
@@ -377,7 +389,7 @@ void ColorCompPicker2D::OnReset()
 	FrameElement::OnReset();
 
 	SetFrameStyle(sid_framestyle_selector_container);
-	selectorStyle = GetCurrentTheme()->GetStyle(sid_selector);
+	selectorStyle = *GetCurrentTheme()->GetStruct(sid_cursorstyle_selector);
 	SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 
 	_settings = {};
@@ -415,13 +427,7 @@ void ColorCompPicker2D::OnPaint(const UIPaintContext& ctx)
 
 	float sx = lerp(cr.x0, cr.x1, _settings._invx ? 1 - _x : _x);
 	float sy = lerp(cr.y0, cr.y1, _settings._invy ? 1 - _y : _y);
-	float sw = ResolveUnits(selectorStyle->width, cr.GetWidth());
-	float sh = ResolveUnits(selectorStyle->height, cr.GetWidth());
-	sx = roundf(sx - sw / 2);
-	sy = roundf(sy - sh / 2);
-	PaintInfo info(this);
-	info.rect = { sx, sy, sx + sw, sy + sh };
-	selectorStyle->background_painter->Paint(info);
+	selectorStyle.Paint(this, { roundf(sx), roundf(sy) });
 
 	ph.PaintChildren(this, ctx);
 }

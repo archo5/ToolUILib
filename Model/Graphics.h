@@ -104,6 +104,17 @@ struct ImageElement : UIElement
 	draw::ImageSetHandle _bgImageSet;
 };
 
+struct CursorStyle
+{
+	static constexpr const char* NAME = "CursorStyle";
+
+	AABB2f expand = {};
+	PainterHandle painter;
+
+	void Paint(UIObject* obj, Vec2f pos);
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
 struct HueSatPicker : FrameElement, PreferredSizeLayout
 {
 	Size2f size = { 256, 256 };
@@ -132,7 +143,7 @@ struct HueSatPicker : FrameElement, PreferredSizeLayout
 
 	void _RegenerateBackground(int w);
 
-	StyleBlockRef selectorStyle;
+	CursorStyle selectorStyle;
 	float _hue = 0;
 	float _sat = 0;
 	draw::ImageHandle _bgImage;
@@ -226,7 +237,7 @@ struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
 
 	void _RegenerateBackground(int w, int h);
 
-	StyleBlockRef selectorStyle;
+	CursorStyle selectorStyle;
 	ColorCompPicker2DSettings _settings, _curImgSettings;
 	float _x = 0;
 	float _y = 0;

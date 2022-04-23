@@ -1,18 +1,25 @@
-"dropdown_button:style":
+"dropdown_button:FrameStyle":
 {
 	padding = 5
 	paddingRight = 20
-	height = 22
-	backgroundPainter = "button"
+	backgroundPainter = "dropdown_button"
 }
 
-"dropdown_button_icon:style":
+"dropdown_button:painter":
 {
-	width = "10px"
-	height = "10px"
-	backgroundPainter = "dropdown_button_icon"
+	__ = "layer", painters =
+	[
+		"button",
+		{
+			__ = "point_anchored_placement_rect_mod"
+			anchor = { x = 1, y = 0.5 }
+			pivot = { x = 1, y = 0.5 }
+			size = { x = 10, y = 10 }
+			bias = { x = -5, y = 1 }
+			painter = "dropdown_button_icon"
+		}
+	]
 }
-
 "dropdown_button_icon:painter":
 {
 	__ = "imgset", imgset = "dropdown-icon"

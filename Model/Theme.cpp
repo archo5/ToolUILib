@@ -418,20 +418,64 @@ struct ThemeLoaderData : IThemeLoader
 
 	ThemeFileHandle curFile;
 
-	PainterHandle LoadPainter() override
+	PainterHandle LoadPainter(const FieldInfo& FI) override
 	{
 		if (!curFile)
 			return nullptr;
 
-		auto type = curFile->unserializer.ReadString("__");
-		if (!type.HasValue())
+		auto* e = curFile->unserializer.FindEntry(FI.name);
+		if (!e)
 			return nullptr;
 
-		auto it = g_painterCreateFuncs.find(type.GetValue());
-		if (!it.is_valid())
+		if (e->type == json_type_string)
+		{
+			auto* s = json_value_as_string(e);
+
+			return _LoadPainterByName(s->string);
+		}
+		else if (e->type == json_type_object)
+		{
+			curFile->unserializer.BeginEntry(e);
+
+			auto type = curFile->unserializer.ReadString("__");
+			if (!type.HasValue())
+				return nullptr;
+
+			auto it = g_painterCreateFuncs.find(type.GetValue());
+			if (!it.is_valid())
+				return nullptr;
+
+			auto ret = it->value(this, curFile->unserializer);
+
+			curFile->unserializer.EndEntry();
+			return ret;
+		}
+
+		return nullptr;
+	}
+
+	PainterHandle _LoadPainterByName(const std::string& name)
+	{
+		auto it = loadedData->painters.find(name);
+		if (it.is_valid())
+			return it->value;
+
+		auto it2 = painters.find(name);
+		if (!it2.is_valid())
 			return nullptr;
 
-		return it->value(this, curFile->unserializer);
+		auto& u = it2->value.file->unserializer;
+		auto prevCurFile = curFile;
+		curFile = it2->value.file;
+		u.BeginEntry(u._root);
+
+		auto loaded = LoadPainter(it2->value.key);
+		loadedData->painters.insert(it2->key, loaded);
+
+		u.EndEntry();
+		curFile = prevCurFile;
+
+		return loaded;
 	}
 
 	StyleBlockRef GetStyleBlock(const std::string& name)
@@ -736,15 +780,7 @@ void ThemeData::LoadTheme(StringView folder)
 
 	for (auto& painter : tld.painters)
 	{
-		auto& u = painter.value.file->unserializer;
-		tld.curFile = painter.value.file;
-		u.BeginDict(painter.value.key);
-		{
-			auto loaded = tld.LoadPainter();
-			tld.loadedData->painters.insert(painter.key, loaded);
-		}
-		u.EndDict();
-		tld.curFile = nullptr;
+		tld._LoadPainterByName(painter.key);
 	}
 
 	for (auto& style : tld.styles)
@@ -774,12 +810,8 @@ static IPainter* LayerPainterCreateFunc(IThemeLoader* loader, IObjectIterator& O
 	OI.BeginArray(0, "painters");
 	while (OI.HasMoreArrayElements())
 	{
-		OI.BeginObject({}, "Layer");
-		{
-			if (auto cp = loader->LoadPainter())
-				p->layers.push_back(cp);
-		}
-		OI.EndObject();
+		if (auto cp = loader->LoadPainter({}))
+			p->layers.push_back(cp);
 	}
 	OI.EndArray();
 
@@ -831,9 +863,7 @@ static IPainter* ConditionalPainterCreateFunc(IThemeLoader* loader, IObjectItera
 
 	p->condition = ParseCondition(OI, "condition");
 
-	OI.BeginObject("painter", "Painter");
-	p->painter = loader->LoadPainter();
-	OI.EndObject();
+	p->painter = loader->LoadPainter("painter");
 
 	return p;
 }
@@ -851,14 +881,26 @@ static IPainter* SelectFirstPainterCreateFunc(IThemeLoader* loader, IObjectItera
 			item.condition = ParseCondition(OI, "condition");
 			OnField(OI, "checkState", item.checkState);
 
-			OI.BeginObject("painter", "Painter");
-			item.painter = loader->LoadPainter();
-			OI.EndObject();
+			item.painter = loader->LoadPainter("painter");
 		}
 		OI.EndObject();
 		p->items.push_back(item);
 	}
 	OI.EndArray();
+
+	return p;
+}
+
+static IPainter* PointAnchoredPlacementRectModPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
+{
+	auto* p = new PointAnchoredPlacementRectModPainter;
+
+	p->painter = loader->LoadPainter("painter");
+	OnField(OI, "anchor", p->anchor);
+	OnField(OI, "pivot", p->pivot);
+	OnField(OI, "bias", p->bias);
+	OnField(OI, "sizeAddFraction", p->sizeAddFraction);
+	OnField(OI, "size", p->size);
 
 	return p;
 }
@@ -896,6 +938,7 @@ void RegisterPainters()
 	RegisterPainter("layer", LayerPainterCreateFunc);
 	RegisterPainter("conditional", ConditionalPainterCreateFunc);
 	RegisterPainter("select_first", SelectFirstPainterCreateFunc);
+	RegisterPainter("point_anchored_placement_rect_mod", PointAnchoredPlacementRectModPainterCreateFunc);
 	RegisterPainter("color_fill", ColorFillPainterCreateFunc);
 	RegisterPainter("imgset", ImageSetPainterCreateFunc);
 }

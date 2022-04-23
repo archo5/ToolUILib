@@ -83,6 +83,7 @@ FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 static StaticID<FrameStyle> sid_framestyle_label("label");
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
+static StaticID<FrameStyle> sid_framestyle_dropdown_button("dropdown_button");
 static StaticID<FrameStyle> sid_framestyle_listbox("listbox");
 static StaticID<FrameStyle> sid_framestyle_textbox("textbox");
 static StaticID<FrameStyle> sid_framestyle_proc_graph_node("proc_graph_node");
@@ -94,6 +95,7 @@ FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 	case DefaultFrameStyle::Label: return SetFrameStyle(sid_framestyle_label);
 	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
 	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
+	case DefaultFrameStyle::DropdownButton: return SetFrameStyle(sid_framestyle_dropdown_button);
 	case DefaultFrameStyle::ListBox: return SetFrameStyle(sid_framestyle_listbox);
 	case DefaultFrameStyle::TextBox: return SetFrameStyle(sid_framestyle_textbox);
 	case DefaultFrameStyle::ProcGraphNode: return SetFrameStyle(sid_framestyle_proc_graph_node);
@@ -1782,14 +1784,9 @@ void DropdownMenu::OnEvent(Event& e)
 	}
 }
 
-static StaticID_Style sid_dropdown_button("dropdown_button");
-static StaticID_Style sid_dropdown_button_icon("dropdown_button_icon");
 void DropdownMenu::OnBuildButton()
 {
-	auto& ple = Push<PlacementLayoutElement>();
-
-	auto& btn = Push<StackLTRLayoutElement>();
-	btn.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button));
+	auto& btn = Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::DropdownButton);
 	btn.flags |= flags & UIObject_IsDisabled;
 	btn.SetFlag(UIObject_IsChecked, !!(flags & UIObject_IsChecked));
 	if (!(flags & UIObject_IsDisabled))
@@ -1803,23 +1800,11 @@ void DropdownMenu::OnBuildButton()
 		};
 	}
 
+	Push<StackLTRLayoutElement>();
 	OnBuildButtonContents();
-
 	Pop(); // StackLTRLayoutElement
 
-	auto tmpl = ple.GetSlotTemplate();
-
-	auto* pap = Allocate<PointAnchoredPlacement>();
-	pap->anchor = { 1, 0 };
-	pap->pivot = { 1, 0 };
-	pap->bias = { -5, 7 };
-	tmpl->placement = pap;
-	tmpl->measure = false;
-
-	auto& icon = Make<BoxElement>(); // TODO move to painter
-	icon.SetStyle(GetCurrentTheme()->GetStyle(sid_dropdown_button_icon));
-
-	Pop(); // PlacementLayoutElement
+	Pop(); // FrameElement(DropdownButton)
 }
 
 void DropdownMenu::OnBuildMenuWithLayout()

@@ -274,6 +274,18 @@ struct SelectFirstPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
+struct PointAnchoredPlacementRectModPainter : IPainter
+{
+	PainterHandle painter;
+	Vec2f anchor = { 0.5f, 0.5f };
+	Vec2f pivot = { 0.5f, 0.5f };
+	Vec2f bias;
+	Vec2f sizeAddFraction;
+	Vec2f size;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
 struct ColorFillPainter : IPainter
 {
 	Color4b color;

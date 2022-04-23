@@ -317,6 +317,24 @@ ContentPaintAdvice SelectFirstPainter::Paint(const PaintInfo& info)
 }
 
 
+ContentPaintAdvice PointAnchoredPlacementRectModPainter::Paint(const PaintInfo& info)
+{
+	auto ro = info.rect;
+
+	float w = ro.GetWidth() * sizeAddFraction.x + size.x;
+	float h = ro.GetHeight() * sizeAddFraction.y + size.y;
+	float x = lerp(ro.x0, ro.x1, anchor.x) - w * pivot.x + bias.x;
+	float y = lerp(ro.y0, ro.y1, anchor.y) - h * pivot.y + bias.y;
+	AABB2f rnew = { x, y, x + w, y + h };
+	const_cast<AABB2f&>(info.rect) = rnew;
+
+	auto cpa = painter->Paint(info);
+
+	const_cast<AABB2f&>(info.rect) = ro;
+	return cpa;
+}
+
+
 ContentPaintAdvice ColorFillPainter::Paint(const PaintInfo& info)
 {
 	AABB2f r = info.rect;

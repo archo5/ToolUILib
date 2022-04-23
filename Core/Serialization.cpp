@@ -850,6 +850,16 @@ void JSONLinearReader::EndDict()
 	_stack.pop_back();
 }
 
+void JSONLinearReader::BeginEntry(Entry* E)
+{
+	_stack.push_back({ E });
+}
+
+void JSONLinearReader::EndEntry()
+{
+	_stack.pop_back();
+}
+
 
 std::string Base16Encode(const void* src, size_t size)
 {

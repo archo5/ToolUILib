@@ -41,6 +41,7 @@ enum class DefaultFrameStyle
 	Label,
 	GroupBox,
 	Selectable,
+	DropdownButton,
 	ListBox,
 	TextBox,
 	ProcGraphNode,
