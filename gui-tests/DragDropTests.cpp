@@ -454,7 +454,6 @@ struct TreeNodeReorderTest : ui::Buildable
 };
 
 
-static ui::StaticID_Style sid_proc_graph_node("proc_graph_node");
 struct DragElementTest : ui::Buildable
 {
 	void Build() override
@@ -469,8 +468,8 @@ struct DragElementTest : ui::Buildable
 		drelPlacement = Allocate<ui::PointAnchoredPlacement>();
 		drelPlacement->bias = drelPos;
 		tmpl->placement = drelPlacement;
-		auto& tp = ui::Push<ui::PaddedWrapperElement>();
-		tp.SetStyle(ui::GetCurrentTheme()->GetStyle(sid_proc_graph_node));
+		auto& tp = ui::Push<ui::FrameElement>();
+		tp.SetDefaultFrameStyle(ui::DefaultFrameStyle::ProcGraphNode);
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::MakeWithText<ui::Selectable>("draggable area").Init(drelIsDragging) + ui::MakeDraggable() + ui::AddEventHandler([this, &tp](ui::Event& e)
 		{
@@ -493,7 +492,7 @@ struct DragElementTest : ui::Buildable
 		});
 		ui::MakeWithText<ui::LabelFrame>("the other part");
 		ui::Pop(); // StackTopDownLayoutElement
-		ui::Pop(); // PaddedWrapperElement(proc_graph_node)
+		ui::Pop(); // FrameElement(ProcGraphNode)
 
 		ui::Pop(); // PlacementLayoutElement
 		ui::Pop(); // ListBoxFrame

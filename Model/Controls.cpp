@@ -80,30 +80,34 @@ FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 	return *this;
 }
 
+static StaticID<FrameStyle> sid_framestyle_label("label");
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
 static StaticID<FrameStyle> sid_framestyle_listbox("listbox");
+static StaticID<FrameStyle> sid_framestyle_textbox("textbox");
+static StaticID<FrameStyle> sid_framestyle_proc_graph_node("proc_graph_node");
 static StaticID<FrameStyle> sid_framestyle_checkerboard("checkerboard");
 FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 {
 	switch (style)
 	{
+	case DefaultFrameStyle::Label: return SetFrameStyle(sid_framestyle_label);
 	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
 	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
 	case DefaultFrameStyle::ListBox: return SetFrameStyle(sid_framestyle_listbox);
+	case DefaultFrameStyle::TextBox: return SetFrameStyle(sid_framestyle_textbox);
+	case DefaultFrameStyle::ProcGraphNode: return SetFrameStyle(sid_framestyle_proc_graph_node);
 	case DefaultFrameStyle::Checkerboard: return SetFrameStyle(sid_framestyle_checkerboard);
 	}
 	return *this;
 }
 
 
-static StaticID_Style sid_prop_label("prop_label");
 void LabelFrame::OnReset()
 {
-	PaddedWrapperElement::OnReset();
+	FrameElement::OnReset();
 
-	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_prop_label); // TODO: do we need another style?
+	SetDefaultFrameStyle(DefaultFrameStyle::Label);
 }
 
 
@@ -225,7 +229,6 @@ void StateButtonSkin::OnReset()
 }
 
 
-static StaticID_Style sid_listbox("listbox");
 void ListBoxFrame::OnReset()
 {
 	FrameElement::OnReset();
@@ -238,7 +241,7 @@ void Selectable::OnReset()
 {
 	FrameElement::OnReset();
 
-	flags |= UIObject_DB_Selectable | UIObject_SetsChildTextStyle;
+	flags |= UIObject_DB_Selectable;
 	SetDefaultFrameStyle(DefaultFrameStyle::Selectable);
 }
 
@@ -425,6 +428,7 @@ double Slider::ValueToQ(double v)
 }
 
 
+static StaticID_Style sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {
 	UIElement::OnReset();
@@ -989,27 +993,29 @@ SplitPane* SplitPane::SetDirection(bool vertical)
 }
 
 
+void ScrollbarStyle::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	OnField(oi, "width", width);
+	OnFieldBorderBox(oi, "trackFillMargin", trackFillMargin);
+	OnField(oi, "thumbMinLength", thumbMinLength);
+	OnFieldPainter(oi, td, "trackPainter", trackPainter);
+	OnFieldPainter(oi, td, "thumbPainter", thumbPainter);
+}
+
 ScrollbarV::ScrollbarV()
 {
 	OnReset();
 }
 
-static StaticID_Style sid_scroll_v_track("scroll_v_track");
-static StaticID_Style sid_scroll_v_thumb("scroll_v_thumb");
+static StaticID<ScrollbarStyle> sid_scrollbar_style_vert("scrollbar_vertical");
 void ScrollbarV::OnReset()
 {
-	trackVStyle = GetCurrentTheme()->GetStyle(sid_scroll_v_track);
-	thumbVStyle = GetCurrentTheme()->GetStyle(sid_scroll_v_thumb);
+	style = *GetCurrentTheme()->GetStruct(sid_scrollbar_style_vert);
 }
 
 Coord ScrollbarV::GetWidth()
 {
-	return trackVStyle->width;
-}
-
-static UIRect sbv_GetTrackRect(const ScrollbarData& info, StyleBlock* trackVStyle)
-{
-	return info.rect.ShrinkBy(trackVStyle->GetPaddingRect());
+	return style.width;
 }
 
 UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
@@ -1020,10 +1026,10 @@ UIRect ScrollbarV::GetThumbRect(const ScrollbarData& info)
 	float scrollFactor = contentSize == viewportSize ? 0 : info.contentOff / (contentSize - viewportSize);
 	float thumbSizeFactor = viewportSize / contentSize;
 
-	UIRect trackRect = sbv_GetTrackRect(info, trackVStyle);
+	UIRect trackRect = info.rect.ShrinkBy(style.trackFillMargin);
 
 	float thumbSize = thumbSizeFactor * trackRect.GetHeight();
-	float minH = info.owner->ResolveUnits(thumbVStyle->min_height, info.rect.GetWidth());
+	float minH = style.thumbMinLength;
 	thumbSize = max(thumbSize, minH);
 
 	float pos = (trackRect.GetHeight() - thumbSize) * scrollFactor;
@@ -1036,7 +1042,8 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 	PaintInfo vsinfo;
 	vsinfo.obj = info.owner;
 	vsinfo.rect = info.rect;
-	trackVStyle->background_painter->Paint(vsinfo);
+	if (style.trackPainter)
+		style.trackPainter->Paint(vsinfo);
 
 	vsinfo.rect = GetThumbRect(info);
 	vsinfo.state = 0;
@@ -1049,7 +1056,8 @@ void ScrollbarV::OnPaint(const ScrollbarData& info)
 		if (uiState.IsPressed(0))
 			vsinfo.state |= PS_Down;
 	}
-	thumbVStyle->background_painter->Paint(vsinfo);
+	if (style.thumbPainter)
+		style.thumbPainter->Paint(vsinfo);
 }
 
 bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
@@ -1073,10 +1081,10 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 	case SubUIDragState::Move: {
 		float thumbSizeFactor = viewportSize / contentSize;
 
-		UIRect trackRect = sbv_GetTrackRect(info, trackVStyle);
+		UIRect trackRect = info.rect.ShrinkBy(style.trackFillMargin);
 
 		float thumbSize = thumbSizeFactor * trackRect.GetHeight();
-		float minH = info.owner->ResolveUnits(thumbVStyle->min_height, info.rect.GetWidth());
+		float minH = style.thumbMinLength;
 		thumbSize = max(thumbSize, minH);
 
 		float trackRange = trackRect.GetHeight() - thumbSize;
@@ -1172,20 +1180,21 @@ void ScrollArea::OnReset()
 }
 
 
-static StaticID_Style sid_textbox("textbox");
 void Textbox::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick | UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_textbox);
+	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick;
+	SetDefaultFrameStyle(DefaultFrameStyle::TextBox);
+
 	_placeholder = {};
 }
 
 void Textbox::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 
 	{
 		auto* font = styleProps->GetFont();
@@ -1537,6 +1546,18 @@ void Textbox::OnEvent(Event& e)
 	}
 }
 
+Rangef Textbox::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float minWidth = styleProps->font_size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
+	return FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minWidth));
+}
+
+Rangef Textbox::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	float minHeight = styleProps->font_size + frameStyle.padding.y0 + frameStyle.padding.y1;
+	return FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minHeight));
+}
+
 StringView Textbox::GetSelectedText() const
 {
 	int min = startCursor < endCursor ? startCursor : endCursor;
@@ -1885,22 +1906,6 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 }
 
 
-void TooltipFrame::OnReset()
-{
-	UIElement::OnReset();
-
-	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
-}
-
-
-void DragDropDataFrame::OnReset()
-{
-	UIElement::OnReset();
-
-	styleProps = GetCurrentTheme()->GetStyle(sid_listbox);
-}
-
-
 void DefaultOverlayBuilder::Build()
 {
 	if (drawTooltip || drawDragDrop)
@@ -1916,7 +1921,9 @@ void DefaultOverlayBuilder::Build()
 			tmpl->measure = false;
 			tmpl->placement = &placement;
 
-			Push<TooltipFrame>().RegisterAsOverlay();
+			Push<FrameElement>()
+				.SetDefaultFrameStyle(DefaultFrameStyle::ListBox)
+				.RegisterAsOverlay();
 			Tooltip::Build();
 			Pop();
 		}
@@ -1932,7 +1939,9 @@ void DefaultOverlayBuilder::Build()
 				tmpl->measure = false;
 				tmpl->placement = &placement;
 
-				Push<DragDropDataFrame>().RegisterAsOverlay();
+				Push<FrameElement>()
+					.SetDefaultFrameStyle(DefaultFrameStyle::ListBox)
+					.RegisterAsOverlay();
 				ddd->Build();
 				Pop();
 			}

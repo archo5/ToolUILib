@@ -175,13 +175,12 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 }
 
 
-static StaticID_Style sid_proc_graph_node("proc_graph_node");
 void ProcGraphEditor_Node::Build()
 {
 	TEMP_LAYOUT_MODE = WRAPPER;
 	Subscribe(DCT_EditProcGraphNode, _node);
 
-	Push<PaddedWrapperElement>().SetStyle(GetCurrentTheme()->GetStyle(sid_proc_graph_node));
+	Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::ProcGraphNode);
 	Push<StackTopDownLayoutElement>();
 
 	OnBuildTitleBar();

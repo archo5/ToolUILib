@@ -483,7 +483,6 @@ struct ThemeLoaderData : IThemeLoader
 
 			OnField(u, "width", loaded->width);
 			OnField(u, "height", loaded->height);
-			OnField(u, "minHeight", loaded->min_height);
 
 			if (u.IsUnserializer())
 			{

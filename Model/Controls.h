@@ -38,9 +38,12 @@ public:
 
 enum class DefaultFrameStyle
 {
+	Label,
 	GroupBox,
 	Selectable,
 	ListBox,
+	TextBox,
+	ProcGraphNode,
 	Checkerboard,
 };
 
@@ -63,7 +66,7 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	FrameElement& SetDefaultFrameStyle(DefaultFrameStyle style);
 };
 
-struct LabelFrame : PaddedWrapperElement
+struct LabelFrame : FrameElement
 {
 	void OnReset() override;
 };
@@ -451,20 +454,32 @@ struct ScrollbarData
 	float& contentOff;
 };
 
+struct ScrollbarStyle
+{
+	static constexpr const char* NAME = "ScrollbarStyle";
+
+	float width = 20;
+	AABB2f trackFillMargin = {};
+	float thumbMinLength = 0;
+	PainterHandle trackPainter;
+	PainterHandle thumbPainter;
+
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+};
+
 struct ScrollbarV
 {
+	ScrollbarStyle style;
+	SubUI<int> uiState;
+	float dragStartContentOff = 0;
+	float dragStartCursorPos = 0;
+
 	ScrollbarV();
 	void OnReset();
 	Coord GetWidth();
 	UIRect GetThumbRect(const ScrollbarData& info);
 	void OnPaint(const ScrollbarData& info);
 	bool OnEvent(const ScrollbarData& info, Event& e);
-
-	StyleBlockRef trackVStyle;
-	StyleBlockRef thumbVStyle;
-	SubUI<int> uiState;
-	float dragStartContentOff;
-	float dragStartCursorPos;
 };
 
 struct ScrollArea : FillerElement
@@ -480,11 +495,14 @@ struct ScrollArea : FillerElement
 };
 
 
-struct Textbox : UIElement
+struct Textbox : FrameElement
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
 	StringView GetSelectedText() const;
@@ -679,20 +697,6 @@ template <class T> bool PropDropdownMenuList(const char* label, T& val, OptionLi
 struct OverlayInfoPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
-};
-
-struct OverlayInfoFrame : UIElement
-{
-};
-
-struct TooltipFrame : OverlayInfoFrame
-{
-	void OnReset() override;
-};
-
-struct DragDropDataFrame : OverlayInfoFrame
-{
-	void OnReset() override;
 };
 
 struct DefaultOverlayBuilder : Buildable

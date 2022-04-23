@@ -544,7 +544,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	auto style = GetStyle();
 
 	auto height = style.GetHeight();
-	auto minHeight = style.GetMinHeight();
 
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
 
@@ -559,12 +558,6 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight();
 		contSizeShrunk.y -= addP;
 		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP;
-	}
-
-	if (minHeight.IsDefined())
-	{
-		float resMinH = ResolveUnits(minHeight, containerSize.y);
-		resH = max(resH, resMinH);
 	}
 
 	float resMaxH = height.IsDefined() ? resH : FLT_MAX;

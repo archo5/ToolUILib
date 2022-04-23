@@ -89,7 +89,7 @@ struct ThemeData : RefCountedST
 	void* _FindStructByNameImpl(IThemeStructLoader* loader, const std::string& name);
 	template <class T> T* FindStructByName(const std::string& name)
 	{
-		return _FindStructByNameImpl(GetThemeStructLoader<T>(), name);
+		return static_cast<T*>(_FindStructByNameImpl(GetThemeStructLoader<T>(), name));
 	}
 
 	Optional<Color4b> GetColor(const StaticID_Color& id);

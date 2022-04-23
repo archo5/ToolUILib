@@ -843,9 +843,13 @@ struct TooltipTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
 		ui::MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([]()
 		{
+			ui::Push<ui::SizeConstraintElement>().SetMinWidth(100);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			bool t = true, f = false;
-			ui::imm::PropEditBool("Done", t, { ui::Enable(false) });
-			ui::imm::PropEditBool("Not done", f, { ui::Enable(false) });
+			ui::imm::EditBool(t, "Done", { ui::Enable(false) });
+			ui::imm::EditBool(f, "Not done", { ui::Enable(false) });
+			ui::Pop();
+			ui::Pop();
 		});
 
 		ui::Make<ui::DefaultOverlayBuilder>();

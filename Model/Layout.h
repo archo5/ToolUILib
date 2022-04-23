@@ -380,7 +380,6 @@ struct StyleBlock
 
 	Coord width;
 	Coord height;
-	Coord min_height;
 
 	float padding_left = 0;
 	float padding_right = 0;
@@ -477,8 +476,6 @@ public:
 
 	Coord GetHeight() const;
 	void SetHeight(Coord v);
-
-	Coord GetMinHeight() const;
 
 
 	float GetPaddingLeft() const;

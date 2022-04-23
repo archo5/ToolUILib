@@ -14,6 +14,10 @@
 {
 	"padding": 5
 }
+"label:FrameStyle":
+{
+	padding = 5
+}
 
 "group_box:FrameStyle":
 {
@@ -21,11 +25,6 @@
 	backgroundPainter = "panel"
 }
 
-"panel:style":
-{
-	"padding": 6,
-	"backgroundPainter": "panel"
-}
 "panel:painter":
 {
 	"__": "imgset",
@@ -33,11 +32,6 @@
 }
 "panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 3 }] }
 
-"listbox:style":
-{
-	"padding": 5,
-	"backgroundPainter": "insetbox"
-}
 "listbox:FrameStyle":
 {
 	padding = 5
@@ -67,24 +61,19 @@
 	fillPainter = "outsetbox"
 }
 
-"scroll_v_track:style":
+"scrollbar_vertical:ScrollbarStyle":
 {
-	"width": "20px",
-	"padding": 2,
-	"backgroundPainter": "insetbox"
-}
-"scroll_v_thumb:style":
-{
-	"minHeight": "16px",
-	"backgroundPainter": "button"
+	width = 20,
+	trackFillMargin = 2
+	thumbMinLength = 16
+	trackPainter = "insetbox"
+	thumbPainter = "button"
 }
 
-"textbox:style":
+"textbox:FrameStyle":
 {
-	"width": "1fr",
-	"padding": 5,
-	"height": "22px",
-	"backgroundPainter": "textbox"
+	padding = 5
+	backgroundPainter = "textbox"
 }
 
 "textbox:painter":
@@ -143,7 +132,7 @@
 	]
 }
 
-"proc_graph_node:style":
+"proc_graph_node:FrameStyle":
 {
 	padding = 5
 	backgroundPainter = "tab_panel"

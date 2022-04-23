@@ -33,7 +33,7 @@ struct TrackEditorDemo : ui::Buildable
 				ui::PaintInfo info(this);
 				info.rect.y0 += i * TRACK_HEIGHT;
 				info.rect.y1 = info.rect.y0 + TRACK_HEIGHT;
-				ui::GetCurrentTheme()->FindStyleByName("listbox")->background_painter->Paint(info);
+				ui::GetCurrentTheme()->FindStructByName<ui::FrameStyle>("listbox")->backgroundPainter->Paint(info);
 			}
 
 			uint32_t id = 0;
