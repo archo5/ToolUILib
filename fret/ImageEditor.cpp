@@ -12,11 +12,12 @@ void ImageEditorWindowNode::Build()
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::Checkerboard);
 				auto& img = ui::Make<ui::ImageElement>();
 				img.SetLayoutMode(ui::ImageLayoutMode::Fill);
-				img.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				img.SetImage(cachedImg.GetImage(ddiSrc.dataDesc->GetInstanceImage(*ddiSrc.dataDesc->curInst)));
 				img.SetScaleMode(ui::ScaleMode::Fit);
+				ui::Pop();
 			}
 			ui::Pop();
 

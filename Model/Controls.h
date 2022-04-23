@@ -41,6 +41,7 @@ enum class DefaultFrameStyle
 	GroupBox,
 	Selectable,
 	ListBox,
+	Checkerboard,
 };
 
 struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>

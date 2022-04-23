@@ -83,6 +83,7 @@ FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
 static StaticID<FrameStyle> sid_framestyle_listbox("listbox");
+static StaticID<FrameStyle> sid_framestyle_checkerboard("checkerboard");
 FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 {
 	switch (style)
@@ -90,6 +91,7 @@ FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
 	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
 	case DefaultFrameStyle::ListBox: return SetFrameStyle(sid_framestyle_listbox);
+	case DefaultFrameStyle::Checkerboard: return SetFrameStyle(sid_framestyle_checkerboard);
 	}
 	return *this;
 }

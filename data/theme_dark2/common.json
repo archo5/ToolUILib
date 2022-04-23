@@ -43,6 +43,10 @@
 	padding = 5
 	backgroundPainter = "insetbox"
 }
+"checkerboard:FrameStyle":
+{
+	backgroundPainter = "checkerboard"
+}
 
 "split_pane_separator_horizontal:SeparatorLineStyle":
 {
@@ -148,6 +152,7 @@
 "textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 4 }] }
 "textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 4 }] }
 
+"checkerboard:painter": { __ = "imgset", imgset = "bgr-checkerboard" }
 "bgr-checkerboard:imgset":
 {
 	type = "pattern"

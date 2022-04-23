@@ -14,8 +14,8 @@ void MeshEditorWindowNode::Build()
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
 			{
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::Checkerboard);
 				auto& view3d = ui::Push<ui::View3D>();
-				view3d.GetStyle().SetBackgroundPainter(ui::CheckerboardPainter::Get());
 				view3d.HandleEvent() = [this](ui::Event& e) { orbitCamera.OnEvent(e); };
 				view3d.onRender = [this](ui::UIRect r) { OnRender3D(r); };
 				{
@@ -53,6 +53,7 @@ void MeshEditorWindowNode::Build()
 
 					ui::Pop();
 				}
+				ui::Pop();
 				ui::Pop();
 			}
 			ui::Pop();
