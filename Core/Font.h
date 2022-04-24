@@ -40,6 +40,12 @@ struct CachedFontRef
 	int _cacheKeyWeight = 0;
 	bool _cacheKeyItalic = false;
 
+	CachedFontRef() {}
+	CachedFontRef(CachedFontRef&&) {}
+	CachedFontRef(const CachedFontRef&) {}
+	CachedFontRef& operator = (CachedFontRef&&) { return *this; }
+	CachedFontRef& operator = (const CachedFontRef&) { return *this; }
+
 	Font* GetCachedFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
 };
 

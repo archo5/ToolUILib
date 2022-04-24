@@ -218,6 +218,51 @@ template <class E> inline void OnFieldEnumInt(IObjectIterator& oi, const FieldIn
 }
 
 
+template <class E> struct EnumKeys
+{
+	static E StringToValue(const char* name) = delete;
+	static const char* ValueToString(E e) = delete;
+};
+
+inline constexpr size_t CountStrings(const char** list)
+{
+	const char** it = list;
+	while (*it)
+		it++;
+	return it - list;
+}
+
+template <class E, const char** list, E def = (E)0> struct EnumKeysStringList
+{
+	static E StringToValue(const char* name)
+	{
+		for (auto it = list; *it; it++)
+			if (!strcmp(*it, name))
+				return E(uintptr_t(it - list));
+		return def;
+	}
+	static const char* ValueToString(E v)
+	{
+		static size_t MAX = CountStrings(list);
+		if (size_t(v) >= MAX)
+			return "";
+		return list[size_t(v)];
+	}
+};
+
+template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const FieldInfo& FI, E& val)
+{
+	std::string str;
+	if (!oi.IsUnserializer())
+		str = EnumKeys<E>::ValueToString(val);
+	if (oi.IsUnserializer() && !oi.HasField(FI.GetNameOrEmptyStr()))
+		return;
+	OnField(oi, FI, str);
+	if (oi.IsUnserializer())
+		val = EnumKeys<E>::StringToValue(str.c_str());
+}
+
+
 
 struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 {

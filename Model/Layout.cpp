@@ -155,6 +155,45 @@ ILayout* Stack() { return &g_stackLayout; }
 } // layouts
 
 
+FontWeight EnumKeys<FontWeight>::StringToValue(const char* name)
+{
+	if (!strcmp(name, "thin")) return FontWeight::Thin;
+	if (!strcmp(name, "extraLight")) return FontWeight::ExtraLight;
+	if (!strcmp(name, "light")) return FontWeight::Light;
+	if (!strcmp(name, "normal")) return FontWeight::Normal;
+	if (!strcmp(name, "medium")) return FontWeight::Medium;
+	if (!strcmp(name, "semibold")) return FontWeight::Semibold;
+	if (!strcmp(name, "bold")) return FontWeight::Bold;
+	if (!strcmp(name, "extraBold")) return FontWeight::ExtraBold;
+	if (!strcmp(name, "black")) return FontWeight::Black;
+	return FontWeight::Normal;
+}
+
+const char* EnumKeys<FontWeight>::ValueToString(FontWeight e)
+{
+	switch (e)
+	{
+	case FontWeight::Thin: return "thin";
+	case FontWeight::ExtraLight: return "extraLight";
+	case FontWeight::Light: return "light";
+	case FontWeight::Normal: return "normal";
+	case FontWeight::Medium: return "medium";
+	case FontWeight::Semibold: return "semibold";
+	case FontWeight::Bold: return "bold";
+	case FontWeight::ExtraBold: return "extraBold";
+	case FontWeight::Black: return "black";
+	default: return "";
+	}
+}
+
+const char* EnumKeys_FontStyle[] =
+{
+	"normal",
+	"italic",
+	nullptr,
+};
+
+
 int g_numStyleBlocks;
 
 
@@ -391,6 +430,32 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 }
 
 
+void FontSettings::_SerializeContents(IObjectIterator& oi)
+{
+	OnField(oi, "family", family);
+	OnFieldEnumString(oi, "weight", weight);
+	OnFieldEnumString(oi, "style", style);
+	OnField(oi, "size", size);
+}
+
+void FontSettings::Serialize(ThemeData& td, IObjectIterator& oi)
+{
+	_SerializeContents(oi);
+}
+
+void FontSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "FontSettings");
+	_SerializeContents(oi);
+	oi.EndObject();
+}
+
+Font* FontSettings::GetFont()
+{
+	return _cachedFont.GetCachedFont(family.c_str(), int(weight), style == FontStyle::Italic);
+}
+
+
 StyleBlock::~StyleBlock()
 {
 	for (auto* ch = _firstChild; ch; ch = ch->_next)
@@ -571,26 +636,6 @@ void StyleAccessor::SetTextColor(Color4b v)
 	AccSet(*this, offsetof(StyleBlock, text_color), v);
 }
 
-
-Coord StyleAccessor::GetWidth() const
-{
-	return block->width;
-}
-
-void StyleAccessor::SetWidth(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, width), v);
-}
-
-Coord StyleAccessor::GetHeight() const
-{
-	return block->height;
-}
-
-void StyleAccessor::SetHeight(Coord v)
-{
-	AccSet(*this, offsetof(StyleBlock, height), v);
-}
 
 float StyleAccessor::GetPaddingLeft() const
 {

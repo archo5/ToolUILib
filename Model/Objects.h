@@ -22,8 +22,6 @@
 
 namespace ui {
 
-struct ThemeData; // Theme.h
-
 struct Event;
 struct UIObject; // any item
 struct UIElement; // physical item

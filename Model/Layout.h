@@ -135,11 +135,20 @@ enum class FontWeight : uint16_t
 	Black = 900,
 };
 
+template <> struct EnumKeys<FontWeight>
+{
+	static FontWeight StringToValue(const char* name);
+	static const char* ValueToString(FontWeight e);
+};
+
 enum class FontStyle : uint8_t
 {
 	Normal,
 	Italic,
 };
+
+extern const char* EnumKeys_FontStyle[];
+template <> struct EnumKeys<FontStyle> : EnumKeysStringList<FontStyle, EnumKeys_FontStyle> {};
 
 enum class CoordTypeUnit
 {
@@ -319,6 +328,27 @@ struct FunctionPainterT : IPainter
 template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(std::move(f)); }
 
 
+struct ThemeData; // Theme.h
+
+struct FontSettings
+{
+	static constexpr const char* NAME = "FontSettings";
+
+	CachedFontRef _cachedFont;
+
+	std::string family = FONT_FAMILY_SANS_SERIF;
+	FontWeight weight = FontWeight::Normal;
+	FontStyle style = FontStyle::Normal;
+	int size = 12;
+
+	void _SerializeContents(IObjectIterator& oi);
+	void Serialize(ThemeData& td, IObjectIterator& oi);
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
+
+	Font* GetFont();
+};
+
+
 struct PropChange
 {
 	int which;
@@ -389,9 +419,6 @@ struct StyleBlock
 	FontStyle font_style = FontStyle::Normal;
 	int font_size = 12;
 	Color4b text_color;
-
-	Coord width;
-	Coord height;
 
 	float padding_left = 0;
 	float padding_right = 0;
@@ -481,13 +508,6 @@ public:
 
 	Color4b GetTextColor() const;
 	void SetTextColor(Color4b v);
-
-
-	Coord GetWidth() const;
-	void SetWidth(Coord v);
-
-	Coord GetHeight() const;
-	void SetHeight(Coord v);
 
 
 	float GetPaddingLeft() const;

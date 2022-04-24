@@ -505,16 +505,9 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 
 	auto style = GetStyle();
 
-	auto width = style.GetWidth();
-
 	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
 
 	float resW;
-	if (width.IsDefined())
-	{
-		resW = ResolveUnits(width, containerSize.x);
-	}
-	else
 	{
 		Size2f contSizeShrunk = containerSize;
 		contSizeShrunk.x -= addP;
@@ -522,9 +515,7 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP;
 	}
 
-	float resMaxW = width.IsDefined() ? resW : FLT_MAX;
-
-	Rangef s = { resW, resMaxW };
+	Rangef s = { resW, FLT_MAX };
 
 	_cacheFrameWidth = g_curLayoutFrame;
 	_cacheValueWidth = s;
@@ -543,16 +534,9 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 
 	auto style = GetStyle();
 
-	auto height = style.GetHeight();
-
 	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
 
 	float resH;
-	if (height.IsDefined())
-	{
-		resH = ResolveUnits(height, containerSize.y);
-	}
-	else
 	{
 		Size2f contSizeShrunk = containerSize;
 		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight();
@@ -560,9 +544,7 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP;
 	}
 
-	float resMaxH = height.IsDefined() ? resH : FLT_MAX;
-
-	Rangef s = { resH, resMaxH };
+	Rangef s = { resH, FLT_MAX };
 
 	_cacheFrameHeight = g_curLayoutFrame;
 	_cacheValueHeight = s;

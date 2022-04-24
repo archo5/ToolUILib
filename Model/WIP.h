@@ -253,6 +253,7 @@ struct TabbedPanelStyle
 	float tabInnerButtonMargin = 4;
 	AABB2f tabButtonPadding = {};
 	PainterHandle tabButtonPainter;
+	FontSettings tabButtonFont;
 	AABB2f tabPanelPadding = {};
 	PainterHandle tabPanelPainter;
 	Size2f tabCloseButtonSize = {};
@@ -277,7 +278,6 @@ struct TabbedPanel : UIObjectSingleChild
 	SubUI<uint32_t> _tabUI;
 
 	TabbedPanelStyle style;
-	StyleBlockRef tabButtonStyle;
 	float tabHeight = 22;
 
 	UIObject* _tabBarExtension = nullptr;

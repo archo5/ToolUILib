@@ -12,7 +12,6 @@
 		tabCloseButtonHeight = 12
 		tabCloseButtonPainter = "tab_close_button"
 	}
-	"tab_button:style": {}
 
 	"tab_button:painter":
 	{

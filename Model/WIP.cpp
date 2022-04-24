@@ -334,7 +334,6 @@ bool TabbedPanel::SetActiveTabByUID(uintptr_t uid)
 }
 
 static StaticID<TabbedPanelStyle> sid_tabbed_panel("tabbed_panel");
-static StaticID_Style sid_tab_button("tab_button");
 
 void TabbedPanel::OnReset()
 {
@@ -342,7 +341,6 @@ void TabbedPanel::OnReset()
 
 	tabHeight = 22;
 	style = *GetCurrentTheme()->GetStruct(sid_tabbed_panel);
-	tabButtonStyle = GetCurrentTheme()->GetStyle(sid_tab_button);
 
 	_tabs.clear();
 	_tabBarExtension = nullptr;
@@ -358,8 +356,8 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 	float x0 = GetContentRect().x0 + 4;
 	float y0 = GetContentRect().y0;
 	float y1 = y0 + tabHeight;
-	auto* tbFont = tabButtonStyle->GetFont();
-	int tbFontSize = tabButtonStyle->font_size;
+	auto* tbFont = style.tabButtonFont.GetFont();
+	int tbFontSize = style.tabButtonFont.size;
 	UIRect btnRect = { x0, y0, x0, y1 };
 	for (auto& tab : _tabs)
 	{
@@ -418,7 +416,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 				x0 + style.tabButtonPadding.x0 + cpa.offset.x,
 				y0 + style.tabButtonPadding.y0 + tbFontSize + cpa.offset.y,
 				tab.text,
-				cpa.HasTextColor() ? cpa.GetTextColor() : tabButtonStyle->text_color);
+				cpa.HasTextColor() ? cpa.GetTextColor() : ctx.textColor);
 		}
 
 		x0 = x1;
@@ -461,8 +459,8 @@ void TabbedPanel::OnEvent(Event& e)
 	float x0 = GetContentRect().x0 + 4;
 	float y0 = GetContentRect().y0;
 	float y1 = y0 + tabHeight;
-	auto* tbFont = tabButtonStyle->GetFont();
-	int tbFontSize = tabButtonStyle->font_size;
+	auto* tbFont = style.tabButtonFont.GetFont();
+	int tbFontSize = style.tabButtonFont.size;
 	for (auto& tab : _tabs)
 	{
 		float tw = tab._contentWidth;
@@ -543,8 +541,8 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	subr.y0 += tabHeight - style.tabButtonOverlap;
 	subr = subr.ShrinkBy(style.tabPanelPadding);
 
-	auto* tbFont = tabButtonStyle->GetFont();
-	int tbFontSize = tabButtonStyle->font_size;
+	auto* tbFont = style.tabButtonFont.GetFont();
+	int tbFontSize = style.tabButtonFont.size;
 	auto cr = rect;
 	float x0 = cr.x0 + 4;
 	float x1 = cr.x1 - 4;
