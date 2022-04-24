@@ -156,14 +156,6 @@ PainterHandle ThemeData::FindPainterByName(const std::string& name)
 	return {};
 }
 
-StyleBlockRef ThemeData::FindStyleByName(const std::string& name)
-{
-	auto it = styles.find(name);
-	if (it.is_valid())
-		return it->value;
-	return {};
-}
-
 static void InitStruct(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader)
 {
 	csd.structLoader = loader;
@@ -277,14 +269,6 @@ PainterHandle ThemeData::GetPainter(const StaticID_Painter& id, bool returnDefau
 	return slot ? slot : returnDefaultIfMissing ? EmptyPainter::Get() : nullptr;
 }
 
-StyleBlockRef ThemeData::GetStyle(const StaticID_Style& id, bool returnDefaultIfMissing)
-{
-	auto& slot = GetCacheSlot(_cachedStyles, id);
-	if (!slot)
-		slot = FindStyleByName(id._name);
-	return slot ? slot : returnDefaultIfMissing ? GetObjectStyle() : nullptr;
-}
-
 void* ThemeData::_GetStructImpl(IThemeStructLoader* loader, const char* name, uint32_t id, bool returnDefaultIfMissing)
 {
 	auto& csd = GetStructData(*this, loader);
@@ -340,7 +324,6 @@ struct ThemeLoaderData : IThemeLoader
 	HashMap<std::string, ThemeElementRef> colors;
 	HashMap<std::string, ThemeElementRef> imageSets;
 	HashMap<std::string, ThemeElementRef> painters;
-	HashMap<std::string, ThemeElementRef> styles;
 	ThemeDataHandle loadedData;
 
 	ThemeFileHandle curFile;
@@ -401,85 +384,6 @@ struct ThemeLoaderData : IThemeLoader
 
 		u.EndEntry();
 		curFile = prevCurFile;
-
-		return loaded;
-	}
-
-	StyleBlockRef GetStyleBlock(const std::string& name)
-	{
-		auto it = loadedData->styles.find(name);
-		if (it.is_valid())
-			return it->value;
-
-		auto it2 = styles.find(name);
-		if (!it2.is_valid())
-		{
-			printf("Failed to find style: \"%s\"\n", name.c_str());
-			return nullptr;
-		}
-
-		return _LoadStyleBlock(name, it2->value);
-	}
-
-	StyleBlockRef _LoadStyleBlock(const std::string& styleKey, const ThemeElementRef& styleElemRef)
-	{
-		StyleBlockRef loaded;
-
-		auto& u = styleElemRef.file->unserializer;
-		u.BeginDict(styleElemRef.key);
-		{
-			std::string basedOn;
-			OnField(u, "basedOn", basedOn);
-			if (!basedOn.empty())
-				loaded = GetStyleBlock(basedOn);
-			if (!loaded)
-				loaded = new StyleBlock;
-
-			std::string painterName;
-			OnField(u, "backgroundPainter", painterName);
-			auto pit = loadedData->painters.find(painterName);
-			if (pit != loadedData->painters.end())
-				loaded->background_painter = pit->value;
-			else
-				loaded->background_painter = EmptyPainter::Get();
-
-			OnFieldEnumString(u, "presence", loaded->presence);
-			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
-			OnFieldEnumString(u, "horAlign", loaded->h_align);
-
-			if (u.IsUnserializer())
-			{
-				float f = 0;
-				OnField(u, "padding", f);
-				loaded->padding_left = f;
-				loaded->padding_top = f;
-				loaded->padding_right = f;
-				loaded->padding_bottom = f;
-			}
-			if (u.HasField("paddingH"))
-			{
-				float p = 0;
-				OnField(u, "paddingH", p);
-				loaded->padding_left = loaded->padding_right = p;
-			}
-			if (u.HasField("paddingV"))
-			{
-				float p = 0;
-				OnField(u, "paddingV", p);
-				loaded->padding_top = loaded->padding_bottom = p;
-			}
-			if (u.HasField("paddingLeft"))
-				OnField(u, "paddingLeft", loaded->padding_left);
-			if (u.HasField("paddingTop"))
-				OnField(u, "paddingTop", loaded->padding_top);
-			if (u.HasField("paddingRight"))
-				OnField(u, "paddingRight", loaded->padding_right);
-			if (u.HasField("paddingBottom"))
-				OnField(u, "paddingBottom", loaded->padding_bottom);
-
-			loadedData->styles.insert(styleKey, loaded);
-		}
-		u.EndDict();
 
 		return loaded;
 	}
@@ -571,11 +475,6 @@ void ThemeData::LoadTheme(StringView folder)
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":painter")));
 								tld.painters.insert(key, { tf, el->name->string });
-							}
-							else if (name.ends_with(":style"))
-							{
-								auto key = to_string(name.substr(0, name.find_last_at(":style")));
-								tld.styles.insert(key, { tf, el->name->string });
 							}
 							else
 							{
@@ -700,11 +599,6 @@ void ThemeData::LoadTheme(StringView folder)
 	for (auto& painter : tld.painters)
 	{
 		tld._LoadPainterByName(painter.key);
-	}
-
-	for (auto& style : tld.styles)
-	{
-		tld.GetStyleBlock(style.key);
 	}
 }
 

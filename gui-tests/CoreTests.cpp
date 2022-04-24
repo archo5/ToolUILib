@@ -138,15 +138,15 @@ void Test_RenderingPrimitives()
 
 struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 {
-	ui::StyleBlockRef buttonStyle;
-	ui::StyleBlockRef checkboxStyle;
-	ui::StyleBlockRef radioBtnStyle;
+	ui::FrameStyle buttonStyle;
+	ui::IconStyle checkboxStyle;
+	ui::IconStyle radioBtnStyle;
 
 	void OnReset() override
 	{
-		buttonStyle = ui::GetCurrentTheme()->FindStyleByName("button");
-		checkboxStyle = ui::GetCurrentTheme()->FindStyleByName("checkbox");
-		radioBtnStyle = ui::GetCurrentTheme()->FindStyleByName("radio_button");
+		buttonStyle = *ui::GetCurrentTheme()->FindStructByName<ui::FrameStyle>("button");
+		checkboxStyle = *ui::GetCurrentTheme()->FindStructByName<ui::IconStyle>("checkbox");
+		radioBtnStyle = *ui::GetCurrentTheme()->FindStructByName<ui::IconStyle>("radio_button");
 	}
 	void OnEnable() override
 	{
@@ -165,21 +165,21 @@ struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 				float x = xi * W;
 				pi.state = xi;
 				pi.rect = { x, y, x + W, y + H };
-				buttonStyle->background_painter->Paint(pi);
+				buttonStyle.backgroundPainter->Paint(pi);
 			}
 			for (int xi = 0; xi < 16; xi++)
 			{
 				float x = (xi + 16) * W;
 				pi.state = xi;
 				pi.rect = { x, y, x + W, y + H };
-				checkboxStyle->background_painter->Paint(pi);
+				checkboxStyle.painter->Paint(pi);
 			}
 			for (int xi = 0; xi < 16; xi++)
 			{
 				float x = (xi + 32) * W;
 				pi.state = xi;
 				pi.rect = { x, y, x + W, y + H };
-				radioBtnStyle->background_painter->Paint(pi);
+				radioBtnStyle.painter->Paint(pi);
 			}
 		}
 	}
@@ -364,9 +364,9 @@ struct OpenCloseTest : ui::Buildable
 		auto& closeBtn = ui::MakeWithText<ui::Button>("Close");
 		closeBtn.HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { open = false; Rebuild(); };
 
-		(open ? closeBtn : openBtn).GetStyle().SetFontWeight(ui::FontWeight::Bold);
-		(open ? closeBtn : openBtn).GetStyle().SetTextColor(ui::Color4f(0.1f, 0.9f, 0.5f));
-		(!open ? closeBtn : openBtn).GetStyle().SetTextColor(ui::Color4f(0.7f, 1.0f));
+		(open ? closeBtn : openBtn).frameStyle.font.weight = ui::FontWeight::Bold;
+		(open ? closeBtn : openBtn).frameStyle.textColor.SetValue(ui::Color4f(0.1f, 0.9f, 0.5f));
+		(!open ? closeBtn : openBtn).frameStyle.textColor.SetValue(ui::Color4f(0.7f, 1.0f));
 
 		if (open)
 		{

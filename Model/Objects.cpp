@@ -26,7 +26,6 @@ struct EventHandlerEntry
 
 UIObject::UIObject()
 {
-	SetStyle(GetObjectStyle());
 }
 
 UIObject::~UIObject()
@@ -121,8 +120,6 @@ void UIObject::PO_ResetConfiguration()
 	UnregisterAsOverlay();
 
 	DetachAll();
-
-	SetStyle(GetObjectStyle());
 
 	auto origFlags = flags;
 	const uint32_t KEEP_MASK =
@@ -370,8 +367,7 @@ struct VertexShifter
 
 void UIObject::OnPaint(const UIPaintContext& ctx)
 {
-	auto cpa = styleProps->background_painter->Paint(this);
-	PaintChildren(ctx, cpa);
+	PaintChildren(ctx, {});
 }
 
 void UIObject::Paint(const UIPaintContext& ctx)
@@ -406,7 +402,7 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 		if (cpa.HasTextColor())
 			col = cpa.GetTextColor();
 		else
-			col = styleProps->text_color;
+			col = Color4b::White(); // TODO
 		subctx = UIPaintContext(ctx, col);
 		pctx = &subctx;
 	}
@@ -503,17 +499,7 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
 
-	auto style = GetStyle();
-
-	float addP = style.GetPaddingLeft() + style.GetPaddingRight();
-
-	float resW;
-	{
-		Size2f contSizeShrunk = containerSize;
-		contSizeShrunk.x -= addP;
-		contSizeShrunk.y -= style.GetPaddingTop() + style.GetPaddingBottom();
-		resW = CalcEstimatedWidth(contSizeShrunk, type) + addP;
-	}
+	float resW = CalcEstimatedWidth(containerSize, type);
 
 	Rangef s = { resW, FLT_MAX };
 
@@ -532,17 +518,7 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
 
-	auto style = GetStyle();
-
-	float addP = style.GetPaddingTop() + style.GetPaddingBottom();
-
-	float resH;
-	{
-		Size2f contSizeShrunk = containerSize;
-		contSizeShrunk.x -= style.GetPaddingLeft() + style.GetPaddingRight();
-		contSizeShrunk.y -= addP;
-		resH = CalcEstimatedHeight(contSizeShrunk, type) + addP;
-	}
+	float resH = CalcEstimatedHeight(containerSize, type);
 
 	Rangef s = { resH, FLT_MAX };
 
@@ -577,8 +553,6 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 		return;
 	}
 
-	auto style = GetStyle();
-
 	UIRect rect = inRect;
 
 	UIRect Prect = CalcPaddingRect(rect);
@@ -600,7 +574,7 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 
 UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
 {
-	return styleProps->GetPaddingRect();
+	return {};
 }
 
 UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
@@ -847,17 +821,6 @@ void UIObject::SetInputDisabled(bool v)
 		flags &= ~UIObject_IsDisabled;
 }
 
-StyleAccessor UIObject::GetStyle()
-{
-	return StyleAccessor(styleProps, this);
-}
-
-void UIObject::SetStyle(StyleBlock* style)
-{
-	styleProps = style;
-	_OnChangeStyle();
-}
-
 void UIObject::_OnChangeStyle()
 {
 	if (system && (flags & UIObject_IsInTree))
@@ -1016,63 +979,6 @@ void WrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
 }
 
 
-#if 0
-Size2f PaddedWrapperElement::GetReducedContainerSize(Size2f size)
-{
-	size.x -= styleProps->padding_left + styleProps->padding_right;
-	size.y -= styleProps->padding_top + styleProps->padding_bottom;
-	return size;
-}
-
-Rangef PaddedWrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
-{
-	float pad = styleProps->padding_left + styleProps->padding_right;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
-}
-
-Rangef PaddedWrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
-{
-	float pad = styleProps->padding_top + styleProps->padding_bottom;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
-}
-
-void PaddedWrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
-{
-	auto padRect = styleProps->GetPaddingRect();
-	auto padsub = rect.ShrinkBy(padRect);
-	if (_child)
-	{
-		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
-		finalRectC = _child->finalRectCP;
-		finalRectCP = finalRectC.ExtendBy(padRect);
-	}
-	else
-	{
-		finalRectCP = rect;
-		finalRectC = padsub;
-	}
-}
-
-
-Size2f PaddedFillerElement::GetReducedContainerSize(Size2f size)
-{
-	size.x -= styleProps->padding_left + styleProps->padding_right;
-	size.y -= styleProps->padding_top + styleProps->padding_bottom;
-	return size;
-}
-
-void PaddedFillerElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
-{
-	auto padRect = styleProps->GetPaddingRect();
-	auto inRect = rect.ShrinkBy(padRect);
-	if (_child)
-		_child->PerformLayout(inRect, GetReducedContainerSize(containerSize));
-	finalRectC = inRect;
-	finalRectCP = rect;
-}
-#endif
-
-
 void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();
@@ -1104,8 +1010,7 @@ void TextElement::OnReset()
 
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
-	// TODO can we nullify styleProps?
-	auto* fs = styleProps ? &styleProps->font : _FindClosestParentFontSettings();
+	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
 	auto r = GetContentRect();
@@ -1122,15 +1027,16 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	char text[32];
 	snprintf(text, sizeof(text), "%gx%g", finalRectCP.GetWidth(), finalRectCP.GetHeight());
 
-	auto* font = styleProps->font.GetFont();
+	auto* fs = _FindClosestParentFontSettings();
+	auto* font = fs->GetFont();
 
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	float tw = GetTextWidth(font, styleProps->font.size, text);
-	draw::TextLine(font, styleProps->font.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - styleProps->font.size) / 2, text, ctx.textColor);
+	float tw = GetTextWidth(font, fs->size, text);
+	draw::TextLine(font, fs->size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -1286,7 +1192,6 @@ UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& dat
 void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
 {
 	auto subr = inrect;
-	//subr = subr.ShrinkBy(styleProps->GetPaddingRect());
 	for (const auto& slot : _slots)
 	{
 		auto* ch = slot._element;

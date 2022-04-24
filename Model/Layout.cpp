@@ -19,18 +19,8 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	float w = curObj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding, false).min;
 	float h = curObj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding, false).min;
 
-	float xo = 0, yo = 0;
-	if (useContentBox)
-	{
-		auto pr = curObj->styleProps->GetPaddingRect();
-		xo = pr.x0;
-		yo = pr.y0;
-		w -= pr.x0 + pr.x1;
-		h -= pr.y0 + pr.y1;
-	}
-
-	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x - xo + bias.x;
-	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y - yo + bias.y;
+	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
+	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
 	outRect = { x, y, x + w, y + h };
 }
 
@@ -51,9 +41,8 @@ struct StackLayout : ILayout
 {
 	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
-		auto style = curObj->GetStyle();
 		float size = 0;
-		auto dir = style.GetStackingDirection();
+		auto dir = StackingDirection::TopDown;
 		if (dir == StackingDirection::Undefined)
 			dir = StackingDirection::TopDown;
 		switch (dir)
@@ -71,9 +60,8 @@ struct StackLayout : ILayout
 	}
 	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
 	{
-		auto style = curObj->GetStyle();
 		float size = 0;
-		auto dir = style.GetStackingDirection();
+		auto dir = StackingDirection::TopDown;
 		if (dir == StackingDirection::Undefined)
 			dir = StackingDirection::TopDown;
 		switch (dir)
@@ -93,10 +81,7 @@ struct StackLayout : ILayout
 	{
 		// put items one after another in the indicated direction
 		// container size adapts to child elements in stacking direction, and to parent in the other
-		auto style = curObj->GetStyle();
-		auto dir = style.GetStackingDirection();
-		if (dir == StackingDirection::Undefined)
-			dir = StackingDirection::TopDown;
+		auto dir = StackingDirection::TopDown;
 		switch (dir)
 		{
 		case StackingDirection::TopDown: {
@@ -111,7 +96,7 @@ struct StackLayout : ILayout
 		case StackingDirection::LeftToRight: {
 			float p = inrect.x0;
 			float xw = 0;
-			auto ha = style.GetHAlign();
+			auto ha = HAlign::Undefined;
 			if (ha != HAlign::Undefined && ha != HAlign::Left)
 			{
 				float tw = 0;

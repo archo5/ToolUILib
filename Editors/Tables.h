@@ -9,6 +9,9 @@ namespace ui {
 
 struct MessageLogDataSource
 {
+	FontSettings messageFont;
+	Color4b messageColor = Color4b::White();
+
 	virtual size_t GetNumMessages() = 0;
 	virtual std::string GetMessage(size_t msg, size_t line) = 0;
 

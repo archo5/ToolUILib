@@ -79,7 +79,6 @@ struct PointAnchoredPlacement : IPlacement
 	Point2f anchor = { 0, 0 };
 	Point2f pivot = { 0, 0 };
 	Point2f bias = { 0, 0 };
-	bool useContentBox = false;
 };
 
 struct RectAnchoredPlacement : IPlacement

@@ -46,7 +46,7 @@ struct TrackEditorDemo : ui::Buildable
 					info.state |= ui::PS_Hover;
 				if (subui.IsPressed(id))
 					info.state |= ui::PS_Down;
-				ui::GetCurrentTheme()->FindStyleByName("button")->background_painter->Paint(info);
+				ui::GetCurrentTheme()->FindStructByName<ui::FrameStyle>("button")->backgroundPainter->Paint(info);
 				id++;
 			}
 

@@ -404,8 +404,6 @@ struct UIObject : IPersistentObject
 	bool IsInputDisabled() const;
 	void SetInputDisabled(bool v);
 
-	StyleAccessor GetStyle();
-	void SetStyle(StyleBlock* style);
 	void _OnChangeStyle();
 
 	float ResolveUnits(Coord coord, float ref);
@@ -415,7 +413,7 @@ struct UIObject : IPersistentObject
 
 	UI_FORCEINLINE const FontSettings* FindFontSettings(const FontSettings* first) const { return first ? first : _FindClosestParentFontSettings(); }
 	const FontSettings* _FindClosestParentFontSettings() const;
-	virtual const FontSettings* _GetFontSettings() const { return styleProps ? &styleProps->font : nullptr; }
+	virtual const FontSettings* _GetFontSettings() const { return nullptr; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
@@ -437,7 +435,6 @@ struct UIObject : IPersistentObject
 	ui::EventHandlerEntry* _firstEH = nullptr;
 	ui::EventHandlerEntry* _lastEH = nullptr;
 
-	StyleBlockRef styleProps;
 	LivenessToken _livenessToken;
 
 	// final layout rectangles: C=content, P=padding
@@ -476,25 +473,16 @@ struct UIPaintHelper
 
 	void PaintBackground(UIObject* obj)
 	{
-		if (obj->styleProps->background_painter)
-			cpa = obj->styleProps->background_painter->Paint(obj);
+		// TODO delete
 	}
 	void PaintBackground(const PaintInfo& info)
 	{
-		if (info.obj->styleProps->background_painter)
-			cpa = info.obj->styleProps->background_painter->Paint(info);
+		// TODO delete
 	}
 
 	void PaintChildren(UIObject* obj, const UIPaintContext& ctx)
 	{
 		obj->PaintChildren(ctx, cpa);
-	}
-
-	static void Paint(const PaintInfo& info, const UIPaintContext& ctx)
-	{
-		UIPaintHelper ph;
-		ph.PaintBackground(info);
-		ph.PaintChildren(const_cast<UIObject*>(info.obj), ctx);
 	}
 };
 
@@ -546,23 +534,13 @@ struct UIElement : UIObject
 	typedef char IsElement[1];
 };
 
-// TODO: slowly port to these and use custom [single] child storage
+// TODO: slowly port to these
 struct WrapperElement : UIObjectSingleChild
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
-
-#if 0
-struct PaddedWrapperElement : UIObjectSingleChild
-{
-	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-};
-#endif
 
 struct FillerElement : UIObjectSingleChild
 {
@@ -581,16 +559,6 @@ struct FillerElement : UIObjectSingleChild
 		finalRectCP = finalRectC = rect;
 	}
 };
-
-#if 0
-struct PaddedFillerElement : UIObjectSingleChild
-{
-	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::Exact(containerSize.x); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override { return Rangef::Exact(containerSize.y); }
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
-};
-#endif
 
 struct SizeConstraintElement : WrapperElement
 {
@@ -655,7 +623,6 @@ struct TextElement : UIObjectNoChildren
 		auto ret = UIObjectNoChildren::GetFullEstimatedWidth(containerSize, type, forParentLayout);
 		ret.max = ret.min;
 		return ret;
-		//return CalcEstimatedWidth(containerSize, type) + styleProps->padding_left + styleProps->padding_right;
 	}
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{

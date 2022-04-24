@@ -47,7 +47,6 @@ void ProcGraphEditor_NodePin::Build()
 	auto* pap = Allocate<PointAnchoredPlacement>();
 	pap->pivot = { _pin.isOutput ? 0.5f : 0.5f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
-	pap->useContentBox = true;
 	tmpl->placement = pap;
 	auto& cb = Push<ColorBlock>().SetSize(4, 7);
 	cb.SetColor(_graph->GetPinColor(_pin));

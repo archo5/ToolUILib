@@ -227,8 +227,8 @@ struct FancyButtonDemo : ui::Buildable
 		ui::Push<ui::PaddingElement>().SetPadding(30);
 
 		auto& btn = ui::Push<ui::Button>();
-		btn.GetStyle().SetBackgroundPainter(new FancyButtonPainter());
-		btn.GetStyle().SetPadding(5, 5, 9);
+		btn.frameStyle.backgroundPainter = new FancyButtonPainter();
+		btn.SetPadding(5, 5, 5, 9);
 		ui::Text("Fancy button");
 		ui::Pop();
 

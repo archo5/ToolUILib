@@ -1315,8 +1315,8 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 
 	{
-		auto* font = styleProps->font.GetFont();
-		int size = styleProps->font.size;
+		auto* font = frameStyle.font.GetFont();
+		int size = frameStyle.font.size;
 
 		auto r = GetContentRect();
 		if (!_placeholder.empty() && !IsFocused() && _text.empty())
@@ -1666,13 +1666,13 @@ void Textbox::OnEvent(Event& e)
 
 Rangef Textbox::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float minWidth = styleProps->font.size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
+	float minWidth = frameStyle.font.size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
 	return FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minWidth));
 }
 
 Rangef Textbox::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float minHeight = styleProps->font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
+	float minHeight = frameStyle.font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
 	return FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minHeight));
 }
 
@@ -1710,7 +1710,7 @@ size_t Textbox::_FindCursorPos(float vpx)
 	float x = r.x0;
 	for (size_t i = 0; i < _text.size(); i++)
 	{
-		float lw = GetTextWidth(styleProps->font.GetFont(), styleProps->font.size, StringView(_text).substr(i, 1));
+		float lw = GetTextWidth(frameStyle.font.GetFont(), frameStyle.font.size, StringView(_text).substr(i, 1));
 		if (vpx < x + lw * 0.5f)
 			return i;
 		x += lw;
