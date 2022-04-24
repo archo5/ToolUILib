@@ -355,15 +355,12 @@ void ProcGraphEditor::OnLayout(const UIRect& rect, const Size2f& containerSize)
 
 void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	if (!drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();
 	if (!drawPendingLinksOnTop)
 		OnDrawPendingLinks();
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 
 	if (drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();

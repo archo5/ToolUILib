@@ -46,9 +46,6 @@ void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect a
 
 void MessageLogView::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
 
@@ -81,8 +78,6 @@ void MessageLogView::OnPaint(const UIPaintContext& ctx)
 	draw::PopScissorRect();
 
 	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), numMsgs * htMsg, yOff });
-
-	ph.PaintChildren(this, ctx);
 }
 
 void MessageLogView::OnEvent(Event& e)
@@ -199,10 +194,8 @@ void TableView::OnReset()
 
 void TableView::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
+	auto cpa = PaintFrame();
 	PaintInfo info(this);
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(info);
 
 	size_t nc = _impl->dataSource->GetNumCols();
 	size_t nr = _impl->dataSource->GetNumRows();
@@ -241,7 +234,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	if (enableRowHeader)
 	{
-		ContentPaintAdvice rowcpa = ph.cpa;
+		ContentPaintAdvice rowcpa = cpa;
 		// - row header
 		draw::PushScissorRect(UIRect{ RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1 });
 		// background:
@@ -279,7 +272,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	}
 
 	// - column header
-	ContentPaintAdvice colcpa = ph.cpa;
+	ContentPaintAdvice colcpa = cpa;
 	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh });
 	// background:
 	for (size_t c = 0; c < nc; c++)
@@ -315,7 +308,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	draw::PopScissorRect();
 
 	// - cells
-	ContentPaintAdvice cellcpa = ph.cpa;
+	ContentPaintAdvice cellcpa = cpa;
 	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1 });
 	// background:
 	for (size_t r = minR; r < maxR; r++)
@@ -365,7 +358,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), chh + nr * h, yOff });
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 void TableView::OnEvent(Event& e)
@@ -640,8 +633,7 @@ void TreeView::OnReset()
 
 void TreeView::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	auto cpa = PaintFrame();
 
 	int chh = 20;
 	int h = 20;
@@ -690,7 +682,7 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 	for (size_t i = 0, n = _impl->dataSource->GetChildCount(TreeDataSource::ROOT); i < n; i++)
 		_PaintOne(ctx, _impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 void TreeView::_PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, PaintState& ps)

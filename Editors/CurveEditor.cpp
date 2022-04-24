@@ -548,13 +548,12 @@ void CurveEditorElement::OnEvent(Event& e)
 
 void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	auto cpa = PaintFrame();
 
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 

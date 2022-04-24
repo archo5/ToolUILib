@@ -342,13 +342,13 @@ struct ColorEditRT : IColorEdit
 	ColorEditRT& SetColor(const MultiFormatColor& c);
 };
 
-struct View2D : UIElement
+struct View2D : FillerElement
 {
 	std::function<void(UIRect)> onPaint;
 
 	void OnReset() override
 	{
-		UIElement::OnReset();
+		FillerElement::OnReset();
 
 		onPaint = {};
 	}

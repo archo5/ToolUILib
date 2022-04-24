@@ -61,6 +61,8 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	UI_FORCEINLINE AABB2f& GetPadding() { return frameStyle.padding; }
 
 	void OnReset() override;
+	ContentPaintAdvice PaintFrame() { return PaintFrame(this); }
+	ContentPaintAdvice PaintFrame(const PaintInfo& info);
 	void OnPaint(const UIPaintContext& ctx) override;
 	const FontSettings* _GetFontSettings() const override;
 	Size2f GetReducedContainerSize(Size2f size);

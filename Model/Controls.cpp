@@ -26,14 +26,20 @@ void FrameElement::OnReset()
 	frameStyle = {};
 }
 
+ContentPaintAdvice FrameElement::PaintFrame(const PaintInfo& info)
+{
+	ContentPaintAdvice cpa;
+	if (frameStyle.backgroundPainter)
+		cpa = frameStyle.backgroundPainter->Paint(info);
+	if (frameStyle.textColor.HasValue())
+		cpa.SetTextColor(frameStyle.textColor.GetValue());
+	return cpa;
+}
+
 void FrameElement::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(this);
-	if (frameStyle.textColor.HasValue())
-		ph.cpa.SetTextColor(frameStyle.textColor.GetValue());
-	ph.PaintChildren(this, ctx);
+	auto cpa = PaintFrame();
+	PaintChildren(ctx, cpa);
 }
 
 const FontSettings* FrameElement::_GetFontSettings() const
@@ -299,12 +305,8 @@ void StateToggleFrameBase::OnPaint(const UIPaintContext& ctx)
 	info.obj = this;
 	info.rect = GetPaddingRect();
 
-	UIPaintHelper ph;
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(info);
-	if (frameStyle.textColor.HasValue())
-		ph.cpa.SetTextColor(frameStyle.textColor.GetValue());
-	ph.PaintChildren(this, ctx);
+	auto cpa = PaintFrame(info);
+	PaintChildren(ctx, cpa);
 }
 
 
@@ -377,11 +379,11 @@ void ProgressBar::OnReset()
 
 void ProgressBar::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
+	ContentPaintAdvice cpa;
 
 	if (style.backgroundPainter)
 	{
-		ph.cpa = style.backgroundPainter->Paint(this);
+		cpa = style.backgroundPainter->Paint(this);
 	}
 
 	if (style.fillPainter)
@@ -392,7 +394,7 @@ void ProgressBar::OnPaint(const UIPaintContext& ctx)
 		style.fillPainter->Paint(cinfo);
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 Size2f ProgressBar::GetReducedContainerSize(Size2f size)
@@ -458,9 +460,9 @@ void Slider::OnReset()
 
 void Slider::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
+	ContentPaintAdvice cpa;
 	if (style.backgroundPainter)
-		ph.cpa = style.backgroundPainter->Paint(this);
+		cpa = style.backgroundPainter->Paint(this);
 
 	// track
 	PaintInfo trkinfo(this);
@@ -482,7 +484,7 @@ void Slider::OnPaint(const UIPaintContext& ctx)
 	if (style.thumbPainter)
 		style.thumbPainter->Paint(trkinfo);
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 void Slider::OnEvent(Event& e)
@@ -604,8 +606,6 @@ void LabeledProperty::OnEnterTree()
 
 void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-
 	if (!_labelText.empty())
 	{
 		auto& labelStyle = FindCurrentLabelStyle();
@@ -641,7 +641,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		}
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
@@ -800,9 +800,6 @@ static void CheckSplits(SplitPane* sp)
 
 void SplitPane::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	if (!_children.empty())
 	{
 		size_t split = 0;
@@ -1310,9 +1307,7 @@ void Textbox::OnReset()
 
 void Textbox::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(this);
+	auto cpa = PaintFrame();
 
 	{
 		auto* font = frameStyle.font.GetFont();
@@ -1344,7 +1339,7 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 		}
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 static size_t PrevChar(StringView str, size_t pos)

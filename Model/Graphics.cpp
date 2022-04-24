@@ -56,9 +56,7 @@ void ColorBlock::OnReset()
 
 void ColorBlock::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(this);
+	auto cpa = PaintFrame();
 
 	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
 
@@ -69,7 +67,7 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, _color);
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 ColorBlock& ColorBlock::SetLayoutMode(ImageLayoutMode mode)
@@ -93,9 +91,7 @@ void ColorInspectBlock::OnReset()
 
 void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	if (frameStyle.backgroundPainter)
-		ph.cpa = frameStyle.backgroundPainter->Paint(this);
+	auto cpa = PaintFrame();
 
 	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
 
@@ -121,7 +117,7 @@ void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 		draw::RectCol(r_rt.x0, r_rt.y0, r_rt.x1, r_rt.y1, Color4b::Black());
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 
@@ -167,8 +163,6 @@ void ImageElement::OnReset()
 
 void ImageElement::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-
 	auto c = GetContentRect();
 	if (draw::GetCurrentScissorRectF().Overlaps(c))
 	{
@@ -178,8 +172,6 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 			_image = draw::ImageLoadFromFile(_delayLoadPath, draw::TexFlags::None);
 		}
 
-		ph.PaintBackground(this);
-
 		if (_bgImageSet)
 		{
 			_bgImageSet->Draw(c);
@@ -187,7 +179,7 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 		DrawImage(c, _image, _scaleMode, { _anchorX, _anchorY });
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
@@ -323,8 +315,7 @@ void HueSatPicker::OnEvent(Event& e)
 
 void HueSatPicker::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	auto cpa = PaintFrame();
 
 	auto cr = GetContentRect();
 	int tgtw = int(min(cr.GetWidth(), cr.GetHeight()));
@@ -342,7 +333,7 @@ void HueSatPicker::OnPaint(const UIPaintContext& ctx)
 	float sy = cy - cosf(_hue * 3.14159f * 2) * _sat * hw;
 	selectorStyle.Paint(this, { roundf(sx), roundf(sy) });
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 HueSatPicker& HueSatPicker::SetLayoutMode(ImageLayoutMode mode)
@@ -413,8 +404,7 @@ void ColorCompPicker2D::OnEvent(Event& e)
 
 void ColorCompPicker2D::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
+	auto cpa = PaintFrame();
 
 	auto cr = GetContentRect();
 	int tgtw = int(cr.GetWidth());
@@ -429,7 +419,7 @@ void ColorCompPicker2D::OnPaint(const UIPaintContext& ctx)
 	float sy = lerp(cr.y0, cr.y1, _settings._invy ? 1 - _y : _y);
 	selectorStyle.Paint(this, { roundf(sx), roundf(sy) });
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, cpa);
 }
 
 ColorCompPicker2D& ColorCompPicker2D::SetLayoutMode(ImageLayoutMode mode)
@@ -964,9 +954,6 @@ ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
 
 void View2D::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	auto r = finalRectC;
 	if (draw::PushScissorRectIfNotEmpty(r))
 	{
@@ -975,15 +962,12 @@ void View2D::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 
 void View3D::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	auto r = finalRectC;
 	if (draw::PushScissorRectIfNotEmpty(r))
 	{
@@ -1000,7 +984,7 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 

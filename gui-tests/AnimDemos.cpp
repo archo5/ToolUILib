@@ -137,10 +137,12 @@ struct ButtonPressHighlightDemo : ui::Buildable
 	void Build() override
 	{
 		ui::Push<ui::PaddingElement>().SetPadding(30);
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		AddActivationAnim(ui::MakeWithText<ui::Button>("Press me"));
 		AddActivationAnim(ui::MakeWithText<ui::Button>("...or me"));
 
+		ui::Pop();
 		ui::Pop();
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override

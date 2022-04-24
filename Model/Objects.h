@@ -467,25 +467,6 @@ struct UIObjectIterator
 	}
 };
 
-struct UIPaintHelper
-{
-	ContentPaintAdvice cpa;
-
-	void PaintBackground(UIObject* obj)
-	{
-		// TODO delete
-	}
-	void PaintBackground(const PaintInfo& info)
-	{
-		// TODO delete
-	}
-
-	void PaintChildren(UIObject* obj, const UIPaintContext& ctx)
-	{
-		obj->PaintChildren(ctx, cpa);
-	}
-};
-
 template <class T> inline T* CreateUIObject()
 {
 	auto* obj = new T;

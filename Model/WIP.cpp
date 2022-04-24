@@ -351,9 +351,6 @@ void TabbedPanel::OnReset()
 
 void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 {
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	float x0 = GetContentRect().x0 + 4;
 	float y0 = GetContentRect().y0;
 	float y1 = y0 + tabHeight;
@@ -450,7 +447,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 			style.tabPanelPainter->Paint(pi);
 	}
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 void TabbedPanel::OnEvent(Event& e)

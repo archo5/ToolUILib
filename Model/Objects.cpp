@@ -1030,15 +1030,12 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	float tw = GetTextWidth(font, fs->size, text);
 	draw::TextLine(font, fs->size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
 
-	ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 }
 
 
@@ -1077,9 +1074,6 @@ void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 
 	auto prevSRRT = draw::AddScissorRectResolutionTransform(transform.GetScaleOnly() * ScaleOffset2D(1, cr.x0, cr.y0));
 
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
-
 	bool paintChildren = true;
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
@@ -1088,8 +1082,7 @@ void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 		paintChildren = draw::PushScissorRect({ 0, 0, _childSize.x, _childSize.y });
 	}
 
-	if (paintChildren)
-		ph.PaintChildren(this, ctx);
+	PaintChildren(ctx, {});
 
 	if (clipChildren)
 	{
