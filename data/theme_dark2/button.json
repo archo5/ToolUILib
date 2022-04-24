@@ -1,10 +1,9 @@
 {
-	"button:style":
+	"button:FrameStyle":
 	{
-		"stackingDirection": "LeftToRight",
-		"horAlign": "center",
-		"padding": 5,
-		"backgroundPainter": "button"
+		horAlign = "center"
+		padding = 5
+		backgroundPainter = "button"
 	},
 	"button:painter":
 	{

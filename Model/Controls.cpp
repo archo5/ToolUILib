@@ -91,6 +91,7 @@ FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 static StaticID<FrameStyle> sid_framestyle_label("label");
 static StaticID<FrameStyle> sid_framestyle_header("header");
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
+static StaticID<FrameStyle> sid_framestyle_button("button");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
 static StaticID<FrameStyle> sid_framestyle_dropdown_button("dropdown_button");
 static StaticID<FrameStyle> sid_framestyle_listbox("listbox");
@@ -104,6 +105,7 @@ FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 	case DefaultFrameStyle::Label: return SetFrameStyle(sid_framestyle_label);
 	case DefaultFrameStyle::Header: return SetFrameStyle(sid_framestyle_header);
 	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
+	case DefaultFrameStyle::Button: return SetFrameStyle(sid_framestyle_button);
 	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
 	case DefaultFrameStyle::DropdownButton: return SetFrameStyle(sid_framestyle_dropdown_button);
 	case DefaultFrameStyle::ListBox: return SetFrameStyle(sid_framestyle_listbox);
@@ -187,13 +189,37 @@ void Header::OnReset()
 }
 
 
-static StaticID_Style sid_button("button");
 void Button::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_button);
+	flags |= UIObject_DB_Button;
+	SetDefaultFrameStyle(DefaultFrameStyle::Button);
+}
+
+Rangef Button::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	return Rangef::AtLeast(FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).min);
+}
+
+Rangef Button::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+{
+	return Rangef::AtLeast(FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).min);
+}
+
+void Button::OnLayout(const UIRect& rect, const Size2f& containerSize)
+{
+	if (_child)
+	{
+		float minw = _child->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		float minh = _child->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
+		UIRect r = rect.ShrinkBy(frameStyle.padding);
+		float ox = roundf((r.GetWidth() - minw) * 0.5f);
+		float oy = roundf((r.GetHeight() - minh) * 0.5f);
+		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		_child->PerformLayout(fr, GetReducedContainerSize(containerSize));
+	}
+	finalRectCP = finalRectC = rect;
 }
 
 
@@ -201,7 +227,7 @@ void StateButtonBase::OnReset()
 {
 	WrapperElement::OnReset();
 
-	flags |= UIObject_DB_Button | UIObject_SetsChildTextStyle;
+	flags |= UIObject_DB_Button;
 }
 
 
@@ -273,7 +299,12 @@ void StateToggleFrameBase::OnPaint(const UIPaintContext& ctx)
 	info.obj = this;
 	info.rect = GetPaddingRect();
 
-	UIPaintHelper::Paint(info, ctx);
+	UIPaintHelper ph;
+	if (frameStyle.backgroundPainter)
+		ph.cpa = frameStyle.backgroundPainter->Paint(info);
+	if (frameStyle.textColor.HasValue())
+		ph.cpa.SetTextColor(frameStyle.textColor.GetValue());
+	ph.PaintChildren(this, ctx);
 }
 
 
@@ -305,7 +336,7 @@ void StateButtonSkin::OnReset()
 {
 	StateToggleFrameBase::OnReset();
 
-	styleProps = GetCurrentTheme()->GetStyle(sid_button);
+	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 }
 
 

@@ -43,6 +43,7 @@ enum class DefaultFrameStyle
 	Label,
 	Header,
 	GroupBox,
+	Button,
 	Selectable,
 	DropdownButton,
 	ListBox,
@@ -113,9 +114,13 @@ struct Header : FrameElement
 	void OnReset() override;
 };
 
-struct Button : UIElement
+struct Button : FrameElement
 {
 	void OnReset() override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
 
@@ -244,7 +249,7 @@ struct StateToggleIconBase : IconElement
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct StateToggleFrameBase : UIElement
+struct StateToggleFrameBase : FrameElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };
