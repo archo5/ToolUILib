@@ -15,24 +15,6 @@
 	colHeaderPaddingH = 2
 	colHeaderBackgroundPainter = "table_header"
 }
-"table_cell:style":
-{
-	paddingV = 1
-	paddingH = 2
-	backgroundPainter = "table_cell"
-}
-"table_row_header:style":
-{
-	paddingV = 1
-	paddingH = 2
-	backgroundPainter = "table_header"
-}
-"table_col_header:style":
-{
-	paddingV = 1
-	paddingH = 2
-	backgroundPainter = "table_header"
-}
 
 "table_cell:painter":
 {

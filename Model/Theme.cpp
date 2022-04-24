@@ -91,6 +91,16 @@ void OnFieldPainter(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, Pai
 	ph = td.FindPainterByName(text);
 }
 
+void OnFieldFontSettings(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, FontSettings& fs)
+{
+	std::string text;
+	OnField(oi, FI, text);
+	if (auto* s = td.FindStructByName<FontSettings>(text))
+		fs = *s;
+	else
+		fs = {};
+}
+
 
 static const char* EnumKeys_Presence[] =
 {

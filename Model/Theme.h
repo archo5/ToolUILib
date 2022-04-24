@@ -52,6 +52,7 @@ struct IThemeLoader
 
 void OnFieldBorderBox(IObjectIterator& oi, const FieldInfo& FI, AABB2f& bbox);
 void OnFieldPainter(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, PainterHandle& ph);
+void OnFieldFontSettings(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI, FontSettings& fs);
 
 using StaticID_Color = StaticID<Color4b>;
 using StaticID_ImageSet = StaticID<draw::ImageSet>;

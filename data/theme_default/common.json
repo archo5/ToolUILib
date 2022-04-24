@@ -2,6 +2,8 @@
 "foreground:color" = "b:255"
 "clear:color" = "b:37;255"
 
+":FontSettings" = {}
+
 "outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] }
 
 "header:style":

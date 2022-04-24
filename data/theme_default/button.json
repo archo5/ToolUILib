@@ -1,7 +1,6 @@
 {
 	"button:style":
 	{
-		"layout": "stack",
 		"stackingDirection": "LeftToRight",
 		"horAlign": "center",
 		"padding": 5,

@@ -156,6 +156,9 @@ void TableStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 	OnFieldPainter(oi, td, "cellBackgroundPainter", cellBackgroundPainter);
 	OnFieldPainter(oi, td, "rowHeaderBackgroundPainter", rowHeaderBackgroundPainter);
 	OnFieldPainter(oi, td, "colHeaderBackgroundPainter", colHeaderBackgroundPainter);
+	OnFieldFontSettings(oi, td, "cellFont", cellFont);
+	OnFieldFontSettings(oi, td, "rowHeaderFont", rowHeaderFont);
+	OnFieldFontSettings(oi, td, "colHeaderFont", colHeaderFont);
 }
 
 struct TableViewImpl
@@ -181,9 +184,6 @@ TableView::~TableView()
 
 static StaticID<FrameStyle> sid_framestyle_table_frame("table_frame");
 static StaticID<TableStyle> sid_table_style("table");
-static StaticID_Style sid_table_cell("table_cell");
-static StaticID_Style sid_table_row_header("table_row_header");
-static StaticID_Style sid_table_col_header("table_col_header");
 void TableView::OnReset()
 {
 	FrameElement::OnReset();
@@ -191,11 +191,6 @@ void TableView::OnReset()
 	flags |= UIObject_SetsChildTextStyle;
 	SetFrameStyle(sid_framestyle_table_frame);
 	style = *GetCurrentTheme()->GetStruct(sid_table_style);
-#if 1
-	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
-	rowHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_row_header);
-	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);
-#endif
 
 	enableRowHeader = true;
 	_impl->dataSource = nullptr;
@@ -249,6 +244,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	if (enableRowHeader)
 	{
+		ContentPaintAdvice rowcpa = ph.cpa;
 		// - row header
 		draw::PushScissorRect(UIRect{ RC.x0, RC.y0 + chh, RC.x0 + rhw, RC.y1 });
 		// background:
@@ -261,10 +257,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw,
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			style.rowHeaderBackgroundPainter->Paint(info);
+			rowcpa = style.rowHeaderBackgroundPainter->Paint(info);
 		}
 		// text:
-		auto* rowHeaderFont = rowHeaderStyle->GetFont();
+		auto* rowHeaderFont = style.rowHeaderFont.GetFont();
 		for (size_t r = minR; r < maxR; r++)
 		{
 			UIRect rect =
@@ -277,15 +273,16 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			rect = rect.ShrinkBy(padRH);
 			draw::TextLine(
 				rowHeaderFont,
-				rowHeaderStyle->font_size,
-				rect.x0, (rect.y0 + rect.y1 + rowHeaderStyle->font_size) / 2,
+				style.rowHeaderFont.size,
+				rect.x0, (rect.y0 + rect.y1 + style.rowHeaderFont.size) / 2,
 				_impl->dataSource->GetRowName(r),
-				rowHeaderStyle->text_color);
+				rowcpa.HasTextColor() ? rowcpa.GetTextColor() : ctx.textColor);
 		}
 		draw::PopScissorRect();
 	}
 
 	// - column header
+	ContentPaintAdvice colcpa = ph.cpa;
 	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh });
 	// background:
 	for (size_t c = 0; c < nc; c++)
@@ -297,10 +294,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			RC.x0 + rhw + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		style.colHeaderBackgroundPainter->Paint(info);
+		colcpa = style.colHeaderBackgroundPainter->Paint(info);
 	}
 	// text:
-	auto* colHeaderFont = colHeaderStyle->GetFont();
+	auto* colHeaderFont = style.colHeaderFont.GetFont();
 	for (size_t c = 0; c < nc; c++)
 	{
 		UIRect rect =
@@ -313,14 +310,15 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		rect = rect.ShrinkBy(padCH);
 		draw::TextLine(
 			colHeaderFont,
-			colHeaderStyle->font_size,
-			rect.x0, (rect.y0 + rect.y1 + colHeaderStyle->font_size) / 2,
+			style.colHeaderFont.size,
+			rect.x0, (rect.y0 + rect.y1 + style.colHeaderFont.size) / 2,
 			_impl->dataSource->GetColName(c),
-			colHeaderStyle->text_color);
+			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor);
 	}
 	draw::PopScissorRect();
 
 	// - cells
+	ContentPaintAdvice cellcpa = ph.cpa;
 	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0 + chh, RC.x1, RC.y1 });
 	// background:
 	for (size_t r = minR; r < maxR; r++)
@@ -339,11 +337,11 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				info.state |= PS_Hover;
 			else
 				info.state &= ~PS_Hover;
-			style.cellBackgroundPainter->Paint(info);
+			cellcpa = style.cellBackgroundPainter->Paint(info);
 		}
 	}
 	// text:
-	auto* cellFont = cellStyle->GetFont();
+	auto* cellFont = style.cellFont.GetFont();
 	for (size_t r = minR; r < maxR; r++)
 	{
 		for (size_t c = 0; c < nc; c++)
@@ -358,10 +356,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			rect = rect.ShrinkBy(padC);
 			draw::TextLine(
 				cellFont,
-				cellStyle->font_size,
-				rect.x0, (rect.y0 + rect.y1 + cellStyle->font_size) / 2,
+				style.cellFont.size,
+				rect.x0, (rect.y0 + rect.y1 + style.cellFont.size) / 2,
 				_impl->dataSource->GetText(r, c),
-				cellStyle->text_color);
+				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor);
 		}
 	}
 	draw::PopScissorRect();
@@ -495,24 +493,24 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 	if (includeHeader)
 	{
-		auto* rowHeaderFont = rowHeaderStyle->GetFont();
+		auto* rowHeaderFont = style.rowHeaderFont.GetFont();
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetColName(c);
-			float w = GetTextWidth(rowHeaderFont, rowHeaderStyle->font_size, text) + padCH.x0 + padCH.x1;
+			float w = GetTextWidth(rowHeaderFont, style.rowHeaderFont.size, text) + padCH.x0 + padCH.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
 	}
 
-	auto* cellFont = cellStyle->GetFont();
+	auto* cellFont = style.cellFont.GetFont();
 	for (size_t i = 0, n = _impl->dataSource->GetNumRows(); i < n; i++)
 	{
 		_impl->dataSource->OnBeginReadRows(i, i + 1);
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetText(i, c);
-			float w = GetTextWidth(cellFont, cellStyle->font_size, text) + padC.x0 + padC.x1;
+			float w = GetTextWidth(cellFont, style.cellFont.size, text) + padC.x0 + padC.x1;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
@@ -627,7 +625,8 @@ TreeView::~TreeView()
 	delete _impl;
 }
 
-static StaticID_Style sid_tree_expand("tree_expand");
+static StaticID<TableStyle> sid_tree_style("table");
+static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
 	FrameElement::OnReset();
@@ -636,9 +635,8 @@ void TreeView::OnReset()
 
 	// TODO separate styles for TreeView
 	SetFrameStyle(sid_framestyle_table_frame);
-	cellStyle = GetCurrentTheme()->GetStyle(sid_table_cell);
-	expandButtonStyle = GetCurrentTheme()->GetStyle(sid_tree_expand);
-	colHeaderStyle = GetCurrentTheme()->GetStyle(sid_table_col_header);
+	style = *GetCurrentTheme()->GetStruct(sid_tree_style);
+	expandButtonStyle = *GetCurrentTheme()->GetStruct(sid_iconstyle_tree_expand);
 
 	_impl->dataSource = nullptr;
 }
@@ -658,6 +656,7 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 
 	auto RC = GetContentRect();
 
+	ContentPaintAdvice colcpa;
 	// backgrounds
 	for (int c = 0; c < nc; c++)
 	{
@@ -668,11 +667,11 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 			RC.x0 + _impl->colEnds[c + 1],
 			RC.y0 + chh,
 		};
-		colHeaderStyle->background_painter->Paint(info);
+		colcpa = style.colHeaderBackgroundPainter->Paint(info);
 	}
 
 	// text
-	auto* colHeaderFont = colHeaderStyle->GetFont();
+	auto* colHeaderFont = style.colHeaderFont.GetFont();
 	for (int c = 0; c < nc; c++)
 	{
 		UIRect rect =
@@ -684,24 +683,25 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 		};
 		draw::TextLine(
 			colHeaderFont,
-			colHeaderStyle->font_size,
-			rect.x0, (rect.y0 + rect.y1 + colHeaderStyle->font_size) / 2,
+			style.colHeaderFont.size,
+			rect.x0, (rect.y0 + rect.y1 + style.colHeaderFont.size) / 2,
 			_impl->dataSource->GetColName(c),
-			colHeaderStyle->text_color);
+			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor);
 	}
 
 	PaintState ps = { info, nc, RC.x0, RC.y0 + chh };
 	for (size_t i = 0, n = _impl->dataSource->GetChildCount(TreeDataSource::ROOT); i < n; i++)
-		_PaintOne(_impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
+		_PaintOne(ctx, _impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
 
 	ph.PaintChildren(this, ctx);
 }
 
-void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
+void TreeView::_PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, PaintState& ps)
 {
 	int h = 20;
 	int tab = 20;
 
+	ContentPaintAdvice cellcpa;
 	// backgrounds
 	for (int c = 0; c < ps.nc; c++)
 	{
@@ -712,11 +712,11 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 			ps.x + _impl->colEnds[c + 1],
 			ps.y + h,
 		};
-		cellStyle->background_painter->Paint(ps.info);
+		cellcpa = style.cellBackgroundPainter->Paint(ps.info);
 	}
 
 	// text
-	auto* cellFont = cellStyle->GetFont();
+	auto* cellFont = style.cellFont.GetFont();
 	for (int c = 0; c < ps.nc; c++)
 	{
 		UIRect rect =
@@ -730,10 +730,10 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 			rect.x0 += tab * lvl;
 		draw::TextLine(
 			cellFont,
-			cellStyle->font_size,
-			rect.x0, (rect.y0 + rect.y1 + cellStyle->font_size) / 2,
+			style.cellFont.size,
+			rect.x0, (rect.y0 + rect.y1 + style.cellFont.size) / 2,
 			_impl->dataSource->GetText(id, c),
-			cellStyle->text_color);
+			cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor);
 	}
 
 	ps.y += h;
@@ -741,7 +741,7 @@ void TreeView::_PaintOne(uintptr_t id, int lvl, PaintState& ps)
 	if (true) // open
 	{
 		for (size_t i = 0, n = _impl->dataSource->GetChildCount(id); i < n; i++)
-			_PaintOne(_impl->dataSource->GetChild(id, i), lvl + 1, ps);
+			_PaintOne(ctx, _impl->dataSource->GetChild(id, i), lvl + 1, ps);
 	}
 }
 
@@ -786,8 +786,8 @@ void TreeView::CalculateColumnWidths(bool firstTimeOnly)
 	std::vector<float> colWidths;
 	colWidths.resize(nc, 0.0f);
 
-	auto* cellFont = cellStyle->GetFont();
-	auto cellFontSize = cellStyle->font_size;
+	auto* cellFont = style.cellFont.GetFont();
+	auto cellFontSize = style.cellFont.size;
 
 	struct Entry
 	{

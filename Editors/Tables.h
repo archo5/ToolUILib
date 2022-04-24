@@ -49,6 +49,9 @@ struct TableStyle
 	PainterHandle cellBackgroundPainter;
 	PainterHandle rowHeaderBackgroundPainter;
 	PainterHandle colHeaderBackgroundPainter;
+	FontSettings cellFont;
+	FontSettings rowHeaderFont;
+	FontSettings colHeaderFont;
 
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
@@ -91,11 +94,6 @@ struct TableView : FrameElement
 	size_t GetHoverRow() const;
 
 	bool enableRowHeader = true;
-#if 1
-	StyleBlockRef cellStyle;
-	StyleBlockRef rowHeaderStyle;
-	StyleBlockRef colHeaderStyle;
-#endif
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 
@@ -119,20 +117,19 @@ struct TreeView : FrameElement
 {
 	struct PaintState;
 
+	TableStyle style;
+	IconStyle expandButtonStyle;
+
 	TreeView();
 	~TreeView();
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	void _PaintOne(uintptr_t id, int lvl, PaintState& ps);
+	void _PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, PaintState& ps);
 	void OnEvent(Event& e) override;
 
 	TreeDataSource* GetDataSource() const;
 	void SetDataSource(TreeDataSource* src);
 	void CalculateColumnWidths(bool firstTimeOnly = true);
-
-	StyleBlockRef cellStyle;
-	StyleBlockRef expandButtonStyle;
-	StyleBlockRef colHeaderStyle;
 
 private:
 	struct TreeViewImpl* _impl;

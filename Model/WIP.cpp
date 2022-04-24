@@ -267,6 +267,7 @@ void TabbedPanelStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 	OnField(oi, "tabInnerButtonMargin", tabInnerButtonMargin);
 	OnFieldBorderBox(oi, "tabButtonPadding", tabButtonPadding);
 	OnFieldPainter(oi, td, "tabButtonPainter", tabButtonPainter);
+	OnFieldFontSettings(oi, td, "tabButtonFont", tabButtonFont);
 	OnFieldBorderBox(oi, "tabPanelPadding", tabPanelPadding);
 	OnFieldPainter(oi, td, "tabPanelPainter", tabPanelPainter);
 	OnField(oi, "tabCloseButtonWidth", tabCloseButtonSize.x);
