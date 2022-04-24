@@ -58,7 +58,7 @@ void ColorBlock::OnPaint(const UIPaintContext& ctx)
 {
 	auto cpa = PaintFrame();
 
-	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
+	auto r = GetFinalRect().ShrinkBy(frameStyle.padding);
 
 	if (!_color.IsOpaque())
 	{
@@ -93,7 +93,7 @@ void ColorInspectBlock::OnPaint(const UIPaintContext& ctx)
 {
 	auto cpa = PaintFrame();
 
-	auto r = finalRectCP.ShrinkBy(frameStyle.padding);
+	auto r = GetFinalRect().ShrinkBy(frameStyle.padding);
 
 	float hbar = roundf(ResolveUnits(alphaBarHeight, r.GetWidth()));
 	UIRect r_lf = { r.x0, r.y0, roundf((r.x0 + r.x1) / 2), r.y1 - hbar };
@@ -163,7 +163,7 @@ void ImageElement::OnReset()
 
 void ImageElement::OnPaint(const UIPaintContext& ctx)
 {
-	auto c = GetContentRect();
+	auto c = GetFinalRect();
 	if (draw::GetCurrentScissorRectF().Overlaps(c))
 	{
 		if (_tryDelayLoad)
@@ -214,7 +214,7 @@ Rangef ImageElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSize
 
 void ImageElement::OnLayout(const UIRect& rect)
 {
-	finalRectC = finalRectCP = rect;
+	_finalRect = rect;
 }
 
 ImageElement& ImageElement::SetImage(draw::IImage* img)
@@ -954,7 +954,7 @@ ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
 
 void View2D::OnPaint(const UIPaintContext& ctx)
 {
-	auto r = finalRectC;
+	auto r = GetFinalRect();
 	if (draw::PushScissorRectIfNotEmpty(r))
 	{
 		if (onPaint)
@@ -968,7 +968,7 @@ void View2D::OnPaint(const UIPaintContext& ctx)
 
 void View3D::OnPaint(const UIPaintContext& ctx)
 {
-	auto r = finalRectC;
+	auto r = GetFinalRect();
 	if (draw::PushScissorRectIfNotEmpty(r))
 	{
 		rhi::Begin3DMode(r.Cast<int>());
@@ -1124,7 +1124,7 @@ bool OrbitCamera::OnEvent(Event& e)
 		if (rotating)
 			Rotate(e.delta.x * rotationSpeed, e.delta.y * rotationSpeed);
 		if (panning)
-			Pan(e.delta.x / e.current->GetContentRect().GetWidth(), e.delta.y / e.current->GetContentRect().GetHeight());
+			Pan(e.delta.x / e.current->GetFinalRect().GetWidth(), e.delta.y / e.current->GetFinalRect().GetHeight());
 		return rotating || panning;
 	}
 	if (e.type == EventType::MouseScroll)

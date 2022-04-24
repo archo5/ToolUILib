@@ -293,7 +293,7 @@ struct RenderView : ui::Buildable
 	{
 		ui::Application::PushEvent(this, [this, force]()
 		{
-			auto cr = imageEl->GetContentRect();
+			auto cr = imageEl->GetFinalRect();
 			int scale = 1;
 #if !NDEBUG
 			scale = 2;

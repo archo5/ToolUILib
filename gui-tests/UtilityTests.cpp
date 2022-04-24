@@ -87,7 +87,7 @@ struct ThreadedImageRenderingTest : ui::Buildable
 
 		ui::Application::PushEvent(this, [this, &img]()
 		{
-			auto cr = img.GetContentRect();
+			auto cr = img.GetFinalRect();
 			int tw = cr.GetWidth();
 			int th = cr.GetHeight();
 

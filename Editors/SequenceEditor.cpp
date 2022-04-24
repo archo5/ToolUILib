@@ -59,7 +59,7 @@ void SequenceItemElement::OnEvent(Event& e)
 		{
 			if (ddd->scope == seqEd)
 			{
-				auto r = GetPaddingRect();
+				auto r = GetFinalRect();
 				bool after = e.position.y > (r.y0 + r.y1) * 0.5f;
 				seqEd->_dragTargetPos = num + after;
 				float y = after ? r.y1 : r.y0;

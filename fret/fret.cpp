@@ -43,7 +43,7 @@ struct MainWindowContents : ui::Buildable
 
 		if (curFileView && curFileView->curHexViewer && curTable)
 		{
-			auto hvcr = curFileView->curHexViewer->GetContentRect();
+			auto hvcr = curFileView->curHexViewer->GetFinalRect();
 			ConnectOffset cobuf[128];
 			int count = curTable->GetOffsets(128, cobuf);
 			for (int i = 0; i < count; i++)

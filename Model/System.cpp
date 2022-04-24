@@ -404,7 +404,7 @@ void InlineFrame::OnLayoutChanged()
 {
 	if (frameContents &&
 		frameContents->container.rootBuildable)
-		frameContents->container.rootBuildable->PerformLayout(finalRectC);
+		frameContents->container.rootBuildable->PerformLayout(GetFinalRect());
 }
 
 void InlineFrame::SetFrameContents(FrameContents* contents)

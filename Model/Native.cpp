@@ -475,10 +475,10 @@ void DebugDrawSelf(UIObject* o)
 {
 	float a = 0.2f;
 
-	auto r = o->GetPaddingRect();
+	auto r = o->GetFinalRect();
 
 	// padding
-	draw::RectCutoutCol(r, o->GetPaddingRect(), Color4f(0.5f, 0.6f, 0.9f, a));
+	draw::RectCutoutCol(r, o->GetFinalRect(), Color4f(0.5f, 0.6f, 0.9f, a));
 	// border
 #if 1
 	draw::RectCutoutCol(r, r.ExtendBy(UIRect::UniformBorder(-1)), Color4f(0.5f, 0.9f, 0.6f, a));
@@ -1086,7 +1086,7 @@ void NativeMainWindow::OnClose()
 
 void NativeWindowNode::OnLayout(const UIRect& rect)
 {
-	finalRectC = finalRectCP = {};
+	_finalRect = {};
 }
 
 
@@ -1205,14 +1205,9 @@ struct Inspector : NativeDialogWindow
 				draw::TextLine(font, fontSize, x + 60, ys, CleanName(typeid(*obj).name()), Color4b::White());
 				char bfr[1024];
 				{
-					auto& fr = obj->finalRectC;
+					auto fr = obj->GetFinalRect();
 					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
 					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White());
-				}
-				{
-					auto& fr = obj->finalRectCP;
-					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-					draw::TextLine(font, fontSize, 600, ys, bfr, Color4b::White());
 				}
 			}
 
@@ -1235,7 +1230,7 @@ struct Inspector : NativeDialogWindow
 		}
 		void OnLayout(const ui::UIRect& rect) override
 		{
-			finalRectC = finalRectCP = rect;
+			_finalRect = rect;
 		}
 
 		void OnPaint(const UIPaintContext& ctx) override
@@ -1245,8 +1240,7 @@ struct Inspector : NativeDialogWindow
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = mainFont.size;
 			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153));
-			draw::TextLine(font, mainFont.size, 400, y, "Content rect", Color4b(255, 153));
-			draw::TextLine(font, mainFont.size, 600, y, "Padding rect", Color4b(255, 153));
+			draw::TextLine(font, mainFont.size, 400, y, "Rect (final)", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
 			scrollMax = y;
 			//draw::TextLine(font, mainFont.size, 10, 10, "inspector", Color4b::White());

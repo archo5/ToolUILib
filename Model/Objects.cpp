@@ -213,7 +213,7 @@ void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 			if (e.type == EventType::MouseMove)
 			{
 				if (e.context->GetMouseCapture() == this) // TODO separate flag for this!
-					SetFlag(UIObject_IsPressedMouse, finalRectCP.Contains(e.position));
+					SetFlag(UIObject_IsPressedMouse, GetFinalRect().Contains(e.position));
 				//e.StopPropagation();
 			}
 			if (e.type == EventType::KeyAction && e.GetKeyAction() == KeyAction::ActivateDown)
@@ -375,7 +375,7 @@ void UIObject::Paint(const UIPaintContext& ctx)
 	if (!_CanPaint())
 		return;
 
-	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(finalRectCP)))
+	if (!((flags & UIObject_DisableCulling) || draw::GetCurrentScissorRectF().Overlaps(GetFinalRect())))
 		return;
 
 	OnPaint(ctx);
@@ -390,7 +390,7 @@ void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice
 	bool clipChildren = !!(flags & UIObject_ClipChildren);
 	if (clipChildren)
 	{
-		if (!draw::PushScissorRectIfNotEmpty(finalRectC))
+		if (!draw::PushScissorRectIfNotEmpty(GetFinalRect()))
 			return;
 	}
 
@@ -542,12 +542,12 @@ void UIObject::OnLayout(const UIRect& inRect)
 
 	if (TEMP_LAYOUT_MODE)
 	{
-		finalRectC = finalRectCP = inRect;
+		_finalRect = inRect;
 		if (firstChild)
 		{
 			firstChild->PerformLayout(inRect);
 			if (TEMP_LAYOUT_MODE == WRAPPER)
-				finalRectC = finalRectCP = firstChild->finalRectCP;
+				_finalRect = firstChild->GetFinalRect();
 		}
 		return;
 	}
@@ -555,7 +555,7 @@ void UIObject::OnLayout(const UIRect& inRect)
 	LayoutState state = { inRect };
 	CalcLayout(inRect, state);
 
-	finalRectCP = finalRectC = state.finalContentRect;
+	_finalRect = state.finalContentRect;
 }
 
 UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
@@ -954,9 +954,9 @@ void WrapperElement::OnLayout(const UIRect& rect)
 	if (_child)
 	{
 		_child->PerformLayout(rect);
-		finalRectCP = finalRectC = _child->finalRectCP;
+		_finalRect = _child->GetFinalRect();
 	}
-	else finalRectCP = finalRectC = rect;
+	else _finalRect = rect;
 }
 
 
@@ -994,7 +994,7 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
-	auto r = GetContentRect();
+	auto r = GetFinalRect();
 	float w = r.x1 - r.x0;
 	draw::TextLine(font, fs->size, r.x0, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
 }
@@ -1002,16 +1002,16 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 void Placeholder::OnPaint(const UIPaintContext& ctx)
 {
-	draw::RectCol(finalRectCP.x0, finalRectCP.y0, finalRectCP.x1, finalRectCP.y1, Color4b(0, 127));
-	draw::RectCutoutCol(finalRectCP, finalRectCP.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
+	auto r = GetFinalRect();
+	draw::RectCol(r.x0, r.y0, r.x1, r.y1, Color4b(0, 127));
+	draw::RectCutoutCol(r, r.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
 
 	char text[32];
-	snprintf(text, sizeof(text), "%gx%g", finalRectCP.GetWidth(), finalRectCP.GetHeight());
+	snprintf(text, sizeof(text), "%gx%g", r.GetWidth(), r.GetHeight());
 
 	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
-	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	float tw = GetTextWidth(font, fs->size, text);
 	draw::TextLine(font, fs->size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
@@ -1033,7 +1033,7 @@ void ChildScaleOffsetElement::TransformVerts(void* userdata, Vertex* vertices, s
 {
 	auto* me = (ChildScaleOffsetElement*)userdata;
 
-	auto cr = me->GetContentRect();
+	auto cr = me->GetFinalRect();
 	for (size_t i = 0; i < count; i++)
 	{
 		vertices[i].x = me->transform.TransformX(vertices[i].x) + cr.x0;
@@ -1049,7 +1049,7 @@ void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 	_prevVTCB = draw::SetVertexTransformCallback(cb);
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
-	auto cr = GetContentRect();
+	auto cr = GetFinalRect();
 	float sroX = cr.x0;
 	float sroY = cr.y0;
 
@@ -1083,7 +1083,7 @@ void ChildScaleOffsetElement::OnPaintSingleChild(SingleChildPaintPtr* next, cons
 	_prevVTCB = draw::SetVertexTransformCallback(cb);
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
-	auto cr = GetContentRect();
+	auto cr = GetFinalRect();
 	float sroX = cr.x0;
 	float sroY = cr.y0;
 
@@ -1099,7 +1099,7 @@ void ChildScaleOffsetElement::OnPaintSingleChild(SingleChildPaintPtr* next, cons
 
 Point2f ChildScaleOffsetElement::LocalToChildPoint(Point2f pos) const
 {
-	auto cr = GetContentRect();
+	auto cr = GetFinalRect();
 	pos -= { cr.x0, cr.y0 };
 	pos = transform.InverseTransformPoint(pos);
 	return pos;
@@ -1125,19 +1125,10 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
 	UIElement::OnLayout(srect);
+	_childSize = GetFinalRect().GetSize();
+	_finalRect = rect;
 
 	SetTextResolutionScale(prevTRS);
-	auto pfr = finalRectC;
-	_childSize = pfr.GetSize();
-	finalRectC.x1 = (finalRectC.x1 - finalRectC.x0) * transform.scale + rect.x0;
-	finalRectC.y1 = (finalRectC.y1 - finalRectC.y0) * transform.scale + rect.y0;
-	finalRectC.x0 = rect.x0;
-	finalRectC.y0 = rect.y0;
-
-	finalRectCP.x0 += finalRectC.x0 - pfr.x0;
-	finalRectCP.y0 += finalRectC.y0 - pfr.y0;
-	finalRectCP.x1 += finalRectC.x1 - pfr.x1;
-	finalRectCP.y1 += finalRectC.y1 - pfr.y1;
 }
 
 

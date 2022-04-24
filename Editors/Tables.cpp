@@ -49,7 +49,7 @@ void MessageLogView::OnPaint(const UIPaintContext& ctx)
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
 
-	auto RC = GetContentRect();
+	auto RC = GetFinalRect();
 
 	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
 	auto sbrect = RC;
@@ -85,7 +85,7 @@ void MessageLogView::OnEvent(Event& e)
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
 
-	auto RC = GetContentRect();
+	auto RC = GetFinalRect();
 
 	float sbw = ResolveUnits(scrollbarV.GetWidth(), RC.GetWidth());
 	auto sbrect = RC;
@@ -122,7 +122,7 @@ bool MessageLogView::IsAtEnd()
 {
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
-	auto RC = GetContentRect();
+	auto RC = GetFinalRect();
 	return yOff >= numMsgs * htMsg - RC.GetHeight();
 }
 
@@ -135,7 +135,7 @@ void MessageLogView::ScrollToEnd()
 {
 	size_t numMsgs = _dataSource->GetNumMessages();
 	float htMsg = _dataSource->GetMessageHeight(this);
-	auto RC = GetContentRect();
+	auto RC = GetFinalRect();
 	yOff = numMsgs * htMsg - RC.GetHeight();
 }
 

@@ -37,13 +37,11 @@ void PaddingElement::OnLayout(const UIRect& rect)
 	if (_child)
 	{
 		_child->PerformLayout(padsub);
-		finalRectC = _child->finalRectCP;
-		finalRectCP = finalRectC.ExtendBy(padding);
+		_finalRect = _child->GetFinalRect().ExtendBy(padding);
 	}
 	else
 	{
-		finalRectCP = rect;
-		finalRectC = padsub;
+		_finalRect = rect;
 	}
 }
 
@@ -256,7 +254,7 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect)
 		r.y1 = roundf(r.y1);
 		slot._obj->PerformLayout(r);
 	}
-	finalRectC = finalRectCP = contRect;
+	_finalRect = contRect;
 }
 
 
@@ -352,8 +350,8 @@ void TabbedPanel::OnReset()
 
 void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 {
-	float x0 = GetContentRect().x0 + 4;
-	float y0 = GetContentRect().y0;
+	float x0 = GetFinalRect().x0 + 4;
+	float y0 = GetFinalRect().y0;
 	float y1 = y0 + tabHeight;
 	auto* tbFont = style.tabButtonFont.GetFont();
 	int tbFontSize = style.tabButtonFont.size;
@@ -455,8 +453,8 @@ void TabbedPanel::OnEvent(Event& e)
 {
 	_tabUI.InitOnEvent(e);
 
-	float x0 = GetContentRect().x0 + 4;
-	float y0 = GetContentRect().y0;
+	float x0 = GetFinalRect().x0 + 4;
+	float y0 = GetFinalRect().y0;
 	float y1 = y0 + tabHeight;
 	auto* tbFont = style.tabButtonFont.GetFont();
 	int tbFontSize = style.tabButtonFont.size;
@@ -582,7 +580,7 @@ void TabbedPanel::OnLayout(const UIRect& rect)
 	{
 		_child->PerformLayout(subr);
 	}
-	finalRectC = finalRectCP = rect;
+	_finalRect = rect;
 }
 
 UIObject* TabbedPanel::SlotIterator_GetNext(UIObjectIteratorData& data)

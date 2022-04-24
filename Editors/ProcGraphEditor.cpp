@@ -351,7 +351,7 @@ void ProcGraphEditor::OnLayout(const UIRect& rect)
 		auto hr = N->GetFullEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
 		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
 	}
-	finalRectC = finalRectCP = rect;
+	_finalRect = rect;
 }
 
 void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
@@ -513,10 +513,11 @@ void ProcGraphEditor::GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3
 
 Point2f ProcGraphEditor::GetPinPos(ProcGraphEditor_NodePin* P)
 {
+	auto frP = P->GetFinalRect();
 	return
 	{
-		!P->_pin.isOutput ? P->finalRectCP.x0 : P->finalRectCP.x1,
-		(P->finalRectCP.y0 + P->finalRectCP.y1) * 0.5f,
+		!P->_pin.isOutput ? frP.x0 : frP.x1,
+		(frP.y0 + frP.y1) * 0.5f,
 	};
 }
 

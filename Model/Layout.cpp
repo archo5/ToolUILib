@@ -236,7 +236,7 @@ void Coord::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 PaintInfo::PaintInfo(const UIObject* o) : obj(o)
 {
-	rect = o->GetPaddingRect();
+	rect = o->GetFinalRect();
 	if (o->IsHovered())
 		state |= PS_Hover;
 	if (o->IsPressed())

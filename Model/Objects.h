@@ -345,7 +345,7 @@ struct UIObject : IPersistentObject
 
 	virtual bool Contains(Point2f pos) const
 	{
-		return GetPaddingRect().Contains(pos);
+		return GetFinalRect().Contains(pos);
 	}
 	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
 	virtual UIObject* FindLastChildContainingPos(Point2f pos) const;
@@ -406,8 +406,7 @@ struct UIObject : IPersistentObject
 
 	float ResolveUnits(Coord coord, float ref);
 
-	UIRect GetContentRect() const { return finalRectC; }
-	UIRect GetPaddingRect() const { return finalRectCP; }
+	UI_FORCEINLINE UIRect GetFinalRect() const { return _finalRect; }
 
 	UI_FORCEINLINE const FontSettings* FindFontSettings(const FontSettings* first) const { return first ? first : _FindClosestParentFontSettings(); }
 	const FontSettings* _FindClosestParentFontSettings() const;
@@ -435,9 +434,8 @@ struct UIObject : IPersistentObject
 
 	LivenessToken _livenessToken;
 
-	// final layout rectangles: C=content, P=padding
-	UIRect finalRectC = {};
-	UIRect finalRectCP = {};
+	// final layout rectangle
+	UIRect _finalRect = {};
 
 	// previous layout input argument cache
 	UIRect lastLayoutInputRect = {};
@@ -534,7 +532,7 @@ struct FillerElement : UIObjectSingleChild
 	{
 		if (_child)
 			_child->PerformLayout(rect);
-		finalRectCP = finalRectC = rect;
+		_finalRect = rect;
 	}
 };
 

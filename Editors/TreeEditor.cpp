@@ -38,7 +38,7 @@ void TreeItemElement::OnEvent(Event& e)
 	{
 		if (auto* ddd = DragDrop::GetData<TreeDragData>())
 			if (ddd->scope == treeEd)
-				treeEd->_OnDragMove(ddd, path, GetPaddingRect(), e);
+				treeEd->_OnDragMove(ddd, path, GetFinalRect(), e);
 	}
 	if (e.type == EventType::DragDrop)
 	{

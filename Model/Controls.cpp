@@ -72,13 +72,11 @@ void FrameElement::OnLayout(const UIRect& rect)
 	if (_child)
 	{
 		_child->PerformLayout(padsub);
-		finalRectC = _child->finalRectCP;
-		finalRectCP = finalRectC.ExtendBy(frameStyle.padding);
+		_finalRect = _child->GetFinalRect().ExtendBy(frameStyle.padding);
 	}
 	else
 	{
-		finalRectCP = rect;
-		finalRectC = padsub;
+		_finalRect = rect;
 	}
 }
 
@@ -155,7 +153,7 @@ Rangef IconElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeT
 
 void IconElement::OnLayout(const UIRect& rect)
 {
-	finalRectCP = finalRectC = rect;
+	_finalRect = rect;
 }
 
 IconElement& IconElement::SetStyle(const StaticID<IconStyle>& id)
@@ -226,7 +224,7 @@ void Button::OnLayout(const UIRect& rect)
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
 		_child->PerformLayout(fr);
 	}
-	finalRectCP = finalRectC = rect;
+	_finalRect = rect;
 }
 
 
@@ -290,7 +288,7 @@ void StateToggleIconBase::OnPaint(const UIPaintContext& ctx)
 		info.SetCheckState(st->GetState());
 
 	info.obj = this;
-	info.rect = GetPaddingRect();
+	info.rect = GetFinalRect();
 
 	style.painter->Paint(info);
 }
@@ -304,7 +302,7 @@ void StateToggleFrameBase::OnPaint(const UIPaintContext& ctx)
 		info.SetCheckState(st->GetState());
 
 	info.obj = this;
-	info.rect = GetPaddingRect();
+	info.rect = GetFinalRect();
 
 	auto cpa = PaintFrame(info);
 	PaintChildren(ctx, cpa);
@@ -423,13 +421,11 @@ void ProgressBar::OnLayout(const UIRect& rect)
 	if (_child)
 	{
 		_child->PerformLayout(padsub);
-		finalRectC = _child->finalRectCP;
-		finalRectCP = finalRectC.ExtendBy(style.padding);
+		_finalRect = _child->GetFinalRect().ExtendBy(style.padding);
 	}
 	else
 	{
-		finalRectCP = rect;
-		finalRectC = padsub;
+		_finalRect = rect;
 	}
 }
 
@@ -509,7 +505,7 @@ void Slider::OnEvent(Event& e)
 
 double Slider::PosToQ(double x)
 {
-	auto rect = finalRectCP.ShrinkBy(style.trackMargin);
+	auto rect = GetFinalRect().ShrinkBy(style.trackMargin);
 	float fw = rect.GetWidth();
 	return clamp(fw ? float(x - rect.x0) / fw : 0, 0.0f, 1.0f);
 }
@@ -614,7 +610,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 
 		auto* font = labelStyle.font.GetFont();
 
-		auto contPadRect = GetPaddingRect();
+		auto contPadRect = GetFinalRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, _lastSepX, contPadRect.y1 };
 		auto cr = labelContRect;
 		auto r = labelContRect.ShrinkBy(labelStyle.padding);
@@ -674,7 +670,7 @@ void LabeledProperty::OnLayout(const UIRect& rect)
 		r.x0 = _lastSepX;
 		_child->PerformLayout(r);
 	}
-	finalRectCP = finalRectC = rect;
+	_finalRect = rect;
 }
 
 LabeledProperty& LabeledProperty::SetText(StringView text)
@@ -725,25 +721,25 @@ void SplitPane::OnReset()
 static float SplitQToX(SplitPane* sp, float split)
 {
 	float hw = sp->vertSepStyle.size / 2;
-	return lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split);
+	return lerp(sp->GetFinalRect().x0 + hw, sp->GetFinalRect().x1 - hw, split);
 }
 
 static float SplitQToY(SplitPane* sp, float split)
 {
 	float hh = sp->horSepStyle.size / 2;
-	return lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split);
+	return lerp(sp->GetFinalRect().y0 + hh, sp->GetFinalRect().y1 - hh, split);
 }
 
 static float SplitXToQ(SplitPane* sp, float c)
 {
 	float hw = sp->vertSepStyle.size / 2;
-	return sp->finalRectC.GetWidth() > hw * 2 ? (c - sp->finalRectC.x0 - hw) / (sp->finalRectC.GetWidth() - hw * 2) : 0;
+	return sp->GetFinalRect().GetWidth() > hw * 2 ? (c - sp->GetFinalRect().x0 - hw) / (sp->GetFinalRect().GetWidth() - hw * 2) : 0;
 }
 
 static float SplitYToQ(SplitPane* sp, float c)
 {
 	float hh = sp->horSepStyle.size / 2;
-	return sp->finalRectC.GetHeight() > hh * 2 ? (c - sp->finalRectC.y0 - hh) / (sp->finalRectC.GetHeight() - hh * 2) : 0;
+	return sp->GetFinalRect().GetHeight() > hh * 2 ? (c - sp->GetFinalRect().y0 - hh) / (sp->GetFinalRect().GetHeight() - hh * 2) : 0;
 }
 
 static UIRect GetSplitRectH(SplitPane* sp, int which)
@@ -751,8 +747,8 @@ static UIRect GetSplitRectH(SplitPane* sp, int which)
 	float split = sp->_splits[which];
 	float w = sp->vertSepStyle.size;
 	float hw = w / 2;
-	float x = roundf(lerp(sp->finalRectC.x0 + hw, sp->finalRectC.x1 - hw, split) - hw);
-	return { x, sp->finalRectC.y0, x + roundf(w), sp->finalRectC.y1 };
+	float x = roundf(lerp(sp->GetFinalRect().x0 + hw, sp->GetFinalRect().x1 - hw, split) - hw);
+	return { x, sp->GetFinalRect().y0, x + roundf(w), sp->GetFinalRect().y1 };
 }
 
 static UIRect GetSplitRectV(SplitPane* sp, int which)
@@ -760,25 +756,25 @@ static UIRect GetSplitRectV(SplitPane* sp, int which)
 	float split = sp->_splits[which];
 	float h = sp->horSepStyle.size;
 	float hh = h / 2;
-	float y = roundf(lerp(sp->finalRectC.y0 + hh, sp->finalRectC.y1 - hh, split) - hh);
-	return { sp->finalRectC.x0, y, sp->finalRectC.x1, y + roundf(h) };
+	float y = roundf(lerp(sp->GetFinalRect().y0 + hh, sp->GetFinalRect().y1 - hh, split) - hh);
+	return { sp->GetFinalRect().x0, y, sp->GetFinalRect().x1, y + roundf(h) };
 }
 
 static float SplitWidthAsQ(SplitPane* sp)
 {
 	if (!sp->_verticalSplit)
 	{
-		if (sp->finalRectC.GetWidth() == 0)
+		if (sp->GetFinalRect().GetWidth() == 0)
 			return 0;
 		float w = sp->vertSepStyle.size;
-		return w / max(w, sp->finalRectC.GetWidth() - w);
+		return w / max(w, sp->GetFinalRect().GetWidth() - w);
 	}
 	else
 	{
-		if (sp->finalRectC.GetHeight() == 0)
+		if (sp->GetFinalRect().GetHeight() == 0)
 			return 0;
 		float w = sp->horSepStyle.size;
-		return w / max(w, sp->finalRectC.GetHeight() - w);
+		return w / max(w, sp->GetFinalRect().GetHeight() - w);
 	}
 }
 
@@ -815,10 +811,10 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 		if (!_verticalSplit)
 		{
 			float splitWidth = vertSepStyle.size;
-			float prevEdge = finalRectC.x0;
+			float prevEdge = GetFinalRect().x0;
 			for (auto* ch : _children)
 			{
-				UIRect r = finalRectC;
+				UIRect r = GetFinalRect();
 				auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
 				split++;
 				r.x0 = prevEdge;
@@ -836,10 +832,10 @@ void SplitPane::OnPaint(const UIPaintContext& ctx)
 		else
 		{
 			float splitHeight = horSepStyle.size;
-			float prevEdge = finalRectC.y0;
+			float prevEdge = GetFinalRect().y0;
 			for (auto* ch : _children)
 			{
-				UIRect r = finalRectC;
+				UIRect r = GetFinalRect();
 				auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
 				split++;
 				r.y0 = prevEdge;
@@ -954,16 +950,16 @@ void SplitPane::OnLayout(const UIRect& rect)
 {
 	CheckSplits(this);
 
-	finalRectCP = finalRectC = rect;
+	_finalRect = rect;
 
 	size_t split = 0;
 	if (!_verticalSplit)
 	{
 		float splitWidth = vertSepStyle.size;
-		float prevEdge = finalRectC.x0;
+		float prevEdge = GetFinalRect().x0;
 		for (auto* ch : _children)
 		{
-			UIRect r = finalRectC;
+			UIRect r = GetFinalRect();
 			auto sr = split < _splits.size() ? GetSplitRectH(this, split) : UIRect{ r.x1, 0, r.x1, 0 };
 			split++;
 			r.x0 = prevEdge;
@@ -975,10 +971,10 @@ void SplitPane::OnLayout(const UIRect& rect)
 	else
 	{
 		float splitHeight = horSepStyle.size;
-		float prevEdge = finalRectC.y0;
+		float prevEdge = GetFinalRect().y0;
 		for (auto* ch : _children)
 		{
-			UIRect r = finalRectC;
+			UIRect r = GetFinalRect();
 			auto sr = split < _splits.size() ? GetSplitRectV(this, split) : UIRect{ 0, r.y1, 0, r.y1 };
 			split++;
 			r.y0 = prevEdge;
@@ -1244,21 +1240,21 @@ void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
 	FillerElement::OnPaint(ctx);
 
-	auto cr = GetContentRect();
+	auto cr = GetFinalRect();
 	float w = cr.GetWidth();
 	auto sbvr = cr;
-	sbvr.x0 = cr.x1;
-	sbvr.x1 = sbvr.x0 + ResolveUnits(sbv.GetWidth(), w);
+	sbvr.x1 = cr.x1;
+	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
 	sbv.OnPaint({ this, sbvr, cr.GetHeight(), estContentSize.y, yoff });
 }
 
 void ScrollArea::OnEvent(Event& e)
 {
-	auto cr = GetContentRect();
+	auto cr = GetFinalRect();
 	float w = cr.GetWidth();
 	auto sbvr = cr;
-	sbvr.x0 = cr.x1;
-	sbvr.x1 = sbvr.x0 + ResolveUnits(sbv.GetWidth(), w);
+	sbvr.x1 = cr.x1;
+	sbvr.x0 = sbvr.x1 - ResolveUnits(sbv.GetWidth(), w);
 	ScrollbarData info = { this, sbvr, cr.GetHeight(), estContentSize.y, yoff };
 
 	if (sbv.OnEvent(info, e))
@@ -1291,8 +1287,7 @@ void ScrollArea::OnLayout(const UIRect& rect)
 	crect.y1 = crect.y0 + estContentSize.y;
 	if (_child)
 		_child->PerformLayout(crect);
-	finalRectCP = finalRectC = rect;
-	finalRectC.x1 -= vScrollWidth;
+	_finalRect = rect;
 }
 
 void ScrollArea::OnReset()
@@ -1775,8 +1770,7 @@ void BackgroundBlocker::OnEvent(Event& e)
 
 void BackgroundBlocker::OnLayout(const UIRect& rect)
 {
-	UIRect r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
-	finalRectC = finalRectCP = r;
+	_finalRect = { 0, 0, system->eventSystem.width, system->eventSystem.height };
 }
 
 void BackgroundBlocker::OnButton()

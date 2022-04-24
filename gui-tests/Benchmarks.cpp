@@ -18,7 +18,7 @@ struct SubUIBenchmark : ui::Buildable
 	{
 		ui::PaintInfo info(this);
 		ui::GetCurrentTheme()->FindStructByName<ui::FrameStyle>("textbox")->backgroundPainter->Paint(info);
-		auto r = finalRectC;
+		auto r = GetFinalRect();
 
 		for (uint16_t pid = 0; pid < points.size(); pid++)
 		{
@@ -36,7 +36,7 @@ struct SubUIBenchmark : ui::Buildable
 	}
 	void OnEvent(ui::Event& e) override
 	{
-		auto r = finalRectC;
+		auto r = GetFinalRect();
 
 		subui.InitOnEvent(e);
 		for (uint16_t pid = 0; pid < points.size(); pid++)

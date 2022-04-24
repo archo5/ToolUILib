@@ -259,7 +259,7 @@ struct EventsTest : ui::Buildable
 		for (unsigned i = 0; i < MAX_MESSAGES; i++)
 		{
 			unsigned idx = (MAX_MESSAGES * 2 + writePos - i - 1) % MAX_MESSAGES;
-			ui::draw::TextLine(font, 12, 0, finalRectC.y1 - i * 12, msgBuf[idx], ui::Color4f::White());
+			ui::draw::TextLine(font, 12, 0, GetFinalRect().y1 - i * 12, msgBuf[idx], ui::Color4f::White());
 		}
 	}
 	void Build() override
@@ -579,7 +579,7 @@ struct SubUITest : ui::Buildable
 	{
 		ui::PaintInfo info(this);
 		ui::GetCurrentTheme()->FindStructByName<ui::FrameStyle>("textbox")->backgroundPainter->Paint(info);
-		auto r = finalRectC;
+		auto r = GetFinalRect();
 
 		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
 		const int size = 12;
@@ -601,7 +601,7 @@ struct SubUITest : ui::Buildable
 	}
 	void OnEvent(ui::Event& e) override
 	{
-		auto r = finalRectC;
+		auto r = GetFinalRect();
 
 		subui.InitOnEvent(e);
 		if (subui.ButtonOnEvent(0, ui::UIRect{ r.x0, r.y0, r.x0 + 50, r.y0 + 50 }, e))
@@ -671,7 +671,7 @@ struct HighElementCountTest : ui::Buildable
 	{
 		void OnPaint(const ui::UIPaintContext& ctx) override
 		{
-			auto r = GetContentRect();
+			auto r = GetFinalRect();
 			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));
 		}
 		ui::Rangef GetFullEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override

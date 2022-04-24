@@ -39,7 +39,7 @@ struct TE_SlicedImageElement : ui::FillerElement
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
-		UIRect r = GetContentRect();
+		UIRect r = GetFinalRect();
 		float iw = _image->GetWidth();
 		float ih = _image->GetHeight();
 		float x0 = roundf((r.x0 + r.x1 - _width) * 0.5f);

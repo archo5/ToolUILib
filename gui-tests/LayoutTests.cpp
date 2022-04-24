@@ -168,8 +168,8 @@ struct SizeTest : ui::Buildable
 			if (res.size())
 			{
 				float textw = ui::GetTextWidth(font, fsize, res);
-				ui::draw::LineCol(t.obj->finalRectCP.x1, t.obj->finalRectCP.y0, finalRectCP.x1 - textw, ypos - fsize / 2, 1, ui::Color4b(255, 0, 0));
-				ui::draw::TextLine(font, fsize, finalRectCP.x1 - textw, ypos, res, ui::Color4b(255, 0, 0));
+				ui::draw::LineCol(t.obj->GetFinalRect().x1, t.obj->GetFinalRect().y0, GetFinalRect().x1 - textw, ypos - fsize / 2, 1, ui::Color4b(255, 0, 0));
+				ui::draw::TextLine(font, fsize, GetFinalRect().x1 - textw, ypos, res, ui::Color4b(255, 0, 0));
 				ypos += fsize;
 			}
 		}
@@ -217,7 +217,7 @@ struct SizeTest : ui::Buildable
 		ui::Pop();
 	}
 
-	static std::string TestSize(ui::UIRect& r, float w, float h)
+	static std::string TestSize(const ui::UIRect& r, float w, float h)
 	{
 		if (fabsf(r.GetWidth() - w) > 0.0001f || fabsf(r.GetHeight() - h) > 0.0001f)
 		{
@@ -230,7 +230,7 @@ struct SizeTest : ui::Buildable
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{
-			return TestSize(obj->finalRectCP, w, h);
+			return TestSize(obj->GetFinalRect(), w, h);
 		};
 		tests.push_back({ &obj, fn });
 	}
@@ -239,7 +239,7 @@ struct SizeTest : ui::Buildable
 	{
 		auto fn = [obj{ &obj }, x]()->std::string
 		{
-			auto r = obj->finalRectCP;
+			auto r = obj->GetFinalRect();
 			if (fabsf(r.x0 - x) > 0.0001f)
 			{
 				return ui::Format("expected x %g - got %g", x, r.x0);

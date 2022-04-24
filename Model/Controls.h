@@ -60,6 +60,8 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	// for PaddingStyleMixin
 	UI_FORCEINLINE AABB2f& GetPadding() { return frameStyle.padding; }
 
+	AABB2f GetContentRect() { return GetFinalRect().ShrinkBy(frameStyle.padding); }
+
 	void OnReset() override;
 	ContentPaintAdvice PaintFrame() { return PaintFrame(this); }
 	ContentPaintAdvice PaintFrame(const PaintInfo& info);

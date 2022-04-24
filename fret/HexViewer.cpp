@@ -393,8 +393,8 @@ void HexViewer::OnEvent(ui::Event& e)
 		ui::Font* font = contentFont.GetFont();
 
 		float fh = contentFont.size + 4;
-		float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
-		float y = finalRectC.y0 + fh;
+		float x = GetFinalRect().x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
+		float y = GetFinalRect().y0 + fh;
 		float x2 = x + 20 * W + 10;
 
 		state->hoverSection = -1;
@@ -454,8 +454,8 @@ void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 	size_t sz = file->dataSource->Read(GetBasePos(), W * 64, buf);
 
 	float fh = contentFont.size + 4;
-	float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
-	float y = finalRectC.y0 + fh * 2;
+	float x = GetFinalRect().x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
+	float y = GetFinalRect().y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
 
 	Highlight(highlightSettings, dataDesc, file, state->basePos, &bcol[0], buf, sz);
@@ -561,8 +561,8 @@ ui::UIRect HexViewer::GetByteRect(uint64_t pos)
 
 	auto* font = contentFont.GetFont();
 	float fh = contentFont.size + 4;
-	float x0 = finalRectC.x0 + ui::GetTextWidth(font, contentFont.size, "0") * 8 + x * 20;
-	float y0 = finalRectC.y0 + 4 + fh * (1 + y);
+	float x0 = GetFinalRect().x0 + ui::GetTextWidth(font, contentFont.size, "0") * 8 + x * 20;
+	float y0 = GetFinalRect().y0 + 4 + fh * (1 + y);
 
 	return { x0, y0, x0 + 16, y0 + fh };
 }
