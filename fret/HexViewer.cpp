@@ -390,10 +390,10 @@ void HexViewer::OnEvent(ui::Event& e)
 	}
 	else if (e.type == ui::EventType::MouseMove)
 	{
-		ui::Font* font = styleProps->GetFont();
+		ui::Font* font = contentFont.GetFont();
 
-		float fh = styleProps->font.size + 4;
-		float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, styleProps->font.size, "0") * 8;
+		float fh = contentFont.size + 4;
+		float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
 		float y = finalRectC.y0 + fh;
 		float x2 = x + 20 * W + 10;
 
@@ -443,7 +443,7 @@ void HexViewer::OnEvent(ui::Event& e)
 void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 {
 	int W = state->byteWidth;
-	ui::Font* font = styleProps->GetFont();
+	ui::Font* font = contentFont.GetFont();
 
 	auto minSel = std::min(state->selectionStart, state->selectionEnd);
 	auto maxSel = std::max(state->selectionStart, state->selectionEnd);
@@ -453,8 +453,8 @@ void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 	memset(&bcol, 0, sizeof(bcol));
 	size_t sz = file->dataSource->Read(GetBasePos(), W * 64, buf);
 
-	float fh = styleProps->font.size + 4;
-	float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, styleProps->font.size, "0") * 8;
+	float fh = contentFont.size + 4;
+	float x = finalRectC.x0 + 2 + ui::GetTextWidth(font, contentFont.size, "0") * 8;
 	float y = finalRectC.y0 + fh * 2;
 	float x2 = x + 20 * W + 10;
 
@@ -520,8 +520,8 @@ void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 			break;
 		char str[16];
 		snprintf(str, 16, "%" PRIX64, GetBasePos() + i * W);
-		float w = ui::GetTextWidth(font, styleProps->font.size, str);
-		ui::draw::TextLine(font, styleProps->font.size, x - w - 10, y + i * fh, str, colHalfTransparentWhite);
+		float w = ui::GetTextWidth(font, contentFont.size, str);
+		ui::draw::TextLine(font, contentFont.size, x - w - 10, y + i * fh, str, colHalfTransparentWhite);
 	}
 
 	for (int i = 0; i < W; i++)
@@ -531,7 +531,7 @@ void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 		str[1] = "0123456789ABCDEF"[i & 0xf];
 		str[2] = 0;
 		float xoff = (i % W) * 20;
-		ui::draw::TextLine(font, styleProps->font.size, x + xoff, y - fh, str, colHalfTransparentWhite);
+		ui::draw::TextLine(font, contentFont.size, x + xoff, y - fh, str, colHalfTransparentWhite);
 	}
 
 	for (size_t i = 0; i < sz; i++)
@@ -543,9 +543,9 @@ void HexViewer::OnPaint(const ui::UIPaintContext& ctx)
 		str[2] = 0;
 		float xoff = (i % W) * 20;
 		float yoff = (i / W) * fh;
-		ui::draw::TextLine(font, styleProps->font.size, x + xoff, y + yoff, str, colWhite);
+		ui::draw::TextLine(font, contentFont.size, x + xoff, y + yoff, str, colWhite);
 		str[1] = IsASCII(v) ? v : '.';
-		ui::draw::TextLine(font, styleProps->font.size, x2 + xoff / 2, y + yoff, str + 1, colWhite);
+		ui::draw::TextLine(font, contentFont.size, x2 + xoff / 2, y + yoff, str + 1, colWhite);
 	}
 }
 
@@ -559,9 +559,9 @@ ui::UIRect HexViewer::GetByteRect(uint64_t pos)
 
 	int y = at / state->byteWidth;
 
-	auto* font = styleProps->GetFont();
-	float fh = styleProps->font.size + 4;
-	float x0 = finalRectC.x0 + ui::GetTextWidth(font, styleProps->font.size, "0") * 8 + x * 20;
+	auto* font = contentFont.GetFont();
+	float fh = contentFont.size + 4;
+	float x0 = finalRectC.x0 + ui::GetTextWidth(font, contentFont.size, "0") * 8 + x * 20;
 	float y0 = finalRectC.y0 + 4 + fh * (1 + y);
 
 	return { x0, y0, x0 + 16, y0 + fh };

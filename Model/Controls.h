@@ -89,7 +89,7 @@ enum class DefaultIconStyle
 	TreeExpand,
 };
 
-struct IconElement : UIElement // TODO no children
+struct IconElement : UIObjectNoChildren
 {
 	IconStyle style;
 

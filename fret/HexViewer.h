@@ -70,11 +70,13 @@ extern ui::DataCategoryTag DCT_HexViewerState[1];
 
 struct HexViewer : ui::FillerElement
 {
+	ui::FontSettings contentFont;
+
 	void OnReset() override
 	{
 		ui::FillerElement::OnReset();
 
-		GetStyle().SetFontFamily(ui::FONT_FAMILY_MONOSPACE);
+		contentFont.family = ui::FONT_FAMILY_MONOSPACE;
 	}
 	void OnEvent(ui::Event& e) override;
 	void OnPaint(const ui::UIPaintContext& ctx) override;

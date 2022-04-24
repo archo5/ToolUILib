@@ -124,7 +124,7 @@ void IconStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 
 void IconElement::OnReset()
 {
-	UIElement::OnReset();
+	UIObjectNoChildren::OnReset();
 
 	style = {};
 }
@@ -917,8 +917,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
 	CheckSplits(this);
 
-	finalRectCP = rect;
-	finalRectC = finalRectCP.ShrinkBy(styleProps->GetPaddingRect());
+	finalRectCP = finalRectC = rect;
 
 	size_t split = 0;
 	if (!_verticalSplit)

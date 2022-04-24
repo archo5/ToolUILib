@@ -154,11 +154,13 @@ struct SizeTest : ui::Buildable
 		std::function<std::string()> func;
 	};
 
+	ui::FontSettings msgFont;
+
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		ui::Buildable::OnPaint(ctx);
-		auto* font = styleProps->GetFont();
-		int fsize = styleProps->font.size;
+		auto* font = msgFont.GetFont();
+		int fsize = msgFont.size;
 		float ypos = fsize;
 		for (const auto& t : tests)
 		{

@@ -520,6 +520,5 @@ public:
 };
 
 StyleBlockRef GetObjectStyle();
-StyleBlockRef GetTextStyle();
 
 } // ui

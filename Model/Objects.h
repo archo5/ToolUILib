@@ -510,6 +510,19 @@ inline void DeleteUIObject(UIObject* obj)
 	DeletePersistentObject(obj);
 }
 
+struct UIObjectNoChildren : UIObject
+{
+	typedef char IsElement[1];
+
+	void SlotIterator_Init(UIObjectIteratorData& data) override {}
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override { return nullptr; }
+	void RemoveChildImpl(UIObject* ch) override {}
+	void DetachChildren(bool recursive) override {}
+	void CustomAppendChild(UIObject* obj) override;
+	void PaintChildrenImpl(const UIPaintContext& ctx) override {}
+	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
+};
+
 struct UIObjectSingleChild : UIObject
 {
 	typedef char IsElement[1];
@@ -616,7 +629,7 @@ struct SizeConstraintElement : WrapperElement
 	}
 };
 
-struct TextElement : UIElement
+struct TextElement : UIObjectNoChildren
 {
 	std::string text;
 
@@ -639,14 +652,14 @@ struct TextElement : UIElement
 	}
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		auto ret = UIElement::GetFullEstimatedWidth(containerSize, type, forParentLayout);
+		auto ret = UIObjectNoChildren::GetFullEstimatedWidth(containerSize, type, forParentLayout);
 		ret.max = ret.min;
 		return ret;
 		//return CalcEstimatedWidth(containerSize, type) + styleProps->padding_left + styleProps->padding_right;
 	}
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
 	{
-		auto ret = UIElement::GetFullEstimatedHeight(containerSize, type, forParentLayout);
+		auto ret = UIObjectNoChildren::GetFullEstimatedHeight(containerSize, type, forParentLayout);
 		ret.max = ret.min;
 		return ret;
 	}

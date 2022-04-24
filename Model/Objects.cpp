@@ -897,6 +897,12 @@ NativeWindowBase* UIObject::GetNativeWindow() const
 }
 
 
+void UIObjectNoChildren::CustomAppendChild(UIObject* obj)
+{
+	puts("WARNING: trying to add child to a no-children UI object");
+}
+
+
 void UIObjectSingleChild::OnReset()
 {
 	UIObject::OnReset();
@@ -1091,9 +1097,7 @@ Rangef SizeConstraintElement::GetFullEstimatedHeight(const Size2f& containerSize
 
 void TextElement::OnReset()
 {
-	UIElement::OnReset();
-
-	styleProps = GetTextStyle();
+	UIObjectNoChildren::OnReset();
 
 	text = {};
 }
@@ -1101,18 +1105,14 @@ void TextElement::OnReset()
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
 	// TODO can we nullify styleProps?
-	auto* fs = styleProps != GetTextStyle() ? &styleProps->font : _FindClosestParentFontSettings();
+	auto* fs = styleProps ? &styleProps->font : _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
-
-	UIPaintHelper ph;
-	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
 	draw::TextLine(font, fs->size, r.x0, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
-
-	ph.PaintChildren(this, ctx);
 }
+
 
 void Placeholder::OnPaint(const UIPaintContext& ctx)
 {
