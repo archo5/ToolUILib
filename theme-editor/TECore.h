@@ -2,6 +2,8 @@
 #pragma once
 #include "../GUI.h"
 
+#include "../Model/WIP.h"
+
 
 using namespace ui;
 

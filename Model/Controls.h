@@ -386,10 +386,10 @@ struct Slider : UIElement
 };
 
 
-struct PropertyList : UIElement
+struct PropertyList : WrapperElement // TODO should this be a stack layout?
 {
 	void OnReset() override;
-	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	Coord splitPos = Coord::Percent(40);
 	Coord minSplitPos = 0;
@@ -398,7 +398,7 @@ struct PropertyList : UIElement
 	float _calcSplitX = 0;
 };
 
-struct LabeledProperty : UIElement
+struct LabeledProperty : WrapperElement
 {
 	enum ContentLayoutType
 	{
@@ -432,7 +432,7 @@ struct LabeledProperty : UIElement
 	void OnReset() override;
 	void OnEnterTree() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
+	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	StringView GetText() const { return _labelText; }
 	LabeledProperty& SetText(StringView text);
@@ -455,6 +455,7 @@ struct LabeledProperty : UIElement
 	FrameStyle _labelStyle;
 	std::string _labelText;
 	PropertyList* _propList = nullptr;
+	float _lastSepX = 0;
 	bool _isBrief = false;
 	bool _preferOwnLabelStyle = false;
 };

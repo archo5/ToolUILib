@@ -342,7 +342,6 @@ struct UIObject : IPersistentObject
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
-	virtual UIRect CalcPaddingRect(const UIRect& expTgtRect);
 
 	virtual bool Contains(Point2f pos) const
 	{

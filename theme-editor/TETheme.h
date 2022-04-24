@@ -85,7 +85,9 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 	void NodePropertyEditorUI(Node* node)
 	{
 		Push<PropertyList>().splitPos = Coord::Percent(25);
+		Push<StackTopDownLayoutElement>();
 		static_cast<TE_Node*>(node)->PropertyUI();
+		Pop();
 		Pop();
 	}
 

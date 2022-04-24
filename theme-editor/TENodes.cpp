@@ -137,9 +137,11 @@ void TE_MaskRef::UI()
 	auto& pl = Push<PropertyList>();
 	pl.splitPos = Coord::Percent(30);
 	pl.minSplitPos = 50;
+	Push<StackTopDownLayoutElement>();
 	imm::PropEditInt("Border", border, { SetMinWidth(20) });
 	imm::PropEditInt("Radius", radius, { SetMinWidth(20) });
 	imm::PropEditInt("V.bias", vbias, { SetMinWidth(20) });
+	Pop();
 	Pop();
 }
 

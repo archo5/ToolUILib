@@ -553,28 +553,10 @@ void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
 		return;
 	}
 
-	UIRect rect = inRect;
+	LayoutState state = { inRect };
+	CalcLayout(inRect, state);
 
-	UIRect Prect = CalcPaddingRect(rect);
-	UIRect Arect = Prect;
-	UIRect inrect =
-	{
-		rect.x0 + Arect.x0,
-		rect.y0 + Arect.y0,
-		rect.x1 - Arect.x1,
-		rect.y1 - Arect.y1,
-	};
-
-	LayoutState state = { inrect };
-	CalcLayout(inrect, state);
-
-	finalRectC = state.finalContentRect;
-	finalRectCP = state.finalContentRect.ExtendBy(Prect);
-}
-
-UIRect UIObject::CalcPaddingRect(const UIRect& expTgtRect)
-{
-	return {};
+	finalRectCP = finalRectC = state.finalContentRect;
 }
 
 UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const

@@ -3,8 +3,6 @@
 #include "TENodes.h"
 #include "TETheme.h"
 
-#include "../Model/WIP.h"
-
 
 enum TE_PreviewMode
 {
@@ -304,6 +302,7 @@ struct TE_TemplateEditorNode : Buildable
 
 					Push<PropertyList>()
 						+ AddEventHandler(EventType::IMChange, [this](Event&) { tmpl->InvalidateAllNodes(); });
+					Push<StackTopDownLayoutElement>();
 					{
 						imm::EditBool(showRenderSettings, "Render settings", {}, imm::TreeStateToggleSkin());
 						if (showRenderSettings)
@@ -324,6 +323,7 @@ struct TE_TemplateEditorNode : Buildable
 							};
 						}
 					}
+					Pop();
 					Pop();
 				}
 				Pop();

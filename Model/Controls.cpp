@@ -543,7 +543,7 @@ double Slider::ValueToQ(double v)
 
 void PropertyList::OnReset()
 {
-	UIElement::OnReset();
+	WrapperElement::OnReset();
 
 	splitPos = Coord::Percent(40);
 	minSplitPos = 0;
@@ -551,13 +551,14 @@ void PropertyList::OnReset()
 	defaultLabelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
 }
 
-UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
+void PropertyList::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	float splitPosR = ResolveUnits(splitPos, expTgtRect.GetWidth());
-	float minSplitPosR = ResolveUnits(minSplitPos, expTgtRect.GetWidth());
+	float splitPosR = ResolveUnits(splitPos, rect.GetWidth());
+	float minSplitPosR = ResolveUnits(minSplitPos, rect.GetWidth());
 	float finalSplitPosR = max(splitPosR, minSplitPosR);
-	_calcSplitX = roundf(finalSplitPosR + expTgtRect.x0);
-	return {};
+	_calcSplitX = roundf(finalSplitPosR + rect.x0);
+
+	WrapperElement::OnLayout(rect, containerSize);
 }
 
 
@@ -588,7 +589,7 @@ void LabeledProperty::End(ContentLayoutType layout)
 
 void LabeledProperty::OnReset()
 {
-	UIElement::OnReset();
+	WrapperElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	_labelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
@@ -599,7 +600,7 @@ void LabeledProperty::OnReset()
 
 void LabeledProperty::OnEnterTree()
 {
-	UIElement::OnEnterTree();
+	WrapperElement::OnEnterTree();
 
 	_propList = FindParentOfType<PropertyList>();
 }
@@ -613,7 +614,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		auto* font = labelStyle.font.GetFont();
 
 		auto contPadRect = GetPaddingRect();
-		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
+		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, _lastSepX, contPadRect.y1 };
 		auto cr = labelContRect;
 		auto r = labelContRect.ShrinkBy(labelStyle.padding);
 
@@ -644,9 +645,8 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 	PaintChildren(ctx, {});
 }
 
-UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
+void LabeledProperty::OnLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	UIRect r = {};
 	if (!_labelText.empty())
 	{
 		if (_isBrief)
@@ -655,17 +655,25 @@ UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 
 			auto* font = labelStyle.font.GetFont();
 
-			r.x0 += GetTextWidth(font, labelStyle.font.size, _labelText);
-			r.x0 += labelStyle.padding.x0 + labelStyle.padding.x1;
+			_lastSepX = rect.x0 + GetTextWidth(font, labelStyle.font.size, _labelText) + labelStyle.padding.x0 + labelStyle.padding.x1;
 		}
 		else
 		{
-			r.x0 += _propList
-				? _propList->_calcSplitX - expTgtRect.x0
-				: roundf(expTgtRect.ShrinkBy(r).GetWidth() * 0.4f);
+			_lastSepX = _propList
+				? _propList->_calcSplitX
+				: rect.x0 + roundf(rect.GetWidth() * 0.4f);
 		}
 	}
-	return r;
+	else
+		_lastSepX = rect.x0;
+
+	if (_child)
+	{
+		UIRect r = rect;
+		r.x0 = _lastSepX;
+		_child->PerformLayout(r, containerSize);
+	}
+	finalRectCP = finalRectC = rect;
 }
 
 LabeledProperty& LabeledProperty::SetText(StringView text)

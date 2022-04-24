@@ -382,6 +382,7 @@ struct InspectorView : ui::Buildable
 	void Build() override
 	{
 		ui::Push<ui::PropertyList>();
+		ui::Push<ui::StackTopDownLayoutElement>();
 
 		ui::Text("Camera");
 		auto& cameraBox = ui::Push<ui::StackTopDownLayoutElement>();
@@ -394,6 +395,7 @@ struct InspectorView : ui::Buildable
 		};
 		ui::Pop();
 
+		ui::Pop();
 		ui::Pop();
 	}
 };
