@@ -337,8 +337,8 @@ struct UIObject : IPersistentObject
 	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	virtual void CalcLayout(const UIRect& inrect, LayoutState& state);
-	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
-	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true);
+	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
@@ -356,7 +356,6 @@ struct UIObject : IPersistentObject
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
-	bool _IsPartOfParentLayout() { return !(flags & UIObject_IsHidden); }
 
 	virtual void RemoveChildImpl(UIObject* ch);
 	void DetachAll();
@@ -517,18 +516,18 @@ struct UIElement : UIObject
 // TODO: slowly port to these
 struct WrapperElement : UIObjectSingleChild
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
 struct FillerElement : UIObjectSingleChild
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return Rangef::Exact(containerSize.x);
 	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		return Rangef::Exact(containerSize.y);
 	}
@@ -546,8 +545,8 @@ struct SizeConstraintElement : WrapperElement
 	Rangef heightRange = Rangef::AtLeast(0);
 
 	void OnReset() override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = r; return *this; }
 	SizeConstraintElement& SetHeightRange(Rangef r) { heightRange = r; return *this; }
@@ -598,15 +597,15 @@ struct TextElement : UIObjectNoChildren
 	{
 		state.finalContentRect = inrect;
 	}
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
-		auto ret = UIObjectNoChildren::GetFullEstimatedWidth(containerSize, type, forParentLayout);
+		auto ret = UIObjectNoChildren::GetFullEstimatedWidth(containerSize, type);
 		ret.max = ret.min;
 		return ret;
 	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
-		auto ret = UIObjectNoChildren::GetFullEstimatedHeight(containerSize, type, forParentLayout);
+		auto ret = UIObjectNoChildren::GetFullEstimatedHeight(containerSize, type);
 		ret.max = ret.min;
 		return ret;
 	}

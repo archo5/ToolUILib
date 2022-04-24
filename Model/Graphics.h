@@ -36,8 +36,8 @@ struct PreferredSizeLayout
 
 	virtual Size2f GetSize() = 0;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout);
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout);
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 };
 
 struct ColorBlock : FrameElement, PreferredSizeLayout
@@ -56,10 +56,10 @@ struct ColorBlock : FrameElement, PreferredSizeLayout
 	ColorBlock& SetSize(float x, float y) { size = { x, y }; _OnChangeStyle(); return *this; }
 	ColorBlock& SetLayoutMode(ImageLayoutMode mode);
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Color4b GetColor() const { return _color; }
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
@@ -80,8 +80,8 @@ struct ImageElement : UIElement
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	ImageElement& SetImage(draw::IImage* img);
@@ -123,10 +123,10 @@ struct HueSatPicker : FrameElement, PreferredSizeLayout
 	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Size2f GetSize() override { return size; }
 	HueSatPicker& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }
@@ -207,10 +207,10 @@ struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
 	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type, forParentLayout).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
-	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type, forParentLayout).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{ return PreferredSizeLayout::GetFullEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Size2f GetSize() override { return size; }
 	ColorCompPicker2D& SetSize(Size2f s) { size = s; _OnChangeStyle(); return *this; }

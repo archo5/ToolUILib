@@ -11,7 +11,7 @@
 namespace ui {
 
 
-Rangef PreferredSizeLayout::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PreferredSizeLayout::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
@@ -26,7 +26,7 @@ Rangef PreferredSizeLayout::GetFullEstimatedWidth(const Size2f& containerSize, E
 	}
 }
 
-Rangef PreferredSizeLayout::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PreferredSizeLayout::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
@@ -182,7 +182,7 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 	PaintChildren(ctx, {});
 }
 
-Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
@@ -197,7 +197,7 @@ Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeT
 	}
 }
 
-Rangef ImageElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef ImageElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{

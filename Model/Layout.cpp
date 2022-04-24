@@ -16,8 +16,8 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	UIRect parentRect = outRect;
 	Size2f contSize = parentRect.GetSize();
 
-	float w = curObj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding, false).min;
-	float h = curObj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding, false).min;
+	float w = curObj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
+	float h = curObj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
 
 	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
 	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;

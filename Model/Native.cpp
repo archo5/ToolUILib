@@ -1225,11 +1225,11 @@ struct Inspector : NativeDialogWindow
 			}
 		}
 
-		Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+		Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 		{
 			return Rangef::Exact(containerSize.x);
 		}
-		Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override
+		Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 		{
 			return Rangef::Exact(containerSize.y);
 		}

@@ -19,16 +19,16 @@ Size2f PaddingElement::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef PaddingElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PaddingElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = padding.x0 + padding.x1;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef PaddingElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PaddingElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = padding.y0 + padding.y1;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void PaddingElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -208,28 +208,28 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
-Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._obj->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+			auto cr = slot._obj->GetFullEstimatedWidth(containerSize, type);
 			r = r.Intersect(cr);
 		}
 	}
 	return r;
 }
 
-Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._obj->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+			auto cr = slot._obj->GetFullEstimatedHeight(containerSize, type);
 			r = r.Intersect(cr);
 		}
 	}
@@ -514,7 +514,7 @@ Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = 
 		+ style.tabPanelPadding.x0
@@ -523,7 +523,7 @@ Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeTy
 	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad =
 		+ style.tabPanelPadding.y0

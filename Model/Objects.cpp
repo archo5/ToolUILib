@@ -489,12 +489,12 @@ void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
 	layouts::Stack()->OnLayout(this, inrect, state);
 }
 
-Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (TEMP_LAYOUT_MODE)
 		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
 
-	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
+	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
@@ -508,12 +508,12 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	return s;
 }
 
-Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (TEMP_LAYOUT_MODE)
 		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
 
-	if (!(forParentLayout ? _IsPartOfParentLayout() : _NeedsLayout()))
+	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
@@ -529,7 +529,7 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 
 void UIObject::PerformLayout(const UIRect& rect, const Size2f& containerSize)
 {
-	if (_IsPartOfParentLayout())
+	if (_NeedsLayout())
 	{
 		OnLayout(rect, containerSize);
 		OnLayoutChanged();
@@ -936,18 +936,18 @@ void UIObjectSingleChild::_DetachFromFrameContents()
 }
 
 
-Rangef WrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef WrapperElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_child)
 		return Rangef::AtLeast(0);
-	return _child->GetFullEstimatedWidth(containerSize, type, forParentLayout);
+	return _child->GetFullEstimatedWidth(containerSize, type);
 }
 
-Rangef WrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef WrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_child)
 		return Rangef::AtLeast(0);
-	return _child->GetFullEstimatedHeight(containerSize, type, forParentLayout);
+	return _child->GetFullEstimatedHeight(containerSize, type);
 }
 
 void WrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -968,18 +968,18 @@ void SizeConstraintElement::OnReset()
 	heightRange = Rangef::AtLeast(0);
 }
 
-Rangef SizeConstraintElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SizeConstraintElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (widthRange.min >= widthRange.max)
 		return widthRange;
-	return WrapperElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(widthRange);
+	return WrapperElement::GetFullEstimatedWidth(containerSize, type).Intersect(widthRange);
 }
 
-Rangef SizeConstraintElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SizeConstraintElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (heightRange.min >= heightRange.max)
 		return heightRange;
-	return WrapperElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(heightRange);
+	return WrapperElement::GetFullEstimatedHeight(containerSize, type).Intersect(heightRange);
 }
 
 

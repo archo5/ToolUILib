@@ -54,16 +54,16 @@ Size2f FrameElement::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef FrameElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef FrameElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef FrameElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef FrameElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -143,12 +143,12 @@ void IconElement::OnPaint(const UIPaintContext& ctx)
 		style.painter->Paint(this);
 }
 
-Rangef IconElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef IconElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	return Rangef::Exact(style.size.x);
 }
 
-Rangef IconElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef IconElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	return Rangef::Exact(style.size.y);
 }
@@ -203,14 +203,14 @@ void Button::OnReset()
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 }
 
-Rangef Button::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef Button::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).min);
+	return Rangef::AtLeast(FrameElement::GetFullEstimatedWidth(containerSize, type).min);
 }
 
-Rangef Button::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef Button::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).min);
+	return Rangef::AtLeast(FrameElement::GetFullEstimatedHeight(containerSize, type).min);
 }
 
 void Button::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -404,16 +404,16 @@ Size2f ProgressBar::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef ProgressBar::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef ProgressBar::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = style.padding.x0 + style.padding.x1;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef ProgressBar::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef ProgressBar::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = style.padding.y0 + style.padding.y1;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type, forParentLayout) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void ProgressBar::OnLayout(const UIRect& rect, const Size2f& containerSize)
@@ -1068,12 +1068,12 @@ void SplitPane::_DetachFromFrameContents()
 	UIElement::_DetachFromFrameContents();
 }
 
-Rangef SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SplitPane::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	return { containerSize.x, containerSize.x };
 }
 
-Rangef SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef SplitPane::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	return { containerSize.y, containerSize.y };
 }
@@ -1667,16 +1667,16 @@ void Textbox::OnEvent(Event& e)
 	}
 }
 
-Rangef Textbox::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef Textbox::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float minWidth = frameStyle.font.size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
-	return FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minWidth));
+	return FrameElement::GetFullEstimatedWidth(containerSize, type).Intersect(Rangef::AtLeast(minWidth));
 }
 
-Rangef Textbox::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
+Rangef Textbox::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float minHeight = frameStyle.font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
-	return FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minHeight));
+	return FrameElement::GetFullEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
 }
 
 StringView Textbox::GetSelectedText() const
@@ -1982,8 +1982,8 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 		minContSize.y = contSize.y;
 #endif
 
-	float w = curObj->GetFullEstimatedWidth(minContSize, EstSizeType::Expanding, false).min;
-	float h = curObj->GetFullEstimatedHeight(minContSize, EstSizeType::Expanding, false).min;
+	float w = curObj->GetFullEstimatedWidth(minContSize, EstSizeType::Expanding).min;
+	float h = curObj->GetFullEstimatedHeight(minContSize, EstSizeType::Expanding).min;
 
 	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMousePos, 16);
 

@@ -11,8 +11,8 @@ struct PaddingElement : UIObjectSingleChild
 
 	void OnReset() override;
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	PaddingElement& SetPadding(float w) { padding = UIRect::UniformBorder(w); return *this; }
@@ -238,8 +238,8 @@ struct PlacementLayoutElement_Slot
 
 struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 };
 
@@ -309,8 +309,8 @@ struct TabbedPanel : UIObjectSingleChild
 	void OnEvent(Event& e) override;
 
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
 
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
