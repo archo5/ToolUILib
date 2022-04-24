@@ -340,15 +340,16 @@ void ProcGraphEditor::OnEvent(Event& e)
 	}
 }
 
-void ProcGraphEditor::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void ProcGraphEditor::OnLayout(const UIRect& rect)
 {
+	auto rectSize = rect.GetSize();
 	for (auto* ch = firstChild; ch; ch = ch->next)
 	{
 		auto* N = static_cast<ProcGraphEditor_Node*>(ch);
 		auto pos = _graph->GetNodePosition(N->_node) + viewOffset + rect.GetMin();
-		auto wr = N->GetFullEstimatedWidth(containerSize, ui::EstSizeType::Expanding);
-		auto hr = N->GetFullEstimatedHeight(containerSize, ui::EstSizeType::Expanding);
-		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min }, containerSize);
+		auto wr = N->GetFullEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
+		auto hr = N->GetFullEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
+		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
 	}
 	finalRectC = finalRectCP = rect;
 }

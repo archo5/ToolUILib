@@ -31,12 +31,12 @@ Rangef PaddingElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSi
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void PaddingElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void PaddingElement::OnLayout(const UIRect& rect)
 {
 	auto padsub = rect.ShrinkBy(padding);
 	if (_child)
 	{
-		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		_child->PerformLayout(padsub);
 		finalRectC = _child->finalRectCP;
 		finalRectCP = finalRectC.ExtendBy(padding);
 	}
@@ -78,12 +78,13 @@ void StackLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
 	float p = inrect.x0;
+	auto inrectSize = inrect.GetSize();
 	for (auto& slot : _slots)
 	{
-		float w = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Exact).min;
-		Rangef hr = slot._obj->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding);
+		float w = slot._obj->GetFullEstimatedWidth(inrectSize, EstSizeType::Exact).min;
+		Rangef hr = slot._obj->GetFullEstimatedHeight(inrectSize, EstSizeType::Expanding);
 		float h = clamp(inrect.y1 - inrect.y0, hr.min, hr.max);
-		slot._obj->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h }, inrect.GetSize());
+		slot._obj->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h });
 		p += w + paddingBetweenElements;
 	}
 }
@@ -117,7 +118,7 @@ void StackTopDownLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& st
 		Rangef wr = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
 		float w = clamp(inrect.x1 - inrect.x0, wr.min, wr.max);
 		float h = slot._obj->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Exact).min;
-		slot._obj->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h }, inrect.GetSize());
+		slot._obj->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h });
 		p += h;
 	}
 }
@@ -200,7 +201,7 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 	}
 	for (const auto& item : items)
 	{
-		item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 }, inrect.GetSize());
+		item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 });
 		p += item.w + paddingBetweenElements;
 	}
 }
@@ -236,7 +237,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSiz
 	return r;
 }
 
-void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void PlacementLayoutElement::OnLayout(const UIRect& rect)
 {
 	UIRect contRect = rect;
 	for (auto& slot : _slots)
@@ -253,7 +254,7 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, const Size2f& containe
 		r.y0 = roundf(r.y0);
 		r.x1 = roundf(r.x1);
 		r.y1 = roundf(r.y1);
-		slot._obj->PerformLayout(r, containerSize);
+		slot._obj->PerformLayout(r);
 	}
 	finalRectC = finalRectCP = contRect;
 }
@@ -533,8 +534,9 @@ Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeT
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void TabbedPanel::OnLayout(const UIRect& rect)
 {
+	auto btnRectSize = rect.GetSize(); // TODO use only the part that will be used for buttons?
 	auto subr = rect;
 	subr.y0 += tabHeight - style.tabButtonOverlap;
 	subr = subr.ShrinkBy(style.tabPanelPadding);
@@ -550,7 +552,7 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	{
 		if (tab.obj)
 		{
-			tab._contentWidth = tab.obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
+			tab._contentWidth = tab.obj->GetFullEstimatedWidth(btnRectSize, EstSizeType::Exact).min;
 		}
 		else
 		{
@@ -560,7 +562,7 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 		{
 			float xbase = x0 + style.tabButtonPadding.x0;
 			UIRect trect = { xbase, y0, xbase + tab._contentWidth, y1 };
-			tab.obj->PerformLayout(trect, trect.GetSize());
+			tab.obj->PerformLayout(trect);
 		}
 
 		float tw = tab._contentWidth + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
@@ -573,12 +575,12 @@ void TabbedPanel::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	if (_tabBarExtension)
 	{
 		UIRect xrect = { x0, y0, x1, y1 };
-		_tabBarExtension->PerformLayout(xrect, xrect.GetSize());
+		_tabBarExtension->PerformLayout(xrect);
 	}
 
 	if (_child)
 	{
-		_child->PerformLayout(subr, subr.GetSize());
+		_child->PerformLayout(subr);
 	}
 	finalRectC = finalRectCP = rect;
 }

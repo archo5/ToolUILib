@@ -339,9 +339,9 @@ struct UIObject : IPersistentObject
 	virtual void CalcLayout(const UIRect& inrect, LayoutState& state);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	void PerformLayout(const UIRect& rect, const Size2f& containerSize);
+	void PerformLayout(const UIRect& rect);
 	virtual void OnLayoutChanged() {}
-	virtual void OnLayout(const UIRect& rect, const Size2f& containerSize);
+	virtual void OnLayout(const UIRect& rect);
 
 	virtual bool Contains(Point2f pos) const
 	{
@@ -441,7 +441,6 @@ struct UIObject : IPersistentObject
 
 	// previous layout input argument cache
 	UIRect lastLayoutInputRect = {};
-	Size2f lastLayoutInputCSize = {};
 
 	// size cache
 	uint32_t _cacheFrameWidth = {};
@@ -518,7 +517,7 @@ struct WrapperElement : UIObjectSingleChild
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 struct FillerElement : UIObjectSingleChild
@@ -531,10 +530,10 @@ struct FillerElement : UIObjectSingleChild
 	{
 		return Rangef::Exact(containerSize.y);
 	}
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override
+	void OnLayout(const UIRect& rect) override
 	{
 		if (_child)
-			_child->PerformLayout(rect, containerSize);
+			_child->PerformLayout(rect);
 		finalRectCP = finalRectC = rect;
 	}
 };
@@ -642,7 +641,7 @@ struct ChildScaleOffsetElement : UIElement
 	Point2f LocalToChildPoint(Point2f pos) const override;
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 struct EdgeSliceLayoutElement : UIElement

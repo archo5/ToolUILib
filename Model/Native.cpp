@@ -1084,7 +1084,7 @@ void NativeMainWindow::OnClose()
 }
 
 
-void NativeWindowNode::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void NativeWindowNode::OnLayout(const UIRect& rect)
 {
 	finalRectC = finalRectCP = {};
 }
@@ -1233,7 +1233,7 @@ struct Inspector : NativeDialogWindow
 		{
 			return Rangef::Exact(containerSize.y);
 		}
-		void OnLayout(const ui::UIRect& rect, const ui::Size2f& containerSize) override
+		void OnLayout(const ui::UIRect& rect) override
 		{
 			finalRectC = finalRectCP = rect;
 		}

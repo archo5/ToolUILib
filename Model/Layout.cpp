@@ -89,7 +89,7 @@ struct StackLayout : ILayout
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
 				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h }, inrect.GetSize());
+				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h });
 				p += h;
 			}
 			break; }
@@ -127,7 +127,7 @@ struct StackLayout : ILayout
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
 				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
-				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 }, inrect.GetSize());
+				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 });
 				p += w + xw;
 			}
 			break; }

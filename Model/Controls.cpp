@@ -66,12 +66,12 @@ Rangef FrameElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSize
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void FrameElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void FrameElement::OnLayout(const UIRect& rect)
 {
 	auto padsub = rect.ShrinkBy(frameStyle.padding);
 	if (_child)
 	{
-		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		_child->PerformLayout(padsub);
 		finalRectC = _child->finalRectCP;
 		finalRectCP = finalRectC.ExtendBy(frameStyle.padding);
 	}
@@ -153,7 +153,7 @@ Rangef IconElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeT
 	return Rangef::Exact(style.size.y);
 }
 
-void IconElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void IconElement::OnLayout(const UIRect& rect)
 {
 	finalRectCP = finalRectC = rect;
 }
@@ -213,17 +213,18 @@ Rangef Button::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType t
 	return Rangef::AtLeast(FrameElement::GetFullEstimatedHeight(containerSize, type).min);
 }
 
-void Button::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void Button::OnLayout(const UIRect& rect)
 {
 	if (_child)
 	{
-		float minw = _child->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-		float minh = _child->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 		UIRect r = rect.ShrinkBy(frameStyle.padding);
-		float ox = roundf((r.GetWidth() - minw) * 0.5f);
-		float oy = roundf((r.GetHeight() - minh) * 0.5f);
+		auto rSize = r.GetSize();
+		float minw = _child->GetFullEstimatedWidth(rSize, EstSizeType::Expanding).min;
+		float minh = _child->GetFullEstimatedHeight(rSize, EstSizeType::Expanding).min;
+		float ox = roundf((rSize.x - minw) * 0.5f);
+		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
-		_child->PerformLayout(fr, GetReducedContainerSize(containerSize));
+		_child->PerformLayout(fr);
 	}
 	finalRectCP = finalRectC = rect;
 }
@@ -416,12 +417,12 @@ Rangef ProgressBar::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeT
 	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void ProgressBar::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void ProgressBar::OnLayout(const UIRect& rect)
 {
 	auto padsub = rect.ShrinkBy(style.padding);
 	if (_child)
 	{
-		_child->PerformLayout(padsub, GetReducedContainerSize(containerSize));
+		_child->PerformLayout(padsub);
 		finalRectC = _child->finalRectCP;
 		finalRectCP = finalRectC.ExtendBy(style.padding);
 	}
@@ -551,14 +552,14 @@ void PropertyList::OnReset()
 	defaultLabelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
 }
 
-void PropertyList::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void PropertyList::OnLayout(const UIRect& rect)
 {
 	float splitPosR = ResolveUnits(splitPos, rect.GetWidth());
 	float minSplitPosR = ResolveUnits(minSplitPos, rect.GetWidth());
 	float finalSplitPosR = max(splitPosR, minSplitPosR);
 	_calcSplitX = roundf(finalSplitPosR + rect.x0);
 
-	WrapperElement::OnLayout(rect, containerSize);
+	WrapperElement::OnLayout(rect);
 }
 
 
@@ -645,7 +646,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 	PaintChildren(ctx, {});
 }
 
-void LabeledProperty::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void LabeledProperty::OnLayout(const UIRect& rect)
 {
 	if (!_labelText.empty())
 	{
@@ -671,7 +672,7 @@ void LabeledProperty::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	{
 		UIRect r = rect;
 		r.x0 = _lastSepX;
-		_child->PerformLayout(r, containerSize);
+		_child->PerformLayout(r);
 	}
 	finalRectCP = finalRectC = rect;
 }
@@ -949,7 +950,7 @@ void SplitPane::OnEvent(Event& e)
 	_splitUI.FinalizeOnEvent(e);
 }
 
-void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void SplitPane::OnLayout(const UIRect& rect)
 {
 	CheckSplits(this);
 
@@ -967,7 +968,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 			split++;
 			r.x0 = prevEdge;
 			r.x1 = sr.x0;
-			ch->PerformLayout(r, finalRectC.GetSize());
+			ch->PerformLayout(r);
 			prevEdge = sr.x1;
 		}
 	}
@@ -982,7 +983,7 @@ void SplitPane::OnLayout(const UIRect& rect, const Size2f& containerSize)
 			split++;
 			r.y0 = prevEdge;
 			r.y1 = sr.y0;
-			ch->PerformLayout(r, finalRectC.GetSize());
+			ch->PerformLayout(r);
 			prevEdge = sr.y1;
 		}
 	}
@@ -1267,9 +1268,9 @@ void ScrollArea::OnEvent(Event& e)
 	}
 }
 
-void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void ScrollArea::OnLayout(const UIRect& rect)
 {
-	auto realContSize = containerSize;
+	auto realContSize = rect.GetSize();
 
 	bool hasVScroll = estContentSize.y > rect.GetHeight();
 	float vScrollWidth = ResolveUnits(sbv.GetWidth(), rect.GetWidth());
@@ -1289,7 +1290,7 @@ void ScrollArea::OnLayout(const UIRect& rect, const Size2f& containerSize)
 	auto crect = r;
 	crect.y1 = crect.y0 + estContentSize.y;
 	if (_child)
-		_child->PerformLayout(crect, realContSize);
+		_child->PerformLayout(crect);
 	finalRectCP = finalRectC = rect;
 	finalRectC.x1 -= vScrollWidth;
 }
@@ -1772,7 +1773,7 @@ void BackgroundBlocker::OnEvent(Event& e)
 	}
 }
 
-void BackgroundBlocker::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void BackgroundBlocker::OnLayout(const UIRect& rect)
 {
 	UIRect r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
 	finalRectC = finalRectCP = r;

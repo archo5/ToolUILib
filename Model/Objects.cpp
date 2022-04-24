@@ -527,26 +527,25 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	return s;
 }
 
-void UIObject::PerformLayout(const UIRect& rect, const Size2f& containerSize)
+void UIObject::PerformLayout(const UIRect& rect)
 {
 	if (_NeedsLayout())
 	{
-		OnLayout(rect, containerSize);
+		OnLayout(rect);
 		OnLayoutChanged();
 	}
 }
 
-void UIObject::OnLayout(const UIRect& inRect, const Size2f& containerSize)
+void UIObject::OnLayout(const UIRect& inRect)
 {
 	lastLayoutInputRect = inRect;
-	lastLayoutInputCSize = containerSize;
 
 	if (TEMP_LAYOUT_MODE)
 	{
 		finalRectC = finalRectCP = inRect;
 		if (firstChild)
 		{
-			firstChild->PerformLayout(inRect, containerSize);
+			firstChild->PerformLayout(inRect);
 			if (TEMP_LAYOUT_MODE == WRAPPER)
 				finalRectC = finalRectCP = firstChild->finalRectCP;
 		}
@@ -950,11 +949,11 @@ Rangef WrapperElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSi
 	return _child->GetFullEstimatedHeight(containerSize, type);
 }
 
-void WrapperElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void WrapperElement::OnLayout(const UIRect& rect)
 {
 	if (_child)
 	{
-		_child->PerformLayout(rect, containerSize);
+		_child->PerformLayout(rect);
 		finalRectCP = finalRectC = _child->finalRectCP;
 	}
 	else finalRectCP = finalRectC = rect;
@@ -1116,17 +1115,16 @@ float ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize, 
 	return UIElement::CalcEstimatedHeight(containerSize / transform.scale, type) * transform.scale;
 }
 
-void ChildScaleOffsetElement::OnLayout(const UIRect& rect, const Size2f& containerSize)
+void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
 {
 	auto srect = rect;
 	srect.x1 = (srect.x1 - srect.x0) / transform.scale;
 	srect.y1 = (srect.y1 - srect.y0) / transform.scale;
 	srect.x0 = 0;
 	srect.y0 = 0;
-	auto ssize = containerSize / transform.scale;
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
-	UIElement::OnLayout(srect, ssize);
+	UIElement::OnLayout(srect);
 
 	SetTextResolutionScale(prevTRS);
 	auto pfr = finalRectC;
@@ -1181,22 +1179,22 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 				d = r.Clamp(subr.GetHeight());
 			else
 				d = r.min;
-			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, subr.GetSize());
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d });
 			subr.y0 += d;
 			break;
 		case Edge::Bottom:
 			d = ch->GetFullEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, subr.GetSize());
+			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 });
 			subr.y1 -= d;
 			break;
 		case Edge::Left:
 			d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, subr.GetSize());
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 });
 			subr.x0 += d;
 			break;
 		case Edge::Right:
 			d = ch->GetFullEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, subr.GetSize());
+			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 });
 			subr.x1 -= d;
 			break;
 		}

@@ -13,7 +13,7 @@ struct PaddingElement : UIObjectSingleChild
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void OnLayout(const UIRect& rect) override;
 
 	PaddingElement& SetPadding(float w) { padding = UIRect::UniformBorder(w); return *this; }
 	PaddingElement& SetPadding(float x, float y) { padding = { x, y, x, y }; return *this; }
@@ -220,7 +220,7 @@ struct WrapperLTRLayoutElement : UIElement
 		{
 			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
 			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
-			ch->PerformLayout({ p, y0, p + w, y0 + h }, contSize);
+			ch->PerformLayout({ p, y0, p + w, y0 + h });
 			p += w;
 			maxH = max(maxH, h);
 		}
@@ -240,7 +240,7 @@ struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
 {
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 struct TabbedPanelStyle
@@ -311,7 +311,7 @@ struct TabbedPanel : UIObjectSingleChild
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, const Size2f& containerSize) override;
+	void OnLayout(const UIRect& rect) override;
 
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;

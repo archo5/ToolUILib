@@ -161,7 +161,7 @@ void EventSystem::RecomputeLayout()
 {
 	g_curLayoutFrame++;
 	if (container->rootBuildable)
-		container->rootBuildable->OnLayout({ 0, 0, width, height }, { width, height });
+		container->rootBuildable->OnLayout({ 0, 0, width, height });
 }
 
 static void RemoveTimer(std::vector<TimerData>& timers, size_t& i, size_t& count)

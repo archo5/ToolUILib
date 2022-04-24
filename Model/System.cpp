@@ -229,7 +229,7 @@ void UIContainer::ProcessLayoutStack()
 	{
 		// TODO how to restart layout?
 		printf("relayout %s @ %p\n", typeid(*obj).name(), obj);
-		obj->OnLayout(obj->lastLayoutInputRect, obj->lastLayoutInputCSize);
+		obj->OnLayout(obj->lastLayoutInputRect);
 		obj->OnLayoutChanged();
 	}
 	layoutStack.Clear();
@@ -404,7 +404,7 @@ void InlineFrame::OnLayoutChanged()
 {
 	if (frameContents &&
 		frameContents->container.rootBuildable)
-		frameContents->container.rootBuildable->PerformLayout(finalRectC, finalRectC.GetSize());
+		frameContents->container.rootBuildable->PerformLayout(finalRectC);
 }
 
 void InlineFrame::SetFrameContents(FrameContents* contents)
