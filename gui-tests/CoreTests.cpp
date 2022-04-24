@@ -374,14 +374,12 @@ struct OpenCloseTest : ui::Buildable
 			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::StackTopDownLayoutElement>();
 			ui::Text("It is open!");
-			auto& box = ui::MakeWithText<ui::BoxElement>("Different text");
-			box.flags |= ui::UIObject_SetsChildTextStyle;
-			auto s = box.GetStyle();
-			s.SetFontSize(16);
-			s.SetFontFamily(ui::FONT_FAMILY_SERIF);
-			s.SetFontWeight(ui::FontWeight::Bold);
-			s.SetFontStyle(ui::FontStyle::Italic);
-			s.SetTextColor(ui::Color4f(1.0f, 0.1f, 0.0f));
+			auto& fe = ui::MakeWithText<ui::FrameElement>("Different text");
+			fe.frameStyle.font.size = 16;
+			fe.frameStyle.font.family = ui::FONT_FAMILY_SERIF;
+			fe.frameStyle.font.weight = ui::FontWeight::Bold;
+			fe.frameStyle.font.style = ui::FontStyle::Italic;
+			fe.frameStyle.textColor.SetValue(ui::Color4f(1.0f, 0.1f, 0.0f));
 			WPop();
 			WPop();
 		}

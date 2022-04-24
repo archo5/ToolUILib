@@ -14,6 +14,8 @@ struct FrameStyle
 
 	AABB2f padding;
 	PainterHandle backgroundPainter;
+	FontSettings font;
+	Optional<Color4b> textColor;
 
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
@@ -39,6 +41,7 @@ public:
 enum class DefaultFrameStyle
 {
 	Label,
+	Header,
 	GroupBox,
 	Selectable,
 	DropdownButton,
@@ -58,6 +61,7 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
+	const FontSettings* _GetFontSettings() const override;
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
 	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout = true) override;
@@ -104,7 +108,7 @@ struct LabelFrame : FrameElement
 	void OnReset() override;
 };
 
-struct Header : UIElement
+struct Header : FrameElement
 {
 	void OnReset() override;
 };
@@ -380,13 +384,10 @@ struct PropertyList : UIElement
 	void OnReset() override;
 	UIRect CalcPaddingRect(const UIRect& expTgtRect) override;
 
-	StyleAccessor GetDefaultLabelStyle() { return StyleAccessor(_defaultLabelStyle, this); }
-	void SetDefaultLabelStyle(const StyleBlockRef& s) { _defaultLabelStyle = s; }
-
 	Coord splitPos = Coord::Percent(40);
 	Coord minSplitPos = 0;
+	FrameStyle defaultLabelStyle;
 
-	StyleBlockRef _defaultLabelStyle;
 	float _calcSplitX = 0;
 };
 
@@ -432,14 +433,23 @@ struct LabeledProperty : UIElement
 	bool IsBrief() const { return _isBrief; }
 	LabeledProperty& SetBrief(bool b) { _isBrief = b; return *this; }
 
-	StyleBlock* FindCurrentLabelStyle() const;
-	StyleAccessor GetLabelStyle();
-	LabeledProperty& SetLabelStyle(const StyleBlockRef& s) { _labelStyle = s; return *this; }
+	const FrameStyle& FindCurrentLabelStyle() const;
+	const FrameStyle& GetLabelStyle();
+	LabeledProperty& SetLabelStyle(const FrameStyle& s);
 
-	StyleBlockRef _labelStyle;
+	LabeledProperty& SetLabelBold(bool b = true) { return SetLabelFontWeight(b ? FontWeight::Bold : FontWeight::Normal); }
+	LabeledProperty& SetLabelFontWeight(FontWeight w)
+	{
+		_labelStyle.font.weight = w;
+		_preferOwnLabelStyle = true;
+		return *this;
+	}
+
+	FrameStyle _labelStyle;
 	std::string _labelText;
 	PropertyList* _propList = nullptr;
 	bool _isBrief = false;
+	bool _preferOwnLabelStyle = false;
 };
 
 

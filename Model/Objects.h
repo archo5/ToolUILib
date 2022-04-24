@@ -413,8 +413,9 @@ struct UIObject : IPersistentObject
 	UIRect GetContentRect() const { return finalRectC; }
 	UIRect GetPaddingRect() const { return finalRectCP; }
 
-	UI_FORCEINLINE StyleBlock* FindTextStyle(StyleBlock* first) const { return first ? first : _FindClosestParentTextStyle(); }
-	StyleBlock* _FindClosestParentTextStyle() const;
+	UI_FORCEINLINE const FontSettings* FindFontSettings(const FontSettings* first) const { return first ? first : _FindClosestParentFontSettings(); }
+	const FontSettings* _FindClosestParentFontSettings() const;
+	virtual const FontSettings* _GetFontSettings() const { return styleProps ? &styleProps->font : nullptr; }
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
@@ -624,11 +625,13 @@ struct TextElement : UIElement
 
 	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
-		return ceilf(GetTextWidth(styleProps->GetFont(), styleProps->font_size, text));
+		auto* fs = _FindClosestParentFontSettings();
+		return ceilf(GetTextWidth(fs->GetFont(), fs->size, text));
 	}
 	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
-		return styleProps->font_size;
+		auto* fs = _FindClosestParentFontSettings();
+		return fs->size;
 	}
 	void CalcLayout(const UIRect& inrect, LayoutState& state) override
 	{

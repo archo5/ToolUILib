@@ -9,7 +9,7 @@ namespace ui {
 float MessageLogDataSource::GetMessageHeight(UIObject* context)
 {
 	StyleBlock* textStyle = context->styleProps;
-	return textStyle->font_size * GetNumLines();
+	return textStyle->font.size * GetNumLines();
 }
 
 float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
@@ -22,7 +22,7 @@ float MessageLogDataSource::GetMessageWidth(UIObject* context, size_t msg)
 	for (size_t i = 0; i < numLines; i++)
 	{
 		auto msgLine = GetMessage(msg, i);
-		float w = GetTextWidth(font, textStyle->font_size, msgLine);
+		float w = GetTextWidth(font, textStyle->font.size, msgLine);
 		maxW = max(maxW, w);
 	}
 	return maxW;
@@ -39,8 +39,8 @@ void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect a
 		auto msgLine = GetMessage(msg, i);
 		draw::TextLine(
 			font,
-			textStyle->font_size,
-			area.x0, area.y0 + (i + 1) * textStyle->font_size,
+			textStyle->font.size,
+			area.x0, area.y0 + (i + 1) * textStyle->font.size,
 			msgLine,
 			textStyle->text_color);
 	}

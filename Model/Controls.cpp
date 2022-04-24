@@ -14,6 +14,7 @@ void FrameStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 {
 	OnFieldBorderBox(oi, "padding", padding);
 	OnFieldPainter(oi, td, "backgroundPainter", backgroundPainter);
+	OnFieldFontSettings(oi, td, "font", font);
 }
 
 
@@ -30,7 +31,14 @@ void FrameElement::OnPaint(const UIPaintContext& ctx)
 	UIPaintHelper ph;
 	if (frameStyle.backgroundPainter)
 		ph.cpa = frameStyle.backgroundPainter->Paint(this);
+	if (frameStyle.textColor.HasValue())
+		ph.cpa.SetTextColor(frameStyle.textColor.GetValue());
 	ph.PaintChildren(this, ctx);
+}
+
+const FontSettings* FrameElement::_GetFontSettings() const
+{
+	return &frameStyle.font;
 }
 
 Size2f FrameElement::GetReducedContainerSize(Size2f size)
@@ -81,6 +89,7 @@ FrameElement& FrameElement::SetFrameStyle(const StaticID<FrameStyle>& id)
 }
 
 static StaticID<FrameStyle> sid_framestyle_label("label");
+static StaticID<FrameStyle> sid_framestyle_header("header");
 static StaticID<FrameStyle> sid_framestyle_group_box("group_box");
 static StaticID<FrameStyle> sid_framestyle_selectable("selectable");
 static StaticID<FrameStyle> sid_framestyle_dropdown_button("dropdown_button");
@@ -93,6 +102,7 @@ FrameElement& FrameElement::SetDefaultFrameStyle(DefaultFrameStyle style)
 	switch (style)
 	{
 	case DefaultFrameStyle::Label: return SetFrameStyle(sid_framestyle_label);
+	case DefaultFrameStyle::Header: return SetFrameStyle(sid_framestyle_header);
 	case DefaultFrameStyle::GroupBox: return SetFrameStyle(sid_framestyle_group_box);
 	case DefaultFrameStyle::Selectable: return SetFrameStyle(sid_framestyle_selectable);
 	case DefaultFrameStyle::DropdownButton: return SetFrameStyle(sid_framestyle_dropdown_button);
@@ -169,13 +179,11 @@ void LabelFrame::OnReset()
 }
 
 
-static StaticID_Style sid_header("header");
 void Header::OnReset()
 {
-	UIElement::OnReset();
+	FrameElement::OnReset();
 
-	flags |= UIObject_SetsChildTextStyle;
-	styleProps = GetCurrentTheme()->GetStyle(sid_header);
+	SetDefaultFrameStyle(DefaultFrameStyle::Header);
 }
 
 
@@ -500,7 +508,6 @@ double Slider::ValueToQ(double v)
 }
 
 
-static StaticID_Style sid_prop_label("prop_label");
 void PropertyList::OnReset()
 {
 	UIElement::OnReset();
@@ -508,18 +515,16 @@ void PropertyList::OnReset()
 	splitPos = Coord::Percent(40);
 	minSplitPos = 0;
 
-	_defaultLabelStyle = GetCurrentTheme()->GetStyle(sid_prop_label);
+	defaultLabelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
 }
 
 UIRect PropertyList::CalcPaddingRect(const UIRect& expTgtRect)
 {
-	auto pad = UIElement::CalcPaddingRect(expTgtRect);
-	auto estContent = expTgtRect.ShrinkBy(pad);
-	float splitPosR = ResolveUnits(splitPos, estContent.GetWidth());
-	float minSplitPosR = ResolveUnits(minSplitPos, estContent.GetWidth());
+	float splitPosR = ResolveUnits(splitPos, expTgtRect.GetWidth());
+	float minSplitPosR = ResolveUnits(minSplitPos, expTgtRect.GetWidth());
 	float finalSplitPosR = max(splitPosR, minSplitPosR);
-	_calcSplitX = roundf(finalSplitPosR + estContent.x0);
-	return pad;
+	_calcSplitX = roundf(finalSplitPosR + expTgtRect.x0);
+	return {};
 }
 
 
@@ -553,7 +558,7 @@ void LabeledProperty::OnReset()
 	UIElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
-	_labelStyle = {};
+	_labelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
 
 	_labelText = {};
 	_isBrief = false;
@@ -569,29 +574,38 @@ void LabeledProperty::OnEnterTree()
 void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 {
 	UIPaintHelper ph;
-	ph.PaintBackground(this);
 
 	if (!_labelText.empty())
 	{
-		StyleBlock* labelStyle = FindCurrentLabelStyle();
+		auto& labelStyle = FindCurrentLabelStyle();
 
-		auto* font = labelStyle->GetFont();
+		auto* font = labelStyle.font.GetFont();
 
 		auto contPadRect = GetPaddingRect();
 		UIRect labelContRect = { contPadRect.x0, contPadRect.y0, GetContentRect().x0, contPadRect.y1 };
-		auto labelPadRect = labelStyle->GetPaddingRect();
 		auto cr = labelContRect;
-		auto r = labelContRect.ShrinkBy(labelPadRect);
+		auto r = labelContRect.ShrinkBy(labelStyle.padding);
 
 		// TODO optimize scissor (shared across labels)
 		if (draw::PushScissorRectIfNotEmpty(cr))
 		{
+			ContentPaintAdvice cpa;
+			cpa.SetTextColor(ctx.textColor);
+			if (labelStyle.backgroundPainter)
+			{
+				PaintInfo pi(this);
+				pi.rect = cr;
+				cpa = labelStyle.backgroundPainter->Paint(pi);
+			}
+			if (labelStyle.textColor.HasValue())
+				cpa.SetTextColor(labelStyle.textColor.GetValue());
+
 			draw::TextLine(
 				font,
-				labelStyle->font_size,
-				r.x0, r.y1 - (r.y1 - r.y0 - labelStyle->font_size) / 2,
+				labelStyle.font.size,
+				r.x0, r.y1 - (r.y1 - r.y0 - labelStyle.font.size) / 2,
 				_labelText,
-				labelStyle->text_color);
+				cpa.GetTextColor());
 			draw::PopScissorRect();
 		}
 	}
@@ -601,18 +615,17 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 
 UIRect LabeledProperty::CalcPaddingRect(const UIRect& expTgtRect)
 {
-	auto r = UIElement::CalcPaddingRect(expTgtRect);
+	UIRect r = {};
 	if (!_labelText.empty())
 	{
 		if (_isBrief)
 		{
-			StyleBlock* labelStyle = FindCurrentLabelStyle();
+			auto& labelStyle = FindCurrentLabelStyle();
 
-			auto* font = labelStyle->GetFont();
+			auto* font = labelStyle.font.GetFont();
 
-			r.x0 += GetTextWidth(font, labelStyle->font_size, _labelText);
-			auto labelPadRect = labelStyle->GetPaddingRect();
-			r.x0 += labelPadRect.x0 + labelPadRect.x1;
+			r.x0 += GetTextWidth(font, labelStyle.font.size, _labelText);
+			r.x0 += labelStyle.padding.x0 + labelStyle.padding.x1;
 		}
 		else
 		{
@@ -630,20 +643,23 @@ LabeledProperty& LabeledProperty::SetText(StringView text)
 	return *this;
 }
 
-StyleBlock* LabeledProperty::FindCurrentLabelStyle() const
+const FrameStyle& LabeledProperty::FindCurrentLabelStyle() const
 {
-	if (_labelStyle)
+	if (_preferOwnLabelStyle || !_propList)
 		return _labelStyle;
-	if (_propList && _propList->_defaultLabelStyle)
-		return _propList->_defaultLabelStyle;
-	return GetCurrentTheme()->GetStyle(sid_prop_label);
+	return _propList->defaultLabelStyle;
 }
 
-StyleAccessor LabeledProperty::GetLabelStyle()
+const FrameStyle& LabeledProperty::GetLabelStyle()
 {
-	if (!_labelStyle)
-		_labelStyle = FindCurrentLabelStyle();
-	return StyleAccessor(_labelStyle, this);
+	return _labelStyle;
+}
+
+LabeledProperty& LabeledProperty::SetLabelStyle(const FrameStyle& s)
+{
+	_labelStyle = s;
+	_preferOwnLabelStyle = true;
+	return *this;
 }
 
 
@@ -1269,8 +1285,8 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 		ph.cpa = frameStyle.backgroundPainter->Paint(this);
 
 	{
-		auto* font = styleProps->GetFont();
-		int size = styleProps->font_size;
+		auto* font = styleProps->font.GetFont();
+		int size = styleProps->font.size;
 
 		auto r = GetContentRect();
 		if (!_placeholder.empty() && !IsFocused() && _text.empty())
@@ -1620,13 +1636,13 @@ void Textbox::OnEvent(Event& e)
 
 Rangef Textbox::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float minWidth = styleProps->font_size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
+	float minWidth = styleProps->font.size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
 	return FrameElement::GetFullEstimatedWidth(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minWidth));
 }
 
 Rangef Textbox::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type, bool forParentLayout)
 {
-	float minHeight = styleProps->font_size + frameStyle.padding.y0 + frameStyle.padding.y1;
+	float minHeight = styleProps->font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
 	return FrameElement::GetFullEstimatedHeight(containerSize, type, forParentLayout).Intersect(Rangef::AtLeast(minHeight));
 }
 
@@ -1664,7 +1680,7 @@ size_t Textbox::_FindCursorPos(float vpx)
 	float x = r.x0;
 	for (size_t i = 0; i < _text.size(); i++)
 	{
-		float lw = GetTextWidth(styleProps->GetFont(), styleProps->font_size, StringView(_text).substr(i, 1));
+		float lw = GetTextWidth(styleProps->font.GetFont(), styleProps->font.size, StringView(_text).substr(i, 1));
 		if (vpx < x + lw * 0.5f)
 			return i;
 		x += lw;

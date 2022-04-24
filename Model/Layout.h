@@ -345,7 +345,7 @@ struct FontSettings
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
-	Font* GetFont();
+	Font* GetFont() const;
 };
 
 
@@ -406,18 +406,13 @@ struct StyleBlock
 	StyleBlock* _firstChild = nullptr;
 	StyleBlock* _lastChild = nullptr;
 
-	CachedFontRef _cachedFont;
-
 	PainterHandle background_painter;
 
 	Presence presence = Presence::Visible;
 	StackingDirection stacking_direction = StackingDirection::Undefined;
 	HAlign h_align = HAlign::Undefined;
 
-	std::string font_family = FONT_FAMILY_SANS_SERIF;
-	FontWeight font_weight = FontWeight::Normal;
-	FontStyle font_style = FontStyle::Normal;
-	int font_size = 12;
+	FontSettings font;
 	Color4b text_color;
 
 	float padding_left = 0;
@@ -494,19 +489,10 @@ public:
 	void SetHAlign(HAlign a);
 
 
-	const std::string& GetFontFamily() const;
 	void SetFontFamily(const std::string& v);
-
-	FontWeight GetFontWeight() const;
 	void SetFontWeight(FontWeight v);
-
-	FontStyle GetFontStyle() const;
 	void SetFontStyle(FontStyle v);
-
-	int GetFontSize() const;
 	void SetFontSize(int v);
-
-	Color4b GetTextColor() const;
 	void SetTextColor(Color4b v);
 
 

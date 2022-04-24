@@ -1173,6 +1173,7 @@ struct Inspector : NativeDialogWindow
 		static constexpr int TAB_W = 10;
 		float scrollPos = 0;
 		float scrollMax = FLT_MAX;
+		FontSettings mainFont;
 
 		Inspector* insp;
 
@@ -1192,8 +1193,8 @@ struct Inspector : NativeDialogWindow
 
 		void PaintObject(UIObject* obj, int x, int& y)
 		{
-			auto* font = styleProps->GetFont();
-			int fontSize = styleProps->font_size;
+			auto* font = mainFont.GetFont();
+			int fontSize = mainFont.size;
 
 			float ys = y - scrollPos;
 			if (obj == insp->selObj)
@@ -1244,16 +1245,16 @@ struct Inspector : NativeDialogWindow
 
 		void OnPaint(const UIPaintContext& ctx) override
 		{
-			auto* font = styleProps->GetFont();
+			auto* font = mainFont.GetFont();
 
 			auto& c = insp->selWindow->_impl->GetContainer();
-			int y = styleProps->font_size;
-			draw::TextLine(font, styleProps->font_size, 0, y, "Address / Name", Color4b(255, 153));
-			draw::TextLine(font, styleProps->font_size, 400, y, "Content rect", Color4b(255, 153));
-			draw::TextLine(font, styleProps->font_size, 600, y, "Padding rect", Color4b(255, 153));
+			int y = mainFont.size;
+			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153));
+			draw::TextLine(font, mainFont.size, 400, y, "Content rect", Color4b(255, 153));
+			draw::TextLine(font, mainFont.size, 600, y, "Padding rect", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
 			scrollMax = y;
-			//draw::TextLine(font, styleProps->font_size, 10, 10, "inspector", Color4b::White());
+			//draw::TextLine(font, mainFont.size, 10, 10, "inspector", Color4b::White());
 		}
 
 		void OnEvent(Event& e) override

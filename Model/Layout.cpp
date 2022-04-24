@@ -450,7 +450,7 @@ void FontSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndObject();
 }
 
-Font* FontSettings::GetFont()
+Font* FontSettings::GetFont() const
 {
 	return _cachedFont.GetCachedFont(family.c_str(), int(weight), style == FontStyle::Italic);
 }
@@ -525,7 +525,7 @@ StyleBlock* StyleBlock::_GetWithChange(int off, FnIsPropEqual feq, FnPropCopy fc
 
 Font* StyleBlock::GetFont()
 {
-	return _cachedFont.GetCachedFont(font_family.c_str(), int(font_weight), font_style == FontStyle::Italic);
+	return font.GetFont();
 }
 
 
@@ -586,49 +586,24 @@ void StyleAccessor::SetHAlign(HAlign a)
 }
 
 
-const std::string& StyleAccessor::GetFontFamily() const
-{
-	return block->font_family;
-}
-
 void StyleAccessor::SetFontFamily(const std::string& v)
 {
-	AccSet(*this, offsetof(StyleBlock, font_family), v);
-}
-
-FontWeight StyleAccessor::GetFontWeight() const
-{
-	return block->font_weight;
+	AccSet(*this, offsetof(StyleBlock, font.family), v);
 }
 
 void StyleAccessor::SetFontWeight(FontWeight v)
 {
-	AccSet(*this, offsetof(StyleBlock, font_weight), v);
-}
-
-FontStyle StyleAccessor::GetFontStyle() const
-{
-	return block->font_style;
+	AccSet(*this, offsetof(StyleBlock, font.weight), v);
 }
 
 void StyleAccessor::SetFontStyle(FontStyle v)
 {
-	AccSet(*this, offsetof(StyleBlock, font_style), v);
-}
-
-int StyleAccessor::GetFontSize() const
-{
-	return block->font_size;
+	AccSet(*this, offsetof(StyleBlock, font.style), v);
 }
 
 void StyleAccessor::SetFontSize(int v)
 {
-	AccSet(*this, offsetof(StyleBlock, font_size), v);
-}
-
-Color4b StyleAccessor::GetTextColor() const
-{
-	return block->text_color;
+	AccSet(*this, offsetof(StyleBlock, font.size), v);
 }
 
 void StyleAccessor::SetTextColor(Color4b v)

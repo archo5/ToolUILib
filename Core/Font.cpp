@@ -281,7 +281,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 } // draw
 
 
-Font* CachedFontRef::GetCachedFont(const char* nameOrFamily, int weight, bool italic)
+Font* CachedFontRef::GetCachedFont(const char* nameOrFamily, int weight, bool italic) const
 {
 	if (_cachedFont &&
 		_cacheKeyNameOrFamily == nameOrFamily &&

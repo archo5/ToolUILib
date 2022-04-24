@@ -158,7 +158,7 @@ struct SizeTest : ui::Buildable
 	{
 		ui::Buildable::OnPaint(ctx);
 		auto* font = styleProps->GetFont();
-		int fsize = styleProps->font_size;
+		int fsize = styleProps->font.size;
 		float ypos = fsize;
 		for (const auto& t : tests)
 		{

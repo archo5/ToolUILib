@@ -111,8 +111,8 @@ struct MathExprStr : IMathExprErrorOutput
 		bool ret = imm::PropEditString(label, expr.c_str(), [this](const char* v) { SetExpr(v); });
 		if (!error.empty())
 		{
-			auto s = MakeWithText<LabelFrame>(error).GetStyle();
-			s.SetTextColor(Color4b(200, 0, 0));
+			auto& fe = MakeWithText<LabelFrame>(error);
+			fe.frameStyle.textColor.SetValue(Color4b(200, 0, 0));
 		}
 		return ret;
 	}

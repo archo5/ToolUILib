@@ -192,9 +192,11 @@ void* LoadStructFromSource(ThemeData& td, ThemeData::CustomStructData& csd, IThe
 	if (it.is_valid())
 	{
 		auto* tf = static_cast<ThemeFile*>(it->value.get_ptr());
+		tf->unserializer.BeginEntry(tf->unserializer._root);
 		tf->unserializer.BeginObject(it->key.c_str(), loader->GetName());
 		void* data = loader->ReadStruct(td, tf->unserializer);
 		tf->unserializer.EndObject();
+		tf->unserializer.EndEntry();
 
 		csd.instances.insert(name, data);
 		return data;
@@ -444,11 +446,6 @@ struct ThemeLoaderData : IThemeLoader
 			OnFieldEnumString(u, "presence", loaded->presence);
 			OnFieldEnumString(u, "stackingDirection", loaded->stacking_direction);
 			OnFieldEnumString(u, "horAlign", loaded->h_align);
-
-			OnFieldEnumString(u, "fontWeight", loaded->font_weight);
-			//OnFieldEnumInt(u, "fontWeight", loaded->font_weight); -- may want to support both?
-			OnFieldEnumString(u, "fontStyle", loaded->font_style);
-			OnField(u, "fontSize", loaded->font_size);
 
 			if (u.IsUnserializer())
 			{

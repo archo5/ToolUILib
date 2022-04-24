@@ -35,10 +35,10 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 
 struct CachedFontRef
 {
-	Font* _cachedFont = nullptr;
-	std::string _cacheKeyNameOrFamily;
-	int _cacheKeyWeight = 0;
-	bool _cacheKeyItalic = false;
+	mutable Font* _cachedFont = nullptr;
+	mutable std::string _cacheKeyNameOrFamily;
+	mutable int _cacheKeyWeight = 0;
+	mutable bool _cacheKeyItalic = false;
 
 	CachedFontRef() {}
 	CachedFontRef(CachedFontRef&&) {}
@@ -46,7 +46,7 @@ struct CachedFontRef
 	CachedFontRef& operator = (CachedFontRef&&) { return *this; }
 	CachedFontRef& operator = (const CachedFontRef&) { return *this; }
 
-	Font* GetCachedFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
+	Font* GetCachedFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false) const;
 };
 
 } // ui

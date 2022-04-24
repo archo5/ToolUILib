@@ -237,8 +237,6 @@ void ProcGraphEditor_Node::Init(IProcGraph* graph, IProcGraph::Node* node, Point
 void ProcGraphEditor_Node::OnBuildTitleBar()
 {
 	auto& sel = Push<Selectable>().Init(_isDragging);
-	sel.GetStyle().SetFontWeight(FontWeight::Bold);
-	sel.GetStyle().SetFontStyle(FontStyle::Italic);
 	sel
 		.SetPadding(0)
 		+ MakeDraggable()
@@ -268,7 +266,9 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 		imm::EditBool(showPreview, nullptr);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
-	MakeWithText<LabelFrame>(_graph->GetNodeName(_node));
+	auto& lf = MakeWithText<LabelFrame>(_graph->GetNodeName(_node));
+	lf.frameStyle.font.weight = FontWeight::Bold;
+	lf.frameStyle.font.style = FontStyle::Italic;
 	Pop();
 	Pop();
 }

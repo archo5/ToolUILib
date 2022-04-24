@@ -65,10 +65,10 @@ struct StateButtonsTest : ui::Buildable
 				.SetLayoutMode(ui::ImageLayoutMode::PreferredMin);
 			break;
 		case 7: {
-			auto s = ui::MakeWithText<ui::LabelFrame>(text).GetStyle();
-			s.SetTextColor(GetStateColor(stb->GetState()));
-			s.SetFontWeight(stb->GetState() == 1 ? ui::FontWeight::Bold : ui::FontWeight::Normal);
-			s.SetFontStyle(stb->GetState() > 1 ? ui::FontStyle::Italic : ui::FontStyle::Normal);
+			auto& fe = ui::MakeWithText<ui::LabelFrame>(text);
+			fe.frameStyle.textColor.SetValue(GetStateColor(stb->GetState()));
+			fe.frameStyle.font.weight = stb->GetState() == 1 ? ui::FontWeight::Bold : ui::FontWeight::Normal;
+			fe.frameStyle.font.style = stb->GetState() > 1 ? ui::FontStyle::Italic : ui::FontStyle::Normal;
 			break; }
 		}
 		WPop();
@@ -225,7 +225,7 @@ struct PropertyListTest : ui::Buildable
 
 		ui::MakeWithText<ui::Button>("interjection");
 
-		ui::Push<ui::LabeledProperty>().SetText("and for 2").GetLabelStyle().SetFontWeight(ui::FontWeight::Bold);
+		ui::Push<ui::LabeledProperty>().SetText("and for 2").SetLabelBold();
 		ui::MakeWithText<ui::Button>("test 2");
 		ui::Pop();
 

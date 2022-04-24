@@ -3,22 +3,18 @@
 "clear:color" = "b:37;255"
 
 ":FontSettings" = {}
+"header:FontSettings" = { weight = "bold" }
 
 "outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] }
 
-"header:style":
-{
-	"padding": 5,
-	"fontWeight": "bold"
-}
-
-"prop_label:style":
-{
-	"padding": 5
-}
 "label:FrameStyle":
 {
 	padding = 5
+}
+"header:FrameStyle":
+{
+	padding = 5
+	font = "header"
 }
 
 "group_box:FrameStyle":

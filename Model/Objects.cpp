@@ -880,14 +880,15 @@ float UIObject::ResolveUnits(Coord coord, float ref)
 	}
 }
 
-StyleBlock* UIObject::_FindClosestParentTextStyle() const
+const FontSettings* UIObject::_FindClosestParentFontSettings() const
 {
 	for (auto* p = parent; p; p = p->parent)
 	{
-		if ((p->flags & UIObject_SetsChildTextStyle) && p->styleProps)
-			return p->styleProps;
+		if (p->flags & UIObject_SetsChildTextStyle)
+			if (auto* fs = p->_GetFontSettings())
+				return fs;
 	}
-	return GetTextStyle();
+	return GetCurrentTheme()->FindStructByName<FontSettings>("");
 }
 
 NativeWindowBase* UIObject::GetNativeWindow() const
@@ -1100,15 +1101,15 @@ void TextElement::OnReset()
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
 	// TODO can we nullify styleProps?
-	auto* style = styleProps != GetTextStyle() ? static_cast<StyleBlock*>(styleProps) : _FindClosestParentTextStyle();
-	auto* font = style->GetFont();
+	auto* fs = styleProps != GetTextStyle() ? &styleProps->font : _FindClosestParentFontSettings();
+	auto* font = fs->GetFont();
 
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, style->font_size, r.x0, r.y1 - (r.y1 - r.y0 - style->font_size) / 2, text, ctx.textColor);
+	draw::TextLine(font, fs->size, r.x0, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
@@ -1121,15 +1122,15 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	char text[32];
 	snprintf(text, sizeof(text), "%gx%g", finalRectCP.GetWidth(), finalRectCP.GetHeight());
 
-	auto* font = styleProps->GetFont();
+	auto* font = styleProps->font.GetFont();
 
 	UIPaintHelper ph;
 	ph.PaintBackground(this);
 
 	auto r = GetContentRect();
 	float w = r.x1 - r.x0;
-	float tw = GetTextWidth(font, styleProps->font_size, text);
-	draw::TextLine(font, styleProps->font_size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - styleProps->font_size) / 2, text, ctx.textColor);
+	float tw = GetTextWidth(font, styleProps->font.size, text);
+	draw::TextLine(font, styleProps->font.size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - styleProps->font.size) / 2, text, ctx.textColor);
 
 	ph.PaintChildren(this, ctx);
 }
