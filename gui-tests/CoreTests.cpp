@@ -692,7 +692,6 @@ struct HighElementCountTest : ui::Buildable
 			auto& el = ui::Make<DummyElement>();
 		}
 
-		printf("# blocks: %d\n", ui::g_numStyleBlocks);
 		WPop();
 	}
 	int styleMode;

@@ -569,9 +569,6 @@ static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
 static int g_rsrcUsers = 0;
 
-void _InitStyles();
-void _FreeStyles();
-
 static StaticID_Color sid_color_clear("clear");
 
 struct NativeWindow_Impl
@@ -601,7 +598,6 @@ struct NativeWindow_Impl
 		if (!g_rsrcUsers)
 		{
 			draw::internals::InitResources();
-			_InitStyles();
 			if (!GetCurrentTheme())
 				SetCurrentTheme(LoadTheme("theme_default"));
 		}
@@ -617,7 +613,6 @@ struct NativeWindow_Impl
 		if (--g_rsrcUsers == 0)
 		{
 			SetCurrentTheme(nullptr);
-			_FreeStyles();
 			draw::internals::FreeResources();
 		}
 
