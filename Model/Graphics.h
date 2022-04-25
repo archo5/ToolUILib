@@ -76,7 +76,7 @@ struct ColorInspectBlock : ColorBlock
 
 void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, Vec2f placement = { 0.5f, 0.5f });
 
-struct ImageElement : UIElement
+struct ImageElement : UIObjectSingleChild
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;

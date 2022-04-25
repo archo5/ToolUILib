@@ -423,6 +423,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 	if (_tabBarExtension)
 		_tabBarExtension->Paint(ctx);
 
+	ContentPaintAdvice cpa;
 	if (style.tabPanelPainter)
 	{
 		PaintInfo pi(this);
@@ -435,7 +436,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 			draw::PopScissorRect();
 
 			draw::PushScissorRect(UIRect{ btnRect.x0, btnRect.y1, btnRect.x1, panelRect.y1 });
-			style.tabPanelPainter->Paint(pi);
+			cpa = style.tabPanelPainter->Paint(pi);
 			draw::PopScissorRect();
 
 			draw::PushScissorRect(UIRect{ btnRect.x1, panelRect.y0, panelRect.x1, panelRect.y1 });
@@ -443,10 +444,11 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 			draw::PopScissorRect();
 		}
 		else
-			style.tabPanelPainter->Paint(pi);
+			cpa = style.tabPanelPainter->Paint(pi);
 	}
 
-	PaintChildren(ctx, {});
+	if (_child)
+		_child->Paint(ctx.WithAdvice(cpa));
 }
 
 void TabbedPanel::OnEvent(Event& e)

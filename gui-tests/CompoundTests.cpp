@@ -453,11 +453,13 @@ struct TransformContainerTest : ui::Buildable
 		{
 			auto& te = ui::Push<ui::ChildScaleOffsetElement>();
 			te.transform = ui::ScaleOffset2D::OffsetThenScale(x, y, scale);
+			ui::Push<ui::StackTopDownLayoutElement>();
 			{
 				ui::MakeWithText<ui::Button>("One button");
 				ui::MakeWithText<ui::Button>("The second button");
 				ui::MakeWithText<ui::Button>("#3");
 			}
+			ui::Pop();
 			ui::Pop();
 		}
 		ui::Pop();

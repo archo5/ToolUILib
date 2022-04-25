@@ -180,7 +180,6 @@ void TableView::OnReset()
 {
 	FrameElement::OnReset();
 
-	flags |= UIObject_SetsChildTextStyle;
 	SetFrameStyle(sid_framestyle_table_frame);
 	style = *GetCurrentTheme()->GetStruct(sid_table_style);
 
@@ -620,8 +619,6 @@ static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
 void TreeView::OnReset()
 {
 	FrameElement::OnReset();
-
-	flags |= UIObject_SetsChildTextStyle;
 
 	// TODO separate styles for TreeView
 	SetFrameStyle(sid_framestyle_table_frame);

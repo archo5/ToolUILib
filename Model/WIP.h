@@ -103,7 +103,7 @@ struct LayoutElement : UIElement
 			obj->_AttachToFrameContents(system);
 	}
 
-	void PaintChildrenImpl(const UIPaintContext& ctx) override
+	void OnPaint(const UIPaintContext& ctx) override
 	{
 		for (auto& slot : _slots)
 			slot._obj->Paint(ctx);

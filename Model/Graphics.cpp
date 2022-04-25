@@ -150,7 +150,7 @@ void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, Vec2f placement)
 
 void ImageElement::OnReset()
 {
-	UIElement::OnReset();
+	UIObjectSingleChild::OnReset();
 
 	_image = {};
 	_scaleMode = ScaleMode::Fit;
@@ -179,7 +179,7 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 		DrawImage(c, _image, _scaleMode, { _anchorX, _anchorY });
 	}
 
-	PaintChildren(ctx, {});
+	UIObjectSingleChild::OnPaint(ctx);
 }
 
 Rangef ImageElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -962,7 +962,7 @@ void View2D::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 	}
 
-	PaintChildren(ctx, {});
+	FillerElement::OnPaint(ctx);
 }
 
 
@@ -984,7 +984,7 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 	}
 
-	PaintChildren(ctx, {});
+	FillerElement::OnPaint(ctx);
 }
 
 

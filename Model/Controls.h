@@ -63,9 +63,12 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	AABB2f GetContentRect() { return GetFinalRect().ShrinkBy(frameStyle.padding); }
 
 	void OnReset() override;
+
 	ContentPaintAdvice PaintFrame() { return PaintFrame(this); }
 	ContentPaintAdvice PaintFrame(const PaintInfo& info);
 	void OnPaint(const UIPaintContext& ctx) override;
+	void PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa);
+
 	const FontSettings* _GetFontSettings() const override;
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
@@ -346,7 +349,7 @@ struct SliderStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct Slider : UIElement
+struct Slider : UIObjectNoChildren
 {
 	SliderStyle style;
 

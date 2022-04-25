@@ -42,6 +42,51 @@ void FrameElement::OnPaint(const UIPaintContext& ctx)
 	PaintChildren(ctx, cpa);
 }
 
+struct VertexShifter
+{
+	draw::VertexTransformCallback prev;
+	Vec2f offset;
+};
+
+void FrameElement::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa)
+{
+	if (!_child)
+		return;
+
+	UIPaintContext subctx = ctx.WithAdvice(cpa);
+	if (!cpa.HasTextColor() && frameStyle.textColor.HasValue())
+		subctx.textColor = frameStyle.textColor.GetValue();
+
+	if (cpa.offset != Vec2f())
+	{
+		VertexShifter vsh;
+		vsh.offset = cpa.offset;
+
+		draw::VertexTransformFunction* vtf = [](void* userdata, Vertex* vertices, size_t count)
+		{
+			auto* data = static_cast<VertexShifter*>(userdata);
+			for (auto* v = vertices, *vend = vertices + count; v != vend; v++)
+			{
+				v->x += data->offset.x;
+				v->y += data->offset.y;
+			}
+
+			data->prev.Call(vertices, count);
+		};
+		vsh.prev = draw::SetVertexTransformCallback({ &vsh, vtf });
+
+		if (_child)
+			_child->Paint(subctx);
+
+		draw::SetVertexTransformCallback(vsh.prev);
+	}
+	else
+	{
+		if (_child)
+			_child->Paint(subctx);
+	}
+}
+
 const FontSettings* FrameElement::_GetFontSettings() const
 {
 	return &frameStyle.font;
@@ -393,7 +438,8 @@ void ProgressBar::OnPaint(const UIPaintContext& ctx)
 		style.fillPainter->Paint(cinfo);
 	}
 
-	PaintChildren(ctx, cpa);
+	if (_child)
+		_child->Paint(ctx.WithAdvice(cpa));
 }
 
 Size2f ProgressBar::GetReducedContainerSize(Size2f size)
@@ -446,7 +492,7 @@ void SliderStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 static StaticID<SliderStyle> sid_slider_style_hor("slider_style_horizontal");
 void Slider::OnReset()
 {
-	UIElement::OnReset();
+	UIObjectNoChildren::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	style = *GetCurrentTheme()->GetStruct(sid_slider_style_hor);
@@ -480,8 +526,6 @@ void Slider::OnPaint(const UIPaintContext& ctx)
 	trkinfo.rect = prethumb.ExtendBy(style.thumbExtend);
 	if (style.thumbPainter)
 		style.thumbPainter->Paint(trkinfo);
-
-	PaintChildren(ctx, cpa);
 }
 
 void Slider::OnEvent(Event& e)
@@ -639,7 +683,8 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		}
 	}
 
-	PaintChildren(ctx, {});
+	if (_child)
+		_child->Paint(ctx);
 }
 
 void LabeledProperty::OnLayout(const UIRect& rect)
@@ -1238,7 +1283,12 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 
 void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
-	FillerElement::OnPaint(ctx);
+	if (draw::PushScissorRectIfNotEmpty(GetFinalRect()))
+	{
+		FillerElement::OnPaint(ctx);
+
+		draw::PopScissorRect();
+	}
 
 	auto cr = GetFinalRect();
 	float w = cr.GetWidth();
@@ -1294,7 +1344,6 @@ void ScrollArea::OnReset()
 {
 	FillerElement::OnReset();
 
-	SetFlag(UIObject_ClipChildren, true);
 	sbv.OnReset();
 }
 

@@ -361,7 +361,8 @@ void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
 	if (!drawPendingLinksOnTop)
 		OnDrawPendingLinks();
 
-	PaintChildren(ctx, {});
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->Paint(ctx);
 
 	if (drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();

@@ -102,7 +102,7 @@ enum UIObjectFlags
 	UIObject_DisableCulling = 1 << 23,
 	UIObject_NoPaint = 1 << 24,
 	UIObject_DB_RebuildOnChange = 1 << 25,
-	UIObject_ClipChildren = 1 << 26,
+	//UIObject_ClipChildren = 1 << 26,
 	UIObject_IsInTree = 1 << 27,
 	UIObject_NeedsTreeUpdates = 1 << 28,
 	UIObject_SetsChildTextStyle = 1 << 29,
@@ -277,6 +277,13 @@ struct UIPaintContext
 	{
 		textColor = arg_textColor;
 	}
+	UIPaintContext WithAdvice(const ContentPaintAdvice& cpa) const
+	{
+		UIPaintContext pc = *this;
+		if (cpa.HasTextColor())
+			pc.textColor = cpa.GetTextColor();
+		return pc;
+	}
 };
 
 struct SingleChildPaintPtr
@@ -329,8 +336,6 @@ struct UIObject : IPersistentObject
 
 	virtual void OnPaint(const UIPaintContext& ctx);
 	void Paint(const UIPaintContext& ctx);
-	void PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa);
-	virtual void PaintChildrenImpl(const UIPaintContext& ctx);
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
@@ -410,7 +415,7 @@ struct UIObject : IPersistentObject
 
 	UI_FORCEINLINE const FontSettings* FindFontSettings(const FontSettings* first) const { return first ? first : _FindClosestParentFontSettings(); }
 	const FontSettings* _FindClosestParentFontSettings() const;
-	virtual const FontSettings* _GetFontSettings() const { return nullptr; }
+	virtual const FontSettings* _GetFontSettings() const;
 
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
@@ -483,7 +488,7 @@ struct UIObjectNoChildren : UIObject
 	void RemoveChildImpl(UIObject* ch) override {}
 	void DetachChildren(bool recursive) override {}
 	void CustomAppendChild(UIObject* obj) override;
-	void PaintChildrenImpl(const UIPaintContext& ctx) override {}
+	void OnPaint(const UIPaintContext& ctx) override {}
 	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
 };
 
@@ -499,7 +504,7 @@ struct UIObjectSingleChild : UIObject
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
 	void CustomAppendChild(UIObject* obj) override;
-	void PaintChildrenImpl(const UIPaintContext& ctx) override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;
@@ -623,7 +628,7 @@ struct Placeholder : UIElement
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct ChildScaleOffsetElement : UIElement
+struct ChildScaleOffsetElement : WrapperElement
 {
 	ScaleOffset2D transform;
 
@@ -637,8 +642,8 @@ struct ChildScaleOffsetElement : UIElement
 	void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx) override;
 
 	Point2f LocalToChildPoint(Point2f pos) const override;
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
 
@@ -672,7 +677,7 @@ struct EdgeSliceLayoutElement : UIElement
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
 	void CustomAppendChild(UIObject* obj) override;
-	void PaintChildrenImpl(const UIPaintContext& ctx) override;
+	void OnPaint(const UIPaintContext& ctx) override;
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;

@@ -359,15 +359,10 @@ void UIObject::UnregisterAsOverlay()
 	}
 }
 
-struct VertexShifter
-{
-	draw::VertexTransformCallback prev;
-	Vec2f offset;
-};
-
 void UIObject::OnPaint(const UIPaintContext& ctx)
 {
-	PaintChildren(ctx, {});
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->Paint(ctx);
 }
 
 void UIObject::Paint(const UIPaintContext& ctx)
@@ -379,69 +374,6 @@ void UIObject::Paint(const UIPaintContext& ctx)
 		return;
 
 	OnPaint(ctx);
-}
-
-void UIObject::PaintChildren(const UIPaintContext& ctx, const ContentPaintAdvice& cpa)
-{
-	// TODO
-	//if (!firstChild)
-	//	return;
-
-	bool clipChildren = !!(flags & UIObject_ClipChildren);
-	if (clipChildren)
-	{
-		if (!draw::PushScissorRectIfNotEmpty(GetFinalRect()))
-			return;
-	}
-
-	UIPaintContext subctx(DoNotInitialize{});
-	auto* pctx = &ctx;
-	if ((flags & UIObject_SetsChildTextStyle) || cpa.HasTextColor())
-	{
-		Color4b col;
-		if (cpa.HasTextColor())
-			col = cpa.GetTextColor();
-		else
-			col = Color4b::White(); // TODO
-		subctx = UIPaintContext(ctx, col);
-		pctx = &subctx;
-	}
-
-	if (cpa.offset != Vec2f())
-	{
-		VertexShifter vsh;
-		vsh.offset = cpa.offset;
-
-		draw::VertexTransformFunction* vtf = [](void* userdata, Vertex* vertices, size_t count)
-		{
-			auto* data = static_cast<VertexShifter*>(userdata);
-			for (auto* v = vertices, *vend = vertices + count; v != vend; v++)
-			{
-				v->x += data->offset.x;
-				v->y += data->offset.y;
-			}
-
-			data->prev.Call(vertices, count);
-		};
-		vsh.prev = draw::SetVertexTransformCallback({ &vsh, vtf });
-
-		PaintChildrenImpl(*pctx);
-
-		draw::SetVertexTransformCallback(vsh.prev);
-	}
-	else
-	{
-		PaintChildrenImpl(*pctx);
-	}
-
-	if (clipChildren)
-		draw::PopScissorRect();
-}
-
-void UIObject::PaintChildrenImpl(const UIPaintContext& ctx)
-{
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->Paint(ctx);
 }
 
 static void PaintBacktracker(UIObject* cur, SingleChildPaintPtr* next, const UIPaintContext& ctx)
@@ -835,6 +767,11 @@ const FontSettings* UIObject::_FindClosestParentFontSettings() const
 	return GetCurrentTheme()->FindStructByName<FontSettings>("");
 }
 
+const FontSettings* UIObject::_GetFontSettings() const
+{
+	return GetCurrentTheme()->FindStructByName<FontSettings>("");
+}
+
 NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
@@ -905,7 +842,7 @@ void UIObjectSingleChild::CustomAppendChild(UIObject* obj)
 		obj->_AttachToFrameContents(system);
 }
 
-void UIObjectSingleChild::PaintChildrenImpl(const UIPaintContext& ctx)
+void UIObjectSingleChild::OnPaint(const UIPaintContext& ctx)
 {
 	if (_child)
 		_child->Paint(ctx);
@@ -1015,16 +952,12 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	float w = r.x1 - r.x0;
 	float tw = GetTextWidth(font, fs->size, text);
 	draw::TextLine(font, fs->size, r.x0 + w * 0.5f - tw * 0.5f, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
-
-	PaintChildren(ctx, {});
 }
 
 
 void ChildScaleOffsetElement::OnReset()
 {
-	UIElement::OnReset();
-
-	flags |= UIObject_ClipChildren;
+	WrapperElement::OnReset();
 
 	transform = {};
 }
@@ -1055,20 +988,11 @@ void ChildScaleOffsetElement::OnPaint(const UIPaintContext& ctx)
 
 	auto prevSRRT = draw::AddScissorRectResolutionTransform(transform.GetScaleOnly() * ScaleOffset2D(1, cr.x0, cr.y0));
 
-	bool paintChildren = true;
-	bool clipChildren = !!(flags & UIObject_ClipChildren);
-	if (clipChildren)
+	if (draw::PushScissorRectIfNotEmpty({ 0, 0, _childSize.x, _childSize.y }))
 	{
-		flags &= ~UIObject_ClipChildren;
-		paintChildren = draw::PushScissorRect({ 0, 0, _childSize.x, _childSize.y });
-	}
+		WrapperElement::OnPaint(ctx);
 
-	PaintChildren(ctx, {});
-
-	if (clipChildren)
-	{
 		draw::PopScissorRect();
-		flags |= UIObject_ClipChildren;
 	}
 
 	draw::SetScissorRectResolutionTransform(prevSRRT);
@@ -1089,7 +1013,7 @@ void ChildScaleOffsetElement::OnPaintSingleChild(SingleChildPaintPtr* next, cons
 
 	auto prevSRRT = draw::AddScissorRectResolutionTransform(transform.GetScaleOnly() * ScaleOffset2D(1, cr.x0, cr.y0));
 
-	UIElement::OnPaintSingleChild(next, ctx);
+	WrapperElement::OnPaintSingleChild(next, ctx);
 
 	draw::SetScissorRectResolutionTransform(prevSRRT);
 
@@ -1105,14 +1029,22 @@ Point2f ChildScaleOffsetElement::LocalToChildPoint(Point2f pos) const
 	return pos;
 }
 
-float ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef ChildScaleOffsetElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return UIElement::CalcEstimatedWidth(containerSize / transform.scale, type) * transform.scale;
+	Rangef r = WrapperElement::GetFullEstimatedWidth(containerSize / transform.scale, type);
+	r.min *= transform.scale;
+	if (r.max < FLT_MAX)
+		r.max *= transform.scale;
+	return r;
 }
 
-float ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef ChildScaleOffsetElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return UIElement::CalcEstimatedHeight(containerSize / transform.scale, type) * transform.scale;
+	Rangef r = WrapperElement::GetFullEstimatedHeight(containerSize / transform.scale, type);
+	r.min *= transform.scale;
+	if (r.max < FLT_MAX)
+		r.max *= transform.scale;
+	return r;
 }
 
 void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
@@ -1124,7 +1056,7 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
 	srect.y0 = 0;
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
-	UIElement::OnLayout(srect);
+	WrapperElement::OnLayout(srect);
 	_childSize = GetFinalRect().GetSize();
 	_finalRect = rect;
 
@@ -1236,7 +1168,7 @@ void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
 		obj->_AttachToFrameContents(system);
 }
 
-void EdgeSliceLayoutElement::PaintChildrenImpl(const UIPaintContext& ctx)
+void EdgeSliceLayoutElement::OnPaint(const UIPaintContext& ctx)
 {
 	for (auto& slot : _slots)
 		slot._element->Paint(ctx);
