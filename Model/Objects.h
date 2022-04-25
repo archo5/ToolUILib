@@ -339,9 +339,9 @@ struct UIObject : IPersistentObject
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
-	virtual float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	virtual float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	virtual void CalcLayout(const UIRect& inrect, LayoutState& state);
+	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
+	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	virtual void CalcLayout(UIRect& rect);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	void PerformLayout(const UIRect& rect);
@@ -585,32 +585,17 @@ struct TextElement : UIObjectNoChildren
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		auto* fs = _FindClosestParentFontSettings();
-		return ceilf(GetTextWidth(fs->GetFont(), fs->size, text));
+		return Rangef::Exact(ceilf(GetTextWidth(fs->GetFont(), fs->size, text)));
 	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		auto* fs = _FindClosestParentFontSettings();
-		return fs->size;
+		return Rangef::Exact(fs->size);
 	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
-	{
-		state.finalContentRect = inrect;
-	}
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		auto ret = UIObjectNoChildren::GetFullEstimatedWidth(containerSize, type);
-		ret.max = ret.min;
-		return ret;
-	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		auto ret = UIObjectNoChildren::GetFullEstimatedHeight(containerSize, type);
-		ret.max = ret.min;
-		return ret;
-	}
+	void CalcLayout(UIRect& rect) override {}
 
 	TextElement& SetText(StringView t)
 	{
@@ -664,15 +649,15 @@ struct EdgeSliceLayoutElement : UIElement
 
 	void SlotIterator_Init(UIObjectIteratorData& data) override;
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
-		return containerSize.x;
+		return Rangef::AtLeast(containerSize.x);
 	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
-		return containerSize.y;
+		return Rangef::AtLeast(containerSize.y);
 	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
+	void CalcLayout(UIRect& rect) override;
 	void OnReset() override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;

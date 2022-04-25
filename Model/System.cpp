@@ -390,14 +390,14 @@ void InlineFrame::OnPaint(const UIPaintContext& ctx)
 		frameContents->container.rootBuildable->OnPaint({ ctx, {} });
 }
 
-float InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return 100; // default width
+	return Rangef::AtLeast(100); // default width
 }
 
-float InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return 100; // default height
+	return Rangef::AtLeast(100); // default height
 }
 
 void InlineFrame::OnLayoutChanged()

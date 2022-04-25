@@ -148,9 +148,9 @@ struct StackLTRLayoutElement : LayoutElement<_::StackLTRLayoutElement_Slot>
 {
 	float paddingBetweenElements = 0;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(UIRect& rect) override;
 
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
@@ -164,9 +164,9 @@ struct StackTopDownLayoutElement_Slot
 
 struct StackTopDownLayoutElement : LayoutElement<_::StackTopDownLayoutElement_Slot>
 {
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(UIRect& rect) override;
 };
 
 namespace _ {
@@ -187,34 +187,34 @@ struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElemen
 {
 	float paddingBetweenElements = 0;
 
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void CalcLayout(UIRect& rect) override;
 
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
 struct WrapperLTRLayoutElement : UIElement
 {
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		float size = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-		return size;
+		return Rangef::AtLeast(size);
 	}
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		float size = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-		return size;
+		return Rangef::AtLeast(size);
 	}
-	void CalcLayout(const UIRect& inrect, LayoutState& state) override
+	void CalcLayout(UIRect& rect) override
 	{
-		auto contSize = inrect.GetSize();
-		float p = inrect.x0;
-		float y0 = inrect.y0;
+		auto contSize = rect.GetSize();
+		float p = rect.x0;
+		float y0 = rect.y0;
 		float maxH = 0;
 		for (auto* ch = firstChild; ch; ch = ch->next)
 		{

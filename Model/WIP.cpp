@@ -48,7 +48,7 @@ void PaddingElement::OnLayout(const UIRect& rect)
 
 StackLTRLayoutElement::Slot StackLTRLayoutElement::_slotTemplate;
 
-float StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	bool first = true;
@@ -60,29 +60,29 @@ float StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, Est
 			first = false;
 		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
 	}
-	return size;
+	return Rangef::AtLeast(size);
 }
 
-float StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-	return size;
+	return Rangef::AtLeast(size);
 }
 
-void StackLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+void StackLTRLayoutElement::CalcLayout(UIRect& rect)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
-	float p = inrect.x0;
-	auto inrectSize = inrect.GetSize();
+	float p = rect.x0;
+	auto rectSize = rect.GetSize();
 	for (auto& slot : _slots)
 	{
-		float w = slot._obj->GetFullEstimatedWidth(inrectSize, EstSizeType::Exact).min;
-		Rangef hr = slot._obj->GetFullEstimatedHeight(inrectSize, EstSizeType::Expanding);
-		float h = clamp(inrect.y1 - inrect.y0, hr.min, hr.max);
-		slot._obj->PerformLayout({ p, inrect.y0, p + w, inrect.y0 + h });
+		float w = slot._obj->GetFullEstimatedWidth(rectSize, EstSizeType::Exact).min;
+		Rangef hr = slot._obj->GetFullEstimatedHeight(rectSize, EstSizeType::Expanding);
+		float h = clamp(rect.y1 - rect.y0, hr.min, hr.max);
+		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h });
 		p += w + paddingBetweenElements;
 	}
 }
@@ -90,33 +90,33 @@ void StackLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
 
 StackTopDownLayoutElement::Slot StackTopDownLayoutElement::_slotTemplate;
 
-float StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
-	return size;
+	return Rangef::AtLeast(size);
 }
 
-float StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	for (auto& slot : _slots)
 		size += slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
-	return size;
+	return Rangef::AtLeast(size);
 }
 
-void StackTopDownLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+void StackTopDownLayoutElement::CalcLayout(UIRect& rect)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
-	float p = inrect.y0;
+	float p = rect.y0;
 	for (auto& slot : _slots)
 	{
-		Rangef wr = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
-		float w = clamp(inrect.x1 - inrect.x0, wr.min, wr.max);
-		float h = slot._obj->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Exact).min;
-		slot._obj->PerformLayout({ inrect.x0, p, inrect.x0 + w, p + h });
+		Rangef wr = slot._obj->GetFullEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
+		float w = clamp(rect.x1 - rect.x0, wr.min, wr.max);
+		float h = slot._obj->GetFullEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
+		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h });
 		p += h;
 	}
 }
@@ -124,7 +124,7 @@ void StackTopDownLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& st
 
 StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
-float StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (type == EstSizeType::Expanding)
 	{
@@ -133,23 +133,23 @@ float StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSiz
 			size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 		if (_slots.size() >= 2)
 			size += paddingBetweenElements * (_slots.size() - 1);
-		return size;
+		return Rangef::AtLeast(size);
 	}
 	else
-		return containerSize.x;
+		return Rangef::AtLeast(containerSize.x);
 }
 
-float StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
-	return size;
+	return Rangef::AtLeast(size);
 }
 
-void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+void StackExpandLTRLayoutElement::CalcLayout(UIRect& rect)
 {
-	float p = inrect.x0;
+	float p = rect.x0;
 	float sum = 0, frsum = 0;
 	struct Item
 	{
@@ -163,7 +163,7 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 	std::vector<int> sorted;
 	for (auto& slot : _slots)
 	{
-		auto s = slot._obj->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding);
+		auto s = slot._obj->GetFullEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
 		items.push_back({ slot._obj, s.min, s.max, s.min, slot.fraction });
 		sorted.push_back(sorted.size());
 		sum += s.min;
@@ -179,7 +179,7 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 			const auto& b = items[ib];
 			return (a.maxw - a.minw) < (b.maxw - b.minw);
 		});
-		float leftover = max(inrect.GetWidth() - sum, 0.0f);
+		float leftover = max(rect.GetWidth() - sum, 0.0f);
 		for (auto idx : sorted)
 		{
 			auto& item = items[idx];
@@ -199,7 +199,7 @@ void StackExpandLTRLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& 
 	}
 	for (const auto& item : items)
 	{
-		item.ch->PerformLayout({ p, inrect.y0, p + item.w, inrect.y1 });
+		item.ch->PerformLayout({ p, rect.y0, p + item.w, rect.y1 });
 		p += item.w + paddingBetweenElements;
 	}
 }

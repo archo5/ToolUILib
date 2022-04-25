@@ -332,8 +332,8 @@ public:
 	void OnDisable() override;
 	void OnEvent(Event& ev) override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	float CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	float CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayoutChanged() override;
 	void Build() override;
 

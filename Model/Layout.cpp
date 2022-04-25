@@ -77,7 +77,7 @@ struct StackLayout : ILayout
 		}
 		return size;
 	}
-	void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state)
+	void OnLayout(UIObject* curObj, UIRect& inrect)
 	{
 		// put items one after another in the indicated direction
 		// container size adapts to child elements in stacking direction, and to parent in the other

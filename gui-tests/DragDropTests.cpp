@@ -157,7 +157,9 @@ struct SlideReorderTest : ui::Buildable
 					Rebuild();
 				}
 			};
+			ui::Push<ui::StackExpandLTRLayoutElement>();
 			ui::Textf("item %d%s", iids[i], dragging ? " [dragging]" : "");
+			ui::Pop();
 			ui::Pop();
 		}
 		ui::Pop();

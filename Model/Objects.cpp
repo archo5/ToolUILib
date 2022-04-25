@@ -406,19 +406,19 @@ void UIObject::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContex
 		next->child->OnPaintSingleChild(next->next, ctx);
 }
 
-float UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return layouts::Stack()->CalcEstimatedWidth(this, containerSize, type);
+	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedWidth(this, containerSize, type));
 }
 
-float UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return layouts::Stack()->CalcEstimatedHeight(this, containerSize, type);
+	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedHeight(this, containerSize, type));
 }
 
-void UIObject::CalcLayout(const UIRect& inrect, LayoutState& state)
+void UIObject::CalcLayout(UIRect& rect)
 {
-	layouts::Stack()->OnLayout(this, inrect, state);
+	layouts::Stack()->OnLayout(this, rect);
 }
 
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -431,13 +431,11 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
 
-	float resW = CalcEstimatedWidth(containerSize, type);
-
-	Rangef s = { resW, FLT_MAX };
+	Rangef r = CalcEstimatedWidth(containerSize, type);
 
 	_cacheFrameWidth = g_curLayoutFrame;
-	_cacheValueWidth = s;
-	return s;
+	_cacheValueWidth = r;
+	return r;
 }
 
 Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -450,13 +448,11 @@ Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
 
-	float resH = CalcEstimatedHeight(containerSize, type);
-
-	Rangef s = { resH, FLT_MAX };
+	Rangef r = CalcEstimatedHeight(containerSize, type);
 
 	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = s;
-	return s;
+	_cacheValueHeight = r;
+	return r;
 }
 
 void UIObject::PerformLayout(const UIRect& rect)
@@ -484,10 +480,10 @@ void UIObject::OnLayout(const UIRect& inRect)
 		return;
 	}
 
-	LayoutState state = { inRect };
-	CalcLayout(inRect, state);
+	UIRect rect = inRect;
+	CalcLayout(rect);
 
-	_finalRect = state.finalContentRect;
+	_finalRect = rect;
 }
 
 UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
@@ -1085,9 +1081,9 @@ UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& dat
 	return _slots[data.data0++]._element;
 }
 
-void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state)
+void EdgeSliceLayoutElement::CalcLayout(UIRect& rect)
 {
-	auto subr = inrect;
+	auto subr = rect;
 	for (const auto& slot : _slots)
 	{
 		auto* ch = slot._element;
@@ -1122,7 +1118,6 @@ void EdgeSliceLayoutElement::CalcLayout(const UIRect& inrect, LayoutState& state
 			break;
 		}
 	}
-	state.finalContentRect = inrect;
 }
 
 void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)

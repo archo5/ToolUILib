@@ -27,24 +27,6 @@ enum class Presence : uint8_t
 	LayoutOnly,
 	None,
 };
-/*
-enum class Layout : uint8_t
-{
-	Undefined,
-	Inherit,
-
-	//None, // skipped when doing layout and painting
-	//Inline, // text-line formatting, can be split
-	InlineBlock, // text-line formatting, cannot be split
-	Stack, // parent-controlled single line stacking
-	StackExpand, // same as above but try to fill the space
-	EdgeSlice, // child-controlled multidirectional stacking at the edges of remaining space
-};
-*/
-struct LayoutState
-{
-	UIRect finalContentRect;
-};
 
 enum class EstSizeType
 {
@@ -56,7 +38,7 @@ struct ILayout
 {
 	virtual float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
 	virtual float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type) = 0;
-	virtual void OnLayout(UIObject* curObj, const UIRect& inrect, LayoutState& state) = 0;
+	virtual void OnLayout(UIObject* curObj, UIRect& inrect) = 0;
 };
 
 struct IPlacement
