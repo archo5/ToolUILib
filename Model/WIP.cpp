@@ -6,6 +6,9 @@
 
 namespace ui {
 
+extern uint32_t g_curLayoutFrame;
+
+
 void PaddingElement::OnReset()
 {
 	UIObjectSingleChild::OnReset();
@@ -50,6 +53,9 @@ StackLTRLayoutElement::Slot StackLTRLayoutElement::_slotTemplate;
 
 Rangef StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
+
 	float size = 0;
 	bool first = true;
 	for (auto& slot : _slots)
@@ -60,15 +66,26 @@ Rangef StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, Es
 			first = false;
 		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
 	}
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameWidth = g_curLayoutFrame;
+	_cacheValueWidth = r;
+	return r;
 }
 
 Rangef StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameHeight = g_curLayoutFrame;
+	_cacheValueHeight = r;
+	return r;
 }
 
 void StackLTRLayoutElement::OnLayout(const UIRect& rect)
@@ -93,18 +110,32 @@ StackTopDownLayoutElement::Slot StackTopDownLayoutElement::_slotTemplate;
 
 Rangef StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameWidth = g_curLayoutFrame;
+	_cacheValueWidth = r;
+	return r;
 }
 
 Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size += slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameHeight = g_curLayoutFrame;
+	_cacheValueHeight = r;
+	return r;
 }
 
 void StackTopDownLayoutElement::OnLayout(const UIRect& rect)
@@ -128,6 +159,10 @@ StackExpandLTRLayoutElement::Slot StackExpandLTRLayoutElement::_slotTemplate;
 
 Rangef StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
+
+	Rangef r;
 	if (type == EstSizeType::Expanding)
 	{
 		float size = 0;
@@ -135,18 +170,29 @@ Rangef StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSi
 			size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 		if (_slots.size() >= 2)
 			size += paddingBetweenElements * (_slots.size() - 1);
-		return Rangef::AtLeast(size);
+		r = Rangef::AtLeast(size);
 	}
 	else
-		return Rangef::AtLeast(containerSize.x);
+		r = Rangef::AtLeast(containerSize.x);
+
+	_cacheFrameWidth = g_curLayoutFrame;
+	_cacheValueWidth = r;
+	return r;
 }
 
 Rangef StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameHeight = g_curLayoutFrame;
+	_cacheValueHeight = r;
+	return r;
 }
 
 void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
@@ -212,17 +258,31 @@ WrapperLTRLayoutElement::Slot WrapperLTRLayoutElement::_slotTemplate;
 
 Rangef WrapperLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameWidth = g_curLayoutFrame;
+	_cacheValueWidth = r;
+	return r;
 }
 Rangef WrapperLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
+
 	float size = 0;
 	for (auto& slot : _slots)
 		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-	return Rangef::AtLeast(size);
+	Rangef r = Rangef::AtLeast(size);
+
+	_cacheFrameHeight = g_curLayoutFrame;
+	_cacheValueHeight = r;
+	return r;
 }
 void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 {
@@ -246,6 +306,9 @@ PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
 Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameWidth)
+		return _cacheValueWidth;
+
 	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
@@ -255,11 +318,17 @@ Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize
 			r = r.Intersect(cr);
 		}
 	}
+
+	_cacheFrameWidth = g_curLayoutFrame;
+	_cacheValueWidth = r;
 	return r;
 }
 
 Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (g_curLayoutFrame == _cacheFrameHeight)
+		return _cacheValueHeight;
+
 	Rangef r = Rangef::AtLeast(0);
 	for (auto& slot : _slots)
 	{
@@ -269,6 +338,9 @@ Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSiz
 			r = r.Intersect(cr);
 		}
 	}
+
+	_cacheFrameHeight = g_curLayoutFrame;
+	_cacheValueHeight = r;
 	return r;
 }
 

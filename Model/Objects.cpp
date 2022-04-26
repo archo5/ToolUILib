@@ -8,7 +8,6 @@
 
 namespace ui {
 
-extern uint32_t g_curLayoutFrame;
 extern FrameContents* g_curSystem;
 
 
@@ -420,28 +419,16 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 {
 	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
-	if (g_curLayoutFrame == _cacheFrameWidth)
-		return _cacheValueWidth;
 
-	Rangef r = CalcEstimatedWidth(containerSize, type);
-
-	_cacheFrameWidth = g_curLayoutFrame;
-	_cacheValueWidth = r;
-	return r;
+	return CalcEstimatedWidth(containerSize, type);
 }
 
 Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
-	if (g_curLayoutFrame == _cacheFrameHeight)
-		return _cacheValueHeight;
 
-	Rangef r = CalcEstimatedHeight(containerSize, type);
-
-	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = r;
-	return r;
+	return CalcEstimatedHeight(containerSize, type);
 }
 
 void UIObject::PerformLayout(const UIRect& rect)

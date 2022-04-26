@@ -39,6 +39,12 @@ struct LayoutElement : UIElement
 
 	std::vector<Slot> _slots;
 
+	// size cache
+	uint32_t _cacheFrameWidth = {};
+	uint32_t _cacheFrameHeight = {};
+	Rangef _cacheValueWidth = { 0, 0 };
+	Rangef _cacheValueHeight = { 0, 0 };
+
 	void OnReset() override
 	{
 		UIElement::OnReset();

@@ -436,12 +436,6 @@ struct UIObject : IPersistentObject
 
 	// final layout rectangle
 	UIRect _finalRect = {};
-
-	// size cache
-	uint32_t _cacheFrameWidth = {};
-	uint32_t _cacheFrameHeight = {};
-	Rangef _cacheValueWidth = { 0, 0 };
-	Rangef _cacheValueHeight = { 0, 0 };
 };
 
 struct UIObjectIterator
