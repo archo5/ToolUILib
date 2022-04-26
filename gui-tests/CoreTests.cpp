@@ -334,7 +334,7 @@ struct OpenCloseTest : ui::Buildable
 		int val;
 	};
 
-	struct EDLogger : ui::UIElement
+	struct EDLogger : ui::UIObjectNoChildren
 	{
 		void OnEnable() override
 		{
@@ -667,7 +667,7 @@ void Test_SubUI()
 
 struct HighElementCountTest : ui::Buildable
 {
-	struct DummyElement : ui::UIElement
+	struct DummyElement : ui::UIObjectNoChildren
 	{
 		void OnPaint(const ui::UIPaintContext& ctx) override
 		{

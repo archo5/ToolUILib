@@ -72,7 +72,7 @@ struct BuildManyElementsBenchmark : ui::Buildable
 	{
 		for (int i = 0; i < 100000; i++)
 		{
-			ui::Make<ui::BoxElement>();
+			ui::Make<ui::UIObjectNoChildren>();
 		}
 	}
 };

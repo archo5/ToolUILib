@@ -17,7 +17,7 @@ static StaticID<SeparatorLineStyle> sid_seplinestyle_hor("split_pane_separator_h
 static StaticID<SeparatorLineStyle> sid_seplinestyle_vert("split_pane_separator_vertical");
 void SplitPane::OnReset()
 {
-	UIElement::OnReset();
+	UIObject::OnReset();
 
 	vertSepStyle = *GetCurrentTheme()->GetStruct(sid_seplinestyle_vert);
 	horSepStyle = *GetCurrentTheme()->GetStruct(sid_seplinestyle_hor);
@@ -359,7 +359,7 @@ UIObject* SplitPane::FindLastChildContainingPos(Point2f pos) const
 
 void SplitPane::_AttachToFrameContents(FrameContents* owner)
 {
-	UIElement::_AttachToFrameContents(owner);
+	UIObject::_AttachToFrameContents(owner);
 
 	for (auto* ch : _children)
 		ch->_AttachToFrameContents(owner);
@@ -370,7 +370,7 @@ void SplitPane::_DetachFromFrameContents()
 	for (auto* ch : _children)
 		ch->_DetachFromFrameContents();
 
-	UIElement::_DetachFromFrameContents();
+	UIObject::_DetachFromFrameContents();
 }
 
 Rangef SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

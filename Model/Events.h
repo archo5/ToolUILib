@@ -17,7 +17,6 @@ struct Overlays;
 extern struct DataCategoryTag DCT_MouseMoved[1];
 
 struct UIObject;
-struct UIElement;
 struct UIContainer;
 struct EventSystem;
 

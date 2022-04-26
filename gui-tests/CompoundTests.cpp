@@ -979,9 +979,9 @@ struct DropdownTest : ui::Buildable
 			{
 				nullptr,
 				&typeid(ui::UIObject),
-				&typeid(ui::UIElement),
-				&typeid(ui::Buildable),
 				&typeid(ui::WrapperElement),
+				&typeid(ui::FillerElement),
+				&typeid(ui::Buildable),
 				&typeid(ui::TextElement),
 			};
 			for (size_t i = 0; i < count && i + from < sizeof(types) / sizeof(types[0]); i++)

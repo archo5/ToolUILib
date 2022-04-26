@@ -8,7 +8,7 @@ namespace ui {
 struct FrameContents;
 struct Dockable;
 
-struct DockingArea : UIElement
+struct DockingArea : UIObject
 {
 	void SetDefaultLayout();
 

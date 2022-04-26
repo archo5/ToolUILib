@@ -28,7 +28,7 @@ struct PaddingElement : UIObjectSingleChild
 
 
 template <class SlotT>
-struct LayoutElement : UIElement
+struct LayoutElement : UIObject
 {
 	using Slot = SlotT;
 
@@ -48,7 +48,7 @@ struct LayoutElement : UIElement
 
 	void OnReset() override
 	{
-		UIElement::OnReset();
+		UIObject::OnReset();
 
 		_slots.clear();
 	}
@@ -129,7 +129,7 @@ struct LayoutElement : UIElement
 
 	void _AttachToFrameContents(FrameContents* owner) override
 	{
-		UIElement::_AttachToFrameContents(owner);
+		UIObject::_AttachToFrameContents(owner);
 
 		for (auto& slot : _slots)
 			slot._obj->_AttachToFrameContents(owner);
@@ -140,7 +140,7 @@ struct LayoutElement : UIElement
 		for (auto& slot : _slots)
 			slot._obj->_DetachFromFrameContents();
 
-		UIElement::_DetachFromFrameContents();
+		UIObject::_DetachFromFrameContents();
 	}
 };
 

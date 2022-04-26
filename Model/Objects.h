@@ -24,7 +24,6 @@ namespace ui {
 
 struct Event;
 struct UIObject; // any item
-struct UIElement; // physical item
 struct UIContainer;
 struct EventSystem;
 
@@ -492,10 +491,6 @@ struct UIObjectSingleChild : UIObject
 	void _DetachFromFrameContents() override;
 };
 
-struct UIElement : UIObject
-{
-};
-
 // TODO: slowly port to these
 struct WrapperElement : UIObjectSingleChild
 {
@@ -584,11 +579,7 @@ struct TextElement : UIObjectNoChildren
 	}
 };
 
-struct BoxElement : UIElement
-{
-};
-
-struct Placeholder : UIElement
+struct Placeholder : UIObject
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };

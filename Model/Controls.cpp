@@ -936,14 +936,14 @@ void ScrollArea::OnReset()
 
 void BackgroundBlocker::OnReset()
 {
-	UIElement::OnReset();
+	FillerElement::OnReset();
 
 	RegisterAsOverlay(199.f);
 }
 
 void BackgroundBlocker::OnEvent(Event& e)
 {
-	UIElement::OnEvent(e);
+	FillerElement::OnEvent(e);
 	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 		OnButton();
 	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
@@ -956,7 +956,7 @@ void BackgroundBlocker::OnEvent(Event& e)
 
 void BackgroundBlocker::OnLayout(const UIRect& rect)
 {
-	_finalRect = { 0, 0, system->eventSystem.width, system->eventSystem.height };
+	FillerElement::OnLayout({ 0, 0, system->eventSystem.width, system->eventSystem.height });
 }
 
 void BackgroundBlocker::OnButton()

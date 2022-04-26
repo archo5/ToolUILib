@@ -516,7 +516,7 @@ struct ScrollArea : FillerElement
 };
 
 
-struct BackgroundBlocker : UIElement
+struct BackgroundBlocker : FillerElement
 {
 	void OnReset() override;
 	void OnEvent(Event& e) override;

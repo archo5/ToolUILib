@@ -15,7 +15,7 @@ struct SeparatorLineStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct SplitPane : UIElement
+struct SplitPane : UIObject
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;

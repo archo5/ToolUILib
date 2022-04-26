@@ -795,7 +795,7 @@ void ColorPicker::Build()
 				Pop();
 				Pop();
 
-				Make<BoxElement>();
+				Make<UIObjectNoChildren>();
 
 				tmpl->DisableScaling();
 				Push<StackTopDownLayoutElement>();
