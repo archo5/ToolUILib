@@ -1,9 +1,8 @@
 
 #include "SequenceEditor.h"
 
+#include "../Model/Layout.h"
 #include "../Model/Menu.h"
-
-#include "../Model/WIP.h"
 
 
 namespace ui {

@@ -2,10 +2,7 @@
 #include "TreeEditor.h"
 
 #include "../Model/Menu.h"
-
-#include "../Model/WIP.h"
-
-#include <algorithm>
+#include "../Model/Layout.h"
 
 
 namespace ui {

@@ -1,8 +1,6 @@
 
 #include "../GUI.h"
 
-#include "../Model/WIP.h"
-
 
 struct Vec3
 {

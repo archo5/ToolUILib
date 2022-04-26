@@ -1,6 +1,6 @@
 
+#pragma once
 #include "Objects.h"
-#include <algorithm>
 
 
 namespace ui {

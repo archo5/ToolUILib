@@ -4,11 +4,10 @@
 #include "../Model/Controls.h"
 #include "../Model/Graphics.h"
 #include "../Model/ImmediateMode.h"
+#include "../Model/Layout.h"
 #include "../Model/Menu.h"
 #include "../Model/System.h"
 #include "../Model/Theme.h"
-
-#include "../Model/WIP.h"
 
 
 namespace ui {

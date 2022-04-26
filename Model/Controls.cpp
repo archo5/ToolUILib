@@ -1,12 +1,11 @@
 
 #include "Controls.h"
 
+#include "Layout.h"
+#include "Native.h"
 #include "Painting.h"
 #include "System.h"
-#include "Native.h"
 #include "Theme.h"
-
-#include "WIP.h"
 
 
 namespace ui {
