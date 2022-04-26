@@ -213,7 +213,6 @@ struct ProcGraphEditor : Buildable
 	void OnEvent(Event& e) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::Exact(containerSize.x); }
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::Exact(containerSize.y); }
-	void OnLayout(const UIRect& rect) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
 	void Init(IProcGraph* graph);

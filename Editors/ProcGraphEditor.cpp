@@ -300,11 +300,47 @@ void ProcGraphEditor_Node::OnBuildPreview()
 }
 
 
+struct ProcGraphLayoutElement_Slot
+{
+	UIObject* _obj = nullptr;
+};
+
+struct ProcGraphLayoutElement : LayoutElement<ProcGraphLayoutElement_Slot>
+{
+	ProcGraphEditor* PGE = nullptr;
+
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		return Rangef::Exact(containerSize.x);
+	}
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		return Rangef::Exact(containerSize.y);
+	}
+	void OnLayout(const UIRect& rect) override
+	{
+		auto rectSize = rect.GetSize();
+		for (auto& slot : _slots)
+		{
+			auto* N = static_cast<ProcGraphEditor_Node*>(slot._obj);
+			auto pos = PGE->_graph->GetNodePosition(N->_node) + PGE->viewOffset + rect.GetMin();
+			auto wr = N->CalcEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
+			auto hr = N->CalcEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
+			N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
+		}
+		_finalRect = rect;
+	}
+};
+ProcGraphLayoutElement_Slot ProcGraphLayoutElement::_slotTemplate;
+
+
 void ProcGraphEditor::Build()
 {
 	Subscribe(DCT_EditProcGraph, _graph);
 
+	Push<ProcGraphLayoutElement>().PGE = this;
 	OnBuildNodes();
+	Pop();
 }
 
 void ProcGraphEditor::OnReset()
@@ -339,20 +375,6 @@ void ProcGraphEditor::OnEvent(Event& e)
 	}
 }
 
-void ProcGraphEditor::OnLayout(const UIRect& rect)
-{
-	auto rectSize = rect.GetSize();
-	for (auto* ch = firstChild; ch; ch = ch->next)
-	{
-		auto* N = static_cast<ProcGraphEditor_Node*>(ch);
-		auto pos = _graph->GetNodePosition(N->_node) + viewOffset + rect.GetMin();
-		auto wr = N->CalcEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
-		auto hr = N->CalcEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
-		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
-	}
-	_finalRect = rect;
-}
-
 void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
 {
 	if (!drawCurrentLinksOnTop)
@@ -360,8 +382,7 @@ void ProcGraphEditor::OnPaint(const UIPaintContext& ctx)
 	if (!drawPendingLinksOnTop)
 		OnDrawPendingLinks();
 
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->Paint(ctx);
+	Buildable::OnPaint(ctx);
 
 	if (drawCurrentLinksOnTop)
 		OnDrawCurrentLinks();

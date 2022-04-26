@@ -97,6 +97,8 @@ struct UIContainer
 
 	void AddToBuildStack(Buildable* n)
 	{
+		if (!(n->flags & UIObject_IsInTree))
+			return;
 		UI_DEBUG_FLOW(printf("add %p to build stack\n", n));
 		if (n->_lastBuildFrameID != _lastBuildFrameID)
 			buildStack.Add(n);

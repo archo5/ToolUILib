@@ -23,6 +23,8 @@ struct DrumGenerator : ui::Buildable
 	}
 	void Build() override
 	{
+		ui::Push<ui::StackTopDownLayoutElement>();
+
 		if (ui::imm::Button("Play"))
 		{
 			Regenerate();
@@ -33,6 +35,8 @@ struct DrumGenerator : ui::Buildable
 		{
 			ui::imm::RadioButton(state, i, nullptr);
 		}
+
+		ui::Pop();
 	}
 	void Play()
 	{

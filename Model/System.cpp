@@ -170,7 +170,7 @@ void UIContainer::ProcessBuildStack()
 
 		if (objectStackSize > 1)
 		{
-			printf("WARNING: elements not popped: %d\n", objectStackSize - 1);
+			printf("WARNING: elements not popped: %d (after building %s)\n", objectStackSize - 1, typeid(*currentBuildable).name());
 			while (objectStackSize > 1)
 			{
 				Pop();

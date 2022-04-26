@@ -142,6 +142,17 @@ struct LayoutElement : UIObject
 
 		UIObject::_DetachFromFrameContents();
 	}
+
+	void _DetachFromTree() override
+	{
+		if (!(flags & UIObject_IsInTree))
+			return;
+
+		for (auto& slot : _slots)
+			slot._obj->_DetachFromTree();
+
+		UIObject::_DetachFromTree();
+	}
 };
 
 

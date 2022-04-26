@@ -638,7 +638,14 @@ void MarkedItemEditor::Build()
 		tbl.SetDataSource(&analysisData);
 		tbl.CalculateColumnWidths();
 	}
+	else
+	{
+		// something to take the space so that the last button isn't extended
+		ui::Make<ui::WrapperElement>();
+	}
 	ui::Pop();
+	ui::Pop();
+
 	ui::Pop();
 }
 

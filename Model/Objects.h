@@ -520,6 +520,7 @@ struct UIObjectSingleChild : UIObject
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;
+	void _DetachFromTree() override;
 };
 
 // TODO: slowly port to these

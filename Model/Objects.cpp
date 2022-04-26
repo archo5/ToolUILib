@@ -859,6 +859,17 @@ void UIObjectSingleChild::_DetachFromFrameContents()
 	UIObject::_DetachFromFrameContents();
 }
 
+void UIObjectSingleChild::_DetachFromTree()
+{
+	if (!(flags & UIObject_IsInTree))
+		return;
+
+	if (_child)
+		_child->_DetachFromTree();
+
+	UIObject::_DetachFromTree();
+}
+
 
 Rangef WrapperElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
@@ -1234,6 +1245,8 @@ void Buildable::OnLayout(const UIRect& inRect)
 
 void Buildable::Rebuild()
 {
+	if (!(flags & UIObject_IsInTree))
+		return;
 	system->container.AddToBuildStack(this);
 	GetNativeWindow()->InvalidateAll();
 }

@@ -164,6 +164,8 @@ struct TE_ImageEditorNode : Buildable
 	{
 		Subscribe(DCT_ChangeActiveImage);
 
+		Push<StackTopDownLayoutElement>();
+
 		Push<StackLTRLayoutElement>();
 		{
 			MakeWithText<LabelFrame>("Images");
@@ -184,6 +186,8 @@ struct TE_ImageEditorNode : Buildable
 		{
 			EditImage(static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
 		};
+
+		Pop();
 	}
 
 	void EditImage(TE_Image* img, SequenceEditor* se, size_t idx, void* ptr)
@@ -432,7 +436,7 @@ struct ThemeEditorMainWindow : NativeMainWindow
 		auto& ten = Make<TE_ThemeEditorNode>();
 		ten.theme = &theme;
 
-		Make<DefaultOverlayBuilder>();
+		//Make<DefaultOverlayBuilder>(); // TODO: make compatible with single child situations
 	}
 
 	TE_Theme theme;
