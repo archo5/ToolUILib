@@ -16,9 +16,6 @@
     <ClCompile Include="Model\System.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="Model\Layout.cpp">
-      <Filter>Model</Filter>
-    </ClCompile>
     <ClCompile Include="Model\Native.cpp">
       <Filter>Model</Filter>
     </ClCompile>
@@ -121,6 +118,9 @@
     <ClCompile Include="Elements\SplitPane.cpp">
       <Filter>Elements</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Painting.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -139,9 +139,6 @@
       <Filter>Model</Filter>
     </ClInclude>
     <ClInclude Include="Model\System.h">
-      <Filter>Model</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\Layout.h">
       <Filter>Model</Filter>
     </ClInclude>
     <ClInclude Include="Core\String.h">
@@ -276,6 +273,9 @@
     </ClInclude>
     <ClInclude Include="Elements\SplitPane.h">
       <Filter>Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Painting.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,12 +1,9 @@
 
-#include "Layout.h"
-#include "Theme.h"
+#include "Painting.h"
 
+#include "Theme.h"
 #include "Native.h"
 #include "Objects.h"
-
-#include <vector>
-#include <algorithm>
 
 
 namespace ui {
