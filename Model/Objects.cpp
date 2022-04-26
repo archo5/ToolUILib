@@ -821,21 +821,21 @@ void UIObjectSingleChild::_DetachFromFrameContents()
 
 Rangef WrapperElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	if (!_child)
+	if (!_child || !_child->_NeedsLayout())
 		return Rangef::AtLeast(0);
 	return _child->CalcEstimatedWidth(containerSize, type);
 }
 
 Rangef WrapperElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (!_child)
+	if (!_child || !_child->_NeedsLayout())
 		return Rangef::AtLeast(0);
 	return _child->CalcEstimatedHeight(containerSize, type);
 }
 
 void WrapperElement::OnLayout(const UIRect& rect)
 {
-	if (_child)
+	if (_child && _child->_NeedsLayout())
 	{
 		_child->PerformLayout(rect);
 		_finalRect = _child->GetFinalRect();

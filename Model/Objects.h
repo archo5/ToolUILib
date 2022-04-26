@@ -521,7 +521,7 @@ struct FillerElement : UIObjectSingleChild
 	}
 	void OnLayout(const UIRect& rect) override
 	{
-		if (_child)
+		if (_child && _child->_NeedsLayout())
 			_child->PerformLayout(rect);
 		_finalRect = rect;
 	}

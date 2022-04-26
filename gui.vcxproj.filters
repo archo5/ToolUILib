@@ -112,6 +112,9 @@
     <ClCompile Include="Model\WIP.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Elements\TabbedPanel.cpp">
+      <Filter>Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -259,6 +262,9 @@
     <ClInclude Include="Model\WIP.h">
       <Filter>Model</Filter>
     </ClInclude>
+    <ClInclude Include="Elements\TabbedPanel.h">
+      <Filter>Elements</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -278,6 +284,9 @@
     </Filter>
     <Filter Include="Render\D3D11Shaders">
       <UniqueIdentifier>{b87fa685-edd0-4618-a02f-44930dc3fd25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Elements">
+      <UniqueIdentifier>{baa39f61-fc91-4fdf-899f-7741eeb43f96}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
