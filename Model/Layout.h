@@ -19,8 +19,6 @@ struct UIObject;
 
 using UIRect = AABB2f;
 
-extern int g_numStyleBlocks;
-
 enum class Presence : uint8_t
 {
 	Visible, // most common = 0
@@ -48,29 +46,6 @@ struct IPlacement
 	bool fullScreenRelative = false;
 };
 
-struct PointAnchoredPlacement : IPlacement
-{
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
-
-	void SetAnchorAndPivot(Point2f p)
-	{
-		anchor = p;
-		pivot = p;
-	}
-
-	Point2f anchor = { 0, 0 };
-	Point2f pivot = { 0, 0 };
-	Point2f bias = { 0, 0 };
-};
-
-struct RectAnchoredPlacement : IPlacement
-{
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
-
-	UIRect anchor = { 0, 0, 1, 1 };
-	UIRect bias = { 0, 0, 0, 0 };
-};
-
 namespace layouts {
 
 ILayout* Stack();
@@ -83,14 +58,6 @@ enum class StackingDirection : uint8_t
 
 	LeftToRight,
 	TopDown,
-};
-
-enum class Edge : uint8_t
-{
-	Left,
-	Top,
-	Right,
-	Bottom,
 };
 
 enum class HAlign : uint8_t

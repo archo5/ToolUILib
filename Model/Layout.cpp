@@ -11,30 +11,6 @@
 
 namespace ui {
 
-void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
-{
-	UIRect parentRect = outRect;
-	Size2f contSize = parentRect.GetSize();
-
-	float w = curObj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).min;
-	float h = curObj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
-
-	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
-	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
-	outRect = { x, y, x + w, y + h };
-}
-
-void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
-{
-	UIRect parentRect = outRect;
-
-	outRect.x0 = lerp(parentRect.x0, parentRect.x1, anchor.x0) + bias.x0;
-	outRect.x1 = lerp(parentRect.x0, parentRect.x1, anchor.x1) + bias.x1;
-	outRect.y0 = lerp(parentRect.y0, parentRect.y1, anchor.y0) + bias.y0;
-	outRect.y1 = lerp(parentRect.y0, parentRect.y1, anchor.y1) + bias.y1;
-}
-
-
 namespace layouts {
 
 struct StackLayout : ILayout
@@ -177,9 +153,6 @@ const char* EnumKeys_FontStyle[] =
 	"italic",
 	nullptr,
 };
-
-
-int g_numStyleBlocks;
 
 
 struct CoordBufferRW : IBufferRW

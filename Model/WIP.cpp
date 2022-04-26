@@ -352,6 +352,144 @@ void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 }
 
 
+EdgeSliceLayoutElement::Slot EdgeSliceLayoutElement::_slotTemplate;
+
+void EdgeSliceLayoutElement::OnReset()
+{
+	UIElement::OnReset();
+
+	_slots.clear();
+}
+
+void EdgeSliceLayoutElement::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = 0;
+}
+
+UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	if (data.data0 >= _slots.size())
+		return nullptr;
+	return _slots[data.data0++]._element;
+}
+
+void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
+{
+	auto subr = rect;
+	for (const auto& slot : _slots)
+	{
+		auto* ch = slot._element;
+		auto e = slot.edge;
+		Rangef r(DoNotInitialize{});
+		float d;
+		switch (e)
+		{
+		case Edge::Top:
+			r = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding);
+			if (&slot == &_slots.back())
+				d = r.Clamp(subr.GetHeight());
+			else
+				d = r.min;
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d });
+			subr.y0 += d;
+			break;
+		case Edge::Bottom:
+			d = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 });
+			subr.y1 -= d;
+			break;
+		case Edge::Left:
+			d = ch->CalcEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 });
+			subr.x0 += d;
+			break;
+		case Edge::Right:
+			d = ch->CalcEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
+			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 });
+			subr.x1 -= d;
+			break;
+		}
+	}
+	_finalRect = rect;
+}
+
+void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i]._element == ch)
+		{
+			_slots.erase(_slots.begin() + i);
+			break;
+		}
+	}
+}
+
+void EdgeSliceLayoutElement::DetachChildren(bool recursive)
+{
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		auto* ch = _slots[i]._element;
+
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
+		ch->parent = nullptr;
+	}
+	_slots.clear();
+}
+
+void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
+{
+	obj->DetachParent();
+
+	obj->parent = this;
+	Slot slot = _slotTemplate;
+	slot._element = obj;
+	_slots.push_back(slot);
+
+	if (system)
+		obj->_AttachToFrameContents(system);
+}
+
+void EdgeSliceLayoutElement::OnPaint(const UIPaintContext& ctx)
+{
+	for (auto& slot : _slots)
+		slot._element->Paint(ctx);
+}
+
+UIObject* EdgeSliceLayoutElement::FindLastChildContainingPos(Point2f pos) const
+{
+	for (size_t i = _slots.size(); i > 0; )
+	{
+		i--;
+		if (_slots[i]._element->Contains(pos))
+			return _slots[i]._element;
+	}
+	return nullptr;
+}
+
+void EdgeSliceLayoutElement::_AttachToFrameContents(FrameContents* owner)
+{
+	UIElement::_AttachToFrameContents(owner);
+
+	for (auto& slot : _slots)
+		slot._element->_AttachToFrameContents(owner);
+}
+
+void EdgeSliceLayoutElement::_DetachFromFrameContents()
+{
+	for (auto& slot : _slots)
+		slot._element->_DetachFromFrameContents();
+
+	UIElement::_DetachFromFrameContents();
+}
+
+
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
 Rangef PlacementLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -423,6 +561,30 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect)
 		slot._obj->PerformLayout(r);
 	}
 	_finalRect = contRect;
+}
+
+
+void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
+{
+	UIRect parentRect = outRect;
+	Size2f contSize = parentRect.GetSize();
+
+	float w = curObj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).min;
+	float h = curObj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
+
+	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
+	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
+	outRect = { x, y, x + w, y + h };
+}
+
+void RectAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
+{
+	UIRect parentRect = outRect;
+
+	outRect.x0 = lerp(parentRect.x0, parentRect.x1, anchor.x0) + bias.x0;
+	outRect.x1 = lerp(parentRect.x0, parentRect.x1, anchor.x1) + bias.x1;
+	outRect.y0 = lerp(parentRect.y0, parentRect.y1, anchor.y0) + bias.y0;
+	outRect.y1 = lerp(parentRect.y0, parentRect.y1, anchor.y1) + bias.y1;
 }
 
 } // ui

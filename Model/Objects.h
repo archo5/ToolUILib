@@ -617,42 +617,6 @@ struct ChildScaleOffsetElement : WrapperElement
 	void OnLayout(const UIRect& rect) override;
 };
 
-struct EdgeSliceLayoutElement : UIElement
-{
-	struct Slot
-	{
-		UIObject* _element = nullptr;
-		Edge edge = Edge::Top;
-	};
-	static TempEditable<Slot> GetSlotTemplate()
-	{
-		return { &_slotTemplate };
-	}
-	static Slot _slotTemplate;
-
-	std::vector<Slot> _slots;
-
-	void SlotIterator_Init(UIObjectIteratorData& data) override;
-	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::AtLeast(containerSize.x);
-	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::AtLeast(containerSize.y);
-	}
-	void OnLayout(const UIRect& rect) override;
-	void OnReset() override;
-	void RemoveChildImpl(UIObject* ch) override;
-	void DetachChildren(bool recursive) override;
-	void CustomAppendChild(UIObject* obj) override;
-	void OnPaint(const UIPaintContext& ctx) override;
-	UIObject* FindLastChildContainingPos(Point2f pos) const override;
-	void _AttachToFrameContents(FrameContents* owner) override;
-	void _DetachFromFrameContents() override;
-};
-
 struct Subscription;
 struct DataCategoryTag {};
 

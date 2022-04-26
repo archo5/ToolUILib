@@ -26,6 +26,7 @@ struct PaddingElement : UIObjectSingleChild
 	PaddingElement& SetPaddingBottom(float p) { padding.y1 = p; return *this; }
 };
 
+
 template <class SlotT>
 struct LayoutElement : UIElement
 {
@@ -143,6 +144,7 @@ struct LayoutElement : UIElement
 	}
 };
 
+
 namespace _ {
 struct StackLTRLayoutElement_Slot
 {
@@ -161,6 +163,7 @@ struct StackLTRLayoutElement : LayoutElement<_::StackLTRLayoutElement_Slot>
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
+
 namespace _ {
 struct StackTopDownLayoutElement_Slot
 {
@@ -174,6 +177,7 @@ struct StackTopDownLayoutElement : LayoutElement<_::StackTopDownLayoutElement_Sl
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
+
 
 namespace _ {
 struct StackExpandLTRLayoutElement_Slot
@@ -200,6 +204,7 @@ struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElemen
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
+
 namespace _ {
 struct WrapperLTRLayoutElement_Slot
 {
@@ -213,6 +218,52 @@ struct WrapperLTRLayoutElement : LayoutElement<_::WrapperLTRLayoutElement_Slot>
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
+
+
+enum class Edge : uint8_t
+{
+	Left,
+	Top,
+	Right,
+	Bottom,
+};
+
+struct EdgeSliceLayoutElement : UIElement
+{
+	struct Slot
+	{
+		UIObject* _element = nullptr;
+		Edge edge = Edge::Top;
+	};
+	static TempEditable<Slot> GetSlotTemplate()
+	{
+		return { &_slotTemplate };
+	}
+	static Slot _slotTemplate;
+
+	std::vector<Slot> _slots;
+
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		return Rangef::AtLeast(containerSize.x);
+	}
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		return Rangef::AtLeast(containerSize.y);
+	}
+	void OnLayout(const UIRect& rect) override;
+	void OnReset() override;
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive) override;
+	void CustomAppendChild(UIObject* obj) override;
+	void OnPaint(const UIPaintContext& ctx) override;
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+};
+
 
 namespace _ {
 struct PlacementLayoutElement_Slot
@@ -228,6 +279,29 @@ struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
+};
+
+struct PointAnchoredPlacement : IPlacement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
+
+	void SetAnchorAndPivot(Point2f p)
+	{
+		anchor = p;
+		pivot = p;
+	}
+
+	Point2f anchor = { 0, 0 };
+	Point2f pivot = { 0, 0 };
+	Point2f bias = { 0, 0 };
+};
+
+struct RectAnchoredPlacement : IPlacement
+{
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
+
+	UIRect anchor = { 0, 0, 1, 1 };
+	UIRect bias = { 0, 0, 0, 0 };
 };
 
 } // ui
