@@ -16,7 +16,6 @@ struct The3DViewTest : ui::Buildable
 	};
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
@@ -174,7 +173,6 @@ struct GizmoTest : ui::Buildable
 	};
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();
@@ -345,7 +343,6 @@ struct QuaternionTest : ui::Buildable
 	};
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		{
 			auto& v = ui::Push<ui::View3D>();

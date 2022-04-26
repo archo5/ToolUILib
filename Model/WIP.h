@@ -150,7 +150,7 @@ struct StackLTRLayoutElement : LayoutElement<_::StackLTRLayoutElement_Slot>
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(UIRect& rect) override;
+	void OnLayout(const UIRect& rect) override;
 
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
@@ -166,7 +166,7 @@ struct StackTopDownLayoutElement : LayoutElement<_::StackTopDownLayoutElement_Sl
 {
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(UIRect& rect) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 namespace _ {
@@ -189,7 +189,7 @@ struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElemen
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void CalcLayout(UIRect& rect) override;
+	void OnLayout(const UIRect& rect) override;
 
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
@@ -210,7 +210,7 @@ struct WrapperLTRLayoutElement : UIElement
 			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 		return Rangef::AtLeast(size);
 	}
-	void CalcLayout(UIRect& rect) override
+	void OnLayout(const UIRect& rect) override
 	{
 		auto contSize = rect.GetSize();
 		float p = rect.x0;
@@ -224,6 +224,7 @@ struct WrapperLTRLayoutElement : UIElement
 			p += w;
 			maxH = max(maxH, h);
 		}
+		_finalRect = rect;
 	}
 };
 

@@ -341,12 +341,12 @@ struct UIObject : IPersistentObject
 
 	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	virtual void CalcLayout(UIRect& rect);
 	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	void PerformLayout(const UIRect& rect);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect);
+	virtual void RedoLayout();
 
 	virtual bool Contains(Point2f pos) const
 	{
@@ -420,12 +420,7 @@ struct UIObject : IPersistentObject
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 
-	void dump() { printf("    [=%p ]=%p ^=%p <=%p >=%p\n", firstChild, lastChild, parent, prev, next); fflush(stdout); }
-
 	uint32_t flags = UIObject_DB__Defaults; // @ 16
-#define WRAPPER 1
-#define FILLER 2
-	uint8_t TEMP_LAYOUT_MODE = 0;
 	uint32_t _pendingDeactivationSetPos = UINT32_MAX; // @ 20
 	ui::FrameContents* system = nullptr; // @ 24
 	UIObject* parent = nullptr; // @ 32
@@ -441,9 +436,6 @@ struct UIObject : IPersistentObject
 
 	// final layout rectangle
 	UIRect _finalRect = {};
-
-	// previous layout input argument cache
-	UIRect lastLayoutInputRect = {};
 
 	// size cache
 	uint32_t _cacheFrameWidth = {};
@@ -490,6 +482,8 @@ struct UIObjectNoChildren : UIObject
 	void CustomAppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override {}
 	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
+
+	void OnLayout(const UIRect& rect) override { _finalRect = rect; }
 };
 
 struct UIObjectSingleChild : UIObject
@@ -595,7 +589,6 @@ struct TextElement : UIObjectNoChildren
 		auto* fs = _FindClosestParentFontSettings();
 		return Rangef::Exact(fs->size);
 	}
-	void CalcLayout(UIRect& rect) override {}
 
 	TextElement& SetText(StringView t)
 	{
@@ -657,7 +650,7 @@ struct EdgeSliceLayoutElement : UIElement
 	{
 		return Rangef::AtLeast(containerSize.y);
 	}
-	void CalcLayout(UIRect& rect) override;
+	void OnLayout(const UIRect& rect) override;
 	void OnReset() override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
@@ -685,6 +678,10 @@ struct Buildable : UIObject
 	typedef char IsBuildable[2];
 
 	void PO_ResetConfiguration() override;
+
+	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect) override;
 
 	virtual void Build() = 0;
 	void Rebuild();
@@ -717,6 +714,9 @@ struct Buildable : UIObject
 	Subscription* _lastSub = nullptr;
 	uint64_t _lastBuildFrameID = 0;
 	std::vector<std::function<void()>> _deferredDestructors;
+#define WRAPPER 1
+#define FILLER 2
+	uint8_t TEMP_LAYOUT_MODE = 0;
 };
 
 

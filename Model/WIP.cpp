@@ -71,7 +71,7 @@ Rangef StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, E
 	return Rangef::AtLeast(size);
 }
 
-void StackLTRLayoutElement::CalcLayout(UIRect& rect)
+void StackLTRLayoutElement::OnLayout(const UIRect& rect)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
@@ -85,6 +85,7 @@ void StackLTRLayoutElement::CalcLayout(UIRect& rect)
 		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h });
 		p += w + paddingBetweenElements;
 	}
+	_finalRect = rect;
 }
 
 
@@ -106,7 +107,7 @@ Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSiz
 	return Rangef::AtLeast(size);
 }
 
-void StackTopDownLayoutElement::CalcLayout(UIRect& rect)
+void StackTopDownLayoutElement::OnLayout(const UIRect& rect)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
@@ -119,6 +120,7 @@ void StackTopDownLayoutElement::CalcLayout(UIRect& rect)
 		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h });
 		p += h;
 	}
+	_finalRect = rect;
 }
 
 
@@ -147,7 +149,7 @@ Rangef StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerS
 	return Rangef::AtLeast(size);
 }
 
-void StackExpandLTRLayoutElement::CalcLayout(UIRect& rect)
+void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
 {
 	float p = rect.x0;
 	float sum = 0, frsum = 0;
@@ -202,6 +204,7 @@ void StackExpandLTRLayoutElement::CalcLayout(UIRect& rect)
 		item.ch->PerformLayout({ p, rect.y0, p + item.w, rect.y1 });
 		p += item.w + paddingBetweenElements;
 	}
+	_finalRect = rect;
 }
 
 

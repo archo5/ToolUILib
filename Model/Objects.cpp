@@ -416,16 +416,8 @@ Rangef UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType ty
 	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedHeight(this, containerSize, type));
 }
 
-void UIObject::CalcLayout(UIRect& rect)
-{
-	layouts::Stack()->OnLayout(this, rect);
-}
-
 Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
-
 	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameWidth)
@@ -440,9 +432,6 @@ Rangef UIObject::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType 
 
 Rangef UIObject::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
-
 	if (!_NeedsLayout())
 		return Rangef::AtLeast(0);
 	if (g_curLayoutFrame == _cacheFrameHeight)
@@ -466,24 +455,15 @@ void UIObject::PerformLayout(const UIRect& rect)
 
 void UIObject::OnLayout(const UIRect& inRect)
 {
-	lastLayoutInputRect = inRect;
-
-	if (TEMP_LAYOUT_MODE)
-	{
-		_finalRect = inRect;
-		if (firstChild)
-		{
-			firstChild->PerformLayout(inRect);
-			if (TEMP_LAYOUT_MODE == WRAPPER)
-				_finalRect = firstChild->GetFinalRect();
-		}
-		return;
-	}
-
 	UIRect rect = inRect;
-	CalcLayout(rect);
-
+	layouts::Stack()->OnLayout(this, rect);
 	_finalRect = rect;
+}
+
+void UIObject::RedoLayout()
+{
+	UIRect r = _finalRect;
+	PerformLayout(r);
 }
 
 UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
@@ -1081,7 +1061,7 @@ UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& dat
 	return _slots[data.data0++]._element;
 }
 
-void EdgeSliceLayoutElement::CalcLayout(UIRect& rect)
+void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
 {
 	auto subr = rect;
 	for (const auto& slot : _slots)
@@ -1118,6 +1098,7 @@ void EdgeSliceLayoutElement::CalcLayout(UIRect& rect)
 			break;
 		}
 	}
+	_finalRect = rect;
 }
 
 void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)
@@ -1342,6 +1323,39 @@ void Buildable::PO_ResetConfiguration()
 	UIObject::PO_ResetConfiguration();
 
 	std::swap(_deferredDestructors, ddList);
+}
+
+Rangef Buildable::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	if (TEMP_LAYOUT_MODE)
+		return firstChild ? firstChild->GetFullEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
+
+	return UIObject::GetFullEstimatedWidth(containerSize, type);
+}
+
+Rangef Buildable::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	if (TEMP_LAYOUT_MODE)
+		return firstChild ? firstChild->GetFullEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
+
+	return UIObject::GetFullEstimatedHeight(containerSize, type);
+}
+
+void Buildable::OnLayout(const UIRect& inRect)
+{
+	if (TEMP_LAYOUT_MODE)
+	{
+		_finalRect = inRect;
+		if (firstChild)
+		{
+			firstChild->PerformLayout(inRect);
+			if (TEMP_LAYOUT_MODE == WRAPPER)
+				_finalRect = firstChild->GetFinalRect();
+		}
+		return;
+	}
+
+	UIObject::OnLayout(inRect);
 }
 
 void Buildable::Rebuild()

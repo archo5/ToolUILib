@@ -229,8 +229,7 @@ void UIContainer::ProcessLayoutStack()
 	{
 		// TODO how to restart layout?
 		printf("relayout %s @ %p\n", typeid(*obj).name(), obj);
-		obj->OnLayout(obj->lastLayoutInputRect);
-		obj->OnLayoutChanged();
+		obj->RedoLayout();
 	}
 	layoutStack.Clear();
 }
