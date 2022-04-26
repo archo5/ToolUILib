@@ -194,38 +194,18 @@ struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElemen
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
-struct WrapperLTRLayoutElement : UIElement
+namespace _ {
+struct WrapperLTRLayoutElement_Slot
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
-		return Rangef::AtLeast(size);
-	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		float size = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-			size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
-		return Rangef::AtLeast(size);
-	}
-	void OnLayout(const UIRect& rect) override
-	{
-		auto contSize = rect.GetSize();
-		float p = rect.x0;
-		float y0 = rect.y0;
-		float maxH = 0;
-		for (auto* ch = firstChild; ch; ch = ch->next)
-		{
-			float w = ch->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
-			float h = ch->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
-			ch->PerformLayout({ p, y0, p + w, y0 + h });
-			p += w;
-			maxH = max(maxH, h);
-		}
-		_finalRect = rect;
-	}
+	UIObject* _obj = nullptr;
+};
+} // _
+
+struct WrapperLTRLayoutElement : LayoutElement<_::WrapperLTRLayoutElement_Slot>
+{
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 namespace _ {

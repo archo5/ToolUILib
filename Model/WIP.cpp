@@ -208,6 +208,40 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
 }
 
 
+WrapperLTRLayoutElement::Slot WrapperLTRLayoutElement::_slotTemplate;
+
+Rangef WrapperLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+	return Rangef::AtLeast(size);
+}
+Rangef WrapperLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	float size = 0;
+	for (auto& slot : _slots)
+		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+	return Rangef::AtLeast(size);
+}
+void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
+{
+	auto contSize = rect.GetSize();
+	float p = rect.x0;
+	float y0 = rect.y0;
+	float maxH = 0;
+	for (auto& slot : _slots)
+	{
+		float w = slot._obj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
+		float h = slot._obj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
+		slot._obj->PerformLayout({ p, y0, p + w, y0 + h });
+		p += w;
+		maxH = max(maxH, h);
+	}
+	_finalRect = rect;
+}
+
+
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
 Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
