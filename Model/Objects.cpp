@@ -747,6 +747,7 @@ void UIObjectLegacyChildren::CustomAppendChild(UIObject* obj)
 
 	if (lastChild)
 	{
+		printf("\nWARNING: appending more than one child!\nparent: %p (%s)\nchild: %p (%s)\n\n", this, typeid(*this).name(), obj, typeid(*obj).name());
 		obj->prev = lastChild;
 		obj->next = nullptr;
 		lastChild->next = obj;

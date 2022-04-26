@@ -208,6 +208,8 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::LabeledProperty::Begin("Expression:");
 
 		ui::Push<ui::StackTopDownLayoutElement>();
@@ -266,6 +268,8 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			ui::Text("- no expression -");
 
 		ui::LabeledProperty::End();
+
+		WPop();
 	}
 
 	std::vector<Variable> variables{ { "test", 5 } };
@@ -530,6 +534,7 @@ struct ScriptTreeDemo : ui::Buildable
 			}
 			ui::Pop();
 		}
+		ui::Pop();
 		sp.SetDirection(false);
 		sp.SetSplits({ 0.5f });
 	}

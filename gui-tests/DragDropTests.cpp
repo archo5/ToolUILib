@@ -6,6 +6,8 @@ struct FileReceiverTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("File receiver");
 
 		ui::Push<ui::ListBoxFrame>().HandleEvent(ui::EventType::DragDrop) = [this](ui::Event& e)
@@ -30,6 +32,8 @@ struct FileReceiverTest : ui::Buildable
 		}
 		ui::Pop();
 		ui::Pop();
+
+		WPop();
 	}
 
 	std::vector<std::string> filePaths;
@@ -47,6 +51,8 @@ struct TransferCountablesTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		WText("Transfer countables");
 
 		WPush<ui::StackLTRLayoutElement>();
@@ -94,6 +100,8 @@ struct TransferCountablesTest : ui::Buildable
 			};
 		}
 		WPop();
+
+		WPop();
 	}
 
 	int slots[3] = { 5, 2, 0 };
@@ -111,6 +119,8 @@ struct SlideReorderTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Slide-reorder (instant)");
 
 		ui::Push<ui::ListBoxFrame>();
@@ -164,6 +174,8 @@ struct SlideReorderTest : ui::Buildable
 		}
 		ui::Pop();
 		ui::Pop();
+
+		WPop();
 	}
 
 	int iids[4] = { 1, 2, 3, 4 };
@@ -238,6 +250,8 @@ struct TreeNodeReorderTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Tree node reorder with preview");
 
 		ui::Push<ui::ListBoxFrame>();
@@ -245,6 +259,8 @@ struct TreeNodeReorderTest : ui::Buildable
 		BuildNodeList(nullptr, rootNodes, 0);
 		ui::Pop();
 		ui::Pop();
+
+		WPop();
 	}
 	void BuildNodeList(Node* cont, std::vector<Node*>& nodes, int level)
 	{
@@ -460,6 +476,8 @@ struct DragElementTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Drag element");
 
 		ui::Push<ui::SizeConstraintElement>().SetHeight(100);
@@ -499,6 +517,8 @@ struct DragElementTest : ui::Buildable
 		ui::Pop(); // PlacementLayoutElement
 		ui::Pop(); // ListBoxFrame
 		ui::Pop(); // SizeConstraintElement
+
+		WPop();
 	}
 
 	ui::PointAnchoredPlacement* drelPlacement = nullptr;
@@ -630,6 +650,8 @@ struct DragConnectTest : ui::Buildable
 	};
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Drag connect");
 
 		ui::Push<ui::SizeConstraintElement>().SetHeight(60);
@@ -654,6 +676,8 @@ struct DragConnectTest : ui::Buildable
 
 		ui::Pop();
 		ui::Pop();
+
+		WPop();
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
@@ -748,11 +772,10 @@ struct DragDropTest : ui::Buildable
 
 		WPop(); // StackTopDownLayoutElement
 		WPop(); // FrameElement
+		WMake<ui::DefaultOverlayBuilder>(); // TODO: hack, do we need these at all? maybe they should work differently?
 		WPop(); // StackTopDownLayoutElement
 
 		WPop(); // PlacementLayoutElement
-
-		WMake<ui::DefaultOverlayBuilder>();
 	}
 };
 void Test_DragDrop()

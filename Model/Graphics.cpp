@@ -627,6 +627,8 @@ void ColorPicker::Build()
 {
 	*this + RebuildOnChange();
 
+	Push<StackTopDownLayoutElement>();
+
 	Push<StackExpandLTRLayoutElement>();
 	{
 		// left side
@@ -855,6 +857,8 @@ void ColorPicker::Build()
 		}
 	}
 	Pop();
+	Pop();
+
 	Pop();
 }
 

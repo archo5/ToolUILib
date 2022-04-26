@@ -452,7 +452,7 @@ Size2f ProgressBar::GetReducedContainerSize(Size2f size)
 Rangef ProgressBar::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = style.padding.x0 + style.padding.x1;
-	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return Rangef::AtLeast(_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).min : 0).Add(pad);
 }
 
 Rangef ProgressBar::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)

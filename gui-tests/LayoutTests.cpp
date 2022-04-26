@@ -35,6 +35,8 @@ struct StackingLayoutVariationsTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		static int mode = 0;
 
 		static const char* layoutShortNames[] =
@@ -138,6 +140,8 @@ struct StackingLayoutVariationsTest : ui::Buildable
 			WPop();
 			WPop();
 		}
+
+		WPop();
 	}
 };
 void Test_StackingLayoutVariations()

@@ -531,6 +531,7 @@ struct ElementResetTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
 		if (first)
 		{
 			ui::Push<ui::SizeConstraintElement>().SetWidth(300);
@@ -557,6 +558,8 @@ struct ElementResetTest : ui::Buildable
 		auto& tb = ui::Make<ui::Textbox>();
 		tb + ui::AddEventHandler(ui::EventType::Change, [this, &tb](ui::Event&) { text[2] = tb.GetText(); });
 		tb.SetText(text[2]);
+
+		WPop();
 	}
 	bool first = true;
 	std::string text[3] = { "first", "second", "third" };
@@ -714,6 +717,8 @@ struct ZeroRebuildTest : ui::Buildable
 		else
 			puts("Should not happen!");
 
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::LabeledProperty::Begin("Show?");
 		cbShow = &ui::Push<ui::StateToggle>().InitEditable(show);
 		ui::Make<ui::CheckboxIcon>();
@@ -739,6 +744,8 @@ struct ZeroRebuildTest : ui::Buildable
 		ui::Pop();
 
 		OnShowChange();
+
+		WPop();
 	}
 
 	void OnShowChange()
@@ -787,6 +794,8 @@ struct GlobalEventsTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		for (auto& e = ui::Make<EventTest>();
 			e.name = "Mouse moved",
 			e.dct = ui::DCT_MouseMoved,
@@ -817,6 +826,8 @@ struct GlobalEventsTest : ui::Buildable
 		});
 		ui::MakeWithText<ui::Button>("Tooltip") + ui::AddTooltip("Tooltip");
 		ui::Make<ui::DefaultOverlayBuilder>();
+
+		WPop();
 	}
 };
 void Test_GlobalEvents()
@@ -905,6 +916,8 @@ struct DialogWindowTest : ui::Buildable
 		}
 		void OnBuild() override
 		{
+			WPush<ui::StackTopDownLayoutElement>();
+
 			ui::Text("This is a basic dialog window");
 			BasicRadioButton("option 0", choice, 0);
 			BasicRadioButton("option 1", choice, 1);
@@ -912,6 +925,8 @@ struct DialogWindowTest : ui::Buildable
 			{
 				OnClose();
 			};
+
+			WPop();
 		}
 		void OnClose() override
 		{

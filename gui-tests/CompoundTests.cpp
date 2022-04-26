@@ -277,6 +277,8 @@ struct SlidersTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		static float sldval0 = 0.63f;
 		ui::Make<ui::Slider>().Init(sldval0, { 0, 1 });
 
@@ -317,6 +319,8 @@ struct SlidersTest : ui::Buildable
 			ui::Make<ui::ColorCompPicker2D>().SetSize(120, 100).Init(hue, sat);
 		}
 		ui::LabeledProperty::End();
+
+		WPop();
 	}
 };
 void Test_Sliders()
@@ -430,6 +434,8 @@ struct TransformContainerTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		{
 			ui::LabeledProperty::Scope lp("X");
 			ui::MakeWithText<ui::Button>("-") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&) { x -= 10; Rebuild(); });
@@ -463,6 +469,8 @@ struct TransformContainerTest : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
+
+		WPop();
 	}
 };
 void Test_TransformContainer()
@@ -509,11 +517,15 @@ struct TextboxTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Single line / selection (read only)");
 		ui::Make<ui::Textbox>().SetText("test 3.14 abc").SetInputDisabled(true);
 
 		ui::Text("Single line / editing");
 		ui::Make<ui::Textbox>().SetText("test 3.14 abc");
+
+		WPop();
 	}
 };
 void Test_Textbox()
@@ -587,7 +599,7 @@ struct ColorBlockTest : ui::Buildable
 			partTA->bias.y0 = -4;
 			tmpl->placement = partTA;
 			tmpl->measure = false;
-			WPush<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveFrameStyle();
+			WMake<ui::ColorBlock>().SetColor(ui::Color4b::Black()).RemoveFrameStyle();
 
 			WPop();
 		}
@@ -619,6 +631,8 @@ struct ImageTest : ui::Buildable
 	}
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::ScaleMode scaleModes[3] = { ui::ScaleMode::Stretch, ui::ScaleMode::Fit, ui::ScaleMode::Fill };
 		const char* scaleModeNames[3] = { "Stretch", "Fit", "Fill" };
 
@@ -654,6 +668,8 @@ struct ImageTest : ui::Buildable
 		WPush<ui::SizeConstraintElement>().SetSize(50, 50);
 		WMake<ui::ImageElement>().SetImage(img);
 		WPop();
+
+		WPop();
 	}
 
 	ui::draw::ImageHandle img;
@@ -669,6 +685,8 @@ struct ColorPickerTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		auto& cp = WMake<ui::ColorPicker>().SetColor(colorPickerTestCol);
 		cp.HandleEvent(ui::EventType::Change) = [&cp](ui::Event& e)
 		{
@@ -676,6 +694,8 @@ struct ColorPickerTest : ui::Buildable
 		};
 
 		WMake<ui::DefaultOverlayBuilder>();
+
+		WPop(); // TODO: hack, needed for overlay builder above
 	}
 };
 void Test_ColorPicker()
@@ -689,6 +709,8 @@ struct IMGUITest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::LabeledProperty::Begin("All disabled");
 		ui::imm::EditBool(imguiTestDisableAll, nullptr);
 		ui::LabeledProperty::End();
@@ -818,6 +840,8 @@ struct IMGUITest : ui::Buildable
 		}
 
 		ui::imm::SetEnabled(oldEnabled);
+
+		WPop();
 	}
 
 	bool boolVal = true;
@@ -842,6 +866,8 @@ struct TooltipTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
 		ui::MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([]()
 		{
@@ -855,6 +881,8 @@ struct TooltipTest : ui::Buildable
 		});
 
 		ui::Make<ui::DefaultOverlayBuilder>();
+
+		WPop();
 	}
 };
 void Test_Tooltip()

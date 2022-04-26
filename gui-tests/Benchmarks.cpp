@@ -70,10 +70,12 @@ struct BuildManyElementsBenchmark : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
 		for (int i = 0; i < 100000; i++)
 		{
-			ui::Make<ui::WrapperElement>();
+			WMake<ui::WrapperElement>();
 		}
+		WPop();
 	}
 };
 void Benchmark_BuildManyElements()

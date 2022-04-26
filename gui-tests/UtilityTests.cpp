@@ -11,6 +11,8 @@ struct BasicEasingAnimTest : ui::Buildable
 	}
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::LabeledProperty::Begin("Control");
 		if (ui::imm::Button("Play"))
 		{
@@ -26,6 +28,8 @@ struct BasicEasingAnimTest : ui::Buildable
 		ui::LabeledProperty::End();
 		sliderVal = animPlayer.GetVariable("test");
 		ui::Make<ui::Slider>().Init(sliderVal, { 0, 123, 0 });
+
+		WPop();
 	}
 
 	ui::AnimPlayer animPlayer;
@@ -42,6 +46,8 @@ struct ThreadWorkerTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::MakeWithText<ui::Button>("Do it").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 		{
 			wq.Push([this]()
@@ -62,6 +68,8 @@ struct ThreadWorkerTest : ui::Buildable
 		};
 		auto& pb = ui::MakeWithText<ui::ProgressBar>(progress < 1 ? "Processing..." : "Done");
 		pb.progress = progress;
+
+		WPop();
 	}
 
 	float progress = 0;
@@ -145,6 +153,8 @@ struct OSCommunicationTest : ui::Buildable
 	}
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		{
 			ui::LabeledProperty::Scope ps("\bClipboard");
 			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
@@ -177,6 +187,8 @@ struct OSCommunicationTest : ui::Buildable
 
 		if (ui::imm::Button("Browse to file"))
 			ui::platform::BrowseToFile("gui-theme2.tga");
+
+		WPop();
 	}
 
 	ui::AnimationCallbackRequester animReq;
@@ -193,6 +205,8 @@ struct FileSelectionWindowTest : ui::Buildable
 {
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		ui::Text("Check for change");
 		ui::imm::PropText("Current working directory", ui::GetWorkingDirectory().c_str());
 
@@ -249,6 +263,8 @@ struct FileSelectionWindowTest : ui::Buildable
 
 		ui::Text("Outputs");
 		ui::imm::PropText("Last returned value", lastRet);
+
+		WPop();
 	}
 
 	void Show(bool save)

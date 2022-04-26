@@ -51,6 +51,8 @@ struct SequenceEditorsTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		WPush<ui::EdgeSliceLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
 
@@ -121,6 +123,7 @@ struct SequenceEditorsTest : ui::Buildable
 		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
+		WPop(); // TODO: hack for overlay builder above
 	}
 
 	void SeqEdit(ui::ISequence* seq, ui::ISelectionStorage* sel)
@@ -475,6 +478,8 @@ struct TreeEditorsTest : ui::Buildable
 
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		WPush<ui::EdgeSliceLayoutElement>();
 		{
 			WPush<ui::StackExpandLTRLayoutElement>();
@@ -545,6 +550,7 @@ struct TreeEditorsTest : ui::Buildable
 		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
+		WPop(); // TODO: hack for overlay builder above
 	}
 
 	void TreeEdit(ui::ITree* itree)
@@ -830,6 +836,8 @@ struct CurveEditorTest : ui::Buildable
 	}
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
+
 		WPush<ui::SizeConstraintElement>().SetHeight(50);
 		auto& ce = WMake<ui::CurveEditorElement>();
 		WPop();
@@ -850,6 +858,8 @@ struct CurveEditorTest : ui::Buildable
 		auto* cnrcv = ui::BuildAlloc<ui::CubicNormalizedRemapCurveView>();
 		cnrcv->curve = &cubicNormalizedRemapCurve;
 		ce2.curveView = cnrcv;
+
+		WPop();
 	}
 	ui::BasicLinear01Curve basicLinear01Curve;
 	ui::Sequence01Curve sequence01Curve;
