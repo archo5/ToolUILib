@@ -253,8 +253,8 @@ struct SizeTest : ui::Buildable
 	{
 		auto fn = [obj{ &obj }, w, h]()->std::string
 		{
-			auto ew = obj->GetFullEstimatedWidth({ 500, 500 }, ui::EstSizeType::Exact);
-			auto eh = obj->GetFullEstimatedHeight({ 500, 500 }, ui::EstSizeType::Exact);
+			auto ew = obj->CalcEstimatedWidth({ 500, 500 }, ui::EstSizeType::Exact);
+			auto eh = obj->CalcEstimatedHeight({ 500, 500 }, ui::EstSizeType::Exact);
 			if (ew.max < ew.min)
 				return "est.width: max < min";
 			if (eh.max < eh.min)

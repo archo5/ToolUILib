@@ -22,16 +22,16 @@ Size2f PaddingElement::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef PaddingElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef PaddingElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = padding.x0 + padding.x1;
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef PaddingElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef PaddingElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = padding.y0 + padding.y1;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void PaddingElement::OnLayout(const UIRect& rect)
@@ -64,7 +64,7 @@ Rangef StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, Es
 			size += paddingBetweenElements;
 		else
 			first = false;
-		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Exact).min;
+		size += slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Exact).min;
 	}
 	Rangef r = Rangef::AtLeast(size);
 
@@ -80,7 +80,7 @@ Rangef StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, E
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+		size = max(size, slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameHeight = g_curLayoutFrame;
@@ -96,8 +96,8 @@ void StackLTRLayoutElement::OnLayout(const UIRect& rect)
 	auto rectSize = rect.GetSize();
 	for (auto& slot : _slots)
 	{
-		float w = slot._obj->GetFullEstimatedWidth(rectSize, EstSizeType::Exact).min;
-		Rangef hr = slot._obj->GetFullEstimatedHeight(rectSize, EstSizeType::Expanding);
+		float w = slot._obj->CalcEstimatedWidth(rectSize, EstSizeType::Exact).min;
+		Rangef hr = slot._obj->CalcEstimatedHeight(rectSize, EstSizeType::Expanding);
 		float h = clamp(rect.y1 - rect.y0, hr.min, hr.max);
 		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h });
 		p += w + paddingBetweenElements;
@@ -115,7 +115,7 @@ Rangef StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size = max(size, slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
+		size = max(size, slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameWidth = g_curLayoutFrame;
@@ -130,7 +130,7 @@ Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSiz
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size += slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min;
+		size += slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Exact).min;
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameHeight = g_curLayoutFrame;
@@ -145,9 +145,9 @@ void StackTopDownLayoutElement::OnLayout(const UIRect& rect)
 	float p = rect.y0;
 	for (auto& slot : _slots)
 	{
-		Rangef wr = slot._obj->GetFullEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
+		Rangef wr = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
 		float w = clamp(rect.x1 - rect.x0, wr.min, wr.max);
-		float h = slot._obj->GetFullEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
+		float h = slot._obj->CalcEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
 		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h });
 		p += h;
 	}
@@ -162,12 +162,12 @@ Rangef StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSi
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
 
-	Rangef r;
+	Rangef r(DoNotInitialize{});
 	if (type == EstSizeType::Expanding)
 	{
 		float size = 0;
 		for (auto& slot : _slots)
-			size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+			size += slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 		if (_slots.size() >= 2)
 			size += paddingBetweenElements * (_slots.size() - 1);
 		r = Rangef::AtLeast(size);
@@ -187,7 +187,7 @@ Rangef StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerS
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Exact).min);
+		size = max(size, slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Exact).min);
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameHeight = g_curLayoutFrame;
@@ -211,7 +211,7 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
 	std::vector<int> sorted;
 	for (auto& slot : _slots)
 	{
-		auto s = slot._obj->GetFullEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
+		auto s = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
 		items.push_back({ slot._obj, s.min, s.max, s.min, slot.fraction });
 		sorted.push_back(sorted.size());
 		sum += s.min;
@@ -263,7 +263,7 @@ Rangef WrapperLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, 
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size += slot._obj->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+		size += slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameWidth = g_curLayoutFrame;
@@ -277,7 +277,7 @@ Rangef WrapperLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize,
 
 	float size = 0;
 	for (auto& slot : _slots)
-		size = max(size, slot._obj->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+		size = max(size, slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 	Rangef r = Rangef::AtLeast(size);
 
 	_cacheFrameHeight = g_curLayoutFrame;
@@ -292,8 +292,8 @@ void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 	float maxH = 0;
 	for (auto& slot : _slots)
 	{
-		float w = slot._obj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
-		float h = slot._obj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
+		float w = slot._obj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).min;
+		float h = slot._obj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
 		slot._obj->PerformLayout({ p, y0, p + w, y0 + h });
 		p += w;
 		maxH = max(maxH, h);
@@ -304,7 +304,7 @@ void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
-Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef PlacementLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (g_curLayoutFrame == _cacheFrameWidth)
 		return _cacheValueWidth;
@@ -314,7 +314,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._obj->GetFullEstimatedWidth(containerSize, type);
+			auto cr = slot._obj->CalcEstimatedWidth(containerSize, type);
 			r = r.Intersect(cr);
 		}
 	}
@@ -324,7 +324,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedWidth(const Size2f& containerSize
 	return r;
 }
 
-Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef PlacementLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
@@ -334,7 +334,7 @@ Rangef PlacementLayoutElement::GetFullEstimatedHeight(const Size2f& containerSiz
 	{
 		if (slot.measure)
 		{
-			auto cr = slot._obj->GetFullEstimatedHeight(containerSize, type);
+			auto cr = slot._obj->CalcEstimatedHeight(containerSize, type);
 			r = r.Intersect(cr);
 		}
 	}
@@ -624,23 +624,23 @@ Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef TabbedPanel::GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+Rangef TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = 
 		+ style.tabPanelPadding.x0
 		+ style.tabPanelPadding.x1
 		+ (showCloseButton ? style.tabInnerButtonMargin + style.tabCloseButtonSize.x : 0);
-	return (_child ? _child->GetFullEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-Rangef TabbedPanel::GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+Rangef TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad =
 		+ style.tabPanelPadding.y0
 		+ style.tabPanelPadding.y1
 		+ tabHeight
 		- style.tabButtonOverlap;
-	return (_child ? _child->GetFullEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void TabbedPanel::OnLayout(const UIRect& rect)
@@ -661,7 +661,7 @@ void TabbedPanel::OnLayout(const UIRect& rect)
 	{
 		if (tab.obj)
 		{
-			tab._contentWidth = tab.obj->GetFullEstimatedWidth(btnRectSize, EstSizeType::Exact).min;
+			tab._contentWidth = tab.obj->CalcEstimatedWidth(btnRectSize, EstSizeType::Exact).min;
 		}
 		else
 		{

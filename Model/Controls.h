@@ -71,8 +71,8 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 
 	const FontSettings* _GetFontSettings() const override;
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 
 	FrameElement& RemoveFrameStyle();
@@ -103,8 +103,8 @@ struct IconElement : UIObjectNoChildren
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 
 	IconElement& SetStyle(const StaticID<IconStyle>& id);
@@ -125,8 +125,8 @@ struct Button : FrameElement
 {
 	void OnReset() override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
 
@@ -319,8 +319,8 @@ struct ProgressBar : UIObjectSingleChild
 	void OnPaint(const UIPaintContext& ctx) override;
 
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
 
@@ -361,8 +361,8 @@ struct Slider : UIObjectNoChildren
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(style.minSize); }
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(style.minSize); }
 
 	double PosToQ(double x);
 	double QToValue(double q);
@@ -490,8 +490,8 @@ struct SplitPane : UIElement
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
 	SplitPane* SetDirection(bool vertical);
@@ -562,8 +562,8 @@ struct Textbox : FrameElement
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	bool IsLongSelection() const { return startCursor != endCursor; }
 	StringView GetSelectedText() const;
@@ -621,8 +621,8 @@ struct BackgroundBlocker : UIElement
 	void OnEvent(Event& e) override;
 
 	void OnLayout(const UIRect& rect) override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 
 	void OnButton();
 };

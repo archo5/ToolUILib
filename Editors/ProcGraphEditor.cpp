@@ -347,8 +347,8 @@ void ProcGraphEditor::OnLayout(const UIRect& rect)
 	{
 		auto* N = static_cast<ProcGraphEditor_Node*>(ch);
 		auto pos = _graph->GetNodePosition(N->_node) + viewOffset + rect.GetMin();
-		auto wr = N->GetFullEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
-		auto hr = N->GetFullEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
+		auto wr = N->CalcEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
+		auto hr = N->CalcEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
 		N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
 	}
 	_finalRect = rect;

@@ -341,8 +341,6 @@ struct UIObject : IPersistentObject
 
 	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
 	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
-	virtual Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	virtual Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	void PerformLayout(const UIRect& rect);
 	virtual void OnLayoutChanged() {}
 	virtual void OnLayout(const UIRect& rect);
@@ -506,18 +504,18 @@ struct UIElement : UIObject
 // TODO: slowly port to these
 struct WrapperElement : UIObjectSingleChild
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
 
 struct FillerElement : UIObjectSingleChild
 {
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{
 		return Rangef::Exact(containerSize.x);
 	}
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
 		return Rangef::Exact(containerSize.y);
 	}
@@ -535,8 +533,8 @@ struct SizeConstraintElement : WrapperElement
 	Rangef heightRange = Rangef::AtLeast(0);
 
 	void OnReset() override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = r; return *this; }
 	SizeConstraintElement& SetHeightRange(Rangef r) { heightRange = r; return *this; }
@@ -614,8 +612,8 @@ struct ChildScaleOffsetElement : WrapperElement
 	void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx) override;
 
 	Point2f LocalToChildPoint(Point2f pos) const override;
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 };
 
@@ -673,8 +671,8 @@ struct Buildable : UIObject
 
 	void PO_ResetConfiguration() override;
 
-	Rangef GetFullEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef GetFullEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
 
 	virtual void Build() = 0;

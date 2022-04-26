@@ -16,8 +16,8 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	UIRect parentRect = outRect;
 	Size2f contSize = parentRect.GetSize();
 
-	float w = curObj->GetFullEstimatedWidth(contSize, EstSizeType::Expanding).min;
-	float h = curObj->GetFullEstimatedHeight(contSize, EstSizeType::Expanding).min;
+	float w = curObj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).min;
+	float h = curObj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
 
 	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
 	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;
@@ -49,11 +49,11 @@ struct StackLayout : ILayout
 		{
 		case StackingDirection::TopDown:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = max(size, ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min);
+				size = max(size, ch->CalcEstimatedWidth(containerSize, EstSizeType::Expanding).min);
 			break;
 		case StackingDirection::LeftToRight:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedWidth(containerSize, EstSizeType::Expanding).min;
+				size += ch->CalcEstimatedWidth(containerSize, EstSizeType::Expanding).min;
 			break;
 		}
 		return size;
@@ -68,11 +68,11 @@ struct StackLayout : ILayout
 		{
 		case StackingDirection::TopDown:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size += ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min;
+				size += ch->CalcEstimatedHeight(containerSize, EstSizeType::Expanding).min;
 			break;
 		case StackingDirection::LeftToRight:
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
-				size = max(size, ch->GetFullEstimatedHeight(containerSize, EstSizeType::Expanding).min);
+				size = max(size, ch->CalcEstimatedHeight(containerSize, EstSizeType::Expanding).min);
 			break;
 		}
 		return size;
@@ -88,7 +88,7 @@ struct StackLayout : ILayout
 			float p = inrect.y0;
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float h = ch->GetFullEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
+				float h = ch->CalcEstimatedHeight(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ inrect.x0, p, inrect.x1, p + h });
 				p += h;
 			}
@@ -103,7 +103,7 @@ struct StackLayout : ILayout
 				int cc = 0;
 				for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 				{
-					tw += ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
+					tw += ch->CalcEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 					cc++;
 				}
 				float diff = inrect.GetWidth() - tw;
@@ -126,7 +126,7 @@ struct StackLayout : ILayout
 			p = floorf(p);
 			for (auto* ch = curObj->firstChild; ch; ch = ch->next)
 			{
-				float w = ch->GetFullEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
+				float w = ch->CalcEstimatedWidth(inrect.GetSize(), EstSizeType::Expanding).min;
 				ch->PerformLayout({ p, inrect.y0, p + w, inrect.y1 });
 				p += w + xw;
 			}
