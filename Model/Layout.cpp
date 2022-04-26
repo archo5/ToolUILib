@@ -1,7 +1,7 @@
 
 #include "Layout.h"
 
-#include "System.h" // TODO: only for FrameContents->EventSystem->size
+#include "System.h" // TODO: only for FrameContents->EventSystem->size & Push/Pop
 
 #include <algorithm> // TODO: only for std::sort
 
@@ -48,6 +48,16 @@ void PaddingElement::OnLayout(const UIRect& rect)
 	{
 		_finalRect = rect;
 	}
+}
+
+void AddContentPadding::OnBeforeContent() const
+{
+	Push<PaddingElement>().SetPadding(padding);
+}
+
+void AddContentPadding::OnAfterContent() const
+{
+	Pop();
 }
 
 

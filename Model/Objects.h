@@ -700,6 +700,8 @@ struct Modifier
 	virtual void OnAfterControlGroup() const {}
 	virtual void OnBeforeControl() const {}
 	virtual void OnAfterControl() const {}
+	virtual void OnBeforeContent() const {}
+	virtual void OnAfterContent() const {}
 	virtual void Apply(UIObject* obj) const {}
 };
 

@@ -76,7 +76,14 @@ bool Button(const char* text, ModInitList mods)
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
-	auto& btn = MakeWithText<ui::Button>(text);
+	auto& btn = Push<ui::Button>();
+	for (auto& mod : mods)
+		mod->OnBeforeContent();
+	Text(text);
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterContent();
+	Pop();
+
 	btn.flags |= UIObject_DB_IMEdit;
 	if (!GetEnabled())
 		btn.flags |= UIObject_IsDisabled;
@@ -441,9 +448,23 @@ bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConf
 void PropText(const char* label, const char* text, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
-	auto& ctrl = MakeWithText<LabelFrame>(text);
+
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
+	auto& ctrl = Push<LabelFrame>();
+	for (auto& mod : mods)
+		mod->OnBeforeContent();
+	Text(text);
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterContent();
+	Pop();
+
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
 }
 
 bool PropButton(const char* label, const char* text, ModInitList mods)

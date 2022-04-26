@@ -457,6 +457,8 @@ struct LabeledProperty : WrapperElement
 		return *this;
 	}
 
+	float GetLastSeparatorPositionX() const { return _lastSepX; }
+
 	FrameStyle _labelStyle;
 	std::string _labelText;
 	PropertyList* _propList = nullptr;
