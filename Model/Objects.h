@@ -465,8 +465,6 @@ inline void DeleteUIObject(UIObject* obj)
 
 struct UIObjectNoChildren : UIObject
 {
-	typedef char IsElement[1];
-
 	void SlotIterator_Init(UIObjectIteratorData& data) override {}
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override { return nullptr; }
 	void RemoveChildImpl(UIObject* ch) override {}
@@ -480,8 +478,6 @@ struct UIObjectNoChildren : UIObject
 
 struct UIObjectSingleChild : UIObject
 {
-	typedef char IsElement[1];
-
 	UIObject* _child = nullptr;
 
 	void OnReset() override;
@@ -498,7 +494,6 @@ struct UIObjectSingleChild : UIObject
 
 struct UIElement : UIObject
 {
-	typedef char IsElement[1];
 };
 
 // TODO: slowly port to these

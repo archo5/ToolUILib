@@ -88,6 +88,9 @@ bool GetEnabled();
 bool SetEnabled(bool);
 }
 
+template <class T>
+using NotBuildable = std::enable_if_t<!std::is_base_of<Buildable, T>::value>;
+
 struct UIContainer
 {
 	void Free();
@@ -133,21 +136,21 @@ struct UIContainer
 		return *obj;
 	}
 
-	template<class T, class = typename T::IsElement> T& MakeWithText(StringView text)
+	template<class T, class = typename NotBuildable<T>> T& MakeWithText(StringView text)
 	{
 		auto& ret = Push<T>();
 		Text(text);
 		Pop();
 		return ret;
 	}
-	template<class T, class = typename T::IsElement> T& MakeWithTextVA(const char* fmt, va_list args)
+	template<class T, class = typename NotBuildable<T>> T& MakeWithTextVA(const char* fmt, va_list args)
 	{
 		auto& ret = Push<T>();
 		TextVA(fmt, args);
 		Pop();
 		return ret;
 	}
-	template<class T, class = typename T::IsElement> T& MakeWithTextf(const char* fmt, ...)
+	template<class T, class = typename NotBuildable<T>> T& MakeWithTextf(const char* fmt, ...)
 	{
 		auto& ret = Push<T>();
 		va_list args;
@@ -158,14 +161,14 @@ struct UIContainer
 		return ret;
 	}
 
-	template<class T, class = typename T::IsElement> T& PushNoAppend()
+	template<class T, class = typename NotBuildable<T>> T& PushNoAppend()
 	{
 		auto* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  push-no-append [%d] %s\n", objectStackSize, typeid(*obj).name()));
 		_Push(obj);
 		return *obj;
 	}
-	template<class T, class = typename T::IsElement> T& Push()
+	template<class T, class = typename NotBuildable<T>> T& Push()
 	{
 		auto* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
@@ -235,15 +238,15 @@ template <class T> inline T& Make()
 {
 	return UIContainer::GetCurrent()->Make<T>();
 }
-template <class T, class = typename T::IsElement> inline T& MakeWithText(StringView text)
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithText(StringView text)
 {
 	return UIContainer::GetCurrent()->MakeWithText<T>(text);
 }
-template <class T, class = typename T::IsElement> inline T& MakeWithTextVA(const char* fmt, va_list args)
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextVA(const char* fmt, va_list args)
 {
 	return UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
 }
-template <class T, class = typename T::IsElement> inline T& MakeWithTextf(const char* fmt, ...)
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextf(const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -251,11 +254,11 @@ template <class T, class = typename T::IsElement> inline T& MakeWithTextf(const 
 	va_end(args);
 	return ret;
 }
-template <class T, class = typename T::IsElement> inline T& PushNoAppend()
+template <class T, class = typename NotBuildable<T>> inline T& PushNoAppend()
 {
 	return UIContainer::GetCurrent()->PushNoAppend<T>();
 }
-template <class T, class = typename T::IsElement> inline T& Push()
+template <class T, class = typename NotBuildable<T>> inline T& Push()
 {
 	return UIContainer::GetCurrent()->Push<T>();
 }
