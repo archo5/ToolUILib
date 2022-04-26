@@ -10,7 +10,6 @@
 #include "../Render/Render.h"
 
 #include <vector>
-#include <functional>
 
 
 namespace ui {
@@ -42,7 +41,6 @@ struct ILayout
 struct IPlacement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const = 0;
-	bool applyOnLayout = false;
 	bool fullScreenRelative = false;
 };
 

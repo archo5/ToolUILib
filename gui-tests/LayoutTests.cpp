@@ -278,7 +278,6 @@ struct PlacementTest : ui::Buildable
 	PlacementTest()
 	{
 		buttonPlacement.bias = { 3, -2, -2, -2 };
-		buttonPlacement.applyOnLayout = true;
 	}
 	void Build() override
 	{

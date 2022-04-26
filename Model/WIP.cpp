@@ -354,23 +354,14 @@ void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 
 EdgeSliceLayoutElement::Slot EdgeSliceLayoutElement::_slotTemplate;
 
-void EdgeSliceLayoutElement::OnReset()
+Rangef EdgeSliceLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	UIElement::OnReset();
-
-	_slots.clear();
+	return Rangef::AtLeast(containerSize.x);
 }
 
-void EdgeSliceLayoutElement::SlotIterator_Init(UIObjectIteratorData& data)
+Rangef EdgeSliceLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	data.data0 = 0;
-}
-
-UIObject* EdgeSliceLayoutElement::SlotIterator_GetNext(UIObjectIteratorData& data)
-{
-	if (data.data0 >= _slots.size())
-		return nullptr;
-	return _slots[data.data0++]._element;
+	return Rangef::AtLeast(containerSize.y);
 }
 
 void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
@@ -378,7 +369,10 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
 	auto subr = rect;
 	for (const auto& slot : _slots)
 	{
-		auto* ch = slot._element;
+		auto* ch = slot._obj;
+		if (!ch->_NeedsLayout())
+			continue;
+
 		auto e = slot.edge;
 		Rangef r(DoNotInitialize{});
 		float d;
@@ -411,82 +405,6 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
 		}
 	}
 	_finalRect = rect;
-}
-
-void EdgeSliceLayoutElement::RemoveChildImpl(UIObject* ch)
-{
-	for (size_t i = 0; i < _slots.size(); i++)
-	{
-		if (_slots[i]._element == ch)
-		{
-			_slots.erase(_slots.begin() + i);
-			break;
-		}
-	}
-}
-
-void EdgeSliceLayoutElement::DetachChildren(bool recursive)
-{
-	for (size_t i = 0; i < _slots.size(); i++)
-	{
-		auto* ch = _slots[i]._element;
-
-		if (recursive)
-			ch->DetachChildren(true);
-
-		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
-		if (system)
-			ch->_DetachFromTree();
-
-		ch->parent = nullptr;
-	}
-	_slots.clear();
-}
-
-void EdgeSliceLayoutElement::CustomAppendChild(UIObject* obj)
-{
-	obj->DetachParent();
-
-	obj->parent = this;
-	Slot slot = _slotTemplate;
-	slot._element = obj;
-	_slots.push_back(slot);
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
-void EdgeSliceLayoutElement::OnPaint(const UIPaintContext& ctx)
-{
-	for (auto& slot : _slots)
-		slot._element->Paint(ctx);
-}
-
-UIObject* EdgeSliceLayoutElement::FindLastChildContainingPos(Point2f pos) const
-{
-	for (size_t i = _slots.size(); i > 0; )
-	{
-		i--;
-		if (_slots[i]._element->Contains(pos))
-			return _slots[i]._element;
-	}
-	return nullptr;
-}
-
-void EdgeSliceLayoutElement::_AttachToFrameContents(FrameContents* owner)
-{
-	UIElement::_AttachToFrameContents(owner);
-
-	for (auto& slot : _slots)
-		slot._element->_AttachToFrameContents(owner);
-}
-
-void EdgeSliceLayoutElement::_DetachFromFrameContents()
-{
-	for (auto& slot : _slots)
-		slot._element->_DetachFromFrameContents();
-
-	UIElement::_DetachFromFrameContents();
 }
 
 

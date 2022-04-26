@@ -228,40 +228,19 @@ enum class Edge : uint8_t
 	Bottom,
 };
 
-struct EdgeSliceLayoutElement : UIElement
+namespace _ {
+struct EdgeSliceLayoutElement_Slot
 {
-	struct Slot
-	{
-		UIObject* _element = nullptr;
-		Edge edge = Edge::Top;
-	};
-	static TempEditable<Slot> GetSlotTemplate()
-	{
-		return { &_slotTemplate };
-	}
-	static Slot _slotTemplate;
+	UIObject* _obj = nullptr;
+	Edge edge = Edge::Top;
+};
+} // _
 
-	std::vector<Slot> _slots;
-
-	void SlotIterator_Init(UIObjectIteratorData& data) override;
-	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::AtLeast(containerSize.x);
-	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::AtLeast(containerSize.y);
-	}
+struct EdgeSliceLayoutElement : LayoutElement<_::EdgeSliceLayoutElement_Slot>
+{
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
-	void OnReset() override;
-	void RemoveChildImpl(UIObject* ch) override;
-	void DetachChildren(bool recursive) override;
-	void CustomAppendChild(UIObject* obj) override;
-	void OnPaint(const UIPaintContext& ctx) override;
-	UIObject* FindLastChildContainingPos(Point2f pos) const override;
-	void _AttachToFrameContents(FrameContents* owner) override;
-	void _DetachFromFrameContents() override;
 };
 
 
