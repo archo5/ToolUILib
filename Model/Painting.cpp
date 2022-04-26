@@ -12,7 +12,7 @@ namespace layouts {
 
 struct StackLayout : ILayout
 {
-	float CalcEstimatedWidth(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
+	float CalcEstimatedWidth(UIObjectLegacyChildren* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		float size = 0;
 		auto dir = StackingDirection::TopDown;
@@ -31,7 +31,7 @@ struct StackLayout : ILayout
 		}
 		return size;
 	}
-	float CalcEstimatedHeight(UIObject* curObj, const Size2f& containerSize, EstSizeType type)
+	float CalcEstimatedHeight(UIObjectLegacyChildren* curObj, const Size2f& containerSize, EstSizeType type)
 	{
 		float size = 0;
 		auto dir = StackingDirection::TopDown;
@@ -50,7 +50,7 @@ struct StackLayout : ILayout
 		}
 		return size;
 	}
-	void OnLayout(UIObject* curObj, UIRect& inrect)
+	void OnLayout(UIObjectLegacyChildren* curObj, UIRect& inrect)
 	{
 		// put items one after another in the indicated direction
 		// container size adapts to child elements in stacking direction, and to parent in the other

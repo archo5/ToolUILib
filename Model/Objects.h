@@ -174,7 +174,7 @@ struct LivenessToken
 // objects whose configuration can be reset without also resetting the state
 struct IPersistentObject
 {
-	IPersistentObject* _next = nullptr;
+	IPersistentObject* _next = nullptr; // @ 0p1
 
 	virtual ~IPersistentObject() {}
 	virtual void PO_ResetConfiguration() {}
@@ -317,8 +317,8 @@ struct UIObject : IPersistentObject
 	void _InitReset();
 	virtual void OnReset() {}
 
-	virtual void SlotIterator_Init(UIObjectIteratorData& data);
-	virtual UIObject* SlotIterator_GetNext(UIObjectIteratorData& data);
+	virtual void SlotIterator_Init(UIObjectIteratorData& data) = 0;
+	virtual UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) = 0;
 
 	virtual void OnEvent(Event& e) {}
 	void _DoEvent(Event& e);
@@ -333,16 +333,16 @@ struct UIObject : IPersistentObject
 	void RegisterAsOverlay(float depth = 0);
 	void UnregisterAsOverlay();
 
-	virtual void OnPaint(const UIPaintContext& ctx);
+	virtual void OnPaint(const UIPaintContext& ctx) = 0;
 	void Paint(const UIPaintContext& ctx);
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
-	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 	void PerformLayout(const UIRect& rect);
+	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) = 0;
+	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) = 0;
+	virtual void OnLayout(const UIRect& rect) = 0;
 	virtual void OnLayoutChanged() {}
-	virtual void OnLayout(const UIRect& rect);
 	virtual void RedoLayout();
 
 	virtual bool Contains(Point2f pos) const
@@ -350,7 +350,7 @@ struct UIObject : IPersistentObject
 		return GetFinalRect().Contains(pos);
 	}
 	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
-	virtual UIObject* FindLastChildContainingPos(Point2f pos) const;
+	virtual UIObject* FindLastChildContainingPos(Point2f pos) const = 0;
 
 	void SetFlag(UIObjectFlags flag, bool set);
 	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
@@ -359,14 +359,11 @@ struct UIObject : IPersistentObject
 	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 
-	virtual void RemoveChildImpl(UIObject* ch);
+	virtual void RemoveChildImpl(UIObject* ch) = 0;
 	void DetachAll();
 	void DetachParent();
-	virtual void DetachChildren(bool recursive = false);
-	void InsertNext(UIObject* obj);
-	void AppendChild(UIObject* obj);
-	virtual void CustomAppendChild(UIObject* obj);
-	void _AddFirstChild(UIObject* obj);
+	virtual void DetachChildren(bool recursive = false) = 0;
+	virtual void CustomAppendChild(UIObject* obj) = 0;
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
@@ -384,10 +381,17 @@ struct UIObject : IPersistentObject
 				return t;
 		return nullptr;
 	}
-	UIObject* GetPrevInOrder();
-	UIObject* GetNextInOrder();
-	UIObject* GetFirstInOrder();
-	UIObject* GetLastInOrder();
+
+	// for focus (lower priority) navigation (can be slower)
+	UIObject* LPN_GetFirstInForwardOrder() { return this; }
+	UIObject* LPN_GetNextInForwardOrder();
+	UIObject* LPN_GetPrevInReverseOrder();
+	UIObject* LPN_GetLastInReverseOrder();
+	// - primitives for replacing generic iteration:
+	virtual UIObject* LPN_GetFirstChild();
+	virtual UIObject* LPN_GetChildAfter(UIObject* cur);
+	virtual UIObject* LPN_GetChildBefore(UIObject* cur);
+	virtual UIObject* LPN_GetLastChild();
 
 	void Rebuild();
 	void RebuildContainer();
@@ -417,22 +421,24 @@ struct UIObject : IPersistentObject
 	ui::NativeWindowBase* GetNativeWindow() const;
 	LivenessToken GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 
-	uint32_t flags = UIObject_DB__Defaults; // @ 16
-	uint32_t _pendingDeactivationSetPos = UINT32_MAX; // @ 20
-	ui::FrameContents* system = nullptr; // @ 24
-	UIObject* parent = nullptr; // @ 32
-	UIObject* firstChild = nullptr; // @ 40
-	UIObject* lastChild = nullptr; // @ 48
-	UIObject* next = nullptr; // @56
-	UIObject* prev = nullptr; // @64
+	uint32_t flags = UIObject_DB__Defaults; // @ 0p2
+	uint32_t _pendingDeactivationSetPos = UINT32_MAX; // @ 4p2
+	ui::FrameContents* system = nullptr; // @ 8p2
+	UIObject* parent = nullptr; // @ 8p3
 
-	ui::EventHandlerEntry* _firstEH = nullptr;
-	ui::EventHandlerEntry* _lastEH = nullptr;
+	ui::EventHandlerEntry* _firstEH = nullptr; // @ 8p4
+	ui::EventHandlerEntry* _lastEH = nullptr; // @ 8p5
 
-	LivenessToken _livenessToken;
+	LivenessToken _livenessToken; // @ 8p6
 
 	// final layout rectangle
-	UIRect _finalRect = {};
+	UIRect _finalRect = {}; // @ 8p7
+
+	// total size: 24p7 (52/80)
+
+	// TODO
+	UIObject* next = nullptr;
+	UIObject* prev = nullptr;
 };
 
 struct UIObjectIterator
@@ -461,6 +467,31 @@ inline void DeleteUIObject(UIObject* obj)
 {
 	DeletePersistentObject(obj);
 }
+
+struct UIObjectLegacyChildren : UIObject
+{
+	UIObject* firstChild = nullptr;
+	UIObject* lastChild = nullptr;
+
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+	void _DetachFromTree() override;
+
+	void SlotIterator_Init(UIObjectIteratorData& data) override;
+	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
+
+	void OnPaint(const UIPaintContext& ctx) override;
+
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect) override;
+
+	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+
+	void RemoveChildImpl(UIObject* ch) override;
+	void DetachChildren(bool recursive = false) override;
+	void CustomAppendChild(UIObject* obj) override;
+};
 
 struct UIObjectNoChildren : UIObject
 {
@@ -614,7 +645,7 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
 }
 
-struct Buildable : UIObject
+struct Buildable : UIObjectLegacyChildren
 {
 	~Buildable();
 	typedef char IsBuildable[2];

@@ -664,7 +664,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 		else if (act == KeyAction::FocusNext && lastFocusObj)
 		{
 			bool found = false;
-			for (UIObject* it = lastFocusObj->GetNextInOrder(); it; it = it->GetNextInOrder())
+			for (UIObject* it = lastFocusObj->LPN_GetNextInForwardOrder(); it; it = it->LPN_GetNextInForwardOrder())
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
@@ -675,7 +675,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			}
 			if (!found)
 			{
-				for (UIObject* it = container->rootBuildable->GetFirstInOrder(); it && it != lastFocusObj; it = it->GetNextInOrder())
+				for (UIObject* it = container->rootBuildable->LPN_GetFirstInForwardOrder(); it && it != lastFocusObj; it = it->LPN_GetNextInForwardOrder())
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
@@ -688,7 +688,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 		else if (act == KeyAction::FocusPrev && lastFocusObj)
 		{
 			bool found = false;
-			for (UIObject* it = lastFocusObj->GetPrevInOrder(); it; it = it->GetPrevInOrder())
+			for (UIObject* it = lastFocusObj->LPN_GetPrevInReverseOrder(); it; it = it->LPN_GetPrevInReverseOrder())
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
@@ -699,7 +699,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			}
 			if (!found)
 			{
-				for (UIObject* it = container->rootBuildable->GetLastInOrder(); it && it != lastFocusObj; it = it->GetPrevInOrder())
+				for (UIObject* it = container->rootBuildable->LPN_GetLastInReverseOrder(); it && it != lastFocusObj; it = it->LPN_GetPrevInReverseOrder())
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{

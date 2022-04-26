@@ -344,6 +344,8 @@ struct OpenCloseTest : ui::Buildable
 		{
 			puts("STATE: disabled");
 		}
+		ui::Rangef CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override { return ui::Rangef::AtLeast(0); }
+		ui::Rangef CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override { return ui::Rangef::AtLeast(0); }
 	};
 	void Build() override
 	{

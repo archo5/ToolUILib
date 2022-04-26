@@ -66,16 +66,10 @@ void UIObject::_AttachToFrameContents(FrameContents* owner)
 	flags |= UIObject_IsInTree;
 
 	_OnChangeStyle();
-
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_AttachToFrameContents(owner);
 }
 
 void UIObject::_DetachFromFrameContents()
 {
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_DetachFromFrameContents();
-
 	OnDisable();
 
 	system->container.layoutStack.OnDestroy(this);
@@ -94,9 +88,6 @@ void UIObject::_DetachFromTree()
 {
 	if (!(flags & UIObject_IsInTree))
 		return;
-
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_DetachFromTree();
 
 	if (flags & UIObject_NeedsTreeUpdates)
 		OnExitTree();
@@ -147,19 +138,6 @@ void UIObject::PO_BeforeDelete()
 void UIObject::_InitReset()
 {
 	OnReset();
-}
-
-void UIObject::SlotIterator_Init(UIObjectIteratorData& data)
-{
-	data.data0 = uintptr_t(firstChild);
-}
-
-UIObject* UIObject::SlotIterator_GetNext(UIObjectIteratorData& data)
-{
-	UIObject* ret = reinterpret_cast<UIObject*>(data.data0);
-	if (ret)
-		data.data0 = uintptr_t(ret->next);
-	return ret;
 }
 
 void UIObject::_DoEvent(Event& e)
@@ -358,12 +336,6 @@ void UIObject::UnregisterAsOverlay()
 	}
 }
 
-void UIObject::OnPaint(const UIPaintContext& ctx)
-{
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->Paint(ctx);
-}
-
 void UIObject::Paint(const UIPaintContext& ctx)
 {
 	if (!_CanPaint())
@@ -405,16 +377,6 @@ void UIObject::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContex
 		next->child->OnPaintSingleChild(next->next, ctx);
 }
 
-Rangef UIObject::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
-{
-	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedWidth(this, containerSize, type));
-}
-
-Rangef UIObject::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
-{
-	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedHeight(this, containerSize, type));
-}
-
 void UIObject::PerformLayout(const UIRect& rect)
 {
 	if (_NeedsLayout())
@@ -424,27 +386,10 @@ void UIObject::PerformLayout(const UIRect& rect)
 	}
 }
 
-void UIObject::OnLayout(const UIRect& inRect)
-{
-	UIRect rect = inRect;
-	layouts::Stack()->OnLayout(this, rect);
-	_finalRect = rect;
-}
-
 void UIObject::RedoLayout()
 {
 	UIRect r = _finalRect;
 	PerformLayout(r);
-}
-
-UIObject* UIObject::FindLastChildContainingPos(Point2f pos) const
-{
-	for (auto* ch = lastChild; ch; ch = ch->prev)
-	{
-		if (ch->Contains(pos))
-			return ch;
-	}
-	return nullptr;
 }
 
 void UIObject::SetFlag(UIObjectFlags flag, bool set)
@@ -455,22 +400,6 @@ void UIObject::SetFlag(UIObjectFlags flag, bool set)
 		flags &= ~flag;
 }
 
-
-void UIObject::RemoveChildImpl(UIObject* ch)
-{
-	if (ch->prev)
-		ch->prev->next = ch->next;
-	else
-		firstChild = ch->next;
-
-	if (ch->next)
-		ch->next->prev = ch->prev;
-	else
-		lastChild = ch->prev;
-
-	ch->prev = nullptr;
-	ch->next = nullptr;
-}
 
 void UIObject::DetachAll()
 {
@@ -491,80 +420,6 @@ void UIObject::DetachParent()
 	parent = nullptr;
 }
 
-void UIObject::DetachChildren(bool recursive)
-{
-	UIObject* next;
-	for (auto* ch = firstChild; ch; ch = next)
-	{
-		next = ch->next;
-
-		if (recursive)
-			ch->DetachChildren(true);
-
-		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
-		if (system)
-			ch->_DetachFromTree();
-
-		ch->parent = nullptr;
-		ch->prev = nullptr;
-		ch->next = nullptr;
-		if (next)
-			next->prev = nullptr;
-		firstChild = next;
-	}
-	firstChild = nullptr;
-	lastChild = nullptr;
-}
-
-void UIObject::InsertNext(UIObject* obj)
-{
-	if (next == obj)
-		return;
-
-	obj->DetachParent();
-	obj->prev = this;
-	obj->next = next;
-	obj->parent = parent;
-
-	auto* origNext = next;
-	next = obj;
-	if (origNext)
-		origNext->prev = obj;
-	else
-		parent->lastChild = obj;
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
-void UIObject::AppendChild(UIObject* obj)
-{
-	if (lastChild == obj)
-		return;
-
-	if (lastChild)
-		lastChild->InsertNext(obj);
-	else
-		_AddFirstChild(obj);
-}
-
-void UIObject::CustomAppendChild(UIObject* obj)
-{
-	AppendChild(obj);
-}
-
-void UIObject::_AddFirstChild(UIObject* obj)
-{
-	obj->DetachParent();
-
-	firstChild = obj;
-	lastChild = obj;
-	obj->parent = this;
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
 
 bool UIObject::IsChildOf(UIObject* obj) const
 {
@@ -579,40 +434,83 @@ bool UIObject::IsChildOrSame(UIObject* obj) const
 	return obj == this || IsChildOf(obj);
 }
 
-UIObject* UIObject::GetPrevInOrder()
-{
-	if (UIObject* ret = prev)
-	{
-		while (ret->lastChild)
-			ret = ret->lastChild;
-		return ret;
-	}
-	return parent;
-}
+// ORDER:
+// 1      [first in forward order]
+// - 2
+// - - 3
+// - - - 4
+// - 5
+// - - 6  [last in reverse order]
 
-UIObject* UIObject::GetNextInOrder()
+UIObject* UIObject::LPN_GetNextInForwardOrder()
 {
-	if (firstChild)
+	if (auto* firstChild = LPN_GetFirstChild())
 		return firstChild;
-	for (UIObject* it = this; it; it = it->parent)
+
+	for (UIObject* it = this; it && it->parent; it = it->parent)
 	{
-		if (it->next)
-			return it->next;
+		if (auto* next = it->parent->LPN_GetChildAfter(it))
+			return next;
 	}
 	return nullptr;
 }
 
-UIObject* UIObject::GetFirstInOrder()
+UIObject* UIObject::LPN_GetPrevInReverseOrder()
 {
-	return this;
+	if (!parent)
+		return nullptr;
+	if (UIObject* ret = parent->LPN_GetChildBefore(this))
+		return ret->LPN_GetLastInReverseOrder();
+	return parent;
 }
 
-UIObject* UIObject::GetLastInOrder()
+UIObject* UIObject::LPN_GetLastInReverseOrder()
 {
 	UIObject* ret = this;
-	while (ret->lastChild)
-		ret = ret->lastChild;
+	while (UIObject* lastChild = ret->LPN_GetLastChild())
+		ret = lastChild;
 	return ret;
+}
+
+UIObject* UIObject::LPN_GetFirstChild()
+{
+	UIObjectIterator it(this);
+	if (UIObject* firstChild = it.GetNext())
+		return firstChild;
+	return nullptr;
+}
+
+UIObject* UIObject::LPN_GetChildAfter(UIObject* cur)
+{
+	UIObjectIterator it(this);
+	while (UIObject* o = it.GetNext())
+	{
+		if (o == cur)
+			return it.GetNext();
+	}
+	return nullptr;
+}
+
+UIObject* UIObject::LPN_GetChildBefore(UIObject* cur)
+{
+	UIObjectIterator it(this);
+	UIObject* lastChild = nullptr;
+	while (UIObject* o = it.GetNext())
+	{
+		if (o == cur)
+			return lastChild;
+		lastChild = o;
+	}
+	return nullptr;
+}
+
+UIObject* UIObject::LPN_GetLastChild()
+{
+	UIObjectIterator it(this);
+	UIObject* lastChild = nullptr;
+	while (UIObject* o = it.GetNext())
+		lastChild = o;
+	return lastChild;
 }
 
 void UIObject::Rebuild()
@@ -722,6 +620,148 @@ const FontSettings* UIObject::_GetFontSettings() const
 NativeWindowBase* UIObject::GetNativeWindow() const
 {
 	return system->nativeWindow;
+}
+
+
+void UIObjectLegacyChildren::_AttachToFrameContents(FrameContents* owner)
+{
+	UIObject::_AttachToFrameContents(owner);
+
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_AttachToFrameContents(owner);
+}
+
+void UIObjectLegacyChildren::_DetachFromFrameContents()
+{
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_DetachFromFrameContents();
+
+	UIObject::_DetachFromFrameContents();
+}
+
+void UIObjectLegacyChildren::_DetachFromTree()
+{
+	if (!(flags & UIObject_IsInTree))
+		return;
+
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->_DetachFromTree();
+
+	UIObject::_DetachFromTree();
+}
+
+void UIObjectLegacyChildren::SlotIterator_Init(UIObjectIteratorData& data)
+{
+	data.data0 = uintptr_t(firstChild);
+}
+
+UIObject* UIObjectLegacyChildren::SlotIterator_GetNext(UIObjectIteratorData& data)
+{
+	UIObject* ret = reinterpret_cast<UIObject*>(data.data0);
+	if (ret)
+		data.data0 = uintptr_t(ret->next);
+	return ret;
+}
+
+void UIObjectLegacyChildren::OnPaint(const UIPaintContext& ctx)
+{
+	for (auto* ch = firstChild; ch; ch = ch->next)
+		ch->Paint(ctx);
+}
+
+Rangef UIObjectLegacyChildren::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedWidth(this, containerSize, type));
+}
+
+Rangef UIObjectLegacyChildren::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedHeight(this, containerSize, type));
+}
+
+void UIObjectLegacyChildren::OnLayout(const UIRect& inRect)
+{
+	UIRect rect = inRect;
+	layouts::Stack()->OnLayout(this, rect);
+	_finalRect = rect;
+}
+
+UIObject* UIObjectLegacyChildren::FindLastChildContainingPos(Point2f pos) const
+{
+	for (auto* ch = lastChild; ch; ch = ch->prev)
+	{
+		if (ch->Contains(pos))
+			return ch;
+	}
+	return nullptr;
+}
+
+void UIObjectLegacyChildren::RemoveChildImpl(UIObject* ch)
+{
+	if (ch->prev)
+		ch->prev->next = ch->next;
+	else
+		firstChild = ch->next;
+
+	if (ch->next)
+		ch->next->prev = ch->prev;
+	else
+		lastChild = ch->prev;
+
+	ch->prev = nullptr;
+	ch->next = nullptr;
+}
+
+void UIObjectLegacyChildren::DetachChildren(bool recursive)
+{
+	UIObject* next;
+	for (auto* ch = firstChild; ch; ch = next)
+	{
+		next = ch->next;
+
+		if (recursive)
+			ch->DetachChildren(true);
+
+		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
+		if (system)
+			ch->_DetachFromTree();
+
+		ch->parent = nullptr;
+		ch->prev = nullptr;
+		ch->next = nullptr;
+		if (next)
+			next->prev = nullptr;
+		firstChild = next;
+	}
+	firstChild = nullptr;
+	lastChild = nullptr;
+}
+
+void UIObjectLegacyChildren::CustomAppendChild(UIObject* obj)
+{
+	if (lastChild == obj)
+		return;
+
+	obj->DetachParent();
+	obj->parent = this;
+
+	if (lastChild)
+	{
+		obj->prev = lastChild;
+		obj->next = nullptr;
+		lastChild->next = obj;
+	}
+	else
+	{
+		obj->prev = nullptr;
+		obj->next = nullptr;
+		firstChild = obj;
+	}
+
+	lastChild = obj;
+
+	if (system)
+		obj->_AttachToFrameContents(system);
 }
 
 
@@ -1153,7 +1193,7 @@ void Buildable::PO_ResetConfiguration()
 	decltype(_deferredDestructors) ddList;
 	std::swap(_deferredDestructors, ddList);
 
-	UIObject::PO_ResetConfiguration();
+	UIObjectLegacyChildren::PO_ResetConfiguration();
 
 	std::swap(_deferredDestructors, ddList);
 }
@@ -1163,7 +1203,7 @@ Rangef Buildable::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType ty
 	if (TEMP_LAYOUT_MODE)
 		return firstChild ? firstChild->CalcEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
 
-	return UIObject::CalcEstimatedWidth(containerSize, type);
+	return UIObjectLegacyChildren::CalcEstimatedWidth(containerSize, type);
 }
 
 Rangef Buildable::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -1171,7 +1211,7 @@ Rangef Buildable::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType t
 	if (TEMP_LAYOUT_MODE)
 		return firstChild ? firstChild->CalcEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
 
-	return UIObject::CalcEstimatedHeight(containerSize, type);
+	return UIObjectLegacyChildren::CalcEstimatedHeight(containerSize, type);
 }
 
 void Buildable::OnLayout(const UIRect& inRect)
@@ -1188,7 +1228,7 @@ void Buildable::OnLayout(const UIRect& inRect)
 		return;
 	}
 
-	UIObject::OnLayout(inRect);
+	UIObjectLegacyChildren::OnLayout(inRect);
 }
 
 void Buildable::Rebuild()
