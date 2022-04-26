@@ -115,6 +115,12 @@
     <ClCompile Include="Elements\TabbedPanel.cpp">
       <Filter>Elements</Filter>
     </ClCompile>
+    <ClCompile Include="Elements\Textbox.cpp">
+      <Filter>Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="Elements\SplitPane.cpp">
+      <Filter>Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -263,6 +269,12 @@
       <Filter>Model</Filter>
     </ClInclude>
     <ClInclude Include="Elements\TabbedPanel.h">
+      <Filter>Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Elements\Textbox.h">
+      <Filter>Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Elements\SplitPane.h">
       <Filter>Elements</Filter>
     </ClInclude>
   </ItemGroup>

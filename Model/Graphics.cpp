@@ -3,6 +3,9 @@
 #include "Theme.h"
 #include "Controls.h"
 #include "System.h"
+
+#include "../Elements/Textbox.h"
+
 #include "../Render/RHI.h"
 
 #include "WIP.h"

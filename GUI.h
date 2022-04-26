@@ -17,7 +17,9 @@
 #include "Model/ImmediateMode.h"
 #include "Model/Animation.h"
 
+#include "Elements/Textbox.h"
 #include "Elements/TabbedPanel.h"
+#include "Elements/SplitPane.h"
 
 #include "Editors/Tables.h"
 #include "Editors/SequenceEditor.h"

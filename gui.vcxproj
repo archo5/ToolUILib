@@ -157,7 +157,9 @@
     <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Editors\Tables.cpp" />
     <ClCompile Include="Editors\TreeEditor.cpp" />
+    <ClCompile Include="Elements\SplitPane.cpp" />
     <ClCompile Include="Elements\TabbedPanel.cpp" />
+    <ClCompile Include="Elements\Textbox.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
@@ -209,7 +211,9 @@
     <ClInclude Include="Editors\SequenceEditor.h" />
     <ClInclude Include="Editors\Tables.h" />
     <ClInclude Include="Editors\TreeEditor.h" />
+    <ClInclude Include="Elements\SplitPane.h" />
     <ClInclude Include="Elements\TabbedPanel.h" />
+    <ClInclude Include="Elements\Textbox.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Model\Animation.h" />
     <ClInclude Include="Model\Controls.h" />

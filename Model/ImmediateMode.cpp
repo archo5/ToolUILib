@@ -4,6 +4,8 @@
 #include "Graphics.h"
 #include "System.h"
 
+#include "../Elements/Textbox.h"
+
 #include "WIP.h"
 
 
