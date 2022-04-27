@@ -435,10 +435,6 @@ struct UIObject : IPersistentObject
 	UIRect _finalRect = {}; // @ 8p7
 
 	// total size: 24p7 (52/80)
-
-	// TODO
-	UIObject* next = nullptr;
-	UIObject* prev = nullptr;
 };
 
 struct UIObjectIterator
@@ -467,31 +463,6 @@ inline void DeleteUIObject(UIObject* obj)
 {
 	DeletePersistentObject(obj);
 }
-
-struct UIObjectLegacyChildren : UIObject
-{
-	UIObject* firstChild = nullptr;
-	UIObject* lastChild = nullptr;
-
-	void _AttachToFrameContents(FrameContents* owner) override;
-	void _DetachFromFrameContents() override;
-	void _DetachFromTree() override;
-
-	void SlotIterator_Init(UIObjectIteratorData& data) override;
-	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
-
-	void OnPaint(const UIPaintContext& ctx) override;
-
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
-
-	UIObject* FindLastChildContainingPos(Point2f pos) const override;
-
-	void RemoveChildImpl(UIObject* ch) override;
-	void DetachChildren(bool recursive = false) override;
-	void AppendChild(UIObject* obj) override;
-};
 
 struct UIObjectNoChildren : UIObject
 {
@@ -646,7 +617,7 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
 }
 
-struct Buildable : UIObjectLegacyChildren
+struct Buildable : WrapperElement
 {
 	~Buildable();
 	typedef char IsBuildable[2];

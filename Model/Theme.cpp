@@ -111,15 +111,6 @@ static const char* EnumKeys_Presence[] =
 };
 template <> struct EnumKeys<Presence> : EnumKeysStringList<Presence, EnumKeys_Presence> {};
 
-static const char* EnumKeys_StackingDirection[] =
-{
-	"",
-	"LeftToRight",
-	"TopDown",
-	nullptr,
-};
-template <> struct EnumKeys<StackingDirection> : EnumKeysStringList<StackingDirection, EnumKeys_StackingDirection> {};
-
 static const char* EnumKeys_HAlign[] =
 {
 	"",

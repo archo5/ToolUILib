@@ -31,32 +31,10 @@ enum class EstSizeType
 	Expanding,
 };
 
-struct UIObjectLegacyChildren;
-struct ILayout
-{
-	virtual float CalcEstimatedWidth(UIObjectLegacyChildren* curObj, const Size2f& containerSize, EstSizeType type) = 0;
-	virtual float CalcEstimatedHeight(UIObjectLegacyChildren* curObj, const Size2f& containerSize, EstSizeType type) = 0;
-	virtual void OnLayout(UIObjectLegacyChildren* curObj, UIRect& inrect) = 0;
-};
-
 struct IPlacement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const = 0;
 	bool fullScreenRelative = false;
-};
-
-namespace layouts {
-
-ILayout* Stack();
-
-}
-
-enum class StackingDirection : uint8_t
-{
-	Undefined,
-
-	LeftToRight,
-	TopDown,
 };
 
 enum class HAlign : uint8_t

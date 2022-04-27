@@ -500,10 +500,12 @@ struct AnimationRequestTest : ui::Buildable
 	}
 	void Build() override
 	{
+		WPush<ui::StackTopDownLayoutElement>();
 		auto& cb = ui::Push<ui::StateToggle>().InitReadOnly(animReq.IsAnimating());
 		ui::Make<ui::CheckboxIcon>();
 		ui::Pop();
 		cb.HandleEvent(ui::EventType::Activate) = [this, &cb](ui::Event&) { animReq.SetAnimating(!animReq.IsAnimating()); Rebuild(); };
+		WPop();
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{

@@ -623,149 +623,6 @@ NativeWindowBase* UIObject::GetNativeWindow() const
 }
 
 
-void UIObjectLegacyChildren::_AttachToFrameContents(FrameContents* owner)
-{
-	UIObject::_AttachToFrameContents(owner);
-
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_AttachToFrameContents(owner);
-}
-
-void UIObjectLegacyChildren::_DetachFromFrameContents()
-{
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_DetachFromFrameContents();
-
-	UIObject::_DetachFromFrameContents();
-}
-
-void UIObjectLegacyChildren::_DetachFromTree()
-{
-	if (!(flags & UIObject_IsInTree))
-		return;
-
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->_DetachFromTree();
-
-	UIObject::_DetachFromTree();
-}
-
-void UIObjectLegacyChildren::SlotIterator_Init(UIObjectIteratorData& data)
-{
-	data.data0 = uintptr_t(firstChild);
-}
-
-UIObject* UIObjectLegacyChildren::SlotIterator_GetNext(UIObjectIteratorData& data)
-{
-	UIObject* ret = reinterpret_cast<UIObject*>(data.data0);
-	if (ret)
-		data.data0 = uintptr_t(ret->next);
-	return ret;
-}
-
-void UIObjectLegacyChildren::OnPaint(const UIPaintContext& ctx)
-{
-	for (auto* ch = firstChild; ch; ch = ch->next)
-		ch->Paint(ctx);
-}
-
-Rangef UIObjectLegacyChildren::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
-{
-	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedWidth(this, containerSize, type));
-}
-
-Rangef UIObjectLegacyChildren::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
-{
-	return Rangef::AtLeast(layouts::Stack()->CalcEstimatedHeight(this, containerSize, type));
-}
-
-void UIObjectLegacyChildren::OnLayout(const UIRect& inRect)
-{
-	UIRect rect = inRect;
-	layouts::Stack()->OnLayout(this, rect);
-	_finalRect = rect;
-}
-
-UIObject* UIObjectLegacyChildren::FindLastChildContainingPos(Point2f pos) const
-{
-	for (auto* ch = lastChild; ch; ch = ch->prev)
-	{
-		if (ch->Contains(pos))
-			return ch;
-	}
-	return nullptr;
-}
-
-void UIObjectLegacyChildren::RemoveChildImpl(UIObject* ch)
-{
-	if (ch->prev)
-		ch->prev->next = ch->next;
-	else
-		firstChild = ch->next;
-
-	if (ch->next)
-		ch->next->prev = ch->prev;
-	else
-		lastChild = ch->prev;
-
-	ch->prev = nullptr;
-	ch->next = nullptr;
-}
-
-void UIObjectLegacyChildren::DetachChildren(bool recursive)
-{
-	UIObject* next;
-	for (auto* ch = firstChild; ch; ch = next)
-	{
-		next = ch->next;
-
-		if (recursive)
-			ch->DetachChildren(true);
-
-		// if ch->system != 0 then system != 0 but the latter should be a more predictable branch
-		if (system)
-			ch->_DetachFromTree();
-
-		ch->parent = nullptr;
-		ch->prev = nullptr;
-		ch->next = nullptr;
-		if (next)
-			next->prev = nullptr;
-		firstChild = next;
-	}
-	firstChild = nullptr;
-	lastChild = nullptr;
-}
-
-void UIObjectLegacyChildren::AppendChild(UIObject* obj)
-{
-	if (lastChild == obj)
-		return;
-
-	obj->DetachParent();
-	obj->parent = this;
-
-	if (lastChild)
-	{
-		printf("\nWARNING: appending more than one child!\nparent: %p (%s)\nchild: %p (%s)\n\n", this, typeid(*this).name(), obj, typeid(*obj).name());
-		obj->prev = lastChild;
-		obj->next = nullptr;
-		lastChild->next = obj;
-	}
-	else
-	{
-		obj->prev = nullptr;
-		obj->next = nullptr;
-		firstChild = obj;
-	}
-
-	lastChild = obj;
-
-	if (system)
-		obj->_AttachToFrameContents(system);
-}
-
-
 void UIObjectNoChildren::AppendChild(UIObject* obj)
 {
 	puts("WARNING: trying to add child to a no-children UI object");
@@ -1205,7 +1062,7 @@ void Buildable::PO_ResetConfiguration()
 	decltype(_deferredDestructors) ddList;
 	std::swap(_deferredDestructors, ddList);
 
-	UIObjectLegacyChildren::PO_ResetConfiguration();
+	WrapperElement::PO_ResetConfiguration();
 
 	std::swap(_deferredDestructors, ddList);
 }
@@ -1213,17 +1070,17 @@ void Buildable::PO_ResetConfiguration()
 Rangef Buildable::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->CalcEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
+		return _child ? _child->CalcEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
 
-	return UIObjectLegacyChildren::CalcEstimatedWidth(containerSize, type);
+	return WrapperElement::CalcEstimatedWidth(containerSize, type);
 }
 
 Rangef Buildable::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (TEMP_LAYOUT_MODE)
-		return firstChild ? firstChild->CalcEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
+		return _child ? _child->CalcEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
 
-	return UIObjectLegacyChildren::CalcEstimatedHeight(containerSize, type);
+	return WrapperElement::CalcEstimatedHeight(containerSize, type);
 }
 
 void Buildable::OnLayout(const UIRect& inRect)
@@ -1231,16 +1088,16 @@ void Buildable::OnLayout(const UIRect& inRect)
 	if (TEMP_LAYOUT_MODE)
 	{
 		_finalRect = inRect;
-		if (firstChild)
+		if (_child)
 		{
-			firstChild->PerformLayout(inRect);
+			_child->PerformLayout(inRect);
 			if (TEMP_LAYOUT_MODE == WRAPPER)
-				_finalRect = firstChild->GetFinalRect();
+				_finalRect = _child->GetFinalRect();
 		}
 		return;
 	}
 
-	UIObjectLegacyChildren::OnLayout(inRect);
+	WrapperElement::OnLayout(inRect);
 }
 
 void Buildable::Rebuild()

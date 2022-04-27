@@ -154,7 +154,7 @@ void UIContainer::ProcessBuildStack()
 		decltype(Buildable::_deferredDestructors) oldDDs;
 		std::swap(oldDDs, currentBuildable->_deferredDestructors);
 
-		currentBuildable->DetachChildren();
+		currentBuildable->DetachChildren(false);
 
 		currentBuildable->Build();
 

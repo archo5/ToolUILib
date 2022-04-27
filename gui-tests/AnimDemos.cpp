@@ -230,15 +230,17 @@ struct FancyButtonDemo : ui::Buildable
 
 	void Build() override
 	{
-		ui::Push<ui::PaddingElement>().SetPadding(30);
+		WPush<ui::PaddingElement>().SetPadding(30);
+		WPush<ui::StackTopDownLayoutElement>();
 
-		auto& btn = ui::Push<ui::Button>();
+		auto& btn = WPush<ui::Button>();
 		btn.frameStyle.backgroundPainter = new FancyButtonPainter();
 		btn.SetPadding(5, 5, 5, 9);
-		ui::Text("Fancy button");
-		ui::Pop();
+		WText("Fancy button");
+		WPop();
 
-		ui::Pop();
+		WPop();
+		WPop();
 	}
 };
 void Demo_FancyButton()
