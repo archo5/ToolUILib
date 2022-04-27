@@ -363,7 +363,7 @@ struct UIObject : IPersistentObject
 	void DetachAll();
 	void DetachParent();
 	virtual void DetachChildren(bool recursive = false) = 0;
-	virtual void CustomAppendChild(UIObject* obj) = 0;
+	virtual void AppendChild(UIObject* obj) = 0;
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
@@ -490,7 +490,7 @@ struct UIObjectLegacyChildren : UIObject
 
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive = false) override;
-	void CustomAppendChild(UIObject* obj) override;
+	void AppendChild(UIObject* obj) override;
 };
 
 struct UIObjectNoChildren : UIObject
@@ -499,7 +499,7 @@ struct UIObjectNoChildren : UIObject
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override { return nullptr; }
 	void RemoveChildImpl(UIObject* ch) override {}
 	void DetachChildren(bool recursive) override {}
-	void CustomAppendChild(UIObject* obj) override;
+	void AppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override {}
 	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
 
@@ -515,7 +515,7 @@ struct UIObjectSingleChild : UIObject
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
-	void CustomAppendChild(UIObject* obj) override;
+	void AppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;

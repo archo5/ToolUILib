@@ -25,7 +25,7 @@ struct SplitPane : UIObject
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
 	void DetachChildren(bool recursive) override;
-	void CustomAppendChild(UIObject* obj) override;
+	void AppendChild(UIObject* obj) override;
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;

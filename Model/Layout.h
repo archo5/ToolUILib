@@ -108,7 +108,7 @@ struct LayoutElement : UIObject
 		_slots.clear();
 	}
 
-	void CustomAppendChild(UIObject* obj) override
+	void AppendChild(UIObject* obj) override
 	{
 		obj->DetachParent();
 

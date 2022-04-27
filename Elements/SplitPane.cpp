@@ -335,7 +335,7 @@ void SplitPane::DetachChildren(bool recursive)
 	_children.clear();
 }
 
-void SplitPane::CustomAppendChild(UIObject* obj)
+void SplitPane::AppendChild(UIObject* obj)
 {
 	obj->DetachParent();
 

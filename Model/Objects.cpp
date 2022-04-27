@@ -737,7 +737,7 @@ void UIObjectLegacyChildren::DetachChildren(bool recursive)
 	lastChild = nullptr;
 }
 
-void UIObjectLegacyChildren::CustomAppendChild(UIObject* obj)
+void UIObjectLegacyChildren::AppendChild(UIObject* obj)
 {
 	if (lastChild == obj)
 		return;
@@ -766,7 +766,7 @@ void UIObjectLegacyChildren::CustomAppendChild(UIObject* obj)
 }
 
 
-void UIObjectNoChildren::CustomAppendChild(UIObject* obj)
+void UIObjectNoChildren::AppendChild(UIObject* obj)
 {
 	puts("WARNING: trying to add child to a no-children UI object");
 }
@@ -813,7 +813,7 @@ void UIObjectSingleChild::DetachChildren(bool recursive)
 	}
 }
 
-void UIObjectSingleChild::CustomAppendChild(UIObject* obj)
+void UIObjectSingleChild::AppendChild(UIObject* obj)
 {
 	if (_child)
 	{
