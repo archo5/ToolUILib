@@ -1194,7 +1194,7 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 void DefaultOverlayBuilder::Build()
 {
 	if (drawTooltip || drawDragDrop)
-		Subscribe(DCT_MouseMoved);
+		;// Subscribe(DCT_MouseMoved);
 
 	auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
 

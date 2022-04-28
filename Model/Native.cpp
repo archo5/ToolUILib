@@ -1179,9 +1179,6 @@ struct Inspector : NativeDialogWindow
 			if (name.starts_with("struct ")) name = name.substr(7);
 			if (name.starts_with("class ")) name = name.substr(6);
 			if (name.starts_with("ui::")) name = name.substr(4);
-			if (name.starts_with("layouts::")) name = name.substr(9);
-
-			if (name.ends_with("Layout")) name = name.substr(0, name.size() - 6);
 
 			return name;
 		}
@@ -1208,6 +1205,39 @@ struct Inspector : NativeDialogWindow
 					auto fr = obj->GetFinalRect();
 					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
 					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White());
+				}
+
+				{
+					char* p = bfr;
+					char* e = p + 1024;
+					if (obj->_firstEH)
+					{
+						int count = 0;
+						for (EventHandlerEntry* it = obj->_firstEH; it; )
+						{
+							count++;
+							memcpy(&it, it, sizeof(it));
+						}
+						p += snprintf(p, e - p, "EH(%d) ", count);
+					}
+					if (obj->_livenessToken._data)
+						p += snprintf(p, e - p, "LT ");
+
+					static const char* flagText[] =
+					{
+						"BS", "LS", "Ho", "@L", "@R", "@M", "@1", "@2",
+						"Di", "Hi", "DH", "Ed", "Ch", "Fo", "PM", "PO",
+						"IM", "Ov", "#CaM", "#FoL", "#Bu", "#Dr", "#Se", "-C",
+						"-P", "#RbC", nullptr, "Tr", "NT", "CT",
+					};
+					for (int i = 0; i < sizeof(flagText) / sizeof(flagText[0]); i++)
+					{
+						if (!flagText[i])
+							continue;
+						if (obj->flags & (1 << i))
+							p += snprintf(p, e - p, "%s ", flagText[i]);
+					}
+					draw::TextLine(font, fontSize, 500, ys, bfr, Color4b::White());
 				}
 			}
 
@@ -1241,6 +1271,7 @@ struct Inspector : NativeDialogWindow
 			int y = mainFont.size;
 			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153));
 			draw::TextLine(font, mainFont.size, 400, y, "Rect (final)", Color4b(255, 153));
+			draw::TextLine(font, mainFont.size, 500, y, "State", Color4b(255, 153));
 			PaintObject(c.rootBuildable, 0, y);
 			scrollMax = y;
 			//draw::TextLine(font, mainFont.size, 10, 10, "inspector", Color4b::White());
