@@ -156,6 +156,26 @@ struct ContentPaintAdvice
 	}
 };
 
+struct UIPaintContext
+{
+	Color4b textColor;
+
+	UI_FORCEINLINE UIPaintContext() {}
+	UI_FORCEINLINE UIPaintContext(DoNotInitialize) : textColor(DoNotInitialize{}) {}
+	UI_FORCEINLINE UIPaintContext(const UIPaintContext&, Color4b arg_textColor)
+	{
+		textColor = arg_textColor;
+	}
+	UIPaintContext WithAdvice(const ContentPaintAdvice& cpa) const
+	{
+		UIPaintContext pc = *this;
+		if (cpa.HasTextColor())
+			pc.textColor = cpa.GetTextColor();
+		return pc;
+	}
+};
+
+
 struct IPainter : RefCountedST
 {
 	virtual ContentPaintAdvice Paint(const PaintInfo&) = 0;

@@ -195,42 +195,11 @@ struct PersistentObjectList
 	IPersistentObject* _firstPO = nullptr;
 	IPersistentObject** _curPO = nullptr;
 
-	~PersistentObjectList()
-	{
-		DeleteAll();
-	}
-
-	void DeleteAll()
-	{
-		_curPO = &_firstPO;
-		DeleteRemaining();
-		_firstPO = nullptr;
-	}
-
-	void BeginAllocations()
-	{
-		_curPO = &_firstPO;
-		// reset all
-		for (auto* cur = _firstPO; cur; cur = cur->_next)
-			cur->PO_ResetConfiguration();
-	}
-
-	void EndAllocations()
-	{
-		DeleteRemaining();
-		_curPO = nullptr;
-	}
-
-	void DeleteRemaining()
-	{
-		IPersistentObject* next;
-		for (auto* cur = *_curPO; cur; cur = next)
-		{
-			next = cur->_next;
-			DeletePersistentObject(cur);
-		}
-		*_curPO = nullptr;
-	}
+	~PersistentObjectList();
+	void DeleteAll();
+	void BeginAllocations();
+	void EndAllocations();
+	void DeleteRemaining();
 
 	template <class T> T* TryNext()
 	{
@@ -247,7 +216,8 @@ struct PersistentObjectList
 
 	void AddNext(IPersistentObject* po)
 	{
-		DeleteRemaining();
+		if (*_curPO) // a stable early-out branch that doesn't depend on inlining (TODO: use a separate bool w/o indirection?)
+			DeleteRemaining();
 		*_curPO = po;
 		_curPO = &po->_next;
 	}
@@ -264,25 +234,6 @@ struct UIWeakPtr
 	UI_FORCEINLINE T* Get() const { return _token.IsAlive() ? _obj : nullptr; }
 	UI_FORCEINLINE T* operator -> () const { return Get(); }
 	UI_FORCEINLINE operator T* () const { return Get(); }
-};
-
-struct UIPaintContext
-{
-	Color4b textColor;
-
-	UI_FORCEINLINE UIPaintContext() {}
-	UI_FORCEINLINE UIPaintContext(DoNotInitialize) : textColor(DoNotInitialize{}) {}
-	UIPaintContext(const UIPaintContext&, Color4b arg_textColor)
-	{
-		textColor = arg_textColor;
-	}
-	UIPaintContext WithAdvice(const ContentPaintAdvice& cpa) const
-	{
-		UIPaintContext pc = *this;
-		if (cpa.HasTextColor())
-			pc.textColor = cpa.GetTextColor();
-		return pc;
-	}
 };
 
 struct SingleChildPaintPtr
@@ -367,13 +318,6 @@ struct UIObject : IPersistentObject
 
 	bool IsChildOf(UIObject* obj) const;
 	bool IsChildOrSame(UIObject* obj) const;
-	int GetDepth() const
-	{
-		int out = 0;
-		for (auto* p = this; p; p = p->parent)
-			out++;
-		return out;
-	}
 	template <class T> T* FindParentOfType()
 	{
 		for (auto* p = parent; p; p = p->parent)
@@ -442,11 +386,11 @@ struct UIObjectIterator
 	UIObject* _obj;
 	UIObjectIteratorData _data;
 
-	UIObjectIterator(UIObject* o) : _obj(o)
+	UI_FORCEINLINE UIObjectIterator(UIObject* o) : _obj(o)
 	{
 		o->SlotIterator_Init(_data);
 	}
-	UIObject* GetNext()
+	UI_FORCEINLINE UIObject* GetNext()
 	{
 		return _obj->SlotIterator_GetNext(_data);
 	}
@@ -504,20 +448,9 @@ struct WrapperElement : UIObjectSingleChild
 
 struct FillerElement : UIObjectSingleChild
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::Exact(containerSize.x);
-	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		return Rangef::Exact(containerSize.y);
-	}
-	void OnLayout(const UIRect& rect) override
-	{
-		if (_child && _child->_NeedsLayout())
-			_child->PerformLayout(rect);
-		_finalRect = rect;
-	}
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 struct SizeConstraintElement : WrapperElement
@@ -564,16 +497,8 @@ struct TextElement : UIObjectNoChildren
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
-	{
-		auto* fs = _FindClosestParentFontSettings();
-		return Rangef::Exact(ceilf(GetTextWidth(fs->GetFont(), fs->size, text)));
-	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
-	{
-		auto* fs = _FindClosestParentFontSettings();
-		return Rangef::Exact(fs->size);
-	}
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	TextElement& SetText(StringView t)
 	{
@@ -699,8 +624,6 @@ struct Enable : Modifier
 	Enable(bool e) : _enable(e) {}
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
 };
-
-#undef UI_COORD_VALUE_PROXY
 
 struct AddEventHandler : Modifier
 {

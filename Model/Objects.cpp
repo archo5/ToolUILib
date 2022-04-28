@@ -14,6 +14,44 @@ extern FrameContents* g_curSystem;
 static HashMap<UIObject*, Overlays::Info> g_overlays;
 
 
+PersistentObjectList::~PersistentObjectList()
+{
+	DeleteAll();
+}
+
+void PersistentObjectList::DeleteAll()
+{
+	_curPO = &_firstPO;
+	DeleteRemaining();
+	_firstPO = nullptr;
+}
+
+void PersistentObjectList::BeginAllocations()
+{
+	_curPO = &_firstPO;
+	// reset all
+	for (auto* cur = _firstPO; cur; cur = cur->_next)
+		cur->PO_ResetConfiguration();
+}
+
+void PersistentObjectList::EndAllocations()
+{
+	DeleteRemaining();
+	_curPO = nullptr;
+}
+
+void PersistentObjectList::DeleteRemaining()
+{
+	IPersistentObject* next;
+	for (auto* cur = *_curPO; cur; cur = next)
+	{
+		next = cur->_next;
+		DeletePersistentObject(cur);
+	}
+	*_curPO = nullptr;
+}
+
+
 struct EventHandlerEntry
 {
 	EventHandlerEntry* next;
@@ -753,6 +791,24 @@ void WrapperElement::OnLayout(const UIRect& rect)
 }
 
 
+Rangef FillerElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::Exact(containerSize.x);
+}
+
+Rangef FillerElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::Exact(containerSize.y);
+}
+
+void FillerElement::OnLayout(const UIRect& rect)
+{
+	if (_child && _child->_NeedsLayout())
+		_child->PerformLayout(rect);
+	_finalRect = rect;
+}
+
+
 void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();
@@ -790,6 +846,18 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 	auto r = GetFinalRect();
 	float w = r.x1 - r.x0;
 	draw::TextLine(font, fs->size, r.x0, r.y1 - (r.y1 - r.y0 - fs->size) / 2, text, ctx.textColor);
+}
+
+Rangef TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	auto* fs = _FindClosestParentFontSettings();
+	return Rangef::Exact(ceilf(GetTextWidth(fs->GetFont(), fs->size, text)));
+}
+
+Rangef TextElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	auto* fs = _FindClosestParentFontSettings();
+	return Rangef::Exact(fs->size);
 }
 
 
