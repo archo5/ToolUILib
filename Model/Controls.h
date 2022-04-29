@@ -114,6 +114,8 @@ struct IconElement : UIObjectNoChildren
 struct LabelFrame : FrameElement
 {
 	void OnReset() override;
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 };
 
 struct Header : FrameElement
@@ -279,6 +281,7 @@ struct TreeExpandIcon : StateToggleIconBase
 struct StateButtonSkin : StateToggleFrameBase
 {
 	void OnReset() override;
+	void OnLayout(const UIRect& rect) override;
 };
 
 

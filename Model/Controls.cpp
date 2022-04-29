@@ -102,13 +102,13 @@ Size2f FrameElement::GetReducedContainerSize(Size2f size)
 Rangef FrameElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
-	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? Rangef::AtLeast(_child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).min) : Rangef::AtLeast(0)).Add(pad);
 }
 
 Rangef FrameElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
-	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? Rangef::AtLeast(_child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type).min) : Rangef::AtLeast(0)).Add(pad);
 }
 
 void FrameElement::OnLayout(const UIRect& rect)
@@ -227,6 +227,18 @@ void LabelFrame::OnReset()
 	FrameElement::OnReset();
 
 	SetDefaultFrameStyle(DefaultFrameStyle::Label);
+}
+
+Rangef LabelFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+}
+
+Rangef LabelFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
 
@@ -383,6 +395,22 @@ void StateButtonSkin::OnReset()
 	StateToggleFrameBase::OnReset();
 
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
+}
+
+void StateButtonSkin::OnLayout(const UIRect& rect)
+{
+	if (_child)
+	{
+		UIRect r = rect.ShrinkBy(frameStyle.padding);
+		auto rSize = r.GetSize();
+		float minw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding).min;
+		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).min;
+		float ox = roundf((rSize.x - minw) * 0.5f);
+		float oy = roundf((rSize.y - minh) * 0.5f);
+		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		_child->PerformLayout(fr);
+	}
+	_finalRect = rect;
 }
 
 
