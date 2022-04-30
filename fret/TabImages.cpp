@@ -5,9 +5,12 @@
 #include "Workspace.h"
 
 
+static float hsplitImgTab1[1] = { 0.5f };
+static float vsplitImgTab2[1] = { 0.5f };
+
 void TabImages::Build()
 {
-	auto& spstr = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitImgTab1);
 	{
 		ui::Push<ui::EdgeSliceLayoutElement>();
 
@@ -81,7 +84,7 @@ void TabImages::Build()
 		ui::Pop();
 	}
 	{
-		auto& spvert = ui::Push<ui::SplitPane>();
+		ui::Push<ui::SplitPane>().Init(ui::Direction::Vertical, vsplitImgTab2);
 		{
 			if (workspace->desc.curImage < workspace->desc.images.size())
 			{
@@ -99,9 +102,6 @@ void TabImages::Build()
 			ui::Pop();
 		}
 		ui::Pop();
-		spvert.SetDirection(true);
-		spvert.SetSplits({ 0.5f });
 	}
 	ui::Pop();
-	spstr.SetSplits({ 0.5f });
 }

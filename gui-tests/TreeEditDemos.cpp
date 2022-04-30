@@ -535,7 +535,7 @@ struct ScriptTreeDemo : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
-		sp.SetDirection(false);
+		sp.SetDirection(ui::Direction::Horizontal);
 		sp.SetSplits({ 0.5f });
 	}
 	void OnEvent(ui::Event& e) override

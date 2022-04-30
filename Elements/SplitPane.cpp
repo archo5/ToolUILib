@@ -86,9 +86,11 @@ static float SplitWidthAsQ(SplitPane* sp)
 	}
 }
 
-static void CheckSplits(SplitPane* sp)
+static void CheckSplits(SplitPane* sp, size_t needElement = SIZE_MAX)
 {
 	size_t cc = sp->_children.size() - 1;
+	if (needElement != SIZE_MAX)
+		cc = max(cc, needElement + 1);
 	size_t oldsize = sp->_splits.size();
 	if (oldsize < cc)
 	{
@@ -109,6 +111,43 @@ static void CheckSplits(SplitPane* sp)
 		for (auto& s : sp->_splits)
 			s *= scale;
 	}
+}
+
+static void ClampSplit(SplitPane* sp, size_t which)
+{
+	// TODO config option
+	float minPartSizePx = 4;
+
+	bool v = sp->_verticalSplit;
+	auto r = sp->GetFinalRect();
+	if (r.x0 == 0 && r.y0 == 0 && r.x1 == 0 && r.y1 == 0)
+		return; // no layout yet
+	float minPos = !v ? r.x0 : r.y0;
+	float maxPos = !v ? r.x1 : r.y1;
+
+	if (which > 0)
+	{
+		if (!v)
+			minPos = SplitQToX(sp, sp->_splits[which - 1]) + sp->vertSepStyle.size / 2;
+		else
+			minPos = SplitQToY(sp, sp->_splits[which - 1]) + sp->horSepStyle.size / 2;
+	}
+	if (which + 1 < sp->_splits.size())
+	{
+		if (!v)
+			maxPos = SplitQToX(sp, sp->_splits[which + 1]) - sp->vertSepStyle.size / 2;
+		else
+			maxPos = SplitQToY(sp, sp->_splits[which + 1]) - sp->horSepStyle.size / 2;
+	}
+
+	minPos += minPartSizePx;
+	maxPos -= minPartSizePx;
+
+	auto& S = sp->_splits[which];
+	if (!v)
+		S = SplitXToQ(sp, clamp(SplitQToX(sp, S), minPos, maxPos));
+	else
+		S = SplitYToQ(sp, clamp(SplitQToY(sp, S), minPos, maxPos));
 }
 
 void SplitPane::OnPaint(const UIPaintContext& ctx)
@@ -219,11 +258,22 @@ void SplitPane::OnEvent(Event& e)
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitXToQ(this, e.position.x + _dragOff);
+				ClampSplit(this, i);
 				_OnChangeStyle();
+				{
+					Event ev(e.context, this, EventType::Change);
+					ev.arg0 = i;
+					e.context->BubblingEvent(ev);
+				}
 				break;
 			case SubUIDragState::Stop:
 				if (e.context->GetMouseCapture() == this)
 					e.context->ReleaseMouse();
+				{
+					Event ev(e.context, this, EventType::Commit);
+					ev.arg0 = i;
+					e.context->BubblingEvent(ev);
+				}
 				break;
 			}
 		}
@@ -237,11 +287,22 @@ void SplitPane::OnEvent(Event& e)
 				break;
 			case SubUIDragState::Move:
 				_splits[i] = SplitYToQ(this, e.position.y + _dragOff);
+				ClampSplit(this, i);
 				_OnChangeStyle();
+				{
+					Event ev(e.context, this, EventType::Change);
+					ev.arg0 = i;
+					e.context->BubblingEvent(ev);
+				}
 				break;
 			case SubUIDragState::Stop:
 				if (e.context->GetMouseCapture() == this)
 					e.context->ReleaseMouse();
+				{
+					Event ev(e.context, this, EventType::Commit);
+					ev.arg0 = i;
+					e.context->BubblingEvent(ev);
+				}
 				break;
 			}
 		}
@@ -254,11 +315,23 @@ void SplitPane::OnEvent(Event& e)
 	_splitUI.FinalizeOnEvent(e);
 }
 
+Rangef SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::Exact(containerSize.x);
+}
+
+Rangef SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::Exact(containerSize.y);
+}
+
 void SplitPane::OnLayout(const UIRect& rect)
 {
-	CheckSplits(this);
-
 	_finalRect = rect;
+
+	CheckSplits(this);
+	for (size_t i = 0; i < _splits.size(); i++)
+		ClampSplit(this, i);
 
 	size_t split = 0;
 	if (!_verticalSplit)
@@ -373,51 +446,49 @@ void SplitPane::_DetachFromFrameContents()
 	UIObject::_DetachFromFrameContents();
 }
 
-Rangef SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+SplitPane& SplitPane::SetDirection(Direction d)
 {
-	return { containerSize.x, containerSize.x };
+	_verticalSplit = d == Direction::Vertical;
+	_OnChangeStyle();
+	return *this;
 }
 
-Rangef SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+SplitPane& SplitPane::SetSplitPos(int which, float pos)
 {
-	return { containerSize.y, containerSize.y };
+	if (which < 0)
+		return *this;
+	CheckSplits(this, which);
+	_splits[which] = pos;
+	ClampSplit(this, which);
+	_OnChangeStyle();
+	return *this;
 }
 
-#if 0
-SplitPane* SplitPane::SetSplit(unsigned which, float f, bool clamp)
+float SplitPane::GetSplitPos(int which) const
 {
-	CheckSplits(this);
-	if (clamp)
+	if (which < 0 || size_t(which) >= _splits.size())
+		return 0;
+	return _splits[which];
+}
+
+SplitPane& SplitPane::SetSplits(const float* splits, size_t numSplits)
+{
+	_splits.assign(splits, splits + numSplits);
+	for (size_t i = 0; i < _splits.size(); i++)
+		ClampSplit(this, i);
+	_OnChangeStyle();
+	return *this;
+}
+
+SplitPane& SplitPane::Init(Direction d, float* splits, size_t numSplits)
+{
+	SetDirection(d);
+	SetSplits(splits, numSplits);
+	HandleEvent(this, EventType::Change) = [this, splits](ui::Event& e)
 	{
-		float swq = SplitWidthAsQ(this);
-		if (which > 0)
-			f = std::max(f, _splits[which - 1] + swq);
-		else
-			f = std::max(f, 0.0f);
-		if (which + 1 < _splits.size())
-			f = std::min(f, _splits[which + 1] - swq);
-		else
-			f = std::min(f, 1.0f);
-	}
-	_splits[which] = f;
-	return this;
-}
-#endif
-
-SplitPane* SplitPane::SetSplits(std::initializer_list<float> splits, bool firstTimeOnly)
-{
-	if (!firstTimeOnly || !_splitsSet)
-	{
-		_splits = splits;
-		_splitsSet = true;
-	}
-	return this;
-}
-
-SplitPane* SplitPane::SetDirection(bool vertical)
-{
-	_verticalSplit = vertical;
-	return this;
+		splits[e.arg0] = GetSplitPos(e.arg0);
+	};
+	return *this;
 }
 
 } // ui

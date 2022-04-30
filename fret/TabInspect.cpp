@@ -6,11 +6,13 @@
 #include "Workspace.h"
 
 
+static float hsplitInspectTab1[1] = { 0.5f };
+
 void TabInspect::Build()
 {
 	Subscribe(DCT_HexViewerState, &of->hexViewerState);
 
-	auto& spmkr = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitInspectTab1);
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
@@ -63,5 +65,4 @@ void TabInspect::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	spmkr.SetSplits({ 0.6f });
 }

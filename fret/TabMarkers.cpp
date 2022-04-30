@@ -5,10 +5,12 @@
 #include "Workspace.h"
 
 
+static float hsplitMarkersTab1[1] = { 0.6f };
+
 void TabMarkers::Build()
 {
 	auto* f = of->ddFile;
-	auto& spmkr = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitMarkersTab1);
 	{
 		ui::Push<ui::EdgeSliceLayoutElement>();
 
@@ -66,5 +68,4 @@ void TabMarkers::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	spmkr.SetSplits({ 0.6f });
 }

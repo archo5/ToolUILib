@@ -3,11 +3,14 @@
 #include "ImageEditor.h"
 
 
+static float hsplitImgEd1[1] = { 0.6f };
+static float vsplitImgEd2[1] = { 0.6f };
+
 void ImageEditorWindowNode::Build()
 {
-	auto& sp1 = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitImgEd1);
 	{
-		auto& sp2 = ui::Push<ui::SplitPane>();
+		ui::Push<ui::SplitPane>().Init(ui::Direction::Vertical, vsplitImgEd2);
 		{
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
@@ -47,8 +50,6 @@ void ImageEditorWindowNode::Build()
 			ui::Pop();
 		}
 		ui::Pop();
-		sp2.SetDirection(true);
-		sp2.SetSplits({ 0.6f });
 
 		ui::Push<ui::FillerElement>();
 		if (ddiSrc.dataDesc)
@@ -64,6 +65,4 @@ void ImageEditorWindowNode::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	sp1.SetDirection(false);
-	sp1.SetSplits({ 0.6f });
 }

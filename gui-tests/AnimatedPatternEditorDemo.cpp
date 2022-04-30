@@ -552,6 +552,10 @@ struct AnimPattern : ITree
 };
 
 
+static float hsplit[1] = { 0.7f };
+static float vsplit1[1] = { 0.6f };
+static float vsplit2[1] = { 0.3f };
+
 struct AnimatedPatternEditor : Buildable, AnimationRequester
 {
 	void OnAnimationFrame() override
@@ -570,9 +574,9 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 		Subscribe(DCT_AnimPatternChanged);
 		BeginAnimation();
 
-		auto& hsp = Push<SplitPane>();
+		Push<SplitPane>().Init(Direction::Horizontal, hsplit);
 		{
-			auto& vsp = Push<SplitPane>();
+			Push<SplitPane>().Init(Direction::Vertical, vsplit1);
 			{
 				Push<EdgeSliceLayoutElement>();
 				{
@@ -587,10 +591,8 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 				Pop();
 			}
 			Pop();
-			vsp.SetDirection(true);
-			vsp.SetSplits({ 0.6f });
 
-			auto& vsp2 = Push<SplitPane>();
+			Push<SplitPane>().Init(Direction::Vertical, vsplit2);
 			{
 				Push<EdgeSliceLayoutElement>();
 				{
@@ -613,12 +615,8 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 				Pop();
 			}
 			Pop();
-			vsp2.SetDirection(true);
-			vsp2.SetSplits({ 0.3f });
 		}
 		Pop();
-		hsp.SetDirection(false);
-		hsp.SetSplits({ 0.7f });
 	}
 	void OnEvent(Event& e) override
 	{

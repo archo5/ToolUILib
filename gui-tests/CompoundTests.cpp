@@ -338,7 +338,7 @@ struct SplitPaneTest : ui::Buildable
 		ui::MakeWithText<ui::FrameElement>("Pane A").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::MakeWithText<ui::FrameElement>("Pane B").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 
-		ui::Push<ui::SplitPane>().SetDirection(true);
+		ui::Push<ui::SplitPane>().SetDirection(ui::Direction::Vertical);
 
 		ui::MakeWithText<ui::FrameElement>("Pane C").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::MakeWithText<ui::FrameElement>("Pane D").SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);

@@ -405,7 +405,7 @@ struct MainWindow : ui::NativeMainWindow
 		auto& hsp = ui::Push<ui::SplitPane>();
 		{
 			auto& vsp = ui::Push<ui::SplitPane>();
-			vsp.SetDirection(true);
+			vsp.SetDirection(ui::Direction::Vertical);
 			{
 				ui::Make<RenderView>();
 				ui::Make<EditorView>();

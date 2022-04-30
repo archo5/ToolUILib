@@ -277,6 +277,9 @@ struct TE_ImageEditorNode : Buildable
 
 static bool showRenderSettings = true;
 static bool showColors = true;
+static float hSplit[2] = { 0.6f, 0.8f };
+static float vSplitPreview[1] = { 0.5f };
+
 struct TE_TemplateEditorNode : Buildable
 {
 	TE_Theme* theme;
@@ -284,7 +287,7 @@ struct TE_TemplateEditorNode : Buildable
 
 	void Build() override
 	{
-		auto& hsp = Push<SplitPane>();
+		Push<SplitPane>().Init(Direction::Horizontal, hSplit);
 		{
 			Push<ListBoxFrame>();
 			{
@@ -299,7 +302,7 @@ struct TE_TemplateEditorNode : Buildable
 
 			Push<StackTopDownLayoutElement>();
 			{
-				auto& vsp = Push<SplitPane>();
+				Push<SplitPane>().Init(Direction::Vertical, vSplitPreview);
 				{
 					auto& preview = Make<TE_MainPreviewNode>();
 					preview.tmpl = tmpl;
@@ -331,13 +334,10 @@ struct TE_TemplateEditorNode : Buildable
 					Pop();
 				}
 				Pop();
-				vsp.SetDirection(true);
-				vsp.SetSplits({ 0.5f });
 			}
 			Pop();
 		}
 		Pop();
-		hsp.SetSplits({ 0.6f, 0.8f });
 	}
 };
 

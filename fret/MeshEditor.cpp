@@ -5,11 +5,14 @@
 #include "../Render/RHI.h"
 
 
+static float hsplitMeshEd1[1] = { 0.6f };
+static float vsplitMeshEd2[1] = { 0.6f };
+
 void MeshEditorWindowNode::Build()
 {
-	auto& sp1 = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitMeshEd1);
 	{
-		auto& sp2 = ui::Push<ui::SplitPane>();
+		ui::Push<ui::SplitPane>().Init(ui::Direction::Vertical, vsplitMeshEd2);
 		{
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			if (ddiSrc.dataDesc && ddiSrc.dataDesc->curInst)
@@ -66,8 +69,6 @@ void MeshEditorWindowNode::Build()
 			ui::Pop();
 		}
 		ui::Pop();
-		sp2.SetDirection(true);
-		sp2.SetSplits({ 0.6f });
 
 		ui::Push<ui::FillerElement>();
 		if (ddiSrc.dataDesc)
@@ -88,8 +89,6 @@ void MeshEditorWindowNode::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	sp1.SetDirection(false);
-	sp1.SetSplits({ 0.6f });
 }
 
 void MeshEditorWindowNode::ReloadMesh()

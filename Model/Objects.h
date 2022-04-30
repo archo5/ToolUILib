@@ -254,6 +254,11 @@ struct UIObject : IPersistentObject
 	UIObject(const UIObject&) = delete;
 	virtual ~UIObject();
 
+	void PO_ResetConfiguration() override; // IPersistentObject
+	void PO_BeforeDelete() override; // IPersistentObject
+	void _InitReset();
+	virtual void OnReset() {}
+
 	virtual void OnEnable() {}
 	virtual void OnDisable() {}
 	virtual void OnEnterTree() {}
@@ -262,11 +267,6 @@ struct UIObject : IPersistentObject
 	virtual void _AttachToFrameContents(FrameContents* owner);
 	virtual void _DetachFromFrameContents();
 	virtual void _DetachFromTree();
-
-	void PO_ResetConfiguration() override;
-	void PO_BeforeDelete() override;
-	void _InitReset();
-	virtual void OnReset() {}
 
 	virtual void SlotIterator_Init(UIObjectIteratorData& data) = 0;
 	virtual UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) = 0;

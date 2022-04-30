@@ -214,9 +214,11 @@ MSData MeshScript::RunScript(IDataSource* src, IVariableSource* instCtx)
 	return ret;
 }
 
+static float hsplitMeshScript[1] = { 0.5f };
+
 void MeshScript::EditUI()
 {
-	auto& sp1 = ui::Push<ui::SplitPane>();
+	auto& sp1 = ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitMeshScript);
 	{
 		auto& tree = ui::Make<ui::TreeEditor>();
 		tree.SetTree(this);
@@ -235,8 +237,6 @@ void MeshScript::EditUI()
 		ui::Pop();
 	}
 	ui::Pop();
-	sp1.SetDirection(false);
-	sp1.SetSplits({ 0.5f });
 	auto* cb = ui::GetCurrentBuildable();
 	cb->Subscribe(DCT_MeshScriptChanged, this);
 	sp1.HandleEvent() = [cb](ui::Event& e)

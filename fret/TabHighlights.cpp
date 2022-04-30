@@ -5,9 +5,11 @@
 #include "Workspace.h"
 
 
+static float hsplitHighlightsTab1[1] = { 0.6f };
+
 void TabHighlights::Build()
 {
-	auto& spmkr = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitHighlightsTab1);
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
@@ -20,5 +22,4 @@ void TabHighlights::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	spmkr.SetSplits({ 0.6f });
 }

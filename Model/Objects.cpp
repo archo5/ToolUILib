@@ -70,58 +70,6 @@ UIObject::~UIObject()
 	ClearEventHandlers();
 }
 
-void UIObject::_AttachToFrameContents(FrameContents* owner)
-{
-	if (!system)
-	{
-		system = owner;
-
-		OnEnable();
-	}
-
-	system->container.pendingDeactivationSet.RemoveIfFound(this);
-
-	if (flags & UIObject_IsOverlay)
-	{
-		system->overlays.Register(this, g_overlays.find(this)->value.depth);
-		g_overlays.erase(this);
-	}
-
-	// TODO verify possibly inconsistent duplicate flags of states (if flag set)
-#if 0
-	for (UIObject* p = system->eventSystem.hoverObj; p; p = p->parent)
-		if (p == this)
-			flags |= UIObject_IsHovered;
-	for (int i = 0; i < 5; i++)
-		for (UIObject* p = system->eventSystem.clickObj[i]; p; p = p->parent)
-			if (p == this)
-				flags |= _UIObject_IsClicked_First << i;
-#endif
-
-	if (flags & UIObject_NeedsTreeUpdates)
-		OnEnterTree();
-
-	flags |= UIObject_IsInTree;
-
-	_OnChangeStyle();
-}
-
-void UIObject::_DetachFromFrameContents()
-{
-	OnDisable();
-
-	system->container.layoutStack.OnDestroy(this);
-	system->container.pendingDeactivationSet.RemoveIfFound(this);
-
-	if (flags & UIObject_IsOverlay)
-	{
-		g_overlays.insert(this, system->overlays.mapped.find(this)->value);
-		system->overlays.Unregister(this);
-	}
-
-	system = nullptr;
-}
-
 void UIObject::_DetachFromTree()
 {
 	if (!(flags & UIObject_IsInTree))
@@ -176,6 +124,58 @@ void UIObject::PO_BeforeDelete()
 void UIObject::_InitReset()
 {
 	OnReset();
+}
+
+void UIObject::_AttachToFrameContents(FrameContents* owner)
+{
+	if (!system)
+	{
+		system = owner;
+
+		OnEnable();
+	}
+
+	system->container.pendingDeactivationSet.RemoveIfFound(this);
+
+	if (flags & UIObject_IsOverlay)
+	{
+		system->overlays.Register(this, g_overlays.find(this)->value.depth);
+		g_overlays.erase(this);
+	}
+
+	// TODO verify possibly inconsistent duplicate flags of states (if flag set)
+#if 0
+	for (UIObject* p = system->eventSystem.hoverObj; p; p = p->parent)
+		if (p == this)
+			flags |= UIObject_IsHovered;
+	for (int i = 0; i < 5; i++)
+		for (UIObject* p = system->eventSystem.clickObj[i]; p; p = p->parent)
+			if (p == this)
+				flags |= _UIObject_IsClicked_First << i;
+#endif
+
+	if (flags & UIObject_NeedsTreeUpdates)
+		OnEnterTree();
+
+	flags |= UIObject_IsInTree;
+
+	_OnChangeStyle();
+}
+
+void UIObject::_DetachFromFrameContents()
+{
+	OnDisable();
+
+	system->container.layoutStack.OnDestroy(this);
+	system->container.pendingDeactivationSet.RemoveIfFound(this);
+
+	if (flags & UIObject_IsOverlay)
+	{
+		g_overlays.insert(this, system->overlays.mapped.find(this)->value);
+		system->overlays.Unregister(this);
+	}
+
+	system = nullptr;
 }
 
 void UIObject::_DoEvent(Event& e)

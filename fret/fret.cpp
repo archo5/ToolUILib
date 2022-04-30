@@ -21,6 +21,8 @@
 
 #define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
 
+static float hsplitHexView[1] = { 0.3f };
+
 struct MainWindowContents : ui::Buildable
 {
 	void OnEnable() override
@@ -153,7 +155,7 @@ struct MainWindowContents : ui::Buildable
 					//ui::Push<ui::FrameElement>().SetDefaultStyle(ui::DefaultFrameStyle::GroupBox);
 					{
 						//ui::Make<FileStructureViewer2>()->ds = f->ds;
-						auto& sp = ui::Push<ui::SplitPane>();
+						ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitHexView);
 						{
 							// left
 							auto& fv = ui::Make<FileView>();
@@ -207,7 +209,6 @@ struct MainWindowContents : ui::Buildable
 							}
 							ui::Pop();
 						}
-						sp.SetSplits({ 0.3f });
 						ui::Pop();
 					}
 					//ui::Pop();

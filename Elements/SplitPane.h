@@ -20,7 +20,11 @@ struct SplitPane : UIObject
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
+
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect) override;
+
 	void SlotIterator_Init(UIObjectIteratorData& data) override;
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;
 	void RemoveChildImpl(UIObject* ch) override;
@@ -29,11 +33,18 @@ struct SplitPane : UIObject
 	UIObject* FindLastChildContainingPos(Point2f pos) const override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
-	SplitPane* SetSplits(std::initializer_list<float> splits, bool firstTimeOnly = true);
-	SplitPane* SetDirection(bool vertical);
+	SplitPane& SetDirection(Direction d);
+	UI_FORCEINLINE Direction GetDirection() const { return _verticalSplit ? Direction::Vertical : Direction::Horizontal; }
+
+	SplitPane& SetSplitPos(int which, float pos);
+	float GetSplitPos(int which) const;
+	UI_FORCEINLINE SplitPane& SetSplits(std::initializer_list<float> splits) { return SetSplits(splits.begin(), splits.size()); }
+	SplitPane& SetSplits(const float* splits, size_t numSplits);
+
+	SplitPane& Init(Direction d, float* splits, size_t numSplits);
+	template <size_t N>
+	UI_FORCEINLINE SplitPane& Init(Direction d, float(&splits)[N]) { return Init(d, splits, N); }
 
 	SeparatorLineStyle vertSepStyle; // for horizontal splitting
 	SeparatorLineStyle horSepStyle; // for vertical splitting

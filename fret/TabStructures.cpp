@@ -5,12 +5,14 @@
 #include "Workspace.h"
 
 
+static float hsplitStructuresTab1[1] = { 0.6f };
+
 void TabStructures::Build()
 {
 	if (workspace->ddiSrc.filterFileFollow && workspace->curOpenedFile < (int)workspace->openedFiles.size())
 		workspace->ddiSrc.filterFile = workspace->openedFiles[workspace->curOpenedFile]->ddFile;
 
-	auto& spstr = ui::Push<ui::SplitPane>();
+	ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplitStructuresTab1);
 	{
 		ui::Push<ui::EdgeSliceLayoutElement>();
 
@@ -84,5 +86,4 @@ void TabStructures::Build()
 		ui::Pop();
 	}
 	ui::Pop();
-	spstr.SetSplits({ 0.6f });
 }
