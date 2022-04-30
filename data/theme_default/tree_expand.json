@@ -1,46 +1,45 @@
-{
-	"tree_expand:IconStyle":
-	{
-		width = 22
-		height = 22
-		painter = "tree_expand"
-	},
-	"tree_expand:painter":
-	{
-		"__": "layer",
-		"painters":
-		[
-			{
-				"__": "select_first",
-				"painters":
-				[
-					{
-						"condition": ["checked", "hover"],
-						"painter": { "__": "imgset", "imgset": "treetick.open-hover" }
-					},
-					{
-						"condition": ["checked"],
-						"painter": { "__": "imgset", "imgset": "treetick.open-normal" }
-					},
-					{
-						"condition": ["hover"],
-						"painter": { "__": "imgset", "imgset": "treetick.closed-hover" }
-					},
-					{
-						"painter": { "__": "imgset", "imgset": "treetick.closed-normal" }
-					}
-				]
-			},
-			{
-				"__": "conditional_DISABLED",
-				"condition": ["focused"],
-				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
-			}
-		]
-	},
 
-	"treetick.closed-normal:imgset": { "images": [{ "path": "images/treetick-closed-normal.png" }] },
-	"treetick.closed-hover:imgset": { "images": [{ "path": "images/treetick-closed-hover.png" }] },
-	"treetick.open-normal:imgset": { "images": [{ "path": "images/treetick-open-normal.png" }] },
-	"treetick.open-hover:imgset": { "images": [{ "path": "images/treetick-open-hover.png" }] }
+"tree_expand:IconStyle":
+{
+	width = 22
+	height = 22
+	painter = "tree_expand"
 }
+"tree_expand:painter":
+{
+	__ = "layer"
+	painters:
+	[
+		{
+			__ = "select_first"
+			painters:
+			[
+				{
+					condition = ["checked", "hover"]
+					painter = { __ = "imgset", imgset = "treetick.open-hover" }
+				}
+				{
+					condition = ["checked"]
+					painter = { __ = "imgset", imgset = "treetick.open-normal" }
+				}
+				{
+					condition = ["hover"]
+					painter = { __ = "imgset", imgset = "treetick.closed-hover" }
+				}
+				{
+					painter = { __ = "imgset", imgset = "treetick.closed-normal" }
+				}
+			]
+		}
+		{
+			__ = "conditional_DISABLED"
+			condition = ["focused"]
+			painter = { __ = "imgset", imgset = "outline", shrink = -1 }
+		}
+	]
+}
+
+"treetick.closed-normal:imgset": { images = [{ path = "images/treetick-closed-normal.png" }] }
+"treetick.closed-hover:imgset": { images = [{ path = "images/treetick-closed-hover.png" }] }
+"treetick.open-normal:imgset": { images = [{ path = "images/treetick-open-normal.png" }] }
+"treetick.open-hover:imgset": { images = [{ path = "images/treetick-open-hover.png" }] }

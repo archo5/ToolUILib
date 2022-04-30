@@ -19,6 +19,6 @@
 	painter = "selector-16"
 }
 
-"selector-16:painter": { "__": "imgset", "imgset": "selector-16" }
+"selector-16:painter": { __ = "imgset", imgset = "selector-16" }
 
-"selector-16:imgset": { "images": [{ "path": "images/selector-16.png" }] }
+"selector-16:imgset": { images = [{ path = "images/selector-16.png" }] }

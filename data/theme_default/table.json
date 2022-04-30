@@ -18,7 +18,7 @@
 
 "table_cell:painter":
 {
-	__ = "select_first",
+	__ = "select_first"
 	painters:
 	[
 		{ condition = ["checked"], painter = { __ = "color_fill",

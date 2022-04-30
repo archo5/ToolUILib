@@ -16,28 +16,28 @@
 // TODO `if (r.GetWidth() > 0)` - needed?
 "slider_track:painter":
 {
-	__ = "select_first",
+	__ = "select_first"
 	painters:
 	[
 		{
-			condition = ["disabled"],
+			condition = ["disabled"]
 			painter = { __ = "imgset", imgset = "textbox.disabled", shrink = -3 }
-		},
+		}
 		{
 			painter = { __ = "imgset", imgset = "textbox.normal", shrink = -3 }
 		}
 	]
-},
+}
 
 "slider_track_fill:painter":
 {
-	__ = "select_first",
+	__ = "select_first"
 	painters:
 	[
 		{
-			condition = ["disabled"],
+			condition = ["disabled"]
 			painter = { __ = "imgset", imgset = "button.disabled", shrink = -3 }
-		},
+		}
 		{
 			painter = { __ = "imgset", imgset = "button.normal", shrink = -3 }
 		}

@@ -5,7 +5,7 @@
 ":FontSettings" = {}
 "header:FontSettings" = { weight = "bold" }
 
-"outline:imgset": { "images": [{ "path": "images/outline.png", "edge": 4 }] }
+"outline:imgset": { images = [{ path = "images/outline.png", edge = 4 }] }
 
 "label:FrameStyle":
 {
@@ -23,12 +23,8 @@
 	backgroundPainter = "panel"
 }
 
-"panel:painter":
-{
-	"__": "imgset",
-	"imgset": "panel"
-}
-"panel:imgset": { "images": [{ "path": "images/panel.png", "edge": 5 }] }
+"panel:painter": { __ = "imgset", imgset = "panel" }
+"panel:imgset": { images = [{ path = "images/panel.png", edge = 5 }] }
 
 "listbox:FrameStyle":
 {
@@ -61,7 +57,7 @@
 
 "scrollbar_vertical:ScrollbarStyle":
 {
-	width = 20,
+	width = 20
 	trackFillMargin = 2
 	thumbMinLength = 16
 	trackPainter = "insetbox"
@@ -76,56 +72,56 @@
 
 "textbox:painter":
 {
-	"__": "layer",
-	"painters":
+	__ = "layer"
+	painters:
 	[
 		{
-			"__": "select_first",
-			"painters":
+			__ = "select_first"
+			painters:
 			[
 				{
-					"condition": ["disabled"],
-					"painter": { "__": "imgset", "imgset": "textbox.disabled" }
-				},
+					condition = ["disabled"]
+					painter = { __ = "imgset", imgset = "textbox.disabled" }
+				}
 				{
-					"painter": { "__": "imgset", "imgset": "textbox.normal" }
+					painter = { __ = "imgset", imgset = "textbox.normal" }
 				}
 			]
-		},
+		}
 		{
-			"__": "conditional",
-			"condition": ["focused"],
-			"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
+			__ = "conditional"
+			condition = ["focused"]
+			painter = { __ = "imgset", imgset = "outline", "shrink": -1 }
 		}
 	]
 }
 
 "insetbox:painter":
 {
-	"__": "select_first",
-	"painters":
+	__ = "select_first"
+	painters:
 	[
 		{
-			"condition": ["disabled"],
-			"painter": { "__": "imgset", "imgset": "textbox.disabled" }
-		},
+			condition = ["disabled"]
+			painter = { __ = "imgset", imgset = "textbox.disabled" }
+		}
 		{
-			"painter": { "__": "imgset", "imgset": "textbox.normal" }
+			painter = { __ = "imgset", imgset = "textbox.normal" }
 		}
 	]
 }
 
 "outsetbox:painter":
 {
-	"__": "select_first",
-	"painters":
+	__ = "select_first"
+	painters:
 	[
 		{
-			"condition": ["disabled"],
-			"painter": { "__": "imgset", "imgset": "button.disabled" }
-		},
+			condition = ["disabled"]
+			painter = { __ = "imgset", imgset = "button.disabled" }
+		}
 		{
-			"painter": { "__": "imgset", "imgset": "button.normal" }
+			painter = { __ = "imgset", imgset = "button.normal" }
 		}
 	]
 }
@@ -136,8 +132,8 @@
 	backgroundPainter = "tab_panel"
 }
 
-"textbox.normal:imgset": { "images": [{ "path": "images/textbox-normal.png", "edge": 5 }] }
-"textbox.disabled:imgset": { "images": [{ "path": "images/textbox-disabled.png", "edge": 5 }] }
+"textbox.normal:imgset": { images = [{ path = "images/textbox-normal.png", edge = 5 }] }
+"textbox.disabled:imgset": { images = [{ path = "images/textbox-disabled.png", edge = 5 }] }
 
 "checkerboard:painter": { __ = "imgset", imgset = "bgr-checkerboard" }
 "bgr-checkerboard:imgset":

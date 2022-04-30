@@ -1,38 +1,37 @@
-{
-	"selectable:FrameStyle":
-	{
-		"padding": 5,
-		"backgroundPainter": "selectable"
-	},
 
-	"selectable:painter":
-	{
-		"__": "layer",
-		"painters":
-		[
-			{
-				"__": "select_first",
-				"painters":
-				[
-					{
-						"condition": ["checked"],
-						"painter": { "__": "color_fill", "color": "f:0.6;0.04;0" }
-					},
-					{
-						"condition": ["down"],
-						"painter": { "__": "color_fill", "color": "f:0;0;0;0.5" }
-					},
-					{
-						"condition": ["hover"],
-						"painter": { "__": "color_fill", "color": "f:1;1;1;0.2" }
-					}
-				]
-			},
-			{
-				"__": "conditional",
-				"condition": ["focused"],
-				"painter": { "__": "imgset", "imgset": "outline", "shrink": -1 }
-			}
-		]
-	}
+"selectable:FrameStyle":
+{
+	padding = 5
+	backgroundPainter = "selectable"
+}
+
+"selectable:painter":
+{
+	__ = "layer"
+	painters:
+	[
+		{
+			__ = "select_first"
+			painters:
+			[
+				{
+					condition = ["checked"],
+					painter = { __ = "color_fill", color = "f:0.6;0.04;0" }
+				},
+				{
+					condition = ["down"],
+					painter = { __ = "color_fill", color = "f:0;0;0;0.5" }
+				},
+				{
+					condition = ["hover"],
+					painter = { __ = "color_fill", color = "f:1;1;1;0.2" }
+				}
+			]
+		}
+		{
+			__ = "conditional"
+			condition = ["focused"]
+			painter = { __ = "imgset", imgset = "outline", shrink = -1 }
+		}
+	]
 }
