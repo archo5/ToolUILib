@@ -1,35 +1,60 @@
 
 required layout structures:
 
-+ stack
+- stack (Stack*LayoutElement)
   basic single-direction element stacking for general content
+  > use cases: small/medium lists
 
-+ edge off
+- stack expand (StackExpand*LayoutElement)
+  stacking with support for ratio/computed size-based expansion
+  > use cases: small/medium lists containing fields that benefit from expansion
+
+- edge slice (EdgeSliceLayoutElement)
   this is when one of the rectangle sides have been allocated to other controls than the rest of it
   can be combined to remove multiple edges (top + bottom, top + right and so on)
-  window menu is one type of this
+  > use cases: window menus, toolbars, sidebar button lists, status bars
 
-- calculator
-  buttons are aligned on a grid, and can span more than one cell
-  size generally adapts uniformly but there may be exceptions
-
-- absolute/fixed
-  for emergencies, manual layouts, menus, tooltips, dropdowns, sidebar tools etc.
-
-- table
-  tables, tree views, detail views, property lists, settings menus
-  this probably requires special model-based controls though, beyond some small amount of data
-
-- scrollables
-  can be both containers whose children exceed their size (overflow) and separate scrollbars
-
-- stretch fill
+- stretch fill (EdgeSliceLayoutElement / FillerElement / PlacementLayoutElement)
   when all edges have been removed, the remaining area is often the workspace
 
-+ 3-slice
-  for managing separable sections: A=content_1, B=separator, C=content_2
-  should support both absolute and relative positioning, but...
-  ...separator has to stay unchanged (accounting for global scale, if it exists)
+- grid (predefined) (PlacementLayoutElement)
+  items are aligned on a grid, and can span more than one cell
+  > use cases: calculator, fancy editing layouts, small tables
 
-- docking/partitioning
-  possibly done on a higher level, but would be nice to allow customization
+- absolute/fixed (PlacementLayoutElement / custom layout)
+  > use cases: emergencies, manual layouts, menus, tooltips, dropdowns, sidebar tools etc.
+
+- table (TableView)
+  > use cases: tables, tree views, detail views, property lists, settings menus
+  requires special model-based controls though, beyond some small amount of data
+
+- scrollables (ScrollArea)
+  can be both containers whose children exceed their size (overflow) and separate scrollbars
+
+- N-slice / split pane (SplitPane)
+  for managing separate sections that fight for the same space but should be always accessible
+
+
+the layout process:
+
+- measure the space required/allowed for the element (as a min/max range)
+  (own CalcEstimatedWidth/Height)
+- allocate a rectangle based on the state, requirements and any slot metadata (if it exists)
+  (parent OnLayout)
+- use the rectangle to position children/self
+  (own OnLayout)
+
+(a=parent, b=self, c=children)
+[a]OnLayout:
+  [b]CalcEstimatedWidth/Height(optional):
+    [c]CalcEstimatedWidth/Height(optional)
+  [b]OnLayout:
+    [c]OnLayout, specify final rect (can do it before or after)
+
+
+sizing subtypes:
+
+- wrapper - simply passes on child element measurements / parent layout rectangle, in the end taking the child final rectangle
+- filler - forces the child to fill the given space as much as possible, doesn't care about child size
+- container - passes on child min. sizes but may expand beyond that
+- specific - has a specific content size that should be used, can be used exactly or as a minimum size
