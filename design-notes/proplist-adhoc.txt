@@ -1,0 +1,43 @@
+property lists (that can be mixed with other elements)
+
+label/editor proportions:
+- percentage (+optional min.fixed label)
+- fixed
+- editable (either as percentage or fixed)
+
+number of ui controls:
+- ideally 1 per editor and 1 per editor group
+	> float -> 1 editor, 0 groups -> 1 control
+	> vec2 -> 2 editors, 1 group -> 3 controls
+
+additional features:
+- hierarchy support on the label side
+- headers intermixed with properties
+- drag label to edit number (maybe?)
+- custom layout to minimize relayout cost
+
+
+
+option 1: each element has an optional label prefix
++ # ctrls is lowest
+? additional style memory
+? can render it inside margin or similar
+? can create label drag/cursor events for label drag
++ orthogonal to headers and special case inserts
+- groups would offset the split by default
+? each control [+] can and [-] has to be styled separately?
+
+1a: property list parent, items controlled by attributes (how?)
++ # ctrls is second lowest (+1 to total for all editors of a section)
+- label not part of element and not a separate element, drag events are not trivial (this is optional though)
++ hierarchy can be taken into account for layout
++ can use its style such that it's shared across all controls by default
+
+
+common solutions to common problems:
+- indents ignore hierarchy
+  -> common parent element that computes the label/editor split
+- defining metadata for each element
+  -> style override inside label element that can be enabled/modified
+- out-of-control drag events
+  -> intercept the events of a different control (easier if whole control can be intercepted but also ~easy if always "whole parent to the left aka <x0, >=y0, <y1")

@@ -1,0 +1,27 @@
+target flows
+- initial build
+- rebuild
+- cleanup
+
+initial build is easy
+- alloc new
+- append to tree
+- calls SET-OWNER
+- calls ENTER-TREE
+
+cleanup is easy
+- if in tree, LEAVE-TREE
+- if has owner, UNSET-OWNER
+- free resources
+
+rebuild is hard!
+
+hard restrictions:
+- cannot reuse tree pointers since they may be changed during Build()
+- cannot remove a node from system just because it's detached from the tree
+- must support owner-allocated UI elements
+
+currently solved using a pending deactivation set:
+- items removed from the tree are added to the set
+- items added back to the tree are removed from the set
+- items in the set after rebuild have UNSET-OWNER called on them

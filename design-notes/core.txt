@@ -1,0 +1,24 @@
+
+>>> types of data
+	- input-only
+		- USER SET: required on every build, otherwise resets to defaults
+		- SYS MODIFY: does not happen
+		- USER READ: can technically read but no point
+	- input, state, output (ISO):
+		- USER SET: defined on construction but otherwise not reset (e.g. on rebuild), can be updated by anyone at any point
+		- SYS MODIFY: happens via events (but can also animate after the original events)
+		- USER READ: can be done whenever but an event indicates when the value is likely to be updated
+
+- table data pointer for a table view ==> input-only
+- UI control styles ==> input-only
+- UI behavior flags ==> input-only
+- checkbox checked ==> ISO
+- textbox text ==> ISO
+- textbox selection ==> ISO
+- scroll position ==> ISO
+
+>>> basic shared rules
+- every output needs a corresponding change event with data indicating which change happened ..
+	.. to allow retrieving/propagating the output on change only
+- avoid getters/setters where unlikely that access will change (e.g. styles)
+	- setters may still be added for convenience (method chaining)
