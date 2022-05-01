@@ -8,46 +8,53 @@ namespace ui {
 struct FrameContents;
 struct Dockable;
 
-struct DockingArea : UIObject
+struct DockableContents : Buildable
 {
-	void SetDefaultLayout();
-
-private:
-	struct Node
-	{
-		float splitPos = 0;
-
-		bool childOrderVertical = false;
-		std::vector<Node*> childNodes;
-		std::vector<Dockable*> tabs;
-	};
-	struct Window
-	{
-		NativeWindowBase* window;
-		std::vector<Dockable*> tabs;
-	};
-
-	friend Dockable;
-
-	void RegisterDockable(Dockable* d);
-	void UnregisterDockable(Dockable* d);
-
-	Node _root;
-	std::vector<Window> _windows;
+	virtual std::string GetTitle() = 0;
 };
 
-struct Dockable : Buildable
+struct DockableContentsContainer : RefCountedST
 {
-	DockingArea* _area;
-	FrameContents* _contents;
+	DockableContents* contents;
+	FrameContents* frameContents;
 
-	Dockable()
-	{
-		flags |= UIObject_NeedsTreeUpdates;
-	}
+	DockableContentsContainer(DockableContents* C);
+};
 
-	void OnEnterTree() override;
-	void OnExitTree() override;
+struct DockingNode : RefCountedST
+{
+	bool isLeaf = true;
+	// if not leaf (contains child ndoes):
+	Direction splitDir = Direction::Horizontal;
+	std::vector<float> splits;
+	std::vector<RCHandle<DockingNode>> childNodes;
+	// if leaf (contains docked contents):
+	std::vector<RCHandle<DockableContentsContainer>> tabs;
+	RCHandle<DockableContentsContainer> curActiveTab;
+
+	void Build();
+};
+using DockingNodeHandle = RCHandle<DockingNode>;
+
+struct DockingSubwindow
+{
+	NativeWindowBase* window;
+	DockingNodeHandle rootNode;
+};
+
+struct DockingWindowContentBuilder : Buildable
+{
+	DockingNodeHandle _root;
+
+	void Build() override;
+};
+
+struct DockingMainArea : Buildable
+{
+	std::vector<DockingSubwindow> _subwindows;
+	DockingNodeHandle _mainAreaRootNode;
+
+	void Build() override;
 };
 
 }

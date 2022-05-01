@@ -315,6 +315,7 @@ void Test_ColorBlock();
 void Test_Image();
 void Test_ColorPicker();
 void Test_IMGUI();
+void Test_Docking();
 
 void Test_3DView();
 void Test_Gizmo();
@@ -408,6 +409,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Color picker", Test_ColorPicker },
 	{},
 	{ "IMGUI test", Test_IMGUI },
+	{ "Docking test", Test_Docking },
 };
 static const TestEntry _3dTestEntries[] =
 {

@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../Model/Docking.h"
+
 
 struct StateButtonsTest : ui::Buildable
 {
@@ -1026,5 +1028,68 @@ struct DropdownTest : ui::Buildable
 void Test_Dropdown()
 {
 	WMake<DropdownTest>();
+}
+
+
+struct DockingTest : ui::Buildable
+{
+	struct DockableTest : ui::DockableContents
+	{
+		std::string name;
+
+		std::string GetTitle() override
+		{
+			return name;
+		}
+		void Build() override
+		{
+			WMakeWithText<ui::Button>(name);
+		}
+	};
+
+	ui::DockingMainArea* area;
+	DockableTest* d1;
+	DockableTest* d2;
+
+	DockingTest()
+	{
+		area = ui::CreateUIObject<ui::DockingMainArea>();
+		d1 = ui::CreateUIObject<DockableTest>();
+		d1->name = "Dockable 1";
+		d2 = ui::CreateUIObject<DockableTest>();
+		d2->name = "Dockable 2";
+
+		auto* DCC1 = new ui::DockableContentsContainer(d1);
+		auto* CN1 = new ui::DockingNode;
+		CN1->tabs.push_back(DCC1);
+		CN1->curActiveTab = DCC1;
+
+		auto* DCC2 = new ui::DockableContentsContainer(d2);
+		auto* CN2 = new ui::DockingNode;
+		CN2->tabs.push_back(DCC2);
+		CN2->curActiveTab = DCC2;
+
+		auto* N = new ui::DockingNode;
+		N->isLeaf = false;
+		N->childNodes.push_back(CN1);
+		N->childNodes.push_back(CN2);
+		N->splits.push_back(0.5f);
+
+		area->_mainAreaRootNode = N;
+	}
+	~DockingTest()
+	{
+		ui::DeleteUIObject(d2);
+		ui::DeleteUIObject(d1);
+		ui::DeleteUIObject(area);
+	}
+	void Build() override
+	{
+		ui::Append(area);
+	}
+};
+void Test_Docking()
+{
+	WMake<DockingTest>();
 }
 
