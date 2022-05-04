@@ -140,7 +140,7 @@ struct MainWindowContents : ui::Buildable
 				tpFiles.AddTextTab(f->ddFile->name, uintptr_t(nf++));
 			}
 			tpFiles.SetActiveTabByUID(workspace.curOpenedFile);
-			tpFiles.HandleEvent(&tpFiles, ui::EventType::Commit) = [this, &tpFiles](ui::Event&)
+			tpFiles.HandleEvent(&tpFiles, ui::EventType::SelectionChange) = [this, &tpFiles](ui::Event&)
 			{
 				workspace.curOpenedFile = tpFiles.GetCurrentTabUID(0);
 			};
@@ -173,7 +173,7 @@ struct MainWindowContents : ui::Buildable
 								tp.AddEnumTab("Images", SubtabType::Images);
 
 								tp.SetActiveTabByUID(uintptr_t(workspace.curSubtab));
-								tp.HandleEvent(&tp, ui::EventType::Commit) = [this, &tp](ui::Event&)
+								tp.HandleEvent(&tp, ui::EventType::SelectionChange) = [this, &tp](ui::Event&)
 								{
 									workspace.curSubtab = SubtabType(tp.GetCurrentTabUID(0));
 								};

@@ -394,7 +394,7 @@ struct TE_ThemeEditorNode : Buildable
 			}
 		}
 		tp.SetActiveTabByEnumValue(theme->curTemplate);
-		tp.HandleEvent(&tp, EventType::Change) = [this, &tp](Event&)
+		tp.HandleEvent(&tp, EventType::SelectionChange) = [this, &tp](Event&)
 		{
 			theme->curTemplate = tp.GetCurrentTabEnumValue<TE_Template*>();
 			Rebuild();

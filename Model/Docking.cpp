@@ -26,7 +26,7 @@ void DockingNode::Build()
 			tp.AddEnumTab<DockableContentsContainer*>(tab->contents->GetTitle(), tab);
 
 		tp.SetActiveTabByEnumValue<DockableContentsContainer*>(curActiveTab);
-		tp.HandleEvent(&tp, ui::EventType::Commit) = [this, &tp](ui::Event&)
+		tp.HandleEvent(&tp, ui::EventType::SelectionChange) = [this, &tp](ui::Event&)
 		{
 			curActiveTab = tp.GetCurrentTabEnumValue<DockableContentsContainer*>(0);
 		};

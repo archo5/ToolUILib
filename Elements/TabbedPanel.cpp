@@ -209,6 +209,11 @@ void TabbedPanel::OnEvent(Event& e)
 	float y1 = y0 + tabHeight;
 	auto* tbFont = style.tabButtonFont.GetFont();
 	int tbFontSize = style.tabButtonFont.size;
+
+	bool tabReordered = false;
+	size_t tabFrom = 0;
+	size_t tabTo = 0;
+
 	for (auto& tab : _tabs)
 	{
 		float tw = tab._contentWidth;
@@ -221,13 +226,60 @@ void TabbedPanel::OnEvent(Event& e)
 
 		size_t id = &tab - &_tabs.front();
 		bool wasPressed = _tabUI.IsPressed(id);
-		if (_tabUI.ButtonOnEvent(id, tabButtonRect, e) || (_tabUI.IsPressed(id) && !wasPressed))
+		if ((_tabUI.ButtonOnEvent(id, tabButtonRect, e) || (_tabUI.IsPressed(id) && !wasPressed)) && _curTabNum != id)
 		{
 			_curTabNum = id;
-			e.context->OnChange(this);
-			e.context->OnCommit(this);
+
+			Event selev(e.context, this, EventType::SelectionChange);
+			selev.arg0 = id;
+			selev.arg1 = tab.uid;
+			e.context->BubblingEvent(selev);
+
 			if (rebuildOnChange)
 				RebuildContainer();
+		}
+		if (allowDragReorder)
+		{
+			switch (_tabUI.DragOnEvent(id, tabButtonRect, e))
+			{
+			case SubUIDragState::Start:
+				DragDrop::SetData(new DragDropTab(this, id));
+				break;
+			case SubUIDragState::Move:
+				// handle externally since this event only covers the same exact tab
+				break;
+			case SubUIDragState::Stop:
+				e.context->OnCommit(this);
+				break;
+			}
+		}
+
+		if (e.type == EventType::MouseMove && !tabReordered)
+		{
+			if (auto* ddtd = DragDrop::GetData<DragDropTab>())
+			{
+				auto dragSwapRect = tabButtonRect;
+				if (_lastDragUnfinishedDiff && id == ddtd->origTabNum + sign(_lastDragUnfinishedDiff))
+				{
+					if (_lastDragUnfinishedDiff < 0)
+						dragSwapRect.x1 += _lastDragUnfinishedDiff;
+					else
+						dragSwapRect.x0 += _lastDragUnfinishedDiff;
+				}
+				if (dragSwapRect.Contains(e.position))
+				{
+					if (ddtd->curPanel == this)
+					{
+						_lastDragUnfinishedDiff = 0;
+						if (ddtd->origTabNum != id)
+						{
+							tabReordered = true;
+							tabFrom = ddtd->origTabNum;
+							tabTo = id;
+						}
+					}
+				}
+			}
 		}
 
 		if (showCloseButton)
@@ -252,6 +304,41 @@ void TabbedPanel::OnEvent(Event& e)
 		}
 
 		x0 = x1;
+	}
+
+	if (tabReordered)
+	{
+		//printf("FROM:%d TO:%d\n", int(tabFrom), int(tabTo));
+		size_t tabInc = tabFrom < tabTo ? 1 : SIZE_MAX;
+
+		// calculate the size difference
+		if (_tabs[tabFrom]._contentWidth < _tabs[tabTo]._contentWidth)
+		{
+			_lastDragUnfinishedDiff = _tabs[tabTo]._contentWidth - _tabs[tabFrom]._contentWidth;
+			if (tabTo > tabFrom)
+				_lastDragUnfinishedDiff = -_lastDragUnfinishedDiff;
+		}
+		else
+			_lastDragUnfinishedDiff = 0;
+
+		// move tab data
+		for (size_t i = tabFrom; i != tabTo; i += tabInc)
+		{
+			std::swap(_tabs[i], _tabs[i + tabInc]);
+		}
+
+		_curTabNum = tabTo;
+		_tabUI._hovered = tabTo;
+		_tabUI._pressed = tabTo;
+		DragDrop::GetData<DragDropTab>()->origTabNum = tabTo;
+
+		RedoLayout();
+
+		// let user know / ask to update tabs if needed
+		Event chgev(e.context, this, EventType::Change);
+		chgev.arg0 = tabFrom;
+		chgev.arg1 = tabTo;
+		e.context->BubblingEvent(chgev);
 	}
 
 	_tabUI.FinalizeOnEvent(e);

@@ -24,6 +24,18 @@ struct TabbedPanelStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
+struct TabbedPanel;
+struct DragDropTab : DragDropData
+{
+	static constexpr const char* NAME = "tabbed_panel_tab";
+
+	TabbedPanel* curPanel;
+	size_t origTabNum;
+
+	DragDropTab(TabbedPanel* tp, size_t tab) : DragDropData(NAME), curPanel(tp), origTabNum(tab) {}
+	bool ShouldBuild() override { return false; }
+};
+
 struct TabbedPanel : UIObjectSingleChild
 {
 	struct Tab
@@ -37,15 +49,17 @@ struct TabbedPanel : UIObjectSingleChild
 
 	std::vector<Tab> _tabs;
 	size_t _curTabNum = 0;
+	float _lastDragUnfinishedDiff = 0; // (-) = the big element is on the left, (+) = right
 	SubUI<uint32_t> _tabUI;
 
 	TabbedPanelStyle style;
 	float tabHeight = 22;
 
 	UIObject* _tabBarExtension = nullptr;
+	bool rebuildOnChange = true;
+	bool allowDragReorder = false;
 	bool showCloseButton = false;
 	std::function<void(size_t, uintptr_t)> onClose;
-	bool rebuildOnChange = true;
 
 	void SetTabBarExtension(UIObject* o);
 	void AddTextTab(StringView text, uintptr_t uid = UINTPTR_MAX);

@@ -359,22 +359,37 @@ void Test_SplitPane()
 
 struct TabsTest : ui::Buildable
 {
+	int tp1idx[2] = { 0, 1 };
+	const char* tabnames[2] = { "First tab", "Second tab" };
+	int tp2idx[2] = { 0, 1 };
+
 	void Build() override
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
 		auto& tp1 = ui::Push<ui::TabbedPanel>();
-		tp1.AddTextTab("First tab", 0);
+		tp1.allowDragReorder = true;
 
-		auto& sltr = ui::PushNoAppend<ui::StackLTRLayoutElement>();
-		sltr.paddingBetweenElements = 4;
-		ui::MakeWithText<ui::LabelFrame>("Second tab");
-		ui::MakeWithText<ui::Button>("button");
-		ui::Pop();
-		tp1.AddUITab(&sltr, 1);
+		for (int i = 0; i < 2; i++)
+		{
+			switch (tp1idx[i])
+			{
+			case 0:
+				tp1.AddTextTab("First tab", 0);
+				break;
+			case 1: {
+				auto& sltr = ui::PushNoAppend<ui::StackLTRLayoutElement>();
+				sltr.paddingBetweenElements = 4;
+				ui::MakeWithText<ui::LabelFrame>("Second tab");
+				ui::MakeWithText<ui::Button>("button");
+				ui::Pop();
+				tp1.AddUITab(&sltr, 1);
+				break; }
+			}
+		}
 
 		tp1.SetActiveTabByUID(tab1);
-		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event&)
+		tp1.HandleEvent(&tp1, ui::EventType::SelectionChange) = [this, &tp1](ui::Event&)
 		{
 			tab1 = int(tp1.GetCurrentTabUID(0));
 		};
@@ -393,16 +408,27 @@ struct TabsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 		}
+		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event& e)
+		{
+			// only 2 tabs
+			std::swap(tp1idx[0], tp1idx[1]);
+		};
 		ui::Pop();
 
 		auto& tp2 = ui::Push<ui::TabbedPanel>();
+		tp2.allowDragReorder = true;
 		tp2.showCloseButton = true;
-		tp2.AddTextTab("First tab", 0);
-		tp2.AddTextTab("Second tab", 1);
+		for (int i = 0; i < 2; i++)
+			tp2.AddTextTab(tabnames[tp2idx[i]], tp2idx[i]);
 		tp2.SetActiveTabByUID(tab2);
-		tp2.HandleEvent(&tp2, ui::EventType::Change) = [this, &tp2](ui::Event&)
+		tp2.HandleEvent(&tp2, ui::EventType::SelectionChange) = [this, &tp2](ui::Event&)
 		{
 			tab2 = int(tp2.GetCurrentTabUID(0));
+		};
+		tp2.HandleEvent(&tp2, ui::EventType::Change) = [this, &tp2](ui::Event& e)
+		{
+			// only 2 tabs
+			std::swap(tp2idx[0], tp2idx[1]);
 		};
 		{
 			if (tab2 == 0)
@@ -416,6 +442,8 @@ struct TabsTest : ui::Buildable
 			}
 		}
 		ui::Pop(); // TabbedPanel
+
+		//ui::Make<ui::DefaultOverlayBuilder>();
 
 		ui::Pop(); // StackTopDownLayoutElement
 	}
