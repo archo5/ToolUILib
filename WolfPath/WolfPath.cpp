@@ -426,7 +426,7 @@ int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
 	MainWindow mw;
-	mw.SetSize(1024, 576);
+	mw.SetInnerSize(1024, 576);
 	mw.SetVisible(true);
 	return app.Run();
 }

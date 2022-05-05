@@ -794,6 +794,13 @@ struct GlobalEventsTest : ui::Buildable
 		int count = -1;
 	};
 
+	void GetWindowSizeInfo(char* bfr)
+	{
+		auto wos = GetNativeWindow()->GetOuterSize();
+		auto wis = GetNativeWindow()->GetInnerSize();
+		snprintf(bfr, 64, "window size: outer=%dx%d inner=%dx%d", wos.x, wos.y, wis.x, wis.y);
+	}
+
 	void Build() override
 	{
 		WPush<ui::StackTopDownLayoutElement>();
@@ -807,7 +814,7 @@ struct GlobalEventsTest : ui::Buildable
 		for (auto& e = ui::Make<EventTest>();
 			e.name = "Resize window",
 			e.dct = ui::DCT_ResizeWindow,
-			e.infofn = [this](char* bfr) { auto ws = GetNativeWindow()->GetSize(); snprintf(bfr, 64, "window size: %dx%d", ws.x, ws.y); },
+			e.infofn = [this](char* bfr) { GetWindowSizeInfo(bfr); },
 			0;);
 
 		for (auto& e = ui::Make<EventTest>();
@@ -914,7 +921,7 @@ struct DialogWindowTest : ui::Buildable
 		BasicDialog()
 		{
 			SetTitle("Basic dialog window");
-			SetSize(200, 100);
+			SetInnerSize(200, 100);
 		}
 		void OnBuild() override
 		{

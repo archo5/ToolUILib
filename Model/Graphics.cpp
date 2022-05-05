@@ -866,7 +866,7 @@ void ColorPicker::Build()
 ColorPickerWindow::ColorPickerWindow()
 {
 	SetTitle("Color picker");
-	SetSize(500, 300);
+	SetInnerSize(500, 300);
 }
 
 void ColorPickerWindow::OnBuild()
@@ -910,7 +910,7 @@ struct ColorPickerWindowRT : NativeWindowBase
 	ColorPickerWindowRT()
 	{
 		SetTitle("Color picker");
-		SetSize(500, 300);
+		SetInnerSize(500, 300);
 	}
 	void OnBuild() override
 	{

@@ -117,13 +117,24 @@ struct NativeWindowBase
 	Menu* GetMenu();
 	void SetMenu(Menu* m);
 
-	Point2i GetPosition();
-	void SetPosition(int x, int y);
-	void SetPosition(Point2i p) { SetPosition(p.x, p.y); }
+	AABB2i GetOuterRect();
+	AABB2i GetInnerRect();
+	void SetOuterRect(AABB2i bb);
+	void SetInnerRect(AABB2i bb);
 
-	Size2i GetSize();
-	void SetSize(int x, int y, bool inner = true);
-	void SetSize(Size2i p, bool inner = true) { SetSize(p.x, p.y, inner); }
+	Point2i GetOuterPosition();
+	Point2i GetInnerPosition();
+	void SetOuterPosition(int x, int y);
+	void SetOuterPosition(Point2i p) { SetOuterPosition(p.x, p.y); }
+	void SetInnerPosition(int x, int y);
+	void SetInnerPosition(Point2i p) { SetInnerPosition(p.x, p.y); }
+
+	Size2i GetOuterSize();
+	Size2i GetInnerSize();
+	void SetOuterSize(int x, int y);
+	void SetOuterSize(Size2i p) { SetOuterSize(p.x, p.y); }
+	void SetInnerSize(int x, int y);
+	void SetInnerSize(Size2i p) { SetInnerSize(p.x, p.y); }
 
 	WindowState GetState();
 	void SetState(WindowState ws);
@@ -144,6 +155,7 @@ struct NativeWindowBase
 	void InvalidateAll();
 
 	void SetDefaultCursor(DefaultCursor cur);
+	void CaptureMouse();
 
 	void ProcessEventsExclusive();
 

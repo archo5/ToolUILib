@@ -330,8 +330,8 @@ struct RenameDialog : ui::NativeDialogWindow
 	{
 		newName.assign(name.data(), name.size());
 		SetTitle(("Rename struct: " + newName).c_str());
-		SetSize(400, 16 * 3 + 24 * 2);
 		SetStyle(ui::WindowStyle::WS_TitleBar);
+		SetInnerSize(400, 16 * 3 + 24 * 2);
 	}
 	void OnClose() override
 	{

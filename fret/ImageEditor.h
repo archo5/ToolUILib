@@ -10,7 +10,7 @@ struct ImageEditorWindowNode : ui::Buildable
 	void OnEnable() override
 	{
 		GetNativeWindow()->SetTitle("Image Resource Editor");
-		GetNativeWindow()->SetSize(1200, 800);
+		GetNativeWindow()->SetInnerSize(1200, 800);
 	}
 	void Build() override;
 	void Setup(DataDesc* desc)

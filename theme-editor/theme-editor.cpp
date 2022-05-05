@@ -429,7 +429,7 @@ struct ThemeEditorMainWindow : NativeMainWindow
 	ThemeEditorMainWindow()
 	{
 		SetTitle("Theme Editor");
-		SetSize(1280, 720);
+		SetInnerSize(1280, 720);
 	}
 	void OnBuild() override
 	{

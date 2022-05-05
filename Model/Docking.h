@@ -2,11 +2,13 @@
 #pragma once
 #include <vector>
 #include "Objects.h"
+#include "Native.h"
 
 namespace ui {
 
 struct FrameContents;
-struct Dockable;
+struct DockingMainArea;
+struct DockingSubwindow;
 
 struct DockableContents : Buildable
 {
@@ -20,27 +22,40 @@ struct DockableContentsContainer : RefCountedST
 
 	DockableContentsContainer(DockableContents* C);
 };
+using DockableContentsContainerHandle = RCHandle<DockableContentsContainer>;
 
 struct DockingNode : RefCountedST
 {
+	DockingMainArea* main = nullptr;
+	DockingSubwindow* subwindow = nullptr;
+	DockingNode* parentNode = nullptr;
+
 	bool isLeaf = true;
 	// if not leaf (contains child ndoes):
 	Direction splitDir = Direction::Horizontal;
 	std::vector<float> splits;
 	std::vector<RCHandle<DockingNode>> childNodes;
 	// if leaf (contains docked contents):
-	std::vector<RCHandle<DockableContentsContainer>> tabs;
+	std::vector<DockableContentsContainerHandle> tabs;
 	RCHandle<DockableContentsContainer> curActiveTab;
 
 	void Build();
 };
 using DockingNodeHandle = RCHandle<DockingNode>;
 
-struct DockingSubwindow
+struct DockingSubwindow : NativeWindowBase, RefCountedST
 {
-	NativeWindowBase* window;
 	DockingNodeHandle rootNode;
+
+	Buildable* _root = nullptr;
+	bool _dragging = false;
+	Point2i _dragCWPDelta = {};
+
+	void OnBuild() override;
+
+	void StartDrag();
 };
+using DockingSubwindowHandle = RCHandle<DockingSubwindow>;
 
 struct DockingWindowContentBuilder : Buildable
 {
@@ -51,10 +66,13 @@ struct DockingWindowContentBuilder : Buildable
 
 struct DockingMainArea : Buildable
 {
-	std::vector<DockingSubwindow> _subwindows;
+	std::vector<DockingSubwindowHandle> _subwindows;
 	DockingNodeHandle _mainAreaRootNode;
 
 	void Build() override;
+
+	void _PullOutTab(DockingNode* node, size_t tabID);
+	void _CloseTab(DockingNode* node, size_t tabID);
 };
 
 }

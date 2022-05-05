@@ -903,16 +903,67 @@ void NativeWindowBase::SetMenu(Menu* m)
 	// TODO is there a way to prevent partial redrawing results from showing up?
 }
 
-Point2i NativeWindowBase::GetPosition()
+static BOOL UnadjustWindowRectEx(LPRECT prect, DWORD style, BOOL hasMenu, DWORD exStyle = 0)
+{
+	RECT rc = {};
+	BOOL ret = AdjustWindowRectEx(&rc, style, hasMenu, exStyle);
+	if (ret)
+	{
+		prect->left -= rc.left;
+		prect->top -= rc.top;
+		prect->right -= rc.right;
+		prect->bottom -= rc.bottom;
+	}
+	return ret;
+}
+
+AABB2i NativeWindowBase::GetOuterRect()
 {
 	RECT r = {};
 	GetWindowRect(_impl->window, &r);
-	return { r.left, r.top };
+	return { r.left, r.top, r.right, r.bottom };
 }
 
-void NativeWindowBase::SetPosition(int x, int y)
+AABB2i NativeWindowBase::GetInnerRect()
+{
+	RECT r = {};
+	GetWindowRect(_impl->window, &r);
+	UnadjustWindowRectEx(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	return { r.left, r.top, r.right, r.bottom };
+}
+
+void NativeWindowBase::SetOuterRect(AABB2i bb)
+{
+	SetWindowPos(_impl->window, nullptr, bb.x0, bb.y0, bb.GetWidth(), bb.GetHeight(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
+
+void NativeWindowBase::SetInnerRect(AABB2i bb)
+{
+	RECT r = { bb.x0, bb.y0, bb.x1, bb.y1 };
+	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	SetWindowPos(_impl->window, nullptr, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
+
+Point2i NativeWindowBase::GetOuterPosition()
+{
+	return GetOuterRect().GetMin();
+}
+
+Point2i NativeWindowBase::GetInnerPosition()
+{
+	return GetInnerRect().GetMin();
+}
+
+void NativeWindowBase::SetOuterPosition(int x, int y)
 {
 	SetWindowPos(_impl->window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
+
+void NativeWindowBase::SetInnerPosition(int x, int y)
+{
+	RECT r = { x, y, x, y };
+	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	SetWindowPos(_impl->window, nullptr, r.left, r.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
 void NativeWindowBase::ProcessEventsExclusive()
@@ -934,25 +985,30 @@ void NativeWindowBase::ProcessEventsExclusive()
 	_impl->ExitExclusiveMode();
 }
 
-Size2i NativeWindowBase::GetSize()
+Size2i NativeWindowBase::GetOuterSize()
 {
-	RECT r = {};
-	GetWindowRect(_impl->window, &r);
-	return { r.right - r.left, r.bottom - r.top };
+	return GetOuterRect().GetSize();
 }
 
-void NativeWindowBase::SetSize(int x, int y, bool inner)
+Size2i NativeWindowBase::GetInnerSize()
 {
-	if (inner)
-	{
-		RECT r = { 0, 0, x, y };
-		if (AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu))
-		{
-			x = r.right - r.left;
-			y = r.bottom - r.top;
-		}
-	}
+	return GetInnerRect().GetSize();
+}
+
+void NativeWindowBase::SetOuterSize(int x, int y)
+{
 	SetWindowPos(_impl->window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
+
+void NativeWindowBase::SetInnerSize(int x, int y)
+{
+	RECT r = { 0, 0, x, y };
+	if (AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu))
+	{
+		x = r.right - r.left;
+		y = r.bottom - r.top;
+	}
+	SetOuterSize(x, y);
 }
 
 WindowState NativeWindowBase::GetState()
@@ -1053,6 +1109,11 @@ void NativeWindowBase::InvalidateAll()
 void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
 {
 	_impl->cursor = g_defaultCursors[(int)cur];
+}
+
+void NativeWindowBase::CaptureMouse()
+{
+	::SetCapture(_impl->window);
 }
 
 void* NativeWindowBase::GetNativeHandle() const
@@ -1160,7 +1221,7 @@ struct Inspector : NativeDialogWindow
 	Inspector()
 	{
 		SetTitle("Inspector");
-		SetSize(1024, 768);
+		SetInnerSize(1024, 768);
 	}
 
 	struct InspectorUI : Buildable

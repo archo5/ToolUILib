@@ -249,7 +249,6 @@ template <class T> struct SubUI
 		}
 		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 		{
-			_pressed = NoValue;
 			return SubUIDragState::Stop;
 		}
 		else if (e.type == EventType::Click && e.GetButton() == MouseButton::Left)
@@ -275,7 +274,6 @@ template <class T> struct SubUI
 		}
 		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 		{
-			_pressed = NoValue;
 			return SubUIDragState::Stop;
 		}
 		else if (e.type == EventType::Click && e.GetButton() == MouseButton::Left)

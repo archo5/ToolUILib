@@ -28,7 +28,7 @@ struct MainWindowContents : ui::Buildable
 	void OnEnable() override
 	{
 		GetNativeWindow()->SetTitle("Binary Data Analysis Tool");
-		GetNativeWindow()->SetSize(1200, 800);
+		GetNativeWindow()->SetInnerSize(1200, 800);
 		FileDataSource fds(CUR_WORKSPACE);
 		std::string wsdata;
 		wsdata.resize(fds.GetSize());

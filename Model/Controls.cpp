@@ -1178,7 +1178,7 @@ void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 
 void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
 {
-	auto contSize = curObj->GetNativeWindow()->GetSize();
+	auto contSize = curObj->GetNativeWindow()->GetInnerSize();
 
 #if 1
 	Size2f minContSize = { float(contSize.x), float(contSize.y) };

@@ -243,6 +243,7 @@ void TabbedPanel::OnEvent(Event& e)
 			switch (_tabUI.DragOnEvent(id, tabButtonRect, e))
 			{
 			case SubUIDragState::Start:
+				e.context->CaptureMouse(this);
 				DragDrop::SetData(new DragDropTab(this, id));
 				break;
 			case SubUIDragState::Move:
@@ -250,6 +251,8 @@ void TabbedPanel::OnEvent(Event& e)
 				break;
 			case SubUIDragState::Stop:
 				e.context->OnCommit(this);
+				if (e.context->GetMouseCapture() == this)
+					e.context->ReleaseMouse();
 				break;
 			}
 		}
@@ -339,6 +342,24 @@ void TabbedPanel::OnEvent(Event& e)
 		chgev.arg0 = tabFrom;
 		chgev.arg1 = tabTo;
 		e.context->BubblingEvent(chgev);
+	}
+	else if (allowDragRemove && _tabUI.IsAnyPressed() && e.type == EventType::MouseMove)
+	{
+		auto* ddtd = DragDrop::GetData<DragDropTab>();
+		if (ddtd && ddtd->curPanel == this)
+		{
+			auto fr = GetFinalRect();
+			UIRect tabListRect = { fr.x0 + 4, y0, fr.x1 - 4, y1 };
+			bool inside = tabListRect.Contains(e.position);
+			if (!inside && _lastMoveWasInside)
+			{
+				Event chgev(e.context, this, EventType::Change);
+				chgev.arg0 = _tabUI._pressed;
+				chgev.arg1 = UINTPTR_MAX;
+				e.context->BubblingEvent(chgev);
+			}
+			_lastMoveWasInside = inside;
+		}
 	}
 
 	_tabUI.FinalizeOnEvent(e);

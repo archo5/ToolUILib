@@ -58,6 +58,8 @@ struct TabbedPanel : UIObjectSingleChild
 	UIObject* _tabBarExtension = nullptr;
 	bool rebuildOnChange = true;
 	bool allowDragReorder = false;
+	bool allowDragRemove = false;
+	bool _lastMoveWasInside = false;
 	bool showCloseButton = false;
 	std::function<void(size_t, uintptr_t)> onClose;
 

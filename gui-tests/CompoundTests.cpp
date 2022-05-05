@@ -369,6 +369,7 @@ struct TabsTest : ui::Buildable
 
 		auto& tp1 = ui::Push<ui::TabbedPanel>();
 		tp1.allowDragReorder = true;
+		tp1.allowDragRemove = true;
 
 		for (int i = 0; i < 2; i++)
 		{
@@ -393,6 +394,16 @@ struct TabsTest : ui::Buildable
 		{
 			tab1 = int(tp1.GetCurrentTabUID(0));
 		};
+		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event& e)
+		{
+			if (e.arg1 == UINTPTR_MAX)
+			{
+				printf("Removed tab %d\n", int(e.arg0));
+				return;
+			}
+			// only 2 tabs
+			std::swap(tp1idx[0], tp1idx[1]);
+		};
 		{
 			ui::Push<ui::StackTopDownLayoutElement>();
 			ui::Push<ui::StackTopDownLayoutElement>().SetVisible(tp1.GetCurrentTabUID() == 0);
@@ -408,15 +419,11 @@ struct TabsTest : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 		}
-		tp1.HandleEvent(&tp1, ui::EventType::Change) = [this, &tp1](ui::Event& e)
-		{
-			// only 2 tabs
-			std::swap(tp1idx[0], tp1idx[1]);
-		};
 		ui::Pop();
 
 		auto& tp2 = ui::Push<ui::TabbedPanel>();
 		tp2.allowDragReorder = true;
+		tp2.allowDragRemove = true;
 		tp2.showCloseButton = true;
 		for (int i = 0; i < 2; i++)
 			tp2.AddTextTab(tabnames[tp2idx[i]], tp2idx[i]);
@@ -427,6 +434,11 @@ struct TabsTest : ui::Buildable
 		};
 		tp2.HandleEvent(&tp2, ui::EventType::Change) = [this, &tp2](ui::Event& e)
 		{
+			if (e.arg1 == UINTPTR_MAX)
+			{
+				printf("Removed tab %d\n", int(e.arg0));
+				return;
+			}
 			// only 2 tabs
 			std::swap(tp2idx[0], tp2idx[1]);
 		};
@@ -1089,11 +1101,13 @@ struct DockingTest : ui::Buildable
 
 		auto* DCC1 = new ui::DockableContentsContainer(d1);
 		auto* CN1 = new ui::DockingNode;
+		CN1->main = area;
 		CN1->tabs.push_back(DCC1);
 		CN1->curActiveTab = DCC1;
 
 		auto* DCC2 = new ui::DockableContentsContainer(d2);
 		auto* CN2 = new ui::DockingNode;
+		CN2->main = area;
 		CN2->tabs.push_back(DCC2);
 		CN2->curActiveTab = DCC2;
 
@@ -1102,6 +1116,8 @@ struct DockingTest : ui::Buildable
 		N->childNodes.push_back(CN1);
 		N->childNodes.push_back(CN2);
 		N->splits.push_back(0.5f);
+		CN1->parentNode = N;
+		CN2->parentNode = N;
 
 		area->_mainAreaRootNode = N;
 	}
