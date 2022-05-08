@@ -15,6 +15,11 @@ struct DockableContents : Buildable
 	virtual std::string GetTitle() = 0;
 };
 
+struct DockableContentsSource
+{
+	virtual DockableContents* GetDockableContentsByID(StringView id) = 0;
+};
+
 struct DockableContentsContainer : RefCountedST
 {
 	DockableContents* contents;
@@ -38,6 +43,8 @@ struct DockingNode : RefCountedST
 	// if leaf (contains docked contents):
 	std::vector<DockableContentsContainerHandle> tabs;
 	RCHandle<DockableContentsContainer> curActiveTab;
+
+	void SetSubwindow(DockingSubwindow* dsw);
 
 	void Build();
 };
@@ -64,15 +71,72 @@ struct DockingWindowContentBuilder : Buildable
 	void Build() override;
 };
 
+struct DockDefNode
+{
+	virtual DockingNodeHandle Construct(DockingMainArea*) const = 0;
+};
+
 struct DockingMainArea : Buildable
 {
 	std::vector<DockingSubwindowHandle> _subwindows;
 	DockingNodeHandle _mainAreaRootNode;
 
+	DockableContentsSource* source = nullptr;
+
 	void Build() override;
 
 	void _PullOutTab(DockingNode* node, size_t tabID);
 	void _CloseTab(DockingNode* node, size_t tabID);
+	void _DeleteNode(DockingNode* node);
+
+	DockingMainArea& SetSource(DockableContentsSource* dcs);
+	void Clear();
+	void ClearMainArea();
+	void RemoveSubwindows();
+	void SetMainAreaContents(const DockDefNode& node);
+	void AddSubwindow(const DockDefNode& node);
 };
+
+namespace dockdef {
+
+struct Split : DockDefNode
+{
+	struct Entry
+	{
+		float split;
+		const DockDefNode* node;
+	};
+
+	std::vector<Entry> children;
+
+	Split(const DockDefNode& a, float s1, const DockDefNode& b)
+	{
+		children = { { 0, &a }, { s1, &b } };
+	}
+	DockingNodeHandle Construct(DockingMainArea*) const override;
+	virtual Direction GetSplitDirection() const = 0;
+};
+
+struct HSplit : Split
+{
+	using Split::Split;
+	Direction GetSplitDirection() const override { return Direction::Horizontal; }
+};
+
+struct VSplit : Split
+{
+	using Split::Split;
+	Direction GetSplitDirection() const override { return Direction::Vertical; }
+};
+
+struct Tabs : DockDefNode
+{
+	std::vector<const char*> tabContentIDs;
+
+	Tabs(std::initializer_list<const char*> ids) : tabContentIDs(ids) {}
+	DockingNodeHandle Construct(DockingMainArea*) const override;
+};
+
+} // dockdef
 
 }

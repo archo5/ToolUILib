@@ -15,13 +15,26 @@ DockableContentsContainer::DockableContentsContainer(DockableContents* C) : cont
 	frameContents->BuildRoot(C);
 }
 
+void DockingNode::SetSubwindow(DockingSubwindow* dsw)
+{
+	subwindow = dsw;
+	if (!isLeaf)
+	{
+		for (auto& cn : childNodes)
+			cn->SetSubwindow(dsw);
+	}
+}
+
 void DockingNode::Build()
 {
 	if (isLeaf)
 	{
+		bool topLevel = tabs.size() <= 1 && !parentNode;
+
 		auto& tp = Push<TabbedPanel>();
 		tp.allowDragReorder = true;
-		tp.allowDragRemove = true;
+		if (!topLevel)
+			tp.allowDragRemove = true;
 		tp.showCloseButton = true;
 
 		for (auto& tab : tabs)
@@ -38,8 +51,9 @@ void DockingNode::Build()
 			if (e.arg1 == UINTPTR_MAX)
 			{
 				e.context->ReleaseMouse();
-				main->_PullOutTab(this, e.arg0);
 				CB->Rebuild();
+				// could delete this node
+				main->_PullOutTab(this, e.arg0);
 				return;
 			}
 			uintptr_t inc = e.arg1 > e.arg0 ? 1 : UINTPTR_MAX;
@@ -50,8 +64,9 @@ void DockingNode::Build()
 		};
 		tp.onClose = [this, CB](size_t num, uintptr_t id)
 		{
-			main->_CloseTab(this, num);
 			CB->Rebuild();
+			// could delete this node
+			main->_CloseTab(this, num);
 		};
 
 		if (curActiveTab)
@@ -78,7 +93,7 @@ void DockingSubwindow::OnBuild()
 	rootNode->Build();
 	GetCurrentBuildable()->HandleEvent() = [this](Event& e)
 	{
-		printf("%s\n", EventTypeToBaseString(e.type));
+		//printf("%s\n", EventTypeToBaseString(e.type));
 		if (_dragging)
 		{
 			if (e.type == EventType::MouseMove)
@@ -90,6 +105,16 @@ void DockingSubwindow::OnBuild()
 			{
 				e.context->ReleaseMouse();
 				_dragging = false;
+				SetHitTestEnabled(true);
+			}
+		}
+		if (rootNode->isLeaf && rootNode->tabs.size() <= 1)
+		{
+			switch (e.type)
+			{
+			case EventType::DragStart:
+				StartDrag();
+				break;
 			}
 		}
 	};
@@ -101,6 +126,8 @@ void DockingSubwindow::StartDrag()
 	auto csp = platform::GetCursorScreenPos();
 	auto wp = GetOuterPosition();
 	_dragCWPDelta = wp - csp;
+
+	SetHitTestEnabled(false);
 
 	// force-transfer capture to this window
 	CaptureMouse();
@@ -134,7 +161,10 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	if (node->tabs.size() == 0)
 	{
 		node->curActiveTab = nullptr;
-		// TODO: cascade of destruction
+		Application::PushEvent([this, node]()
+		{
+			_DeleteNode(node);
+		});
 	}
 	else if (node->curActiveTab == dcch)
 		node->curActiveTab = node->tabs[tabID ? tabID - 1 : 0];
@@ -151,6 +181,7 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 
 	_subwindows.push_back(DSW);
 	AABB2i finalClientRect = rect.MoveBy(wpos.x, wpos.y);
+	DSW->SetStyle(WS_Resizable);
 	DSW->SetInnerRect(finalClientRect);
 	DSW->SetVisible(true);
 	DSW->StartDrag();
@@ -168,10 +199,132 @@ void DockingMainArea::_CloseTab(DockingNode* node, size_t tabID)
 	if (node->tabs.size() == 0)
 	{
 		node->curActiveTab = nullptr;
-		// TODO: cascade of destruction
+		Application::PushEvent([this, node]()
+		{
+			_DeleteNode(node);
+		});
 	}
 	else if (node->curActiveTab == dcch)
 		node->curActiveTab = node->tabs[tabID ? tabID - 1 : 0];
 }
+
+void DockingMainArea::_DeleteNode(DockingNode* node)
+{
+	DockingNode* cch = node;
+	while (DockingNode* P = cch->parentNode)
+	{
+		for (size_t i = 0; i < P->childNodes.size(); i++)
+		{
+			if (P->childNodes[i] == cch)
+			{
+				P->childNodes.erase(P->childNodes.begin() + i);
+				// TODO rebalance splits
+				if (!P->splits.empty())
+					P->splits.pop_back();
+				break;
+			}
+		}
+		if (P->childNodes.empty())
+			break;
+		cch = P;
+	}
+
+	// empty root node, close its window
+	if (!cch->parentNode && cch->subwindow && (cch->isLeaf ? cch->tabs.empty() : cch->childNodes.empty()))
+	{
+		for (size_t i = 0; i < _subwindows.size(); i++)
+		{
+			if (_subwindows[i] == cch->subwindow)
+			{
+				_subwindows.erase(_subwindows.begin() + i);
+				break;
+			}
+		}
+	}
+}
+
+DockingMainArea& DockingMainArea::SetSource(DockableContentsSource* dcs)
+{
+	source = dcs;
+	return *this;
+}
+
+void DockingMainArea::Clear()
+{
+	RemoveSubwindows();
+	ClearMainArea();
+}
+
+void DockingMainArea::ClearMainArea()
+{
+	_mainAreaRootNode = nullptr;
+	Rebuild();
+}
+
+void DockingMainArea::RemoveSubwindows()
+{
+	_subwindows.clear();
+	Rebuild();
+}
+
+void DockingMainArea::SetMainAreaContents(const DockDefNode& node)
+{
+	ClearMainArea();
+	_mainAreaRootNode = node.Construct(this);
+}
+
+void DockingMainArea::AddSubwindow(const DockDefNode& node)
+{
+	DockingSubwindow* DSW = new DockingSubwindow;
+	DSW->rootNode = node.Construct(this);
+	DSW->rootNode->SetSubwindow(DSW);
+	_subwindows.push_back(DSW);
+	Rebuild();
+}
+
+namespace dockdef {
+
+DockingNodeHandle Split::Construct(DockingMainArea* main) const
+{
+	auto* node = new ui::DockingNode;
+	node->isLeaf = false;
+	node->main = main;
+	node->splitDir = GetSplitDirection();
+
+	for (auto& cn : children)
+	{
+		auto ccnh = cn.node->Construct(main);
+		ccnh->parentNode = node;
+
+		node->childNodes.push_back(ccnh);
+		if (&cn != &children.front())
+			node->splits.push_back(cn.split);
+	}
+
+	return node;
+}
+
+DockingNodeHandle Tabs::Construct(DockingMainArea* main) const
+{
+	auto* node = new ui::DockingNode;
+	node->isLeaf = true;
+	node->main = main;
+
+	for (auto tab : tabContentIDs)
+	{
+		auto* dc = main->source->GetDockableContentsByID(tab);
+		if (!dc)
+			continue;
+
+		auto* dcc = new ui::DockableContentsContainer(dc);
+		node->tabs.push_back(dcc);
+
+		if (!node->curActiveTab)
+			node->curActiveTab = dcc;
+	}
+	return node;
+}
+
+} // dockdef
 
 } // ui

@@ -114,6 +114,10 @@ struct NativeWindowBase
 	bool IsVisible();
 	void SetVisible(bool v);
 
+	// can the window be reached by using the mouse cursor
+	bool IsHitTestEnabled();
+	void SetHitTestEnabled(bool e);
+
 	Menu* GetMenu();
 	void SetMenu(Menu* m);
 

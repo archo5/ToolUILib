@@ -1071,7 +1071,7 @@ void Test_Dropdown()
 }
 
 
-struct DockingTest : ui::Buildable
+struct DockingTest : ui::Buildable, ui::DockableContentsSource
 {
 	struct DockableTest : ui::DockableContents
 	{
@@ -1091,14 +1091,25 @@ struct DockingTest : ui::Buildable
 	DockableTest* d1;
 	DockableTest* d2;
 
+	ui::DockableContents* GetDockableContentsByID(ui::StringView id) override
+	{
+		if (id == "dockable1")
+			return d1;
+		if (id == "dockable2")
+			return d2;
+		return nullptr;
+	}
+
 	DockingTest()
 	{
 		area = ui::CreateUIObject<ui::DockingMainArea>();
+		area->SetSource(this);
 		d1 = ui::CreateUIObject<DockableTest>();
 		d1->name = "Dockable 1";
 		d2 = ui::CreateUIObject<DockableTest>();
 		d2->name = "Dockable 2";
 
+#if 0
 		auto* DCC1 = new ui::DockableContentsContainer(d1);
 		auto* CN1 = new ui::DockingNode;
 		CN1->main = area;
@@ -1120,6 +1131,17 @@ struct DockingTest : ui::Buildable
 		CN2->parentNode = N;
 
 		area->_mainAreaRootNode = N;
+#endif
+		using namespace ui::dockdef;
+		area->SetMainAreaContents
+		(
+			HSplit
+			(
+				Tabs({ "dockable1" }),
+				0.5f,
+				Tabs({ "dockable2" })
+			)
+		);
 	}
 	~DockingTest()
 	{

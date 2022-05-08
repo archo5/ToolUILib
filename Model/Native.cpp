@@ -794,6 +794,7 @@ struct NativeWindow_Impl
 
 	double prevTime;
 	bool visible = true;
+	bool hitTest = true;
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
 	bool debugDrawEnabled = false;
@@ -889,6 +890,16 @@ void NativeWindowBase::SetVisible(bool v)
 
 		_impl->SetBuildFunc([this]() { OnBuild(); });
 	}
+}
+
+bool NativeWindowBase::IsHitTestEnabled()
+{
+	return _impl->hitTest;
+}
+
+void NativeWindowBase::SetHitTestEnabled(bool e)
+{
+	_impl->hitTest = e;
 }
 
 Menu* NativeWindowBase::GetMenu()
@@ -1531,6 +1542,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			win->GetOwner()->OnFocusLost();
 			return TRUE;
 		}
+		break;
+	case WM_NCHITTEST:
+		if (auto* win = GetNativeWindow(hWnd))
+			if (!win->hitTest)
+				return HTTRANSPARENT;
 		break;
 	case WM_INPUT:
 		if (g_rawMouseInputRequesters.HasAny())

@@ -244,7 +244,12 @@ void TabbedPanel::OnEvent(Event& e)
 			{
 			case SubUIDragState::Start:
 				e.context->CaptureMouse(this);
+
 				DragDrop::SetData(new DragDropTab(this, id));
+				{
+					Event e(&system->eventSystem, this, EventType::DragStart);
+					e.context->BubblingEvent(e);
+				}
 				break;
 			case SubUIDragState::Move:
 				// handle externally since this event only covers the same exact tab

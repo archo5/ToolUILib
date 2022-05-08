@@ -89,6 +89,8 @@ static float SplitWidthAsQ(SplitPane* sp)
 static void CheckSplits(SplitPane* sp, size_t needElement = SIZE_MAX)
 {
 	size_t cc = sp->_children.size() - 1;
+	if (cc == SIZE_MAX)
+		cc = 0;
 	if (needElement != SIZE_MAX)
 		cc = max(cc, needElement + 1);
 	size_t oldsize = sp->_splits.size();
