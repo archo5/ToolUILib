@@ -1090,6 +1090,7 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 	ui::DockingMainArea* area;
 	DockableTest* d1;
 	DockableTest* d2;
+	DockableTest* d3;
 
 	ui::DockableContents* GetDockableContentsByID(ui::StringView id) override
 	{
@@ -1097,6 +1098,8 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 			return d1;
 		if (id == "dockable2")
 			return d2;
+		if (id == "dockable3")
+			return d3;
 		return nullptr;
 	}
 
@@ -1108,30 +1111,9 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 		d1->name = "Dockable 1";
 		d2 = ui::CreateUIObject<DockableTest>();
 		d2->name = "Dockable 2";
+		d3 = ui::CreateUIObject<DockableTest>();
+		d3->name = "Dockable 3";
 
-#if 0
-		auto* DCC1 = new ui::DockableContentsContainer(d1);
-		auto* CN1 = new ui::DockingNode;
-		CN1->main = area;
-		CN1->tabs.push_back(DCC1);
-		CN1->curActiveTab = DCC1;
-
-		auto* DCC2 = new ui::DockableContentsContainer(d2);
-		auto* CN2 = new ui::DockingNode;
-		CN2->main = area;
-		CN2->tabs.push_back(DCC2);
-		CN2->curActiveTab = DCC2;
-
-		auto* N = new ui::DockingNode;
-		N->isLeaf = false;
-		N->childNodes.push_back(CN1);
-		N->childNodes.push_back(CN2);
-		N->splits.push_back(0.5f);
-		CN1->parentNode = N;
-		CN2->parentNode = N;
-
-		area->_mainAreaRootNode = N;
-#endif
 		using namespace ui::dockdef;
 		area->SetMainAreaContents
 		(
@@ -1139,12 +1121,18 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 			(
 				Tabs({ "dockable1" }),
 				0.5f,
-				Tabs({ "dockable2" })
+				VSplit
+				(
+					Tabs({ "dockable2" }),
+					0.5f,
+					Tabs({ "dockable3" })
+				)
 			)
 		);
 	}
 	~DockingTest()
 	{
+		ui::DeleteUIObject(d3);
 		ui::DeleteUIObject(d2);
 		ui::DeleteUIObject(d1);
 		ui::DeleteUIObject(area);

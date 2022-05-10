@@ -7,6 +7,7 @@
 namespace ui {
 
 struct FrameContents;
+struct DockingNode;
 struct DockingMainArea;
 struct DockingSubwindow;
 
@@ -29,6 +30,23 @@ struct DockableContentsContainer : RefCountedST
 };
 using DockableContentsContainerHandle = RCHandle<DockableContentsContainer>;
 
+enum DockingInsertionSide
+{
+	DockingInsertionSide_Here  = -1,
+	DockingInsertionSide_Above = -2,
+	DockingInsertionSide_Below = -3,
+	DockingInsertionSide_Left  = -4,
+	DockingInsertionSide_Right = -5,
+};
+
+struct DockingInsertionTarget
+{
+	DockingNode* node;
+	// >= 0  -->  tab
+	//  < 0  -->  side (DockingInsertionSide)
+	int tabOrSide;
+};
+
 struct DockingNode : RefCountedST
 {
 	DockingMainArea* main = nullptr;
@@ -44,7 +62,10 @@ struct DockingNode : RefCountedST
 	std::vector<DockableContentsContainerHandle> tabs;
 	RCHandle<DockableContentsContainer> curActiveTab;
 
+	UIWeakPtr<UIObject> rectSource;
+
 	void SetSubwindow(DockingSubwindow* dsw);
+	DockingInsertionTarget FindInsertionTarget(Vec2f pos);
 
 	void Build();
 };
@@ -67,8 +88,11 @@ using DockingSubwindowHandle = RCHandle<DockingSubwindow>;
 struct DockingWindowContentBuilder : Buildable
 {
 	DockingNodeHandle _root;
+	DockingInsertionTarget _insTarget = {};
 
 	void Build() override;
+	void OnEvent(Event& e) override;
+	void OnPaint(const UIPaintContext&) override;
 };
 
 struct DockDefNode

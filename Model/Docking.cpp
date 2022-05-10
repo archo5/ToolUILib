@@ -25,6 +25,47 @@ void DockingNode::SetSubwindow(DockingSubwindow* dsw)
 	}
 }
 
+DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
+{
+	if (!rectSource)
+		return {};
+
+	auto rect = rectSource->GetFinalRect();
+	if (!rect.Contains(pos))
+		return {};
+
+	if (!isLeaf)
+	{
+		for (auto& cn : childNodes)
+		{
+			auto ret = cn->FindInsertionTarget(pos);
+			if (ret.node)
+				return ret;
+		}
+		return {};
+	}
+
+	float margin = min(rect.GetWidth(), rect.GetHeight()) * 0.25f;
+	auto inner = rect.ShrinkBy(UIRect::UniformBorder(margin));
+	if (inner.Contains(pos))
+		return { this, DockingInsertionSide_Here };
+
+	float distL = fabsf(rect.x0 - pos.x);
+	float distR = fabsf(rect.x1 - pos.x);
+	float distT = fabsf(rect.y0 - pos.y);
+	float distB = fabsf(rect.y1 - pos.y);
+	float distH = min(distL, distR);
+	float distV = min(distT, distB);
+
+	return
+	{
+		this,
+		distH < distV
+		? distL < distR ? DockingInsertionSide_Left : DockingInsertionSide_Right
+		: distT < distB ? DockingInsertionSide_Above : DockingInsertionSide_Below
+	};
+}
+
 void DockingNode::Build()
 {
 	if (isLeaf)
@@ -36,6 +77,8 @@ void DockingNode::Build()
 		if (!topLevel)
 			tp.allowDragRemove = true;
 		tp.showCloseButton = true;
+
+		rectSource = &tp;
 
 		for (auto& tab : tabs)
 			tp.AddEnumTab<DockableContentsContainer*>(tab->contents->GetTitle(), tab);
@@ -76,7 +119,7 @@ void DockingNode::Build()
 	}
 	else
 	{
-		Push<SplitPane>().Init(splitDir, splits.data(), splits.size());
+		rectSource = &Push<SplitPane>().Init(splitDir, splits.data(), splits.size());
 
 		for (auto& cn : childNodes)
 			cn->Build();
@@ -90,7 +133,8 @@ void DockingSubwindow::OnBuild()
 	_root = GetCurrentBuildable();
 	if (_dragging)
 		_root->system->eventSystem.CaptureMouse(_root);
-	rootNode->Build();
+	//rootNode->Build();
+	Make<DockingWindowContentBuilder>()._root = rootNode;
 	GetCurrentBuildable()->HandleEvent() = [this](Event& e)
 	{
 		//printf("%s\n", EventTypeToBaseString(e.type));
@@ -141,6 +185,50 @@ void DockingWindowContentBuilder::Build()
 	TEMP_LAYOUT_MODE = FILLER;
 
 	_root->Build();
+}
+
+void DockingWindowContentBuilder::OnEvent(Event& e)
+{
+	if (e.type == EventType::MouseMove)
+	{
+		_insTarget = _root->FindInsertionTarget(e.position);
+	}
+}
+
+void DockingWindowContentBuilder::OnPaint(const UIPaintContext& ctx)
+{
+	Buildable::OnPaint(ctx);
+
+	if (_insTarget.node)
+	{
+		if (auto* rs = _insTarget.node->rectSource.Get())
+		{
+			// TODO
+			auto r = rs->GetFinalRect();
+			float margin = min(r.GetWidth(), r.GetHeight()) * 0.25f;
+			auto q = r.ShrinkBy(UIRect::UniformBorder(margin));
+
+			switch (_insTarget.tabOrSide)
+			{
+			case DockingInsertionSide_Here:
+				draw::RectCol(q.x0, q.y0, q.x1, q.y1, Color4b(0, 64, 192, 64));
+				break;
+				// TODO diagonal edges?
+			case DockingInsertionSide_Above:
+				draw::RectCol(r.x0, r.y0, r.x1, q.y0, Color4b(0, 64, 192, 64));
+				break;
+			case DockingInsertionSide_Below:
+				draw::RectCol(r.x0, q.y1, r.x1, r.y1, Color4b(0, 64, 192, 64));
+				break;
+			case DockingInsertionSide_Left:
+				draw::RectCol(r.x0, r.y0, q.x0, r.y1, Color4b(0, 64, 192, 64));
+				break;
+			case DockingInsertionSide_Right:
+				draw::RectCol(q.x1, r.y0, r.x1, r.y1, Color4b(0, 64, 192, 64));
+				break;
+			}
+		}
+	}
 }
 
 void DockingMainArea::Build()
@@ -224,7 +312,7 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 				break;
 			}
 		}
-		if (P->childNodes.empty())
+		if (!P->childNodes.empty())
 			break;
 		cch = P;
 	}
