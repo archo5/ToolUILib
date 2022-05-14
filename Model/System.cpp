@@ -376,7 +376,7 @@ void InlineFrame::OnEvent(Event& ev)
 		// pass events
 		if (ev.type == EventType::ButtonDown || ev.type == EventType::ButtonUp)
 			frameContents->eventSystem.OnMouseButton(ev.type == EventType::ButtonDown, ev.GetButton(), ev.position, ev.modifiers);
-		if (ev.type == EventType::MouseMove)
+		if (ev.type == EventType::MouseMove || ev.type == EventType::MouseLeave)
 			frameContents->eventSystem.OnMouseMove(ev.position, ev.modifiers);
 	}
 	Buildable::OnEvent(ev);

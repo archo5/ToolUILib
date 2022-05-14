@@ -182,6 +182,9 @@ struct OSCommunicationTest : ui::Buildable
 			col.r, col.g, col.b, col.a);
 		ui::Make<ui::ColorInspectBlock>().SetColor(col);
 
+		auto* win = ui::NativeWindowBase::FindFromScreenPos(pt);
+		ui::MakeWithTextf<ui::LabelFrame>("window under cursor: %p (%s)", win, win ? win->GetTitle().c_str() : "-");
+
 		if (ui::imm::Button("Show error message"))
 			ui::platform::ShowErrorMessage("Error", "Message");
 

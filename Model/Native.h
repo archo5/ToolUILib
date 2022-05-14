@@ -166,6 +166,8 @@ struct NativeWindowBase
 	void* GetNativeHandle() const;
 	bool IsDragged() const;
 
+	static NativeWindowBase* FindFromScreenPos(Point2i p);
+
 	NativeWindow_Impl* _impl = nullptr;
 };
 

@@ -853,8 +853,10 @@ void NativeWindowBase::SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
 std::string NativeWindowBase::GetTitle()
 {
 	std::wstring titleW;
-	titleW.resize(GetWindowTextLengthW(_impl->window));
-	GetWindowTextW(_impl->window, &titleW[0], titleW.size());
+	int len = GetWindowTextLengthW(_impl->window);
+	titleW.resize(len + 1);
+	int ret = GetWindowTextW(_impl->window, &titleW[0], titleW.size());
+	titleW.resize(ret);
 	return WCHARtoUTF8s(titleW);
 }
 
@@ -1135,6 +1137,20 @@ void* NativeWindowBase::GetNativeHandle() const
 bool NativeWindowBase::IsDragged() const
 {
 	return _impl->sysMoveSizeState == MSST_Move;
+}
+
+NativeWindowBase* NativeWindowBase::FindFromScreenPos(Point2i p)
+{
+	HWND win = ::WindowFromPoint({ p.x, p.y });
+	if (!win)
+		return nullptr;
+
+	if (!IsOwnWindow(win))
+		return nullptr;
+
+	auto ptr = GetWindowLongPtr(win, GWLP_USERDATA);
+	auto* impl = reinterpret_cast<NativeWindow_Impl*>(ptr);
+	return impl->system.nativeWindow;
 }
 
 

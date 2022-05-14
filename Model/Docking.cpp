@@ -137,31 +137,40 @@ void DockingSubwindow::OnBuild()
 	Make<DockingWindowContentBuilder>()._root = rootNode;
 	GetCurrentBuildable()->HandleEvent() = [this](Event& e)
 	{
-		//printf("%s\n", EventTypeToBaseString(e.type));
-		if (_dragging)
-		{
-			if (e.type == EventType::MouseMove)
-			{
-				auto csp = platform::GetCursorScreenPos();
-				SetOuterPosition(csp + _dragCWPDelta);
-			}
-			else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
-			{
-				e.context->ReleaseMouse();
-				_dragging = false;
-				SetHitTestEnabled(true);
-			}
-		}
-		if (rootNode->isLeaf && rootNode->tabs.size() <= 1)
-		{
-			switch (e.type)
-			{
-			case EventType::DragStart:
-				StartDrag();
-				break;
-			}
-		}
+		OnBuildableEvent(e);
 	};
+}
+
+void DockingSubwindow::OnBuildableEvent(Event& e)
+{
+	//printf("%s\n", EventTypeToBaseString(e.type));
+	if (_dragging)
+	{
+		if (e.type == EventType::MouseMove)
+		{
+			auto csp = platform::GetCursorScreenPos();
+			SetOuterPosition(csp + _dragCWPDelta);
+
+			rootNode->main->_UpdateInsertionTarget(csp);
+		}
+		else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
+		{
+			e.context->ReleaseMouse();
+			_dragging = false;
+			SetHitTestEnabled(true);
+
+			rootNode->main->_ClearInsertionTarget();
+		}
+	}
+	if (rootNode->isLeaf && rootNode->tabs.size() <= 1)
+	{
+		switch (e.type)
+		{
+		case EventType::DragStart:
+			StartDrag();
+			break;
+		}
+	}
 }
 
 void DockingSubwindow::StartDrag()
@@ -191,7 +200,8 @@ void DockingWindowContentBuilder::OnEvent(Event& e)
 {
 	if (e.type == EventType::MouseMove)
 	{
-		_insTarget = _root->FindInsertionTarget(e.position);
+		// TODO remove
+		//_insTarget = _root->FindInsertionTarget(e.position);
 	}
 }
 
@@ -199,16 +209,17 @@ void DockingWindowContentBuilder::OnPaint(const UIPaintContext& ctx)
 {
 	Buildable::OnPaint(ctx);
 
-	if (_insTarget.node)
+	auto tgt = _root->main->_insTarget;
+	if (tgt.node && tgt.node->subwindow == _root->subwindow)
 	{
-		if (auto* rs = _insTarget.node->rectSource.Get())
+		if (auto* rs = tgt.node->rectSource.Get())
 		{
 			// TODO
 			auto r = rs->GetFinalRect();
 			float margin = min(r.GetWidth(), r.GetHeight()) * 0.25f;
 			auto q = r.ShrinkBy(UIRect::UniformBorder(margin));
 
-			switch (_insTarget.tabOrSide)
+			switch (tgt.tabOrSide)
 			{
 			case DockingInsertionSide_Here:
 				draw::RectCol(q.x0, q.y0, q.x1, q.y1, Color4b(0, 64, 192, 64));
@@ -329,6 +340,39 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 			}
 		}
 	}
+}
+
+void DockingMainArea::_UpdateInsertionTarget(Point2i screenCursorPos)
+{
+	auto* win = NativeWindowBase::FindFromScreenPos(screenCursorPos);
+
+	DockingNode* root = nullptr;
+	Point2i testPos = screenCursorPos;
+	if (win)
+	{
+		if (win == GetNativeWindow())
+		{
+			root = _mainAreaRootNode;
+			testPos -= GetNativeWindow()->GetInnerPosition();
+		}
+		for (auto& sw : _subwindows)
+		{
+			if (win == sw)
+			{
+				root = sw->rootNode;
+				testPos -= sw->GetInnerPosition();
+			}
+		}
+	}
+
+	if (root)
+		_insTarget = root->FindInsertionTarget(testPos.Cast<float>());
+	else
+		_ClearInsertionTarget();
+
+	GetNativeWindow()->InvalidateAll();
+	for (auto& sw : _subwindows)
+		sw->InvalidateAll();
 }
 
 DockingMainArea& DockingMainArea::SetSource(DockableContentsSource* dcs)

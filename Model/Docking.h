@@ -80,6 +80,7 @@ struct DockingSubwindow : NativeWindowBase, RefCountedST
 	Point2i _dragCWPDelta = {};
 
 	void OnBuild() override;
+	void OnBuildableEvent(Event& e);
 
 	void StartDrag();
 };
@@ -88,7 +89,6 @@ using DockingSubwindowHandle = RCHandle<DockingSubwindow>;
 struct DockingWindowContentBuilder : Buildable
 {
 	DockingNodeHandle _root;
-	DockingInsertionTarget _insTarget = {};
 
 	void Build() override;
 	void OnEvent(Event& e) override;
@@ -104,6 +104,7 @@ struct DockingMainArea : Buildable
 {
 	std::vector<DockingSubwindowHandle> _subwindows;
 	DockingNodeHandle _mainAreaRootNode;
+	DockingInsertionTarget _insTarget = {};
 
 	DockableContentsSource* source = nullptr;
 
@@ -112,6 +113,8 @@ struct DockingMainArea : Buildable
 	void _PullOutTab(DockingNode* node, size_t tabID);
 	void _CloseTab(DockingNode* node, size_t tabID);
 	void _DeleteNode(DockingNode* node);
+	void _UpdateInsertionTarget(Point2i screenCursorPos);
+	void _ClearInsertionTarget() { _insTarget = {}; }
 
 	DockingMainArea& SetSource(DockableContentsSource* dcs);
 	void Clear();
