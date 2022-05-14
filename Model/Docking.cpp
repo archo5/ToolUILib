@@ -9,6 +9,9 @@
 
 namespace ui {
 
+static DataCategoryTag DCT_DockingRootUpdated[1];
+static DataCategoryTag DCT_DockingNodeUpdated[1];
+
 DockableContentsContainer::DockableContentsContainer(DockableContents* C) : contents(C)
 {
 	frameContents = new FrameContents;
@@ -68,6 +71,8 @@ DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
 
 void DockingNode::Build()
 {
+	GetCurrentBuildable()->Subscribe(DCT_DockingNodeUpdated, this);
+
 	if (isLeaf)
 	{
 		bool topLevel = tabs.size() <= 1 && !parentNode;
@@ -97,10 +102,11 @@ void DockingNode::Build()
 				CB->Rebuild();
 				// could delete this node
 				main->_PullOutTab(this, e.arg0);
+				e.StopPropagation();
 				return;
 			}
 			uintptr_t inc = e.arg1 > e.arg0 ? 1 : UINTPTR_MAX;
-			for (uintptr_t i = e.arg0; i < e.arg1; i += inc)
+			for (uintptr_t i = e.arg0; i != e.arg1; i += inc)
 			{
 				std::swap(tabs[i], tabs[i + inc]);
 			}
@@ -130,12 +136,14 @@ void DockingNode::Build()
 
 void DockingSubwindow::OnBuild()
 {
-	_root = GetCurrentBuildable();
+	auto* B = GetCurrentBuildable();
+	_root = B;
+	B->Subscribe(DCT_DockingRootUpdated, &rootNode);
 	if (_dragging)
-		_root->system->eventSystem.CaptureMouse(_root);
+		B->system->eventSystem.CaptureMouse(B);
 	//rootNode->Build();
 	Make<DockingWindowContentBuilder>()._root = rootNode;
-	GetCurrentBuildable()->HandleEvent() = [this](Event& e)
+	B->HandleEvent() = [this](Event& e)
 	{
 		OnBuildableEvent(e);
 	};
@@ -159,7 +167,10 @@ void DockingSubwindow::OnBuildableEvent(Event& e)
 			_dragging = false;
 			SetHitTestEnabled(true);
 
-			rootNode->main->_ClearInsertionTarget();
+			Application::PushEvent([this]()
+			{
+				rootNode->main->_FinishInsertion(this);
+			});
 		}
 	}
 	if (rootNode->isLeaf && rootNode->tabs.size() <= 1)
@@ -194,15 +205,6 @@ void DockingWindowContentBuilder::Build()
 	TEMP_LAYOUT_MODE = FILLER;
 
 	_root->Build();
-}
-
-void DockingWindowContentBuilder::OnEvent(Event& e)
-{
-	if (e.type == EventType::MouseMove)
-	{
-		// TODO remove
-		//_insTarget = _root->FindInsertionTarget(e.position);
-	}
 }
 
 void DockingWindowContentBuilder::OnPaint(const UIPaintContext& ctx)
@@ -246,6 +248,7 @@ void DockingMainArea::Build()
 {
 	TEMP_LAYOUT_MODE = FILLER;
 
+	Subscribe(DCT_DockingRootUpdated, &_mainAreaRootNode);
 	Make<DockingWindowContentBuilder>()._root = _mainAreaRootNode;
 }
 
@@ -373,6 +376,104 @@ void DockingMainArea::_UpdateInsertionTarget(Point2i screenCursorPos)
 	GetNativeWindow()->InvalidateAll();
 	for (auto& sw : _subwindows)
 		sw->InvalidateAll();
+}
+
+void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
+{
+	if (auto tgt = _insTarget.node)
+	{
+		DockingNodeHandle insSWRoot = dsw->rootNode;
+		assert(insSWRoot->isLeaf);
+		assert(insSWRoot->tabs.size() == 1);
+
+		DockableContentsContainerHandle tab = insSWRoot->tabs[0];
+
+		// remove the window
+		for (size_t i = 0; i < _subwindows.size(); i++)
+		{
+			if (_subwindows[i] == dsw)
+			{
+				_subwindows.erase(_subwindows.begin() + i);
+				break;
+			}
+		}
+
+		// tab insertion
+		if (_insTarget.tabOrSide == DockingInsertionSide_Here || 
+			_insTarget.tabOrSide >= 0)
+		{
+			int pos = _insTarget.tabOrSide == DockingInsertionSide_Here ? 0 : _insTarget.tabOrSide;
+
+			tgt->tabs.insert(tgt->tabs.begin() + pos, tab);
+			tgt->curActiveTab = tab;
+
+			Notify(DCT_DockingNodeUpdated, tgt);
+		}
+		else // split insertion
+		{
+			insSWRoot->SetSubwindow(tgt->subwindow);
+
+			Direction splitDir = _insTarget.tabOrSide == DockingInsertionSide_Left
+				|| _insTarget.tabOrSide == DockingInsertionSide_Right
+				? Direction::Horizontal : Direction::Vertical;
+
+			auto* P = tgt->parentNode;
+			// find the location of the target inside parent
+			size_t idx = 0;
+			if (P)
+			{
+				for (; idx < P->childNodes.size(); idx++)
+				{
+					if (P->childNodes[idx] == tgt)
+						break;
+				}
+			}
+
+			// need to make a new shared parent
+			if (!P || P->splitDir != splitDir)
+			{
+				DockingNodeHandle mid = new DockingNode;
+				mid->isLeaf = false;
+				mid->main = this;
+				mid->parentNode = P;
+				mid->subwindow = tgt->subwindow;
+				mid->splitDir = splitDir;
+				mid->childNodes.push_back(tgt);
+
+				tgt->parentNode = mid;
+
+				if (P)
+				{
+					Notify(DCT_DockingNodeUpdated, P);
+					P->childNodes[idx] = mid;
+				}
+				else
+				{
+					DockingNodeHandle& rootRef = tgt->subwindow ? tgt->subwindow->rootNode : _mainAreaRootNode;
+					Notify(DCT_DockingRootUpdated, &rootRef);
+					rootRef = mid;
+				}
+
+				P = mid;
+				idx = 0;
+			}
+			else
+				Notify(DCT_DockingNodeUpdated, P);
+
+			bool insAfter = _insTarget.tabOrSide == DockingInsertionSide_Right
+				|| _insTarget.tabOrSide == DockingInsertionSide_Below;
+			size_t insIdx = insAfter ? idx + 1 : idx;
+
+			P->childNodes.insert(P->childNodes.begin() + insIdx, insSWRoot);
+			insSWRoot->parentNode = P;
+			float before = idx == 0 ? 0 : P->splits[idx - 1];
+			float after = idx >= P->splits.size() ? 1 : P->splits[idx];
+			float splitVal = (before + after) * 0.5f;
+			P->splits.insert(P->splits.begin() + idx, splitVal);
+		}
+	}
+
+	_ClearInsertionTarget();
 }
 
 DockingMainArea& DockingMainArea::SetSource(DockableContentsSource* dcs)

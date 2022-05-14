@@ -362,6 +362,8 @@ void TabbedPanel::OnEvent(Event& e)
 				chgev.arg0 = _tabUI._pressed;
 				chgev.arg1 = UINTPTR_MAX;
 				e.context->BubblingEvent(chgev);
+				if (chgev.IsPropagationStopped())
+					_tabUI._pressed = decltype(_tabUI)::NoValue;
 			}
 			_lastMoveWasInside = inside;
 		}

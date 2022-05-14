@@ -60,7 +60,7 @@ struct DockingNode : RefCountedST
 	std::vector<RCHandle<DockingNode>> childNodes;
 	// if leaf (contains docked contents):
 	std::vector<DockableContentsContainerHandle> tabs;
-	RCHandle<DockableContentsContainer> curActiveTab;
+	DockableContentsContainerHandle curActiveTab;
 
 	UIWeakPtr<UIObject> rectSource;
 
@@ -91,7 +91,6 @@ struct DockingWindowContentBuilder : Buildable
 	DockingNodeHandle _root;
 
 	void Build() override;
-	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext&) override;
 };
 
@@ -114,6 +113,7 @@ struct DockingMainArea : Buildable
 	void _CloseTab(DockingNode* node, size_t tabID);
 	void _DeleteNode(DockingNode* node);
 	void _UpdateInsertionTarget(Point2i screenCursorPos);
+	void _FinishInsertion(DockingSubwindow* dsw);
 	void _ClearInsertionTarget() { _insTarget = {}; }
 
 	DockingMainArea& SetSource(DockableContentsSource* dcs);
