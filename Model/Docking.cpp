@@ -48,6 +48,9 @@ DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
 		return {};
 	}
 
+	if (!parentNode && tabs.empty())
+		return { this, DockingInsertionSide_Here };
+
 	float margin = min(rect.GetWidth(), rect.GetHeight()) * 0.25f;
 	auto inner = rect.ShrinkBy(UIRect::UniformBorder(margin));
 	if (inner.Contains(pos))
@@ -329,6 +332,12 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 		if (!P->childNodes.empty())
 			break;
 		cch = P;
+	}
+
+	// convert to leaf (easy way to ensure future root insertability)
+	if (!cch->isLeaf && cch->childNodes.empty())
+	{
+		cch->isLeaf = true;
 	}
 
 	// empty root node, close its window
