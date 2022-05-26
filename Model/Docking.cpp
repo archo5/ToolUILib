@@ -329,9 +329,9 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 				break;
 			}
 		}
+		cch = P;
 		if (!P->childNodes.empty())
 			break;
-		cch = P;
 	}
 
 	// convert to leaf (easy way to ensure future root insertability)
@@ -426,7 +426,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				|| _insTarget.tabOrSide == DockingInsertionSide_Right
 				? Direction::Horizontal : Direction::Vertical;
 
-			auto* P = tgt->parentNode;
+			auto* P = tgt->parentNode.Get();
 			// find the location of the target inside parent
 			size_t idx = 0;
 			if (P)
@@ -449,7 +449,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				mid->splitDir = splitDir;
 				mid->childNodes.push_back(tgt);
 
-				tgt->parentNode = mid;
+				tgt->parentNode = mid.get_ptr();
 
 				if (P)
 				{

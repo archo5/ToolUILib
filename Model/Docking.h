@@ -49,9 +49,13 @@ struct DockingInsertionTarget
 
 struct DockingNode : RefCountedST
 {
+	LivenessToken _token;
+	LivenessToken& GetLivenessToken() { return _token.GetOrCreate(); }
+	~DockingNode() { _token.SetAlive(false); }
+
 	DockingMainArea* main = nullptr;
 	DockingSubwindow* subwindow = nullptr;
-	DockingNode* parentNode = nullptr;
+	UIWeakPtr<DockingNode> parentNode = nullptr;
 
 	bool isLeaf = true;
 	// if not leaf (contains child ndoes):
