@@ -2,6 +2,8 @@
 #pragma once
 #include "../GUI.h"
 
+#include <memory>
+
 
 using namespace ui;
 

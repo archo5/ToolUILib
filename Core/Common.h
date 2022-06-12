@@ -4,6 +4,7 @@
 #include "Platform.h"
 
 #include <assert.h>
+#include <iterator>
 
 
 #define UI_CONCAT_(a, b) a ## b

@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include <memory>
+
 
 struct SlidingHighlightAnimDemo : ui::Buildable
 {

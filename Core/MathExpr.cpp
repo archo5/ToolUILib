@@ -187,7 +187,7 @@ struct MathExprData
 			case Ceil: *stackLast = ceilf(*stackLast); break;
 			case Int: *stackLast = float(int(*stackLast)); break;
 			case Frac: {
-				float dummy;
+				double dummy;
 				*stackLast = modf(*stackLast, &dummy);
 				break; }
 
@@ -529,7 +529,7 @@ struct MathExprData
 			case Ceil: ret = ceilf(cd[0]); break;
 			case Int: ret = float(int(cd[0])); break;
 			case Frac: {
-				float dummy;
+				double dummy;
 				ret = modf(cd[0], &dummy);
 				break; }
 
