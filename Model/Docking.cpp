@@ -76,6 +76,8 @@ void DockingNode::Build()
 {
 	GetCurrentBuildable()->Subscribe(DCT_DockingNodeUpdated, this);
 
+	UIWeakPtr<DockingNode> me = this;
+
 	if (isLeaf)
 	{
 		bool topLevel = tabs.size() <= 1 && !parentNode;
@@ -92,33 +94,48 @@ void DockingNode::Build()
 			tp.AddEnumTab<DockableContentsContainer*>(tab->contents->GetTitle(), tab);
 
 		tp.SetActiveTabByEnumValue<DockableContentsContainer*>(curActiveTab);
-		tp.HandleEvent(&tp, ui::EventType::SelectionChange) = [this, &tp](ui::Event&)
+		tp.HandleEvent(&tp, ui::EventType::SelectionChange) = [me, &tp](ui::Event&)
 		{
-			curActiveTab = tp.GetCurrentTabEnumValue<DockableContentsContainer*>(0);
+			if (!me)
+			{
+				puts("WHAT1");
+				return;
+			}
+			me->curActiveTab = tp.GetCurrentTabEnumValue<DockableContentsContainer*>(0);
 		};
 		auto* CB = GetCurrentBuildable();
-		tp.HandleEvent(&tp, ui::EventType::Change) = [this, &tp, CB](ui::Event& e)
+		tp.HandleEvent(&tp, ui::EventType::Change) = [me, &tp, CB](ui::Event& e)
 		{
+			if (!me)
+			{
+				puts("WHAT2");
+				return;
+			}
 			if (e.arg1 == UINTPTR_MAX)
 			{
 				e.context->ReleaseMouse();
 				CB->Rebuild();
 				// could delete this node
-				main->_PullOutTab(this, e.arg0);
+				me->main->_PullOutTab(me, e.arg0);
 				e.StopPropagation();
 				return;
 			}
 			uintptr_t inc = e.arg1 > e.arg0 ? 1 : UINTPTR_MAX;
 			for (uintptr_t i = e.arg0; i != e.arg1; i += inc)
 			{
-				std::swap(tabs[i], tabs[i + inc]);
+				std::swap(me->tabs[i], me->tabs[i + inc]);
 			}
 		};
-		tp.onClose = [this, CB](size_t num, uintptr_t id)
+		tp.onClose = [me, CB](size_t num, uintptr_t id)
 		{
+			if (!me)
+			{
+				puts("WHAT3");
+				return;
+			}
 			CB->Rebuild();
 			// could delete this node
-			main->_CloseTab(this, num);
+			me->main->_CloseTab(me, num);
 		};
 
 		if (curActiveTab)
@@ -128,7 +145,21 @@ void DockingNode::Build()
 	}
 	else
 	{
-		rectSource = &Push<SplitPane>().Init(splitDir, splits.data(), splits.size());
+		auto& sp = Push<SplitPane>();
+		sp.SetDirection(splitDir);
+		sp.SetSplits(splits.data(), splits.size());
+		sp.HandleEvent(EventType::Change) = [me, &sp](ui::Event& e)
+		{
+			if (e.target != &sp)
+				return;
+			if (!me)
+			{
+				puts("WHAT4");
+				return;
+			}
+			me->splits[e.arg0] = sp.GetSplitPos(e.arg0);
+		};
+		rectSource = &sp;
 
 		for (auto& cn : childNodes)
 			cn->Build();
@@ -323,15 +354,75 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 			if (P->childNodes[i] == cch)
 			{
 				P->childNodes.erase(P->childNodes.begin() + i);
-				// TODO rebalance splits
+				cch = nullptr;
+				node = nullptr;
+
+				// rebalance splits - redistribute space used by a part equally across other parts
 				if (!P->splits.empty())
+				{
+					std::vector<float> partSizes;
+					float prev = 0;
+					for (float split : P->splits)
+					{
+						partSizes.push_back(split - prev);
+						prev = split;
+					}
+					partSizes.push_back(1 - prev);
+
+					float usedSize = partSizes[i];
+					partSizes.erase(partSizes.begin() + i);
+					float addSize = usedSize / partSizes.size();
+					for (float& s : partSizes)
+						s += addSize;
+
+					P->splits.clear();
+					float sum = 0;
+					for (float s : partSizes)
+					{
+						sum += s;
+						P->splits.push_back(sum);
+					}
+					// remove the 1 at the end
 					P->splits.pop_back();
+				}
 				break;
 			}
 		}
 		cch = P;
 		if (!P->childNodes.empty())
 			break;
+	}
+
+	// remove one-child intermediate nodes
+	if (!cch->isLeaf && cch->childNodes.size() == 1)
+	{
+		if (auto P = cch->parentNode)
+		{
+			for (size_t i = 0; i < P->childNodes.size(); i++)
+			{
+				if (P->childNodes[i] == cch)
+				{
+					cch->childNodes[0]->parentNode = P;
+					P->childNodes[i] = cch->childNodes[0];
+					cch = P;
+					break;
+				}
+			}
+		}
+		else if (cch->subwindow)
+		{
+			auto* sw = cch->subwindow;
+			sw->rootNode = cch->childNodes[0];
+			sw->rootNode->parentNode = nullptr;
+			cch = sw->rootNode;
+		}
+		else
+		{
+			auto* m = cch->main;
+			m->_mainAreaRootNode = cch->childNodes[0];
+			m->_mainAreaRootNode->parentNode = nullptr;
+			cch = m->_mainAreaRootNode;
+		}
 	}
 
 	// convert to leaf (easy way to ensure future root insertability)
@@ -351,6 +442,10 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 				break;
 			}
 		}
+	}
+	else
+	{
+		Notify(DCT_DockingNodeUpdated, cch->parentNode);
 	}
 }
 
@@ -389,8 +484,11 @@ void DockingMainArea::_UpdateInsertionTarget(Point2i screenCursorPos)
 
 void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 {
-	if (auto tgt = _insTarget.node)
+	if (DockingNode* tgt = _insTarget.node)
 	{
+		// make sure it's kept alive
+		DockingNodeHandle htgt = tgt;
+
 		DockingNodeHandle insSWRoot = dsw->rootNode;
 		assert(insSWRoot->isLeaf);
 		assert(insSWRoot->tabs.size() == 1);
@@ -479,6 +577,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 			float after = idx >= P->splits.size() ? 1 : P->splits[idx];
 			float splitVal = (before + after) * 0.5f;
 			P->splits.insert(P->splits.begin() + idx, splitVal);
+			// TODO rebalance ^
 		}
 	}
 

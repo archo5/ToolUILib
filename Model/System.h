@@ -316,7 +316,7 @@ struct Overlays
 	bool sortedOutdated = false;
 };
 
-class InlineFrame;
+struct InlineFrame;
 struct FrameContents
 {
 	FrameContents();
@@ -327,14 +327,15 @@ struct FrameContents
 	EventSystem eventSystem;
 	Overlays overlays;
 	NativeWindowBase* nativeWindow = nullptr;
-	InlineFrame* owningFrame = nullptr;
+	UIWeakPtr<InlineFrame> owningFrame = nullptr;
 };
 
-class InlineFrame : public Buildable
+struct InlineFrame : Buildable
 {
-public:
+	FrameContents* _frameContents = nullptr;
+	bool _ownsContents = false;
 
-	void OnDisable() override;
+	void OnReset() override;
 	void OnEvent(Event& ev) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
@@ -344,11 +345,6 @@ public:
 
 	void SetFrameContents(FrameContents* contents);
 	void CreateFrameContents(std::function<void()> buildFunc);
-
-private:
-
-	FrameContents* frameContents = nullptr;
-	bool ownsContents = false;
 };
 
 } // ui

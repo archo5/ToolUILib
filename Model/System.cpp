@@ -355,14 +355,22 @@ void FrameContents::BuildRoot(Buildable* B)
 }
 
 
-void InlineFrame::OnDisable()
+void InlineFrame::OnReset()
 {
-	if (ownsContents && frameContents)
+	if (_frameContents)
 	{
-		delete frameContents;
-		frameContents = nullptr;
-		ownsContents = false;
+		if (_ownsContents)
+		{
+			delete _frameContents;
+		}
+		else
+		{
+			_frameContents->owningFrame = nullptr;
+			_frameContents->nativeWindow = nullptr;
+		}
 	}
+	_frameContents = nullptr;
+	_ownsContents = false;
 }
 
 void InlineFrame::Build()
@@ -371,22 +379,22 @@ void InlineFrame::Build()
 
 void InlineFrame::OnEvent(Event& ev)
 {
-	if (frameContents)
+	if (_frameContents)
 	{
 		// pass events
 		if (ev.type == EventType::ButtonDown || ev.type == EventType::ButtonUp)
-			frameContents->eventSystem.OnMouseButton(ev.type == EventType::ButtonDown, ev.GetButton(), ev.position, ev.modifiers);
+			_frameContents->eventSystem.OnMouseButton(ev.type == EventType::ButtonDown, ev.GetButton(), ev.position, ev.modifiers);
 		if (ev.type == EventType::MouseMove || ev.type == EventType::MouseLeave)
-			frameContents->eventSystem.OnMouseMove(ev.position, ev.modifiers);
+			_frameContents->eventSystem.OnMouseMove(ev.position, ev.modifiers);
 	}
 	Buildable::OnEvent(ev);
 }
 
 void InlineFrame::OnPaint(const UIPaintContext& ctx)
 {
-	if (frameContents &&
-		frameContents->container.rootBuildable)
-		frameContents->container.rootBuildable->OnPaint({ ctx, {} });
+	if (_frameContents &&
+		_frameContents->container.rootBuildable)
+		_frameContents->container.rootBuildable->OnPaint({ ctx, {} });
 }
 
 Rangef InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -401,36 +409,36 @@ Rangef InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType
 
 void InlineFrame::OnLayoutChanged()
 {
-	if (frameContents &&
-		frameContents->container.rootBuildable)
-		frameContents->container.rootBuildable->PerformLayout(GetFinalRect());
+	if (_frameContents &&
+		_frameContents->container.rootBuildable)
+		_frameContents->container.rootBuildable->PerformLayout(GetFinalRect());
 }
 
 void InlineFrame::SetFrameContents(FrameContents* contents)
 {
-	if (frameContents)
+	if (_frameContents)
 	{
-		if (ownsContents)
+		if (_ownsContents)
 		{
-			delete frameContents;
+			delete _frameContents;
 		}
 		else
 		{
-			frameContents->owningFrame = nullptr;
-			frameContents->nativeWindow = nullptr;
+			_frameContents->owningFrame = nullptr;
+			_frameContents->nativeWindow = nullptr;
 		}
 	}
 	if (contents)
 	{
 		if (contents->owningFrame)
 		{
-			contents->owningFrame->frameContents = nullptr;
+			contents->owningFrame->_frameContents = nullptr;
 		}
 		contents->nativeWindow = GetNativeWindow();
 		contents->owningFrame = this;
 	}
-	frameContents = contents;
-	ownsContents = false;
+	_frameContents = contents;
+	_ownsContents = false;
 	_OnChangeStyle();
 }
 
@@ -441,7 +449,7 @@ void InlineFrame::CreateFrameContents(std::function<void()> buildFunc)
 	cb->buildFunc = buildFunc;
 	contents->BuildRoot(cb);
 	SetFrameContents(contents);
-	ownsContents = true;
+	_ownsContents = true;
 }
 
 } // ui

@@ -41,7 +41,7 @@ enum DockingInsertionSide
 
 struct DockingInsertionTarget
 {
-	DockingNode* node;
+	UIWeakPtr<DockingNode> node;
 	// >= 0  -->  tab
 	//  < 0  -->  side (DockingInsertionSide)
 	int tabOrSide;

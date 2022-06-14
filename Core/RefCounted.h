@@ -89,11 +89,12 @@ public:
 	{
 		if (_ptr != ptr)
 		{
-			if (_ptr)
-				_ptr->Release();
+			auto* pptr = _ptr;
 			_ptr = ptr;
 			if (ptr)
 				ptr->AddRef();
+			if (pptr)
+				pptr->Release();
 		}
 		return *this;
 	}
@@ -101,11 +102,12 @@ public:
 	{
 		if (_ptr != o._ptr)
 		{
-			if (_ptr)
-				_ptr->Release();
+			auto* pptr = _ptr;
 			_ptr = o._ptr;
 			if (_ptr)
 				_ptr->AddRef();
+			if (pptr)
+				pptr->Release();
 		}
 		return *this;
 	}
@@ -113,10 +115,11 @@ public:
 	{
 		if (this != &o)
 		{
-			if (_ptr)
-				_ptr->Release();
+			auto* pptr = _ptr;
 			_ptr = o._ptr;
 			o._ptr = nullptr;
+			if (pptr)
+				pptr->Release();
 		}
 		return *this;
 	}
@@ -125,11 +128,12 @@ public:
 	{
 		if (_ptr != o._ptr)
 		{
-			if (_ptr)
-				_ptr->Release();
+			auto* pptr = _ptr;
 			_ptr = o._ptr;
 			if (_ptr)
 				_ptr->AddRef();
+			if (pptr)
+				pptr->Release();
 		}
 		return *this;
 	}
@@ -138,10 +142,11 @@ public:
 	{
 		if (this != &o)
 		{
-			if (_ptr)
-				_ptr->Release();
+			auto* pptr = _ptr;
 			_ptr = o._ptr;
 			o._ptr = nullptr;
+			if (pptr)
+				pptr->Release();
 		}
 		return *this;
 	}
