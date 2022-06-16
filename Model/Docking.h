@@ -13,6 +13,7 @@ struct DockingSubwindow;
 
 struct DockableContents : Buildable
 {
+	virtual bool HasID(StringView id) = 0;
 	virtual std::string GetTitle() = 0;
 };
 
@@ -70,6 +71,7 @@ struct DockingNode : RefCountedST
 
 	void SetSubwindow(DockingSubwindow* dsw);
 	DockingInsertionTarget FindInsertionTarget(Vec2f pos);
+	bool HasDockable(StringView id) const;
 
 	void Build();
 };
@@ -83,6 +85,7 @@ struct DockingSubwindow : NativeWindowBase, RefCountedST
 	bool _dragging = false;
 	Point2i _dragCWPDelta = {};
 
+	DockingSubwindow();
 	void OnBuild() override;
 	void OnBuildableEvent(Event& e);
 
@@ -126,6 +129,7 @@ struct DockingMainArea : Buildable
 	void RemoveSubwindows();
 	void SetMainAreaContents(const DockDefNode& node);
 	void AddSubwindow(const DockDefNode& node);
+	bool HasDockable(StringView id) const;
 };
 
 namespace dockdef {

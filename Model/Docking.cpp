@@ -72,6 +72,23 @@ DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
 	};
 }
 
+bool DockingNode::HasDockable(StringView id) const
+{
+	if (isLeaf)
+	{
+		for (auto& tab : tabs)
+			if (tab->contents->HasID(id))
+				return true;
+	}
+	else
+	{
+		for (auto& ch : childNodes)
+			if (ch->HasDockable(id))
+				return true;
+	}
+	return false;
+}
+
 void DockingNode::Build()
 {
 	GetCurrentBuildable()->Subscribe(DCT_DockingNodeUpdated, this);
@@ -166,6 +183,11 @@ void DockingNode::Build()
 
 		Pop();
 	}
+}
+
+DockingSubwindow::DockingSubwindow()
+{
+	SetStyle(WS_Resizable);
 }
 
 void DockingSubwindow::OnBuild()
@@ -317,7 +339,6 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 
 	_subwindows.push_back(DSW);
 	AABB2i finalClientRect = rect.MoveBy(wpos.x, wpos.y);
-	DSW->SetStyle(WS_Resizable);
 	DSW->SetInnerRect(finalClientRect);
 	DSW->SetVisible(true);
 	DSW->StartDrag();
@@ -573,11 +594,35 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 
 			P->childNodes.insert(P->childNodes.begin() + insIdx, insSWRoot);
 			insSWRoot->parentNode = P;
-			float before = idx == 0 ? 0 : P->splits[idx - 1];
-			float after = idx >= P->splits.size() ? 1 : P->splits[idx];
-			float splitVal = (before + after) * 0.5f;
-			P->splits.insert(P->splits.begin() + idx, splitVal);
-			// TODO rebalance ^
+
+			// add a split with rebalancing
+			{
+				// to avoid a special case at the end
+				P->splits.push_back(1);
+
+				std::vector<float> parts;
+				float prev = 0;
+				float sum = 0;
+				size_t n = 0;
+				for (float s : P->splits)
+				{
+					float diff = s - prev;
+					sum += diff;
+					parts.push_back(diff);
+					if (n++ == idx) // insert a copy
+					{
+						sum += diff;
+						parts.push_back(diff);
+					}
+					prev = s;
+				}
+				prev = 0;
+				for (size_t i = 0; i + 1 < parts.size(); i++)
+				{
+					prev += parts[i] / sum;
+					P->splits[i] = prev;
+				}
+			}
 		}
 	}
 
@@ -621,6 +666,19 @@ void DockingMainArea::AddSubwindow(const DockDefNode& node)
 	DSW->rootNode->SetSubwindow(DSW);
 	_subwindows.push_back(DSW);
 	Rebuild();
+	DSW->SetVisible(true);
+}
+
+bool DockingMainArea::HasDockable(StringView id) const
+{
+	if (_mainAreaRootNode->HasDockable(id))
+		return true;
+	for (auto& sw : _subwindows)
+	{
+		if (sw->rootNode->HasDockable(id))
+			return true;
+	}
+	return false;
 }
 
 namespace dockdef {

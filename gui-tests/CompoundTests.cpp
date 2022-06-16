@@ -1075,8 +1075,13 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 {
 	struct DockableTest : ui::DockableContents
 	{
+		ui::StringView id;
 		std::string name;
 
+		bool HasID(ui::StringView id) override
+		{
+			return this->id == id;
+		}
 		std::string GetTitle() override
 		{
 			return name;
@@ -1108,10 +1113,13 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 		area = ui::CreateUIObject<ui::DockingMainArea>();
 		area->SetSource(this);
 		d1 = ui::CreateUIObject<DockableTest>();
+		d1->id = "dockable1";
 		d1->name = "Dockable 1";
 		d2 = ui::CreateUIObject<DockableTest>();
+		d2->id = "dockable2";
 		d2->name = "Dockable 2";
 		d3 = ui::CreateUIObject<DockableTest>();
+		d3->id = "dockable3";
 		d3->name = "Dockable 3";
 
 		using namespace ui::dockdef;
@@ -1139,7 +1147,29 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 	}
 	void Build() override
 	{
-		ui::Append(area);
+		WPush<ui::EdgeSliceLayoutElement>();
+		{
+			WPush<ui::StackLTRLayoutElement>();
+			if (ui::imm::Button("Show 1"))
+			{
+				if (!area->HasDockable("dockable1"))
+					area->AddSubwindow(ui::dockdef::Tabs({ "dockable1" }));
+			}
+			if (ui::imm::Button("Show 2"))
+			{
+				if (!area->HasDockable("dockable2"))
+					area->AddSubwindow(ui::dockdef::Tabs({ "dockable2" }));
+			}
+			if (ui::imm::Button("Show 3"))
+			{
+				if (!area->HasDockable("dockable3"))
+					area->AddSubwindow(ui::dockdef::Tabs({ "dockable3" }));
+			}
+			WPop();
+
+			ui::Append(area);
+		}
+		WPop();
 	}
 };
 void Test_Docking()
