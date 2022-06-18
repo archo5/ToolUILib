@@ -1078,9 +1078,9 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 		ui::StringView id;
 		std::string name;
 
-		bool HasID(ui::StringView id) override
+		ui::StringView GetID() const override
 		{
-			return this->id == id;
+			return this->id;
 		}
 		std::string GetTitle() override
 		{
@@ -1096,6 +1096,7 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 	DockableTest* d1;
 	DockableTest* d2;
 	DockableTest* d3;
+	std::string mem;
 
 	ui::DockableContents* GetDockableContentsByID(ui::StringView id) override
 	{
@@ -1122,7 +1123,12 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 		d3->id = "dockable3";
 		d3->name = "Dockable 3";
 
+		Reset();
+	}
+	void Reset()
+	{
 		using namespace ui::dockdef;
+		area->RemoveSubwindows();
 		area->SetMainAreaContents
 		(
 			HSplit
@@ -1147,23 +1153,42 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 	}
 	void Build() override
 	{
+		using namespace ui::imm;
+
 		WPush<ui::EdgeSliceLayoutElement>();
 		{
 			WPush<ui::StackLTRLayoutElement>();
-			if (ui::imm::Button("Show 1"))
+			if (Button("Reset"))
+				Reset();
+			if (Button("Show 1"))
 			{
 				if (!area->HasDockable("dockable1"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable1" }));
 			}
-			if (ui::imm::Button("Show 2"))
+			if (Button("Show 2"))
 			{
 				if (!area->HasDockable("dockable2"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable2" }));
 			}
-			if (ui::imm::Button("Show 3"))
+			if (Button("Show 3"))
 			{
 				if (!area->HasDockable("dockable3"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable3" }));
+			}
+			if (Button("->Mem"))
+			{
+				ui::JSONSerializerObjectIterator w;
+				area->OnSerialize(w, {});
+				mem = w.GetData();
+				printf("[->Mem] serialized to json:\n%s\n", mem.c_str());
+			}
+			if (Button("Mem->"))
+			{
+				ui::JSONUnserializerObjectIterator u;
+				if (u.Parse(mem))
+					area->OnSerialize(u, {});
+				else
+					printf("[Mem->] failed to parse json?\n%s\n", mem.c_str());
 			}
 			WPop();
 

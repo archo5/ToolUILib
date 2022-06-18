@@ -88,6 +88,8 @@ struct NativeWindowGeometry
 	Point2i position;
 	Point2i size;
 	uint32_t state;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
 

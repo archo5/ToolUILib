@@ -13,7 +13,7 @@ struct DockingSubwindow;
 
 struct DockableContents : Buildable
 {
-	virtual bool HasID(StringView id) = 0;
+	virtual StringView GetID() const = 0;
 	virtual std::string GetTitle() = 0;
 };
 
@@ -74,6 +74,7 @@ struct DockingNode : RefCountedST
 	bool HasDockable(StringView id) const;
 
 	void Build();
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 using DockingNodeHandle = RCHandle<DockingNode>;
 
@@ -81,6 +82,7 @@ struct DockingSubwindow : NativeWindowBase, RefCountedST
 {
 	DockingNodeHandle rootNode;
 
+	DockingMainArea* main;
 	Buildable* _root = nullptr;
 	bool _dragging = false;
 	Point2i _dragCWPDelta = {};
@@ -88,6 +90,7 @@ struct DockingSubwindow : NativeWindowBase, RefCountedST
 	DockingSubwindow();
 	void OnBuild() override;
 	void OnBuildableEvent(Event& e);
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	void StartDrag();
 };
@@ -130,6 +133,7 @@ struct DockingMainArea : Buildable
 	void SetMainAreaContents(const DockDefNode& node);
 	void AddSubwindow(const DockDefNode& node);
 	bool HasDockable(StringView id) const;
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
 namespace dockdef {

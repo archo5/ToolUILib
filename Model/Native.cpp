@@ -465,6 +465,18 @@ bool FileSelectionWindow::Show(bool save)
 }
 
 
+void NativeWindowGeometry::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "NativeWindowGeometry");
+
+	OnField(oi, "position", position);
+	OnField(oi, "size", size);
+	OnField(oi, "state", state);
+
+	oi.EndObject();
+}
+
+
 DataCategoryTag DCT_ResizeWindow[1];
 
 

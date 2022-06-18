@@ -77,7 +77,7 @@ bool DockingNode::HasDockable(StringView id) const
 	if (isLeaf)
 	{
 		for (auto& tab : tabs)
-			if (tab->contents->HasID(id))
+			if (tab->contents->GetID() == id)
 				return true;
 	}
 	else
@@ -185,6 +185,114 @@ void DockingNode::Build()
 	}
 }
 
+void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "DockingNode");
+
+	OnField(oi, "isLeaf", isLeaf);
+	if (oi.IsUnserializer())
+	{
+		tabs.clear();
+		childNodes.clear();
+		splits.clear();
+	}
+
+	if (isLeaf)
+	{
+		if (oi.IsUnserializer())
+		{
+			std::string activeID;
+			OnField(oi, "activeID", activeID);
+
+			tabs.reserve(oi.BeginArray(0, "tabs"));
+
+			while (oi.HasMoreArrayElements())
+			{
+				std::string id;
+				OnField(oi, "tab", id);
+
+				auto* dc = main->source->GetDockableContentsByID(id);
+				if (!dc)
+					continue;
+
+				auto* dcc = new ui::DockableContentsContainer(dc);
+				tabs.push_back(dcc);
+
+				if (!curActiveTab || id == activeID)
+					curActiveTab = dcc;
+			}
+
+			oi.EndArray();
+		}
+		else
+		{
+			std::string activeID;
+			if (curActiveTab)
+				activeID = to_string(curActiveTab->contents->GetID());
+			OnField(oi, "activeID", activeID);
+
+			oi.BeginArray(tabs.size(), "tabs");
+
+			for (auto& tab : tabs)
+			{
+				std::string id = to_string(tab->contents->GetID());
+				OnField(oi, {}, id);
+			}
+
+			oi.EndArray();
+		}
+	}
+	else
+	{
+		OnFieldEnumInt(oi, "splitDir", splitDir);
+
+		if (oi.IsUnserializer())
+		{
+			childNodes.clear();
+			childNodes.reserve(oi.BeginArray(0, "childNodes"));
+
+			while (oi.HasMoreArrayElements())
+			{
+				auto* ch = new DockingNode;
+				ch->main = main;
+				ch->subwindow = subwindow;
+				ch->parentNode = this;
+				OnField(oi, {}, *ch);
+
+				childNodes.push_back(ch);
+			}
+
+			oi.EndArray();
+		}
+		else
+		{
+			oi.BeginArray(childNodes.size(), "childNodes");
+
+			for (auto& ch : childNodes)
+			{
+				OnField(oi, {}, *ch);
+			}
+
+			oi.EndArray();
+		}
+
+		OnField(oi, "splits", splits);
+		if (oi.IsUnserializer())
+		{
+			// TODO more advanced fix-up?
+			if (!childNodes.empty() && splits.size() != childNodes.size() - 1)
+			{
+				splits.clear();
+				for (size_t i = 0; i + 1 < childNodes.size(); i++)
+					splits.push_back((i + 1.0f) / childNodes.size());
+			}
+		}
+	}
+
+	oi.EndObject();
+}
+
+
 DockingSubwindow::DockingSubwindow()
 {
 	SetStyle(WS_Resizable);
@@ -238,6 +346,29 @@ void DockingSubwindow::OnBuildableEvent(Event& e)
 			break;
 		}
 	}
+}
+
+void DockingSubwindow::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	bool un = oi.IsUnserializer();
+	oi.BeginObject(FI, "DockingSubwindow");
+
+	NativeWindowGeometry g;
+	if (!un)
+		g = GetGeometry();
+	OnField(oi, "geometry", g);
+	if (un)
+		SetGeometry(g);
+
+	if (un)
+	{
+		rootNode = new DockingNode;
+		rootNode->subwindow = this;
+		rootNode->main = main;
+	}
+	OnField(oi, "rootNode", *rootNode);
+
+	oi.EndObject();
 }
 
 void DockingSubwindow::StartDrag()
@@ -334,6 +465,7 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	DN->curActiveTab = dcch;
 
 	DockingSubwindow* DSW = new DockingSubwindow;
+	DSW->main = this;
 	DSW->rootNode = DN;
 	DN->subwindow = DSW;
 
@@ -650,7 +782,6 @@ void DockingMainArea::ClearMainArea()
 void DockingMainArea::RemoveSubwindows()
 {
 	_subwindows.clear();
-	Rebuild();
 }
 
 void DockingMainArea::SetMainAreaContents(const DockDefNode& node)
@@ -662,10 +793,10 @@ void DockingMainArea::SetMainAreaContents(const DockDefNode& node)
 void DockingMainArea::AddSubwindow(const DockDefNode& node)
 {
 	DockingSubwindow* DSW = new DockingSubwindow;
+	DSW->main = this;
 	DSW->rootNode = node.Construct(this);
 	DSW->rootNode->SetSubwindow(DSW);
 	_subwindows.push_back(DSW);
-	Rebuild();
 	DSW->SetVisible(true);
 }
 
@@ -680,6 +811,52 @@ bool DockingMainArea::HasDockable(StringView id) const
 	}
 	return false;
 }
+
+void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	if (FI.NeedObject())
+		oi.BeginObject(FI, "DockingMainArea");
+
+	if (oi.IsUnserializer())
+	{
+		_mainAreaRootNode = new DockingNode;
+		_mainAreaRootNode->main = this;
+		OnField(oi, "rootNode", *_mainAreaRootNode);
+
+		RemoveSubwindows();
+		_subwindows.reserve(oi.BeginArray(0, "subwindows"));
+
+		while (oi.HasMoreArrayElements())
+		{
+			DockingSubwindow* DSW = new DockingSubwindow;
+			DSW->main = this;
+
+			OnField(oi, "tab", *DSW);
+
+			_subwindows.push_back(DSW);
+			DSW->SetVisible(true);
+		}
+
+		oi.EndArray();
+	}
+	else
+	{
+		OnField(oi, "rootNode", *_mainAreaRootNode);
+
+		oi.BeginArray(_subwindows.size(), "subwindows");
+
+		for (auto& sw : _subwindows)
+		{
+			OnField(oi, "node", *sw);
+		}
+
+		oi.EndArray();
+	}
+
+	if (FI.NeedObject())
+		oi.EndObject();
+}
+
 
 namespace dockdef {
 
