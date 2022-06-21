@@ -1,6 +1,7 @@
 
 #pragma once
 #include "pch.h"
+#include "../Core/RefCounted.h"
 #include "../Editors/TreeEditor.h"
 
 #include "FileReaders.h"
@@ -76,7 +77,7 @@ struct MSData
 
 struct MSError
 {
-	std::weak_ptr<struct MSNode> node;
+	ui::WeakPtr<struct MSNode> node;
 	std::string error;
 };
 
@@ -86,15 +87,17 @@ struct MSContext
 	IDataSource* src;
 	IVariableSource* vs;
 
-	std::weak_ptr<struct MSNode> curNode;
+	ui::WeakPtr<struct MSNode> curNode;
 	std::vector<MSError> errors;
 
 	void Error(std::string&& text);
 };
 
-struct MSNode
+struct MSNode : ui::RefCountedST
 {
-	using Ptr = std::shared_ptr<MSNode>;
+	UI_DECLARE_WEAK_PTR_COMPATIBLE;
+
+	using Ptr = ui::RCHandle<MSNode>;
 
 	std::vector<Ptr> children;
 
@@ -117,7 +120,7 @@ struct MSNode
 struct MeshScript : ui::ITree
 {
 	std::vector<MSNode::Ptr> rootNodes;
-	std::weak_ptr<MSNode> selected;
+	ui::WeakPtr<MSNode> selected;
 
 	~MeshScript();
 	void Clear();

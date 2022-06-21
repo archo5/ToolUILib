@@ -40,7 +40,7 @@ MSNode* MSNode::Clone()
 {
 	MSNode* tmp = CloneBase();
 	for (auto& n : tmp->children)
-		n.reset(n->Clone());
+		n = n->Clone();
 	return tmp;
 }
 
@@ -230,7 +230,7 @@ void MeshScript::EditUI()
 		};
 
 		ui::Push<ui::StackTopDownLayoutElement>();
-		if (auto selNode = selected.lock())
+		if (auto selNode = selected.Get())
 		{
 			selNode->FullEditUI();
 		}
@@ -263,13 +263,13 @@ void MeshScript::IterateChildren(ui::TreePathRef path, IterationFunc&& fn)
 	if (path.empty())
 	{
 		for (auto& node : rootNodes)
-			fn(node.get());
+			fn(node.get_ptr());
 	}
 	else
 	{
 		auto loc = FindNode(path);
 		for (auto& node : loc.Get()->children)
-			fn(node.get());
+			fn(node.get_ptr());
 	}
 }
 
@@ -311,20 +311,20 @@ void MeshScript::Insert(ui::TreePathRef path, MSNode* node)
 
 void MeshScript::ClearSelection()
 {
-	selected.reset();
+	selected = nullptr;
 }
 
 bool MeshScript::GetSelectionState(ui::TreePathRef path)
 {
 	auto loc = FindNode(path);
-	return loc.Get() == selected.lock();
+	return loc.Get() == selected.Get();
 }
 
 void MeshScript::SetSelectionState(ui::TreePathRef path, bool sel)
 {
 	auto loc = FindNode(path);
 	if (sel)
-		selected = loc.Get();
+		selected = loc.Get().get_ptr();
 }
 
 void MeshScript::Remove(ui::TreePathRef path)

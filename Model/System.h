@@ -327,7 +327,7 @@ struct FrameContents
 	EventSystem eventSystem;
 	Overlays overlays;
 	NativeWindowBase* nativeWindow = nullptr;
-	UIWeakPtr<InlineFrame> owningFrame = nullptr;
+	WeakPtr<InlineFrame> owningFrame = nullptr;
 };
 
 struct InlineFrame : Buildable

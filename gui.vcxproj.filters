@@ -277,6 +277,9 @@
     <ClInclude Include="Model\Layout.h">
       <Filter>Model</Filter>
     </ClInclude>
+    <ClInclude Include="Core\WeakPtr.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

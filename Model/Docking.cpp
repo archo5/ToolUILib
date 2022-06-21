@@ -93,7 +93,7 @@ void DockingNode::Build()
 {
 	GetCurrentBuildable()->Subscribe(DCT_DockingNodeUpdated, this);
 
-	UIWeakPtr<DockingNode> me = this;
+	WeakPtr<DockingNode> me = this;
 
 	if (isLeaf)
 	{

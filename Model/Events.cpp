@@ -375,7 +375,7 @@ static void _HoverEnterEvent(UIObject* o, UIObject* end, Event& e, uint32_t fl)
 	o->_DoEvent(e);
 }
 
-void EventSystem::_UpdateHoverObj(UIWeakPtr<UIObject>& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
+void EventSystem::_UpdateHoverObj(WeakPtr<UIObject>& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents)
 {
 	auto* tgt = dragEvents ?
 		DragDrop::GetData() == nullptr ? nullptr : FindObjectAtPosition(cursorPos) :

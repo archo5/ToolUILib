@@ -9,7 +9,7 @@ namespace ui {
 
 struct TimerData
 {
-	UIWeakPtr<UIObject> target;
+	WeakPtr<UIObject> target;
 	float timeLeft;
 	int id;
 };
@@ -42,7 +42,7 @@ struct EventSystem
 	UIObject* FindObjectAtPosition(Point2f pos);
 	static UIObject* _FindObjectAtPosition(UIObject* root, Point2f pos);
 	void MoveClickTo(UIObject* obj, MouseButton btn = MouseButton::Left);
-	void _UpdateHoverObj(UIWeakPtr<UIObject>& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents);
+	void _UpdateHoverObj(WeakPtr<UIObject>& curHoverObj, Point2f cursorPos, uint8_t mod, bool dragEvents);
 	void _UpdateCursor(UIObject* hoverObj);
 	void _UpdateTooltip(Point2f cursorPos);
 	void OnMouseMove(Point2f cursorPos, uint8_t mod);
@@ -57,10 +57,10 @@ struct EventSystem
 	UIContainer* container;
 	Overlays* overlays;
 
-	UIWeakPtr<UIObject> hoverObj;
-	UIWeakPtr<UIObject> dragHoverObj;
-	UIWeakPtr<UIObject> mouseCaptureObj = nullptr;
-	UIWeakPtr<UIObject> clickObj[5] = {};
+	WeakPtr<UIObject> hoverObj;
+	WeakPtr<UIObject> dragHoverObj;
+	WeakPtr<UIObject> mouseCaptureObj = nullptr;
+	WeakPtr<UIObject> clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};
 	Point2f clickStartPositions[5] = {};
@@ -68,8 +68,8 @@ struct EventSystem
 	uint32_t mouseBtnPressLastTimes[5] = {};
 	unsigned mouseBtnReleaseCounts[5] = {};
 	uint32_t mouseBtnReleaseLastTimes[5] = {};
-	UIWeakPtr<UIObject> focusObj;
-	UIWeakPtr<UIObject> lastFocusObj;
+	WeakPtr<UIObject> focusObj;
+	WeakPtr<UIObject> lastFocusObj;
 	std::vector<TimerData> pendingTimers;
 	float width = 100;
 	float height = 100;

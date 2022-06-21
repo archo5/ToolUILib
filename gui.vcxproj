@@ -204,6 +204,7 @@
     <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
+    <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
     <ClInclude Include="Editors\EditCommon.h" />

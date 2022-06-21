@@ -42,7 +42,7 @@ enum DockingInsertionSide
 
 struct DockingInsertionTarget
 {
-	UIWeakPtr<DockingNode> node;
+	WeakPtr<DockingNode> node;
 	// >= 0  -->  tab
 	//  < 0  -->  side (DockingInsertionSide)
 	int tabOrSide;
@@ -50,13 +50,11 @@ struct DockingInsertionTarget
 
 struct DockingNode : RefCountedST
 {
-	LivenessToken _token;
-	LivenessToken& GetLivenessToken() { return _token.GetOrCreate(); }
-	~DockingNode() { _token.SetAlive(false); }
+	UI_DECLARE_WEAK_PTR_COMPATIBLE;
 
 	DockingMainArea* main = nullptr;
 	DockingSubwindow* subwindow = nullptr;
-	UIWeakPtr<DockingNode> parentNode = nullptr;
+	WeakPtr<DockingNode> parentNode = nullptr;
 
 	bool isLeaf = true;
 	// if not leaf (contains child ndoes):
@@ -67,7 +65,7 @@ struct DockingNode : RefCountedST
 	std::vector<DockableContentsContainerHandle> tabs;
 	DockableContentsContainerHandle curActiveTab;
 
-	UIWeakPtr<UIObject> rectSource;
+	WeakPtr<UIObject> rectSource;
 
 	void SetSubwindow(DockingSubwindow* dsw);
 	DockingInsertionTarget FindInsertionTarget(Vec2f pos);

@@ -12,6 +12,7 @@
 #include "../Core/Serialization.h"
 #include "../Core/String.h"
 #include "../Core/Threading.h"
+#include "../Core/WeakPtr.h"
 #include "../Core/Font.h"
 
 #include "../Render/Render.h"
@@ -115,62 +116,6 @@ enum class Direction
 	Vertical,
 };
 
-struct LivenessToken
-{
-	struct Data
-	{
-		AtomicInt32 ref;
-		AtomicBool alive;
-	};
-
-	Data* _data;
-
-	LivenessToken() : _data(nullptr) {}
-	LivenessToken(Data* d) : _data(d) { if (d) d->ref++; }
-	LivenessToken(const LivenessToken& o) : _data(o._data) { if (_data) _data->ref++; }
-	LivenessToken(LivenessToken&& o) : _data(o._data) { o._data = nullptr; }
-	~LivenessToken() { Release(); }
-	LivenessToken& operator = (const LivenessToken& o)
-	{
-		Release();
-		_data = o._data;
-		if (_data)
-			_data->ref++;
-		return *this;
-	}
-	LivenessToken& operator = (LivenessToken&& o)
-	{
-		Release();
-		_data = o._data;
-		o._data = nullptr;
-		return *this;
-	}
-	void Release()
-	{
-		if (_data && --_data->ref <= 0)
-		{
-			delete _data;
-			_data = nullptr;
-		}
-	}
-
-	bool IsAlive() const
-	{
-		return _data && _data->alive;
-	}
-	void SetAlive(bool alive)
-	{
-		if (_data)
-			_data->alive = alive;
-	}
-	LivenessToken& GetOrCreate()
-	{
-		if (!_data)
-			_data = new Data{ 1, true };
-		return *this;
-	}
-};
-
 // objects whose configuration can be reset without also resetting the state
 struct IPersistentObject
 {
@@ -221,19 +166,6 @@ struct PersistentObjectList
 		*_curPO = po;
 		_curPO = &po->_next;
 	}
-};
-
-template <class T>
-struct UIWeakPtr
-{
-	LivenessToken _token;
-	T* _obj = nullptr;
-
-	UI_FORCEINLINE UIWeakPtr() {}
-	UI_FORCEINLINE UIWeakPtr(T* o) : _obj(o) { if (o) _token = o->GetLivenessToken(); }
-	UI_FORCEINLINE T* Get() const { return _token.IsAlive() ? _obj : nullptr; }
-	UI_FORCEINLINE T* operator -> () const { return Get(); }
-	UI_FORCEINLINE operator T* () const { return Get(); }
 };
 
 struct SingleChildPaintPtr
