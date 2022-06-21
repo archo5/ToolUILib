@@ -1240,7 +1240,7 @@ void AddTooltip::Apply(UIObject* obj) const
 	auto fn = _evfn;
 	obj->HandleEvent(EventType::Tooltip) = [fn{ std::move(fn) }](Event& e)
 	{
-		Tooltip::Set(fn);
+		Tooltip::Set(e.current, fn);
 		e.StopPropagation();
 	};
 }

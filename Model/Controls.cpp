@@ -746,6 +746,15 @@ void LabeledProperty::OnLayout(const UIRect& rect)
 	_finalRect = rect;
 }
 
+void LabeledProperty::OnEvent(Event& e)
+{
+	if (e.type == EventType::Tooltip && e.target == this && e.position.x < _lastSepX && _tooltipBuildFunc)
+	{
+		Tooltip::Set(this, _tooltipBuildFunc);
+		e.StopPropagation();
+	}
+}
+
 LabeledProperty& LabeledProperty::SetText(StringView text)
 {
 	_labelText.assign(text.data(), text.size());
@@ -1219,12 +1228,20 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 }
 
 
+struct CursorFollowingPLE : PlacementLayoutElement
+{
+	// hack
+	void OnPaint(const UIPaintContext& pc) override
+	{
+		if (!_slots.empty())
+			_OnChangeStyle();
+	}
+};
+
+
 void DefaultOverlayBuilder::Build()
 {
-	if (drawTooltip || drawDragDrop)
-		Subscribe(DCT_MouseMoved);
-
-	auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+	auto tmpl = ui::Push<CursorFollowingPLE>().GetSlotTemplate();
 
 	if (drawTooltip)
 	{

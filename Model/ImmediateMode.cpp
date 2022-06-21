@@ -448,6 +448,8 @@ bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConf
 void PropText(const char* label, const char* text, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -470,66 +472,88 @@ void PropText(const char* label, const char* text, ModInitList mods)
 bool PropButton(const char* label, const char* text, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return Button(text, mods);
 }
 
 bool PropEditBool(const char* label, bool& val, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditBool(val, nullptr, mods);
 }
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditInt(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditFloat(ps.label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditString(text, retfn, mods);
 }
 
 bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditColor(val, delayed, mods);
 }
 
 bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mods)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditColor(val, delayed, mods);
 }
 
 bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
 	return EditFloatVec(val, axes, mods, cfg, range, fmt);
 }
 

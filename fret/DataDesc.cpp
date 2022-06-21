@@ -147,7 +147,7 @@ void DataDesc::EditInstance()
 			del = true;
 		}
 		ui::imm::PropEditString("Notes", SI->notes.c_str(), [&SI](const char* s) { SI->notes = s; });
-		ui::imm::PropEditBool("Allow auto expand", SI->allowAutoExpand);
+		ui::imm::PropEditBool("Allow auto expand", SI->allowAutoExpand, { ui::AddLabelTooltip("Enable creation of structs referenced by this struct") });
 		ui::imm::PropEditInt("Offset", SI->off);
 		if (ui::imm::PropButton("Edit struct:", SI->def->name.c_str()))
 		{
@@ -158,8 +158,11 @@ void DataDesc::EditInstance()
 		if (advancedAccess)
 		{
 			EditCreationReason("Creation reason", SI->creationReason);
-			ui::imm::PropEditBool("Use remaining size", SI->remainingCountIsSize);
-			ui::imm::PropEditInt(SI->remainingCountIsSize ? "Remaining size" : "Remaining count", SI->remainingCount);
+			ui::imm::PropEditBool("Use remaining size", SI->remainingCountIsSize, { ui::AddLabelTooltip("Changes how the following value is interpreted") });
+			if (SI->remainingCountIsSize)
+				ui::imm::PropEditInt("Remaining size", SI->remainingCount, { ui::AddLabelTooltip("The number of bytes used by subsequent instances of the struct") });
+			else
+				ui::imm::PropEditInt("Remaining count", SI->remainingCount, { ui::AddLabelTooltip("The number of subsequent instances of the struct") });
 
 			ui::LabeledProperty::Begin("Size override");
 			ui::imm::EditBool(SI->sizeOverrideEnable, nullptr);

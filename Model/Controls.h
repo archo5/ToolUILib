@@ -417,7 +417,7 @@ struct LabeledProperty : WrapperElement
 	struct Scope
 	{
 		ContentLayoutType layoutType;
-		UIObject* label;
+		LabeledProperty* label;
 
 		Scope(const char* lblstr = nullptr, ContentLayoutType layout = StackExpandLTR) : layoutType(layout)
 		{
@@ -441,6 +441,7 @@ struct LabeledProperty : WrapperElement
 	void OnEnterTree() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnLayout(const UIRect& rect) override;
+	void OnEvent(Event& e) override;
 
 	StringView GetText() const { return _labelText; }
 	LabeledProperty& SetText(StringView text);
@@ -468,6 +469,17 @@ struct LabeledProperty : WrapperElement
 	float _lastSepX = 0;
 	bool _isBrief = false;
 	bool _preferOwnLabelStyle = false;
+	Tooltip::BuildFunc _tooltipBuildFunc;
+};
+
+struct AddLabelTooltip : AddTooltip
+{
+	using AddTooltip::AddTooltip;
+	void ApplyToLabel(struct LabeledProperty* lp) const override
+	{
+		lp->_tooltipBuildFunc = _evfn;
+	}
+	void Apply(UIObject* obj) const override {}
 };
 
 

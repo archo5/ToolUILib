@@ -10,7 +10,15 @@
 namespace ui {
 
 uint32_t g_curLayoutFrame = 0;
+DataCategoryTag DCT_UIObject[1];
 DataCategoryTag DCT_MouseMoved[1];
+DataCategoryTag DCT_TooltipChanged[1];
+
+static bool g_tooltipInChangeContext;
+static OwnerID g_curTooltipOwner;
+static Tooltip::BuildFunc g_curTooltipBuildFn;
+static OwnerID g_newTooltipOwner;
+static Tooltip::BuildFunc g_newTooltipBuildFn;
 
 
 const char* EventTypeToBaseString(EventType type)
@@ -422,27 +430,31 @@ void EventSystem::_UpdateCursor(UIObject* hoverObj)
 
 void EventSystem::_UpdateTooltip(Point2f cursorPos)
 {
-#if 0
-	if (Tooltip::IsSet())
-		return;
-#endif
-	Tooltip::ClearChangedFlag();
+	g_newTooltipBuildFn = {};
+	g_newTooltipOwner = {};
+	g_tooltipInChangeContext = true;
+
 	Event ev(this, hoverObj, EventType::Tooltip);
 	ev.topLevelPosition = cursorPos;
+
 	UIObject* obj = ev.target;
 	while (obj && !ev.IsPropagationStopped())
 	{
 		UpdateEventPosition(ev, obj);
 		obj->_DoEvent(ev);
-		if (Tooltip::WasChanged())
-		{
-			tooltipObj = obj;
-			Tooltip::ClearChangedFlag();
-			Notify(DCT_TooltipChanged);
+		if (g_newTooltipBuildFn || g_newTooltipOwner != OwnerID::Empty())
 			break;
-		}
 		obj = obj->parent;
 	}
+
+	if (g_curTooltipOwner != g_newTooltipOwner || !g_curTooltipBuildFn != !g_newTooltipBuildFn)
+	{
+		g_curTooltipBuildFn = g_newTooltipBuildFn;
+		g_curTooltipOwner = g_newTooltipOwner;
+		Notify(DCT_TooltipChanged);
+	}
+
+	g_tooltipInChangeContext = false;
 }
 
 void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
@@ -489,11 +501,6 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 
 	if (moved)
 	{
-		if (Tooltip::IsSet() && tooltipObj && (!hoverObj || !hoverObj->IsChildOrSame(tooltipObj)))
-		{
-			Tooltip::Unset();
-			Notify(DCT_TooltipChanged);
-		}
 		_UpdateTooltip(cursorPos);
 	}
 
@@ -757,36 +764,19 @@ DragDropData* DragDrop::GetData(const char* type)
 }
 
 
-static Tooltip::BuildFunc g_curTooltipBuildFn;
-static bool g_tooltipChanged;
 
-DataCategoryTag DCT_TooltipChanged[1];
-
-void Tooltip::Set(const BuildFunc& f)
+void Tooltip::Set(const OwnerID& oid, const BuildFunc& f)
 {
-	g_curTooltipBuildFn = f;
-	g_tooltipChanged = true;
-}
+	if (!g_tooltipInChangeContext)
+		return; // TODO error
 
-void Tooltip::Unset()
-{
-	g_curTooltipBuildFn = {};
-	g_tooltipChanged = true;
+	g_newTooltipOwner = oid;
+	g_newTooltipBuildFn = f;
 }
 
 bool Tooltip::IsSet()
 {
 	return !!g_curTooltipBuildFn;
-}
-
-bool Tooltip::WasChanged()
-{
-	return g_tooltipChanged;
-}
-
-void Tooltip::ClearChangedFlag()
-{
-	g_tooltipChanged = false;
 }
 
 void Tooltip::Build()

@@ -546,18 +546,18 @@ void MarkedItemEditor::Build()
 
 	ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 	ui::Push<ui::StackTopDownLayoutElement>();
-	ui::imm::DropdownMenuList(marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
+	ui::imm::PropDropdownMenuList("Type", marker->type, ui::BuildAlloc<ui::CStrArrayOptionList>(typeNames));
 	ui::imm::PropEditInt("Offset", marker->at);
-	ui::imm::PropEditInt("Count", marker->count);
-	ui::imm::PropEditInt("Repeats", marker->repeats);
-	ui::imm::PropEditInt("Stride", marker->stride);
+	ui::imm::PropEditInt("Count", marker->count, { ui::AddLabelTooltip("The number of elements within a single packed array") });
+	ui::imm::PropEditInt("Repeats", marker->repeats, { ui::AddLabelTooltip(">1 turns on analysis across repeats instead of packed array") });
+	ui::imm::PropEditInt("Stride", marker->stride, { ui::AddLabelTooltip("Distance in bytes between arrays of elements") });
 	unsigned bs = marker->bitstart;
 	if (ui::imm::PropEditInt("Start bit", bs, {}, 1U, { 0U, 64U }))
 		marker->bitstart = bs;
 	unsigned be = marker->bitend;
 	if (ui::imm::PropEditInt("End bit", be, {}, 1U, { 0U, 64U }))
 		marker->bitend = be;
-	ui::imm::PropEditBool("Exclude zeroes", marker->excludeZeroes);
+	ui::imm::PropEditBool("Exclude zeroes", marker->excludeZeroes, { ui::AddLabelTooltip("Whether to ignore zeroes during analysis") });
 	ui::imm::PropEditString("Notes", marker->notes.c_str(), [this](const char* v) { marker->notes = v; });
 	ui::Pop();
 	ui::Pop();

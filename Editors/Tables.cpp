@@ -436,8 +436,6 @@ void TableView::SetDataSource(TableDataSource* src)
 		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
 	while (_impl->colEnds.size() > nc + 1)
 		_impl->colEnds.pop_back();
-
-	Rebuild();
 }
 
 ISelectionStorage* TableView::GetSelectionStorage() const
@@ -755,8 +753,6 @@ void TreeView::SetDataSource(TreeDataSource* src)
 		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
 	while (_impl->colEnds.size() > nc + 1)
 		_impl->colEnds.pop_back();
-
-	Rebuild();
 }
 
 void TreeView::CalculateColumnWidths(bool firstTimeOnly)

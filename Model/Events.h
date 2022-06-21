@@ -14,7 +14,8 @@ namespace ui {
 struct NativeWindowBase;
 struct Buildable;
 struct Overlays;
-extern struct DataCategoryTag DCT_MouseMoved[1];
+struct DataCategoryTag;
+extern DataCategoryTag DCT_MouseMoved[1];
 
 struct UIObject;
 struct UIContainer;
@@ -319,7 +320,7 @@ struct DragDropFiles : DragDropData
 	std::vector<std::string> paths;
 };
 
-extern struct DataCategoryTag DCT_DragDropDataChanged[1];
+extern DataCategoryTag DCT_DragDropDataChanged[1];
 struct DragDrop
 {
 	static void SetData(DragDropData* data);
@@ -329,16 +330,36 @@ struct DragDrop
 	static T* GetData() { return static_cast<T*>(GetData(T::NAME)); }
 };
 
-extern struct DataCategoryTag DCT_TooltipChanged[1];
+extern DataCategoryTag DCT_UIObject[1];
+struct OwnerID
+{
+	DataCategoryTag* category;
+	uintptr_t id;
+
+	UI_FORCEINLINE OwnerID() : category(nullptr), id(0) {}
+	UI_FORCEINLINE OwnerID(UIObject* o) : category(DCT_UIObject), id(uintptr_t(o)) {}
+	UI_FORCEINLINE OwnerID(DataCategoryTag* c, uintptr_t i) : category(c), id(i) {}
+	UI_FORCEINLINE OwnerID(DataCategoryTag* c, void* p) : category(c), id(uintptr_t(p)) {}
+
+	UI_FORCEINLINE static OwnerID Empty() { return {}; }
+
+	UI_FORCEINLINE bool operator == (const OwnerID& o) const
+	{
+		return category == o.category && id == o.id;
+	}
+	UI_FORCEINLINE bool operator != (const OwnerID& o) const
+	{
+		return category != o.category || id != o.id;
+	}
+};
+
+extern DataCategoryTag DCT_TooltipChanged[1];
 struct Tooltip
 {
 	using BuildFunc = std::function<void()>;
 
-	static void Set(const BuildFunc& f);
-	static void Unset();
+	static void Set(const OwnerID& oid, const BuildFunc& f);
 	static bool IsSet();
-	static bool WasChanged();
-	static void ClearChangedFlag();
 	static void Build();
 };
 

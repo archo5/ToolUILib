@@ -60,7 +60,6 @@ struct EventSystem
 	UIWeakPtr<UIObject> hoverObj;
 	UIWeakPtr<UIObject> dragHoverObj;
 	UIWeakPtr<UIObject> mouseCaptureObj = nullptr;
-	UIWeakPtr<UIObject> tooltipObj = nullptr; // TODO check if it resets when an element is deleted
 	UIWeakPtr<UIObject> clickObj[5] = {};
 	unsigned clickCounts[5] = {};
 	uint32_t clickLastTimes[5] = {};

@@ -131,6 +131,9 @@ struct MainWindowContents : ui::Buildable
 		ui::Pop();
 #endif
 
+		ui::Push<ui::EdgeSliceLayoutElement>();
+		ui::Make<ui::DefaultOverlayBuilder>();
+
 		auto& tpFiles = ui::Push<ui::TabbedPanel>();
 		tpFiles.showCloseButton = true;
 		{
@@ -216,6 +219,8 @@ struct MainWindowContents : ui::Buildable
 			}
 		}
 		ui::Pop();
+
+		ui::Pop(); // EdgeSliceLayoutElement
 	}
 
 	Workspace workspace;

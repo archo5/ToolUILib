@@ -110,7 +110,7 @@ void HighlightSettings::Save(const char* key, NamedTextSerializeWriter& w)
 
 void HighlightSettings::EditUI()
 {
-	ui::imm::PropEditBool("Exclude zeroes", excludeZeroes);
+	ui::imm::PropEditBool("Exclude zeroes", excludeZeroes, { ui::AddLabelTooltip("Typically enabled since every type can represent 0") });
 
 	ui::LabeledProperty::Begin("float32");
 	ui::imm::PropEditBool(nullptr, enableFloat32);
