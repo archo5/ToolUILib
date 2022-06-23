@@ -16,9 +16,8 @@
 *.lib
 *.dll
 __pycache__
-/Debug
-/Release
-/x64
+/build
+/int
 
 # generated data
 *.tga

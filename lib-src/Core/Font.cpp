@@ -5,7 +5,7 @@
 #include "../Render/Render.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../ThirdParty/stb_truetype.h"
+#include "../../ThirdParty/stb_truetype.h"
 
 #include <vector>
 

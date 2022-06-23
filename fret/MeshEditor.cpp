@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "MeshEditor.h"
 
-#include "../Render/RHI.h"
+#include "../lib-src/Render/RHI.h"
 
 
 static float hsplitMeshEd1[1] = { 0.6f };

@@ -1,6 +1,6 @@
 
 #pragma once
-#include "../GUI.h"
+#include "../lib-src/GUI.h"
 
 #include <memory>
 

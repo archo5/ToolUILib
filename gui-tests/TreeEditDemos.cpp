@@ -1,7 +1,7 @@
 
 #include "pch.h"
 
-#include "../Editors/TreeEditor.h"
+#include "../lib-src/Editors/TreeEditor.h"
 
 
 static ui::DataCategoryTag DCT_Node[1];

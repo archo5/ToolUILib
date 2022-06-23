@@ -8,7 +8,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "../GUI.h"
+#include "../lib-src/GUI.h"
 
 
 inline ui::RadioButtonT<int>& BasicRadioButton(const char* text, int& iref, int val)

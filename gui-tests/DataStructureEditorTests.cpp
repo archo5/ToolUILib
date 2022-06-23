@@ -3,8 +3,8 @@
 
 #include <time.h>
 #include <deque>
-#include "../Editors/TreeEditor.h"
-#include "../Editors/CurveEditor.h"
+#include "../lib-src/Editors/TreeEditor.h"
+#include "../lib-src/Editors/CurveEditor.h"
 
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource

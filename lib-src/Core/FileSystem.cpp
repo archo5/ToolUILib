@@ -3,7 +3,7 @@
 
 #include "WindowsUtils.h"
 
-#include "../ThirdParty/miniz.h"
+#include "../../ThirdParty/miniz.h"
 
 
 #undef CreateDirectory

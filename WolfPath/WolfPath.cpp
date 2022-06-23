@@ -1,5 +1,5 @@
 
-#include "../GUI.h"
+#include "../lib-src/GUI.h"
 
 
 struct Vec3

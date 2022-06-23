@@ -103,9 +103,6 @@
     <ClCompile Include="Model\Theme.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="ThirdParty\miniz.c">
-      <Filter>ThirdParty</Filter>
-    </ClCompile>
     <ClCompile Include="Elements\TabbedPanel.cpp">
       <Filter>Elements</Filter>
     </ClCompile>
@@ -121,6 +118,7 @@
     <ClCompile Include="Model\Layout.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="..\ThirdParty\miniz.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -202,17 +200,8 @@
     <ClInclude Include="Editors\EditCommon.h">
       <Filter>Editors</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\stb_rect_pack.h">
-      <Filter>ThirdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\stb_truetype.h">
-      <Filter>ThirdParty</Filter>
-    </ClInclude>
     <ClInclude Include="Core\ObjectIteration.h">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\json.h">
-      <Filter>ThirdParty</Filter>
     </ClInclude>
     <ClInclude Include="Render\Primitives.h">
       <Filter>Render</Filter>
@@ -256,12 +245,6 @@
     <ClInclude Include="Model\Theme.h">
       <Filter>Model</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\miniz.h">
-      <Filter>ThirdParty</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\stb_image.h">
-      <Filter>ThirdParty</Filter>
-    </ClInclude>
     <ClInclude Include="Elements\TabbedPanel.h">
       <Filter>Elements</Filter>
     </ClInclude>
@@ -280,6 +263,11 @@
     <ClInclude Include="Core\WeakPtr.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\ThirdParty\json.h" />
+    <ClInclude Include="..\ThirdParty\miniz.h" />
+    <ClInclude Include="..\ThirdParty\stb_image.h" />
+    <ClInclude Include="..\ThirdParty\stb_rect_pack.h" />
+    <ClInclude Include="..\ThirdParty\stb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

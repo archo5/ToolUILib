@@ -65,9 +65,21 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -184,7 +196,7 @@
     </ClCompile>
     <ClCompile Include="Render\Primitives.cpp" />
     <ClCompile Include="Render\Render.cpp" />
-    <ClCompile Include="ThirdParty\miniz.c" />
+    <ClCompile Include="..\ThirdParty\miniz.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
@@ -236,11 +248,11 @@
     <ClInclude Include="Render\Primitives.h" />
     <ClInclude Include="Render\Render.h" />
     <ClCompile Include="Render\RHI_Internal.cpp" />
-    <ClInclude Include="ThirdParty\json.h" />
-    <ClInclude Include="ThirdParty\miniz.h" />
-    <ClInclude Include="ThirdParty\stb_image.h" />
-    <ClInclude Include="ThirdParty\stb_rect_pack.h" />
-    <ClInclude Include="ThirdParty\stb_truetype.h" />
+    <ClInclude Include="..\ThirdParty\json.h" />
+    <ClInclude Include="..\ThirdParty\miniz.h" />
+    <ClInclude Include="..\ThirdParty\stb_image.h" />
+    <ClInclude Include="..\ThirdParty\stb_rect_pack.h" />
+    <ClInclude Include="..\ThirdParty\stb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="layout-design.txt" />

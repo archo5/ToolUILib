@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <sstream>
-#include "../GUI.h"
+#include "../lib-src/GUI.h"
 
 
 enum GlobalEvents

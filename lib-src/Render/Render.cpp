@@ -7,10 +7,10 @@
 #include "../Core/HashTable.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
-#include "../ThirdParty/stb_rect_pack.h"
+#include "../../ThirdParty/stb_rect_pack.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../ThirdParty/stb_image.h"
+#include "../../ThirdParty/stb_image.h"
 
 #include <stdio.h>
 

@@ -7,7 +7,7 @@
 #define NONLS
 #include <Windows.h>
 
-#include "../ThirdParty/json.h"
+#include "../../ThirdParty/json.h"
 
 
 namespace ui {

@@ -72,15 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)-$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -229,7 +237,7 @@
     <ClCompile Include="Workspace.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\gui.vcxproj">
+    <ProjectReference Include="..\lib-src\gui.vcxproj">
       <Project>{e98c0101-91a1-491a-8aea-5a6ceb47fc36}</Project>
     </ProjectReference>
   </ItemGroup>

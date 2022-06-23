@@ -1,9 +1,9 @@
 
 #include "pch.h"
 
-#include "../Core/MathExpr.h"
-#include "../Editors/TreeEditor.h"
-#include "../Editors/CurveEditor.h"
+#include "../lib-src/Core/MathExpr.h"
+#include "../lib-src/Editors/TreeEditor.h"
+#include "../lib-src/Editors/CurveEditor.h"
 
 
 using namespace ui;

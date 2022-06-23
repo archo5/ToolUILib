@@ -1,8 +1,8 @@
 
 #pragma once
 #include "pch.h"
-#include "../Core/RefCounted.h"
-#include "../Editors/TreeEditor.h"
+#include "../lib-src/Core/RefCounted.h"
+#include "../lib-src/Editors/TreeEditor.h"
 
 #include "FileReaders.h"
 #include "MathExpr.h"
