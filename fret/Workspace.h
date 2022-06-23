@@ -48,6 +48,8 @@ struct Workspace
 
 	void Load(NamedTextSerializeReader& r);
 	void Save(NamedTextSerializeWriter& w);
+	bool LoadFromFile(ui::StringView path);
+	bool SaveToFile(ui::StringView path);
 
 	std::vector<OpenedFile*> openedFiles;
 	int curOpenedFile = 0;

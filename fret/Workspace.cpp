@@ -69,3 +69,22 @@ void Workspace::Save(NamedTextSerializeWriter& w)
 
 	w.EndDict();
 }
+
+bool Workspace::LoadFromFile(ui::StringView path)
+{
+	auto data = ui::ReadTextFile(path);
+	if (data.result != ui::IOResult::Success)
+		return false;
+	NamedTextSerializeReader ntsr;
+	bool parsed = ntsr.Parse(data.data->GetStringView());
+	printf("parsed: %s\n", parsed ? "yes" : "no");
+	Load(ntsr);
+	return true;
+}
+
+bool Workspace::SaveToFile(ui::StringView path)
+{
+	NamedTextSerializeWriter ntsw;
+	Save(ntsw);
+	return ui::WriteTextFile(path, ntsw.data);
+}

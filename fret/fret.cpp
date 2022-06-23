@@ -19,62 +19,72 @@
 #include "TabImages.h"
 
 
-#define CUR_WORKSPACE "FRET_Plugins/wav.bdaw"
-
 static float hsplitHexView[1] = { 0.3f };
 
-struct MainWindowContents : ui::Buildable
+struct MainWindow : ui::NativeMainWindow
 {
-	void OnEnable() override
+	struct ConnectionPainter : ui::FillerElement
 	{
-		GetNativeWindow()->SetTitle("Binary Data Analysis Tool");
-		GetNativeWindow()->SetInnerSize(1200, 800);
-		FileDataSource fds(CUR_WORKSPACE);
-		std::string wsdata;
-		wsdata.resize(fds.GetSize());
-		fds.Read(0, fds.GetSize(), &wsdata[0]);
-		NamedTextSerializeReader ntsr;
-		printf("parsed: %s\n", ntsr.Parse(wsdata) ? "yes" : "no");
-		workspace.Load(ntsr);
-		//files.push_back(new REFile("tree.mesh"));
-		//files.push_back(new REFile("arch.tar"));
-	}
-	void OnPaint(const ui::UIPaintContext& ctx) override
-	{
-		ui::Buildable::OnPaint(ctx);
+		MainWindow* W;
 
-		if (curFileView && curFileView->curHexViewer && curTable)
+		void OnPaint(const ui::UIPaintContext& ctx) override
 		{
-			auto hvcr = curFileView->curHexViewer->GetFinalRect();
-			ConnectOffset cobuf[128];
-			int count = curTable->GetOffsets(128, cobuf);
-			for (int i = 0; i < count; i++)
-			{
-				auto co = cobuf[i];
-				if (co.off < curFileView->curHexViewer->GetBasePos())
-					continue;
-				auto br = curFileView->curHexViewer->GetByteRect(co.off);
-				if (!hvcr.Contains(br.x1, br.y1))
-					continue;
+			ui::FillerElement::OnPaint(ctx);
 
-				ui::Color4f colLine(1, 0.5f, 0);
-				ui::draw::LineCol(br.x0, br.y0, br.x0, br.y1, 1, colLine);
-				ui::draw::LineCol(br.x0, br.y1, br.x1, br.y1, 1, colLine);
-				ui::draw::LineCol(br.x1, br.y1, co.tablePos.x, co.tablePos.y, 1, colLine);
+			if (W->curFileView && W->curFileView->curHexViewer && W->curTable)
+			{
+				auto hvcr = W->curFileView->curHexViewer->GetFinalRect();
+				ConnectOffset cobuf[128];
+				int count = W->curTable->GetOffsets(128, cobuf);
+				for (int i = 0; i < count; i++)
+				{
+					auto co = cobuf[i];
+					if (co.off < W->curFileView->curHexViewer->GetBasePos())
+						continue;
+					auto br = W->curFileView->curHexViewer->GetByteRect(co.off);
+					if (!hvcr.Contains(br.x1, br.y1))
+						continue;
+
+					ui::Color4f colLine(1, 0.5f, 0);
+					ui::draw::LineCol(br.x0, br.y0, br.x0, br.y1, 1, colLine);
+					ui::draw::LineCol(br.x0, br.y1, br.x1, br.y1, 1, colLine);
+					ui::draw::LineCol(br.x1, br.y1, co.tablePos.x, co.tablePos.y, 1, colLine);
+				}
 			}
 		}
+	};
+
+	void UpdateTitle()
+	{
+		std::string title;
+		if (curWorkspacePath.empty())
+			title += "<untitled>";
+		else
+			title += curWorkspacePath;
+		title += " - Binary Data Analysis Tool";
+		SetTitle(title);
 	}
-	void Build() override
+	MainWindow()
+	{
+		fileSel.defaultExt = "bdaw";
+		fileSel.filters.push_back({ "Binary Data Analysis Tool workspace files (*.bdaw)", "*.bdaw" });
+
+		SetInnerSize(1200, 800);
+		UpdateTitle();
+	}
+	void OnBuild() override
 	{
 		curFileView = nullptr;
 		curTable = nullptr;
 
-		HandleEvent(ui::UserEvent(GlobalEvent_OpenImage)) = [this](ui::Event& e)
+		auto* N = ui::GetCurrentBuildable();
+
+		N->HandleEvent(ui::UserEvent(GlobalEvent_OpenImage)) = [this](ui::Event& e)
 		{
 			workspace.curSubtab = SubtabType::Images;
 			Rebuild();
 		};
-		HandleEvent(ui::UserEvent(GlobalEvent_OpenImageRsrcEditor)) = [this](ui::Event& e)
+		N->HandleEvent(ui::UserEvent(GlobalEvent_OpenImageRsrcEditor)) = [this](ui::Event& e)
 		{
 			if (!curImageEditor)
 				curImageEditor = new WindowT<ImageEditorWindowNode>();
@@ -83,7 +93,7 @@ struct MainWindowContents : ui::Buildable
 			curImageEditor->rootBuildable->SetStruct((DDStruct*)e.arg0);
 			curImageEditor->rootBuildable->Rebuild();
 		};
-		HandleEvent(ui::UserEvent(GlobalEvent_OpenMeshRsrcEditor)) = [this](ui::Event& e)
+		N->HandleEvent(ui::UserEvent(GlobalEvent_OpenMeshRsrcEditor)) = [this](ui::Event& e)
 		{
 			if (!curMeshEditor)
 				curMeshEditor = new WindowT<MeshEditorWindowNode>();
@@ -93,44 +103,32 @@ struct MainWindowContents : ui::Buildable
 			curMeshEditor->rootBuildable->Rebuild();
 		};
 
-#if 1
 		std::vector<ui::MenuItem> topMenu;
-		topMenu.push_back(ui::MenuItem("Save").Func([&]()
 		{
-			NamedTextSerializeWriter ntsw;
-			workspace.Save(ntsw);
-			ui::WriteTextFile(CUR_WORKSPACE, ntsw.data);
-		}));
-		topMenu.push_back(ui::MenuItem("Export script").Func([&]()
-		{
-			char bfr[256];
-			strcpy(bfr, CUR_WORKSPACE);
-			*strrchr(bfr, '.') = '\0';
-			strcat(bfr, ".py");
-			auto scr = ExportPythonScript(&workspace.desc);
-			ui::WriteTextFile(bfr, scr);
-		}));
-		Allocate<ui::TopMenu>(GetNativeWindow(), topMenu);
-#else
-		ui::Push<ui::MenuBarElement>();
-		ui::Make<ui::MenuItemElement>().SetText("Save").Func([&]()
-		{
-			NamedTextSerializeWriter ntsw;
-			workspace.Save(ntsw);
-			ui::WriteTextFile(CUR_WORKSPACE, ntsw.data);
-		});
-		ui::Make<ui::MenuItemElement>().SetText("Export script").Func([&]()
-		{
-			char bfr[256];
-			strcpy(bfr, CUR_WORKSPACE);
-			*strrchr(bfr, '.') = '\0';
-			strcat(bfr, ".py");
-			auto scr = ExportPythonScript(&workspace.desc);
-			ui::WriteTextFile(bfr, scr);
-		});
-		ui::Pop();
-#endif
+			topMenu.push_back(ui::MenuItem("File"));
+			auto& fileMenu = topMenu.back().submenu;
 
+			fileMenu.push_back(ui::MenuItem("New").Func([this, N]() { OnNew(); N->Rebuild(); }));
+			fileMenu.push_back(ui::MenuItem("Open...").Func([this, N]() { OnOpen(); N->Rebuild(); }));
+			fileMenu.push_back(ui::MenuItem("Save").Func([this, N]() { OnSave(); N->Rebuild(); }));
+			fileMenu.push_back(ui::MenuItem("Save As...").Func([this, N]() { OnSaveAs(); N->Rebuild(); }));
+
+			fileMenu.push_back(ui::MenuItem::Separator());
+
+			fileMenu.push_back(ui::MenuItem("Export script").Func([&]()
+			{
+				std::string path = ui::to_string(ui::StringView(curWorkspacePath).until_last("."), ".py");
+				auto scr = ExportPythonScript(&workspace.desc);
+				ui::WriteTextFile(path, scr);
+			}));
+
+			fileMenu.push_back(ui::MenuItem::Separator());
+
+			fileMenu.push_back(ui::MenuItem("Quit").Func([this]() { OnQuit(); }));
+		}
+		ui::BuildAlloc<ui::TopMenu>(this, topMenu);
+
+		ui::Push<ConnectionPainter>().W = this;
 		ui::Push<ui::EdgeSliceLayoutElement>();
 		ui::Make<ui::DefaultOverlayBuilder>();
 
@@ -221,9 +219,56 @@ struct MainWindowContents : ui::Buildable
 		ui::Pop();
 
 		ui::Pop(); // EdgeSliceLayoutElement
+		ui::Pop(); // ConnectionPainter
+	}
+
+	void LoadFile(const std::string& path)
+	{
+		if (workspace.LoadFromFile(path))
+		{
+			curWorkspacePath = path;
+			UpdateTitle();
+		}
+	}
+	void OnNew()
+	{
+		curWorkspacePath.clear();
+		UpdateTitle();
+	}
+	void OnOpen()
+	{
+		if (fileSel.Show(false))
+		{
+			LoadFile(fileSel.currentDir + "/" + fileSel.selectedFiles[0]);
+		}
+	}
+	void OnSave()
+	{
+		if (curWorkspacePath.empty())
+			OnSaveAs();
+		else
+			workspace.SaveToFile(curWorkspacePath);
+	}
+	void OnSaveAs()
+	{
+		if (fileSel.Show(true))
+		{
+			auto path = fileSel.currentDir + "/" + fileSel.selectedFiles[0];
+			if (workspace.SaveToFile(path))
+			{
+				curWorkspacePath = path;
+				UpdateTitle();
+			}
+		}
+	}
+	void OnQuit()
+	{
+		OnClose();
 	}
 
 	Workspace workspace;
+	ui::FileSelectionWindow fileSel;
+	std::string curWorkspacePath;
 
 	FileView* curFileView = nullptr;
 	TableWithOffsets* curTable = nullptr;
@@ -234,8 +279,11 @@ struct MainWindowContents : ui::Buildable
 int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
-	WindowT<MainWindowContents> mw;
-	mw.subWindow = false;
+	MainWindow mw;
+	if (argc == 2)
+	{
+		mw.LoadFile(argv[1]);
+	}
 	mw.SetVisible(true);
 	return app.Run();
 }
