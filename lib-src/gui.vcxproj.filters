@@ -118,7 +118,9 @@
     <ClCompile Include="Model\Layout.cpp">
       <Filter>Model</Filter>
     </ClCompile>
-    <ClCompile Include="..\ThirdParty\miniz.c" />
+    <ClCompile Include="..\ThirdParty\miniz.c">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -263,11 +265,21 @@
     <ClInclude Include="Core\WeakPtr.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="..\ThirdParty\json.h" />
-    <ClInclude Include="..\ThirdParty\miniz.h" />
-    <ClInclude Include="..\ThirdParty\stb_image.h" />
-    <ClInclude Include="..\ThirdParty\stb_rect_pack.h" />
-    <ClInclude Include="..\ThirdParty\stb_truetype.h" />
+    <ClInclude Include="..\ThirdParty\json.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\miniz.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\stb_image.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\stb_rect_pack.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\stb_truetype.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
