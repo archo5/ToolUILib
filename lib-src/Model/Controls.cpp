@@ -900,6 +900,9 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 	{
 		info.contentOff = max(0.0f, min(maxOff, info.contentOff));
 	}
+
+	uiState.FinalizeOnEvent(e);
+
 	return contentOffsetChanged;
 }
 
