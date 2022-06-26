@@ -1,7 +1,9 @@
 
 #pragma once
 
+#include "Core/DynamicLib.h"
 #include "Core/FileSystem.h"
+#include "Core/Logging.h"
 #include "Core/Math.h"
 #include "Core/RefCounted.h"
 #include "Core/String.h"

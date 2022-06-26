@@ -33,8 +33,39 @@ static const char* g_levelNames[] =
 	"-all-",
 };
 
+bool CanLogDynLev(LogLevel level, const LogCategory& category)
+{
+	if (level == LogLevel::Off)
+		return false;
+	// TODO
+	return true;
+}
+
+bool CanLogError(const LogCategory& category)
+{
+	return CanLogDynLev(LogLevel::Error, category);
+}
+
+bool CanLogWarn(const LogCategory& category)
+{
+	return CanLogDynLev(LogLevel::Warn, category);
+}
+
+bool CanLogInfo(const LogCategory& category)
+{
+	return CanLogDynLev(LogLevel::Info, category);
+}
+
+bool CanLogDebug(const LogCategory& category)
+{
+	return CanLogDynLev(LogLevel::Debug, category);
+}
+
 void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, va_list args)
 {
+	if (!CanLogDynLev(level, category))
+		return;
+
 	char buf[1024];
 	tm t = CurTime();
 	size_t at = strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);

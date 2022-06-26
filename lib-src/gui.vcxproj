@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClCompile Include="Core\3DMath.cpp" />
     <ClCompile Include="Core\ContainerTests.cpp" />
+    <ClCompile Include="Core\DynamicLib.cpp" />
     <ClCompile Include="Core\FileSystem.cpp" />
     <ClCompile Include="Core\Font.cpp" />
     <ClCompile Include="Core\Logging.cpp" />
@@ -202,6 +203,7 @@
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Common.h" />
+    <ClInclude Include="Core\DynamicLib.h" />
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\HashTable.h" />

@@ -124,6 +124,9 @@
     <ClCompile Include="Core\Logging.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\DynamicLib.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -284,6 +287,9 @@
       <Filter>ThirdParty</Filter>
     </ClInclude>
     <ClInclude Include="Core\Logging.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DynamicLib.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
