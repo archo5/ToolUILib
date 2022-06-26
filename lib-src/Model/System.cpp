@@ -1,6 +1,8 @@
 
 #include "System.h"
 
+#include "../Core/Logging.h"
+
 #include <algorithm>
 
 
@@ -9,6 +11,8 @@ namespace ui {
 extern uint32_t g_curLayoutFrame;
 FrameContents* g_curSystem;
 UIContainer* g_curContainer;
+
+LogCategory LOG_UISYS("UISys");
 
 
 #if 0
@@ -170,7 +174,7 @@ void UIContainer::ProcessBuildStack()
 
 		if (objectStackSize > 1)
 		{
-			printf("WARNING: elements not popped: %d (after building %s)\n", objectStackSize - 1, typeid(*currentBuildable).name());
+			LogWarn(LOG_UISYS, "elements not popped: %d (after building %s)", objectStackSize - 1, typeid(*currentBuildable).name());
 			while (objectStackSize > 1)
 			{
 				Pop();
@@ -187,7 +191,7 @@ void UIContainer::ProcessBuildStack()
 
 	pendingDeactivationSet.Flush();
 
-	printf("build time: %g\n", hqtime() - t);
+	LogDebug(LOG_UISYS, "build time: %g", hqtime() - t);
 }
 
 void UIContainer::ProcessLayoutStack()
@@ -228,7 +232,7 @@ void UIContainer::ProcessLayoutStack()
 	for (UIObject* obj : layoutStack.stack)
 	{
 		// TODO how to restart layout?
-		printf("relayout %s @ %p\n", typeid(*obj).name(), obj);
+		LogDebug(LOG_UISYS, "relayout %s @ %p", typeid(*obj).name(), obj);
 		obj->RedoLayout();
 	}
 	layoutStack.Clear();
