@@ -5,11 +5,6 @@ VisualStudioVersion = 15.0.28307.645
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "themegen", "themegen\themegen.vcxproj", "{C13F286E-FD8A-4E45-9EBB-C49665E7C30E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fret", "fret\fret.vcxproj", "{D862930B-CE8B-43EA-BB26-190DF3974D70}"
-	ProjectSection(ProjectDependencies) = postProject
-		{E98C0101-91A1-491A-8AEA-5A6CEB47FC36} = {E98C0101-91A1-491A-8AEA-5A6CEB47FC36}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "theme-editor", "theme-editor\theme-editor.vcxproj", "{3C26408B-4D43-422A-95CA-EDBEBA82442C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E98C0101-91A1-491A-8AEA-5A6CEB47FC36} = {E98C0101-91A1-491A-8AEA-5A6CEB47FC36}
@@ -40,14 +35,6 @@ Global
 		{C13F286E-FD8A-4E45-9EBB-C49665E7C30E}.Release|x64.Build.0 = Release|x64
 		{C13F286E-FD8A-4E45-9EBB-C49665E7C30E}.Release|x86.ActiveCfg = Release|Win32
 		{C13F286E-FD8A-4E45-9EBB-C49665E7C30E}.Release|x86.Build.0 = Release|Win32
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Debug|x64.ActiveCfg = Debug|x64
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Debug|x64.Build.0 = Debug|x64
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Debug|x86.ActiveCfg = Debug|Win32
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Debug|x86.Build.0 = Debug|Win32
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Release|x64.ActiveCfg = Release|x64
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Release|x64.Build.0 = Release|x64
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Release|x86.ActiveCfg = Release|Win32
-		{D862930B-CE8B-43EA-BB26-190DF3974D70}.Release|x86.Build.0 = Release|Win32
 		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x64.ActiveCfg = Debug|x64
 		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x64.Build.0 = Debug|x64
 		{3C26408B-4D43-422A-95CA-EDBEBA82442C}.Debug|x86.ActiveCfg = Debug|Win32
