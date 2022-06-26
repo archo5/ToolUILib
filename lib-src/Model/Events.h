@@ -160,6 +160,8 @@ struct Event
 	uint8_t modifiers = 0;
 	bool down = false;
 	bool _stopPropagation = false;
+	// key: 0 = original press, 1+ = OS-generated keypress
+	// mouse button: 1 = first click, 2 = second etc.
 	uint16_t numRepeats = 0;
 	uintptr_t arg0 = 0, arg1 = 0;
 

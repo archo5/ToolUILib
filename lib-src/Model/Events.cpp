@@ -528,7 +528,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		mouseBtnPressLastTimes[id] = t;
 		mouseBtnPressCounts[id] = mouseBtnPressCount;
 
-		ev.numRepeats = mouseBtnPressCount - 1;
+		ev.numRepeats = mouseBtnPressCount;
 
 		for (auto* p = hoverObj.Get(); p; p = p->parent)
 			p->flags |= _UIObject_IsClicked_First << id;
@@ -552,7 +552,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 			clickCounts[id] = clickCount;
 
 			ev.type = EventType::Click;
-			ev.numRepeats = clickCount - 1;
+			ev.numRepeats = clickCount;
 			ev._stopPropagation = false;
 			BubblingEvent(ev);
 
@@ -618,7 +618,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		mouseBtnReleaseLastTimes[id] = t;
 		mouseBtnReleaseCounts[id] = mouseBtnReleaseCount;
 
-		ev.numRepeats = mouseBtnReleaseCount - 1;
+		ev.numRepeats = mouseBtnReleaseCount;
 
 		ev.type = EventType::ButtonUp;
 		ev._stopPropagation = false;

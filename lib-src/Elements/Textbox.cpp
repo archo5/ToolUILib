@@ -175,9 +175,9 @@ static void UpdateSelection(Textbox& tb, Event& e, bool start)
 {
 	if (start)
 	{
-		tb._lastPressRepeatCount = e.numRepeats;
+		tb._lastPressRepeatCount = e.numRepeats - 1;
 		tb._origStartCursor = tb._FindCursorPos(e.position.x);
-		if (e.numRepeats == 0)
+		if (e.numRepeats == 1)
 			tb._hadFocusOnFirstClick = tb.IsFocused();
 	}
 	unsigned mode = (tb._lastPressRepeatCount + (tb._hadFocusOnFirstClick ? 0 : 2)) % 3;

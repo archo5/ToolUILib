@@ -362,7 +362,7 @@ struct TE_ThemeEditorNode : Buildable
 				//txt.flags |= UIObject_DB_CaptureMouseOnLeftClick;
 				txt.HandleEvent(EventType::Click) = [this, tmpl](Event& e)
 				{
-					if (e.numRepeats == 1)
+					if (e.numRepeats == 2)
 					{
 						editNameTemplate = tmpl;
 						Rebuild();
