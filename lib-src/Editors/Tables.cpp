@@ -37,9 +37,10 @@ void MessageLogDataSource::OnDrawMessage(UIObject* context, size_t msg, UIRect a
 		draw::TextLine(
 			font,
 			messageFont.size,
-			area.x0, area.y0 + (i + 1) * messageFont.size,
+			area.x0, area.y0 + i * messageFont.size,
 			msgLine,
-			messageColor);
+			messageColor,
+			TextBaseline::Top);
 	}
 }
 
@@ -263,9 +264,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			draw::TextLine(
 				rowHeaderFont,
 				style.rowHeaderFont.size,
-				rect.x0, (rect.y0 + rect.y1 + style.rowHeaderFont.size) / 2,
+				rect.x0, (rect.y0 + rect.y1) / 2,
 				_impl->dataSource->GetRowName(r),
-				rowcpa.HasTextColor() ? rowcpa.GetTextColor() : ctx.textColor);
+				rowcpa.HasTextColor() ? rowcpa.GetTextColor() : ctx.textColor,
+				TextBaseline::Middle);
 		}
 		draw::PopScissorRect();
 	}
@@ -300,9 +302,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		draw::TextLine(
 			colHeaderFont,
 			style.colHeaderFont.size,
-			rect.x0, (rect.y0 + rect.y1 + style.colHeaderFont.size) / 2,
+			rect.x0, (rect.y0 + rect.y1) / 2,
 			_impl->dataSource->GetColName(c),
-			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor);
+			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
+			TextBaseline::Middle);
 	}
 	draw::PopScissorRect();
 
@@ -346,9 +349,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			draw::TextLine(
 				cellFont,
 				style.cellFont.size,
-				rect.x0, (rect.y0 + rect.y1 + style.cellFont.size) / 2,
+				rect.x0, (rect.y0 + rect.y1) / 2,
 				_impl->dataSource->GetText(r, c),
-				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor);
+				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
+				TextBaseline::Middle);
 		}
 	}
 	draw::PopScissorRect();
@@ -668,9 +672,10 @@ void TreeView::OnPaint(const UIPaintContext& ctx)
 		draw::TextLine(
 			colHeaderFont,
 			style.colHeaderFont.size,
-			rect.x0, (rect.y0 + rect.y1 + style.colHeaderFont.size) / 2,
+			rect.x0, (rect.y0 + rect.y1) / 2,
 			_impl->dataSource->GetColName(c),
-			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor);
+			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
+			TextBaseline::Middle);
 	}
 
 	PaintState ps = { info, nc, RC.x0, RC.y0 + chh };
@@ -715,9 +720,10 @@ void TreeView::_PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, Paint
 		draw::TextLine(
 			cellFont,
 			style.cellFont.size,
-			rect.x0, (rect.y0 + rect.y1 + style.cellFont.size) / 2,
+			rect.x0, (rect.y0 + rect.y1) / 2,
 			_impl->dataSource->GetText(id, c),
-			cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor);
+			cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
+			TextBaseline::Middle);
 	}
 
 	ps.y += h;

@@ -280,6 +280,7 @@ struct DataEditor : ui::Buildable
 
 
 void Test_RenderingPrimitives();
+void Test_TextBaseline();
 void Test_StylePainting();
 void Test_ImageSetSizing();
 void Test_KeyboardEvents();
@@ -361,6 +362,7 @@ static const TestEntry coreTestEntries[] =
 	{},
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
+	{ "Text baseline", Test_TextBaseline },
 	{ "Style painting", Test_StylePainting },
 	{ "Image set sizing", Test_ImageSetSizing },
 	{ "- Events -" },

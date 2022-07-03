@@ -704,9 +704,10 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 			draw::TextLine(
 				font,
 				labelStyle.font.size,
-				r.x0, r.y1 - (r.y1 - r.y0 - labelStyle.font.size) / 2,
+				r.x0, (r.y0 + r.y1) / 2,
 				_labelText,
-				cpa.GetTextColor());
+				cpa.GetTextColor(),
+				TextBaseline::Middle);
 			draw::PopScissorRect();
 		}
 	}

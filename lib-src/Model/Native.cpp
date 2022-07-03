@@ -1288,23 +1288,22 @@ struct Inspector : NativeDialogWindow
 			auto* font = mainFont.GetFont();
 			int fontSize = mainFont.size;
 
+			y += mainFont.size;
+
 			float ys = y - scrollPos;
 			if (obj == insp->selObj)
 			{
 				draw::RectCol(0, ys, 9999, ys + fontSize, Color4f(0.5f, 0, 0));
 			}
-
-			y += fontSize - 1;
-			ys = y - scrollPos;
-			if (ys >= fontSize * 2 - 1)
+			if (ys >= fontSize - 1)
 			{
-				draw::TextLine(font, fontSize, x, ys, Format("%p", obj), Color4b::White());
-				draw::TextLine(font, fontSize, x + 60, ys, CleanName(typeid(*obj).name()), Color4b::White());
+				draw::TextLine(font, fontSize, x, ys, Format("%p", obj), Color4b::White(), TextBaseline::Top);
+				draw::TextLine(font, fontSize, x + 60, ys, CleanName(typeid(*obj).name()), Color4b::White(), TextBaseline::Top);
 				char bfr[1024];
 				{
 					auto fr = obj->GetFinalRect();
 					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White());
+					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 
 				{
@@ -1337,11 +1336,9 @@ struct Inspector : NativeDialogWindow
 						if (obj->flags & (1 << i))
 							p += snprintf(p, e - p, "%s ", flagText[i]);
 					}
-					draw::TextLine(font, fontSize, 500, ys, bfr, Color4b::White());
+					draw::TextLine(font, fontSize, 500, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 			}
-
-			y++;
 
 			UIObjectIterator it(obj);
 			while (UIObject* ch = it.GetNext())
@@ -1368,10 +1365,10 @@ struct Inspector : NativeDialogWindow
 			auto* font = mainFont.GetFont();
 
 			auto& c = insp->selWindow->_impl->GetContainer();
-			int y = mainFont.size;
-			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153));
-			draw::TextLine(font, mainFont.size, 400, y, "Rect (final)", Color4b(255, 153));
-			draw::TextLine(font, mainFont.size, 500, y, "State", Color4b(255, 153));
+			int y = 0;
+			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, 400, y, "Rect (final)", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, 500, y, "State", Color4b(255, 153), TextBaseline::Top);
 			PaintObject(c.rootBuildable, 0, y);
 			scrollMax = y;
 			//draw::TextLine(font, mainFont.size, 10, 10, "inspector", Color4b::White());

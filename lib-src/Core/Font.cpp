@@ -56,6 +56,7 @@ struct Font
 	struct SizeContext
 	{
 		int size = 0;
+		float asc = 0, desc = 0, lgap = 0;
 		HashMap<uint32_t, GlyphValue> glyphMap;
 	};
 
@@ -86,6 +87,15 @@ struct Font
 	{
 		auto& sctx = sizes[size];
 		sctx.size = size;
+
+		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(size));
+		int asc, desc, lgap;
+		stbtt_GetFontVMetrics(&info, &asc, &desc, &lgap);
+		sctx.asc = asc * scale;
+		sctx.desc = desc * scale;
+		sctx.lgap = lgap * scale;
+		//printf("INFO size=%d em=%g asc=%g desc=%g lgap=%g\n", sctx.size, sctx.asc, sctx.desc, sctx.lgap);
+
 		return sctx;
 	}
 
@@ -104,6 +114,7 @@ struct Font
 			int xadv = 0, lsb = 0, x0, y0, x1, y1;
 			stbtt_GetGlyphHMetrics(&info, glyphID, &xadv, &lsb);
 			stbtt_GetGlyphBitmapBox(&info, glyphID, scale, scale, &x0, &y0, &x1, &y1);
+			//y0 += sctx.size;
 
 			gv = &sctx.glyphMap[codepoint];
 			gv->xadv = int16_t(roundf(xadv * scale));
@@ -261,13 +272,29 @@ float GetTextWidth(Font* font, int size, StringView text)
 
 namespace draw {
 
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color)
+void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline)
 {
 	float scale = g_textResScale;
 	float invScale = 1.0f / scale;
+	auto& sctx = font->GetSizeContext(size * scale);
+	if (baseline != TextBaseline::Default)
+	{
+		// https://drafts.csswg.org/css-inline/#baseline-synthesis-em
+		switch (baseline)
+		{
+		case TextBaseline::Top:
+			y += sctx.asc * (sctx.size / (sctx.asc - sctx.desc));
+			break;
+		case TextBaseline::Middle:
+			y += (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc));
+			break;
+		case TextBaseline::Bottom:
+			y += sctx.desc * (sctx.size / (sctx.asc - sctx.desc));
+			break;
+		}
+	}
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
-	auto& sctx = font->GetSizeContext(size * scale);
 	for (char ch : text)
 	{
 		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);

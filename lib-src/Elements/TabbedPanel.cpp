@@ -160,9 +160,10 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 		{
 			draw::TextLine(tbFont, tbFontSize,
 				x0 + style.tabButtonPadding.x0 + cpa.offset.x,
-				y0 + style.tabButtonPadding.y0 + tbFontSize + cpa.offset.y,
+				y0 + style.tabButtonPadding.y0 + cpa.offset.y,
 				tab.text,
-				cpa.HasTextColor() ? cpa.GetTextColor() : ctx.textColor);
+				cpa.HasTextColor() ? cpa.GetTextColor() : ctx.textColor,
+				TextBaseline::Top);
 		}
 
 		x0 = x1;

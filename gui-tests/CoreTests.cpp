@@ -136,6 +136,63 @@ void Test_RenderingPrimitives()
 }
 
 
+struct TextBaselineTest : ui::Buildable
+{
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		static const char* text = "Tyi";
+		ui::Font* fonts[] =
+		{
+			ui::GetFont(ui::FONT_FAMILY_SANS_SERIF),
+			ui::GetFont(ui::FONT_FAMILY_SERIF),
+			ui::GetFont(ui::FONT_FAMILY_MONOSPACE),
+		};
+		ui::Color4b colors[] =
+		{
+			ui::Color4f(0.9f, 0.5f, 0.1f),
+			ui::Color4f(0.1f, 0.5f, 0.9f),
+			ui::Color4f(0.5f, 0.9f, 0.1f),
+		};
+		int y = 20;
+		for (int i = 0; i < 12; i++)
+		{
+			ui::draw::LineCol(0, y, 10000, y, 1, ui::Color4b(255, 0, 0));
+
+			int size = 6 + 2 * i;
+			for (int j = 0; j < 3; j++)
+			{
+				int x = 2 + j * 40;
+				float width = ui::GetTextWidth(fonts[j], size, text);
+
+				ui::draw::RectCol(x, y - size, x + width, y, ui::Color4b(64, 255));
+				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Default);
+
+				x += 130;
+
+				ui::draw::RectCol(x, y, x + width, y + size, ui::Color4b(64, 255));
+				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Top);
+
+				x += 130;
+
+				ui::draw::RectCol(x, y - size, x + width, y, ui::Color4b(64, 255));
+				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Bottom);
+
+				x += 130;
+
+				ui::draw::RectCol(x, y - size / 2, x + width, y + size / 2, ui::Color4b(64, 255));
+				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Middle);
+			}
+			y += size + 10;
+		}
+	}
+	void Build() override {}
+};
+void Test_TextBaseline()
+{
+	ui::Make<TextBaselineTest>();
+}
+
+
 struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 {
 	ui::FrameStyle buttonStyle;

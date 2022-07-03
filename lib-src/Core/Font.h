@@ -29,8 +29,16 @@ float MultiplyTextResolutionScale(float ntrs);
 
 float GetTextWidth(Font* font, int size, StringView text);
 
+enum class TextBaseline
+{
+	Default, // no adjustment
+	Top,
+	Middle,
+	Bottom,
+};
+
 namespace draw {
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color);
+void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline = TextBaseline::Default);
 } // draw
 
 struct CachedFontRef

@@ -25,10 +25,11 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 		int size = frameStyle.font.size;
 
 		auto r = GetContentRect();
+		float y = (r.y0 + r.y1) / 2;
 		if (!_placeholder.empty() && !IsFocused() && _text.empty())
-			draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - size) / 2, _placeholder, Color4b(255, 128));
+			draw::TextLine(font, size, r.x0, y, _placeholder, Color4b(255, 128), TextBaseline::Middle);
 		if (!_text.empty())
-			draw::TextLine(font, size, r.x0, r.y1 - (r.y1 - r.y0 - size) / 2, _text, Color4b::White());
+			draw::TextLine(font, size, r.x0, y, _text, Color4b::White(), TextBaseline::Middle);
 
 		if (IsFocused())
 		{
