@@ -284,3 +284,30 @@ void Test_FileSelectionWindow()
 	ui::Make<FileSelectionWindowTest>();
 }
 
+
+struct DirectoryChangeWatcherTest : EventsTest, ui::IDirectoryChangeListener
+{
+	ui::DirectoryChangeWatcherHandle dcwh;
+
+	void OnFileAdded(ui::StringView path) override
+	{
+		WriteMsg("OnFileAdded:\"%.*s\"", int(path.size()), path.data());
+	}
+	void OnFileRemoved(ui::StringView path) override
+	{
+		WriteMsg("OnFileRemoved:\"%.*s\"", int(path.size()), path.data());
+	}
+	void OnFileChanged(ui::StringView path) override
+	{
+		WriteMsg("OnFileChanged:\"%.*s\"", int(path.size()), path.data());
+	}
+	DirectoryChangeWatcherTest()
+	{
+		dcwh = ui::CreateDirectoryChangeWatcher("build", this);
+	}
+};
+void Test_DirectoryChangeWatcher()
+{
+	ui::Make<DirectoryChangeWatcherTest>();
+}
+

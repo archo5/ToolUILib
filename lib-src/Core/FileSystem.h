@@ -98,6 +98,22 @@ struct NullDirectoryIterator : IDirectoryIterator
 };
 
 
+struct IDirectoryChangeListener
+{
+	// in this context, "file" refers to any type of file (could be directory, symlink etc.)
+	// "path" is relative to the listened path
+	// the file may be gone by the time this function is called
+	virtual void OnFileAdded(StringView path) = 0;
+	virtual void OnFileRemoved(StringView path) = 0;
+	virtual void OnFileChanged(StringView path) = 0;
+};
+struct IDirectoryChangeWatcher : RefCountedST
+{
+};
+using DirectoryChangeWatcherHandle = RCHandle<IDirectoryChangeWatcher>;
+DirectoryChangeWatcherHandle CreateDirectoryChangeWatcher(StringView path, IDirectoryChangeListener* listener);
+
+
 struct IFileSource : RefCountedST
 {
 	virtual FileReadResult ReadTextFile(StringView path) = 0;

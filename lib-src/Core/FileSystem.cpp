@@ -1,9 +1,15 @@
 
 #include "FileSystem.h"
 
+#include "Logging.h"
+#include "Threading.h"
 #include "WindowsUtils.h"
 
+#include "../Model/Native.h"
+
 #include "../../ThirdParty/miniz.h"
+
+#include <thread>
 
 
 #undef CreateDirectory
@@ -262,6 +268,166 @@ bool DirectoryIteratorImpl::GetNext(std::string& retFile)
 DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
 {
 	return new DirectoryIteratorImpl(path);
+}
+
+
+static LogCategory LOG_DIR_CHANGE_WATCHER("DirChgWatch");
+
+struct DirectoryChangeWatcherImpl : IDirectoryChangeWatcher
+{
+	std::wstring _path;
+	IDirectoryChangeListener* _listener;
+	std::thread _thread;
+	HANDLE _quitEvent;
+
+	struct CHANGE_BUF
+	{
+		FILE_NOTIFY_INFORMATION _align;
+		char _pad[16384 - sizeof(_align)];
+	};
+
+	DirectoryChangeWatcherImpl(StringView path, IDirectoryChangeListener* listener) : _listener(listener)
+	{
+		_path = UTF8toWCHAR(path);
+		_quitEvent = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
+		_thread = std::thread([this]() { Run(); });
+	}
+
+	~DirectoryChangeWatcherImpl()
+	{
+		::SetEvent(_quitEvent);
+		_thread.join();
+		CloseHandle(_quitEvent);
+	}
+
+	void Run()
+	{
+		DWORD flags =
+			FILE_NOTIFY_CHANGE_FILE_NAME |
+			FILE_NOTIFY_CHANGE_DIR_NAME |
+			FILE_NOTIFY_CHANGE_ATTRIBUTES |
+			FILE_NOTIFY_CHANGE_SIZE |
+			FILE_NOTIFY_CHANGE_LAST_WRITE;
+#if 0
+		HANDLE h = ::FindFirstChangeNotificationW(_path.c_str(), TRUE, flags);
+		for (;;)
+		{
+			HANDLE waitHandles[] = { _quitEvent, h };
+			auto ret = ::WaitForMultipleObjects(2, waitHandles, FALSE, INFINITE);
+			if (ret == WAIT_OBJECT_0)
+				break;
+			if (ret != WAIT_OBJECT_0 + 1)
+				continue;
+
+			::FindNextChangeNotification(h);
+		}
+		::FindCloseChangeNotification(h);
+#endif
+		HANDLE h = ::CreateFileW(
+			_path.c_str(),
+			FILE_LIST_DIRECTORY,
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			nullptr,
+			OPEN_EXISTING,
+			FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS,
+			nullptr);
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			LogWarn(LOG_DIR_CHANGE_WATCHER, "CreateFileW failed (error %08X) on %s", GetLastError(), WCHARtoUTF8s(_path).c_str());
+			return;
+		}
+
+		HANDLE complEv = ::CreateEventW(nullptr, FALSE, FALSE, nullptr);
+
+		bool error = false;
+		while (::WaitForSingleObject(_quitEvent, 0) != WAIT_OBJECT_0)
+		{
+			CHANGE_BUF buf;
+			OVERLAPPED ovr = {};
+			ovr.hEvent = complEv;
+			if (!::ReadDirectoryChangesW(h, &buf, sizeof(buf), TRUE, flags, nullptr, &ovr, nullptr))
+			{
+				if (!error)
+				{
+					LogWarn(LOG_DIR_CHANGE_WATCHER, "ReadDirectoryChangesW failed (%08X)", GetLastError());
+					error = true;
+				}
+				::WaitForSingleObject(_quitEvent, 1000);
+				continue;
+			}
+			HANDLE waitHandles[] = { _quitEvent, complEv };
+			auto ret = ::WaitForMultipleObjects(2, waitHandles, FALSE, INFINITE);
+			if (ret == WAIT_OBJECT_0)
+				break;
+			if (ret != WAIT_OBJECT_0 + 1)
+				continue;
+
+			DWORD size = 0;
+			if (!::GetOverlappedResult(h, &ovr, &size, FALSE))
+				LogError(LOG_DIR_CHANGE_WATCHER, "GetOverlappedResult failed!");
+
+			if (size == 0)
+			{
+				LogError(LOG_DIR_CHANGE_WATCHER, "returned 0 bytes, changes were too big for the buffer!");
+				continue;
+			}
+			else
+			{
+				LogInfo(LOG_DIR_CHANGE_WATCHER, "returned %d bytes", int(size));
+			}
+
+			auto* info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(&buf);
+			for (;;)
+			{
+				auto path = WCHARtoUTF8(info->FileName, info->FileNameLength / sizeof(WCHAR));
+				if (CanLogInfo(LOG_DIR_CHANGE_WATCHER))
+				{
+					const char* type = "<unrecognized file action>";
+					switch (info->Action)
+					{
+					case FILE_ACTION_ADDED: type = "ADDED"; break;
+					case FILE_ACTION_REMOVED: type = "REMOVED"; break;
+					case FILE_ACTION_MODIFIED: type = "MODIFIED"; break;
+					case FILE_ACTION_RENAMED_OLD_NAME: type = "RENAMED_OLD_NAME"; break;
+					case FILE_ACTION_RENAMED_NEW_NAME: type = "RENAMED_NEW_NAME"; break;
+					}
+					LogInfo(
+						LOG_DIR_CHANGE_WATCHER,
+						"%s: [%u]%s",
+						type,
+						unsigned(info->FileNameLength),
+						path.c_str());
+				}
+
+				path = PathFromSystem(path);
+				switch (info->Action)
+				{
+				case FILE_ACTION_ADDED:
+				case FILE_ACTION_RENAMED_NEW_NAME:
+					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileAdded(path); });
+					break;
+				case FILE_ACTION_REMOVED:
+				case FILE_ACTION_RENAMED_OLD_NAME:
+					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileRemoved(path); });
+					break;
+				case FILE_ACTION_MODIFIED:
+					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileChanged(path); });
+					break;
+				}
+
+				if (info->NextEntryOffset == 0)
+					break;
+				info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(reinterpret_cast<char*>(info) + info->NextEntryOffset);
+			}
+		}
+
+		CloseHandle(complEv);
+	}
+};
+
+DirectoryChangeWatcherHandle CreateDirectoryChangeWatcher(StringView path, IDirectoryChangeListener* listener)
+{
+	return new DirectoryChangeWatcherImpl(path, listener);
 }
 
 

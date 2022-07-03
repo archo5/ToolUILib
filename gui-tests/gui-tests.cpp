@@ -326,6 +326,7 @@ void Test_ThreadWorker();
 void Test_ThreadedImageRendering();
 void Test_OSCommunication();
 void Test_FileSelectionWindow();
+void Test_DirectoryChangeWatcher();
 
 void Test_SequenceEditors();
 void Test_TreeEditors();
@@ -428,6 +429,7 @@ static const TestEntry utilityTestEntries[] =
 	{},
 	{ "OS communication", Test_OSCommunication },
 	{ "File selection window", Test_FileSelectionWindow },
+	{ "Directory change watcher", Test_DirectoryChangeWatcher },
 };
 static const TestEntry dseditTestEntries[] =
 {

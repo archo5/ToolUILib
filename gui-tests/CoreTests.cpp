@@ -235,38 +235,6 @@ void Test_ImageSetSizing()
 }
 
 
-struct EventsTest : ui::Buildable
-{
-	static constexpr unsigned MAX_MESSAGES = 50;
-
-	std::string msgBuf[MAX_MESSAGES];
-	unsigned writePos = 0;
-
-	void WriteMsg(const char* fmt, ...)
-	{
-		char buf[1024];
-		va_list args;
-		va_start(args, fmt);
-		vsnprintf(buf, 1024, fmt, args);
-		va_end(args);
-		msgBuf[writePos++] = buf;
-		writePos %= MAX_MESSAGES;
-	}
-
-	void OnPaint(const ui::UIPaintContext& ctx) override
-	{
-		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
-		for (unsigned i = 0; i < MAX_MESSAGES; i++)
-		{
-			unsigned idx = (MAX_MESSAGES * 2 + writePos - i - 1) % MAX_MESSAGES;
-			ui::draw::TextLine(font, 12, 0, GetFinalRect().y1 - i * 12, msgBuf[idx], ui::Color4f::White());
-		}
-	}
-	void Build() override
-	{
-	}
-};
-
 struct KeyboardEventsTest : EventsTest
 {
 	void OnReset() override
