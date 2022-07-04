@@ -7,6 +7,9 @@ namespace ui {
 
 struct Textbox : FrameElement
 {
+	Textbox();
+	~Textbox();
+
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
@@ -14,14 +17,14 @@ struct Textbox : FrameElement
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
-	bool IsLongSelection() const { return startCursor != endCursor; }
+	bool IsLongSelection() const;
 	StringView GetSelectedText() const;
 	void EnterText(const char* str);
 	void EraseSelection();
 
 	size_t _FindCursorPos(float vpx);
 
-	const std::string& GetText() const { return _text; }
+	const std::string& GetText() const;
 	Textbox& SetText(StringView s);
 	Textbox& SetPlaceholder(StringView s);
 
@@ -39,14 +42,7 @@ struct Textbox : FrameElement
 		return *this;
 	}
 
-	std::string _text;
-	std::string _placeholder;
-	size_t _origStartCursor = 0;
-	size_t startCursor = 0;
-	size_t endCursor = 0;
-	bool showCaretState = false;
-	bool _hadFocusOnFirstClick = false;
-	unsigned _lastPressRepeatCount = 0;
+	struct TextboxImpl* _impl;
 	float accumulator = 0;
 };
 

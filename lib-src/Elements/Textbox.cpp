@@ -6,6 +6,28 @@
 
 namespace ui {
 
+struct TextboxImpl
+{
+	std::string text;
+	std::string placeholder;
+	size_t origStartCursor = 0;
+	size_t startCursor = 0;
+	size_t endCursor = 0;
+	bool showCaretState = false;
+	bool hadFocusOnFirstClick = false;
+	unsigned lastPressRepeatCount = 0;
+};
+
+Textbox::Textbox()
+{
+	_impl = new TextboxImpl;
+}
+
+Textbox::~Textbox()
+{
+	delete _impl;
+}
+
 void Textbox::OnReset()
 {
 	FrameElement::OnReset();
@@ -13,7 +35,7 @@ void Textbox::OnReset()
 	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick;
 	SetDefaultFrameStyle(DefaultFrameStyle::TextBox);
 
-	_placeholder = {};
+	_impl->placeholder = {};
 }
 
 void Textbox::OnPaint(const UIPaintContext& ctx)
@@ -26,26 +48,29 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 
 		auto r = GetContentRect();
 		float y = (r.y0 + r.y1) / 2;
-		if (!_placeholder.empty() && !IsFocused() && _text.empty())
-			draw::TextLine(font, size, r.x0, y, _placeholder, Color4b(255, 128), TextBaseline::Middle);
-		if (!_text.empty())
-			draw::TextLine(font, size, r.x0, y, _text, Color4b::White(), TextBaseline::Middle);
+		if (!_impl->placeholder.empty() && !IsFocused() && _impl->text.empty())
+			draw::TextLine(font, size, r.x0, y, _impl->placeholder, Color4b(255, 128), TextBaseline::Middle);
+		if (!_impl->text.empty())
+			draw::TextLine(font, size, r.x0, y, _impl->text, Color4b::White(), TextBaseline::Middle);
 
 		if (IsFocused())
 		{
+			auto startCursor = _impl->startCursor;
+			auto endCursor = _impl->endCursor;
+
 			if (startCursor != endCursor)
 			{
 				int minpos = startCursor < endCursor ? startCursor : endCursor;
 				int maxpos = startCursor > endCursor ? startCursor : endCursor;
-				float x0 = GetTextWidth(font, size, StringView(_text).substr(0, minpos));
-				float x1 = GetTextWidth(font, size, StringView(_text).substr(0, maxpos));
+				float x0 = GetTextWidth(font, size, StringView(_impl->text).substr(0, minpos));
+				float x1 = GetTextWidth(font, size, StringView(_impl->text).substr(0, maxpos));
 
 				draw::RectCol(r.x0 + x0, r.y0, r.x0 + x1, r.y1, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
 			}
 
-			if (showCaretState)
+			if (_impl->showCaretState)
 			{
-				float x = GetTextWidth(font, size, StringView(_text).substr(0, endCursor));
+				float x = GetTextWidth(font, size, StringView(_impl->text).substr(0, endCursor));
 				draw::RectCol(r.x0 + x, r.y0, r.x0 + x + 1, r.y1, Color4b::White());
 			}
 		}
@@ -174,33 +199,44 @@ static size_t NextWord(StringView str, size_t pos)
 
 static void UpdateSelection(Textbox& tb, Event& e, bool start)
 {
+	auto& hadFocusOnFirstClick = tb._impl->hadFocusOnFirstClick;
+	auto& lastPressRepeatCount = tb._impl->lastPressRepeatCount;
+	auto& origStartCursor = tb._impl->origStartCursor;
+	auto& startCursor = tb._impl->startCursor;
+	auto& endCursor = tb._impl->endCursor;
+	auto& text = tb._impl->text;
+
 	if (start)
 	{
-		tb._lastPressRepeatCount = e.numRepeats - 1;
-		tb._origStartCursor = tb._FindCursorPos(e.position.x);
+		lastPressRepeatCount = e.numRepeats - 1;
+		origStartCursor = tb._FindCursorPos(e.position.x);
 		if (e.numRepeats == 1)
-			tb._hadFocusOnFirstClick = tb.IsFocused();
+			hadFocusOnFirstClick = tb.IsFocused();
 	}
-	unsigned mode = (tb._lastPressRepeatCount + (tb._hadFocusOnFirstClick ? 0 : 2)) % 3;
+	unsigned mode = (lastPressRepeatCount + (hadFocusOnFirstClick ? 0 : 2)) % 3;
 	if (mode != 2)
 	{
-		tb.startCursor = tb._origStartCursor;
-		tb.endCursor = tb._FindCursorPos(e.position.x);
+		startCursor = origStartCursor;
+		endCursor = tb._FindCursorPos(e.position.x);
 		if (mode == 1)
 		{
-			tb.startCursor = PrevWord(tb._text, tb.startCursor);
-			tb.endCursor = NextWord(tb._text, tb.endCursor);
+			startCursor = PrevWord(text, startCursor);
+			endCursor = NextWord(text, endCursor);
 		}
 	}
 	else
 	{
-		tb.startCursor = 0;
-		tb.endCursor = tb._text.size();
+		startCursor = 0;
+		endCursor = text.size();
 	}
 }
 
 void Textbox::OnEvent(Event& e)
 {
+	auto& startCursor = _impl->startCursor;
+	auto& endCursor = _impl->endCursor;
+	auto& text = _impl->text;
+
 	if (e.type == EventType::ButtonDown)
 	{
 		if (e.GetButton() == MouseButton::Left)
@@ -223,7 +259,7 @@ void Textbox::OnEvent(Event& e)
 	}
 	else if (e.type == EventType::Timer)
 	{
-		showCaretState = !showCaretState;
+		_impl->showCaretState = !_impl->showCaretState;
 		if (system) // TODO better check? needed?
 			GetNativeWindow()->InvalidateAll(); // TODO localized
 		if (IsFocused())
@@ -231,10 +267,10 @@ void Textbox::OnEvent(Event& e)
 	}
 	else if (e.type == EventType::GotFocus)
 	{
-		showCaretState = true;
+		_impl->showCaretState = true;
 		GetNativeWindow()->InvalidateAll(); // TODO localized
 		startCursor = 0;
-		endCursor = _text.size();
+		endCursor = text.size();
 		e.context->SetTimer(this, 0.5f);
 	}
 	else if (e.type == EventType::LostFocus)
@@ -256,7 +292,7 @@ void Textbox::OnEvent(Event& e)
 			}
 			else
 			{
-				endCursor = PrevChar(_text, endCursor);
+				endCursor = PrevChar(text, endCursor);
 				if (!e.GetKeyActionModifier())
 					startCursor = endCursor;
 			}
@@ -268,19 +304,19 @@ void Textbox::OnEvent(Event& e)
 			}
 			else
 			{
-				endCursor = NextChar(_text, endCursor);
+				endCursor = NextChar(text, endCursor);
 				if (!e.GetKeyActionModifier())
 					startCursor = endCursor;
 			}
 			break;
 
 		case KeyAction::PrevWord:
-			endCursor = PrevWord(_text, endCursor);
+			endCursor = PrevWord(text, endCursor);
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
 		case KeyAction::NextWord:
-			endCursor = NextWord(_text, endCursor);
+			endCursor = NextWord(text, endCursor);
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
@@ -293,7 +329,7 @@ void Textbox::OnEvent(Event& e)
 			break;
 		case KeyAction::GoToLineEnd:
 		case KeyAction::GoToEnd:
-			endCursor = _text.size();
+			endCursor = text.size();
 			if (!e.GetKeyActionModifier())
 				startCursor = endCursor;
 			break;
@@ -311,7 +347,7 @@ void Textbox::OnEvent(Event& e)
 			break;
 		case KeyAction::SelectAll:
 			startCursor = 0;
-			endCursor = _text.size();
+			endCursor = text.size();
 			break;
 		}
 
@@ -333,22 +369,22 @@ void Textbox::OnEvent(Event& e)
 					switch (e.GetKeyAction())
 					{
 					case KeyAction::DelPrevLetter:
-						to = PrevChar(_text, endCursor);
-						_text.erase(to, endCursor - to);
+						to = PrevChar(text, endCursor);
+						text.erase(to, endCursor - to);
 						startCursor = endCursor = to;
 						break;
 					case KeyAction::DelNextLetter:
-						to = NextChar(_text, endCursor);
-						_text.erase(endCursor, to - endCursor);
+						to = NextChar(text, endCursor);
+						text.erase(endCursor, to - endCursor);
 						break;
 					case KeyAction::DelPrevWord:
-						to = PrevWord(_text, endCursor);
-						_text.erase(to, endCursor - to);
+						to = PrevWord(text, endCursor);
+						text.erase(to, endCursor - to);
 						startCursor = endCursor = to;
 						break;
 					case KeyAction::DelNextWord:
-						to = NextWord(_text, endCursor);
-						_text.erase(endCursor, to - endCursor);
+						to = NextWord(text, endCursor);
+						text.erase(endCursor, to - endCursor);
 						break;
 					}
 				}
@@ -383,19 +419,26 @@ Rangef Textbox::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType typ
 	return FrameElement::CalcEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
 }
 
+bool Textbox::IsLongSelection() const
+{
+	return _impl->startCursor != _impl->endCursor;
+}
+
 StringView Textbox::GetSelectedText() const
 {
+	auto startCursor = _impl->startCursor;
+	auto endCursor = _impl->endCursor;
 	int min = startCursor < endCursor ? startCursor : endCursor;
 	int max = startCursor > endCursor ? startCursor : endCursor;
-	return StringView(_text.data() + min, max - min);
+	return StringView(_impl->text.data() + min, max - min);
 }
 
 void Textbox::EnterText(const char* str)
 {
 	EraseSelection();
 	size_t num = strlen(str);
-	_text.insert(endCursor, str, num);
-	startCursor = endCursor += num;
+	_impl->text.insert(_impl->endCursor, str, num);
+	_impl->startCursor = _impl->endCursor += num;
 	system->eventSystem.OnChange(this);
 }
 
@@ -403,9 +446,11 @@ void Textbox::EraseSelection()
 {
 	if (IsLongSelection())
 	{
+		auto& startCursor = _impl->startCursor;
+		auto& endCursor = _impl->endCursor;
 		int min = startCursor < endCursor ? startCursor : endCursor;
 		int max = startCursor > endCursor ? startCursor : endCursor;
-		_text.erase(min, max - min);
+		_impl->text.erase(min, max - min);
 		startCursor = endCursor = min;
 	}
 }
@@ -415,31 +460,37 @@ size_t Textbox::_FindCursorPos(float vpx)
 	auto r = GetContentRect();
 	// TODO kerning
 	float x = r.x0;
-	for (size_t i = 0; i < _text.size(); i++)
+	for (size_t i = 0; i < _impl->text.size(); i++)
 	{
-		float lw = GetTextWidth(frameStyle.font.GetFont(), frameStyle.font.size, StringView(_text).substr(i, 1));
+		float lw = GetTextWidth(frameStyle.font.GetFont(), frameStyle.font.size, StringView(_impl->text).substr(i, 1));
 		if (vpx < x + lw * 0.5f)
 			return i;
 		x += lw;
 	}
-	return _text.size();
+	return _impl->text.size();
+}
+
+const std::string& Textbox::GetText() const
+{
+	return _impl->text;
 }
 
 Textbox& Textbox::SetText(StringView s)
 {
 	if (InUse())
 		return *this;
-	_text.assign(s.data(), s.size());
-	if (startCursor > _text.size())
-		startCursor = _text.size();
-	if (endCursor > _text.size())
-		endCursor = _text.size();
+	auto& text = _impl->text;
+	text.assign(s.data(), s.size());
+	if (_impl->startCursor > text.size())
+		_impl->startCursor = text.size();
+	if (_impl->endCursor > text.size())
+		_impl->endCursor = text.size();
 	return *this;
 }
 
 Textbox& Textbox::SetPlaceholder(StringView s)
 {
-	_placeholder.assign(s.data(), s.size());
+	_impl->placeholder.assign(s.data(), s.size());
 	return *this;
 }
 
