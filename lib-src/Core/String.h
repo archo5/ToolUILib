@@ -256,4 +256,18 @@ inline std::string Format(const char* fmt, ...)
 	return ret;
 }
 
+struct UTF8Iterator
+{
+	static constexpr const uint32_t END = UINT32_MAX;
+	static constexpr const uint32_t SAFE_ERROR_VALUE = UINT32_MAX - 1;
+	static constexpr const uint32_t REPLACEMENT_CHARACTER = 0xFFFD;
+
+	StringView str;
+	size_t pos = 0;
+	uint32_t errorReturnValue = REPLACEMENT_CHARACTER;
+
+	UTF8Iterator(StringView s) : str(s) {}
+	uint32_t Read();
+};
+
 } // ui

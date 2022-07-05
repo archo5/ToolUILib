@@ -263,12 +263,48 @@ float GetTextWidth(Font* font, int size, StringView text)
 	auto& sctx = font->GetSizeContext(size * g_textResScale);
 	float invScale = 1.0f / g_textResScale;
 	int out = 0;
-	for (char c : text)
+
+	UTF8Iterator it(text);
+	for (;;)
 	{
-		out += int(roundf(font->FindGlyph(sctx, (uint8_t)c, false).xadv * invScale));
+		uint32_t ch = it.Read();
+		if (ch == UTF8Iterator::END)
+			break;
+
+		out += int(roundf(font->FindGlyph(sctx, ch, false).xadv * invScale));
 	}
 	return float(out);
 }
+
+static Font* g_tmFont;
+static Font::SizeContext* g_tmSizeCtx;
+float g_tmInvScale;
+int g_tmWidth;
+void TextMeasureBegin(Font* font, int size)
+{
+	g_tmFont = font;
+	g_tmSizeCtx = &font->GetSizeContext(size * g_textResScale);
+	g_tmInvScale = 1.0f / g_textResScale;
+	g_tmWidth = 0;
+}
+
+void TextMeasureEnd()
+{
+	g_tmFont = nullptr;
+	g_tmSizeCtx = nullptr;
+	g_tmInvScale = 0;
+}
+
+void TextMeasureReset()
+{
+	g_tmWidth = 0;
+}
+
+float TextMeasureAddChar(uint32_t ch)
+{
+	return float(g_tmWidth += int(roundf(g_tmFont->FindGlyph(*g_tmSizeCtx, ch, false).xadv * g_tmInvScale)));
+}
+
 
 namespace draw {
 
@@ -295,9 +331,15 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 	}
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
-	for (char ch : text)
+
+	UTF8Iterator it(text);
+	for (;;)
 	{
-		auto gv = font->FindGlyph(sctx, (uint8_t)ch, true);
+		uint32_t ch = it.Read();
+		if (ch == UTF8Iterator::END)
+			break;
+
+		auto gv = font->FindGlyph(sctx, ch, true);
 		float x0 = gv.xoff * invScale + x;
 		float y0 = gv.yoff * invScale + y;
 		draw::RectColTex(x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale, color, gv.img);

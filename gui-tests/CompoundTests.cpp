@@ -567,6 +567,9 @@ struct TextboxTest : ui::Buildable
 		ui::Text("Single line / editing");
 		ui::Make<ui::Textbox>().SetText("test 3.14 abc");
 
+		ui::Text("Multiline / editing");
+		ui::Make<ui::Textbox>().SetMultiline(true).SetText("test\n3.14\nabc");
+
 		WPop();
 	}
 };

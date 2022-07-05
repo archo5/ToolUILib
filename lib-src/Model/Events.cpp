@@ -109,23 +109,23 @@ bool Event::GetUTF8Text(char out[5]) const
 	}
 	else if (utf32char <= 0x7ff)
 	{
-		out[0] = 0xc0 | (utf32char & 0x1f);
-		out[1] = 0x80 | ((utf32char >> 5) & 0x3f);
+		out[0] = 0xc0 | ((utf32char >> 6) & 0x1f);
+		out[1] = 0x80 | (utf32char & 0x3f);
 		out[2] = 0;
 	}
 	else if (utf32char <= 0xffff)
 	{
-		out[0] = 0xe0 | (utf32char & 0xf);
-		out[1] = 0x80 | ((utf32char >> 4) & 0x3f);
-		out[2] = 0x80 | ((utf32char >> 10) & 0x3f);
+		out[0] = 0xe0 | ((utf32char >> 12) & 0xf);
+		out[1] = 0x80 | ((utf32char >> 6) & 0x3f);
+		out[2] = 0x80 | (utf32char & 0x3f);
 		out[3] = 0;
 	}
 	else if (utf32char <= 0x10ffff)
 	{
-		out[0] = 0xf0 | (utf32char & 0x7);
-		out[1] = 0x80 | ((utf32char >> 3) & 0x3f);
-		out[2] = 0x80 | ((utf32char >> 9) & 0x3f);
-		out[3] = 0x80 | ((utf32char >> 15) & 0x3f);
+		out[0] = 0xf0 | ((utf32char >> 18) & 0x7);
+		out[1] = 0x80 | ((utf32char >> 12) & 0x3f);
+		out[2] = 0x80 | ((utf32char >> 6) & 0x3f);
+		out[3] = 0x80 | (utf32char & 0x3f);
 		out[4] = 0;
 	}
 	else

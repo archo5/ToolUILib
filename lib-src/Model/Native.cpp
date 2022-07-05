@@ -1,4 +1,5 @@
 
+#define UNICODE 1
 #include <windows.h>
 #include <windowsx.h>
 #include <shellapi.h>
@@ -589,7 +590,7 @@ struct NativeWindow_Impl
 	{
 		system.nativeWindow = owner;
 
-		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandle(nullptr), this);
+		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandleW(nullptr), this);
 		DragAcceptFiles(window, TRUE);
 		renderCtx = rhi::CreateRenderContext(window);
 
@@ -996,7 +997,7 @@ void NativeWindowBase::ProcessEventsExclusive()
 	_impl->EnterExclusiveMode();
 
 	MSG msg;
-	while (!g_appQuit && _impl->visible && GetMessage(&msg, NULL, 0, 0))
+	while (!g_appQuit && _impl->visible && GetMessageW(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
@@ -1407,7 +1408,7 @@ struct Inspector : NativeDialogWindow
 
 BufferHandle LoadEmbeddedData()
 {
-	HRSRC hrsrc = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(50), RT_RCDATA);
+	HRSRC hrsrc = FindResource(GetModuleHandleW(nullptr), MAKEINTRESOURCE(50), RT_RCDATA);
 	if (!hrsrc)
 		return {};
 	HGLOBAL hglobal = LoadResource(nullptr, hrsrc);
@@ -1502,7 +1503,7 @@ void Application::_SignalEvent()
 int Application::Run()
 {
 	MSG msg;
-	while (!g_appQuit && GetMessage(&msg, NULL, 0, 0))
+	while (!g_appQuit && GetMessageW(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
@@ -1797,6 +1798,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		return TRUE;
 	case WM_CHAR:
+	case WM_UNICHAR:
+		if (wParam == UNICODE_NOCHAR)
+			return TRUE;
 		if (auto* evsys = GetEventSys(hWnd))
 			evsys->OnTextInput(wParam, GetModifierKeys(), lParam & 0xffff);
 		return TRUE;
@@ -1903,10 +1907,10 @@ void InitializeWin32()
 	wc.cbSize = sizeof(WNDCLASSEXW);
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = ui::WindowProc;
-	wc.hInstance = GetModuleHandle(nullptr);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hIcon = LoadIcon(GetModuleHandle(nullptr), "MAINICON");
-	wc.hIconSm = LoadIcon(GetModuleHandle(nullptr), "MAINICON");
+	wc.hInstance = GetModuleHandleW(nullptr);
+	wc.hCursor = LoadCursorW(NULL, (LPWSTR)IDC_ARROW);
+	wc.hIcon = LoadIconW(GetModuleHandleW(nullptr), L"MAINICON");
+	wc.hIconSm = LoadIconW(GetModuleHandleW(nullptr), L"MAINICON");
 	wc.hbrBackground = GetStockBrush(BLACK_BRUSH);
 	wc.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClassExW(&wc);

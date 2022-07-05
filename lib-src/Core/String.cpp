@@ -162,4 +162,45 @@ double StringView::take_float64()
 	return ret * sign;
 }
 
+
+uint32_t UTF8Iterator::Read()
+{
+	if (pos >= str.size())
+		return END;
+
+	// ASCII
+	char c0 = str[pos++];
+	if (!(c0 & 0x80))
+		return c0;
+
+	if (pos >= str.size())
+		return errorReturnValue;
+	char c1 = str[pos++];
+	if ((c1 & 0xC0) != 0x80)
+		return errorReturnValue;
+
+	if ((c0 & 0xE0) == 0xC0)
+		return ((c0 & 0x1F) << 6) | (c1 & 0x3F);
+
+	if (pos >= str.size())
+		return errorReturnValue;
+	char c2 = str[pos++];
+	if ((c2 & 0xC0) != 0x80)
+		return errorReturnValue;
+
+	if ((c0 & 0xF0) == 0xE0)
+		return ((c0 & 0xF) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+
+	if (pos >= str.size())
+		return errorReturnValue;
+	char c3 = str[pos++];
+	if ((c3 & 0xC0) != 0x80)
+		return errorReturnValue;
+
+	if ((c0 & 0xF8) == 0xF0)
+		return ((c0 & 0x7) << 18) | ((c1 & 0x3F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+
+	return errorReturnValue;
+}
+
 } // ui

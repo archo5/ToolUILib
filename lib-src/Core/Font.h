@@ -28,6 +28,11 @@ float SetTextResolutionScale(float ntrs);
 float MultiplyTextResolutionScale(float ntrs);
 
 float GetTextWidth(Font* font, int size, StringView text);
+// ongoing measurement
+void TextMeasureBegin(Font* font, int size);
+void TextMeasureEnd();
+void TextMeasureReset();
+float TextMeasureAddChar(uint32_t ch);
 
 enum class TextBaseline
 {

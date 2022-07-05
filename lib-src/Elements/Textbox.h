@@ -17,12 +17,15 @@ struct Textbox : FrameElement
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
+	bool IsMultiline() const;
+	Textbox& SetMultiline(bool ml);
+
 	bool IsLongSelection() const;
 	StringView GetSelectedText() const;
 	void EnterText(const char* str);
 	void EraseSelection();
 
-	size_t _FindCursorPos(float vpx);
+	size_t _FindCursorPos(Point2f vp);
 
 	const std::string& GetText() const;
 	Textbox& SetText(StringView s);

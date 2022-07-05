@@ -6,6 +6,106 @@
 
 namespace ui {
 
+struct TextRange
+{
+	size_t start;
+	size_t end;
+
+	StringView sv(StringView text)
+	{
+		return text.substr(start, end - start);
+	}
+};
+
+struct TextLines
+{
+	std::vector<TextRange> lines;
+
+	size_t FindLine(size_t pos) const
+	{
+		if (lines.size() <= 1)
+			return 0;
+		for (size_t i = 0; i < lines.size(); i++)
+		{
+			if (lines[i].start <= pos && pos < lines[i].end)
+				return i;
+		}
+		if (lines.back().end == pos)
+			return lines.size() - 1;
+		// error
+		assert(!"bad position");
+		return 0;
+	}
+	void Recalculate(StringView s, Font* font, int size, float maxWidth, bool multiline)
+	{
+		if (multiline)
+			RecalculateMultiline(s, font, size, maxWidth);
+		else
+			SetOne(s);
+	}
+	void SetOne(StringView s)
+	{
+		lines = { TextRange{ 0, s.size() } };
+	}
+	void RecalculateMultiline(StringView s, Font* font, int size, float maxWidth)
+	{
+		lines.clear();
+		lines.push_back({ 0, 0 });
+
+		size_t lastBreakPos = 0;
+		float widthToLastBreak = 0;
+		float widthSoFar = 0;
+		uint32_t prevCh = 0;
+
+		TextMeasureBegin(font, size);
+		UTF8Iterator it(s);
+		for (;;)
+		{
+			uint32_t charStart = it.pos;
+			uint32_t ch = it.Read();
+			if (ch == UTF8Iterator::END)
+				break;
+			lines.back().end = it.pos;
+			if (ch == '\n')
+			{
+				lines.push_back({ it.pos, it.pos });
+
+				TextMeasureReset();
+				widthToLastBreak = 0;
+				widthSoFar = 0;
+			}
+			else
+			{
+				// TODO full unicode?
+				if (ch == ' ' || prevCh == ' ')
+				{
+					widthToLastBreak = widthSoFar;
+					lastBreakPos = charStart;
+				}
+				float w = TextMeasureAddChar(ch);
+				if (w > maxWidth && lines.back().end != lines.back().start)
+				{
+					uint32_t p = widthToLastBreak > 0 ? lastBreakPos : charStart;
+
+					it.pos = p;
+					lines.back().end = p;
+					lines.push_back({ p, p });
+
+					TextMeasureReset();
+					widthToLastBreak = 0;
+					widthSoFar = 0;
+				}
+				widthSoFar = w;
+			}
+			prevCh = ch;
+		}
+		TextMeasureEnd();
+
+		if (lines.back().start == lines.back().end && (lines.size() == 1 || !lines[lines.size() - 2].sv(s).ends_with("\n")))
+			lines.pop_back();
+	}
+};
+
 struct TextboxImpl
 {
 	std::string text;
@@ -15,7 +115,10 @@ struct TextboxImpl
 	size_t endCursor = 0;
 	bool showCaretState = false;
 	bool hadFocusOnFirstClick = false;
+	bool multiline = false;
 	unsigned lastPressRepeatCount = 0;
+
+	TextLines lines;
 };
 
 Textbox::Textbox()
@@ -42,16 +145,21 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 {
 	auto cpa = PaintFrame();
 
-	{
-		auto* font = frameStyle.font.GetFont();
-		int size = frameStyle.font.size;
+	auto* font = frameStyle.font.GetFont();
+	int size = frameStyle.font.size;
 
+	bool usePlaceholder = !IsFocused() && _impl->text.empty();
+	StringView text = usePlaceholder ? _impl->placeholder : _impl->text;
+	auto textColor = usePlaceholder ? Color4b(255, 128) : Color4b::White(); // TODO to theme
+	_impl->lines.Recalculate(text, font, size, GetContentRect().GetWidth(), _impl->multiline);
+	{
 		auto r = GetContentRect();
-		float y = (r.y0 + r.y1) / 2;
-		if (!_impl->placeholder.empty() && !IsFocused() && _impl->text.empty())
-			draw::TextLine(font, size, r.x0, y, _impl->placeholder, Color4b(255, 128), TextBaseline::Middle);
-		if (!_impl->text.empty())
-			draw::TextLine(font, size, r.x0, y, _impl->text, Color4b::White(), TextBaseline::Middle);
+		float y = r.y0;
+		for (TextRange line : _impl->lines.lines)
+		{
+			draw::TextLine(font, size, r.x0, y, line.sv(text).rtrim(), textColor, TextBaseline::Top);
+			y += size;
+		}
 
 		if (IsFocused())
 		{
@@ -60,18 +168,32 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 
 			if (startCursor != endCursor)
 			{
-				int minpos = startCursor < endCursor ? startCursor : endCursor;
-				int maxpos = startCursor > endCursor ? startCursor : endCursor;
-				float x0 = GetTextWidth(font, size, StringView(_impl->text).substr(0, minpos));
-				float x1 = GetTextWidth(font, size, StringView(_impl->text).substr(0, maxpos));
+				size_t minpos = startCursor < endCursor ? startCursor : endCursor;
+				size_t maxpos = startCursor > endCursor ? startCursor : endCursor;
+				size_t minline = _impl->lines.FindLine(minpos);
+				size_t maxline = _impl->lines.FindLine(maxpos);
+				for (size_t line = minline; line <= maxline; line++)
+				{
+					auto L = _impl->lines.lines[line];
+					size_t minLpos = ui::max(L.start, minpos);
+					size_t maxLpos = ui::min(L.end, maxpos);
 
-				draw::RectCol(r.x0 + x0, r.y0, r.x0 + x1, r.y1, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
+					float x0 = GetTextWidth(font, size, text.substr(L.start, minLpos - L.start));
+					float x1 = GetTextWidth(font, size, text.substr(L.start, maxLpos - L.start));
+					float y = r.y0 + line * size;
+
+					draw::RectCol(r.x0 + x0, y, r.x0 + x1, y + size, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
+				}
 			}
 
 			if (_impl->showCaretState)
 			{
-				float x = GetTextWidth(font, size, StringView(_impl->text).substr(0, endCursor));
-				draw::RectCol(r.x0 + x, r.y0, r.x0 + x + 1, r.y1, Color4b::White());
+				size_t line = _impl->lines.FindLine(endCursor);
+				auto L = _impl->lines.lines[line];
+
+				float x = GetTextWidth(font, size, text.substr(L.start, endCursor - L.start));
+				float y = r.y0 + line * size;
+				draw::RectCol(r.x0 + x, y, r.x0 + x + 1, y + size, Color4b::White());
 			}
 		}
 	}
@@ -99,48 +221,12 @@ static size_t NextChar(StringView str, size_t pos)
 	return pos;
 }
 
-static uint32_t GetUTF8(StringView str, size_t pos)
-{
-	if (pos >= str.size())
-		return UINT32_MAX;
-
-	char c0 = str[pos];
-	if (!(c0 & 0x80))
-		return c0;
-
-	if (pos + 1 >= str.size())
-		return UINT32_MAX;
-	char c1 = str[pos + 1];
-	if ((c1 & 0xC0) != 0x80)
-		return UINT32_MAX;
-
-	if ((c0 & 0xE0) == 0xC0)
-		return (c0 & ~0xE0) | ((c1 & ~0xC0) << 5);
-
-	if (pos + 2 >= str.size())
-		return UINT32_MAX;
-	char c2 = str[pos + 2];
-	if ((c2 & 0xC0) != 0x80)
-		return UINT32_MAX;
-
-	if ((c0 & 0xF0) == 0xE0)
-		return (c0 & ~0xF0) | ((c1 & ~0xC0) << 4) | ((c2 & ~0xC0) << 10);
-
-	if (pos + 3 >= str.size())
-		return UINT32_MAX;
-	char c3 = str[pos + 3];
-	if ((c3 & 0xC0) != 0x80)
-		return UINT32_MAX;
-
-	if ((c0 & 0xF8) == 0xF0)
-		return (c0 & ~0xF0) | ((c1 & ~0xC0) << 3) | ((c2 & ~0xC0) << 9) | ((c2 & ~0xC0) << 15);
-
-	return UINT32_MAX;
-}
-
 static int GetCharClass(StringView str, size_t pos)
 {
-	uint32_t c = GetUTF8(str, pos);
+	UTF8Iterator it(str);
+	it.pos = pos;
+	uint32_t c = it.Read();
+
 	// TODO full unicode
 	if (IsSpace(c)) // (ASCII)
 		return 0;
@@ -206,10 +292,12 @@ static void UpdateSelection(Textbox& tb, Event& e, bool start)
 	auto& endCursor = tb._impl->endCursor;
 	auto& text = tb._impl->text;
 
+	tb._impl->lines.Recalculate(text, tb.frameStyle.font.GetFont(), tb.frameStyle.font.size, tb.GetContentRect().GetWidth(), tb._impl->multiline);
+
 	if (start)
 	{
 		lastPressRepeatCount = e.numRepeats - 1;
-		origStartCursor = tb._FindCursorPos(e.position.x);
+		origStartCursor = tb._FindCursorPos(e.position);
 		if (e.numRepeats == 1)
 			hadFocusOnFirstClick = tb.IsFocused();
 	}
@@ -217,7 +305,7 @@ static void UpdateSelection(Textbox& tb, Event& e, bool start)
 	if (mode != 2)
 	{
 		startCursor = origStartCursor;
-		endCursor = tb._FindCursorPos(e.position.x);
+		endCursor = tb._FindCursorPos(e.position);
 		if (mode == 1)
 		{
 			startCursor = PrevWord(text, startCursor);
@@ -282,7 +370,10 @@ void Textbox::OnEvent(Event& e)
 		switch (e.GetKeyAction())
 		{
 		case KeyAction::Enter:
-			e.context->SetKeyboardFocus(nullptr);
+			if (_impl->multiline)
+				EnterText("\n");
+			else
+				e.context->SetKeyboardFocus(nullptr);
 			break;
 
 		case KeyAction::PrevLetter:
@@ -339,6 +430,7 @@ void Textbox::OnEvent(Event& e)
 			if (!IsInputDisabled())
 			{
 				EraseSelection();
+				_OnChangeStyle();
 				e.context->OnChange(this);
 			}
 			break;
@@ -388,6 +480,7 @@ void Textbox::OnEvent(Event& e)
 						break;
 					}
 				}
+				_OnChangeStyle();
 				e.context->OnChange(this);
 				break;
 			case KeyAction::Paste:
@@ -415,8 +508,28 @@ Rangef Textbox::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type
 
 Rangef Textbox::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	float minHeight = frameStyle.font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
+	bool usePlaceholder = !IsFocused() && _impl->text.empty();
+	StringView text = usePlaceholder ? _impl->placeholder : _impl->text;
+	float maxWidth = GetContentRect().GetWidth();
+	if (maxWidth <= 0)
+		maxWidth = containerSize.x - frameStyle.padding.x0 - frameStyle.padding.x1;
+	_impl->lines.Recalculate(text, frameStyle.font.GetFont(), frameStyle.font.size, maxWidth, _impl->multiline);
+
+	float minHeight = frameStyle.font.size * ui::max(size_t(1), _impl->lines.lines.size());
+
+	minHeight += frameStyle.padding.y0 + frameStyle.padding.y1;
 	return FrameElement::CalcEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
+}
+
+bool Textbox::IsMultiline() const
+{
+	return _impl->multiline;
+}
+
+Textbox& Textbox::SetMultiline(bool ml)
+{
+	_impl->multiline = ml;
+	return *this;
 }
 
 bool Textbox::IsLongSelection() const
@@ -439,6 +552,9 @@ void Textbox::EnterText(const char* str)
 	size_t num = strlen(str);
 	_impl->text.insert(_impl->endCursor, str, num);
 	_impl->startCursor = _impl->endCursor += num;
+
+	_OnChangeStyle();
+
 	system->eventSystem.OnChange(this);
 }
 
@@ -455,19 +571,47 @@ void Textbox::EraseSelection()
 	}
 }
 
-size_t Textbox::_FindCursorPos(float vpx)
+size_t Textbox::_FindCursorPos(Point2f vp)
 {
+	if (_impl->text.empty())
+		return 0;
+
 	auto r = GetContentRect();
-	// TODO kerning
-	float x = r.x0;
-	for (size_t i = 0; i < _impl->text.size(); i++)
+	size_t line = vp.y < r.y0 ? 0 : min(size_t(floorf((vp.y - r.y0) / frameStyle.font.size)), _impl->lines.lines.size() - 1);
+	auto L = _impl->lines.lines[line];
+
+	auto lineText = L.sv(_impl->text);
+	if (lineText.ends_with("\n"))
 	{
-		float lw = GetTextWidth(frameStyle.font.GetFont(), frameStyle.font.size, StringView(_impl->text).substr(i, 1));
-		if (vpx < x + lw * 0.5f)
-			return i;
-		x += lw;
+		lineText = lineText.substr(0, lineText.size() - 1);
+		if (lineText.ends_with("\r"))
+			lineText = lineText.substr(0, lineText.size() - 1);
 	}
-	return _impl->text.size();
+
+	TextMeasureBegin(frameStyle.font.GetFont(), frameStyle.font.size);
+	float lpx = vp.x - r.x0;
+	float bestDist = fabsf(lpx);
+	size_t bestPos = 0;
+	UTF8Iterator it(lineText);
+	for (;;)
+	{
+		uint32_t c = it.Read();
+		if (c == UTF8Iterator::END)
+			break;
+
+		float nw = TextMeasureAddChar(c);
+		float nd = fabsf(lpx - nw);
+		if (nd <= bestDist)
+		{
+			bestDist = nd;
+			bestPos = it.pos;
+		}
+		else
+			break; // distance increasing so no value in processing the rest
+	}
+	TextMeasureEnd();
+
+	return L.start + bestPos;
 }
 
 const std::string& Textbox::GetText() const
