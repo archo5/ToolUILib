@@ -628,6 +628,70 @@ void Test_TableView()
 }
 
 
+struct RandomNumberTreeDataSource : ui::TreeDataSource
+{
+	size_t GetNumCols() { return 5; }
+	std::string GetColName(size_t col) { return std::to_string(col + 1); }
+	size_t GetChildCount(uintptr_t id)
+	{
+		if (id == ROOT)
+			return 1000;
+		if (id >= 11000)
+			return 0;
+		return 10;
+	}
+	uintptr_t GetChild(uintptr_t id, size_t which)
+	{
+		if (id == ROOT)
+			return which;
+		// level 1
+		if (id < 1000)
+			return 1000 + id * 10 + which;
+		// level 2
+		id -= 1000;
+		if (id < 10000)
+			return 11000 + id * 10 + which;
+
+		return 0;
+	}
+	std::string GetText(uintptr_t id, size_t col)
+	{
+		return std::to_string(((unsigned(id) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
+	}
+}
+g_randomNumberTree;
+
+struct TreeViewTest : ui::Buildable
+{
+	void Build() override
+	{
+		ui::Push<ui::EdgeSliceLayoutElement>();
+
+		{
+			ui::LabeledProperty::Scope ps("\bSelection type:");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
+		}
+
+		auto& tv = ui::Make<ui::TableView>();
+		tv.SetSelectionMode(selectionType);
+		tv.SetSelectionStorage(&g_randomNumbers);
+		tv.SetDataSource(&g_randomNumberTree);
+		tv.SetContextMenuSource(&g_infoDumpCMS);
+
+		ui::Pop();
+	}
+
+	ui::SelectionMode selectionType = ui::SelectionMode::Single;
+};
+void Test_TreeView()
+{
+	ui::Make<TreeViewTest>();
+}
+
+
 struct MessageLogViewTest : ui::Buildable
 {
 	struct Message

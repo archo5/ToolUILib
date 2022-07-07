@@ -59,16 +59,51 @@ struct TableStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct TableDataSource
+struct GenericGridDataSource
+{
+	struct TreeElementRef
+	{
+		uintptr_t id;
+		size_t depth;
+	};
+
+	virtual bool IsTree() = 0;
+
+	// columns
+	virtual size_t GetNumCols() = 0;
+	virtual size_t GetTreeCol() { return SIZE_MAX; }
+	virtual std::string GetColName(size_t col) = 0;
+
+	// getting viewed elements
+	virtual size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) = 0;
+
+	// cell contents
+	virtual std::string GetText(uintptr_t id, size_t col) = 0;
+
+	// row extras
+	virtual std::string GetRowName(size_t row, uintptr_t id);
+};
+
+struct TableDataSource : GenericGridDataSource
 {
 	virtual size_t GetNumRows() = 0;
-	virtual size_t GetNumCols() = 0;
 	virtual std::string GetRowName(size_t row) = 0;
-	virtual std::string GetColName(size_t col) = 0;
-	virtual std::string GetText(size_t row, size_t col) = 0;
-	// cache interface
-	virtual void OnBeginReadRows(size_t startRow, size_t endRow) {}
-	virtual void OnEndReadRows(size_t startRow, size_t endRow) {}
+
+	bool IsTree() override { return false; }
+	std::string GetRowName(size_t row, uintptr_t id) override { return GetRowName(row); }
+	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&) override;
+};
+
+struct TreeDataSource : GenericGridDataSource
+{
+	static constexpr uintptr_t ROOT = uintptr_t(-1);
+
+	virtual size_t GetChildCount(uintptr_t id) = 0;
+	virtual uintptr_t GetChild(uintptr_t id, size_t which) = 0;
+
+	bool IsTree() override { return true; }
+	size_t GetTreeCol() override { return 0; }
+	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) override;
 };
 
 struct TableView : FrameElement
@@ -81,8 +116,8 @@ struct TableView : FrameElement
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
 
-	TableDataSource* GetDataSource() const;
-	void SetDataSource(TableDataSource* src);
+	GenericGridDataSource* GetDataSource() const;
+	void SetDataSource(GenericGridDataSource* src);
 	ISelectionStorage* GetSelectionStorage() const;
 	void SetSelectionStorage(ISelectionStorage* src);
 	void SetSelectionMode(SelectionMode mode);
@@ -105,6 +140,7 @@ private:
 };
 
 
+#if 0
 struct TreeDataSource
 {
 	static constexpr uintptr_t ROOT = uintptr_t(-1);
@@ -137,5 +173,6 @@ struct TreeView : FrameElement
 private:
 	struct TreeViewImpl* _impl;
 };
+#endif
 
 } // ui

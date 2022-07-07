@@ -154,13 +154,56 @@ void TableStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 	OnFieldFontSettings(oi, td, "colHeaderFont", colHeaderFont);
 }
 
+
+std::string GenericGridDataSource::GetRowName(size_t row, uintptr_t id)
+{
+	return std::to_string(row + 1);
+}
+
+
+size_t TableDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&)
+{
+	return GetNumRows();
+}
+
+
+static void TDS_GetElements(
+	TreeDataSource* me,
+	GenericGridDataSource::TreeElementRef elem,
+	size_t& n,
+	Range<size_t> orderRange,
+	std::vector<GenericGridDataSource::TreeElementRef>& outElemList)
+{
+	size_t nch = me->GetChildCount(elem.id);
+	for (size_t ch = 0; ch < nch; ch++)
+	{
+		uintptr_t chid = me->GetChild(elem.id, ch);
+		size_t num = n++;
+		GenericGridDataSource::TreeElementRef chelem = { chid, elem.depth + 1 };
+
+		if (orderRange.Contains(num))
+			outElemList.push_back(chelem);
+
+		TDS_GetElements(me, chelem, n, orderRange, outElemList);
+	}
+}
+
+size_t TreeDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList)
+{
+	size_t n = 0;
+	TDS_GetElements(this, { ROOT, SIZE_MAX }, n, orderRange, outElemList);
+	return n;
+}
+
+
 struct TableViewImpl
 {
-	TableDataSource* dataSource = nullptr;
+	GenericGridDataSource* dataSource = nullptr;
 	ISelectionStorage* selStorage = nullptr;
 	IListContextMenuSource* ctxMenuSrc = nullptr;
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
+	size_t lastRowCount = 0;
 	size_t hoverRow = SIZE_MAX;
 	SelectionImplementation sel;
 };
@@ -192,13 +235,20 @@ void TableView::OnReset()
 	scrollbarV.OnReset();
 }
 
+static GenericGridDataSource::TreeElementRef ExtractID(const std::vector<GenericGridDataSource::TreeElementRef>& ids, size_t i)
+{
+	if (i < ids.size())
+		return ids[i];
+	return { i, 0 };
+}
+
 void TableView::OnPaint(const UIPaintContext& ctx)
 {
 	auto cpa = PaintFrame();
 	PaintInfo info(this);
 
 	size_t nc = _impl->dataSource->GetNumCols();
-	size_t nr = _impl->dataSource->GetNumRows();
+	size_t treeCol = _impl->dataSource->GetTreeCol();
 
 	auto RC = GetContentRect();
 
@@ -225,12 +275,12 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	size_t minR = floor(yOff / h);
 	size_t maxR = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / h));
-	if (minR > nr)
-		minR = nr;
-	if (maxR > nr)
-		maxR = nr;
-
-	_impl->dataSource->OnBeginReadRows(minR, maxR);
+	Range<size_t> rowRange = { minR, maxR };
+	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	size_t nr = _impl->dataSource->GetElements(rowRange, ids);
+	minR = min(minR, nr);
+	maxR = min(maxR, nr);
+	_impl->lastRowCount = nr;
 
 	if (enableRowHeader)
 	{
@@ -253,6 +303,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		auto* rowHeaderFont = style.rowHeaderFont.GetFont();
 		for (size_t r = minR; r < maxR; r++)
 		{
+			auto rowRef = ExtractID(ids, r - minR);
 			UIRect rect =
 			{
 				RC.x0,
@@ -265,7 +316,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				rowHeaderFont,
 				style.rowHeaderFont.size,
 				rect.x0, (rect.y0 + rect.y1) / 2,
-				_impl->dataSource->GetRowName(r),
+				_impl->dataSource->GetRowName(r, rowRef.id),
 				rowcpa.HasTextColor() ? rowcpa.GetTextColor() : ctx.textColor,
 				TextBaseline::Middle);
 		}
@@ -336,6 +387,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	auto* cellFont = style.cellFont.GetFont();
 	for (size_t r = minR; r < maxR; r++)
 	{
+		auto rowRef = ExtractID(ids, r - minR);
 		for (size_t c = 0; c < nc; c++)
 		{
 			UIRect rect =
@@ -345,19 +397,19 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
+			if (c == treeCol)
+				rect.x0 += rowRef.depth * 20;
 			rect = rect.ShrinkBy(padC);
 			draw::TextLine(
 				cellFont,
 				style.cellFont.size,
 				rect.x0, (rect.y0 + rect.y1) / 2,
-				_impl->dataSource->GetText(r, c),
+				_impl->dataSource->GetText(rowRef.id, c),
 				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
 				TextBaseline::Middle);
 		}
 	}
 	draw::PopScissorRect();
-
-	_impl->dataSource->OnEndReadRows(minR, maxR);
 
 	scrollbarV.OnPaint({ this, sbrect, RC.GetHeight(), chh + nr * h, yOff });
 
@@ -366,8 +418,6 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 void TableView::OnEvent(Event& e)
 {
-	size_t nr = _impl->dataSource->GetNumRows();
-
 	auto RC = GetContentRect();
 
 	auto padCH = style.colHeaderPadding;
@@ -389,6 +439,16 @@ void TableView::OnEvent(Event& e)
 	sbrect.x0 = sbrect.x1 - sbw;
 	sbrect.y0 += chh;
 	RC.x1 -= sbw;
+
+	size_t minR = floor(yOff / h);
+	size_t maxR = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / h));
+	Range<size_t> rowRange = { minR, maxR };
+	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	size_t nr = _impl->dataSource->GetElements(rowRange, ids);
+	minR = min(minR, nr);
+	maxR = min(maxR, nr);
+	_impl->lastRowCount = nr;
+
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
 
@@ -424,12 +484,12 @@ void TableView::OnEvent(Event& e)
 	}
 }
 
-TableDataSource* TableView::GetDataSource() const
+GenericGridDataSource* TableView::GetDataSource() const
 {
 	return _impl->dataSource;
 }
 
-void TableView::SetDataSource(TableDataSource* src)
+void TableView::SetDataSource(GenericGridDataSource* src)
 {
 	if (src != _impl->dataSource)
 		_impl->firstColWidthCalc = true;
@@ -475,6 +535,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	_impl->firstColWidthCalc = false;
 
 	auto nc = _impl->dataSource->GetNumCols();
+	size_t treeCol = _impl->dataSource->GetTreeCol();
 	std::vector<float> colWidths;
 	colWidths.resize(nc, 0.0f);
 
@@ -494,18 +555,23 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 		}
 	}
 
+	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	size_t nr = _impl->dataSource->GetElements(All{}, ids);
+	_impl->lastRowCount = nr;
+
 	auto* cellFont = style.cellFont.GetFont();
-	for (size_t i = 0, n = _impl->dataSource->GetNumRows(); i < n; i++)
+	for (size_t i = 0; i < nr; i++)
 	{
-		_impl->dataSource->OnBeginReadRows(i, i + 1);
+		auto rowRef = ExtractID(ids, i);
 		for (size_t c = 0; c < nc; c++)
 		{
-			std::string text = _impl->dataSource->GetText(i, c);
+			std::string text = _impl->dataSource->GetText(rowRef.id, c);
 			float w = GetTextWidth(cellFont, style.cellFont.size, text) + padC.x0 + padC.x1;
+			if (c == treeCol)
+				w += rowRef.depth * 20;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}
-		_impl->dataSource->OnEndReadRows(i, i + 1);
 	}
 
 	for (size_t c = 0; c < nc; c++)
@@ -514,7 +580,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 bool TableView::IsValidRow(uintptr_t pos)
 {
-	return pos < _impl->dataSource->GetNumRows();
+	return pos < _impl->lastRowCount;
 }
 
 size_t TableView::GetRowAt(float y)
@@ -539,7 +605,7 @@ size_t TableView::GetRowAt(float y)
 	y -= chh;
 	y = floor(y / h);
 	size_t row = y;
-	size_t numRows = _impl->dataSource->GetNumRows();
+	size_t numRows = _impl->lastRowCount;
 	return row < numRows ? row : SIZE_MAX;
 }
 
@@ -548,7 +614,7 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 	size_t numCols = _impl->dataSource->GetNumCols();
 	if (col >= numCols && col != SIZE_MAX)
 		col = numCols ? numCols - 1 : 0;
-	size_t numRows = _impl->dataSource->GetNumRows();
+	size_t numRows = _impl->lastRowCount;
 	if (row >= numRows)
 		row = numRows ? numRows - 1 : 0;
 
@@ -591,6 +657,7 @@ size_t TableView::GetHoverRow() const
 }
 
 
+#if 0
 struct TreeView::PaintState
 {
 	PaintInfo info;
@@ -808,5 +875,6 @@ void TreeView::CalculateColumnWidths(bool firstTimeOnly)
 	for (size_t c = 0; c < nc; c++)
 		_impl->colEnds[c + 1] = _impl->colEnds[c] + colWidths[c];
 }
+#endif
 
 } // ui

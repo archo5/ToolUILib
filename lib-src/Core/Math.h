@@ -142,22 +142,22 @@ template <class T> struct Range
 	UI_FORCEINLINE Range(DoNotInitialize) {}
 	UI_FORCEINLINE Range(All) : min(Limits::lowest()), max(Limits::max()) {}
 	UI_FORCEINLINE Range(T _min, T _max) : min(_min), max(_max) {}
-	UI_FORCEINLINE static Range AtLeast(float v) { return { v, Limits::max() }; }
-	UI_FORCEINLINE static Range AtMost(float v) { return { Limits::lowest(), v }; }
-	UI_FORCEINLINE static Range Exact(float v) { return { v, v }; }
+	UI_FORCEINLINE static Range AtLeast(T v) { return { v, Limits::max() }; }
+	UI_FORCEINLINE static Range AtMost(T v) { return { Limits::lowest(), v }; }
+	UI_FORCEINLINE static Range Exact(T v) { return { v, v }; }
 	UI_FORCEINLINE static Range All() { return { Limits::lowest(), Limits::max() }; }
 
 	UI_FORCEINLINE T GetWidth() const { return max - min; }
 	UI_FORCEINLINE bool IsValid() const { return min <= max; }
-	UI_FORCEINLINE bool Contains(float v) const { return v >= min && v < max; }
+	UI_FORCEINLINE bool Contains(T v) const { return v >= min && v < max; }
 	UI_FORCEINLINE bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
 	UI_FORCEINLINE Range Intersect(const Range& o) const { return { ::ui::max(min, o.min), ::ui::min(max, o.max) }; }
-	Range Add(float o)
+	Range Add(T o)
 	{
 		Range r = *this;
-		if (r.min < FLT_MAX)
+		if (r.min < Limits::max())
 			r.min += o;
-		if (r.max < FLT_MAX)
+		if (r.max < Limits::max())
 			r.max += o;
 		return r;
 	}

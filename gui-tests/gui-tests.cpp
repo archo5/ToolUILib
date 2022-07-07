@@ -144,8 +144,8 @@ struct DataEditor : ui::Buildable
 		};
 		static TreeDS treeds;
 		ui::Push<ui::SizeConstraintElement>().SetHeight(90);
-		auto& trv = ui::Make<ui::TreeView>();
-		trv.SetDataSource(&treeds);
+		//auto& trv = ui::Make<ui::TreeView>();
+		//trv.SetDataSource(&treeds);
 		ui::Pop();
 #endif
 
@@ -337,6 +337,7 @@ void Test_CurveEditor();
 void Benchmark_SubUI();
 void Benchmark_BuildManyElements();
 void Test_TableView();
+void Test_TreeView();
 
 void Demo_Calculator();
 void Demo_SettingsWindow();
@@ -444,6 +445,7 @@ static const TestEntry dseditTestEntries[] =
 	{},
 	{ "- Fully virtualized (single UI element for all items) -" },
 	{ "Table view", Test_TableView },
+	{ "Tree view", Test_TreeView },
 	{ "Message log view", Test_MessageLogView },
 	{ "Curve editor", Test_CurveEditor },
 };
