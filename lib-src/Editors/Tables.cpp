@@ -195,6 +195,13 @@ size_t TreeDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeEle
 	return n;
 }
 
+Optional<bool> TreeDataSource::GetCheckState(uintptr_t id)
+{
+	if (GetChildCount(id) == 0)
+		return {};
+	return IsOpen(id);
+}
+
 
 struct TableViewImpl
 {
@@ -220,12 +227,14 @@ TableView::~TableView()
 
 static StaticID<FrameStyle> sid_framestyle_table_frame("table_frame");
 static StaticID<TableStyle> sid_table_style("table");
+static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
 void TableView::OnReset()
 {
 	FrameElement::OnReset();
 
 	SetFrameStyle(sid_framestyle_table_frame);
 	style = *GetCurrentTheme()->GetStruct(sid_table_style);
+	expandButtonStyle = *GetCurrentTheme()->GetStruct(sid_iconstyle_tree_expand);
 
 	enableRowHeader = true;
 	_impl->dataSource = nullptr;
@@ -398,7 +407,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
 			if (c == treeCol)
-				rect.x0 += rowRef.depth * 20;
+				rect.x0 += rowRef.depth * 20 + h;
 			rect = rect.ShrinkBy(padC);
 			draw::TextLine(
 				cellFont,
@@ -407,6 +416,29 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				_impl->dataSource->GetText(rowRef.id, c),
 				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
 				TextBaseline::Middle);
+		}
+	}
+	// tree icons
+	if (_impl->dataSource->IsTree() && treeCol < nc)
+	{
+		for (size_t r = minR; r < maxR; r++)
+		{
+			auto elem = ExtractID(ids, r - minR);
+			float xo = elem.depth * 20;
+			auto cs = _impl->dataSource->GetCheckState(elem.id);
+			if (!cs.HasValue())
+				continue;
+			PaintInfo pi;
+			pi.obj = this;
+			pi.rect =
+			{
+				RC.x0 + rhw + _impl->colEnds[treeCol] + xo,
+				RC.y0 + chh - yOff + h * r,
+				RC.x0 + rhw + _impl->colEnds[treeCol] + xo + h,
+				RC.y0 + chh - yOff + h * (r + 1),
+			};
+			pi.SetChecked(cs.GetValue());
+			expandButtonStyle.painter->Paint(pi);
 		}
 	}
 	draw::PopScissorRect();
@@ -542,6 +574,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	auto RC = GetContentRect();
 	auto padCH = style.colHeaderPadding;
 	auto padC = style.cellPadding;
+	float cellh = 20 + padC.y0 + padC.y1;
 
 	if (includeHeader)
 	{
@@ -568,7 +601,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 			std::string text = _impl->dataSource->GetText(rowRef.id, c);
 			float w = GetTextWidth(cellFont, style.cellFont.size, text) + padC.x0 + padC.x1;
 			if (c == treeCol)
-				w += rowRef.depth * 20;
+				w += rowRef.depth * 20 + cellh;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}

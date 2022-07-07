@@ -82,6 +82,7 @@ struct GenericGridDataSource
 
 	// row extras
 	virtual std::string GetRowName(size_t row, uintptr_t id);
+	virtual Optional<bool> GetCheckState(uintptr_t id) = 0;
 };
 
 struct TableDataSource : GenericGridDataSource
@@ -90,8 +91,9 @@ struct TableDataSource : GenericGridDataSource
 	virtual std::string GetRowName(size_t row) = 0;
 
 	bool IsTree() override { return false; }
-	std::string GetRowName(size_t row, uintptr_t id) override { return GetRowName(row); }
 	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&) override;
+	std::string GetRowName(size_t row, uintptr_t id) override { return GetRowName(row); }
+	Optional<bool> GetCheckState(uintptr_t id) override { return {}; }
 };
 
 struct TreeDataSource : GenericGridDataSource
@@ -100,15 +102,18 @@ struct TreeDataSource : GenericGridDataSource
 
 	virtual size_t GetChildCount(uintptr_t id) = 0;
 	virtual uintptr_t GetChild(uintptr_t id, size_t which) = 0;
+	virtual bool IsOpen(uintptr_t id) { return true; }
 
 	bool IsTree() override { return true; }
 	size_t GetTreeCol() override { return 0; }
 	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) override;
+	Optional<bool> GetCheckState(uintptr_t id) override;
 };
 
 struct TableView : FrameElement
 {
 	TableStyle style;
+	IconStyle expandButtonStyle;
 
 	TableView();
 	~TableView();

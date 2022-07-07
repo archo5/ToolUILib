@@ -680,6 +680,7 @@ struct TreeViewTest : ui::Buildable
 		tv.SetSelectionStorage(&g_randomNumbers);
 		tv.SetDataSource(&g_randomNumberTree);
 		tv.SetContextMenuSource(&g_infoDumpCMS);
+		tv.CalculateColumnWidths();
 
 		ui::Pop();
 	}
