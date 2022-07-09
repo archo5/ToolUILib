@@ -8,7 +8,7 @@
 
 using namespace ui;
 
-static DataCategoryTag DCT_AnimPatternChanged[1];
+static MulticastDelegate<> AnimPatternChanged;
 
 
 static constexpr int NUM_CURVES = 16;
@@ -369,7 +369,7 @@ struct AnimPattern : ITree
 		{
 			Push<StackExpandLTRLayoutElement>();
 			MakeWithText<Header>(Format("Properties - %s", selectedLayer->ItemName()));
-			MakeWithText<Button>("X") + ui::AddEventHandler(EventType::Activate, [this](Event&) { selectedLayer = nullptr; Notify(DCT_AnimPatternChanged); });
+			MakeWithText<Button>("X") + ui::AddEventHandler(EventType::Activate, [this](Event&) { selectedLayer = nullptr; AnimPatternChanged.Call(); });
 			Pop();
 
 			selectedLayer->FullUI();
@@ -524,7 +524,7 @@ struct AnimPattern : ITree
 			rootLayers.push_back(node);
 		else
 			FindNode(path).Get()->children.push_back(node);
-		Notify(DCT_AnimPatternChanged);
+		AnimPatternChanged.Call();
 	}
 
 	void Remove(TreePathRef path) override
@@ -571,7 +571,7 @@ struct AnimatedPatternEditor : Buildable, AnimationRequester
 	}
 	void Build() override
 	{
-		Subscribe(DCT_AnimPatternChanged);
+		BuildMulticastDelegateAdd(AnimPatternChanged, [this]() { Rebuild(); });
 		BeginAnimation();
 
 		Push<SplitPane>().Init(Direction::Horizontal, hsplit);

@@ -61,7 +61,7 @@ struct FileSelectionWindow
 };
 
 
-extern DataCategoryTag DCT_ResizeWindow[1];
+extern MulticastDelegate<NativeWindowBase*> OnWindowResized;
 
 
 enum class WindowState : uint8_t

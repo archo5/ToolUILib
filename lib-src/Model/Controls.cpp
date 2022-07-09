@@ -1245,11 +1245,17 @@ struct CursorFollowingPLE : PlacementLayoutElement
 
 void DefaultOverlayBuilder::Build()
 {
-	auto tmpl = ui::Push<CursorFollowingPLE>().GetSlotTemplate();
+	auto& cfple = ui::Push<PlacementLayoutElement>();
+	BuildMulticastDelegateAdd(OnMouseMoved, [&cfple](NativeWindowBase* win, int, int)
+	{
+		if (win == cfple.GetNativeWindow())
+			cfple._OnChangeStyle();
+	});
+	auto tmpl = cfple.GetSlotTemplate();
 
 	if (drawTooltip)
 	{
-		Subscribe(DCT_TooltipChanged);
+		BuildMulticastDelegateAdd(OnTooltipChanged, [this]() { Rebuild(); });
 		if (Tooltip::IsSet())
 		{
 			tmpl->measure = false;
@@ -1265,7 +1271,7 @@ void DefaultOverlayBuilder::Build()
 
 	if (drawDragDrop)
 	{
-		Subscribe(DCT_DragDropDataChanged);
+		BuildMulticastDelegateAdd(OnDragDropDataChanged, [this]() { Rebuild(); });
 		if (auto* ddd = DragDrop::GetData())
 		{
 			if (ddd->ShouldBuild())

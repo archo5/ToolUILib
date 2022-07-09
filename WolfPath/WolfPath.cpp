@@ -251,7 +251,7 @@ Vec3 cameraPos = { 1.2f, 3.5f, 0.0f };
 Vec3 cameraDir = Vec3{ 2, 1, 0 };
 Vec3 cameraUp = { 0, 0, 1 };
 float cameraFOV = 90.0f;
-ui::DataCategoryTag DCT_CameraEdited[1];
+ui::MulticastDelegate<> g_OnCameraEdited;
 
 Vec3 GetCameraRayDir(int x, int y, int w, int h)
 {
@@ -266,22 +266,21 @@ Vec3 GetCameraRayDir(int x, int y, int w, int h)
 	return (camDirNorm + cameraRight * fx * d * asp - cameraUp * fy * d).Normalized();
 }
 
+
 struct RenderView : ui::Buildable
 {
 	void Build() override
 	{
-		Subscribe(DCT_CameraEdited);
+		ui::BuildMulticastDelegateAdd(g_OnCameraEdited, [this]()
+		{
+			Rebuild();
+			UpdateImage(true);
+		});
 
 		imageEl = &ui::Make<ui::ImageElement>();
 		imageEl->SetLayoutMode(ui::ImageLayoutMode::Fill);
 		imageEl->SetScaleMode(ui::ScaleMode::Stretch);
 		imageEl->SetImage(image);
-	}
-	void OnNotify(ui::DataCategoryTag* tag, uintptr_t at) override
-	{
-		ui::Buildable::OnNotify(tag, at);
-		if (tag == DCT_CameraEdited)
-			UpdateImage(true);
 	}
 	void OnLayoutChanged() override
 	{
@@ -298,6 +297,8 @@ struct RenderView : ui::Buildable
 #endif
 			int tw = int(cr.GetWidth() / scale);
 			int th = int(cr.GetHeight() / scale);
+			if (th == 0)
+				return;
 
 			if (!force && image && image->GetWidth() == tw && image->GetHeight() == th)
 				return;
@@ -382,14 +383,14 @@ struct InspectorView : ui::Buildable
 		ui::Push<ui::PropertyList>();
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		ui::Text("Camera");
+		ui::MakeWithText<ui::Header>("Camera");
 		auto& cameraBox = ui::Push<ui::StackTopDownLayoutElement>();
 		ui::imm::PropEditFloat("FOV", cameraFOV);
 		ui::imm::PropEditFloatVec("Position", &cameraPos.x);
 		ui::imm::PropEditFloatVec("Direction", &cameraDir.x);
 		cameraBox.HandleEvent(ui::EventType::Commit) = [](ui::Event& e)
 		{
-			ui::Notify(DCT_CameraEdited);
+			g_OnCameraEdited.Call();
 		};
 		ui::Pop();
 
@@ -398,25 +399,23 @@ struct InspectorView : ui::Buildable
 	}
 };
 
+static float hsplit[1] = { 0.6f };
+static float vsplit[1] = { 0.6f };
+
 struct MainWindow : ui::NativeMainWindow
 {
 	void OnBuild() override
 	{
-		auto& hsp = ui::Push<ui::SplitPane>();
+		ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplit);
 		{
-			auto& vsp = ui::Push<ui::SplitPane>();
-			vsp.SetDirection(ui::Direction::Vertical);
+			ui::Push<ui::SplitPane>().Init(ui::Direction::Vertical, vsplit);
 			{
 				ui::Make<RenderView>();
 				ui::Make<EditorView>();
-
-				vsp.SetSplits({ 0.6f });
 			}
 			ui::Pop();
 
 			ui::Make<InspectorView>();
-
-			hsp.SetSplits({ 0.6f });
 		}
 		ui::Pop();
 	}

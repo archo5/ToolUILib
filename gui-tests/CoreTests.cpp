@@ -801,7 +801,6 @@ struct GlobalEventsTest : ui::Buildable
 	{
 		void Build() override
 		{
-			Subscribe(dct);
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			count++;
@@ -814,9 +813,33 @@ struct GlobalEventsTest : ui::Buildable
 			ui::Pop();
 		}
 		const char* name;
-		ui::DataCategoryTag* dct;
 		std::function<void(char*)> infofn;
 		int count = -1;
+	};
+	struct MouseMovedEventTest : EventTest
+	{
+		void Build() override
+		{
+			ui::BuildMulticastDelegateAddNoArgs(ui::OnMouseMoved, [this]() { Rebuild(); });
+			EventTest::Build();
+		}
+	};
+	struct ResizeWindowEventTest : EventTest
+	{
+		void Build() override
+		{
+			ui::BuildMulticastDelegateAddNoArgs(ui::OnWindowResized, [this]() { Rebuild(); });
+			EventTest::Build();
+		}
+	};
+	struct GenericEventTest : EventTest
+	{
+		void Build() override
+		{
+			ui::BuildMulticastDelegateAddNoArgs(*md, [this]() { Rebuild(); });
+			EventTest::Build();
+		}
+		ui::MulticastDelegate<>* md;
 	};
 
 	void GetWindowSizeInfo(char* bfr)
@@ -830,27 +853,25 @@ struct GlobalEventsTest : ui::Buildable
 	{
 		WPush<ui::StackTopDownLayoutElement>();
 
-		for (auto& e = ui::Make<EventTest>();
+		for (auto& e = ui::Make<MouseMovedEventTest>();
 			e.name = "Mouse moved",
-			e.dct = ui::DCT_MouseMoved,
 			e.infofn = [this](char* bfr) { snprintf(bfr, 64, "mouse pos: %g; %g", system->eventSystem.prevMousePos.x, system->eventSystem.prevMousePos.y); },
 			0;);
 
-		for (auto& e = ui::Make<EventTest>();
+		for (auto& e = ui::Make<ResizeWindowEventTest>();
 			e.name = "Resize window",
-			e.dct = ui::DCT_ResizeWindow,
 			e.infofn = [this](char* bfr) { GetWindowSizeInfo(bfr); },
 			0;);
 
-		for (auto& e = ui::Make<EventTest>();
+		for (auto& e = ui::Make<GenericEventTest>();
 			e.name = "Drag/drop data changed",
-			e.dct = ui::DCT_DragDropDataChanged,
+			e.md = &ui::OnDragDropDataChanged,
 			e.infofn = [this](char* bfr) { auto* ddd = ui::DragDrop::GetData(); snprintf(bfr, 64, "drag data: %s", !ddd ? "<none>" : ddd->type.c_str()); },
 			0;);
 
-		for (auto& e = ui::Make<EventTest>();
+		for (auto& e = ui::Make<GenericEventTest>();
 			e.name = "Tooltip changed",
-			e.dct = ui::DCT_TooltipChanged,
+			e.md = &ui::OnTooltipChanged,
 			e.infofn = [this](char* bfr) { snprintf(bfr, 64, "tooltip: %s", ui::Tooltip::IsSet() ? "set" : "<none>"); },
 			0;);
 

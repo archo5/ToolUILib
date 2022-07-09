@@ -292,6 +292,9 @@
     <ClInclude Include="Core\DynamicLib.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Delegate.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

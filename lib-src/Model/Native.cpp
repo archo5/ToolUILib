@@ -478,7 +478,7 @@ void NativeWindowGeometry::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-DataCategoryTag DCT_ResizeWindow[1];
+MulticastDelegate<NativeWindowBase*> OnWindowResized;
 
 
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -1823,14 +1823,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				draw::_ResetScissorRectStack(0, 0, w, h);
 
 				auto& evsys = window->GetEventSys();
-				if (w != evsys.width || h != evsys.height)
-				{
-					Notify(DCT_ResizeWindow, window->GetOwner());
-				}
+				bool szdiff = w != evsys.width || h != evsys.height;
 				evsys.width = w;
 				evsys.height = h;
 				evsys.RecomputeLayout();
 				window->GetOwner()->InvalidateAll();
+				if (szdiff)
+				{
+					OnWindowResized.Call(window->GetOwner());
+				}
 			}
 		}
 		break;

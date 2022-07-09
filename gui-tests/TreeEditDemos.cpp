@@ -4,7 +4,7 @@
 #include "../lib-src/Editors/TreeEditor.h"
 
 
-static ui::DataCategoryTag DCT_Node[1];
+static ui::MulticastDelegate<void*> MD_Node;
 struct BasicTreeNodeEditDemo : ui::Buildable
 {
 	struct TreeNode
@@ -23,7 +23,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 	{
 		void Build() override
 		{
-			Subscribe(DCT_Node, tgt);
+			ui::BuildMulticastDelegateAdd(MD_Node, [this](void* which) { if (which == tgt) Rebuild(); });
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
 
@@ -33,7 +33,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				{
 					delete tgt;
 					parent->children.erase(std::find(parent->children.begin(), parent->children.end(), tgt));
-					ui::Notify(DCT_Node, parent);
+					MD_Node.Call(parent);
 				};
 			}
 
@@ -67,7 +67,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				auto* t = new TreeNode;
 				t->name = "new child " + std::to_string(ctr++);
 				tgt->children.insert(tgt->children.begin() + inspos, t);
-				ui::Notify(DCT_Node, tgt);
+				MD_Node.Call(tgt);
 			};
 		}
 
@@ -313,7 +313,7 @@ void Demo_CompactTreeNodeEdit()
 
 
 namespace script_tree {
-static ui::DataCategoryTag DCT_TreeChanged[1];
+static ui::MulticastDelegate<> MD_TreeChanged;
 struct Node
 {
 	std::vector<Node*> children;
@@ -478,7 +478,7 @@ struct Tree : ui::ITree
 			roots.push_back(node);
 		else
 			FindNode(path).Get()->children.push_back(node);
-		ui::Notify(DCT_TreeChanged);
+		MD_TreeChanged.Call();
 	}
 
 	void Remove(ui::TreePathRef path) override
@@ -509,7 +509,7 @@ struct ScriptTreeDemo : ui::Buildable
 {
 	void Build() override
 	{
-		Subscribe(script_tree::DCT_TreeChanged);
+		ui::BuildMulticastDelegateAdd(script_tree::MD_TreeChanged, [this]() { Rebuild(); });
 		auto& sp = ui::Push<ui::SplitPane>();
 		{
 			auto& te = ui::Make<ui::TreeEditor>();

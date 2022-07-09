@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "../Core/Delegate.h"
 #include "../Core/Math.h"
 
 #include "Keyboard.h"
@@ -15,7 +16,7 @@ struct NativeWindowBase;
 struct Buildable;
 struct Overlays;
 struct DataCategoryTag;
-extern DataCategoryTag DCT_MouseMoved[1];
+extern MulticastDelegate<NativeWindowBase*, int, int> OnMouseMoved;
 
 struct UIObject;
 struct UIContainer;
@@ -322,7 +323,7 @@ struct DragDropFiles : DragDropData
 	std::vector<std::string> paths;
 };
 
-extern DataCategoryTag DCT_DragDropDataChanged[1];
+extern MulticastDelegate<> OnDragDropDataChanged;
 struct DragDrop
 {
 	static void SetData(DragDropData* data);
@@ -355,7 +356,7 @@ struct OwnerID
 	}
 };
 
-extern DataCategoryTag DCT_TooltipChanged[1];
+extern MulticastDelegate<> OnTooltipChanged;
 struct Tooltip
 {
 	using BuildFunc = std::function<void()>;

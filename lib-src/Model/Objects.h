@@ -477,7 +477,6 @@ inline void Notify(DataCategoryTag* tag, const void* ptr)
 struct Buildable : WrapperElement
 {
 	~Buildable();
-	typedef char IsBuildable[2];
 
 	void PO_ResetConfiguration() override;
 

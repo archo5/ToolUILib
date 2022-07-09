@@ -122,8 +122,19 @@ static void ClampSplit(SplitPane* sp, size_t which)
 
 	bool v = sp->_verticalSplit;
 	auto r = sp->GetFinalRect();
-	if (r.x0 == 0 && r.y0 == 0 && r.x1 == 0 && r.y1 == 0)
-		return; // no layout yet
+
+	// no layout yet or broken layout
+	if (sp->_verticalSplit)
+	{
+		if (r.y0 >= r.y1)
+			return;
+	}
+	else
+	{
+		if (r.x0 >= r.x1)
+			return;
+	}
+
 	float minPos = !v ? r.x0 : r.y0;
 	float maxPos = !v ? r.x1 : r.y1;
 

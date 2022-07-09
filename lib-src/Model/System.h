@@ -275,13 +275,25 @@ inline void Append(Buildable* o)
 TextElement& Text(StringView s);
 TextElement& TextVA(const char* fmt, va_list args);
 TextElement& Textf(const char* fmt, ...);
-template <class T, class... Args> T* BuildAlloc(Args&&... args)
-{
-	return UIContainer::GetCurrent()->GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
-}
+bool LastIsNew();
+
 void RebuildCurrent();
 Buildable* GetCurrentBuildable();
-bool LastIsNew();
+template <class T, class... Args> T* BuildAlloc(Args&&... args)
+{
+	return GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
+}
+template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(std::move(f)); }
+template <class MD, class F> void BuildMulticastDelegateAdd(MD& md, F&& f)
+{
+	auto* e = md.Add(std::move(f));
+	BuildDefer([e]() { e->Destroy(); });
+}
+template <class MD, class F> void BuildMulticastDelegateAddNoArgs(MD& md, F&& f)
+{
+	auto* e = md.AddNoArgs(std::move(f));
+	BuildDefer([e]() { e->Destroy(); });
+}
 
 
 class BuildCallback : public Buildable

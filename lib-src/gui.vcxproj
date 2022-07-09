@@ -203,6 +203,7 @@
   <ItemGroup>
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Common.h" />
+    <ClInclude Include="Core\Delegate.h" />
     <ClInclude Include="Core\DynamicLib.h" />
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />

@@ -86,7 +86,11 @@ struct ThreadedImageRenderingTest : ui::Buildable
 {
 	void Build() override
 	{
-		Subscribe(ui::DCT_ResizeWindow, GetNativeWindow());
+		ui::BuildMulticastDelegateAdd(ui::OnWindowResized, [this](ui::NativeWindowBase* w)
+		{
+			if (w == GetNativeWindow())
+				Rebuild();
+		});
 
 		auto& img = ui::Make<ui::ImageElement>();
 		img.SetLayoutMode(ui::ImageLayoutMode::Fill);

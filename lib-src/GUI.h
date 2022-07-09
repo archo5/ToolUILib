@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "Core/Delegate.h"
 #include "Core/DynamicLib.h"
 #include "Core/FileSystem.h"
 #include "Core/Logging.h"

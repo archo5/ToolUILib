@@ -3,7 +3,7 @@
 #include "../lib-src/Render/RHI.h"
 
 
-ui::DataCategoryTag DCT_ItemSelection[1];
+ui::MulticastDelegate<> ItemSelectionChanged;
 struct DataEditor : ui::Buildable
 {
 	struct Item
@@ -232,7 +232,7 @@ struct DataEditor : ui::Buildable
 		ui::Pop();
 		ui::Pop();
 
-		Subscribe(DCT_ItemSelection);
+		ui::BuildMulticastDelegateAdd(ItemSelectionChanged, [this]() { Rebuild(); });
 		if (editing == SIZE_MAX)
 		{
 			ui::Text("List");
@@ -240,7 +240,7 @@ struct DataEditor : ui::Buildable
 			ui::Push<ui::StackTopDownLayoutElement>();
 			for (size_t i = 0; i < items.size(); i++)
 			{
-				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ui::Notify(DCT_ItemSelection); });
+				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ItemSelectionChanged.Call(); });
 			}
 			ui::Pop();
 			ui::Pop();
@@ -256,7 +256,7 @@ struct DataEditor : ui::Buildable
 			if (ui::imm::Button("Go back"))
 			{
 				editing = SIZE_MAX;
-				ui::Notify(DCT_ItemSelection);
+				ItemSelectionChanged.Call();
 			}
 			ui::Pop();
 			ui::Pop();

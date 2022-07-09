@@ -11,8 +11,8 @@ namespace ui {
 
 uint32_t g_curLayoutFrame = 0;
 DataCategoryTag DCT_UIObject[1];
-DataCategoryTag DCT_MouseMoved[1];
-DataCategoryTag DCT_TooltipChanged[1];
+MulticastDelegate<NativeWindowBase*, int, int> OnMouseMoved;
+MulticastDelegate<> OnTooltipChanged;
 
 static bool g_tooltipInChangeContext;
 static OwnerID g_curTooltipOwner;
@@ -451,7 +451,7 @@ void EventSystem::_UpdateTooltip(Point2f cursorPos)
 	{
 		g_curTooltipBuildFn = g_newTooltipBuildFn;
 		g_curTooltipOwner = g_newTooltipOwner;
-		Notify(DCT_TooltipChanged);
+		OnTooltipChanged.Call();
 	}
 
 	g_tooltipInChangeContext = false;
@@ -507,7 +507,7 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 	prevMousePos = cursorPos;
 
 	if (moved)
-		Notify(DCT_MouseMoved, GetNativeWindow());
+		OnMouseMoved.Call(GetNativeWindow(), cursorPos.x, cursorPos.y);
 }
 
 void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
@@ -742,7 +742,7 @@ void DragDropData::Build()
 	Text(type);
 }
 
-DataCategoryTag DCT_DragDropDataChanged[1];
+MulticastDelegate<> OnDragDropDataChanged;
 static DragDropData* g_curDragDropData = nullptr;
 
 void DragDrop::SetData(DragDropData* data)
@@ -752,7 +752,7 @@ void DragDrop::SetData(DragDropData* data)
 	g_curDragDropData = data;
 	if (pd != data)
 	{
-		Notify(DCT_DragDropDataChanged);
+		OnDragDropDataChanged.Call();
 	}
 }
 
