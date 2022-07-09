@@ -9,8 +9,8 @@
 
 namespace ui {
 
-static DataCategoryTag DCT_DockingRootUpdated[1];
-static DataCategoryTag DCT_DockingNodeUpdated[1];
+static MulticastDelegate<DockingNodeHandle*> OnDockingRootUpdated;
+static MulticastDelegate<DockingNode*> OnDockingNodeUpdated;
 
 DockableContentsContainer::DockableContentsContainer(DockableContents* C) : contents(C)
 {
@@ -91,7 +91,12 @@ bool DockingNode::HasDockable(StringView id) const
 
 void DockingNode::Build()
 {
-	GetCurrentBuildable()->Subscribe(DCT_DockingNodeUpdated, this);
+	auto* B = GetCurrentBuildable();
+	BuildMulticastDelegateAdd(OnDockingNodeUpdated, [this, B](DockingNode* N)
+	{
+		if (N == this)
+			B->Rebuild();
+	});
 
 	WeakPtr<DockingNode> me = this;
 
@@ -302,7 +307,11 @@ void DockingSubwindow::OnBuild()
 {
 	auto* B = GetCurrentBuildable();
 	_root = B;
-	B->Subscribe(DCT_DockingRootUpdated, &rootNode);
+	BuildMulticastDelegateAdd(OnDockingRootUpdated, [this, B](DockingNodeHandle* h)
+	{
+		if (h == &rootNode)
+			B->Rebuild();
+	});
 	if (_dragging)
 		B->system->eventSystem.CaptureMouse(B);
 	//rootNode->Build();
@@ -435,7 +444,11 @@ void DockingMainArea::Build()
 {
 	TEMP_LAYOUT_MODE = FILLER;
 
-	Subscribe(DCT_DockingRootUpdated, &_mainAreaRootNode);
+	BuildMulticastDelegateAdd(OnDockingRootUpdated, [this](DockingNodeHandle* h)
+	{
+		if (h == &_mainAreaRootNode)
+			Rebuild();
+	});
 	Make<DockingWindowContentBuilder>()._root = _mainAreaRootNode;
 }
 
@@ -598,7 +611,7 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 	}
 	else
 	{
-		Notify(DCT_DockingNodeUpdated, cch->parentNode);
+		OnDockingNodeUpdated.Call(cch->parentNode);
 	}
 }
 
@@ -667,7 +680,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 			tgt->tabs.insert(tgt->tabs.begin() + pos, tab);
 			tgt->curActiveTab = tab;
 
-			Notify(DCT_DockingNodeUpdated, tgt);
+			OnDockingNodeUpdated.Call(tgt);
 		}
 		else // split insertion
 		{
@@ -704,13 +717,13 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 
 				if (P)
 				{
-					Notify(DCT_DockingNodeUpdated, P);
+					OnDockingNodeUpdated.Call(P);
 					P->childNodes[idx] = mid;
 				}
 				else
 				{
 					DockingNodeHandle& rootRef = tgt->subwindow ? tgt->subwindow->rootNode : _mainAreaRootNode;
-					Notify(DCT_DockingRootUpdated, &rootRef);
+					OnDockingRootUpdated.Call(&rootRef);
 					rootRef = mid;
 				}
 
@@ -718,7 +731,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				idx = 0;
 			}
 			else
-				Notify(DCT_DockingNodeUpdated, P);
+				OnDockingNodeUpdated.Call(P);
 
 			bool insAfter = _insTarget.tabOrSide == DockingInsertionSide_Right
 				|| _insTarget.tabOrSide == DockingInsertionSide_Below;

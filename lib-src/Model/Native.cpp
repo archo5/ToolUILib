@@ -1424,9 +1424,6 @@ BufferHandle LoadEmbeddedData()
 }
 
 
-extern void SubscriptionTable_Init();
-extern void SubscriptionTable_Free();
-
 static EventQueue* g_mainEventQueue;
 static DWORD g_mainThreadID;
 
@@ -1453,7 +1450,6 @@ Application::Application(int argc, char* argv[])
 	g_curWindowRepaintList = new std::vector<NativeWindow_Impl*>;
 
 	LoadDefaultCursors();
-	SubscriptionTable_Init();
 }
 
 Application::~Application()
@@ -1462,7 +1458,6 @@ Application::~Application()
 		delete _inspector;
 
 	//system.container.Free();
-	SubscriptionTable_Free();
 	UnloadDefaultCursors();
 
 	delete g_windowRepaintList;

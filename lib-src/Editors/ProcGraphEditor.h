@@ -7,9 +7,6 @@
 
 namespace ui {
 
-extern DataCategoryTag DCT_EditProcGraph[1];
-extern DataCategoryTag DCT_EditProcGraphNode[1];
-
 struct IProcGraph
 {
 	using Node = void;
@@ -134,6 +131,9 @@ struct IProcGraph
 	virtual bool CanDuplicateNode(Node*) { return false; }
 	virtual Node* DuplicateNode(Node*) { return nullptr; }
 };
+
+extern MulticastDelegate<IProcGraph*> OnProcGraphEdit;
+extern MulticastDelegate<IProcGraph*, IProcGraph::Node*> OnProcGraphNodeEdit;
 
 
 struct ProcGraphLinkDragDropData : DragDropData

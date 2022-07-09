@@ -12,8 +12,8 @@
 
 namespace ui {
 
-DataCategoryTag DCT_EditProcGraph[1];
-DataCategoryTag DCT_EditProcGraphNode[1];
+MulticastDelegate<IProcGraph*> OnProcGraphEdit;
+MulticastDelegate<IProcGraph*, IProcGraph::Node*> OnProcGraphNodeEdit;
 
 
 void ProcGraphEditor_NodePin::Build()
@@ -153,8 +153,8 @@ void ProcGraphEditor_NodePin::_TryLink(const IProcGraph::Pin& pin)
 		: _graph->TryLink({ pin.end, _pin.end });
 	if (success)
 	{
-		Notify(DCT_EditProcGraphNode, _pin.end.node);
-		Notify(DCT_EditProcGraphNode, pin.end.node);
+		OnProcGraphNodeEdit.Call(_graph, _pin.end.node);
+		OnProcGraphNodeEdit.Call(_graph, pin.end.node);
 	}
 }
 
@@ -165,10 +165,10 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 
 	_graph->UnlinkPin(_pin);
 
-	Notify(DCT_EditProcGraphNode, _pin.end.node);
+	OnProcGraphNodeEdit.Call(_graph, _pin.end.node);
 	for (const auto& link : links)
 	{
-		Notify(DCT_EditProcGraphNode, (_pin.isOutput ? link.input : link.output).node);
+		OnProcGraphNodeEdit.Call(_graph, (_pin.isOutput ? link.input : link.output).node);
 	}
 }
 
@@ -176,7 +176,11 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 void ProcGraphEditor_Node::Build()
 {
 	TEMP_LAYOUT_MODE = WRAPPER;
-	Subscribe(DCT_EditProcGraphNode, _node);
+	BuildMulticastDelegateAdd(OnProcGraphNodeEdit, [this](IProcGraph* g, IProcGraph::Node* n)
+	{
+		if (g == _graph && n == _node)
+			Rebuild();
+	});
 
 	Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::ProcGraphNode);
 	Push<StackTopDownLayoutElement>();
@@ -199,19 +203,19 @@ void ProcGraphEditor_Node::OnEvent(Event& e)
 		ContextMenu::Get().Add("Delete node", !_graph->CanDeleteNode(_node)) = [this]()
 		{
 			_graph->DeleteNode(_node);
-			Notify(DCT_EditProcGraph, _graph);
+			OnProcGraphEdit.Call(_graph);
 		};
 		ContextMenu::Get().Add("Duplicate node", !_graph->CanDuplicateNode(_node)) = [this]()
 		{
 			_graph->DuplicateNode(_node);
-			Notify(DCT_EditProcGraph, _graph);
+			OnProcGraphEdit.Call(_graph);
 		};
 		if (_graph->HasPreview(_node))
 		{
 			ContextMenu::Get().Add("Show preview", false, _graph->IsPreviewEnabled(_node)) = [this]()
 			{
 				_graph->SetPreviewEnabled(_node, !_graph->IsPreviewEnabled(_node));
-				Notify(DCT_EditProcGraphNode, _node);
+				OnProcGraphNodeEdit.Call(_graph, _node);
 			};
 		}
 
@@ -336,7 +340,11 @@ ProcGraphLayoutElement_Slot ProcGraphLayoutElement::_slotTemplate;
 
 void ProcGraphEditor::Build()
 {
-	Subscribe(DCT_EditProcGraph, _graph);
+	BuildMulticastDelegateAdd(OnProcGraphEdit, [this](IProcGraph* g)
+	{
+		if (g == _graph)
+			Rebuild();
+	});
 
 	Push<ProcGraphLayoutElement>().PGE = this;
 	OnBuildNodes();
@@ -417,7 +425,7 @@ void ProcGraphEditor::OnMakeCreationMenu(MenuItemCollection& menu)
 		{
 			auto* node = e.func(graph, e.path, e.id);
 			graph->SetNodePosition(node, system->eventSystem.clickStartPositions[1]);
-			Notify(DCT_EditProcGraph, graph);
+			OnProcGraphEdit.Call(graph);
 		};
 	}
 

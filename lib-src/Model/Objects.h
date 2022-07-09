@@ -463,16 +463,9 @@ struct ChildScaleOffsetElement : WrapperElement
 	void OnLayout(const UIRect& rect) override;
 };
 
-struct Subscription;
 struct DataCategoryTag {};
 
 constexpr auto ANY_ITEM = uintptr_t(-1);
-
-void Notify(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
-inline void Notify(DataCategoryTag* tag, const void* ptr)
-{
-	Notify(tag, reinterpret_cast<uintptr_t>(ptr));
-}
 
 struct Buildable : WrapperElement
 {
@@ -487,18 +480,6 @@ struct Buildable : WrapperElement
 	virtual void Build() = 0;
 	void Rebuild();
 
-	virtual void OnNotify(DataCategoryTag* tag, uintptr_t at);
-	bool Subscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
-	bool Unsubscribe(DataCategoryTag* tag, uintptr_t at = ANY_ITEM);
-	bool Subscribe(DataCategoryTag* tag, const void* ptr)
-	{
-		return Subscribe(tag, reinterpret_cast<uintptr_t>(ptr));
-	}
-	bool Unsubscribe(DataCategoryTag* tag, const void* ptr)
-	{
-		return Unsubscribe(tag, reinterpret_cast<uintptr_t>(ptr));
-	}
-
 	void Defer(std::function<void()>&& fn)
 	{
 		_deferredDestructors.push_back(std::move(fn));
@@ -511,8 +492,6 @@ struct Buildable : WrapperElement
 	}
 
 	PersistentObjectList _objList;
-	Subscription* _firstSub = nullptr;
-	Subscription* _lastSub = nullptr;
 	uint64_t _lastBuildFrameID = 0;
 	std::vector<std::function<void()>> _deferredDestructors;
 #define WRAPPER 1

@@ -4,9 +4,10 @@
 
 void TE_Node::Preview::Build()
 {
-	Subscribe(DCT_NodePreviewInvalidated);
-	Subscribe(DCT_EditProcGraph);
-	Subscribe(DCT_EditProcGraphNode);
+	auto rebuildFn = [this]() { Rebuild(); };
+	BuildMulticastDelegateAddNoArgs(OnNodePreviewInvalidated, rebuildFn);
+	BuildMulticastDelegateAddNoArgs(OnProcGraphEdit, rebuildFn);
+	BuildMulticastDelegateAddNoArgs(OnProcGraphNodeEdit, rebuildFn);
 
 	Make<ImageElement>()
 		.SetImage(node->GetImage(rcp))

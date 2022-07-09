@@ -8,8 +8,8 @@
 using namespace ui;
 
 
-extern DataCategoryTag DCT_NodePreviewInvalidated[1];
-extern DataCategoryTag DCT_ChangeActiveImage[1];
+extern MulticastDelegate<struct TE_Node*> OnNodePreviewInvalidated;
+extern MulticastDelegate<> OnActiveImageChanged;
 
 
 using AbsRect = AABB2f;

@@ -297,7 +297,7 @@ void TE_Template::OnEditNode(Event& e, Node* node)
 void TE_Template::InvalidateNode(TE_Node* n)
 {
 	n->SetDirty();
-	Notify(DCT_NodePreviewInvalidated, n);
+	OnNodePreviewInvalidated.Call(n);
 }
 
 void TE_Template::InvalidateAllNodes()
@@ -405,7 +405,7 @@ void TE_Template::SetCurPreviewImage(TE_Image* cpi)
 {
 	InvalidateAllNodes();
 	curPreviewImage = cpi;
-	Notify(DCT_ChangeActiveImage);
+	OnActiveImageChanged.Call();
 }
 
 

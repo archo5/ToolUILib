@@ -77,9 +77,10 @@ struct TE_MainPreviewNode : Buildable
 	void Build() override
 	{
 		TEMP_LAYOUT_MODE = FILLER;
-		Subscribe(DCT_NodePreviewInvalidated);
-		Subscribe(DCT_EditProcGraph);
-		Subscribe(DCT_EditProcGraphNode);
+		auto rebuildFn = [this]() { Rebuild(); };
+		BuildMulticastDelegateAddNoArgs(OnNodePreviewInvalidated, rebuildFn);
+		BuildMulticastDelegateAddNoArgs(OnProcGraphEdit, rebuildFn);
+		BuildMulticastDelegateAddNoArgs(OnProcGraphNodeEdit, rebuildFn);
 
 		Push<EdgeSliceLayoutElement>();
 
@@ -162,7 +163,7 @@ struct TE_ImageEditorNode : Buildable
 
 	void Build() override
 	{
-		Subscribe(DCT_ChangeActiveImage);
+		BuildMulticastDelegateAdd(OnActiveImageChanged, [this]() { Rebuild(); });
 
 		Push<StackTopDownLayoutElement>();
 

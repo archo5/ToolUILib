@@ -2,8 +2,8 @@
 #include "TECore.h"
 
 
-DataCategoryTag DCT_NodePreviewInvalidated[1];
-DataCategoryTag DCT_ChangeActiveImage[1];
+MulticastDelegate<struct TE_Node*> OnNodePreviewInvalidated;
+MulticastDelegate<> OnActiveImageChanged;
 
 
 AbsRect SubRect::Resolve(const AbsRect& frame)
