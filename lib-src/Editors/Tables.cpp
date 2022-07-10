@@ -184,7 +184,8 @@ static void TDS_GetElements(
 		if (orderRange.Contains(num))
 			outElemList.push_back(chelem);
 
-		TDS_GetElements(me, chelem, n, orderRange, outElemList);
+		if (me->IsOpen(chid))
+			TDS_GetElements(me, chelem, n, orderRange, outElemList);
 	}
 }
 
@@ -195,7 +196,7 @@ size_t TreeDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeEle
 	return n;
 }
 
-Optional<bool> TreeDataSource::GetCheckState(uintptr_t id)
+Optional<bool> TreeDataSource::GetOpenState(uintptr_t id)
 {
 	if (GetChildCount(id) == 0)
 		return {};
@@ -211,6 +212,7 @@ struct TableViewImpl
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
 	size_t lastRowCount = 0;
+	bool hoverIsIcon = false;
 	size_t hoverRow = SIZE_MAX;
 	uintptr_t hoverItem = UINTPTR_MAX;
 	SelectionImplementation sel;
@@ -429,7 +431,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		{
 			auto elem = ExtractID(ids, r, minR);
 			float xo = elem.depth * 20;
-			auto cs = _impl->dataSource->GetCheckState(elem.id);
+			auto cs = _impl->dataSource->GetOpenState(elem.id);
 			if (!cs.HasValue())
 				continue;
 			PaintInfo pi;
@@ -441,6 +443,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw + _impl->colEnds[treeCol] + xo + h,
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
+			if (_impl->hoverRow == r && _impl->hoverIsIcon)
+				pi.state |= PS_Hover;
 			pi.SetChecked(cs.GetValue());
 			expandButtonStyle.painter->Paint(pi);
 		}
@@ -507,20 +511,32 @@ void TableView::OnEvent(Event& e)
 		if (e.position.x < RC.x1 && e.position.y > RC.y0 + chh)
 		{
 			_impl->hoverRow = GetRowAt(e.position.y);
-			_impl->hoverItem = ExtractID(ids, _impl->hoverRow, minR).id;
+			auto rowRef = ExtractID(ids, _impl->hoverRow, minR);
+			_impl->hoverItem = rowRef.id;
+			_impl->hoverIsIcon =
+				_impl->dataSource->GetOpenState(_impl->hoverItem).HasValue() &&
+				e.position.x >= RC.x0 + rowRef.depth * 20 &&
+				e.position.x < RC.x0 + rowRef.depth * 20 + cellh;
 		}
 		else
 		{
 			_impl->hoverRow = SIZE_MAX;
 			_impl->hoverItem = UINTPTR_MAX;
+			_impl->hoverIsIcon = false;
 		}
 	}
 	if (e.type == EventType::MouseLeave)
 	{
 		_impl->hoverRow = SIZE_MAX;
 		_impl->hoverItem = UINTPTR_MAX;
+		_impl->hoverIsIcon = false;
 	}
-	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverItem, e.position.x < RC.x1 && e.position.y > RC.y0 + chh))
+	if (e.type == EventType::ButtonDown && _impl->hoverIsIcon && _impl->hoverItem != UINTPTR_MAX)
+	{
+		_impl->dataSource->ToggleOpenState(_impl->hoverItem);
+	}
+	bool hovering = !_impl->hoverIsIcon && e.position.x < RC.x1 && e.position.y > RC.y0 + chh;
+	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverItem, hovering))
 	{
 		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
@@ -699,226 +715,5 @@ size_t TableView::GetHoverRow() const
 {
 	return _impl->hoverRow;
 }
-
-
-#if 0
-struct TreeView::PaintState
-{
-	PaintInfo info;
-	int nc;
-	float x;
-	float y;
-};
-
-struct TreeViewImpl
-{
-	TreeDataSource* dataSource = nullptr;
-	bool firstColWidthCalc = true;
-	std::vector<float> colEnds = { 1.0f };
-};
-
-TreeView::TreeView()
-{
-	_impl = new TreeViewImpl;
-}
-
-TreeView::~TreeView()
-{
-	delete _impl;
-}
-
-static StaticID<TableStyle> sid_tree_style("table");
-static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
-void TreeView::OnReset()
-{
-	FrameElement::OnReset();
-
-	// TODO separate styles for TreeView
-	SetFrameStyle(sid_framestyle_table_frame);
-	style = *GetCurrentTheme()->GetStruct(sid_tree_style);
-	expandButtonStyle = *GetCurrentTheme()->GetStruct(sid_iconstyle_tree_expand);
-
-	_impl->dataSource = nullptr;
-}
-
-void TreeView::OnPaint(const UIPaintContext& ctx)
-{
-	auto cpa = PaintFrame();
-
-	int chh = 20;
-	int h = 20;
-
-	int nc = _impl->dataSource->GetNumCols();
-	int nr = 0;// _dataSource->GetNumRows();
-
-	PaintInfo info(this);
-
-	auto RC = GetContentRect();
-
-	ContentPaintAdvice colcpa;
-	// backgrounds
-	for (int c = 0; c < nc; c++)
-	{
-		info.rect =
-		{
-			RC.x0 + _impl->colEnds[c],
-			RC.y0,
-			RC.x0 + _impl->colEnds[c + 1],
-			RC.y0 + chh,
-		};
-		colcpa = style.colHeaderBackgroundPainter->Paint(info);
-	}
-
-	// text
-	auto* colHeaderFont = style.colHeaderFont.GetFont();
-	for (int c = 0; c < nc; c++)
-	{
-		UIRect rect =
-		{
-			RC.x0 + _impl->colEnds[c],
-			RC.y0,
-			RC.x0 + _impl->colEnds[c + 1],
-			RC.y0 + chh,
-		};
-		draw::TextLine(
-			colHeaderFont,
-			style.colHeaderFont.size,
-			rect.x0, (rect.y0 + rect.y1) / 2,
-			_impl->dataSource->GetColName(c),
-			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
-			TextBaseline::Middle);
-	}
-
-	PaintState ps = { info, nc, RC.x0, RC.y0 + chh };
-	for (size_t i = 0, n = _impl->dataSource->GetChildCount(TreeDataSource::ROOT); i < n; i++)
-		_PaintOne(ctx, _impl->dataSource->GetChild(TreeDataSource::ROOT, i), 0, ps);
-
-	PaintChildren(ctx, cpa);
-}
-
-void TreeView::_PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, PaintState& ps)
-{
-	int h = 20;
-	int tab = 20;
-
-	ContentPaintAdvice cellcpa;
-	// backgrounds
-	for (int c = 0; c < ps.nc; c++)
-	{
-		ps.info.rect =
-		{
-			ps.x + _impl->colEnds[c],
-			ps.y,
-			ps.x + _impl->colEnds[c + 1],
-			ps.y + h,
-		};
-		cellcpa = style.cellBackgroundPainter->Paint(ps.info);
-	}
-
-	// text
-	auto* cellFont = style.cellFont.GetFont();
-	for (int c = 0; c < ps.nc; c++)
-	{
-		UIRect rect =
-		{
-			ps.x + _impl->colEnds[c],
-			ps.y,
-			ps.x + _impl->colEnds[c + 1],
-			ps.y + h,
-		};
-		if (c == 0)
-			rect.x0 += tab * lvl;
-		draw::TextLine(
-			cellFont,
-			style.cellFont.size,
-			rect.x0, (rect.y0 + rect.y1) / 2,
-			_impl->dataSource->GetText(id, c),
-			cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
-			TextBaseline::Middle);
-	}
-
-	ps.y += h;
-
-	if (true) // open
-	{
-		for (size_t i = 0, n = _impl->dataSource->GetChildCount(id); i < n; i++)
-			_PaintOne(ctx, _impl->dataSource->GetChild(id, i), lvl + 1, ps);
-	}
-}
-
-void TreeView::OnEvent(Event& e)
-{
-	if (e.type == EventType::ButtonDown)
-	{
-		e.context->SetKeyboardFocus(this);
-	}
-}
-
-TreeDataSource* TreeView::GetDataSource() const
-{
-	return _impl->dataSource;
-}
-
-void TreeView::SetDataSource(TreeDataSource* src)
-{
-	if (src != _impl->dataSource)
-		_impl->firstColWidthCalc = true;
-	_impl->dataSource = src;
-
-	size_t nc = src->GetNumCols();
-	while (_impl->colEnds.size() < nc + 1)
-		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
-	while (_impl->colEnds.size() > nc + 1)
-		_impl->colEnds.pop_back();
-}
-
-void TreeView::CalculateColumnWidths(bool firstTimeOnly)
-{
-	if (firstTimeOnly && !_impl->firstColWidthCalc)
-		return;
-
-	_impl->firstColWidthCalc = false;
-
-	int tab = 20;
-
-	auto nc = _impl->dataSource->GetNumCols();
-	std::vector<float> colWidths;
-	colWidths.resize(nc, 0.0f);
-
-	auto* cellFont = style.cellFont.GetFont();
-	auto cellFontSize = style.cellFont.size;
-
-	struct Entry
-	{
-		uintptr_t id;
-		int lev;
-	};
-	std::vector<Entry> stack = { Entry{ TreeDataSource::ROOT, 0 } };
-	while (!stack.empty())
-	{
-		Entry E = stack.back();
-		stack.pop_back();
-
-		for (size_t i = 0, n = _impl->dataSource->GetChildCount(E.id); i < n; i++)
-		{
-			uintptr_t chid = _impl->dataSource->GetChild(E.id, i);
-			stack.push_back({ chid, E.lev + 1 });
-
-			for (size_t c = 0; c < nc; c++)
-			{
-				std::string text = _impl->dataSource->GetText(chid, c);
-				float w = GetTextWidth(cellFont, cellFontSize, text);
-				if (c == 0)
-					w += tab * E.lev;
-				if (colWidths[c] < w)
-					colWidths[c] = w;
-			}
-		}
-	}
-
-	for (size_t c = 0; c < nc; c++)
-		_impl->colEnds[c + 1] = _impl->colEnds[c] + colWidths[c];
-}
-#endif
 
 } // ui

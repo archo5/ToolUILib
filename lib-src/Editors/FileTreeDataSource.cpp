@@ -108,6 +108,11 @@ bool FileTreeDataSource::IsOpen(uintptr_t id)
 	return GetFileFromID(id)->open;
 }
 
+void FileTreeDataSource::ToggleOpenState(uintptr_t id)
+{
+	GetFileFromID(id)->open ^= true;
+}
+
 void FileTreeDataSource::ClearSelection()
 {
 	for (const auto& kvp : _selected)

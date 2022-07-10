@@ -82,7 +82,8 @@ struct GenericGridDataSource
 
 	// row extras
 	virtual std::string GetRowName(size_t row, uintptr_t id);
-	virtual Optional<bool> GetCheckState(uintptr_t id) = 0;
+	virtual Optional<bool> GetOpenState(uintptr_t id) = 0;
+	virtual void ToggleOpenState(uintptr_t id) = 0;
 };
 
 struct TableDataSource : GenericGridDataSource
@@ -93,7 +94,8 @@ struct TableDataSource : GenericGridDataSource
 	bool IsTree() override { return false; }
 	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&) override;
 	std::string GetRowName(size_t row, uintptr_t id) override { return GetRowName(row); }
-	Optional<bool> GetCheckState(uintptr_t id) override { return {}; }
+	Optional<bool> GetOpenState(uintptr_t id) override { return {}; }
+	void ToggleOpenState(uintptr_t id) override {}
 };
 
 struct TreeDataSource : GenericGridDataSource
@@ -103,11 +105,12 @@ struct TreeDataSource : GenericGridDataSource
 	virtual size_t GetChildCount(uintptr_t id) = 0;
 	virtual uintptr_t GetChild(uintptr_t id, size_t which) = 0;
 	virtual bool IsOpen(uintptr_t id) { return true; }
+	void ToggleOpenState(uintptr_t id) override {}
 
 	bool IsTree() override { return true; }
 	size_t GetTreeCol() override { return 0; }
 	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) override;
-	Optional<bool> GetCheckState(uintptr_t id) override;
+	Optional<bool> GetOpenState(uintptr_t id) override;
 };
 
 struct TableView : FrameElement
@@ -143,41 +146,5 @@ struct TableView : FrameElement
 private:
 	struct TableViewImpl* _impl;
 };
-
-
-#if 0
-struct TreeDataSource
-{
-	static constexpr uintptr_t ROOT = uintptr_t(-1);
-
-	virtual size_t GetNumCols() = 0;
-	virtual std::string GetColName(size_t col) = 0;
-	virtual size_t GetChildCount(uintptr_t id) = 0;
-	virtual uintptr_t GetChild(uintptr_t id, size_t which) = 0;
-	virtual std::string GetText(uintptr_t id, size_t col) = 0;
-};
-
-struct TreeView : FrameElement
-{
-	struct PaintState;
-
-	TableStyle style;
-	IconStyle expandButtonStyle;
-
-	TreeView();
-	~TreeView();
-	void OnReset() override;
-	void OnPaint(const UIPaintContext& ctx) override;
-	void _PaintOne(const UIPaintContext& ctx, uintptr_t id, int lvl, PaintState& ps);
-	void OnEvent(Event& e) override;
-
-	TreeDataSource* GetDataSource() const;
-	void SetDataSource(TreeDataSource* src);
-	void CalculateColumnWidths(bool firstTimeOnly = true);
-
-private:
-	struct TreeViewImpl* _impl;
-};
-#endif
 
 } // ui

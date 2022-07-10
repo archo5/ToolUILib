@@ -55,6 +55,7 @@ struct FileTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage, ui::IDire
 	size_t GetChildCount(uintptr_t id) override;
 	uintptr_t GetChild(uintptr_t id, size_t which) override;
 	bool IsOpen(uintptr_t id) override;
+	void ToggleOpenState(uintptr_t id) override;
 
 	// ISelectionStorage
 	void ClearSelection() override;
