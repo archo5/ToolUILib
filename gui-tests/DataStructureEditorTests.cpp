@@ -628,8 +628,10 @@ void Test_TableView()
 }
 
 
-struct RandomNumberTreeDataSource : ui::TreeDataSource
+struct RandomNumberTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage
 {
+	std::unordered_set<size_t> selRows;
+
 	size_t GetNumCols() { return 5; }
 	std::string GetColName(size_t col) { return std::to_string(col + 1); }
 	size_t GetChildCount(uintptr_t id)
@@ -658,6 +660,16 @@ struct RandomNumberTreeDataSource : ui::TreeDataSource
 	{
 		return std::to_string(((unsigned(id) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
 	}
+
+	virtual void ClearSelection() { selRows.clear(); }
+	virtual bool GetSelectionState(uintptr_t item) { return selRows.count(item); }
+	virtual void SetSelectionState(uintptr_t item, bool sel)
+	{
+		if (sel)
+			selRows.insert(item);
+		else
+			selRows.erase(item);
+	}
 }
 g_randomNumberTree;
 
@@ -677,7 +689,7 @@ struct TreeViewTest : ui::Buildable
 
 		auto& tv = ui::Make<ui::TableView>();
 		tv.SetSelectionMode(selectionType);
-		tv.SetSelectionStorage(&g_randomNumbers);
+		tv.SetSelectionStorage(&g_randomNumberTree);
 		tv.SetDataSource(&g_randomNumberTree);
 		tv.SetContextMenuSource(&g_infoDumpCMS);
 		tv.CalculateColumnWidths();
@@ -690,6 +702,32 @@ struct TreeViewTest : ui::Buildable
 void Test_TreeView()
 {
 	ui::Make<TreeViewTest>();
+}
+
+
+struct FileTreeViewTest : ui::Buildable
+{
+	void Build() override
+	{
+		ui::Push<ui::EdgeSliceLayoutElement>();
+
+		auto& tv = ui::Make<ui::TableView>();
+		tv.enableRowHeader = false;
+		tv.SetSelectionMode(ui::SelectionMode::Single);
+		tv.SetSelectionStorage(&fds);
+		tv.SetDataSource(&fds);
+		tv.SetContextMenuSource(&g_infoDumpCMS);
+		tv.CalculateColumnWidths();
+		ui::BuildMulticastDelegateAdd(fds.onChange, [&tv]() { tv.GetNativeWindow()->InvalidateAll(); });
+
+		ui::Pop();
+	}
+
+	ui::FileTreeDataSource fds = { "build" };
+};
+void Test_FileTreeView()
+{
+	ui::Make<FileTreeViewTest>();
 }
 
 

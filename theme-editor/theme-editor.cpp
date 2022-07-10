@@ -114,7 +114,7 @@ struct TE_MainPreviewNode : Buildable
 				}
 				if (g_previewMode == TEPM_Sliced)
 				{
-					Push<LabeledProperty>();
+					Push<StackExpandLTRLayoutElement>();
 					{
 						imm::PropEditInt("\bWidth", g_previewSlicedWidth, { SetMinWidth(20) });
 						imm::PropEditInt("\bHeight", g_previewSlicedHeight, { SetMinWidth(20) });

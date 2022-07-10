@@ -469,9 +469,8 @@ constexpr auto ANY_ITEM = uintptr_t(-1);
 
 struct Buildable : WrapperElement
 {
-	~Buildable();
-
-	void PO_ResetConfiguration() override;
+	void PO_ResetConfiguration() override; // IPersistentObject
+	void PO_BeforeDelete() override; // IPersistentObject
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;

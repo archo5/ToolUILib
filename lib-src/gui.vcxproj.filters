@@ -127,6 +127,9 @@
     <ClCompile Include="Core\DynamicLib.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Editors\FileTreeDataSource.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -294,6 +297,9 @@
     </ClInclude>
     <ClInclude Include="Core\Delegate.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\FileTreeDataSource.h">
+      <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

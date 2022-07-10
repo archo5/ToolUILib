@@ -212,6 +212,7 @@ struct TableViewImpl
 	std::vector<float> colEnds = { 1.0f };
 	size_t lastRowCount = 0;
 	size_t hoverRow = SIZE_MAX;
+	uintptr_t hoverItem = UINTPTR_MAX;
 	SelectionImplementation sel;
 };
 
@@ -244,11 +245,11 @@ void TableView::OnReset()
 	scrollbarV.OnReset();
 }
 
-static GenericGridDataSource::TreeElementRef ExtractID(const std::vector<GenericGridDataSource::TreeElementRef>& ids, size_t i)
+static GenericGridDataSource::TreeElementRef ExtractID(const std::vector<GenericGridDataSource::TreeElementRef>& ids, size_t r, size_t minR)
 {
-	if (i < ids.size())
-		return ids[i];
-	return { i, 0 };
+	if (r - minR < ids.size())
+		return ids[r - minR];
+	return { r, 0 };
 }
 
 void TableView::OnPaint(const UIPaintContext& ctx)
@@ -312,7 +313,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		auto* rowHeaderFont = style.rowHeaderFont.GetFont();
 		for (size_t r = minR; r < maxR; r++)
 		{
-			auto rowRef = ExtractID(ids, r - minR);
+			auto rowRef = ExtractID(ids, r, minR);
 			UIRect rect =
 			{
 				RC.x0,
@@ -375,6 +376,14 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	// background:
 	for (size_t r = minR; r < maxR; r++)
 	{
+		auto rowRef = ExtractID(ids, r, minR);
+
+		info.SetChecked(_impl->selStorage ? _impl->selStorage->GetSelectionState(rowRef.id) : false);
+		if (_impl->hoverRow == r)
+			info.state |= PS_Hover;
+		else
+			info.state &= ~PS_Hover;
+
 		for (size_t c = 0; c < nc; c++)
 		{
 			info.rect =
@@ -384,11 +393,6 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
-			info.SetChecked(_impl->selStorage ? _impl->selStorage->GetSelectionState(r) : false);
-			if (_impl->hoverRow == r)
-				info.state |= PS_Hover;
-			else
-				info.state &= ~PS_Hover;
 			cellcpa = style.cellBackgroundPainter->Paint(info);
 		}
 	}
@@ -396,7 +400,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	auto* cellFont = style.cellFont.GetFont();
 	for (size_t r = minR; r < maxR; r++)
 	{
-		auto rowRef = ExtractID(ids, r - minR);
+		auto rowRef = ExtractID(ids, r, minR);
 		for (size_t c = 0; c < nc; c++)
 		{
 			UIRect rect =
@@ -423,7 +427,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	{
 		for (size_t r = minR; r < maxR; r++)
 		{
-			auto elem = ExtractID(ids, r - minR);
+			auto elem = ExtractID(ids, r, minR);
 			float xo = elem.depth * 20;
 			auto cs = _impl->dataSource->GetCheckState(elem.id);
 			if (!cs.HasValue())
@@ -489,10 +493,10 @@ void TableView::OnEvent(Event& e)
 	if (e.type == EventType::ContextMenu)
 	{
 		auto& CM = ContextMenu::Get();
-		if (_impl->hoverRow != SIZE_MAX)
+		if (_impl->hoverItem != UINTPTR_MAX)
 		{
 			if (_impl->ctxMenuSrc)
-				_impl->ctxMenuSrc->FillItemContextMenu(CM, _impl->hoverRow, 0); // todo col
+				_impl->ctxMenuSrc->FillItemContextMenu(CM, _impl->hoverItem, 0); // todo col
 		}
 		if (_impl->ctxMenuSrc)
 			_impl->ctxMenuSrc->FillListContextMenu(CM);
@@ -501,15 +505,22 @@ void TableView::OnEvent(Event& e)
 	if (e.type == EventType::MouseMove)
 	{
 		if (e.position.x < RC.x1 && e.position.y > RC.y0 + chh)
+		{
 			_impl->hoverRow = GetRowAt(e.position.y);
+			_impl->hoverItem = ExtractID(ids, _impl->hoverRow, minR).id;
+		}
 		else
+		{
 			_impl->hoverRow = SIZE_MAX;
+			_impl->hoverItem = UINTPTR_MAX;
+		}
 	}
 	if (e.type == EventType::MouseLeave)
 	{
 		_impl->hoverRow = SIZE_MAX;
+		_impl->hoverItem = UINTPTR_MAX;
 	}
-	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverRow, e.position.x < RC.x1 && e.position.y > RC.y0 + chh))
+	if (_impl->sel.OnEvent(e, _impl->selStorage, _impl->hoverItem, e.position.x < RC.x1 && e.position.y > RC.y0 + chh))
 	{
 		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
@@ -595,7 +606,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 	auto* cellFont = style.cellFont.GetFont();
 	for (size_t i = 0; i < nr; i++)
 	{
-		auto rowRef = ExtractID(ids, i);
+		auto rowRef = ExtractID(ids, i, 0);
 		for (size_t c = 0; c < nc; c++)
 		{
 			std::string text = _impl->dataSource->GetText(rowRef.id, c);

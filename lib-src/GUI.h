@@ -26,5 +26,6 @@
 #include "Elements/SplitPane.h"
 
 #include "Editors/Tables.h"
+#include "Editors/FileTreeDataSource.h"
 #include "Editors/SequenceEditor.h"
 #include "Editors/ProcGraphEditor.h"

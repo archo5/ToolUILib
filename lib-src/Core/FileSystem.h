@@ -78,7 +78,9 @@ enum FileAttributes
 	FA_Symlink = 1 << 2,
 };
 unsigned GetFileAttributes(StringView path);
+uint64_t GetFileSize(StringView path);
 uint64_t GetFileModTimeUTC(StringView path);
+uint64_t GetFileModTimeUnixMS(StringView path);
 
 // TODO allow single user only
 struct IDirectoryIterator : RefCountedST

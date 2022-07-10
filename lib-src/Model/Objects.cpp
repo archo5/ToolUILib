@@ -988,15 +988,6 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
 }
 
 
-Buildable::~Buildable()
-{
-	while (_deferredDestructors.size())
-	{
-		_deferredDestructors.back()();
-		_deferredDestructors.pop_back();
-	}
-}
-
 void Buildable::PO_ResetConfiguration()
 {
 	decltype(_deferredDestructors) ddList;
@@ -1005,6 +996,17 @@ void Buildable::PO_ResetConfiguration()
 	WrapperElement::PO_ResetConfiguration();
 
 	std::swap(_deferredDestructors, ddList);
+}
+
+void Buildable::PO_BeforeDelete()
+{
+	while (_deferredDestructors.size())
+	{
+		_deferredDestructors.back()();
+		_deferredDestructors.pop_back();
+	}
+
+	WrapperElement::PO_BeforeDelete();
 }
 
 Rangef Buildable::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

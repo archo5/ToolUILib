@@ -231,9 +231,13 @@ void UIContainer::ProcessLayoutStack()
 	// single pass
 	for (UIObject* obj : layoutStack.stack)
 	{
+		double t0 = hqtime();
+
 		// TODO how to restart layout?
-		LogDebug(LOG_UISYS, "relayout %s @ %p", typeid(*obj).name(), obj);
 		obj->RedoLayout();
+
+		double t1 = hqtime();
+		LogDebug(LOG_UISYS, "relayout %s @ %p took %.3f ms", typeid(*obj).name(), obj, (t1 - t0) * 1000);
 	}
 	layoutStack.Clear();
 }

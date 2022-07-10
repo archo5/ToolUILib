@@ -27,9 +27,12 @@ struct MulticastDelegate
 		}
 	};
 
-	Entry* _first;
-	Entry* _last;
+	Entry* _first = nullptr;
+	Entry* _last = nullptr;
 
+	UI_FORCEINLINE MulticastDelegate() {}
+	MulticastDelegate(const MulticastDelegate&) = delete;
+	MulticastDelegate& operator = (const MulticastDelegate&) = delete;
 	~MulticastDelegate()
 	{
 		Clear();

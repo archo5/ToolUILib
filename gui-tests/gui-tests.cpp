@@ -338,6 +338,7 @@ void Benchmark_SubUI();
 void Benchmark_BuildManyElements();
 void Test_TableView();
 void Test_TreeView();
+void Test_FileTreeView();
 
 void Demo_Calculator();
 void Demo_SettingsWindow();
@@ -446,6 +447,7 @@ static const TestEntry dseditTestEntries[] =
 	{ "- Fully virtualized (single UI element for all items) -" },
 	{ "Table view", Test_TableView },
 	{ "Tree view", Test_TreeView },
+	{ "File tree view", Test_FileTreeView },
 	{ "Message log view", Test_MessageLogView },
 	{ "Curve editor", Test_CurveEditor },
 };

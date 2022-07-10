@@ -444,10 +444,22 @@ unsigned GetFileAttributes(StringView path)
 	return ret;
 }
 
-uint64_t GetFileModTimeUTC(StringView path)
+uint64_t GetFileSize(StringView path)
 {
 	HANDLE hfile = CreateFileW(UTF8toWCHAR(path).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	if (!hfile)
+	if (hfile == INVALID_HANDLE_VALUE)
+		return 0;
+	UI_DEFER(CloseHandle(hfile));
+	LARGE_INTEGER size;
+	if (!::GetFileSizeEx(hfile, &size))
+		return 0;
+	return size.QuadPart;
+}
+
+uint64_t GetFileModTimeUTC(StringView path)
+{
+	HANDLE hfile = CreateFileW(UTF8toWCHAR(path).c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (hfile == INVALID_HANDLE_VALUE)
 		return 0;
 	UI_DEFER(CloseHandle(hfile));
 	FILETIME t;
@@ -457,6 +469,16 @@ uint64_t GetFileModTimeUTC(StringView path)
 	uli.HighPart = t.dwHighDateTime;
 	uli.LowPart = t.dwLowDateTime;
 	return uli.QuadPart / 10000; // to milliseconds
+}
+
+#define SEC_TO_UNIX_EPOCH 11644473600LL
+uint64_t GetFileModTimeUnixMS(StringView path)
+{
+	auto t = GetFileModTimeUTC(path);
+	if (t == 0)
+		return 0;
+	t -= SEC_TO_UNIX_EPOCH * 1000;
+	return t;
 }
 
 
