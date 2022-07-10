@@ -278,7 +278,7 @@ bool EventSystem::DragCheck(Event& e, MouseButton btn)
 	if (DragDrop::GetData())
 		return false;
 	return e.type == EventType::MouseMove
-		&& (e.current->flags & UIObject_IsPressedMouse)
+		&& clickObj[at]
 		&& (fabsf(e.position.x - clickStartPositions[at].x) >= 3.0f
 			|| fabsf(e.position.y - clickStartPositions[at].y) >= 3.0f);
 }
