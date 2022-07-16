@@ -212,6 +212,7 @@ struct TableViewImpl
 	bool firstColWidthCalc = true;
 	std::vector<float> colEnds = { 1.0f };
 	size_t lastRowCount = 0;
+	Range<size_t> lastVisibleRowRange = { 0, 0 };
 	bool hoverIsIcon = false;
 	size_t hoverRow = SIZE_MAX;
 	uintptr_t hoverItem = UINTPTR_MAX;
@@ -293,6 +294,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	minR = min(minR, nr);
 	maxR = min(maxR, nr);
 	_impl->lastRowCount = nr;
+	_impl->lastVisibleRowRange = { minR, maxR };
 
 	if (enableRowHeader)
 	{
@@ -488,6 +490,7 @@ void TableView::OnEvent(Event& e)
 	minR = min(minR, nr);
 	maxR = min(maxR, nr);
 	_impl->lastRowCount = nr;
+	_impl->lastVisibleRowRange = { minR, maxR };
 
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
@@ -709,6 +712,11 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 	float y1 = y0 + h;
 
 	return { x0, y0, x1, y1 };
+}
+
+Range<size_t> TableView::GetVisibleRange() const
+{
+	return _impl->lastVisibleRowRange;
 }
 
 size_t TableView::GetHoverRow() const

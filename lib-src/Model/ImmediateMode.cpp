@@ -348,12 +348,14 @@ bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+bool EditStringImpl(bool multiline, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& tb = Make<Textbox>();
+	if (multiline)
+		tb.SetMultiline(true);
 	if (!GetEnabled())
 		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
@@ -378,6 +380,16 @@ bool EditString(const char* text, const std::function<void(const char*)>& retfn,
 		mod->OnAfterControl();
 
 	return changed;
+}
+
+bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+{
+	return EditStringImpl(false, text, retfn, mods);
+}
+
+bool EditStringMultiline(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+{
+	return EditStringImpl(true, text, retfn, mods);
 }
 
 bool EditColor(Color4f& val, bool delayed, ModInitList mods)
@@ -531,6 +543,14 @@ bool PropEditString(const char* label, const char* text, const std::function<voi
 	for (auto& mod : mods)
 		mod->ApplyToLabel(ps.label);
 	return EditString(text, retfn, mods);
+}
+
+bool PropEditStringMultiline(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+{
+	LabeledProperty::Scope ps(label);
+	for (auto& mod : mods)
+		mod->ApplyToLabel(ps.label);
+	return EditStringMultiline(text, retfn, mods);
 }
 
 bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)

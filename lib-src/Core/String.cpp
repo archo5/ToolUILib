@@ -104,6 +104,150 @@ void StringView::skip_c_whitespace(bool single_line_comments, bool multiline_com
 	}
 }
 
+static int ParseHexDigit(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return -1;
+}
+
+int64_t StringView::take_int64(unsigned formats)
+{
+	const char* end = _data + _size;
+
+	bool neg = false;
+	if (_data != end && *_data == '+')
+	{
+		neg = false;
+		_data++;
+	}
+	else if (_data != end && *_data == '-')
+	{
+		neg = true;
+		_data++;
+	}
+	else
+		neg = true;
+
+	unsigned format = DECIMAL;
+	unsigned base = 10;
+	if (_data != end && _data != end + 1 && *_data == '0')
+	{
+		_data++;
+		if (*_data == 'x')
+		{
+			format = HEX;
+			base = 16;
+		}
+		else if (*_data == 'o')
+		{
+			format = OCTAL;
+			base = 8;
+		}
+		else if (*_data == 'b')
+		{
+			format = BINARY;
+			base = 2;
+		}
+	}
+
+	if (!(formats & format))
+	{
+		_size = end - _data;
+		return 0;
+	}
+
+	if (format != DECIMAL)
+		_data++;
+
+	int64_t ret = 0;
+	if (base == 16)
+	{
+		int digit;
+		while (_data != end && (digit = ParseHexDigit(*_data)) >= 0)
+		{
+			ret *= base;
+			ret -= digit;
+			_data++;
+		}
+	}
+	else
+	{
+		while (_data != end && *_data >= '0' && *_data <= '0' + base)
+		{
+			ret *= base;
+			ret -= *_data - '0';
+			_data++;
+		}
+	}
+
+	if (!neg)
+		ret = -ret;
+
+	_size = end - _data;
+
+	return ret;
+}
+
+#if 0 // TODO
+int64_t StringView::take_int64_checked(bool* valid, int64_t min, int64_t max)
+{
+	const char* end = _data + _size;
+
+	bool neg = false;
+	if (_data != end && *_data == '+')
+	{
+		neg = false;
+		_data++;
+	}
+	else if (_data != end && *_data == '-')
+	{
+		neg = true;
+		_data++;
+	}
+	else
+		neg = true;
+
+	bool isValid = true;
+
+	int64_t ret = 0;
+	while (_data != end && *_data >= '0' && *_data <= '9')
+	{
+		int64_t pret = ret;
+		ret *= 10;
+		if (ret / 10 != pret)
+			isValid = false;
+
+		pret = ret;
+		ret -= *_data - '0';
+		if (ret > pret)
+			isValid = false;
+
+		_data++;
+	}
+	if (!neg)
+	{
+		if (ret == INT64_MIN)
+			isValid = false;
+		ret = -ret;
+	}
+
+	_size = end - _data;
+
+	if (ret < min || ret > max)
+		isValid = false;
+
+	if (valid)
+		*valid = isValid;
+
+	return ret;
+}
+#endif
+
 double StringView::take_float64()
 {
 	const char* end = _data + _size;

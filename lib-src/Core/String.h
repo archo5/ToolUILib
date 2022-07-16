@@ -22,6 +22,12 @@ static inline bool IsAlphaNum(char c) { return IsAlpha(c) || IsDigit(c); }
 static inline char ToLower(char c) { return c >= 'A' && c <= 'Z' ? c | 0x20 : c; }
 static inline char ToUpper(char c) { return c >= 'a' && c <= 'z' ? c & ~0x20 : c; }
 
+static const constexpr unsigned DECIMAL = 1 << 0;
+static const constexpr unsigned HEX = 1 << 1;
+static const constexpr unsigned BINARY = 1 << 2;
+static const constexpr unsigned OCTAL = 1 << 3;
+static const constexpr unsigned ALL_NUMBER_FORMATS = 0xf;
+
 
 struct StringView
 {
@@ -143,10 +149,25 @@ struct StringView
 		return StringView(start, _data - start);
 	}
 
+	int64_t take_int64(unsigned formats = ALL_NUMBER_FORMATS);
+	UI_FORCEINLINE int64_t to_int64(unsigned formats = ALL_NUMBER_FORMATS) const { return StringView(*this).take_int64(formats); }
+	int32_t take_int32(unsigned formats = ALL_NUMBER_FORMATS) { return int32_t(take_int64(formats)); }
+	UI_FORCEINLINE int32_t to_int32(unsigned formats = ALL_NUMBER_FORMATS) const { return int32_t(StringView(*this).take_int64(formats)); }
+
+#if 0 // TODO
+	int64_t take_int64_checked(bool* valid = nullptr, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX);
+	UI_FORCEINLINE int64_t to_int64_checked(bool* valid = nullptr, int64_t vmin = INT64_MIN, int64_t vmax = INT64_MAX)
+	{ return StringView(*this).take_int64_checked(valid); }
+	UI_FORCEINLINE int32_t take_int32_checked(bool* valid = nullptr, int32_t vmin = INT32_MIN, int32_t vmax = INT32_MAX)
+	{ return int32_t(take_int64_checked(valid, vmin, vmax)); }
+	UI_FORCEINLINE int32_t to_int32_checked(bool* valid = nullptr)
+	{ return StringView(*this).take_int32_checked(valid); }
+#endif
+
 	double take_float64();
-	UI_FORCEINLINE double to_float64() { return StringView(*this).take_float64(); }
-	UI_FORCEINLINE float take_float32() { return (float)take_float64(); }
-	UI_FORCEINLINE float to_float32() { return (float)StringView(*this).take_float64(); }
+	UI_FORCEINLINE double to_float64() const { return StringView(*this).take_float64(); }
+	UI_FORCEINLINE float take_float32() { return float(take_float64()); }
+	UI_FORCEINLINE float to_float32() const { return float(StringView(*this).take_float64()); }
 
 	const char* _data;
 	size_t _size;

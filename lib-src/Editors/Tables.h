@@ -137,6 +137,7 @@ struct TableView : FrameElement
 	bool IsValidRow(uintptr_t pos);
 	size_t GetRowAt(float y);
 	UIRect GetCellRect(size_t col, size_t row);
+	Range<size_t> GetVisibleRange() const;
 	size_t GetHoverRow() const;
 
 	bool enableRowHeader = true;
