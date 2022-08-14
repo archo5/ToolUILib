@@ -66,12 +66,20 @@ template <class T> struct Vec2
 
 	UI_FORCEINLINE Vec2 operator + (const Vec2& o) const { return { x + o.x, y + o.y }; }
 	UI_FORCEINLINE Vec2 operator - (const Vec2& o) const { return { x - o.x, y - o.y }; }
+	UI_FORCEINLINE Vec2 operator * (const Vec2& o) const { return { x * o.x, y * o.y }; }
+	UI_FORCEINLINE Vec2 operator / (const Vec2& o) const { return { x / o.x, y / o.y }; }
 	UI_FORCEINLINE Vec2 operator * (T f) const { return { x * f, y * f }; }
 	UI_FORCEINLINE Vec2 operator / (T f) const { return { x / f, y / f }; }
+
 	UI_FORCEINLINE Vec2& operator += (const Vec2& o) { x += o.x; y += o.y; return *this; }
 	UI_FORCEINLINE Vec2& operator -= (const Vec2& o) { x -= o.x; y -= o.y; return *this; }
+	UI_FORCEINLINE Vec2& operator *= (const Vec2& o) { x *= o.x; y *= o.y; return *this; }
+	UI_FORCEINLINE Vec2& operator /= (const Vec2& o) { x /= o.x; y /= o.y; return *this; }
 	UI_FORCEINLINE Vec2& operator *= (T f) { x *= f; y *= f; return *this; }
 	UI_FORCEINLINE Vec2& operator /= (T f) { x /= f; y /= f; return *this; }
+
+	UI_FORCEINLINE Vec2 operator + () const { return *this; }
+	UI_FORCEINLINE Vec2 operator - () const { return { -x, -y }; }
 
 	UI_FORCEINLINE bool operator == (const Vec2& o) const { return x == o.x && y == o.y; }
 	UI_FORCEINLINE bool operator != (const Vec2& o) const { return x != o.x || y != o.y; }
