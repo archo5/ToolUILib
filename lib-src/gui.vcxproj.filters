@@ -130,6 +130,9 @@
     <ClCompile Include="Editors\FileTreeDataSource.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Core\GUID.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PropertyStore.h">
@@ -300,6 +303,9 @@
     </ClInclude>
     <ClInclude Include="Editors\FileTreeDataSource.h">
       <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\GUID.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

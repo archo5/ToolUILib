@@ -1505,7 +1505,8 @@ int Application::Run()
 
 		g_mainEventQueue->RunAllCurrent();
 
-		if (msg.hwnd)
+		// TODO HACK: avoid repainting on every WM_INPUT as there's a lot of them (WM_MOUSEMOVE should still trigger repainting)
+		if (msg.hwnd && msg.message != WM_INPUT)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
 				window->GetOwner()->_impl->AddToInvalidationList();

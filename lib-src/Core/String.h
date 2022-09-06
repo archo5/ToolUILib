@@ -22,6 +22,14 @@ static inline bool IsAlphaNum(char c) { return IsAlpha(c) || IsDigit(c); }
 static inline char ToLower(char c) { return c >= 'A' && c <= 'Z' ? c | 0x20 : c; }
 static inline char ToUpper(char c) { return c >= 'a' && c <= 'z' ? c & ~0x20 : c; }
 
+static inline unsigned DecodeHexChar(char c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+	return 0;
+}
+
 static const constexpr unsigned DECIMAL = 1 << 0;
 static const constexpr unsigned HEX = 1 << 1;
 static const constexpr unsigned BINARY = 1 << 2;

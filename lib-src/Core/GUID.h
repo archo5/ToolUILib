@@ -1,0 +1,54 @@
+
+#pragma once
+
+#include "ObjectIteration.h"
+#include "Platform.h"
+#include "String.h"
+
+
+namespace ui {
+
+struct GUID
+{
+	union
+	{
+		u64 v64[2];
+		u32 v32[4];
+		u8 v8[16];
+	};
+
+	GUID() { v64[0] = 0; v64[1] = 0; }
+	UI_FORCEINLINE GUID(DoNotInitialize) {}
+
+	bool operator == (const GUID& o) const { return v64[0] == o.v64[0] && v64[1] == o.v64[1]; }
+	bool operator != (const GUID& o) const { return v64[0] != o.v64[0] || v64[1] != o.v64[1]; }
+	bool operator < (const GUID& o) const { return memcmp(v8, o.v8, 16) < 0; }
+	bool operator <= (const GUID& o) const { return memcmp(v8, o.v8, 16) <= 0; }
+	bool operator > (const GUID& o) const { return memcmp(v8, o.v8, 16) > 0; }
+	bool operator >= (const GUID& o) const { return memcmp(v8, o.v8, 16) >= 0; }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		bool un = oi.IsUnserializer();
+		std::string tmp;
+		if (!un)
+			tmp = ToStringHex();
+		OnField(oi, FI, tmp);
+		if (un)
+			*this = FromStringHex(tmp);
+	}
+
+	static GUID Null() { return {}; }
+	static GUID New();
+	static bool ValidateStringHex(StringView str);
+	static bool ValidateStringHexSplit(StringView str);
+	static GUID FromStringHex(StringView str);
+	static GUID FromStringHexSplit(StringView str);
+
+	void ToStringHex(char out[32], bool upper = false) const;
+	void ToStringHexSplit(char out[36], bool upper = false) const;
+	std::string ToStringHex(bool upper = false) const;
+	std::string ToStringHexSplit(bool upper = false) const;
+};
+
+} // ui

@@ -130,8 +130,6 @@ int64_t StringView::take_int64(unsigned formats)
 		neg = true;
 		_data++;
 	}
-	else
-		neg = true;
 
 	unsigned format = DECIMAL;
 	unsigned base = 10;
@@ -209,8 +207,6 @@ int64_t StringView::take_int64_checked(bool* valid, int64_t min, int64_t max)
 		neg = true;
 		_data++;
 	}
-	else
-		neg = true;
 
 	bool isValid = true;
 

@@ -158,6 +158,7 @@
     <ClCompile Include="Core\DynamicLib.cpp" />
     <ClCompile Include="Core\FileSystem.cpp" />
     <ClCompile Include="Core\Font.cpp" />
+    <ClCompile Include="Core\GUID.cpp" />
     <ClCompile Include="Core\Logging.cpp" />
     <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\PropertyStore.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Core\DynamicLib.h" />
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
+    <ClInclude Include="Core\GUID.h" />
     <ClInclude Include="Core\HashTable.h" />
     <ClInclude Include="Core\Image.h" />
     <ClInclude Include="Core\Logging.h" />
