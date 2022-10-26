@@ -94,6 +94,7 @@ template <class T> struct Vec2
 		float l = sqrtf(lsq);
 		return { x / l, y / l };
 	}
+	UI_FORCEINLINE T Abs() const { return { abs(x), abs(y) }; }
 	UI_FORCEINLINE Vec2 Perp() const { return { -y, x }; }
 	UI_FORCEINLINE Vec2 Perp2() const { return { y, -x }; }
 
@@ -196,6 +197,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE Size2<T> GetSize() const { return { GetWidth(), GetHeight() }; }
 	UI_FORCEINLINE Vec2<T> GetMin() const { return { x0, y0 }; }
 	UI_FORCEINLINE Vec2<T> GetMax() const { return { x1, y1 }; }
+	UI_FORCEINLINE Vec2<T> GetCenter() const { return { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f }; }
 	UI_FORCEINLINE bool IsValid() const { return x0 <= x1 && y0 <= y1; }
 	UI_FORCEINLINE bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
 	UI_FORCEINLINE bool Contains(Vec2<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }

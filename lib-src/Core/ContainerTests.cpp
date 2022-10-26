@@ -369,7 +369,7 @@ static void HashMapTests()
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.contains(i % 10);
+		testval += v.Contains(i % 10);
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -433,7 +433,7 @@ static void HashMapTests()
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.contains(i % 100);
+		testval += v.Contains(i % 100);
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -497,7 +497,7 @@ static void HashMapTests()
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.contains(i % 1000);
+		testval += v.Contains(i % 1000);
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -557,7 +557,7 @@ static void HashMapTests()
 		check_integrity(v);
 		for (int j = i + 1; j < 100; j++)
 		{
-			assert(v.contains(j));
+			assert(v.Contains(j));
 			auto it = v.find(j);
 			assert(it.is_valid());
 		}
@@ -869,7 +869,7 @@ static void HashMapTests()
 		check_integrity(v);
 		for (int j = i + 1; j < 100; j++)
 		{
-			assert(v.contains(j));
+			assert(v.Contains(j));
 			auto it = v.find(j);
 			assert(it.is_valid());
 		}

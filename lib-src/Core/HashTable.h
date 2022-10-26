@@ -65,11 +65,11 @@ struct HashMap
 
 	HashMap(size_t capacity = 0) : _capacity(capacity), _hashCap(capacity + capacity / 4)
 	{
-		reserve(capacity);
+		Reserve(capacity);
 	}
 	HashMap(const HashMap& o)
 	{
-		reserve(o._count);
+		Reserve(o._count);
 		for (EntryRef e : o)
 			insert(e.key, e.value);
 	}
@@ -81,8 +81,8 @@ struct HashMap
 	{
 		if (this == &o)
 			return *this;
-		clear();
-		reserve(o._count);
+		Clear();
+		Reserve(o._count);
 		for (EntryRef e : o)
 			insert(e.key, e.value);
 		return *this;
@@ -107,6 +107,10 @@ struct HashMap
 	UI_FORCEINLINE Iterator end() { return { this, _count }; }
 	UI_FORCEINLINE ConstIterator begin() const { return { this, 0 }; }
 	UI_FORCEINLINE ConstIterator end() const { return { this, _count }; }
+
+	UI_FORCEINLINE bool IsEmpty() const { return _count == 0; }
+	UI_FORCEINLINE size_t Size() const { return _count; }
+	UI_FORCEINLINE size_t Capacity() const { return _capacity; }
 
 	void _move_from(HashMap& o)
 	{
@@ -147,7 +151,8 @@ struct HashMap
 		free(_values);
 	}
 
-	void clear()
+	UI_FORCEINLINE void clear() { Clear(); }
+	void Clear()
 	{
 		_destruct_all();
 		for (size_t i = 0; i < _hashCap; i++)
@@ -217,7 +222,8 @@ struct HashMap
 		v++;
 		return v;
 	}
-	void reserve(size_t capacity)
+	UI_FORCEINLINE void reserve(size_t capacity) { Reserve(capacity); }
+	void Reserve(size_t capacity)
 	{
 		if (capacity <= _capacity)
 			return;
@@ -305,23 +311,26 @@ struct HashMap
 				return 0;
 		}
 	}
-	UI_FORCEINLINE Iterator find(const K& key)
-	{
-		return { this, _find_pos(key, _count) };
-	}
-	UI_FORCEINLINE ConstIterator find(const K& key) const
-	{
-		return { this, _find_pos(key, _count) };
-	}
-	UI_FORCEINLINE const V& get(const K& key, const V& def = {}) const
+	UI_FORCEINLINE Iterator find(const K& key) { return { this, _find_pos(key, _count) }; }
+	UI_FORCEINLINE Iterator Find(const K& key) { return { this, _find_pos(key, _count) }; }
+	UI_FORCEINLINE ConstIterator find(const K& key) const { return { this, _find_pos(key, _count) }; }
+	UI_FORCEINLINE ConstIterator Find(const K& key) const { return { this, _find_pos(key, _count) }; }
+
+	UI_FORCEINLINE V get(const K& key, const V& def = {}) const { return GetValueOrDefault(key, def); }
+	UI_FORCEINLINE V GetValueOrDefault(const K& key, const V& def = {}) const
 	{
 		auto pos = _find_pos(key, SIZE_MAX);
 		return pos != SIZE_MAX ? _values[pos] : def;
 	}
-	UI_FORCEINLINE bool contains(const K& key) const
+
+	UI_FORCEINLINE const V* GetValuePtr(const K& key) const { return const_cast<HashMap*>(this)->GetValuePtr(key); }
+	UI_FORCEINLINE V* GetValuePtr(const K& key)
 	{
-		return _find_pos(key, SIZE_MAX) != SIZE_MAX;
+		auto pos = _find_pos(key, SIZE_MAX);
+		return pos == SIZE_MAX ? nullptr : &_values[pos];
 	}
+
+	UI_FORCEINLINE bool Contains(const K& key) const { return _find_pos(key, SIZE_MAX) != SIZE_MAX; }
 
 	struct InsertResult
 	{
@@ -347,7 +356,8 @@ struct HashMap
 		}
 		return { pos, inserted };
 	}
-	Iterator insert(const K& key, const V& value, bool* inserted = nullptr)
+	UI_FORCEINLINE Iterator insert(const K& key, const V& value, bool* inserted = nullptr) { return Insert(key, value, inserted); }
+	Iterator Insert(const K& key, const V& value, bool* inserted = nullptr)
 	{
 		InsertResult res = _insert_alloc(key);
 		if (!res.inserted)
@@ -366,7 +376,8 @@ struct HashMap
 		return _values[res.pos];
 	}
 
-	bool erase(const K& key)
+	UI_FORCEINLINE bool erase(const K& key) { return Remove(key); }
+	bool Remove(const K& key)
 	{
 		size_t idx = _find_htidx(key);
 		if (idx == SIZE_MAX)
