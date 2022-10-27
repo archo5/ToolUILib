@@ -237,7 +237,7 @@ struct Array
 	}
 
 	// complex modification
-	UI_FORCEINLINE void _HardMove(size_t to, size_t from)
+	inline void _HardMove(size_t to, size_t from)
 	{
 		new (&_data[to]) T(std::move(_data[from]));
 		_data[from].~T();
@@ -253,7 +253,7 @@ struct Array
 	void RemoveAt(size_t at, size_t n = 1)
 	{
 		assert(at < _size);
-		assert(n < _size);
+		assert(n <= _size);
 		assert(at + n >= at);
 		assert(at + n <= _size); // may overflow
 
@@ -275,8 +275,8 @@ struct Array
 		{
 			for (size_t p = _size; p > at; )
 			{
-				_HardMove(p, p - 1);
 				p--;
+				_HardMove(p + 1, p);
 			}
 		}
 		new (&_data[at]) T(v);
@@ -285,6 +285,51 @@ struct Array
 	UI_FORCEINLINE void Prepend(const T& v)
 	{
 		InsertAt(0, v);
+	}
+	void InsertManyAt(size_t at, const T* p, size_t n)
+	{
+		assert(at <= _size);
+		Reserve(_size + n);
+		if (at < _size)
+		{
+			for (size_t p = _size; p > at; )
+			{
+				p--;
+				_HardMove(p + n, p);
+			}
+		}
+		for (size_t i = 0; i < n; i++)
+			new (&_data[at + i]) T(p[i]);
+		_size += n;
+	}
+	UI_FORCEINLINE void InsertManyAt(size_t at, const T* from, const T* end)
+	{
+		InsertManyAt(at, from, end - from);
+	}
+	template <class R>
+	UI_FORCEINLINE void InsertRangeAt(size_t at, const R& r)
+	{
+		InsertManyAt(at, r.begin(), r.end() - r.begin());
+	}
+	UI_FORCEINLINE void InsertRangeAt(size_t at, const std::initializer_list<T>& il)
+	{
+		InsertManyAt(at, il.begin(), il.size());
+	}
+	void RemoveAllOf(const T& v)
+	{
+		size_t diff = 0;
+		for (size_t i = 0; i < _size; i++)
+		{
+			if (_data[i] == v)
+			{
+				diff++;
+				_data[i].~T();
+				continue;
+			}
+			if (diff)
+				_HardMove(i - diff, i);
+		}
+		_size -= diff;
 	}
 
 	// combined shorthands
