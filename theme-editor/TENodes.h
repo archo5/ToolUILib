@@ -259,5 +259,5 @@ struct TE_BlendLayer : TE_LayerNode
 
 	Color4f Eval(float x, float y, const TE_RenderContext& rc) override;
 
-	std::vector<TE_LayerBlendRef> layers;
+	Array<TE_LayerBlendRef> layers;
 };

@@ -18,7 +18,7 @@ struct FileTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage, ui::IDire
 		bool selected = false;
 		bool open = true;
 
-		std::vector<ui::RCHandle<File>> subfiles;
+		Array<ui::RCHandle<File>> subfiles;
 
 		void InitFrom(const ui::StringView& fullPath, bool recursive = false);
 	};

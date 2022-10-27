@@ -618,7 +618,7 @@ float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q
 
 float Sequence01Curve::Evaluate(float t)
 {
-	if (points.empty())
+	if (points.IsEmpty())
 		return 0;
 
 	if (t <= points[0].posX)
@@ -634,12 +634,12 @@ float Sequence01Curve::Evaluate(float t)
 			return EvaluateSegment(p0, p1, invlerp(p0.posX, p1.posX, t));
 		}
 	}
-	return points.back().posY;
+	return points.Last().posY;
 }
 
 void Sequence01Curve::RemovePoint(size_t i)
 {
-	points.erase(points.begin() + i);
+	points.RemoveAt(i);
 	if (i > 0)
 		points[i].deltaX = points[i].posX - points[i - 1].posX;
 	else
@@ -653,12 +653,12 @@ void Sequence01Curve::AddPoint(Vec2f pos)
 		before++;
 
 	Sequence01Curve::Point p = {};
-	if (!points.empty())
-		p = before < points.size() ? points[before] : points.back();
+	if (points.NotEmpty())
+		p = before < points.size() ? points[before] : points.Last();
 	p.posX = pos.x;
 	p.posY = clamp(pos.y, 0.0f, 1.0f);
 
-	points.insert(points.begin() + before, p);
+	points.InsertAt(before, p);
 	if (before > 0)
 		points[before].deltaX = points[before].posX - points[before - 1].posX;
 	if (before + 1 < points.size())

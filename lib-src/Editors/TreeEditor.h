@@ -2,6 +2,7 @@
 #pragma once
 #include "EditCommon.h"
 
+#include "../Core/Array.h"
 #include "../Core/Memory.h"
 
 #include "../Model/Objects.h"
@@ -11,7 +12,7 @@
 
 namespace ui {
 
-using TreePath = std::vector<uintptr_t>;
+using TreePath = Array<uintptr_t>;
 using TreePathRef = ArrayView<uintptr_t>;
 
 struct ITree
@@ -41,10 +42,10 @@ struct TreeDragData : DragDropData
 {
 	static constexpr const char* NAME = "TreeDragData";
 
-	TreeDragData(TreeEditor* s, const std::vector<TreePath>& pv) : DragDropData(NAME), scope(s), paths(pv) {}
+	TreeDragData(TreeEditor* s, const Array<TreePath>& pv) : DragDropData(NAME), scope(s), paths(pv) {}
 
 	TreeEditor* scope;
-	std::vector<TreePath> paths;
+	Array<TreePath> paths;
 };
 
 struct TreeItemElement : Selectable

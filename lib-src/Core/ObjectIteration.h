@@ -1,10 +1,13 @@
 
 #pragma once
+
+#include "Array.h"
+#include "String.h"
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <type_traits>
 #include <vector>
-#include "String.h"
 
 
 namespace ui {
@@ -108,6 +111,38 @@ struct StdStringRW : IBufferRW
 };
 inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::string& val) { StdStringRW rw; rw.S = &val; oi.OnFieldString(FI, rw); }
 
+template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val)
+{
+	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	if (oi.IsUnserializer())
+	{
+		FieldInfo chfi(nullptr, FI.flags);
+		if (FI.flags & FieldInfo::Preallocated)
+		{
+			size_t i = 0;
+			while (oi.HasMoreArrayElements())
+				OnField(oi, chfi, val[i++]);
+		}
+		else
+		{
+			val.Clear();
+			val.Reserve(estNewSize);
+			while (oi.HasMoreArrayElements())
+			{
+				val.Append(T());
+				OnField(oi, chfi, val.Last());
+			}
+		}
+	}
+	else
+	{
+		for (auto& item : val)
+			OnField(oi, {}, item);
+	}
+	oi.EndArray();
+}
+
+#ifdef UI_USE_STD_VECTOR
 template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val)
 {
 	size_t estNewSize = oi.BeginArray(val.size(), FI);
@@ -138,7 +173,48 @@ template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI,
 	}
 	oi.EndArray();
 }
+#endif // UI_USE_STD_VECTOR
 
+template <class T, class XF, class CF>
+inline void OnFieldPtrArray(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val, XF&& transform, CF&& construct)
+{
+	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	if (oi.IsUnserializer())
+	{
+		FieldInfo chfi(nullptr, FI.flags);
+		if (FI.flags & FieldInfo::Preallocated)
+		{
+			size_t i = 0;
+			while (oi.HasMoreArrayElements())
+			{
+				auto& r = transform(val[i++]);
+				OnField(oi, chfi, r);
+			}
+		}
+		else
+		{
+			val.Clear();
+			val.Reserve(estNewSize);
+			while (oi.HasMoreArrayElements())
+			{
+				val.Append(construct());
+				auto& r = transform(val.Last());
+				OnField(oi, chfi, r);
+			}
+		}
+	}
+	else
+	{
+		for (auto& item : val)
+		{
+			auto& r = transform(item);
+			OnField(oi, {}, r);
+		}
+	}
+	oi.EndArray();
+}
+
+#ifdef UI_USE_STD_VECTOR
 template <class T, class XF, class CF>
 inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val, XF&& transform, CF&& construct)
 {
@@ -177,9 +253,10 @@ inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vect
 	}
 	oi.EndArray();
 }
+#endif // UI_USE_STD_VECTOR
 
 template <class T, class CT, class XF>
-inline void OnFieldVectorValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont, XF&& transform)
+inline void OnFieldArrayValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont, XF&& transform)
 {
 	int32_t idx = -1;
 	if (ptr && !oi.IsUnserializer())
@@ -204,9 +281,9 @@ inline void OnFieldVectorValIndex(IObjectIterator& oi, const FieldInfo& FI, T& p
 	}
 }
 template <class T, class CT>
-inline void OnFieldVectorValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont)
+inline void OnFieldArrayValIndex(IObjectIterator& oi, const FieldInfo& FI, T& ptr, CT& cont)
 {
-	OnFieldVectorValIndex(oi, FI, ptr, cont, [](const T& v) { return v; });
+	OnFieldArrayValIndex(oi, FI, ptr, cont, [](const T& v) { return v; });
 }
 
 template <class E> inline void OnFieldEnumInt(IObjectIterator& oi, const FieldInfo& FI, E& val)

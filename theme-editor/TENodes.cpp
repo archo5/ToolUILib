@@ -304,7 +304,7 @@ void TE_BlendLayer::InputPinUI(int pin)
 void TE_BlendLayer::PropertyUI()
 {
 	if (imm::Button("Add pin"))
-		layers.push_back({});
+		layers.Append({});
 }
 
 void TE_BlendLayer::Serialize(IObjectIterator& oi)

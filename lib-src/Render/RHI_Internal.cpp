@@ -10,7 +10,7 @@ namespace ui {
 namespace rhi {
 
 
-static std::vector<IRHIListener*> g_listeners;
+static Array<IRHIListener*> g_listeners;
 
 
 void OnListenerAdd(IRHIListener*);
@@ -29,7 +29,7 @@ void AttachListener(IRHIListener* L)
 			return;
 
 	OnListenerAdd(L);
-	g_listeners.push_back(L);
+	g_listeners.Append(L);
 }
 
 void DetachListener(IRHIListener* L)
@@ -38,7 +38,7 @@ void DetachListener(IRHIListener* L)
 	{
 		if (g_listeners[i] == L)
 		{
-			g_listeners.erase(g_listeners.begin() + i);
+			g_listeners.RemoveAt(i);
 			OnListenerRemove(L);
 			break;
 		}

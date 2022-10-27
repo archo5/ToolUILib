@@ -40,7 +40,7 @@ void FileTreeDataSource::File::InitFrom(const ui::StringView& fullPath, bool rec
 	modTimeUnixMS = ui::GetFileModTimeUnixMS(fullPath);
 	isDir = !!(ui::GetFileAttributes(fullPath) & ui::FA_Directory);
 
-	subfiles.clear();
+	subfiles.Clear();
 	if (recursive && isDir)
 	{
 		auto dih = ui::CreateDirectoryIterator(fullPath);
@@ -50,7 +50,7 @@ void FileTreeDataSource::File::InitFrom(const ui::StringView& fullPath, bool rec
 			auto chFullPath = ui::PathJoin(fullPath, file);
 			auto* F = new File;
 			F->InitFrom(chFullPath, true);
-			subfiles.push_back(F);
+			subfiles.Append(F);
 		}
 	}
 }
@@ -193,13 +193,13 @@ void FileTreeDataSource::OnFileAdded(ui::StringView path)
 	{
 		if (chf->name == name)
 		{
-			F->subfiles.erase(F->subfiles.begin() + (&chf - F->subfiles.data()));
+			F->subfiles.RemoveAt(F->subfiles.GetElementIndex(chf));
 			break;
 		}
 	}
 	auto* chf = new File;
 	chf->InitFrom(ui::PathJoin(_rootPath, path));
-	F->subfiles.push_back(chf);
+	F->subfiles.Append(chf);
 	onChange.Call();
 }
 
@@ -226,7 +226,7 @@ void FileTreeDataSource::OnFileRemoved(ui::StringView path)
 	{
 		if (chf->name == name)
 		{
-			F->subfiles.erase(F->subfiles.begin() + (&chf - F->subfiles.data()));
+			F->subfiles.RemoveAt(F->subfiles.GetElementIndex(chf));
 			break;
 		}
 	}

@@ -187,7 +187,7 @@ struct CurveEditorElement : FrameElement
 
 struct BasicLinear01Curve : ICurveView
 {
-	std::vector<Vec2f> points;
+	Array<Vec2f> points;
 
 	uint32_t GetFeatures() override { return 0; }
 
@@ -232,7 +232,7 @@ struct Sequence01Curve
 		void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 	};
 
-	std::vector<Point> points;
+	Array<Point> points;
 
 	void SerializeData(IObjectIterator& oi);
 

@@ -310,10 +310,10 @@ struct RenderView : ui::Buildable
 				auto* px = canvas.GetPixels();
 				memset(px, 0, tw * th * 4);
 
-				std::vector<Vec3> tmpimg;
-				tmpimg.resize(tw * th, { 0, 0, 0 });
-				std::vector<float> tmpscale;
-				tmpscale.resize(tw * th, 0.0001f);
+				ui::Array<Vec3> tmpimg;
+				tmpimg.ResizeWith(tw * th, { 0, 0, 0 });
+				ui::Array<float> tmpscale;
+				tmpscale.ResizeWith(tw * th, 0.0001f);
 
 				for (int nwhole = 0; nwhole < 64; nwhole++)
 				{

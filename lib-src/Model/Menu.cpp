@@ -32,12 +32,12 @@ MenuItemCollection::Entry::~Entry()
 
 void MenuItemCollection::Entry::Finalize()
 {
-	if (children.size() == 0)
+	if (children.IsEmpty())
 		return;
 
-	std::vector<Entry*> sortedChildren;
+	Array<Entry*> sortedChildren;
 	for (const auto& ch : children)
-		sortedChildren.push_back(ch.value);
+		sortedChildren.Append(ch.value);
 
 	std::sort(sortedChildren.begin(), sortedChildren.end(), [](const Entry* a, const Entry* b)
 	{

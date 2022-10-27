@@ -172,11 +172,9 @@ void EventSystem::RecomputeLayout()
 		container->rootBuildable->OnLayout({ 0, 0, width, height });
 }
 
-static void RemoveTimer(std::vector<TimerData>& timers, size_t& i, size_t& count)
+static void RemoveTimer(Array<TimerData>& timers, size_t& i, size_t& count)
 {
-	if (i + 1 < timers.size())
-		std::swap(timers[i], timers.back());
-	timers.pop_back();
+	timers.UnorderedRemoveAt(i);
 	i--;
 	count--;
 }
@@ -309,7 +307,7 @@ UIObject* EventSystem::GetMouseCapture()
 
 void EventSystem::SetTimer(UIObject* tgt, float t, int id)
 {
-	pendingTimers.push_back({ tgt, t, id });
+	pendingTimers.Append({ tgt, t, id });
 }
 
 void EventSystem::SetDefaultCursor(DefaultCursor cur)

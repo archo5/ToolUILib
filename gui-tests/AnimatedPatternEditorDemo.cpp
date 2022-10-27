@@ -26,8 +26,8 @@ struct APGlobalSettings
 	{
 		for (int i = 0; i < NUM_CURVES; i++)
 		{
-			curves[i].points.push_back({ 0, 0, 0 });
-			curves[i].points.push_back({ 1, 1, 1 });
+			curves[i].points.Append({ 0, 0, 0 });
+			curves[i].points.Append({ 1, 1, 1 });
 		}
 	}
 	void UI()
@@ -126,7 +126,7 @@ struct MathExprStr : IMathExprErrorOutput
 
 struct APLayer
 {
-	std::vector<APLayer*> children;
+	Array<APLayer*> children;
 
 	~APLayer()
 	{
@@ -198,7 +198,7 @@ struct APL_Combiner : APLayer
 	}
 	float Sample(float spx, float spy) override
 	{
-		if (children.empty())
+		if (children.IsEmpty())
 			return invert ? 1 : 0;
 
 		float ret = 1;
@@ -294,7 +294,7 @@ struct APL_Shape_Square : APL_Shape
 static Color4b defImage(255, 0, 0, 127);
 struct AnimPattern : ITree
 {
-	std::vector<APLayer*> rootLayers;
+	Array<APLayer*> rootLayers;
 	APGlobalSettings globalSettings;
 
 	APLayer* selectedLayer = nullptr;
@@ -314,7 +314,7 @@ struct AnimPattern : ITree
 	{
 		for (APLayer* r : rootLayers)
 			delete r;
-		rootLayers.clear();
+		rootLayers.Clear();
 	}
 
 	void SetPlaying(bool play)
@@ -437,10 +437,10 @@ struct AnimPattern : ITree
 
 	struct NodeLoc
 	{
-		std::vector<APLayer*>* arr;
+		Array<APLayer*>* arr;
 		size_t idx;
 
-		APLayer* Get() const { return arr->at(idx); }
+		APLayer* Get() const { return arr->At(idx); }
 	};
 	NodeLoc FindNode(TreePathRef path)
 	{
@@ -521,9 +521,9 @@ struct AnimPattern : ITree
 	void Insert(TreePathRef path, APLayer* node)
 	{
 		if (path.empty())
-			rootLayers.push_back(node);
+			rootLayers.Append(node);
 		else
-			FindNode(path).Get()->children.push_back(node);
+			FindNode(path).Get()->children.Append(node);
 		AnimPatternChanged.Call();
 	}
 
@@ -533,21 +533,21 @@ struct AnimPattern : ITree
 		delete loc.Get();
 		if (selectedLayer == loc.Get())
 			selectedLayer = nullptr;
-		loc.arr->erase(loc.arr->begin() + loc.idx);
+		loc.arr->RemoveAt(loc.idx);
 	}
 	void Duplicate(TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->push_back(loc.Get()->Clone());
+		loc.arr->Append(loc.Get()->Clone());
 	}
 	void MoveTo(TreePathRef node, TreePathRef dest) override
 	{
 		auto srcLoc = FindNode(node);
 		auto* srcNode = srcLoc.Get();
-		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
+		srcLoc.arr->RemoveAt(srcLoc.idx);
 
 		auto destLoc = FindNode(dest);
-		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
+		destLoc.arr->InsertAt(destLoc.idx, srcNode);
 	}
 };
 

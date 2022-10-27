@@ -19,19 +19,19 @@ struct TextRange
 
 struct TextLines
 {
-	std::vector<TextRange> lines;
+	Array<TextRange> lines;
 
 	size_t FindLine(size_t pos) const
 	{
-		if (lines.size() <= 1)
+		if (lines.Size() <= 1)
 			return 0;
-		for (size_t i = 0; i < lines.size(); i++)
+		for (size_t i = 0; i < lines.Size(); i++)
 		{
 			if (lines[i].start <= pos && pos < lines[i].end)
 				return i;
 		}
-		if (lines.back().end == pos)
-			return lines.size() - 1;
+		if (lines.Last().end == pos)
+			return lines.Size() - 1;
 		// error
 		assert(!"bad position");
 		return 0;
@@ -49,8 +49,8 @@ struct TextLines
 	}
 	void RecalculateMultiline(StringView s, Font* font, int size, float maxWidth)
 	{
-		lines.clear();
-		lines.push_back({ 0, 0 });
+		lines.Clear();
+		lines.Append({ 0, 0 });
 
 		size_t lastBreakPos = 0;
 		float widthToLastBreak = 0;
@@ -65,10 +65,10 @@ struct TextLines
 			uint32_t ch = it.Read();
 			if (ch == UTF8Iterator::END)
 				break;
-			lines.back().end = it.pos;
+			lines.Last().end = it.pos;
 			if (ch == '\n')
 			{
-				lines.push_back({ it.pos, it.pos });
+				lines.Append({ it.pos, it.pos });
 
 				TextMeasureReset();
 				widthToLastBreak = 0;
@@ -83,13 +83,13 @@ struct TextLines
 					lastBreakPos = charStart;
 				}
 				float w = TextMeasureAddChar(ch);
-				if (w > maxWidth && lines.back().end != lines.back().start)
+				if (w > maxWidth && lines.Last().end != lines.Last().start)
 				{
 					uint32_t p = widthToLastBreak > 0 ? lastBreakPos : charStart;
 
 					it.pos = p;
-					lines.back().end = p;
-					lines.push_back({ p, p });
+					lines.Last().end = p;
+					lines.Append({ p, p });
 
 					TextMeasureReset();
 					widthToLastBreak = 0;
@@ -101,8 +101,8 @@ struct TextLines
 		}
 		TextMeasureEnd();
 
-		if (lines.back().start == lines.back().end && (lines.size() == 1 || !lines[lines.size() - 2].sv(s).ends_with("\n")))
-			lines.pop_back();
+		if (lines.Last().start == lines.Last().end && (lines.size() == 1 || !lines[lines.size() - 2].sv(s).ends_with("\n")))
+			lines.RemoveLast();
 	}
 };
 

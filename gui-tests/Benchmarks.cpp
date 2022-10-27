@@ -10,7 +10,7 @@ struct SubUIBenchmark : ui::Buildable
 		{
 			for (int x = 0; x < 60; x++)
 			{
-				points.push_back({ x * 12.f + 10.f, y * 12.f + 10.f });
+				points.Append({ x * 12.f + 10.f, y * 12.f + 10.f });
 			}
 		}
 	}
@@ -57,7 +57,7 @@ struct SubUIBenchmark : ui::Buildable
 	}
 
 	ui::SubUI<uint16_t> subui;
-	std::vector<ui::Point2f> points;
+	ui::Array<ui::Point2f> points;
 	ui::Vec2f dragOff = { 0, 0 };
 };
 void Benchmark_SubUI()

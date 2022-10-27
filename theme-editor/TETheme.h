@@ -67,7 +67,7 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 		T* node = new T;
 		node->id = ++nodeIDAlloc;
 		node->position = { x, y };
-		nodes.push_back(node);
+		nodes.Append(node);
 		return node;
 	}
 	template<class T> static Node* CreateNode(IProcGraph* pg)
@@ -134,16 +134,16 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 
 	void SetCurPreviewImage(TE_Image* cpi);
 
-	std::vector<TE_Node*> nodes;
-	std::vector<std::shared_ptr<TE_NamedColor>> colors;
-	std::vector<std::shared_ptr<TE_Image>> images;
+	Array<TE_Node*> nodes;
+	Array<std::shared_ptr<TE_NamedColor>> colors;
+	Array<std::shared_ptr<TE_Image>> images;
 	TE_Image* curPreviewImage = nullptr;
 	uint32_t nodeIDAlloc = 0;
 	std::string name;
 	TE_TmplSettings renderSettings;
 
 	// edit-only
-	std::vector<TE_Node*> topoSortedNodes;
+	Array<TE_Node*> topoSortedNodes;
 	TE_IVariationProvider* varProv = nullptr;
 };
 
@@ -165,8 +165,8 @@ struct TE_Theme : TE_IVariationProvider, TE_IUnserializeStorage
 
 	TE_Variation* GetVariation();
 
-	std::vector<std::shared_ptr<TE_Variation>> variations;
-	std::vector<TE_Template*> templates;
+	Array<std::shared_ptr<TE_Variation>> variations;
+	Array<TE_Template*> templates;
 	TE_Variation* curVariation = nullptr;
 	TE_Template* curTemplate = nullptr;
 };

@@ -598,8 +598,8 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 
 	auto nc = _impl->dataSource->GetNumCols();
 	size_t treeCol = _impl->dataSource->GetTreeCol();
-	std::vector<float> colWidths;
-	colWidths.resize(nc, 0.0f);
+	Array<float> colWidths;
+	colWidths.ResizeWith(nc, 0.0f);
 
 	auto RC = GetContentRect();
 	auto padCH = style.colHeaderPadding;

@@ -200,7 +200,7 @@ private:
 
 struct LayerPainter : IPainter
 {
-	std::vector<PainterHandle> layers;
+	Array<PainterHandle> layers;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static RCHandle<LayerPainter> Create();
@@ -223,7 +223,7 @@ struct SelectFirstPainter : IPainter
 		uint8_t checkState = 0xff;
 	};
 
-	std::vector<Item> items;
+	Array<Item> items;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };

@@ -1126,7 +1126,7 @@ void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::functi
 
 void StringArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
 {
-	for (size_t i = 0; i < count && i + from < options.size(); i++)
+	for (size_t i = 0; i < count && i + from < options.Size(); i++)
 		fn(options[i + from].c_str(), i + from);
 }
 

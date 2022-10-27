@@ -83,7 +83,7 @@ void TE_NamedColor::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 }
 
 
-std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
+Array<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 
 void EditNCRef(std::weak_ptr<TE_NamedColor>& ncref)
 {

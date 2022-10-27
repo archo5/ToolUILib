@@ -299,8 +299,8 @@ struct SlidersTest : ui::Buildable
 		{
 			auto& s = ui::Make<ui::Slider>().Init(sldval3, { 0, 1 });
 			auto lp = ui::LayerPainter::Create();
-			lp->layers.push_back(s.style.trackBasePainter);
-			lp->layers.push_back(new MyGradientPainter);
+			lp->layers.Append(s.style.trackBasePainter);
+			lp->layers.Append(new MyGradientPainter);
 			s.style.trackBasePainter = lp;
 			s.style.trackFillPainter = ui::EmptyPainter::Get();
 		}

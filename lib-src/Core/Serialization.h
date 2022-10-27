@@ -117,8 +117,8 @@ struct NamedTextSerializeReader
 	void BeginEntry(Entry* E);
 	void EndEntry();
 
-	std::vector<Entry> entries;
-	std::vector<EntryRange> stack;
+	Array<Entry> entries;
+	Array<EntryRange> stack;
 };
 
 struct JSONLinearWriter
@@ -151,8 +151,8 @@ struct JSONLinearWriter
 	void _OnEndObject();
 
 	std::string _data;
-	std::vector<CompactScope> _starts;
-	std::vector<bool> _inArray;
+	Array<CompactScope> _starts;
+	Array<bool> _inArray;
 };
 
 enum JSONParseFlags
@@ -222,7 +222,7 @@ struct JSONLinearReader
 	void EndEntry();
 
 	json_value_s* _root = nullptr;
-	std::vector<StackElement> _stack;
+	Array<StackElement> _stack;
 };
 
 std::string Base16Encode(const void* src, size_t size);

@@ -25,6 +25,63 @@ struct ISequence
 
 
 template <class Cont>
+struct ArraySequence : ISequence
+{
+	size_t GetSizeLimit() override
+	{
+		return sizeLimit;
+	}
+	size_t GetCurrentSize() override
+	{
+		return cont.Size();
+	}
+
+	void IterateElements(size_t from, IterationFunc&& fn) override
+	{
+		for (size_t i = from; i < cont.Size(); i++)
+			if (!fn(i, &cont[i]))
+				break;
+	}
+
+	void Remove(size_t off) override
+	{
+		cont.RemoveAt(off);
+	}
+	void Duplicate(size_t off) override
+	{
+		auto val = cont[off];
+		cont.InsertAt(off + 1, val);
+	}
+	void MoveElementTo(size_t off, size_t to) override
+	{
+		auto imin = min(off, to);
+		auto imax = max(off, to);
+		auto minit = cont.begin();
+		std::advance(minit, imin);
+		auto maxit = minit;
+		std::advance(maxit, imax - imin);
+		auto itoff = off == imin ? minit : maxit;
+		auto itto = to == imin ? minit : maxit;
+		for (auto it = itoff; it != itto; )
+		{
+			auto nit = it;
+			if (to > off)
+				++nit;
+			else
+				--nit;
+			std::swap(*it, *nit);
+			it = nit;
+		}
+	}
+
+	ArraySequence(Cont& c) : cont(c) {}
+
+	Cont& cont;
+	size_t sizeLimit = SIZE_MAX;
+};
+
+
+template <class Cont>
 struct StdSequence : ISequence
 {
 	size_t GetSizeLimit() override

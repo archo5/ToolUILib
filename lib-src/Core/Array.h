@@ -4,6 +4,7 @@
 #include "Platform.h"
 
 #include <assert.h>
+#include <initializer_list>
 #include <new>
 #include <type_traits>
 
@@ -20,20 +21,34 @@ struct Array
 	size_t _capacity = 0;
 
 	// whole object ops
-	UI_FORCEINLINE Array(size_t capacity = 0)
+	UI_FORCEINLINE Array() {}
+	UI_FORCEINLINE Array(size_t capacity)
 	{
 		if (capacity)
 			Reserve(capacity);
 	}
+
 	Array(const Array& o) { AppendRange(o); }
+	Array(const std::initializer_list<T>& il) { AppendRange(il); }
 	template <class R, typename HasBegin = decltype(std::declval<R>().begin()), typename HasEnd = decltype(std::declval<R>().end())>
 	Array(const R& r) { AppendRange(r); }
 	Array& operator = (const Array& o)
 	{
-		Clear();
-		AppendRange(o);
+		AssignRange(o);
 		return *this;
 	}
+	Array& operator = (const std::initializer_list<T>& il)
+	{
+		AssignRange(il);
+		return *this;
+	}
+	template <class R, typename HasBegin = decltype(std::declval<R>().begin()), typename HasEnd = decltype(std::declval<R>().end())>
+	Array& operator = (const R& r)
+	{
+		AssignRange(r);
+		return *this;
+	}
+
 	Array(Array&& o) : _data(o._data), _size(o._size), _capacity(o._capacity)
 	{
 		o._data = nullptr;
@@ -52,17 +67,20 @@ struct Array
 		o._capacity = 0;
 		return *this;
 	}
+
 	UI_FORCEINLINE ~Array()
 	{
 		Clear();
 		free(_data);
 	}
+
 	void Clear()
 	{
 		for (size_t i = 0; i < _size; i++)
 			_data[i].~T();
 		_size = 0;
 	}
+
 	void AssignMany(const T* p, size_t n)
 	{
 		Clear();
@@ -95,6 +113,13 @@ struct Array
 	UI_FORCEINLINE const T* GetDataPtr() const { return _data; }
 	UI_FORCEINLINE size_t Size() const { return _size; }
 	UI_FORCEINLINE size_t Capacity() const { return _capacity; }
+
+	T& At(size_t i)
+	{
+		assert(i < _size);
+		return _data[i];
+	}
+	UI_FORCEINLINE const T& At(size_t i) const { return const_cast<Array*>(this)->operator[](i); }
 
 	T& operator [] (size_t i)
 	{
@@ -278,5 +303,22 @@ struct Array
 		return i != SIZE_MAX;
 	}
 };
+
+template <class T>
+bool operator == (const Array<T>& a, const Array<T>& b)
+{
+	if (a.Size() != b.Size())
+		return false;
+	for (size_t i = 0; i < a.Size(); i++)
+		if (a[i] != b[i])
+			return false;
+	return true;
+}
+
+template <class T>
+UI_FORCEINLINE bool operator != (const Array<T>& a, const Array<T>& b)
+{
+	return !(a == b);
+}
 
 } // ui

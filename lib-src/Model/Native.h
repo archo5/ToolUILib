@@ -49,15 +49,15 @@ struct FileSelectionWindow
 		CreatePrompt = 1 << 1,
 	};
 
-	bool Show(bool save);
-
-	std::vector<Filter> filters;
+	Array<Filter> filters;
 	std::string defaultExt;
 	std::string title;
 	std::string currentDir;
-	std::vector<std::string> selectedFiles;
+	Array<std::string> selectedFiles;
 	size_t maxFileNameBuffer = 65536;
 	unsigned flags = 0;
+
+	bool Show(bool save);
 };
 
 

@@ -56,7 +56,7 @@ struct TexturePage
 	unsigned pixelsAllocated = 0;
 	stbrp_context rectPackContext;
 	stbrp_node rectPackNodes[MAX_TEXTURE_PAGE_NODES];
-	std::vector<ImageHandle> allocatedImages;
+	Array<ImageHandle> allocatedImages;
 };
 
 static bool CanPack(TexFlags f)
@@ -135,7 +135,7 @@ struct TextureStorage
 					N->page = page_num;
 					P->pixelsAllocated += N->rw * N->rh;
 					P->pixelsUsed += N->rw * N->rh;
-					P->allocatedImages.push_back(pendingImages[R.id]);
+					P->allocatedImages.Append(pendingImages[R.id]);
 				}
 			}
 

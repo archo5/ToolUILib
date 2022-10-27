@@ -387,7 +387,7 @@ bool FileSelectionWindow::Show(bool save)
 		ofn.Flags |= OFN_CREATEPROMPT;
 
 	std::wstring filtersW;
-	if (!filters.empty())
+	if (filters.NotEmpty())
 	{
 		std::string fltmerge;
 		for (const auto& F : filters)
@@ -452,11 +452,11 @@ bool FileSelectionWindow::Show(bool save)
 	{
 		currentDir = WCHARtoUTF8(fileBufW.c_str(), ofn.nFileOffset - 1);
 		NormalizePath(currentDir);
-		selectedFiles.clear();
+		selectedFiles.Clear();
 		for (size_t i = ofn.nFileOffset; i < fileBufW.size() && fileBufW[i]; i += wcslen(fileBufW.c_str() + i) + 1)
 		{
-			selectedFiles.push_back(WCHARtoUTF8(fileBufW.c_str() + i));
-			NormalizePath(selectedFiles.back());
+			selectedFiles.Append(WCHARtoUTF8(fileBufW.c_str() + i));
+			NormalizePath(selectedFiles.Last());
 		}
 	}
 

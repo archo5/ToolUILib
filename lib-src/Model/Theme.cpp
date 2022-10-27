@@ -615,7 +615,7 @@ static IPainter* LayerPainterCreateFunc(IThemeLoader* loader, IObjectIterator& O
 	while (OI.HasMoreArrayElements())
 	{
 		if (auto cp = loader->LoadPainter({}))
-			p->layers.push_back(cp);
+			p->layers.Append(cp);
 	}
 	OI.EndArray();
 
@@ -688,7 +688,7 @@ static IPainter* SelectFirstPainterCreateFunc(IThemeLoader* loader, IObjectItera
 			item.painter = loader->LoadPainter("painter");
 		}
 		OI.EndObject();
-		p->items.push_back(item);
+		p->items.Append(item);
 	}
 	OI.EndArray();
 

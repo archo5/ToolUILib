@@ -174,7 +174,7 @@ struct TE_ImageEditorNode : Buildable
 			{
 				auto img = std::make_shared<TE_Image>();
 				img->name = "<unnamed>";
-				tmpl->images.insert(tmpl->images.begin(), img);
+				tmpl->images.InsertAt(0, img);
 				Rebuild();
 			}
 		}
@@ -182,7 +182,7 @@ struct TE_ImageEditorNode : Buildable
 
 		auto& imged = Make<SequenceEditor>();
 		imged.itemLayoutPreset = EditorItemContentsLayoutPreset::None;
-		imged.SetSequence(Allocate<StdSequence<decltype(tmpl->images)>>(tmpl->images));
+		imged.SetSequence(Allocate<ArraySequence<decltype(tmpl->images)>>(tmpl->images));
 		imged.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 		{
 			EditImage(static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
@@ -230,7 +230,7 @@ struct TE_ImageEditorNode : Buildable
 
 					auto& coed = Make<SequenceEditor>();
 					// TODO making Allocate automatically work in the current node would avoid this bug (Allocate instead of GetCurrentNode()->)
-					coed.SetSequence(ui::BuildAlloc<StdSequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
+					coed.SetSequence(ui::BuildAlloc<ArraySequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
 					coed.itemUICallback = [](SequenceEditor* se, size_t idx, void* ptr)
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);
@@ -260,7 +260,7 @@ struct TE_ImageEditorNode : Buildable
 							}
 							if (!added)
 							{
-								items.Append(MenuItem(col->name).Func([ovr, col]() { ovr->colorOverrides.push_back({ col, col->color }); }));
+								items.Append(MenuItem(col->name).Func([ovr, col]() { ovr->colorOverrides.Append({ col, col->color }); }));
 							}
 						}
 						if (items.IsEmpty())
@@ -322,7 +322,7 @@ struct TE_TemplateEditorNode : Buildable
 						if (showColors)
 						{
 							auto& ced = Make<SequenceEditor>();
-							ced.SetSequence(Allocate<StdSequence<decltype(tmpl->colors)>>(tmpl->colors));
+							ced.SetSequence(Allocate<ArraySequence<decltype(tmpl->colors)>>(tmpl->colors));
 							ced.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 							{
 								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
@@ -406,7 +406,7 @@ struct TE_ThemeEditorNode : Buildable
 		{
 			auto* p = new TE_Template(theme);
 			p->name = "<name>";
-			theme->templates.push_back(p);
+			theme->templates.Append(p);
 			Rebuild();
 		}
 		Pop();

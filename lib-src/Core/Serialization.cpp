@@ -337,8 +337,8 @@ double NamedTextSerializeReader::Entry::GetFloatValue()
 
 bool NamedTextSerializeReader::Parse(StringView all)
 {
-	std::vector<size_t> entryStack;
-	entryStack.reserve(32);
+	Array<size_t> entryStack;
+	entryStack.Reserve(32);
 
 	StringView rem = all;
 	while (!rem.empty())
@@ -363,8 +363,8 @@ bool NamedTextSerializeReader::Parse(StringView all)
 		if (line.empty())
 			continue;
 
-		int prevIndent = entries.size() ? entries.back().indent : -1;
-		if (entries.size() && indent > prevIndent + 1)
+		int prevIndent = entries.Size() ? entries.Last().indent : -1;
+		if (entries.Size() && indent > prevIndent + 1)
 		{
 			// indent jumps too high
 			return false;
@@ -382,22 +382,22 @@ bool NamedTextSerializeReader::Parse(StringView all)
 
 		// linkage
 		if (indent > prevIndent) // moving deeper
-			entryStack.push_back(entries.size());
+			entryStack.Append(entries.Size());
 		else
 		{
 			// same level or moving back
 			for (int i = indent; i < prevIndent; i++)
-				entries[entryStack[i]].childSkip = entries.size() - entryStack[i];
-			entryStack.resize(indent + 1);
-			entryStack[indent] = entries.size();
+				entries[entryStack[i]].childSkip = entries.Size() - entryStack[i];
+			entryStack.Resize(indent + 1);
+			entryStack[indent] = entries.Size();
 		}
 
-		entries.push_back({ key, value, indent, 1 });
+		entries.Append({ key, value, indent, 1 });
 	}
 
-	int prevIndent = entries.size() ? entries.back().indent : -1;
+	int prevIndent = entries.Size() ? entries.Last().indent : -1;
 	for (int i = 0; i < prevIndent; i++)
-		entries[entryStack[i]].childSkip = entries.size() - entryStack[i];
+		entries[entryStack[i]].childSkip = entries.Size() - entryStack[i];
 
 	//for (auto& E : entries)
 	//	printf("indent=%d childSkip=%d key=\"%.*s\" value=\"%.*s\"\n", E.indent, int(E.childSkip), int(E.key.size()), E.key.data(), int(E.value.size()), E.value.data());
@@ -406,9 +406,9 @@ bool NamedTextSerializeReader::Parse(StringView all)
 
 NamedTextSerializeReader::EntryRange NamedTextSerializeReader::GetCurrentRange()
 {
-	if (stack.empty())
-		return { entries.data(), entries.data() + entries.size() };
-	return stack.back();
+	if (stack.IsEmpty())
+		return { entries.data(), entries.data() + entries.Size() };
+	return stack.Last();
 }
 
 static NamedTextSerializeReader::Entry defaultEntry = {};
@@ -473,14 +473,14 @@ void NamedTextSerializeReader::BeginArray(const char* key)
 {
 	auto E = FindEntry(key);
 	if (E && E->ValueEquals("[]"))
-		stack.push_back({ E + 1, E + E->childSkip });
+		stack.Append({ E + 1, E + E->childSkip });
 	else
-		stack.push_back({ nullptr, nullptr });
+		stack.Append({ nullptr, nullptr });
 }
 
 void NamedTextSerializeReader::EndArray()
 {
-	stack.pop_back();
+	stack.RemoveLast();
 }
 
 bool NamedTextSerializeReader::BeginDict(const char* key)
@@ -488,29 +488,29 @@ bool NamedTextSerializeReader::BeginDict(const char* key)
 	auto E = FindEntry(key);
 	if (E && E->ValueEquals("{}"))
 	{
-		stack.push_back({ E + 1, E + E->childSkip });
+		stack.Append({ E + 1, E + E->childSkip });
 		return true;
 	}
 	else
 	{
-		stack.push_back({ nullptr, nullptr });
+		stack.Append({ nullptr, nullptr });
 		return false;
 	}
 }
 
 void NamedTextSerializeReader::EndDict()
 {
-	stack.pop_back();
+	stack.RemoveLast();
 }
 
 void NamedTextSerializeReader::BeginEntry(Entry* E)
 {
-	stack.push_back({ E, E + E->childSkip });
+	stack.Append({ E, E + E->childSkip });
 }
 
 void NamedTextSerializeReader::EndEntry()
 {
-	stack.pop_back();
+	stack.RemoveLast();
 }
 
 
@@ -541,21 +541,21 @@ void JSONLinearWriter::WriteString(const char* key, StringView value)
 		else _data += c;
 	}
 	_data += "\"";
-	_starts.back().weight += 9999;
+	_starts.Last().weight += 9999;
 }
 
 void JSONLinearWriter::WriteNull(const char* key)
 {
 	_WritePrefix(key);
 	_data += "null";
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::WriteBool(const char* key, bool value)
 {
 	_WritePrefix(key);
 	_data += value ? "true" : "false";
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::WriteInt(const char* key, int64_t value)
@@ -564,7 +564,7 @@ void JSONLinearWriter::WriteInt(const char* key, int64_t value)
 	char bfr[32];
 	snprintf(bfr, 32, "%" PRId64, value);
 	_data += bfr;
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
@@ -573,7 +573,7 @@ void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 	char bfr[32];
 	snprintf(bfr, 32, "%" PRIu64, value);
 	_data += bfr;
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::WriteFloat(const char* key, double value)
@@ -585,27 +585,27 @@ void JSONLinearWriter::WriteFloat(const char* key, double value)
 		if (c == ',')
 			c = '.';
 	_data += bfr;
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::WriteRawNumber(const char* key, StringView value)
 {
 	_WritePrefix(key);
 	_data.append(value.data(), value.size());
-	_starts.back().weight += 6;
+	_starts.Last().weight += 6;
 }
 
 void JSONLinearWriter::BeginArray(const char* key)
 {
 	_WritePrefix(key);
-	_starts.push_back({ _data.size(), 2U });
+	_starts.Append({ _data.size(), 2U });
 	_data += "[";
-	_inArray.push_back(true);
+	_inArray.Append(true);
 }
 
 void JSONLinearWriter::EndArray()
 {
-	_inArray.pop_back();
+	_inArray.RemoveLast();
 	_WriteIndent(true);
 	_data += "]";
 	_OnEndObject();
@@ -614,20 +614,20 @@ void JSONLinearWriter::EndArray()
 void JSONLinearWriter::BeginDict(const char* key)
 {
 	_WriteIndent();
-	if (!_inArray.back())
+	if (!_inArray.Last())
 	{
 		_data += "\"";
 		_data += key;
 		_data += "\": ";
 	}
-	_starts.push_back({ _data.size(), 2U });
+	_starts.Append({ _data.size(), 2U });
 	_data += "{";
-	_inArray.push_back(false);
+	_inArray.Append(false);
 }
 
 void JSONLinearWriter::EndDict()
 {
-	_inArray.pop_back();
+	_inArray.RemoveLast();
 	_WriteIndent(true);
 	_data += "}";
 	_OnEndObject();
@@ -637,8 +637,8 @@ std::string& JSONLinearWriter::GetData()
 {
 	while (_inArray.size())
 	{
-		_data += _inArray.back() ? "\n]" : "\n}";
-		_inArray.pop_back();
+		_data += _inArray.Last() ? "\n]" : "\n}";
+		_inArray.RemoveLast();
 	}
 	return _data;
 }
@@ -655,22 +655,22 @@ void JSONLinearWriter::_WriteIndent(bool skipComma)
 void JSONLinearWriter::_WritePrefix(const char* key)
 {
 	_WriteIndent();
-	if (!_inArray.back())
+	if (!_inArray.Last())
 	{
 		_data += "\"";
 		_data += key;
 		_data += "\": ";
-		_starts.back().weight += strlen(key) + 4;
+		_starts.Last().weight += strlen(key) + 4;
 	}
 }
 
 void JSONLinearWriter::_OnEndObject()
 {
-	_starts.back().weight += 2;
-	if (_starts.back().weight < 100U)
+	_starts.Last().weight += 2;
+	if (_starts.Last().weight < 100U)
 	{
-		size_t dst = _starts.back().start;
-		for (size_t src = _starts.back().start; src < _data.size(); src++)
+		size_t dst = _starts.Last().start;
+		for (size_t src = _starts.Last().start; src < _data.size(); src++)
 		{
 			if (_data[src] == '\n')
 				_data[dst++] = ' ';
@@ -679,8 +679,8 @@ void JSONLinearWriter::_OnEndObject()
 		}
 		_data.resize(dst);
 	}
-	_starts[_starts.size() - 2].weight += _starts.back().weight;
-	_starts.pop_back();
+	_starts[_starts.size() - 2].weight += _starts.Last().weight;
+	_starts.RemoveLast();
 }
 
 
@@ -691,7 +691,7 @@ JSONLinearReader::~JSONLinearReader()
 
 void JSONLinearReader::_Free()
 {
-	_stack.clear();
+	_stack.Clear();
 	if (_root)
 	{
 		free(_root);
@@ -703,18 +703,18 @@ bool JSONLinearReader::Parse(StringView all, unsigned flags)
 {
 	_Free();
 	_root = json_parse_ex(all.data(), all.size(), flags, nullptr, nullptr, nullptr);
-	_stack.push_back({ _root });
+	_stack.Append({ _root });
 	return !!_root;
 }
 
 bool JSONLinearReader::HasMoreArrayElements()
 {
-	return !!_stack.back().curElem;
+	return !!_stack.Last().curElem;
 }
 
 size_t JSONLinearReader::GetCurrentArraySize()
 {
-	if (auto* e = _stack.back().entry)
+	if (auto* e = _stack.Last().entry)
 		if (auto* a = json_value_as_array(e))
 			return a->length;
 	return 0;
@@ -722,7 +722,7 @@ size_t JSONLinearReader::GetCurrentArraySize()
 
 JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 {
-	if (auto*& e = _stack.back().curElem)
+	if (auto*& e = _stack.Last().curElem)
 	{
 		auto* r = e->value;
 		e = e->next;
@@ -730,7 +730,7 @@ JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 	}
 	if (key)
 	{
-		if (auto* e = _stack.back().entry)
+		if (auto* e = _stack.Last().entry)
 		{
 			if (auto* o = json_value_as_object(e))
 			{
@@ -822,42 +822,42 @@ Optional<double> JSONLinearReader::ReadFloat(const char* key)
 bool JSONLinearReader::BeginArray(const char* key)
 {
 	auto* e = FindEntry(key);
-	_stack.push_back({});
+	_stack.Append({});
 	if (e)
 	{
 		if (auto* a = json_value_as_array(e))
-			_stack.back() = { e, a->start };
+			_stack.Last() = { e, a->start };
 	}
 	return !!e;
 }
 
 void JSONLinearReader::EndArray()
 {
-	_stack.pop_back();
+	_stack.RemoveLast();
 }
 
 bool JSONLinearReader::BeginDict(const char* key)
 {
-	_stack.push_back({ FindEntry(key) });
-	if (auto* e = _stack.back().entry)
+	_stack.Append({ FindEntry(key) });
+	if (auto* e = _stack.Last().entry)
 		if (e->type != json_type_object)
-			_stack.back().entry = nullptr;
-	return !!_stack.back().entry;
+			_stack.Last().entry = nullptr;
+	return !!_stack.Last().entry;
 }
 
 void JSONLinearReader::EndDict()
 {
-	_stack.pop_back();
+	_stack.RemoveLast();
 }
 
 void JSONLinearReader::BeginEntry(Entry* E)
 {
-	_stack.push_back({ E });
+	_stack.Append({ E });
 }
 
 void JSONLinearReader::EndEntry()
 {
-	_stack.pop_back();
+	_stack.RemoveLast();
 }
 
 

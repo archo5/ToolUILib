@@ -65,11 +65,11 @@ struct TE_IUnserializeStorage : IUnserializeStorage
 {
 	virtual struct TE_Variation* FindVariation(const std::string& name) = 0;
 
-	std::vector<std::shared_ptr<TE_NamedColor>>* curNamedColors = nullptr;
+	Array<std::shared_ptr<TE_NamedColor>>* curNamedColors = nullptr;
 	HashMap<uint32_t, struct TE_Node*> curNodes;
 };
 
-extern std::vector<std::shared_ptr<TE_NamedColor>>* g_namedColors;
+extern Array<std::shared_ptr<TE_NamedColor>>* g_namedColors;
 
 void EditNCRef(std::weak_ptr<TE_NamedColor>& ncref);
 void OnField(IObjectIterator& oi, const FieldInfo& FI, std::weak_ptr<TE_NamedColor>& val);
@@ -85,7 +85,7 @@ struct TE_ColorOverride
 
 struct TE_Overrides
 {
-	std::vector<TE_ColorOverride> colorOverrides;
+	Array<TE_ColorOverride> colorOverrides;
 };
 
 

@@ -48,7 +48,7 @@ DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
 		return {};
 	}
 
-	if (!parentNode && tabs.empty())
+	if (!parentNode && tabs.IsEmpty())
 		return { this, DockingInsertionSide_Here };
 
 	float margin = min(rect.GetWidth(), rect.GetHeight()) * 0.25f;
@@ -102,7 +102,7 @@ void DockingNode::Build()
 
 	if (isLeaf)
 	{
-		bool topLevel = tabs.size() <= 1 && !parentNode;
+		bool topLevel = tabs.Size() <= 1 && !parentNode;
 
 		auto& tp = Push<TabbedPanel>();
 		tp.allowDragReorder = true;
@@ -169,7 +169,7 @@ void DockingNode::Build()
 	{
 		auto& sp = Push<SplitPane>();
 		sp.SetDirection(splitDir);
-		sp.SetSplits(splits.data(), splits.size());
+		sp.SetSplits(splits.data(), splits.Size());
 		sp.HandleEvent(EventType::Change) = [me, &sp](ui::Event& e)
 		{
 			if (e.target != &sp)
@@ -197,9 +197,9 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	OnField(oi, "isLeaf", isLeaf);
 	if (oi.IsUnserializer())
 	{
-		tabs.clear();
-		childNodes.clear();
-		splits.clear();
+		tabs.Clear();
+		childNodes.Clear();
+		splits.Clear();
 	}
 
 	if (isLeaf)
@@ -209,7 +209,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 			std::string activeID;
 			OnField(oi, "activeID", activeID);
 
-			tabs.reserve(oi.BeginArray(0, "tabs"));
+			tabs.Reserve(oi.BeginArray(0, "tabs"));
 
 			while (oi.HasMoreArrayElements())
 			{
@@ -221,7 +221,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 					continue;
 
 				auto* dcc = new ui::DockableContentsContainer(dc);
-				tabs.push_back(dcc);
+				tabs.Append(dcc);
 
 				if (!curActiveTab || id == activeID)
 					curActiveTab = dcc;
@@ -236,7 +236,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 				activeID = to_string(curActiveTab->contents->GetID());
 			OnField(oi, "activeID", activeID);
 
-			oi.BeginArray(tabs.size(), "tabs");
+			oi.BeginArray(tabs.Size(), "tabs");
 
 			for (auto& tab : tabs)
 			{
@@ -253,8 +253,8 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 		if (oi.IsUnserializer())
 		{
-			childNodes.clear();
-			childNodes.reserve(oi.BeginArray(0, "childNodes"));
+			childNodes.Clear();
+			childNodes.Reserve(oi.BeginArray(0, "childNodes"));
 
 			while (oi.HasMoreArrayElements())
 			{
@@ -264,14 +264,14 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 				ch->parentNode = this;
 				OnField(oi, {}, *ch);
 
-				childNodes.push_back(ch);
+				childNodes.Append(ch);
 			}
 
 			oi.EndArray();
 		}
 		else
 		{
-			oi.BeginArray(childNodes.size(), "childNodes");
+			oi.BeginArray(childNodes.Size(), "childNodes");
 
 			for (auto& ch : childNodes)
 			{
@@ -285,11 +285,11 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		if (oi.IsUnserializer())
 		{
 			// TODO more advanced fix-up?
-			if (!childNodes.empty() && splits.size() != childNodes.size() - 1)
+			if (childNodes.NotEmpty() && splits.Size() != childNodes.Size() - 1)
 			{
-				splits.clear();
-				for (size_t i = 0; i + 1 < childNodes.size(); i++)
-					splits.push_back((i + 1.0f) / childNodes.size());
+				splits.Clear();
+				for (size_t i = 0; i + 1 < childNodes.Size(); i++)
+					splits.Append((i + 1.0f) / childNodes.Size());
 			}
 		}
 	}
@@ -346,7 +346,7 @@ void DockingSubwindow::OnBuildableEvent(Event& e)
 			});
 		}
 	}
-	if (rootNode->isLeaf && rootNode->tabs.size() <= 1)
+	if (rootNode->isLeaf && rootNode->tabs.Size() <= 1)
 	{
 		switch (e.type)
 		{
@@ -459,8 +459,8 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	auto wpos = dcch->frameContents->nativeWindow->GetInnerPosition();
 	assert(dcch);
 
-	node->tabs.erase(node->tabs.begin() + tabID);
-	if (node->tabs.size() == 0)
+	node->tabs.RemoveAt(tabID);
+	if (node->tabs.Size() == 0)
 	{
 		node->curActiveTab = nullptr;
 		Application::PushEvent([this, node]()
@@ -474,7 +474,7 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	DockingNode* DN = new DockingNode;
 	DN->isLeaf = true;
 	DN->main = this;
-	DN->tabs.push_back(dcch);
+	DN->tabs.Append(dcch);
 	DN->curActiveTab = dcch;
 
 	DockingSubwindow* DSW = new DockingSubwindow;
@@ -482,7 +482,7 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	DSW->rootNode = DN;
 	DN->subwindow = DSW;
 
-	_subwindows.push_back(DSW);
+	_subwindows.Append(DSW);
 	AABB2i finalClientRect = rect.MoveBy(wpos.x, wpos.y);
 	DSW->SetInnerRect(finalClientRect);
 	DSW->SetVisible(true);
@@ -497,8 +497,8 @@ void DockingMainArea::_CloseTab(DockingNode* node, size_t tabID)
 {
 	DockableContentsContainerHandle dcch = node->tabs[tabID];
 
-	node->tabs.erase(node->tabs.begin() + tabID);
-	if (node->tabs.size() == 0)
+	node->tabs.RemoveAt(tabID);
+	if (node->tabs.Size() == 0)
 	{
 		node->curActiveTab = nullptr;
 		Application::PushEvent([this, node]()
@@ -515,56 +515,56 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 	DockingNode* cch = node;
 	while (DockingNode* P = cch->parentNode)
 	{
-		for (size_t i = 0; i < P->childNodes.size(); i++)
+		for (size_t i = 0; i < P->childNodes.Size(); i++)
 		{
 			if (P->childNodes[i] == cch)
 			{
-				P->childNodes.erase(P->childNodes.begin() + i);
+				P->childNodes.RemoveAt(i);
 				cch = nullptr;
 				node = nullptr;
 
 				// rebalance splits - redistribute space used by a part equally across other parts
-				if (!P->splits.empty())
+				if (P->splits.NotEmpty())
 				{
-					std::vector<float> partSizes;
+					Array<float> partSizes;
 					float prev = 0;
 					for (float split : P->splits)
 					{
-						partSizes.push_back(split - prev);
+						partSizes.Append(split - prev);
 						prev = split;
 					}
-					partSizes.push_back(1 - prev);
+					partSizes.Append(1 - prev);
 
 					float usedSize = partSizes[i];
-					partSizes.erase(partSizes.begin() + i);
-					float addSize = usedSize / partSizes.size();
+					partSizes.RemoveAt(i);
+					float addSize = usedSize / partSizes.Size();
 					for (float& s : partSizes)
 						s += addSize;
 
-					P->splits.clear();
+					P->splits.Clear();
 					float sum = 0;
 					for (float s : partSizes)
 					{
 						sum += s;
-						P->splits.push_back(sum);
+						P->splits.Append(sum);
 					}
 					// remove the 1 at the end
-					P->splits.pop_back();
+					P->splits.RemoveLast();
 				}
 				break;
 			}
 		}
 		cch = P;
-		if (!P->childNodes.empty())
+		if (P->childNodes.NotEmpty())
 			break;
 	}
 
 	// remove one-child intermediate nodes
-	if (!cch->isLeaf && cch->childNodes.size() == 1)
+	if (!cch->isLeaf && cch->childNodes.Size() == 1)
 	{
 		if (auto P = cch->parentNode)
 		{
-			for (size_t i = 0; i < P->childNodes.size(); i++)
+			for (size_t i = 0; i < P->childNodes.Size(); i++)
 			{
 				if (P->childNodes[i] == cch)
 				{
@@ -592,19 +592,19 @@ void DockingMainArea::_DeleteNode(DockingNode* node)
 	}
 
 	// convert to leaf (easy way to ensure future root insertability)
-	if (!cch->isLeaf && cch->childNodes.empty())
+	if (!cch->isLeaf && cch->childNodes.IsEmpty())
 	{
 		cch->isLeaf = true;
 	}
 
 	// empty root node, close its window
-	if (!cch->parentNode && cch->subwindow && (cch->isLeaf ? cch->tabs.empty() : cch->childNodes.empty()))
+	if (!cch->parentNode && cch->subwindow && (cch->isLeaf ? cch->tabs.IsEmpty() : cch->childNodes.IsEmpty()))
 	{
-		for (size_t i = 0; i < _subwindows.size(); i++)
+		for (size_t i = 0; i < _subwindows.Size(); i++)
 		{
 			if (_subwindows[i] == cch->subwindow)
 			{
-				_subwindows.erase(_subwindows.begin() + i);
+				_subwindows.RemoveAt(i);
 				break;
 			}
 		}
@@ -657,16 +657,16 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 
 		DockingNodeHandle insSWRoot = dsw->rootNode;
 		assert(insSWRoot->isLeaf);
-		assert(insSWRoot->tabs.size() == 1);
+		assert(insSWRoot->tabs.Size() == 1);
 
 		DockableContentsContainerHandle tab = insSWRoot->tabs[0];
 
 		// remove the window
-		for (size_t i = 0; i < _subwindows.size(); i++)
+		for (size_t i = 0; i < _subwindows.Size(); i++)
 		{
 			if (_subwindows[i] == dsw)
 			{
-				_subwindows.erase(_subwindows.begin() + i);
+				_subwindows.RemoveAt(i);
 				break;
 			}
 		}
@@ -677,7 +677,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 		{
 			int pos = _insTarget.tabOrSide == DockingInsertionSide_Here ? 0 : _insTarget.tabOrSide;
 
-			tgt->tabs.insert(tgt->tabs.begin() + pos, tab);
+			tgt->tabs.InsertAt(pos, tab);
 			tgt->curActiveTab = tab;
 
 			OnDockingNodeUpdated.Call(tgt);
@@ -695,7 +695,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 			size_t idx = 0;
 			if (P)
 			{
-				for (; idx < P->childNodes.size(); idx++)
+				for (; idx < P->childNodes.Size(); idx++)
 				{
 					if (P->childNodes[idx] == tgt)
 						break;
@@ -711,7 +711,7 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				mid->parentNode = P;
 				mid->subwindow = tgt->subwindow;
 				mid->splitDir = splitDir;
-				mid->childNodes.push_back(tgt);
+				mid->childNodes.Append(tgt);
 
 				tgt->parentNode = mid.get_ptr();
 
@@ -737,15 +737,15 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				|| _insTarget.tabOrSide == DockingInsertionSide_Below;
 			size_t insIdx = insAfter ? idx + 1 : idx;
 
-			P->childNodes.insert(P->childNodes.begin() + insIdx, insSWRoot);
+			P->childNodes.InsertAt(insIdx, insSWRoot);
 			insSWRoot->parentNode = P;
 
 			// add a split with rebalancing
 			{
 				// to avoid a special case at the end
-				P->splits.push_back(1);
+				P->splits.Append(1);
 
-				std::vector<float> parts;
+				Array<float> parts;
 				float prev = 0;
 				float sum = 0;
 				size_t n = 0;
@@ -753,16 +753,16 @@ void DockingMainArea::_FinishInsertion(DockingSubwindow* dsw)
 				{
 					float diff = s - prev;
 					sum += diff;
-					parts.push_back(diff);
+					parts.Append(diff);
 					if (n++ == idx) // insert a copy
 					{
 						sum += diff;
-						parts.push_back(diff);
+						parts.Append(diff);
 					}
 					prev = s;
 				}
 				prev = 0;
-				for (size_t i = 0; i + 1 < parts.size(); i++)
+				for (size_t i = 0; i + 1 < parts.Size(); i++)
 				{
 					prev += parts[i] / sum;
 					P->splits[i] = prev;
@@ -794,7 +794,7 @@ void DockingMainArea::ClearMainArea()
 
 void DockingMainArea::RemoveSubwindows()
 {
-	_subwindows.clear();
+	_subwindows.Clear();
 }
 
 void DockingMainArea::SetMainAreaContents(const DockDefNode& node)
@@ -809,7 +809,7 @@ void DockingMainArea::AddSubwindow(const DockDefNode& node)
 	DSW->main = this;
 	DSW->rootNode = node.Construct(this);
 	DSW->rootNode->SetSubwindow(DSW);
-	_subwindows.push_back(DSW);
+	_subwindows.Append(DSW);
 	DSW->SetVisible(true);
 }
 
@@ -837,7 +837,7 @@ void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		OnField(oi, "rootNode", *_mainAreaRootNode);
 
 		RemoveSubwindows();
-		_subwindows.reserve(oi.BeginArray(0, "subwindows"));
+		_subwindows.Reserve(oi.BeginArray(0, "subwindows"));
 
 		while (oi.HasMoreArrayElements())
 		{
@@ -846,7 +846,7 @@ void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 			OnField(oi, "tab", *DSW);
 
-			_subwindows.push_back(DSW);
+			_subwindows.Append(DSW);
 			DSW->SetVisible(true);
 		}
 
@@ -856,7 +856,7 @@ void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		OnField(oi, "rootNode", *_mainAreaRootNode);
 
-		oi.BeginArray(_subwindows.size(), "subwindows");
+		oi.BeginArray(_subwindows.Size(), "subwindows");
 
 		for (auto& sw : _subwindows)
 		{
@@ -885,9 +885,9 @@ DockingNodeHandle Split::Construct(DockingMainArea* main) const
 		auto ccnh = cn.node->Construct(main);
 		ccnh->parentNode = node;
 
-		node->childNodes.push_back(ccnh);
-		if (&cn != &children.front())
-			node->splits.push_back(cn.split);
+		node->childNodes.Append(ccnh);
+		if (&cn != children.GetDataPtr())
+			node->splits.Append(cn.split);
 	}
 
 	return node;
@@ -906,7 +906,7 @@ DockingNodeHandle Tabs::Construct(DockingMainArea* main) const
 			continue;
 
 		auto* dcc = new ui::DockableContentsContainer(dc);
-		node->tabs.push_back(dcc);
+		node->tabs.Append(dcc);
 
 		if (!node->curActiveTab)
 			node->curActiveTab = dcc;

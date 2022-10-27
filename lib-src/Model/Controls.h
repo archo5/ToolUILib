@@ -601,7 +601,7 @@ struct CStrArrayOptionList : CStrOptionList
 
 struct StringArrayOptionList : CStrOptionList
 {
-	std::vector<std::string> options;
+	Array<std::string> options;
 
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 };

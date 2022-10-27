@@ -70,7 +70,7 @@ struct EventSystem
 	uint32_t mouseBtnReleaseLastTimes[5] = {};
 	WeakPtr<UIObject> focusObj;
 	WeakPtr<UIObject> lastFocusObj;
-	std::vector<TimerData> pendingTimers;
+	Array<TimerData> pendingTimers;
 	float width = 100;
 	float height = 100;
 	Point2f prevMousePos;

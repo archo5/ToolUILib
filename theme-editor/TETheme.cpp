@@ -79,7 +79,7 @@ void TE_Template::Clear()
 {
 	for (TE_Node* node : nodes)
 		delete node;
-	nodes.clear();
+	nodes.Clear();
 	nodeIDAlloc = 0;
 }
 
@@ -100,7 +100,7 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	OnField(oi, "name", name);
 	OnField(oi, "nodeIDAlloc", nodeIDAlloc);
 
-	OnFieldPtrVector(oi, "colors", colors,
+	OnFieldPtrArray(oi, "colors", colors,
 		[](auto& v) -> TE_NamedColor& { return *v; },
 		[]() { return std::make_shared<TE_NamedColor>(); });
 
@@ -111,16 +111,16 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		US->curNodes.clear();
 	}
 
-	OnFieldPtrVector(oi, "images", images,
+	OnFieldPtrArray(oi, "images", images,
 		[](auto& v) -> TE_Image& { return *v; },
 		[]() { return std::make_shared<TE_Image>(); });
 
-	OnFieldVectorValIndex(oi, "curPreviewImage", curPreviewImage, images, [](auto& v) -> TE_Image* { return v.get(); });
+	OnFieldArrayValIndex(oi, "curPreviewImage", curPreviewImage, images, [](auto& v) -> TE_Image* { return v.get(); });
 
 	if (oi.IsUnserializer())
 	{
 		oi.BeginArray(0, "nodes");
-		nodes.clear();
+		nodes.Clear();
 		// read node base data (at least type, id), create the node placeholders
 		while (oi.HasMoreArrayElements())
 		{
@@ -131,7 +131,7 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 			OnField(oi, "__id", id);
 			oi.EndObject();
 			auto* N = CreateNodeFromTypeName(type);
-			nodes.push_back(N);
+			nodes.Append(N);
 			US->curNodes[id] = N;
 		}
 		oi.EndArray();
@@ -258,7 +258,7 @@ bool TE_Template::TryLink(const Link& link)
 	if (inNode->GetInputPinType(link.input.num) != outNode->GetType())
 		return false;
 	inNode->SetInputPinValue(link.input.num, outNode);
-	topoSortedNodes.clear();
+	topoSortedNodes.Clear();
 	InvalidateNode(inNode);
 	return true;
 }
@@ -328,13 +328,8 @@ void TE_Template::DeleteNode(Node* node)
 	if (renderSettings.layer == N)
 		renderSettings.layer = nullptr;
 
-	for (size_t i = 0; i < nodes.size(); i++)
-		if (nodes[i] == N)
-			nodes.erase(nodes.begin() + i);
-
-	for (size_t i = 0; i < topoSortedNodes.size(); i++)
-		if (topoSortedNodes[i] == N)
-			topoSortedNodes.erase(topoSortedNodes.begin() + i);
+	nodes.RemoveFirstOf(N);
+	topoSortedNodes.RemoveFirstOf(N);
 
 	delete N;
 }
@@ -345,14 +340,14 @@ TE_Template::Node* TE_Template::DuplicateNode(Node* node)
 	n->_image = nullptr;
 	n->id = ++nodeIDAlloc;
 	n->position += { 5, 5 };
-	nodes.push_back(n);
-	topoSortedNodes.clear();
+	nodes.Append(n);
+	topoSortedNodes.Clear();
 	return n;
 }
 
 void TE_Template::UpdateTopoSortedNodes()
 {
-	if (!topoSortedNodes.empty())
+	if (topoSortedNodes.NotEmpty())
 		return;
 
 	struct TopoSortUtil
@@ -377,10 +372,10 @@ void TE_Template::UpdateTopoSortedNodes()
 			});
 
 			n->_topoState = Perm;
-			topoSortedNodes.push_back(n);
+			topoSortedNodes.Append(n);
 		}
 
-		std::vector<TE_Node*> topoSortedNodes;
+		Array<TE_Node*> topoSortedNodes;
 	};
 
 	TopoSortUtil tsu;
@@ -423,7 +418,7 @@ void TE_Theme::Clear()
 {
 	for (TE_Template* tmpl : templates)
 		delete tmpl;
-	templates.clear();
+	templates.Clear();
 	curTemplate = nullptr;
 	g_namedColors = nullptr;
 }
@@ -442,16 +437,16 @@ void TE_Theme::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
 	oi.BeginObject(FI, "Theme");
 
-	OnFieldPtrVector(oi, "variations", variations,
+	OnFieldPtrArray(oi, "variations", variations,
 		[](auto& v) -> TE_Variation& { return *v; },
 		[this]() { return std::make_shared<TE_Variation>(); });
 
-	OnFieldPtrVector(oi, "templates", templates,
+	OnFieldPtrArray(oi, "templates", templates,
 		[](auto& v) -> TE_Template& { return *v; },
 		[this]() { return new TE_Template(this); });
 
-	OnFieldVectorValIndex(oi, "curTemplate", curTemplate, templates);
-	OnFieldVectorValIndex(oi, "curVariation", curVariation, variations, [](auto& v) -> TE_Variation* { return v.get(); });
+	OnFieldArrayValIndex(oi, "curTemplate", curTemplate, templates);
+	OnFieldArrayValIndex(oi, "curVariation", curVariation, variations, [](auto& v) -> TE_Variation* { return v.get(); });
 
 	g_namedColors = curTemplate ? &curTemplate->colors : nullptr;
 
@@ -494,10 +489,10 @@ void TE_Theme::CreateSampleTheme()
 	TE_Template* tmpl = new TE_Template(this);
 	tmpl->name = "Button";
 
-	tmpl->colors.push_back(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x00, 0xff)));
-	tmpl->colors.push_back(std::make_shared<TE_NamedColor>("ltedge", Color4b(0xcd, 0xff)));
-	tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdtop", Color4b(0x94, 0xff)));
-	tmpl->colors.push_back(std::make_shared<TE_NamedColor>("grdbtm", Color4b(0x47, 0xff)));
+	tmpl->colors.Append(std::make_shared<TE_NamedColor>("dkedge", Color4b(0x00, 0xff)));
+	tmpl->colors.Append(std::make_shared<TE_NamedColor>("ltedge", Color4b(0xcd, 0xff)));
+	tmpl->colors.Append(std::make_shared<TE_NamedColor>("grdtop", Color4b(0x94, 0xff)));
+	tmpl->colors.Append(std::make_shared<TE_NamedColor>("grdbtm", Color4b(0x47, 0xff)));
 #if 0
 	auto* mr = tmpl->CreateNode<TE_RectMask>(100, 100);
 	mr->rect = { { 0, 0, 1, 1 }, { 1, 1, -1, -1 } };
@@ -522,9 +517,9 @@ void TE_Theme::CreateSampleTheme()
 	l3->mask.radius = 1;
 
 	auto* bl = tmpl->CreateNode<TE_BlendLayer>(600, 100);
-	bl->layers.push_back({ l1, true, 1 });
-	bl->layers.push_back({ l2, true, 1 });
-	bl->layers.push_back({ l3, true, 1 });
+	bl->layers.Append({ l1, true, 1 });
+	bl->layers.Append({ l2, true, 1 });
+	bl->layers.Append({ l3, true, 1 });
 
 	auto& rs = tmpl->renderSettings;
 	rs.w = 10;
@@ -532,25 +527,25 @@ void TE_Theme::CreateSampleTheme()
 	rs.l = rs.r = rs.t = rs.b = 5;
 	tmpl->SetCurrentLayerNode(bl);
 
-	templates.push_back(tmpl);
+	templates.Append(tmpl);
 
 	curTemplate = tmpl;
 	g_namedColors = &tmpl->colors;
 
 	auto variation = std::make_shared<TE_Variation>();
-	variations.push_back(variation);
+	variations.Append(variation);
 	curVariation = variation.get();
 
 	auto overrides = std::make_shared<TE_Overrides>();
-	overrides->colorOverrides.push_back({ tmpl->colors[0], Color4b(0x1a, 0xff) });
-	overrides->colorOverrides.push_back({ tmpl->colors[1], Color4b(0x4d, 0xff) });
-	overrides->colorOverrides.push_back({ tmpl->colors[2], Color4b(0x34, 0xff) });
-	overrides->colorOverrides.push_back({ tmpl->colors[3], Color4b(0x27, 0xff) });
+	overrides->colorOverrides.Append({ tmpl->colors[0], Color4b(0x1a, 0xff) });
+	overrides->colorOverrides.Append({ tmpl->colors[1], Color4b(0x4d, 0xff) });
+	overrides->colorOverrides.Append({ tmpl->colors[2], Color4b(0x34, 0xff) });
+	overrides->colorOverrides.Append({ tmpl->colors[3], Color4b(0x27, 0xff) });
 
 	auto image = std::make_shared<TE_Image>();
 	image->name = "TE_ButtonNormal";
 	image->overrides[variation.get()] = overrides;
-	tmpl->images.push_back(image);
+	tmpl->images.Append(image);
 
 	tmpl->SetCurPreviewImage(image.get());
 

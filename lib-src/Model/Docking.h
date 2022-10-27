@@ -1,6 +1,6 @@
 
 #pragma once
-#include <vector>
+#include "../Core/Array.h"
 #include "Objects.h"
 #include "Native.h"
 
@@ -59,10 +59,10 @@ struct DockingNode : RefCountedST
 	bool isLeaf = true;
 	// if not leaf (contains child ndoes):
 	Direction splitDir = Direction::Horizontal;
-	std::vector<float> splits;
-	std::vector<RCHandle<DockingNode>> childNodes;
+	Array<float> splits;
+	Array<RCHandle<DockingNode>> childNodes;
 	// if leaf (contains docked contents):
-	std::vector<DockableContentsContainerHandle> tabs;
+	Array<DockableContentsContainerHandle> tabs;
 	DockableContentsContainerHandle curActiveTab;
 
 	WeakPtr<UIObject> rectSource;
@@ -109,7 +109,7 @@ struct DockDefNode
 
 struct DockingMainArea : Buildable
 {
-	std::vector<DockingSubwindowHandle> _subwindows;
+	Array<DockingSubwindowHandle> _subwindows;
 	DockingNodeHandle _mainAreaRootNode;
 	DockingInsertionTarget _insTarget = {};
 
@@ -144,7 +144,7 @@ struct Split : DockDefNode
 		const DockDefNode* node;
 	};
 
-	std::vector<Entry> children;
+	Array<Entry> children;
 
 	Split(const DockDefNode& a, float s1, const DockDefNode& b)
 	{
@@ -168,7 +168,7 @@ struct VSplit : Split
 
 struct Tabs : DockDefNode
 {
-	std::vector<const char*> tabContentIDs;
+	Array<const char*> tabContentIDs;
 
 	Tabs(std::initializer_list<const char*> ids) : tabContentIDs(ids) {}
 	DockingNodeHandle Construct(DockingMainArea*) const override;
