@@ -160,7 +160,7 @@ void ProcGraphEditor_NodePin::_TryLink(const IProcGraph::Pin& pin)
 
 void ProcGraphEditor_NodePin::_UnlinkPin()
 {
-	std::vector<IProcGraph::Link> links;
+	Array<IProcGraph::Link> links;
 	_graph->GetPinLinks(_pin, links);
 
 	_graph->UnlinkPin(_pin);
@@ -405,7 +405,7 @@ void ProcGraphEditor::Init(IProcGraph* graph)
 
 void ProcGraphEditor::OnBuildNodes()
 {
-	std::vector<IProcGraph::Node*> nodes;
+	Array<IProcGraph::Node*> nodes;
 	_graph->GetNodes(nodes);
 	for (auto* N : nodes)
 	{
@@ -415,7 +415,7 @@ void ProcGraphEditor::OnBuildNodes()
 
 void ProcGraphEditor::OnMakeCreationMenu(MenuItemCollection& menu)
 {
-	std::vector<IProcGraph::NodeTypeEntry> nodes;
+	Array<IProcGraph::NodeTypeEntry> nodes;
 	_graph->GetAvailableNodeTypes(nodes);
 
 	auto& CM = ContextMenu::Get();
@@ -437,13 +437,13 @@ void ProcGraphEditor::OnMakeCreationMenu(MenuItemCollection& menu)
 
 void ProcGraphEditor::OnDrawCurrentLinks()
 {
-	std::vector<IProcGraph::Link> links;
+	Array<IProcGraph::Link> links;
 	_graph->GetLinks(links);
 
-	std::vector<Point2f> points;
+	Array<Point2f> points;
 	for (const auto& link : links)
 	{
-		points.clear();
+		points.Clear();
 		GetLinkPoints(link, points);
 		OnDrawSingleLink(points, 0, 1, _graph->GetLinkColor(link, false, false));
 	}
@@ -455,14 +455,14 @@ void ProcGraphEditor::OnDrawPendingLinks()
 	{
 		if (ddd->_graph == _graph)
 		{
-			std::vector<Point2f> points;
+			Array<Point2f> points;
 			GetConnectingLinkPoints(ddd->_pin, points);
 			OnDrawSingleLink(points, ddd->_pin.isOutput ? 1 : -1, 1, _graph->GetNewLinkColor(ddd->_pin));
 		}
 	}
 }
 
-void ProcGraphEditor::GetLinkPoints(const IProcGraph::Link& link, std::vector<Point2f>& outPoints)
+void ProcGraphEditor::GetLinkPoints(const IProcGraph::Link& link, Array<Point2f>& outPoints)
 {
 	auto A = link.output;
 	auto B = link.input;
@@ -477,7 +477,7 @@ void ProcGraphEditor::GetLinkPoints(const IProcGraph::Link& link, std::vector<Po
 	}
 }
 
-void ProcGraphEditor::GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::vector<Point2f>& outPoints)
+void ProcGraphEditor::GetConnectingLinkPoints(const IProcGraph::Pin& pin, Array<Point2f>& outPoints)
 {
 	if (auto* P = pinUIMap.get(pin))
 	{
@@ -489,15 +489,15 @@ void ProcGraphEditor::GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::v
 	}
 }
 
-void ProcGraphEditor::GetLinkPointsRaw(const Point2f& p0, const Point2f& p1, int connecting, std::vector<Point2f>& outPoints)
+void ProcGraphEditor::GetLinkPointsRaw(const Point2f& p0, const Point2f& p1, int connecting, Array<Point2f>& outPoints)
 {
 	if (linkExtension)
 	{
-		outPoints.push_back(p0);
+		outPoints.Append(p0);
 		Point2f b0 = { p0.x + linkExtension, p0.y };
 		Point2f b3 = { p1.x - linkExtension, p1.y };
 		GetLinkPointsRawInner(b0, b3, outPoints);
-		outPoints.push_back(p1);
+		outPoints.Append(p1);
 	}
 	else
 		GetLinkPointsRawInner(p0, p1, outPoints);
@@ -527,7 +527,7 @@ static Point2f BezierPoint(const Point2f& b0, const Point2f& b1, const Point2f& 
 	return Lerp(b012, b123, q);
 }
 
-void ProcGraphEditor::GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3, std::vector<Point2f>& outPoints)
+void ProcGraphEditor::GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3, Array<Point2f>& outPoints)
 {
 	Point2f b1, b2;
 	GetTangents(b0, b3, b1, b2);
@@ -536,7 +536,7 @@ void ProcGraphEditor::GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3
 	for (int i = 0; i < 30; i++)
 	{
 		float q = i / 29.f;
-		outPoints.push_back(BezierPoint(b0, b1, b2, b3, q));
+		outPoints.Append(BezierPoint(b0, b1, b2, b3, q));
 	}
 }
 
@@ -550,7 +550,7 @@ Point2f ProcGraphEditor::GetPinPos(ProcGraphEditor_NodePin* P)
 	};
 }
 
-void ProcGraphEditor::OnDrawSingleLink(const std::vector<Point2f>& points, int connecting, float width, Color4b color)
+void ProcGraphEditor::OnDrawSingleLink(const Array<Point2f>& points, int connecting, float width, Color4b color)
 {
 	draw::AALineCol(points, width + 2, Color4b::Black(), false);
 	draw::AALineCol(points, width, color, false);

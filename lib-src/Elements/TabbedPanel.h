@@ -47,7 +47,7 @@ struct TabbedPanel : UIObjectSingleChild
 		float _contentWidth = 0;
 	};
 
-	std::vector<Tab> _tabs;
+	Array<Tab> _tabs;
 	size_t _curTabNum = 0;
 	float _lastDragUnfinishedDiff = 0; // (-) = the big element is on the left, (+) = right
 	SubUI<uint32_t> _tabUI;

@@ -3,6 +3,7 @@
 
 #include "RHI.h"
 
+#include "../Core/Array.h"
 #include "../Core/FileSystem.h"
 #include "../Core/HashTable.h"
 
@@ -420,24 +421,25 @@ static inline ImageSetSizeMode GetFinalSizeMode(ImageSetType type, ImageSetSizeM
 
 ImageSet::Entry* ImageSet::FindEntryForSize(Size2f size)
 {
+	if (entries.IsEmpty())
+		return nullptr;
+
 	auto mode = GetFinalSizeMode(type, sizeMode);
 
-	Entry* last = entries.empty() ? nullptr : &entries.front();
+	Entry* last = entries.GetDataPtr();
 	if (mode == ImageSetSizeMode::NearestScaleUp || mode == ImageSetSizeMode::NearestNoScale)
 	{
-		for (size_t i = 0; i < entries.size(); i++)
+		for (auto& e : entries)
 		{
-			auto& e = entries[i];
 			if (e.image->GetWidth() > size.x || e.image->GetHeight() > size.y)
 				break;
-			last = &entries[i];
+			last = &e;
 		}
 	}
 	else
 	{
-		for (size_t i = 0; i < entries.size(); i++)
+		for (auto& e : entries)
 		{
-			auto& e = entries[i];
 			last = &e;
 			if (e.image->GetWidth() >= size.x && e.image->GetHeight() >= size.y)
 				break;
@@ -448,8 +450,12 @@ ImageSet::Entry* ImageSet::FindEntryForSize(Size2f size)
 
 ImageSet::Entry* ImageSet::FindEntryForEdgeWidth(AABB2f edgeWidth)
 {
+	if (entries.IsEmpty())
+		return nullptr;
+
+	Entry* last = entries.GetDataPtr();
 	// TODO
-	return entries.empty() ? nullptr : &entries[0];
+	return last;
 }
 
 void ImageSet::_DrawAsIcon(AABB2f rect, Color4b color)
@@ -809,8 +815,8 @@ void LineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed
 	else
 		t_prev = (points[1] - points[0]).Normalized().Perp();
 
-	std::vector<rhi::Vertex> verts;
-	verts.reserve(size * 2);
+	Array<rhi::Vertex> verts;
+	verts.Reserve(size * 2);
 	for (size_t i = 0; i < size; i++)
 	{
 		Point2f p0 = points[i];
@@ -824,24 +830,24 @@ void LineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed
 		}
 
 		Point2f t = t_avg * (w * 0.5f / Vec2Dot(t_avg, t_prev));
-		verts.push_back(ColorVert(p0 + t, col));
-		verts.push_back(ColorVert(p0 - t, col));
+		verts.Append(ColorVert(p0 + t, col));
+		verts.Append(ColorVert(p0 - t, col));
 
 		t_prev = t_next;
 	}
 
-	std::vector<uint16_t> indices;
-	indices.reserve((size - 1) * 6);
+	Array<uint16_t> indices;
+	indices.Reserve((size - 1) * 6);
 	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
 	{
 		size_t i1 = (i + 1) % size;
-		indices.push_back(uint16_t(i * 2 + 0));
-		indices.push_back(uint16_t(i1 * 2 + 0));
-		indices.push_back(uint16_t(i1 * 2 + 1));
+		indices.Append(uint16_t(i * 2 + 0));
+		indices.Append(uint16_t(i1 * 2 + 0));
+		indices.Append(uint16_t(i1 * 2 + 1));
 
-		indices.push_back(uint16_t(i1 * 2 + 1));
-		indices.push_back(uint16_t(i * 2 + 1));
-		indices.push_back(uint16_t(i * 2 + 0));
+		indices.Append(uint16_t(i1 * 2 + 1));
+		indices.Append(uint16_t(i * 2 + 1));
+		indices.Append(uint16_t(i * 2 + 0));
 	}
 
 	IndexedTriangles(nullptr, verts.data(), verts.size(), indices.data(), indices.size());
@@ -866,9 +872,9 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 
 	size_t ncols = w <= 1 ? 3 : 4;
 
-	std::vector<rhi::Vertex> verts;
-	verts.resize(size * ncols);
-	auto* vdest = verts.data();
+	Array<rhi::Vertex> verts;
+	verts.Resize(size * ncols);
+	auto* vdest = verts.GetDataPtr();
 	for (size_t i = 0; i < size; i++)
 	{
 		Point2f p0 = points[i];
@@ -902,9 +908,9 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 		t_prev = t_next;
 	}
 
-	std::vector<uint16_t> indices;
-	indices.resize((closed ? size : size - 1) * (ncols - 1) * 6);
-	uint16_t* idest = indices.data();
+	Array<uint16_t> indices;
+	indices.Resize((closed ? size : size - 1) * (ncols - 1) * 6);
+	uint16_t* idest = indices.GetDataPtr();
 	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
 	{
 		size_t i1 = (i + 1) % size;
@@ -925,7 +931,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 
 struct CircleList
 {
-	std::vector<Point2f> points;
+	Array<Point2f> points;
 
 	CircleList(Point2f center, float radius)
 	{
@@ -935,11 +941,11 @@ struct CircleList
 		if (size > 4096)
 			size = 4096;
 
-		points.reserve(size);
+		points.Reserve(size);
 		for (size_t i = 0; i < size; i++)
 		{
 			float a = i * 3.14159f * 2 / size;
-			points.push_back({ sinf(a) * radius + center.x, cosf(a) * radius + center.y });
+			points.Append({ sinf(a) * radius + center.x, cosf(a) * radius + center.y });
 		}
 	}
 };

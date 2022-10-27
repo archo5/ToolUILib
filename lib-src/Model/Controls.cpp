@@ -1237,7 +1237,7 @@ struct CursorFollowingPLE : PlacementLayoutElement
 	// hack
 	void OnPaint(const UIPaintContext& pc) override
 	{
-		if (!_slots.empty())
+		if (_slots.NotEmpty())
 			_OnChangeStyle();
 	}
 };

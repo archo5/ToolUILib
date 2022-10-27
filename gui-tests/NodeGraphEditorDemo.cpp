@@ -159,16 +159,16 @@ static ui::Color4b g_graphColors[] =
 
 struct GraphImpl : ui::IProcGraph
 {
-	void GetNodes(std::vector<Node*>& outNodes) override
+	void GetNodes(ui::Array<Node*>& outNodes) override
 	{
 		for (auto* n : graph->nodes)
-			outNodes.push_back(static_cast<Node*>(n));
+			outNodes.Append(static_cast<Node*>(n));
 	}
-	void GetLinks(std::vector<Link>& outLinks) override
+	void GetLinks(ui::Array<Link>& outLinks) override
 	{
 		for (auto* l : graph->links)
 		{
-			outLinks.push_back
+			outLinks.Append
 			({
 				static_cast<Node*>(l->output.node),
 				uintptr_t(l->output.pin),
@@ -182,13 +182,13 @@ struct GraphImpl : ui::IProcGraph
 		static_cast<GraphImpl*>(graph)->graph->nodes.push_back(node);
 		return node;
 	}
-	void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) override
+	void GetAvailableNodeTypes(ui::Array<NodeTypeEntry>& outEntries) override
 	{
-		outEntries.push_back({ "Vector/Make", 0,
+		outEntries.Append({ "Vector/Make", 0,
 			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new MakeVec); } });
-		outEntries.push_back({ "Vector/Scale", 0,
+		outEntries.Append({ "Vector/Scale", 0,
 			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new ScaleVec); } });
-		outEntries.push_back({ "Vector/Dot product", 0,
+		outEntries.Append({ "Vector/Dot product", 0,
 			[](IProcGraph* graph, const char*, uintptr_t) -> Node* { return AddNode(graph, new DotProduct); } });
 	}
 

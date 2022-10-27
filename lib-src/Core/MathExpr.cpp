@@ -1,10 +1,9 @@
 
 #include "MathExpr.h"
 
+#include "Array.h"
 #include "Math.h"
 #include "String.h"
-
-#include <vector>
 
 
 //#define MATHEXPR_DEBUG
@@ -252,9 +251,9 @@ struct MathExprData
 	}
 
 	MathExprData(
-		const std::vector<float>& arg_constants,
-		const std::vector<uint8_t>& arg_instructions,
-		const std::vector<uint16_t>& arg_variables,
+		const Array<float>& arg_constants,
+		const Array<uint8_t>& arg_instructions,
+		const Array<uint16_t>& arg_variables,
 		size_t arg_maxTempStackSize)
 	{
 		constants = new float[arg_constants.size()];
@@ -341,10 +340,10 @@ struct MathExprData
 			uint32_t numArgs = 0;
 		};
 
-		std::vector<float> constants;
-		std::vector<uint8_t> instructions;
-		std::vector<uint16_t> foundVars;
-		std::vector<Op> opStack;
+		Array<float> constants;
+		Array<uint8_t> instructions;
+		Array<uint16_t> foundVars;
+		Array<Op> opStack;
 		int constStreak = 0;
 		size_t maxTempStackSize = 0;
 		size_t curTempStackSize = 0;
@@ -426,8 +425,8 @@ struct MathExprData
 			printf("> PushConst %g\n", v);
 #endif
 			constStreak++;
-			constants.push_back(v);
-			instructions.push_back(PushConst);
+			constants.Append(v);
+			instructions.Append(PushConst);
 			TSSPush();
 			LastScopePushValue();
 		}
@@ -444,11 +443,11 @@ struct MathExprData
 			if (op.realOp == FuncCall)
 			{
 				constStreak = 0;
-				instructions.push_back(op.funcID > UINT8_MAX ? FuncCall16 : FuncCall);
-				instructions.push_back(uint8_t(op.realArgCount));
-				instructions.push_back(op.funcID & 0xff);
+				instructions.Append(op.funcID > UINT8_MAX ? FuncCall16 : FuncCall);
+				instructions.Append(uint8_t(op.realArgCount));
+				instructions.Append(op.funcID & 0xff);
 				if (op.funcID > UINT8_MAX)
-					instructions.push_back(op.funcID >> 8);
+					instructions.Append(op.funcID >> 8);
 			}
 			else
 			{
@@ -463,18 +462,18 @@ struct MathExprData
 					bool degArg = HasDegreeArg(op.realOp);
 					if ((op.realOp & BIF_Degrees) != 0 && degArg)
 					{
-						constants.push_back(DEG2RAD);
-						instructions.push_back(PushConst);
-						instructions.push_back(Mul);
+						constants.Append(DEG2RAD);
+						instructions.Append(PushConst);
+						instructions.Append(Mul);
 					}
 
-					instructions.push_back(op.realOp & ~BIF_Degrees);
+					instructions.Append(op.realOp & ~BIF_Degrees);
 
 					if ((op.realOp & BIF_Degrees) != 0 && !degArg)
 					{
-						constants.push_back(RAD2DEG);
-						instructions.push_back(PushConst);
-						instructions.push_back(Mul);
+						constants.Append(RAD2DEG);
+						instructions.Append(PushConst);
+						instructions.Append(Mul);
 					}
 				}
 			}
@@ -484,7 +483,7 @@ struct MathExprData
 		{
 			constStreak -= realArgCount;
 			for (uint16_t i = 0; i < realArgCount; i++)
-				instructions.pop_back();
+				instructions.RemoveLast();
 
 			const float* cd = constants.data() + constants.size() - realArgCount;
 			float ret = 0;
@@ -563,19 +562,19 @@ struct MathExprData
 			}
 
 			for (uint16_t i = 0; i < realArgCount; i++)
-				constants.pop_back();
+				constants.RemoveLast();
 
 			constStreak++;
-			constants.push_back(ret);
-			instructions.push_back(PushConst);
+			constants.Append(ret);
+			instructions.Append(PushConst);
 		}
 
 		void FinishScope()
 		{
-			while (!opStack.empty() && opStack.back().op != TMP_LParen)
+			while (opStack.NotEmpty() && opStack.Last().op != TMP_LParen)
 			{
-				CommitOp(opStack.back());
-				opStack.pop_back();
+				CommitOp(opStack.Last());
+				opStack.RemoveLast();
 			}
 		}
 
@@ -599,17 +598,17 @@ struct MathExprData
 		{
 			uint8_t curPrecedence = GetOpPrecedence(op);
 
-			while (!opStack.empty())
+			while (opStack.NotEmpty())
 			{
-				auto top = opStack.back();
+				auto top = opStack.Last();
 				if (top.precedence < curPrecedence || top.op == Negate) // unary ops can't be committed by other unary ops
 					break;
 
 				CommitOp(top);
-				opStack.pop_back();
+				opStack.RemoveLast();
 			}
 
-			opStack.push_back({ op, curPrecedence, op, expArgs });
+			opStack.Append({ op, curPrecedence, op, expArgs });
 		}
 
 		void AddFuncCallToStack(uint8_t realOp, uint8_t expArgs, IMathExprDataSource::ID funcID, StringView refText)
@@ -619,7 +618,7 @@ struct MathExprData
 			Op v = { op, curPrecedence, realOp, expArgs };
 			v.funcID = funcID;
 			v.refText = refText;
-			opStack.push_back(v);
+			opStack.Append(v);
 		}
 
 		struct BuiltInFunc
@@ -858,19 +857,19 @@ struct MathExprData
 								if (at == SIZE_MAX)
 								{
 									at = foundVars.size();
-									foundVars.push_back(vid);
+									foundVars.Append(vid);
 								}
 								constStreak = 0;
 								if (at > UINT8_MAX)
 								{
-									instructions.push_back(PushVar16);
-									instructions.push_back(at & 0xff);
-									instructions.push_back((at >> 8) & 0xff);
+									instructions.Append(PushVar16);
+									instructions.Append(at & 0xff);
+									instructions.Append((at >> 8) & 0xff);
 								}
 								else
 								{
-									instructions.push_back(PushVar);
-									instructions.push_back(at & 0xff);
+									instructions.Append(PushVar);
+									instructions.Append(at & 0xff);
 								}
 								TSSPush();
 								LastScopePushValue();
@@ -886,8 +885,8 @@ struct MathExprData
 						return Error(it, "unexpected left parenthesis");
 
 					uint8_t curPrecedence = GetOpPrecedence(TMP_LParen);
-					opStack.push_back({ TMP_LParen, curPrecedence, TMP_LParen, 1 });
-					opStack.back().refText = it.substr(0, 1);
+					opStack.Append({ TMP_LParen, curPrecedence, TMP_LParen, 1 });
+					opStack.Last().refText = it.substr(0, 1);
 					it.take_char();
 				}
 				else if (curTokenType == TTRParen)
@@ -899,10 +898,10 @@ struct MathExprData
 
 					FinishScope();
 
-					if (opStack.empty() || opStack.back().op != TMP_LParen)
+					if (opStack.IsEmpty() || opStack.Last().op != TMP_LParen)
 						return Error(it, "no matching left parenthesis found");
 
-					auto& op = opStack.back();
+					auto& op = opStack.Last();
 					if (op.expArgCount < UINT8_MAX && op.expArgCount != op.realArgCount)
 					{
 						if (op.realOp == TMP_LParen)
@@ -912,7 +911,7 @@ struct MathExprData
 					}
 
 					CommitOp(op);
-					opStack.pop_back();
+					opStack.RemoveLast();
 					LastScopePushValue();
 					it.take_char();
 				}
@@ -924,7 +923,7 @@ struct MathExprData
 					FinishScope();
 					LastScopeNextValue();
 
-					if (opStack.empty())
+					if (opStack.IsEmpty())
 						return Error(it, "unexpected top-level comma");
 
 					it.take_char();
@@ -958,8 +957,8 @@ struct MathExprData
 							{
 								// negate operator
 								AddOpToStack(Negate, 1);
-								opStack.back().realArgCount = 1;
-								opStack.back().refText = dbgText;
+								opStack.Last().realArgCount = 1;
+								opStack.Last().refText = dbgText;
 								LastScopePushValue();
 							}
 						}
@@ -982,8 +981,8 @@ struct MathExprData
 						return Error(dbgText, "internal error (bad op)");
 					}
 					AddOpToStack(op, 2);
-					opStack.back().realArgCount = 2;
-					opStack.back().refText = dbgText;
+					opStack.Last().realArgCount = 2;
+					opStack.Last().refText = dbgText;
 					LastScopePushValue();
 				}
 				else
@@ -1001,10 +1000,10 @@ struct MathExprData
 
 			FinishScope();
 
-			if (!opStack.empty())
-				return Error(opStack.back().refText, "no matching right parenthesis found");
+			if (opStack.NotEmpty())
+				return Error(opStack.Last().refText, "no matching right parenthesis found");
 
-			instructions.push_back(Return);
+			instructions.Append(Return);
 
 			return true;
 		}

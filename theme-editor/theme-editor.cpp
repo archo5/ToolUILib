@@ -246,7 +246,7 @@ struct TE_ImageEditorNode : Buildable
 
 					if (imm::Button("Add override"))
 					{
-						std::vector<MenuItem> items;
+						Array<MenuItem> items;
 						for (auto& col : theme->curTemplate->colors)
 						{
 							bool added = false;
@@ -260,11 +260,11 @@ struct TE_ImageEditorNode : Buildable
 							}
 							if (!added)
 							{
-								items.push_back(MenuItem(col->name).Func([ovr, col]() { ovr->colorOverrides.push_back({ col, col->color }); }));
+								items.Append(MenuItem(col->name).Func([ovr, col]() { ovr->colorOverrides.push_back({ col, col->color }); }));
 							}
 						}
-						if (items.empty())
-							items.push_back(MenuItem("- no overrides left to add -", {}, true));
+						if (items.IsEmpty())
+							items.Append(MenuItem("- no overrides left to add -", {}, true));
 						Menu(items).Show(this);
 					}
 				}
@@ -346,11 +346,11 @@ struct TE_ThemeEditorNode : Buildable
 {
 	void Build() override
 	{
-		std::vector<MenuItem> topMenu;
-		topMenu.push_back(MenuItem("File"));
-		topMenu.back().submenu.push_back(MenuItem("New").Func([this]() { theme->Clear(); Rebuild(); }));
-		topMenu.back().submenu.push_back(MenuItem("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); }));
-		topMenu.back().submenu.push_back(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
+		Array<MenuItem> topMenu;
+		topMenu.Append(MenuItem("File"));
+		topMenu.Last().submenu.Append(MenuItem("New").Func([this]() { theme->Clear(); Rebuild(); }));
+		topMenu.Last().submenu.Append(MenuItem("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); }));
+		topMenu.Last().submenu.Append(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
 		Allocate<TopMenu>(GetNativeWindow(), topMenu);
 
 		auto& tp = Push<TabbedPanel>();

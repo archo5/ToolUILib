@@ -262,9 +262,9 @@ struct ImageSetSizingTest : ui::Buildable
 	{
 		icon = new ui::draw::ImageSet;
 		icon->baseSize = { 32, 32 };
-		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss32.png") });
-		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss64.png") });
-		icon->entries.push_back({ ui::draw::ImageLoadFromFile("iss96.png") });
+		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss32.png") });
+		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss64.png") });
+		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss96.png") });
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{

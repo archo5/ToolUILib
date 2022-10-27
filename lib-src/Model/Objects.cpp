@@ -1002,8 +1002,8 @@ void Buildable::PO_BeforeDelete()
 {
 	while (_deferredDestructors.size())
 	{
-		_deferredDestructors.back()();
-		_deferredDestructors.pop_back();
+		_deferredDestructors.Last()();
+		_deferredDestructors.RemoveLast();
 	}
 
 	WrapperElement::PO_BeforeDelete();

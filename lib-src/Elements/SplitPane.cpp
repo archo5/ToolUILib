@@ -23,7 +23,7 @@ void SplitPane::OnReset()
 	horSepStyle = *GetCurrentTheme()->GetStruct(sid_seplinestyle_hor);
 
 	_verticalSplit = false;
-	_children.clear();
+	_children.Clear();
 }
 
 static float SplitQToX(SplitPane* sp, float split)
@@ -101,13 +101,13 @@ static void CheckSplits(SplitPane* sp, size_t needElement = SIZE_MAX)
 		for (auto& s : sp->_splits)
 			s *= scale;
 
-		sp->_splits.resize(cc);
+		sp->_splits.Resize(cc);
 		for (size_t i = oldsize; i < cc; i++)
 			sp->_splits[i] = (i + 1.0f) / (cc + 1.0f);
 	}
 	else if (oldsize > cc)
 	{
-		sp->_splits.resize(cc);
+		sp->_splits.Resize(cc);
 		// rescale to fit
 		float scale = cc ? oldsize / (float)cc : 1.0f;
 		for (auto& s : sp->_splits)
@@ -165,7 +165,7 @@ static void ClampSplit(SplitPane* sp, size_t which)
 
 void SplitPane::OnPaint(const UIPaintContext& ctx)
 {
-	if (!_children.empty())
+	if (_children.NotEmpty())
 	{
 		size_t split = 0;
 		if (!_verticalSplit)
@@ -397,7 +397,7 @@ void SplitPane::RemoveChildImpl(UIObject* ch)
 	{
 		if (_children[i] == ch)
 		{
-			_children.erase(_children.begin() + i);
+			_children.RemoveAt(i);
 			break;
 		}
 	}
@@ -418,7 +418,7 @@ void SplitPane::DetachChildren(bool recursive)
 
 		ch->parent = nullptr;
 	}
-	_children.clear();
+	_children.Clear();
 }
 
 void SplitPane::AppendChild(UIObject* obj)
@@ -426,7 +426,7 @@ void SplitPane::AppendChild(UIObject* obj)
 	obj->DetachParent();
 
 	obj->parent = this;
-	_children.push_back(obj);
+	_children.Append(obj);
 
 	if (system)
 		obj->_AttachToFrameContents(system);
@@ -486,7 +486,7 @@ float SplitPane::GetSplitPos(int which) const
 
 SplitPane& SplitPane::SetSplits(const float* splits, size_t numSplits)
 {
-	_splits.assign(splits, splits + numSplits);
+	_splits.AssignMany(splits, numSplits);
 	for (size_t i = 0; i < _splits.size(); i++)
 		ClampSplit(this, i);
 	_OnChangeStyle();

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "String.h"
+#include "Array.h"
 #include "HashTable.h"
 #include "RefCounted.h"
 
@@ -126,7 +127,7 @@ using FileSourceHandle = RCHandle<IFileSource>;
 
 struct FileSourceSequence : IFileSource
 {
-	std::vector<FileSourceHandle> fileSystems;
+	Array<FileSourceHandle> fileSystems;
 
 	FileReadResult ReadTextFile(StringView path) override;
 	FileReadResult ReadBinaryFile(StringView path) override;

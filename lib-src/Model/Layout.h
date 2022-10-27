@@ -1,5 +1,6 @@
 
 #pragma once
+#include "../Core/Array.h"
 #include "Objects.h"
 
 
@@ -51,7 +52,7 @@ struct LayoutElement : UIObject
 	}
 	static Slot _slotTemplate;
 
-	std::vector<Slot> _slots;
+	Array<Slot> _slots;
 
 	// size cache
 	uint32_t _cacheFrameWidth = {};
@@ -63,7 +64,7 @@ struct LayoutElement : UIObject
 	{
 		UIObject::OnReset();
 
-		_slots.clear();
+		_slots.Clear();
 	}
 
 	void SlotIterator_Init(UIObjectIteratorData& data) override
@@ -73,18 +74,18 @@ struct LayoutElement : UIObject
 
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override
 	{
-		if (data.data0 >= _slots.size())
+		if (data.data0 >= _slots.Size())
 			return nullptr;
 		return _slots[data.data0++]._obj;
 	}
 
 	void RemoveChildImpl(UIObject* ch) override
 	{
-		for (size_t i = 0; i < _slots.size(); i++)
+		for (size_t i = 0; i < _slots.Size(); i++)
 		{
 			if (_slots[i]._obj == ch)
 			{
-				_slots.erase(_slots.begin() + i);
+				_slots.RemoveAt(i);
 				break;
 			}
 		}
@@ -92,7 +93,7 @@ struct LayoutElement : UIObject
 
 	void DetachChildren(bool recursive) override
 	{
-		for (size_t i = 0; i < _slots.size(); i++)
+		for (size_t i = 0; i < _slots.Size(); i++)
 		{
 			auto* ch = _slots[i]._obj;
 
@@ -105,7 +106,7 @@ struct LayoutElement : UIObject
 
 			ch->parent = nullptr;
 		}
-		_slots.clear();
+		_slots.Clear();
 	}
 
 	void AppendChild(UIObject* obj) override
@@ -115,7 +116,7 @@ struct LayoutElement : UIObject
 		obj->parent = this;
 		Slot slot = _slotTemplate;
 		slot._obj = obj;
-		_slots.push_back(slot);
+		_slots.Append(slot);
 		// reset the template
 		_slotTemplate = {};
 
@@ -131,7 +132,7 @@ struct LayoutElement : UIObject
 
 	UIObject* FindLastChildContainingPos(Point2f pos) const override
 	{
-		for (size_t i = _slots.size(); i > 0; )
+		for (size_t i = _slots.Size(); i > 0; )
 		{
 			i--;
 			if (_slots[i]._obj->Contains(pos))

@@ -160,7 +160,7 @@ static ThemeData::CustomStructData& GetStructData(ThemeData& td, IThemeStructLoa
 {
 	if (loader->id >= td._cachedStructs.size())
 	{
-		td._cachedStructs.resize(loader->id + 1);
+		td._cachedStructs.Resize(loader->id + 1);
 		auto csd = new ThemeData::CustomStructData;
 		InitStruct(td, *csd, loader);
 		td._cachedStructs[loader->id] = csd;
@@ -208,11 +208,11 @@ static size_t CalcNewSize(size_t curSize, size_t curMaxCount)
 	return curSize + curMaxCount;
 }
 
-template <class TC, class TID> TC& GetCacheSlot(std::vector<TC>& cache, const StaticID<TID>& id)
+template <class TC, class TID> TC& GetCacheSlot(Array<TC>& cache, const StaticID<TID>& id)
 {
 	size_t newSize = CalcNewSize(cache.size(), StaticID<TID>::GetCount());
 	if (cache.size() < newSize)
-		cache.resize(newSize);
+		cache.Resize(newSize);
 	return cache[id._id];
 }
 
@@ -268,7 +268,7 @@ void* ThemeData::_GetStructImpl(IThemeStructLoader* loader, const char* name, ui
 		return csd.cachedInstances[id];
 
 	if (id >= csd.cachedInstances.size())
-		csd.cachedInstances.resize(id + 1, nullptr);
+		csd.cachedInstances.ResizeWith(id + 1, nullptr);
 
 	auto it = csd.instances.find(name);
 	if (it.is_valid())
@@ -311,7 +311,7 @@ struct ThemeElementRef
 
 struct ThemeLoaderData : IThemeLoader
 {
-	std::vector<ThemeFileHandle> files;
+	Array<ThemeFileHandle> files;
 	HashMap<std::string, ThemeElementRef> colors;
 	HashMap<std::string, ThemeElementRef> imageSets;
 	HashMap<std::string, ThemeElementRef> painters;
@@ -441,7 +441,7 @@ void ThemeData::LoadTheme(StringView folder)
 
 			if (tf->unserializer.Parse(tf->text->GetStringView(), JPF_AllowAll))
 			{
-				tld.files.push_back(tf);
+				tld.files.Append(tf);
 
 				// enumerate the contents
 				if (auto* root = tf->unserializer._root)
@@ -578,7 +578,7 @@ void ThemeData::LoadTheme(StringView folder)
 				}
 				u.EndObject();
 
-				loaded->entries.push_back(e);
+				loaded->entries.Append(e);
 			}
 			u.EndArray();
 

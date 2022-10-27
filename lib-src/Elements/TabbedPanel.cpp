@@ -48,7 +48,7 @@ void TabbedPanel::AddTextTab(StringView text, uintptr_t uid)
 	Tab tab;
 	tab.text = to_string(text);
 	tab.uid = uid;
-	_tabs.push_back(tab);
+	_tabs.Append(tab);
 }
 
 void TabbedPanel::AddUITab(UIObject* obj, uintptr_t uid)
@@ -56,7 +56,7 @@ void TabbedPanel::AddUITab(UIObject* obj, uintptr_t uid)
 	Tab tab;
 	tab.obj = obj;
 	tab.uid = uid;
-	_tabs.push_back(tab);
+	_tabs.Append(tab);
 
 	obj->DetachParent();
 	obj->parent = this;
@@ -75,7 +75,7 @@ bool TabbedPanel::SetActiveTabByUID(uintptr_t uid)
 	{
 		if (tab.uid == uid)
 		{
-			_curTabNum = &tab - &_tabs.front();
+			_curTabNum = _tabs.GetElementIndex(tab);
 			return true;
 		}
 	}
@@ -91,7 +91,7 @@ void TabbedPanel::OnReset()
 	tabHeight = 22;
 	style = *GetCurrentTheme()->GetStruct(sid_tabbed_panel);
 
-	_tabs.clear();
+	_tabs.Clear();
 	_tabBarExtension = nullptr;
 	//_curTabNum = 0;
 	rebuildOnChange = true;
@@ -107,7 +107,7 @@ void TabbedPanel::OnPaint(const UIPaintContext& ctx)
 	UIRect btnRect = { x0, y0, x0, y1 };
 	for (auto& tab : _tabs)
 	{
-		size_t id = &tab - &_tabs.front();
+		size_t id = _tabs.GetElementIndex(tab);
 
 		float tw = tab._contentWidth;
 		float x1 = x0 + tw + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
@@ -225,7 +225,7 @@ void TabbedPanel::OnEvent(Event& e)
 		}
 		UIRect tabButtonRect = { x0, y0, x1, y1 };
 
-		size_t id = &tab - &_tabs.front();
+		size_t id = _tabs.GetElementIndex(tab);
 		bool wasPressed = _tabUI.IsPressed(id);
 		if ((_tabUI.ButtonOnEvent(id, tabButtonRect, e) || (_tabUI.IsPressed(id) && !wasPressed)) && _curTabNum != id)
 		{

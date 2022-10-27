@@ -1,7 +1,10 @@
 
+#include "Array.h"
 #include "HashTable.h"
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <vector>
 #include <unordered_map>
 #ifdef _MSC_VER
 #pragma warning(disable:4996)
@@ -61,7 +64,6 @@ struct Test
 
 #define TEST(name) Test _test(name, false)
 #define TEST_ONLY(name) Test _test(name, false, true)
-#define TEST_CMP Test _test(" unordered_map:", true)
 #define RESTART_MEASURING _test.RestartMeasure()
 #define VALIDATE _test.EndMeasure()
 #define END_MEASURING _test.EndMeasure()
@@ -69,6 +71,18 @@ struct Test
 
 #define BACKSPACE10 "\x8\x8\x8\x8\x8\x8\x8\x8\x8\x8"
 #define ERASE10 BACKSPACE10 "          " BACKSPACE10
+
+static void TestError(const char* what, int line, const char* fmt, ...)
+{
+	printf("[ERROR] Check failed - \"%s\" (line %d)\nInfo: ", what, line);
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+	puts("");
+}
+#define CHECK(truth, fmt, ...) do { if (!(truth)) TestError(#truth, __LINE__, fmt, __VA_ARGS__); } while(0)
+#define CHECK_INT_EQ(what, to) CHECK(int(what) == int(to), "%d", int(what))
 
 template <int& at>
 struct InstCounter
@@ -126,6 +140,103 @@ static void check_integrity(HT& ht)
 	}
 }
 
+#define TEST_CMP Test _test(" vector:", true)
+static int arr0 = 0;
+static void ArrayTests()
+{
+	// test basic functionality
+	{
+		// - initial state
+		CHECK_INT_EQ(arr0, 0);
+		Array<InstCounter<arr0>> arr;
+		CHECK_INT_EQ(arr0, 0);
+		CHECK_INT_EQ(arr.Size(), 0);
+		CHECK_INT_EQ(arr.Capacity(), 0);
+		// - append & remove all
+		arr.Append({});
+		CHECK_INT_EQ(arr0, 1);
+		CHECK_INT_EQ(arr.Size(), 1);
+		CHECK_INT_EQ(arr.Capacity(), 1);
+		arr.Clear();
+		CHECK_INT_EQ(arr0, 0);
+		CHECK_INT_EQ(arr.Size(), 0);
+		CHECK_INT_EQ(arr.Capacity(), 1);
+		// - gradually append
+		arr.Append({});
+		CHECK_INT_EQ(arr0, 1);
+		CHECK_INT_EQ(arr.Size(), 1);
+		CHECK_INT_EQ(arr.Capacity(), 1);
+		arr.Append({});
+		CHECK_INT_EQ(arr0, 2);
+		CHECK_INT_EQ(arr.Size(), 2);
+		CHECK_INT_EQ(arr.Capacity(), 3);
+		arr.Append({});
+		CHECK_INT_EQ(arr0, 3);
+		CHECK_INT_EQ(arr.Size(), 3);
+		CHECK_INT_EQ(arr.Capacity(), 3);
+		arr.Append({});
+		CHECK_INT_EQ(arr0, 4);
+		CHECK_INT_EQ(arr.Size(), 4);
+		CHECK_INT_EQ(arr.Capacity(), 7);
+		// - copy ctor
+		{
+			auto arr2(arr);
+			CHECK_INT_EQ(arr0, 8);
+		}
+		CHECK_INT_EQ(arr0, 4);
+		// - copy assign
+		{
+			auto arr2 = arr;
+			CHECK_INT_EQ(arr0, 8);
+		}
+		CHECK_INT_EQ(arr0, 4);
+		// - move ctor
+		{
+			auto arr2(std::move(arr));
+			CHECK_INT_EQ(arr0, 4);
+			arr = std::move(arr2);
+			CHECK_INT_EQ(arr0, 4);
+		}
+		CHECK_INT_EQ(arr0, 4);
+	}
+	// - dtor
+	CHECK_INT_EQ(arr0, 0);
+
+
+	{TEST("ctor/dtor (int) x1000");
+	for (int i = 0; i < 1000; i++)
+		Array<int> v;
+	}
+
+	{TEST_CMP;
+	for (int i = 0; i < 1000; i++)
+		std::vector<int> v;
+	}
+	END_TEST_GROUP;
+
+
+	for (int cap = 1; cap <= 1024; cap *= 2)
+	{
+		char bfr[128];
+		snprintf(bfr, 128, "ctor/dtor [cap=%d] (int) x1000", cap);
+		{TEST(bfr);
+		for (int i = 0; i < 1000; i++)
+			Array<int> v(cap);
+		}
+
+		{TEST_CMP;
+		for (int i = 0; i < 1000; i++)
+		{
+			std::vector<int> v;
+			v.reserve(cap);
+		}
+		}
+		END_TEST_GROUP;
+	}
+}
+#undef TEST_CMP
+
+#define TEST_CMP Test _test(" unordered_map:", true)
 static void HashMapTests()
 {
 	{TEST("ctor/dtor (int, int) x100");
@@ -901,12 +1012,14 @@ static void HashMapTests()
 	}
 	END_TEST_GROUP;
 }
+#undef TEST_CMP
 
 struct Init
 {
 	Init()
 	{
-		HashMapTests();
+		ArrayTests();
+		//HashMapTests();
 		exit(0);
 	}
 };

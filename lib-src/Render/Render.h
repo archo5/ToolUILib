@@ -1,8 +1,9 @@
 
 #pragma once
 
-#include "../Core/Math.h"
+#include "../Core/Array.h"
 #include "../Core/Image.h"
+#include "../Core/Math.h"
 #include "../Core/Memory.h"
 #include "../Core/RefCounted.h"
 
@@ -87,7 +88,7 @@ struct ImageSet : RefCountedST
 		AABB2f edgeWidth = {};
 	};
 
-	std::vector<Entry> entries;
+	Array<Entry> entries;
 	ImageSetType type = ImageSetType::Icon;
 	ImageSetSizeMode sizeMode = ImageSetSizeMode::Default;
 	AABB2f baseEdgeWidth = {};

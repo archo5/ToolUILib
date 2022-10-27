@@ -146,13 +146,13 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	oi.EndObject();
 }
 
-void TE_Template::GetNodes(std::vector<Node*>& outNodes)
+void TE_Template::GetNodes(Array<Node*>& outNodes)
 {
 	for (TE_Node* node : nodes)
-		outNodes.push_back(node);
+		outNodes.Append(node);
 }
 
-void TE_Template::GetLinks(std::vector<Link>& outLinks)
+void TE_Template::GetLinks(Array<Link>& outLinks)
 {
 	for (TE_Node* inNode : nodes)
 	{
@@ -161,19 +161,19 @@ void TE_Template::GetLinks(std::vector<Link>& outLinks)
 		{
 			TE_Node* outNode = inNode->GetInputPinValue(i);
 			if (outNode)
-				outLinks.push_back({ { outNode, 0 }, { inNode, i } });
+				outLinks.Append({ { outNode, 0 }, { inNode, i } });
 		}
 	}
 }
 
-void TE_Template::GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries)
+void TE_Template::GetAvailableNodeTypes(Array<NodeTypeEntry>& outEntries)
 {
-	outEntries.push_back({ "Masks/Rectangle", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_RectMask>(pg); } });
-	outEntries.push_back({ "Masks/Combine", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_CombineMask>(pg); } });
-	outEntries.push_back({ "Layers/Solid color", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_SolidColorLayer>(pg); } });
-	outEntries.push_back({ "Layers/2 color linear gradient", 0,
+	outEntries.Append({ "Masks/Rectangle", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_RectMask>(pg); } });
+	outEntries.Append({ "Masks/Combine", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_CombineMask>(pg); } });
+	outEntries.Append({ "Layers/Solid color", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_SolidColorLayer>(pg); } });
+	outEntries.Append({ "Layers/2 color linear gradient", 0,
 		[](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_2ColorLinearGradientColorLayer>(pg); } });
-	outEntries.push_back({ "Layers/Blend", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_BlendLayer>(pg); } });
+	outEntries.Append({ "Layers/Blend", 0, [](IProcGraph* pg, const char*, uintptr_t) { return CreateNode<TE_BlendLayer>(pg); } });
 }
 
 std::string TE_Template::GetPinName(const Pin& pin)

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "../Core/Array.h"
 #include "../Core/HashTable.h"
 #include "../Model/Objects.h"
 
@@ -51,8 +52,8 @@ struct IProcGraph
 	//virtual int GetSupportedFeatures() = 0;
 
 	// global lists
-	virtual void GetNodes(std::vector<Node*>& outNodes) = 0;
-	virtual void GetLinks(std::vector<Link>& outLinks) = 0;
+	virtual void GetNodes(Array<Node*>& outNodes) = 0;
+	virtual void GetLinks(Array<Link>& outLinks) = 0;
 
 	// node types to add
 	typedef Node* NodeCreationFunc(IProcGraph*, const char* path, uintptr_t id);
@@ -62,7 +63,7 @@ struct IProcGraph
 		uintptr_t id;
 		NodeCreationFunc* func;
 	};
-	virtual void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) = 0;
+	virtual void GetAvailableNodeTypes(Array<NodeTypeEntry>& outEntries) = 0;
 
 	// basic node info
 	virtual std::string GetNodeName(Node*) = 0;
@@ -80,7 +81,7 @@ struct IProcGraph
 	// pin linkage info (with default suboptimal implementations)
 	virtual bool IsPinLinked(const Pin& pin)
 	{
-		std::vector<Link> allLinks;
+		Array<Link> allLinks;
 		GetLinks(allLinks);
 		for (const auto& link : allLinks)
 		{
@@ -89,14 +90,14 @@ struct IProcGraph
 		}
 		return false;
 	}
-	virtual void GetPinLinks(const Pin& pin, std::vector<Link>& outLinks)
+	virtual void GetPinLinks(const Pin& pin, Array<Link>& outLinks)
 	{
-		std::vector<Link> allLinks;
+		Array<Link> allLinks;
 		GetLinks(allLinks);
 		for (const auto& link : allLinks)
 		{
 			if ((pin.isOutput ? link.output : link.input) == pin.end)
-				outLinks.push_back(link);
+				outLinks.Append(link);
 		}
 	}
 	virtual void UnlinkPin(const Pin& pin) = 0;
@@ -221,14 +222,14 @@ struct ProcGraphEditor : Buildable
 	virtual void OnMakeCreationMenu(struct MenuItemCollection& menu);
 	virtual void OnDrawCurrentLinks();
 	virtual void OnDrawPendingLinks();
-	virtual void GetLinkPoints(const IProcGraph::Link& link, std::vector<Point2f>& outPoints);
-	virtual void GetConnectingLinkPoints(const IProcGraph::Pin& pin, std::vector<Point2f>& outPoints);
+	virtual void GetLinkPoints(const IProcGraph::Link& link, Array<Point2f>& outPoints);
+	virtual void GetConnectingLinkPoints(const IProcGraph::Pin& pin, Array<Point2f>& outPoints);
 	// connecting = 0 (not), 1 (output-*), -1 (*-input)
-	virtual void GetLinkPointsRaw(const Point2f& p0, const Point2f& p1, int connecting, std::vector<Point2f>& outPoints);
+	virtual void GetLinkPointsRaw(const Point2f& p0, const Point2f& p1, int connecting, Array<Point2f>& outPoints);
 	virtual void GetTangents(const Point2f& b0, const Point2f& b3, Point2f& b1, Point2f& b2);
-	virtual void GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3, std::vector<Point2f>& outPoints);
+	virtual void GetLinkPointsRawInner(const Point2f& b0, const Point2f& b3, Array<Point2f>& outPoints);
 	virtual Point2f GetPinPos(ProcGraphEditor_NodePin* P);
-	virtual void OnDrawSingleLink(const std::vector<Point2f>& points, int connecting, float width, Color4b color);
+	virtual void OnDrawSingleLink(const Array<Point2f>& points, int connecting, float width, Color4b color);
 
 	IProcGraph* _graph = nullptr;
 	PinUIMap pinUIMap;

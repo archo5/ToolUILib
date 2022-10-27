@@ -522,19 +522,19 @@ struct TEST : ui::Buildable
 	{
 		TEMP_LAYOUT_MODE = FILLER;
 #if 1
-		std::vector<ui::MenuItem> rootMenu;
+		ui::Array<ui::MenuItem> rootMenu;
 
 		for (const auto& group : exampleGroups)
 		{
-			rootMenu.push_back(ui::MenuItem(group.name));
+			rootMenu.Append(ui::MenuItem(group.name));
 			for (auto& entry : group.entries)
 			{
 				if (!entry.func)
 				{
 					if (entry.name)
-						rootMenu.back().submenu.push_back(ui::MenuItem(entry.name, {}, true));
+						rootMenu.Last().submenu.Append(ui::MenuItem(entry.name, {}, true));
 					else
-						rootMenu.back().submenu.push_back(ui::MenuItem::Separator());
+						rootMenu.Last().submenu.Append(ui::MenuItem::Separator());
 					continue;
 				}
 
@@ -544,25 +544,25 @@ struct TEST : ui::Buildable
 					GetNativeWindow()->SetTitle(entry.name);
 					Rebuild();
 				};
-				rootMenu.back().submenu.push_back(ui::MenuItem(entry.name, {}, false, curTest == &entry).Func(fn));
+				rootMenu.Last().submenu.Append(ui::MenuItem(entry.name, {}, false, curTest == &entry).Func(fn));
 			}
 		}
 
-		rootMenu.push_back(ui::MenuItem("Debug"));
+		rootMenu.Append(ui::MenuItem("Debug"));
 		{
-			rootMenu.back().submenu.push_back(ui::MenuItem("Rebuild always", {}, false, rebuildAlways).Func([this]() { rebuildAlways ^= true; Rebuild(); }));
-			rootMenu.back().submenu.push_back(ui::MenuItem("Add wrappers", {}, false, GetWrapperSetting()).Func([this]() { GetWrapperSetting() ^= true; Rebuild(); }));
-			rootMenu.back().submenu.push_back(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
+			rootMenu.Last().submenu.Append(ui::MenuItem("Rebuild always", {}, false, rebuildAlways).Func([this]() { rebuildAlways ^= true; Rebuild(); }));
+			rootMenu.Last().submenu.Append(ui::MenuItem("Add wrappers", {}, false, GetWrapperSetting()).Func([this]() { GetWrapperSetting() ^= true; Rebuild(); }));
+			rootMenu.Last().submenu.Append(ui::MenuItem("Draw rectangles", {}, false, GetNativeWindow()->IsDebugDrawEnabled()).Func([this]() {
 				auto* w = GetNativeWindow(); w->SetDebugDrawEnabled(!w->IsDebugDrawEnabled()); Rebuild(); }));
 
-			rootMenu.back().submenu.push_back(ui::MenuItem::Separator());
+			rootMenu.Last().submenu.Append(ui::MenuItem::Separator());
 
-			rootMenu.back().submenu.push_back(ui::MenuItem("Enable scale", {}, false, enableScale).Func([this]() {
+			rootMenu.Last().submenu.Append(ui::MenuItem("Enable scale", {}, false, enableScale).Func([this]() {
 				enableScale = !enableScale; Rebuild(); }));
-			rootMenu.back().submenu.push_back(ui::MenuItem(ui::Format("Scale: %d%%", scalePercent), {}, true));
-			rootMenu.back().submenu.push_back(ui::MenuItem("Increase scale by 10%", "F6").Func([this]() {
+			rootMenu.Last().submenu.Append(ui::MenuItem(ui::Format("Scale: %d%%", scalePercent), {}, true));
+			rootMenu.Last().submenu.Append(ui::MenuItem("Increase scale by 10%", "F6").Func([this]() {
 				scalePercent += 10; enableScale = true; Rebuild(); }));
-			rootMenu.back().submenu.push_back(ui::MenuItem("Decrease scale by 10%", "F7").Func([this]() {
+			rootMenu.Last().submenu.Append(ui::MenuItem("Decrease scale by 10%", "F7").Func([this]() {
 				if (scalePercent > 10) scalePercent -= 10; enableScale = true; Rebuild(); }));
 		}
 
@@ -697,7 +697,7 @@ int uimain(int argc, char* argv[])
 	//EarlyTest();
 	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);
-	ui::FSGetDefault()->fileSystems.push_back(ui::CreateFileSystemSource("gui-tests/rsrc"));
+	ui::FSGetDefault()->fileSystems.Append(ui::CreateFileSystemSource("gui-tests/rsrc"));
 	MainWindow mw;
 	mw.SetVisible(true);
 	return app.Run();

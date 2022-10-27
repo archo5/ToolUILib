@@ -578,8 +578,8 @@ struct ProxyEventSystem
 };
 
 struct NativeWindow_Impl;
-static std::vector<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
-static std::vector<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
+static Array<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
+static Array<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
 static int g_rsrcUsers = 0;
 
 static StaticID_Color sid_color_clear("clear");
@@ -630,7 +630,7 @@ struct NativeWindow_Impl
 		}
 
 		if (invalidated)
-			g_windowRepaintList->erase(std::remove(g_windowRepaintList->begin(), g_windowRepaintList->end(), this), g_windowRepaintList->end());
+			g_windowRepaintList->RemoveFirstOf(this);
 		rhi::FreeRenderContext(renderCtx);
 		DestroyWindow(window);
 	}
@@ -640,7 +640,7 @@ struct NativeWindow_Impl
 		if (invalidated)
 			return false;
 		invalidated = true;
-		g_windowRepaintList->push_back(this);
+		g_windowRepaintList->Append(this);
 		return true;
 	}
 
@@ -1434,20 +1434,20 @@ Application::Application(int argc, char* argv[])
 	assert(_instance == nullptr);
 	_instance = this;
 
-	if (FSGetDefault()->fileSystems.empty())
+	if (FSGetDefault()->fileSystems.IsEmpty())
 	{
-		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource(PathJoin(PathGetParent(PathFromSystem(argv[0])), "data")));
+		FSGetDefault()->fileSystems.Append(CreateFileSystemSource(PathJoin(PathGetParent(PathFromSystem(argv[0])), "data")));
 		// TODO pipeline for avoiding this?
-		FSGetDefault()->fileSystems.push_back(CreateFileSystemSource("data"));
+		FSGetDefault()->fileSystems.Append(CreateFileSystemSource("data"));
 	}
 
 	if (auto embData = LoadEmbeddedData())
-		FSGetDefault()->fileSystems.push_back(CreateZipFileMemorySource(embData));
+		FSGetDefault()->fileSystems.Append(CreateZipFileMemorySource(embData));
 
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
-	g_windowRepaintList = new std::vector<NativeWindow_Impl*>;
-	g_curWindowRepaintList = new std::vector<NativeWindow_Impl*>;
+	g_windowRepaintList = new Array<NativeWindow_Impl*>;
+	g_curWindowRepaintList = new Array<NativeWindow_Impl*>;
 
 	LoadDefaultCursors();
 }
@@ -1512,7 +1512,7 @@ int Application::Run()
 				window->GetOwner()->_impl->AddToInvalidationList();
 		}
 
-		assert(g_curWindowRepaintList->empty());
+		assert(g_curWindowRepaintList->IsEmpty());
 
 		std::swap(g_windowRepaintList, g_curWindowRepaintList);
 		for (auto* win : *g_curWindowRepaintList)
@@ -1520,9 +1520,9 @@ int Application::Run()
 
 		for (auto* win : *g_curWindowRepaintList)
 			win->Redraw(true);
-		g_curWindowRepaintList->clear();
+		g_curWindowRepaintList->Clear();
 
-		assert(g_curWindowRepaintList->empty());
+		assert(g_curWindowRepaintList->IsEmpty());
 	}
 	return g_appExitCode;
 }
@@ -1863,7 +1863,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				goto error;
 			UINT numFiles = DragQueryFileW(hdrop, 0xffffffff, nullptr, 0);
 			DragDropFiles* files = new DragDropFiles;
-			files->paths.reserve(numFiles);
+			files->paths.Reserve(numFiles);
 			for (UINT i = 0; i < numFiles; i++)
 			{
 				WCHAR path[MAX_PATH + 1];
@@ -1872,7 +1872,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				char bfr[MAX_PATH * 3 + 1];
 				int len2 = WideCharToMultiByte(CP_UTF8, 0, path, len, bfr, MAX_PATH * 3, nullptr, nullptr);
 				bfr[len2] = 0;
-				files->paths.push_back(bfr);
+				files->paths.Append(bfr);
 			}
 
 			DragDrop::SetData(files);
@@ -1978,14 +1978,14 @@ int RealMain()
 
 	int argc = 0;
 	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	std::vector<std::string> args;
-	std::vector<char*> argp;
-	args.reserve(argc);
-	argp.reserve(argc);
+	ui::Array<std::string> args;
+	ui::Array<char*> argp;
+	args.Reserve(argc);
+	argp.Reserve(argc);
 	for (int i = 0; i < argc; i++)
-		args.push_back(ui::WCHARtoUTF8(argv[i]));
+		args.Append(ui::WCHARtoUTF8(argv[i]));
 	for (int i = 0; i < argc; i++)
-		argp.push_back(const_cast<char*>(args[i].c_str()));
+		argp.Append(const_cast<char*>(args[i].c_str()));
 	LocalFree(argv);
 
 	GlobalResources grsrc;

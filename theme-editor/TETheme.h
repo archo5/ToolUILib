@@ -75,9 +75,9 @@ struct TE_Template : ui::IProcGraph, TE_IRenderContextProvider
 		return (TE_Node*)static_cast<TE_Template*>(pg)->CreateNode<T>(0, 0);
 	}
 
-	void GetNodes(std::vector<Node*>& outNodes) override;
-	void GetLinks(std::vector<Link>& outLinks) override;
-	void GetAvailableNodeTypes(std::vector<NodeTypeEntry>& outEntries) override;
+	void GetNodes(Array<Node*>& outNodes) override;
+	void GetLinks(Array<Link>& outLinks) override;
+	void GetAvailableNodeTypes(Array<NodeTypeEntry>& outEntries) override;
 
 	std::string GetNodeName(Node* node) override { return static_cast<TE_Node*>(node)->GetName(); }
 	uintptr_t GetNodeInputCount(Node* node) override { return static_cast<TE_Node*>(node)->GetInputPinCount(); }

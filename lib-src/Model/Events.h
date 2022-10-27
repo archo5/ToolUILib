@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "../Core/Array.h"
 #include "../Core/Delegate.h"
 #include "../Core/Math.h"
 
@@ -320,7 +321,7 @@ struct DragDropFiles : DragDropData
 	static constexpr const char* NAME = "files";
 	DragDropFiles() : DragDropData(NAME) {}
 
-	std::vector<std::string> paths;
+	Array<std::string> paths;
 };
 
 extern MulticastDelegate<> OnDragDropDataChanged;

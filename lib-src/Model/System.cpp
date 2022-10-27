@@ -26,7 +26,7 @@ void UIObjectDirtyStack::Clear()
 {
 	for (auto* obj : stack)
 		obj->flags &= ~flag;
-	stack.clear();
+	stack.Clear();
 }
 
 void UIObjectDirtyStack::Add(UIObject* n)
@@ -44,7 +44,7 @@ void UIObjectDirtyStack::Add(UIObject* n)
 #endif
 	if (n->flags & flag)
 		return;
-	stack.push_back(n);
+	stack.Append(n);
 	n->flags |= flag;
 }
 
@@ -55,24 +55,15 @@ void UIObjectDirtyStack::OnDestroy(UIObject* n)
 		CHECK_NOT_IN_DIRTY_STACK(n);
 		return;
 	}
-	for (auto it = stack.begin(); it != stack.end(); it++)
-	{
-		if (*it == n)
-		{
-			if (it + 1 != stack.end())
-				*it = stack.back();
-			stack.pop_back();
-			break;
-		}
-	}
+	stack.UnorderedRemoveFirstOf(n);
 	CHECK_NOT_IN_DIRTY_STACK(n);
 }
 
 UIObject* UIObjectDirtyStack::Pop()
 {
 	assert(stack.size() > 0);
-	UIObject* n = stack.back();
-	stack.pop_back();
+	UIObject* n = stack.Last();
+	stack.RemoveLast();
 	n->flags &= ~flag;
 	CHECK_NOT_IN_DIRTY_STACK(n);
 	return n;
@@ -100,9 +91,7 @@ void UIObjectDirtyStack::RemoveNth(size_t n)
 	auto* src = stack[n];
 
 	src->flags &= ~flag;
-	if (n + 1 < stack.size())
-		stack[n] = stack.back();
-	stack.pop_back();
+	stack.UnorderedRemoveAt(n);
 
 	CHECK_NOT_IN_DIRTY_STACK(src);
 }
@@ -164,8 +153,8 @@ void UIContainer::ProcessBuildStack()
 
 		while (oldDDs.size())
 		{
-			oldDDs.back()();
-			oldDDs.pop_back();
+			oldDDs.Last()();
+			oldDDs.RemoveLast();
 		}
 
 		_curObjectList->EndAllocations();
@@ -225,7 +214,7 @@ void UIContainer::ProcessLayoutStack()
 
 	layoutStack.RemoveChildren();
 
-	assert(!layoutStack.stack.empty());
+	assert(layoutStack.stack.NotEmpty());
 	g_curLayoutFrame++;
 
 	// single pass
@@ -336,10 +325,10 @@ void Overlays::UpdateSorted()
 	if (!sortedOutdated)
 		return;
 
-	sorted.clear();
-	sorted.reserve(mapped.size());
+	sorted.Clear();
+	sorted.Reserve(mapped.size());
 	for (const auto& kvp : mapped)
-		sorted.push_back({ kvp.key, kvp.value.depth });
+		sorted.Append({ kvp.key, kvp.value.depth });
 	std::sort(sorted.begin(), sorted.end(), [](const Sorted& a, const Sorted& b) { return a.depth < b.depth; });
 	sortedOutdated = false;
 }

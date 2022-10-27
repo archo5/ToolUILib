@@ -585,7 +585,7 @@ struct ZipFileSource : IFileSource
 	{
 		mz_uint id = -1;
 		bool dir = false;
-		std::vector<std::string> dirEntries;
+		Array<std::string> dirEntries;
 	};
 
 	mz_zip_archive arch;
@@ -604,7 +604,7 @@ struct ZipFileSource : IFileSource
 		{
 			auto& pe = InsertEntry(parent);
 			pe.dir = true;
-			pe.dirEntries.push_back(name);
+			pe.dirEntries.Append(name);
 		}
 		return fileMap[name];
 	}

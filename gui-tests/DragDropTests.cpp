@@ -19,7 +19,7 @@ struct FileReceiverTest : ui::Buildable
 			}
 		};
 		ui::Push<ui::StackTopDownLayoutElement>();
-		if (filePaths.empty())
+		if (filePaths.IsEmpty())
 		{
 			ui::Text("Drop files here");
 		}
@@ -36,7 +36,7 @@ struct FileReceiverTest : ui::Buildable
 		WPop();
 	}
 
-	std::vector<std::string> filePaths;
+	ui::Array<std::string> filePaths;
 };
 
 

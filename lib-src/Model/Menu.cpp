@@ -18,7 +18,7 @@ MenuItem::MenuItem(StringView text, StringView shortcut, bool disabled, bool che
 		this->text += "\t";
 		this->text.append(shortcut.data(), shortcut.size());
 	}
-	this->submenu.assign(submenu.begin(), submenu.end());
+	this->submenu.AssignRange(submenu);
 	this->isChecked = checked;
 	this->isDisabled = disabled;
 }
@@ -46,18 +46,18 @@ void MenuItemCollection::Entry::Finalize()
 		return a->name < b->name;
 	});
 
-	_finalizedChildItems.clear();
+	_finalizedChildItems.Clear();
 	int prevPrio = sortedChildren[0]->minPriority;
 	for (Entry* ch : sortedChildren)
 	{
 		if (ch->minPriority - prevPrio >= SEPARATOR_THRESHOLD)
 		{
-			_finalizedChildItems.push_back(MenuItem::Separator());
+			_finalizedChildItems.Append(MenuItem::Separator());
 		}
 		prevPrio = ch->maxPriority;
 
 		ch->Finalize();
-		_finalizedChildItems.push_back(
+		_finalizedChildItems.Append(
 			MenuItem(
 				ch->name,
 				{},
@@ -120,7 +120,7 @@ HMENU CreateMenuFrom(ArrayView<Menu::Item> items, Menu::Item* base, bool topbar 
 				flags |= MF_DISABLED | MF_GRAYED;
 		}
 		UINT_PTR id = &items[i] - base + 1;
-		if (!item.submenu.empty())
+		if (item.submenu.NotEmpty())
 		{
 			flags |= MF_POPUP;
 			id = (UINT_PTR)CreateMenuFrom(ArrayView<Menu::Item>(&items[i + 1], items[i].subelems), base);
@@ -185,13 +185,13 @@ bool Menu::CallActivationFunction(int which)
 
 void Menu::_Unpack(ArrayView<MenuItem> miv, int parent)
 {
-	if (items.capacity() < items.size() + miv.size())
-		items.reserve(items.capacity() * 2 + miv.size());
+	if (items.Capacity() < items.Size() + miv.size())
+		items.Reserve(items.Capacity() * 2 + miv.size());
 
 	for (const auto& mi : miv)
 	{
-		items.push_back({ &mi, parent, 0 });
-		if (!mi.submenu.empty())
+		items.Append({ &mi, parent, 0 });
+		if (mi.submenu.NotEmpty())
 		{
 			size_t start = items.size();
 			_Unpack(mi.submenu, start - 1);
@@ -202,7 +202,7 @@ void Menu::_Unpack(ArrayView<MenuItem> miv, int parent)
 
 
 TopMenu::TopMenu(NativeWindowBase* w, ArrayView<MenuItem> rootItems) :
-	_items(rootItems.begin(), rootItems.end()), _menu(_items, true), _window(w)
+	_items(rootItems), _menu(_items, true), _window(w)
 {
 	_window->SetMenu(&_menu);
 }

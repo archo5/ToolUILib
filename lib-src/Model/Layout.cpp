@@ -253,16 +253,16 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
 		float w;
 		float fr;
 	};
-	std::vector<Item> items;
-	std::vector<int> sorted;
+	Array<Item> items;
+	Array<int> sorted;
 	for (auto& slot : _slots)
 	{
 		if (!slot._obj->_NeedsLayout())
 			continue;
 
 		auto s = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
-		items.push_back({ slot._obj, s.min, s.max, s.min, slot.fraction });
-		sorted.push_back(sorted.size());
+		items.Append({ slot._obj, s.min, s.max, s.min, slot.fraction });
+		sorted.Append(sorted.size());
 		sum += s.min;
 		frsum += slot.fraction;
 	}
@@ -392,7 +392,7 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
 		{
 		case Edge::Top:
 			r = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding);
-			if (&slot == &_slots.back())
+			if (&slot == &_slots.Last())
 				d = r.Clamp(subr.GetHeight());
 			else
 				d = r.min;

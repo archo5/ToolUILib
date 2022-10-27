@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include "../Core/Array.h"
 #include "../Core/HashTable.h"
 #include "Objects.h"
 #include "EventSystem.h"
@@ -16,10 +17,10 @@ namespace ui {
 struct UIObjectDirtyStack
 {
 	UIObjectDirtyStack(uint32_t f) : flag(f) {}
-	bool ContainsAny() const { return stack.size() != 0; }
+	bool ContainsAny() const { return stack.NotEmpty(); }
 	void ClearWithoutFlags()
 	{
-		stack.clear();
+		stack.Clear();
 	}
 	void Clear();
 	void Swap(UIObjectDirtyStack& o)
@@ -31,16 +32,16 @@ struct UIObjectDirtyStack
 	void OnDestroy(UIObject* n);
 	UIObject* Pop();
 	void RemoveChildren();
-	size_t Size() const { return stack.size(); }
+	size_t Size() const { return stack.Size(); }
 	void RemoveNth(size_t n);
 
-	std::vector<UIObject*> stack;
+	Array<UIObject*> stack;
 	uint32_t flag;
 };
 
 struct UIObjectPendingDeactivationSet
 {
-	std::vector<UIObject*> _data;
+	Array<UIObject*> _data;
 
 	void InsertIfMissing(UIObject* obj)
 	{
@@ -50,8 +51,8 @@ struct UIObjectPendingDeactivationSet
 	}
 	void Insert(UIObject* obj)
 	{
-		obj->_pendingDeactivationSetPos = _data.size();
-		_data.push_back(obj);
+		obj->_pendingDeactivationSetPos = _data.Size();
+		_data.Append(obj);
 	}
 	void RemoveIfFound(UIObject* obj)
 	{
@@ -64,21 +65,21 @@ struct UIObjectPendingDeactivationSet
 		auto pos = obj->_pendingDeactivationSetPos;
 		obj->_pendingDeactivationSetPos = UINT32_MAX;
 
-		if (pos + 1 < _data.size())
+		if (pos + 1 < _data.Size())
 		{
-			_data[pos] = _data.back();
+			_data[pos] = _data.Last();
 			_data[pos]->_pendingDeactivationSetPos = pos;
 		}
-		_data.pop_back();
+		_data.RemoveLast();
 	}
 	void Flush()
 	{
-		while (!_data.empty())
+		while (_data.NotEmpty())
 		{
-			UIObject* obj = _data.back();
+			UIObject* obj = _data.Last();
 			obj->_DetachFromFrameContents();
 		}
-		assert(_data.empty() && "some object continues to add itself to the pending deactivation set!");
+		assert(_data.IsEmpty() && "some object continues to add itself to the pending deactivation set!");
 	}
 };
 
@@ -324,7 +325,7 @@ struct Overlays
 	void UpdateSorted();
 
 	HashMap<UIObject*, Info> mapped;
-	std::vector<Sorted> sorted;
+	Array<Sorted> sorted;
 	bool sortedOutdated = false;
 };
 

@@ -48,8 +48,8 @@ struct SplitPane : UIObject
 
 	SeparatorLineStyle vertSepStyle; // for horizontal splitting
 	SeparatorLineStyle horSepStyle; // for vertical splitting
-	std::vector<UIObject*> _children;
-	std::vector<float> _splits;
+	Array<UIObject*> _children;
+	Array<float> _splits;
 	bool _splitsSet = false;
 	bool _verticalSplit = false;
 	SubUI<uint16_t> _splitUI;

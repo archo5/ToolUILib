@@ -3,6 +3,7 @@
 
 #include "Painting.h"
 #include "../Render/Render.h"
+#include "../Core/Array.h"
 #include "../Core/HashTable.h"
 #include "../Core/StaticID.h"
 
@@ -65,7 +66,7 @@ struct ThemeData : RefCountedST
 		IThemeStructLoader* structLoader = nullptr;
 		void* defaultInstance = nullptr;
 		HashMap<std::string, void*> instances;
-		std::vector<void*> cachedInstances;
+		Array<void*> cachedInstances;
 	};
 	using CustomStructDataHandle = RCHandle<CustomStructData>;
 
@@ -73,10 +74,10 @@ struct ThemeData : RefCountedST
 	HashMap<std::string, draw::ImageSetHandle> imageSets;
 	HashMap<std::string, PainterHandle> painters;
 
-	std::vector<Optional<Color4b>> _cachedColors;
-	std::vector<draw::ImageSetHandle> _cachedImageSets;
-	std::vector<PainterHandle> _cachedPainters;
-	std::vector<CustomStructDataHandle> _cachedStructs;
+	Array<Optional<Color4b>> _cachedColors;
+	Array<draw::ImageSetHandle> _cachedImageSets;
+	Array<PainterHandle> _cachedPainters;
+	Array<CustomStructDataHandle> _cachedStructs;
 
 	HashMap<std::string, RCHandle<RefCountedST>> _customStructSources;
 

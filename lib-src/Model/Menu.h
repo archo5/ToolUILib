@@ -2,8 +2,8 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <functional>
+#include "../Core/Array.h"
 #include "../Core/Memory.h"
 #include "../Core/String.h"
 #include "../Core/HashTable.h"
@@ -50,7 +50,7 @@ struct MenuItem
 	}
 
 	std::string text;
-	std::vector<MenuItem> submenu;
+	Array<MenuItem> submenu;
 	bool isSeparator = false;
 	bool isChecked = false;
 	bool isDisabled = false;
@@ -78,7 +78,7 @@ struct MenuItemCollection
 
 		HashMap<std::string, Entry*> children;
 
-		std::vector<MenuItem> _finalizedChildItems;
+		Array<MenuItem> _finalizedChildItems;
 
 		~Entry();
 		void Finalize();
@@ -159,13 +159,13 @@ private:
 
 	void _Unpack(ArrayView<MenuItem> miv, int parent);
 
-	std::vector<Item> items;
+	Array<Item> items;
 	void* impl;
 };
 
 struct TopMenu
 {
-	std::vector<MenuItem> _items;
+	Array<MenuItem> _items;
 	Menu _menu;
 	NativeWindowBase* _window;
 

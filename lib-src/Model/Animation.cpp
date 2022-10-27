@@ -8,7 +8,7 @@ void AnimPlayer::PlayAnim(const AnimPtr& anim)
 {
 	StopAnim(anim);
 	anim->Reset(this);
-	_activeAnims.push_back(anim);
+	_activeAnims.Append(anim);
 
 	if (!IsAnimating())
 		_prevTime = platform::GetTimeMs();
@@ -17,22 +17,15 @@ void AnimPlayer::PlayAnim(const AnimPtr& anim)
 
 void AnimPlayer::StopAnim(const AnimPtr& anim)
 {
-	for (auto it = _activeAnims.begin(); it != _activeAnims.end(); it++)
-	{
-		if (*it == anim)
-		{
-			_activeAnims.erase(it);
-			break;
-		}
-	}
+	_activeAnims.RemoveFirstOf(anim);
 
-	if (_activeAnims.empty())
+	if (_activeAnims.IsEmpty())
 		EndAnimation();
 }
 
 void AnimPlayer::StopAllAnims()
 {
-	_activeAnims.clear();
+	_activeAnims.Clear();
 	EndAnimation();
 }
 
@@ -52,14 +45,14 @@ void AnimPlayer::OnAnimationFrame()
 	for (size_t i = 0; i < _activeAnims.size(); i++)
 	{
 		if (_activeAnims[i]->Advance((t - _prevTime) * 0.001f, this) > 0)
-			_activeAnims.erase(_activeAnims.begin() + i--);
+			_activeAnims.RemoveAt(i--);
 	}
 	_prevTime = t;
 
 	if (onAnimUpdate)
 		onAnimUpdate();
 
-	if (_activeAnims.empty())
+	if (_activeAnims.IsEmpty())
 		EndAnimation();
 }
 
@@ -74,7 +67,7 @@ float SequenceAnimation::Advance(float dt, IAnimState* asrw)
 	if (_curAnim == SIZE_MAX)
 	{
 		_curAnim = 0;
-		if (!animations.empty())
+		if (animations.NotEmpty())
 			animations[0]->Reset(asrw);
 	}
 	while (dt > 0 && _curAnim < animations.size())
@@ -96,8 +89,8 @@ float SequenceAnimation::Advance(float dt, IAnimState* asrw)
 
 void ParallelAnimation::Reset(IAnimState* asrw)
 {
-	_states.clear();
-	_states.resize(animations.size(), 0);
+	_states.Clear();
+	_states.ResizeWith(animations.Size(), 0);
 }
 
 float ParallelAnimation::Advance(float dt, IAnimState* asrw)

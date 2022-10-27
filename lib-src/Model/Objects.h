@@ -8,6 +8,7 @@
 #include <typeinfo>
 #include <new>
 
+#include "../Core/Array.h"
 #include "../Core/Math.h"
 #include "../Core/Serialization.h"
 #include "../Core/String.h"
@@ -481,7 +482,7 @@ struct Buildable : WrapperElement
 
 	void Defer(std::function<void()>&& fn)
 	{
-		_deferredDestructors.push_back(std::move(fn));
+		_deferredDestructors.Append(std::move(fn));
 	}
 	template <class T, class... Args> T* Allocate(Args&&... args)
 	{
@@ -492,7 +493,7 @@ struct Buildable : WrapperElement
 
 	PersistentObjectList _objList;
 	uint64_t _lastBuildFrameID = 0;
-	std::vector<std::function<void()>> _deferredDestructors;
+	Array<std::function<void()>> _deferredDestructors;
 #define WRAPPER 1
 #define FILLER 2
 	uint8_t TEMP_LAYOUT_MODE = 0;

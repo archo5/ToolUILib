@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include <vector>
-#include <functional>
-
+#include "../Core/Array.h"
 #include "../Core/HashTable.h"
 #include "Native.h" // TODO
+
+#include <functional>
 
 
 namespace ui {
@@ -37,7 +37,7 @@ struct AnimPlayer : IAnimState, protected AnimationRequester
 	std::function<void()> onAnimUpdate;
 
 	HashMap<std::string, float> _variables;
-	std::vector<AnimPtr> _activeAnims;
+	Array<AnimPtr> _activeAnims;
 	uint32_t _prevTime;
 };
 
@@ -50,7 +50,7 @@ struct SequenceAnimation : Animation
 	void Reset(IAnimState* asrw) override;
 	float Advance(float dt, IAnimState* asrw) override;
 
-	std::vector<AnimPtr> animations;
+	Array<AnimPtr> animations;
 
 	size_t _curAnim = SIZE_MAX;
 };
@@ -63,9 +63,9 @@ struct ParallelAnimation : Animation
 	void Reset(IAnimState* asrw) override;
 	float Advance(float dt, IAnimState* asrw) override;
 
-	std::vector<AnimPtr> animations;
+	Array<AnimPtr> animations;
 
-	std::vector<uint8_t> _states;
+	Array<uint8_t> _states;
 };
 
 struct RepeatAnimation : Animation
