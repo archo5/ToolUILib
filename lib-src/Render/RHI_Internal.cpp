@@ -2,8 +2,8 @@
 #pragma once
 #include "RHI.h"
 
+#include "../Core/Array.h"
 #include "../Core/Memory.h"
-#include <vector>
 
 
 namespace ui {

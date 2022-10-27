@@ -62,7 +62,7 @@ struct Graph
 		{
 			if (link->input != end &&
 				link->output != end)
-				newlinks.push_back(link);
+				newlinks.Append(link);
 			else
 				delete link;
 		}
@@ -71,7 +71,7 @@ struct Graph
 	void AddLink(const LinkEnd& output, const LinkEnd& input)
 	{
 		UnlinkAll(input);
-		links.push_back(new Link{ output, input });
+		links.Append(new Link{ output, input });
 	}
 
 	bool CanLink(const LinkEnd& eout, const LinkEnd& ein)
@@ -97,8 +97,8 @@ struct Graph
 		return e.isOutput ? e.node->GetOutputType(e.pin) : e.node->GetInputType(e.pin);
 	}
 
-	std::vector<Node*> nodes;
-	std::vector<Link*> links;
+	ui::Array<Node*> nodes;
+	ui::Array<Link*> links;
 };
 
 struct MakeVec : Graph::Node
@@ -179,7 +179,7 @@ struct GraphImpl : ui::IProcGraph
 	}
 	static Node* AddNode(IProcGraph* graph, Graph::Node* node)
 	{
-		static_cast<GraphImpl*>(graph)->graph->nodes.push_back(node);
+		static_cast<GraphImpl*>(graph)->graph->nodes.Append(node);
 		return node;
 	}
 	void GetAvailableNodeTypes(ui::Array<NodeTypeEntry>& outEntries) override
@@ -295,25 +295,17 @@ struct GraphImpl : ui::IProcGraph
 	bool CanDeleteNode(Node*) override { return true; }
 	void DeleteNode(Node* node) override
 	{
-		for (auto it = graph->links.begin(), itend = graph->links.end(); it != itend; )
+		for (size_t i = 0; i < graph->links.size(); i++)
 		{
-			if ((*it)->input.node == node || (*it)->output.node == node)
+			auto* L = graph->links[i];
+			if (L->input.node == node || L->output.node == node)
 			{
-				delete *it;
-				it = graph->links.erase(it);
-			}
-			else
-				it++;
-		}
-		for (auto it = graph->nodes.begin(), itend = graph->nodes.end(); it != itend; it++)
-		{
-			if (*it == node)
-			{
-				graph->nodes.erase(it);
-				delete node;
-				break;
+				delete L;
+				i--;
 			}
 		}
+		graph->nodes.RemoveFirstOf(static_cast<Graph::Node*>(node));
+		delete static_cast<Graph::Node*>(node);
 	}
 
 	bool CanDuplicateNode(Node*) override { return true; }
@@ -339,13 +331,13 @@ struct NodeGraphEditorDemo : ui::Buildable
 		dotProd->position = { 200, 50 };
 		scaleVec->position = { 200, 150 };
 
-		graph.nodes.push_back(makeVec1);
-		graph.nodes.push_back(dotProd);
-		graph.nodes.push_back(scaleVec);
+		graph.nodes.Append(makeVec1);
+		graph.nodes.Append(dotProd);
+		graph.nodes.Append(scaleVec);
 
-		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 0 } });
-		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 1 } });
-		graph.links.push_back(new Graph::Link{ { makeVec1, 0, true }, { scaleVec, 0 } });
+		graph.links.Append(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 0 } });
+		graph.links.Append(new Graph::Link{ { makeVec1, 0, true }, { dotProd, 1 } });
+		graph.links.Append(new Graph::Link{ { makeVec1, 0, true }, { scaleVec, 0 } });
 	}
 	void Build() override
 	{

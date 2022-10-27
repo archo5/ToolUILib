@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <type_traits>
 #include <string>
-#include <vector>
 
 
 struct json_value_s;

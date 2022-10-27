@@ -16,9 +16,9 @@ struct TrackEditorDemo : ui::Buildable
 
 		TrackEditor()
 		{
-			items.push_back({ 100, 150, 50, 0, "Animation one" });
-			items.push_back({ 200, 350, 150, 0, "Sound effect two" });
-			items.push_back({ 120, 320, 200, 1, "Camera track" });
+			items.Append({ 100, 150, 50, 0, "Animation one" });
+			items.Append({ 200, 350, 150, 0, "Sound effect two" });
+			items.Append({ 120, 320, 200, 1, "Camera track" });
 		}
 		void OnReset() override
 		{
@@ -120,7 +120,7 @@ struct TrackEditorDemo : ui::Buildable
 			}
 		}
 
-		std::vector<Item> items;
+		ui::Array<Item> items;
 		ui::SubUI<uint32_t> subui;
 		float dx, dy;
 	};

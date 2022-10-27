@@ -7,7 +7,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <type_traits>
-#include <vector>
+
+#ifdef UI_USE_STD_VECTOR
+#  include <vector>
+#endif
 
 
 namespace ui {

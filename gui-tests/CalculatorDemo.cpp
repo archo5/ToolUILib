@@ -130,11 +130,11 @@ struct Calculator : ui::Buildable
 			return 1;
 		return 0;
 	}
-	void Apply(std::vector<double>& numqueue, char op)
+	void Apply(ui::Array<double>& numqueue, char op)
 	{
-		double b = numqueue.back();
-		numqueue.pop_back();
-		double& a = numqueue.back();
+		double b = numqueue.Last();
+		numqueue.RemoveLast();
+		double& a = numqueue.Last();
 		switch (op)
 		{
 		case '+': a += b; break;
@@ -145,8 +145,8 @@ struct Calculator : ui::Buildable
 	}
 	double Calculate()
 	{
-		std::vector<double> numqueue;
-		std::vector<char> opstack;
+		ui::Array<double> numqueue;
+		ui::Array<char> opstack;
 		bool lastwasop = false;
 		for (size_t i = 0; i < operation.size(); i++)
 		{
@@ -154,29 +154,29 @@ struct Calculator : ui::Buildable
 			if (isdigit(c))
 			{
 				char* end = nullptr;
-				numqueue.push_back(std::strtod(operation.c_str() + i, &end));
+				numqueue.Append(std::strtod(operation.c_str() + i, &end));
 				i = end - operation.c_str() - 1;
 				lastwasop = false;
 			}
 			else
 			{
-				while (!opstack.empty() && precedence(opstack.back()) > precedence(c))
+				while (opstack.NotEmpty() && precedence(opstack.Last()) > precedence(c))
 				{
-					Apply(numqueue, opstack.back());
-					opstack.pop_back();
+					Apply(numqueue, opstack.Last());
+					opstack.RemoveLast();
 				}
-				opstack.push_back(c);
+				opstack.Append(c);
 				lastwasop = true;
 			}
 		}
 		if (lastwasop)
-			opstack.pop_back();
-		while (!opstack.empty() && numqueue.size() >= 2)
+			opstack.RemoveLast();
+		while (opstack.NotEmpty() && numqueue.Size() >= 2)
 		{
-			Apply(numqueue, opstack.back());
-			opstack.pop_back();
+			Apply(numqueue, opstack.Last());
+			opstack.RemoveLast();
 		}
-		return !numqueue.empty() ? numqueue.back() : 0;
+		return numqueue.NotEmpty() ? numqueue.Last() : 0;
 	}
 
 	std::string ToString(double val)

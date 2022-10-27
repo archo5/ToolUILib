@@ -7,27 +7,27 @@ namespace ui {
 
 struct DataWriter
 {
-	std::vector<char>& _data;
+	Array<char>& _data;
 
-	DataWriter(std::vector<char>& data) : _data(data) {}
+	DataWriter(Array<char>& data) : _data(data) {}
 
 	template <class T> DataWriter& operator << (const T& src)
 	{
-		_data.insert(_data.end(), (char*)&src, (char*)(&src + 1));
+		_data.AppendMany((char*)&src, sizeof(src));
 		return *this;
 	}
 };
 
 struct DataReader
 {
-	std::vector<char>& _data;
+	Array<char>& _data;
 	size_t _off = 0;
 
-	DataReader(std::vector<char>& data) : _data(data) {}
+	DataReader(Array<char>& data) : _data(data) {}
 
 	size_t Remaining() const
 	{
-		return _off <= _data.size() ? _data.size() - _off : 0;
+		return _off <= _data.Size() ? _data.Size() - _off : 0;
 	}
 
 	void Reset()
@@ -42,7 +42,7 @@ struct DataReader
 
 	template <class T> DataReader& operator << (T& o)
 	{
-		if (_off + sizeof(o) <= _data.size())
+		if (_off + sizeof(o) <= _data.Size())
 		{
 			memcpy(&o, &_data[_off], sizeof(T));
 			_off += sizeof(T);
@@ -195,7 +195,7 @@ struct Gizmo
 	Point2f _totalMovedWinVec = {};
 	float _totalAngleDiff = 0;
 	Point2f _origCenterWinPos = {};
-	std::vector<char> _origData;
+	Array<char> _origData;
 	Mat4f _origXF = Mat4f::Identity();
 
 	void SetTransform(const Mat4f& base);

@@ -7,7 +7,6 @@
 
 #include "Keyboard.h"
 
-#include <vector>
 #include <functional>
 
 

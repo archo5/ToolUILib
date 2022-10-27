@@ -47,7 +47,7 @@ static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
 
 struct SequenceEditorsTest : ui::Buildable
 {
-	ui::RectAnchoredPlacement parts[4];
+	ui::RectAnchoredPlacement parts[5];
 
 	void Build() override
 	{
@@ -58,6 +58,7 @@ struct SequenceEditorsTest : ui::Buildable
 
 		if (ui::imm::Button("Reset"))
 		{
+			arraydata = { 1, 2, 3, 4 };
 			vectordata = { 1, 2, 3, 4 };
 			listdata = { 1, 2, 3, 4 };
 			dequedata = { 1, 2, 3, 4 };
@@ -80,10 +81,10 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imm::EditBool(setSelectionStorage, "Storage");
 		}
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 5; i++)
 		{
-			parts[i].anchor.x0 = i / 4.0f;
-			parts[i].anchor.x1 = (i + 1) / 4.0f;
+			parts[i].anchor.x0 = i / 5.0f;
+			parts[i].anchor.x1 = (i + 1) / 5.0f;
 		}
 
 		auto& ple = WPush<ui::PlacementLayoutElement>();
@@ -94,25 +95,32 @@ struct SequenceEditorsTest : ui::Buildable
 		tmpl->placement = &parts[0];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
+		ui::Text("Array<int>:");
+		SeqEdit(Allocate<ui::ArraySequence<decltype(arraydata)>>(arraydata), &arraysel);
+		ui::Pop();
+
+		tmpl->placement = &parts[1];
+		tmpl->measure = false;
+		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::vector<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
 		ui::Pop();
 
-		tmpl->placement = &parts[1];
+		tmpl->placement = &parts[2];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::list<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
 		ui::Pop();
 
-		tmpl->placement = &parts[2];
+		tmpl->placement = &parts[3];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::deque<int>:");
 		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
 		ui::Pop();
 
-		tmpl->placement = &parts[3];
+		tmpl->placement = &parts[4];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("int[5]:");
@@ -141,6 +149,11 @@ struct SequenceEditorsTest : ui::Buildable
 
 	void AdjustSizeAll(size_t size)
 	{
+		while (arraydata.Size() > size)
+			arraydata.RemoveLast();
+		while (arraydata.Size() < size)
+			arraydata.Append(arraydata.size() + 1);
+
 		AdjustSize(vectordata, size);
 		AdjustSize(listdata, size);
 		AdjustSize(dequedata, size);
@@ -153,12 +166,14 @@ struct SequenceEditorsTest : ui::Buildable
 			C.push_back(C.size() + 1);
 	}
 
+	ui::Array<int> arraydata{ 1, 2, 3, 4 };
 	std::vector<int> vectordata{ 1, 2, 3, 4 };
 	std::list<int> listdata{ 1, 2, 3, 4 };
 	std::deque<int> dequedata{ 1, 2, 3, 4 };
 	int bufdata[5] = { 1, 2, 3, 4, 9999 };
 	uint8_t buflen = 4;
 
+	ui::BasicSelection arraysel;
 	ui::BasicSelection vectorsel;
 	ui::BasicSelection listsel;
 	ui::BasicSelection dequesel;
@@ -178,9 +193,9 @@ struct Node
 {
 	int num = 0;
 	bool sel = false;
-	std::vector<Node*> children;
+	ui::Array<Node*> children;
 
-	Node(int n, const std::vector<Node*>& ch) : num(n), children(ch) {}
+	Node(int n, const ui::Array<Node*>& ch) : num(n), children(ch) {}
 	~Node()
 	{
 		for (Node* n : children)
@@ -202,7 +217,7 @@ struct Node
 };
 struct Tree : ui::ITree
 {
-	std::vector<Node*> roots;
+	ui::Array<Node*> roots;
 
 	Tree()
 	{
@@ -217,7 +232,7 @@ struct Tree : ui::ITree
 	{
 		for (Node* r : roots)
 			delete r;
-		roots.clear();
+		roots.Clear();
 	}
 	void SetDefault()
 	{
@@ -242,7 +257,7 @@ struct Tree : ui::ITree
 	{
 		Clear();
 		for (int i = 0; i < count; i++)
-			roots.push_back(new Node(i, {}));
+			roots.Append(new Node(i, {}));
 	}
 	void SetBranchy(int levels)
 	{
@@ -258,7 +273,7 @@ struct Tree : ui::ITree
 
 	struct NodeLoc
 	{
-		std::vector<Node*>* arr;
+		ui::Array<Node*>* arr;
 		size_t idx;
 	};
 	NodeLoc FindNode(ui::TreePathRef path)
@@ -282,7 +297,7 @@ struct Tree : ui::ITree
 		else
 		{
 			auto loc = FindNode(path);
-			for (auto* node : loc.arr->at(loc.idx)->children)
+			for (auto* node : loc.arr->At(loc.idx)->children)
 				fn(&node->num);
 		}
 	}
@@ -291,7 +306,7 @@ struct Tree : ui::ITree
 		if (path.empty())
 			return roots.size();
 		auto loc = FindNode(path);
-		return loc.arr->at(loc.idx)->children.size();
+		return loc.arr->At(loc.idx)->children.size();
 	}
 
 	void ClearSelection() override
@@ -302,12 +317,12 @@ struct Tree : ui::ITree
 	bool GetSelectionState(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		return loc.arr->at(loc.idx)->sel;
+		return loc.arr->At(loc.idx)->sel;
 	}
 	void SetSelectionState(ui::TreePathRef path, bool sel) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->at(loc.idx)->sel = sel;
+		loc.arr->At(loc.idx)->sel = sel;
 	}
 
 	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path) override { TreeFillItemContextMenu(mic, path); }
@@ -316,22 +331,22 @@ struct Tree : ui::ITree
 	void Remove(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		delete loc.arr->at(loc.idx);
-		loc.arr->erase(loc.arr->begin() + loc.idx);
+		delete loc.arr->At(loc.idx);
+		loc.arr->RemoveAt(loc.idx);
 	}
 	void Duplicate(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->push_back(loc.arr->at(loc.idx)->Clone());
+		loc.arr->Append(loc.arr->At(loc.idx)->Clone());
 	}
 	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
 		auto srcLoc = FindNode(node);
-		auto* srcNode = srcLoc.arr->at(srcLoc.idx);
-		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
+		auto* srcNode = srcLoc.arr->At(srcLoc.idx);
+		srcLoc.arr->RemoveAt(srcLoc.idx);
 
 		auto destLoc = FindNode(dest);
-		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
+		destLoc.arr->InsertAt(destLoc.idx, srcNode);
 	}
 };
 } // cpa
@@ -341,9 +356,9 @@ struct Node
 {
 	int num = 0;
 	bool sel = false;
-	std::vector<Node> children;
+	ui::Array<Node> children;
 
-	Node(int n, const std::vector<Node>& ch) : num(n), children(ch) {}
+	Node(int n, const ui::Array<Node>& ch) : num(n), children(ch) {}
 	void ClearSelection()
 	{
 		sel = false;
@@ -353,7 +368,7 @@ struct Node
 };
 struct Tree : ui::ITree
 {
-	std::vector<Node> roots;
+	ui::Array<Node> roots;
 
 	Tree()
 	{
@@ -380,9 +395,9 @@ struct Tree : ui::ITree
 	}
 	void SetFlat(int count)
 	{
-		roots.clear();
+		roots.Clear();
 		for (int i = 0; i < count; i++)
-			roots.push_back(Node(i, {}));
+			roots.Append(Node(i, {}));
 	}
 	void SetBranchy(int levels)
 	{
@@ -395,7 +410,7 @@ struct Tree : ui::ITree
 
 	struct NodeLoc
 	{
-		std::vector<Node>* arr;
+		ui::Array<Node>* arr;
 		size_t idx;
 	};
 	NodeLoc FindNode(ui::TreePathRef path)
@@ -419,7 +434,7 @@ struct Tree : ui::ITree
 		else
 		{
 			auto loc = FindNode(path);
-			for (auto& node : loc.arr->at(loc.idx).children)
+			for (auto& node : loc.arr->At(loc.idx).children)
 				fn(&node.num);
 		}
 	}
@@ -428,7 +443,7 @@ struct Tree : ui::ITree
 		if (path.empty())
 			return roots.size();
 		auto loc = FindNode(path);
-		return loc.arr->at(loc.idx).children.size();
+		return loc.arr->At(loc.idx).children.size();
 	}
 
 	void ClearSelection() override
@@ -439,12 +454,12 @@ struct Tree : ui::ITree
 	bool GetSelectionState(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		return loc.arr->at(loc.idx).sel;
+		return loc.arr->At(loc.idx).sel;
 	}
 	void SetSelectionState(ui::TreePathRef path, bool sel) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->at(loc.idx).sel = sel;
+		loc.arr->At(loc.idx).sel = sel;
 	}
 
 	void FillItemContextMenu(ui::MenuItemCollection& mic, ui::TreePathRef path) override { TreeFillItemContextMenu(mic, path); }
@@ -453,21 +468,21 @@ struct Tree : ui::ITree
 	void Remove(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->erase(loc.arr->begin() + loc.idx);
+		loc.arr->RemoveAt(loc.idx);
 	}
 	void Duplicate(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->push_back(loc.arr->at(loc.idx));
+		loc.arr->Append(loc.arr->At(loc.idx));
 	}
 	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
 		auto srcLoc = FindNode(node);
-		auto srcNode = std::move(srcLoc.arr->at(srcLoc.idx));
-		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
+		auto srcNode = std::move(srcLoc.arr->At(srcLoc.idx));
+		srcLoc.arr->RemoveAt(srcLoc.idx);
 
 		auto destLoc = FindNode(dest);
-		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, std::move(srcNode));
+		destLoc.arr->InsertAt(destLoc.idx, std::move(srcNode));
 	}
 };
 } // cva
@@ -756,7 +771,7 @@ struct MessageLogViewTest : ui::Buildable
 			else return M.location;
 		}
 
-		std::vector<Message>* msgs;
+		ui::Array<Message>* msgs;
 	};
 	struct MLV_R : MLV_Common {};
 	struct MLV_I : MLV_Common
@@ -833,7 +848,7 @@ struct MessageLogViewTest : ui::Buildable
 			snprintf(bfr, sizeof(bfr), "/random/generated/word/seq/%d/num/%d", i, nwords);
 			msg.location = bfr;
 
-			messages.push_back(msg);
+			messages.Append(msg);
 		}
 
 		if (isAtEndR)
@@ -854,7 +869,7 @@ struct MessageLogViewTest : ui::Buildable
 		WPush<ui::StackExpandLTRLayoutElement>();
 		{
 			if (ui::imm::Button("Clear"))
-				messages.clear();
+				messages.Clear();
 			if (ui::imm::Button("Add 1 line"))
 				AddMessages(1);
 			if (ui::imm::Button("Add 10"))
@@ -905,7 +920,7 @@ struct MessageLogViewTest : ui::Buildable
 		WPop(); // EdgeSliceLayoutElement
 	}
 
-	std::vector<Message> messages;
+	ui::Array<Message> messages;
 
 	MLV_R mlvRData;
 	MLV_I mlvIData;

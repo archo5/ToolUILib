@@ -161,7 +161,7 @@ std::string GenericGridDataSource::GetRowName(size_t row, uintptr_t id)
 }
 
 
-size_t TableDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&)
+size_t TableDataSource::GetElements(Range<size_t> orderRange, Array<TreeElementRef>&)
 {
 	return GetNumRows();
 }
@@ -172,7 +172,7 @@ static void TDS_GetElements(
 	GenericGridDataSource::TreeElementRef elem,
 	size_t& n,
 	Range<size_t> orderRange,
-	std::vector<GenericGridDataSource::TreeElementRef>& outElemList)
+	Array<GenericGridDataSource::TreeElementRef>& outElemList)
 {
 	size_t nch = me->GetChildCount(elem.id);
 	for (size_t ch = 0; ch < nch; ch++)
@@ -182,14 +182,14 @@ static void TDS_GetElements(
 		GenericGridDataSource::TreeElementRef chelem = { chid, elem.depth + 1 };
 
 		if (orderRange.Contains(num))
-			outElemList.push_back(chelem);
+			outElemList.Append(chelem);
 
 		if (me->IsOpen(chid))
 			TDS_GetElements(me, chelem, n, orderRange, outElemList);
 	}
 }
 
-size_t TreeDataSource::GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList)
+size_t TreeDataSource::GetElements(Range<size_t> orderRange, Array<TreeElementRef>& outElemList)
 {
 	size_t n = 0;
 	TDS_GetElements(this, { ROOT, SIZE_MAX }, n, orderRange, outElemList);
@@ -210,7 +210,7 @@ struct TableViewImpl
 	ISelectionStorage* selStorage = nullptr;
 	IListContextMenuSource* ctxMenuSrc = nullptr;
 	bool firstColWidthCalc = true;
-	std::vector<float> colEnds = { 1.0f };
+	Array<float> colEnds = { 1.0f };
 	size_t lastRowCount = 0;
 	Range<size_t> lastVisibleRowRange = { 0, 0 };
 	bool hoverIsIcon = false;
@@ -248,7 +248,7 @@ void TableView::OnReset()
 	scrollbarV.OnReset();
 }
 
-static GenericGridDataSource::TreeElementRef ExtractID(const std::vector<GenericGridDataSource::TreeElementRef>& ids, size_t r, size_t minR)
+static GenericGridDataSource::TreeElementRef ExtractID(const Array<GenericGridDataSource::TreeElementRef>& ids, size_t r, size_t minR)
 {
 	if (r - minR < ids.size())
 		return ids[r - minR];
@@ -289,7 +289,7 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 	size_t minR = floor(yOff / h);
 	size_t maxR = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / h));
 	Range<size_t> rowRange = { minR, maxR };
-	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	Array<GenericGridDataSource::TreeElementRef> ids;
 	size_t nr = _impl->dataSource->GetElements(rowRange, ids);
 	minR = min(minR, nr);
 	maxR = min(maxR, nr);
@@ -485,7 +485,7 @@ void TableView::OnEvent(Event& e)
 	size_t minR = floor(yOff / h);
 	size_t maxR = size_t(ceil((yOff + max(0.0f, sbrect.GetHeight())) / h));
 	Range<size_t> rowRange = { minR, maxR };
-	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	Array<GenericGridDataSource::TreeElementRef> ids;
 	size_t nr = _impl->dataSource->GetElements(rowRange, ids);
 	minR = min(minR, nr);
 	maxR = min(maxR, nr);
@@ -559,9 +559,9 @@ void TableView::SetDataSource(GenericGridDataSource* src)
 
 	size_t nc = src->GetNumCols();
 	while (_impl->colEnds.size() < nc + 1)
-		_impl->colEnds.push_back(_impl->colEnds.back() + 100);
+		_impl->colEnds.Append(_impl->colEnds.Last() + 100);
 	while (_impl->colEnds.size() > nc + 1)
-		_impl->colEnds.pop_back();
+		_impl->colEnds.RemoveLast();
 }
 
 ISelectionStorage* TableView::GetSelectionStorage() const
@@ -618,7 +618,7 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 		}
 	}
 
-	std::vector<GenericGridDataSource::TreeElementRef> ids;
+	Array<GenericGridDataSource::TreeElementRef> ids;
 	size_t nr = _impl->dataSource->GetElements(All{}, ids);
 	_impl->lastRowCount = nr;
 

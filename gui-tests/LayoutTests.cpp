@@ -196,7 +196,7 @@ struct SizeTest : ui::Buildable
 	{
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		tests.clear();
+		tests.Clear();
 		ui::Text("Any errors will be drawn next to the element in red");
 
 		TestSize(ui::Text("Testing text element size"), CalcTestTextWidth("Testing text element size"), GetTestFontHeight());
@@ -236,7 +236,7 @@ struct SizeTest : ui::Buildable
 		{
 			return TestSize(obj->GetFinalRect(), w, h);
 		};
-		tests.push_back({ &obj, fn });
+		tests.Append({ &obj, fn });
 	}
 
 	void TestX(UIObject& obj, float x)
@@ -250,7 +250,7 @@ struct SizeTest : ui::Buildable
 			}
 			return {};
 		};
-		tests.push_back({ &obj, fn });
+		tests.Append({ &obj, fn });
 	}
 
 	void TestEstSize(UIObject& obj, float w, float h)
@@ -266,10 +266,10 @@ struct SizeTest : ui::Buildable
 			ui::UIRect r{ 0, 0, ew.min, eh.min };
 			return TestSize(r, w, h);
 		};
-		tests.push_back({ &obj, fn });
+		tests.Append({ &obj, fn });
 	}
 
-	std::vector<Test> tests;
+	ui::Array<Test> tests;
 };
 void Test_Size()
 {

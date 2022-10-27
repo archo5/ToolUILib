@@ -238,7 +238,7 @@ struct DataEditor : ui::Buildable
 			ui::Text("List");
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
-			for (size_t i = 0; i < items.size(); i++)
+			for (size_t i = 0; i < items.Size(); i++)
 			{
 				ui::Make<ItemButton>().Init(items[i].name.c_str(), [this, i]() { editing = i; ItemSelectionChanged.Call(); });
 			}
@@ -269,7 +269,7 @@ struct DataEditor : ui::Buildable
 	}
 
 	size_t editing = SIZE_MAX;
-	std::vector<Item> items =
+	ui::Array<Item> items =
 	{
 		{ "test item 1", 5, true, 36.6f },
 		{ "another test item", 123, false, 12.3f },

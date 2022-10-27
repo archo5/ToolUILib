@@ -194,7 +194,7 @@ struct TreeNodeReorderTest : ui::Buildable
 		std::string name;
 		bool open = true;
 		Node* parent = nullptr;
-		std::vector<Node*> children;
+		ui::Array<Node*> children;
 	};
 	struct DragDropNodeData : ui::DragDropData
 	{
@@ -218,7 +218,7 @@ struct TreeNodeReorderTest : ui::Buildable
 				ui::Textf("%zu items", entries.size());
 			}
 		}
-		std::vector<Entry> entries;
+		ui::Array<Entry> entries;
 	};
 
 	TreeNodeReorderTest()
@@ -235,12 +235,12 @@ struct TreeNodeReorderTest : ui::Buildable
 		Node* fourth = new Node();
 		fourth->name = "fourth [4]";
 
-		rootNodes.push_back(first);
-		first->children.push_back(second);
+		rootNodes.Append(first);
+		first->children.Append(second);
 		second->parent = first;
-		second->children.push_back(third);
+		second->children.Append(third);
 		third->parent = second;
-		rootNodes.push_back(fourth);
+		rootNodes.Append(fourth);
 	}
 	~TreeNodeReorderTest()
 	{
@@ -262,7 +262,7 @@ struct TreeNodeReorderTest : ui::Buildable
 
 		WPop();
 	}
-	void BuildNodeList(Node* cont, std::vector<Node*>& nodes, int level)
+	void BuildNodeList(Node* cont, ui::Array<Node*>& nodes, int level)
 	{
 		for (size_t i = 0; i < nodes.size(); i++)
 		{
@@ -279,7 +279,7 @@ struct TreeNodeReorderTest : ui::Buildable
 					if (selectedNodes.size())
 					{
 						auto* ddd = new DragDropNodeData();
-						ddd->entries.push_back({ N, i });
+						ddd->entries.Append({ N, i });
 						ui::DragDrop::SetData(ddd);
 					}
 				}
@@ -323,7 +323,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			ui::Pop();
 		}
 	}
-	void Tree_OnDragMove(Node* cont, std::vector<Node*>& nodes, int level, size_t i, ui::Event& e)
+	void Tree_OnDragMove(Node* cont, ui::Array<Node*>& nodes, int level, size_t i, ui::Event& e)
 	{
 		Node* N = nodes[i];
 
@@ -431,19 +431,19 @@ struct TreeNodeReorderTest : ui::Buildable
 				for (auto& E : ddd->entries)
 				{
 					auto& arr = E.node->parent ? E.node->parent->children : rootNodes;
-					auto it = std::find_first_of(arr.begin(), arr.end(), &E.node, &E.node + 1);
-					if (E.node->parent == dragTargetCont && (it - arr.begin()) < ptrdiff_t(dragTargetInsertBefore))
+					size_t i = arr.IndexOf(E.node);
+					if (E.node->parent == dragTargetCont && i < ptrdiff_t(dragTargetInsertBefore))
 					{
 						dragTargetInsertBefore--;
 					}
-					arr.erase(it);
+					arr.RemoveAt(i);
 				}
 
 				// reparent
 				for (auto& E : ddd->entries)
 				{
 					E.node->parent = dragTargetCont;
-					dragTargetArr->insert(dragTargetArr->begin() + dragTargetInsertBefore, E.node);
+					dragTargetArr->InsertAt(dragTargetInsertBefore, E.node);
 				}
 
 				Rebuild();
@@ -461,14 +461,14 @@ struct TreeNodeReorderTest : ui::Buildable
 		}
 	}
 
-	std::vector<Node*> rootNodes;
+	ui::Array<Node*> rootNodes;
 	std::unordered_set<Node*> selectedNodes;
 
 	bool hasDragTarget = false;
 	ui::UIRect dragTargetLine = {};
 	size_t dragTargetInsertBefore = 0;
 	Node* dragTargetCont = nullptr;
-	std::vector<Node*>* dragTargetArr = nullptr;
+	ui::Array<Node*>* dragTargetArr = nullptr;
 };
 
 

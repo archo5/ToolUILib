@@ -133,7 +133,7 @@ struct ButtonPressHighlightDemo : ui::Buildable
 		});
 		aad->player.PlayAnim(activationAnim);
 
-		anims.emplace_back(std::move(aad));
+		anims.Append(std::move(aad));
 	}
 	void AddActivationAnim(ui::Button& button)
 	{
@@ -160,13 +160,14 @@ struct ButtonPressHighlightDemo : ui::Buildable
 			float alpha = anim->player.GetVariable("alpha", 1);
 			ui::draw::RectCutoutCol(anim->baseRect.ExtendBy(ui::AABB2f::UniformBorder(dist)), anim->baseRect, ui::Color4f(1, alpha));
 		}
-		anims.erase(std::remove_if(anims.begin(), anims.end(), [](const std::unique_ptr<ActivationAnimData>& anim)
+		for (size_t i = 0; i < anims.size(); i++)
 		{
-			return anim->player.GetVariable("alpha", 1) <= 0;
-		}), anims.end());
+			if (anims[i]->player.GetVariable("alpha", 1) <= 0)
+				anims.RemoveAt(i--);
+		}
 	}
 
-	std::vector<std::unique_ptr<ActivationAnimData>> anims;
+	ui::Array<std::unique_ptr<ActivationAnimData>> anims;
 };
 void Demo_ButtonPressHighlight()
 {

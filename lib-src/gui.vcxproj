@@ -161,7 +161,6 @@
     <ClCompile Include="Core\GUID.cpp" />
     <ClCompile Include="Core\Logging.cpp" />
     <ClCompile Include="Core\MathExpr.cpp" />
-    <ClCompile Include="Core\PropertyStore.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
     <ClCompile Include="Core\StaticID.cpp" />
     <ClCompile Include="Core\String.cpp" />
@@ -219,7 +218,6 @@
     <ClInclude Include="Core\Memory.h" />
     <ClInclude Include="Core\ObjectIteration.h" />
     <ClInclude Include="Core\Platform.h" />
-    <ClInclude Include="Core\PropertyStore.h" />
     <ClInclude Include="Core\RefCounted.h" />
     <ClInclude Include="Core\Serialization.h" />
     <ClInclude Include="Core\StaticID.h" />

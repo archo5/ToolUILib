@@ -75,7 +75,7 @@ struct GenericGridDataSource
 	virtual std::string GetColName(size_t col) = 0;
 
 	// getting viewed elements
-	virtual size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) = 0;
+	virtual size_t GetElements(Range<size_t> orderRange, Array<TreeElementRef>& outElemList) = 0;
 
 	// cell contents
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
@@ -92,7 +92,7 @@ struct TableDataSource : GenericGridDataSource
 	virtual std::string GetRowName(size_t row) = 0;
 
 	bool IsTree() override { return false; }
-	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>&) override;
+	size_t GetElements(Range<size_t> orderRange, Array<TreeElementRef>&) override;
 	std::string GetRowName(size_t row, uintptr_t id) override { return GetRowName(row); }
 	Optional<bool> GetOpenState(uintptr_t id) override { return {}; }
 	void ToggleOpenState(uintptr_t id) override {}
@@ -109,7 +109,7 @@ struct TreeDataSource : GenericGridDataSource
 
 	bool IsTree() override { return true; }
 	size_t GetTreeCol() override { return 0; }
-	size_t GetElements(Range<size_t> orderRange, std::vector<TreeElementRef>& outElemList) override;
+	size_t GetElements(Range<size_t> orderRange, Array<TreeElementRef>& outElemList) override;
 	Optional<bool> GetOpenState(uintptr_t id) override;
 };
 

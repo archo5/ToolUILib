@@ -16,7 +16,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 		}
 
 		std::string name;
-		std::vector<TreeNode*> children;
+		ui::Array<TreeNode*> children;
 	};
 
 	struct TreeNodeUI : ui::Buildable
@@ -32,7 +32,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				ui::MakeWithText<ui::Button>("Delete").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 				{
 					delete tgt;
-					parent->children.erase(std::find(parent->children.begin(), parent->children.end(), tgt));
+					parent->children.RemoveFirstOf(tgt);
 					MD_Node.Call(parent);
 				};
 			}
@@ -66,7 +66,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				static int ctr = 0;
 				auto* t = new TreeNode;
 				t->name = "new child " + std::to_string(ctr++);
-				tgt->children.insert(tgt->children.begin() + inspos, t);
+				tgt->children.InsertAt(inspos, t);
 				MD_Node.Call(tgt);
 			};
 		}
@@ -98,7 +98,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 	};
 	struct ComputeInfo
 	{
-		std::vector<Variable>& variables;
+		ui::Array<Variable>& variables;
 		std::string& errors;
 	};
 
@@ -240,13 +240,13 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 
 		if (del)
 		{
-			variables.erase(variables.begin() + (del - variables.data()));
+			variables.RemoveAt(variables.GetElementIndex(*del));
 			Rebuild();
 		}
 
 		if (ui::imm::Button("Add"))
 		{
-			variables.push_back({ "unnamed", 0 });
+			variables.Append({ "unnamed", 0 });
 		}
 
 		ui::Pop();
@@ -272,7 +272,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 		WPop();
 	}
 
-	std::vector<Variable> variables{ { "test", 5 } };
+	ui::Array<Variable> variables{ { "test", 5 } };
 	ExprNode* root = nullptr;
 };
 void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
@@ -316,7 +316,7 @@ namespace script_tree {
 static ui::MulticastDelegate<> MD_TreeChanged;
 struct Node
 {
-	std::vector<Node*> children;
+	ui::Array<Node*> children;
 
 	~Node()
 	{
@@ -377,7 +377,7 @@ struct PrintNode : Node
 
 struct Tree : ui::ITree
 {
-	std::vector<Node*> roots;
+	ui::Array<Node*> roots;
 	Node* selected = nullptr;
 
 	~Tree()
@@ -389,7 +389,7 @@ struct Tree : ui::ITree
 	{
 		for (Node* r : roots)
 			delete r;
-		roots.clear();
+		roots.Clear();
 	}
 	void RunScript()
 	{
@@ -399,10 +399,10 @@ struct Tree : ui::ITree
 
 	struct NodeLoc
 	{
-		std::vector<Node*>* arr;
+		ui::Array<Node*>* arr;
 		size_t idx;
 
-		Node* Get() const { return arr->at(idx); }
+		Node* Get() const { return arr->At(idx); }
 	};
 	NodeLoc FindNode(ui::TreePathRef path)
 	{
@@ -475,9 +475,9 @@ struct Tree : ui::ITree
 	void Insert(ui::TreePathRef path, Node* node)
 	{
 		if (path.empty())
-			roots.push_back(node);
+			roots.Append(node);
 		else
-			FindNode(path).Get()->children.push_back(node);
+			FindNode(path).Get()->children.Append(node);
 		MD_TreeChanged.Call();
 	}
 
@@ -487,21 +487,21 @@ struct Tree : ui::ITree
 		delete loc.Get();
 		if (selected == loc.Get())
 			selected = nullptr;
-		loc.arr->erase(loc.arr->begin() + loc.idx);
+		loc.arr->RemoveAt(loc.idx);
 	}
 	void Duplicate(ui::TreePathRef path) override
 	{
 		auto loc = FindNode(path);
-		loc.arr->push_back(loc.Get()->Clone());
+		loc.arr->Append(loc.Get()->Clone());
 	}
 	void MoveTo(ui::TreePathRef node, ui::TreePathRef dest) override
 	{
 		auto srcLoc = FindNode(node);
 		auto* srcNode = srcLoc.Get();
-		srcLoc.arr->erase(srcLoc.arr->begin() + srcLoc.idx);
+		srcLoc.arr->RemoveAt(srcLoc.idx);
 
 		auto destLoc = FindNode(dest);
-		destLoc.arr->insert(destLoc.arr->begin() + destLoc.idx, srcNode);
+		destLoc.arr->InsertAt(destLoc.idx, srcNode);
 	}
 };
 } // script_tree

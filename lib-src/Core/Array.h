@@ -204,7 +204,7 @@ struct Array
 	inline void Append(T&& v)
 	{
 		Reserve(_size + 1);
-		new (&_data[_size++]) T(v);
+		new (&_data[_size++]) T(std::move(v));
 	}
 	void AppendMany(const T* p, size_t n)
 	{
@@ -260,9 +260,9 @@ struct Array
 		for (size_t i = 0; i < n; i++)
 			_data[at + i].~T();
 
-		if (at + n < _size)
+		_size -= n;
+		if (at < _size)
 		{
-			_size -= n;
 			for (size_t p = at; p < _size; p++)
 				_HardMove(p, p + n);
 		}

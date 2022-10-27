@@ -270,7 +270,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 		_totalMovedWinVec = {};
 		_totalAngleDiff = 0;
 
-		_origData.clear();
+		_origData.Clear();
 		DataWriter dw(_origData);
 		editable.Backup(dw);
 	}
