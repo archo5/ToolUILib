@@ -1,6 +1,7 @@
 
 #include "Theme.h"
 
+#include "../Core/Logging.h"
 #include "../Core/Serialization.h"
 #include "../Core/FileSystem.h"
 
@@ -8,6 +9,8 @@
 
 
 namespace ui {
+
+LogCategory LOG_THEME("Theme");
 
 size_t IThemeStructLoader::AllocID()
 {
@@ -477,7 +480,7 @@ void ThemeData::LoadTheme(StringView folder)
 			}
 			else
 			{
-				printf("FAILED to parse %s\n", path.c_str());
+				LogError(LOG_THEME, "Failed to parse %s\n", path.c_str());
 			}
 		}
 	}

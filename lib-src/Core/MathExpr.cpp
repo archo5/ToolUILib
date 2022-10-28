@@ -2,20 +2,20 @@
 #include "MathExpr.h"
 
 #include "Array.h"
+#include "Logging.h"
 #include "Math.h"
 #include "String.h"
 
 
-//#define MATHEXPR_DEBUG
-
-
 namespace ui {
+
+LogCategory LOG_MATHEXPR("MathExpr");
 
 struct DefaultErrorOutput : IMathExprErrorOutput
 {
 	void OnError(int pos, const char* error)
 	{
-		fprintf(stderr, "MathExpr compilation error: [%d] %s\n", pos, error);
+		LogError(LOG_MATHEXPR, "MathExpr compilation error: [%d] %s\n", pos, error);
 	}
 };
 static DefaultErrorOutput g_defErrOut;
@@ -354,10 +354,9 @@ struct MathExprData
 
 		MathExprData* CreateExpr()
 		{
-#ifdef MATHEXPR_DEBUG
-			printf(">> EXPR: const=%d instrB=%d vars=%d stack=%d\n",
+			LogDebug(LOG_MATHEXPR, ">> EXPR: const=%d instrB=%d vars=%d stack=%d\n",
 				int(constants.size()), int(instructions.size()), int(foundVars.size()), int(maxTempStackSize));
-#endif
+
 			return new MathExprData(constants, instructions, foundVars, maxTempStackSize);
 		}
 
@@ -421,9 +420,9 @@ struct MathExprData
 
 		void PushValue(float v)
 		{
-#ifdef MATHEXPR_DEBUG
-			printf("> PushConst %g\n", v);
-#endif
+			if (CanLogDebug(LOG_MATHEXPR))
+				LogDebug(LOG_MATHEXPR, "> PushConst %g\n", v);
+
 			constStreak++;
 			constants.Append(v);
 			instructions.Append(PushConst);
@@ -435,9 +434,13 @@ struct MathExprData
 		{
 			if (op.realOp == UINT8_MAX) // if op is not real
 				return;
-#ifdef MATHEXPR_DEBUG
-			printf("> Op[%d]%.*s expargs=%d realargs=%d\n", op.realOp, int(op.refText.size()), op.refText.data(), op.expArgCount, op.realArgCount);
-#endif
+
+			if (CanLogDebug(LOG_MATHEXPR))
+			{
+				LogDebug(LOG_MATHEXPR, "> Op[%d]%.*s expargs=%d realargs=%d\n",
+					op.realOp, int(op.refText.size()), op.refText.data(), op.expArgCount, op.realArgCount);
+			}
+
 			assert(curTempStackSize >= op.realArgCount);
 			TSSOp(op.realArgCount);
 			if (op.realOp == FuncCall)

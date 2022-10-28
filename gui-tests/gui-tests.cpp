@@ -694,6 +694,8 @@ struct MainWindow : ui::NativeMainWindow
 
 int uimain(int argc, char* argv[])
 {
+	ui::LOG_UISYS.level = ui::LogLevel::All;
+
 	//EarlyTest();
 	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);

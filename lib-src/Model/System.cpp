@@ -112,7 +112,7 @@ void UIContainer::ProcessBuildStack()
 {
 	if (buildStack.ContainsAny())
 	{
-		UI_DEBUG_FLOW(puts(" ---- processing node BUILD stack ----"));
+		LogDebug(LOG_UISYS, " ---- processing node BUILD stack ----");
 		_lastBuildFrameID++;
 	}
 	else
@@ -136,7 +136,9 @@ void UIContainer::ProcessBuildStack()
 		_curObjectList = &currentBuildable->_objList;
 		_curObjectList->BeginAllocations();
 
-		UI_DEBUG_FLOW(printf("building %s\n", typeid(*currentBuildable).name()));
+		if (CanLogDebug(LOG_UISYS))
+			LogDebug(LOG_UISYS, "building %s", typeid(*currentBuildable).name());
+
 		_curBuildable = currentBuildable;
 		currentBuildable->_lastBuildFrameID = _lastBuildFrameID;
 
@@ -180,14 +182,14 @@ void UIContainer::ProcessBuildStack()
 
 	pendingDeactivationSet.Flush();
 
-	LogDebug(LOG_UISYS, "build time: %g", hqtime() - t);
+	LogDebug(LOG_UISYS, "build time: %.3f ms", (hqtime() - t) * 1000);
 }
 
 void UIContainer::ProcessLayoutStack()
 {
 	if (layoutStack.ContainsAny())
 	{
-		UI_DEBUG_FLOW(printf(" ---- processing node LAYOUT stack (%zu items) ----\n", layoutStack.stack.size()));
+		LogDebug(LOG_UISYS, " ---- processing node LAYOUT stack (%zu items) ----", layoutStack.stack.size());
 	}
 	else
 		return;

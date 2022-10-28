@@ -1,6 +1,8 @@
 
 #pragma once
 #include "Platform.h"
+#include "String.h"
+#include "Delegate.h"
 
 #include <stdarg.h>
 
@@ -19,10 +21,16 @@ enum class LogLevel : uint8_t
 
 struct LogCategory
 {
-	const char* name;
+	const char* const name;
 
-	LogCategory(const char* nm) : name(nm) {}
+	LogLevel level = LogLevel::Warn;
+	MulticastDelegate<LogLevel, StringView> onCategoryLogMessage;
+
+	LogCategory(const char* nm, LogLevel lev = LogLevel::Warn) : name(nm), level(lev) {}
 };
+
+extern MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;
+extern LogLevel GlobalLogLevel;
 
 bool CanLogDynLev(LogLevel level, const LogCategory& category);
 bool CanLogError(const LogCategory& category);

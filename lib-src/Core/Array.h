@@ -242,13 +242,14 @@ struct Array
 		new (&_data[to]) T(std::move(_data[from]));
 		_data[from].~T();
 	}
-	inline void UnorderedRemoveAt(size_t at)
+	inline bool UnorderedRemoveAt(size_t at)
 	{
 		assert(at < _size);
 		_data[at].~T();
 		--_size;
 		if (at < _size)
 			_HardMove(at, _size);
+		return at < _size;
 	}
 	void RemoveAt(size_t at, size_t n = 1)
 	{

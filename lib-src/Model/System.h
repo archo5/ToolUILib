@@ -5,6 +5,7 @@
 
 #include "../Core/Array.h"
 #include "../Core/HashTable.h"
+#include "../Core/Logging.h"
 #include "Objects.h"
 #include "EventSystem.h"
 
@@ -13,6 +14,8 @@
 
 
 namespace ui {
+
+extern LogCategory LOG_UISYS;
 
 struct UIObjectDirtyStack
 {

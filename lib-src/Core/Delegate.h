@@ -120,7 +120,7 @@ struct MulticastDelegate
 		delete e;
 	}
 
-	void Call(Args... args)
+	void Call(Args... args) const
 	{
 		for (Entry* e = _first; e; e = e->_next)
 			e->Call(args...);

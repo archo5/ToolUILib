@@ -14,6 +14,9 @@ extern "C"
 
 namespace ui {
 
+MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;
+LogLevel GlobalLogLevel = LogLevel::All;
+
 static tm CurTime()
 {
 	time_t src = time(nullptr);
@@ -37,7 +40,10 @@ bool CanLogDynLev(LogLevel level, const LogCategory& category)
 {
 	if (level == LogLevel::Off)
 		return false;
-	// TODO
+	if (level > GlobalLogLevel)
+		return false;
+	if (level > category.level)
+		return false;
 	return true;
 }
 
@@ -73,6 +79,12 @@ void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, v
 	at += vsnprintf(buf + at, sizeof(buf) - at, fmt, args);
 	if (at + 2 > sizeof(buf))
 		at = sizeof(buf) - 2;
+
+	buf[at] = '\0';
+
+	category.onCategoryLogMessage.Call(level, buf);
+	OnAnyLogMessage.Call(level, category, buf);
+
 	buf[at++] = '\n';
 	buf[at] = '\0';
 
