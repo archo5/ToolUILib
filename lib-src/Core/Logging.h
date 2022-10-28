@@ -8,6 +8,7 @@
 
 
 namespace ui {
+namespace log {
 
 enum class LogLevel : uint8_t
 {
@@ -46,4 +47,6 @@ void LogWarn(const LogCategory& category, const char* fmt, ...);
 void LogInfo(const LogCategory& category, const char* fmt, ...);
 void LogDebug(const LogCategory& category, const char* fmt, ...);
 
+} // log
+using namespace ui::log;
 } // ui

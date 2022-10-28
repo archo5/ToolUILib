@@ -13,6 +13,7 @@ extern "C"
 
 
 namespace ui {
+namespace log {
 
 MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;
 LogLevel GlobalLogLevel = LogLevel::All;
@@ -76,14 +77,15 @@ void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, v
 	tm t = CurTime();
 	size_t at = strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
 	at += snprintf(buf + at, sizeof(buf) - at, " % 5ld %s|%s ", GetCurrentThreadId(), g_levelNames[int(level)], category.name);
+	const char* msgonly = buf + at;
 	at += vsnprintf(buf + at, sizeof(buf) - at, fmt, args);
 	if (at + 2 > sizeof(buf))
 		at = sizeof(buf) - 2;
 
 	buf[at] = '\0';
 
-	category.onCategoryLogMessage.Call(level, buf);
-	OnAnyLogMessage.Call(level, category, buf);
+	category.onCategoryLogMessage.Call(level, msgonly);
+	OnAnyLogMessage.Call(level, category, msgonly);
 
 	buf[at++] = '\n';
 	buf[at] = '\0';
@@ -132,4 +134,5 @@ void LogDebug(const LogCategory& category, const char* fmt, ...)
 	va_end(args);
 }
 
+} // log
 } // ui
