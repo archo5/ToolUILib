@@ -2,6 +2,8 @@
 #include "pch.h"
 
 #include <time.h>
+#include <vector>
+#include <list>
 #include <deque>
 #include "../lib-src/Editors/TreeEditor.h"
 #include "../lib-src/Editors/CurveEditor.h"
@@ -598,17 +600,17 @@ struct RandomNumberDataSource : ui::TableDataSource, ui::ISelectionStorage
 		return std::to_string(((unsigned(row) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
 	}
 
-	virtual void ClearSelection() { selRows.clear(); }
-	virtual bool GetSelectionState(uintptr_t item) { return selRows.count(item); }
+	virtual void ClearSelection() { selRows.Clear(); }
+	virtual bool GetSelectionState(uintptr_t item) { return selRows.Contains(item); }
 	virtual void SetSelectionState(uintptr_t item, bool sel)
 	{
 		if (sel)
-			selRows.insert(item);
+			selRows.Insert(item);
 		else
-			selRows.erase(item);
+			selRows.Remove(item);
 	}
 
-	std::unordered_set<size_t> selRows;
+	ui::HashSet<size_t> selRows;
 }
 g_randomNumbers;
 
@@ -645,7 +647,7 @@ void Test_TableView()
 
 struct RandomNumberTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage
 {
-	std::unordered_set<size_t> selRows;
+	ui::HashSet<size_t> selRows;
 
 	size_t GetNumCols() { return 5; }
 	std::string GetColName(size_t col) { return std::to_string(col + 1); }
@@ -676,14 +678,14 @@ struct RandomNumberTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage
 		return std::to_string(((unsigned(id) * 5 + unsigned(col)) + 1013904223U) * 1664525U);
 	}
 
-	virtual void ClearSelection() { selRows.clear(); }
-	virtual bool GetSelectionState(uintptr_t item) { return selRows.count(item); }
+	virtual void ClearSelection() { selRows.Clear(); }
+	virtual bool GetSelectionState(uintptr_t item) { return selRows.Contains(item); }
 	virtual void SetSelectionState(uintptr_t item, bool sel)
 	{
 		if (sel)
-			selRows.insert(item);
+			selRows.Insert(item);
 		else
-			selRows.erase(item);
+			selRows.Remove(item);
 	}
 }
 g_randomNumberTree;

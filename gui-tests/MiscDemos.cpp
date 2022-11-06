@@ -1,19 +1,6 @@
 
 #include "pch.h"
-#include <unordered_set>
 
-
-// TODO have our own set
-namespace std {
-template <>
-struct hash<ui::StringView>
-{
-	size_t operator () (const ui::StringView& v) const
-	{
-		return ui::HashValue(v);
-	}
-};
-} // std
 
 struct Settings
 {
@@ -54,12 +41,12 @@ struct SettingsWindowDemo : ui::Buildable
 
 		ui::imm::EditString(search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
 
-		std::unordered_set<ui::StringView> sections;
+		ui::HashSet<ui::StringView> sections;
 		for (auto& entry : entries)
 		{
 			if (!SearchMatch(entry.searchStr))
 				continue;
-			if (sections.insert(entry.section).second)
+			if (sections.Insert(entry.section))
 			{
 				ui::MakeWithText<ui::Selectable>(entry.section).Init(entry.section == currentSection)
 					+ ui::AddEventHandler(ui::EventType::Activate, [this, &entry](ui::Event&)

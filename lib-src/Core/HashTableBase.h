@@ -89,13 +89,14 @@ struct HashTableExtBase : HashTableBase
 		FreeMemory();
 	}
 
+	UI_FORCEINLINE Iterator begin() { return _storage.Begin(); }
+	UI_FORCEINLINE Iterator end() { return _storage.End(); }
+	UI_FORCEINLINE ConstIterator begin() const { return _storage.Begin(); }
+	UI_FORCEINLINE ConstIterator end() const { return _storage.End(); }
+
 	UI_FORCEINLINE bool empty() const { return _storage.count == 0; }
 	UI_FORCEINLINE size_t size() const { return _storage.count; }
 	UI_FORCEINLINE size_t capacity() const { return _storage.capacity; }
-	UI_FORCEINLINE Iterator begin() { return { &_storage, 0 }; }
-	UI_FORCEINLINE Iterator end() { return { &_storage, _storage.count }; }
-	UI_FORCEINLINE ConstIterator begin() const { return { &_storage, 0 }; }
-	UI_FORCEINLINE ConstIterator end() const { return { &_storage, _storage.count }; }
 
 	UI_FORCEINLINE bool IsEmpty() const { return _storage.count == 0; }
 	UI_FORCEINLINE size_t Size() const { return _storage.count; }

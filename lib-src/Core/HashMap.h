@@ -49,6 +49,11 @@ struct HashTableDataStorage_SeparateArrays
 	size_t count = 0;
 	size_t capacity = 0;
 
+	UI_FORCEINLINE Iterator Begin() { return { this, 0 }; }
+	UI_FORCEINLINE Iterator End() { return { this, count }; }
+	UI_FORCEINLINE ConstIterator Begin() const { return { this, 0 }; }
+	UI_FORCEINLINE ConstIterator End() const { return { this, count }; }
+
 	void DestructAll()
 	{
 		if (!std::is_trivially_destructible_v<K>)

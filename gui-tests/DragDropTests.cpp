@@ -269,7 +269,7 @@ struct TreeNodeReorderTest : ui::Buildable
 			Node* N = nodes[i];
 			ui::Push<ui::StackTopDownLayoutElement>();
 
-			ui::Push<ui::Selectable>().Init(selectedNodes.count(N))
+			ui::Push<ui::Selectable>().Init(selectedNodes.Contains(N))
 				.SetPadding(0)
 				+ ui::MakeDraggable()
 				+ ui::AddEventHandler([this, cont, N, i, &nodes, level](ui::Event& e)
@@ -297,8 +297,8 @@ struct TreeNodeReorderTest : ui::Buildable
 				}
 				if (e.type == ui::EventType::Activate)
 				{
-					selectedNodes.clear();
-					selectedNodes.insert(N);
+					selectedNodes.Clear();
+					selectedNodes.Insert(N);
 					Rebuild();
 				}
 			});
@@ -462,7 +462,7 @@ struct TreeNodeReorderTest : ui::Buildable
 	}
 
 	ui::Array<Node*> rootNodes;
-	std::unordered_set<Node*> selectedNodes;
+	ui::HashSet<Node*> selectedNodes;
 
 	bool hasDragTarget = false;
 	ui::UIRect dragTargetLine = {};
@@ -548,7 +548,7 @@ struct DragConnectTest : ui::Buildable
 
 	DragConnectTest()
 	{
-		links.insert(CombineLinkableIDs(0, 3));
+		links.Insert(CombineLinkableIDs(0, 3));
 	}
 
 	struct Linkable : ui::Selectable
@@ -599,7 +599,7 @@ struct DragConnectTest : ui::Buildable
 						{
 							if (ol->_right != _right)
 							{
-								p->links.insert(CombineLinkableIDs(ddd->_linkID, _which));
+								p->links.Insert(CombineLinkableIDs(ddd->_linkID, _which));
 							}
 						}
 					}
@@ -637,7 +637,7 @@ struct DragConnectTest : ui::Buildable
 				{
 					if ((link >> 16) != _which &&
 						(link & 0xffff) != _which)
-						newlinks.insert(link);
+						newlinks.Insert(link);
 				}
 				std::swap(newlinks, p->links);
 			}
@@ -725,7 +725,7 @@ struct DragConnectTest : ui::Buildable
 	}
 
 	ui::HashMap<int, Linkable*> linkables;
-	std::unordered_set<int> links; // smallest first
+	ui::HashSet<int> links; // smallest first
 };
 
 

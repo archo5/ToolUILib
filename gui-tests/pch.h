@@ -5,7 +5,6 @@
 
 #include <functional>
 #include <algorithm>
-#include <unordered_set>
 
 #include "../lib-src/GUI.h"
 

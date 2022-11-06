@@ -310,6 +310,9 @@
     <ClInclude Include="Core\HashMap.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Core\HashSet.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

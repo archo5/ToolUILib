@@ -1,14 +1,14 @@
 
 #include "EditCommon.h"
 
-#include <unordered_set>
+#include "../Core/HashSet.h"
 
 
 namespace ui {
 
 struct BasicSelectionImpl
 {
-	std::unordered_set<uintptr_t> sel;
+	HashSet<uintptr_t> sel;
 };
 
 BasicSelection::BasicSelection()
@@ -23,20 +23,20 @@ BasicSelection::~BasicSelection()
 
 void BasicSelection::ClearSelection()
 {
-	_impl->sel.clear();
+	_impl->sel.Clear();
 }
 
 bool BasicSelection::GetSelectionState(uintptr_t item)
 {
-	return _impl->sel.count(item);
+	return _impl->sel.Contains(item);
 }
 
 void BasicSelection::SetSelectionState(uintptr_t item, bool sel)
 {
 	if (sel)
-		_impl->sel.insert(item);
+		_impl->sel.Insert(item);
 	else
-		_impl->sel.erase(item);
+		_impl->sel.Remove(item);
 }
 
 
