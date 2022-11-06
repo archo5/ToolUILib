@@ -150,7 +150,6 @@ struct HashMap
 		free(_values);
 	}
 
-	UI_FORCEINLINE void clear() { Clear(); }
 	void Clear()
 	{
 		_destruct_all();
@@ -221,7 +220,6 @@ struct HashMap
 		v++;
 		return v;
 	}
-	UI_FORCEINLINE void reserve(size_t capacity) { Reserve(capacity); }
 	void Reserve(size_t capacity)
 	{
 		if (capacity <= _capacity)
@@ -307,12 +305,9 @@ struct HashMap
 				return 0;
 		}
 	}
-	UI_FORCEINLINE Iterator find(const K& key) { return { this, _find_pos(key, _count) }; }
 	UI_FORCEINLINE Iterator Find(const K& key) { return { this, _find_pos(key, _count) }; }
-	UI_FORCEINLINE ConstIterator find(const K& key) const { return { this, _find_pos(key, _count) }; }
 	UI_FORCEINLINE ConstIterator Find(const K& key) const { return { this, _find_pos(key, _count) }; }
 
-	UI_FORCEINLINE V get(const K& key, const V& def = {}) const { return GetValueOrDefault(key, def); }
 	UI_FORCEINLINE V GetValueOrDefault(const K& key, const V& def = {}) const
 	{
 		auto pos = _find_pos(key, SIZE_MAX);
@@ -337,7 +332,7 @@ struct HashMap
 	{
 		if (_count == _capacity)
 		{
-			reserve(_capacity * 2 + 1);
+			Reserve(_capacity * 2 + 1);
 		}
 
 		H hash = HEC::GetHash(key);
@@ -351,7 +346,6 @@ struct HashMap
 		}
 		return { pos, inserted };
 	}
-	UI_FORCEINLINE Iterator insert(const K& key, const V& value, bool* inserted = nullptr) { return Insert(key, value, inserted); }
 	Iterator Insert(const K& key, const V& value, bool* inserted = nullptr)
 	{
 		InsertResult res = _insert_alloc(key);
@@ -371,7 +365,6 @@ struct HashMap
 		return _values[res.pos];
 	}
 
-	UI_FORCEINLINE bool erase(const K& key) { return Remove(key); }
 	bool Remove(const K& key)
 	{
 		size_t idx = _find_htidx(key);

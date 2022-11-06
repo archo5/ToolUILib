@@ -31,12 +31,12 @@ void AnimPlayer::StopAllAnims()
 
 float AnimPlayer::GetVariable(const std::string& name, float def) const
 {
-	return _variables.get(name, def);
+	return _variables.GetValueOrDefault(name, def);
 }
 
 void AnimPlayer::SetVariable(const std::string& name, float value)
 {
-	_variables.insert(name, value);
+	_variables.Insert(name, value);
 }
 
 void AnimPlayer::OnAnimationFrame()

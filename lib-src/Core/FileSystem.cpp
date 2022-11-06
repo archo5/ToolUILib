@@ -662,17 +662,17 @@ struct ZipFileSource : IFileSource
 	}
 	FileReadResult ReadBinaryFile(StringView path)
 	{
-		auto it = fileMap.find(to_string(path));
-		if (it.is_valid() && it->value.dir == false && it->value.id != mz_uint(-1))
+		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		if (zfs && zfs->dir == false && zfs->id != mz_uint(-1))
 		{
 			mz_zip_archive_file_stat s;
-			if (mz_zip_reader_file_stat(&arch, it->value.id, &s))
+			if (mz_zip_reader_file_stat(&arch, zfs->id, &s))
 			{
 				auto buf = AsRCHandle(new OwnedMemoryBuffer);
 				size_t fileSize = mz_uint(s.m_uncomp_size);
 				buf->size = fileSize;
 				buf->Alloc(fileSize);
-				if (mz_zip_reader_extract_to_mem_no_alloc(&arch, it->value.id, buf->data, buf->size, 0, nullptr, 0))
+				if (mz_zip_reader_extract_to_mem_no_alloc(&arch, zfs->id, buf->data, buf->size, 0, nullptr, 0))
 					return { IOResult::Success, buf };
 			}
 		}
@@ -697,12 +697,12 @@ struct ZipFileSource : IFileSource
 	};
 	DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
 	{
-		auto it = fileMap.find(to_string(path));
-		if (it.is_valid() && it->value.dir)
+		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		if (zfs && zfs->dir)
 		{
 			auto ret = AsRCHandle(new DirIter);
 			ret->zfs = this;
-			ret->entry = &it->value;
+			ret->entry = zfs;
 			return ret;
 		}
 		return new NullDirectoryIterator;

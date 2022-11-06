@@ -595,7 +595,7 @@ struct DragConnectTest : ui::Buildable
 				{
 					if (auto* p = FindParentOfType<DragConnectTest>())
 					{
-						if (auto* ol = p->linkables.get(ddd->_linkID))
+						if (auto* ol = p->linkables.GetValueOrDefault(ddd->_linkID))
 						{
 							if (ol->_right != _right)
 							{
@@ -615,7 +615,7 @@ struct DragConnectTest : ui::Buildable
 		{
 			if (auto* p = FindParentOfType<DragConnectTest>())
 			{
-				p->linkables.erase(_which);
+				p->linkables.Remove(_which);
 			}
 		}
 		Linkable& Init(bool right, int which)
@@ -624,7 +624,7 @@ struct DragConnectTest : ui::Buildable
 			_which = which;
 			if (auto* p = FindParentOfType<DragConnectTest>())
 			{
-				p->linkables.insert(_which, this);
+				p->linkables.Insert(_which, this);
 			}
 			return *this;
 		}
@@ -687,9 +687,9 @@ struct DragConnectTest : ui::Buildable
 		{
 			int A = link >> 16;
 			int B = link & 0xffff;
-			if (auto* LA = linkables.get(A))
+			if (auto* LA = linkables.GetValueOrDefault(A))
 			{
-				if (auto* LB = linkables.get(B))
+				if (auto* LB = linkables.GetValueOrDefault(B))
 				{
 					auto PA = GetLinkablePos(LA);
 					auto PB = GetLinkablePos(LB);
@@ -703,7 +703,7 @@ struct DragConnectTest : ui::Buildable
 
 		if (auto* ddd = ui::DragDrop::GetData<LinkDragDropData>())
 		{
-			if (auto* linkable = linkables.get(ddd->_linkID))
+			if (auto* linkable = linkables.GetValueOrDefault(ddd->_linkID))
 			{
 				auto pos = GetLinkablePos(linkable);
 				ui::draw::AALineCol(

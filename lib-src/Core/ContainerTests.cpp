@@ -285,7 +285,7 @@ static void HashMapTests()
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		testval += v.find(i) != end;
+		testval += v.Find(i) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -308,7 +308,7 @@ static void HashMapTests()
 	for (int i = 0; i < 100; i++)
 	{
 		bool inserted = false;
-		auto it = v.insert(i, i + 1000, &inserted);
+		auto it = v.Insert(i, i + 1000, &inserted);
 		assert(inserted);
 		assert(v.size() == i + 1);
 		assert(v.capacity() >= size_t(i + 1));
@@ -319,24 +319,24 @@ static void HashMapTests()
 		assert(it != v.end());
 		assert(it->key == i);
 		assert(it->value == i + 1000);
-		auto it2 = v.find(i);
+		auto it2 = v.Find(i);
 		assert(it == it2);
 		assert(!(it != it2));
 		assert(it2->key == i);
 		assert(it2->value == i + 1000);
 		for (int j = 0; j < i; j++)
 		{
-			auto it3 = v.find(j);
+			auto it3 = v.Find(j);
 			assert(it3 != v.end());
 			assert(it3 != it2);
 			assert(it3 != it);
 			assert(it3->key == j);
 			assert(it3->value == j + 1000);
 		}
-		v.reserve(3);
+		v.Reserve(3);
 		check_integrity(v);
 		inserted = true;
-		v.insert(i, i + 1000, &inserted);
+		v.Insert(i, i + 1000, &inserted);
 		assert(!inserted);
 		check_integrity(v);
 	}
@@ -346,7 +346,7 @@ static void HashMapTests()
 		assert(e.key == at && e.value == at + 1000);
 		at++;
 	}
-	v.clear();
+	v.Clear();
 	assert(v.size() == 0);
 	}
 	END_TEST_GROUP;
@@ -362,12 +362,12 @@ static void HashMapTests()
 		assert(v._hashCap >= size_t(i + 1));
 		assert(v.begin() != v.end());
 		assert(!(v.begin() == v.end()));
-		auto it2 = v.find(i);
+		auto it2 = v.Find(i);
 		assert(it2->key == i);
 		assert(it2->value == i + 1000);
 		for (int j = 0; j < i; j++)
 		{
-			auto it3 = v.find(j);
+			auto it3 = v.Find(j);
 			assert(it3 != v.end());
 			assert(it3 != it2);
 			assert(it3->key == j);
@@ -376,7 +376,7 @@ static void HashMapTests()
 		v[i] = i + 1000;
 		assert(v.size() == i + 1);
 		bool inserted = true;
-		v.insert(i, i + 1000, &inserted);
+		v.Insert(i, i + 1000, &inserted);
 		assert(!inserted);
 	}
 	int at = 0;
@@ -393,7 +393,7 @@ static void HashMapTests()
 	HashMap<int, int> v;
 	RESTART_MEASURING;
 	for (int i = 0; i < 10; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -411,7 +411,7 @@ static void HashMapTests()
 	HashMap<int, int> v;
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -429,7 +429,7 @@ static void HashMapTests()
 	HashMap<int, int> v;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -466,7 +466,7 @@ static void HashMapTests()
 	RESTART_MEASURING;
 	for (int n = 0; n < 3; n++)
 		for (int i = 0; i < 100; i++)
-			v.insert(i, i + 1000);
+			v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -484,7 +484,7 @@ static void HashMapTests()
 	{TEST("contain check successfully in 10 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 10; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
@@ -511,18 +511,18 @@ static void HashMapTests()
 	{TEST("find successfully in 10 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 10; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.find(i % 10) != end;
+		testval += v.Find(i % 10) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	VALIDATE;
 	for (int i = 0; i < 10; i++)
 	{
-		auto it = v.find(i);
+		auto it = v.Find(i);
 		assert(it != v.end());
 		assert(it._pos == i);
 		assert(it->key == i);
@@ -548,7 +548,7 @@ static void HashMapTests()
 	{TEST("contain check successfully in 100 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
@@ -575,18 +575,18 @@ static void HashMapTests()
 	{TEST("find successfully in 100 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.find(i % 100) != end;
+		testval += v.Find(i % 100) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	VALIDATE;
 	for (int i = 0; i < 100; i++)
 	{
-		auto it = v.find(i);
+		auto it = v.Find(i);
 		assert(it != v.end());
 		assert(it._pos == i);
 		assert(it->key == i);
@@ -612,7 +612,7 @@ static void HashMapTests()
 	{TEST("contain check successfully in 1000 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 1000; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
@@ -639,11 +639,11 @@ static void HashMapTests()
 	{TEST("find successfully in 1000 (int, int) x1'000'000");
 	HashMap<int, int> v;
 	for (int i = 0; i < 1000; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	RESTART_MEASURING;
 	for (int i = 0; i < 1000000; i++)
-		testval += v.find(i % 1000)->value;
+		testval += v.Find(i % 1000)->value;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -665,19 +665,19 @@ static void HashMapTests()
 	{TEST_ONLY("insert -> erase (int, int) x100");
 	HashMap<int, int> v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	assert(v.size() == 100);
 	check_integrity(v);
 	for (int i = 0; i < 100; i++)
 	{
-		bool ret = v.erase(i);
+		bool ret = v.Remove(i);
 		assert(ret);
 		assert(v.size() == 100 - i - 1);
 		check_integrity(v);
 		for (int j = i + 1; j < 100; j++)
 		{
 			assert(v.Contains(j));
-			auto it = v.find(j);
+			auto it = v.Find(j);
 			assert(it.is_valid());
 		}
 	}
@@ -689,10 +689,10 @@ static void HashMapTests()
 	{TEST("insert -> erase (int, int) x100");
 	HashMap<int, int> v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		v.erase(i);
+		v.Remove(i);
 	END_MEASURING;
 	}
 
@@ -711,14 +711,14 @@ static void HashMapTests()
 	{TEST("find in empty post-erase (int, int) x100");
 	HashMap<int, int> v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	for (int i = 0; i < 100; i++)
-		v.erase(i);
+		v.Remove(i);
 	unsigned testval = 0;
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		testval += v.find(i) != end;
+		testval += v.Find(i) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	}
@@ -784,7 +784,7 @@ static void HashMapTests()
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		testval += v.find(i) != end;
+		testval += v.Find(i) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	VALIDATE;
@@ -809,25 +809,25 @@ static void HashMapTests()
 	for (int i = 0; i < 100; i++)
 	{
 		bool inserted = false;
-		auto it = v.insert(i, i + 1000, &inserted);
+		auto it = v.Insert(i, i + 1000, &inserted);
 		assert(inserted);
 		assert(g_numKeys == i + 1 && g_numVals == i + 1);
 		assert(it->key.num == i);
 		assert(it->value.num == i + 1000);
-		auto it2 = v.find(i);
+		auto it2 = v.Find(i);
 		assert(it == it2);
 		assert(!(it != it2));
 		assert(it2->key.num == i);
 		assert(it2->value.num == i + 1000);
 		for (int j = 0; j < i; j++)
 		{
-			auto it3 = v.find(j);
+			auto it3 = v.Find(j);
 			assert(it3 != v.end());
 			assert(it3->key.num == j);
 			assert(it3->value.num == j + 1000);
 		}
 		inserted = true;
-		v.insert(i, i + 1000, &inserted);
+		v.Insert(i, i + 1000, &inserted);
 		assert(!inserted);
 		assert(g_numKeys == i + 1 && g_numVals == i + 1);
 	}
@@ -838,7 +838,7 @@ static void HashMapTests()
 		assert(e.key.num == at && e.value.num == at + 1000);
 		at++;
 	}
-	v.clear();
+	v.Clear();
 	assert(v.size() == 0);
 	assert(g_numKeys == 0 && g_numVals == 0);
 	}
@@ -851,12 +851,12 @@ static void HashMapTests()
 	{
 		v[i] = i + 1000;
 		assert(g_numKeys == i + 1 && g_numVals == i + 1);
-		auto it2 = v.find(i);
+		auto it2 = v.Find(i);
 		assert(it2->key.num == i);
 		assert(it2->value.num == i + 1000);
 		for (int j = 0; j < i; j++)
 		{
-			auto it3 = v.find(j);
+			auto it3 = v.Find(j);
 			assert(it3 != v.end());
 			assert(it3 != it2);
 			assert(it3->key.num == j);
@@ -865,7 +865,7 @@ static void HashMapTests()
 		v[i] = i + 1000;
 		assert(v.size() == i + 1);
 		bool inserted = true;
-		v.insert(i, i + 1000, &inserted);
+		v.Insert(i, i + 1000, &inserted);
 		assert(!inserted);
 		assert(g_numKeys == i + 1 && g_numVals == i + 1);
 	}
@@ -884,7 +884,7 @@ static void HashMapTests()
 	HashMapIC v;
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -921,7 +921,7 @@ static void HashMapTests()
 	RESTART_MEASURING;
 	for (int n = 0; n < 3; n++)
 		for (int i = 0; i < 100; i++)
-			v.insert(i, i + 1000);
+			v.Insert(i, i + 1000);
 	END_MEASURING;
 	}
 
@@ -939,18 +939,18 @@ static void HashMapTests()
 	{TEST("find successfully in 100 (K/V InstCounters) x100'000");
 	HashMapIC v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	unsigned testval = 0;
 	auto end = v.end();
 	RESTART_MEASURING;
 	for (int i = 0; i < 100000; i++)
-		testval += v.find(i % 100) != end;
+		testval += v.Find(i % 100) != end;
 	END_MEASURING;
 	printf("%10u" ERASE10, testval);
 	VALIDATE;
 	for (int i = 0; i < 100; i++)
 	{
-		auto it = v.find(i);
+		auto it = v.Find(i);
 		assert(it != v.end());
 		assert(it._pos == i);
 		assert(it->key.num == i);
@@ -976,20 +976,20 @@ static void HashMapTests()
 	{TEST_ONLY("insert -> erase (K/V InstCounters) x100");
 	HashMapIC v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	assert(v.size() == 100);
 	assert(g_numKeys == 100 && g_numVals == 100);
 	check_integrity(v);
 	for (int i = 0; i < 100; i++)
 	{
-		bool ret = v.erase(i);
+		bool ret = v.Remove(i);
 		assert(ret);
 		assert(v.size() == 100 - i - 1);
 		check_integrity(v);
 		for (int j = i + 1; j < 100; j++)
 		{
 			assert(v.Contains(j));
-			auto it = v.find(j);
+			auto it = v.Find(j);
 			assert(it.is_valid());
 		}
 	}
@@ -1002,10 +1002,10 @@ static void HashMapTests()
 	{TEST("insert -> erase (K/V InstCounters) x100");
 	HashMapIC v;
 	for (int i = 0; i < 100; i++)
-		v.insert(i, i + 1000);
+		v.Insert(i, i + 1000);
 	RESTART_MEASURING;
 	for (int i = 0; i < 100; i++)
-		v.erase(i);
+		v.Remove(i);
 	END_MEASURING;
 	}
 

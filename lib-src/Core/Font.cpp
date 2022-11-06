@@ -57,7 +57,7 @@ struct Font
 
 	~Font()
 	{
-		g_loadedFonts.erase(key);
+		g_loadedFonts.Remove(key);
 	}
 
 	bool LoadFromPath(const char* path)
@@ -96,15 +96,14 @@ struct Font
 
 	GlyphValue FindGlyph(SizeContext& sctx, uint32_t codepoint, bool needTex)
 	{
-		auto it = sctx.glyphMap.find(codepoint);
-		if (it != sctx.glyphMap.end() && (!needTex || it->value.img))
-			return it->value;
+		GlyphValue* gv = sctx.glyphMap.GetValuePtr(codepoint);
+		if (gv && (!needTex || gv->img))
+			return *gv;
 
 		int glyphID = stbtt_FindGlyphIndex(&info, codepoint);
 		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(sctx.size));
 
-		GlyphValue* gv = nullptr;
-		if (it == sctx.glyphMap.end())
+		if (!gv)
 		{
 			int xadv = 0, lsb = 0, x0, y0, x1, y1;
 			stbtt_GetGlyphHMetrics(&info, glyphID, &xadv, &lsb);
@@ -118,8 +117,6 @@ struct Font
 			gv->w = x1 - x0;
 			gv->h = y1 - y0;
 		}
-		else
-			gv = &it->value;
 
 		if (needTex && !gv->img)
 		{
@@ -183,9 +180,8 @@ static BufferHandle FindFontDataByName(const char* name, int weight, bool italic
 
 static Font* FindExistingFont(const FontKey& key)
 {
-	auto it = g_loadedFonts.find(key);
-	if (it != g_loadedFonts.end())
-		return it->value;
+	if (auto* pp = g_loadedFonts.GetValuePtr(key))
+		return *pp;
 	return nullptr;
 }
 

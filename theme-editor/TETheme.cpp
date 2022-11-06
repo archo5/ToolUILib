@@ -40,8 +40,8 @@ void TE_Image::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	size_t sz = oi.BeginArray(overrides.size(), "overrides");
 	if (oi.IsUnserializer())
 	{
-		overrides.clear();
-		overrides.reserve(sz);
+		overrides.Clear();
+		overrides.Reserve(sz);
 		while (oi.HasMoreArrayElements())
 		{
 			oi.BeginObject({}, "Override");
@@ -108,7 +108,7 @@ void TE_Template::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	if (oi.IsUnserializer())
 	{
 		US->curNamedColors = &colors;
-		US->curNodes.clear();
+		US->curNodes.Clear();
 	}
 
 	OnFieldPtrArray(oi, "images", images,

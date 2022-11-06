@@ -139,8 +139,8 @@ void UIObject::_AttachToFrameContents(FrameContents* owner)
 
 	if (flags & UIObject_IsOverlay)
 	{
-		system->overlays.Register(this, g_overlays.find(this)->value.depth);
-		g_overlays.erase(this);
+		system->overlays.Register(this, g_overlays.GetValuePtr(this)->depth);
+		g_overlays.Remove(this);
 	}
 
 	// TODO verify possibly inconsistent duplicate flags of states (if flag set)
@@ -171,7 +171,7 @@ void UIObject::_DetachFromFrameContents()
 
 	if (flags & UIObject_IsOverlay)
 	{
-		g_overlays.insert(this, system->overlays.mapped.find(this)->value);
+		g_overlays.Insert(this, *system->overlays.mapped.GetValuePtr(this));
 		system->overlays.Unregister(this);
 	}
 
@@ -358,7 +358,7 @@ void UIObject::RegisterAsOverlay(float depth)
 	if (system)
 		system->overlays.Register(this, depth);
 	else
-		g_overlays.insert(this, { depth });
+		g_overlays.Insert(this, { depth });
 	flags |= UIObject_IsOverlay;
 }
 
@@ -369,7 +369,7 @@ void UIObject::UnregisterAsOverlay()
 		if (system)
 			system->overlays.Unregister(this);
 		else
-			g_overlays.erase(this);
+			g_overlays.Remove(this);
 		flags &= ~UIObject_IsOverlay;
 	}
 }

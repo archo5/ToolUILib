@@ -80,8 +80,7 @@ inline void OnNodeRefField(IObjectIterator& oi, const FieldInfo& FI, T*& node)
 	if (oi.IsUnserializer())
 	{
 		auto* US = oi.GetUnserializeStorage<TE_IUnserializeStorage>();
-		auto it = id != 0 ? US->curNodes.find(id) : US->curNodes.end();
-		node = it.is_valid() ? static_cast<T*>(it->value) : nullptr;
+		node = id != 0 ? static_cast<T*>(US->curNodes.GetValueOrDefault(id)) : nullptr;
 	}
 }
 
