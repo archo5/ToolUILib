@@ -6,7 +6,7 @@
 #include "../Core/Array.h"
 #include "../Core/Memory.h"
 #include "../Core/String.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "Objects.h"
 
 

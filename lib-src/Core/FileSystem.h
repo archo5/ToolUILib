@@ -3,7 +3,6 @@
 
 #include "String.h"
 #include "Array.h"
-#include "HashTable.h"
 #include "RefCounted.h"
 
 

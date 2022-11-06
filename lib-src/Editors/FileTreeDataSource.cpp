@@ -117,7 +117,7 @@ void FileTreeDataSource::ClearSelection()
 {
 	for (const auto& kvp : _selected)
 		kvp.key->selected = false;
-	_selected.clear();
+	_selected.Clear();
 }
 
 bool FileTreeDataSource::GetSelectionState(uintptr_t item)
@@ -133,9 +133,9 @@ void FileTreeDataSource::SetSelectionState(uintptr_t item, bool sel)
 	{
 		F->selected = sel;
 		if (sel)
-			_selected.insert(F, {});
+			_selected.Insert(F, {});
 		else
-			_selected.erase(F);
+			_selected.Remove(F);
 	}
 }
 

@@ -81,21 +81,19 @@ MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int 
 
 	auto* parent = CreateEntry(parentPath, priority);
 
-	auto it = parent->children.find(nameStr);
-	if (it.is_valid())
+	if (Entry* E = parent->children.GetValueOrDefault(nameStr))
 	{
-		Entry* E = it->value;
 		E->minPriority = min(E->minPriority, priority);
 		E->maxPriority = max(E->maxPriority, priority);
 		return E;
 	}
 	else
 	{
-		Entry* E = new Entry;
+		E = new Entry;
 		E->name = nameStr;
 		E->minPriority = priority;
 		E->maxPriority = priority;
-		parent->children.insert(E->name, E);
+		parent->children.Insert(E->name, E);
 
 		return E;
 	}

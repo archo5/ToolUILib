@@ -1,5 +1,5 @@
 
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "Objects.h"
 #include "Native.h"
 #include "System.h"

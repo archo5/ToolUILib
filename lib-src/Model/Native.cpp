@@ -1216,7 +1216,7 @@ void AnimationRequester::BeginAnimation()
 		g_animReqTimerID = ::SetTimer(nullptr, 0, 1, AnimTimerProc);
 		timeBeginPeriod(1);
 	}
-	g_animRequesters.insert(this, true);
+	g_animRequesters.Insert(this, true);
 	_animating = true;
 }
 
@@ -1224,7 +1224,7 @@ void AnimationRequester::EndAnimation()
 {
 	if (!_animating)
 		return;
-	g_animRequesters.erase(this);
+	g_animRequesters.Remove(this);
 	if (g_animRequesters.size() == 0)
 	{
 		::KillTimer(nullptr, g_animReqTimerID);

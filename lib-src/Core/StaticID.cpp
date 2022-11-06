@@ -2,7 +2,7 @@
 #include "StaticID.h"
 
 #include "String.h"
-#include "HashTable.h"
+#include "HashMap.h"
 
 
 namespace ui {
@@ -14,12 +14,11 @@ struct StaticIDStorage
 
 	uint32_t Alloc(const char* name)
 	{
-		auto it = ids.find(name);
-		if (it.is_valid())
-			return it->value;
+		if (auto* pval = ids.GetValuePtr(name))
+			return *pval;
 
 		uint32_t id = count++;
-		ids.insert(name, id);
+		ids.Insert(name, id);
 		return id;
 	}
 };

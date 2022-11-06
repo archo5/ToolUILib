@@ -248,22 +248,6 @@ inline bool operator <= (const StringView& a, const StringView& b) { return a.co
 inline bool operator >= (const StringView& a, const StringView& b) { return a.compare(b) >= 0; }
 inline std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
 
-} // ui
-namespace std {
-template <>
-struct hash<ui::StringView>
-{
-	size_t operator () (const ui::StringView& v) const
-	{
-		uint64_t hash = 0xcbf29ce484222325;
-		for (char c : v)
-			hash = (hash ^ c) * 1099511628211;
-		return size_t(hash);
-	}
-};
-} // std
-namespace ui {
-
 inline std::string FormatVA(const char* fmt, va_list args)
 {
 	va_list args2;

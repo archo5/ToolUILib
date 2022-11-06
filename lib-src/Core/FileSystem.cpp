@@ -1,6 +1,7 @@
 
 #include "FileSystem.h"
 
+#include "HashMap.h"
 #include "Logging.h"
 #include "Threading.h"
 #include "WindowsUtils.h"

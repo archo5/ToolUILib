@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "../Core/Array.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "../Core/Logging.h"
 #include "Objects.h"
 #include "EventSystem.h"
@@ -327,6 +327,7 @@ struct Overlays
 	void Unregister(UIObject* obj);
 	void UpdateSorted();
 
+	// TODO hide impl?
 	HashMap<UIObject*, Info> mapped;
 	Array<Sorted> sorted;
 	bool sortedOutdated = false;

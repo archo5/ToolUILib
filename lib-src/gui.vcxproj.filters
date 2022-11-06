@@ -184,9 +184,6 @@
     <ClInclude Include="Core\Font.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\HashTable.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Model\Animation.h">
       <Filter>Model</Filter>
     </ClInclude>
@@ -308,6 +305,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\HashTableBase.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\HashMap.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

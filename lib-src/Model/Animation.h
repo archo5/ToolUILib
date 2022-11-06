@@ -2,7 +2,7 @@
 #pragma once
 
 #include "../Core/Array.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "Native.h" // TODO
 
 #include <functional>

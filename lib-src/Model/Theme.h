@@ -4,7 +4,7 @@
 #include "Painting.h"
 #include "../Render/Render.h"
 #include "../Core/Array.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "../Core/StaticID.h"
 
 

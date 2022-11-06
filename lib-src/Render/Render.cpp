@@ -5,7 +5,7 @@
 
 #include "../Core/Array.h"
 #include "../Core/FileSystem.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../../ThirdParty/stb_rect_pack.h"
@@ -321,7 +321,7 @@ struct ImageImpl : IImage
 
 		if (!path.empty())
 		{
-			g_imageTextures.erase(path);
+			g_imageTextures.Remove(path);
 		}
 	}
 	rhi::Texture2D* GetRHITex() const
@@ -376,9 +376,9 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags)
 
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 {
-	auto it = g_imageTextures.find(path);
-	if (it.is_valid() && static_cast<ImageImpl*>(it->value)->flags == flags && (flags & TexFlags::NoCache) == TexFlags::None)
-		return it->value;
+	IImage* iimg = g_imageTextures.GetValueOrDefault(path);
+	if (iimg && static_cast<ImageImpl*>(iimg)->flags == flags && (flags & TexFlags::NoCache) == TexFlags::None)
+		return iimg;
 
 	if (flags != TexFlags::Packed)
 		flags = flags & ~TexFlags::Packed;

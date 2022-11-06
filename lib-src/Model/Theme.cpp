@@ -128,26 +128,17 @@ template <> struct EnumKeys<HAlign> : EnumKeysStringList<HAlign, EnumKeys_HAlign
 
 Optional<Color4b> ThemeData::FindColorByName(const std::string& name)
 {
-	auto it = colors.find(name);
-	if (it.is_valid())
-		return it->value;
-	return {};
+	return colors.GetValueOrDefault(name);
 }
 
 draw::ImageSetHandle ThemeData::FindImageSetByName(const std::string& name)
 {
-	auto it = imageSets.find(name);
-	if (it.is_valid())
-		return it->value;
-	return {};
+	return imageSets.GetValueOrDefault(name);
 }
 
 PainterHandle ThemeData::FindPainterByName(const std::string& name)
 {
-	auto it = painters.find(name);
-	if (it.is_valid())
-		return it->value;
-	return {};
+	return painters.GetValueOrDefault(name);
 }
 
 static void InitStruct(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader)
@@ -174,17 +165,16 @@ static ThemeData::CustomStructData& GetStructData(ThemeData& td, IThemeStructLoa
 void* LoadStructFromSource(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader, const std::string& name)
 {
 	auto key = to_string(name, ":", loader->GetName());
-	auto it = td._customStructSources.find(key);
-	if (it.is_valid())
+	if (auto css = td._customStructSources.GetValueOrDefault(key))
 	{
-		auto* tf = static_cast<ThemeFile*>(it->value.get_ptr());
+		auto* tf = static_cast<ThemeFile*>(css.get_ptr());
 		tf->unserializer.BeginEntry(tf->unserializer._root);
-		tf->unserializer.BeginObject(it->key.c_str(), loader->GetName());
+		tf->unserializer.BeginObject(key.c_str(), loader->GetName());
 		void* data = loader->ReadStruct(td, tf->unserializer);
 		tf->unserializer.EndObject();
 		tf->unserializer.EndEntry();
 
-		csd.instances.insert(name, data);
+		csd.instances.Insert(name, data);
 		return data;
 	}
 	return nullptr;
@@ -194,9 +184,8 @@ void* ThemeData::_FindStructByNameImpl(IThemeStructLoader* loader, const std::st
 {
 	auto& csd = GetStructData(*this, loader);
 
-	auto it = csd.instances.find(name);
-	if (it.is_valid())
-		return it->value;
+	if (auto* pv = csd.instances.GetValuePtr(name))
+		return *pv;
 
 	if (auto* data = LoadStructFromSource(*this, csd, loader, name))
 		return data;
@@ -273,11 +262,10 @@ void* ThemeData::_GetStructImpl(IThemeStructLoader* loader, const char* name, ui
 	if (id >= csd.cachedInstances.size())
 		csd.cachedInstances.ResizeWith(id + 1, nullptr);
 
-	auto it = csd.instances.find(name);
-	if (it.is_valid())
+	if (auto* pv = csd.instances.GetValuePtr(name))
 	{
-		csd.cachedInstances[id] = it->value;
-		return it->value;
+		csd.cachedInstances[id] = *pv;
+		return *pv;
 	}
 
 	if (auto* data = LoadStructFromSource(*this, csd, loader, name))
@@ -345,11 +333,11 @@ struct ThemeLoaderData : IThemeLoader
 			if (!type.HasValue())
 				return nullptr;
 
-			auto it = g_painterCreateFuncs.find(type.GetValue());
-			if (!it.is_valid())
+			auto fnPainterCreate = g_painterCreateFuncs.GetValueOrDefault(type.GetValue());
+			if (!fnPainterCreate)
 				return nullptr;
 
-			auto ret = it->value(this, curFile->unserializer);
+			auto ret = fnPainterCreate(this, curFile->unserializer);
 
 			curFile->unserializer.EndEntry();
 			return ret;
@@ -360,21 +348,20 @@ struct ThemeLoaderData : IThemeLoader
 
 	PainterHandle _LoadPainterByName(const std::string& name)
 	{
-		auto it = loadedData->painters.find(name);
-		if (it.is_valid())
-			return it->value;
+		if (auto* pp = loadedData->painters.GetValuePtr(name))
+			return *pp;
 
-		auto it2 = painters.find(name);
-		if (!it2.is_valid())
+		auto* pthelref = painters.GetValuePtr(name);
+		if (!pthelref)
 			return nullptr;
 
-		auto& u = it2->value.file->unserializer;
+		auto& u = pthelref->file->unserializer;
 		auto prevCurFile = curFile;
-		curFile = it2->value.file;
+		curFile = pthelref->file;
 		u.BeginEntry(u._root);
 
-		auto loaded = LoadPainter(it2->value.key);
-		loadedData->painters.insert(it2->key, loaded);
+		auto loaded = LoadPainter(pthelref->key);
+		loadedData->painters.Insert(name, loaded);
 
 		u.EndEntry();
 		curFile = prevCurFile;
@@ -419,7 +406,7 @@ struct ThemeLoaderData : IThemeLoader
 
 	draw::ImageSetHandle FindImageSet(const std::string& name)
 	{
-		return loadedData->imageSets.get(name, nullptr);
+		return loadedData->imageSets.GetValueOrDefault(name, nullptr);
 	}
 };
 
@@ -458,21 +445,21 @@ void ThemeData::LoadTheme(StringView folder)
 							if (name.ends_with(":color"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":color")));
-								tld.colors.insert(key, { tf, el->name->string });
+								tld.colors.Insert(key, { tf, el->name->string });
 							}
 							else if (name.ends_with(":imgset"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":imgset")));
-								tld.imageSets.insert(key, { tf, el->name->string });
+								tld.imageSets.Insert(key, { tf, el->name->string });
 							}
 							else if (name.ends_with(":painter"))
 							{
 								auto key = to_string(name.substr(0, name.find_last_at(":painter")));
-								tld.painters.insert(key, { tf, el->name->string });
+								tld.painters.Insert(key, { tf, el->name->string });
 							}
 							else
 							{
-								_customStructSources.insert(el->name->string, tf);
+								_customStructSources.Insert(el->name->string, tf);
 							}
 						}
 					}
@@ -493,7 +480,7 @@ void ThemeData::LoadTheme(StringView folder)
 		tld.curFile = col.value.file;
 
 		auto loaded = tld.LoadColor(col.value.key);
-		tld.loadedData->colors.insert(col.key, loaded);
+		tld.loadedData->colors.Insert(col.key, loaded);
 
 		tld.curFile = nullptr;
 	}
@@ -585,7 +572,7 @@ void ThemeData::LoadTheme(StringView folder)
 			}
 			u.EndArray();
 
-			tld.loadedData->imageSets.insert(imgSet.key, loaded);
+			tld.loadedData->imageSets.Insert(imgSet.key, loaded);
 		}
 		u.EndDict();
 	}
@@ -606,7 +593,7 @@ ThemeDataHandle LoadTheme(StringView folder)
 
 void RegisterPainter(const char* type, PainterCreateFunc* createFunc)
 {
-	g_painterCreateFuncs.insert(type, createFunc);
+	g_painterCreateFuncs.Insert(type, createFunc);
 }
 
 

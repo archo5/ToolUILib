@@ -318,7 +318,7 @@ void Overlays::Register(UIObject* obj, float depth)
 
 void Overlays::Unregister(UIObject* obj)
 {
-	mapped.erase(obj);
+	mapped.Remove(obj);
 	sortedOutdated = true;
 }
 

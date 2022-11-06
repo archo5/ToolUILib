@@ -1,6 +1,6 @@
 
 #include "Array.h"
-#include "HashTable.h"
+#include "HashMap.h"
 
 #include <stdarg.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
 
 #include "Font.h"
 #include "FileSystem.h"
-#include "HashTable.h"
+#include "HashMap.h"
 #include "../Render/Render.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION

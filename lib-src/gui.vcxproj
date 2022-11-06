@@ -212,7 +212,7 @@
     <ClInclude Include="Core\GUID.h" />
     <ClInclude Include="Core\HashTableBase.h" />
     <ClInclude Include="Core\HashUtils.h" />
-    <ClInclude Include="Core\HashTable.h" />
+    <ClInclude Include="Core\HashMap.h" />
     <ClInclude Include="Core\Image.h" />
     <ClInclude Include="Core\Logging.h" />
     <ClInclude Include="Core\Math.h" />

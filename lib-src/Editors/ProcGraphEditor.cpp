@@ -134,7 +134,7 @@ void ProcGraphEditor_NodePin::_RegisterPin()
 {
 	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
-		p->pinUIMap.insert(_pin, this);
+		p->pinUIMap.Insert(_pin, this);
 	}
 }
 
@@ -142,7 +142,7 @@ void ProcGraphEditor_NodePin::_UnregisterPin()
 {
 	if (auto* p = FindParentOfType<ProcGraphEditor>())
 	{
-		p->pinUIMap.erase(_pin);
+		p->pinUIMap.Remove(_pin);
 	}
 }
 
@@ -466,9 +466,9 @@ void ProcGraphEditor::GetLinkPoints(const IProcGraph::Link& link, Array<Point2f>
 {
 	auto A = link.output;
 	auto B = link.input;
-	if (auto* LA = pinUIMap.get({ A, true }))
+	if (auto* LA = pinUIMap.GetValueOrDefault({ A, true }))
 	{
-		if (auto* LB = pinUIMap.get({ B, false }))
+		if (auto* LB = pinUIMap.GetValueOrDefault({ B, false }))
 		{
 			auto PA = GetPinPos(LA);
 			auto PB = GetPinPos(LB);
@@ -479,7 +479,7 @@ void ProcGraphEditor::GetLinkPoints(const IProcGraph::Link& link, Array<Point2f>
 
 void ProcGraphEditor::GetConnectingLinkPoints(const IProcGraph::Pin& pin, Array<Point2f>& outPoints)
 {
-	if (auto* P = pinUIMap.get(pin))
+	if (auto* P = pinUIMap.GetValueOrDefault(pin))
 	{
 		auto p0 = GetPinPos(P);
 		Point2f p1 = system->eventSystem.prevMousePos;

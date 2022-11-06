@@ -1,7 +1,19 @@
 
 #include "pch.h"
-#include <set>
+#include <unordered_set>
 
+
+// TODO have our own set
+namespace std {
+template <>
+struct hash<ui::StringView>
+{
+	size_t operator () (const ui::StringView& v) const
+	{
+		return ui::HashValue(v);
+	}
+};
+} // std
 
 struct Settings
 {

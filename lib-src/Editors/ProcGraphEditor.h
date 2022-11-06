@@ -2,7 +2,7 @@
 #pragma once
 
 #include "../Core/Array.h"
-#include "../Core/HashTable.h"
+#include "../Core/HashMap.h"
 #include "../Model/Objects.h"
 
 
@@ -36,9 +36,13 @@ struct IProcGraph
 		LinkEnd output;
 		LinkEnd input;
 	};
-	struct PinHash
+	struct PinHEC
 	{
-		size_t operator () (const Pin& p) const
+		static bool AreEqual(const Pin& a, const Pin& b)
+		{
+			return a == b;
+		}
+		static size_t GetHash(const Pin& p)
 		{
 			auto hash = HashValue(p.end.node);
 			hash *= 121;
@@ -179,7 +183,7 @@ struct ProcGraphEditor_NodePin : Buildable
 	struct Selectable* _sel = nullptr;
 };
 
-using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::PinHash>;
+using PinUIMap = HashMap<IProcGraph::Pin, ProcGraphEditor_NodePin*, IProcGraph::PinHEC>;
 
 struct ProcGraphEditor_Node : Buildable
 {
