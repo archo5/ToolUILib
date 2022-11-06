@@ -171,15 +171,11 @@ struct HashTableDataStorage_SeparateArrays
 		capacity = cap;
 	}
 
-	void SetKeyDefValue(size_t pos, const K& key)
+	void SetKeyDefValueIfMissing(size_t pos, const K& key)
 	{
 		if (pos != count)
-		{
-			keys[pos].~K();
-			values[pos].~V();
-		}
-		else
-			count++;
+			return;
+		count++;
 		new (&keys[pos]) K(key);
 		new (&values[pos]) V;
 	}
@@ -238,7 +234,7 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 	V& operator [] (const K& key)
 	{
 		size_t ipos = Base::_FindInsertPos(key);
-		this->_storage.SetKeyDefValue(ipos, key);
+		this->_storage.SetKeyDefValueIfMissing(ipos, key);
 		return this->_storage.GetValueAt(ipos);
 	}
 };

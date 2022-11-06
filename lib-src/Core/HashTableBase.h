@@ -237,7 +237,7 @@ struct HashTableExtBase : HashTableBase
 		for (;;)
 		{
 			size_t idx = _hashTable[i];
-			if (idx == NO_VALUE)
+			if (idx == NO_VALUE || idx == REMOVED)
 			{
 				size_t pos = _storage.count;
 				_hashTable[i] = pos;
