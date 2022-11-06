@@ -12,12 +12,14 @@
 #include <string>
 
 
-namespace ui {
-
+namespace std {
 inline size_t HashValue(const std::string& sv)
 {
-	return HashManyBytesFast(sv.data(), sv.size());
+	return ui::HashManyBytesFast(sv.data(), sv.size());
 }
+} // std
+
+namespace ui {
 
 static inline bool IsSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
 static inline bool IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }

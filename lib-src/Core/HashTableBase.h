@@ -58,9 +58,7 @@ struct HashTableExtBase : HashTableBase
 	}
 	HashTableExtBase(const HashTableExtBase& o)
 	{
-		Reserve(o._storage.count);
-		for (EntryRef e : o)
-			Insert(e.key, e.value);
+		_CopyFrom(o);
 	}
 	HashTableExtBase(HashTableExtBase&& o)
 	{
@@ -71,9 +69,7 @@ struct HashTableExtBase : HashTableBase
 		if (this == &o)
 			return *this;
 		Clear();
-		Reserve(o._storage.count);
-		for (EntryRef e : o)
-			Insert(e.key, e.value);
+		_CopyFrom(o);
 		return *this;
 	}
 	HashTableExtBase& operator = (HashTableExtBase&& o)
@@ -107,6 +103,16 @@ struct HashTableExtBase : HashTableBase
 	// TODO needed?
 	UI_FORCEINLINE Iterator Find(const K& key) { return { &_storage, _FindPos(key, _storage.count) }; }
 	UI_FORCEINLINE ConstIterator Find(const K& key) const { return { &_storage, _FindPos(key, _storage.count) }; }
+
+	void _CopyFrom(const HashTableExtBase& o)
+	{
+		Reserve(o._storage.count);
+
+		_storage.InitCopyFrom(o._storage);
+		memcpy(_hashes, o._hashes, sizeof(H) * o._storage.count);
+
+		_Rehash(_hashCap);
+	}
 
 	void _MoveFrom(HashTableExtBase&& o)
 	{

@@ -108,6 +108,11 @@ template <class T> struct Vec2
 
 	template <class U> UI_FORCEINLINE Vec2<U> Cast() const { return { U(x), U(y) }; }
 };
+template <class T>
+inline size_t HashValue(Vec2<T> v)
+{
+	return HashValue(v.x) ^ HashValue(v.y);
+}
 
 using Vec2f = Vec2<float>;
 using Vec2i = Vec2<int>;

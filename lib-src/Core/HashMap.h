@@ -96,6 +96,31 @@ struct HashTableDataStorage_SeparateArrays
 		capacity = 0;
 	}
 
+	void InitCopyFrom(const Self& o)
+	{
+		count = o.count;
+
+		if (std::is_standard_layout_v<K> && std::is_trivially_copy_constructible_v<K>)
+		{
+			memcpy(keys, o.keys, sizeof(K) * count);
+		}
+		else
+		{
+			for (size_t i = 0; i < count; i++)
+				new (&keys[i]) K(o.keys[i]);
+		}
+
+		if (std::is_standard_layout_v<V> && std::is_trivially_copy_constructible_v<V>)
+		{
+			memcpy(values, o.values, sizeof(V) * count);
+		}
+		else
+		{
+			for (size_t i = 0; i < count; i++)
+				new (&values[i]) V(o.values[i]);
+		}
+	}
+
 	void MoveFrom(Self&& o)
 	{
 		keys = o.keys;
