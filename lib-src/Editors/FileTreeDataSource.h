@@ -3,13 +3,14 @@
 
 #include "Tables.h"
 #include "../Core/FileSystem.h"
+#include "../Core/HashSet.h"
 
 
 namespace ui {
 
-struct FileTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage, ui::IDirectoryChangeListener
+struct FileTreeDataSource : TreeDataSource, ISelectionStorage, IDirectoryChangeListener
 {
-	struct File : ui::RefCountedST
+	struct File : RefCountedST
 	{
 		std::string name;
 		uint64_t size;
@@ -18,16 +19,16 @@ struct FileTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage, ui::IDire
 		bool selected = false;
 		bool open = true;
 
-		Array<ui::RCHandle<File>> subfiles;
+		Array<RCHandle<File>> subfiles;
 
-		void InitFrom(const ui::StringView& fullPath, bool recursive = false);
+		void InitFrom(const StringView& fullPath, bool recursive = false);
 	};
 
 	std::string _rootPath;
-	ui::RCHandle<File> _root;
-	ui::DirectoryChangeWatcherHandle _dcw;
-	ui::HashMap<File*, ui::NoValue> _selected;
-	ui::MulticastDelegate<> onChange;
+	RCHandle<File> _root;
+	DirectoryChangeWatcherHandle _dcw;
+	HashSet<File*> _selected;
+	MulticastDelegate<> onChange;
 
 	FileTreeDataSource(std::string rootPath);
 
@@ -63,12 +64,12 @@ struct FileTreeDataSource : ui::TreeDataSource, ui::ISelectionStorage, ui::IDire
 	void SetSelectionState(uintptr_t item, bool sel) override;
 
 	// IDirectoryChangeListener utils
-	ui::RCHandle<File> GetFileFromPath(ui::StringView path, bool rebuildIfMissing);
+	RCHandle<File> GetFileFromPath(StringView path, bool rebuildIfMissing);
 
 	// IDirectoryChangeListener
-	void OnFileAdded(ui::StringView path) override;
-	void OnFileRemoved(ui::StringView path) override;
-	void OnFileChanged(ui::StringView path) override;
+	void OnFileAdded(StringView path) override;
+	void OnFileRemoved(StringView path) override;
+	void OnFileChanged(StringView path) override;
 };
 
 } // ui

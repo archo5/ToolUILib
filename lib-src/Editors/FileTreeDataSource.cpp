@@ -115,8 +115,8 @@ void FileTreeDataSource::ToggleOpenState(uintptr_t id)
 
 void FileTreeDataSource::ClearSelection()
 {
-	for (const auto& kvp : _selected)
-		kvp.key->selected = false;
+	for (File* F : _selected)
+		F->selected = false;
 	_selected.Clear();
 }
 
@@ -133,7 +133,7 @@ void FileTreeDataSource::SetSelectionState(uintptr_t item, bool sel)
 	{
 		F->selected = sel;
 		if (sel)
-			_selected.Insert(F, {});
+			_selected.Insert(F);
 		else
 			_selected.Remove(F);
 	}
