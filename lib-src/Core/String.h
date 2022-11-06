@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Common.h"
+#include "HashUtils.h"
 #include "Memory.h"
 
 #include <assert.h>
@@ -12,6 +13,11 @@
 
 
 namespace ui {
+
+inline size_t HashValue(const std::string& sv)
+{
+	return HashManyBytesFast(sv.data(), sv.size());
+}
 
 static inline bool IsSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
 static inline bool IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
@@ -202,6 +208,11 @@ inline std::string to_string(StringView s1, StringView s2, StringView s3)
 	out.append(s2.data(), s2.size());
 	out.append(s3.data(), s3.size());
 	return out;
+}
+
+inline size_t HashValue(StringView sv)
+{
+	return HashManyBytesFast(sv.data(), sv.size());
 }
 
 template <size_t S>

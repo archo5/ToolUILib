@@ -24,20 +24,17 @@ struct FontKey
 	{
 		return name == o.name && weight == o.weight && italic == o.italic;
 	}
-	struct Hasher
-	{
-		size_t operator () (const FontKey& k) const
-		{
-			size_t h = std::hash<std::string>()(k.name);
-			h *= 131;
-			h ^= std::hash<int>()(k.weight);
-			h *= 131;
-			h ^= std::hash<bool>()(k.italic);
-			return h;
-		}
-	};
 };
-static HashMap<FontKey, Font*, FontKey::Hasher> g_loadedFonts;
+inline size_t HashValue(const FontKey& k)
+{
+	size_t h = HashValue(k.name);
+	h *= 131;
+	h ^= HashValue(k.weight);
+	h *= 131;
+	h ^= HashValue(k.italic);
+	return h;
+}
+static HashMap<FontKey, Font*> g_loadedFonts;
 
 struct GlyphValue
 {

@@ -113,6 +113,14 @@ struct KeyICHasher
 	{
 		return k.num;
 	};
+	static UI_FORCEINLINE size_t GetHash(const KeyIC& v)
+	{
+		return v.num;
+	}
+	static UI_FORCEINLINE bool AreEqual(const KeyIC& a, const KeyIC& b)
+	{
+		return a == b;
+	}
 };
 
 using HashMapIC = HashMap<KeyIC, ValueIC, KeyICHasher>;

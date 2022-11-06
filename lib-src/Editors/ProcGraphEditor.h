@@ -40,11 +40,11 @@ struct IProcGraph
 	{
 		size_t operator () (const Pin& p) const
 		{
-			auto hash = std::hash<Node*>()(p.end.node);
+			auto hash = HashValue(p.end.node);
 			hash *= 121;
-			hash = std::hash<int>()(p.end.num);
+			hash ^= HashValue(p.end.num);
 			hash *= 121;
-			hash = std::hash<bool>()(p.isOutput);
+			hash ^= HashValue(p.isOutput);
 			return hash;
 		}
 	};

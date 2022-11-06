@@ -2,16 +2,15 @@
 #pragma once
 
 #include "Platform.h"
+#include "HashUtils.h"
 
 #include <assert.h>
 #include <stddef.h>
-#include <type_traits>
-#include <new>
 
 
 namespace ui {
 
-template <class K, class V, class Hasher = std::hash<K>, class Equal = std::equal_to<K>>
+template <class K, class V, class HEC = HashEqualityComparer<K>>
 struct HashMap
 {
 	using H = size_t;
@@ -265,9 +264,7 @@ struct HashMap
 	{
 		if (!_count)
 			return SIZE_MAX;
-		Hasher hh;
-		Equal eq;
-		H hash = hh(key);
+		H hash = HEC::GetHash(key);
 		size_t start = hash & (_hashCap - 1);
 		size_t i = start;
 		for (;;)
@@ -275,7 +272,7 @@ struct HashMap
 			size_t idx = _hashTable[i];
 			if (idx == NO_VALUE)
 				return SIZE_MAX;
-			if (idx != REMOVED && eq(key, _keys[idx]))
+			if (idx != REMOVED && HEC::AreEqual(key, _keys[idx]))
 				return i;
 			i = _advance(i);
 			if (i == start)
@@ -290,7 +287,6 @@ struct HashMap
 	}
 	size_t _insert_pos(const K& key, H hash, size_t def)
 	{
-		Equal eq;
 		size_t start = hash & (_hashCap - 1);
 		size_t i = start;
 		for (;;)
@@ -301,7 +297,7 @@ struct HashMap
 				_hashTable[i] = def;
 				return def;
 			}
-			if (idx != REMOVED && eq(key, _keys[idx]))
+			if (idx != REMOVED && HEC::AreEqual(key, _keys[idx]))
 				return idx;
 			i = _advance(i);
 
@@ -344,8 +340,7 @@ struct HashMap
 			reserve(_capacity * 2 + 1);
 		}
 
-		Hasher hh;
-		H hash = hh(key);
+		H hash = HEC::GetHash(key);
 		size_t pos = _insert_pos(key, hash, _count);
 		bool inserted = pos == _count;
 		if (pos == _count)
