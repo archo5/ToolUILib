@@ -129,17 +129,17 @@ using unordered_map_IC = std::unordered_map<KeyIC, ValueIC, KeyICHasher>;
 template <class HT>
 static void check_integrity(HT& ht)
 {
-	assert(ht._count <= ht._capacity);
-	assert(ht._count <= ht._hashCap);
-	assert(ht._capacity <= ht._hashCap);
-	for (size_t i = 0; i < ht._count; i++)
+	assert(ht.Size() <= ht.Capacity());
+	assert(ht.Size() <= ht._hashCap);
+	assert(ht.Capacity() <= ht._hashCap);
+	for (size_t i = 0; i < ht.Size(); i++)
 	{
 		size_t start = ht._hashes[i] % ht._hashCap;
 		size_t j = start;
 		for (;;)
 		{
 			size_t idx = ht._hashTable[j];
-			assert(idx < ht._count || idx == HT::REMOVED);
+			assert(idx < ht.Size() || idx == HT::REMOVED);
 			if (idx == i)
 				break;
 			j = ht._advance(j);
@@ -1027,7 +1027,7 @@ struct Init
 	Init()
 	{
 		ArrayTests();
-		//HashMapTests();
+		HashMapTests();
 		exit(0);
 	}
 };

@@ -210,6 +210,7 @@
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\GUID.h" />
+    <ClInclude Include="Core\HashTableBase.h" />
     <ClInclude Include="Core\HashUtils.h" />
     <ClInclude Include="Core\HashTable.h" />
     <ClInclude Include="Core\Image.h" />

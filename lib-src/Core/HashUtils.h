@@ -40,15 +40,15 @@ inline size_t HashManyBytesFast(const void* bytes, size_t num, size_t maxsteps =
 }
 
 UI_FORCEINLINE size_t HashValue(unsigned char v) { return v * HASH_PRIME; }
-UI_FORCEINLINE size_t HashValue(signed char v) { return unsigned char(v) * HASH_PRIME; }
+UI_FORCEINLINE size_t HashValue(signed char v) { return (unsigned char)v * HASH_PRIME; }
 UI_FORCEINLINE size_t HashValue(unsigned short v) { return v * HASH_PRIME; }
-UI_FORCEINLINE size_t HashValue(signed short v) { return unsigned short(v) * HASH_PRIME; }
+UI_FORCEINLINE size_t HashValue(signed short v) { return (unsigned short)v * HASH_PRIME; }
 UI_FORCEINLINE size_t HashValue(unsigned int v) { return v * HASH_PRIME; }
-UI_FORCEINLINE size_t HashValue(signed int v) { return unsigned int(v) * HASH_PRIME; }
+UI_FORCEINLINE size_t HashValue(signed int v) { return (unsigned int)v * HASH_PRIME; }
 UI_FORCEINLINE size_t HashValue(unsigned long v) { return v * HASH_PRIME; }
-UI_FORCEINLINE size_t HashValue(signed long v) { return unsigned long(v) * HASH_PRIME; }
+UI_FORCEINLINE size_t HashValue(signed long v) { return (unsigned long)v * HASH_PRIME; }
 UI_FORCEINLINE size_t HashValue(unsigned long long v) { return size_t(v * HASH_PRIME); }
-UI_FORCEINLINE size_t HashValue(signed long long v) { return size_t(unsigned long long(v) * HASH_PRIME); }
+UI_FORCEINLINE size_t HashValue(signed long long v) { return size_t((unsigned long long)v * HASH_PRIME); }
 
 UI_FORCEINLINE size_t HashValue(float v) { return reinterpret_cast<u32&>(v) * HASH_PRIME; }
 UI_FORCEINLINE size_t HashValue(double v) { return size_t(reinterpret_cast<u64&>(v) * HASH_PRIME); }
