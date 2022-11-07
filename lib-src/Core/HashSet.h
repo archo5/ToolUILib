@@ -122,12 +122,44 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 
 	using HashTableExtBase<K, HEC, HashSetDataStorage<K>>::HashTableExtBase;
 
+	HashSet() {}
+	HashSet(const std::initializer_list<K>& keys)
+	{
+		Base::Reserve(keys.size());
+		for (const K& key : keys)
+			Insert(key);
+	}
+
+	K& At(size_t pos)
+	{
+		assert(pos < this->_storage.count);
+		return this->_storage.GetKeyAt(pos);
+	}
+	UI_FORCEINLINE const K& At(size_t pos) const { return const_cast<HashSet*>(this)->At(pos); }
+
 	bool Insert(const K& key)
 	{
 		size_t ipos = Base::_FindInsertPos(key);
 		bool inserted = ipos == this->_storage.count;
 		this->_storage.SetKey(ipos, key);
 		return inserted;
+	}
+
+	K FindFirstIntersecting(const HashSet& other, const K& def = {}) const
+	{
+		for (const K& key : *this)
+			if (other.Contains(key))
+				return key;
+		return def;
+	}
+
+	HashSet IntersectWith(const HashSet& other) const
+	{
+		HashSet ret;
+		for (const K& key : *this)
+			if (other.Contains(key))
+				ret.Insert(key);
+		return ret;
 	}
 };
 
