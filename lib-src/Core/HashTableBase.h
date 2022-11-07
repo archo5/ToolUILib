@@ -92,8 +92,8 @@ struct HashTableExtBase : HashTableBase
 
 	UI_FORCEINLINE bool empty() const { return _storage.count == 0; }
 	UI_FORCEINLINE size_t size() const { return _storage.count; }
-	UI_FORCEINLINE size_t capacity() const { return _storage.capacity; }
 
+	UI_FORCEINLINE bool NotEmpty() const { return _storage.count != 0; }
 	UI_FORCEINLINE bool IsEmpty() const { return _storage.count == 0; }
 	UI_FORCEINLINE size_t Size() const { return _storage.count; }
 	UI_FORCEINLINE size_t Capacity() const { return _storage.capacity; }

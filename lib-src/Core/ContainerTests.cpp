@@ -311,7 +311,7 @@ static void HashMapTests()
 		auto it = v.Insert(i, i + 1000, &inserted);
 		assert(inserted);
 		assert(v.size() == i + 1);
-		assert(v.capacity() >= size_t(i + 1));
+		assert(v.Capacity() >= size_t(i + 1));
 		assert(v._hashCap >= size_t(i + 1));
 		check_integrity(v);
 		assert(v.begin() != v.end());
@@ -358,7 +358,7 @@ static void HashMapTests()
 	{
 		v[i] = i + 1000;
 		assert(v.size() == i + 1);
-		assert(v.capacity() >= size_t(i + 1));
+		assert(v.Capacity() >= size_t(i + 1));
 		assert(v._hashCap >= size_t(i + 1));
 		assert(v.begin() != v.end());
 		assert(!(v.begin() == v.end()));
