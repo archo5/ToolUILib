@@ -360,4 +360,7 @@
       <Filter>Render\D3D11Shaders</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="gui.natvis" />
+  </ItemGroup>
 </Project>
