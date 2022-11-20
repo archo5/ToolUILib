@@ -109,8 +109,8 @@ struct Array
 
 	UI_FORCEINLINE bool IsEmpty() const { return _size == 0; }
 	UI_FORCEINLINE bool NotEmpty() const { return _size != 0; }
-	UI_FORCEINLINE T* GetDataPtr() { return _data; }
-	UI_FORCEINLINE const T* GetDataPtr() const { return _data; }
+	UI_FORCEINLINE T* Data() { return _data; }
+	UI_FORCEINLINE const T* Data() const { return _data; }
 	UI_FORCEINLINE size_t Size() const { return _size; }
 	UI_FORCEINLINE size_t Capacity() const { return _capacity; }
 

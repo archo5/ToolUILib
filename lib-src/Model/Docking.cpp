@@ -886,7 +886,7 @@ DockingNodeHandle Split::Construct(DockingMainArea* main) const
 		ccnh->parentNode = node;
 
 		node->childNodes.Append(ccnh);
-		if (&cn != children.GetDataPtr())
+		if (&cn != children.Data())
 			node->splits.Append(cn.split);
 	}
 

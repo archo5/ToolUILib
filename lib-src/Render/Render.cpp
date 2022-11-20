@@ -388,7 +388,7 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 		return nullptr; // TODO return default?
 
 	int w = 0, h = 0, n = 0;
-	auto* imgData = stbi_load_from_memory((const stbi_uc*)frr.data->GetData(), frr.data->GetSize(), &w, &h, &n, 4);
+	auto* imgData = stbi_load_from_memory((const stbi_uc*)frr.data->Data(), frr.data->Size(), &w, &h, &n, 4);
 	if (!imgData)
 		return nullptr;
 	UI_DEFER(stbi_image_free(imgData));
@@ -426,7 +426,7 @@ ImageSet::Entry* ImageSet::FindEntryForSize(Size2f size)
 
 	auto mode = GetFinalSizeMode(type, sizeMode);
 
-	Entry* last = entries.GetDataPtr();
+	Entry* last = entries.Data();
 	if (mode == ImageSetSizeMode::NearestScaleUp || mode == ImageSetSizeMode::NearestNoScale)
 	{
 		for (auto& e : entries)
@@ -453,7 +453,7 @@ ImageSet::Entry* ImageSet::FindEntryForEdgeWidth(AABB2f edgeWidth)
 	if (entries.IsEmpty())
 		return nullptr;
 
-	Entry* last = entries.GetDataPtr();
+	Entry* last = entries.Data();
 	// TODO
 	return last;
 }
@@ -874,7 +874,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 
 	Array<rhi::Vertex> verts;
 	verts.Resize(size * ncols);
-	auto* vdest = verts.GetDataPtr();
+	auto* vdest = verts.Data();
 	for (size_t i = 0; i < size; i++)
 	{
 		Point2f p0 = points[i];
@@ -910,7 +910,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 
 	Array<uint16_t> indices;
 	indices.Resize((closed ? size : size - 1) * (ncols - 1) * 6);
-	uint16_t* idest = indices.GetDataPtr();
+	uint16_t* idest = indices.Data();
 	for (size_t i = 0; i + (closed ? 0 : 1) < size; i++)
 	{
 		size_t i1 = (i + 1) % size;

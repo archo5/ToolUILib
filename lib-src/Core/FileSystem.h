@@ -17,10 +17,10 @@ enum class IOResult : uint8_t
 
 struct IBuffer : RefCountedMT
 {
-	virtual void* GetData() const = 0;
-	virtual size_t GetSize() const = 0;
+	virtual void* Data() const = 0;
+	virtual size_t Size() const = 0;
 
-	StringView GetStringView() const { return { static_cast<const char*>(GetData()), GetSize() }; }
+	StringView GetStringView() const { return { static_cast<const char*>(Data()), Size() }; }
 };
 using BufferHandle = RCHandle<IBuffer>;
 
@@ -29,8 +29,8 @@ struct BasicMemoryBuffer : IBuffer
 	void* data = nullptr;
 	size_t size = 0;
 
-	void* GetData() const override { return data; }
-	size_t GetSize() const override { return size; }
+	void* Data() const override { return data; }
+	size_t Size() const override { return size; }
 };
 
 struct OwnedMemoryBuffer : BasicMemoryBuffer

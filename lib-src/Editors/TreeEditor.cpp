@@ -249,7 +249,7 @@ void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIR
 					foundplace = true;
 					break;
 				}
-				if (P.empty())
+				if (P.IsEmpty())
 					break;
 				PP = P;
 				P = P.without_last();

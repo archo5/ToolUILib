@@ -455,7 +455,7 @@ struct AnimPattern : ITree
 
 	void IterateChildren(TreePathRef path, IterationFunc&& fn) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 		{
 			for (auto* node : rootLayers)
 				fn(node);
@@ -469,7 +469,7 @@ struct AnimPattern : ITree
 	}
 	size_t GetChildCount(TreePathRef path) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			return rootLayers.size();
 		auto loc = FindNode(path);
 		return loc.Get()->children.size();
@@ -520,7 +520,7 @@ struct AnimPattern : ITree
 	}
 	void Insert(TreePathRef path, APLayer* node)
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			rootLayers.Append(node);
 		else
 			FindNode(path).Get()->children.Append(node);

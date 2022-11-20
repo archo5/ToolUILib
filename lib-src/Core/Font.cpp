@@ -73,7 +73,7 @@ struct Font
 	{
 		if (!data)
 			return false;
-		if (!stbtt_InitFont(&info, (const unsigned char*)data->GetData(), 0))
+		if (!stbtt_InitFont(&info, (const unsigned char*)data->Data(), 0))
 			return false;
 		return true;
 	}

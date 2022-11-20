@@ -417,7 +417,7 @@ struct Tree : ui::ITree
 
 	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 		{
 			for (auto* node : roots)
 				fn(node);
@@ -431,7 +431,7 @@ struct Tree : ui::ITree
 	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			return roots.size();
 		auto loc = FindNode(path);
 		return loc.Get()->children.size();
@@ -474,7 +474,7 @@ struct Tree : ui::ITree
 	}
 	void Insert(ui::TreePathRef path, Node* node)
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			roots.Append(node);
 		else
 			FindNode(path).Get()->children.Append(node);

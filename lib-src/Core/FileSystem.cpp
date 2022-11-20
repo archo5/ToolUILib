@@ -657,7 +657,7 @@ struct ZipFileSource : IFileSource
 		auto res = ReadBinaryFile(path);
 		if (res.data)
 		{
-			static_cast<OwnedMemoryBuffer*>(&*res.data)->size = NormalizeNewlines(static_cast<char*>(res.data->GetData()), res.data->GetSize());
+			static_cast<OwnedMemoryBuffer*>(&*res.data)->size = NormalizeNewlines(static_cast<char*>(res.data->Data()), res.data->Size());
 		}
 		return res;
 	}
@@ -724,7 +724,7 @@ FileSourceHandle CreateZipFileMemorySource(BufferHandle memory)
 	auto h = AsRCHandle(new ZipFileSource);
 	h->memory = memory;
 	mz_zip_zero_struct(&h->arch);
-	mz_zip_reader_init_mem(&h->arch, memory->GetData(), memory->GetSize(), 0);
+	mz_zip_reader_init_mem(&h->arch, memory->Data(), memory->Size(), 0);
 	h->Init();
 	return h;
 }

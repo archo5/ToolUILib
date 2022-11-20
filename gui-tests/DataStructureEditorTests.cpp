@@ -291,7 +291,7 @@ struct Tree : ui::ITree
 
 	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 		{
 			for (auto* node : roots)
 				fn(&node->num);
@@ -305,7 +305,7 @@ struct Tree : ui::ITree
 	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			return roots.size();
 		auto loc = FindNode(path);
 		return loc.arr->At(loc.idx)->children.size();
@@ -428,7 +428,7 @@ struct Tree : ui::ITree
 
 	void IterateChildren(ui::TreePathRef path, IterationFunc&& fn) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 		{
 			for (auto& node : roots)
 				fn(&node.num);
@@ -442,7 +442,7 @@ struct Tree : ui::ITree
 	}
 	size_t GetChildCount(ui::TreePathRef path) override
 	{
-		if (path.empty())
+		if (path.IsEmpty())
 			return roots.size();
 		auto loc = FindNode(path);
 		return loc.arr->At(loc.idx).children.size();

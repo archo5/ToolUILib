@@ -17,9 +17,12 @@ struct ArrayView
 	template <class U>
 	ArrayView(const U& o) : _data(o.data()), _size(o.size()) {}
 
+	const T* Data() const { return _data; }
+	size_t Size() const { return _size; }
+	bool IsEmpty() const { return _size == 0; }
+	bool NotEmpty() const { return _size != 0; }
 	const T* data() const { return _data; }
 	size_t size() const { return _size; }
-	bool empty() const { return _size == 0; }
 	const T* begin() const { return _data; }
 	const T* end() const { return _data + _size; }
 	const T& operator [] (size_t i) const
