@@ -747,7 +747,7 @@ struct MathExprData
 				bv += it.take_char() - '0';
 			}
 
-			if (it.empty() || it.first() != '.')
+			if (it.IsEmpty() || it.first() != '.')
 			{
 				vout = float(bv);
 				return true;
@@ -786,7 +786,7 @@ struct MathExprData
 			for (;;)
 			{
 				it = it.ltrim();
-				if (it.empty())
+				if (it.IsEmpty())
 					break;
 
 				char ch = it.first();

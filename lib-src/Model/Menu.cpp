@@ -13,7 +13,7 @@ namespace ui {
 MenuItem::MenuItem(StringView text, StringView shortcut, bool disabled, bool checked, ArrayView<MenuItem> submenu)
 {
 	this->text.append(text.data(), text.size());
-	if (!shortcut.empty())
+	if (shortcut.NotEmpty())
 	{
 		this->text += "\t";
 		this->text.append(shortcut.data(), shortcut.size());
@@ -71,7 +71,7 @@ void MenuItemCollection::Entry::Finalize()
 
 MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int priority)
 {
-	if (path.empty())
+	if (path.IsEmpty())
 		return &root;
 
 	size_t sep = path.find_last_at(SEPARATOR);

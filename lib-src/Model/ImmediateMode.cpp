@@ -29,7 +29,7 @@ bool SetEnabled(bool newValue)
 
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	if (!text.empty())
+	if (text.NotEmpty())
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<CheckboxIcon>();
@@ -42,7 +42,7 @@ void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView 
 
 void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	if (!text.empty())
+	if (text.NotEmpty())
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<RadioButtonIcon>();
@@ -60,7 +60,7 @@ void ButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringView te
 
 void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
-	if (!text.empty())
+	if (text.NotEmpty())
 	{
 		Push<StackExpandLTRLayoutElement>();
 		Make<TreeExpandIcon>();

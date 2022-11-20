@@ -143,7 +143,7 @@ ui::RCHandle<FileTreeDataSource::File> FileTreeDataSource::GetFileFromPath(ui::S
 {
 	auto name = path.after_last("/");
 	auto parent = name.size() < path.size() ? path.substr(0, path.size() - name.size() - 1) : ui::StringView();
-	auto parentFile = parent.empty() ? _root : GetFileFromPath(parent, rebuildIfMissing);
+	auto parentFile = parent.IsEmpty() ? _root : GetFileFromPath(parent, rebuildIfMissing);
 	if (!parentFile)
 		return nullptr;
 	bool secondTry = false;

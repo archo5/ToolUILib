@@ -55,9 +55,12 @@ struct StringView
 	//StringView(const std::vector<char>& o) : _data(o.data()), _size(o.size()) {}
 	StringView(const ArrayView<char>& o) : _data(o.data()), _size(o.size()) {}
 
+	const char* Data() const { return _data; }
+	size_t Size() const { return _size; }
+	bool IsEmpty() const { return _size == 0; }
+	bool NotEmpty() const { return _size != 0; }
 	const char* data() const { return _data; }
 	size_t size() const { return _size; }
-	bool empty() const { return _size == 0; }
 	const char& first() const { return _data[0]; }
 	const char& last() const { return _data[_size - 1]; }
 	const char* begin() const { return _data; }

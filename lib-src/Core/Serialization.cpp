@@ -252,7 +252,7 @@ StringView NamedTextSerializeReader::Entry::GetStringValue(std::string& tmp)
 	tmp.clear();
 	tmp.reserve(val.size());
 
-	for (auto it = val; !it.empty(); )
+	for (auto it = val; it.NotEmpty(); )
 	{
 		auto ch = it.take_char();
 		if (ch == '\\' && it.size() >= 1)
@@ -341,7 +341,7 @@ bool NamedTextSerializeReader::Parse(StringView all)
 	entryStack.Reserve(32);
 
 	StringView rem = all;
-	while (!rem.empty())
+	while (rem.NotEmpty())
 	{
 		auto at = rem.find_first_at("\n");
 		auto line = rem.substr(0, at);
@@ -360,7 +360,7 @@ bool NamedTextSerializeReader::Parse(StringView all)
 		}
 
 		// empty line (possibly with whitespace)
-		if (line.empty())
+		if (line.IsEmpty())
 			continue;
 
 		int prevIndent = entries.Size() ? entries.Last().indent : -1;
@@ -980,7 +980,7 @@ std::string Base64Decode(StringView src, const char* endChars, bool needPadding,
 		return {};
 	}
 
-	while (!src.empty() && src.last() == '=')
+	while (src.NotEmpty() && src.last() == '=')
 		src = src.substr(0, src.size() - 1);
 	if (src.size() == 1)
 	{
