@@ -407,11 +407,11 @@ struct Tree : ui::ITree
 	NodeLoc FindNode(ui::TreePathRef path)
 	{
 		if (path.size() == 1)
-			return { &roots, path.last() };
+			return { &roots, path.Last() };
 		else
 		{
-			auto parent = FindNode(path.without_last());
-			return { &(*parent.arr)[parent.idx]->children, path.last() };
+			auto parent = FindNode(path.WithoutLast());
+			return { &(*parent.arr)[parent.idx]->children, path.Last() };
 		}
 	}
 

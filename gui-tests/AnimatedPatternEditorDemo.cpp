@@ -445,11 +445,11 @@ struct AnimPattern : ITree
 	NodeLoc FindNode(TreePathRef path)
 	{
 		if (path.size() == 1)
-			return { &rootLayers, path.last() };
+			return { &rootLayers, path.Last() };
 		else
 		{
-			auto parent = FindNode(path.without_last());
-			return { &(*parent.arr)[parent.idx]->children, path.last() };
+			auto parent = FindNode(path.WithoutLast());
+			return { &(*parent.arr)[parent.idx]->children, path.Last() };
 		}
 	}
 

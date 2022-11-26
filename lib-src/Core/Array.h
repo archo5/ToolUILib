@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Platform.h"
+#include "Memory.h" // ArrayView
 
 #include <assert.h>
 #include <initializer_list>
@@ -112,7 +113,9 @@ struct Array
 	UI_FORCEINLINE T* Data() { return _data; }
 	UI_FORCEINLINE const T* Data() const { return _data; }
 	UI_FORCEINLINE size_t Size() const { return _size; }
+	UI_FORCEINLINE size_t SizeInBytes() const { return _size * sizeof(T); }
 	UI_FORCEINLINE size_t Capacity() const { return _capacity; }
+	UI_FORCEINLINE ArrayView<T> View() { return { _data, _size }; }
 
 	T& At(size_t i)
 	{
@@ -177,6 +180,11 @@ struct Array
 	UI_FORCEINLINE void Reserve(size_t newSize)
 	{
 		if (newSize > _capacity)
+			_Realloc(newSize);
+	}
+	UI_FORCEINLINE void ReserveForAppend(size_t newSize)
+	{
+		if (newSize > _capacity)
 			_Realloc(newSize + _capacity);
 	}
 	void Resize(size_t newSize)
@@ -198,18 +206,18 @@ struct Array
 
 	inline void Append(const T& v)
 	{
-		Reserve(_size + 1);
+		ReserveForAppend(_size + 1);
 		new (&_data[_size++]) T(v);
 	}
 	inline void Append(T&& v)
 	{
-		Reserve(_size + 1);
+		ReserveForAppend(_size + 1);
 		new (&_data[_size++]) T(std::move(v));
 	}
 	void AppendMany(const T* p, size_t n)
 	{
 		size_t newSize = _size + n;
-		Reserve(newSize);
+		ReserveForAppend(newSize);
 		for (size_t i = 0; i < n; i++)
 			new (&_data[_size + i]) T(p[i]);
 		_size = newSize;
@@ -271,7 +279,7 @@ struct Array
 	void InsertAt(size_t at, const T& v)
 	{
 		assert(at <= _size);
-		Reserve(_size + 1);
+		ReserveForAppend(_size + 1);
 		if (at < _size)
 		{
 			for (size_t p = _size; p > at; )
@@ -290,7 +298,7 @@ struct Array
 	void InsertManyAt(size_t at, const T* p, size_t n)
 	{
 		assert(at <= _size);
-		Reserve(_size + n);
+		ReserveForAppend(_size + n);
 		if (at < _size)
 		{
 			for (size_t p = _size; p > at; )

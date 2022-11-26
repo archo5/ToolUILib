@@ -238,21 +238,21 @@ void TreeEditor::_OnDragMove(TreeDragData* tdd, TreePathRef hoverPath, const UIR
 		else
 		{
 			auto PP = hoverPath;
-			auto P = hoverPath.without_last();
+			auto P = hoverPath.WithoutLast();
 			bool foundplace = false;
 			for (;;)
 			{
-				if (PP.last() + 1 < GetTree()->GetChildCount(P))
+				if (PP.Last() + 1 < GetTree()->GetChildCount(P))
 				{
 					_dragTargetLoc = P;
-					_dragTargetLoc.Append(PP.last() + 1);
+					_dragTargetLoc.Append(PP.Last() + 1);
 					foundplace = true;
 					break;
 				}
 				if (P.IsEmpty())
 					break;
 				PP = P;
-				P = P.without_last();
+				P = P.WithoutLast();
 			}
 			if (!foundplace)
 			{
@@ -312,7 +312,7 @@ void TreeEditor::_OnDragDrop(TreeDragData* tdd)
 
 	auto src = tdd->paths[0];
 	if (dest.size() >= src.size() &&
-		PathMatchesPrefix(dest, TreePathRef(src).without_last()) &&
+		PathMatchesPrefix(dest, TreePathRef(src).WithoutLast()) &&
 		dest[src.size() - 1] > src[src.size() - 1])
 		dest[src.size() - 1]--;
 	GetTree()->MoveTo(src, dest);
