@@ -235,7 +235,7 @@ ImageElement& ImageElement::SetPath(StringView path)
 
 ImageElement& ImageElement::SetDelayLoadPath(StringView path)
 {
-	if (_image && _image->GetPath() == path)
+	if (_image && draw::ImageIsLoadedFromFileWithFlags(_image, path, draw::TexFlags::None))
 		return *this;
 	_image = nullptr;
 	_tryDelayLoad = true;

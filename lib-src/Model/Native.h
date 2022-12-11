@@ -5,6 +5,7 @@
 
 #include "../Core/Math.h"
 #include "../Core/Threading.h"
+#include "../Render/Render.h"
 #include "Objects.h"
 #include "System.h"
 
@@ -23,6 +24,14 @@ void RequestRawMouseInput();
 Color4b GetColorAtScreenPos(Point2i pos);
 void ShowErrorMessage(StringView title, StringView text);
 void BrowseToFile(StringView path);
+
+enum class FileIconType
+{
+	FromFile,
+	GenericFile,
+	GenericDir,
+};
+draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconType::FromFile);
 } // platform
 
 

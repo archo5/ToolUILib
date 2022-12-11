@@ -49,7 +49,8 @@ struct IImage : IRefCounted
 {
 	virtual uint16_t GetWidth() const = 0;
 	virtual uint16_t GetHeight() const = 0;
-	virtual StringView GetPath() const = 0;
+	virtual StringView GetCacheKey() const = 0;
+	virtual TexFlags GetFlags() const = 0;
 	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
 
 	Size2f GetSizeF() const { return { float(GetWidth()), float(GetHeight()) }; }
@@ -61,6 +62,11 @@ ImageHandle ImageCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags
 ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::None);
 
+IImage* ImageCacheRead(StringView key);
+void ImageCacheWrite(IImage* image, StringView key);
+
+bool ImageIsLoadedFromFile(IImage* image, StringView path);
+bool ImageIsLoadedFromFileWithFlags(IImage* image, StringView path, TexFlags flags = TexFlags::Packed);
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags = TexFlags::Packed);
 
 enum class ImageSetType : uint8_t

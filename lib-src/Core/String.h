@@ -112,6 +112,11 @@ struct StringView
 		size_t at = find_last_at(sub);
 		return substr(at < SIZE_MAX ? at + sub._size : 0);
 	}
+	StringView since_last(StringView sub) const
+	{
+		size_t at = find_last_at(sub);
+		return substr(at < SIZE_MAX ? at : 0);
+	}
 	StringView until_last(StringView sub) const
 	{
 		size_t at = find_last_at(sub, SIZE_MAX, 0);

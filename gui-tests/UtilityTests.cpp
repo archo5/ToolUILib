@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../lib-src/Model/Native.h"
+
 
 struct BasicEasingAnimTest : ui::Buildable
 {
@@ -154,6 +156,12 @@ struct OSCommunicationTest : ui::Buildable
 	{
 		animReq.callback = [this]() { Rebuild(); };
 		animReq.BeginAnimation();
+
+		using namespace ui::platform;
+		icons[0] = LoadFileIcon("gui-tests/rsrc/iss96.png");
+		icons[1] = LoadFileIcon("gui-tests/rsrc");
+		icons[2] = LoadFileIcon(".png", FileIconType::GenericFile);
+		icons[3] = LoadFileIcon(" ", FileIconType::GenericDir);
 	}
 	void Build() override
 	{
@@ -195,12 +203,32 @@ struct OSCommunicationTest : ui::Buildable
 		if (ui::imm::Button("Browse to file"))
 			ui::platform::BrowseToFile("gui-theme2.tga");
 
+		WPush<ui::StackLTRLayoutElement>();
+		{
+			for (auto icon : icons)
+			{
+				if (icon)
+				{
+					WText("Icon images:");
+					for (auto& entry : icon->entries)
+					{
+						ui::Make<ui::ImageElement>().SetImage(entry.image);
+					}
+				}
+				else
+					WText("Icon failed to load");
+			}
+		}
+		WPop();
+
 		WPop();
 	}
 
 	ui::AnimationCallbackRequester animReq;
 
 	std::string clipboardData;
+
+	ui::draw::ImageSetHandle icons[4];
 };
 void Test_OSCommunication()
 {

@@ -327,6 +327,114 @@ void BrowseToFile(StringView path)
 	}
 }
 
+draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
+{
+	draw::ImageSetHandle imgSet = new draw::ImageSet;
+
+	HDC dc = ::CreateCompatibleDC(nullptr);
+
+	unsigned attr = 0;
+	switch (type)
+	{
+	case FileIconType::FromFile:
+		attr = ::GetFileAttributesW(UTF8toWCHAR(path).c_str());
+		break;
+	case FileIconType::GenericFile:
+		attr = FILE_ATTRIBUTE_NORMAL;
+		break;
+	case FileIconType::GenericDir:
+		attr = FILE_ATTRIBUTE_DIRECTORY;
+		break;
+	}
+
+	if (attr & FILE_ATTRIBUTE_DIRECTORY)
+		path = "-";
+	else
+		path = path.after_last("/").since_last(".");
+
+	auto wpath = UTF8toWCHAR(path);
+	for (auto& c : wpath)
+		if (c == '/')
+			c = '\\';
+
+	// TODO jumbo icon?
+	unsigned sizes[] = { SHGFI_SMALLICON, 0 };
+	int sizeID = 0;
+	for (unsigned size : sizes)
+	{
+		char cacheKeyPrefix[64];
+		snprintf(cacheKeyPrefix, sizeof(cacheKeyPrefix), "fileicon:%d:%d:", int(type), sizeID++);
+		std::string cacheKey = to_string(cacheKeyPrefix, path);
+		if (auto* img = draw::ImageCacheRead(cacheKey))
+		{
+			draw::ImageSet::Entry E;
+			E.image = img;
+			imgSet->entries.Append(E);
+			continue;
+		}
+
+		SHFILEINFOW fileInfo;
+		memset(&fileInfo, 0, sizeof(fileInfo));
+		DWORD_PTR ret = ::SHGetFileInfoW(
+			wpath.c_str(),
+			attr,
+			&fileInfo,
+			sizeof(fileInfo),
+			SHGFI_ICON | SHGFI_USEFILEATTRIBUTES | size);
+		if (ret && fileInfo.hIcon)
+		{
+			ICONINFO iconInfo;
+			if (GetIconInfo(fileInfo.hIcon, &iconInfo))
+			{
+				BITMAPINFO bmInfo;
+				memset(&bmInfo, 0, sizeof(bmInfo));
+				bmInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+
+				if (GetDIBits(dc, iconInfo.hbmColor, 0, 0, nullptr, &bmInfo, DIB_RGB_COLORS))
+				{
+					auto hdr = bmInfo.bmiHeader;
+					if (hdr.biBitCount == 32)
+					{
+						Array<u8> data;
+						data.Resize(hdr.biWidth * (hdr.biHeight + 1) * 4);
+						if (GetDIBits(dc, iconInfo.hbmColor, 0, hdr.biHeight, data.Data(), &bmInfo, DIB_RGB_COLORS))
+						{
+							// swap R/B
+							for (int i = 0; i < hdr.biWidth * hdr.biHeight; i++)
+							{
+								std::swap(data[i * 4], data[i * 4 + 2]);
+							}
+							// vertical flip
+							int bw = hdr.biWidth * 4;
+							u8* swapRow = &data[bw * hdr.biHeight];
+							for (int i = 0; i < hdr.biHeight / 2; i++)
+							{
+								int i1 = hdr.biHeight - i - 1;
+								memcpy(swapRow, &data[i * bw], bw);
+								memcpy(&data[i * bw], &data[i1 * bw], bw);
+								memcpy(&data[i1 * bw], swapRow, bw);
+							}
+
+							draw::ImageSet::Entry E;
+							E.image = draw::ImageCreateRGBA8(hdr.biWidth, hdr.biHeight, data.Data());
+							imgSet->entries.Append(E);
+
+							draw::ImageCacheWrite(E.image, cacheKey);
+						}
+					}
+				}
+			}
+			DestroyIcon(fileInfo.hIcon);
+		}
+	}
+
+	DeleteDC(dc);
+
+	if (imgSet->entries.IsEmpty())
+		return nullptr;
+	return imgSet;
+}
+
 } // platform
 
 

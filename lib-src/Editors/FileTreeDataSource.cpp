@@ -2,6 +2,7 @@
 #include "FileTreeDataSource.h"
 
 #include "../Core/Logging.h"
+#include "../Model/Native.h"
 
 #include <time.h>
 
@@ -55,6 +56,18 @@ void FileTreeDataSource::File::InitFrom(const ui::StringView& fullPath, bool rec
 	}
 }
 
+draw::ImageSetHandle FileTreeDataSource::File::GetIcon()
+{
+	if (!_cachedIcon && !_triedLoadingIcon)
+	{
+		_triedLoadingIcon = true;
+
+		using namespace platform;
+		_cachedIcon = LoadFileIcon(name, isDir ? FileIconType::GenericDir : FileIconType::GenericFile);
+	}
+	return _cachedIcon;
+}
+
 FileTreeDataSource::FileTreeDataSource(std::string rootPath) : _rootPath(rootPath)
 {
 	_dcw = ui::CreateDirectoryChangeWatcher(rootPath, this);
@@ -87,6 +100,12 @@ std::string FileTreeDataSource::GetText(uintptr_t id, size_t col)
 	case COL_LastModified: return TimestampToText(F->modTimeUnixMS);
 	default: return "???";
 	}
+}
+
+draw::ImageSetHandle FileTreeDataSource::GetIcon(uintptr_t id, size_t col)
+{
+	auto* F = GetFileFromID(id);
+	return col == COL_Name ? F->GetIcon() : nullptr;
 }
 
 size_t FileTreeDataSource::GetChildCount(uintptr_t id)

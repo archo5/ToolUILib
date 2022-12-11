@@ -79,6 +79,7 @@ struct GenericGridDataSource
 
 	// cell contents
 	virtual std::string GetText(uintptr_t id, size_t col) = 0;
+	virtual draw::ImageSetHandle GetIcon(uintptr_t id, size_t col) { return nullptr; }
 
 	// row extras
 	virtual std::string GetRowName(size_t row, uintptr_t id);

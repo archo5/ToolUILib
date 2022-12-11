@@ -247,7 +247,7 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2])
 } // debug
 
 
-static HashMap<StringView, IImage*> g_imageTextures;
+static HashMap<StringView, IImage*> g_loadedImages;
 
 struct ImageImpl : IImage
 {
@@ -259,7 +259,7 @@ struct ImageImpl : IImage
 	rhi::Texture2D* rhiTex = nullptr;
 	TextureNode* atlasNode = nullptr;
 
-	std::string path;
+	std::string cacheKey;
 
 	ImageImpl(int w, int h, int pitch, const void* d, bool a8, TexFlags flg) :
 		width(w), height(h), flags(flg)
@@ -319,9 +319,9 @@ struct ImageImpl : IImage
 		rhi::DestroyTexture(rhiTex);
 		delete[] data;
 
-		if (!path.empty())
+		if (!cacheKey.empty())
 		{
-			g_imageTextures.Remove(path);
+			g_loadedImages.Remove(cacheKey);
 		}
 	}
 	rhi::Texture2D* GetRHITex() const
@@ -345,7 +345,8 @@ struct ImageImpl : IImage
 	// IImage
 	uint16_t GetWidth() const override { return width; }
 	uint16_t GetHeight() const override { return height; }
-	StringView GetPath() const override { return path; }
+	StringView GetCacheKey() const override { return cacheKey; }
+	TexFlags GetFlags() const override { return flags; }
 	rhi::Texture2D* GetInternalExclusive() const override
 	{
 		return rhiTex;
@@ -374,9 +375,43 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags)
 }
 
 
+IImage* ImageCacheRead(StringView key)
+{
+	return g_loadedImages.GetValueOrDefault(key);
+}
+
+void ImageCacheWrite(IImage* image, StringView key)
+{
+	if (auto* prev = ImageCacheRead(key))
+		static_cast<ImageImpl*>(prev)->cacheKey.clear();
+
+	auto* impl = static_cast<ImageImpl*>(image);
+	impl->cacheKey = to_string(key);
+	g_loadedImages[impl->cacheKey] = image;
+}
+
+
+bool ImageIsLoadedFromFile(IImage* image, StringView path)
+{
+	if (!image)
+		return false;
+	auto ck = image->GetCacheKey();
+	return ck.starts_with("file:") && ck.substr(5) == path;
+}
+
+bool ImageIsLoadedFromFileWithFlags(IImage* image, StringView path, TexFlags flags)
+{
+	if (!image)
+		return false;
+	auto ck = image->GetCacheKey();
+	return ck.starts_with("file:") && ck.substr(5) == path && image->GetFlags() == flags;
+}
+
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 {
-	IImage* iimg = g_imageTextures.GetValueOrDefault(path);
+	std::string cacheKey = to_string("file:", path);
+
+	IImage* iimg = ImageCacheRead(cacheKey);
 	if (iimg && static_cast<ImageImpl*>(iimg)->flags == flags && (flags & TexFlags::NoCache) == TexFlags::None)
 		return iimg;
 
@@ -398,10 +433,10 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 		return nullptr;
 
 	auto* impl = static_cast<ImageImpl*>(img.get_ptr());
-	impl->path = to_string(path);
 	if ((flags & TexFlags::NoCache) == TexFlags::None)
-		g_imageTextures[impl->path] = impl;
-	return impl;
+		ImageCacheWrite(impl, cacheKey);
+
+	return img;
 }
 
 

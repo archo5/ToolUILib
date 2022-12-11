@@ -399,6 +399,28 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			cellcpa = style.cellBackgroundPainter->Paint(info);
 		}
 	}
+	// icons:
+	for (size_t r = minR; r < maxR; r++)
+	{
+		auto rowRef = ExtractID(ids, r, minR);
+		for (size_t c = 0; c < nc; c++)
+		{
+			if (auto icon = _impl->dataSource->GetIcon(rowRef.id, c))
+			{
+				UIRect rect =
+				{
+					RC.x0 + rhw + _impl->colEnds[c],
+					RC.y0 + chh - yOff + h * r,
+					RC.x0 + rhw + _impl->colEnds[c + 1],
+					RC.y0 + chh - yOff + h * (r + 1),
+				};
+				if (c == treeCol)
+					rect.x0 += rowRef.depth * 20 + h;
+				rect.x1 = rect.x0 + h;
+				icon->Draw(rect);
+			}
+		}
+	}
 	// text:
 	auto* cellFont = style.cellFont.GetFont();
 	for (size_t r = minR; r < maxR; r++)
@@ -415,6 +437,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			};
 			if (c == treeCol)
 				rect.x0 += rowRef.depth * 20 + h;
+			if (_impl->dataSource->GetIcon(rowRef.id, c))
+				rect.x0 += h;
 			rect = rect.ShrinkBy(padC);
 			draw::TextLine(
 				cellFont,
@@ -631,6 +655,8 @@ void TableView::CalculateColumnWidths(bool includeHeader, bool firstTimeOnly)
 			float w = GetTextWidth(cellFont, style.cellFont.size, text) + padC.x0 + padC.x1;
 			if (c == treeCol)
 				w += rowRef.depth * 20 + cellh;
+			if (_impl->dataSource->GetIcon(rowRef.id, c))
+				w += cellh;
 			if (colWidths[c] < w)
 				colWidths[c] = w;
 		}

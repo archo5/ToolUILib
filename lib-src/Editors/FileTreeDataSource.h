@@ -18,10 +18,14 @@ struct FileTreeDataSource : TreeDataSource, ISelectionStorage, IDirectoryChangeL
 		bool isDir = false;
 		bool selected = false;
 		bool open = true;
+		bool _triedLoadingIcon = false;
+
+		draw::ImageSetHandle _cachedIcon;
 
 		Array<RCHandle<File>> subfiles;
 
 		void InitFrom(const StringView& fullPath, bool recursive = false);
+		draw::ImageSetHandle GetIcon();
 	};
 
 	std::string _rootPath;
@@ -53,6 +57,7 @@ struct FileTreeDataSource : TreeDataSource, ISelectionStorage, IDirectoryChangeL
 	size_t GetNumCols() override { return COL_COUNT; }
 	std::string GetColName(size_t col) override;
 	std::string GetText(uintptr_t id, size_t col) override;
+	draw::ImageSetHandle GetIcon(uintptr_t id, size_t col) override;
 	size_t GetChildCount(uintptr_t id) override;
 	uintptr_t GetChild(uintptr_t id, size_t which) override;
 	bool IsOpen(uintptr_t id) override;
