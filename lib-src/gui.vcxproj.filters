@@ -130,6 +130,12 @@
     <ClCompile Include="Core\GUID.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Render\DrawableImage.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\DrawableImageSet.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -312,6 +318,12 @@
     </ClInclude>
     <ClInclude Include="Core\HashSet.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\DrawableImage.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\DrawableImageSet.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

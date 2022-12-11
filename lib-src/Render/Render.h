@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "DrawableImage.h"
+
 #include "../Core/Array.h"
 #include "../Core/Image.h"
 #include "../Core/Math.h"
@@ -9,113 +11,9 @@
 
 
 namespace ui {
-namespace rhi {
-
-struct Texture2D;
-
-} // rhi
 namespace draw {
 
-// texture flags
-enum class TexFlags : uint8_t
-{
-	None = 0,
-	NoFilter = 1 << 0,
-	Repeat = 1 << 1,
-	Packed = 1 << 2,
-	NoCache = 1 << 3,
-};
-inline TexFlags operator | (TexFlags a, TexFlags b)
-{
-	return TexFlags(int(a) | int(b));
-}
-inline TexFlags operator & (TexFlags a, TexFlags b)
-{
-	return TexFlags(int(a) & int(b));
-}
-inline TexFlags operator ~ (TexFlags f)
-{
-	return TexFlags(~int(f));
-}
-
-namespace debug {
-
-int GetAtlasTextureCount();
-rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
-
-} // debug
-
-struct IImage : IRefCounted
-{
-	virtual uint16_t GetWidth() const = 0;
-	virtual uint16_t GetHeight() const = 0;
-	virtual StringView GetCacheKey() const = 0;
-	virtual TexFlags GetFlags() const = 0;
-	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
-
-	Size2f GetSizeF() const { return { float(GetWidth()), float(GetHeight()) }; }
-};
-using ImageHandle = RCHandle<IImage>;
-
-ImageHandle ImageCreateRGBA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
-ImageHandle ImageCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
-ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
-ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::None);
-
-IImage* ImageCacheRead(StringView key);
-void ImageCacheWrite(IImage* image, StringView key);
-
-bool ImageIsLoadedFromFile(IImage* image, StringView path);
-bool ImageIsLoadedFromFileWithFlags(IImage* image, StringView path, TexFlags flags = TexFlags::Packed);
-ImageHandle ImageLoadFromFile(StringView path, TexFlags flags = TexFlags::Packed);
-
-enum class ImageSetType : uint8_t
-{
-	Icon = 0,
-	Sliced,
-	Pattern,
-	RawImage,
-};
-
-enum class ImageSetSizeMode : uint8_t
-{
-	Default = 0, // image set defaults to app-wide setting, which defaults to nearest scale down
-	NearestScaleDown,
-	NearestScaleUp,
-	NearestNoScale,
-};
-
-struct ImageSet : RefCountedST
-{
-	struct Entry
-	{
-		draw::ImageHandle image;
-		AABB2f innerUV = { 0, 0, 1, 1 };
-		AABB2f edgeWidth = {};
-	};
-
-	Array<Entry> entries;
-	ImageSetType type = ImageSetType::Icon;
-	ImageSetSizeMode sizeMode = ImageSetSizeMode::Default;
-	AABB2f baseEdgeWidth = {};
-	Size2f baseSize = { 1, 1 };
-
-	Entry* FindEntryForSize(Size2f size);
-	Entry* FindEntryForEdgeWidth(AABB2f edgeWidth);
-
-	void _DrawAsIcon(AABB2f rect, Color4b color);
-	void _DrawAsSliced(AABB2f rect, Color4b color);
-	void _DrawAsPattern(AABB2f rect, Color4b color);
-	void _DrawAsRawImage(AABB2f rect, Color4b color);
-	void Draw(AABB2f rect, Color4b color = {});
-};
-using ImageSetHandle = RCHandle<ImageSet>;
-
-ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type);
-void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode);
-void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode);
-
-namespace internals {
+namespace _ {
 
 void InitResources();
 void FreeResources();

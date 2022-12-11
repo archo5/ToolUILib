@@ -718,7 +718,7 @@ struct NativeWindow_Impl
 
 		if (!g_rsrcUsers)
 		{
-			draw::internals::InitResources();
+			draw::_::InitResources();
 			if (!GetCurrentTheme())
 				SetCurrentTheme(LoadTheme("theme_default"));
 		}
@@ -734,7 +734,8 @@ struct NativeWindow_Impl
 		if (--g_rsrcUsers == 0)
 		{
 			SetCurrentTheme(nullptr);
-			draw::internals::FreeResources();
+			draw::_::TextureStorage_Free();
+			draw::_::FreeResources();
 		}
 
 		if (invalidated)
@@ -799,7 +800,7 @@ struct NativeWindow_Impl
 		rhi::SetActiveContext(renderCtx);
 		rhi::SetViewport(0, 0, evsys.width, evsys.height);
 		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
-		draw::internals::OnBeginDrawFrame();
+		draw::_::OnBeginDrawFrame();
 
 		auto clearColor = GetCurrentTheme()->GetBackgroundColor(sid_color_clear);
 		rhi::Clear(clearColor.r, clearColor.g, clearColor.b, 255);
@@ -832,7 +833,7 @@ struct NativeWindow_Impl
 		}
 #endif
 
-		draw::internals::OnEndDrawFrame();
+		draw::_::OnEndDrawFrame();
 
 #if DRAW_STATS
 		double t1 = hqtime();

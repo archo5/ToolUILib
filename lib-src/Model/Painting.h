@@ -7,7 +7,7 @@
 #include "../Core/RefCounted.h"
 #include "../Core/Font.h"
 
-#include "../Render/Render.h"
+#include "../Render/DrawableImageSet.h"
 
 
 namespace ui {
