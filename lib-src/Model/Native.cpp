@@ -329,10 +329,6 @@ void BrowseToFile(StringView path)
 
 draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 {
-	draw::ImageSetHandle imgSet = new draw::ImageSet;
-
-	HDC dc = ::CreateCompatibleDC(nullptr);
-
 	unsigned attr = 0;
 	switch (type)
 	{
@@ -352,6 +348,16 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 	else
 		path = path.after_last("/").since_last(".");
 
+	char cacheKeyPrefix[64];
+	snprintf(cacheKeyPrefix, sizeof(cacheKeyPrefix), "fileicon:%d:", int(type));
+	auto imgSetCacheKey = to_string(cacheKeyPrefix, path);
+	if (auto* iset = draw::ImageSetCacheRead(imgSetCacheKey))
+		return iset;
+
+	draw::ImageSetHandle imgSet = new draw::ImageSet;
+
+	HDC dc = ::CreateCompatibleDC(nullptr);
+
 	auto wpath = UTF8toWCHAR(path);
 	for (auto& c : wpath)
 		if (c == '/')
@@ -362,7 +368,6 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 	int sizeID = 0;
 	for (unsigned size : sizes)
 	{
-		char cacheKeyPrefix[64];
 		snprintf(cacheKeyPrefix, sizeof(cacheKeyPrefix), "fileicon:%d:%d:", int(type), sizeID++);
 		std::string cacheKey = to_string(cacheKeyPrefix, path);
 		if (auto* img = draw::ImageCacheRead(cacheKey))
@@ -432,6 +437,8 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 
 	if (imgSet->entries.IsEmpty())
 		return nullptr;
+
+	draw::ImageSetCacheWrite(imgSet, imgSetCacheKey);
 	return imgSet;
 }
 

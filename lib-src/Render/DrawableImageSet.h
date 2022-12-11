@@ -25,6 +25,10 @@ enum class ImageSetSizeMode : uint8_t
 	NearestNoScale,
 };
 
+ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type);
+void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode);
+void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode);
+
 struct ImageSet : RefCountedST
 {
 	struct Entry
@@ -40,6 +44,8 @@ struct ImageSet : RefCountedST
 	AABB2f baseEdgeWidth = {};
 	Size2f baseSize = { 1, 1 };
 
+	std::string _cacheKey;
+
 	Entry* FindEntryForSize(Size2f size);
 	Entry* FindEntryForEdgeWidth(AABB2f edgeWidth);
 
@@ -48,12 +54,16 @@ struct ImageSet : RefCountedST
 	void _DrawAsPattern(AABB2f rect, Color4b color);
 	void _DrawAsRawImage(AABB2f rect, Color4b color);
 	void Draw(AABB2f rect, Color4b color = {});
+
+	~ImageSet();
+
+	// overridable interface
+	virtual void OnBeforeFindEntryForSize(Size2f size) {}
 };
 using ImageSetHandle = RCHandle<ImageSet>;
 
-ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type);
-void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode);
-void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode);
+ImageSet* ImageSetCacheRead(StringView key);
+void ImageSetCacheWrite(ImageSet* set, StringView key);
 
 } // draw
 } // ui

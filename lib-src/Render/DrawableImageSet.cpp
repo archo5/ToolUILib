@@ -3,16 +3,46 @@
 
 #include "Render.h"
 
+#include "../Core/HashMap.h"
+
 
 namespace ui {
 namespace draw {
 
+
+HashMap<StringView, ImageSet*> g_loadedImageSets;
 ImageSetSizeMode g_imageSetSizeModes[3] =
 {
 	ImageSetSizeMode::NearestScaleDown,
 	ImageSetSizeMode::NearestScaleDown,
 	ImageSetSizeMode::NearestScaleDown,
 };
+
+
+ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type)
+{
+	auto i = unsigned(type);
+	assert(i < 3);
+	return g_imageSetSizeModes[i];
+}
+
+void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode)
+{
+	auto i = unsigned(type);
+	assert(i < 3);
+	if (sizeMode == ImageSetSizeMode::Default)
+		sizeMode = ImageSetSizeMode::NearestScaleDown;
+	g_imageSetSizeModes[i] = sizeMode;
+}
+
+void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode)
+{
+	if (sizeMode == ImageSetSizeMode::Default)
+		sizeMode = ImageSetSizeMode::NearestScaleDown;
+	for (auto& m : g_imageSetSizeModes)
+		m = sizeMode;
+}
+
 
 static inline ImageSetSizeMode GetFinalSizeMode(ImageSetType type, ImageSetSizeMode mode)
 {
@@ -23,6 +53,8 @@ static inline ImageSetSizeMode GetFinalSizeMode(ImageSetType type, ImageSetSizeM
 
 ImageSet::Entry* ImageSet::FindEntryForSize(Size2f size)
 {
+	OnBeforeFindEntryForSize(size);
+
 	if (entries.IsEmpty())
 		return nullptr;
 
@@ -123,28 +155,25 @@ void ImageSet::Draw(AABB2f rect, Color4b color)
 	}
 }
 
-ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type)
+ImageSet::~ImageSet()
 {
-	auto i = unsigned(type);
-	assert(i < 3);
-	return g_imageSetSizeModes[i];
+	if (!_cacheKey.empty())
+		g_loadedImageSets.Remove(_cacheKey);
 }
 
-void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode)
+
+ImageSet* ImageSetCacheRead(StringView key)
 {
-	auto i = unsigned(type);
-	assert(i < 3);
-	if (sizeMode == ImageSetSizeMode::Default)
-		sizeMode = ImageSetSizeMode::NearestScaleDown;
-	g_imageSetSizeModes[i] = sizeMode;
+	return g_loadedImageSets.GetValueOrDefault(key);
 }
 
-void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode)
+void ImageSetCacheWrite(ImageSet* set, StringView key)
 {
-	if (sizeMode == ImageSetSizeMode::Default)
-		sizeMode = ImageSetSizeMode::NearestScaleDown;
-	for (auto& m : g_imageSetSizeModes)
-		m = sizeMode;
+	if (auto* prev = ImageSetCacheRead(key))
+		prev->_cacheKey.clear();
+
+	set->_cacheKey = to_string(key);
+	g_loadedImageSets[set->_cacheKey] = set;
 }
 
 
