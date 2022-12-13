@@ -136,6 +136,54 @@ void Test_RenderingPrimitives()
 }
 
 
+struct VectorImageTest : ui::Buildable
+{
+	enum
+	{
+		NUM_IMAGES = 5,
+	};
+	ui::draw::ImageHandle img[8 * NUM_IMAGES];
+	VectorImageTest()
+	{
+		ui::VectorImageHandle vimg[NUM_IMAGES] =
+		{
+			ui::VectorImageLoadFromFile("common/icons/delete.svg"),
+			ui::VectorImageLoadFromFile("common/icons/pause.svg"),
+			ui::VectorImageLoadFromFile("common/icons/play.svg"),
+			ui::VectorImageLoadFromFile("common/icons/stop.svg"),
+			ui::VectorImageLoadFromFile("common/icons/close.svg"),
+		};
+		for (int i = 0; i < 8 * NUM_IMAGES; i++)
+			img[i] = ui::draw::ImageCreateFromCanvas(vimg[i / 8]->GetImageWithHeight(9 + 8 * (i % 8)));
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		int y = 10;
+		for (int j = 0; j < NUM_IMAGES; j++)
+		{
+			int x = 10;
+			for (int i = 0; i < 8; i++)
+			{
+				int h = 9 + 8 * i;
+				int w = img[j * 8 + i]->GetWidth();
+				ui::draw::RectCol(x, y, x + w, y + h, ui::Color4b(i * 8, 16 + i * 6, 64, 255));
+				ui::draw::RectTex(x, y, x + w, y + h, img[j * 8 + i]);
+				x += w + 8;
+				if (i == 7)
+					y += h + 8;
+			}
+		}
+	}
+	void Build() override
+	{
+	}
+};
+void Test_VectorImage()
+{
+	ui::Make<VectorImageTest>();
+}
+
+
 struct TextBaselineTest : ui::Buildable
 {
 	void OnPaint(const ui::UIPaintContext& ctx) override

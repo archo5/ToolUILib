@@ -13,6 +13,11 @@
 #include "Core/RefCounted.h"
 #include "Core/String.h"
 #include "Core/Threading.h"
+#include "Core/VectorImage.h"
+
+#include "Render/DrawableImage.h"
+#include "Render/DrawableImageSet.h"
+#include "Render/Render.h"
 
 #include "Model/Events.h"
 #include "Model/Controls.h"

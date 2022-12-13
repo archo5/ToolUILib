@@ -165,6 +165,7 @@
     <ClCompile Include="Core\StaticID.cpp" />
     <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
+    <ClCompile Include="Core\VectorImage.cpp" />
     <ClCompile Include="Editors\CurveEditor.cpp" />
     <ClCompile Include="Editors\EditCommon.cpp" />
     <ClCompile Include="Editors\FileTreeDataSource.cpp" />
@@ -204,6 +205,8 @@
     <ClCompile Include="..\ThirdParty\miniz.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ThirdParty\nanosvg.h" />
+    <ClInclude Include="..\ThirdParty\nanosvgrast.h" />
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Array.h" />
     <ClInclude Include="Core\Common.h" />
@@ -228,6 +231,7 @@
     <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Threading.h" />
+    <ClInclude Include="Core\VectorImage.h" />
     <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
