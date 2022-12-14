@@ -528,7 +528,7 @@ void ThemeData::LoadTheme(StringView folder)
 			size_t count = u.BeginArray(0, "images");
 			for (size_t i = 0; i < count; i++)
 			{
-				draw::ImageSet::Entry e;
+				draw::ImageSet::BitmapImageEntry e;
 
 				u.BeginObject({}, "ImageSetEntry");
 				{
@@ -568,7 +568,7 @@ void ThemeData::LoadTheme(StringView folder)
 				}
 				u.EndObject();
 
-				loaded->entries.Append(e);
+				loaded->bitmapImageEntries.Append(new draw::ImageSet::BitmapImageEntry(e));
 			}
 			u.EndArray();
 

@@ -372,9 +372,9 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 		std::string cacheKey = to_string(cacheKeyPrefix, path);
 		if (auto* img = draw::ImageCacheRead(cacheKey))
 		{
-			draw::ImageSet::Entry E;
-			E.image = img;
-			imgSet->entries.Append(E);
+			auto* E = new draw::ImageSet::BitmapImageEntry;
+			E->image = img;
+			imgSet->bitmapImageEntries.Append(E);
 			continue;
 		}
 
@@ -420,11 +420,11 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 								memcpy(&data[i1 * bw], swapRow, bw);
 							}
 
-							draw::ImageSet::Entry E;
-							E.image = draw::ImageCreateRGBA8(hdr.biWidth, hdr.biHeight, data.Data());
-							imgSet->entries.Append(E);
+							auto* E = new draw::ImageSet::BitmapImageEntry;
+							E->image = draw::ImageCreateRGBA8(hdr.biWidth, hdr.biHeight, data.Data());
+							imgSet->bitmapImageEntries.Append(E);
 
-							draw::ImageCacheWrite(E.image, cacheKey);
+							draw::ImageCacheWrite(E->image, cacheKey);
 						}
 					}
 				}
@@ -435,7 +435,7 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 
 	DeleteDC(dc);
 
-	if (imgSet->entries.IsEmpty())
+	if (imgSet->bitmapImageEntries.IsEmpty())
 		return nullptr;
 
 	draw::ImageSetCacheWrite(imgSet, imgSetCacheKey);

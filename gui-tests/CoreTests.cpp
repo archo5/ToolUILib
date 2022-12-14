@@ -305,14 +305,19 @@ void Test_StylePainting()
 struct ImageSetSizingTest : ui::Buildable
 {
 	ui::draw::ImageSetHandle icon;
+	ui::draw::ImageSetHandle vicon;
 
 	void OnReset() override
 	{
 		icon = new ui::draw::ImageSet;
 		icon->baseSize = { 32, 32 };
-		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss32.png") });
-		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss64.png") });
-		icon->entries.Append({ ui::draw::ImageLoadFromFile("iss96.png") });
+		icon->AddBitmapImage(ui::draw::ImageLoadFromFile("iss32.png"));
+		icon->AddBitmapImage(ui::draw::ImageLoadFromFile("iss64.png"));
+		icon->AddBitmapImage(ui::draw::ImageLoadFromFile("iss96.png"));
+
+		vicon = new ui::draw::ImageSet;
+		vicon->baseSize = { 32, 32 };
+		vicon->AddVectorImage(ui::VectorImageLoadFromFile("common/icons/delete.svg"));
 	}
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
@@ -328,6 +333,13 @@ struct ImageSetSizingTest : ui::Buildable
 				x += i;
 			}
 			y += 96;
+		}
+
+		float x = 0;
+		for (float i = 8; i < 52; i += 4)
+		{
+			vicon->Draw({ x, y, x + i, y + i });
+			x += i;
 		}
 	}
 	void Build() override

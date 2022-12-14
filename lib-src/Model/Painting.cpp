@@ -267,8 +267,6 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 	if (!imageSet)
 		return {};
 
-	const auto& ise = imageSet->entries[0];
-
 	AABB2f r = info.rect;
 	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
 

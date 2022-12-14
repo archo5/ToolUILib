@@ -249,8 +249,7 @@ static HashMap<StringView, IImage*> g_loadedImages;
 struct ImageImpl : IImage
 {
 	int refcount = 0;
-	uint16_t width = 0;
-	uint16_t height = 0;
+	Size2i size = {};
 	uint8_t* data = nullptr;
 	TexFlags flags = TexFlags::None;
 	rhi::Texture2D* rhiTex = nullptr;
@@ -259,7 +258,7 @@ struct ImageImpl : IImage
 	std::string cacheKey;
 
 	ImageImpl(int w, int h, int pitch, const void* d, bool a8, TexFlags flg) :
-		width(w), height(h), flags(flg)
+		size(w, h), flags(flg)
 	{
 		if (auto* n = g_textureStorage.AllocNode(w, h, flg, this))
 		{
@@ -340,8 +339,7 @@ struct ImageImpl : IImage
 	}
 
 	// IImage
-	uint16_t GetWidth() const override { return width; }
-	uint16_t GetHeight() const override { return height; }
+	Size2i GetSize() const override { return size; }
 	StringView GetCacheKey() const override { return cacheKey; }
 	TexFlags GetFlags() const override { return flags; }
 	rhi::Texture2D* GetInternal() const override { return GetRHITex(); }

@@ -210,9 +210,9 @@ struct OSCommunicationTest : ui::Buildable
 				if (icon)
 				{
 					WText("Icon images:");
-					for (auto& entry : icon->entries)
+					for (auto& entry : icon->bitmapImageEntries)
 					{
-						ui::Make<ui::ImageElement>().SetImage(entry.image);
+						ui::Make<ui::ImageElement>().SetImage(entry->image);
 					}
 				}
 				else

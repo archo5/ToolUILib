@@ -46,14 +46,15 @@ rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
 
 struct IImage : IRefCounted
 {
-	virtual uint16_t GetWidth() const = 0;
-	virtual uint16_t GetHeight() const = 0;
+	virtual Size2i GetSize() const = 0;
 	virtual StringView GetCacheKey() const = 0;
 	virtual TexFlags GetFlags() const = 0;
 	virtual rhi::Texture2D* GetInternal() const = 0;
 	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
 
-	Size2f GetSizeF() const { return { float(GetWidth()), float(GetHeight()) }; }
+	Size2f GetSizeF() const { return GetSize().Cast<float>(); }
+	int GetWidth() const { return GetSize().x; }
+	int GetHeight() const { return GetSize().y; }
 };
 using ImageHandle = RCHandle<IImage>;
 
