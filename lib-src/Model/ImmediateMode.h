@@ -49,6 +49,7 @@ struct TreeStateToggleSkin : IStateToggleSkin
 };
 
 bool Button(const char* text, ModInitList mods = {});
+bool Button(DefaultIconStyle icon, ModInitList mods = {}); // TODO expand on putting text+icon/other elements inside buttons etc.
 bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 bool EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 template <class T> bool EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())

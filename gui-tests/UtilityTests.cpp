@@ -16,12 +16,12 @@ struct BasicEasingAnimTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::LabeledProperty::Begin("Control");
-		if (ui::imm::Button("Play"))
+		if (ui::imm::Button(ui::DefaultIconStyle::Play))
 		{
 			animPlayer.SetVariable("test", 0);
 			animPlayer.PlayAnim(anim);
 		}
-		if (ui::imm::Button("Stop"))
+		if (ui::imm::Button(ui::DefaultIconStyle::Stop))
 		{
 			animPlayer.StopAnim(anim);
 		}

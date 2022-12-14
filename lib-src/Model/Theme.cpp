@@ -530,7 +530,7 @@ void ThemeData::LoadTheme(StringView folder)
 			{
 				draw::ImageSet::BitmapImageEntry e;
 
-				u.BeginObject({}, "ImageSetEntry");
+				u.BeginObject({}, "ImageSetBitmapEntry");
 				{
 					if (auto path = u.ReadString("path"))
 					{
@@ -569,6 +569,51 @@ void ThemeData::LoadTheme(StringView folder)
 				u.EndObject();
 
 				loaded->bitmapImageEntries.Append(new draw::ImageSet::BitmapImageEntry(e));
+			}
+			u.EndArray();
+
+			count = u.BeginArray(0, "vectorimages");
+			for (size_t i = 0; i < count; i++)
+			{
+				draw::ImageSet::VectorImageEntry e;
+
+				u.BeginObject({}, "ImageSetBitmapEntry");
+				{
+					if (auto path = u.ReadString("path"))
+					{
+						auto fullpath = to_string(folder, "/", path.GetValue());
+						e.image = VectorImageLoadFromFile(fullpath);
+					}
+					if (auto edge = u.ReadInt("edge"))
+					{
+						e.edgeWidth = AABB2f::UniformBorder(float(edge.GetValue()));
+						if (!hasBaseType)
+							loaded->type = draw::ImageSetType::Sliced;
+						if (!hasBaseEdge)
+							loaded->baseEdgeWidth = e.edgeWidth;
+					}
+
+					OnField(u, "minSizeHint", e.minSizeHint);
+
+					if (e.image)
+					{
+						if (e.edgeWidth.x0 != 0 ||
+							e.edgeWidth.y0 != 0 ||
+							e.edgeWidth.x1 != 0 ||
+							e.edgeWidth.y1 != 0)
+						{
+							float iw = 1.0f / e.image->GetWidth();
+							float ih = 1.0f / e.image->GetHeight();
+							e.innerUV.x0 = e.edgeWidth.x0 * iw;
+							e.innerUV.y0 = e.edgeWidth.y0 * ih;
+							e.innerUV.x1 = 1 - e.edgeWidth.x1 * iw;
+							e.innerUV.y1 = 1 - e.edgeWidth.y1 * ih;
+						}
+					}
+				}
+				u.EndObject();
+
+				loaded->vectorImageEntries.Append(new draw::ImageSet::VectorImageEntry(e));
 			}
 			u.EndArray();
 

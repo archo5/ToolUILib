@@ -95,6 +95,12 @@ enum class DefaultIconStyle
 	Checkbox,
 	RadioButton,
 	TreeExpand,
+
+	Close,
+	Delete,
+	Play,
+	Pause,
+	Stop,
 };
 
 struct IconElement : UIObjectNoChildren

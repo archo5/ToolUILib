@@ -194,7 +194,9 @@ void SequenceEditor::OnBuildItem(size_t idx, void* ptr)
 void SequenceEditor::OnBuildDeleteButton()
 {
 	Push<SizeConstraintElement>().SetWidth(20);
-	auto& delBtn = MakeWithText<Button>("X");
+	auto& delBtn = Push<Button>();
+	Make<IconElement>().SetDefaultStyle(DefaultIconStyle::Delete);
+	Pop();
 	Pop();
 	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event& e)
 	{

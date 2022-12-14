@@ -103,6 +103,38 @@ bool Button(const char* text, ModInitList mods)
 	return clicked;
 }
 
+bool Button(DefaultIconStyle icon, ModInitList mods)
+{
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
+	auto& btn = Push<ui::Button>();
+	for (auto& mod : mods)
+		mod->OnBeforeContent();
+	Make<IconElement>().SetDefaultStyle(icon);
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterContent();
+	Pop();
+
+	btn.flags |= UIObject_DB_IMEdit;
+	if (!GetEnabled())
+		btn.flags |= UIObject_IsDisabled;
+	for (auto& mod : mods)
+		mod->Apply(&btn);
+	bool clicked = false;
+	if (btn.flags & UIObject_IsEdited)
+	{
+		clicked = true;
+		btn.flags &= ~UIObject_IsEdited;
+		btn._OnIMChange();
+	}
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
+	return clicked;
+}
+
 bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
