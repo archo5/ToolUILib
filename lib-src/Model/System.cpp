@@ -10,7 +10,11 @@ namespace ui {
 
 extern uint32_t g_curLayoutFrame;
 FrameContents* g_curSystem;
+
+namespace _ {
 UIContainer* g_curContainer;
+} // _
+using namespace _;
 
 LogCategory LOG_UISYS("UISys");
 
@@ -277,12 +281,12 @@ void Pop()
 
 TextElement& NewText(StringView s)
 {
-	return g_curContainer->NewText(s);
+	return New<TextElement>().SetText(s);
 }
 
 TextElement& NewTextVA(const char* fmt, va_list args)
 {
-	return g_curContainer->NewTextVA(fmt, args);
+	return NewText(FormatVA(fmt, args));
 }
 
 TextElement& NewTextf(const char* fmt, ...)
@@ -296,12 +300,14 @@ TextElement& NewTextf(const char* fmt, ...)
 
 TextElement& Text(StringView s)
 {
-	return g_curContainer->Text(s);
+	auto& t = NewText(s);
+	Add(t);
+	return t;
 }
 
 TextElement& TextVA(const char* fmt, va_list args)
 {
-	return g_curContainer->TextVA(fmt, args);
+	return Text(FormatVA(fmt, args));
 }
 
 TextElement& Textf(const char* fmt, ...)

@@ -134,37 +134,12 @@ struct UIContainer
 		_Pop();
 		UI_DEBUG_FLOW(printf("  pop [%d] %s\n", objectStackSize, typeid(*objectStack[objectStackSize]).name()));
 	}
-	template<class T> T& Make()
+	template<class T> T& AddNew()
 	{
 		T* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
 		Add(obj);
 		return *obj;
-	}
-
-	template<class T, class = typename NotBuildable<T>> T& MakeWithText(StringView text)
-	{
-		auto& ret = Push<T>();
-		Text(text);
-		Pop();
-		return ret;
-	}
-	template<class T, class = typename NotBuildable<T>> T& MakeWithTextVA(const char* fmt, va_list args)
-	{
-		auto& ret = Push<T>();
-		TextVA(fmt, args);
-		Pop();
-		return ret;
-	}
-	template<class T, class = typename NotBuildable<T>> T& MakeWithTextf(const char* fmt, ...)
-	{
-		auto& ret = Push<T>();
-		va_list args;
-		va_start(args, fmt);
-		TextVA(fmt, args);
-		va_end(args);
-		Pop();
-		return ret;
 	}
 
 	template<class T, class = typename NotBuildable<T>> T& PushNoAppend()
@@ -193,32 +168,6 @@ struct UIContainer
 		}
 		return obj;
 	}
-	template <class T> T& New()
-	{
-		return *_Alloc<T>();
-	}
-
-	TextElement& NewText(StringView s)
-	{
-		auto& T = *_Alloc<TextElement>();
-		T.SetText(s);
-		return T;
-	}
-	TextElement& NewTextVA(const char* fmt, va_list args)
-	{
-		return NewText(FormatVA(fmt, args));
-	}
-
-	TextElement& Text(StringView s)
-	{
-		auto& T = Make<TextElement>();
-		T.SetText(s);
-		return T;
-	}
-	TextElement& TextVA(const char* fmt, va_list args)
-	{
-		return Text(FormatVA(fmt, args));
-	}
 
 	bool LastIsNew() const { return lastIsNew; }
 
@@ -246,54 +195,58 @@ struct UIContainer
 };
 
 
+namespace _ {
+extern UIContainer* g_curContainer; // do not use directly, this is for optimization purposes only
+} // _
+
 void Pop();
-template <class T> T& New()
+template <class T> inline T& New()
 {
-	return *UIContainer::GetCurrent()->_Alloc<T>();
+	return *_::g_curContainer->_Alloc<T>();
 }
-template <class T> inline T& Make()
+template <class T> inline T& Wrap(UIObject& obj)
 {
-	return UIContainer::GetCurrent()->Make<T>();
+	auto& p = New<T>();
+	p.AppendChild(&obj);
+	return p;
 }
-template <class T, class = typename NotBuildable<T>> inline T& MakeWithText(StringView text)
+template <class T> inline T& Make() // deprecated
 {
-	return UIContainer::GetCurrent()->MakeWithText<T>(text);
+	return _::g_curContainer->AddNew<T>();
 }
-template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextVA(const char* fmt, va_list args)
+template <class T> inline T& AddNew()
 {
-	return UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
+	return _::g_curContainer->AddNew<T>();
 }
-template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextf(const char* fmt, ...)
+template <class T> inline T& AddWrappedIn(UIObject& obj)
 {
-	va_list args;
-	va_start(args, fmt);
-	auto& ret = UIContainer::GetCurrent()->MakeWithTextVA<T>(fmt, args);
-	va_end(args);
-	return ret;
+	auto& p = AddNew<T>();
+	p.AppendChild(&obj);
+	return p;
 }
 template <class T, class = typename NotBuildable<T>> inline T& PushNoAppend()
 {
-	return UIContainer::GetCurrent()->PushNoAppend<T>();
+	return _::g_curContainer->PushNoAppend<T>();
 }
 template <class T, class = typename NotBuildable<T>> inline T& Push()
 {
-	return UIContainer::GetCurrent()->Push<T>();
+	return _::g_curContainer->Push<T>();
 }
 inline void Add(UIObject* o)
 {
-	UIContainer::GetCurrent()->Add(o);
+	_::g_curContainer->Add(o);
 }
 inline void Add(Buildable* o)
 {
-	UIContainer::GetCurrent()->Add(o);
+	_::g_curContainer->Add(o);
 }
 inline void Add(UIObject& o)
 {
-	UIContainer::GetCurrent()->Add(&o);
+	_::g_curContainer->Add(&o);
 }
 inline void Add(Buildable& o)
 {
-	UIContainer::GetCurrent()->Add(&o);
+	_::g_curContainer->Add(&o);
 }
 TextElement& NewText(StringView s);
 TextElement& NewTextVA(const char* fmt, va_list args);
@@ -301,6 +254,24 @@ TextElement& NewTextf(const char* fmt, ...);
 TextElement& Text(StringView s);
 TextElement& TextVA(const char* fmt, va_list args);
 TextElement& Textf(const char* fmt, ...);
+
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithText(StringView text)
+{
+	return AddWrappedIn<T>(NewText(text));
+}
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextVA(const char* fmt, va_list args)
+{
+	return AddWrappedIn<T>(NewTextVA(fmt, args));
+}
+template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextf(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	auto& ret = AddWrappedIn<T>(NewTextVA(fmt, args));
+	va_end(args);
+	return ret;
+}
+
 bool LastIsNew();
 
 void RebuildCurrent();
