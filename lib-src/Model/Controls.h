@@ -96,6 +96,7 @@ enum class DefaultIconStyle
 	RadioButton,
 	TreeExpand,
 
+	Add,
 	Close,
 	Delete,
 	Play,

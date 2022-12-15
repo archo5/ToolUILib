@@ -369,7 +369,8 @@ struct AnimPattern : ITree
 		{
 			Push<StackExpandLTRLayoutElement>();
 			MakeWithText<Header>(Format("Properties - %s", selectedLayer->ItemName()));
-			MakeWithText<Button>("X") + ui::AddEventHandler(EventType::Activate, [this](Event&) { selectedLayer = nullptr; AnimPatternChanged.Call(); });
+			AddWrappedIn<Button>(New<IconElement>().SetDefaultStyle(DefaultIconStyle::Close))
+				+ ui::AddEventHandler(EventType::Activate, [this](Event&) { selectedLayer = nullptr; AnimPatternChanged.Call(); });
 			Pop();
 
 			selectedLayer->FullUI();

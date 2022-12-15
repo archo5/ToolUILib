@@ -170,7 +170,7 @@ struct DataEditor : ui::Buildable
 
 						ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
-						if (ui::imm::Button("X"))
+						if (ui::imm::Button(ui::DefaultIconStyle::Close))
 							OnClose();
 						if (ui::imm::Button("[]"))
 							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized);

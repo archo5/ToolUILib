@@ -1,16 +1,19 @@
 
+"add:imgset": { vectorimages = [{ path = "../common/icons/add.svg" }] }
 "close:imgset": { vectorimages = [{ path = "../common/icons/close.svg" }] }
 "delete:imgset": { vectorimages = [{ path = "../common/icons/delete.svg" }] }
 "play:imgset": { vectorimages = [{ path = "../common/icons/play.svg" }] }
 "pause:imgset": { vectorimages = [{ path = "../common/icons/pause.svg" }] }
 "stop:imgset": { vectorimages = [{ path = "../common/icons/stop.svg" }] }
 
+"add:painter" = { __ = "imgset", imgset = "add" }
 "close:painter" = { __ = "imgset", imgset = "close" }
 "delete:painter" = { __ = "imgset", imgset = "delete" }
 "play:painter" = { __ = "imgset", imgset = "play" }
 "pause:painter" = { __ = "imgset", imgset = "pause" }
 "stop:painter" = { __ = "imgset", imgset = "stop" }
 
+"add:IconStyle" = { width = 12, height = 12, painter = "add" }
 "close:IconStyle" = { width = 12, height = 12, painter = "close" }
 "delete:IconStyle" = { width = 12, height = 12, painter = "delete" }
 "play:IconStyle" = { width = 12, height = 12, painter = "play" }

@@ -211,6 +211,7 @@ static StaticID<IconStyle> sid_iconstyle_checkbox("checkbox");
 static StaticID<IconStyle> sid_iconstyle_radio_button("radio_button");
 static StaticID<IconStyle> sid_iconstyle_tree_expand("tree_expand");
 
+static StaticID<IconStyle> sid_iconstyle_add("add");
 static StaticID<IconStyle> sid_iconstyle_close("close");
 static StaticID<IconStyle> sid_iconstyle_delete("delete");
 static StaticID<IconStyle> sid_iconstyle_play("play");
@@ -225,6 +226,7 @@ IconElement& IconElement::SetDefaultStyle(DefaultIconStyle style)
 	case DefaultIconStyle::RadioButton: return SetStyle(sid_iconstyle_radio_button);
 	case DefaultIconStyle::TreeExpand: return SetStyle(sid_iconstyle_tree_expand);
 
+	case DefaultIconStyle::Add: return SetStyle(sid_iconstyle_add);
 	case DefaultIconStyle::Close: return SetStyle(sid_iconstyle_close);
 	case DefaultIconStyle::Delete: return SetStyle(sid_iconstyle_delete);
 	case DefaultIconStyle::Play: return SetStyle(sid_iconstyle_play);

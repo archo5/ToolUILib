@@ -227,7 +227,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			ui::LabeledProperty::Begin();
 
 			ui::Push<ui::SizeConstraintElement>().SetWidth(20);
-			if (ui::imm::Button("X"))
+			if (ui::imm::Button(ui::DefaultIconStyle::Delete))
 			{
 				del = &v;
 			}
@@ -289,7 +289,7 @@ void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
 	}
 	else
 	{
-		if (ui::imm::Button("+"))
+		if (ui::imm::Button(ui::DefaultIconStyle::Add))
 		{
 			ui::MenuItem items[] =
 			{
