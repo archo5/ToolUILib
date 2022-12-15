@@ -898,7 +898,7 @@ struct MessageLogViewTest : ui::Buildable
 				ui::Text("single line");
 				ui::Push<ui::ListBoxFrame>();
 				{
-					ui::Append(mlvR);
+					ui::Add(mlvR);
 				}
 				ui::Pop();
 			}
@@ -911,7 +911,7 @@ struct MessageLogViewTest : ui::Buildable
 				ui::Text("two lines, custom drawing");
 				ui::Push<ui::ListBoxFrame>();
 				{
-					ui::Append(mlvI);
+					ui::Add(mlvI);
 				}
 				ui::Pop();
 			}

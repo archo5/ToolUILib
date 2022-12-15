@@ -114,11 +114,11 @@ struct UIContainer
 
 	void _BuildUsing(Buildable* n);
 
-	void Append(UIObject* obj)
+	void Add(UIObject* obj)
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
 	}
-	void Append(Buildable* obj)
+	void Add(Buildable* obj)
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
 		if (!imm::GetEnabled())
@@ -138,7 +138,7 @@ struct UIContainer
 	{
 		T* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  make %s\n", typeid(*obj).name()));
-		Append(obj);
+		Add(obj);
 		return *obj;
 	}
 
@@ -178,7 +178,7 @@ struct UIContainer
 	{
 		auto* obj = _Alloc<T>();
 		UI_DEBUG_FLOW(printf("  push [%d] %s\n", objectStackSize, typeid(*obj).name()));
-		Append(obj);
+		Add(obj);
 		_Push(obj);
 		return *obj;
 	}
@@ -193,6 +193,21 @@ struct UIContainer
 		}
 		return obj;
 	}
+	template <class T> T& New()
+	{
+		return *_Alloc<T>();
+	}
+
+	TextElement& NewText(StringView s)
+	{
+		auto& T = *_Alloc<TextElement>();
+		T.SetText(s);
+		return T;
+	}
+	TextElement& NewTextVA(const char* fmt, va_list args)
+	{
+		return NewText(FormatVA(fmt, args));
+	}
 
 	TextElement& Text(StringView s)
 	{
@@ -203,14 +218,6 @@ struct UIContainer
 	TextElement& TextVA(const char* fmt, va_list args)
 	{
 		return Text(FormatVA(fmt, args));
-	}
-	TextElement& Textf(const char* fmt, ...)
-	{
-		va_list args;
-		va_start(args, fmt);
-		auto str = FormatVA(fmt, args);
-		va_end(args);
-		return Text(str);
 	}
 
 	bool LastIsNew() const { return lastIsNew; }
@@ -240,6 +247,10 @@ struct UIContainer
 
 
 void Pop();
+template <class T> T& New()
+{
+	return *UIContainer::GetCurrent()->_Alloc<T>();
+}
 template <class T> inline T& Make()
 {
 	return UIContainer::GetCurrent()->Make<T>();
@@ -268,14 +279,25 @@ template <class T, class = typename NotBuildable<T>> inline T& Push()
 {
 	return UIContainer::GetCurrent()->Push<T>();
 }
-inline void Append(UIObject* o)
+inline void Add(UIObject* o)
 {
-	UIContainer::GetCurrent()->Append(o);
+	UIContainer::GetCurrent()->Add(o);
 }
-inline void Append(Buildable* o)
+inline void Add(Buildable* o)
 {
-	UIContainer::GetCurrent()->Append(o);
+	UIContainer::GetCurrent()->Add(o);
 }
+inline void Add(UIObject& o)
+{
+	UIContainer::GetCurrent()->Add(&o);
+}
+inline void Add(Buildable& o)
+{
+	UIContainer::GetCurrent()->Add(&o);
+}
+TextElement& NewText(StringView s);
+TextElement& NewTextVA(const char* fmt, va_list args);
+TextElement& NewTextf(const char* fmt, ...);
 TextElement& Text(StringView s);
 TextElement& TextVA(const char* fmt, va_list args);
 TextElement& Textf(const char* fmt, ...);

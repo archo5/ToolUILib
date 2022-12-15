@@ -1195,7 +1195,7 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 			}
 			WPop();
 
-			ui::Append(area);
+			ui::Add(area);
 		}
 		WPop();
 	}

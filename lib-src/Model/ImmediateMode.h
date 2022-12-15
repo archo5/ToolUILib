@@ -48,8 +48,11 @@ struct TreeStateToggleSkin : IStateToggleSkin
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
-bool Button(const char* text, ModInitList mods = {});
-bool Button(DefaultIconStyle icon, ModInitList mods = {}); // TODO expand on putting text+icon/other elements inside buttons etc.
+bool Button(UIObject& obj, ModInitList mods = {});
+
+bool Button(StringView text, ModInitList mods = {});
+bool Button(DefaultIconStyle icon, ModInitList mods = {});
+
 bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 bool EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 template <class T> bool EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())

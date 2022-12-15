@@ -556,10 +556,10 @@ struct AppendMixTest : ui::Buildable
 			ui::Text("inline");
 			break;
 		case Append1:
-			ui::Append(append1);
+			ui::Add(append1);
 			break;
 		case Append2:
-			ui::Append(append2);
+			ui::Add(append2);
 			break;
 		}
 

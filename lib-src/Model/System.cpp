@@ -275,6 +275,25 @@ void Pop()
 	return g_curContainer->Pop();
 }
 
+TextElement& NewText(StringView s)
+{
+	return g_curContainer->NewText(s);
+}
+
+TextElement& NewTextVA(const char* fmt, va_list args)
+{
+	return g_curContainer->NewTextVA(fmt, args);
+}
+
+TextElement& NewTextf(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	auto str = FormatVA(fmt, args);
+	va_end(args);
+	return NewText(str);
+}
+
 TextElement& Text(StringView s)
 {
 	return g_curContainer->Text(s);
