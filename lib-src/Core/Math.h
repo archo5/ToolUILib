@@ -86,7 +86,8 @@ template <class T> struct Vec2
 
 	UI_FORCEINLINE T LengthSq() const { return x * x + y * y; }
 	UI_FORCEINLINE float Length() const { return sqrtf(x * x + y * y); }
-	Vec2 Normalized() const
+	UI_FORCEINLINE float Angle() const { return atan2(y, x) * RAD2DEG; }
+	Vec2<float> Normalized() const
 	{
 		T lsq = LengthSq();
 		if (!lsq)
@@ -97,6 +98,16 @@ template <class T> struct Vec2
 	UI_FORCEINLINE T Abs() const { return { abs(x), abs(y) }; }
 	UI_FORCEINLINE Vec2 Perp() const { return { -y, x }; }
 	UI_FORCEINLINE Vec2 Perp2() const { return { y, -x }; }
+	Vec2 Rotated(float angle) const
+	{
+		float c = cosf(angle * DEG2RAD);
+		float s = sinf(angle * DEG2RAD);
+		return
+		{
+			T(x * c - y * s),
+			T(x * s + y * c),
+		};
+	}
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
@@ -121,6 +132,7 @@ using Point2i = Vec2<int>;
 
 template <class T> UI_FORCEINLINE T Vec2Dot(const Vec2<T>& a, const Vec2<T>& b) { return a.x * b.x + a.y * b.y; }
 UI_FORCEINLINE Vec2f Vec2fLerp(Vec2f a, Vec2f b, float q) { return a * (1 - q) + b * q; }
+inline Vec2f Vec2fFromAngle(float angle) { angle *= DEG2RAD; return { cosf(angle), sinf(angle) }; }
 
 template <class T> struct Size2
 {
