@@ -27,6 +27,7 @@ struct The3DViewTest : ui::Buildable
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
+			v.onPaintOverlay = [this](ui::UIRect r) { RenderOverlay(r); };
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
 
@@ -45,7 +46,7 @@ struct The3DViewTest : ui::Buildable
 					camera = {};
 					camera.rightHanded = rh;
 				});
-				ui::imm::PropEditBool("\bRight-handed", camera.rightHanded);
+				ui::imm::EditBool(camera.rightHanded, "Right-handed");
 
 				ui::Pop();
 				ui::Pop();
@@ -53,6 +54,41 @@ struct The3DViewTest : ui::Buildable
 			ui::Pop();
 		}
 		ui::Pop();
+	}
+	void RenderOverlay(const ui::UIRect& rect)
+	{
+		float y = rect.y0 + 100;
+		auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF);
+
+		auto fwd = camera.GetCameraForwardDir();
+		ui::draw::TextLine(font, 12, rect.x0, y,
+			ui::Format("Dir (Z): %g;%g;%g", fwd.x, fwd.y, fwd.z),
+			ui::Color4b::White());
+		y += 12;
+
+		auto up = camera.GetCameraUpDir();
+		ui::draw::TextLine(font, 12, rect.x0, y,
+			ui::Format("Up (Y): %g;%g;%g", up.x, up.y, up.z),
+			ui::Color4b::White());
+		y += 12;
+
+		auto rt = camera.GetCameraRightDir();
+		ui::draw::TextLine(font, 12, rect.x0, y,
+			ui::Format("Right (X): %g;%g;%g", rt.x, rt.y, rt.z),
+			ui::Color4b::White());
+		y += 12;
+
+		auto pos = camera.GetCameraPosition();
+		ui::draw::TextLine(font, 12, rect.x0, y,
+			ui::Format("Position: %g;%g;%g", pos.x, pos.y, pos.z),
+			ui::Color4b::White());
+		y += 12;
+
+		auto epos = camera.GetCameraEyePos();
+		ui::draw::TextLine(font, 12, rect.x0, y,
+			ui::Format("Eye pos.: %g;%g;%g", epos.x, epos.y, epos.z),
+			ui::Color4b::White());
+		y += 12;
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{

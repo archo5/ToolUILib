@@ -398,6 +398,16 @@ struct CameraBase
 	UI_FORCEINLINE const UIRect& GetWindowRect() const { return _windowRect; }
 	void SetWindowRect(const UIRect& rect);
 
+	// position found in the inverse view matrix
+	virtual Vec3f GetCameraPosition() const { return _mtxInvView.GetTranslation(); }
+	virtual Vec3f GetCameraRightDir() const { return Vec3f(_mtxInvView.v00, _mtxInvView.v10, _mtxInvView.v20).Normalized(); }
+	virtual Vec3f GetCameraUpDir() const { return Vec3f(_mtxInvView.v01, _mtxInvView.v11, _mtxInvView.v21).Normalized(); }
+	virtual Vec3f GetCameraForwardDir() const { return Vec3f(_mtxInvView.v02, _mtxInvView.v12, _mtxInvView.v22).Normalized(); }
+	// the location of the "eye" (source of rays)
+	virtual Vec3f GetCameraEyePos() const { return GetCameraEyePosEstimate(); }
+	// https://terathon.com/gdc07_lengyel.pdf (slide 6)
+	Vec3f GetCameraEyePosEstimate(float z = -10000) const { return _mtxInvViewProj.TransformPoint({ 0, 0, z }); }
+
 	Point2f WindowToNormalizedPoint(Point2f p) const;
 	Point2f NormalizedToWindowPoint(Point2f p) const;
 	Point2f WorldToNormalizedPoint(const Vec3f& p) const;
@@ -417,6 +427,7 @@ struct CameraBase
 struct OrbitCamera : CameraBase
 {
 	OrbitCamera(bool rh = false);
+	// returns true if the camera was modified
 	bool OnEvent(Event& e);
 	void SerializeState(IObjectIterator& oi, const FieldInfo& FI);
 

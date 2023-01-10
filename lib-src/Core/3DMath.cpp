@@ -42,6 +42,12 @@ Vec3f Quat::ToEulerAnglesZYX() const
 	return Vec3f(angleX, angleY, angleZ) * RAD2DEG;
 }
 
+Vec3f Quat::Rotate(Vec3f v) const
+{
+	Vec3f myvec(x, y, z);
+	return 2 * Vec3Dot(v, myvec) * myvec + (w * w - Vec3Dot(myvec, myvec)) * v + 2 * w * Vec3Cross(myvec, v);
+}
+
 Quat Quat::Identity()
 {
 	return { 0, 0, 0, 1 };
@@ -53,6 +59,16 @@ Quat Quat::RotateAxisAngle(const Vec3f& axis, float angle)
 	float c = cosf(har);
 	float s = sinf(har);
 	return { s * axis.x, s * axis.y, s * axis.z, c };
+}
+
+Quat Quat::RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b)
+{
+	return RotateAxisAngle(Vec3Cross(a, b).Normalized(), acosf(clamp(Vec3Dot(a, b), -1.f, 1.f)) * RAD2DEG);
+}
+
+Quat Quat::RotateBetweenDirections(const Vec3f& a, const Vec3f& b)
+{
+	return RotateBetweenNormalDirections(a.Normalized(), b.Normalized());
 }
 
 Quat Quat::RotateX(float angle)

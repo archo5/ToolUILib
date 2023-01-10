@@ -64,6 +64,7 @@ struct Vec3f
 		oi.EndObject();
 	}
 };
+UI_FORCEINLINE Vec3f operator * (float f, Vec3f v) { return { f * v.x, f * v.y, f * v.z }; }
 
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z) }; }
@@ -103,6 +104,7 @@ struct Quat
 
 	Quat operator * (const Quat& o) const;
 	Vec3f ToEulerAnglesZYX() const;
+	Vec3f Rotate(Vec3f v) const;
 
 	UI_FORCEINLINE bool operator == (const Quat& o) const { return x == o.x && y == o.y && z == o.z && w == o.w; }
 	UI_FORCEINLINE bool operator != (const Quat& o) const { return x != o.x || y != o.y || z != o.z || w != o.w; }
@@ -119,6 +121,8 @@ struct Quat
 
 	static Quat Identity();
 	static Quat RotateAxisAngle(const Vec3f& axis, float angle);
+	static Quat RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b);
+	static Quat RotateBetweenDirections(const Vec3f& a, const Vec3f& b);
 	static Quat RotateX(float angle);
 	static Quat RotateY(float angle);
 	static Quat RotateZ(float angle);

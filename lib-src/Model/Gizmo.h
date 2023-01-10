@@ -200,6 +200,7 @@ struct Gizmo
 
 	void SetTransform(const Mat4f& base);
 	void Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable);
+	// returns true if the event was processed (editable was modified or transforming started)
 	bool OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable);
 	void Render(const CameraBase& cam, float size = 100.0f, GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixels);
 };
