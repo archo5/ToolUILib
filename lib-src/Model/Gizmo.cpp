@@ -170,18 +170,13 @@ static GizmoAction GetIntersectingPart(GizmoType type, const Ray3f& ray, Point2f
 	return GizmoAction::None;
 }
 
-static Mat4f GetTransformBasis(const Mat4f& src, bool isWorldSpace)
+static Mat4f GetTransformBasis(const Transform3Df& src, bool isWorldSpace)
 {
 	if (isWorldSpace)
 	{
-		return Mat4f::Translate(src.TransformPoint({ 0, 0, 0 }));
+		return Mat4f::Translate(src.position);
 	}
-	return src;
-}
-
-void Gizmo::SetTransform(const Mat4f& base)
-{
-	_xf = base;
+	return src.ToMatrix();
 }
 
 static float ScaleFactor(Point2f centerWinPos, Point2f cursorWinPos, Point2f newWinPos)
@@ -262,7 +257,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 {
 	if (_selectedPart == GizmoAction::None)
 	{
-		_origXF = _xf;
+		_origXF = editable.GetGizmoLocation();
 
 		_origCursorWinPos = cursorPoint;
 		auto pointWP = cam.WorldToWindowPoint(_origXF.TransformPoint({ 0, 0, 0 }));
@@ -276,7 +271,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 	}
 
 	_selectedPart = action;
-	_curXFWorldSpace = isWorldSpace;
+	_curXFWorldSpace = settings.isWorldSpace;
 }
 
 bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable)
@@ -290,11 +285,11 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		_lastCursorPos = e.position;
 		if (_selectedPart == GizmoAction::None)
 		{
-			if (visible)
+			if (settings.visible)
 			{
 				auto wp = _combinedXF.TransformPoint({ 0, 0, 0 });
 				_hoveredPart = GetIntersectingPart(
-					type,
+					settings.type,
 					cam.GetLocalRayEP(e, _combinedXF.Inverted()),
 					_lastCursorPos,
 					cam.WorldToWindowPoint(wp),
@@ -320,9 +315,9 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 			if (IsMoveAction(_selectedPart))
 			{
-				_totalMovedWinVec += delta * (slowMotion ? settings.moveSlowdownFactor : 1);
+				_totalMovedWinVec += delta * (slowMotion ? settings.edit.moveSlowdownFactor : 1);
 
-				float snapDist = slowMotion ? settings.moveSlowSnapDist : settings.moveSnapDist;
+				float snapDist = slowMotion ? settings.edit.moveSlowSnapDist : settings.edit.moveSnapDist;
 
 				Ray3f ray = cam.GetRayWP(_origCenterWinPos + _totalMovedWinVec);
 
@@ -389,12 +384,12 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			else if (IsRotateAction(_selectedPart))
 			{
-				float snapAngle = slowMotion ? settings.rotateSlowSnapAngleDeg : settings.rotateSnapAngleDeg;
+				float snapAngle = slowMotion ? settings.edit.rotateSlowSnapAngleDeg : settings.edit.rotateSnapAngleDeg;
 
 				Mat4f fullXF;
 				if ((int(_selectedPart) & GAF_Shape_MASK) == GAF_Shape_Trackpad)
 				{
-					_totalMovedWinVec += delta * (slowMotion ? settings.rotateSlowdownFactor : 1);
+					_totalMovedWinVec += delta * (slowMotion ? settings.edit.rotateSlowdownFactor : 1);
 
 					auto angles = _totalMovedWinVec;
 					if (snapping)
@@ -426,7 +421,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 					angleDiff *= 180 / 3.14159f;
 
 					if (slowMotion)
-						angleDiff *= settings.rotateSlowdownFactor;
+						angleDiff *= settings.edit.rotateSlowdownFactor;
 
 					_totalAngleDiff += angleDiff;
 
@@ -452,11 +447,11 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			else if (IsScaleAction(_selectedPart))
 			{
-				_totalMovedWinVec += delta * (slowMotion ? settings.scaleSlowdownFactor : 1);
+				_totalMovedWinVec += delta * (slowMotion ? settings.edit.scaleSlowdownFactor : 1);
 
 				float scaleFactor = ScaleFactor(_origCenterWinPos, _origCursorWinPos, _origCursorWinPos + _totalMovedWinVec);
 				if (snapping)
-					Snap(scaleFactor, slowMotion ? settings.scaleSlowSnapDist : settings.scaleSnapDist);
+					Snap(scaleFactor, slowMotion ? settings.edit.scaleSlowSnapDist : settings.edit.scaleSnapDist);
 
 				Mat4f xf;
 				switch (int(_selectedPart) & GAF_Shape_MASK)
@@ -522,7 +517,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			e.StopPropagation();
 		}
 	}
-	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Right && _selectedPart != GizmoAction::None && visible)
+	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Right && _selectedPart != GizmoAction::None && settings.visible)
 	{
 		_selectedPart = GizmoAction::None;
 		DataReader dr(_origData);
@@ -535,10 +530,14 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	}
 	else if (e.type == EventType::KeyDown)
 	{
+		bool anySelPart = _selectedPart != GizmoAction::None;
+		u8 modeKeyMask = GizmoKeyDetect::Start | (anySelPart ? GizmoKeyDetect::ModeSwitch : 0);
+		u8 axisKeyMask = anySelPart ? GizmoKeyDetect::AxisSwitch : 0;
+
 		switch (e.shortCode)
 		{
 		case KSC_Escape:
-			if (_selectedPart != GizmoAction::None)
+			if (anySelPart && (settings.detectsKeys & GizmoKeyDetect::Exit))
 			{
 				_selectedPart = GizmoAction::None;
 				DataReader dr(_origData);
@@ -550,7 +549,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			break;
 
 		case KSC_G:
-			if (detectsKeys)
+			if (settings.detectsKeys & modeKeyMask)
 			{
 				Start(GizmoAction::MoveScreenPlane, _lastCursorPos, cam, editable);
 				e.StopPropagation();
@@ -558,7 +557,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 		case KSC_R:
-			if (detectsKeys)
+			if (settings.detectsKeys & modeKeyMask)
 			{
 				Start(GizmoAction::RotateScreenAxis, _lastCursorPos, cam, editable);
 				e.StopPropagation();
@@ -566,7 +565,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 		case KSC_S:
-			if (detectsKeys)
+			if (settings.detectsKeys & modeKeyMask)
 			{
 				Start(GizmoAction::ScaleUniform, _lastCursorPos, cam, editable);
 				e.StopPropagation();
@@ -575,7 +574,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			break;
 
 		case KSC_X:
-			if (detectsKeys && _selectedPart != GizmoAction::None)
+			if (settings.detectsKeys & axisKeyMask)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_X, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
@@ -583,7 +582,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 		case KSC_Y:
-			if (detectsKeys && _selectedPart != GizmoAction::None)
+			if (settings.detectsKeys & axisKeyMask)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Y, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
@@ -591,7 +590,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			}
 			break;
 		case KSC_Z:
-			if (detectsKeys && _selectedPart != GizmoAction::None)
+			if (settings.detectsKeys & axisKeyMask)
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Z, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
@@ -1042,22 +1041,23 @@ static int GetOtherAxis(GizmoAction action, bool second)
 	}
 }
 
-void Gizmo::Render(const CameraBase& cam, float size, GizmoSizeMode sizeMode)
+void Gizmo::Render(const CameraBase& cam, const IGizmoEditable& editable)
 {
 	using namespace rhi;
 
-	if (sizeMode != GizmoSizeMode::Scene)
+	float size = settings.size;
+	auto xf = editable.GetGizmoLocation();
+	if (settings.sizeMode != GizmoSizeMode::Scene)
 	{
-		Vec3f pos = _xf.TransformPoint({ 0, 0, 0 });
 		const auto& pm = cam.GetProjectionMatrix();
 		float fovQ = pm.m[1][1];
-		float q = max(0.00001f, fabsf(cam.GetViewMatrix().TransformPoint(pos).z / fovQ));
+		float q = max(0.00001f, fabsf(cam.GetViewMatrix().TransformPoint(xf.position).z / fovQ));
 		size *= q;
-		if (sizeMode == GizmoSizeMode::ViewPixels)
+		if (settings.sizeMode == GizmoSizeMode::ViewPixels)
 			size /= cam.GetWindowRect().GetHeight();
 	}
 	_finalSize = size;
-	_combinedXF = Mat4f::Scale(size) * GetTransformBasis(_xf, isWorldSpace);
+	_combinedXF = Mat4f::Scale(size) * GetTransformBasis(xf, settings.isWorldSpace);
 
 	if (_selectedPart != GizmoAction::None)
 	{
@@ -1088,12 +1088,12 @@ void Gizmo::Render(const CameraBase& cam, float size, GizmoSizeMode sizeMode)
 		return;
 	}
 
-	if (!visible)
+	if (!settings.visible)
 		return;
 
 	SetTexture(nullptr);
 
-	switch (type)
+	switch (settings.type)
 	{
 	case GizmoType::Move:
 		Gizmo_Render_Move(_hoveredPart, _combinedXF, cam);

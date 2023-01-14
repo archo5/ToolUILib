@@ -303,6 +303,49 @@ struct Mat4f
 };
 
 
+struct Transform3Df
+{
+	Vec3f position;
+	Quat rotation;
+
+	UI_FORCEINLINE Transform3Df(DoNotInitialize) : position(DoNotInitialize{}), rotation(DoNotInitialize{}) {}
+	UI_FORCEINLINE Transform3Df() {}
+	UI_FORCEINLINE Transform3Df(Vec3f p) : position(p) {}
+	UI_FORCEINLINE Transform3Df(Vec3f p, Quat r) : position(p), rotation(r) {}
+
+	inline Transform3Df Inverted() const
+	{
+		Quat ir = rotation.Inverted();
+		return { ir.Rotate(-position), ir };
+	}
+	inline Vec3f TransformPoint(Vec3f p) const
+	{
+		return rotation.Rotate(p) + position;
+	}
+	inline Vec3f TransformDir(Vec3f d) const
+	{
+		return rotation.Rotate(d);
+	}
+	inline Mat4f ToMatrix() const
+	{
+		return Mat4f::Rotate(rotation) * Mat4f::Translate(position);
+	}
+
+	static UI_FORCEINLINE Transform3Df Identity()
+	{
+		return {};
+	}
+	static inline Transform3Df FromMatrix(const Mat4f& m)
+	{
+		return { m.GetTranslation(), m.GetRotationQuaternion() };
+	}
+};
+inline Transform3Df operator * (Transform3Df a, Transform3Df b)
+{
+	return { b.TransformPoint(a.position), a.rotation * b.rotation };
+}
+
+
 struct Ray3f
 {
 	Vec3f origin;

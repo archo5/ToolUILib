@@ -51,6 +51,10 @@ struct Optional
 		assert(_hasValue);
 		return _value;
 	}
+	UI_FORCEINLINE const T* GetValuePtrOrNull() const
+	{
+		return _hasValue ? &_value : nullptr;
+	}
 	UI_FORCEINLINE T GetValueOrDefault(const T& def) const
 	{
 		return _hasValue ? _value : def;

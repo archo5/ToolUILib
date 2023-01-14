@@ -193,12 +193,115 @@ void Test_3DView()
 }
 
 
+namespace ui {
+
+struct GizmoContainer;
+struct GizmoPersistentObject : IPersistentObject, IGizmoEditable
+{
+	Gizmo gizmo;
+	Buildable* _buildable = nullptr;
+	GizmoContainer* _cont = nullptr;
+	Array<char> _savedData;
+	Transform3Df _savedXF;
+	Optional<Mat4f> editMatrix;
+	bool edited = false;
+
+	~GizmoPersistentObject();
+
+	// CreateUIObject
+	void _InitReset() {}
+	// IPersistentObject
+	void PO_ResetConfiguration() override
+	{
+		gizmo.settings = {};
+	}
+	// IGizmoEditable
+	void Backup(DataWriter& data) const override
+	{
+		data._data.AppendRange(_savedData);
+	}
+	void Transform(DataReader& data, const Mat4f* xf) override
+	{
+		_savedData = data._data;
+		if (xf)
+			editMatrix = *xf;
+		else
+			editMatrix = {};
+		edited = true;
+		if (_buildable)
+			_buildable->Rebuild();
+	}
+	Transform3Df GetGizmoLocation() const override
+	{
+		return _savedXF;
+	}
+};
+
+struct GizmoContainer
+{
+	Array<GizmoPersistentObject*> _gizmos;
+
+	void OnEvent(Event& e, const CameraBase& cam)
+	{
+		for (auto* gizmo : _gizmos)
+			gizmo->gizmo.OnEvent(e, cam, *gizmo);
+	}
+	void Render(const CameraBase& cam)
+	{
+		for (auto* gizmo : _gizmos)
+			gizmo->gizmo.Render(cam, *gizmo);
+	}
+};
+
+GizmoPersistentObject::~GizmoPersistentObject()
+{
+	if (_cont)
+		_cont->_gizmos.RemoveFirstOf(this);
+}
+
+namespace imm {
+
+bool EditTransform(GizmoContainer& gc, const IGizmoEditable& ge, const GizmoSettings& settings = {})
+{
+	auto& go = New<GizmoPersistentObject>();
+	go.gizmo.settings = settings;
+	if (!go._cont)
+	{
+		go._cont = &gc;
+		gc._gizmos.Append(&go);
+		go._buildable = GetCurrentBuildable();
+	}
+
+	bool edited = go.edited;
+	if (edited)
+	{
+		DataReader dr(go._savedData);
+		const_cast<IGizmoEditable&>(ge).Transform(dr, go.editMatrix.GetValuePtrOrNull());
+		GetCurrentBuildable()->Rebuild();
+		go.edited = false;
+	}
+	else
+	{
+		go._savedData.Clear();
+		DataWriter dw(go._savedData);
+		ge.Backup(dw);
+		go._savedXF = ge.GetGizmoLocation();
+	}
+
+	return edited;
+}
+
+} // imm
+
+} // ui
+
 struct GizmoTest : ui::Buildable
 {
 	ui::OrbitCamera camera;
+	bool useImmediate = true;
+	ui::GizmoSettings gizmoSettings;
+	ui::GizmoContainer gizmoCont;
 	ui::Gizmo gizmo;
-	float gizmoSize = 100;
-	ui::GizmoSizeMode gizmoSizeMode = ui::GizmoSizeMode::ViewPixels;
 	ui::Mat4f xf = ui::Mat4f::Translate(0.01f, 0.02f, 0.03f);
 	float fov = 90;
 
@@ -217,8 +320,15 @@ struct GizmoTest : ui::Buildable
 			{
 				if (e.type == ui::EventType::ButtonDown)
 					e.context->SetKeyboardFocus(e.current);
-				if (gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
-					Rebuild();
+				if (useImmediate)
+				{
+					gizmoCont.OnEvent(e, camera);
+				}
+				else
+				{
+					if (gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
+						Rebuild();
+				}
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
@@ -258,19 +368,25 @@ struct GizmoTest : ui::Buildable
 				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
+					ui::imm::EditBool(useImmediate, "Use immediate");
 					ui::MakeWithText<ui::Header>("Gizmo");
-					ui::imm::PropEditFloat("Size", gizmoSize, {}, {}, { 0.001f, 200.0f });
-					ui::imm::PropDropdownMenuList("Size mode", gizmoSizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
+					ui::imm::PropEditFloat("Size", gizmoSettings.size, {}, {}, { 0.001f, 200.0f });
+					ui::imm::PropDropdownMenuList("Size mode", gizmoSettings.sizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
-						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmo.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
 					}
 					{
 						ui::LabeledProperty::Scope ps("Space");
-						ui::imm::RadioButton(gizmo.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmo.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmoSettings.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imm::RadioButton(gizmoSettings.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
+					}
+
+					if (useImmediate)
+					{
+						ui::imm::EditTransform(gizmoCont, ui::GizmoEditableMat4f(xf), gizmoSettings);
 					}
 				}
 				ui::Pop();
@@ -307,8 +423,15 @@ struct GizmoTest : ui::Buildable
 
 		RenderObject(ui::Mat4f::Scale(0.1f) * xf);
 
-		gizmo.SetTransform(xf.RemoveScale());
-		gizmo.Render(camera, gizmoSize, gizmoSizeMode);
+		if (useImmediate)
+		{
+			gizmoCont.Render(camera);
+		}
+		else
+		{
+			gizmo.settings = gizmoSettings;
+			gizmo.Render(camera, ui::GizmoEditableMat4f(xf));
+		}
 	}
 
 	void RenderObject(const ui::Mat4f& mtx)

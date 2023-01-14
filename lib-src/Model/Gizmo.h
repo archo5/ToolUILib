@@ -59,6 +59,7 @@ struct IGizmoEditable
 {
 	virtual void Backup(DataWriter& data) const = 0;
 	virtual void Transform(DataReader& data, const Mat4f* xf) = 0;
+	virtual Transform3Df GetGizmoLocation() const = 0;
 };
 
 struct GizmoEditablePosVec3f : IGizmoEditable
@@ -76,6 +77,10 @@ struct GizmoEditablePosVec3f : IGizmoEditable
 		if (xf)
 			pos = xf->TransformPoint(pos);
 	}
+	Transform3Df GetGizmoLocation() const override
+	{
+		return { pos };
+	}
 };
 
 struct GizmoEditableMat4f : IGizmoEditable
@@ -92,6 +97,10 @@ struct GizmoEditableMat4f : IGizmoEditable
 		data << mat4f;
 		if (xf)
 			mat4f = mat4f * *xf;
+	}
+	Transform3Df GetGizmoLocation() const override
+	{
+		return Transform3Df::FromMatrix(mat4f);
 	}
 };
 
@@ -158,31 +167,47 @@ enum class GizmoAction : uint8_t
 	RotateTrackpad = GAF_Axis_ScreenOrUniform | GAF_Shape_Trackpad | GAF_Mode_Rotate,
 };
 
+struct GizmoKeyDetect
+{
+	static constexpr const u8
+		None = 0,
+		Start = 1 << 0,
+		Exit = 1 << 1,
+		ModeSwitch = 1 << 2,
+		AxisSwitch = 1 << 3,
+		All = 0xf;
+};
+
 struct GizmoSettings
 {
-	float moveSlowdownFactor = 0.1f;
-	float moveSnapDist = 1;
-	float moveSlowSnapDist = 0.1f;
+	struct Edit
+	{
+		float moveSlowdownFactor = 0.1f;
+		float moveSnapDist = 1;
+		float moveSlowSnapDist = 0.1f;
 
-	float rotateSlowdownFactor = 1.0f / 15.0f;
-	float rotateSnapAngleDeg = 15;
-	float rotateSlowSnapAngleDeg = 1;
+		float rotateSlowdownFactor = 1.0f / 15.0f;
+		float rotateSnapAngleDeg = 15;
+		float rotateSlowSnapAngleDeg = 1;
 
-	float scaleSlowdownFactor = 0.1f;
-	float scaleSnapDist = 0.1f;
-	float scaleSlowSnapDist = 0.01f;
+		float scaleSlowdownFactor = 0.1f;
+		float scaleSnapDist = 0.1f;
+		float scaleSlowSnapDist = 0.01f;
+	}
+	edit;
+
+	GizmoType type = GizmoType::Move;
+	bool isWorldSpace = true;
+	bool visible = true;
+	u8 detectsKeys = GizmoKeyDetect::All;
+	float size = 100.0f;
+	GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixels;
 };
 
 struct Gizmo
 {
-	GizmoType type = GizmoType::Move;
-	bool isWorldSpace = true;
-	bool visible = true;
-	bool detectsKeys = true;
-
 	GizmoSettings settings;
 
-	Mat4f _xf = Mat4f::Identity();
 	Mat4f _combinedXF = Mat4f::Identity();
 	float _finalSize = 1;
 
@@ -196,13 +221,12 @@ struct Gizmo
 	float _totalAngleDiff = 0;
 	Point2f _origCenterWinPos = {};
 	Array<char> _origData;
-	Mat4f _origXF = Mat4f::Identity();
+	Transform3Df _origXF;
 
-	void SetTransform(const Mat4f& base);
 	void Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable);
 	// returns true if the event was processed (editable was modified or transforming started)
 	bool OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable);
-	void Render(const CameraBase& cam, float size = 100.0f, GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixels);
+	void Render(const CameraBase& cam, const IGizmoEditable& editable);
 };
 
 } // ui
