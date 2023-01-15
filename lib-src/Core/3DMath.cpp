@@ -352,6 +352,74 @@ Mat4f Mat4f::RemoveScale() const
 }
 
 
+Transform3Df Transform3Df::FromMatrixLossy(const Mat4f& m)
+{
+	return { m.GetTranslation(), m.GetRotationQuaternion() };
+}
+
+void Transform3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Transform3D");
+	OnField(oi, "position", position);
+	OnField(oi, "rotation", rotation);
+	oi.EndObject();
+}
+
+Transform3Df TransformLerp(const Transform3Df& a, const Transform3Df& b, float q)
+{
+	Transform3Df o;
+	o.position = ui::Vec3Lerp(a.position, b.position, q);
+	o.rotation = ui::QuatNLerp(a.rotation, b.rotation, q);
+	return o;
+}
+
+
+TransformScale3Df TransformScale3Df::FromMatrixLossy(const Mat4f& m)
+{
+	return { m.GetTranslation(), m.GetRotationQuaternion(), m.GetScale() };
+}
+
+void TransformScale3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "TransformScale3D");
+	OnField(oi, "position", position);
+	OnField(oi, "rotation", rotation);
+	OnField(oi, "scale", scale);
+	oi.EndObject();
+}
+
+Mat4f TransformScale3Df::ToMatrix() const
+{
+	return Mat4f::Scale(scale)
+		* Mat4f::Rotate(rotation)
+		* Mat4f::Translate(position);
+}
+
+TransformScale3Df TransformScale3Df::InvertedLossy() const
+{
+	return FromMatrixLossy(ToMatrix().Inverted());
+}
+
+TransformScale3Df TransformScale3Df::TransformLossy(const Mat4f& other) const
+{
+	return FromMatrixLossy(ToMatrix() * other);
+}
+
+TransformScale3Df TransformScale3Df::TransformLossy(const TransformScale3Df& other) const
+{
+	return TransformLossy(other.ToMatrix());
+}
+
+TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale3Df& b, float q)
+{
+	TransformScale3Df o;
+	o.position = ui::Vec3Lerp(a.position, b.position, q);
+	o.rotation = ui::QuatNLerp(a.rotation, b.rotation, q);
+	o.scale = ui::Vec3Lerp(a.scale, b.scale, q);
+	return o;
+}
+
+
 #if 0
 #include <stdio.h>
 #include <stdlib.h>

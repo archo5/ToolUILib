@@ -100,7 +100,49 @@ struct GizmoEditableMat4f : IGizmoEditable
 	}
 	Transform3Df GetGizmoLocation() const override
 	{
-		return Transform3Df::FromMatrix(mat4f);
+		return Transform3Df::FromMatrixLossy(mat4f);
+	}
+};
+
+struct GizmoEditableTransform3Df : IGizmoEditable
+{
+	Transform3Df& xform;
+
+	GizmoEditableTransform3Df(Transform3Df& x) : xform(x) {}
+	void Backup(DataWriter& data) const override
+	{
+		data << xform;
+	}
+	void Transform(DataReader& data, const Mat4f* xf) override
+	{
+		data << xform;
+		if (xf)
+			xform = xform * *xf;
+	}
+	Transform3Df GetGizmoLocation() const override
+	{
+		return xform;
+	}
+};
+
+struct GizmoEditableTransformScale3Df : IGizmoEditable
+{
+	TransformScale3Df& xform;
+
+	GizmoEditableTransformScale3Df(TransformScale3Df& x) : xform(x) {}
+	void Backup(DataWriter& data) const override
+	{
+		data << xform;
+	}
+	void Transform(DataReader& data, const Mat4f* xf) override
+	{
+		data << xform;
+		if (xf)
+			xform = xform.TransformLossy(*xf);
+	}
+	Transform3Df GetGizmoLocation() const override
+	{
+		return xform.WithoutScale();
 	}
 };
 

@@ -312,38 +312,68 @@ struct Transform3Df
 	UI_FORCEINLINE Transform3Df() {}
 	UI_FORCEINLINE Transform3Df(Vec3f p) : position(p) {}
 	UI_FORCEINLINE Transform3Df(Vec3f p, Quat r) : position(p), rotation(r) {}
+	static UI_FORCEINLINE Transform3Df Identity() { return {}; }
+	static Transform3Df FromMatrixLossy(const Mat4f& m);
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	inline Transform3Df Inverted() const
 	{
 		Quat ir = rotation.Inverted();
 		return { ir.Rotate(-position), ir };
 	}
-	inline Vec3f TransformPoint(Vec3f p) const
-	{
-		return rotation.Rotate(p) + position;
-	}
-	inline Vec3f TransformDir(Vec3f d) const
-	{
-		return rotation.Rotate(d);
-	}
+	inline Vec3f TransformPoint(Vec3f p) const { return rotation.Rotate(p) + position; }
+	inline Vec3f TransformDir(Vec3f d) const { return rotation.Rotate(d); }
 	inline Mat4f ToMatrix() const
 	{
 		return Mat4f::Rotate(rotation) * Mat4f::Translate(position);
 	}
-
-	static UI_FORCEINLINE Transform3Df Identity()
-	{
-		return {};
-	}
-	static inline Transform3Df FromMatrix(const Mat4f& m)
-	{
-		return { m.GetTranslation(), m.GetRotationQuaternion() };
-	}
 };
-inline Transform3Df operator * (Transform3Df a, Transform3Df b)
+inline Transform3Df operator * (const Transform3Df& a, const Transform3Df& b)
 {
 	return { b.TransformPoint(a.position), a.rotation * b.rotation };
 }
+inline Transform3Df operator * (const Transform3Df& a, const Mat4f& b)
+{
+	return { b.TransformPoint(a.position), a.rotation * b.GetRotationQuaternion() };
+}
+
+Transform3Df TransformLerp(const Transform3Df& a, const Transform3Df& b, float q);
+
+
+struct TransformScale3Df
+{
+	Vec3f position;
+	Quat rotation;
+	Vec3f scale = { 1, 1, 1 };
+
+	UI_FORCEINLINE TransformScale3Df(DoNotInitialize) :
+		position(DoNotInitialize{}),
+		rotation(DoNotInitialize{}),
+		scale(DoNotInitialize{})
+	{}
+	UI_FORCEINLINE TransformScale3Df() {}
+	UI_FORCEINLINE TransformScale3Df(Vec3f p) : position(p) {}
+	UI_FORCEINLINE TransformScale3Df(Vec3f p, Quat r) : position(p), rotation(r) {}
+	UI_FORCEINLINE TransformScale3Df(Vec3f p, Quat r, Vec3f s) : position(p), rotation(r), scale(s) {}
+	static UI_FORCEINLINE TransformScale3Df Identity() { return {}; }
+	static TransformScale3Df FromMatrixLossy(const Mat4f& m);
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
+
+	Transform3Df WithoutScale() const { return { position, rotation }; }
+	Mat4f ToMatrix() const;
+	TransformScale3Df InvertedLossy() const;
+	TransformScale3Df TransformLossy(const Mat4f& other) const;
+	TransformScale3Df TransformLossy(const TransformScale3Df& other) const;
+
+	inline Vec3f TransformPoint(Vec3f p) const { return rotation.Rotate(p * scale) + position; }
+	inline Vec3f TransformDir(Vec3f d) const { return rotation.Rotate(d * scale); }
+	inline Vec3f TransformNormalDir(Vec3f d) const { return rotation.Rotate(d / scale); }
+	inline Vec3f TransformDirNoScale(Vec3f d) const { return rotation.Rotate(d); }
+};
+
+TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale3Df& b, float q);
 
 
 struct Ray3f

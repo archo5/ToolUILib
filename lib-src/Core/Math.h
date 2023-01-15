@@ -180,6 +180,14 @@ template <class T> struct Range
 	UI_FORCEINLINE static Range Exact(T v) { return { v, v }; }
 	UI_FORCEINLINE static Range All() { return { Limits::lowest(), Limits::max() }; }
 
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Range");
+		OnField(oi, "min", min);
+		OnField(oi, "max", max);
+		oi.EndObject();
+	}
+
 	UI_FORCEINLINE T GetWidth() const { return max - min; }
 	UI_FORCEINLINE bool IsValid() const { return min <= max; }
 	UI_FORCEINLINE bool Contains(T v) const { return v >= min && v < max; }
