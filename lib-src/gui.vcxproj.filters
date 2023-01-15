@@ -142,6 +142,9 @@
     <ClCompile Include="Core\SerializationJSON.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\SerializationBKVT.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -341,6 +344,9 @@
       <Filter>ThirdParty</Filter>
     </ClInclude>
     <ClInclude Include="Core\SerializationJSON.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SerializationBKVT.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

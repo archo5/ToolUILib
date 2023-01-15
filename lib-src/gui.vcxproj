@@ -162,6 +162,7 @@
     <ClCompile Include="Core\Logging.cpp" />
     <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
+    <ClCompile Include="Core\SerializationBKVT.cpp" />
     <ClCompile Include="Core\SerializationJSON.cpp" />
     <ClCompile Include="Core\StaticID.cpp" />
     <ClCompile Include="Core\String.cpp" />
@@ -229,6 +230,7 @@
     <ClInclude Include="Core\Platform.h" />
     <ClInclude Include="Core\RefCounted.h" />
     <ClInclude Include="Core\Serialization.h" />
+    <ClInclude Include="Core\SerializationBKVT.h" />
     <ClInclude Include="Core\SerializationJSON.h" />
     <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\String.h" />
