@@ -2,7 +2,7 @@
 #include "Theme.h"
 
 #include "../Core/Logging.h"
-#include "../Core/Serialization.h"
+#include "../Core/SerializationJSON.h"
 #include "../Core/FileSystem.h"
 
 #include "../../ThirdParty/json.h"

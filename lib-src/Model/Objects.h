@@ -10,7 +10,6 @@
 
 #include "../Core/Array.h"
 #include "../Core/Math.h"
-#include "../Core/Serialization.h"
 #include "../Core/String.h"
 #include "../Core/Threading.h"
 #include "../Core/WeakPtr.h"

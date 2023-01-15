@@ -139,6 +139,9 @@
     <ClCompile Include="Core\VectorImage.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\SerializationJSON.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -336,6 +339,9 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\nanosvgrast.h">
       <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SerializationJSON.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -11,6 +11,7 @@
 #include "Core/Logging.h"
 #include "Core/Math.h"
 #include "Core/RefCounted.h"
+#include "Core/SerializationJSON.h"
 #include "Core/String.h"
 #include "Core/Threading.h"
 #include "Core/VectorImage.h"
