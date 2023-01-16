@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "../lib-src/Model/Native.h"
+#include "../lib-src/Core/SerializationBKVT.h"
 
 
 struct BasicEasingAnimTest : ui::Buildable
@@ -341,5 +342,176 @@ struct DirectoryChangeWatcherTest : EventsTest, ui::IDirectoryChangeListener
 void Test_DirectoryChangeWatcher()
 {
 	ui::Make<DirectoryChangeWatcherTest>();
+}
+
+
+namespace ui {
+double hqtime();
+} // ui
+struct SerializationSpeed : ui::Buildable
+{
+	struct Case1
+	{
+		struct Data
+		{
+			int integer;
+			unsigned unsignedInteger;
+			ui::i64 sixtyFourBitInteger;
+			ui::u64 sixtyFourBitUnsignedInteger;
+			float singlePrecisionfloatingPointNumber;
+			double doublePrecisionfloatingPointNumber;
+
+			void OnSerialize(ui::IObjectIterator& oi, const ui::FieldInfo& FI)
+			{
+				oi.BeginObject(FI, "Data");
+				ui::OnField(oi, "integer", integer);
+				ui::OnField(oi, "unsignedInteger", unsignedInteger);
+				ui::OnField(oi, "sixtyFourBitInteger", sixtyFourBitInteger);
+				ui::OnField(oi, "sixtyFourBitUnsignedInteger", sixtyFourBitUnsignedInteger);
+				ui::OnField(oi, "singlePrecisionfloatingPointNumber", singlePrecisionfloatingPointNumber);
+				ui::OnField(oi, "doublePrecisionfloatingPointNumber", doublePrecisionfloatingPointNumber);
+				oi.EndObject();
+			}
+
+			bool operator == (const Data& o) const
+			{
+				return integer == o.integer
+					&& unsignedInteger == o.unsignedInteger
+					&& sixtyFourBitInteger == o.sixtyFourBitInteger
+					&& sixtyFourBitUnsignedInteger == o.sixtyFourBitUnsignedInteger
+					&& singlePrecisionfloatingPointNumber == o.singlePrecisionfloatingPointNumber
+					&& doublePrecisionfloatingPointNumber == o.doublePrecisionfloatingPointNumber;
+			}
+		};
+
+		ui::Array<std::string> strings;
+		ui::Array<int> ints;
+		ui::Array<Data> datas;
+
+		void OnSerialize(ui::IObjectIterator& oi, const ui::FieldInfo& FI)
+		{
+			if (FI.NeedObject())
+				oi.BeginObject(FI, "Case1");
+
+			ui::OnField(oi, "strings", strings);
+			ui::OnField(oi, "ints", ints);
+			ui::OnField(oi, "datas", datas);
+
+			if (FI.NeedObject())
+				oi.EndObject();
+		}
+
+		bool operator == (const Case1& o) const
+		{
+			return strings == o.strings && ints == o.ints && datas == o.datas;
+		}
+
+		void Generate(int n)
+		{
+			strings.Clear();
+			ints.Clear();
+			datas.Clear();
+
+			for (int i = 0; i < n; i++)
+			{
+				int v = int(ui::i64(ui::hqtime()) * 1000) % 8999 + 1000;
+				strings.Append(ui::Format("%d", v));
+				ints.Append(v);
+				Data d = {};
+				{
+					d.integer = v;
+					d.unsignedInteger = v;
+					d.sixtyFourBitInteger = v;
+					d.sixtyFourBitUnsignedInteger = v;
+					d.singlePrecisionfloatingPointNumber = v;
+					d.doublePrecisionfloatingPointNumber = v;
+				}
+				datas.Append(d);
+			}
+		}
+	};
+
+	ui::Array<std::string> results;
+
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+		if (ui::imm::Button("Run tests"))
+			RunTests();
+		for (auto& r : results)
+			WText(r);
+		WPop();
+	}
+	void RunTests()
+	{
+		results.Clear();
+
+		Case1 case1;
+		case1.Generate(1000);
+
+		{
+			double t0 = ui::hqtime();
+			{
+				ui::JSONSerializerObjectIterator ser;
+				case1.OnSerialize(ser, {});
+				ser.GetData();
+			}
+			double t1 = ui::hqtime();
+			results.Append(ui::Format("case 1(1000) | JSON | serialize: %.2f ms", (t1 - t0) * 1000));
+		}
+		{
+			double t0 = ui::hqtime();
+			{
+				ui::BKVTSerializer ser;
+				case1.OnSerialize(ser, {});
+				ser.GetData(true);
+			}
+			double t1 = ui::hqtime();
+			results.Append(ui::Format("case 1(1000) | BKVT | serialize: %.2f ms", (t1 - t0) * 1000));
+		}
+
+		results.Append("-----");
+
+		{
+			ui::JSONSerializerObjectIterator ser;
+			case1.OnSerialize(ser, {});
+			auto& data = ser.GetData();
+			Case1 dest;
+
+			double t0 = ui::hqtime();
+			{
+				ui::JSONUnserializerObjectIterator uns;
+				if (!uns.Parse(data))
+					results.Append("JSON parse error");
+				dest.OnSerialize(uns, {});
+			}
+			double t1 = ui::hqtime();
+			if (!(case1 == dest))
+				results.Append("JSON parse output mismatch");
+			results.Append(ui::Format("case 1(1000) | JSON | UNserialize: %.2f ms", (t1 - t0) * 1000));
+		}
+		{
+			ui::BKVTSerializer ser;
+			case1.OnSerialize(ser, {});
+			auto data = ser.GetData(true);
+			Case1 dest;
+
+			double t0 = ui::hqtime();
+			{
+				ui::BKVTUnserializer uns;
+				if (!uns.Init(data, true))
+					results.Append("BKVT init error");
+				dest.OnSerialize(uns, {});
+			}
+			double t1 = ui::hqtime();
+			if (!(case1 == dest))
+				results.Append("BKVT parse output mismatch");
+			results.Append(ui::Format("case 1(1000) | BKVT | UNserialize: %.2f ms", (t1 - t0) * 1000));
+		}
+	}
+};
+void Test_SerializationSpeed()
+{
+	ui::Make<SerializationSpeed>();
 }
 

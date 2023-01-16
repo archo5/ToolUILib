@@ -364,7 +364,7 @@ bool operator == (const Array<T>& a, const Array<T>& b)
 	if (a.Size() != b.Size())
 		return false;
 	for (size_t i = 0; i < a.Size(); i++)
-		if (a[i] != b[i])
+		if (!(a[i] == b[i]))
 			return false;
 	return true;
 }

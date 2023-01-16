@@ -22,4 +22,14 @@
 	</Expand>
 </Type>
 
+<Type Name="ui::StringView">
+	<DisplayString>{{ size={_size} }}</DisplayString>
+	<Expand>
+		<ArrayItems>
+			<Size>_size</Size>
+			<ValuePointer>_data</ValuePointer>
+		</ArrayItems>
+	</Expand>
+</Type>
+
 </AutoVisualizer>

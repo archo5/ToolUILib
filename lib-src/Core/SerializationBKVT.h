@@ -53,7 +53,7 @@ enum class BKVT_Type : u8
 	S32,
 	U32,
 	F32,
-	// references value types
+	// external value reference types
 	S64,
 	U64,
 	F64,
@@ -153,7 +153,7 @@ struct BKVTLinearReader
 
 struct BKVTSerializer : BKVTLinearWriter, IObjectIterator
 {
-	unsigned GetFlags() const override { OI_TYPE_Serializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped | OIF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
@@ -177,12 +177,15 @@ struct BKVTSerializer : BKVTLinearWriter, IObjectIterator
 
 struct BKVTUnserializer : BKVTLinearReader, IObjectIterator
 {
-	unsigned GetFlags() const override { OI_TYPE_Unserializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OIF_KeyMapped | OIF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
 	size_t BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
+
+	bool HasMoreArrayElements() override;
+	bool HasField(const char* name) override;
 
 	void OnFieldBool(const FieldInfo& FI, bool& val) override;
 	void OnFieldS8(const FieldInfo& FI, i8& val) override;

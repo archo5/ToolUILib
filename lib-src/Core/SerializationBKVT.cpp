@@ -14,7 +14,7 @@ static To BitCast(From v)
 
 u32 BKVTLinearWriter::_AppendKey(const char* key)
 {
-	u32 ret = _data.Size();
+	u32 ret = _data.Size() - 4;
 	if (!key)
 		key = "";
 	size_t len = strlen(key);
@@ -28,7 +28,7 @@ u32 BKVTLinearWriter::_AppendKey(const char* key)
 
 u32 BKVTLinearWriter::_AppendMem(const void* mem, size_t size)
 {
-	u32 ret = _data.Size();
+	u32 ret = _data.Size() - 4;
 	_data.AppendMany((const char*)mem, size);
 	return ret;
 }
@@ -159,7 +159,8 @@ StringView BKVTLinearWriter::GetData(bool withPrefix)
 		u32 rootpos = _WriteAndRemoveTopObject();
 		memcpy(&_data[4], &rootpos, sizeof(rootpos));
 	}
-	return withPrefix ? _data : StringView(_data).substr(4);
+	StringView ret = _data;
+	return withPrefix ? ret : ret.substr(4);
 }
 
 
@@ -167,44 +168,73 @@ bool BKVTLinearReader::Init(StringView data, bool hasPrefix)
 {
 	if (!hasPrefix)
 	{
-		if (_data.Size() < 6)
+		if (data.Size() < 6)
 			return false; // min. valid size = 6 (pointer to root object + empty object)
 	}
 	else
 	{
 		if (!data.starts_with("BKVT"))
 			return false;
-		if (_data.Size() < 10)
+		if (data.Size() < 10)
 			return false;
 	}
 	_data = data.substr(4);
+	_stack.Append({ { _ReadU32(0), BKVT_Type::Object }, 0 });
 	return true;
 }
 
 bool BKVTLinearReader::HasMoreArrayElements()
 {
-	return _stack.NotEmpty()
-		&& _stack.Last().entry.type == BKVT_Type::Array
-		&& _stack.Last().curElemIndex < _ReadU32(_stack.Last().entry.pos);
+	if (_stack.IsEmpty())
+		return false;
+
+	auto& S = _stack.Last();
+	return S.entry.type == BKVT_Type::Array
+		&& S.curElemIndex < _ReadU32(S.entry.pos);
 }
 
 size_t BKVTLinearReader::GetCurrentArraySize()
 {
-	if (_stack.NotEmpty() && _stack.Last().entry.type == BKVT_Type::Array)
-		return _ReadU32(_stack.Last().entry.pos);
-	return 0;
+	if (_stack.IsEmpty())
+		return 0;
+
+	auto& S = _stack.Last();
+	if (S.entry.type != BKVT_Type::Array)
+		return 0;
+
+	return _ReadU32(_stack.Last().entry.pos);
 }
 
 BKVTLinearReader::EntryRef BKVTLinearReader::FindEntry(const char* key)
 {
-	if (_stack.NotEmpty() && _stack.Last().entry.type == BKVT_Type::Object)
+	if (_stack.IsEmpty())
+		return { 0, BKVT_Type::NotFound };
+
+	auto& S = _stack.Last();
+	if (S.entry.type == BKVT_Type::Array)
 	{
-		u32 pos = _stack.Last().entry.pos;
+		u32 idx = S.curElemIndex++;
+		u32 len = _ReadU32(S.entry.pos);
+		if (idx < len)
+		{
+			EntryRef e;
+			{
+				e.pos = _ReadU32(S.entry.pos + 4 + idx * 4);
+				e.type = BKVT_Type(_ReadU8(S.entry.pos + 4 + len * 4 + idx));
+			}
+			return e;
+		}
+	}
+	else if (S.entry.type == BKVT_Type::Object)
+	{
+		//StringView svkey = key;
+		u32 pos = S.entry.pos;
 		u32 num = _ReadU16(pos);
 		pos += 2;
 		for (u32 i = 0; i < num; i++)
 		{
-			if (_GetKeyString(_ReadU32(pos + i * 4)) == key)
+			//if (_GetKeyString(_ReadU32(pos + i * 4)) == svkey)
+			if (strcmp(_GetKeyString(_ReadU32(pos + i * 4)).Data(), key) == 0) // slightly faster than the other option
 			{
 				EntryRef e;
 				{
@@ -513,12 +543,22 @@ void BKVTUnserializer::EndObject()
 size_t BKVTUnserializer::BeginArray(size_t size, const FieldInfo& FI)
 {
 	BKVTLinearReader::BeginArray(FI.GetNameOrEmptyStr());
-	return 0;
+	return GetCurrentArraySize();
 }
 
 void BKVTUnserializer::EndArray()
 {
 	BKVTLinearReader::EndArray();
+}
+
+bool BKVTUnserializer::HasMoreArrayElements()
+{
+	return BKVTLinearReader::HasMoreArrayElements();
+}
+
+bool BKVTUnserializer::HasField(const char* name)
+{
+	return FindEntry(name).type != BKVT_Type::NotFound;
 }
 
 void BKVTUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
