@@ -131,7 +131,8 @@ std::string& JSONLinearWriter::GetData()
 {
 	while (_inArray.size())
 	{
-		_data += _inArray.Last() ? "\n]" : "\n}";
+		const char* end = _inArray.Last() ? "\n]" : "\n}";
+		_data += indent ? end : end + 1;
 		_inArray.RemoveLast();
 	}
 	return _data;
@@ -141,9 +142,12 @@ void JSONLinearWriter::_WriteIndent(bool skipComma)
 {
 	if (!skipComma && _data.back() != '{' && _data.back() != '[')
 		_data += ",";
-	_data += "\n";
-	for (size_t i = 0; i < _inArray.size(); i++)
-		_data += "\t";
+	if (indent)
+	{
+		_data += "\n";
+		for (size_t i = 0; i < _inArray.size(); i++)
+			_data += indent;
+	}
 }
 
 void JSONLinearWriter::_WritePrefix(const char* key)
@@ -153,7 +157,7 @@ void JSONLinearWriter::_WritePrefix(const char* key)
 	{
 		_data += "\"";
 		_data += key;
-		_data += "\": ";
+		_data += indent ? "\": " : "\":";
 		_starts.Last().weight += strlen(key) + 4;
 	}
 }
@@ -161,7 +165,7 @@ void JSONLinearWriter::_WritePrefix(const char* key)
 void JSONLinearWriter::_OnEndObject()
 {
 	_starts.Last().weight += 2;
-	if (_starts.Last().weight < 100U)
+	if (_starts.Last().weight < 100U && indent)
 	{
 		size_t dst = _starts.Last().start;
 		for (size_t src = _starts.Last().start; src < _data.size(); src++)

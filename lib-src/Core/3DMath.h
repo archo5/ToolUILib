@@ -57,6 +57,8 @@ struct Vec3f
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 3, &x))
+			return;
 		oi.BeginObject(FI, "Vec3");
 		OnField(oi, "x", x);
 		OnField(oi, "y", y);
@@ -111,6 +113,8 @@ struct Quat
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 4, &x))
+			return;
 		oi.BeginObject(FI, "Quat");
 		OnField(oi, "x", x);
 		OnField(oi, "y", y);
@@ -197,6 +201,11 @@ struct Mat4f
 			0, 0, 1, 0,
 			0, 0, 0, 1,
 		};
+	}
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		OnFieldMany(oi, FI, 16, a);
 	}
 
 	UI_FORCEINLINE static Mat4f Translate(const Vec3f& v) { return Translate(v.x, v.y, v.z); }

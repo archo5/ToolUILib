@@ -111,6 +111,8 @@ template <class T> struct Vec2
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 2, &x))
+			return;
 		oi.BeginObject(FI, "Vec2");
 		OnField(oi, "x", x);
 		OnField(oi, "y", y);
@@ -154,6 +156,8 @@ template <class T> struct Size2
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 2, &x))
+			return;
 		oi.BeginObject(FI, "Size2");
 		OnField(oi, "x", x);
 		OnField(oi, "y", y);
@@ -180,8 +184,13 @@ template <class T> struct Range
 	UI_FORCEINLINE static Range Exact(T v) { return { v, v }; }
 	UI_FORCEINLINE static Range All() { return { Limits::lowest(), Limits::max() }; }
 
+	UI_FORCEINLINE bool operator == (const Range& o) const { return min == o.min && max == o.max; }
+	UI_FORCEINLINE bool operator != (const Range& o) const { return min != o.min || max != o.max; }
+
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 2, &min))
+			return;
 		oi.BeginObject(FI, "Range");
 		OnField(oi, "min", min);
 		OnField(oi, "max", max);
@@ -215,6 +224,10 @@ template<class T> struct AABB2
 	static constexpr T MIN_VALUE = std::numeric_limits<T>::lowest();
 	static constexpr T MAX_VALUE = std::numeric_limits<T>::max();
 
+	UI_FORCEINLINE AABB2(DoNotInitialize) {}
+	UI_FORCEINLINE AABB2() : x0(0), y0(0), x1(0), y1(0) {}
+	UI_FORCEINLINE AABB2(T ax0, T ay0, T ax1, T ay1) : x0(ax0), y0(ay0), x1(ax1), y1(ay1) {}
+	UI_FORCEINLINE static AABB2 Zero() { return {}; }
 	UI_FORCEINLINE static AABB2 Empty() { return { MAX_VALUE, MAX_VALUE, MIN_VALUE, MIN_VALUE }; }
 	UI_FORCEINLINE static AABB2 All() { return { MIN_VALUE, MIN_VALUE, MAX_VALUE, MAX_VALUE }; }
 	UI_FORCEINLINE static AABB2 UniformBorder(T v) { return { v, v, v, v }; }
@@ -223,6 +236,10 @@ template<class T> struct AABB2
 	UI_FORCEINLINE static AABB2 FromCenterExtents(T x, T y, T ex, T ey) { return { x - ex, y - ey, x + ex, y + ey }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, T e) { return { c.x - e, c.y - e, c.x + e, c.y + e }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, Vec2<T> e) { return { c.x - e.x, c.y - e.y, c.x + e.x, c.y + e.y }; }
+
+	UI_FORCEINLINE bool operator == (const AABB2& o) const { return x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1; }
+	UI_FORCEINLINE bool operator != (const AABB2& o) const { return !(*this == o); }
+
 	UI_FORCEINLINE T GetWidth() const { return x1 - x0; }
 	UI_FORCEINLINE T GetHeight() const { return y1 - y0; }
 	UI_FORCEINLINE T GetAspectRatio() const { return y0 == y1 ? 1 : GetWidth() / GetHeight(); }
@@ -248,6 +265,8 @@ template<class T> struct AABB2
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
+		if (OnFieldMany(oi, FI, 4, &x0))
+			return;
 		oi.BeginObject(FI, "AABB2");
 		OnField(oi, "x0", x0);
 		OnField(oi, "y0", y0);

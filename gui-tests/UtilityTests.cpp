@@ -360,6 +360,8 @@ struct SerializationSpeed : ui::Buildable
 			ui::u64 sixtyFourBitUnsignedInteger;
 			float singlePrecisionfloatingPointNumber;
 			double doublePrecisionfloatingPointNumber;
+			ui::Vec2f vec2f;
+			ui::AABB2i aabb2i;
 
 			void OnSerialize(ui::IObjectIterator& oi, const ui::FieldInfo& FI)
 			{
@@ -370,6 +372,8 @@ struct SerializationSpeed : ui::Buildable
 				ui::OnField(oi, "sixtyFourBitUnsignedInteger", sixtyFourBitUnsignedInteger);
 				ui::OnField(oi, "singlePrecisionfloatingPointNumber", singlePrecisionfloatingPointNumber);
 				ui::OnField(oi, "doublePrecisionfloatingPointNumber", doublePrecisionfloatingPointNumber);
+				ui::OnField(oi, "vec2f", vec2f);
+				ui::OnField(oi, "aabb2i", aabb2i);
 				oi.EndObject();
 			}
 
@@ -380,7 +384,9 @@ struct SerializationSpeed : ui::Buildable
 					&& sixtyFourBitInteger == o.sixtyFourBitInteger
 					&& sixtyFourBitUnsignedInteger == o.sixtyFourBitUnsignedInteger
 					&& singlePrecisionfloatingPointNumber == o.singlePrecisionfloatingPointNumber
-					&& doublePrecisionfloatingPointNumber == o.doublePrecisionfloatingPointNumber;
+					&& doublePrecisionfloatingPointNumber == o.doublePrecisionfloatingPointNumber
+					&& vec2f == o.vec2f
+					&& aabb2i == o.aabb2i;
 			}
 		};
 
@@ -425,6 +431,8 @@ struct SerializationSpeed : ui::Buildable
 					d.sixtyFourBitUnsignedInteger = v;
 					d.singlePrecisionfloatingPointNumber = v;
 					d.doublePrecisionfloatingPointNumber = v;
+					d.vec2f = ui::Vec2f(v, v);
+					d.aabb2i = ui::AABB2i(v, v, v, v);
 				}
 				datas.Append(d);
 			}
@@ -450,30 +458,34 @@ struct SerializationSpeed : ui::Buildable
 		case1.Generate(1000);
 
 		{
+			size_t size = 0;
 			double t0 = ui::hqtime();
 			{
 				ui::JSONSerializerObjectIterator ser;
+				ser.indent = nullptr;
 				case1.OnSerialize(ser, {});
-				ser.GetData();
+				size = ser.GetData().size();
 			}
 			double t1 = ui::hqtime();
-			results.Append(ui::Format("case 1(1000) | JSON | serialize: %.2f ms", (t1 - t0) * 1000));
+			results.Append(ui::Format("case 1(1000) | JSON | serialize: %.2f ms (%zu bytes)", (t1 - t0) * 1000, size));
 		}
 		{
+			size_t size = 0;
 			double t0 = ui::hqtime();
 			{
 				ui::BKVTSerializer ser;
 				case1.OnSerialize(ser, {});
-				ser.GetData(true);
+				size = ser.GetData(true).Size();
 			}
 			double t1 = ui::hqtime();
-			results.Append(ui::Format("case 1(1000) | BKVT | serialize: %.2f ms", (t1 - t0) * 1000));
+			results.Append(ui::Format("case 1(1000) | BKVT | serialize: %.2f ms (%zu bytes)", (t1 - t0) * 1000, size));
 		}
 
 		results.Append("-----");
 
 		{
 			ui::JSONSerializerObjectIterator ser;
+			ser.indent = nullptr;
 			case1.OnSerialize(ser, {});
 			auto& data = ser.GetData();
 			Case1 dest;

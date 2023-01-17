@@ -18,7 +18,17 @@ struct JSONLinearWriter
 		size_t weight;
 	};
 
+	std::string _data;
+	Array<CompactScope> _starts;
+	Array<bool> _inArray;
+
+	// null = no indent or spacing
+	// other values = the specified string will be used for indentation ..
+	// .. but the output will also contain extra spacing/newlines
+	const char* indent = "\t";
+
 	JSONLinearWriter();
+
 	void WriteString(const char* key, StringView value);
 	void WriteNull(const char* key);
 	void WriteBool(const char* key, bool value);
@@ -28,6 +38,7 @@ struct JSONLinearWriter
 	void WriteInt(const char* key, uint64_t value);
 	void WriteFloat(const char* key, double value);
 	void WriteRawNumber(const char* key, StringView value);
+
 	void BeginArray(const char* key);
 	void EndArray();
 	void BeginDict(const char* key);
@@ -38,10 +49,6 @@ struct JSONLinearWriter
 	void _WriteIndent(bool skipComma = false);
 	void _WritePrefix(const char* key);
 	void _OnEndObject();
-
-	std::string _data;
-	Array<CompactScope> _starts;
-	Array<bool> _inArray;
 };
 
 enum JSONParseFlags
@@ -88,6 +95,9 @@ struct JSONLinearReader
 		json_array_element_s* curElem;
 	};
 
+	json_value_s* _root = nullptr;
+	Array<StackElement> _stack;
+
 	~JSONLinearReader();
 	void _Free();
 
@@ -109,9 +119,6 @@ struct JSONLinearReader
 	void EndDict();
 	void BeginEntry(Entry* E);
 	void EndEntry();
-
-	json_value_s* _root = nullptr;
-	Array<StackElement> _stack;
 };
 
 struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase

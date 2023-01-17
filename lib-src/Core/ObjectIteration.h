@@ -60,6 +60,7 @@ struct IObjectIterator
 	virtual void EndObject() = 0;
 	virtual size_t BeginArray(size_t size, const FieldInfo& FI) = 0;
 	virtual void EndArray() = 0;
+
 	virtual bool HasMoreArrayElements() { return false; }
 	virtual bool HasField(const char* name) { return true; }
 
@@ -74,8 +75,13 @@ struct IObjectIterator
 	virtual void OnFieldU64(const FieldInfo& FI, uint64_t& val) = 0;
 	virtual void OnFieldF32(const FieldInfo& FI, float& val) = 0;
 	virtual void OnFieldF64(const FieldInfo& FI, double& val) = 0;
-	virtual void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) { OnFieldBytes(FI, brw); }
+
+	virtual void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) = 0;
 	virtual void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) = 0;
+
+	// return true if serializing or if successfully unserialized (data had the expected type)
+	virtual bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) = 0;
+	virtual bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) = 0;
 
 	IUnserializeStorage* unserializeStorage = nullptr;
 
@@ -85,6 +91,20 @@ struct IObjectIterator
 	bool IsUnserializer() const { return (GetFlags() & ~OI_ALL_FLAGS) == OI_TYPE_Unserializer; }
 	bool IsBinary() const { return (GetFlags() & OIF_Binary) != 0; }
 	bool IsKeyMapped() const { return (GetFlags() & OIF_KeyMapped) != 0; }
+
+	template <class T>
+	void ImplManyCopy(u32 count, T* dst, ArrayView<T> src)
+	{
+		// only copy if the number of elements is exactly the same
+		//   otherwise it can be assumed that the data is not trivially transferable
+		//   in some cases (e.g. vec3 = [vec2 + z]) it might be..
+		//   but in others it would not be, e.g.:
+		//   - aabb3 = [aabb2.min, +zmin, aabb2.max, +zmax]
+		//   - mat4 = mat3 + 7 right/lower column elements
+		// > instead create a new key and if it doesn't unserialize and the old one does, manually upgrade from the old data
+		if (count == src.Size())
+			memcpy(dst, src.Data(), count * sizeof(*dst));
+	}
 };
 
 template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, T& val) { val.OnSerialize(oi, FI); }
@@ -99,6 +119,9 @@ inline void OnField(IObjectIterator& oi, const FieldInfo& FI, int64_t& val) { oi
 inline void OnField(IObjectIterator& oi, const FieldInfo& FI, uint64_t& val) { oi.OnFieldU64(FI, val); }
 inline void OnField(IObjectIterator& oi, const FieldInfo& FI, float& val) { oi.OnFieldF32(FI, val); }
 inline void OnField(IObjectIterator& oi, const FieldInfo& FI, double& val) { oi.OnFieldF64(FI, val); }
+
+inline bool OnFieldMany(IObjectIterator& oi, const FieldInfo& FI, u32 count, i32* arr) { return oi.OnFieldManyS32(FI, count, arr); }
+inline bool OnFieldMany(IObjectIterator& oi, const FieldInfo& FI, u32 count, float* arr) { return oi.OnFieldManyF32(FI, count, arr); }
 
 struct StdStringRW : IBufferRW
 {
@@ -354,6 +377,23 @@ struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); }
 
 	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); }
+
+	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override
+	{
+		BeginArray(count, FI);
+		for (u32 i = 0; i < count; i++)
+			OnFieldS32({}, arr[i]);
+		EndArray();
+		return true;
+	}
+	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override
+	{
+		BeginArray(count, FI);
+		for (u32 i = 0; i < count; i++)
+			OnFieldF32({}, arr[i]);
+		EndArray();
+		return true;
+	}
 };
 
 
@@ -368,6 +408,25 @@ struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint32_t>(tmp); }
 
 	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); val = static_cast<float>(tmp); }
+
+	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override
+	{
+		BeginArray(count, FI);
+		bool ret = HasMoreArrayElements();
+		for (u32 i = 0; i < count; i++)
+			OnFieldS32({}, arr[i]);
+		EndArray();
+		return ret;
+	}
+	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override
+	{
+		BeginArray(count, FI);
+		bool ret = HasMoreArrayElements();
+		for (u32 i = 0; i < count; i++)
+			OnFieldF32({}, arr[i]);
+		EndArray();
+		return ret;
+	}
 };
 
 
