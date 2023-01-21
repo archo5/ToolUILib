@@ -51,11 +51,11 @@ u32 BKVTLinearWriter::_AppendMem(const void* mem, size_t size)
 	return ret;
 }
 
-u32 BKVTLinearWriter::_AppendArray(size_t num, size_t esize, const void* data)
+u32 BKVTLinearWriter::_AppendArray(size_t num, size_t nbytes, const void* data)
 {
 	u32 slen = u32(num);
 	u32 spos = _AppendMem(&slen, sizeof(slen));
-	_data.AppendMany((const char*)data, num * esize);
+	_data.AppendMany((const char*)data, nbytes);
 	return spos;
 }
 
