@@ -43,7 +43,7 @@ void ProcGraphEditor_NodePin::Build()
 
 	auto tmpl = ple.GetSlotTemplate();
 	tmpl->measure = false;
-	auto* pap = Allocate<PointAnchoredPlacement>();
+	auto* pap = UI_BUILD_ALLOC(PointAnchoredPlacement)();
 	pap->pivot = { _pin.isOutput ? 0.5f : 0.5f, 0.5f };
 	pap->anchor = { _pin.isOutput ? 1.f : 0.f, 0.5f };
 	tmpl->placement = pap;

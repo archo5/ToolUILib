@@ -36,19 +36,19 @@ struct Calculator : ui::Buildable
 		auto& ple = ui::Push<ui::PlacementLayoutElement>();
 		auto tmpl = ple.GetSlotTemplate();
 
-		auto* rap_inputs = Allocate<ui::RectAnchoredPlacement>();
+		auto* rap_inputs = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 		rap_inputs->anchor = { 0, 0, 1, 0.1f };
 		tmpl->placement = rap_inputs;
 		ui::Make<ui::Textbox>().SetText(operation);
 
-		auto* rap_result = Allocate<ui::RectAnchoredPlacement>();
+		auto* rap_result = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 		rap_result->anchor = { 0, 0.1f, 1, 0.2f };
 		tmpl->placement = rap_result;
 		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		ui::Text("=" + ToString(Calculate()));
 		ui::Pop();
 
-		auto* rap_buttons = Allocate<ui::RectAnchoredPlacement>();
+		auto* rap_buttons = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 		rap_buttons->anchor = { 0, 0.2f, 1, 1 };
 		tmpl->placement = rap_buttons;
 		auto& btnple = ui::Push<ui::PlacementLayoutElement>();
@@ -57,7 +57,7 @@ struct Calculator : ui::Buildable
 
 		for (int i = 0; i < 15; i++)
 		{
-			auto* rap = Allocate<ui::RectAnchoredPlacement>();
+			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = calcOpAnchors[i];
 			tmpl->placement = rap;
 			if (ui::imm::Button(calcOpNames[i]))
@@ -68,7 +68,7 @@ struct Calculator : ui::Buildable
 
 		// =
 		{
-			auto* rap = Allocate<ui::RectAnchoredPlacement>();
+			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = CalcBoxButton(2, 4);
 			tmpl->placement = rap;
 			if (ui::imm::Button("="))
@@ -79,7 +79,7 @@ struct Calculator : ui::Buildable
 
 		// backspace
 		{
-			auto* rap = Allocate<ui::RectAnchoredPlacement>();
+			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = CalcBoxButton(2, 0);
 			tmpl->placement = rap;
 			if (ui::imm::Button("<"))

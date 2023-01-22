@@ -485,7 +485,7 @@ struct DragElementTest : ui::Buildable
 		auto& ple = ui::Push<ui::PlacementLayoutElement>();
 		auto tmpl = ple.GetSlotTemplate();
 
-		drelPlacement = Allocate<ui::PointAnchoredPlacement>();
+		drelPlacement = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 		drelPlacement->bias = drelPos;
 		tmpl->placement = drelPlacement;
 		auto& tp = ui::Push<ui::FrameElement>();

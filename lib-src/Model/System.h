@@ -276,11 +276,7 @@ bool LastIsNew();
 
 void RebuildCurrent();
 Buildable* GetCurrentBuildable();
-template <class T, class... Args> T* BuildAlloc(Args&&... args)
-{
-	return GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
-}
-#define UI_BUILD_ALLOC(T) new (::ui::GetCurrentBuildable()->NewT<T>()) T
+#define UI_BUILD_ALLOC(...) new (::ui::GetCurrentBuildable()->NewT<__VA_ARGS__>()) __VA_ARGS__
 template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(std::move(f)); }
 template <class MD, class F> void BuildMulticastDelegateAdd(MD& md, F&& f)
 {

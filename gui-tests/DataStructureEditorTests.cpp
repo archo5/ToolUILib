@@ -98,35 +98,35 @@ struct SequenceEditorsTest : ui::Buildable
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("Array<int>:");
-		SeqEdit(Allocate<ui::ArraySequence<decltype(arraydata)>>(arraydata), &arraysel);
+		SeqEdit(UI_BUILD_ALLOC(ui::ArraySequence<decltype(arraydata)>)(arraydata), &arraysel);
 		ui::Pop();
 
 		tmpl->placement = &parts[1];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::vector<int>:");
-		SeqEdit(Allocate<ui::StdSequence<decltype(vectordata)>>(vectordata), &vectorsel);
+		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(vectordata)>)(vectordata), &vectorsel);
 		ui::Pop();
 
 		tmpl->placement = &parts[2];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::list<int>:");
-		SeqEdit(Allocate<ui::StdSequence<decltype(listdata)>>(listdata), &listsel);
+		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(listdata)>)(listdata), &listsel);
 		ui::Pop();
 
 		tmpl->placement = &parts[3];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("std::deque<int>:");
-		SeqEdit(Allocate<ui::StdSequence<decltype(dequedata)>>(dequedata), &dequesel);
+		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(dequedata)>)(dequedata), &dequesel);
 		ui::Pop();
 
 		tmpl->placement = &parts[4];
 		tmpl->measure = false;
 		ui::Push<ui::StackTopDownLayoutElement>();
 		ui::Text("int[5]:");
-		SeqEdit(Allocate<ui::BufferSequence<int, uint8_t>>(bufdata, buflen), &bufsel);
+		SeqEdit(UI_BUILD_ALLOC(ui::BufferSequence<int, uint8_t>)(bufdata, buflen), &bufsel);
 		ui::Pop();
 
 		WPop(); // PlacementLayoutElement

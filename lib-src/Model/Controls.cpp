@@ -1052,7 +1052,7 @@ void DropdownMenu::Build()
 		Make<BackgroundBlocker>();
 
 		tmpl->measure = false;
-		tmpl->placement = Allocate<DropdownMenuPlacement>();
+		tmpl->placement = UI_BUILD_ALLOC(DropdownMenuPlacement)();
 		OnBuildMenuWithLayout();
 	}
 

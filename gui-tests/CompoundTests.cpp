@@ -616,21 +616,21 @@ struct ColorBlockTest : ui::Buildable
 			WMake<ui::FillerElement>();
 			WPop();
 
-			auto* partOC = Allocate<ui::RectAnchoredPlacement>();
+			auto* partOC = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			partOC->anchor.x1 = 0.5f;
 			partOC->bias.y1 = -4;
 			tmpl->placement = partOC;
 			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(C.GetOpaque()).RemoveFrameStyle();
 
-			auto* partC = Allocate<ui::RectAnchoredPlacement>();
+			auto* partC = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			partC->anchor.x0 = 0.5f;
 			partC->bias.y1 = -4;
 			tmpl->placement = partC;
 			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(C).RemoveFrameStyle();
 
-			auto* partOA = Allocate<ui::RectAnchoredPlacement>();
+			auto* partOA = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			partOA->anchor.x1 = C.a / 255.f;
 			partOA->anchor.y0 = 1;
 			partOA->bias.y0 = -4;
@@ -638,7 +638,7 @@ struct ColorBlockTest : ui::Buildable
 			tmpl->measure = false;
 			WMake<ui::ColorBlock>().SetColor(ui::Color4b::White()).RemoveFrameStyle();
 
-			auto* partTA = Allocate<ui::RectAnchoredPlacement>();
+			auto* partTA = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			partTA->anchor.x0 = C.a / 255.f;
 			partTA->anchor.y0 = 1;
 			partTA->bias.y0 = -4;

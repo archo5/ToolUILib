@@ -435,7 +435,7 @@ struct OpenCloseTest : ui::Buildable
 	void Build() override
 	{
 		static int counter = 0;
-		Allocate<AllocTest>(++counter);
+		UI_BUILD_ALLOC(AllocTest)(++counter);
 
 		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();

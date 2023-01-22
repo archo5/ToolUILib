@@ -571,7 +571,7 @@ struct TEST : ui::Buildable
 				if (scalePercent > 10) scalePercent -= 10; enableScale = true; Rebuild(); }));
 		}
 
-		Allocate<ui::TopMenu>(GetNativeWindow(), rootMenu);
+		UI_BUILD_ALLOC(ui::TopMenu)(GetNativeWindow(), rootMenu);
 #else
 		ui::Push<ui::MenuBarElement>();
 

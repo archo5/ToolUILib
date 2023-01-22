@@ -499,12 +499,6 @@ struct Buildable : WrapperElement
 		Defer([obj]() { delete static_cast<T*>(obj); });
 		return obj;
 	}
-	template <class T, class... Args> T* Allocate(Args&&... args)
-	{
-		T* obj = new T(std::forward<Args>(args)...);
-		Defer([obj]() { delete obj; });
-		return obj;
-	}
 
 	PersistentObjectList _objList;
 	uint64_t _lastBuildFrameID = 0;

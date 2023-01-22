@@ -251,7 +251,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::Push<ui::StackTopDownLayoutElement>();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
-			se.SetSequence(Allocate<ui::ArraySequence<decltype(fsw.filters)>>(fsw.filters));
+			se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(fsw.filters)>)(fsw.filters));
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* filter = static_cast<ui::FileSelectionWindow::Filter*>(ptr);
@@ -277,7 +277,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::Push<ui::StackTopDownLayoutElement>();
 		{
 			auto& se = ui::Make<ui::SequenceEditor>();
-			se.SetSequence(Allocate<ui::ArraySequence<decltype(fsw.selectedFiles)>>(fsw.selectedFiles));
+			se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(fsw.selectedFiles)>)(fsw.selectedFiles));
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* file = static_cast<std::string*>(ptr);

@@ -182,7 +182,7 @@ struct TE_ImageEditorNode : Buildable
 
 		auto& imged = Make<SequenceEditor>();
 		imged.itemLayoutPreset = EditorItemContentsLayoutPreset::None;
-		imged.SetSequence(Allocate<ArraySequence<decltype(tmpl->images)>>(tmpl->images));
+		imged.SetSequence(UI_BUILD_ALLOC(ArraySequence<decltype(tmpl->images)>)(tmpl->images));
 		imged.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 		{
 			EditImage(static_cast<std::shared_ptr<TE_Image>*>(ptr)->get(), se, idx, ptr);
@@ -322,7 +322,7 @@ struct TE_TemplateEditorNode : Buildable
 						if (showColors)
 						{
 							auto& ced = Make<SequenceEditor>();
-							ced.SetSequence(Allocate<ArraySequence<decltype(tmpl->colors)>>(tmpl->colors));
+							ced.SetSequence(UI_BUILD_ALLOC(ArraySequence<decltype(tmpl->colors)>)(tmpl->colors));
 							ced.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 							{
 								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
@@ -351,7 +351,7 @@ struct TE_ThemeEditorNode : Buildable
 		topMenu.Last().submenu.Append(MenuItem("New").Func([this]() { theme->Clear(); Rebuild(); }));
 		topMenu.Last().submenu.Append(MenuItem("Open").Func([this]() { theme->LoadFromFile("sample.ths"); Rebuild(); }));
 		topMenu.Last().submenu.Append(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
-		Allocate<TopMenu>(GetNativeWindow(), topMenu);
+		UI_BUILD_ALLOC(TopMenu)(GetNativeWindow(), topMenu);
 
 		auto& tp = Push<TabbedPanel>();
 		for (TE_Template* tmpl : theme->templates)

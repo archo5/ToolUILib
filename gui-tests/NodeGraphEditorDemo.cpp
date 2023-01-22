@@ -341,7 +341,7 @@ struct NodeGraphEditorDemo : ui::Buildable
 	}
 	void Build() override
 	{
-		ui::Make<ui::ProcGraphEditor>().Init(Allocate<GraphImpl>(&graph));
+		ui::Make<ui::ProcGraphEditor>().Init(UI_BUILD_ALLOC(GraphImpl)(&graph));
 	}
 
 	Graph graph;

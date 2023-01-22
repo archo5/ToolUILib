@@ -370,7 +370,7 @@ struct PlacementTest : ui::Buildable
 			});
 		if (showDropdown)
 		{
-			auto* pap = Allocate<ui::PointAnchoredPlacement>();
+			auto* pap = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 			pap->anchor = { 0, 1 };
 
 			auto tmpl = ple->GetSlotTemplate();

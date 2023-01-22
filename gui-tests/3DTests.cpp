@@ -335,7 +335,7 @@ struct GizmoTest : ui::Buildable
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
 
-				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
+				auto* leftTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
 				tmpl->measure = false;
@@ -360,7 +360,7 @@ struct GizmoTest : ui::Buildable
 				ui::Pop();
 				ui::Pop();
 
-				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
+				auto* rightTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
 				tmpl->measure = false;
@@ -371,7 +371,7 @@ struct GizmoTest : ui::Buildable
 					ui::imm::EditBool(useImmediate, "Use immediate");
 					ui::MakeWithText<ui::Header>("Gizmo");
 					ui::imm::PropEditFloat("Size", gizmoSettings.size, {}, {}, { 0.001f, 200.0f });
-					ui::imm::PropDropdownMenuList("Size mode", gizmoSettings.sizeMode, Allocate<ui::ZeroSepCStrOptionList>("Scene\0View normalized (Y)\0View pixels\0"));
+					ui::imm::PropDropdownMenuList("Size mode", gizmoSettings.sizeMode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
 						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
@@ -516,7 +516,7 @@ struct QuaternionTest : ui::Buildable
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
 
-				auto* leftTop = Allocate<ui::PointAnchoredPlacement>();
+				auto* leftTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 				leftTop->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftTop;
 				tmpl->measure = false;
@@ -533,7 +533,7 @@ struct QuaternionTest : ui::Buildable
 				ui::Pop();
 				ui::Pop();
 
-				auto* rightTop = Allocate<ui::PointAnchoredPlacement>();
+				auto* rightTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 				rightTop->SetAnchorAndPivot({ 1, 0 });
 				tmpl->placement = rightTop;
 				tmpl->measure = false;
