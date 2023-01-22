@@ -44,8 +44,14 @@ Vec3f Quat::ToEulerAnglesZYX() const
 
 Vec3f Quat::Rotate(Vec3f v) const
 {
-	Vec3f myvec(x, y, z);
+#if 0
+	Quat p(v.x, v.y, v.z, 0);
+	Quat r = Inverted() * p * *this;
+	return { r.x, r.y, r.z };
+#else
+	Vec3f myvec(-x, -y, -z);
 	return 2 * Vec3Dot(v, myvec) * myvec + (w * w - Vec3Dot(myvec, myvec)) * v + 2 * w * Vec3Cross(myvec, v);
+#endif
 }
 
 Quat Quat::Identity()
