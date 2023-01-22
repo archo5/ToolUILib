@@ -186,7 +186,7 @@ struct APL_Combiner : APLayer
 	}
 	void FullUI() override
 	{
-		imm::PropDropdownMenuList("Mode", mode, BuildAlloc<ZeroSepCStrOptionList>("Union\0Intersect\0Subtract\0"));
+		imm::PropDropdownMenuList("Mode", mode, UI_BUILD_ALLOC(ZeroSepCStrOptionList)("Union\0Intersect\0Subtract\0"));
 		imm::PropEditBool("Invert", invert);
 	}
 	APLayer* CloneBase() override
@@ -399,7 +399,7 @@ struct AnimPattern : ITree
 		}
 		Pop();
 
-		auto* cv = BuildAlloc<Sequence01CurveView>();
+		auto* cv = UI_BUILD_ALLOC(Sequence01CurveView)();
 		cv->curve = &globalSettings.curves[curCurve];
 		auto& ced = Make<CurveEditorElement>();
 		ced.curveView = cv;

@@ -467,6 +467,16 @@ struct DataCategoryTag {};
 
 constexpr auto ANY_ITEM = uintptr_t(-1);
 
+// a way to call operator new if it exists
+namespace _ {
+template<class T, class = void> struct has_operator_new : std::false_type {};
+template<class T> struct has_operator_new<T, decltype(T::operator new)> : std::true_type {};
+
+template <class T> UI_FORCEINLINE void* CallNew_DefSize(std::false_type) { return operator new(sizeof(T)); }
+template <class T> UI_FORCEINLINE void* CallNew_DefSize(std::true_type) { return T::operator new(sizeof(T)); }
+template <class T> UI_FORCEINLINE void* CallNew_DefSize() { return CallNew_DefSize<T>(has_operator_new<T>()); }
+} // _
+
 struct Buildable : WrapperElement
 {
 	void PO_ResetConfiguration() override; // IPersistentObject
@@ -482,6 +492,12 @@ struct Buildable : WrapperElement
 	void Defer(std::function<void()>&& fn)
 	{
 		_deferredDestructors.Append(std::move(fn));
+	}
+	template <class T> void* NewT()
+	{
+		void* obj = _::CallNew_DefSize<T>();
+		Defer([obj]() { delete static_cast<T*>(obj); });
+		return obj;
 	}
 	template <class T, class... Args> T* Allocate(Args&&... args)
 	{

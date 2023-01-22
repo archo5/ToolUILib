@@ -810,7 +810,7 @@ struct IMGUITest : ui::Buildable
 			ui::LabeledProperty::End();
 		}
 		{
-			ui::imm::PropDropdownMenuList("dropdown", intFmt, ui::BuildAlloc<ui::ZeroSepCStrOptionList>("Decimal\0Hex\0"));
+			ui::imm::PropDropdownMenuList("dropdown", intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
 		}
 
 		{

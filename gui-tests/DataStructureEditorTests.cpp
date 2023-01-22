@@ -967,7 +967,7 @@ struct CurveEditorTest : ui::Buildable
 		WPush<ui::SizeConstraintElement>().SetHeight(50);
 		auto& ce3 = ui::Make<ui::CurveEditorElement>();
 		WPop();
-		auto* s01cv = ui::BuildAlloc<ui::Sequence01CurveView>();
+		auto* s01cv = UI_BUILD_ALLOC(ui::Sequence01CurveView)();
 		s01cv->curve = &sequence01Curve;
 		ce3.curveView = s01cv;
 		ce3.viewport = { 0, 0, 5, 1 };
@@ -975,7 +975,7 @@ struct CurveEditorTest : ui::Buildable
 		WPush<ui::SizeConstraintElement>().SetHeight(200);
 		auto& ce2 = ui::Make<ui::CurveEditorElement>();
 		WPop();
-		auto* cnrcv = ui::BuildAlloc<ui::CubicNormalizedRemapCurveView>();
+		auto* cnrcv = UI_BUILD_ALLOC(ui::CubicNormalizedRemapCurveView)();
 		cnrcv->curve = &cubicNormalizedRemapCurve;
 		ce2.curveView = cnrcv;
 

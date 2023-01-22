@@ -31,7 +31,7 @@ struct The3DViewTest : ui::Buildable
 			{
 				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
 
-				auto* leftCorner = ui::BuildAlloc<ui::PointAnchoredPlacement>();
+				auto* leftCorner = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 				leftCorner->SetAnchorAndPivot({ 0, 0 });
 				tmpl->placement = leftCorner;
 				tmpl->measure = false;

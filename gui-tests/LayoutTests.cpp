@@ -298,7 +298,7 @@ struct PlacementTest : ui::Buildable
 
 		if (open)
 		{
-			auto* pap = ui::BuildAlloc<ui::PointAnchoredPlacement>();
+			auto* pap = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
 			pap->SetAnchorAndPivot({ 0, 0 });
 			pap->bias = { -5, -5 };
 

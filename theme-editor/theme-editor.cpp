@@ -230,7 +230,7 @@ struct TE_ImageEditorNode : Buildable
 
 					auto& coed = Make<SequenceEditor>();
 					// TODO making Allocate automatically work in the current node would avoid this bug (Allocate instead of GetCurrentNode()->)
-					coed.SetSequence(ui::BuildAlloc<ArraySequence<decltype(ovr->colorOverrides)>>(ovr->colorOverrides));
+					coed.SetSequence(UI_BUILD_ALLOC(ArraySequence<decltype(ovr->colorOverrides)>)(ovr->colorOverrides));
 					coed.itemUICallback = [](SequenceEditor* se, size_t idx, void* ptr)
 					{
 						auto& co = *static_cast<TE_ColorOverride*>(ptr);

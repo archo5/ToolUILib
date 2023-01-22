@@ -280,6 +280,7 @@ template <class T, class... Args> T* BuildAlloc(Args&&... args)
 {
 	return GetCurrentBuildable()->Allocate<T, Args...>(std::forward<Args>(args)...);
 }
+#define UI_BUILD_ALLOC(T) new (::ui::GetCurrentBuildable()->NewT<T>()) T
 template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(std::move(f)); }
 template <class MD, class F> void BuildMulticastDelegateAdd(MD& md, F&& f)
 {
