@@ -201,8 +201,9 @@ template <class T> struct Range
 	UI_FORCEINLINE bool IsValid() const { return min <= max; }
 	UI_FORCEINLINE bool Contains(T v) const { return v >= min && v < max; }
 	UI_FORCEINLINE bool Overlaps(const Range& o) const { return min < o.max && o.min < max; }
-	UI_FORCEINLINE Range Intersect(const Range& o) const { return { ::ui::max(min, o.min), ::ui::min(max, o.max) }; }
-	Range Add(T o)
+	inline Range Intersect(const Range& o) const { return { ::ui::max(min, o.min), ::ui::min(max, o.max) }; }
+	inline Range LimitTo(const Range& limit) const { return { limit.Clamp(min), limit.Clamp(max) }; }
+	Range Add(T o) const
 	{
 		Range r = *this;
 		if (r.min < Limits::max())
@@ -211,7 +212,7 @@ template <class T> struct Range
 			r.max += o;
 		return r;
 	}
-	UI_FORCEINLINE T Clamp(T val) { return clamp(val, min, max); }
+	UI_FORCEINLINE T Clamp(T val) const { return clamp(val, min, max); }
 };
 
 using Rangef = Range<float>;

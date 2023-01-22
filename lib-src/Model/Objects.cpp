@@ -824,14 +824,14 @@ Rangef SizeConstraintElement::CalcEstimatedWidth(const Size2f& containerSize, Es
 {
 	if (widthRange.min >= widthRange.max)
 		return widthRange;
-	return WrapperElement::CalcEstimatedWidth(containerSize, type).Intersect(widthRange);
+	return WrapperElement::CalcEstimatedWidth(containerSize, type).LimitTo(widthRange);
 }
 
 Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (heightRange.min >= heightRange.max)
 		return heightRange;
-	return WrapperElement::CalcEstimatedHeight(containerSize, type).Intersect(heightRange);
+	return WrapperElement::CalcEstimatedHeight(containerSize, type).LimitTo(heightRange);
 }
 
 

@@ -941,6 +941,7 @@ struct DropdownTest : ui::Buildable
 	ui::RectAnchoredPlacement parts[2];
 	uintptr_t sel3opts = 1;
 	uintptr_t selPtr = uintptr_t(&typeid(ui::Buildable));
+	uintptr_t selLON = 1;
 	const type_info* selPtrReal = &typeid(ui::Buildable);
 
 	void Build() override
@@ -963,19 +964,22 @@ struct DropdownTest : ui::Buildable
 			WMake<SpecificDropdownMenu>();
 
 			WText("[zssl] unlimited options");
-			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
+			MenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("First\0Second\0Third\0"));
 			WText("[zssl] limited options");
-			MenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>(2, "First\0Second"));
+			MenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)(2, "First\0Second"));
 
 			static const char* options[] = { "First", "Second", "Third", nullptr };
 
 			WText("[sa] unlimited options");
-			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(options));
+			MenuList(sel3opts, UI_BUILD_ALLOC(ui::CStrArrayOptionList)(options));
 			WText("[sa] limited options");
-			MenuList(sel3opts, Allocate<ui::CStrArrayOptionList>(2, options));
+			MenuList(sel3opts, UI_BUILD_ALLOC(ui::CStrArrayOptionList)(2, options));
 
 			WText("custom pointer options");
-			MenuList(selPtr, Allocate<TypeInfoOptions>());
+			MenuList(selPtr, UI_BUILD_ALLOC(TypeInfoOptions)());
+
+			WText("lots of options");
+			MenuList(selLON, UI_BUILD_ALLOC(LotsOfOptions)());
 		}
 		WPop();
 
@@ -984,8 +988,8 @@ struct DropdownTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WText("immediate mode");
-			ui::imm::DropdownMenuList(sel3opts, Allocate<ui::ZeroSepCStrOptionList>("First\0Second\0Third\0"));
-			ui::imm::DropdownMenuList(selPtrReal, Allocate<TypeInfoOptions>());
+			ui::imm::DropdownMenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("First\0Second\0Third\0"));
+			ui::imm::DropdownMenuList(selPtrReal, UI_BUILD_ALLOC(TypeInfoOptions)());
 
 			WPush<ui::PropertyList>();
 			{
@@ -1065,6 +1069,21 @@ struct DropdownTest : ui::Buildable
 		void BuildElement(const void* ptr, uintptr_t id, bool list)
 		{
 			WText(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
+		}
+	};
+
+	struct LotsOfOptions : ui::OptionList
+	{
+		void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+		{
+			for (size_t i = 0; i < count && i + from < 1000; i++)
+			{
+				fn(nullptr, i + from);
+			}
+		}
+		void BuildElement(const void* ptr, uintptr_t id, bool list) override
+		{
+			WText(ui::Format("%d", int(id)));
 		}
 	};
 };
