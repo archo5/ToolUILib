@@ -212,7 +212,7 @@ class NativeWindowNode : public Buildable
 {
 public:
 	void Build() override {}
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 

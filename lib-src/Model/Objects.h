@@ -179,6 +179,27 @@ struct UIObjectIteratorData
 	uintptr_t data0;
 };
 
+enum class EstSizeType
+{
+	Exact,
+	Expanding,
+};
+
+struct LayoutInfo
+{
+	enum
+	{
+		FillH = 1 << 0,
+		FillV = 1 << 1,
+	};
+
+	uint8_t flags;
+
+	UI_FORCEINLINE LayoutInfo WithoutFillH() const { return { u8(flags & ~FillH) }; }
+	UI_FORCEINLINE LayoutInfo WithoutFillV() const { return { u8(flags & ~FillV) }; }
+	UI_FORCEINLINE LayoutInfo WithoutAnyFill() const { return { u8(flags & ~(FillH | FillV)) }; }
+};
+
 struct UIObject : IPersistentObject
 {
 	UIObject();
@@ -221,10 +242,11 @@ struct UIObject : IPersistentObject
 	void RootPaint();
 	virtual void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx);
 
-	void PerformLayout(const UIRect& rect);
+	void PerformLayout(const UIRect& rect, LayoutInfo info);
+	void ApplyLayoutInfo(const UIRect& rectFromChild, const UIRect& layoutRect, LayoutInfo info);
 	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) = 0;
 	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) = 0;
-	virtual void OnLayout(const UIRect& rect) = 0;
+	virtual void OnLayout(const UIRect& rect, LayoutInfo info) = 0;
 	virtual void OnLayoutChanged() {}
 	virtual void RedoLayout();
 
@@ -311,6 +333,8 @@ struct UIObject : IPersistentObject
 	UIRect _finalRect = {}; // @ 8p7
 
 	// total size: 24p7 (52/80)
+
+	LayoutInfo _rcvdLayoutInfo = {};
 };
 
 struct UIObjectIterator
@@ -350,7 +374,7 @@ struct UIObjectNoChildren : UIObject
 	void OnPaint(const UIPaintContext& ctx) override {}
 	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
 
-	void OnLayout(const UIRect& rect) override { _finalRect = rect; }
+	void OnLayout(const UIRect& rect, LayoutInfo info) override { _finalRect = rect; }
 };
 
 struct UIObjectSingleChild : UIObject
@@ -375,14 +399,14 @@ struct WrapperElement : UIObjectSingleChild
 {
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct FillerElement : UIObjectSingleChild
 {
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct SizeConstraintElement : WrapperElement
@@ -460,7 +484,7 @@ struct ChildScaleOffsetElement : WrapperElement
 	Point2f LocalToChildPoint(Point2f pos) const override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct DataCategoryTag {};
@@ -484,7 +508,7 @@ struct Buildable : WrapperElement
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	virtual void Build() = 0;
 	void Rebuild();

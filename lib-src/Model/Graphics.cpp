@@ -215,7 +215,7 @@ Rangef ImageElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeTyp
 	}
 }
 
-void ImageElement::OnLayout(const UIRect& rect)
+void ImageElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	_finalRect = rect;
 }

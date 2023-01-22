@@ -23,7 +23,7 @@ struct SplitPane : UIObject
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	void SlotIterator_Init(UIObjectIteratorData& data) override;
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override;

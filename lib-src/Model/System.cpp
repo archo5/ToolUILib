@@ -435,7 +435,7 @@ void InlineFrame::OnLayoutChanged()
 {
 	if (_frameContents &&
 		_frameContents->container.rootBuildable)
-		_frameContents->container.rootBuildable->PerformLayout(GetFinalRect());
+		_frameContents->container.rootBuildable->PerformLayout(GetFinalRect(), _rcvdLayoutInfo);
 }
 
 void InlineFrame::SetFrameContents(FrameContents* contents)

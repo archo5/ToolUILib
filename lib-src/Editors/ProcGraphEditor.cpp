@@ -321,7 +321,7 @@ struct ProcGraphLayoutElement : LayoutElement<ProcGraphLayoutElement_Slot>
 	{
 		return Rangef::Exact(containerSize.y);
 	}
-	void OnLayout(const UIRect& rect) override
+	void OnLayout(const UIRect& rect, LayoutInfo info) override
 	{
 		auto rectSize = rect.GetSize();
 		for (auto& slot : _slots)
@@ -330,7 +330,7 @@ struct ProcGraphLayoutElement : LayoutElement<ProcGraphLayoutElement_Slot>
 			auto pos = PGE->_graph->GetNodePosition(N->_node) + PGE->viewOffset + rect.GetMin();
 			auto wr = N->CalcEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
 			auto hr = N->CalcEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
-			N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min });
+			N->PerformLayout({ pos.x, pos.y, pos.x + wr.min, pos.y + hr.min }, info.WithoutAnyFill());
 		}
 		_finalRect = rect;
 	}

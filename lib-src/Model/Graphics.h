@@ -82,7 +82,7 @@ struct ImageElement : UIObjectSingleChild
 	void OnPaint(const UIPaintContext& ctx) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	ImageElement& SetImage(draw::IImage* img);
 	ImageElement& SetPath(StringView path);

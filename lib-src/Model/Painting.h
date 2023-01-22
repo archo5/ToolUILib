@@ -23,12 +23,6 @@ enum class Presence : uint8_t
 	None,
 };
 
-enum class EstSizeType
-{
-	Exact,
-	Expanding,
-};
-
 struct IPlacement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const = 0;

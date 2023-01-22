@@ -338,7 +338,7 @@ Rangef SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType t
 	return Rangef::Exact(containerSize.y);
 }
 
-void SplitPane::OnLayout(const UIRect& rect)
+void SplitPane::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	_finalRect = rect;
 
@@ -358,7 +358,7 @@ void SplitPane::OnLayout(const UIRect& rect)
 			split++;
 			r.x0 = prevEdge;
 			r.x1 = sr.x0;
-			ch->PerformLayout(r);
+			ch->PerformLayout(r, info);
 			prevEdge = sr.x1;
 		}
 	}
@@ -373,7 +373,7 @@ void SplitPane::OnLayout(const UIRect& rect)
 			split++;
 			r.y0 = prevEdge;
 			r.y1 = sr.y0;
-			ch->PerformLayout(r);
+			ch->PerformLayout(r, info);
 			prevEdge = sr.y1;
 		}
 	}

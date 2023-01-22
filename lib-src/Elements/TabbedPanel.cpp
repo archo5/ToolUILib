@@ -399,7 +399,7 @@ Rangef TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType
 	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void TabbedPanel::OnLayout(const UIRect& rect)
+void TabbedPanel::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto btnRectSize = rect.GetSize(); // TODO use only the part that will be used for buttons?
 	auto subr = rect;
@@ -427,7 +427,7 @@ void TabbedPanel::OnLayout(const UIRect& rect)
 		{
 			float xbase = x0 + style.tabButtonPadding.x0;
 			UIRect trect = { xbase, y0, xbase + tab._contentWidth, y1 };
-			tab.obj->PerformLayout(trect);
+			tab.obj->PerformLayout(trect, info.WithoutAnyFill());
 		}
 
 		float tw = tab._contentWidth + style.tabButtonPadding.x0 + style.tabButtonPadding.x1;
@@ -440,12 +440,12 @@ void TabbedPanel::OnLayout(const UIRect& rect)
 	if (_tabBarExtension)
 	{
 		UIRect xrect = { x0, y0, x1, y1 };
-		_tabBarExtension->PerformLayout(xrect);
+		_tabBarExtension->PerformLayout(xrect, info.WithoutFillV());
 	}
 
 	if (_child)
 	{
-		_child->PerformLayout(subr);
+		_child->PerformLayout(subr, info.WithoutFillV());
 	}
 	_finalRect = rect;
 }

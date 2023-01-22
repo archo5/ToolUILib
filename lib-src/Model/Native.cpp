@@ -1301,7 +1301,7 @@ void NativeMainWindow::OnClose()
 }
 
 
-void NativeWindowNode::OnLayout(const UIRect& rect)
+void NativeWindowNode::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	_finalRect = {};
 }
@@ -1472,7 +1472,7 @@ struct Inspector : NativeDialogWindow
 		{
 			return Rangef::Exact(containerSize.y);
 		}
-		void OnLayout(const ui::UIRect& rect) override
+		void OnLayout(const ui::UIRect& rect, LayoutInfo info) override
 		{
 			_finalRect = rect;
 		}

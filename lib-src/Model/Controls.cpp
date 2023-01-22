@@ -111,12 +111,12 @@ Rangef FrameElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeTyp
 	return (_child ? Rangef::AtLeast(_child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type).min) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void FrameElement::OnLayout(const UIRect& rect)
+void FrameElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto padsub = rect.ShrinkBy(frameStyle.padding);
 	if (_child)
 	{
-		_child->PerformLayout(padsub);
+		_child->PerformLayout(padsub, info);
 		_finalRect = _child->GetFinalRect().ExtendBy(frameStyle.padding);
 	}
 	else
@@ -196,7 +196,7 @@ Rangef IconElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType
 	return Rangef::Exact(style.size.y);
 }
 
-void IconElement::OnLayout(const UIRect& rect)
+void IconElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	_finalRect = rect;
 }
@@ -283,7 +283,7 @@ Rangef Button::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type
 	return Rangef::AtLeast(FrameElement::CalcEstimatedHeight(containerSize, type).min);
 }
 
-void Button::OnLayout(const UIRect& rect)
+void Button::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	if (_child)
 	{
@@ -294,7 +294,7 @@ void Button::OnLayout(const UIRect& rect)
 		float ox = roundf((rSize.x - minw) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
-		_child->PerformLayout(fr);
+		_child->PerformLayout(fr, info);
 	}
 	_finalRect = rect;
 }
@@ -412,7 +412,7 @@ void StateButtonSkin::OnReset()
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 }
 
-void StateButtonSkin::OnLayout(const UIRect& rect)
+void StateButtonSkin::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	if (_child)
 	{
@@ -423,7 +423,7 @@ void StateButtonSkin::OnLayout(const UIRect& rect)
 		float ox = roundf((rSize.x - minw) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
-		_child->PerformLayout(fr);
+		_child->PerformLayout(fr, info);
 	}
 	_finalRect = rect;
 }
@@ -504,13 +504,13 @@ Rangef ProgressBar::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType
 	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void ProgressBar::OnLayout(const UIRect& rect)
+void ProgressBar::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto padsub = rect.ShrinkBy(style.padding);
 	if (_child)
 	{
-		_child->PerformLayout(padsub);
-		_finalRect = _child->GetFinalRect().ExtendBy(style.padding);
+		_child->PerformLayout(padsub, info);
+		ApplyLayoutInfo(_child->GetFinalRect().ExtendBy(style.padding), rect, info);
 	}
 	else
 	{
@@ -635,14 +635,14 @@ void PropertyList::OnReset()
 	defaultLabelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
 }
 
-void PropertyList::OnLayout(const UIRect& rect)
+void PropertyList::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	float splitPosR = ResolveUnits(splitPos, rect.GetWidth());
 	float minSplitPosR = ResolveUnits(minSplitPos, rect.GetWidth());
 	float finalSplitPosR = max(splitPosR, minSplitPosR);
 	_calcSplitX = roundf(finalSplitPosR + rect.x0);
 
-	WrapperElement::OnLayout(rect);
+	WrapperElement::OnLayout(rect, info);
 }
 
 
@@ -731,7 +731,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		_child->Paint(ctx);
 }
 
-void LabeledProperty::OnLayout(const UIRect& rect)
+void LabeledProperty::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	if (!_labelText.empty())
 	{
@@ -757,7 +757,7 @@ void LabeledProperty::OnLayout(const UIRect& rect)
 	{
 		UIRect r = rect;
 		r.x0 = _lastSepX;
-		_child->PerformLayout(r);
+		_child->PerformLayout(r, info);
 	}
 	_finalRect = rect;
 }
@@ -927,7 +927,7 @@ void ScrollArea::OnPaint(const UIPaintContext& ctx)
 {
 	if (draw::PushScissorRectIfNotEmpty(GetFinalRect()))
 	{
-		FillerElement::OnPaint(ctx);
+		WrapperElement::OnPaint(ctx);
 
 		draw::PopScissorRect();
 	}
@@ -956,7 +956,7 @@ void ScrollArea::OnEvent(Event& e)
 	}
 }
 
-void ScrollArea::OnLayout(const UIRect& rect)
+void ScrollArea::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto realContSize = rect.GetSize();
 
@@ -978,13 +978,13 @@ void ScrollArea::OnLayout(const UIRect& rect)
 	auto crect = r;
 	crect.y1 = crect.y0 + estContentSize.y;
 	if (_child)
-		_child->PerformLayout(crect);
+		_child->PerformLayout(crect, info);
 	_finalRect = rect;
 }
 
 void ScrollArea::OnReset()
 {
-	FillerElement::OnReset();
+	WrapperElement::OnReset();
 
 	sbv.OnReset();
 }
@@ -1010,9 +1010,9 @@ void BackgroundBlocker::OnEvent(Event& e)
 	}
 }
 
-void BackgroundBlocker::OnLayout(const UIRect& rect)
+void BackgroundBlocker::OnLayout(const UIRect& rect, LayoutInfo info)
 {
-	FillerElement::OnLayout({ 0, 0, system->eventSystem.width, system->eventSystem.height });
+	FillerElement::OnLayout({ 0, 0, system->eventSystem.width, system->eventSystem.height }, { LayoutInfo::FillH | LayoutInfo::FillV });
 }
 
 void BackgroundBlocker::OnButton()
@@ -1102,10 +1102,14 @@ void DropdownMenu::OnBuildMenuWithLayout()
 UIObject& DropdownMenu::OnBuildMenu()
 {
 	auto& ret = Push<ListBoxFrame>();
+	Push<SizeConstraintElement>().SetMaxHeight(200);
+	Push<ScrollArea>();
 	Push<StackTopDownLayoutElement>();
 
 	OnBuildMenuContents();
 
+	Pop();
+	Pop();
 	Pop();
 	Pop();
 	return ret;

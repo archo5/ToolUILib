@@ -419,19 +419,45 @@ void UIObject::OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContex
 		next->child->OnPaintSingleChild(next->next, ctx);
 }
 
-void UIObject::PerformLayout(const UIRect& rect)
+void UIObject::PerformLayout(const UIRect& rect, LayoutInfo info)
 {
+	_rcvdLayoutInfo = info;
 	if (_NeedsLayout())
 	{
-		OnLayout(rect);
+		OnLayout(rect, info);
 		OnLayoutChanged();
+	}
+}
+
+void UIObject::ApplyLayoutInfo(const UIRect& rectFromChild, const UIRect& layoutRect, LayoutInfo info)
+{
+	if (info.flags & LayoutInfo::FillH)
+	{
+		_finalRect.x0 = layoutRect.x0;
+		_finalRect.x1 = layoutRect.x1;
+	}
+	else
+	{
+		_finalRect.x0 = rectFromChild.x0;
+		_finalRect.x1 = rectFromChild.x1;
+	}
+
+	if (info.flags & LayoutInfo::FillV)
+	{
+		_finalRect.y0 = layoutRect.y0;
+		_finalRect.y1 = layoutRect.y1;
+	}
+	else
+	{
+		_finalRect.y0 = rectFromChild.y0;
+		_finalRect.y1 = rectFromChild.y1;
 	}
 }
 
 void UIObject::RedoLayout()
 {
 	UIRect r = _finalRect;
-	PerformLayout(r);
+	PerformLayout(r, _rcvdLayoutInfo);
 }
 
 void UIObject::SetFlag(UIObjectFlags flag, bool set)
@@ -784,12 +810,13 @@ Rangef WrapperElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeT
 	return _child->CalcEstimatedHeight(containerSize, type);
 }
 
-void WrapperElement::OnLayout(const UIRect& rect)
+void WrapperElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	if (_child && _child->_NeedsLayout())
 	{
-		_child->PerformLayout(rect);
-		_finalRect = _child->GetFinalRect();
+		_child->PerformLayout(rect, info);
+
+		ApplyLayoutInfo(_child->GetFinalRect(), rect, info);
 	}
 	else _finalRect = rect;
 }
@@ -805,10 +832,10 @@ Rangef FillerElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeTy
 	return Rangef::Exact(containerSize.y);
 }
 
-void FillerElement::OnLayout(const UIRect& rect)
+void FillerElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	if (_child && _child->_NeedsLayout())
-		_child->PerformLayout(rect);
+		_child->PerformLayout(rect, info);
 	_finalRect = rect;
 }
 
@@ -975,7 +1002,7 @@ Rangef ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize,
 	return r;
 }
 
-void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
+void ChildScaleOffsetElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto srect = rect;
 	srect.x1 = (srect.x1 - srect.x0) / transform.scale;
@@ -984,7 +1011,7 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect)
 	srect.y0 = 0;
 	float prevTRS = MultiplyTextResolutionScale(transform.scale);
 
-	WrapperElement::OnLayout(srect);
+	WrapperElement::OnLayout(srect, info);
 	_childSize = GetFinalRect().GetSize();
 	_finalRect = rect;
 
@@ -1029,21 +1056,21 @@ Rangef Buildable::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType t
 	return WrapperElement::CalcEstimatedHeight(containerSize, type);
 }
 
-void Buildable::OnLayout(const UIRect& inRect)
+void Buildable::OnLayout(const UIRect& inRect, LayoutInfo info)
 {
 	if (TEMP_LAYOUT_MODE)
 	{
 		_finalRect = inRect;
 		if (_child)
 		{
-			_child->PerformLayout(inRect);
+			_child->PerformLayout(inRect, info);
 			if (TEMP_LAYOUT_MODE == WRAPPER)
 				_finalRect = _child->GetFinalRect();
 		}
 		return;
 	}
 
-	WrapperElement::OnLayout(inRect);
+	WrapperElement::OnLayout(inRect, info);
 }
 
 void Buildable::Rebuild()

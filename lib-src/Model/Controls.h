@@ -73,7 +73,7 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	FrameElement& RemoveFrameStyle();
 	FrameElement& SetFrameStyle(const StaticID<FrameStyle>& id);
@@ -112,7 +112,7 @@ struct IconElement : UIObjectNoChildren
 	void OnPaint(const UIPaintContext& ctx) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	IconElement& SetStyle(const StaticID<IconStyle>& id);
 	IconElement& SetDefaultStyle(DefaultIconStyle style);
@@ -136,7 +136,7 @@ struct Button : FrameElement
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 
@@ -288,7 +288,7 @@ struct TreeExpandIcon : StateToggleIconBase
 struct StateButtonSkin : StateToggleFrameBase
 {
 	void OnReset() override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 
@@ -331,7 +331,7 @@ struct ProgressBar : UIObjectSingleChild
 	Size2f GetReducedContainerSize(Size2f size);
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 
@@ -404,7 +404,7 @@ struct Slider : UIObjectNoChildren
 struct PropertyList : WrapperElement // TODO should this be a stack layout?
 {
 	void OnReset() override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	Coord splitPos = Coord::Percent(40);
 	Coord minSplitPos = 0;
@@ -447,7 +447,7 @@ struct LabeledProperty : WrapperElement
 	void OnReset() override;
 	void OnEnterTree() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	void OnEvent(Event& e) override;
 
 	StringView GetText() const { return _labelText; }
@@ -527,7 +527,7 @@ struct ScrollbarV
 	bool OnEvent(const ScrollbarData& info, Event& e);
 };
 
-struct ScrollArea : FillerElement
+struct ScrollArea : WrapperElement
 {
 	Size2f estContentSize = {};
 	float yoff = 0;
@@ -535,7 +535,7 @@ struct ScrollArea : FillerElement
 
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	void OnReset() override;
 };
 
@@ -545,7 +545,7 @@ struct BackgroundBlocker : FillerElement
 	void OnReset() override;
 	void OnEvent(Event& e) override;
 
-	void OnLayout(const UIRect& rect) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 

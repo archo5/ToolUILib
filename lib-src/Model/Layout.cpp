@@ -36,13 +36,13 @@ Rangef PaddingElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeT
 	return (_child && _child->_NeedsLayout() ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
 }
 
-void PaddingElement::OnLayout(const UIRect& rect)
+void PaddingElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto padsub = rect.ShrinkBy(padding);
 	if (_child && _child->_NeedsLayout())
 	{
-		_child->PerformLayout(padsub);
-		_finalRect = _child->GetFinalRect().ExtendBy(padding);
+		_child->PerformLayout(padsub, info);
+		ApplyLayoutInfo(_child->GetFinalRect().ExtendBy(padding), rect, info);
 	}
 	else
 	{
@@ -108,7 +108,7 @@ Rangef StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, E
 	return r;
 }
 
-void StackLTRLayoutElement::OnLayout(const UIRect& rect)
+void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
@@ -122,7 +122,7 @@ void StackLTRLayoutElement::OnLayout(const UIRect& rect)
 		float w = slot._obj->CalcEstimatedWidth(rectSize, EstSizeType::Exact).min;
 		Rangef hr = slot._obj->CalcEstimatedHeight(rectSize, EstSizeType::Expanding);
 		float h = clamp(rect.y1 - rect.y0, hr.min, hr.max);
-		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h });
+		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h }, info.WithoutFillH());
 		p += w + paddingBetweenElements;
 	}
 	_finalRect = rect;
@@ -171,7 +171,7 @@ Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSiz
 	return r;
 }
 
-void StackTopDownLayoutElement::OnLayout(const UIRect& rect)
+void StackTopDownLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	// put items one after another in the indicated direction
 	// container size adapts to child elements in stacking direction, and to parent in the other
@@ -184,7 +184,7 @@ void StackTopDownLayoutElement::OnLayout(const UIRect& rect)
 		Rangef wr = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
 		float w = clamp(rect.x1 - rect.x0, wr.min, wr.max);
 		float h = slot._obj->CalcEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
-		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h });
+		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h }, info.WithoutFillV());
 		p += h;
 	}
 	_finalRect = rect;
@@ -241,7 +241,7 @@ Rangef StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerS
 	return r;
 }
 
-void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
+void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	float p = rect.x0;
 	float sum = 0, frsum = 0;
@@ -296,7 +296,7 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect)
 	}
 	for (const auto& item : items)
 	{
-		item.ch->PerformLayout({ p, rect.y0, p + item.w, rect.y1 });
+		item.ch->PerformLayout({ p, rect.y0, p + item.w, rect.y1 }, info.WithoutFillH());
 		p += item.w + paddingBetweenElements;
 	}
 	_finalRect = rect;
@@ -343,7 +343,7 @@ Rangef WrapperLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize,
 	_cacheValueHeight = r;
 	return r;
 }
-void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
+void WrapperLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto contSize = rect.GetSize();
 	float p = rect.x0;
@@ -356,7 +356,7 @@ void WrapperLTRLayoutElement::OnLayout(const UIRect& rect)
 
 		float w = slot._obj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).min;
 		float h = slot._obj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
-		slot._obj->PerformLayout({ p, y0, p + w, y0 + h });
+		slot._obj->PerformLayout({ p, y0, p + w, y0 + h }, info.WithoutAnyFill());
 		p += w;
 		maxH = max(maxH, h);
 	}
@@ -376,7 +376,7 @@ Rangef EdgeSliceLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, 
 	return Rangef::AtLeast(containerSize.y);
 }
 
-void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
+void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto subr = rect;
 	for (const auto& slot : _slots)
@@ -388,30 +388,36 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect)
 		auto e = slot.edge;
 		Rangef r(DoNotInitialize{});
 		float d;
+		LayoutInfo cinfo = info;
 		switch (e)
 		{
 		case Edge::Top:
 			r = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding);
 			if (&slot == &_slots.Last())
-				d = r.Clamp(subr.GetHeight());
+			{
+				d = min(r.Clamp(subr.GetHeight()), subr.GetHeight());
+			}
 			else
+			{
 				d = r.min;
-			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d });
+				cinfo = info.WithoutFillV();
+			}
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, cinfo);
 			subr.y0 += d;
 			break;
 		case Edge::Bottom:
 			d = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 });
+			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, info.WithoutFillV());
 			subr.y1 -= d;
 			break;
 		case Edge::Left:
 			d = ch->CalcEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 });
+			ch->PerformLayout({ subr.x0, subr.y0, subr.x0 + d, subr.y1 }, info.WithoutFillH());
 			subr.x0 += d;
 			break;
 		case Edge::Right:
 			d = ch->CalcEstimatedWidth(subr.GetSize(), EstSizeType::Expanding).min;
-			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 });
+			ch->PerformLayout({ subr.x1 - d, subr.y0, subr.x1, subr.y1 }, info.WithoutFillH());
 			subr.x1 -= d;
 			break;
 		}
@@ -468,7 +474,7 @@ Rangef PlacementLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, 
 	return r;
 }
 
-void PlacementLayoutElement::OnLayout(const UIRect& rect)
+void PlacementLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	UIRect contRect = rect;
 	for (auto& slot : _slots)
@@ -488,7 +494,7 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect)
 		r.y0 = roundf(r.y0);
 		r.x1 = roundf(r.x1);
 		r.y1 = roundf(r.y1);
-		slot._obj->PerformLayout(r);
+		slot._obj->PerformLayout(r, { LayoutInfo::FillH | LayoutInfo::FillV });
 	}
 	_finalRect = contRect;
 }
