@@ -175,7 +175,6 @@ void ProcGraphEditor_NodePin::_UnlinkPin()
 
 void ProcGraphEditor_Node::Build()
 {
-	TEMP_LAYOUT_MODE = WRAPPER;
 	BuildMulticastDelegateAdd(OnProcGraphNodeEdit, [this](IProcGraph* g, IProcGraph::Node* n)
 	{
 		if (g == _graph && n == _node)

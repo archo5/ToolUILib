@@ -76,7 +76,6 @@ struct TE_MainPreviewNode : Buildable
 
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 		auto rebuildFn = [this]() { Rebuild(); };
 		BuildMulticastDelegateAddNoArgs(OnNodePreviewInvalidated, rebuildFn);
 		BuildMulticastDelegateAddNoArgs(OnProcGraphEdit, rebuildFn);

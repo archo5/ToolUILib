@@ -506,10 +506,6 @@ struct Buildable : WrapperElement
 	void PO_ResetConfiguration() override; // IPersistentObject
 	void PO_BeforeDelete() override; // IPersistentObject
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, LayoutInfo info) override;
-
 	virtual void Build() = 0;
 	void Rebuild();
 
@@ -527,9 +523,6 @@ struct Buildable : WrapperElement
 	PersistentObjectList _objList;
 	uint64_t _lastBuildFrameID = 0;
 	Array<std::function<void()>> _deferredDestructors;
-#define WRAPPER 1
-#define FILLER 2
-	uint8_t TEMP_LAYOUT_MODE = 0;
 };
 
 

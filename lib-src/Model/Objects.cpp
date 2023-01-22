@@ -1040,39 +1040,6 @@ void Buildable::PO_BeforeDelete()
 	WrapperElement::PO_BeforeDelete();
 }
 
-Rangef Buildable::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
-{
-	if (TEMP_LAYOUT_MODE)
-		return _child ? _child->CalcEstimatedWidth(containerSize, type) : Rangef::AtLeast(0);
-
-	return WrapperElement::CalcEstimatedWidth(containerSize, type);
-}
-
-Rangef Buildable::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
-{
-	if (TEMP_LAYOUT_MODE)
-		return _child ? _child->CalcEstimatedHeight(containerSize, type) : Rangef::AtLeast(0);
-
-	return WrapperElement::CalcEstimatedHeight(containerSize, type);
-}
-
-void Buildable::OnLayout(const UIRect& inRect, LayoutInfo info)
-{
-	if (TEMP_LAYOUT_MODE)
-	{
-		_finalRect = inRect;
-		if (_child)
-		{
-			_child->PerformLayout(inRect, info);
-			if (TEMP_LAYOUT_MODE == WRAPPER)
-				_finalRect = _child->GetFinalRect();
-		}
-		return;
-	}
-
-	WrapperElement::OnLayout(inRect, info);
-}
-
 void Buildable::Rebuild()
 {
 	if (!(flags & UIObject_IsInTree))

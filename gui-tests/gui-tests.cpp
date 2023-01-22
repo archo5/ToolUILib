@@ -525,7 +525,6 @@ struct TEST : ui::Buildable
 	}
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 #if 1
 		ui::Array<ui::MenuItem> rootMenu;
 

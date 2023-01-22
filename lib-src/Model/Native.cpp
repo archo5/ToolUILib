@@ -763,7 +763,6 @@ struct NativeWindow_Impl
 	void SetBuildFunc(std::function<void()> buildFunc)
 	{
 		auto* cb = CreateUIObject<BuildCallback>();
-		cb->TEMP_LAYOUT_MODE = FILLER;
 		cb->buildFunc = buildFunc;
 		system.BuildRoot(cb);
 		system.eventSystem.RecomputeLayout();

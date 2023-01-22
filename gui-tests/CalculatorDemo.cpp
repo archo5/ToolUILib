@@ -32,7 +32,6 @@ struct Calculator : ui::Buildable
 {
 	void Build() override
 	{
-		TEMP_LAYOUT_MODE = FILLER;
 		auto& ple = ui::Push<ui::PlacementLayoutElement>();
 		auto tmpl = ple.GetSlotTemplate();
 

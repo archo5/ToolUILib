@@ -398,8 +398,6 @@ void DockingSubwindow::StartDrag()
 
 void DockingWindowContentBuilder::Build()
 {
-	TEMP_LAYOUT_MODE = FILLER;
-
 	_root->Build();
 }
 
@@ -442,8 +440,6 @@ void DockingWindowContentBuilder::OnPaint(const UIPaintContext& ctx)
 
 void DockingMainArea::Build()
 {
-	TEMP_LAYOUT_MODE = FILLER;
-
 	BuildMulticastDelegateAdd(OnDockingRootUpdated, [this](DockingNodeHandle* h)
 	{
 		if (h == &_mainAreaRootNode)
