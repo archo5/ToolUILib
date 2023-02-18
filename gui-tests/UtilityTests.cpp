@@ -3,6 +3,7 @@
 
 #include "../lib-src/Model/Native.h"
 #include "../lib-src/Core/SerializationBKVT.h"
+#include "../lib-src/Core/SerializationDATO.h"
 
 
 struct BasicEasingAnimTest : ui::Buildable
@@ -480,6 +481,17 @@ struct SerializationSpeed : ui::Buildable
 			double t1 = ui::hqtime();
 			results.Append(ui::Format("case 1(1000) | BKVT | serialize: %.2f ms (%zu bytes)", (t1 - t0) * 1000, size));
 		}
+		{
+			size_t size = 0;
+			double t0 = ui::hqtime();
+			{
+				ui::DATOSerializer ser;
+				case1.OnSerialize(ser, {});
+				size = ser.GetData().Size();
+			}
+			double t1 = ui::hqtime();
+			results.Append(ui::Format("case 1(1000) | DATO | serialize: %.2f ms (%zu bytes)", (t1 - t0) * 1000, size));
+		}
 
 		results.Append("-----");
 
@@ -509,6 +521,7 @@ struct SerializationSpeed : ui::Buildable
 			Case1 dest;
 
 			double t0 = ui::hqtime();
+			//for (int i = 0; i < 1000; i++)
 			{
 				ui::BKVTUnserializer uns;
 				if (!uns.Init(data, true))
@@ -519,6 +532,25 @@ struct SerializationSpeed : ui::Buildable
 			if (!(case1 == dest))
 				results.Append("BKVT parse output mismatch");
 			results.Append(ui::Format("case 1(1000) | BKVT | UNserialize: %.2f ms", (t1 - t0) * 1000));
+		}
+		{
+			ui::DATOSerializer ser("DATO");
+			case1.OnSerialize(ser, {});
+			auto data = ser.GetData();
+			Case1 dest;
+
+			double t0 = ui::hqtime();
+			//for (int i = 0; i < 1000; i++)
+			{
+				ui::DATOUnserializer uns;
+				if (!uns.Init(data))
+					results.Append("DATO init error");
+				dest.OnSerialize(uns, {});
+			}
+			double t1 = ui::hqtime();
+			if (!(case1 == dest))
+				results.Append("DATO parse output mismatch");
+			results.Append(ui::Format("case 1(1000) | DATO | UNserialize: %.2f ms", (t1 - t0) * 1000));
 		}
 	}
 };
