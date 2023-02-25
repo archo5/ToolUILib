@@ -46,6 +46,37 @@ void Test_BasicEasingAnim()
 }
 
 
+struct VExpandAnimTest : ui::Buildable
+{
+	bool expand = true;
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+		{
+			ui::imm::EditBool(expand, "Expand", {}, ui::imm::TreeStateToggleSkin());
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+			WPush<ui::VExpandContainer>().Init(expand, 0.4f);
+			{
+				WPush<ui::StackTopDownLayoutElement>();
+				{
+					ui::imm::Button("Button 1");
+					ui::imm::Button("Button 2");
+				}
+				WPop();
+			}
+			WPop();
+			WPop();
+			ui::imm::Button("Button 3");
+		}
+		WPop();
+	}
+};
+void Test_VExpandAnim()
+{
+	ui::Make<VExpandAnimTest>();
+}
+
+
 struct ThreadWorkerTest : ui::Buildable
 {
 	void Build() override

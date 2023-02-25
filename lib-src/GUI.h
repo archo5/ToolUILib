@@ -31,6 +31,7 @@
 #include "Model/ImmediateMode.h"
 #include "Model/Animation.h"
 
+#include "Elements/Animated.h"
 #include "Elements/Textbox.h"
 #include "Elements/TabbedPanel.h"
 #include "Elements/SplitPane.h"

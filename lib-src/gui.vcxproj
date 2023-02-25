@@ -176,6 +176,7 @@
     <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Editors\Tables.cpp" />
     <ClCompile Include="Editors\TreeEditor.cpp" />
+    <ClCompile Include="Elements\Animated.cpp" />
     <ClCompile Include="Elements\SplitPane.cpp" />
     <ClCompile Include="Elements\TabbedPanel.cpp" />
     <ClCompile Include="Elements\Textbox.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="Editors\SequenceEditor.h" />
     <ClInclude Include="Editors\Tables.h" />
     <ClInclude Include="Editors\TreeEditor.h" />
+    <ClInclude Include="Elements\Animated.h" />
     <ClInclude Include="Elements\SplitPane.h" />
     <ClInclude Include="Elements\TabbedPanel.h" />
     <ClInclude Include="Elements\Textbox.h" />

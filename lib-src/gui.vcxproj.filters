@@ -148,6 +148,9 @@
     <ClCompile Include="Core\SerializationDATO.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Elements\Animated.cpp">
+      <Filter>Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -354,6 +357,9 @@
     </ClInclude>
     <ClInclude Include="Core\SerializationDATO.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Elements\Animated.h">
+      <Filter>Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

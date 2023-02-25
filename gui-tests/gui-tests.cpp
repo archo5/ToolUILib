@@ -324,6 +324,7 @@ void Test_Gizmo();
 void Test_Quaternion();
 
 void Test_BasicEasingAnim();
+void Test_VExpandAnim();
 void Test_ThreadWorker();
 void Test_ThreadedImageRendering();
 void Test_OSCommunication();
@@ -429,6 +430,7 @@ static const TestEntry utilityTestEntries[] =
 {
 	{ "- Animation -" },
 	{ "Basic easing", Test_BasicEasingAnim },
+	{ "Vertical expand", Test_VExpandAnim },
 	{},
 	{ "- Threading -" },
 	{ "Thread worker", Test_ThreadWorker },
