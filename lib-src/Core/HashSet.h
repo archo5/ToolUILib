@@ -90,7 +90,7 @@ struct HashSetDataStorage
 			K* newKeys = (K*)malloc(sizeof(K) * cap);
 			for (size_t i = 0; i < count; i++)
 			{
-				new (&newKeys[i]) K(std::move(keys[i]));
+				new (&newKeys[i]) K(Move(keys[i]));
 				keys[i].~K();
 			}
 			free(keys);

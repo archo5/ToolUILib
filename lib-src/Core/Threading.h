@@ -69,14 +69,14 @@ struct EventQueue
 		static_assert(std::is_rvalue_reference<F&&>::value, "not an rvalue reference");
 		struct Func : Entry
 		{
-			Func(F&& _f) : f(std::move(_f)) {}
+			Func(F&& _f) : f(Move(_f)) {}
 			void Run() override
 			{
 				f();
 			}
 			F f;
 		};
-		_AddToQueue(new Func(std::move(f)), clear);
+		_AddToQueue(new Func(Move(f)), clear);
 	}
 
 	struct EventQueueImpl* _impl;
@@ -103,14 +103,14 @@ struct WorkerQueue
 		static_assert(std::is_rvalue_reference<F&&>::value, "not an rvalue reference");
 		struct Func : Entry
 		{
-			Func(F&& _f) : f(std::move(_f)) {}
+			Func(F&& _f) : f(Move(_f)) {}
 			void Run() override
 			{
 				f();
 			}
 			F f;
 		};
-		_AddToQueue(new Func(std::move(f)), clear);
+		_AddToQueue(new Func(Move(f)), clear);
 	}
 
 	struct WorkerQueueImpl* _impl;

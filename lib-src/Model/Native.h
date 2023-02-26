@@ -323,19 +323,19 @@ public:
 	template <class F>
 	static void PushEvent(F&& f)
 	{
-		_GetEventQueue().Push(std::move(f));
+		_GetEventQueue().Push(Move(f));
 		_SignalEvent();
 	}
 	template <class F>
 	static void PushEvent(UIObject* obj, F&& f)
 	{
 		auto lt = obj->GetLivenessToken();
-		auto fw = [lt, f{ std::move(f) }]()
+		auto fw = [lt, f{ Move(f) }]()
 		{
 			if (lt.IsAlive())
 				f();
 		};
-		_GetEventQueue().Push(std::move(fw));
+		_GetEventQueue().Push(Move(fw));
 		_SignalEvent();
 	}
 	static EventQueue& _GetEventQueue();

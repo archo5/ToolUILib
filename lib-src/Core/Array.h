@@ -5,9 +5,8 @@
 #include "Memory.h" // ArrayView
 
 #include <assert.h>
+#include <stdlib.h>
 #include <initializer_list>
-#include <new>
-#include <type_traits>
 
 
 namespace ui {
@@ -167,7 +166,7 @@ struct Array
 		size_t numToCopy = _size < newCap ? _size : newCap;
 		for (size_t i = 0; i < numToCopy; i++)
 		{
-			new (&newData[i]) T(std::move(_data[i]));
+			new (&newData[i]) T(Move(_data[i]));
 			_data[i].~T();
 		}
 		for (size_t i = numToCopy; i < _size; i++)
@@ -212,7 +211,7 @@ struct Array
 	inline void Append(T&& v)
 	{
 		ReserveForAppend(_size + 1);
-		new (&_data[_size++]) T(std::move(v));
+		new (&_data[_size++]) T(Move(v));
 	}
 	void AppendMany(const T* p, size_t n)
 	{
@@ -247,7 +246,7 @@ struct Array
 	// complex modification
 	inline void _HardMove(size_t to, size_t from)
 	{
-		new (&_data[to]) T(std::move(_data[from]));
+		new (&_data[to]) T(Move(_data[from]));
 		_data[from].~T();
 	}
 	inline bool UnorderedRemoveAt(size_t at)

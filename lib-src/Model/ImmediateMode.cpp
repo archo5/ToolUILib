@@ -12,6 +12,26 @@
 namespace ui {
 namespace imm {
 
+struct ModInitListReverseIter
+{
+	const CRef<Modifier>* ptr;
+
+	UI_FORCEINLINE ModInitListReverseIter(const CRef<Modifier>* p) : ptr(p) {}
+	UI_FORCEINLINE const CRef<Modifier>& operator * () const { return *ptr; }
+	UI_FORCEINLINE bool operator != (const ModInitListReverseIter& o) const { return ptr != o.ptr; }
+	UI_FORCEINLINE void operator ++ () { ptr--; }
+};
+struct ModInitListReverseRange
+{
+	ModInitListReverseIter _begin, _end;
+
+	UI_FORCEINLINE ModInitListReverseRange(const ModInitList& mil) : _begin(mil.end() - 1), _end(mil.begin() - 1) {}
+	UI_FORCEINLINE ModInitListReverseIter begin() const { return _begin; }
+	UI_FORCEINLINE ModInitListReverseIter end() const { return _end; }
+};
+inline ModInitListReverseRange ReverseIterate(const ModInitList& iterable) { return { iterable }; }
+
+
 static bool g_enabled = true;
 
 bool GetEnabled()

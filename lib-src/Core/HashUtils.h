@@ -3,9 +3,6 @@
 
 #include "Platform.h"
 
-#include <type_traits>
-#include <new>
-
 
 namespace ui {
 

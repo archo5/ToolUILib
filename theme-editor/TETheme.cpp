@@ -384,7 +384,7 @@ void TE_Template::UpdateTopoSortedNodes()
 	for (TE_Node* n : nodes)
 		if (n->_topoState == TopoSortUtil::Unset)
 			tsu.Visit(n);
-	topoSortedNodes = std::move(tsu.topoSortedNodes);
+	topoSortedNodes = Move(tsu.topoSortedNodes);
 }
 
 const TE_RenderContext& TE_Template::GetRenderContext()

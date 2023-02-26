@@ -258,11 +258,11 @@ struct FunctionPainterT : IPainter
 {
 	F func;
 
-	FunctionPainterT(F&& f) : func(std::move(f)) {}
+	FunctionPainterT(F&& f) : func(Move(f)) {}
 	ContentPaintAdvice Paint(const PaintInfo& info) override { return func(info); }
 };
 
-template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(std::move(f)); }
+template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return new FunctionPainterT<F>(Move(f)); }
 
 
 struct ThemeData; // Theme.h

@@ -30,4 +30,11 @@ using u32 = uint32_t;
 using i64 = int64_t;
 using u64 = uint64_t;
 
+template <class T> struct RemoveReference { typedef T Type; };
+template <class T> struct RemoveReference<T&> { typedef T Type; };
+template <class T> struct RemoveReference<T&&> { typedef T Type; };
+
+template <class T> constexpr typename RemoveReference<T>::Type&& Move(T&& t) noexcept
+{ return static_cast<typename RemoveReference<T>::Type&&>(t); }
+
 } // ui

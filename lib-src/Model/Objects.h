@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <string.h>
 #include <typeinfo>
-#include <new>
 
 #include "../Core/Array.h"
 #include "../Core/Math.h"
@@ -511,7 +510,7 @@ struct Buildable : WrapperElement
 
 	void Defer(std::function<void()>&& fn)
 	{
-		_deferredDestructors.Append(std::move(fn));
+		_deferredDestructors.Append(Move(fn));
 	}
 	template <class T> void* NewT()
 	{
@@ -567,9 +566,9 @@ struct AddEventHandler : Modifier
 	std::function<void(Event&)> _evfn;
 	EventType _type = EventType::Any;
 	UIObject* _tgt = nullptr;
-	AddEventHandler(std::function<void(Event&)>&& fn) : _evfn(std::move(fn)) {}
-	AddEventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(std::move(fn)), _type(t) {}
-	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = std::move(_evfn); }
+	AddEventHandler(std::function<void(Event&)>&& fn) : _evfn(Move(fn)) {}
+	AddEventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(Move(fn)), _type(t) {}
+	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = Move(_evfn); }
 };
 
 struct RebuildOnChange : Modifier
@@ -581,7 +580,7 @@ struct AddTooltip : Modifier
 {
 	ui::Tooltip::BuildFunc _evfn;
 
-	AddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(std::move(fn)) {}
+	AddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(Move(fn)) {}
 	AddTooltip(const std::string& s);
 	void Apply(UIObject* obj) const override;
 };
@@ -605,8 +604,8 @@ struct MakeOverlay : Modifier
 struct MakeDraggable : AddEventHandler
 {
 	MakeDraggable() : AddEventHandler({}) {}
-	MakeDraggable(std::function<void(Event&)>&& fn) : AddEventHandler(EventType::DragStart, std::move(fn)) {}
-	MakeDraggable(std::function<void()>&& fn) : AddEventHandler(EventType::DragStart, [fn{ std::move(fn) }](Event&){ fn(); }) {}
+	MakeDraggable(std::function<void(Event&)>&& fn) : AddEventHandler(EventType::DragStart, Move(fn)) {}
+	MakeDraggable(std::function<void()>&& fn) : AddEventHandler(EventType::DragStart, [fn{ Move(fn) }](Event&){ fn(); }) {}
 	void Apply(UIObject* obj) const override
 	{
 		AddEventHandler::Apply(obj);

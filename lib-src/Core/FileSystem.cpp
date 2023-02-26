@@ -405,14 +405,14 @@ struct DirectoryChangeWatcherImpl : IDirectoryChangeWatcher
 				{
 				case FILE_ACTION_ADDED:
 				case FILE_ACTION_RENAMED_NEW_NAME:
-					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileAdded(path); });
+					Application::PushEvent([this, path{ Move(path) }]() { _listener->OnFileAdded(path); });
 					break;
 				case FILE_ACTION_REMOVED:
 				case FILE_ACTION_RENAMED_OLD_NAME:
-					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileRemoved(path); });
+					Application::PushEvent([this, path{ Move(path) }]() { _listener->OnFileRemoved(path); });
 					break;
 				case FILE_ACTION_MODIFIED:
-					Application::PushEvent([this, path{ std::move(path) }]() { _listener->OnFileChanged(path); });
+					Application::PushEvent([this, path{ Move(path) }]() { _listener->OnFileChanged(path); });
 					break;
 				}
 

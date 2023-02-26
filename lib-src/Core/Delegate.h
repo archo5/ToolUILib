@@ -68,10 +68,10 @@ struct MulticastDelegate
 		struct FEntry : Entry
 		{
 			F fn;
-			FEntry(F&& f) : fn(std::move(f)) {}
+			FEntry(F&& f) : fn(Move(f)) {}
 			void Call(Args... args) override { fn(args...); }
 		};
-		auto* e = new FEntry(std::move(f));
+		auto* e = new FEntry(Move(f));
 		_AddEntry(e);
 		return e;
 	}
@@ -82,10 +82,10 @@ struct MulticastDelegate
 		struct FEntry : Entry
 		{
 			F fn;
-			FEntry(F&& f) : fn(std::move(f)) {}
+			FEntry(F&& f) : fn(Move(f)) {}
 			void Call(Args... args) override { fn(); }
 		};
-		auto* e = new FEntry(std::move(f));
+		auto* e = new FEntry(Move(f));
 		_AddEntry(e);
 		return e;
 	}

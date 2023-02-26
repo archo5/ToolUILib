@@ -145,7 +145,7 @@ struct HashTableDataStorage_SeparateArrays
 			K* newKeys = (K*)malloc(sizeof(K) * cap);
 			for (size_t i = 0; i < count; i++)
 			{
-				new (&newKeys[i]) K(std::move(keys[i]));
+				new (&newKeys[i]) K(Move(keys[i]));
 				keys[i].~K();
 			}
 			free(keys);
@@ -161,7 +161,7 @@ struct HashTableDataStorage_SeparateArrays
 			V* newValues = (V*)malloc(sizeof(V) * cap);
 			for (size_t i = 0; i < count; i++)
 			{
-				new (&newValues[i]) V(std::move(values[i]));
+				new (&newValues[i]) V(Move(values[i]));
 				values[i].~V();
 			}
 			free(values);

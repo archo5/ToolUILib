@@ -277,15 +277,15 @@ bool LastIsNew();
 void RebuildCurrent();
 Buildable* GetCurrentBuildable();
 #define UI_BUILD_ALLOC(...) new (::ui::GetCurrentBuildable()->NewT<__VA_ARGS__>()) __VA_ARGS__
-template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(std::move(f)); }
+template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(Move(f)); }
 template <class MD, class F> void BuildMulticastDelegateAdd(MD& md, F&& f)
 {
-	auto* e = md.Add(std::move(f));
+	auto* e = md.Add(Move(f));
 	BuildDefer([e]() { e->Destroy(); });
 }
 template <class MD, class F> void BuildMulticastDelegateAddNoArgs(MD& md, F&& f)
 {
-	auto* e = md.AddNoArgs(std::move(f));
+	auto* e = md.AddNoArgs(Move(f));
 	BuildDefer([e]() { e->Destroy(); });
 }
 

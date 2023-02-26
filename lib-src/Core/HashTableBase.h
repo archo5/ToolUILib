@@ -62,7 +62,7 @@ struct HashTableExtBase : HashTableBase
 	}
 	HashTableExtBase(HashTableExtBase&& o)
 	{
-		_MoveFrom(std::move(o));
+		_MoveFrom(Move(o));
 	}
 	HashTableExtBase& operator = (const HashTableExtBase& o)
 	{
@@ -77,7 +77,7 @@ struct HashTableExtBase : HashTableBase
 		if (this == &o)
 			return *this;
 		FreeMemory();
-		_MoveFrom(std::move(o));
+		_MoveFrom(Move(o));
 		return *this;
 	}
 	~HashTableExtBase()
@@ -124,7 +124,7 @@ struct HashTableExtBase : HashTableBase
 		o._hashCap = 0;
 		o._hashes = nullptr;
 
-		_storage.MoveFrom(std::move(o._storage));
+		_storage.MoveFrom(Move(o._storage));
 	}
 
 	void FreeMemory()
