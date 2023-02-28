@@ -2083,6 +2083,16 @@ struct GlobalResources
 };
 
 
+#if UI_BUILD_TESTS
+namespace ui {
+#include "../Core/Test.h"
+} // ui
+int main(int argc, char* argv[])
+{
+	ui::TestStorage::Get().Run();
+	puts("Tests finished!");
+}
+#else
 int uimain(int argc, char* argv[]);
 void IncludeContainerTests();
 
@@ -2122,3 +2132,4 @@ int main(int argc, char* argv[])
 {
 	return RealMain();
 }
+#endif

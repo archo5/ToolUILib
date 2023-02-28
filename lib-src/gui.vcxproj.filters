@@ -361,6 +361,9 @@
     <ClInclude Include="Elements\Animated.h">
       <Filter>Elements</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Test.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

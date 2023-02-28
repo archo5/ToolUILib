@@ -15,7 +15,7 @@ struct DefaultErrorOutput : IMathExprErrorOutput
 {
 	void OnError(int pos, const char* error)
 	{
-		LogError(LOG_MATHEXPR, "MathExpr compilation error: [%d] %s\n", pos, error);
+		LogError(LOG_MATHEXPR, "MathExpr compilation error: [%d] %s", pos, error);
 	}
 };
 static DefaultErrorOutput g_defErrOut;
@@ -1118,25 +1118,8 @@ bool MathExpr::GetConstant(float& val) const
 }
 
 
-#if 0
-#include <stdio.h>
-#include <stdlib.h>
-static void Impl_AssertEqual(bool xref, bool x, int line, const char* sxref, const char* sx)
-{
-	if (xref != x)
-	{
-		printf("%d: ERROR (%s exp. %s): %s is not %s\n", line, sx, sxref, x ? "true" : "false", xref ? "true" : "false");
-	}
-}
-static void Impl_AssertNear(float a, float b, int line, const char* sa, const char* sb)
-{
-	if (fabsf(float(a) - float(b)) > 0.0001f)
-	{
-		printf("%d: ERROR (%s near %s): %g is not near %g\n", line, sa, sb, a, b);
-	}
-}
-#define ASSERT_EQUAL(xref, x) Impl_AssertEqual(xref, x, __LINE__, #xref, #x)
-#define ASSERT_NEAR(a, b) Impl_AssertNear(a, b, __LINE__, #a, #b)
+#if UI_BUILD_TESTS
+#include "Test.h"
 struct TestMathExpr
 {
 	TestMathExpr()
@@ -1144,7 +1127,6 @@ struct TestMathExpr
 		TestCompile();
 		TestCompileErrors();
 		TestEval();
-		exit(0);
 	}
 
 	void TestCompile()

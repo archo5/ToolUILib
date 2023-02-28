@@ -69,7 +69,7 @@ Quat Quat::RotateAxisAngle(const Vec3f& axis, float angle)
 
 Quat Quat::RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b)
 {
-	return RotateAxisAngle(Vec3Cross(a, b).Normalized(), acosf(clamp(Vec3Dot(a, b), -1.f, 1.f)) * RAD2DEG);
+	return RotateAxisAngle(Vec3Cross(b, a).Normalized(), acosf(clamp(Vec3Dot(a, b), -1.f, 1.f)) * RAD2DEG);
 }
 
 Quat Quat::RotateBetweenDirections(const Vec3f& a, const Vec3f& b)
@@ -426,66 +426,110 @@ TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale
 }
 
 
-#if 0
-#include <stdio.h>
-#include <stdlib.h>
-#define ASSERT_NEAR(a, b) if (fabsf(float(a) - float(b)) > 0.0001f) \
-	printf("%d: ERROR (" #a " near " #b "): %g is not near %g\n", __LINE__, float(a), float(b))
-struct Test3DMath
+#if UI_BUILD_TESTS
+#include "Test.h"
+
+DEFINE_TEST_CATEGORY(3DMath, 1000);
+
+DEFINE_TEST(3DMath, MatrixInvert)
 {
-	Test3DMath()
+	puts("TestMatrixInvert");
+
+	Mat4f id = Mat4f::Identity();
+
+	Mat4f m = Mat4f::LookAtLH({ 5, 5, 5 }, { 1, 2, 3 }, { 0, 0, 1 });
+	Mat4f mi = m.Inverted();
+	Mat4f mxmi = m * mi;
+	for (int i = 0; i < 16; i++)
 	{
-		TestMatrixInvert();
-		TestRayPlaneIntersect();
-		exit(0);
+		ASSERT_NEAR(mxmi.a[i], id.a[i]);
 	}
 
-	void TestMatrixInvert()
+	m = Mat4f::PerspectiveFOVRH(45, 1.333f, 0.123f, 456.f);
+	mi = m.Inverted();
+	mxmi = m * mi;
+	for (int i = 0; i < 16; i++)
 	{
-		puts("TestMatrixInvert");
-
-		Mat4f id = Mat4f::Identity();
-
-		Mat4f m = Mat4f::LookAtLH({ 5, 5, 5 }, { 1, 2, 3 }, { 0, 0, 1 });
-		Mat4f mi = m.Inverted();
-		Mat4f mxmi = m * mi;
-		for (int i = 0; i < 16; i++)
-		{
-			ASSERT_NEAR(mxmi.a[i], id.a[i]);
-		}
-
-		m = Mat4f::PerspectiveFOVRH(45, 1.333f, 0.123f, 456.f);
-		mi = m.Inverted();
-		mxmi = m * mi;
-		for (int i = 0; i < 16; i++)
-		{
-			ASSERT_NEAR(mxmi.a[i], id.a[i]);
-		}
-	}
-
-	void TestRayPlaneIntersect()
-	{
-		puts("TestRayPlaneIntersect");
-
-		RayPlaneIntersectResult rpir;
-		rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 0, -1 }, { 0, 0, 1, 0 });
-		ASSERT_NEAR(rpir.dist, 1);
-		ASSERT_NEAR(rpir.angcos, 1);
-
-		rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1, 0 });
-		ASSERT_NEAR(rpir.dist, -1);
-		ASSERT_NEAR(rpir.angcos, -1);
-
-		rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 1, 0 }, { 0, 0, 1, 0 });
-		ASSERT_NEAR(rpir.dist, 0);
-		ASSERT_NEAR(rpir.angcos, 0);
-
-		rpir = RayPlaneIntersect({ 0, 0, 1 }, Vec3f{ 0, sqrtf(3), -1 }.Normalized(), { 0, 0, 1, 0 });
-		ASSERT_NEAR(rpir.dist, 2);
-		ASSERT_NEAR(rpir.angcos, cosf(3.14159f / 3));
+		ASSERT_NEAR(mxmi.a[i], id.a[i]);
 	}
 }
-g_tests;
+
+DEFINE_TEST(3DMath, TransformInvert)
+{
+	puts("TestTransformInvert");
+
+	Transform3Df a({ 1, 2, 3 }, Quat::RotateX(90));
+	Transform3Df inv = a.Inverted();
+	Transform3Df exp({ -1, 3, -2 }, Quat::RotateX(-90));
+	ASSERT_NEAR(inv.position.x, exp.position.x);
+	ASSERT_NEAR(inv.position.y, exp.position.y);
+	ASSERT_NEAR(inv.position.z, exp.position.z);
+	ASSERT_NEAR(inv.rotation.x, exp.rotation.x);
+	ASSERT_NEAR(inv.rotation.y, exp.rotation.y);
+	ASSERT_NEAR(inv.rotation.z, exp.rotation.z);
+	ASSERT_NEAR(inv.rotation.w, exp.rotation.w);
+	auto rt468 = inv.TransformPoint(a.TransformPoint({ 4, 6, 8 }));
+	ASSERT_NEAR(rt468.x, 4);
+	ASSERT_NEAR(rt468.y, 6);
+	ASSERT_NEAR(rt468.z, 8);
+	auto zt = a * inv;
+	ASSERT_NEAR(zt.position.x, 0);
+	ASSERT_NEAR(zt.position.y, 0);
+	ASSERT_NEAR(zt.position.z, 0);
+	ASSERT_NEAR(zt.rotation.x, 0);
+	ASSERT_NEAR(zt.rotation.y, 0);
+	ASSERT_NEAR(zt.rotation.z, 0);
+	ASSERT_NEAR(zt.rotation.w, 1);
+}
+
+DEFINE_TEST(3DMath, TransformConsistency)
+{
+	puts("TestTransformConsistency");
+
+	// quat / matrix rotation
+	{
+		auto m1 = Mat4f::Rotate(Quat::RotateAxisAngle({ 1, 0, 0 }, 90));
+		auto m2 = Mat4f::RotateX(90);
+		for (int i = 0; i < 16; i++)
+		{
+			ASSERT_NEAR(m1.a[i], m2.a[i]);
+		}
+	}
+
+	// quat / matrix vector transform
+	{
+		Vec3f v(1, 2, 3);
+		auto q1 = Quat::RotateAxisAngle({ 1, 0, 0 }, 90);
+		auto m2 = Mat4f::RotateX(90);
+		auto xfv1 = q1.Rotate(v);
+		auto xfv2 = m2.TransformDirection(v);
+		ASSERT_NEAR(xfv1.x, xfv2.x);
+		ASSERT_NEAR(xfv1.y, xfv2.y);
+		ASSERT_NEAR(xfv1.z, xfv2.z);
+	}
+}
+
+DEFINE_TEST(3DMath, RayPlaneIntersect)
+{
+	puts("TestRayPlaneIntersect");
+
+	RayPlaneIntersectResult rpir;
+	rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 0, -1 }, { 0, 0, 1, 0 });
+	ASSERT_NEAR(rpir.dist, 1);
+	ASSERT_NEAR(rpir.angcos, 1);
+
+	rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1, 0 });
+	ASSERT_NEAR(rpir.dist, -1);
+	ASSERT_NEAR(rpir.angcos, -1);
+
+	rpir = RayPlaneIntersect({ 0, 0, 1 }, { 0, 1, 0 }, { 0, 0, 1, 0 });
+	ASSERT_NEAR(rpir.dist, 0);
+	ASSERT_NEAR(rpir.angcos, 0);
+
+	rpir = RayPlaneIntersect({ 0, 0, 1 }, Vec3f{ 0, sqrtf(3), -1 }.Normalized(), { 0, 0, 1, 0 });
+	ASSERT_NEAR(rpir.dist, 2);
+	ASSERT_NEAR(rpir.angcos, cosf(3.14159f / 3));
+}
 #endif
 
 } // ui
