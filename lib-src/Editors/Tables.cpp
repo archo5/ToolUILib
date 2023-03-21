@@ -331,7 +331,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				rect.x0, (rect.y0 + rect.y1) / 2,
 				_impl->dataSource->GetRowName(r, rowRef.id),
 				rowcpa.HasTextColor() ? rowcpa.GetTextColor() : ctx.textColor,
-				TextBaseline::Middle);
+				TextBaseline::Middle,
+				&rect);
 		}
 		draw::PopScissorRect();
 	}
@@ -369,7 +370,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			rect.x0, (rect.y0 + rect.y1) / 2,
 			_impl->dataSource->GetColName(c),
 			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
-			TextBaseline::Middle);
+			TextBaseline::Middle,
+			&rect);
 	}
 	draw::PopScissorRect();
 
@@ -446,7 +448,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				rect.x0, (rect.y0 + rect.y1) / 2,
 				_impl->dataSource->GetText(rowRef.id, c),
 				cellcpa.HasTextColor() ? cellcpa.GetTextColor() : ctx.textColor,
-				TextBaseline::Middle);
+				TextBaseline::Middle,
+				&rect);
 		}
 	}
 	// tree icons

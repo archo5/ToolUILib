@@ -320,6 +320,7 @@ struct Transform3Df
 	UI_FORCEINLINE Transform3Df(DoNotInitialize) : position(DoNotInitialize{}), rotation(DoNotInitialize{}) {}
 	UI_FORCEINLINE Transform3Df() {}
 	UI_FORCEINLINE Transform3Df(Vec3f p) : position(p) {}
+	UI_FORCEINLINE Transform3Df(Quat r) : rotation(r) {}
 	UI_FORCEINLINE Transform3Df(Vec3f p, Quat r) : position(p), rotation(r) {}
 	static UI_FORCEINLINE Transform3Df Identity() { return {}; }
 	static Transform3Df FromMatrixLossy(const Mat4f& m);

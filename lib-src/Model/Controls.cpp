@@ -1036,6 +1036,22 @@ struct DropdownMenuPlacement : IPlacement
 		float w = rw.min;
 		float h = rh.min;
 
+		auto windowInnerSize = curObj->GetNativeWindow()->GetInnerRect().GetSize();
+		if (y + h > windowInnerSize.y)
+		{
+			// try putting on top if there's more space
+			if (outRect.y0 > windowInnerSize.y - y)
+			{
+				y = max(outRect.y0 - h, 0.0f);
+				h = min(h, outRect.y0);
+			}
+			else
+			{
+				// clamp vertical height in the same place
+				h = min(h, windowInnerSize.y - y);
+			}
+		}
+
 		outRect = { x, y, x + w, y + h };
 	}
 };

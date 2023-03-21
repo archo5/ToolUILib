@@ -157,7 +157,7 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 		float y = r.y0;
 		for (TextRange line : _impl->lines.lines)
 		{
-			draw::TextLine(font, size, r.x0, y, line.sv(text).rtrim(), textColor, TextBaseline::Top);
+			draw::TextLine(font, size, r.x0, y, line.sv(text).rtrim(), textColor, TextBaseline::Top, &r);
 			y += size;
 		}
 

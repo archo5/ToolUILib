@@ -43,7 +43,7 @@ enum class TextBaseline
 };
 
 namespace draw {
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline = TextBaseline::Default);
+void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline = TextBaseline::Default, AABB2f* clipBox = nullptr);
 } // draw
 
 struct CachedFontRef

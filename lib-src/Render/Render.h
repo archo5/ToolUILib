@@ -38,6 +38,7 @@ void RectTex(const AABB2f& r, IImage* tex, const AABB2f& uv);
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex);
 void RectColTex(const AABB2f& r, Color4b col, IImage* tex);
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex, float u0, float v0, float u1, float v1);
+void RectColTex(const AABB2f& r, Color4b col, IImage* tex, const AABB2f& uv);
 void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IImage* tex, const AABB2f& texouter, const AABB2f& texinner);
 void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col);
 

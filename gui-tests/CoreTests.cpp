@@ -119,7 +119,9 @@ struct RenderingPrimitives : ui::Buildable
 
 		ui::draw::RectCol(40, 10, 50, 20, col);
 
-		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SANS_SERIF), 20, 20, 150, "sans-serif w=normal it=0", ui::Color4f(0.9f, 0.8f, 0.6f));
+		ui::AABB2f clipBox0 = { 24, 136, 226, 149 };
+		ui::draw::RectCutoutCol(clipBox0.ExtendBy(ui::AABB2f::UniformBorder(1)), clipBox0, { 255, 0, 0 });
+		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SANS_SERIF), 20, 20, 150, "sans-serif w=normal it=0", ui::Color4f(0.9f, 0.8f, 0.6f), ui::TextBaseline::Default, &clipBox0);
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_SERIF, ui::FONT_WEIGHT_BOLD), 20, 20, 170, "serif w=bold it=0", ui::Color4f(0.6f, 0.8f, 0.9f));
 		ui::draw::TextLine(ui::GetFont(ui::FONT_FAMILY_MONOSPACE, ui::FONT_WEIGHT_NORMAL, true), 20, 20, 190, "monospace w=normal it=1", ui::Color4f(0.7f, 0.9f, 0.6f));
 

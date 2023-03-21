@@ -299,7 +299,7 @@ float TextMeasureAddChar(uint32_t ch)
 
 namespace draw {
 
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline)
+void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox)
 {
 	float scale = g_textResScale;
 	float invScale = 1.0f / scale;
@@ -333,7 +333,27 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 		auto gv = font->FindGlyph(sctx, ch, true);
 		float x0 = gv.xoff * invScale + x;
 		float y0 = gv.yoff * invScale + y;
-		draw::RectColTex(x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale, color, gv.img);
+		AABB2f posbox = { x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale };
+		if (clipBox)
+		{
+			if (clipBox->Overlaps(posbox))
+			{
+				if (clipBox->Contains(posbox))
+				{
+					draw::RectColTex(posbox, color, gv.img);
+				}
+				else
+				{
+					AABB2f clipped = posbox.Intersect(*clipBox);
+					AABB2f uvbox = { posbox.InverseLerp(clipped.GetMin()), posbox.InverseLerp(clipped.GetMax()) };
+					draw::RectColTex(clipped, color, gv.img, uvbox);
+				}
+			}
+		}
+		else
+		{
+			draw::RectColTex(posbox, color, gv.img);
+		}
 		x += roundf(gv.xadv) * invScale;
 	}
 }

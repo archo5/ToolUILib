@@ -228,6 +228,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE AABB2(DoNotInitialize) {}
 	UI_FORCEINLINE AABB2() : x0(0), y0(0), x1(0), y1(0) {}
 	UI_FORCEINLINE AABB2(T ax0, T ay0, T ax1, T ay1) : x0(ax0), y0(ay0), x1(ax1), y1(ay1) {}
+	UI_FORCEINLINE AABB2(Vec2<T> amin, Vec2<T> amax) : x0(amin.x), y0(amin.y), x1(amax.x), y1(amax.y) {}
 	UI_FORCEINLINE static AABB2 Zero() { return {}; }
 	UI_FORCEINLINE static AABB2 Empty() { return { MAX_VALUE, MAX_VALUE, MIN_VALUE, MIN_VALUE }; }
 	UI_FORCEINLINE static AABB2 All() { return { MIN_VALUE, MIN_VALUE, MAX_VALUE, MAX_VALUE }; }
@@ -251,6 +252,8 @@ template<class T> struct AABB2
 	UI_FORCEINLINE bool IsValid() const { return x0 <= x1 && y0 <= y1; }
 	UI_FORCEINLINE bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
 	UI_FORCEINLINE bool Contains(Vec2<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }
+	// assumes both AABBs are valid, may return unexpected results with invalid AABBs
+	UI_FORCEINLINE bool Contains(const AABB2& o) const { return o.x0 >= x0 && o.x1 <= x1 && o.y0 >= y0 && o.y1 <= y1; }
 	UI_FORCEINLINE bool Overlaps(const AABB2& o) const { return x0 <= o.x1 && o.x0 <= x1 && y0 <= o.y1 && o.y0 <= y1; }
 	UI_FORCEINLINE AABB2 Intersect(const AABB2& o) const { return { max(x0, o.x0), max(y0, o.y0), min(x1, o.x1), min(y1, o.y1) }; }
 	UI_FORCEINLINE AABB2 ExtendBy(const AABB2& ext) const { return { x0 - ext.x0, y0 - ext.y0, x1 + ext.x1, y1 + ext.y1 }; }
