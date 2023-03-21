@@ -573,10 +573,13 @@ struct OptionList
 
 	virtual void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) = 0;
 	virtual void BuildElement(const void* ptr, uintptr_t id, bool list) = 0;
+	virtual void BuildEmptyButtonContents();
 };
 
 struct CStrOptionList : OptionList
 {
+	uintptr_t emptyValue = UINTPTR_MAX;
+
 	void BuildElement(const void* ptr, uintptr_t id, bool list) override;
 };
 
@@ -584,11 +587,13 @@ struct ZeroSepCStrOptionList : CStrOptionList
 {
 	const char* str = nullptr;
 	size_t size = SIZE_MAX;
+	const char* emptyStr = nullptr;
 
-	ZeroSepCStrOptionList(const char* s) : str(s) {}
-	ZeroSepCStrOptionList(size_t sz, const char* s) : str(s), size(sz) {}
+	ZeroSepCStrOptionList(const char* s, const char* empty = nullptr) : str(s), emptyStr(empty) {}
+	ZeroSepCStrOptionList(size_t sz, const char* s, const char* empty = nullptr) : str(s), size(sz), emptyStr(empty) {}
 
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+	void BuildEmptyButtonContents() override;
 };
 
 struct NullTerminated {};
@@ -597,20 +602,24 @@ struct CStrArrayOptionList : CStrOptionList
 {
 	const char* const* arr = nullptr;
 	size_t size = SIZE_MAX;
+	const char* emptyStr = nullptr;
 
-	CStrArrayOptionList(const char* const* a, NullTerminated) : arr(a) {}
+	CStrArrayOptionList(NullTerminated, const char* const* a, const char* empty = nullptr) : arr(a), emptyStr(empty) {}
 	template <size_t N>
-	CStrArrayOptionList(const char* const (&a)[N]) : arr(a), size(N) {}
-	CStrArrayOptionList(size_t sz, const char* const* a) : arr(a), size(sz) {}
+	CStrArrayOptionList(const char* const (&a)[N], const char* empty = nullptr) : arr(a), size(N), emptyStr(empty) {}
+	CStrArrayOptionList(size_t sz, const char* const* a, const char* empty = nullptr) : arr(a), size(sz), emptyStr(empty) {}
 
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+	void BuildEmptyButtonContents() override;
 };
 
 struct StringArrayOptionList : CStrOptionList
 {
 	Array<std::string> options;
+	Optional<std::string> emptyStr;
 
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
+	void BuildEmptyButtonContents() override;
 };
 
 

@@ -1132,6 +1132,11 @@ UIObject& DropdownMenu::OnBuildMenu()
 }
 
 
+void OptionList::BuildEmptyButtonContents()
+{
+	Text({});
+}
+
 void CStrOptionList::BuildElement(const void* ptr, uintptr_t id, bool list)
 {
 	Text(static_cast<const char*>(ptr));
@@ -1145,24 +1150,54 @@ static const char* Next(const char* v)
 void ZeroSepCStrOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
 {
 	const char* s = str;
+	if (from == 0 && count && emptyStr)
+	{
+		fn(emptyStr, emptyValue);
+		count--;
+	}
 	for (size_t i = 0; i < from && i < size && *s; i++, s = Next(s));
 	for (size_t i = 0; i < count && i + from < size && *s; i++, s = Next(s))
 		if (*s != '\b')
 			fn(s, i + from);
 }
 
+void ZeroSepCStrOptionList::BuildEmptyButtonContents()
+{
+	Text(emptyStr ? emptyStr : StringView());
+}
+
 void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
 {
 	const char* const* a = arr;
+	if (from == 0 && count && emptyStr)
+	{
+		fn(emptyStr, emptyValue);
+		count--;
+	}
 	for (size_t i = 0; i < from && i < size && *a; i++, a++);
 	for (size_t i = 0; i < count && i + from < size && *a; i++, a++)
 		fn(*a, i + from);
 }
 
+void CStrArrayOptionList::BuildEmptyButtonContents()
+{
+	Text(emptyStr ? emptyStr : StringView());
+}
+
 void StringArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
 {
+	if (from == 0 && count && emptyStr.HasValue())
+	{
+		fn(emptyStr.GetValue().c_str(), emptyValue);
+		count--;
+	}
 	for (size_t i = 0; i < count && i + from < options.Size(); i++)
 		fn(options[i + from].c_str(), i + from);
+}
+
+void StringArrayOptionList::BuildEmptyButtonContents()
+{
+	Text(emptyStr.HasValue() ? emptyStr.GetValue().c_str() : StringView());
 }
 
 
@@ -1198,6 +1233,7 @@ void DropdownMenuList::OnBuildMenuContents()
 
 void DropdownMenuList::OnBuildEmptyButtonContents()
 {
+	_options->BuildEmptyButtonContents();
 }
 
 void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)

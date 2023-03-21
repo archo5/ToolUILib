@@ -966,7 +966,7 @@ struct DropdownTest : ui::Buildable
 			WText("[zssl] unlimited options");
 			MenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("First\0Second\0Third\0"));
 			WText("[zssl] limited options");
-			MenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)(2, "First\0Second"));
+			MenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)(2, "First\0Second", "<none>"));
 
 			static const char* options[] = { "First", "Second", "Third", nullptr };
 
