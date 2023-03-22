@@ -951,6 +951,8 @@ void ScrollArea::OnEvent(Event& e)
 
 	if (sbv.OnEvent(info, e))
 	{
+		if (yoff != info.contentOff)
+			e.StopPropagation();
 		yoff = info.contentOff;
 		_OnChangeStyle();
 	}
@@ -1102,9 +1104,11 @@ void DropdownMenu::OnBuildButton()
 		};
 	}
 
+	Push<ChildScaleOffsetElement>(); // clip only (TODO optimize?)
 	Push<StackLTRLayoutElement>();
 	OnBuildButtonContents();
 	Pop(); // StackLTRLayoutElement
+	Pop(); // ChildScaleOffsetElement
 
 	Pop(); // FrameElement(DropdownButton)
 }
@@ -1115,15 +1119,26 @@ void DropdownMenu::OnBuildMenuWithLayout()
 	list + MakeOverlay(200.f);
 }
 
+struct StopScroll : WrapperElement
+{
+	void OnEvent(Event& e) override
+	{
+		if (e.type == EventType::MouseScroll)
+			e.StopPropagation();
+	}
+};
+
 UIObject& DropdownMenu::OnBuildMenu()
 {
-	auto& ret = Push<ListBoxFrame>();
+	auto& ret = Push<StopScroll>();
+	Push<ListBoxFrame>();
 	Push<SizeConstraintElement>().SetMaxHeight(200);
 	Push<ScrollArea>();
 	Push<StackTopDownLayoutElement>();
 
 	OnBuildMenuContents();
 
+	Pop();
 	Pop();
 	Pop();
 	Pop();

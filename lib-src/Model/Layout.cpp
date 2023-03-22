@@ -182,7 +182,7 @@ void StackTopDownLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 			continue;
 
 		Rangef wr = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
-		float w = clamp(rect.x1 - rect.x0, wr.min, wr.max);
+		float w = clamp(wr.max, wr.min, rect.x1 - rect.x0);
 		float h = slot._obj->CalcEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
 		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h }, info.WithoutFillV());
 		p += h;

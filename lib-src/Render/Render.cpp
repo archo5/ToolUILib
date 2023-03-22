@@ -429,6 +429,11 @@ void RectCol(float x0, float y0, float x1, float y1, Color4b col)
 	RectColTex(x0, y0, x1, y1, col, nullptr, 0.5f, 0.5f, 0.5f, 0.5f);
 }
 
+void RectCol(const AABB2f& r, Color4b col)
+{
+	RectColTex(r, col, nullptr);
+}
+
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 {
 	rhi::Vertex verts[4] =

@@ -30,6 +30,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
 void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
+void RectCol(const AABB2f& r, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
 void RectTex(float x0, float y0, float x1, float y1, IImage* tex);
 void RectTex(const AABB2f& r, IImage* tex);

@@ -182,7 +182,10 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 					float x1 = GetTextWidth(font, size, text.substr(L.start, maxLpos - L.start));
 					float y = r.y0 + line * size;
 
-					draw::RectCol(r.x0 + x0, y, r.x0 + x1, y + size, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
+					AABB2f hlrect = { r.x0 + x0, y, r.x0 + x1, y + size };
+					hlrect = hlrect.Intersect(r);
+
+					draw::RectCol(hlrect, Color4f(0.5f, 0.7f, 0.9f, 0.4f));
 				}
 			}
 
@@ -193,7 +196,8 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 
 				float x = GetTextWidth(font, size, text.substr(L.start, endCursor - L.start));
 				float y = r.y0 + line * size;
-				draw::RectCol(r.x0 + x, y, r.x0 + x + 1, y + size, Color4b::White());
+				if (r.Contains(Vec2f(r.x0 + x, y)))
+					draw::RectCol(r.x0 + x, y, r.x0 + x + 1, y + size, Color4b::White());
 			}
 		}
 	}
