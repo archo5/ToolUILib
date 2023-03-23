@@ -876,7 +876,7 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 	auto r = GetFinalRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, fs->size, r.x0, (r.y0 + r.y1) / 2, text, ctx.textColor, TextBaseline::Middle);
+	draw::TextLine(font, fs->size, r.x0, (r.y0 + r.y1) / 2, text, ctx.textColor, TextBaseline::Middle, &r);
 }
 
 Rangef TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

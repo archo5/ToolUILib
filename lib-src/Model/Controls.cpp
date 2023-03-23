@@ -294,6 +294,7 @@ void Button::OnLayout(const UIRect& rect, LayoutInfo info)
 		float ox = roundf((rSize.x - minw) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		fr = fr.Intersect(r);
 		_child->PerformLayout(fr, info);
 	}
 	_finalRect = rect;
@@ -423,6 +424,7 @@ void StateButtonSkin::OnLayout(const UIRect& rect, LayoutInfo info)
 		float ox = roundf((rSize.x - minw) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		fr = fr.Intersect(r);
 		_child->PerformLayout(fr, info);
 	}
 	_finalRect = rect;
@@ -703,7 +705,7 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 		auto r = labelContRect.ShrinkBy(labelStyle.padding);
 
 		// TODO optimize scissor (shared across labels)
-		if (draw::PushScissorRectIfNotEmpty(cr))
+		//if (draw::PushScissorRectIfNotEmpty(cr))
 		{
 			ContentPaintAdvice cpa;
 			cpa.SetTextColor(ctx.textColor);
@@ -722,8 +724,9 @@ void LabeledProperty::OnPaint(const UIPaintContext& ctx)
 				r.x0, (r.y0 + r.y1) / 2,
 				_labelText,
 				cpa.GetTextColor(),
-				TextBaseline::Middle);
-			draw::PopScissorRect();
+				TextBaseline::Middle,
+				&cr);
+			//draw::PopScissorRect();
 		}
 	}
 
@@ -741,7 +744,15 @@ void LabeledProperty::OnLayout(const UIRect& rect, LayoutInfo info)
 
 			auto* font = labelStyle.font.GetFont();
 
-			_lastSepX = rect.x0 + GetTextWidth(font, labelStyle.font.size, _labelText) + labelStyle.padding.x0 + labelStyle.padding.x1;
+			float labelPartWidth = GetTextWidth(font, labelStyle.font.size, _labelText) + labelStyle.padding.x0 + labelStyle.padding.x1;
+			float childPartWidth = _child ? _child->CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Expanding).min : 0;
+			if (labelPartWidth + childPartWidth > rect.GetWidth())
+			{
+				// reduce size proportionally since cannot fit both
+				_lastSepX = rect.x0 + roundf(labelPartWidth * rect.GetWidth() / (labelPartWidth + childPartWidth));
+			}
+			else
+				_lastSepX = rect.x0 + labelPartWidth;
 		}
 		else
 		{

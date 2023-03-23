@@ -276,22 +276,34 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 			const auto& b = items[ib];
 			return (a.maxw - a.minw) < (b.maxw - b.minw);
 		});
-		float leftover = max(rect.GetWidth() - sum, 0.0f);
-		for (auto idx : sorted)
+		float rectW = rect.GetWidth();
+		if (rectW > sum)
 		{
-			auto& item = items[idx];
-			float mylo = leftover * item.fr / frsum;
-			float w = item.minw + mylo;
-			if (w > item.maxw)
-				w = item.maxw;
-			w = roundf(w);
-			float actual_lo = w - item.minw;
-			leftover -= actual_lo;
-			frsum -= item.fr;
-			item.w = w;
+			float leftover = rectW - sum;
+			for (auto idx : sorted)
+			{
+				auto& item = items[idx];
+				float mylo = leftover * item.fr / frsum;
+				float w = item.minw + mylo;
+				if (w > item.maxw)
+					w = item.maxw;
+				w = roundf(w);
+				float actual_lo = w - item.minw;
+				leftover -= actual_lo;
+				frsum -= item.fr;
+				item.w = w;
 
-			if (frsum <= 0)
-				break;
+				if (frsum <= 0)
+					break;
+			}
+		}
+		else
+		{
+			for (auto idx : sorted)
+			{
+				auto& item = items[idx];
+				item.w = roundf(item.w * rectW / sum);
+			}
 		}
 	}
 	for (const auto& item : items)
