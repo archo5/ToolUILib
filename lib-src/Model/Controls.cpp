@@ -1006,8 +1006,6 @@ void ScrollArea::OnReset()
 void BackgroundBlocker::OnReset()
 {
 	FillerElement::OnReset();
-
-	RegisterAsOverlay(199.f);
 }
 
 void BackgroundBlocker::OnEvent(Event& e)
@@ -1078,7 +1076,9 @@ void DropdownMenu::Build()
 
 	if (HasFlags(UIObject_IsChecked))
 	{
+		Push<OverlayElement>().Init(199);
 		Make<BackgroundBlocker>();
+		Pop();
 
 		tmpl->measure = false;
 		tmpl->placement = UI_BUILD_ALLOC(DropdownMenuPlacement)();
@@ -1126,8 +1126,9 @@ void DropdownMenu::OnBuildButton()
 
 void DropdownMenu::OnBuildMenuWithLayout()
 {
-	auto& list = OnBuildMenu();
-	list + MakeOverlay(200.f);
+	Push<OverlayElement>().Init(200);
+	OnBuildMenu();
+	Pop();
 }
 
 struct StopScroll : WrapperElement
@@ -1358,10 +1359,10 @@ void DefaultOverlayBuilder::Build()
 			tmpl->measure = false;
 			tmpl->placement = &placement;
 
-			Push<FrameElement>()
-				.SetDefaultFrameStyle(DefaultFrameStyle::ListBox)
-				.RegisterAsOverlay();
+			Push<OverlayElement>().Init(1000);
+			Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::ListBox);
 			Tooltip::Build();
+			Pop();
 			Pop();
 		}
 	}
@@ -1376,10 +1377,10 @@ void DefaultOverlayBuilder::Build()
 				tmpl->measure = false;
 				tmpl->placement = &placement;
 
-				Push<FrameElement>()
-					.SetDefaultFrameStyle(DefaultFrameStyle::ListBox)
-					.RegisterAsOverlay();
+				Push<OverlayElement>().Init(1000);
+				Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::ListBox);
 				ddd->Build();
+				Pop();
 				Pop();
 			}
 		}

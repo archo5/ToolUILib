@@ -445,6 +445,18 @@ struct SizeConstraintElement : WrapperElement
 	}
 };
 
+struct OverlayElement : WrapperElement
+{
+	float _depth = 0;
+
+	OverlayElement& Init(float depth) { return SetDepth(depth); }
+	OverlayElement& SetDepth(float depth);
+
+	void OnReset() override;
+	void _AttachToFrameContents(FrameContents* owner) override;
+	void _DetachFromFrameContents() override;
+};
+
 struct TextElement : UIObjectNoChildren
 {
 	std::string text;
@@ -583,22 +595,6 @@ struct AddTooltip : Modifier
 	AddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(Move(fn)) {}
 	AddTooltip(const std::string& s);
 	void Apply(UIObject* obj) const override;
-};
-
-struct MakeOverlay : Modifier
-{
-	MakeOverlay(float depth = 0.0f) : _enable(true), _depth(depth) {}
-	MakeOverlay(bool enable, float depth = 0.0f) : _enable(enable), _depth(depth) {}
-	void Apply(UIObject* obj) const override
-	{
-		if (_enable)
-			obj->RegisterAsOverlay(_depth);
-		else
-			obj->UnregisterAsOverlay();
-	}
-
-	bool _enable;
-	float _depth;
 };
 
 struct MakeDraggable : AddEventHandler

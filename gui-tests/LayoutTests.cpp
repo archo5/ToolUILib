@@ -293,7 +293,9 @@ struct PlacementTest : ui::Buildable
 		auto* ple = &ui::Push<ui::PlacementLayoutElement>();
 
 		ui::Push<ui::StackLTRLayoutElement>();
-		ui::imm::EditBool(open, nullptr, { ui::MakeOverlay(open, 1.0f) });
+		ui::Push<ui::OverlayElement>().Init(1);
+		ui::imm::EditBool(open, nullptr);
+		ui::Pop();
 		ui::Pop();
 
 		if (open)
@@ -306,7 +308,8 @@ struct PlacementTest : ui::Buildable
 			tmpl->placement = pap;
 			tmpl->measure = false;
 
-			ui::Push<ui::ListBoxFrame>() + ui::MakeOverlay();
+			ui::Push<ui::OverlayElement>();
+			ui::Push<ui::ListBoxFrame>();
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			// room for checkbox & spread width a bit
@@ -316,6 +319,7 @@ struct PlacementTest : ui::Buildable
 			ui::imm::PropEditBool("One", one);
 			ui::imm::PropEditInt("Two", two);
 
+			ui::Pop();
 			ui::Pop();
 			ui::Pop();
 		}
@@ -377,7 +381,8 @@ struct PlacementTest : ui::Buildable
 			tmpl->placement = pap;
 			tmpl->measure = false;
 
-			ui::Push<ui::ListBoxFrame>() + ui::MakeOverlay();
+			ui::Push<ui::OverlayElement>();
+			ui::Push<ui::ListBoxFrame>();
 			ui::Push<ui::StackTopDownLayoutElement>();
 
 			int num = 0;
@@ -394,6 +399,7 @@ struct PlacementTest : ui::Buildable
 			if (curSelection >= curOptionCount)
 				curSelection = 0;
 
+			ui::Pop();
 			ui::Pop();
 			ui::Pop();
 		}

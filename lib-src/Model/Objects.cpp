@@ -862,6 +862,37 @@ Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, E
 }
 
 
+OverlayElement& OverlayElement::SetDepth(float depth)
+{
+	bool isRegistered = (flags & UIObject_IsOverlay) != 0;
+	if (isRegistered)
+		UnregisterAsOverlay();
+	_depth = depth;
+	if (isRegistered)
+		RegisterAsOverlay(depth);
+	return *this;
+}
+
+void OverlayElement::OnReset()
+{
+	WrapperElement::OnReset();
+
+	_depth = 0;
+}
+
+void OverlayElement::_AttachToFrameContents(FrameContents* owner)
+{
+	WrapperElement::_AttachToFrameContents(owner);
+	RegisterAsOverlay(_depth);
+}
+
+void OverlayElement::_DetachFromFrameContents()
+{
+	UnregisterAsOverlay();
+	WrapperElement::_DetachFromFrameContents();
+}
+
+
 void TextElement::OnReset()
 {
 	UIObjectNoChildren::OnReset();
