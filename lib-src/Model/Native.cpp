@@ -814,8 +814,9 @@ struct NativeWindow_Impl
 			cont.rootBuildable->RootPaint();
 
 		system.overlays.UpdateSorted();
-		for (auto& ovr : system.overlays.sorted)
-			ovr.obj->RootPaint();
+		for (auto* ovr : system.overlays.sorted)
+			if (ovr->_child)
+				ovr->_child->RootPaint();
 
 		if (debugDrawEnabled)
 		{

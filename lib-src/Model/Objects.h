@@ -92,7 +92,7 @@ enum UIObjectFlags
 	UIObject_IsPressedOther = 1 << 15,
 	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
 	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and Rebuild upon activation
-	UIObject_IsOverlay = 1 << 17,
+	//UIObject_IsOverlay = 1 << 17,
 	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
 	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
 	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
@@ -233,9 +233,6 @@ struct UIObject : IPersistentObject
 	void ClearEventHandlers();
 	void ClearLocalEventHandlers();
 
-	void RegisterAsOverlay(float depth = 0);
-	void UnregisterAsOverlay();
-
 	virtual void OnPaint(const UIPaintContext& ctx) = 0;
 	void Paint(const UIPaintContext& ctx);
 	void RootPaint();
@@ -260,7 +257,7 @@ struct UIObject : IPersistentObject
 	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
 	bool HasFlags(UIObjectFlags f) const { return (flags & f) == f; }
 	bool InUse() const { return !!(flags & UIObject_IsClickedAnyMask) || IsFocused(); }
-	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_IsOverlay | UIObject_NoPaint)); }
+	bool _CanPaint() const { return !(flags & (UIObject_IsHidden | UIObject_NoPaint)); }
 	bool _NeedsLayout() const { return !(flags & UIObject_IsHidden); }
 
 	virtual void RemoveChildImpl(UIObject* ch) = 0;
@@ -448,6 +445,7 @@ struct SizeConstraintElement : WrapperElement
 struct OverlayElement : WrapperElement
 {
 	float _depth = 0;
+	bool _isRegistered = false;
 
 	OverlayElement& Init(float depth) { return SetDepth(depth); }
 	OverlayElement& SetDepth(float depth);

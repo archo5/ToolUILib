@@ -11,9 +11,6 @@ namespace ui {
 extern FrameContents* g_curSystem;
 
 
-static HashMap<UIObject*, Overlays::Info> g_overlays;
-
-
 PersistentObjectList::~PersistentObjectList()
 {
 	DeleteAll();
@@ -92,9 +89,6 @@ void UIObject::PO_ResetConfiguration()
 {
 	ClearEventHandlers();
 
-	// before detaching from frame to avoid a transfer
-	UnregisterAsOverlay();
-
 	DetachAll();
 
 	if (system)
@@ -115,7 +109,6 @@ void UIObject::PO_ResetConfiguration()
 
 void UIObject::PO_BeforeDelete()
 {
-	UnregisterAsOverlay();
 	DetachAll();
 
 	if (system)
@@ -140,12 +133,6 @@ void UIObject::_AttachToFrameContents(FrameContents* owner)
 	}
 
 	system->container.pendingDeactivationSet.RemoveIfFound(this);
-
-	if (flags & UIObject_IsOverlay)
-	{
-		system->overlays.Register(this, g_overlays.GetValuePtr(this)->depth);
-		g_overlays.Remove(this);
-	}
 
 	// TODO verify possibly inconsistent duplicate flags of states (if flag set)
 #if 0
@@ -172,12 +159,6 @@ void UIObject::_DetachFromFrameContents()
 
 	system->container.layoutStack.OnDestroy(this);
 	system->container.pendingDeactivationSet.RemoveIfFound(this);
-
-	if (flags & UIObject_IsOverlay)
-	{
-		g_overlays.Insert(this, *system->overlays.mapped.GetValuePtr(this));
-		system->overlays.Unregister(this);
-	}
 
 	system = nullptr;
 }
@@ -355,27 +336,6 @@ void UIObject::ClearEventHandlers()
 		_firstEH = n;
 	}
 	_lastEH = nullptr;
-}
-
-void UIObject::RegisterAsOverlay(float depth)
-{
-	if (system)
-		system->overlays.Register(this, depth);
-	else
-		g_overlays.Insert(this, { depth });
-	flags |= UIObject_IsOverlay;
-}
-
-void UIObject::UnregisterAsOverlay()
-{
-	if (flags & UIObject_IsOverlay)
-	{
-		if (system)
-			system->overlays.Unregister(this);
-		else
-			g_overlays.Remove(this);
-		flags &= ~UIObject_IsOverlay;
-	}
 }
 
 void UIObject::Paint(const UIPaintContext& ctx)
@@ -864,12 +824,9 @@ Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, E
 
 OverlayElement& OverlayElement::SetDepth(float depth)
 {
-	bool isRegistered = (flags & UIObject_IsOverlay) != 0;
-	if (isRegistered)
-		UnregisterAsOverlay();
 	_depth = depth;
-	if (isRegistered)
-		RegisterAsOverlay(depth);
+	if (_isRegistered)
+		system->overlays.sortedOutdated = true;
 	return *this;
 }
 
@@ -883,12 +840,16 @@ void OverlayElement::OnReset()
 void OverlayElement::_AttachToFrameContents(FrameContents* owner)
 {
 	WrapperElement::_AttachToFrameContents(owner);
-	RegisterAsOverlay(_depth);
+
+	system->overlays.Register(this);
+	_isRegistered = true;
 }
 
 void OverlayElement::_DetachFromFrameContents()
 {
-	UnregisterAsOverlay();
+	_isRegistered = false;
+	system->overlays.Unregister(this);
+
 	WrapperElement::_DetachFromFrameContents();
 }
 

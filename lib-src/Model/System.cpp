@@ -335,15 +335,15 @@ bool LastIsNew()
 }
 
 
-void Overlays::Register(UIObject* obj, float depth)
+void Overlays::Register(OverlayElement* oe)
 {
-	mapped[obj] = { depth };
+	mapped.Insert(oe);
 	sortedOutdated = true;
 }
 
-void Overlays::Unregister(UIObject* obj)
+void Overlays::Unregister(OverlayElement* oe)
 {
-	mapped.Remove(obj);
+	mapped.Remove(oe);
 	sortedOutdated = true;
 }
 
@@ -354,9 +354,9 @@ void Overlays::UpdateSorted()
 
 	sorted.Clear();
 	sorted.Reserve(mapped.size());
-	for (const auto& kvp : mapped)
-		sorted.Append({ kvp.key, kvp.value.depth });
-	std::sort(sorted.begin(), sorted.end(), [](const Sorted& a, const Sorted& b) { return a.depth < b.depth; });
+	for (OverlayElement* oe : mapped)
+		sorted.Append(oe);
+	std::sort(sorted.begin(), sorted.end(), [](const OverlayElement* a, const OverlayElement* b) { return a->_depth < b->_depth; });
 	sortedOutdated = false;
 }
 

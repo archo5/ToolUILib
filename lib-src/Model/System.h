@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "../Core/Array.h"
-#include "../Core/HashMap.h"
+#include "../Core/HashSet.h"
 #include "../Core/Logging.h"
 #include "Objects.h"
 #include "EventSystem.h"
@@ -303,23 +303,13 @@ public:
 
 struct Overlays
 {
-	struct Info
-	{
-		float depth;
-	};
-	struct Sorted
-	{
-		UIObject* obj;
-		float depth;
-	};
-
-	void Register(UIObject* obj, float depth);
-	void Unregister(UIObject* obj);
+	void Register(OverlayElement* oe);
+	void Unregister(OverlayElement* oe);
 	void UpdateSorted();
 
 	// TODO hide impl?
-	HashMap<UIObject*, Info> mapped;
-	Array<Sorted> sorted;
+	HashSet<OverlayElement*> mapped;
+	Array<OverlayElement*> sorted;
 	bool sortedOutdated = false;
 };
 
