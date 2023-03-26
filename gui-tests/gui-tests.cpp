@@ -325,6 +325,7 @@ void Test_ColorBlock();
 void Test_Image();
 void Test_ColorPicker();
 void Test_IMGUI();
+void Test_ModalWindow();
 void Test_Docking();
 
 void Test_3DView();
@@ -427,6 +428,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Color picker", Test_ColorPicker },
 	{},
 	{ "IMGUI test", Test_IMGUI },
+	{ "Modal window test", Test_ModalWindow },
 	{ "Docking test", Test_Docking },
 };
 static const TestEntry _3dTestEntries[] =

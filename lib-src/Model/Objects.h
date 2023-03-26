@@ -442,6 +442,13 @@ struct SizeConstraintElement : WrapperElement
 	}
 };
 
+struct CenteringElement : WrapperElement
+{
+	Vec2f align = { 0.5f, 0.5f };
+
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
+};
+
 struct OverlayElement : WrapperElement
 {
 	float _depth = 0;

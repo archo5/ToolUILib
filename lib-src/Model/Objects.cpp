@@ -825,6 +825,23 @@ Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, E
 }
 
 
+void CenteringElement::OnLayout(const UIRect& rect, LayoutInfo info)
+{
+	if (_child)
+	{
+		auto wr = CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Exact);
+		auto hr = CalcEstimatedHeight(rect.GetSize(), ui::EstSizeType::Exact);
+		float w = roundf(wr.min);
+		float h = roundf(hr.min);
+		float x = roundf(rect.x0 + (rect.GetWidth() - w) * align.x);
+		float y = roundf(rect.y0 + (rect.GetHeight() - h) * align.y);
+		UIRect r = { x, y, x + w, y + h };
+		_child->PerformLayout(r, info);
+	}
+	_finalRect = rect;
+}
+
+
 OverlayElement& OverlayElement::SetDepth(float depth)
 {
 	_depth = depth;

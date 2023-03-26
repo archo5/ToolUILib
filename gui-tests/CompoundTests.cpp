@@ -1093,6 +1093,91 @@ void Test_Dropdown()
 }
 
 
+struct ModalWindowTest : ui::Buildable
+{
+	ui::Array<UIObject*> modalWindows;
+
+	struct QuestionWindow : ui::Buildable
+	{
+		std::string questionText;
+		std::string buttonText;
+
+		void Build() override
+		{
+			WPush<ui::LayerLayoutElement>();
+			{
+				WMake<ui::BackgroundBlocker>();
+
+				WPush<ui::CenteringElement>();
+				WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ListBox);
+				WPush<ui::StackTopDownLayoutElement>();
+				{
+					WMakeWithText<ui::Header>(questionText);
+
+					WMake<ui::SizeConstraintElement>().SetSize(200, 30);
+
+					WMakeWithText<ui::Button>(buttonText) + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&)
+					{
+						SetVisible(false);
+						RebuildContainer();
+					});
+				}
+				WPop();
+				WPop();
+				WPop();
+			}
+			WPop();
+		}
+	};
+
+	void OpenWindow(const char* questionText, const char* buttonText)
+	{
+		auto* qw = ui::CreateUIObject<QuestionWindow>();
+		qw->questionText = questionText;
+		qw->buttonText = buttonText;
+		modalWindows.Append(qw);
+		Rebuild();
+	}
+
+	void Build() override
+	{
+		WPush<ui::LayerLayoutElement>();
+		{
+			WPush<ui::StackTopDownLayoutElement>();
+			{
+				WMakeWithText<ui::Button>("Open a modal window") + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&)
+				{
+					OpenWindow("Do you see this window?", "Yes");
+				});
+			}
+			WPop();
+
+			for (auto*& mw : modalWindows)
+			{
+				if (!mw->IsVisible())
+				{
+					ui::DeleteUIObject(mw);
+					mw = nullptr;
+				}
+				else
+				{
+					if (auto* B = dynamic_cast<ui::Buildable*>(mw))
+						ui::Add(B);
+					else
+						ui::Add(mw);
+				}
+			}
+			modalWindows.RemoveAllOf(nullptr);
+		}
+		WPop();
+	}
+};
+void Test_ModalWindow()
+{
+	WMake<ModalWindowTest>();
+}
+
+
 struct DockingTest : ui::Buildable, ui::DockableContentsSource
 {
 	struct DockableTest : ui::DockableContents
