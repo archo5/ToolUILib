@@ -704,6 +704,8 @@ struct DefaultOverlayBuilder : Buildable
 	{
 		Buildable::OnReset();
 
+		flags |= UIObject_HitTestPassthrough;
+
 		drawTooltip = true;
 		drawDragDrop = true;
 	}

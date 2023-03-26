@@ -726,7 +726,7 @@ UIObject* UIObjectSingleChild::FindObjectAtPoint(Point2f pos)
 	if (_child)
 		if (auto* o = _child->FindObjectAtPoint(pos))
 			return o;
-	if (Contains(pos))
+	if (!(flags & UIObject_HitTestPassthrough) && Contains(pos))
 		return this;
 	return nullptr;
 }
@@ -987,7 +987,7 @@ UIObject* ChildScaleOffsetElement::FindObjectAtPoint(Point2f pos)
 		if (auto* o = _child->FindObjectAtPoint(chpos))
 			return o;
 	}
-	if (Contains(pos))
+	if (!(flags & UIObject_HitTestPassthrough) && Contains(pos))
 		return this;
 	return nullptr;
 }

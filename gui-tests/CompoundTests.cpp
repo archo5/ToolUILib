@@ -730,7 +730,7 @@ struct ColorPickerTest : ui::Buildable
 {
 	void Build() override
 	{
-		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::LayerLayoutElement>();
 
 		auto& cp = WMake<ui::ColorPicker>().SetColor(colorPickerTestCol);
 		cp.HandleEvent(ui::EventType::Change) = [&cp](ui::Event& e)
@@ -740,7 +740,7 @@ struct ColorPickerTest : ui::Buildable
 
 		WMake<ui::DefaultOverlayBuilder>();
 
-		WPop(); // TODO: hack, needed for overlay builder above
+		WPop(); // TODO: hack (?), needed for overlay builder above
 	}
 };
 void Test_ColorPicker()

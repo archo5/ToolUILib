@@ -53,7 +53,7 @@ struct SequenceEditorsTest : ui::Buildable
 
 	void Build() override
 	{
-		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::LayerLayoutElement>();
 
 		WPush<ui::EdgeSliceLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
@@ -133,7 +133,7 @@ struct SequenceEditorsTest : ui::Buildable
 		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
-		WPop(); // TODO: hack for overlay builder above
+		WPop(); // TODO: hack (?) for overlay builder above
 	}
 
 	void SeqEdit(ui::ISequence* seq, ui::ISelectionStorage* sel)
@@ -495,7 +495,7 @@ struct TreeEditorsTest : ui::Buildable
 
 	void Build() override
 	{
-		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::LayerLayoutElement>();
 
 		WPush<ui::EdgeSliceLayoutElement>();
 		{
@@ -567,7 +567,7 @@ struct TreeEditorsTest : ui::Buildable
 		WPop(); // EdgeSliceLayoutElement
 
 		WMake<ui::DefaultOverlayBuilder>();
-		WPop(); // TODO: hack for overlay builder above
+		WPop(); // TODO: hack (?) for overlay builder above
 	}
 
 	void TreeEdit(ui::ITree* itree)

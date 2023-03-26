@@ -51,6 +51,7 @@ struct SubUIBenchmark : ui::Buildable
 				break;
 			}
 		}
+		subui.FinalizeOnEvent(e);
 	}
 	void Build() override
 	{

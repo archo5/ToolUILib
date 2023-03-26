@@ -352,6 +352,8 @@ struct TE_ThemeEditorNode : Buildable
 		topMenu.Last().submenu.Append(MenuItem("Save").Func([this]() { theme->SaveToFile("sample.ths"); Rebuild(); }));
 		UI_BUILD_ALLOC(TopMenu)(GetNativeWindow(), topMenu);
 
+		Push<LayerLayoutElement>();
+
 		auto& tp = Push<TabbedPanel>();
 		for (TE_Template* tmpl : theme->templates)
 		{
@@ -418,6 +420,10 @@ struct TE_ThemeEditorNode : Buildable
 			pen.tmpl = theme->curTemplate;
 		}
 		Pop();
+
+		Make<DefaultOverlayBuilder>();
+
+		Pop();
 	}
 
 	TE_Theme* theme;
@@ -433,7 +439,6 @@ int uimain(int argc, char* argv[])
 	TE_Theme theme;
 	auto* ten = CreateUIObject<TE_ThemeEditorNode>();
 	ten->theme = &theme;
-	//Make<DefaultOverlayBuilder>(); // TODO: make compatible with single child situations
 	mw.SetContents(ten, true);
 	mw.SetVisible(true);
 	return app.Run();

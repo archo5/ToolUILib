@@ -869,12 +869,14 @@ struct ColorPickerWindowContents : Buildable
 
 	void Build() override
 	{
+		Push<LayerLayoutElement>();
 		auto& picker = Make<ColorPicker>().SetColor(_window->_color);
 		picker.HandleEvent(EventType::Change) = [this, &picker](Event&)
 		{
 			_window->_color = picker.GetColor();
 		};
 		Make<DefaultOverlayBuilder>();
+		Pop(); // LayerLayoutElement
 	}
 };
 
@@ -920,6 +922,7 @@ struct ColorPickerWindowRTContents : Buildable
 
 	void Build() override
 	{
+		Push<LayerLayoutElement>();
 		auto& picker = Make<ColorPicker>().SetColor(_editor->GetColor());
 		picker.HandleEvent(EventType::Change) = [this, &picker](Event& e)
 		{
@@ -928,6 +931,7 @@ struct ColorPickerWindowRTContents : Buildable
 			e.context->OnCommit(_editor);
 		};
 		Make<DefaultOverlayBuilder>();
+		Pop(); // LayerLayoutElement
 	}
 };
 

@@ -92,7 +92,7 @@ enum UIObjectFlags
 	UIObject_IsPressedOther = 1 << 15,
 	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
 	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and Rebuild upon activation
-	//UIObject_IsOverlay = 1 << 17,
+	UIObject_HitTestPassthrough = 1 << 17,
 	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
 	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
 	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
@@ -368,7 +368,7 @@ struct UIObjectNoChildren : UIObject
 	void DetachChildren(bool recursive) override {}
 	void AppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override {}
-	UIObject* FindObjectAtPoint(Point2f pos) override { return nullptr; }
+	UIObject* FindObjectAtPoint(Point2f pos) override { return Contains(pos) ? this : nullptr; }
 
 	void OnLayout(const UIRect& rect, LayoutInfo info) override { _finalRect = rect; }
 };

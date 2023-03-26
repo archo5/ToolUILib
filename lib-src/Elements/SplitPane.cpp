@@ -441,7 +441,7 @@ UIObject* SplitPane::FindObjectAtPoint(Point2f pos)
 			if (auto* o = _children[i]->FindObjectAtPoint(pos))
 				return o;
 	}
-	if (Contains(pos))
+	if (!(flags & UIObject_HitTestPassthrough) && Contains(pos))
 		return this;
 	return nullptr;
 }

@@ -271,6 +271,21 @@ struct EdgeSliceLayoutElement : LayoutElement<_::EdgeSliceLayoutElement_Slot>
 
 
 namespace _ {
+struct LayerLayoutElement_Slot
+{
+	UIObject* _obj = nullptr;
+};
+}
+
+struct LayerLayoutElement : LayoutElement<_::LayerLayoutElement_Slot>
+{
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
+};
+
+
+namespace _ {
 struct PlacementLayoutElement_Slot
 {
 	UIObject* _obj = nullptr;

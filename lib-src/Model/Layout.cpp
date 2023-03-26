@@ -438,6 +438,49 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
+LayerLayoutElement::Slot LayerLayoutElement::_slotTemplate;
+
+Rangef LayerLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	Rangef r = Rangef::AtLeast(0);
+	for (auto& slot : _slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		auto cr = slot._obj->CalcEstimatedWidth(containerSize, type);
+		r = r.Intersect(cr);
+	}
+	return r;
+}
+
+Rangef LayerLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	Rangef r = Rangef::AtLeast(0);
+	for (auto& slot : _slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		auto cr = slot._obj->CalcEstimatedHeight(containerSize, type);
+		r = r.Intersect(cr);
+	}
+	return r;
+}
+
+void LayerLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
+{
+	for (auto& slot : _slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		slot._obj->PerformLayout(rect, { LayoutInfo::FillH | LayoutInfo::FillV });
+	}
+	_finalRect = rect;
+}
+
+
 PlacementLayoutElement::Slot PlacementLayoutElement::_slotTemplate;
 
 Rangef PlacementLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
