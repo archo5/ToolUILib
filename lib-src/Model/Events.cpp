@@ -330,18 +330,9 @@ UIObject* EventSystem::FindObjectAtPosition(Point2f pos)
 
 UIObject* EventSystem::_FindObjectAtPosition(UIObject* root, Point2f pos)
 {
-	UIObject* o = root;
-	if (!o || !o->Contains(pos))
-		return nullptr;
-
-	pos = o->LocalToChildPoint(pos);
-
-	while (auto* ch = o->FindLastChildContainingPos(pos))
-	{
-		pos = ch->LocalToChildPoint(pos);
-		o = ch;
-	}
-	return o;
+	if (root)
+		return root->FindObjectAtPoint(pos);
+	return nullptr;
 }
 
 void EventSystem::MoveClickTo(UIObject* obj, MouseButton btn)

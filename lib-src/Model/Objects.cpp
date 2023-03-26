@@ -721,10 +721,13 @@ void UIObjectSingleChild::OnPaint(const UIPaintContext& ctx)
 		_child->Paint(ctx);
 }
 
-UIObject* UIObjectSingleChild::FindLastChildContainingPos(Point2f pos) const
+UIObject* UIObjectSingleChild::FindObjectAtPoint(Point2f pos)
 {
-	if (_child && _child->Contains(pos))
-		return _child;
+	if (_child)
+		if (auto* o = _child->FindObjectAtPoint(pos))
+			return o;
+	if (Contains(pos))
+		return this;
 	return nullptr;
 }
 
@@ -974,6 +977,19 @@ Point2f ChildScaleOffsetElement::LocalToChildPoint(Point2f pos) const
 	pos -= { cr.x0, cr.y0 };
 	pos = transform.InverseTransformPoint(pos);
 	return pos;
+}
+
+UIObject* ChildScaleOffsetElement::FindObjectAtPoint(Point2f pos)
+{
+	if (_child)
+	{
+		auto chpos = ChildScaleOffsetElement::LocalToChildPoint(pos);
+		if (auto* o = _child->FindObjectAtPoint(chpos))
+			return o;
+	}
+	if (Contains(pos))
+		return this;
+	return nullptr;
 }
 
 Rangef ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

@@ -251,7 +251,7 @@ struct UIObject : IPersistentObject
 		return GetFinalRect().Contains(pos);
 	}
 	virtual Point2f LocalToChildPoint(Point2f pos) const { return pos; }
-	virtual UIObject* FindLastChildContainingPos(Point2f pos) const = 0;
+	virtual UIObject* FindObjectAtPoint(Point2f pos) = 0;
 
 	void SetFlag(UIObjectFlags flag, bool set);
 	static bool HasFlags(uint32_t total, UIObjectFlags f) { return (total & f) == f; }
@@ -368,7 +368,7 @@ struct UIObjectNoChildren : UIObject
 	void DetachChildren(bool recursive) override {}
 	void AppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override {}
-	UIObject* FindLastChildContainingPos(Point2f pos) const override { return nullptr; }
+	UIObject* FindObjectAtPoint(Point2f pos) override { return nullptr; }
 
 	void OnLayout(const UIRect& rect, LayoutInfo info) override { _finalRect = rect; }
 };
@@ -384,7 +384,7 @@ struct UIObjectSingleChild : UIObject
 	void DetachChildren(bool recursive) override;
 	void AppendChild(UIObject* obj) override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	UIObject* FindLastChildContainingPos(Point2f pos) const override;
+	UIObject* FindObjectAtPoint(Point2f pos) override;
 	void _AttachToFrameContents(FrameContents* owner) override;
 	void _DetachFromFrameContents() override;
 	void _DetachFromTree() override;
@@ -491,6 +491,8 @@ struct ChildScaleOffsetElement : WrapperElement
 	void OnPaintSingleChild(SingleChildPaintPtr* next, const UIPaintContext& ctx) override;
 
 	Point2f LocalToChildPoint(Point2f pos) const override;
+	UIObject* FindObjectAtPoint(Point2f pos) override;
+
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;

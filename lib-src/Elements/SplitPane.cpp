@@ -432,14 +432,17 @@ void SplitPane::AppendChild(UIObject* obj)
 		obj->_AttachToFrameContents(system);
 }
 
-UIObject* SplitPane::FindLastChildContainingPos(Point2f pos) const
+UIObject* SplitPane::FindObjectAtPoint(Point2f pos)
 {
 	for (size_t i = _children.size(); i > 0; )
 	{
 		i--;
 		if (_children[i]->Contains(pos))
-			return _children[i];
+			if (auto* o = _children[i]->FindObjectAtPoint(pos))
+				return o;
 	}
+	if (Contains(pos))
+		return this;
 	return nullptr;
 }
 

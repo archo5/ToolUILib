@@ -130,13 +130,14 @@ struct LayoutElement : UIObject
 			slot._obj->Paint(ctx);
 	}
 
-	UIObject* FindLastChildContainingPos(Point2f pos) const override
+	UIObject* FindObjectAtPoint(Point2f pos) override
 	{
 		for (size_t i = _slots.Size(); i > 0; )
 		{
 			i--;
 			if (_slots[i]._obj->Contains(pos))
-				return _slots[i]._obj;
+				if (auto* o = _slots[i]._obj->FindObjectAtPoint(pos))
+					return o;
 		}
 		return nullptr;
 	}

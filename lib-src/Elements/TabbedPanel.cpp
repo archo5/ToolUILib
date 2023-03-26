@@ -508,17 +508,19 @@ void TabbedPanel::DetachChildren(bool recursive)
 	UIObjectSingleChild::DetachChildren(recursive);
 }
 
-UIObject* TabbedPanel::FindLastChildContainingPos(Point2f pos) const
+UIObject* TabbedPanel::FindObjectAtPoint(Point2f pos)
 {
 	if (_tabBarExtension)
 		if (_tabBarExtension->Contains(pos))
-			return _tabBarExtension;
+			if (auto* o = _tabBarExtension->FindObjectAtPoint(pos))
+				return o;
 
 	for (auto& tab : _tabs)
 		if (tab.obj && tab.obj->Contains(pos))
-			return tab.obj;
+			if (auto* o = tab.obj->FindObjectAtPoint(pos))
+				return o;
 
-	return UIObjectSingleChild::FindLastChildContainingPos(pos);
+	return UIObjectSingleChild::FindObjectAtPoint(pos);
 }
 
 void TabbedPanel::_AttachToFrameContents(FrameContents* owner)

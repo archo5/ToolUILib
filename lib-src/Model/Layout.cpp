@@ -501,7 +501,7 @@ void PlacementLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 				r = { 0, 0, system->eventSystem.width, system->eventSystem.height };
 			slot.placement->OnApplyPlacement(slot._obj, r);
 		}
-		//contRect = contRect.Include(r);
+		contRect = contRect.Include(r);
 		r.x0 = roundf(r.x0);
 		r.y0 = roundf(r.y0);
 		r.x1 = roundf(r.x1);

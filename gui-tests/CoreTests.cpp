@@ -922,6 +922,7 @@ struct SubUITest : ui::Buildable
 			dox = 0;
 			doy = 0;
 		}
+		subui.FinalizeOnEvent(e);
 	}
 	void Build() override
 	{
