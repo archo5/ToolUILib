@@ -295,6 +295,7 @@ void Test_KeyboardEvents();
 void Test_RawMouseEvents();
 void Test_OpenClose();
 void Test_AppendMix();
+void Test_RebuildEvents();
 void Test_AnimationRequest();
 void Test_ElementReset();
 void Test_SubUI();
@@ -385,6 +386,7 @@ static const TestEntry coreTestEntries[] =
 	{ "- Basic logic -" },
 	{ "Open/Close", Test_OpenClose },
 	{ "Append (+mixing/replacing)", Test_AppendMix },
+	{ "Rebuild events", Test_RebuildEvents },
 	{ "Animation requests", Test_AnimationRequest },
 	{ "Element reset", Test_ElementReset },
 	{ "SubUI", Test_SubUI },

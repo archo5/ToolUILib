@@ -575,6 +575,185 @@ void Test_AppendMix()
 }
 
 
+enum ObjectEventType
+{
+	OE_AttachToFrameContents,
+	OE_DetachFromFrameContents,
+	OE_OnEnable,
+	OE_OnDisable,
+	OE_OnEnterTree,
+	OE_OnExitTree,
+	OE_Build,
+	OE_Rebuild,
+
+	OE__COUNT,
+};
+struct ObjectEvent
+{
+	ui::UIObject* obj;
+	ObjectEventType type;
+	int num;
+};
+static const char* g_objEvNames[] =
+{
+	"FC+",
+	"FC-",
+	"On+",
+	"Off",
+	"Tr+",
+	"Tr-",
+	"Bld",
+	"RBD",
+};
+static const ui::Color4b g_objEvColors[] =
+{
+	ui::Color4f::HSV(0.05f, 0.8f, 0.8f),
+	ui::Color4f::HSV(0.05f, 0.6f, 0.6f),
+	ui::Color4f::HSV(0.25f, 0.8f, 0.8f),
+	ui::Color4f::HSV(0.25f, 0.6f, 0.6f),
+	ui::Color4f::HSV(0.45f, 0.8f, 0.8f),
+	ui::Color4f::HSV(0.45f, 0.6f, 0.6f),
+	ui::Color4f::HSV(0.6f, 0.8f, 0.8f),
+	ui::Color4f::HSV(0, 0, 1),
+};
+static int g_eventNum;
+static ui::Array<ObjectEvent> g_objEvents;
+struct RebuildEventsTest : ui::Buildable
+{
+	struct EventB : ui::Buildable
+	{
+		int depth = -1;
+		EventB* sub = nullptr;
+		EventB()
+		{
+			flags |= ui::UIObject_NeedsTreeUpdates;
+		}
+		~EventB()
+		{
+			ui::DeleteUIObject(sub);
+		}
+		void _AttachToFrameContents(ui::FrameContents* owner) override
+		{
+			AddEvent(this, OE_AttachToFrameContents);
+			ui::Buildable::_AttachToFrameContents(owner);
+		}
+		void _DetachFromFrameContents() override
+		{
+			AddEvent(this, OE_DetachFromFrameContents);
+			ui::Buildable::_DetachFromFrameContents();
+		}
+		void OnEnable() override
+		{
+			AddEvent(this, OE_OnEnable);
+		}
+		void OnDisable() override
+		{
+			AddEvent(this, OE_OnDisable);
+		}
+		void OnEnterTree() override
+		{
+			AddEvent(this, OE_OnEnterTree);
+		}
+		void OnExitTree() override
+		{
+			AddEvent(this, OE_OnExitTree);
+		}
+		void Build() override
+		{
+			AddEvent(this, OE_Build);
+
+			if (depth == 0)
+			{
+				ui::Push<ui::StackTopDownLayoutElement>();
+
+				ui::Make<ui::SizeConstraintElement>().SetHeight(OE__COUNT * 8);
+
+				ui::Make<EventB>().depth = depth + 1;
+
+				if (!sub)
+				{
+					sub = ui::CreateUIObject<EventB>();
+					sub->depth = depth + 1;
+				}
+				ui::Add(*sub);
+
+				ui::Pop();
+			}
+			else
+			{
+				ui::Make<ui::SizeConstraintElement>().SetHeight(OE__COUNT * 8);
+			}
+		}
+
+		void OnEvent(ui::Event& e) override
+		{
+			if (e.type == ui::EventType::Click)
+			{
+				AddEvent(this, OE_Rebuild);
+				Rebuild();
+				e.StopPropagation();
+			}
+		}
+		void OnPaint(const ui::UIPaintContext& ctx) override
+		{
+			auto fr = GetFinalRect();
+			auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF, ui::FONT_WEIGHT_BOLD);
+			float xb = fr.x0 + 20;
+			for (int i = 0; i < OE__COUNT; i++)
+			{
+				ui::draw::TextLine(font, 8, fr.x0 + depth * 4, fr.y0 + 8 * i, g_objEvNames[i], g_objEvColors[i], ui::TextBaseline::Top);
+			}
+			for (auto& ev : g_objEvents)
+			{
+				if (ev.obj != this)
+					continue;
+				float x = xb + ev.num * 8;
+				float y = fr.y0 + 8 * ev.type;
+				ui::draw::RectCol({ x, y, x + 7, y + 8 }, g_objEvColors[ev.type]);
+			}
+
+			ui::Buildable::OnPaint(ctx);
+		}
+	};
+
+	EventB* manualAlloc;
+	RebuildEventsTest()
+	{
+		g_eventNum = 0;
+		manualAlloc = ui::CreateUIObject<EventB>();
+		manualAlloc->depth = 0;
+	}
+	~RebuildEventsTest()
+	{
+		ui::DeleteUIObject(manualAlloc);
+		g_objEvents.Clear();
+	}
+	static void AddEvent(UIObject* o, ObjectEventType oet)
+	{
+		int en = ++g_eventNum;
+		g_objEvents.Append({ o, oet, en });
+	}
+	void Build() override
+	{
+		ui::Push<ui::StackTopDownLayoutElement>();
+		ui::MakeWithText<ui::Button>("Clear events") + ui::AddEventHandler(ui::EventType::Activate, [](ui::Event&)
+		{
+			g_eventNum = 0;
+			g_objEvents.Clear();
+		});
+
+		ui::Make<EventB>().depth = 0;
+		ui::Add(*manualAlloc);
+
+		ui::Pop();
+	}
+};
+void Test_RebuildEvents()
+{
+	ui::Make<RebuildEventsTest>();
+}
+
+
 struct AnimationRequestTest : ui::Buildable
 {
 	AnimationRequestTest()

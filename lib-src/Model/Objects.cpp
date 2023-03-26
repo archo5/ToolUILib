@@ -95,9 +95,6 @@ void UIObject::PO_ResetConfiguration()
 
 	DetachAll();
 
-	if (system)
-		_DetachFromFrameContents();
-
 	auto origFlags = flags;
 	const uint32_t KEEP_MASK =
 		UIObject_IsHovered |
@@ -128,7 +125,6 @@ void UIObject::_InitReset()
 
 void UIObject::_AttachToFrameContents(FrameContents* owner)
 {
-	assert(!system);
 	if (!system)
 	{
 		system = owner;
