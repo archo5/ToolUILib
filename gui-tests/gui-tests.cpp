@@ -158,13 +158,18 @@ struct DataEditor : ui::Buildable
 			ui::Push<ui::StackTopDownLayoutElement>();
 			auto onClick = []()
 			{
-				struct DialogTest : ui::NativeDialogWindow
+				struct DialogTest : ui::NativeDialogWindow, ui::Buildable
 				{
 					DialogTest()
 					{
 						SetStyle(ui::WS_Resizable);
+						SetContents(this, false);
 					}
-					void OnBuild() override
+					~DialogTest()
+					{
+						PO_BeforeDelete();
+					}
+					void Build() override
 					{
 						ui::Push<ui::EdgeSliceLayoutElement>();
 
@@ -194,7 +199,9 @@ struct DataEditor : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 		};
-		nw.GetWindow()->SetBuildFunc(buildFunc);
+		auto* bcb = ui::CreateUIObject<ui::BuildCallback>();
+		bcb->buildFunc = buildFunc;
+		nw.GetWindow()->SetContents(bcb, true);
 		nw.GetWindow()->SetVisible(true);
 #endif
 
@@ -673,20 +680,11 @@ struct RHIListener : ui::rhi::IRHIListener
 g_rl;
 
 
-// force linking of tests
-// namespace ui { extern struct TestMathExpr g_tests; void q() { printf("%p\n", &ui::g_tests); } }
-
-
-void EarlyTest()
-{
-	puts("done");
-}
-
 struct MainWindow : ui::NativeMainWindow
 {
-	void OnBuild() override
+	MainWindow()
 	{
-		ui::Make<TEST>();
+		SetContents(ui::CreateUIObject<TEST>(), true);
 	}
 	void OnFocusReceived() override
 	{
@@ -702,7 +700,6 @@ int uimain(int argc, char* argv[])
 {
 	ui::LOG_UISYS.level = ui::LogLevel::All;
 
-	//EarlyTest();
 	ui::rhi::AttachListener(&g_rl);
 	ui::Application app(argc, argv);
 	ui::FSGetDefault()->fileSystems.Append(ui::CreateFileSystemSource("gui-tests/rsrc"));

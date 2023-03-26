@@ -302,7 +302,6 @@ struct ColorPicker : Buildable
 struct ColorPickerWindow : NativeDialogWindow
 {
 	ColorPickerWindow();
-	void OnBuild() override;
 
 	const MultiFormatColor& GetColor() const { return _color; }
 	void SetColor(const MultiFormatColor& c) { _color = c; }

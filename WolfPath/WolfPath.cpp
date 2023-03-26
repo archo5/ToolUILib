@@ -402,9 +402,9 @@ struct InspectorView : ui::Buildable
 static float hsplit[1] = { 0.6f };
 static float vsplit[1] = { 0.6f };
 
-struct MainWindow : ui::NativeMainWindow
+struct MainWindowContents : ui::Buildable
 {
-	void OnBuild() override
+	void Build() override
 	{
 		ui::Push<ui::SplitPane>().Init(ui::Direction::Horizontal, hsplit);
 		{
@@ -424,8 +424,9 @@ struct MainWindow : ui::NativeMainWindow
 int uimain(int argc, char* argv[])
 {
 	ui::Application app(argc, argv);
-	MainWindow mw;
+	ui::NativeMainWindow mw;
 	mw.SetInnerSize(1024, 576);
+	mw.SetContents(ui::CreateUIObject<MainWindowContents>(), true);
 	mw.SetVisible(true);
 	return app.Run();
 }

@@ -112,7 +112,7 @@ struct UIContainer
 	void ProcessBuildStack();
 	void ProcessLayoutStack();
 
-	void _BuildUsing(Buildable* n);
+	void _BuildUsing(Buildable* B, bool transferOwnership);
 
 	void Add(UIObject* obj)
 	{
@@ -176,6 +176,7 @@ struct UIContainer
 
 	FrameContents* owner = nullptr;
 	Buildable* rootBuildable = nullptr;
+	bool isRootBuildableOwned = false;
 	Buildable* _curBuildable = nullptr;
 	PersistentObjectList* _curObjectList = nullptr;
 	int debugpad1 = 0;
@@ -318,7 +319,7 @@ struct FrameContents
 {
 	FrameContents();
 	~FrameContents();
-	void BuildRoot(Buildable* B);
+	void BuildRoot(Buildable* B, bool transferOwnership);
 
 	UIContainer container;
 	EventSystem eventSystem;

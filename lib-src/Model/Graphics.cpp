@@ -863,20 +863,29 @@ void ColorPicker::Build()
 }
 
 
+struct ColorPickerWindowContents : Buildable
+{
+	ColorPickerWindow* _window = nullptr;
+
+	void Build() override
+	{
+		auto& picker = Make<ColorPicker>().SetColor(_window->_color);
+		picker.HandleEvent(EventType::Change) = [this, &picker](Event&)
+		{
+			_window->_color = picker.GetColor();
+		};
+		Make<DefaultOverlayBuilder>();
+	}
+};
+
 ColorPickerWindow::ColorPickerWindow()
 {
 	SetTitle("Color picker");
 	SetInnerSize(500, 300);
-}
 
-void ColorPickerWindow::OnBuild()
-{
-	auto& picker = Make<ColorPicker>().SetColor(_color);
-	picker.HandleEvent(EventType::Change) = [this, &picker](Event&)
-	{
-		_color = picker.GetColor();
-	};
-	Make<DefaultOverlayBuilder>();
+	auto* B = CreateUIObject<ColorPickerWindowContents>();
+	B->_window = this;
+	SetContents(B, true);
 }
 
 
@@ -905,14 +914,11 @@ ColorEdit& ColorEdit::SetColor(const MultiFormatColor& c)
 }
 
 
-struct ColorPickerWindowRT : NativeWindowBase
+struct ColorPickerWindowRTContents : Buildable
 {
-	ColorPickerWindowRT()
-	{
-		SetTitle("Color picker");
-		SetInnerSize(500, 300);
-	}
-	void OnBuild() override
+	ColorEditRT* _editor = nullptr;
+
+	void Build() override
 	{
 		auto& picker = Make<ColorPicker>().SetColor(_editor->GetColor());
 		picker.HandleEvent(EventType::Change) = [this, &picker](Event& e)
@@ -923,8 +929,19 @@ struct ColorPickerWindowRT : NativeWindowBase
 		};
 		Make<DefaultOverlayBuilder>();
 	}
+};
 
-	ColorEditRT* _editor = nullptr;
+struct ColorPickerWindowRT : NativeWindowBase
+{
+	ColorPickerWindowRT(ColorEditRT* editor)
+	{
+		SetTitle("Color picker");
+		SetInnerSize(500, 300);
+
+		auto* B = CreateUIObject<ColorPickerWindowRTContents>();
+		B->_editor = editor;
+		SetContents(B, true);
+	}
 };
 
 
@@ -937,8 +954,7 @@ void ColorEditRT::Build()
 		if (e.GetButton() == MouseButton::Left && !IsInputDisabled())
 		{
 			if (!_rtWindow)
-				_rtWindow = new ColorPickerWindowRT;
-			_rtWindow->_editor = this;
+				_rtWindow = new ColorPickerWindowRT(this);
 			_rtWindow->SetVisible(true);
 		}
 	});
@@ -954,7 +970,7 @@ ColorEditRT& ColorEditRT::SetColor(const MultiFormatColor& c)
 {
 	_color = c;
 	if (_rtWindow)
-		_rtWindow->Rebuild();
+		_rtWindow->RebuildRoot();
 	return *this;
 }
 

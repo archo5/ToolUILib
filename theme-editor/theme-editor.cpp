@@ -424,28 +424,17 @@ struct TE_ThemeEditorNode : Buildable
 	TE_Template* editNameTemplate = nullptr;
 };
 
-struct ThemeEditorMainWindow : NativeMainWindow
-{
-	ThemeEditorMainWindow()
-	{
-		SetTitle("Theme Editor");
-		SetInnerSize(1280, 720);
-	}
-	void OnBuild() override
-	{
-		auto& ten = Make<TE_ThemeEditorNode>();
-		ten.theme = &theme;
-
-		//Make<DefaultOverlayBuilder>(); // TODO: make compatible with single child situations
-	}
-
-	TE_Theme theme;
-};
-
 int uimain(int argc, char* argv[])
 {
 	Application app(argc, argv);
-	ThemeEditorMainWindow mw;
+	NativeMainWindow mw;
+	mw.SetTitle("Theme Editor");
+	mw.SetInnerSize(1280, 720);
+	TE_Theme theme;
+	auto* ten = CreateUIObject<TE_ThemeEditorNode>();
+	ten->theme = &theme;
+	//Make<DefaultOverlayBuilder>(); // TODO: make compatible with single child situations
+	mw.SetContents(ten, true);
 	mw.SetVisible(true);
 	return app.Run();
 }

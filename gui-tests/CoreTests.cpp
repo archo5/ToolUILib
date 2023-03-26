@@ -970,13 +970,13 @@ struct FrameTest : ui::Buildable
 		{
 			auto* f = ui::CreateUIObject<Frame>();
 			f->name = "Frame A";
-			frameContents[0]->BuildRoot(f);
+			frameContents[0]->BuildRoot(f, true);
 		}
 		frameContents[1] = new ui::FrameContents;
 		{
 			auto* f = ui::CreateUIObject<Frame>();
 			f->name = "Frame B";
-			frameContents[1]->BuildRoot(f);
+			frameContents[1]->BuildRoot(f, true);
 		}
 	}
 	void OnDisable() override
@@ -1024,14 +1024,19 @@ void Test_Frames()
 
 struct DialogWindowTest : ui::Buildable
 {
-	struct BasicDialog : ui::NativeDialogWindow
+	struct BasicDialog : ui::NativeDialogWindow, ui::Buildable
 	{
 		BasicDialog()
 		{
 			SetTitle("Basic dialog window");
 			SetInnerSize(200, 100);
+			SetContents(this, false);
 		}
-		void OnBuild() override
+		~BasicDialog()
+		{
+			PO_BeforeDelete();
+		}
+		void Build() override
 		{
 			WPush<ui::StackTopDownLayoutElement>();
 

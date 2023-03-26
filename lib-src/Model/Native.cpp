@@ -760,11 +760,9 @@ struct NativeWindow_Impl
 		return true;
 	}
 
-	void SetBuildFunc(std::function<void()> buildFunc)
+	void SetContents(Buildable* B, bool transferOwnership)
 	{
-		auto* cb = CreateUIObject<BuildCallback>();
-		cb->buildFunc = buildFunc;
-		system.BuildRoot(cb);
+		system.BuildRoot(B, transferOwnership);
 		system.eventSystem.RecomputeLayout();
 		GetOwner()->InvalidateAll();
 	}
@@ -952,15 +950,6 @@ NativeWindowBase::NativeWindowBase()
 	_impl->Init(this);
 }
 
-#if 0
-NativeWindowBase::NativeWindowBase(std::function<void(UIContainer*)> buildFunc)
-{
-	_impl = new NativeWindow_Impl();
-	_impl->Init(this);
-	_impl->SetBuildFunc(buildFunc);
-}
-#endif
-
 NativeWindowBase::~NativeWindowBase()
 {
 	_impl->GetContainer().Free();
@@ -972,12 +961,10 @@ void NativeWindowBase::OnClose()
 	SetVisible(false);
 }
 
-#if 0
-void NativeWindowBase::SetBuildFunc(std::function<void(UIContainer*)> buildFunc)
+void NativeWindowBase::SetContents(Buildable* B, bool transferOwnership)
 {
-	_impl->SetBuildFunc(buildFunc);
+	_impl->SetContents(B, transferOwnership);
 }
-#endif
 
 std::string NativeWindowBase::GetTitle()
 {
@@ -1018,8 +1005,6 @@ void NativeWindowBase::SetVisible(bool v)
 	if (v && _impl->firstShow)
 	{
 		_impl->firstShow = false;
-
-		_impl->SetBuildFunc([this]() { OnBuild(); });
 	}
 }
 
@@ -1232,7 +1217,7 @@ void NativeWindowBase::SetDebugDrawEnabled(bool enabled)
 	_impl->debugDrawEnabled = enabled;
 }
 
-void NativeWindowBase::Rebuild()
+void NativeWindowBase::RebuildRoot()
 {
 	// don't rebuild if the first build hasn't happened yet
 	// TODO rebuild always and clear the flag?
@@ -1283,27 +1268,9 @@ NativeWindowBase* NativeWindowBase::FindFromScreenPos(Point2i p)
 }
 
 
-void NativeWindowBuildFunc::OnBuild()
-{
-	if (_buildFunc)
-		_buildFunc();
-}
-
-void NativeWindowBuildFunc::SetBuildFunc(std::function<void()> buildFunc)
-{
-	_buildFunc = buildFunc;
-}
-
-
 void NativeMainWindow::OnClose()
 {
 	Application::Quit();
-}
-
-
-void NativeWindowNode::OnLayout(const UIRect& rect, LayoutInfo info)
-{
-	_finalRect = {};
 }
 
 
@@ -1378,6 +1345,10 @@ struct Inspector : NativeDialogWindow
 	{
 		SetTitle("Inspector");
 		SetInnerSize(1024, 768);
+
+		auto* B = CreateUIObject<InspectorUI>();
+		B->insp = this;
+		SetContents(B, true);
 	}
 
 	struct InspectorUI : Buildable
@@ -1500,12 +1471,6 @@ struct Inspector : NativeDialogWindow
 			}
 		}
 	};
-
-	void OnBuild() override
-	{
-		ui = &Make<InspectorUI>();
-		ui->insp = this;
-	}
 
 	void Select(NativeWindowBase* window, UIObject* obj)
 	{

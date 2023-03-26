@@ -15,7 +15,7 @@ static MulticastDelegate<DockingNode*> OnDockingNodeUpdated;
 DockableContentsContainer::DockableContentsContainer(DockableContents* C) : contents(C)
 {
 	frameContents = new FrameContents;
-	frameContents->BuildRoot(C);
+	frameContents->BuildRoot(C, true);
 }
 
 void DockingNode::SetSubwindow(DockingSubwindow* dsw)
@@ -303,26 +303,25 @@ DockingSubwindow::DockingSubwindow()
 	SetStyle(WS_Resizable);
 }
 
-void DockingSubwindow::OnBuild()
+DockingSubwindow::~DockingSubwindow()
 {
-	auto* B = GetCurrentBuildable();
-	_root = B;
-	BuildMulticastDelegateAdd(OnDockingRootUpdated, [this, B](DockingNodeHandle* h)
-	{
-		if (h == &rootNode)
-			B->Rebuild();
-	});
-	if (_dragging)
-		B->system->eventSystem.CaptureMouse(B);
-	//rootNode->Build();
-	Make<DockingWindowContentBuilder>()._root = rootNode;
-	B->HandleEvent() = [this](Event& e)
-	{
-		OnBuildableEvent(e);
-	};
+	PO_BeforeDelete();
 }
 
-void DockingSubwindow::OnBuildableEvent(Event& e)
+void DockingSubwindow::Build()
+{
+	BuildMulticastDelegateAdd(OnDockingRootUpdated, [this](DockingNodeHandle* h)
+	{
+		if (h == &rootNode)
+			Rebuild();
+	});
+	if (_dragging)
+		system->eventSystem.CaptureMouse(this);
+	//rootNode->Build();
+	Make<DockingWindowContentBuilder>()._root = rootNode;
+}
+
+void DockingSubwindow::OnEvent(Event& e)
 {
 	//printf("%s\n", EventTypeToBaseString(e.type));
 	if (_dragging)
@@ -392,8 +391,8 @@ void DockingSubwindow::StartDrag()
 	// force-transfer capture to this window
 	CaptureMouse();
 
-	if (_root)
-		_root->system->eventSystem.CaptureMouse(_root);
+	if (system)
+		system->eventSystem.CaptureMouse(this);
 }
 
 void DockingWindowContentBuilder::Build()
@@ -481,7 +480,8 @@ void DockingMainArea::_PullOutTab(DockingNode* node, size_t tabID)
 	_subwindows.Append(DSW);
 	AABB2i finalClientRect = rect.MoveBy(wpos.x, wpos.y);
 	DSW->SetInnerRect(finalClientRect);
-	DSW->SetVisible(true);
+	DSW->SetContents(DSW, false);
+	DSW->NativeWindowBase::SetVisible(true);
 	DSW->StartDrag();
 
 	DragDrop::SetData(nullptr);
@@ -806,7 +806,8 @@ void DockingMainArea::AddSubwindow(const DockDefNode& node)
 	DSW->rootNode = node.Construct(this);
 	DSW->rootNode->SetSubwindow(DSW);
 	_subwindows.Append(DSW);
-	DSW->SetVisible(true);
+	DSW->SetContents(DSW, false);
+	DSW->NativeWindowBase::SetVisible(true);
 }
 
 bool DockingMainArea::HasDockable(StringView id) const
@@ -843,7 +844,8 @@ void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 			OnField(oi, "tab", *DSW);
 
 			_subwindows.Append(DSW);
-			DSW->SetVisible(true);
+			DSW->SetContents(DSW, false);
+			DSW->NativeWindowBase::SetVisible(true);
 		}
 
 		oi.EndArray();

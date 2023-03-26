@@ -106,15 +106,14 @@ struct NativeWindow_Impl;
 struct NativeWindowBase
 {
 	NativeWindowBase();
-	//NativeWindowBase(std::function<void(UIContainer*)> buildFunc);
 	~NativeWindowBase();
 
-	virtual void OnBuild() = 0;
 	virtual void OnClose();
-	//void SetBuildFunc(std::function<void(UIContainer*)> buildFunc);
 
 	virtual void OnFocusReceived() {}
 	virtual void OnFocusLost() {}
+
+	void SetContents(Buildable* B, bool transferOwnership);
 
 	std::string GetTitle();
 	void SetTitle(StringView title);
@@ -166,7 +165,7 @@ struct NativeWindowBase
 	bool IsDebugDrawEnabled();
 	void SetDebugDrawEnabled(bool enabled);
 
-	void Rebuild();
+	void RebuildRoot();
 	void InvalidateAll();
 
 	void SetDefaultCursor(DefaultCursor cur);
@@ -180,16 +179,6 @@ struct NativeWindowBase
 	static NativeWindowBase* FindFromScreenPos(Point2i p);
 
 	NativeWindow_Impl* _impl = nullptr;
-};
-
-class NativeWindowBuildFunc : public NativeWindowBase
-{
-public:
-	void OnBuild() override;
-	void SetBuildFunc(std::function<void()> buildFunc);
-
-private:
-	std::function<void()> _buildFunc;
 };
 
 class NativeMainWindow : public NativeWindowBase
@@ -208,18 +197,16 @@ public:
 	}
 };
 
-class NativeWindowNode : public Buildable
+class NativeWindowNode : public UIObjectNoChildren
 {
 public:
-	void Build() override {}
-	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
 
-	NativeWindowBuildFunc* GetWindow() { return &_window; }
+	NativeWindowBase* GetWindow() { return &_window; }
 
 private:
-	NativeWindowBuildFunc _window;
+	NativeWindowBase _window;
 };
 
 struct AnimationRequester

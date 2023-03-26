@@ -65,6 +65,10 @@ UIObject::UIObject()
 UIObject::~UIObject()
 {
 	ClearEventHandlers();
+	// ensure PO_BeforeDelete was called
+	assert(!parent);
+	assert(!system);
+	assert(!_livenessToken.IsAlive());
 }
 
 void UIObject::_DetachFromTree()

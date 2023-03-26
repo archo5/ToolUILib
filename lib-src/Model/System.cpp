@@ -106,8 +106,10 @@ void UIContainer::Free()
 	if (rootBuildable)
 	{
 		rootBuildable->_DetachFromFrameContents();
-		DeleteUIObject(rootBuildable);
+		if (isRootBuildableOwned)
+			DeleteUIObject(rootBuildable);
 		rootBuildable = nullptr;
+		isRootBuildableOwned = false;
 	}
 }
 
@@ -237,11 +239,12 @@ void UIContainer::ProcessLayoutStack()
 	layoutStack.Clear();
 }
 
-void UIContainer::_BuildUsing(Buildable* n)
+void UIContainer::_BuildUsing(Buildable* B, bool transferOwnership)
 {
-	n->_AttachToFrameContents(owner);
+	B->_AttachToFrameContents(owner);
 
-	rootBuildable = n;
+	rootBuildable = B;
+	isRootBuildableOwned = transferOwnership;
 
 	assert(!buildStack.ContainsAny());
 	buildStack.ClearWithoutFlags(); // TODO: is this needed?
@@ -373,9 +376,9 @@ FrameContents::~FrameContents()
 	container.Free();
 }
 
-void FrameContents::BuildRoot(Buildable* B)
+void FrameContents::BuildRoot(Buildable* B, bool transferOwnership)
 {
-	container._BuildUsing(B);
+	container._BuildUsing(B, transferOwnership);
 }
 
 
@@ -471,7 +474,7 @@ void InlineFrame::CreateFrameContents(std::function<void()> buildFunc)
 	auto* contents = new FrameContents();
 	auto* cb = CreateUIObject<BuildCallback>();
 	cb->buildFunc = buildFunc;
-	contents->BuildRoot(cb);
+	contents->BuildRoot(cb, true);
 	SetFrameContents(contents);
 	_ownsContents = true;
 }

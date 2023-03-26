@@ -76,18 +76,18 @@ struct DockingNode : RefCountedST
 };
 using DockingNodeHandle = RCHandle<DockingNode>;
 
-struct DockingSubwindow : NativeWindowBase, RefCountedST
+struct DockingSubwindow : NativeWindowBase, Buildable, RefCountedST
 {
 	DockingNodeHandle rootNode;
 
 	DockingMainArea* main;
-	Buildable* _root = nullptr;
 	bool _dragging = false;
 	Point2i _dragCWPDelta = {};
 
 	DockingSubwindow();
-	void OnBuild() override;
-	void OnBuildableEvent(Event& e);
+	~DockingSubwindow();
+	void Build() override;
+	void OnEvent(Event& e) override;
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	void StartDrag();

@@ -301,6 +301,9 @@ namespace draw {
 
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox)
 {
+	if (clipBox && !clipBox->IsValid())
+		return;
+
 	float scale = g_textResScale;
 	float invScale = 1.0f / scale;
 	auto& sctx = font->GetSizeContext(size * scale);
