@@ -56,7 +56,14 @@ struct Color4b
 		oi.EndObject();
 	}
 
-	uint8_t r, g, b, a;
+	union
+	{
+		struct
+		{
+			uint8_t r, g, b, a;
+		};
+		uint32_t value;
+	};
 };
 
 
@@ -71,43 +78,9 @@ struct Color4f
 		strncpy(ntx, hex, 6);
 		return { gethex(ntx[0], ntx[1]) / 255.f, gethex(ntx[2], ntx[3]) / 255.f, gethex(ntx[4], ntx[5]) / 255.f, a };
 	}
-	static Color4f HSV(float h, float s, float v, float a = 1)
-	{
-		h = fmodf(h, 1);
-		h *= 6;
-		float c = v * s;
-		float x = c * (1 - fabsf(fmodf(h, 2) - 1));
-		float m = v - c;
-		if (h < 1) return { c + m, x + m, m, a };
-		if (h < 2) return { x + m, c + m, m, a };
-		if (h < 3) return { m, c + m, x + m, a };
-		if (h < 4) return { m, x + m, c + m, a };
-		if (h < 5) return { x + m, m, c + m, a };
-		return { c + m, m, x + m, a };
-	}
-	void GetHex(char buf[7])
-	{
-		uint8_t r = GetRed8(), g = GetGreen8(), b = GetBlue8();
-		buf[0] = hexchar(r >> 4);
-		buf[1] = hexchar(r & 0xf);
-		buf[2] = hexchar(g >> 4);
-		buf[3] = hexchar(g & 0xf);
-		buf[4] = hexchar(b >> 4);
-		buf[5] = hexchar(b & 0xf);
-	}
-	float GetHue()
-	{
-		float maxv = GetValue();
-		float minv = min(r, min(g, b));
-		float c = maxv - minv;
-		if (c == 0)
-			return 0;
-		if (maxv == r)
-			return fmodf(((g - b) / c) / 6 + 1, 1);
-		if (maxv == g)
-			return (2 + (b - r) / c) / 6;
-		return (4 + (r - g) / c) / 6;
-	}
+	static Color4f HSV(float h, float s, float v, float a = 1);
+	void GetHex(char buf[7]);
+	float GetHue();
 	float GetSaturation()
 	{
 		float maxv = GetValue();
@@ -145,10 +118,10 @@ struct Color4f
 
 	operator Color4b() const { return { GetRed8(), GetGreen8(), GetBlue8(), GetAlpha8() }; }
 
-	__forceinline uint8_t GetRed8() const { return uint8_t(clamp(r, 0.0f, 1.0f) * 255); }
-	__forceinline uint8_t GetGreen8() const { return uint8_t(clamp(g, 0.0f, 1.0f) * 255); }
-	__forceinline uint8_t GetBlue8() const { return uint8_t(clamp(b, 0.0f, 1.0f) * 255); }
-	__forceinline uint8_t GetAlpha8() const { return uint8_t(clamp(a, 0.0f, 1.0f) * 255); }
+	UI_FORCEINLINE uint8_t GetRed8() const { return uint8_t(clamp(r, 0.0f, 1.0f) * 255); }
+	UI_FORCEINLINE uint8_t GetGreen8() const { return uint8_t(clamp(g, 0.0f, 1.0f) * 255); }
+	UI_FORCEINLINE uint8_t GetBlue8() const { return uint8_t(clamp(b, 0.0f, 1.0f) * 255); }
+	UI_FORCEINLINE uint8_t GetAlpha8() const { return uint8_t(clamp(a, 0.0f, 1.0f) * 255); }
 	uint32_t GetColor32()
 	{
 		auto rb = GetRed8();
@@ -188,23 +161,8 @@ struct Canvas
 		c._pixels = nullptr;
 	}
 	~Canvas() { delete[] _pixels; }
-	Canvas& operator = (const Canvas& c)
-	{
-		SetSize(c.GetWidth(), c.GetHeight());
-		memcpy(_pixels, c._pixels, _width * _height * 4);
-		return *this;
-	}
-	Canvas& operator = (Canvas&& c)
-	{
-		delete _pixels;
-		_width = c._width;
-		_height = c._height;
-		_pixels = c._pixels;
-		c._width = 0;
-		c._height = 0;
-		c._pixels = nullptr;
-		return *this;
-	}
+	Canvas& operator = (const Canvas& c);
+	Canvas& operator = (Canvas&& c);
 
 	uint32_t GetWidth() const { return _width; }
 	uint32_t GetHeight() const { return _height; }
@@ -216,20 +174,53 @@ struct Canvas
 	unsigned char* GetBytes() { return reinterpret_cast<unsigned char*>(_pixels); }
 	const unsigned char* GetBytes() const { return reinterpret_cast<unsigned char*>(_pixels); }
 
-	void SetSize(uint32_t w, uint32_t h)
-	{
-		if (_width == w && _height == h)
-			return;
-		delete[] _pixels;
-		_width = w;
-		_height = h;
-		_pixels = new uint32_t[w * h];
-	}
+	void SetSize(uint32_t w, uint32_t h);
 
 	uint32_t _width = 0;
 	uint32_t _height = 0;
 	uint32_t* _pixels = nullptr;
 };
+
+
+// for shadow images
+struct SimpleMaskBlurGen
+{
+	struct Input
+	{
+		u32 boxSizeX, boxSizeY;
+		u32 blurSize;
+		u32 cornerLT, cornerRT, cornerLB, cornerRB;
+
+		bool operator == (const Input& o) const
+		{
+			return boxSizeX == o.boxSizeX
+				&& boxSizeY == o.boxSizeY
+				&& blurSize == o.blurSize
+				&& cornerLT == o.cornerLT
+				&& cornerRT == o.cornerRT
+				&& cornerLB == o.cornerLB
+				&& cornerRB == o.cornerRB;
+		}
+		Input Normalized() const;
+		// generates an equal-comparable version that achieves the same result (after initial normalization)
+		Input Canonicalized() const;
+	};
+	struct Output
+	{
+		AABB2f innerOffset;
+		AABB2f outerOffset;
+		AABB2f innerUV;
+		AABB2f outerUV;
+	};
+
+	static bool OutputWillDiffer(const Input& a, const Input& b);
+	static void Generate(const Input& input, Output& output, Canvas& outCanvas);
+};
+
+UI_FORCEINLINE size_t HashValue(const SimpleMaskBlurGen::Input& v)
+{
+	return HashBytesAll(&v, sizeof(v));
+}
 
 
 struct Vertex

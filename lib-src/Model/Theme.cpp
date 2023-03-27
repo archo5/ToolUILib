@@ -772,6 +772,35 @@ static IPainter* ImageSetPainterCreateFunc(IThemeLoader* loader, IObjectIterator
 	return p;
 }
 
+static IPainter* BoxShadowPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
+{
+	auto* p = new BoxShadowPainter;
+
+	if (OI.HasField("color"))
+		p->color = loader->LoadColor("color");
+	OnField(OI, "offset", p->offset);
+	OnField(OI, "blurSize", p->blurSize);
+	if (OI.HasField("corner"))
+	{
+		u32 val;
+		OnField(OI, "corner", val);
+		p->cornerLT = val;
+		p->cornerRT = val;
+		p->cornerLB = val;
+		p->cornerRB = val;
+	}
+	if (OI.HasField("cornerLT"))
+		OnField(OI, "cornerLT", p->cornerLT);
+	if (OI.HasField("cornerRT"))
+		OnField(OI, "cornerRT", p->cornerRT);
+	if (OI.HasField("cornerLB"))
+		OnField(OI, "cornerLB", p->cornerLB);
+	if (OI.HasField("cornerRB"))
+		OnField(OI, "cornerRB", p->cornerRB);
+
+	return p;
+}
+
 void RegisterPainters()
 {
 	RegisterPainter("layer", LayerPainterCreateFunc);
@@ -780,6 +809,7 @@ void RegisterPainters()
 	RegisterPainter("point_anchored_placement_rect_mod", PointAnchoredPlacementRectModPainterCreateFunc);
 	RegisterPainter("color_fill", ColorFillPainterCreateFunc);
 	RegisterPainter("imgset", ImageSetPainterCreateFunc);
+	RegisterPainter("box_shadow", BoxShadowPainterCreateFunc);
 }
 
 } // ui

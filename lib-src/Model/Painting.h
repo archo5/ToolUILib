@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "../Core/HashMap.h"
 #include "../Core/Math.h"
 #include "../Core/String.h"
 #include "../Core/Image.h"
@@ -249,6 +250,25 @@ struct ImageSetPainter : IPainter
 	Color4b color;
 	int shrink = 0;
 	Vec2f contentOffset;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
+struct BoxShadowPainter : IPainter
+{
+	struct CacheValue
+	{
+		SimpleMaskBlurGen::Output output;
+		draw::ImageHandle image;
+	};
+
+	Color4b color = Color4b::Black();
+	Vec2f offset;
+	int blurSize = 0;
+	int cornerLT = 0, cornerRT = 0, cornerLB = 0, cornerRB = 0;
+	HashMap<SimpleMaskBlurGen::Input, CacheValue> cache;
+
+	CacheValue* GetOrCreate(Size2f size);
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };

@@ -288,6 +288,7 @@ struct DataEditor : ui::Buildable
 
 void Test_RenderingPrimitives();
 void Test_VectorImage();
+void Test_BlurMask();
 void Test_TextBaseline();
 void Test_StylePainting();
 void Test_ImageSetSizing();
@@ -377,6 +378,7 @@ static const TestEntry coreTestEntries[] =
 	{ "- Rendering -" },
 	{ "Primitives", Test_RenderingPrimitives },
 	{ "Vector image", Test_VectorImage },
+	{ "Blur mask", Test_BlurMask },
 	{ "Text baseline", Test_TextBaseline },
 	{ "Style painting", Test_StylePainting },
 	{ "Image set sizing", Test_ImageSetSizing },
@@ -708,6 +710,7 @@ int uimain(int argc, char* argv[])
 	ui::Application app(argc, argv);
 	ui::FSGetDefault()->fileSystems.Append(ui::CreateFileSystemSource("gui-tests/rsrc"));
 	MainWindow mw;
+	mw.SetInnerSize(640, 480);
 	mw.SetVisible(true);
 	return app.Run();
 }

@@ -129,7 +129,22 @@
 "proc_graph_node:FrameStyle":
 {
 	padding = 5
-	backgroundPainter = "tab_panel"
+	backgroundPainter = "proc_graph_node"
+}
+
+"proc_graph_node:painter":
+{
+	__ = "layer"
+	painters:
+	[
+		{
+			__ = "box_shadow"
+			blurSize = 16
+			color = "b:0;127"
+			offset = [0, 1]
+		}
+		"tab_panel"
+	]
 }
 
 "textbox.normal:imgset": { images = [{ path = "images/textbox-normal.png", edge = 5 }] }

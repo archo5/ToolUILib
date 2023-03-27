@@ -186,6 +186,142 @@ void Test_VectorImage()
 }
 
 
+struct BlurMaskTest : ui::Buildable
+{
+	ui::SimpleMaskBlurGen::Input smbgInput = { 150, 50, 4, 3, 3, 3, 3 };
+	ui::SimpleMaskBlurGen::Output smbgOutput = {};
+	ui::draw::ImageHandle smbgImage;
+	bool invalidated = true;
+
+	ui::u32* GetVariable(int id)
+	{
+		static ui::u32 dummy;
+		switch (id)
+		{
+		case 0: return &smbgInput.blurSize;
+		case 1: return &smbgInput.cornerLT;
+		case 2: return &smbgInput.cornerRT;
+		case 3: return &smbgInput.cornerLB;
+		case 4: return &smbgInput.cornerRB;
+		default: return &dummy;
+		}
+	}
+	void OnEvent(ui::Event& e) override
+	{
+		if (e.type == ui::EventType::Click)
+		{
+			int x = floor(e.position.x);
+			int y = floor(e.position.y);
+			auto* var = GetVariable(y / 10);
+			int val = ui::clamp((x - 50) / 8, 0, 60 - 1);
+			*var = val;
+			invalidated = true;
+		}
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		if (invalidated)
+		{
+			invalidated = false;
+			ui::Canvas canvas;
+			ui::SimpleMaskBlurGen::Generate(smbgInput, smbgOutput, canvas);
+			smbgImage = ui::draw::ImageCreateFromCanvas(canvas);
+		}
+
+		ui::AABB2f rect = { 50, 200, 200, 250 };
+		ui::draw::RectColTex9Slice(
+			rect.ExtendBy(smbgOutput.outerOffset),
+			rect.ShrinkBy(smbgOutput.innerOffset),
+			ui::Color4b::White(),
+			smbgImage,
+			smbgOutput.outerUV,
+			smbgOutput.innerUV);
+		ui::draw::RectCutoutCol(rect, rect.ShrinkBy(ui::AABB2f::UniformBorder(1)), { 255, 0, 0, 127 });
+
+		auto fr = GetFinalRect();
+		int scale = 8;
+		while (scale > 1 && smbgImage->GetWidth() * scale > fr.GetWidth() - 250)
+			scale--;
+		ui::AABB2f imgrect =
+		{
+			fr.x1 - 50 - smbgImage->GetWidth() * scale,
+			fr.y0 + 50,
+			fr.x1 - 50,
+			fr.y0 + 50 + smbgImage->GetHeight() * scale,
+		};
+		ui::draw::RectTex(imgrect, smbgImage);
+		ui::draw::RectCutoutCol(imgrect.ExtendBy(ui::AABB2f::UniformBorder(1)), imgrect, { 255, 0, 0, 127 });
+
+		auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF);
+		ui::draw::TextLine(font, 10, 0, 0, "Size:", ui::Color4b::White(), ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 10, 0, 10, "CRad LT:", ui::Color4b::White(), ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 10, 0, 20, "CRad RT:", ui::Color4b::White(), ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 10, 0, 30, "CRad LB:", ui::Color4b::White(), ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 10, 0, 40, "CRad RB:", ui::Color4b::White(), ui::TextBaseline::Top);
+		char bfr[32];
+		{
+			snprintf(bfr, 32, "OuterOff: %g;%g - %g;%g",
+				smbgOutput.outerOffset.x0,
+				smbgOutput.outerOffset.y0,
+				smbgOutput.outerOffset.x1,
+				smbgOutput.outerOffset.y1);
+			ui::draw::TextLine(font, 10, 0, 50, bfr, ui::Color4b::White(), ui::TextBaseline::Top);
+		}
+		{
+			snprintf(bfr, 32, "InnerOff: %g;%g - %g;%g",
+				smbgOutput.innerOffset.x0,
+				smbgOutput.innerOffset.y0,
+				smbgOutput.innerOffset.x1,
+				smbgOutput.innerOffset.y1);
+			ui::draw::TextLine(font, 10, 0, 60, bfr, ui::Color4b::White(), ui::TextBaseline::Top);
+		}
+		{
+			snprintf(bfr, 32, "InnerUV: %g;%g - %g;%g",
+				smbgOutput.innerUV.x0 * smbgImage->GetWidth(),
+				smbgOutput.innerUV.y0 * smbgImage->GetHeight(),
+				smbgOutput.innerUV.x1 * smbgImage->GetWidth(),
+				smbgOutput.innerUV.y1 * smbgImage->GetHeight());
+			ui::draw::TextLine(font, 10, 0, 70, bfr, ui::Color4b::White(), ui::TextBaseline::Top);
+		}
+		{
+			snprintf(bfr, 32, "OuterUV: %g;%g - %g;%g",
+				smbgOutput.outerUV.x0 * smbgImage->GetWidth(),
+				smbgOutput.outerUV.y0 * smbgImage->GetHeight(),
+				smbgOutput.outerUV.x1 * smbgImage->GetWidth(),
+				smbgOutput.outerUV.y1 * smbgImage->GetHeight());
+			ui::draw::TextLine(font, 10, 0, 80, bfr, ui::Color4b::White(), ui::TextBaseline::Top);
+		}
+
+		for (int y = 0; y < 5; y++)
+		{
+			auto* var = GetVariable(y);
+			for (int x = 0; x < 60; x++)
+			{
+				bool hl = *var == x;
+				ui::AABB2i rect =
+				{
+					50 + x * 8,
+					0 + y * 10,
+					57 + x * 8,
+					9 + y * 10,
+				};
+				auto col = ui::Color4b::White();
+				if (!hl)
+					col.a = 127;
+				ui::draw::RectCol(rect.Cast<float>(), col);
+			}
+		}
+	}
+	void Build() override
+	{
+	}
+};
+void Test_BlurMask()
+{
+	ui::Make<BlurMaskTest>();
+}
+
+
 struct TextBaselineTest : ui::Buildable
 {
 	void OnPaint(const ui::UIPaintContext& ctx) override

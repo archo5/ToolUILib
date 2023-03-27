@@ -278,6 +278,49 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 }
 
 
+BoxShadowPainter::CacheValue* BoxShadowPainter::GetOrCreate(Size2f size)
+{
+	SimpleMaskBlurGen::Input config = {};
+	config.boxSizeX = u32(size.x);
+	config.boxSizeY = u32(size.y);
+	config.blurSize = blurSize;
+	config.cornerLT = cornerLT;
+	config.cornerLB = cornerLB;
+	config.cornerRT = cornerRT;
+	config.cornerRB = cornerRB;
+	config = config.Canonicalized();
+
+	CacheValue* ptr = cache.GetValuePtr(config);
+	if (!ptr)
+	{
+		// TODO cache/share generated images?
+		CacheValue val;
+		Canvas canvas;
+		SimpleMaskBlurGen::Generate(config, val.output, canvas);
+		val.image = draw::ImageCreateFromCanvas(canvas);
+
+		ptr = &cache.Insert(config, val)->value;
+	}
+	return ptr;
+}
+
+ContentPaintAdvice BoxShadowPainter::Paint(const PaintInfo& info)
+{
+	auto* ptr = GetOrCreate(info.rect.GetSize());
+	auto rect = info.rect.MoveBy(offset.x, offset.y);
+	draw::RectColTex9Slice
+	(
+		rect.ExtendBy(ptr->output.outerOffset),
+		rect.ShrinkBy(ptr->output.innerOffset),
+		color,
+		ptr->image,
+		ptr->output.outerUV,
+		ptr->output.innerUV
+	);
+	return {};
+}
+
+
 void FontSettings::_SerializeContents(IObjectIterator& oi)
 {
 	OnField(oi, "family", family);

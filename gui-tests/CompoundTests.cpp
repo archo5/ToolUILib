@@ -1109,7 +1109,7 @@ struct ModalWindowTest : ui::Buildable
 				WMake<ui::BackgroundBlocker>();
 
 				WPush<ui::CenteringElement>();
-				WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ListBox);
+				WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ProcGraphNode);
 				WPush<ui::StackTopDownLayoutElement>();
 				{
 					WMakeWithText<ui::Header>(questionText);

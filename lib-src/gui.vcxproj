@@ -231,6 +231,7 @@
     <ClCompile Include="Core\FileSystem.cpp" />
     <ClCompile Include="Core\Font.cpp" />
     <ClCompile Include="Core\GUID.cpp" />
+    <ClCompile Include="Core\Image.cpp" />
     <ClCompile Include="Core\Logging.cpp" />
     <ClCompile Include="Core\MathExpr.cpp" />
     <ClCompile Include="Core\Serialization.cpp" />
