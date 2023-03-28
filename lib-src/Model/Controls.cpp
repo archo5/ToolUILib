@@ -1021,6 +1021,14 @@ void BackgroundBlocker::OnEvent(Event& e)
 	}
 }
 
+void BackgroundBlocker::OnPaint(const UIPaintContext& ctx)
+{
+	if (_color.a > 0)
+		draw::RectCol(GetFinalRect(), _color);
+
+	FillerElement::OnPaint(ctx);
+}
+
 void BackgroundBlocker::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	FillerElement::OnLayout({ 0, 0, system->eventSystem.width, system->eventSystem.height }, { LayoutInfo::FillH | LayoutInfo::FillV });
@@ -1284,6 +1292,103 @@ void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 		e.context->OnCommit(this);
 		Rebuild();
 	});
+}
+
+
+void ModalWindowContainer::AddModalWindow(UIObject* mwo)
+{
+	modalWindows.Append(mwo);
+	onChangeModalWindows.Call();
+}
+
+void ModalWindowContainer::DestroyAll()
+{
+	for (auto* mw : modalWindows)
+		DeleteUIObject(mw);
+	modalWindows.Clear();
+	onChangeModalWindows.Call();
+}
+
+void ModalWindowContainer::BuildUI()
+{
+	auto* B = GetCurrentBuildable();
+	BuildMulticastDelegateAddNoArgs(onChangeModalWindows, [B]() { B->Rebuild(); });
+
+	for (auto*& mw : modalWindows)
+	{
+		if (!mw->IsVisible())
+		{
+			DeleteUIObject(mw);
+			mw = nullptr;
+		}
+		else
+		{
+			// TODO?
+			if (auto* B = dynamic_cast<Buildable*>(mw))
+				Add(B);
+			else
+				Add(mw);
+		}
+	}
+	modalWindows.RemoveAllOf(nullptr);
+}
+
+void ModalWindowContainer::CloseModalWindow(UIObject* root)
+{
+	root->SetVisible(false);
+	root->RebuildContainer();
+}
+
+
+UIObject* ModalWindowOpenInfo::TryGetModalWindowContents(NativeWindowBase* myWindow)
+{
+	if (modalWindowContents && myWindow == targetWindow)
+	{
+		auto* mwc = modalWindowContents;
+		modalWindowContents = nullptr;
+		return mwc;
+	}
+	return nullptr;
+}
+
+
+namespace _ {
+MulticastDelegate<ModalWindowOpenInfo&> OnModalWindowOpened;
+} // _
+
+
+void ModalWindowRenderer::OnReset()
+{
+	Buildable::OnReset();
+
+	flags |= UIObject_HitTestPassthrough;
+}
+
+void ModalWindowRenderer::Build()
+{
+	auto cb = [this](ModalWindowOpenInfo& mwoi)
+	{
+		if (auto* mwc = mwoi.TryGetModalWindowContents(GetNativeWindow()))
+		{
+			_mwc.AddModalWindow(mwc);
+		}
+	};
+	BuildMulticastDelegateAdd(_::OnModalWindowOpened, cb);
+
+	_mwc.BuildUI();
+}
+
+
+bool OpenModalWindow(NativeWindowBase* inNativeWindow, UIObject* modalWindowContents)
+{
+	ModalWindowOpenInfo mwoi = { inNativeWindow, modalWindowContents };
+	_::OnModalWindowOpened.Call(mwoi);
+	if (mwoi.modalWindowContents)
+	{
+		DeleteUIObject(mwoi.modalWindowContents);
+		return false;
+	}
+	return true;
 }
 
 

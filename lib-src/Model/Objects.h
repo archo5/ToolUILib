@@ -446,6 +446,7 @@ struct CenteringElement : WrapperElement
 {
 	Vec2f align = { 0.5f, 0.5f };
 
+	void OnReset() override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 

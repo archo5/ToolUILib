@@ -542,8 +542,13 @@ struct ScrollArea : WrapperElement
 
 struct BackgroundBlocker : FillerElement
 {
+	Color4b _color = Color4b::Zero();
+
+	BackgroundBlocker& SetColor(Color4b c) { _color = c; return *this; }
+
 	void OnReset() override;
 	void OnEvent(Event& e) override;
+	void OnPaint(const UIPaintContext& ctx) override;
 
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
@@ -687,6 +692,49 @@ template <class T> bool PropDropdownMenuList(const char* label, T& val, OptionLi
 }
 
 } // imm
+
+
+struct ModalWindowContainer
+{
+	Array<UIObject*> modalWindows;
+	MulticastDelegate<> onChangeModalWindows;
+
+	ModalWindowContainer() {}
+	ModalWindowContainer(const ModalWindowContainer&) = delete;
+	ModalWindowContainer(ModalWindowContainer&&) = delete;
+	ModalWindowContainer& operator = (const ModalWindowContainer&) = delete;
+	ModalWindowContainer& operator = (ModalWindowContainer&&) = delete;
+
+	~ModalWindowContainer() { DestroyAll(); }
+
+	void AddModalWindow(UIObject* mwo);
+	void DestroyAll();
+	void BuildUI();
+
+	static void CloseModalWindow(UIObject* root);
+};
+
+struct ModalWindowOpenInfo
+{
+	NativeWindowBase* targetWindow;
+	UIObject* modalWindowContents;
+
+	UIObject* TryGetModalWindowContents(NativeWindowBase* myWindow);
+};
+
+namespace _ {
+extern MulticastDelegate<ModalWindowOpenInfo&> OnModalWindowOpened;
+} // _
+
+struct ModalWindowRenderer : Buildable
+{
+	ui::ModalWindowContainer _mwc;
+
+	void OnReset() override;
+	void Build() override;
+};
+
+bool OpenModalWindow(NativeWindowBase* inNativeWindow, UIObject* modalWindowContents);
 
 
 struct OverlayInfoPlacement : IPlacement

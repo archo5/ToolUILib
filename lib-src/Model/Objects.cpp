@@ -155,6 +155,9 @@ void UIObject::_AttachToFrameContents(FrameContents* owner)
 
 void UIObject::_DetachFromFrameContents()
 {
+	if (!system)
+		return;
+
 	OnDisable();
 
 	system->container.layoutStack.OnDestroy(this);
@@ -824,6 +827,13 @@ Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, E
 	return WrapperElement::CalcEstimatedHeight(containerSize, type).LimitTo(heightRange);
 }
 
+
+void CenteringElement::OnReset()
+{
+	WrapperElement::OnReset();
+
+	flags |= UIObject_HitTestPassthrough;
+}
 
 void CenteringElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {

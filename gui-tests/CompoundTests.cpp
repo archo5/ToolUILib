@@ -1095,18 +1095,21 @@ void Test_Dropdown()
 
 struct ModalWindowTest : ui::Buildable
 {
-	ui::Array<UIObject*> modalWindows;
-
 	struct QuestionWindow : ui::Buildable
 	{
 		std::string questionText;
 		std::string buttonText;
 
+		void OnEvent(ui::Event& ev) override
+		{
+			if (ev.type == ui::EventType::BackgroundClick)
+				ui::ModalWindowContainer::CloseModalWindow(this);
+		}
 		void Build() override
 		{
 			WPush<ui::LayerLayoutElement>();
 			{
-				WMake<ui::BackgroundBlocker>();
+				WMake<ui::BackgroundBlocker>().SetColor({ 0, 127 });
 
 				WPush<ui::CenteringElement>();
 				WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ProcGraphNode);
@@ -1118,8 +1121,7 @@ struct ModalWindowTest : ui::Buildable
 
 					WMakeWithText<ui::Button>(buttonText) + ui::AddEventHandler(ui::EventType::Activate, [this](ui::Event&)
 					{
-						SetVisible(false);
-						RebuildContainer();
+						ui::ModalWindowContainer::CloseModalWindow(this);
 					});
 				}
 				WPop();
@@ -1135,8 +1137,7 @@ struct ModalWindowTest : ui::Buildable
 		auto* qw = ui::CreateUIObject<QuestionWindow>();
 		qw->questionText = questionText;
 		qw->buttonText = buttonText;
-		modalWindows.Append(qw);
-		Rebuild();
+		ui::OpenModalWindow(GetNativeWindow(), qw);
 	}
 
 	void Build() override
@@ -1152,22 +1153,7 @@ struct ModalWindowTest : ui::Buildable
 			}
 			WPop();
 
-			for (auto*& mw : modalWindows)
-			{
-				if (!mw->IsVisible())
-				{
-					ui::DeleteUIObject(mw);
-					mw = nullptr;
-				}
-				else
-				{
-					if (auto* B = dynamic_cast<ui::Buildable*>(mw))
-						ui::Add(B);
-					else
-						ui::Add(mw);
-				}
-			}
-			modalWindows.RemoveAllOf(nullptr);
+			WMake<ui::ModalWindowRenderer>();
 		}
 		WPop();
 	}
