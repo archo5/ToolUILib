@@ -517,19 +517,26 @@ static ExampleGroup exampleGroups[] =
 static bool rebuildAlways;
 struct TEST : ui::Buildable
 {
-	void OnEvent(ui::Event& e) override
+	decltype(ui::OnWindowKeyEvent)::Entry* wkeRef;
+	TEST()
 	{
-		ui::Buildable::OnEvent(e);
-
-		if (e.type == ui::EventType::KeyDown)
+		wkeRef = ui::OnWindowKeyEvent.Add([this](const ui::WindowKeyEvent& e) { OnKeyEvent(e); });
+	}
+	~TEST()
+	{
+		ui::OnWindowKeyEvent.Remove(wkeRef);
+	}
+	void OnKeyEvent(const ui::WindowKeyEvent& e)
+	{
+		if (e.down)
 		{
-			if (e.shortCode == ui::KSC_F6)
+			if (e.physicalKey == ui::KSC_F6)
 			{
 				scalePercent += 10;
 				enableScale = true;
 				Rebuild();
 			}
-			if (e.shortCode == ui::KSC_F7)
+			if (e.physicalKey == ui::KSC_F7)
 			{
 				if (scalePercent > 10)
 					scalePercent -= 10;

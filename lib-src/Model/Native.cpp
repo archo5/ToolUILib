@@ -594,6 +594,7 @@ void NativeWindowGeometry::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 
 MulticastDelegate<NativeWindowBase*> OnWindowResized;
+MulticastDelegate<const WindowKeyEvent&> OnWindowKeyEvent;
 
 
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -668,6 +669,17 @@ struct ProxyEventSystem
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
+		{
+			WindowKeyEvent ev = {};
+			ev.window = mainTarget.target->GetNativeWindow();
+			ev.down = down;
+			ev.virtualKey = vk;
+			ev.physicalKey = pk;
+			ev.modifiers = mod;
+			ev.isRepeated = isRepeated;
+			ev.numRepeats = numRepeats;
+			OnWindowKeyEvent.Call(ev);
+		}
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
 		mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);

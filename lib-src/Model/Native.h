@@ -71,6 +71,17 @@ struct FileSelectionWindow
 
 
 extern MulticastDelegate<NativeWindowBase*> OnWindowResized;
+struct WindowKeyEvent
+{
+	NativeWindowBase* window;
+	bool down;
+	u32 virtualKey;
+	u8 physicalKey;
+	u8 modifiers;
+	bool isRepeated;
+	u16 numRepeats;
+};
+extern MulticastDelegate<const WindowKeyEvent&> OnWindowKeyEvent;
 
 
 enum class WindowState : uint8_t
