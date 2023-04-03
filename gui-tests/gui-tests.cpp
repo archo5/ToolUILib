@@ -341,6 +341,7 @@ void Test_OSCommunication();
 void Test_FileSelectionWindow();
 void Test_DirectoryChangeWatcher();
 void Test_SerializationSpeed();
+void Test_ConfigTweakable();
 
 void Test_SequenceEditors();
 void Test_TreeEditors();
@@ -454,6 +455,7 @@ static const TestEntry utilityTestEntries[] =
 	{ "Directory change watcher", Test_DirectoryChangeWatcher },
 	{},
 	{ "Serialization speed", Test_SerializationSpeed },
+	{ "Config tweakable", Test_ConfigTweakable },
 };
 static const TestEntry dseditTestEntries[] =
 {

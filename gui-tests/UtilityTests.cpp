@@ -590,3 +590,54 @@ void Test_SerializationSpeed()
 	ui::Make<SerializationSpeed>();
 }
 
+
+struct Settings
+{
+	static constexpr const char* Type = "test_settings_group";
+
+	bool val1 = true;
+	int val2 = 3;
+	std::string val3 = "test";
+
+	void Serialize(ui::IObjectIterator& oi)
+	{
+		ui::OnField(oi, "val1", val1);
+		ui::OnField(oi, "val2", val2);
+		ui::OnField(oi, "val3", val3);
+	}
+};
+UI_CFG_TWEAKABLE_SET_DECLARE(TestTweakableSet);
+ui::Tweakable<Settings> g_twkSettings(TestTweakableSet());
+UI_CFG_TWEAKABLE_SET_DEFINE(TestTweakableSet);
+struct ConfigTweakableTest : ui::Buildable
+{
+	ui::ConfigDB_JSONFile cfgdb = { TestTweakableSet() };
+
+	void OnEnable() override
+	{
+		cfgdb.filePath = "tweakable_test.json";
+		g_twkSettings.Register();
+	}
+	void OnDisable() override
+	{
+		cfgdb.Save();
+		g_twkSettings.Unregister();
+	}
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+
+		bool edit = false;
+		edit |= ui::imm::PropEditBool("Value 1", g_twkSettings.val1);
+		edit |= ui::imm::PropEditInt("Value 2", g_twkSettings.val2);
+		edit |= ui::imm::PropEditString("Value 3", g_twkSettings.val3.c_str(), [](const char* v) { g_twkSettings.val3 = v; });
+		if (edit)
+			g_twkSettings.SetDirty();
+
+		WPop();
+	}
+};
+void Test_ConfigTweakable()
+{
+	ui::Make<ConfigTweakableTest>();
+}

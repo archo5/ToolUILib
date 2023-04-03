@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Core/Array.h"
+#include "Core/Config.h"
 #include "Core/Delegate.h"
 #include "Core/DynamicLib.h"
 #include "Core/FileSystem.h"
