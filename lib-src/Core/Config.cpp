@@ -46,6 +46,12 @@ void ITweakable::Unregister()
 	_pos = UINT32_MAX;
 }
 
+void ITweakable::Save()
+{
+	if (_set && _set->_db)
+		_set->_db->OnSaveTweakable(this);
+}
+
 
 static void CfgFileProcessTweakable(IObjectIterator& oi, ITweakable* T)
 {
@@ -114,6 +120,14 @@ bool ConfigDB_JSONFile::Save()
 	return false;
 }
 
+bool ConfigDB_JSONFile::IsAnyDirty()
+{
+	for (ITweakable* T : _set->_tweakables)
+		if (T->_dirty)
+			return true;
+	return false;
+}
+
 void ConfigDB_JSONFile::OnRegisterTweakable(ITweakable* T)
 {
 	auto frr = ui::ReadTextFile(filePath);
@@ -124,6 +138,11 @@ void ConfigDB_JSONFile::OnRegisterTweakable(ITweakable* T)
 		return;
 	CfgFileProcessTweakable(r, T);
 	T->_dirty = false;
+}
+
+void ConfigDB_JSONFile::OnSaveTweakable(ITweakable*)
+{
+	Save();
 }
 
 
@@ -209,6 +228,11 @@ void ConfigDB_JSONFiles::SaveMissing(const TweakableFilter* filter)
 void ConfigDB_JSONFiles::OnRegisterTweakable(ITweakable* T)
 {
 	LoadTweakable(T);
+}
+
+void ConfigDB_JSONFiles::OnSaveTweakable(ITweakable* T)
+{
+	SaveTweakable(T);
 }
 
 bool ConfigDB_JSONFiles::_LoadTweakableFrom(ITweakable* T, StringView path)

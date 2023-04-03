@@ -16,6 +16,7 @@ struct ITweakable;
 struct ITweakableSetDatabase
 {
 	virtual void OnRegisterTweakable(ITweakable*) = 0;
+	virtual void OnSaveTweakable(ITweakable*) = 0;
 };
 
 struct TweakableSet
@@ -39,6 +40,7 @@ struct ITweakable
 	void Register(StringView subType = {});
 	void Unregister();
 	void SetDirty() { _dirty = true; }
+	void Save();
 
 	virtual void Serialize(IObjectIterator& oi) = 0;
 };
@@ -89,11 +91,13 @@ struct ConfigDB_JSONFile : ITweakableSetDatabase
 	ConfigDB_JSONFile(TweakableSet& TS);
 	~ConfigDB_JSONFile();
 
-	bool Load(const TweakableFilter& filter);
+	bool Load(const TweakableFilter& filter = {});
 	bool Save();
+	bool IsAnyDirty();
 
 	// ITweakableSetDatabase
 	void OnRegisterTweakable(ITweakable* T) override;
+	void OnSaveTweakable(ITweakable* T) override;
 };
 
 struct ConfigDB_JSONFiles : ITweakableSetDatabase
@@ -116,6 +120,7 @@ struct ConfigDB_JSONFiles : ITweakableSetDatabase
 
 	// ITweakableSetDatabase
 	void OnRegisterTweakable(ITweakable* T) override;
+	void OnSaveTweakable(ITweakable* T) override;
 
 	bool _LoadTweakableFrom(ITweakable* T, StringView path);
 	std::string _GetTweakableFilePath(ITweakable* T, bool def);

@@ -616,12 +616,11 @@ struct ConfigTweakableTest : ui::Buildable
 	void OnEnable() override
 	{
 		cfgdb.filePath = "tweakable_test.json";
-		g_twkSettings.Register();
+		cfgdb.Load();
 	}
 	void OnDisable() override
 	{
 		cfgdb.Save();
-		g_twkSettings.Unregister();
 	}
 	void Build() override
 	{
