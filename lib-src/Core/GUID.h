@@ -51,4 +51,16 @@ struct GUID
 	std::string ToStringHexSplit(bool upper = false) const;
 };
 
+inline size_t HashValue(const GUID& guid)
+{
+	size_t h = guid.v32[0];
+	h *= 131;
+	h ^= guid.v32[1];
+	h *= 131;
+	h ^= guid.v32[2];
+	h *= 131;
+	h ^= guid.v32[3];
+	return h;
+}
+
 } // ui
