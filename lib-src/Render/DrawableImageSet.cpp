@@ -89,7 +89,7 @@ static inline float SizeDiff(ImageSet::VectorImageEntry* e, Size2i size)
 RCHandle<ImageSet::BitmapImageEntry> ImageSet::VectorImageEntry::RequestImage(Size2i size)
 {
 	for (auto r : _rasterized)
-		if (r->image->GetSize() == size)
+		if (r->image->GetSize().y == size.y) // currently requesting by y-size
 			return r;
 
 	auto* E = new BitmapImageEntry;
