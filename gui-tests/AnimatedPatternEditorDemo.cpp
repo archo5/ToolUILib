@@ -510,14 +510,14 @@ struct AnimPattern : ITree
 		mic.basePriority += MenuItemCollection::BASE_ADVANCE;
 
 		mic.Add("- Shapes -", true);
-		mic.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+		mic.NewSection();
 		mic.Add("Square") = [this, path]() { Insert(path, new APL_Shape_Square(globalSettings)); };
-		mic.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+		mic.NewSection();
 
 		mic.Add("- Modifiers -", true);
-		mic.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+		mic.NewSection();
 		mic.Add("Combiner") = [this, path]() { Insert(path, new APL_Combiner); };
-		mic.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+		mic.NewSection();
 	}
 	void Insert(TreePathRef path, APLayer* node)
 	{

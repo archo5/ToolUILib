@@ -726,11 +726,14 @@ void UIObjectSingleChild::OnPaint(const UIPaintContext& ctx)
 
 UIObject* UIObjectSingleChild::FindObjectAtPoint(Point2f pos)
 {
-	if (_child)
-		if (auto* o = _child->FindObjectAtPoint(pos))
-			return o;
-	if (!(flags & UIObject_HitTestPassthrough) && Contains(pos))
-		return this;
+	if (Contains(pos))
+	{
+		if (_child)
+			if (auto* o = _child->FindObjectAtPoint(pos))
+				return o;
+		if (!(flags & UIObject_HitTestPassthrough))
+			return this;
+	}
 	return nullptr;
 }
 

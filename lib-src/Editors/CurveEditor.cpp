@@ -736,7 +736,7 @@ void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
 				{
 					curve->RemovePoint(hp.pointID);
 				};
-				cm.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+				cm.NewSection();
 
 				auto& p = curve->points[hp.pointID];
 				cm.AddNext("Set to 0") = [this, &p]() { p.posY = 0; };
@@ -749,7 +749,7 @@ void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
 					auto& pts = curve->points;
 					pts[hp.pointID + 1].tweak = 0;
 				};
-				cm.basePriority += MenuItemCollection::SEPARATOR_THRESHOLD;
+				cm.NewSection();
 
 				auto& p = curve->points[hp.pointID + 1];
 #define UI_SETMODE(NAME, NEWMODE) cm.AddNext(NAME, false, p.mode == NEWMODE) = [this, &p]() { p.mode = NEWMODE; };

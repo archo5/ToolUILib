@@ -1122,6 +1122,14 @@ void DropdownMenu::OnBuildButton()
 			Rebuild();
 		};
 	}
+	if (enableTooltip)
+	{
+		auto tooltipFn = [this]()
+		{
+			OnBuildButtonContents();
+		};
+		btn + AddTooltip(tooltipFn);
+	}
 
 	Push<ChildScaleOffsetElement>(); // clip only (TODO optimize?)
 	Push<StackLTRLayoutElement>();

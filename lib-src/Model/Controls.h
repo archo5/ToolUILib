@@ -560,6 +560,8 @@ struct BackgroundBlocker : FillerElement
 
 struct DropdownMenu : Buildable
 {
+	bool enableTooltip = true;
+
 	void Build() override;
 	void OnEvent(Event& e) override;
 

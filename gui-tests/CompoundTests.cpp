@@ -952,6 +952,7 @@ struct DropdownTest : ui::Buildable
 			parts[i].anchor.x1 = (i + 1) / 3.f;
 		}
 
+		WPush<ui::LayerLayoutElement>();
 		auto& ple = WPush<ui::PlacementLayoutElement>();
 		auto tmpl = ple.GetSlotTemplate();
 
@@ -1005,7 +1006,10 @@ struct DropdownTest : ui::Buildable
 		}
 		WPop();
 
-		WPop();
+		WPop(); // PlacementLayoutElement
+
+		WMake<ui::DefaultOverlayBuilder>();
+		WPop(); // LayerLayoutElement
 	}
 
 	void MenuList(uintptr_t& sel, ui::OptionList* list)
