@@ -133,6 +133,13 @@ void UIContainer::ProcessBuildStack()
 
 	while (buildStack.ContainsAny())
 	{
+		// skip child builds when parent buildables are rebuilt again
+		// this avoids the case where the deletion of data represented in a child buildable would be accessed after the parent deleting it
+		// TODO: consider in-order child building instead of a stack
+		buildStack.RemoveChildren();
+		if (!buildStack.ContainsAny())
+			break;
+
 		Buildable* currentBuildable = static_cast<Buildable*>(buildStack.Pop());
 
 		bool oldEnabled = imm::SetEnabled(!(currentBuildable->flags & UIObject_IsDisabled));
