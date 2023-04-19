@@ -881,7 +881,8 @@ void OverlayElement::_AttachToFrameContents(FrameContents* owner)
 void OverlayElement::_DetachFromFrameContents()
 {
 	_isRegistered = false;
-	system->overlays.Unregister(this);
+	if (system)
+		system->overlays.Unregister(this);
 
 	WrapperElement::_DetachFromFrameContents();
 }

@@ -341,6 +341,21 @@ public:
 
 	int Run();
 
+	struct IRealtimeRunCallbacks
+	{
+		virtual void OnBeforeAll() {}
+		virtual void OnAfterAll() {}
+		virtual void OnBeforeMessages() {}
+		virtual void OnAfterMessages() {}
+		virtual void OnBeforeEventQueue() {}
+		virtual void OnAfterEventQueue() {}
+		virtual void OnBeforeRedrawAll() {}
+		virtual void OnAfterRedrawAll() {}
+		virtual void OnBeforeRedrawWindow(NativeWindowBase*) {}
+		virtual void OnAfterRedrawWindow(NativeWindowBase*) {}
+	};
+	int RunRealtime(IRealtimeRunCallbacks* cbs);
+
 #if 0
 	template <class T> NativeWindow* BuildWithWindow()
 	{

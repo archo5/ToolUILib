@@ -705,6 +705,7 @@ struct ProxyEventSystem
 };
 
 struct NativeWindow_Impl;
+static Array<NativeWindow_Impl*>* g_allWindows = nullptr;
 static Array<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static Array<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
 static int g_rsrcUsers = 0;
@@ -747,9 +748,11 @@ struct NativeWindow_Impl
 
 		owner->InvalidateAll();
 		cursor = g_defaultCursors[(int)DefaultCursor::Default];
+		g_allWindows->Append(this);
 	}
 	~NativeWindow_Impl()
 	{
+		g_allWindows->RemoveFirstOf(this);
 		if (--g_rsrcUsers == 0)
 		{
 			SetCurrentTheme(nullptr);
@@ -1539,6 +1542,7 @@ Application::Application(int argc, char* argv[])
 
 	g_mainEventQueue = new EventQueue;
 	g_mainThreadID = GetCurrentThreadId();
+	g_allWindows = new Array<NativeWindow_Impl*>;
 	g_windowRepaintList = new Array<NativeWindow_Impl*>;
 	g_curWindowRepaintList = new Array<NativeWindow_Impl*>;
 
@@ -1557,6 +1561,8 @@ Application::~Application()
 	g_windowRepaintList = nullptr;
 	delete g_curWindowRepaintList;
 	g_curWindowRepaintList = nullptr;
+	delete g_allWindows;
+	g_allWindows = nullptr;
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
 
@@ -1616,6 +1622,48 @@ int Application::Run()
 		g_curWindowRepaintList->Clear();
 
 		assert(g_curWindowRepaintList->IsEmpty());
+	}
+	return g_appExitCode;
+}
+
+int Application::RunRealtime(IRealtimeRunCallbacks* cbs)
+{
+	while (!g_appQuit)
+	{
+		cbs->OnBeforeAll();
+
+		cbs->OnBeforeMessages();
+
+		MSG msg;
+		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) != 0)
+		{
+			TranslateMessage(&msg);
+			DispatchMessageW(&msg);
+		}
+
+		cbs->OnAfterMessages();
+
+		cbs->OnBeforeEventQueue();
+
+		g_mainEventQueue->RunAllCurrent();
+
+		cbs->OnAfterEventQueue();
+
+		cbs->OnBeforeRedrawAll();
+
+		for (auto* win : *g_allWindows)
+		{
+			cbs->OnBeforeRedrawWindow(win->GetOwner());
+
+			win->invalidated = false;
+			win->Redraw(true);
+
+			cbs->OnAfterRedrawWindow(win->GetOwner());
+		}
+
+		cbs->OnAfterRedrawAll();
+
+		cbs->OnAfterAll();
 	}
 	return g_appExitCode;
 }
