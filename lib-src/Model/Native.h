@@ -341,20 +341,20 @@ public:
 
 	int Run();
 
-	struct IRealtimeRunCallbacks
-	{
-		virtual void OnBeforeAll() {}
-		virtual void OnAfterAll() {}
-		virtual void OnBeforeMessages() {}
-		virtual void OnAfterMessages() {}
-		virtual void OnBeforeEventQueue() {}
-		virtual void OnAfterEventQueue() {}
-		virtual void OnBeforeRedrawAll() {}
-		virtual void OnAfterRedrawAll() {}
-		virtual void OnBeforeRedrawWindow(NativeWindowBase*) {}
-		virtual void OnAfterRedrawWindow(NativeWindowBase*) {}
-	};
-	int RunRealtime(IRealtimeRunCallbacks* cbs);
+	// pieces for constructing a realtime loop
+	// expected usage code:
+	// for (;;)
+	// {
+	//     if (auto ec = Application::GetExitCode())
+	//         return ec.GetValue();
+	//     Application::ProcessSystemMessagesNonBlocking();
+	//     Application::ProcessMainEventQueue();
+	//     Application::RedrawAllWindows();
+	// }
+	static Optional<int> GetExitCode();
+	static void ProcessSystemMessagesNonBlocking();
+	static void ProcessMainEventQueue();
+	static void RedrawAllWindows();
 
 #if 0
 	template <class T> NativeWindow* BuildWithWindow()

@@ -1626,46 +1626,35 @@ int Application::Run()
 	return g_appExitCode;
 }
 
-int Application::RunRealtime(IRealtimeRunCallbacks* cbs)
+Optional<int> Application::GetExitCode()
 {
-	while (!g_appQuit)
-	{
-		cbs->OnBeforeAll();
-
-		cbs->OnBeforeMessages();
-
-		MSG msg;
-		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) != 0)
-		{
-			TranslateMessage(&msg);
-			DispatchMessageW(&msg);
-		}
-
-		cbs->OnAfterMessages();
-
-		cbs->OnBeforeEventQueue();
-
-		g_mainEventQueue->RunAllCurrent();
-
-		cbs->OnAfterEventQueue();
-
-		cbs->OnBeforeRedrawAll();
-
-		for (auto* win : *g_allWindows)
-		{
-			cbs->OnBeforeRedrawWindow(win->GetOwner());
-
-			win->invalidated = false;
-			win->Redraw(true);
-
-			cbs->OnAfterRedrawWindow(win->GetOwner());
-		}
-
-		cbs->OnAfterRedrawAll();
-
-		cbs->OnAfterAll();
-	}
+	if (!g_appQuit)
+		return {};
 	return g_appExitCode;
+}
+
+void Application::ProcessSystemMessagesNonBlocking()
+{
+	MSG msg;
+	while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) != 0)
+	{
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+	}
+}
+
+void Application::ProcessMainEventQueue()
+{
+	g_mainEventQueue->RunAllCurrent();
+}
+
+void Application::RedrawAllWindows()
+{
+	for (auto* win : *g_allWindows)
+	{
+		win->invalidated = false;
+		win->Redraw(true);
+	}
 }
 
 static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
