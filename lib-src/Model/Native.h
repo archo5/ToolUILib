@@ -20,6 +20,7 @@ namespace platform {
 uint32_t GetTimeMs();
 uint32_t GetDoubleClickTime();
 Point2i GetCursorScreenPos();
+void SetCursorScreenPos(Point2i p);
 void RequestRawMouseInput();
 Color4b GetColorAtScreenPos(Point2i pos);
 void ShowErrorMessage(StringView title, StringView text);
@@ -181,6 +182,7 @@ struct NativeWindowBase
 
 	void SetDefaultCursor(DefaultCursor cur);
 	void CaptureMouse();
+	bool HasFocus();
 
 	void ProcessEventsExclusive();
 

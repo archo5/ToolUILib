@@ -135,6 +135,7 @@ using Point2i = Vec2<int>;
 template <class T> UI_FORCEINLINE T Vec2Dot(const Vec2<T>& a, const Vec2<T>& b) { return a.x * b.x + a.y * b.y; }
 UI_FORCEINLINE Vec2f Vec2fLerp(Vec2f a, Vec2f b, float q) { return a * (1 - q) + b * q; }
 inline Vec2f Vec2fFromAngle(float angle) { angle *= DEG2RAD; return { cosf(angle), sinf(angle) }; }
+inline Vec2f Vec2fFromAngle2(float angle) { angle *= DEG2RAD; return { sinf(angle), cosf(angle) }; }
 
 template <class T> struct Size2
 {
@@ -147,6 +148,8 @@ template <class T> struct Size2
 	UI_FORCEINLINE Size2 operator * (T f) const { return { x * f, y * f }; }
 	UI_FORCEINLINE Size2 operator / (T f) const { return { x / f, y / f }; }
 
+	UI_FORCEINLINE T Min() const { return min(x, y); }
+	UI_FORCEINLINE T Max() const { return max(x, y); }
 	float GetAspectRatio() const { return y == 0 ? 1 : float(x) / float(y); }
 
 	UI_FORCEINLINE bool operator == (const Size2& o) const { return x == o.x && y == o.y; }
@@ -248,7 +251,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE Size2<T> GetSize() const { return { GetWidth(), GetHeight() }; }
 	UI_FORCEINLINE Vec2<T> GetMin() const { return { x0, y0 }; }
 	UI_FORCEINLINE Vec2<T> GetMax() const { return { x1, y1 }; }
-	UI_FORCEINLINE Vec2<T> GetCenter() const { return { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f }; }
+	UI_FORCEINLINE Vec2<T> GetCenter() const { return { (x0 + x1) / 2, (y0 + y1) / 2 }; }
 	UI_FORCEINLINE bool IsValid() const { return x0 <= x1 && y0 <= y1; }
 	UI_FORCEINLINE bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }
 	UI_FORCEINLINE bool Contains(Vec2<T> p) const { return p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1; }

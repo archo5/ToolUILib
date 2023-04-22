@@ -275,6 +275,11 @@ Point2i GetCursorScreenPos()
 	return { -1, -1 };
 }
 
+void SetCursorScreenPos(Point2i p)
+{
+	::SetCursorPos(p.x, p.y);
+}
+
 static bool g_requestedRawMouseInput = false;
 void RequestRawMouseInput()
 {
@@ -1251,11 +1256,25 @@ void NativeWindowBase::InvalidateAll()
 void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
 {
 	_impl->cursor = g_defaultCursors[(int)cur];
+	bool pointingAtWindow = ::GetCapture() == _impl->window;
+	if (!pointingAtWindow)
+	{
+		POINT pt;
+		if (::GetCursorPos(&pt))
+			pointingAtWindow = ::WindowFromPoint(pt) == _impl->window;
+	}
+	if (pointingAtWindow)
+		::SetCursor(_impl->cursor);
 }
 
 void NativeWindowBase::CaptureMouse()
 {
 	::SetCapture(_impl->window);
+}
+
+bool NativeWindowBase::HasFocus()
+{
+	return ::GetFocus() == _impl->window;
 }
 
 void* NativeWindowBase::GetNativeHandle() const
