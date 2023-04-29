@@ -141,7 +141,8 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 	{
 		size_t ipos = Base::_FindInsertPos(key);
 		bool inserted = ipos == this->_storage.count;
-		this->_storage.SetKey(ipos, key);
+		if (inserted)
+			this->_storage.SetKey(ipos, key);
 		return inserted;
 	}
 

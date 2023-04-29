@@ -1,9 +1,13 @@
 
 #pragma once
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+
+double hqtime();
 
 static void Impl_AssertEqual(bool xref, bool x, int line, const char* sxref, const char* sx)
 {
@@ -55,7 +59,11 @@ struct TestStorage
 		for (size_t i = 0; i < numTests; i++)
 		{
 			Test& T = tests[i];
+			printf("=== %s ===\n", T.catdotname);
+			double t0 = hqtime();
 			T.test->RunTest();
+			double t1 = hqtime();
+			printf("--- %s --- (completed in %.2f ms)\n", T.catdotname, (t1 - t0) * 1000);
 		}
 	}
 

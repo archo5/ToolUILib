@@ -1,4 +1,6 @@
 
+#if UI_BUILD_TESTS
+
 #include "Array.h"
 #include "HashMap.h"
 
@@ -11,9 +13,11 @@
 #endif
 
 namespace ui {
+#include "Test.h"
+
 double hqtime();
-} // ui
-using namespace ui;
+//} // ui
+//using namespace ui;
 
 struct Test
 {
@@ -145,12 +149,17 @@ static void check_integrity(HT& ht)
 			j = ht._advance(j);
 			assert(j != start);
 		}
+		for (size_t j = i + 1; j < ht.Size(); j++)
+			assert(!HT::EqualityComparer::AreEqual(ht._storage.keys[i], ht._storage.keys[j]));
 	}
 }
 
 #define TEST_CMP Test _test(" vector:", true)
 static int arr0 = 0;
-static void ArrayTests()
+
+DEFINE_TEST_CATEGORY(Containers, 100);
+
+DEFINE_TEST(Containers, Array)
 {
 	// test basic functionality
 	{
@@ -245,7 +254,7 @@ static void ArrayTests()
 #undef TEST_CMP
 
 #define TEST_CMP Test _test(" unordered_map:", true)
-static void HashMapTests()
+DEFINE_TEST(Containers, HashMap)
 {
 	{TEST("ctor/dtor (int, int) x100");
 	for (int i = 0; i < 100; i++)
@@ -999,6 +1008,76 @@ static void HashMapTests()
 	END_TEST_GROUP;
 
 
+	{TEST_ONLY("insert/erase thoroughness test (+K/V InstCounters)");
+	for (int nelem = 1; nelem <= 10; nelem++)
+	{
+		for (int nrem = 1; nrem <= nelem; nrem++)
+		{
+			// remove from beginning first, then end
+			{
+				HashMapIC v;
+				for (int i = 0; i < nelem; i++)
+					v.Insert(i, i + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Remove(i);
+				check_integrity(v);
+				assert(v.size() == nelem - nrem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Insert(i, i + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Remove(nelem - i - 1);
+				check_integrity(v);
+				assert(v.size() == nelem - nrem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Insert(nelem - i - 1, nelem - i - 1 + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+			}
+			assert(g_numKeys == 0 && g_numVals == 0);
+
+			// remove from end first, then beginning
+			{
+				HashMapIC v;
+				for (int i = 0; i < nelem; i++)
+					v.Insert(i, i + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Remove(nelem - i - 1);
+				check_integrity(v);
+				assert(v.size() == nelem - nrem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Insert(nelem - i - 1, nelem - i - 1 + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Remove(i);
+				check_integrity(v);
+				assert(v.size() == nelem - nrem);
+
+				for (int i = 0; i < nrem; i++)
+					v.Insert(i, i + 1000);
+				check_integrity(v);
+				assert(v.size() == nelem);
+			}
+			assert(g_numKeys == 0 && g_numVals == 0);
+		}
+	}
+	}
+	END_TEST_GROUP;
+
+
 	{TEST("insert -> erase (K/V InstCounters) x100");
 	HashMapIC v;
 	for (int i = 0; i < 100; i++)
@@ -1007,6 +1086,8 @@ static void HashMapTests()
 	for (int i = 0; i < 100; i++)
 		v.Remove(i);
 	END_MEASURING;
+	assert(v.size() == 0);
+	assert(g_numKeys == 0 && g_numVals == 0);
 	}
 
 	{TEST_CMP;
@@ -1022,15 +1103,6 @@ static void HashMapTests()
 }
 #undef TEST_CMP
 
-struct Init
-{
-	Init()
-	{
-		ArrayTests();
-		HashMapTests();
-		exit(0);
-	}
-};
-//static Init init;
+} // ui
 
-void IncludeContainerTests() {}
+#endif // UI_BUILD_TESTS

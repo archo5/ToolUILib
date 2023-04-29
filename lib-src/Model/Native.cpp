@@ -2132,7 +2132,6 @@ void IncludeContainerTests();
 
 int RealMain()
 {
-	IncludeContainerTests();
 	UI_DEFER(dumpallocinfo());
 
 	int argc = 0;

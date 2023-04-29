@@ -44,6 +44,7 @@ struct HashTableBase
 template <class K, class HEC, class HTDS>
 struct HashTableExtBase : HashTableBase
 {
+	using EqualityComparer = HEC;
 	using Storage = HTDS;
 
 	using EntryRef = typename Storage::EntryRef;
@@ -132,11 +133,17 @@ struct HashTableExtBase : HashTableBase
 		_storage.DestructAll();
 		_storage.FreeMemory();
 
-		free(_hashTable);
-		_hashTable = nullptr;
+		if (_hashTable)
+		{
+			free(_hashTable);
+			_hashTable = nullptr;
+		}
 
-		free(_hashes);
-		_hashes = nullptr;
+		if (_hashes)
+		{
+			free(_hashes);
+			_hashes = nullptr;
+		}
 
 		_hashCap = 0;
 	}
@@ -153,7 +160,8 @@ struct HashTableExtBase : HashTableBase
 		if (hashCap != _hashCap)
 		{
 			// no realloc since we don't need the old data
-			free(_hashTable);
+			if (_hashTable)
+				free(_hashTable);
 			_hashTable = (size_t*)malloc(sizeof(size_t) * hashCap);
 		}
 		_hashCap = hashCap;
@@ -226,6 +234,10 @@ struct HashTableExtBase : HashTableBase
 
 	size_t _FindInsertPos(const K& key)
 	{
+		size_t idx = _FindHashTableIndex(key);
+		if (idx != SIZE_MAX)
+			return _hashTable[idx];
+
 		if (_storage.count == _storage.capacity)
 		{
 			Reserve(_storage.capacity * 2 + 1);
@@ -234,25 +246,26 @@ struct HashTableExtBase : HashTableBase
 		H hash = HEC::GetHash(key);
 		size_t start = hash & (_hashCap - 1);
 		size_t i = start;
+		size_t pos = _storage.count;
+		_hashes[pos] = hash;
 		for (;;)
 		{
 			size_t idx = _hashTable[i];
 			if (idx == NO_VALUE || idx == REMOVED)
 			{
-				size_t pos = _storage.count;
+				if (idx == REMOVED)
+					_removed--;
 				_hashTable[i] = pos;
-				_hashes[pos] = hash;
-				return pos;
+				break;
 			}
-			if (idx != REMOVED && HEC::AreEqual(key, _storage.GetKeyAt(idx)))
-				return idx;
 			i = _advance(i);
 
 			// error
-			assert(i != start);
+			//assert(i != start);
 			if (i == start)
-				return 0;
+				break;
 		}
+		return pos;
 	}
 
 	bool Remove(const K& key)

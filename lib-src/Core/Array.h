@@ -71,7 +71,8 @@ struct Array
 	UI_FORCEINLINE ~Array()
 	{
 		Clear();
-		free(_data);
+		if (_data) // optimization
+			free(_data);
 	}
 
 	void Clear()

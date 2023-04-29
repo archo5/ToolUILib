@@ -87,11 +87,17 @@ struct HashTableDataStorage_SeparateArrays
 
 	void FreeMemory()
 	{
-		free(keys);
-		keys = nullptr;
+		if (keys)
+		{
+			free(keys);
+			keys = nullptr;
+		}
 
-		free(values);
-		values = nullptr;
+		if (values)
+		{
+			free(values);
+			values = nullptr;
+		}
 
 		capacity = 0;
 	}
@@ -148,7 +154,8 @@ struct HashTableDataStorage_SeparateArrays
 				new (&newKeys[i]) K(Move(keys[i]));
 				keys[i].~K();
 			}
-			free(keys);
+			if (keys)
+				free(keys);
 			keys = newKeys;
 		}
 
@@ -164,7 +171,8 @@ struct HashTableDataStorage_SeparateArrays
 				new (&newValues[i]) V(Move(values[i]));
 				values[i].~V();
 			}
-			free(values);
+			if (values)
+				free(values);
 			values = newValues;
 		}
 
