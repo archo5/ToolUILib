@@ -254,11 +254,11 @@ std::string ConfigDB_JSONFiles::_GetTweakableFilePath(ITweakable* T, bool def)
 {
 	std::string ret = basePath;
 	ret += "/";
-	ret.append(T->_type.data(), T->_type.size());
+	ret += T->_type;
 	if (!def && T->_subType.NotEmpty())
 	{
 		ret += "/";
-		ret.append(T->_subType.data(), T->_subType.size());
+		ret += T->_subType;
 	}
 	ret += extension;
 	return ret;

@@ -12,11 +12,11 @@ namespace ui {
 
 MenuItem::MenuItem(StringView text, StringView shortcut, bool disabled, bool checked, ArrayView<MenuItem> submenu)
 {
-	this->text.append(text.data(), text.size());
+	this->text += text;
 	if (shortcut.NotEmpty())
 	{
 		this->text += "\t";
-		this->text.append(shortcut.data(), shortcut.size());
+		this->text += shortcut;
 	}
 	this->submenu.AssignRange(submenu);
 	this->isChecked = checked;

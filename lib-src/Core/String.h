@@ -46,6 +46,9 @@ static const constexpr unsigned ALL_NUMBER_FORMATS = 0xf;
 
 struct StringView
 {
+	const char* _data;
+	size_t _size;
+
 	UI_FORCEINLINE StringView() : _data(nullptr), _size(0) {}
 	UI_FORCEINLINE StringView(const char* s) : _data(s), _size(strlen(s)) {}
 	UI_FORCEINLINE StringView(char* s) : _data(s), _size(strlen(s)) {}
@@ -204,32 +207,29 @@ struct StringView
 	UI_FORCEINLINE double to_float64() const { return StringView(*this).take_float64(); }
 	UI_FORCEINLINE float take_float32() { return float(take_float64()); }
 	UI_FORCEINLINE float to_float32() const { return float(StringView(*this).take_float64()); }
-
-	const char* _data;
-	size_t _size;
 };
 
 inline std::string to_string(StringView s)
 {
 	std::string out;
-	out.append(s.Data(), s.Size());
+	out.append(s._data, s._size);
 	return out;
 }
 inline std::string to_string(StringView s1, StringView s2)
 {
 	std::string out;
-	out.reserve(s1.Size() + s2.Size());
-	out.append(s1.Data(), s1.Size());
-	out.append(s2.Data(), s2.Size());
+	out.reserve(s1._size + s2._size);
+	out.append(s1._data, s1._size);
+	out.append(s2._data, s2._size);
 	return out;
 }
 inline std::string to_string(StringView s1, StringView s2, StringView s3)
 {
 	std::string out;
-	out.reserve(s1.Size() + s2.Size() + s3.Size());
-	out.append(s1.Data(), s1.Size());
-	out.append(s2.Data(), s2.Size());
-	out.append(s3.Data(), s3.Size());
+	out.reserve(s1._size + s2._size + s3._size);
+	out.append(s1._data, s1._size);
+	out.append(s2._data, s2._size);
+	out.append(s3._data, s3._size);
 	return out;
 }
 inline std::string StrViewArrConcat(ArrayView<StringView> svav)
@@ -237,16 +237,16 @@ inline std::string StrViewArrConcat(ArrayView<StringView> svav)
 	std::string out;
 	size_t size = 0;
 	for (const auto& sv : svav)
-		size += sv.Size();
+		size += sv._size;
 	out.reserve(size);
 	for (const auto& sv : svav)
-		out.append(sv.Data(), sv.Size());
+		out.append(sv._data, sv._size);
 	return out;
 }
 
 inline size_t HashValue(StringView sv)
 {
-	return HashManyBytesFast(sv.Data(), sv.Size());
+	return HashManyBytesFast(sv._data, sv._size);
 }
 
 template <size_t S>
@@ -267,8 +267,9 @@ struct CStr
 		if (_ptr != _tmp)
 			delete[] _ptr;
 	}
-	const char* c_str() const { return _ptr; }
-	operator const char*() const { return _ptr; }
+	UI_FORCEINLINE const char* operator *() const { return _ptr; }
+	UI_FORCEINLINE const char* c_str() const { return _ptr; }
+	UI_FORCEINLINE operator const char*() const { return _ptr; }
 
 	char* _ptr;
 	char _tmp[S];
