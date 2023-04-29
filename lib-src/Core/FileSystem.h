@@ -68,6 +68,10 @@ bool CreateDirectory(StringView path);
 bool CreateMissingDirectories(StringView path);
 bool CreateMissingParentDirectories(StringView path);
 
+bool DeleteFile(StringView path);
+bool DeleteDirectory(StringView path);
+bool MoveFile(StringView from, StringView to);
+
 std::string GetWorkingDirectory();
 bool SetWorkingDirectory(StringView sv);
 
@@ -120,6 +124,7 @@ struct IFileSource : RefCountedST
 {
 	virtual FileReadResult ReadTextFile(StringView path) = 0;
 	virtual FileReadResult ReadBinaryFile(StringView path) = 0;
+	virtual unsigned GetFileAttributes(StringView path) = 0;
 	virtual DirectoryIteratorHandle CreateDirectoryIterator(StringView path) = 0;
 };
 using FileSourceHandle = RCHandle<IFileSource>;
@@ -130,6 +135,7 @@ struct FileSourceSequence : IFileSource
 
 	FileReadResult ReadTextFile(StringView path) override;
 	FileReadResult ReadBinaryFile(StringView path) override;
+	unsigned GetFileAttributes(StringView path) override;
 	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override;
 };
 

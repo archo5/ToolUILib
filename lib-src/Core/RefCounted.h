@@ -50,30 +50,30 @@ class RCHandle
 	T* _ptr;
 
 public:
-	RCHandle() : _ptr(nullptr) {}
-	RCHandle(std::nullptr_t) : _ptr(nullptr) {}
-	RCHandle(T* ptr) : _ptr(ptr)
+	UI_FORCEINLINE RCHandle() : _ptr(nullptr) {}
+	UI_FORCEINLINE RCHandle(std::nullptr_t) : _ptr(nullptr) {}
+	UI_FORCEINLINE RCHandle(T* ptr) : _ptr(ptr)
 	{
 		if (ptr)
 			ptr->AddRef();
 	}
-	RCHandle(const RCHandle& o) : _ptr(o._ptr)
+	UI_FORCEINLINE RCHandle(const RCHandle& o) : _ptr(o._ptr)
 	{
 		if (_ptr)
 			_ptr->AddRef();
 	}
-	RCHandle(RCHandle&& o) : _ptr(o._ptr)
+	UI_FORCEINLINE RCHandle(RCHandle&& o) : _ptr(o._ptr)
 	{
 		o._ptr = nullptr;
 	}
 	template <class OT>
-	RCHandle(const RCHandle<OT>& o) : _ptr(o._ptr)
+	UI_FORCEINLINE RCHandle(const RCHandle<OT>& o) : _ptr(o._ptr)
 	{
 		if (_ptr)
 			_ptr->AddRef();
 	}
 	template <class OT>
-	RCHandle(RCHandle<OT>&& o) : _ptr(o._ptr)
+	UI_FORCEINLINE RCHandle(RCHandle<OT>&& o) : _ptr(o._ptr)
 	{
 		o._ptr = nullptr;
 	}
@@ -161,10 +161,10 @@ public:
 	}
 
 	//operator void* () const { return _ptr; }
-	T& operator * () const { return *_ptr; }
-	T* operator -> () const { return _ptr; }
-	operator T* () const { return _ptr; }
-	T* get_ptr() const { return _ptr; }
+	UI_FORCEINLINE T& operator * () const { return *_ptr; }
+	UI_FORCEINLINE T* operator -> () const { return _ptr; }
+	UI_FORCEINLINE operator T* () const { return _ptr; }
+	UI_FORCEINLINE T* get_ptr() const { return _ptr; }
 #if 0
 	bool operator == (const T* o) const { return _ptr == o; }
 	bool operator != (const T* o) const { return _ptr != o; }
@@ -173,6 +173,6 @@ public:
 #endif
 };
 
-template <class T> inline RCHandle<T> AsRCHandle(T* ptr) { return ptr; }
+template <class T> UI_FORCEINLINE RCHandle<T> AsRCHandle(T* ptr) { return ptr; }
 
 } // ui

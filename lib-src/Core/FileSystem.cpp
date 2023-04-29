@@ -14,6 +14,8 @@
 
 
 #undef CreateDirectory
+#undef MoveFile
+#undef DeleteFile
 #undef GetFileAttributes
 
 
@@ -188,6 +190,24 @@ bool CreateMissingDirectories(StringView path)
 bool CreateMissingParentDirectories(StringView path)
 {
 	return CreateMissingDirectories(PathGetParent(path));
+}
+
+
+bool DeleteFile(StringView path)
+{
+	auto wpath = UTF8toWCHAR(path);
+	return ::DeleteFileW(wpath.c_str());
+}
+
+bool DeleteDirectory(StringView path)
+{
+	auto wpath = UTF8toWCHAR(path);
+	return ::RemoveDirectoryW(wpath.c_str());
+}
+
+bool MoveFile(StringView from, StringView to)
+{
+	return ::MoveFileW(UTF8toWCHAR(from).c_str(), UTF8toWCHAR(to).c_str());
 }
 
 
@@ -507,6 +527,16 @@ FileReadResult FileSourceSequence::ReadBinaryFile(StringView path)
 	return ret;
 }
 
+unsigned FileSourceSequence::GetFileAttributes(StringView path)
+{
+	for (auto& fs : fileSystems)
+	{
+		if (unsigned attr = fs->GetFileAttributes(path))
+			return attr;
+	}
+	return 0;
+}
+
 struct AllFileSourceIterator : IDirectoryIterator
 {
 	std::string path;
@@ -560,15 +590,19 @@ struct FileSystemSource : IFileSource
 		return PathJoin(rootPath, path);
 	}
 
-	FileReadResult ReadTextFile(StringView path)
+	FileReadResult ReadTextFile(StringView path) override
 	{
 		return ui::ReadTextFile(GetRealPath(path));
 	}
-	FileReadResult ReadBinaryFile(StringView path)
+	FileReadResult ReadBinaryFile(StringView path) override
 	{
 		return ui::ReadBinaryFile(GetRealPath(path));
 	}
-	DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
+	unsigned GetFileAttributes(StringView path) override
+	{
+		return ui::GetFileAttributes(GetRealPath(path));
+	}
+	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override
 	{
 		return ui::CreateDirectoryIterator(GetRealPath(path));
 	}
@@ -652,7 +686,7 @@ struct ZipFileSource : IFileSource
 		return dstdata - start;
 	}
 
-	FileReadResult ReadTextFile(StringView path)
+	FileReadResult ReadTextFile(StringView path) override
 	{
 		auto res = ReadBinaryFile(path);
 		if (res.data)
@@ -661,7 +695,7 @@ struct ZipFileSource : IFileSource
 		}
 		return res;
 	}
-	FileReadResult ReadBinaryFile(StringView path)
+	FileReadResult ReadBinaryFile(StringView path) override
 	{
 		auto* zfs = fileMap.GetValuePtr(to_string(path));
 		if (zfs && zfs->dir == false && zfs->id != mz_uint(-1))
@@ -680,6 +714,19 @@ struct ZipFileSource : IFileSource
 		return { IOResult::FileNotFound };
 	}
 
+	unsigned GetFileAttributes(StringView path) override
+	{
+		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		if (zfs)
+		{
+			unsigned attr = FA_Exists;
+			if (zfs->dir)
+				attr |= FA_Directory;
+			return attr;
+		}
+		return 0;
+	}
+
 	struct DirIter : IDirectoryIterator
 	{
 		RCHandle<ZipFileSource> zfs;
@@ -696,7 +743,7 @@ struct ZipFileSource : IFileSource
 			return false;
 		}
 	};
-	DirectoryIteratorHandle CreateDirectoryIterator(StringView path)
+	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override
 	{
 		auto* zfs = fileMap.GetValuePtr(to_string(path));
 		if (zfs && zfs->dir)

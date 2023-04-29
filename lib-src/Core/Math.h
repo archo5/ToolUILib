@@ -231,6 +231,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE AABB2(DoNotInitialize) {}
 	UI_FORCEINLINE AABB2() : x0(0), y0(0), x1(0), y1(0) {}
 	UI_FORCEINLINE AABB2(T ax0, T ay0, T ax1, T ay1) : x0(ax0), y0(ay0), x1(ax1), y1(ay1) {}
+	UI_FORCEINLINE AABB2(Vec2<T> pos) : x0(pos.x), y0(pos.y), x1(pos.x), y1(pos.y) {}
 	UI_FORCEINLINE AABB2(Vec2<T> amin, Vec2<T> amax) : x0(amin.x), y0(amin.y), x1(amax.x), y1(amax.y) {}
 	UI_FORCEINLINE static AABB2 Zero() { return {}; }
 	UI_FORCEINLINE static AABB2 Empty() { return { MAX_VALUE, MAX_VALUE, MIN_VALUE, MIN_VALUE }; }
@@ -245,12 +246,18 @@ template<class T> struct AABB2
 	UI_FORCEINLINE bool operator == (const AABB2& o) const { return x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1; }
 	UI_FORCEINLINE bool operator != (const AABB2& o) const { return !(*this == o); }
 
+	UI_FORCEINLINE Vec2<T> GetP00() const { return { x0, y0 }; }
+	UI_FORCEINLINE Vec2<T> GetP10() const { return { x1, y0 }; }
+	UI_FORCEINLINE Vec2<T> GetP01() const { return { x0, y1 }; }
+	UI_FORCEINLINE Vec2<T> GetP11() const { return { x1, y1 }; }
 	UI_FORCEINLINE T GetWidth() const { return x1 - x0; }
 	UI_FORCEINLINE T GetHeight() const { return y1 - y0; }
 	UI_FORCEINLINE T GetAspectRatio() const { return y0 == y1 ? 1 : GetWidth() / GetHeight(); }
 	UI_FORCEINLINE Size2<T> GetSize() const { return { GetWidth(), GetHeight() }; }
 	UI_FORCEINLINE Vec2<T> GetMin() const { return { x0, y0 }; }
 	UI_FORCEINLINE Vec2<T> GetMax() const { return { x1, y1 }; }
+	UI_FORCEINLINE T GetCenterX() const { return (x0 + x1) / 2; }
+	UI_FORCEINLINE T GetCenterY() const { return (y0 + y1) / 2; }
 	UI_FORCEINLINE Vec2<T> GetCenter() const { return { (x0 + x1) / 2, (y0 + y1) / 2 }; }
 	UI_FORCEINLINE bool IsValid() const { return x0 <= x1 && y0 <= y1; }
 	UI_FORCEINLINE bool Contains(T x, T y) const { return x >= x0 && x < x1 && y >= y0 && y < y1; }

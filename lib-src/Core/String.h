@@ -46,26 +46,26 @@ static const constexpr unsigned ALL_NUMBER_FORMATS = 0xf;
 
 struct StringView
 {
-	StringView() : _data(nullptr), _size(0) {}
-	StringView(const char* s) : _data(s), _size(strlen(s)) {}
-	StringView(char* s) : _data(s), _size(strlen(s)) {}
-	StringView(const char* ptr, size_t sz) : _data(ptr), _size(sz) {}
+	UI_FORCEINLINE StringView() : _data(nullptr), _size(0) {}
+	UI_FORCEINLINE StringView(const char* s) : _data(s), _size(strlen(s)) {}
+	UI_FORCEINLINE StringView(char* s) : _data(s), _size(strlen(s)) {}
+	UI_FORCEINLINE StringView(const char* ptr, size_t sz) : _data(ptr), _size(sz) {}
 	// TODO
-	StringView(const std::string& o) : _data(o.data()), _size(o.size()) {}
+	UI_FORCEINLINE StringView(const std::string& o) : _data(o.data()), _size(o.size()) {}
 	//StringView(const std::vector<char>& o) : _data(o.data()), _size(o.size()) {}
-	StringView(const ArrayView<char>& o) : _data(o.data()), _size(o.size()) {}
+	UI_FORCEINLINE StringView(const ArrayView<char>& o) : _data(o.data()), _size(o.size()) {}
 
-	const char* Data() const { return _data; }
-	size_t Size() const { return _size; }
-	bool IsEmpty() const { return _size == 0; }
-	bool NotEmpty() const { return _size != 0; }
-	const char* data() const { return _data; }
-	size_t size() const { return _size; }
-	const char& first() const { return _data[0]; }
-	const char& last() const { return _data[_size - 1]; }
-	const char* begin() const { return _data; }
-	const char* end() const { return _data + _size; }
-	char operator [] (size_t pos) const { return _data[pos]; }
+	UI_FORCEINLINE const char* Data() const { return _data; }
+	UI_FORCEINLINE size_t Size() const { return _size; }
+	UI_FORCEINLINE bool IsEmpty() const { return _size == 0; }
+	UI_FORCEINLINE bool NotEmpty() const { return _size != 0; }
+	UI_FORCEINLINE const char* data() const { return _data; }
+	UI_FORCEINLINE size_t size() const { return _size; }
+	UI_FORCEINLINE const char& first() const { return _data[0]; }
+	UI_FORCEINLINE const char& last() const { return _data[_size - 1]; }
+	UI_FORCEINLINE const char* begin() const { return _data; }
+	UI_FORCEINLINE const char* end() const { return _data + _size; }
+	UI_FORCEINLINE char operator [] (size_t pos) const { return _data[pos]; }
 
 	int compare(const StringView& o) const;
 
@@ -121,6 +121,19 @@ struct StringView
 	{
 		size_t at = find_last_at(sub, SIZE_MAX, 0);
 		return substr(0, at);
+	}
+
+	bool SkipNumChars(size_t n)
+	{
+		if (n <= _size)
+		{
+			_data += n;
+			_size -= n;
+			return true;
+		}
+		_data += _size;
+		_size = 0;
+		return false;
 	}
 
 	void skip_c_whitespace(bool single_line_comments = true, bool multiline_comments = true);
@@ -199,30 +212,41 @@ struct StringView
 inline std::string to_string(StringView s)
 {
 	std::string out;
-	out.append(s.data(), s.size());
+	out.append(s.Data(), s.Size());
 	return out;
 }
 inline std::string to_string(StringView s1, StringView s2)
 {
 	std::string out;
-	out.reserve(s1.size() + s2.size());
-	out.append(s1.data(), s1.size());
-	out.append(s2.data(), s2.size());
+	out.reserve(s1.Size() + s2.Size());
+	out.append(s1.Data(), s1.Size());
+	out.append(s2.Data(), s2.Size());
 	return out;
 }
 inline std::string to_string(StringView s1, StringView s2, StringView s3)
 {
 	std::string out;
-	out.reserve(s1.size() + s2.size() + s3.size());
-	out.append(s1.data(), s1.size());
-	out.append(s2.data(), s2.size());
-	out.append(s3.data(), s3.size());
+	out.reserve(s1.Size() + s2.Size() + s3.Size());
+	out.append(s1.Data(), s1.Size());
+	out.append(s2.Data(), s2.Size());
+	out.append(s3.Data(), s3.Size());
+	return out;
+}
+inline std::string StrViewArrConcat(ArrayView<StringView> svav)
+{
+	std::string out;
+	size_t size = 0;
+	for (const auto& sv : svav)
+		size += sv.Size();
+	out.reserve(size);
+	for (const auto& sv : svav)
+		out.append(sv.Data(), sv.Size());
 	return out;
 }
 
 inline size_t HashValue(StringView sv)
 {
-	return HashManyBytesFast(sv.data(), sv.size());
+	return HashManyBytesFast(sv.Data(), sv.Size());
 }
 
 template <size_t S>
