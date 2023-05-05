@@ -637,7 +637,7 @@ void EventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bo
 		ev.shortCode = pk;
 		ev.modifiers = mod;
 		ev.arg0 = isRepeated;
-		ev.numRepeats = numRepeats;
+		ev.numRepeats = isRepeated;// numRepeats; -- TODO
 		BubblingEvent(ev);
 	}
 }

@@ -1863,7 +1863,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			uint8_t origScanCode = (lParam >> 16) & 0xff;
 			uint8_t extMask = lParam & (1 << 24) ? 0x80 : 0;
 			uint8_t scanCode = origScanCode | extMask;
-			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, scanCode, M, (lParam & (1U << 31)) != 0U, numRepeats);
+			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, scanCode, M, (lParam & (1U << 30)) != 0U, numRepeats);
 			if (message == WM_KEYDOWN)
 			{
 				switch (wParam)

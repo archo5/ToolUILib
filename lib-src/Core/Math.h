@@ -133,6 +133,7 @@ using Point2f = Vec2<float>;
 using Point2i = Vec2<int>;
 
 template <class T> UI_FORCEINLINE T Vec2Dot(const Vec2<T>& a, const Vec2<T>& b) { return a.x * b.x + a.y * b.y; }
+template <class T> UI_FORCEINLINE T Vec2Cross(const Vec2<T>& a, const Vec2<T>& b) { return a.x * b.y - a.y * b.x; }
 UI_FORCEINLINE Vec2f Vec2fLerp(Vec2f a, Vec2f b, float q) { return a * (1 - q) + b * q; }
 inline Vec2f Vec2fFromAngle(float angle) { angle *= DEG2RAD; return { cosf(angle), sinf(angle) }; }
 inline Vec2f Vec2fFromAngle2(float angle) { angle *= DEG2RAD; return { sinf(angle), cosf(angle) }; }
