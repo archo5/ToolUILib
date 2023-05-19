@@ -1,5 +1,6 @@
 "background:color" = "b:37;255"
 "foreground:color" = "b:255"
+"foreground_disabled:color" = "b:255;127"
 "clear:color" = "b:37;255"
 
 ":FontSettings" = {}
@@ -10,11 +11,20 @@
 "label:FrameStyle":
 {
 	padding = 5
+	backgroundPainter = "label"
 }
 "header:FrameStyle":
 {
 	padding = 5
 	font = "header"
+	backgroundPainter = "label"
+}
+
+"label:painter":
+{
+	__ = "conditional"
+	condition = ["disabled"]
+	painter = { __ = "text_style_mod", textColor = "b:255;127" }
 }
 
 "group_box:FrameStyle":
@@ -81,7 +91,7 @@
 			[
 				{
 					condition = ["disabled"]
-					painter = { __ = "imgset", imgset = "textbox.disabled" }
+					painter = { __ = "imgset", imgset = "textbox.disabled", textColor = "b:255;127" }
 				}
 				{
 					painter = { __ = "imgset", imgset = "textbox.normal" }
@@ -103,7 +113,7 @@
 	[
 		{
 			condition = ["disabled"]
-			painter = { __ = "imgset", imgset = "textbox.disabled" }
+			painter = { __ = "imgset", imgset = "textbox.disabled", textColor = "b:255;127" }
 		}
 		{
 			painter = { __ = "imgset", imgset = "textbox.normal" }
@@ -118,7 +128,7 @@
 	[
 		{
 			condition = ["disabled"]
-			painter = { __ = "imgset", imgset = "button.disabled" }
+			painter = { __ = "imgset", imgset = "button.disabled", textColor = "b:255;127" }
 		}
 		{
 			painter = { __ = "imgset", imgset = "button.normal" }

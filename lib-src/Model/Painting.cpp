@@ -206,6 +206,18 @@ ContentPaintAdvice SelectFirstPainter::Paint(const PaintInfo& info)
 }
 
 
+ContentPaintAdvice TextStyleModPainter::Paint(const PaintInfo& info)
+{
+	ContentPaintAdvice cpa = {};
+	if (painter)
+		cpa = painter->Paint(info);
+	cpa.SetTextColor(textColor);
+	cpa.offset *= contentOffsetInherit;
+	cpa.offset += contentOffset;
+	return cpa;
+}
+
+
 ContentPaintAdvice PointAnchoredPlacementRectModPainter::Paint(const PaintInfo& info)
 {
 	auto ro = info.rect;
@@ -274,6 +286,8 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 
 	ContentPaintAdvice cpa;
 	cpa.offset = contentOffset;
+	if (overrideTextColor)
+		cpa.SetTextColor(textColor);
 	return cpa;
 }
 

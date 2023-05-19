@@ -150,7 +150,7 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 
 	bool usePlaceholder = !IsFocused() && _impl->text.empty();
 	StringView text = usePlaceholder ? _impl->placeholder : _impl->text;
-	auto textColor = usePlaceholder ? Color4b(255, 128) : Color4b::White(); // TODO to theme
+	auto textColor = usePlaceholder ? Color4b(255, 128) : cpa.HasTextColor() ? cpa.GetTextColor() : Color4b::White(); // TODO to theme
 	_impl->lines.Recalculate(text, font, size, GetContentRect().GetWidth(), _impl->multiline);
 	{
 		auto r = GetContentRect();

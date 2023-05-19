@@ -16,11 +16,11 @@
 			[
 				{
 					condition = ["disabled"]
-					painter = { __ = "imgset", imgset = "button.disabled" }
+					painter = { __ = "imgset", imgset = "button.disabled", textColor = "b:255;127" }
 				}
 				{
 					condition = ["down", "disabled"]
-					painter = { __ = "imgset", imgset = "button.down-disabled" }
+					painter = { __ = "imgset", imgset = "button.down-disabled", textColor = "b:255;127" }
 				}
 				{
 					condition = ["down"]

@@ -221,6 +221,18 @@ struct SelectFirstPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
+// only modifies the text style, can refer to another painter as a passthrough mod
+struct TextStyleModPainter : IPainter
+{
+	PainterHandle painter;
+	Color4b textColor;
+	// TODO text color merge mode
+	float contentOffsetInherit = 0;
+	Vec2f contentOffset;
+
+	ContentPaintAdvice Paint(const PaintInfo&) override;
+};
+
 struct PointAnchoredPlacementRectModPainter : IPainter
 {
 	PainterHandle painter;
@@ -248,6 +260,8 @@ struct ImageSetPainter : IPainter
 {
 	draw::ImageSetHandle imageSet;
 	Color4b color;
+	bool overrideTextColor = false;
+	Color4b textColor;
 	int shrink = 0;
 	Vec2f contentOffset;
 

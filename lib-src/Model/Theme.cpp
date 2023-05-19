@@ -730,6 +730,19 @@ static IPainter* SelectFirstPainterCreateFunc(IThemeLoader* loader, IObjectItera
 	return p;
 }
 
+static IPainter* TextStyleModPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
+{
+	auto* p = new TextStyleModPainter;
+
+	p->painter = loader->LoadPainter("painter");
+	if (OI.HasField("textColor"))
+		p->textColor = loader->LoadColor("textColor");
+	OnField(OI, "contentOffsetInherit", p->contentOffsetInherit);
+	OnField(OI, "contentOffset", p->contentOffset);
+
+	return p;
+}
+
 static IPainter* PointAnchoredPlacementRectModPainterCreateFunc(IThemeLoader* loader, IObjectIterator& OI)
 {
 	auto* p = new PointAnchoredPlacementRectModPainter;
@@ -765,6 +778,13 @@ static IPainter* ImageSetPainterCreateFunc(IThemeLoader* loader, IObjectIterator
 	std::string imgset;
 	OnField(OI, "imgset", imgset);
 	p->imageSet = loader->FindImageSet(imgset);
+	p->color = loader->LoadColor("color");
+
+	if (OI.HasField("textColor"))
+	{
+		p->overrideTextColor = true;
+		p->textColor = loader->LoadColor("textColor");
+	}
 
 	OnField(OI, "shrink", p->shrink);
 	OnField(OI, "contentOffset", p->contentOffset);
@@ -806,6 +826,7 @@ void RegisterPainters()
 	RegisterPainter("layer", LayerPainterCreateFunc);
 	RegisterPainter("conditional", ConditionalPainterCreateFunc);
 	RegisterPainter("select_first", SelectFirstPainterCreateFunc);
+	RegisterPainter("text_style_mod", TextStyleModPainterCreateFunc);
 	RegisterPainter("point_anchored_placement_rect_mod", PointAnchoredPlacementRectModPainterCreateFunc);
 	RegisterPainter("color_fill", ColorFillPainterCreateFunc);
 	RegisterPainter("imgset", ImageSetPainterCreateFunc);
