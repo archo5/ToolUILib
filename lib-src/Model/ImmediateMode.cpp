@@ -223,13 +223,12 @@ float DragConfig::GetSnap(uint8_t modifierKeys) const
 
 struct NumFmtBox
 {
-	char fmt[8];
+	char printFmt[8];
 
 	NumFmtBox(const char* f)
 	{
-		fmt[0] = ' ';
-		strncpy(fmt + 1, f, 6);
-		fmt[7] = '\0';
+		strncpy(printFmt, f, 6);
+		printFmt[7] = '\0';
 	}
 };
 
@@ -249,12 +248,34 @@ template <class T> float GetMinSnap(T) { return 1; }
 float GetMinSnap(float v) { return max(nextafterf(v, INFINITY) - v, FLT_EPSILON); }
 float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON); }
 
+static inline bool fstrhas(const char* s, char c)
+{
+	return strchr(s, c) || strchr(s, ToUpper(c));
+}
+template <class T> const char* GetScanFormat(const char* fmt) { return ""; }
+template <> const char* GetScanFormat<signed int>(const char* fmt) { return fstrhas(fmt, 'x') ? "%x" : fstrhas(fmt, 'o') ? "%o" : "%d"; }
+template <> const char* GetScanFormat<unsigned int>(const char* fmt) { return fstrhas(fmt, 'x') ? "%x" : fstrhas(fmt, 'o') ? "%o" : "%u"; }
+template <> const char* GetScanFormat<signed long>(const char* fmt) { return fstrhas(fmt, 'x') ? "%lx" : fstrhas(fmt, 'o') ? "%lo" : "%ld"; }
+template <> const char* GetScanFormat<unsigned long>(const char* fmt) { return fstrhas(fmt, 'x') ? "%lx" : fstrhas(fmt, 'o') ? "%lo" : "%lu"; }
+template <> const char* GetScanFormat<signed long long>(const char* fmt) { return fstrhas(fmt, 'x') ? "%llx" : fstrhas(fmt, 'o') ? "%llo" : "%lld"; }
+template <> const char* GetScanFormat<unsigned long long>(const char* fmt) { return fstrhas(fmt, 'x') ? "%llx" : fstrhas(fmt, 'o') ? "%llo" : "%llu"; }
+template <> const char* GetScanFormat<float>(const char* fmt) { return "%g"; }
+template <> const char* GetScanFormat<double>(const char* fmt) { return "%G"; }
+
+template <class TNum>
+struct NumberTextbox : Textbox
+{
+	TNum numberValue = 0;
+	float accumulator = 0;
+	int edited = 0; // 1=text, -1=numberValue
+};
+
 template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
-	auto& tb = Make<Textbox>();
+	auto& tb = Make<NumberTextbox<TNum>>();
 	if (!GetEnabled())
 		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
@@ -263,10 +284,15 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	NumFmtBox fb(fmt);
 
 	bool edited = false;
-	if (tb.flags & UIObject_IsEdited)
+	if (tb.edited)
 	{
-		decltype(val + 0) tmp = 0;
-		sscanf(tb.GetText().c_str(), fb.fmt, &tmp);
+		decltype(val + 0) tmp;
+
+		if (tb.edited > 0)
+			sscanf(tb.GetText().c_str(), GetScanFormat<TNum>(fmt), &tmp);
+		else
+			tmp = tb.numberValue;
+
 		if (tmp == 0)
 			tmp = 0;
 		if (tmp > range.max)
@@ -274,13 +300,14 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		if (tmp < range.min)
 			tmp = range.min;
 		val = tmp;
-		tb.flags &= ~UIObject_IsEdited;
+		tb.edited = 0;
 		edited = true;
 		tb._OnIMChange();
 	}
 
 	char buf[1024];
-	snprintf(buf, 1024, fb.fmt + 1, val);
+	snprintf(buf, 1024, fb.printFmt, val);
+	tb.numberValue = val;
 	tb.SetText(RemoveNegZero(buf));
 
 	if (dragObj)
@@ -326,10 +353,11 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 				if (nv < range.min || (diff < 0 && nv > val))
 					nv = range.min;
 
+				tb.numberValue = nv;
 				char buf[1024];
-				snprintf(buf, 1024, fb.fmt + 1, nv);
+				snprintf(buf, 1024, fb.printFmt, nv);
 				tb.SetText(RemoveNegZero(buf));
-				tb.flags |= UIObject_IsEdited;
+				tb.edited = -1;
 
 				e.context->OnCommit(e.target);
 				tb.RebuildContainer();
@@ -343,7 +371,7 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	}
 	tb.HandleEvent(EventType::Commit) = [&tb](Event& e)
 	{
-		tb.flags |= UIObject_IsEdited;
+		tb.edited = 1;
 		tb.RebuildContainer();
 	};
 

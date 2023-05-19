@@ -42,11 +42,11 @@ struct MenuItem
 	}
 	StringView GetText() const
 	{
-		return StringView(text).until_first("\t");
+		return StringView(text).UntilFirst("\t");
 	}
 	StringView GetShortcut() const
 	{
-		return StringView(text).after_first("\t");
+		return StringView(text).AfterFirst("\t");
 	}
 
 	std::string text;

@@ -157,6 +157,9 @@
     <ClCompile Include="Core\Config.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Model\ImmediateMode3D.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -372,6 +375,9 @@
     </ClInclude>
     <ClInclude Include="Core\Config.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ImmediateMode3D.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

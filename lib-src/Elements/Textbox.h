@@ -46,7 +46,6 @@ struct Textbox : FrameElement
 	}
 
 	struct TextboxImpl* _impl;
-	float accumulator = 0;
 };
 
 struct TextboxPlaceholder : Modifier

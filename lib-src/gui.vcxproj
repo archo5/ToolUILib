@@ -261,6 +261,7 @@
     <ClCompile Include="Model\Gizmo.cpp" />
     <ClCompile Include="Model\Graphics.cpp" />
     <ClCompile Include="Model\ImmediateMode.cpp" />
+    <ClCompile Include="Model\ImmediateMode3D.cpp" />
     <ClCompile Include="Model\Painting.cpp" />
     <ClCompile Include="Model\Menu.cpp" />
     <ClCompile Include="Model\Native.cpp" />
@@ -339,6 +340,7 @@
     <ClInclude Include="Model\Gizmo.h" />
     <ClInclude Include="Model\Graphics.h" />
     <ClInclude Include="Model\ImmediateMode.h" />
+    <ClInclude Include="Model\ImmediateMode3D.h" />
     <ClInclude Include="Model\Keyboard.h" />
     <ClInclude Include="Model\Painting.h" />
     <ClInclude Include="Model\Menu.h" />

@@ -351,7 +351,7 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 	if (attr & FILE_ATTRIBUTE_DIRECTORY)
 		path = "-";
 	else
-		path = path.after_last("/").since_last(".");
+		path = path.AfterLast("/").SinceLast(".");
 
 	char cacheKeyPrefix[64];
 	snprintf(cacheKeyPrefix, sizeof(cacheKeyPrefix), "fileicon:%d:", int(type));

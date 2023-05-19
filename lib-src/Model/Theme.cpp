@@ -444,17 +444,17 @@ void ThemeData::LoadTheme(StringView folder)
 							StringView name(el->name->string, el->name->string_size);
 							if (name.ends_with(":color"))
 							{
-								auto key = to_string(name.substr(0, name.find_last_at(":color")));
+								auto key = to_string(name.substr(0, name.FindLastAt(":color")));
 								tld.colors.Insert(key, { tf, el->name->string });
 							}
 							else if (name.ends_with(":imgset"))
 							{
-								auto key = to_string(name.substr(0, name.find_last_at(":imgset")));
+								auto key = to_string(name.substr(0, name.FindLastAt(":imgset")));
 								tld.imageSets.Insert(key, { tf, el->name->string });
 							}
 							else if (name.ends_with(":painter"))
 							{
-								auto key = to_string(name.substr(0, name.find_last_at(":painter")));
+								auto key = to_string(name.substr(0, name.FindLastAt(":painter")));
 								tld.painters.Insert(key, { tf, el->name->string });
 							}
 							else

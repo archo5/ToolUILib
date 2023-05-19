@@ -74,7 +74,7 @@ MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int 
 	if (path.IsEmpty())
 		return &root;
 
-	size_t sep = path.find_last_at(SEPARATOR);
+	size_t sep = path.FindLastAt(SEPARATOR);
 	auto parentPath = path.substr(0, sep == SIZE_MAX ? 0 : sep);
 	auto name = path.substr(sep == SIZE_MAX ? 0 : sep + strlen(SEPARATOR));
 	std::string nameStr(name.data(), name.size());

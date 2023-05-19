@@ -36,7 +36,7 @@ static std::string TimestampToText(uint64_t unixMS)
 
 void FileTreeDataSource::File::InitFrom(const ui::StringView& fullPath, bool recursive)
 {
-	name = ui::to_string(fullPath.after_last("/"));
+	name = ui::to_string(fullPath.AfterLast("/"));
 	size = ui::GetFileSize(fullPath);
 	modTimeUnixMS = ui::GetFileModTimeUnixMS(fullPath);
 	isDir = !!(ui::GetFileAttributes(fullPath) & ui::FA_Directory);
@@ -160,7 +160,7 @@ void FileTreeDataSource::SetSelectionState(uintptr_t item, bool sel)
 
 ui::RCHandle<FileTreeDataSource::File> FileTreeDataSource::GetFileFromPath(ui::StringView path, bool rebuildIfMissing)
 {
-	auto name = path.after_last("/");
+	auto name = path.AfterLast("/");
 	auto parent = name.size() < path.size() ? path.substr(0, path.size() - name.size() - 1) : ui::StringView();
 	auto parentFile = parent.IsEmpty() ? _root : GetFileFromPath(parent, rebuildIfMissing);
 	if (!parentFile)
@@ -207,7 +207,7 @@ void FileTreeDataSource::OnFileAdded(ui::StringView path)
 			return;
 		}
 	}
-	auto name = path.after_last("/");
+	auto name = path.AfterLast("/");
 	for (auto& chf : F->subfiles)
 	{
 		if (chf->name == name)
@@ -240,7 +240,7 @@ void FileTreeDataSource::OnFileRemoved(ui::StringView path)
 			return;
 		}
 	}
-	auto name = path.after_last("/");
+	auto name = path.AfterLast("/");
 	for (auto& chf : F->subfiles)
 	{
 		if (chf->name == name)

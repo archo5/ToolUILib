@@ -293,7 +293,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 					cam.GetLocalRayEP(e, _combinedXF.Inverted()),
 					_lastCursorPos,
 					cam.WorldToWindowPoint(wp),
-					cam.WorldToWindowSize(_finalSize, wp));
+					fabsf(cam.WorldToWindowSize(_finalSize, wp)));
 			}
 			else
 			{
@@ -784,8 +784,8 @@ static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color
 	Vec3f axis2(axis.z, axis.x, axis.y);
 
 	Point2f dzcWin = cam.WorldToWindowPoint(darkZoneCenter);
-	float dzrWin = cam.WorldToWindowSize(darkZoneRadius, darkZoneCenter);
-	float dzz = cam.GetViewMatrix().TransformPoint(darkZoneCenter).z;
+	float dzrWin = fabsf(cam.WorldToWindowSize(darkZoneRadius, darkZoneCenter));
+	float dzz = fabsf(cam.GetViewMatrix().TransformPoint(darkZoneCenter).z);
 
 	Vertex_PF3CB4 circleVerts[NUMSEG * 2];
 	int realnum = 0;
@@ -798,8 +798,8 @@ static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color
 
 		Vec3f wp1 = transform.TransformPoint(dir1);
 		Vec3f wp2 = transform.TransformPoint(dir2);
-		if (((cam.WorldToWindowPoint(wp1) - dzcWin).Length() < dzrWin && cam.GetViewMatrix().TransformPoint(wp1).z > dzz) ||
-			((cam.WorldToWindowPoint(wp2) - dzcWin).Length() < dzrWin && cam.GetViewMatrix().TransformPoint(wp2).z > dzz))
+		if (((cam.WorldToWindowPoint(wp1) - dzcWin).Length() < dzrWin && fabsf(cam.GetViewMatrix().TransformPoint(wp1).z) > dzz) ||
+			((cam.WorldToWindowPoint(wp2) - dzcWin).Length() < dzrWin && fabsf(cam.GetViewMatrix().TransformPoint(wp2).z) > dzz))
 			continue;
 
 		circleVerts[realnum].pos = dir1;
@@ -820,7 +820,7 @@ static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, f
 
 	auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
 	auto wsp = cam.WorldToWindowPoint(worldPoint);
-	float sizeScale = cam.WorldToWindowSize(1.0f, worldPoint);
+	float sizeScale = fabsf(cam.WorldToWindowSize(1.0f, worldPoint));
 
 	// 2D mode
 	{
@@ -910,7 +910,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 		auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
 		auto wsp = cam.WorldToWindowPoint(worldPoint);
-		float sizeScale = cam.WorldToWindowSize(1.0f, worldPoint);
+		float sizeScale = fabsf(cam.WorldToWindowSize(1.0f, worldPoint));
 
 		draw::AACircleLineCol(wsp, sizeScale * size * 0.6f, sizeScale * size * 0.8f, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.2f : 0.1f));
 		draw::AACircleLineCol(wsp, sizeScale * size, 1, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));

@@ -221,7 +221,7 @@ void NamedTextSerializeWriter::_WriteIndent()
 
 bool NamedTextSerializeReader::Entry::IsSimpleStringValue()
 {
-	return value.size() < 2 || value.first() != '"' || value.last() != '"';
+	return value.size() < 2 || value.First() != '"' || value.Last() != '"';
 }
 
 std::string NamedTextSerializeReader::Entry::GetStringValue()
@@ -341,17 +341,17 @@ bool NamedTextSerializeReader::Parse(StringView all)
 	StringView rem = all;
 	while (rem.NotEmpty())
 	{
-		auto at = rem.find_first_at("\n");
+		auto at = rem.FindFirstAt("\n");
 		auto line = rem.substr(0, at);
 		rem = rem.substr(at + 1);
 
 		// comment
-		if (line.first_char_is([](char c) { return c == '#'; }))
+		if (line.FirstCharIs([](char c) { return c == '#'; }))
 			continue;
 
 		// depth
 		int indent = 0;
-		while (line.first_char_is([](char c) { return c == ' ' || c == '\t'; }))
+		while (line.FirstCharIs([](char c) { return c == ' ' || c == '\t'; }))
 		{
 			line.take_char();
 			indent++;
@@ -369,7 +369,7 @@ bool NamedTextSerializeReader::Parse(StringView all)
 		}
 
 		// data
-		size_t eqpos = line.find_first_at("=");
+		size_t eqpos = line.FindFirstAt("=");
 		if (eqpos == SIZE_MAX)
 		{
 			// no equal sign
@@ -631,7 +631,7 @@ std::string Base64Decode(StringView src, const char* endChars, bool needPadding,
 		return {};
 	}
 
-	while (src.NotEmpty() && src.last() == '=')
+	while (src.NotEmpty() && src.Last() == '=')
 		src = src.substr(0, src.size() - 1);
 	if (src.size() == 1)
 	{

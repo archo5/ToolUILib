@@ -53,19 +53,19 @@ StringView StringView::rtrim() const
 	return out;
 }
 
-int StringView::count(StringView sub, size_t maxpos) const
+int StringView::Count(StringView sub, size_t maxpos) const
 {
 	int out = 0;
-	auto at = find_first_at(sub);
+	auto at = FindFirstAt(sub);
 	while (at < maxpos)
 	{
 		out++;
-		at = find_first_at(sub, at + 1);
+		at = FindFirstAt(sub, at + 1);
 	}
 	return out;
 }
 
-size_t StringView::find_first_at(StringView sub, size_t from, size_t def) const
+size_t StringView::FindFirstAt(StringView sub, size_t from, size_t def) const
 {
 	for (size_t i = from; i + sub._size <= _size; i++)
 		if (memcmp(&_data[i], sub._data, sub._size) == 0)
@@ -73,7 +73,7 @@ size_t StringView::find_first_at(StringView sub, size_t from, size_t def) const
 	return def;
 }
 
-size_t StringView::find_last_at(StringView sub, size_t from, size_t def) const
+size_t StringView::FindLastAt(StringView sub, size_t from, size_t def) const
 {
 	for (size_t i = min(_size - sub._size, from) + 1; i <= _size; )
 	{
@@ -84,7 +84,7 @@ size_t StringView::find_last_at(StringView sub, size_t from, size_t def) const
 	return def;
 }
 
-void StringView::skip_c_whitespace(bool single_line_comments, bool multiline_comments)
+void StringView::SkipCWhitespace(bool single_line_comments, bool multiline_comments)
 {
 	bool found = true;
 	while (found)
@@ -94,12 +94,12 @@ void StringView::skip_c_whitespace(bool single_line_comments, bool multiline_com
 		if (single_line_comments && starts_with("//"))
 		{
 			found = true;
-			*this = after_first("\n");
+			*this = AfterFirst("\n");
 		}
 		if (multiline_comments && starts_with("/*"))
 		{
 			found = true;
-			*this = after_first("*/");
+			*this = AfterFirst("*/");
 		}
 	}
 }

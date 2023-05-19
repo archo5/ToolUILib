@@ -106,7 +106,7 @@ struct SettingsWindowDemo : ui::Buildable
 		if (search.empty())
 			return true;
 
-		return s.find_first_at(search) != SIZE_MAX;
+		return s.FindFirstAt(search) != SIZE_MAX;
 	}
 };
 void Demo_SettingsWindow()

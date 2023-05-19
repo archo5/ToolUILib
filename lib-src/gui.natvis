@@ -23,12 +23,20 @@
 </Type>
 
 <Type Name="ui::StringView">
-	<DisplayString>{{ size={_size} }}</DisplayString>
+	<DisplayString>[{_size}]{_data,[_size]s}</DisplayString>
 	<Expand>
 		<ArrayItems>
 			<Size>_size</Size>
 			<ValuePointer>_data</ValuePointer>
 		</ArrayItems>
+	</Expand>
+</Type>
+
+<Type Name="ui::RCHandle&lt;*&gt;">
+	<DisplayString Condition="_ptr == 0">empty</DisplayString>
+	<DisplayString>{*_ptr}</DisplayString>
+	<Expand>
+		<ExpandedItem>_ptr</ExpandedItem>
 	</Expand>
 </Type>
 

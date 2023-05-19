@@ -741,13 +741,13 @@ struct MathExprData
 		bool ReadConstant(StringView& it, float& vout)
 		{
 			double bv = 0;
-			while (it.first_char_is(IsDigit))
+			while (it.FirstCharIs(IsDigit))
 			{
 				bv *= 10;
 				bv += it.take_char() - '0';
 			}
 
-			if (it.IsEmpty() || it.first() != '.')
+			if (it.IsEmpty() || it.First() != '.')
 			{
 				vout = float(bv);
 				return true;
@@ -755,7 +755,7 @@ struct MathExprData
 			it.take_char(); // '.'
 
 			double decimalpos = 1;
-			while (it.first_char_is(IsDigit))
+			while (it.FirstCharIs(IsDigit))
 			{
 				decimalpos *= 0.1;
 				bv += decimalpos * (it.take_char() - '0');
@@ -770,7 +770,7 @@ struct MathExprData
 			it.take_char(); // 'e'
 			double expsign = it.take_char() == '-' ? -1.0f : 1.0f;
 			double exp = 0;
-			while (it.first_char_is(IsDigit))
+			while (it.FirstCharIs(IsDigit))
 			{
 				exp *= 10;
 				exp += it.take_char() - '0';
@@ -789,7 +789,7 @@ struct MathExprData
 				if (it.IsEmpty())
 					break;
 
-				char ch = it.first();
+				char ch = it.First();
 				TokenType curTokenType = ClassifyChar(ch);
 
 				if (curTokenType == TTNumber)
@@ -804,7 +804,7 @@ struct MathExprData
 					// variable or function
 					StringView name = it.take_while([](char c) { return IsAlphaNum(c) || c == '_'; });
 					it = it.ltrim();
-					if (it.first_char_is([](char c) { return c == '('; }))
+					if (it.FirstCharIs([](char c) { return c == '('; }))
 					{
 						it.take_char();
 						curTokenType = TTLParen;
@@ -947,7 +947,7 @@ struct MathExprData
 						{
 							it = it.ltrim();
 							// check if it's a sign
-							if (it.first_char_is(IsDigit))
+							if (it.FirstCharIs(IsDigit))
 							{
 								curTokenType = TTNumber;
 

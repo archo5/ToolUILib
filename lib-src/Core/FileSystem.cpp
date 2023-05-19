@@ -36,7 +36,7 @@ std::string PathGetParent(StringView path)
 		return to_string(path, "/..");
 	if (path == "." || path == "")
 		return "..";
-	auto lastSep = path.find_last_at("/");
+	auto lastSep = path.FindLastAt("/");
 	if (lastSep == SIZE_MAX)
 		return ".";
 	if (lastSep == 0 || path[lastSep - 1] == ':')
@@ -82,7 +82,7 @@ std::string PathGetRelativeTo(StringView path, StringView relativeTo)
 	while (absrelto.size() > 1)
 	{
 		if (StringView(abspath).starts_with(absrelto))
-			return ui::to_string(backtrack, StringView(abspath).substr(absrelto.size()).until_last("/"));
+			return ui::to_string(backtrack, StringView(abspath).substr(absrelto.size()).UntilLast("/"));
 		backtrack += "../";
 		absrelto = PathGetParent(absrelto);
 		absrelto.push_back('/');

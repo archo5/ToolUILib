@@ -64,8 +64,8 @@ struct StringView
 	UI_FORCEINLINE bool NotEmpty() const { return _size != 0; }
 	UI_FORCEINLINE const char* data() const { return _data; }
 	UI_FORCEINLINE size_t size() const { return _size; }
-	UI_FORCEINLINE const char& first() const { return _data[0]; }
-	UI_FORCEINLINE const char& last() const { return _data[_size - 1]; }
+	UI_FORCEINLINE const char& First() const { return _data[0]; }
+	UI_FORCEINLINE const char& Last() const { return _data[_size - 1]; }
 	UI_FORCEINLINE const char* begin() const { return _data; }
 	UI_FORCEINLINE const char* end() const { return _data + _size; }
 	UI_FORCEINLINE char operator [] (size_t pos) const { return _data[pos]; }
@@ -95,34 +95,35 @@ struct StringView
 		return _size >= sub._size && memcmp(_data + _size - sub._size, sub._data, sub._size) == 0;
 	}
 
-	int count(StringView sub, size_t maxpos = SIZE_MAX) const;
-	size_t find_first_at(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const;
-	size_t find_last_at(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const;
+	UI_FORCEINLINE bool Contains(StringView sub) const { return FindFirstAt(sub) != SIZE_MAX; }
+	int Count(StringView sub, size_t maxpos = SIZE_MAX) const;
+	size_t FindFirstAt(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const;
+	size_t FindLastAt(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const;
 
-	StringView until_first(StringView sub) const
+	StringView UntilFirst(StringView sub) const
 	{
-		size_t at = find_first_at(sub);
+		size_t at = FindFirstAt(sub);
 		return at < SIZE_MAX ? substr(0, at) : *this;
 	}
-	StringView after_first(StringView sub) const
+	StringView AfterFirst(StringView sub) const
 	{
-		size_t at = find_first_at(sub);
+		size_t at = FindFirstAt(sub);
 		return at < SIZE_MAX ? substr(at + sub._size) : StringView();
 	}
 
-	StringView after_last(StringView sub) const
+	StringView AfterLast(StringView sub) const
 	{
-		size_t at = find_last_at(sub);
+		size_t at = FindLastAt(sub);
 		return substr(at < SIZE_MAX ? at + sub._size : 0);
 	}
-	StringView since_last(StringView sub) const
+	StringView SinceLast(StringView sub) const
 	{
-		size_t at = find_last_at(sub);
+		size_t at = FindLastAt(sub);
 		return substr(at < SIZE_MAX ? at : 0);
 	}
-	StringView until_last(StringView sub) const
+	StringView UntilLast(StringView sub) const
 	{
-		size_t at = find_last_at(sub, SIZE_MAX, 0);
+		size_t at = FindLastAt(sub, SIZE_MAX, 0);
 		return substr(0, at);
 	}
 
@@ -139,14 +140,14 @@ struct StringView
 		return false;
 	}
 
-	void skip_c_whitespace(bool single_line_comments = true, bool multiline_comments = true);
+	void SkipCWhitespace(bool single_line_comments = true, bool multiline_comments = true);
 
 	template <class F>
-	bool first_char_is(F f)
+	UI_FORCEINLINE bool FirstCharIs(F f) const
 	{
 		return _size != 0 && !!f(_data[0]);
 	}
-	bool first_char_equals(char c)
+	UI_FORCEINLINE bool FirstCharEquals(char c) const
 	{
 		return _size && c == _data[0];
 	}
@@ -158,7 +159,7 @@ struct StringView
 	}
 	bool take_if_equal(char c)
 	{
-		if (first_char_equals(c))
+		if (FirstCharEquals(c))
 		{
 			_data += 1;
 			_size -= 1;
