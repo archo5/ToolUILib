@@ -123,6 +123,7 @@ bool EditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
 bool EditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
 
 // length of `val` = length of `axes`
+bool EditIntVec(int* val, const char* axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool EditFloatVec(float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 void PropText(const char* label, const char* text, ModInitList mods = {});
@@ -139,6 +140,7 @@ bool PropEditColor(const char* label, Color4f& val, bool delayed = false, ModIni
 bool PropEditColor(const char* label, Color4b& val, bool delayed = false, ModInitList mods = {});
 
 // length of `val` = length of `axes`
+bool PropEditIntVec(const char* label, int* val, const char* axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditFloatVec(const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 } // imm
