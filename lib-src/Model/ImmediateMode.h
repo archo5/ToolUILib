@@ -122,9 +122,14 @@ bool EditStringMultiline(const char* text, const std::function<void(const char*)
 bool EditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
 bool EditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
 
-// length of `val` = length of `axes`
-bool EditIntVec(int* val, const char* axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool EditFloatVec(float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+extern const char* XY[];
+extern const char* XYZ[];
+extern const char* XYZW[];
+extern const char* RGBA[];
+extern const char* WidthHeight[];
+// length of `val` = length of `axes` (null-terminated)
+bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 void PropText(const char* label, const char* text, ModInitList mods = {});
 bool PropButton(const char* label, const char* text, ModInitList mods = {});
@@ -139,9 +144,9 @@ bool PropEditStringMultiline(const char* label, const char* text, const std::fun
 bool PropEditColor(const char* label, Color4f& val, bool delayed = false, ModInitList mods = {});
 bool PropEditColor(const char* label, Color4b& val, bool delayed = false, ModInitList mods = {});
 
-// length of `val` = length of `axes`
-bool PropEditIntVec(const char* label, int* val, const char* axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool PropEditFloatVec(const char* label, float* val, const char* axes = "XYZ", ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+// length of `val` = length of `axes` (null-terminated)
+bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool PropEditFloatVec(const char* label, float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 } // imm
 } // ui

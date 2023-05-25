@@ -230,7 +230,7 @@ struct GraphImpl : ui::IProcGraph
 			ui::imm::PropEditFloat("\b=", *data);
 			break;
 		case Graph::Type::Vector:
-			ui::imm::PropEditFloatVec(nullptr, data);
+			ui::imm::PropEditFloatVec(nullptr, data, ui::imm::XYZ);
 			break;
 		}
 	}

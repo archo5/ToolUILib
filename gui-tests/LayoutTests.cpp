@@ -410,8 +410,9 @@ struct PlacementTest : ui::Buildable
 		tmpl->placement = &buttonPlacement;
 		ui::MakeWithText<ui::Button>("This should not cover the entire parent");
 		ui::Pop();
-		ui::imm::PropEditFloatVec("Anchor", &buttonPlacement.anchor.x0, "LTRB", {}, 0.01f);
-		ui::imm::PropEditFloatVec("Bias", &buttonPlacement.bias.x0, "LTRB");
+		const char* LTRB[] = { "\bL", "\bT", "\bR", "\bB", nullptr };
+		ui::imm::PropEditFloatVec("Anchor", &buttonPlacement.anchor.x0, LTRB, {}, 0.01f);
+		ui::imm::PropEditFloatVec("Bias", &buttonPlacement.bias.x0, LTRB);
 
 		ui::Pop();
 		ui::Pop();

@@ -869,8 +869,8 @@ struct IMGUITest : ui::Buildable
 			ui::LabeledProperty::End();
 		}
 		{
-			ui::imm::PropEditFloatVec("float3", float4val, "XYZ");
-			ui::imm::PropEditFloatVec("float4", float4val, "RGBA");
+			ui::imm::PropEditFloatVec("float3", float4val, ui::imm::XYZ);
+			ui::imm::PropEditFloatVec("float4", float4val, ui::imm::RGBA);
 		}
 		{
 			ui::imm::PropEditFloat("multiplier", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });

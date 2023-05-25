@@ -526,7 +526,7 @@ struct QuaternionTest : ui::Buildable
 				{
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
-					ui::imm::PropEditFloatVec("R", &angles.x);
+					ui::imm::PropEditFloatVec("R", &angles.x, ui::imm::XYZ);
 					ui::imm::PropEditBool("Use mtx", useMtx);
 				}
 				ui::Pop();

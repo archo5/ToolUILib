@@ -8,11 +8,11 @@ namespace imm {
 bool EditQuat(Quat& val, QuatEditMode mode, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	if (mode == QuatEditMode::Raw)
-		return EditFloatVec(&val.x, "XYZW", mods, cfg, range, fmt);
+		return EditFloatVec(&val.x, ui::imm::XYZW, mods, cfg, range, fmt);
 	else if (mode == QuatEditMode::EulerZYX)
 	{
 		Vec3f angles = val.ToEulerAnglesZYX();
-		if (EditFloatVec(&angles.x, "XYZ", mods, cfg, range, fmt))
+		if (EditFloatVec(&angles.x, ui::imm::XYZ, mods, cfg, range, fmt))
 		{
 			val = Quat::RotateEulerAnglesZYX(angles);
 			return true;

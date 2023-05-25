@@ -501,17 +501,21 @@ bool EditColor(Color4b& val, bool delayed, ModInitList mods)
 	return false;
 }
 
-bool EditIntVec(int* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
+const char* XY[] = { "\bX", "\bY", nullptr };
+const char* XYZ[] = { "\bX", "\bY", "\bZ", nullptr };
+const char* XYZW[] = { "\bX", "\bY", "\bZ", "\bW", nullptr };
+const char* RGBA[] = { "\bR", "\bG", "\bB", "\bA", nullptr };
+const char* WidthHeight[] = { "\bWidth", "\bHeight", nullptr };
+
+bool EditIntVec(int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControlGroup();
 
 	bool any = false;
-	char axisLabel[3] = "\b\0";
-	while (*axes)
+	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		axisLabel[1] = *axes++;
-		any |= PropEditInt(axisLabel, *val++, mods, cfg, range, fmt);
+		any |= PropEditInt(*plabel, *val++, mods, cfg, range, fmt);
 	}
 
 	for (auto& mod : ReverseIterate(mods))
@@ -520,17 +524,15 @@ bool EditIntVec(int* val, const char* axes, ModInitList mods, const DragConfig& 
 	return any;
 }
 
-bool EditFloatVec(float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool EditFloatVec(float* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControlGroup();
 
 	bool any = false;
-	char axisLabel[3] = "\b\0";
-	while (*axes)
+	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		axisLabel[1] = *axes++;
-		any |= PropEditFloat(axisLabel, *val++, mods, cfg, range, fmt);
+		any |= PropEditFloat(*plabel, *val++, mods, cfg, range, fmt);
 	}
 
 	for (auto& mod : ReverseIterate(mods))
@@ -639,13 +641,13 @@ bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mo
 	return EditColor(val, delayed, mods);
 }
 
-bool PropEditIntVec(const char* label, int* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
+bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
 	LabelPropScope ps(label, mods);
 	return EditIntVec(val, axes, mods, cfg, range, fmt);
 }
 
-bool PropEditFloatVec(const char* label, float* val, const char* axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool PropEditFloatVec(const char* label, float* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	LabelPropScope ps(label, mods);
 	return EditFloatVec(val, axes, mods, cfg, range, fmt);
