@@ -109,6 +109,7 @@ struct UIContainer
 		else
 			nextFrameBuildStack.Add(n);
 	}
+	void ProcessSingleBuildable(Buildable* curB);
 	void ProcessBuildStack();
 	void ProcessLayoutStack();
 

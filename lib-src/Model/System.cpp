@@ -113,17 +113,82 @@ void UIContainer::Free()
 	}
 }
 
+void UIContainer::ProcessSingleBuildable(Buildable* curB)
+{
+	bool oldEnabled = imm::SetEnabled(!(curB->flags & UIObject_IsDisabled));
+
+	objectStackSize = 0;
+	_Push(curB);
+	_curObjectList = &curB->_objList;
+	_curObjectList->BeginAllocations();
+
+	if (CanLogDebug(LOG_UISYS))
+		LogDebug(LOG_UISYS, "building %s", typeid(*curB).name());
+
+	_curBuildable = curB;
+	curB->_lastBuildFrameID = _lastBuildFrameID;
+
+	curB->ClearLocalEventHandlers();
+
+	// do not run old dtors before build (so that mid-build all data is still valid)
+	// but have the space cleaned out for the new dtors
+	decltype(Buildable::_deferredDestructors) oldDDs;
+	std::swap(oldDDs, curB->_deferredDestructors);
+
+	curB->DetachChildren(false);
+
+	curB->Build();
+
+	while (oldDDs.Size())
+	{
+		oldDDs.Last()();
+		oldDDs.RemoveLast();
+	}
+
+	_curObjectList->EndAllocations();
+	_curObjectList = nullptr;
+	_curBuildable = nullptr;
+
+	if (objectStackSize > 1)
+	{
+		LogWarn(LOG_UISYS, "elements not popped: %d (after building %s)", objectStackSize - 1, typeid(*curB).name());
+		while (objectStackSize > 1)
+		{
+			Pop();
+		}
+	}
+
+	_Pop(); // root
+
+	imm::SetEnabled(oldEnabled);
+}
+
 double hqtime();
 void UIContainer::ProcessBuildStack()
 {
-	if (buildStack.ContainsAny())
-	{
-		LogDebug(LOG_UISYS, " ---- processing node BUILD stack ----");
-		_lastBuildFrameID++;
-	}
-	else
+	if (!buildStack.ContainsAny())
 		return;
 
+	// the rules:
+	//
+	// - any built element triggers the immediate subsequent rebuild of all children in entirety always
+	//   this ensures that:
+	//   - child buildables don't contain elements referring to outdated data
+	//   - child buildables contain all the elements they're meant to contain
+	//
+	// - child elements are rebuilt after the full rebuild of their respective parents
+	//   (as opposed to building child elements inline)
+	//   this ensures that:
+	//   - child buildables will have the data assigned to them after construction by the parent ..
+	//     .. without any explicit calls in user code indicating when all the data has been assigned
+	//
+	// - each buildable is built just once per "frame"/loop, rebuilds are queued for the next frame
+	//   this ensures that:
+	//   - there are no infinite loops caused by persistent rebuilding of any buildable
+	//   - all child buildables can still be built (unlike with blanket at-work queueing redirections)
+
+	LogDebug(LOG_UISYS, " ---- processing node BUILD stack ----");
+	_lastBuildFrameID++;
 	double t = hqtime();
 
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
@@ -140,54 +205,9 @@ void UIContainer::ProcessBuildStack()
 		if (!buildStack.ContainsAny())
 			break;
 
-		Buildable* currentBuildable = static_cast<Buildable*>(buildStack.Pop());
+		Buildable* curB = static_cast<Buildable*>(buildStack.Pop());
 
-		bool oldEnabled = imm::SetEnabled(!(currentBuildable->flags & UIObject_IsDisabled));
-
-		objectStackSize = 0;
-		_Push(currentBuildable);
-		_curObjectList = &currentBuildable->_objList;
-		_curObjectList->BeginAllocations();
-
-		if (CanLogDebug(LOG_UISYS))
-			LogDebug(LOG_UISYS, "building %s", typeid(*currentBuildable).name());
-
-		_curBuildable = currentBuildable;
-		currentBuildable->_lastBuildFrameID = _lastBuildFrameID;
-
-		currentBuildable->ClearLocalEventHandlers();
-
-		// do not run old dtors before build (so that mid-build all data is still valid)
-		// but have the space cleaned out for the new dtors
-		decltype(Buildable::_deferredDestructors) oldDDs;
-		std::swap(oldDDs, currentBuildable->_deferredDestructors);
-
-		currentBuildable->DetachChildren(false);
-
-		currentBuildable->Build();
-
-		while (oldDDs.size())
-		{
-			oldDDs.Last()();
-			oldDDs.RemoveLast();
-		}
-
-		_curObjectList->EndAllocations();
-		_curObjectList = nullptr;
-		_curBuildable = nullptr;
-
-		if (objectStackSize > 1)
-		{
-			LogWarn(LOG_UISYS, "elements not popped: %d (after building %s)", objectStackSize - 1, typeid(*currentBuildable).name());
-			while (objectStackSize > 1)
-			{
-				Pop();
-			}
-		}
-
-		_Pop(); // root
-
-		imm::SetEnabled(oldEnabled);
+		ProcessSingleBuildable(curB);
 	}
 
 	buildStack.Swap(nextFrameBuildStack);
