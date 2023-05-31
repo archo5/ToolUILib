@@ -5,6 +5,7 @@
 
 #include "../Core/FileSystem.h"
 #include "../Core/HashMap.h"
+#include "../Core/Logging.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "../../ThirdParty/stb_rect_pack.h"
@@ -14,7 +15,11 @@
 
 
 namespace ui {
+double hqtime();
 namespace draw {
+
+
+LogCategory LOG_DRAWABLE_IMAGE("DrawableImage", LogLevel::Info);
 
 
 static constexpr unsigned TEXTURE_PAGE_WIDTH = 1024;
@@ -408,26 +413,45 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 	if (iimg && static_cast<ImageImpl*>(iimg)->flags == flags && (flags & TexFlags::NoCache) == TexFlags::None)
 		return iimg;
 
+	LogDebug(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: loading image %s (flags:%X)", cacheKey.c_str(), unsigned(flags));
+	double t0 = hqtime();
+
 	if (flags != TexFlags::Packed)
 		flags = flags & ~TexFlags::Packed;
 
 	auto frr = FSReadBinaryFile(path);
 	if (!frr.data)
+	{
+		LogError(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: failed to load %s - could not read file", cacheKey.c_str());
 		return nullptr; // TODO return default?
+	}
 
 	int w = 0, h = 0, n = 0;
 	auto* imgData = stbi_load_from_memory((const stbi_uc*)frr.data->Data(), frr.data->Size(), &w, &h, &n, 4);
 	if (!imgData)
+	{
+		LogError(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: failed to load %s - could not parse file", cacheKey.c_str());
 		return nullptr;
+	}
 	UI_DEFER(stbi_image_free(imgData));
 
 	auto img = ImageCreateRGBA8(w, h, imgData, flags);
 	if (!img)
+	{
+		LogError(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: failed to load %s - could not create image", cacheKey.c_str());
 		return nullptr;
+	}
 
 	auto* impl = static_cast<ImageImpl*>(img.get_ptr());
 	if ((flags & TexFlags::NoCache) == TexFlags::None)
 		ImageCacheWrite(impl, cacheKey);
+
+	LogInfo(
+		LOG_DRAWABLE_IMAGE,
+		"ImageLoadFromFile: image %s (flags:%X) loaded in %.2f ms",
+		cacheKey.c_str(),
+		unsigned(flags),
+		(hqtime() - t0) * 1000);
 
 	return img;
 }
