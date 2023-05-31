@@ -1618,10 +1618,19 @@ int Application::Run()
 	MSG msg;
 	while (!g_appQuit && GetMessageW(&msg, NULL, 0, 0))
 	{
-		TranslateMessage(&msg);
-		DispatchMessageW(&msg);
+		do
+		{
+			TranslateMessage(&msg);
+			DispatchMessageW(&msg);
 
-		g_mainEventQueue->RunAllCurrent();
+			g_mainEventQueue->RunAllCurrent();
+
+			if (g_appQuit)
+				return g_appExitCode;
+			if (msg.message == WM_PAINT)
+				break; // redraw the UI and then continue the core loop
+		}
+		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE));
 
 		// TODO HACK: avoid repainting on every WM_INPUT as there's a lot of them (WM_MOUSEMOVE should still trigger repainting)
 		if (msg.hwnd && msg.message != WM_INPUT)

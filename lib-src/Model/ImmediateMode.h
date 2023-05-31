@@ -126,6 +126,7 @@ extern const char* XY[];
 extern const char* XYZ[];
 extern const char* XYZW[];
 extern const char* RGBA[];
+extern const char* MinMax[];
 extern const char* WidthHeight[];
 // length of `val` = length of `axes` (null-terminated)
 bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");

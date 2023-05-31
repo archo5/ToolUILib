@@ -192,9 +192,12 @@ void Textbox::OnPaint(const UIPaintContext& ctx)
 			if (_impl->showCaretState)
 			{
 				size_t line = _impl->lines.FindLine(endCursor);
-				auto L = _impl->lines.lines[line];
-
-				float x = GetTextWidth(font, size, text.substr(L.start, endCursor - L.start));
+				float x = 0;
+				if (line < _impl->lines.lines.Size())
+				{
+					auto L = _impl->lines.lines[line];
+					x = GetTextWidth(font, size, text.substr(L.start, endCursor - L.start));
+				}
 				float y = r.y0 + line * size;
 				if (r.Contains(Vec2f(r.x0 + x, y)))
 					draw::RectCol(r.x0 + x, y, r.x0 + x + 1, y + size, Color4b::White());

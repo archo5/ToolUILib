@@ -505,6 +505,7 @@ const char* XY[] = { "\bX", "\bY", nullptr };
 const char* XYZ[] = { "\bX", "\bY", "\bZ", nullptr };
 const char* XYZW[] = { "\bX", "\bY", "\bZ", "\bW", nullptr };
 const char* RGBA[] = { "\bR", "\bG", "\bB", "\bA", nullptr };
+const char* MinMax[] = { "\bMin", "\bMax", nullptr };
 const char* WidthHeight[] = { "\bWidth", "\bHeight", nullptr };
 
 bool EditIntVec(int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
