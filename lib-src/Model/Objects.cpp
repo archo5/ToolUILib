@@ -80,10 +80,10 @@ void UIObject::_DetachFromTree()
 		OnExitTree();
 
 	// remove from build/layout sets
-	system->container.buildStack.OnDestroy(this);
-	system->container.nextFrameBuildStack.OnDestroy(this);
+	system->container.pendingBuildSet.Remove(static_cast<Buildable*>(this));
+	system->container.pendingNextBuildSet.Remove(static_cast<Buildable*>(this));
 	system->container.layoutStack.OnDestroy(this);
-	flags &= ~(UIObject_IsInBuildStack | UIObject_IsInLayoutStack | UIObject_IsInTree);
+	flags &= ~(UIObject_IsInLayoutStack | UIObject_IsInTree);
 
 	// add to deactivation set
 	system->container.pendingDeactivationSet.InsertIfMissing(this);
@@ -1083,7 +1083,7 @@ void Buildable::Rebuild()
 {
 	if (!(flags & UIObject_IsInTree))
 		return;
-	system->container.AddToBuildStack(this);
+	system->container.QueueForRebuild(this);
 	GetNativeWindow()->InvalidateAll();
 }
 

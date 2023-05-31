@@ -99,15 +99,15 @@ struct UIContainer
 {
 	void Free();
 
-	void AddToBuildStack(Buildable* n)
+	void QueueForRebuild(Buildable* B)
 	{
-		if (!(n->flags & UIObject_IsInTree))
+		if (!(B->flags & UIObject_IsInTree))
 			return;
-		UI_DEBUG_FLOW(printf("add %p to build stack\n", n));
-		if (n->_lastBuildFrameID != _lastBuildFrameID)
-			buildStack.Add(n);
+		UI_DEBUG_FLOW(printf("add %p to build set [rebuild]\n", B));
+		if (B->_lastBuildFrameID == _lastBuildFrameID)
+			pendingNextBuildSet.Insert(B);
 		else
-			nextFrameBuildStack.Add(n);
+			pendingBuildSet.Insert(B);
 	}
 	void ProcessSingleBuildable(Buildable* curB);
 	void ProcessBuildStack();
@@ -125,7 +125,9 @@ struct UIContainer
 		if (!imm::GetEnabled())
 			obj->flags |= UIObject_IsDisabled;
 		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
-		AddToBuildStack(obj);
+
+		UI_DEBUG_FLOW(printf("add %p to build set [add]\n", obj));
+		pendingBuildSet.Insert(obj);
 	}
 	void _Push(UIObject* obj);
 	void _Pop();
@@ -186,8 +188,8 @@ struct UIContainer
 	int objectStackSize = 0;
 	uint64_t _lastBuildFrameID = 1;
 
-	UIObjectDirtyStack buildStack{ UIObject_IsInBuildStack };
-	UIObjectDirtyStack nextFrameBuildStack{ UIObject_IsInBuildStack };
+	HashSet<Buildable*> pendingBuildSet;
+	HashSet<Buildable*> pendingNextBuildSet;
 	UIObjectDirtyStack layoutStack{ UIObject_IsInLayoutStack };
 	UIObjectPendingDeactivationSet pendingDeactivationSet;
 

@@ -163,15 +163,32 @@ void UIContainer::ProcessSingleBuildable(Buildable* curB)
 	imm::SetEnabled(oldEnabled);
 }
 
+static void CopyBuildablesFromSetWithoutChildren(Array<Buildable*>& outArr, const HashSet<Buildable*>& set)
+{
+	for (auto* B : set)
+	{
+		auto* p = B->parent;
+		while (p)
+		{
+			if (set.Contains(static_cast<Buildable*>(p)))
+				break;
+			p = p->parent;
+		}
+		if (p)
+			continue;
+		outArr.Append(B);
+	}
+}
+
 double hqtime();
 void UIContainer::ProcessBuildStack()
 {
-	if (!buildStack.ContainsAny())
+	if (pendingBuildSet.IsEmpty())
 		return;
 
 	// the rules:
 	//
-	// - any built element triggers the immediate subsequent rebuild of all children in entirety always
+	// - any built element triggers the in-frame subsequent rebuild of all children in entirety always
 	//   this ensures that:
 	//   - child buildables don't contain elements referring to outdated data
 	//   - child buildables contain all the elements they're meant to contain
@@ -182,40 +199,43 @@ void UIContainer::ProcessBuildStack()
 	//   - child buildables will have the data assigned to them after construction by the parent ..
 	//     .. without any explicit calls in user code indicating when all the data has been assigned
 	//
-	// - each buildable is built just once per "frame"/loop, rebuilds are queued for the next frame
+	// - each root-nearest buildable is built just once per "frame"/loop, rebuilds are queued for the next frame
+	//   (eventual parent rebuilds however force the rebuilding of all children)
 	//   this ensures that:
 	//   - there are no infinite loops caused by persistent rebuilding of any buildable
 	//   - all child buildables can still be built (unlike with blanket at-work queueing redirections)
 
 	LogDebug(LOG_UISYS, " ---- processing node BUILD stack ----");
-	_lastBuildFrameID++;
+	//_lastBuildFrameID++;
 	double t = hqtime();
 
 	TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, owner);
 	TmpEdit<decltype(g_curContainer)> tmp2(g_curContainer, this);
 
-	buildStack.RemoveChildren();
-
-	while (buildStack.ContainsAny())
+	// TODO reuse across frames?
+	Array<Buildable*> bldQueue;
+	while (pendingBuildSet.NotEmpty())
 	{
 		// skip child builds when parent buildables are rebuilt again
 		// this avoids the case where the deletion of data represented in a child buildable would be accessed after the parent deleting it
-		// TODO: consider in-order child building instead of a stack
-		buildStack.RemoveChildren();
-		if (!buildStack.ContainsAny())
-			break;
+		bldQueue.Clear();
+		CopyBuildablesFromSetWithoutChildren(bldQueue, pendingBuildSet);
+		pendingBuildSet.Clear();
 
-		Buildable* curB = static_cast<Buildable*>(buildStack.Pop());
-
-		ProcessSingleBuildable(curB);
+		for (Buildable* curB : bldQueue)
+		{
+			ProcessSingleBuildable(curB);
+		}
 	}
 
-	buildStack.Swap(nextFrameBuildStack);
-	_lastBuildFrameID++;
+	for (Buildable* B : pendingNextBuildSet)
+		pendingBuildSet.Insert(B);
+	pendingNextBuildSet.Clear();
 
 	pendingDeactivationSet.Flush();
 
-	LogDebug(LOG_UISYS, "build time: %.3f ms", (hqtime() - t) * 1000);
+	LogDebug(LOG_UISYS, "build %" PRIu64 " time: %.3f ms", _lastBuildFrameID, (hqtime() - t) * 1000);
+	_lastBuildFrameID++;
 }
 
 void UIContainer::ProcessLayoutStack()
@@ -273,10 +293,12 @@ void UIContainer::_BuildUsing(Buildable* B, bool transferOwnership)
 	rootBuildable = B;
 	isRootBuildableOwned = transferOwnership;
 
-	assert(!buildStack.ContainsAny());
-	buildStack.ClearWithoutFlags(); // TODO: is this needed?
+	assert(pendingBuildSet.IsEmpty());
+	pendingBuildSet.Clear(); // TODO: is this needed?
 
-	AddToBuildStack(rootBuildable);
+	B->_lastBuildFrameID = _lastBuildFrameID - 1;
+	UI_DEBUG_FLOW(printf("add %p to build set [add]\n", B));
+	pendingBuildSet.Insert(B);
 
 	ProcessBuildStack();
 	ProcessLayoutStack();

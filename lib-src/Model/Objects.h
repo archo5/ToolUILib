@@ -71,7 +71,7 @@ struct TempEditable
 
 enum UIObjectFlags
 {
-	UIObject_IsInBuildStack = 1 << 0,
+	//UIObject_IsInBuildStack = 1 << 0,
 	UIObject_IsInLayoutStack = 1 << 1,
 	UIObject_IsHovered = 1 << 2,
 	_UIObject_IsClicked_First = 1 << 3,
