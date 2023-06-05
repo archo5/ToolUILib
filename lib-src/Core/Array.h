@@ -3,6 +3,7 @@
 
 #include "Platform.h"
 #include "Memory.h" // ArrayView
+#include "ObjectIterationCore.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -373,6 +374,37 @@ template <class T>
 UI_FORCEINLINE bool operator != (const Array<T>& a, const Array<T>& b)
 {
 	return !(a == b);
+}
+
+template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val)
+{
+	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	if (oi.IsUnserializer())
+	{
+		FieldInfo chfi(nullptr, FI.flags);
+		if (FI.flags & FieldInfo::Preallocated)
+		{
+			size_t i = 0;
+			while (oi.HasMoreArrayElements())
+				OnField(oi, chfi, val[i++]);
+		}
+		else
+		{
+			val.Clear();
+			val.Reserve(estNewSize);
+			while (oi.HasMoreArrayElements())
+			{
+				val.Append(T());
+				OnField(oi, chfi, val.Last());
+			}
+		}
+	}
+	else
+	{
+		for (auto& item : val)
+			OnField(oi, {}, item);
+	}
+	oi.EndArray();
 }
 
 } // ui

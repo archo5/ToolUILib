@@ -210,6 +210,12 @@ struct StringView
 	UI_FORCEINLINE float to_float32() const { return float(StringView(*this).take_float64()); }
 };
 
+inline size_t HashValue(StringView sv)
+{
+	return HashManyBytesFast(sv._data, sv._size);
+}
+
+
 inline std::string to_string(StringView s)
 {
 	std::string out;
@@ -243,11 +249,6 @@ inline std::string StrViewArrConcat(ArrayView<StringView> svav)
 	for (const auto& sv : svav)
 		out.append(sv._data, sv._size);
 	return out;
-}
-
-inline size_t HashValue(StringView sv)
-{
-	return HashManyBytesFast(sv._data, sv._size);
 }
 
 template <size_t S>

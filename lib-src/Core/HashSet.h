@@ -2,6 +2,7 @@
 #pragma once
 
 #include "HashTableBase.h"
+#include "ObjectIterationCore.h"
 
 
 namespace ui {
@@ -161,6 +162,28 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 			if (other.Contains(key))
 				ret.Insert(key);
 		return ret;
+	}
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		size_t n = oi.BeginArray(this->Size(), FI);
+		if (oi.IsUnserializer())
+		{
+			this->Clear();
+			this->Reserve(n);
+			while (oi.HasMoreArrayElements())
+			{
+				K k{};
+				ui::OnField(oi, {}, k);
+				this->Insert(k);
+			}
+		}
+		else
+		{
+			for (K& k : *this)
+				ui::OnField(oi, {}, k);
+		}
+		oi.EndArray();
 	}
 };
 

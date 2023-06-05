@@ -379,6 +379,9 @@
     <ClInclude Include="Model\ImmediateMode3D.h">
       <Filter>Model</Filter>
     </ClInclude>
+    <ClInclude Include="Core\ObjectIterationCore.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

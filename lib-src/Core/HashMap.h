@@ -2,6 +2,7 @@
 #pragma once
 
 #include "HashTableBase.h"
+#include "ObjectIterationCore.h"
 
 
 namespace ui {
@@ -244,6 +245,37 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 		size_t ipos = Base::_FindInsertPos(key);
 		this->_storage.SetKeyDefValueIfMissing(ipos, key);
 		return this->_storage.GetValueAt(ipos);
+	}
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		size_t n = oi.BeginArray(this->Size(), FI);
+		if (oi.IsUnserializer())
+		{
+			this->Clear();
+			this->Reserve(n);
+			while (oi.HasMoreArrayElements())
+			{
+				oi.BeginObject({}, "KeyValuePair");
+				K k{};
+				V v{};
+				ui::OnField(oi, "key", k);
+				ui::OnField(oi, "value", v);
+				this->Insert(k, v);
+				oi.EndObject();
+			}
+		}
+		else
+		{
+			for (const auto& kvp : *this)
+			{
+				oi.BeginObject({}, "KeyValuePair");
+				ui::OnField(oi, "key", kvp.key);
+				ui::OnField(oi, "value", kvp.value);
+				oi.EndObject();
+			}
+		}
+		oi.EndArray();
 	}
 };
 
