@@ -174,14 +174,14 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 			while (oi.HasMoreArrayElements())
 			{
 				K k{};
-				ui::OnField(oi, {}, k);
+				OnField(oi, {}, k);
 				this->Insert(k);
 			}
 		}
 		else
 		{
 			for (K& k : *this)
-				ui::OnField(oi, {}, k);
+				OnField(oi, {}, k);
 		}
 		oi.EndArray();
 	}

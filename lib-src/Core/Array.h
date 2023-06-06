@@ -142,6 +142,24 @@ struct Array
 	T& Last() { assert(NotEmpty()); return _data[_size - 1]; }
 	const T& Last() const { assert(NotEmpty()); return _data[_size - 1]; }
 
+	template <class T>
+	bool operator == (const Array<T>& b) const
+	{
+		const Array<T>& a = *this;
+		if (a.Size() != b.Size())
+			return false;
+		for (size_t i = 0; i < a.Size(); i++)
+			if (!(a[i] == b[i]))
+				return false;
+		return true;
+	}
+
+	template <class T>
+	UI_FORCEINLINE bool operator != (const Array<T>& o) const
+	{
+		return !(*this == o);
+	}
+
 	UI_FORCEINLINE bool Contains(const T& v) const { return IndexOf(v) != SIZE_MAX; }
 	size_t IndexOf(const T& v, size_t from = 0) const
 	{
@@ -357,54 +375,44 @@ struct Array
 			UnorderedRemoveAt(i);
 		return i != SIZE_MAX;
 	}
-};
 
-template <class T>
-bool operator == (const Array<T>& a, const Array<T>& b)
-{
-	if (a.Size() != b.Size())
-		return false;
-	for (size_t i = 0; i < a.Size(); i++)
-		if (!(a[i] == b[i]))
-			return false;
-	return true;
-}
-
-template <class T>
-UI_FORCEINLINE bool operator != (const Array<T>& a, const Array<T>& b)
-{
-	return !(a == b);
-}
-
-template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val)
-{
-	size_t estNewSize = oi.BeginArray(val.size(), FI);
-	if (oi.IsUnserializer())
+	template <class Func>
+	void OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
 	{
-		FieldInfo chfi(nullptr, FI.flags);
-		if (FI.flags & FieldInfo::Preallocated)
+		size_t estNewSize = oi.BeginArray(_size, FI);
+		if (oi.IsUnserializer())
 		{
-			size_t i = 0;
-			while (oi.HasMoreArrayElements())
-				OnField(oi, chfi, val[i++]);
+			FieldInfo chfi(nullptr, FI.flags);
+			if (FI.flags & FieldInfo::Preallocated)
+			{
+				size_t i = 0;
+				while (oi.HasMoreArrayElements())
+					func(oi, chfi, (*this)[i++]);
+			}
+			else
+			{
+				Clear();
+				Reserve(estNewSize);
+				while (oi.HasMoreArrayElements())
+				{
+					Append(T());
+					func(oi, chfi, Last());
+				}
+			}
 		}
 		else
 		{
-			val.Clear();
-			val.Reserve(estNewSize);
-			while (oi.HasMoreArrayElements())
-			{
-				val.Append(T());
-				OnField(oi, chfi, val.Last());
-			}
+			for (auto& item : *this)
+				func(oi, {}, item);
 		}
+		oi.EndArray();
 	}
-	else
+
+	UI_FORCEINLINE void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		for (auto& item : val)
-			OnField(oi, {}, item);
+		// TODO force-inline the lambda
+		OnSerializeCustom(oi, FI, [](IObjectIterator& oi, const FieldInfo& FI, T& val) { OnField(oi, FI, val); });
 	}
-	oi.EndArray();
-}
+};
 
 } // ui

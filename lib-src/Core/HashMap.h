@@ -259,8 +259,8 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 				oi.BeginObject({}, "KeyValuePair");
 				K k{};
 				V v{};
-				ui::OnField(oi, "key", k);
-				ui::OnField(oi, "value", v);
+				OnField(oi, "key", k);
+				OnField(oi, "value", v);
 				this->Insert(k, v);
 				oi.EndObject();
 			}
@@ -270,8 +270,8 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 			for (const auto& kvp : *this)
 			{
 				oi.BeginObject({}, "KeyValuePair");
-				ui::OnField(oi, "key", kvp.key);
-				ui::OnField(oi, "value", kvp.value);
+				OnField(oi, "key", kvp.key);
+				OnField(oi, "value", kvp.value);
 				oi.EndObject();
 			}
 		}
