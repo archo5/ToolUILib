@@ -139,7 +139,7 @@ bool Button(DefaultIconStyle icon, ModInitList mods)
 	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
-bool CheckboxRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+bool CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();

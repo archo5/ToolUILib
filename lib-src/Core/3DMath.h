@@ -10,41 +10,41 @@
 namespace ui {
 
 
-struct Vec3f
+template <class T> struct Vec3
 {
-	float x, y, z;
+	T x, y, z;
 
-	UI_FORCEINLINE Vec3f(DoNotInitialize) {}
-	UI_FORCEINLINE Vec3f() : x(0), y(0), z(0) {}
-	UI_FORCEINLINE Vec3f(float f) : x(f), y(f), z(f) {}
-	UI_FORCEINLINE Vec3f(float ax, float ay) : x(ax), y(ay), z(0) {}
-	UI_FORCEINLINE Vec3f(float ax, float ay, float az) : x(ax), y(ay), z(az) {}
-	UI_FORCEINLINE Vec3f(Vec2f v, float az = 0) : x(v.x), y(v.y), z(az) {}
+	UI_FORCEINLINE Vec3(DoNotInitialize) {}
+	UI_FORCEINLINE Vec3() : x(0), y(0), z(0) {}
+	UI_FORCEINLINE Vec3(T f) : x(f), y(f), z(f) {}
+	UI_FORCEINLINE Vec3(T ax, T ay) : x(ax), y(ay), z(0) {}
+	UI_FORCEINLINE Vec3(T ax, T ay, T az) : x(ax), y(ay), z(az) {}
+	UI_FORCEINLINE Vec3(Vec2<T> v, T az = 0) : x(v.x), y(v.y), z(az) {}
 
-	UI_FORCEINLINE Vec3f operator + (const Vec3f& o) const { return { x + o.x, y + o.y, z + o.z }; }
-	UI_FORCEINLINE Vec3f operator - (const Vec3f& o) const { return { x - o.x, y - o.y, z - o.z }; }
-	UI_FORCEINLINE Vec3f operator * (const Vec3f& o) const { return { x * o.x, y * o.y, z * o.z }; }
-	UI_FORCEINLINE Vec3f operator / (const Vec3f& o) const { return { x / o.x, y / o.y, z / o.z }; }
+	UI_FORCEINLINE Vec3 operator + (const Vec3& o) const { return { x + o.x, y + o.y, z + o.z }; }
+	UI_FORCEINLINE Vec3 operator - (const Vec3& o) const { return { x - o.x, y - o.y, z - o.z }; }
+	UI_FORCEINLINE Vec3 operator * (const Vec3& o) const { return { x * o.x, y * o.y, z * o.z }; }
+	UI_FORCEINLINE Vec3 operator / (const Vec3& o) const { return { x / o.x, y / o.y, z / o.z }; }
 
-	UI_FORCEINLINE Vec3f& operator += (const Vec3f& o) { x += o.x; y += o.y; z += o.z; return *this; }
-	UI_FORCEINLINE Vec3f& operator -= (const Vec3f& o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
-	UI_FORCEINLINE Vec3f& operator *= (const Vec3f& o) { x *= o.x; y *= o.y; z *= o.z; return *this; }
-	UI_FORCEINLINE Vec3f& operator /= (const Vec3f& o) { x /= o.x; y /= o.y; z /= o.z; return *this; }
+	UI_FORCEINLINE Vec3& operator += (const Vec3& o) { x += o.x; y += o.y; z += o.z; return *this; }
+	UI_FORCEINLINE Vec3& operator -= (const Vec3& o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
+	UI_FORCEINLINE Vec3& operator *= (const Vec3& o) { x *= o.x; y *= o.y; z *= o.z; return *this; }
+	UI_FORCEINLINE Vec3& operator /= (const Vec3& o) { x /= o.x; y /= o.y; z /= o.z; return *this; }
 
-	UI_FORCEINLINE Vec3f& operator *= (float f) { x *= f; y *= f; z *= f; return *this; }
-	UI_FORCEINLINE Vec3f& operator /= (float f) { x /= f; y /= f; z /= f; return *this; }
+	UI_FORCEINLINE Vec3& operator *= (T f) { x *= f; y *= f; z *= f; return *this; }
+	UI_FORCEINLINE Vec3& operator /= (T f) { x /= f; y /= f; z /= f; return *this; }
 
-	UI_FORCEINLINE Vec3f operator * (float f) const { return { x * f, y * f, z * f }; }
+	UI_FORCEINLINE Vec3 operator * (T f) const { return { x * f, y * f, z * f }; }
 
-	UI_FORCEINLINE Vec3f operator + () const { return *this; }
-	UI_FORCEINLINE Vec3f operator - () const { return { -x, -y, -z }; }
+	UI_FORCEINLINE Vec3 operator + () const { return *this; }
+	UI_FORCEINLINE Vec3 operator - () const { return { -x, -y, -z }; }
 
-	UI_FORCEINLINE bool operator == (const Vec3f& o) const { return x == o.x && y == o.y && z == o.z; }
-	UI_FORCEINLINE bool operator != (const Vec3f& o) const { return x != o.x || y != o.y || z != o.z; }
+	UI_FORCEINLINE bool operator == (const Vec3& o) const { return x == o.x && y == o.y && z == o.z; }
+	UI_FORCEINLINE bool operator != (const Vec3& o) const { return x != o.x || y != o.y || z != o.z; }
 
-	UI_FORCEINLINE float LengthSq() const { return x * x + y * y + z * z; }
+	UI_FORCEINLINE T LengthSq() const { return x * x + y * y + z * z; }
 	UI_FORCEINLINE float Length() const { return sqrtf(LengthSq()); }
-	Vec3f Normalized() const
+	Vec3<float> Normalized() const
 	{
 		float lsq = LengthSq();
 		if (lsq == 0)
@@ -53,7 +53,7 @@ struct Vec3f
 		return { x * q, y * q, z * q };
 	}
 
-	UI_FORCEINLINE Vec2f ToVec2() const { return { x, y }; }
+	UI_FORCEINLINE Vec2<T> ToVec2() const { return { x, y }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
@@ -65,13 +65,15 @@ struct Vec3f
 		OnField(oi, "z", z);
 		oi.EndObject();
 	}
-};
-UI_FORCEINLINE Vec3f operator * (float f, Vec3f v) { return { f * v.x, f * v.y, f * v.z }; }
 
-inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
-inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z) }; }
-UI_FORCEINLINE float Vec3Dot(const Vec3f& a, const Vec3f& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
+	template <class U> UI_FORCEINLINE Vec3<U> Cast() const { return { U(x), U(y), U(z) }; }
+};
+template <class T>
+UI_FORCEINLINE Vec3<T> operator * (T f, Vec3<T> v) { return { f * v.x, f * v.y, f * v.z }; }
+template <class T>
+UI_FORCEINLINE float Vec3Dot(const Vec3<T>& a, const Vec3<T>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+template <class T>
+inline Vec3<T> Vec3Cross(const Vec3<T>& a, const Vec3<T>& b)
 {
 	return
 	{
@@ -80,6 +82,12 @@ inline Vec3f Vec3Cross(const Vec3f& a, const Vec3f& b)
 		a.x * b.y - b.x * a.y,
 	};
 }
+
+using Vec3i = Vec3<int>;
+using Vec3f = Vec3<float>;
+
+inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s) }; }
+inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z) }; }
 
 
 struct Vec4f

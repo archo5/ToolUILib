@@ -53,11 +53,17 @@ bool Button(UIObject& obj, ModInitList mods = {});
 bool Button(StringView text, ModInitList mods = {});
 bool Button(DefaultIconStyle icon, ModInitList mods = {});
 
-bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+bool CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+{
+	return CheckboxExtRaw(val ? 1 : 0, text, mods, skin);
+}
 bool EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 template <class T> bool EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
-	if (CheckboxRaw((val & cur) == cur, text, mods, skin))
+	bool all = (val & cur) == cur;
+	bool any = (val & cur) != 0;
+	if (CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin))
 	{
 		if ((val & cur) != cur)
 			val |= cur;
