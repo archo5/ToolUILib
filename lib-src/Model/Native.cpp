@@ -662,13 +662,13 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnMouseButton(down, which, cursorPos - mainTarget.window.GetMin(), mod);
 	}
-	void OnMouseScroll(Vec2f delta)
+	void OnMouseScroll(Vec2f delta, u8 mod)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
 			return;
-		mainTarget.target->OnMouseScroll(delta);
+		mainTarget.target->OnMouseScroll(delta, mod);
 	}
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 	{
@@ -1854,13 +1854,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_MOUSEWHEEL:
 		if (auto* evsys = GetEventSys(hWnd))
 		{
-			evsys->OnMouseScroll({ 0, float(GET_WHEEL_DELTA_WPARAM(wParam)) });
+			evsys->OnMouseScroll({ 0, float(GET_WHEEL_DELTA_WPARAM(wParam)) }, GetModifierKeys());
 		}
 		return TRUE;
 	case WM_MOUSEHWHEEL:
 		if (auto* evsys = GetEventSys(hWnd))
 		{
-			evsys->OnMouseScroll({ float(GET_WHEEL_DELTA_WPARAM(wParam)), 0 });
+			evsys->OnMouseScroll({ float(GET_WHEEL_DELTA_WPARAM(wParam)), 0 }, GetModifierKeys());
 		}
 		return TRUE;
 	case WM_KEYDOWN:

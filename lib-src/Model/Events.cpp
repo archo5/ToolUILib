@@ -422,6 +422,16 @@ void EventSystem::_UpdateTooltip(Point2f cursorPos)
 {
 	g_newTooltipBuildFn = {};
 	g_newTooltipOwner = {};
+	if (DragDrop::GetData())
+	{
+		if (g_curTooltipOwner != OwnerID::Empty() || g_curTooltipBuildFn)
+		{
+			g_curTooltipBuildFn = {};
+			g_curTooltipOwner = {};
+			OnTooltipChanged.Call();
+		}
+		return;
+	}
 	g_tooltipInChangeContext = true;
 
 	Event ev(this, hoverObj, EventType::Tooltip);
@@ -618,12 +628,14 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 	}
 }
 
-void EventSystem::OnMouseScroll(Vec2f delta)
+void EventSystem::OnMouseScroll(Vec2f delta, u8 mod)
 {
 	if (hoverObj)
 	{
 		Event e(this, hoverObj, EventType::MouseScroll);
 		e.delta = delta;
+		e.modifiers = mod;
+		e.topLevelPosition = prevMousePos;
 		BubblingEvent(e);
 	}
 }

@@ -47,7 +47,7 @@ struct EventSystem
 	void _UpdateTooltip(Point2f cursorPos);
 	void OnMouseMove(Point2f cursorPos, uint8_t mod);
 	void OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod);
-	void OnMouseScroll(Vec2f delta);
+	void OnMouseScroll(Vec2f delta, u8 mod);
 	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats);
 	void OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier);
 	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats);
