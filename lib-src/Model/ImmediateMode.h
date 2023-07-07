@@ -53,6 +53,9 @@ bool Button(UIObject& obj, ModInitList mods = {});
 bool Button(StringView text, ModInitList mods = {});
 bool Button(DefaultIconStyle icon, ModInitList mods = {});
 
+bool Selectable(UIObject& obj, ModInitList mods = {});
+bool Selectable(StringView text, ModInitList mods = {});
+
 bool CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 UI_FORCEINLINE bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {

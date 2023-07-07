@@ -380,9 +380,9 @@ struct Array
 	void OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
 	{
 		size_t estNewSize = oi.BeginArray(_size, FI);
+		FieldInfo chfi("", FI.flags);
 		if (oi.IsUnserializer())
 		{
-			FieldInfo chfi(nullptr, FI.flags);
 			if (FI.flags & FieldInfo::Preallocated)
 			{
 				size_t i = 0;
@@ -403,7 +403,7 @@ struct Array
 		else
 		{
 			for (auto& item : *this)
-				func(oi, {}, item);
+				func(oi, chfi, item);
 		}
 		oi.EndArray();
 	}

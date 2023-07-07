@@ -23,6 +23,7 @@ Point2i GetCursorScreenPos();
 void SetCursorScreenPos(Point2i p);
 void RequestRawMouseInput();
 Color4b GetColorAtScreenPos(Point2i pos);
+bool IsKeyPressed(u8 physicalKey);
 void ShowErrorMessage(StringView title, StringView text);
 void BrowseToFile(StringView path);
 

@@ -309,6 +309,14 @@ Color4b GetColorAtScreenPos(Point2i pos)
 	return col;
 }
 
+bool IsKeyPressed(u8 physicalKey)
+{
+	UINT vk = ::MapVirtualKeyW(physicalKey, MAPVK_VSC_TO_VK);
+	if (vk == 0)
+		return false;
+	return (::GetAsyncKeyState(vk) & 0x8000) != 0;
+}
+
 void ShowErrorMessage(StringView title, StringView text)
 {
 	::MessageBoxW(nullptr, UTF8toWCHAR(text).c_str(), UTF8toWCHAR(title).c_str(), MB_ICONERROR);

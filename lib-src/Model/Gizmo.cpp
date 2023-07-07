@@ -526,7 +526,11 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	}
 	else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
-		_selectedPart = GizmoAction::None;
+		if (_selectedPart != GizmoAction::None)
+		{
+			_selectedPart = GizmoAction::None;
+			e.StopPropagation();
+		}
 	}
 	else if (e.type == EventType::KeyDown)
 	{

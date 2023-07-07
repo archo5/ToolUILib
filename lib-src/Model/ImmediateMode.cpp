@@ -139,6 +139,43 @@ bool Button(DefaultIconStyle icon, ModInitList mods)
 	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
+bool Selectable(UIObject& obj, ModInitList mods)
+{
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
+	auto& btn = Push<ui::Selectable>();
+	for (auto& mod : mods)
+		mod->OnBeforeContent();
+	Add(obj);
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterContent();
+	Pop();
+
+	btn.flags |= UIObject_DB_IMEdit;
+	if (!GetEnabled())
+		btn.flags |= UIObject_IsDisabled;
+	for (auto& mod : mods)
+		mod->Apply(&btn);
+	bool clicked = false;
+	if (btn.flags & UIObject_IsEdited)
+	{
+		clicked = true;
+		btn.flags &= ~UIObject_IsEdited;
+		btn._OnIMChange();
+	}
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
+	return clicked;
+}
+
+bool Selectable(StringView text, ModInitList mods)
+{
+	return Selectable(NewText(text), mods);
+}
+
 bool CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
