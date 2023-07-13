@@ -70,6 +70,24 @@ const char* EventTypeToBaseString(EventType type)
 	}
 }
 
+bool ModKeyCheck(u8 pressed, u8 expected)
+{
+	u8 diff = pressed ^ expected;
+	for (int i = 0; i < 4; i++)
+	{
+		u8 psh = (pressed >> i) & 0x11;
+		u8 esh = (expected >> i) & 0x11;
+		if (psh != esh)
+		{
+			if (esh == 0)
+				return false; // any pressed, none expected
+			else if ((psh & esh) == 0)
+				return false; // none of the expected keys were pressed
+		}
+	}
+	return true;
+}
+
 
 Buildable* Event::GetTargetBuildable() const
 {

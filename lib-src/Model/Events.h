@@ -144,6 +144,8 @@ enum class DefaultCursor
 
 using MouseCoord = float;
 
+bool ModKeyCheck(u8 pressed, u8 expected);
+
 struct Event
 {
 	EventSystem* context;

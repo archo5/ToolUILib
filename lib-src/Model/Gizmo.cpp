@@ -279,6 +279,18 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	if (e.IsPropagationStopped())
 		return false;
 
+	// consume button releases whose corresponding presses happened during a gizmo action
+	if (e.type == EventType::ButtonDown && (_selectedPart != GizmoAction::None || _hoveredPart != GizmoAction::None))
+	{
+		_buttonPresses |= 1 << int(e.GetButton());
+		e.StopPropagation();
+	}
+	if (e.type == EventType::ButtonUp && (_buttonPresses & (1 << int(e.GetButton()))))
+	{
+		_buttonPresses &= ~(1 << int(e.GetButton()));
+		e.StopPropagation();
+	}
+
 	auto& editableNC = const_cast<IGizmoEditable&>(editable);
 	if (e.type == EventType::MouseMove)
 	{
@@ -532,7 +544,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			e.StopPropagation();
 		}
 	}
-	else if (e.type == EventType::KeyDown)
+	else if (e.type == EventType::KeyDown && (ModKeyCheck(e.GetModifierKeys(), 0) || ModKeyCheck(e.GetModifierKeys(), MK_Shift)))
 	{
 		bool anySelPart = _selectedPart != GizmoAction::None;
 		u8 modeKeyMask = GizmoKeyDetect::Start | (anySelPart ? GizmoKeyDetect::ModeSwitch : 0);

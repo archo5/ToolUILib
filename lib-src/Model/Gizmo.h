@@ -256,6 +256,7 @@ struct Gizmo
 	GizmoAction _selectedPart = GizmoAction::None;
 	GizmoAction _hoveredPart = GizmoAction::None;
 	bool _curXFWorldSpace = true;
+	u8 _buttonPresses = 0;
 	Point2f _lastCursorPos = {};
 
 	Point2f _origCursorWinPos = {};
