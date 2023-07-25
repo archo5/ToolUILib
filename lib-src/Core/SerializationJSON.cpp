@@ -25,6 +25,7 @@ void JSONLinearWriter::WriteString(const char* key, StringView value)
 		else if (c == '\r') _data += "\\r";
 		else if (c == '\t') _data += "\\t";
 		else if (c == '\b') _data += "\\b";
+		else if (c == '\"') _data += "\\\"";
 		else if (c == '\\') _data += "\\\\";
 		else if (c < 0x20)
 		{
