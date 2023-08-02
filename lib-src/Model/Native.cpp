@@ -776,6 +776,7 @@ struct NativeWindow_Impl
 		if (invalidated)
 			g_windowRepaintList->RemoveFirstOf(this);
 		rhi::FreeRenderContext(renderCtx);
+		renderCtx = nullptr;
 		DestroyWindow(window);
 	}
 
@@ -943,7 +944,7 @@ struct NativeWindow_Impl
 
 	HWND window;
 	HCURSOR cursor;
-	rhi::RenderContext* renderCtx;
+	rhi::RenderContext* renderCtx = nullptr;
 
 	Menu* menu;
 

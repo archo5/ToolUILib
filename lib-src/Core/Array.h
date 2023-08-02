@@ -184,13 +184,26 @@ struct Array
 	{
 		auto* newData = (T*)malloc(sizeof(T) * newCap);
 		size_t numToCopy = _size < newCap ? _size : newCap;
-		for (size_t i = 0; i < numToCopy; i++)
+
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_copyable<T>::value)
 		{
-			new (&newData[i]) T(Move(_data[i]));
-			_data[i].~T();
+			memcpy(newData, _data, numToCopy * sizeof(T));
 		}
-		for (size_t i = numToCopy; i < _size; i++)
-			_data[i].~T();
+		else
+		{
+			for (size_t i = 0; i < numToCopy; i++)
+			{
+				new (&newData[i]) T(Move(_data[i]));
+				_data[i].~T();
+			}
+		}
+
+		UI_IF_MAYBE_CONSTEXPR(!std::is_trivially_destructible<T>::value)
+		{
+			for (size_t i = numToCopy; i < _size; i++)
+				_data[i].~T();
+		}
+
 		free(_data);
 		_data = newData;
 		_capacity = newCap;
@@ -209,18 +222,46 @@ struct Array
 	void Resize(size_t newSize)
 	{
 		Reserve(newSize);
-		while (_size < newSize)
-			new (&_data[_size++]) T();
-		while (_size > newSize)
-			_data[--_size].~T();
+
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_constructible<T>::value)
+		{
+			if (_size < newSize)
+				_size = newSize;
+		}
+		else
+		{
+			while (_size < newSize)
+				new (&_data[_size++]) T();
+		}
+
+		UI_IF_MAYBE_CONSTEXPR(!std::is_trivially_destructible<T>::value)
+		{
+			if (_size > newSize)
+				_size = newSize;
+		}
+		else
+		{
+			while (_size > newSize)
+				_data[--_size].~T();
+		}
 	}
 	void ResizeWith(size_t newSize, const T& v)
 	{
 		Reserve(newSize);
+
 		while (_size < newSize)
 			new (&_data[_size++]) T(v);
-		while (_size > newSize)
-			_data[--_size].~T();
+
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_destructible<T>::value)
+		{
+			if (_size > newSize)
+				_size = newSize;
+		}
+		else
+		{
+			while (_size > newSize)
+				_data[--_size].~T();
+		}
 	}
 
 	inline void Append(const T& v)

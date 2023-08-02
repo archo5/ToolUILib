@@ -19,6 +19,13 @@
 #endif
 
 
+#if __cplusplus >= 201703L
+# define UI_IF_MAYBE_CONSTEXPR if constexpr
+#else
+# define UI_IF_MAYBE_CONSTEXPR if
+#endif
+
+
 namespace ui {
 
 using i8 = int8_t;

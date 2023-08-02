@@ -274,13 +274,21 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 	_curXFWorldSpace = settings.isWorldSpace;
 }
 
+static bool IsButtonUsed(Gizmo& G, MouseButton btn)
+{
+	if (G._selectedPart != GizmoAction::None)
+		if (btn == MouseButton::Right)
+			return true;
+	return btn == MouseButton::Left;
+}
+
 bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable)
 {
 	if (e.IsPropagationStopped())
 		return false;
 
 	// consume button releases whose corresponding presses happened during a gizmo action
-	if (e.type == EventType::ButtonDown && (_selectedPart != GizmoAction::None || _hoveredPart != GizmoAction::None))
+	if (e.type == EventType::ButtonDown && (_selectedPart != GizmoAction::None || _hoveredPart != GizmoAction::None) && IsButtonUsed(*this, e.GetButton()))
 	{
 		_buttonPresses |= 1 << int(e.GetButton());
 		e.StopPropagation();
