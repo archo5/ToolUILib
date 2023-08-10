@@ -876,6 +876,11 @@ AABB2i End3DMode()
 	return curRect;
 }
 
+void RestoreRenderStates()
+{
+	Reset2DRender();
+}
+
 void SetAmbientLight(const Color4f& col)
 {
 	// TODO

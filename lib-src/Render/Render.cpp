@@ -84,6 +84,11 @@ void Flush()
 	_Flush();
 }
 
+void RestoreStates()
+{
+	rhi::RestoreRenderStates();
+}
+
 } // internals
 
 VertexTransformCallback g_curVertXFormCB;

@@ -421,7 +421,7 @@ static GLint g_prevTex;
 static AABB2i g_3DRect;
 void Begin3DMode(const AABB2i& rect)
 {
-	draw::internals::Flush();
+	draw::_::Flush();
 
 	GLCHK(glGetIntegerv(GL_TEXTURE_BINDING_2D, &g_prevTex));
 
@@ -466,6 +466,11 @@ AABB2i End3DMode()
 		GLCHK(glDisable(GL_TEXTURE_2D));
 
 	return curRect;
+}
+
+void RestoreRenderStates()
+{
+	SetRenderState(DF_AlphaBlended | DF_ZTestOff | DF_ZWriteOff);
 }
 
 void SetAmbientLight(const Color4f& col)

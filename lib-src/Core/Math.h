@@ -187,6 +187,7 @@ template <class T> struct Range
 	UI_FORCEINLINE static Range AtMost(T v) { return { Limits::lowest(), v }; }
 	UI_FORCEINLINE static Range Exact(T v) { return { v, v }; }
 	UI_FORCEINLINE static Range All() { return { Limits::lowest(), Limits::max() }; }
+	UI_FORCEINLINE static Range Empty() { return { Limits::max(), Limits::lowest() }; }
 
 	UI_FORCEINLINE bool operator == (const Range& o) const { return min == o.min && max == o.max; }
 	UI_FORCEINLINE bool operator != (const Range& o) const { return min != o.min || max != o.max; }
@@ -214,6 +215,17 @@ template <class T> struct Range
 			r.min += o;
 		if (r.max < Limits::max())
 			r.max += o;
+		return r;
+	}
+	UI_FORCEINLINE void Include(T o)
+	{
+		min = ui::min(min, o);
+		max = ui::max(max, o);
+	}
+	Range With(T o) const
+	{
+		Range r = *this;
+		r.Include(o);
 		return r;
 	}
 	UI_FORCEINLINE T Clamp(T val) const { return clamp(val, min, max); }
@@ -292,6 +304,7 @@ template<class T> struct AABB2
 	}
 
 	template <class U> UI_FORCEINLINE AABB2<U> Cast() const { return { U(x0), U(y0), U(x1), U(y1) }; }
+	template <class U> UI_FORCEINLINE AABB2<U> CastRounded() const { return { U(round(x0)), U(round(y0)), U(round(x1)), U(round(y1)) }; }
 };
 template <class T> UI_FORCEINLINE AABB2<T> operator * (T f, const AABB2<T>& o) { return o * f; }
 

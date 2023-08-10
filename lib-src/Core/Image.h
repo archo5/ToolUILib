@@ -93,13 +93,13 @@ struct Color4f
 		return max(r, max(g, b));
 	}
 
-	Color4f() : r(1), g(1), b(1), a(1) {}
-	Color4f(float f) : r(f), g(f), b(f), a(1) {}
-	Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
-	Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
-	Color4f(const Color4b& c) : r(c.r / 255.f), g(c.g / 255.f), b(c.b / 255.f), a(c.a / 255.f) {}
+	UI_FORCEINLINE Color4f() : r(1), g(1), b(1), a(1) {}
+	UI_FORCEINLINE Color4f(float f) : r(f), g(f), b(f), a(1) {}
+	UI_FORCEINLINE Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
+	UI_FORCEINLINE Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
+	UI_FORCEINLINE Color4f(const Color4b& c) : r(c.r / 255.f), g(c.g / 255.f), b(c.b / 255.f), a(c.a / 255.f) {}
 
-	bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
+	UI_FORCEINLINE bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
 	void BlendOver(const Color4f& c)
 	{
@@ -114,7 +114,9 @@ struct Color4f
 		return { powf(r, p), powf(g, p), powf(b, p), a };
 	}
 	bool IsOpaque() const { return fabsf(a - 1) < 0.0001f; }
-	Color4f GetOpaque() const { return { r, g, b, 1 }; }
+	UI_FORCEINLINE Color4f GetOpaque() const { return { r, g, b, 1 }; }
+	UI_FORCEINLINE Color4f GetPremul() const { return { r * a, g * a, b * a, a }; }
+	UI_FORCEINLINE Color4f GetPremulWithAlphaScale(float s) const { float sa = a * s; return { r * sa, g * sa, b * sa, sa }; }
 
 	operator Color4b() const { return { GetRed8(), GetGreen8(), GetBlue8(), GetAlpha8() }; }
 
