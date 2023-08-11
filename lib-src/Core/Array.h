@@ -234,7 +234,7 @@ struct Array
 				new (&_data[_size++]) T();
 		}
 
-		UI_IF_MAYBE_CONSTEXPR(!std::is_trivially_destructible<T>::value)
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_destructible<T>::value)
 		{
 			if (_size > newSize)
 				_size = newSize;
