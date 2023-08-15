@@ -1,59 +1,10 @@
 
 #pragma once
 #include "Graphics.h"
+#include "../Core/SerializationBasic.h"
 
 
 namespace ui {
-
-struct DataWriter
-{
-	Array<char>& _data;
-
-	DataWriter(Array<char>& data) : _data(data) {}
-
-	template <class T> DataWriter& operator << (const T& src)
-	{
-		_data.AppendMany((char*)&src, sizeof(src));
-		return *this;
-	}
-};
-
-struct DataReader
-{
-	Array<char>& _data;
-	size_t _off = 0;
-
-	DataReader(Array<char>& data) : _data(data) {}
-
-	size_t Remaining() const
-	{
-		return _off <= _data.Size() ? _data.Size() - _off : 0;
-	}
-
-	void Reset()
-	{
-		_off = 0;
-	}
-
-	template <class T> void Skip(size_t count = 1)
-	{
-		_off += sizeof(T) * count;
-	}
-
-	template <class T> DataReader& operator << (T& o)
-	{
-		if (_off + sizeof(o) <= _data.Size())
-		{
-			memcpy(&o, &_data[_off], sizeof(T));
-			_off += sizeof(T);
-		}
-		else
-		{
-			memset(&o, 0, sizeof(T));
-		}
-		return *this;
-	}
-};
 
 struct IGizmoEditable
 {

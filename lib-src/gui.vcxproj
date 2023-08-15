@@ -314,6 +314,7 @@
     <ClInclude Include="Core\SerializationBKVT.h" />
     <ClInclude Include="Core\SerializationDATO.h" />
     <ClInclude Include="Core\SerializationJSON.h" />
+    <ClInclude Include="Core\SerializationBasic.h" />
     <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Test.h" />
