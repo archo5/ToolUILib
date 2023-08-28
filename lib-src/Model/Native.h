@@ -51,6 +51,18 @@ struct Monitors
 };
 
 
+namespace rhi {
+struct GraphicsAdapters
+{
+	static Array<std::string> All();
+
+	static void GetInitial(int& index, StringView& name);
+	static void SetInitialByName(StringView name); // empty = default
+	static void SetInitialByIndex(int index); // -1 = default
+};
+} // rhi
+
+
 struct Clipboard
 {
 	static bool HasText();

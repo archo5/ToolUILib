@@ -4,6 +4,8 @@
 
 #include "../Model/Native.h" // TODO?
 
+#include "../Core/WindowsUtils.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
 #define NOMINMAX
@@ -11,6 +13,7 @@
 
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
 #define D3D_DUMP_LIVE_OBJECTS
@@ -186,6 +189,37 @@ static ID3D11PixelShader* g_psDraw3DUnlit = nullptr;
 
 
 ArrayView<IRHIListener*> GetListeners();
+
+
+Array<std::string> GraphicsAdapters::All()
+{
+	auto* factory = g_dxgiFactory;
+	if (factory)
+		factory->AddRef();
+	else
+	{
+		D3DCHK(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
+	}
+
+	Array<std::string> ret;
+	for (UINT i = 0;; i++)
+	{
+		IDXGIAdapter* adapter = nullptr;
+		HRESULT hr = factory->EnumAdapters(i, &adapter);
+		if (hr == DXGI_ERROR_NOT_FOUND)
+			break;
+
+		DXGI_ADAPTER_DESC desc;
+		D3DCHK(adapter->GetDesc(&desc));
+		ret.Append(WCHARtoUTF8(desc.Description));
+
+		SAFE_RELEASE(adapter);
+	}
+
+	SAFE_RELEASE(factory);
+
+	return ret;
+}
 
 
 struct RenderContext
@@ -411,9 +445,64 @@ void GlobalInit()
 		D3D_FEATURE_LEVEL_11_0,
 	};
 
+	int initIndex = -1;
+	StringView initName;
+	GraphicsAdapters::GetInitial(initIndex, initName);
+	IDXGIAdapter* initAdapter = nullptr;
+	if (initIndex != -1 || initName.NotEmpty())
+	{
+		if (initIndex != -1)
+			LogInfo(LOG_RHI_D3D11, "requested the use of graphics adapter %d", initIndex);
+		else
+			LogInfo(LOG_RHI_D3D11, "requested the use of graphics adapter \"%.*s\"", int(initName.Size()), initName.Data());
+
+		IDXGIFactory* factory = nullptr;
+		D3DCHK(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
+
+		for (UINT i = 0;; i++)
+		{
+			IDXGIAdapter* adapter = nullptr;
+			HRESULT hr = factory->EnumAdapters(i, &adapter);
+			if (hr == DXGI_ERROR_NOT_FOUND)
+				break;
+
+			if (initIndex == i)
+			{
+				initAdapter = adapter;
+				break;
+			}
+
+			DXGI_ADAPTER_DESC desc;
+			D3DCHK(adapter->GetDesc(&desc));
+			if (initName == WCHARtoUTF8(desc.Description))
+			{
+				initAdapter = adapter;
+				break;
+			}
+
+			SAFE_RELEASE(adapter);
+		}
+
+		SAFE_RELEASE(factory);
+	}
+
+	if (initAdapter)
+	{
+		DXGI_ADAPTER_DESC desc;
+		D3DCHK(initAdapter->GetDesc(&desc));
+		LogInfo(LOG_RHI_D3D11, "starting with adapter \"%s\" (vendor=%04X device=%04X)",
+			WCHARtoUTF8(desc.Description).c_str(),
+			desc.VendorId,
+			desc.DeviceId);
+	}
+	else
+	{
+		LogInfo(LOG_RHI_D3D11, "starting with the default adapter");
+	}
+
 	D3DCHK(D3D11CreateDevice(
-		nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
+		initAdapter,
+		initAdapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
 		flags,
 		levels,
@@ -422,6 +511,8 @@ void GlobalInit()
 		&g_dev,
 		nullptr,
 		&g_ctx));
+
+	SAFE_RELEASE(initAdapter);
 
 	// try to improve latency
 	{

@@ -339,6 +339,7 @@ void Test_Fullscreen()
 struct OSCommunicationTest : ui::Buildable
 {
 	ui::Array<std::string> monitors;
+	ui::Array<std::string> gfxAdapters;
 
 	OSCommunicationTest()
 	{
@@ -346,6 +347,7 @@ struct OSCommunicationTest : ui::Buildable
 		animReq.BeginAnimation();
 
 		ReloadMonitorInfo();
+		ReloadGfxAdapterInfo();
 
 		using namespace ui::platform;
 		icons[0] = LoadFileIcon("gui-tests/rsrc/iss96.png");
@@ -373,11 +375,16 @@ struct OSCommunicationTest : ui::Buildable
 				ui::Clipboard::SetText(clipboardData);
 		}
 
-		WPush<ui::StackLTRLayoutElement>();
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+		WPush<ui::StackTopDownLayoutElement>();
 		{
+			if (ui::imm::Button("Reload"))
+			{
+				ReloadMonitorInfo();
+				ReloadGfxAdapterInfo();
+			}
+
 			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ListBox);
-			WPush<ui::ScrollArea>();
-			WPush<ui::SizeConstraintElement>().SetMinHeight(40);
 			WPush<ui::StackTopDownLayoutElement>();
 			{
 				for (auto& m : monitors)
@@ -385,12 +392,17 @@ struct OSCommunicationTest : ui::Buildable
 			}
 			WPop();
 			WPop();
+			
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ListBox);
+			WPush<ui::StackTopDownLayoutElement>();
+			{
+				for (auto& g : gfxAdapters)
+					WMakeWithText<ui::LabelFrame>(g);
+			}
 			WPop();
 			WPop();
-
-			if (ui::imm::Button("Reload"))
-				ReloadMonitorInfo();
 		}
+		WPop();
 		WPop();
 
 		ui::MakeWithTextf<ui::LabelFrame>("time (ms): %u, double click time (ms): %u",
@@ -451,6 +463,11 @@ struct OSCommunicationTest : ui::Buildable
 				rect.x0, rect.y0, rect.x1, rect.y1);
 			monitors.Append(info);
 		}
+	}
+
+	void ReloadGfxAdapterInfo()
+	{
+		gfxAdapters = ui::rhi::GraphicsAdapters::All();
 	}
 
 	ui::AnimationCallbackRequester animReq;

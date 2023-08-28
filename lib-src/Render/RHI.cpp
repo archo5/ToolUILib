@@ -1,6 +1,9 @@
 
 #include "RHI.h"
 
+#include "../Model/Native.h" // TODO?
+
+
 namespace ui {
 namespace rhi {
 
@@ -32,6 +35,28 @@ size_t GetVertexSize(unsigned vertexFormat)
 	if (vertexFormat & VF_Color)
 		size += 4;
 	return size;
+}
+
+
+static int g_initialGraphicsAdapterIndex = -1;
+static std::string g_initialGraphicsAdapterName;
+
+void GraphicsAdapters::GetInitial(int& index, StringView& name)
+{
+	index = g_initialGraphicsAdapterIndex;
+	name = g_initialGraphicsAdapterName;
+}
+
+void GraphicsAdapters::SetInitialByName(StringView name)
+{
+	g_initialGraphicsAdapterIndex = -1;
+	g_initialGraphicsAdapterName = ui::to_string(name);
+}
+
+void GraphicsAdapters::SetInitialByIndex(int index)
+{
+	g_initialGraphicsAdapterIndex = index;
+	g_initialGraphicsAdapterName = {};
 }
 
 
