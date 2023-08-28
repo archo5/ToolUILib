@@ -2,6 +2,8 @@
 #include "RHI.h"
 #include "../Core/Memory.h"
 
+#include "../Model/Native.h" // TODO?
+
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
 #define NOMINMAX
@@ -19,6 +21,11 @@
 #include "draw2d.ps.h"
 #include "draw3dunlit.vs.h"
 #include "draw3dunlit.ps.h"
+
+
+namespace ui {
+LogCategory LOG_RHI_D3D11("RHI-D3D11", LogLevel::Info);
+} // ui
 
 
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
@@ -41,6 +48,7 @@ static HRESULT _Check(HRESULT hr, const char* code, const char* file, int line)
 
 static ID3D11Device* g_dev = nullptr;
 static ID3D11DeviceContext* g_ctx = nullptr;
+static IDXGIAdapter* g_dxgiAdapter = nullptr;
 static IDXGIFactory* g_dxgiFactory = nullptr;
 
 
@@ -230,6 +238,7 @@ struct RenderContext
 		}
 
 		D3DCHK(g_dxgiFactory->CreateSwapChain(g_dev, &scd, &swapChain));
+		D3DCHK(g_dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES));
 	}
 	void InitBuffer()
 	{
@@ -279,13 +288,78 @@ struct RenderContext
 	}
 	void Resize(unsigned w, unsigned h)
 	{
+		if (width == w && height == h)
+			return;
+
+		LogInfo(LOG_RHI_D3D11, "Resize requested: %u x %u (from %u x %u)", w, h, width, height);
+
 		ReleaseBuffer();
 
 		width = w;
 		height = h;
-		swapChain->ResizeBuffers(2, w, h, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		D3DCHK(swapChain->ResizeBuffers(2, w, h, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
 		InitBuffer();
+	}
+	void SetFullScreen(const Optional<ExclusiveFullscreenInfo>& info)
+	{
+		if (info.HasValue())
+		{
+			auto efi = info.GetValue();
+
+			IDXGIOutput* dxgiOutput = nullptr;
+			if (efi.monitor)
+			{
+				for (UINT i = 0; ; i++)
+				{
+					HRESULT hr = g_dxgiAdapter->EnumOutputs(i, &dxgiOutput);
+					if (hr == DXGI_ERROR_NOT_FOUND)
+						break;
+
+					DXGI_OUTPUT_DESC desc = {};
+					D3DCHK(dxgiOutput->GetDesc(&desc));
+					if (desc.Monitor == HMONITOR(efi.monitor))
+						break; // found it
+
+					SAFE_RELEASE(dxgiOutput);
+				}
+			}
+			if (!dxgiOutput)
+				D3DCHK(swapChain->GetContainingOutput(&dxgiOutput));
+
+			DXGI_MODE_DESC mode = {};
+			mode.Format = DXGI_FORMAT_UNKNOWN;
+			if (efi.size.x && efi.size.y)
+			{
+				mode.Width = efi.size.x;
+				mode.Height = efi.size.y;
+			}
+			else
+			{
+				DXGI_OUTPUT_DESC desc = {};
+				D3DCHK(dxgiOutput->GetDesc(&desc));
+				mode.Width = desc.DesktopCoordinates.right - desc.DesktopCoordinates.left;
+				mode.Height = desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top;
+			}
+			if (efi.refreshRate)
+			{
+				mode.RefreshRate.Numerator = efi.refreshRate;
+				mode.RefreshRate.Denominator = 1;
+			}
+			D3DCHK(swapChain->ResizeTarget(&mode));
+
+			D3DCHK(swapChain->SetFullscreenState(TRUE, dxgiOutput));
+
+			// needed to allow 1080p, otherwise SetFullscreenState can set 1680x1050 instead (WTF MS?)
+			mode.RefreshRate = {};
+			D3DCHK(swapChain->ResizeTarget(&mode));
+
+			SAFE_RELEASE(dxgiOutput);
+		}
+		else
+		{
+			D3DCHK(swapChain->SetFullscreenState(FALSE, nullptr));
+		}
 	}
 };
 RenderContext* RenderContext::first;
@@ -354,12 +428,10 @@ void GlobalInit()
 	IDXGIDevice* dxgiDevice = nullptr;
 	D3DCHK(g_dev->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice));
 
-	IDXGIAdapter* dxgiAdapter = nullptr;
-	D3DCHK(dxgiDevice->GetAdapter(&dxgiAdapter));
+	D3DCHK(dxgiDevice->GetAdapter(&g_dxgiAdapter));
 	SAFE_RELEASE(dxgiDevice);
 
-	D3DCHK(dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&g_dxgiFactory));
-	SAFE_RELEASE(dxgiAdapter);
+	D3DCHK(g_dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&g_dxgiFactory));
 
 	g_tmpVB = new TempBuffer(D3D11_BIND_VERTEX_BUFFER);
 	g_tmpIB = new TempBuffer(D3D11_BIND_INDEX_BUFFER);
@@ -581,6 +653,7 @@ void GlobalFree()
 	delete g_tmpVB;
 
 	SAFE_RELEASE(g_dxgiFactory);
+	SAFE_RELEASE(g_dxgiAdapter);
 	SAFE_RELEASE(g_ctx);
 
 #ifdef D3D_DUMP_LIVE_OBJECTS
@@ -652,6 +725,11 @@ void SetActiveContext(RenderContext* RC)
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
 {
 	RC->Resize(w, h);
+}
+
+void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info)
+{
+	RC->SetFullScreen(info);
 }
 
 void BeginFrame(RenderContext* RC)

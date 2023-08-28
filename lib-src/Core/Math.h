@@ -157,6 +157,7 @@ template <class T> struct Size2
 	UI_FORCEINLINE bool operator != (const Size2& o) const { return x != o.x || y != o.y; }
 
 	template <class U> UI_FORCEINLINE Size2<U> Cast() const { return { U(x), U(y) }; }
+	UI_FORCEINLINE Vec2<T> ToVec2() const { return { x, y }; }
 
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{

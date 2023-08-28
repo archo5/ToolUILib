@@ -112,6 +112,9 @@ struct Quat
 	UI_FORCEINLINE Quat Inverted() const { return { -x, -y, -z, w }; }
 	UI_FORCEINLINE Quat operator - () const { return { -x, -y, -z, -w }; }
 
+	Vec3f Axis() const;
+	float Angle() const;
+
 	Quat operator * (const Quat& o) const;
 	Vec3f ToEulerAnglesZYX() const;
 	Vec3f Rotate(Vec3f v) const;
@@ -131,7 +134,7 @@ struct Quat
 		oi.EndObject();
 	}
 
-	static Quat Identity();
+	static Quat Identity() { return { 0, 0, 0, 1 }; }
 	static Quat RotateAxisAngle(const Vec3f& axis, float angle);
 	static Quat RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b);
 	static Quat RotateBetweenDirections(const Vec3f& a, const Vec3f& b);

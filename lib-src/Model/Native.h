@@ -37,6 +37,20 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconT
 } // platform
 
 
+typedef struct Monitor_* MonitorID;
+struct Monitors
+{
+	static Array<MonitorID> All();
+	static MonitorID Primary();
+	static MonitorID FindFromPoint(Vec2i point, bool nearest = false);
+	static MonitorID FindFromWindow(NativeWindowBase* w);
+
+	static bool IsPrimary(MonitorID id);
+	static AABB2i GetScreenArea(MonitorID id);
+	static std::string GetName(MonitorID id);
+};
+
+
 struct Clipboard
 {
 	static bool HasText();
@@ -114,6 +128,19 @@ struct NativeWindowGeometry
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 };
 
+struct ExclusiveFullscreenInfo
+{
+	Size2i size;
+	MonitorID monitor = nullptr;
+	int refreshRate = 0;
+
+	bool operator == (const ExclusiveFullscreenInfo& o) const
+	{
+		return size == o.size && monitor == o.monitor && refreshRate == o.refreshRate;
+	}
+	bool operator != (const ExclusiveFullscreenInfo& o) const { return !(*this == o); }
+};
+
 
 struct NativeWindow_Impl;
 struct NativeWindowBase
@@ -172,8 +199,15 @@ struct NativeWindowBase
 	NativeWindowBase* GetParent() const;
 	void SetParent(NativeWindowBase* parent);
 
+	bool IsInExclusiveFullscreen() const;
+	void StopExclusiveFullscreen();
+	void StartExclusiveFullscreen(ExclusiveFullscreenInfo info);
+
 	bool IsInnerUIEnabled();
 	void SetInnerUIEnabled(bool enabled);
+
+	//float GetInnerUIScale();
+	//void SetInnerUIScale(float scale); // use 1 to reset
 
 	bool IsDebugDrawEnabled();
 	void SetDebugDrawEnabled(bool enabled);

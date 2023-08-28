@@ -337,6 +337,7 @@ void Test_BasicEasingAnim();
 void Test_VExpandAnim();
 void Test_ThreadWorker();
 void Test_ThreadedImageRendering();
+void Test_Fullscreen();
 void Test_OSCommunication();
 void Test_FileSelectionWindow();
 void Test_DirectoryChangeWatcher();
@@ -450,6 +451,7 @@ static const TestEntry utilityTestEntries[] =
 	{ "Thread worker", Test_ThreadWorker },
 	{ "Threaded image rendering", Test_ThreadedImageRendering },
 	{},
+	{ "Fullscreen", Test_Fullscreen },
 	{ "OS communication", Test_OSCommunication },
 	{ "File selection window", Test_FileSelectionWindow },
 	{ "Directory change watcher", Test_DirectoryChangeWatcher },
@@ -545,6 +547,11 @@ struct TEST : ui::Buildable
 				enableScale = true;
 				Rebuild();
 			}
+			if (e.physicalKey == ui::KSC_F8)
+			{
+				enableMenu ^= true;
+				Rebuild();
+			}
 		}
 	}
 	void Build() override
@@ -594,7 +601,10 @@ struct TEST : ui::Buildable
 				if (scalePercent > 10) scalePercent -= 10; enableScale = true; Rebuild(); }));
 		}
 
-		UI_BUILD_ALLOC(ui::TopMenu)(GetNativeWindow(), rootMenu);
+		if (enableMenu)
+			UI_BUILD_ALLOC(ui::TopMenu)(GetNativeWindow(), rootMenu);
+		else
+			GetNativeWindow()->SetMenu(nullptr);
 #else
 		ui::Push<ui::MenuBarElement>();
 
@@ -655,6 +665,7 @@ struct TEST : ui::Buildable
 
 	bool enableScale = false;
 	int scalePercent = 100;
+	bool enableMenu = true;
 };
 
 

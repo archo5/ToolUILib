@@ -5,6 +5,7 @@
 
 
 namespace ui {
+struct ExclusiveFullscreenInfo;
 namespace rhi {
 
 using Vertex = ::ui::Vertex;
@@ -61,6 +62,7 @@ RenderContext* CreateRenderContext(void* window);
 void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
+void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info);
 
 void AttachListener(IRHIListener*);
 void DetachListener(IRHIListener*);

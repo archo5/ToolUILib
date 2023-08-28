@@ -183,12 +183,169 @@ void Test_ThreadedImageRendering()
 }
 
 
+struct FullscreenTest : ui::Buildable
+{
+	struct MonitorInfo
+	{
+		std::string name;
+		ui::AABB2i rect;
+		ui::MonitorID id;
+	};
+
+	ui::Array<MonitorInfo> monitors;
+
+	FullscreenTest()
+	{
+		ReloadMonitorInfo();
+	}
+
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+
+#if 0
+		{
+			if (ui::imm::Button("1 (reset)"))
+				GetNativeWindow()->SetInnerUIScale(1);
+			if (ui::imm::Button("0.75"))
+				GetNativeWindow()->SetInnerUIScale(0.75f);
+			if (ui::imm::Button("0.5"))
+				GetNativeWindow()->SetInnerUIScale(0.5f);
+			if (ui::imm::Button("0.25"))
+				GetNativeWindow()->SetInnerUIScale(0.25f);
+			ui::MakeWithTextf<ui::LabelFrame>("- scale: %.2f", GetNativeWindow()->GetInnerUIScale());
+		}
+#endif
+
+		if (ui::imm::Button("Refresh screen info"))
+		{
+			ReloadMonitorInfo();
+		}
+
+		{
+			ui::MakeWithText<ui::LabelFrame>("Windowed:");
+
+			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			{
+				if (ui::imm::Button("Current screen"))
+				{
+					auto rect = ui::Monitors::GetScreenArea(monid);
+					SetWindowed();
+				}
+			}
+
+			for (auto& m : monitors)
+			{
+				if (ui::imm::Button(m.name.c_str()))
+				{
+					SetWindowed();
+					auto* W = GetNativeWindow();
+					W->SetInnerPosition(m.rect.GetCenter() - W->GetInnerSize().ToVec2() / 2);
+				}
+			}
+		}
+
+		{
+			ui::MakeWithText<ui::LabelFrame>("Borderless:");
+
+			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			{
+				if (ui::imm::Button("Current screen"))
+				{
+					auto rect = ui::Monitors::GetScreenArea(monid);
+					SetBorderless(rect);
+				}
+			}
+
+			for (auto& m : monitors)
+			{
+				if (ui::imm::Button(m.name.c_str()))
+					SetBorderless(m.rect);
+			}
+		}
+
+		{
+			ui::MakeWithText<ui::LabelFrame>("Exclusive:");
+
+			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			{
+				if (ui::imm::Button("Current screen"))
+				{
+					SetExclusive(monid);
+				}
+			}
+
+			for (auto& m : monitors)
+			{
+				if (ui::imm::Button(m.name.c_str()))
+					SetExclusive(m.id);
+			}
+		}
+
+		WPop();
+	}
+
+	void ReloadMonitorInfo()
+	{
+		monitors.Clear();
+
+		for (auto id : ui::Monitors::All())
+		{
+			auto rect = ui::Monitors::GetScreenArea(id);
+			auto name = ui::Monitors::GetName(id);
+			bool prim = ui::Monitors::IsPrimary(id);
+
+			std::string info = ui::Format("\"%s\"%s (%d;%d - %d;%d)",
+				name.c_str(),
+				prim ? " (primary)" : "",
+				rect.x0, rect.y0, rect.x1, rect.y1);
+			monitors.Append({ info, rect, id });
+		}
+	}
+
+	void SetWindowed()
+	{
+		auto* W = GetNativeWindow();
+		W->StopExclusiveFullscreen();
+		W->SetState(ui::WindowState::Normal);
+		W->SetStyle(ui::WindowStyle::WS_Default);
+	}
+
+	void SetBorderless(ui::AABB2i rect)
+	{
+		auto* W = GetNativeWindow();
+		W->StopExclusiveFullscreen();
+		W->SetStyle(ui::WindowStyle::WS_None);
+		W->SetInnerPosition(rect.GetCenter() - W->GetInnerSize().ToVec2() / 2);
+		W->SetState(ui::WindowState::Maximized);
+	}
+
+	void SetExclusive(ui::MonitorID monitor)
+	{
+		auto* W = GetNativeWindow();
+		W->SetStyle(ui::WindowStyle::WS_None);
+		//auto rect = ui::Monitors::GetScreenArea(monitor);
+		//W->SetInnerPosition(rect.GetCenter() - W->GetInnerSize().ToVec2() / 2);
+		W->StartExclusiveFullscreen({ {}, monitor });
+		//W->StartExclusiveFullscreen({ { 1920, 1080 }, monitor });
+	}
+};
+void Test_Fullscreen()
+{
+	WMake<FullscreenTest>();
+}
+
+
 struct OSCommunicationTest : ui::Buildable
 {
+	ui::Array<std::string> monitors;
+
 	OSCommunicationTest()
 	{
 		animReq.callback = [this]() { Rebuild(); };
 		animReq.BeginAnimation();
+
+		ReloadMonitorInfo();
 
 		using namespace ui::platform;
 		icons[0] = LoadFileIcon("gui-tests/rsrc/iss96.png");
@@ -215,6 +372,26 @@ struct OSCommunicationTest : ui::Buildable
 			if (ui::imm::Button("Write"))
 				ui::Clipboard::SetText(clipboardData);
 		}
+
+		WPush<ui::StackLTRLayoutElement>();
+		{
+			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ListBox);
+			WPush<ui::ScrollArea>();
+			WPush<ui::SizeConstraintElement>().SetMinHeight(40);
+			WPush<ui::StackTopDownLayoutElement>();
+			{
+				for (auto& m : monitors)
+					WMakeWithText<ui::LabelFrame>(m);
+			}
+			WPop();
+			WPop();
+			WPop();
+			WPop();
+
+			if (ui::imm::Button("Reload"))
+				ReloadMonitorInfo();
+		}
+		WPop();
 
 		ui::MakeWithTextf<ui::LabelFrame>("time (ms): %u, double click time (ms): %u",
 			unsigned(ui::platform::GetTimeMs()),
@@ -255,6 +432,25 @@ struct OSCommunicationTest : ui::Buildable
 		WPop();
 
 		WPop();
+	}
+
+	void ReloadMonitorInfo()
+	{
+		monitors.Clear();
+
+		for (auto id : ui::Monitors::All())
+		{
+			auto rect = ui::Monitors::GetScreenArea(id);
+			auto name = ui::Monitors::GetName(id);
+			bool prim = ui::Monitors::IsPrimary(id);
+
+			std::string info = ui::Format("Monitor %p%s: \"%s\" (%d;%d - %d;%d)",
+				(void*)id,
+				prim ? " (primary)" : "",
+				name.c_str(),
+				rect.x0, rect.y0, rect.x1, rect.y1);
+			monitors.Append(info);
+		}
 	}
 
 	ui::AnimationCallbackRequester animReq;

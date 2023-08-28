@@ -13,6 +13,16 @@ Quat Quat::Normalized() const
 	return { x * il, y * il, z * il, w * il };
 }
 
+Vec3f Quat::Axis() const
+{
+	return Vec3f(x, y, z).Normalized();
+}
+
+float Quat::Angle() const
+{
+	return acosf(clamp(w, -1.f, 1.f)) * (2 * RAD2DEG);
+}
+
 Quat Quat::operator * (const Quat& o) const
 {
 	const Quat& a = *this;
@@ -52,11 +62,6 @@ Vec3f Quat::Rotate(Vec3f v) const
 	Vec3f myvec(-x, -y, -z);
 	return 2 * Vec3Dot(v, myvec) * myvec + (w * w - Vec3Dot(myvec, myvec)) * v + 2 * w * Vec3Cross(myvec, v);
 #endif
-}
-
-Quat Quat::Identity()
-{
-	return { 0, 0, 0, 1 };
 }
 
 Quat Quat::RotateAxisAngle(const Vec3f& axis, float angle)

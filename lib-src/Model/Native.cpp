@@ -26,6 +26,10 @@
 
 #define WINDOW_CLASS_NAME L"UIWindow"
 
+namespace ui {
+LogCategory LOG_WIN32("Win32", LogLevel::Info);
+} // ui
+
 
 enum MoveSizeStateType
 {
@@ -458,6 +462,91 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 } // platform
 
 
+static BOOL CALLBACK MonitorEnumProc(HMONITOR monitor, HDC dc, LPRECT rect, LPARAM lp)
+{
+	auto* ret = reinterpret_cast<Array<MonitorID>*>(lp);
+	auto id = reinterpret_cast<MonitorID>(monitor);
+	if (rect->left == 0 && rect->top == 0)
+		ret->InsertAt(0, id); // make primary first
+	else
+		ret->Append(id);
+	return TRUE;
+}
+
+Array<MonitorID> Monitors::All()
+{
+	Array<MonitorID> ret;
+	if (!::EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&ret)))
+	{
+		LogWarn(LOG_WIN32, "EnumDisplayMonitors failed!");
+	}
+	return ret;
+}
+
+MonitorID Monitors::Primary()
+{
+	return MonitorID(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
+}
+
+MonitorID Monitors::FindFromPoint(Vec2i point, bool nearest)
+{
+	return MonitorID(::MonitorFromPoint({ point.x, point.y }, nearest ? MONITOR_DEFAULTTONEAREST : MONITOR_DEFAULTTONULL));
+}
+
+MonitorID Monitors::FindFromWindow(NativeWindowBase* w)
+{
+	return MonitorID(::MonitorFromWindow(HWND(w->GetNativeHandle()), MONITOR_DEFAULTTONEAREST));
+}
+
+bool Monitors::IsPrimary(MonitorID id)
+{
+	MONITORINFO info;
+	memset(&info, 0, sizeof(info));
+	info.cbSize = sizeof(info);
+
+	if (::GetMonitorInfoW(HMONITOR(id), &info))
+	{
+		auto r = info.rcMonitor;
+		return r.left == 0 && r.top == 0;
+	}
+	return false;
+}
+
+AABB2i Monitors::GetScreenArea(MonitorID id)
+{
+	MONITORINFO info;
+	memset(&info, 0, sizeof(info));
+	info.cbSize = sizeof(info);
+
+	if (::GetMonitorInfoW(HMONITOR(id), &info))
+	{
+		auto r = info.rcMonitor;
+		return { r.left, r.top, r.right, r.bottom };
+	}
+	return {};
+}
+
+std::string Monitors::GetName(MonitorID id)
+{
+	MONITORINFOEXW info;
+	memset(&info, 0, sizeof(info));
+	info.cbSize = sizeof(info);
+
+	if (::GetMonitorInfoW(HMONITOR(id), &info))
+	{
+		DISPLAY_DEVICEW dd;
+		memset(&dd, 0, sizeof(dd));
+		dd.cb = sizeof(dd);
+
+		if (EnumDisplayDevicesW(info.szDevice, 0, &dd, 0))
+		{
+			return WCHARtoUTF8(dd.DeviceString);
+		}
+	}
+	return {};
+}
+
+
 bool Clipboard::HasText()
 {
 	return ::IsClipboardFormatAvailable(CF_UNICODETEXT);
@@ -742,6 +831,11 @@ struct NativeWindow_Impl
 
 		auto& evsys = GetEventSys();
 
+		curRealW = clientRect.right;
+		curRealH = clientRect.bottom;
+		curScaleW = curRealW; // assume no scale at this point
+		curScaleH = curRealH;
+
 		evsys.width = float(clientRect.right);
 		evsys.height = float(clientRect.bottom);
 
@@ -794,6 +888,55 @@ struct NativeWindow_Impl
 		system.BuildRoot(B, transferOwnership);
 		system.eventSystem.RecomputeLayout();
 		GetOwner()->InvalidateAll();
+	}
+
+	void OnResizeTo(u16 w, u16 h)
+	{
+		if (curRealW == w && curRealH == h)
+			return;
+		if (w == 0)
+			w = 1;
+		if (h == 0)
+			h = 1;
+		curRealW = w;
+		curRealH = h;
+		OnResize();
+	}
+
+	void OnResize()
+	{
+		u16 w = u16(curRealW * innerUIScale);
+		u16 h = u16(curRealH * innerUIScale);
+		if (w == 0)
+			w = 1;
+		if (h == 0)
+			h = 1;
+		if (curScaleW == w && curScaleH == h)
+			return;
+
+		curScaleW = w;
+		curScaleH = h;
+
+		rhi::OnResizeWindow(renderCtx, curScaleW, curScaleH);
+		draw::_ResetScissorRectStack(0, 0, curScaleW, curScaleH);
+
+		auto& evsys = GetEventSys();
+		bool szdiff = curScaleW != evsys.width || curScaleH != evsys.height;
+		evsys.width = curScaleW;
+		evsys.height = curScaleH;
+		evsys.RecomputeLayout();
+		GetOwner()->InvalidateAll();
+		if (szdiff)
+		{
+			OnWindowResized.Call(GetOwner());
+		}
+	}
+
+	void UpdateExclusiveFullscreen()
+	{
+		UpdateMenu();
+		//SetWindowLong(window, GWL_STYLE, WS_OVERLAPPED | WS_VISIBLE);
+		rhi::OnChangeFullscreen(renderCtx, exclFSInfo);
 	}
 
 	void Redraw(bool canRebuild)
@@ -913,8 +1056,19 @@ struct NativeWindow_Impl
 			ws |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 		if (style & WS_TitleBar)
 			ws |= WS_DLGFRAME;
+		if (visible)
+			ws |= WS_VISIBLE;
 		SetWindowLong(window, GWL_STYLE, ws);
 		SetWindowPos(window, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+	}
+
+	void UpdateMenu()
+	{
+		auto* m = menu;
+		if (exclFSInfo)
+			m = nullptr;
+		::SetMenu(window, m ? (HMENU)m->GetNativeHandle() : nullptr);
+		// TODO is there a way to prevent partial redrawing results from showing up?
 	}
 
 	void EnterExclusiveMode()
@@ -953,6 +1107,10 @@ struct NativeWindow_Impl
 	bool hitTest = true;
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
+	float innerUIScale = 1;
+	u16 curRealW = 0, curRealH = 0;
+	u16 curScaleW = 0, curScaleH = 0;
+	Optional<ExclusiveFullscreenInfo> exclFSInfo;
 	bool debugDrawEnabled = false;
 	bool firstShow = true;
 	bool invalidated = false;
@@ -1017,6 +1175,8 @@ WindowStyle NativeWindowBase::GetStyle()
 
 void NativeWindowBase::SetStyle(WindowStyle ws)
 {
+	if (_impl->style == ws)
+		return;
 	_impl->style = ws;
 	_impl->UpdateStyle();
 }
@@ -1055,8 +1215,7 @@ Menu* NativeWindowBase::GetMenu()
 void NativeWindowBase::SetMenu(Menu* m)
 {
 	_impl->menu = m;
-	::SetMenu(_impl->window, m ? (HMENU)m->GetNativeHandle() : nullptr);
-	// TODO is there a way to prevent partial redrawing results from showing up?
+	_impl->UpdateMenu();
 }
 
 static BOOL UnadjustWindowRectEx(LPRECT prect, DWORD style, BOOL hasMenu, DWORD exStyle = 0)
@@ -1084,7 +1243,7 @@ AABB2i NativeWindowBase::GetInnerRect()
 {
 	RECT r = {};
 	GetWindowRect(_impl->window, &r);
-	UnadjustWindowRectEx(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	UnadjustWindowRectEx(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo);
 	return { r.left, r.top, r.right, r.bottom };
 }
 
@@ -1096,7 +1255,7 @@ void NativeWindowBase::SetOuterRect(AABB2i bb)
 void NativeWindowBase::SetInnerRect(AABB2i bb)
 {
 	RECT r = { bb.x0, bb.y0, bb.x1, bb.y1 };
-	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo);
 	SetWindowPos(_impl->window, nullptr, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1118,7 +1277,7 @@ void NativeWindowBase::SetOuterPosition(int x, int y)
 void NativeWindowBase::SetInnerPosition(int x, int y)
 {
 	RECT r = { x, y, x, y };
-	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu);
+	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo);
 	SetWindowPos(_impl->window, nullptr, r.left, r.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1159,7 +1318,7 @@ void NativeWindowBase::SetOuterSize(int x, int y)
 void NativeWindowBase::SetInnerSize(int x, int y)
 {
 	RECT r = { 0, 0, x, y };
-	if (AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu))
+	if (AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo))
 	{
 		x = r.right - r.left;
 		y = r.bottom - r.top;
@@ -1226,6 +1385,25 @@ void NativeWindowBase::SetParent(NativeWindowBase* parent)
 	::SetParent(_impl->window, parent ? parent->_impl->window : nullptr);
 }
 
+bool NativeWindowBase::IsInExclusiveFullscreen() const
+{
+	return _impl->exclFSInfo.HasValue();
+}
+
+void NativeWindowBase::StopExclusiveFullscreen()
+{
+	_impl->exclFSInfo.ClearValue();
+	_impl->UpdateExclusiveFullscreen();
+}
+
+void NativeWindowBase::StartExclusiveFullscreen(ExclusiveFullscreenInfo info)
+{
+	if (_impl->exclFSInfo.HasValue() && _impl->exclFSInfo.GetValue() == info)
+		return;
+	_impl->exclFSInfo = info;
+	_impl->UpdateExclusiveFullscreen();
+}
+
 bool NativeWindowBase::IsInnerUIEnabled()
 {
 	return _impl->innerUIEnabled;
@@ -1235,6 +1413,22 @@ void NativeWindowBase::SetInnerUIEnabled(bool enabled)
 {
 	_impl->innerUIEnabled = enabled;
 }
+
+#if 0 // TODO: currently the scaling is blocky
+float NativeWindowBase::GetInnerUIScale()
+{
+	return _impl->innerUIScale;
+}
+
+void NativeWindowBase::SetInnerUIScale(float scale)
+{
+	scale = clamp(scale, 0.f, 1.f);
+	if (_impl->innerUIScale == scale)
+		return;
+	_impl->innerUIScale = scale;
+	_impl->OnResize();
+}
+#endif
 
 bool NativeWindowBase::IsDebugDrawEnabled()
 {
@@ -1982,19 +2176,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			{
 				auto w = LOWORD(lParam);
 				auto h = HIWORD(lParam);
-				rhi::OnResizeWindow(window->renderCtx, w, h);
-				draw::_ResetScissorRectStack(0, 0, w, h);
-
-				auto& evsys = window->GetEventSys();
-				bool szdiff = w != evsys.width || h != evsys.height;
-				evsys.width = w;
-				evsys.height = h;
-				evsys.RecomputeLayout();
-				window->GetOwner()->InvalidateAll();
-				if (szdiff)
-				{
-					OnWindowResized.Call(window->GetOwner());
-				}
+				window->OnResizeTo(w, h);
 			}
 		}
 		break;
@@ -2014,7 +2196,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_COMMAND:
 		if (auto* window = GetNativeWindow(hWnd))
 		{
-			if (HIWORD(wParam) == 0 && window->menu)
+			if (HIWORD(wParam) == 0 && window->menu && !window->exclFSInfo)
 			{
 				window->menu->CallActivationFunction(LOWORD(wParam) - 1);
 				return TRUE;
