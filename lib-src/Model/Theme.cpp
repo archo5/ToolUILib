@@ -105,6 +105,14 @@ void OnFieldFontSettings(IObjectIterator& oi, ThemeData& td, const FieldInfo& FI
 }
 
 
+ThemeData::CustomStructData::~CustomStructData()
+{
+	structLoader->FreeStruct(defaultInstance);
+	for (auto kvp : instances)
+		structLoader->FreeStruct(kvp.value);
+}
+
+
 static const char* EnumKeys_Presence[] =
 {
 	"Visible",

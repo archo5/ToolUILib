@@ -82,6 +82,7 @@ constexpr uint8_t TF_NOFILTER = 1 << 0;
 constexpr uint8_t TF_REPEAT = 1 << 1;
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags);
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags);
+void SetTextureDebugName(Texture2D* tex, StringView debugName);
 void DestroyTexture(Texture2D* tex);
 
 struct MapData

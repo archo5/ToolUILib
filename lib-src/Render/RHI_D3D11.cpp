@@ -11,6 +11,7 @@
 
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #define D3D_DUMP_LIVE_OBJECTS
 
@@ -43,6 +44,13 @@ static HRESULT _Check(HRESULT hr, const char* code, const char* file, int line)
 		}
 	}
 	return hr;
+}
+
+static void SetName(ID3D11DeviceChild* dch, ui::StringView name)
+{
+	if (!dch)
+		return;
+	dch->SetPrivateData(WKPDID_D3DDebugObjectName, name.Size(), name.Data());
 }
 
 
@@ -446,6 +454,7 @@ void GlobalInit()
 	}
 	auto defTexCol = Color4b::White();
 	g_defTex = CreateTextureRGBA8(&defTexCol, 1, 1, 0);
+	SetTextureDebugName(g_defTex, "ui:tex-default");
 
 	D3D11_RASTERIZER_DESC rd = {};
 	{
@@ -457,6 +466,7 @@ void GlobalInit()
 		rd.AntialiasedLineEnable = FALSE;
 	}
 	D3DCHK(g_dev->CreateRasterizerState(&rd, &g_renderState2D));
+	SetName(g_renderState2D, "ui:rs2D");
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -470,6 +480,7 @@ void GlobalInit()
 			rd.AntialiasedLineEnable = FALSE;
 		}
 		D3DCHK(g_dev->CreateRasterizerState(&rd, &g_renderStates3D[i]));
+		SetName(g_renderStates3D[i], "ui:rs3D");
 	}
 
 	for (int i = 0; i < 4; i++)
@@ -481,6 +492,7 @@ void GlobalInit()
 			dsd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 		}
 		D3DCHK(g_dev->CreateDepthStencilState(&dsd, &g_depthStencilStates[i]));
+		SetName(g_depthStencilStates[i], "ui:dss");
 	}
 
 	for (int i = 0; i < 4; i++)
@@ -495,6 +507,7 @@ void GlobalInit()
 			sd.MaxLOD = D3D11_FLOAT32_MAX;
 		}
 		D3DCHK(g_dev->CreateSamplerState(&sd, &g_samplers[i]));
+		SetName(g_samplers[i], "ui:sampler");
 	}
 
 	// clear
@@ -511,6 +524,7 @@ void GlobalInit()
 			bsd.RenderTarget[0].RenderTargetWriteMask = 0xf;
 		}
 		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsClear));
+		SetName(g_bsClear, "ui:blend-clear");
 	}
 
 	// no blend
@@ -521,6 +535,7 @@ void GlobalInit()
 			bsd.RenderTarget[0].RenderTargetWriteMask = 0xf;
 		}
 		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsNoBlend));
+		SetName(g_bsNoBlend, "ui:blend-off");
 	}
 	// alpha blend
 	{
@@ -536,6 +551,7 @@ void GlobalInit()
 			bsd.RenderTarget[0].RenderTargetWriteMask = 0xf;
 		}
 		D3DCHK(g_dev->CreateBlendState(&bsd, &g_bsAlphaBlend));
+		SetName(g_bsAlphaBlend, "ui:blend-alpha");
 	}
 
 	D3D11_INPUT_ELEMENT_DESC ied[3] = {};
@@ -565,6 +581,7 @@ void GlobalInit()
 		ied[2].InstanceDataStepRate = 0;
 	}
 	D3DCHK(g_dev->CreateInputLayout(ied, 3, g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), &g_inputLayout2D));
+	SetName(g_inputLayout2D, "ui:Vertex");
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -596,16 +613,23 @@ void GlobalInit()
 				ie[3] = { "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 0 };
 		}
 		D3DCHK(g_dev->CreateInputLayout(ie, 4, g_shobj_vs_draw3dunlit, sizeof(g_shobj_vs_draw3dunlit), &g_inputLayouts3D[i]));
+		SetName(g_inputLayouts3D[i], "ui:FVF3D");
 	}
 
 	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_clear, sizeof(g_shobj_vs_clear), nullptr, &g_vsClear));
+	SetName(g_vsClear, "ui:Clear");
 	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_clear, sizeof(g_shobj_ps_clear), nullptr, &g_psClear));
+	SetName(g_psClear, "ui:Clear");
 
 	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw2d, sizeof(g_shobj_vs_draw2d), nullptr, &g_vsDraw2D));
+	SetName(g_vsDraw2D, "ui:Draw2D");
 	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw2d, sizeof(g_shobj_ps_draw2d), nullptr, &g_psDraw2D));
+	SetName(g_psDraw2D, "ui:Draw2D");
 
 	D3DCHK(g_dev->CreateVertexShader(g_shobj_vs_draw3dunlit, sizeof(g_shobj_vs_draw3dunlit), nullptr, &g_vsDraw3DUnlit));
+	SetName(g_vsDraw3DUnlit, "ui:Draw3DUnlit");
 	D3DCHK(g_dev->CreatePixelShader(g_shobj_ps_draw3dunlit, sizeof(g_shobj_ps_draw3dunlit), nullptr, &g_psDraw3DUnlit));
+	SetName(g_psDraw3DUnlit, "ui:Draw3DUnlit");
 
 	for (auto* L : GetListeners())
 		L->OnAttach({ g_dev, g_ctx });
@@ -810,6 +834,14 @@ Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, ui
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags)
 {
 	return new Texture2D(data, width, height, flags, false);
+}
+
+void SetTextureDebugName(Texture2D* tex, StringView debugName)
+{
+	if (!tex)
+		return;
+	SetName(tex->tex, debugName);
+	SetName(tex->srv, debugName);
 }
 
 void DestroyTexture(Texture2D* tex)

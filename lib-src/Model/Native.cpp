@@ -1752,6 +1752,8 @@ Application::Application(int argc, char* argv[])
 	assert(_instance == nullptr);
 	_instance = this;
 
+	ui::rhi::GlobalInit();
+
 	if (FSGetDefault()->fileSystems.IsEmpty())
 	{
 		FSGetDefault()->fileSystems.Append(CreateFileSystemSource(PathJoin(PathGetParent(PathFromSystem(argv[0])), "data")));
@@ -1787,6 +1789,8 @@ Application::~Application()
 	g_allWindows = nullptr;
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
+
+	ui::rhi::GlobalFree();
 
 	assert(_instance == this);
 	_instance = nullptr;
@@ -2308,11 +2312,9 @@ struct GlobalResources
 	{
 		ui::RegisterPainters();
 		InitializeWin32();
-		ui::rhi::GlobalInit();
 	}
 	~GlobalResources()
 	{
-		ui::rhi::GlobalFree();
 	}
 };
 

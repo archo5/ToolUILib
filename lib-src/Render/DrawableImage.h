@@ -51,6 +51,7 @@ struct IImage : IRefCounted
 	virtual TexFlags GetFlags() const = 0;
 	virtual rhi::Texture2D* GetInternal() const = 0;
 	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
+	virtual void SetExclDebugName(StringView debugName) = 0;
 
 	Size2f GetSizeF() const { return GetSize().Cast<float>(); }
 	int GetWidth() const { return GetSize().x; }

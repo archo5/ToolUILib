@@ -94,6 +94,7 @@ RCHandle<ImageSet::BitmapImageEntry> ImageSet::VectorImageEntry::RequestImage(Si
 
 	auto* E = new BitmapImageEntry;
 	E->image = ImageCreateFromCanvas(image->GetImageWithHeight(size.y));
+	E->image->SetExclDebugName(image->GetCacheKey());
 	E->innerUV = innerUV;
 	E->edgeWidth = edgeWidth;
 	auto rs = image->GetSize();

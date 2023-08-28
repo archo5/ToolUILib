@@ -263,6 +263,17 @@ struct Array
 				_data[--_size].~T();
 		}
 	}
+	// ignores the constructor
+	void ResizeWithZeroes(size_t newSize)
+	{
+		Reserve(newSize);
+
+		if (_size < newSize)
+		{
+			memset(&_data[_size], 0, (newSize - _size) * sizeof(T));
+		}
+		_size = newSize;
+	}
 
 	inline void Append(const T& v)
 	{

@@ -67,6 +67,8 @@ struct ThemeData : RefCountedST
 		void* defaultInstance = nullptr;
 		HashMap<std::string, void*> instances;
 		Array<void*> cachedInstances;
+
+		~CustomStructData();
 	};
 	using CustomStructDataHandle = RCHandle<CustomStructData>;
 

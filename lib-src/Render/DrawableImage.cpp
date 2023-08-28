@@ -47,6 +47,7 @@ struct TexturePage
 	{
 		stbrp_init_target(&rectPackContext, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, rectPackNodes, MAX_TEXTURE_PAGE_NODES);
 		rhiTex = rhi::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, 0);
+		rhi::SetTextureDebugName(rhiTex, "ui:atlas-page");
 	}
 	~TexturePage()
 	{
@@ -313,6 +314,7 @@ struct ImageImpl : IImage
 			rhiTex = a8
 				? rhi::CreateTextureA8(d, w, h, uint8_t(flg))
 				: rhi::CreateTextureRGBA8(d, w, h, uint8_t(flg));
+			rhi::SetTextureDebugName(rhiTex, "ui:image");
 		}
 	}
 	~ImageImpl()
@@ -349,6 +351,7 @@ struct ImageImpl : IImage
 	TexFlags GetFlags() const override { return flags; }
 	rhi::Texture2D* GetInternal() const override { return GetRHITex(); }
 	rhi::Texture2D* GetInternalExclusive() const override { return rhiTex; }
+	void SetExclDebugName(StringView debugName) override { rhi::SetTextureDebugName(rhiTex, debugName); }
 };
 
 
@@ -385,6 +388,8 @@ void ImageCacheWrite(IImage* image, StringView key)
 
 	auto* impl = static_cast<ImageImpl*>(image);
 	impl->cacheKey = to_string(key);
+	if (impl->rhiTex)
+		rhi::SetTextureDebugName(impl->rhiTex, key);
 	g_loadedImages[impl->cacheKey] = image;
 }
 

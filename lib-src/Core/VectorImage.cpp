@@ -42,6 +42,9 @@ struct VectorImageImpl : IVectorImage
 	}
 	~VectorImageImpl()
 	{
+		if (!cacheKey.empty())
+			g_loadedVectorImages.Remove(cacheKey);
+
 		nsvgDeleteRasterizer(rasterizer);
 		nsvgDelete(image);
 	}
