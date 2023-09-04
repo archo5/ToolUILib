@@ -98,8 +98,13 @@ void SequenceItemElement::ContextMenu()
 	bool canInsertOne = seq->GetCurrentSize() < seq->GetSizeLimit();
 
 	auto& CM = ContextMenu::Get();
-	CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
-	CM.Add("Remove") = [this]() { seqEd->GetSequence()->Remove(num); seqEd->_OnEdit(this); };
+
+	if (seqEd->allowDuplicate)
+		CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
+
+	if (seqEd->allowDelete)
+		CM.Add("Remove") = [this]() { seqEd->_OnDelete(this); };
+
 	if (auto* cms = seqEd->GetContextMenuSource())
 		cms->FillItemContextMenu(CM, num, 0);
 }
@@ -137,7 +142,8 @@ void SequenceEditor::Build()
 
 		OnBuildItem(idx, ptr);
 
-		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::DeleteButton) == EditorItemContentsLayoutPreset::DeleteButton)
+		if (allowDelete &&
+			(itemLayoutPreset & EditorItemContentsLayoutPreset::DeleteButton) == EditorItemContentsLayoutPreset::DeleteButton)
 			OnBuildDeleteButton();
 
 		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
@@ -200,8 +206,8 @@ void SequenceEditor::OnBuildDeleteButton()
 	Pop();
 	delBtn + AddEventHandler(EventType::Activate, [this, &delBtn](Event& e)
 	{
-		GetSequence()->Remove(delBtn.FindParentOfType<SequenceItemElement>()->num);
-		_OnEdit(e.current);
+		auto* sie = delBtn.FindParentOfType<SequenceItemElement>();
+		_OnDelete(sie);
 	});
 }
 
@@ -234,6 +240,22 @@ void SequenceEditor::_OnEdit(UIObject* who)
 	system->eventSystem.OnChange(who);
 	system->eventSystem.OnCommit(who);
 	who->Rebuild();
+}
+
+void SequenceEditor::_OnDelete(SequenceItemElement* sie)
+{
+	if (!allowDelete)
+		return; // last line of defense
+
+	auto ear = EditorActionResponse::Proceed;
+	if (onBeforeRemoveElement)
+		ear = onBeforeRemoveElement(sie->num);
+
+	if (ear == EditorActionResponse::Proceed)
+		GetSequence()->Remove(sie->num);
+
+	if (ear != EditorActionResponse::Stop)
+		_OnEdit(sie);
 }
 
 } // ui

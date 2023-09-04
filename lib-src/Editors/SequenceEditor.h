@@ -254,9 +254,13 @@ struct SequenceEditor : Buildable
 	SequenceEditor& SetContextMenuSource(IListContextMenuSource* src);
 
 	void _OnEdit(UIObject* who);
+	void _OnDelete(SequenceItemElement* sie);
 
 	std::function<void(SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
+	std::function<EditorActionResponse(size_t idx)> onBeforeRemoveElement;
 	EditorItemContentsLayoutPreset itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
+	bool allowDelete = true;
+	bool allowDuplicate = true;
 
 	ISequence* _sequence = nullptr;
 	ISelectionStorage* _selStorage = nullptr;

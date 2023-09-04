@@ -72,7 +72,7 @@ struct StringView
 
 	int compare(const StringView& o) const;
 
-	bool equal_to_ci(const StringView& o) const;
+	bool EqualToCI(const StringView& o) const;
 
 	StringView substr(size_t at, size_t size = SIZE_MAX) const
 	{
@@ -96,8 +96,10 @@ struct StringView
 	}
 
 	UI_FORCEINLINE bool Contains(StringView sub) const { return FindFirstAt(sub) != SIZE_MAX; }
+	UI_FORCEINLINE bool ContainsCI(StringView sub) const { return FindFirstAtCI(sub) != SIZE_MAX; }
 	int Count(StringView sub, size_t maxpos = SIZE_MAX) const;
 	size_t FindFirstAt(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const;
+	size_t FindFirstAtCI(StringView sub, size_t from = 0, size_t def = SIZE_MAX) const;
 	size_t FindLastAt(StringView sub, size_t from = SIZE_MAX, size_t def = SIZE_MAX) const;
 
 	StringView UntilFirst(StringView sub) const

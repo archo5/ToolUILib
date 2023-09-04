@@ -22,7 +22,7 @@ static DefaultErrorOutput g_defErrOut;
 
 bool IMathExprDataSource::IsNameEqualTo(const char* name, const char* name2)
 {
-	return StringView(name).equal_to_ci(name2);
+	return StringView(name).EqualToCI(name2);
 }
 
 
@@ -697,7 +697,7 @@ struct MathExprData
 
 			for (const auto& fn : builtInFuncs)
 			{
-				if (name.equal_to_ci(fn.name))
+				if (name.EqualToCI(fn.name))
 				{
 					AddFuncCallToStack(fn.op, fn.numArgs, UINT16_MAX, name);
 
@@ -709,10 +709,10 @@ struct MathExprData
 
 		bool TryBuiltInConst(StringView name)
 		{
-			if (name.equal_to_ci("pi")) { PushValue(PI); return true; }
-			if (name.equal_to_ci("e")) { PushValue(E); return true; }
-			if (name.equal_to_ci("deg2rad")) { PushValue(DEG2RAD); return true; }
-			if (name.equal_to_ci("rad2deg")) { PushValue(RAD2DEG); return true; }
+			if (name.EqualToCI("pi")) { PushValue(PI); return true; }
+			if (name.EqualToCI("e")) { PushValue(E); return true; }
+			if (name.EqualToCI("deg2rad")) { PushValue(DEG2RAD); return true; }
+			if (name.EqualToCI("rad2deg")) { PushValue(RAD2DEG); return true; }
 			return false;
 		}
 

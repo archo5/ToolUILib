@@ -54,6 +54,14 @@ struct ArrayView
 		assert(_size);
 		return { _data, _size - 1 };
 	}
+	// subSize is clamped instead of range-checked
+	UI_FORCEINLINE ArrayView Subview(size_t subOff = 0, size_t subSize = SIZE_MAX) const
+	{
+		assert(subOff <= subSize);
+		if (subSize > _size - subOff)
+			subSize = _size - subOff;
+		return { _data + subOff, subSize };
+	}
 
 	UI_FORCEINLINE ArrayView<char> AsChar() const { return { (const char*)_data, _size * sizeof(T) }; }
 	UI_FORCEINLINE ArrayView<i8> AsI8() const { return { (const i8*)_data, _size * sizeof(T) }; }

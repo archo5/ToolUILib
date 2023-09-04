@@ -15,7 +15,7 @@ int StringView::compare(const StringView& o) const
 		: _size < o._size ? -1 : 1;
 }
 
-bool StringView::equal_to_ci(const StringView& o) const
+bool StringView::EqualToCI(const StringView& o) const
 {
 	if (_size != o._size)
 		return false;
@@ -69,6 +69,14 @@ size_t StringView::FindFirstAt(StringView sub, size_t from, size_t def) const
 {
 	for (size_t i = from; i + sub._size <= _size; i++)
 		if (memcmp(&_data[i], sub._data, sub._size) == 0)
+			return i;
+	return def;
+}
+
+size_t StringView::FindFirstAtCI(StringView sub, size_t from, size_t def) const
+{
+	for (size_t i = from; i + sub._size <= _size; i++)
+		if (memicmp(&_data[i], sub._data, sub._size) == 0)
 			return i;
 	return def;
 }

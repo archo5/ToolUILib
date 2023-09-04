@@ -27,6 +27,13 @@ inline EditorItemContentsLayoutPreset operator & (EditorItemContentsLayoutPreset
 	return EditorItemContentsLayoutPreset(uint8_t(a) & uint8_t(b));
 }
 
+enum class EditorActionResponse : u8
+{
+	Stop,
+	Proceed, // do the action and notify / update changed
+	AlreadyDone, // don't do the action, only notify / update changed
+};
+
 enum class SelectionMode : uint8_t
 {
 	None,
