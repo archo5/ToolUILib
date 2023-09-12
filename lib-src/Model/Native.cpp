@@ -321,6 +321,20 @@ bool IsKeyPressed(u8 physicalKey)
 	return (::GetAsyncKeyState(vk) & 0x8000) != 0;
 }
 
+std::string GetPhysicalKeyName(u8 physicalKey)
+{
+	LONG lparam = 0;
+	if (physicalKey & KSC_EXTENDED_MASK)
+	{
+		physicalKey &= ~KSC_EXTENDED_MASK;
+		lparam |= 1 << 24;
+	}
+	lparam |= physicalKey << 16;
+	WCHAR buf[64] = {};
+	int len = ::GetKeyNameTextW(lparam, buf, 64);
+	return WCHARtoUTF8(buf, len);
+}
+
 void ShowErrorMessage(StringView title, StringView text)
 {
 	::MessageBoxW(nullptr, UTF8toWCHAR(text).c_str(), UTF8toWCHAR(title).c_str(), MB_ICONERROR);

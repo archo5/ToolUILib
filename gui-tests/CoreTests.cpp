@@ -512,10 +512,11 @@ struct KeyboardEventsTest : EventsTest
 		}
 		else if (e.type == ui::EventType::KeyDown || e.type == ui::EventType::KeyUp)
 		{
-			WriteMsg("type=Key%s virtual=%u physical=%u mod=%02X numRepeats=%u",
+			WriteMsg("type=Key%s virtual=%u physical=%u (%s) mod=%02X numRepeats=%u",
 				e.type == ui::EventType::KeyDown ? "Down" : "Up",
 				e.longCode,
 				e.shortCode,
+				ui::platform::GetPhysicalKeyName(e.shortCode).c_str(),
 				e.GetModifierKeys(),
 				e.numRepeats);
 		}
