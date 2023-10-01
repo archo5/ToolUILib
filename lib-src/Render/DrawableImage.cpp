@@ -393,6 +393,17 @@ void ImageCacheWrite(IImage* image, StringView key)
 	g_loadedImages[impl->cacheKey] = image;
 }
 
+bool ImageCacheRemove(StringView key)
+{
+	if (auto* prev = ImageCacheRead(key))
+	{
+		g_loadedImages.Remove(key);
+		static_cast<ImageImpl*>(prev)->cacheKey.clear();
+		return true;
+	}
+	return false;
+}
+
 
 bool ImageIsLoadedFromFile(IImage* image, StringView path)
 {
@@ -459,6 +470,12 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 		(hqtime() - t0) * 1000);
 
 	return img;
+}
+
+bool ImageCacheRemoveLoadedFromFile(StringView path)
+{
+	std::string cacheKey = to_string("file:", path);
+	return ImageCacheRemove(cacheKey);
 }
 
 

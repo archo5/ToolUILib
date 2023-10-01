@@ -66,10 +66,12 @@ ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::No
 
 IImage* ImageCacheRead(StringView key);
 void ImageCacheWrite(IImage* image, StringView key);
+bool ImageCacheRemove(StringView key);
 
 bool ImageIsLoadedFromFile(IImage* image, StringView path);
 bool ImageIsLoadedFromFileWithFlags(IImage* image, StringView path, TexFlags flags = TexFlags::Packed);
 ImageHandle ImageLoadFromFile(StringView path, TexFlags flags = TexFlags::Packed);
+bool ImageCacheRemoveLoadedFromFile(StringView path);
 
 namespace _ {
 
