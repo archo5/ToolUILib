@@ -887,6 +887,7 @@ struct IMGUITest : ui::Buildable
 
 		ui::imm::SetEnabled(oldEnabled);
 
+		WMake<ui::DefaultOverlayBuilder>();
 		WPop();
 	}
 

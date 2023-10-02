@@ -16,6 +16,7 @@ MulticastDelegate<> OnTooltipChanged;
 
 static bool g_tooltipInChangeContext;
 static OwnerID g_curTooltipOwner;
+static NativeWindowBase* g_curTooltipWindow = nullptr;
 static Tooltip::BuildFunc g_curTooltipBuildFn;
 static OwnerID g_newTooltipOwner;
 static Tooltip::BuildFunc g_newTooltipBuildFn;
@@ -446,6 +447,7 @@ void EventSystem::_UpdateTooltip(Point2f cursorPos)
 		{
 			g_curTooltipBuildFn = {};
 			g_curTooltipOwner = {};
+			g_curTooltipWindow = nullptr;
 			OnTooltipChanged.Call();
 		}
 		return;
@@ -469,6 +471,7 @@ void EventSystem::_UpdateTooltip(Point2f cursorPos)
 	{
 		g_curTooltipBuildFn = g_newTooltipBuildFn;
 		g_curTooltipOwner = g_newTooltipOwner;
+		g_curTooltipWindow = g_newTooltipBuildFn ? GetNativeWindow() : nullptr;
 		OnTooltipChanged.Call();
 	}
 
@@ -794,14 +797,15 @@ void Tooltip::Set(const OwnerID& oid, const BuildFunc& f)
 	g_newTooltipBuildFn = f;
 }
 
-bool Tooltip::IsSet()
+bool Tooltip::IsSet(NativeWindowBase* curWindow)
 {
-	return !!g_curTooltipBuildFn;
+	return !!g_curTooltipBuildFn && g_curTooltipWindow == curWindow;
 }
 
-void Tooltip::Build()
+void Tooltip::Build(NativeWindowBase* curWindow)
 {
-	g_curTooltipBuildFn();
+	if (g_curTooltipBuildFn && g_curTooltipWindow == curWindow)
+		g_curTooltipBuildFn();
 }
 
 

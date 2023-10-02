@@ -1251,7 +1251,7 @@ struct GlobalEventsTest : ui::Buildable
 		for (auto& e = ui::Make<GenericEventTest>();
 			e.name = "Tooltip changed",
 			e.md = &ui::OnTooltipChanged,
-			e.infofn = [this](char* bfr) { snprintf(bfr, 64, "tooltip: %s", ui::Tooltip::IsSet() ? "set" : "<none>"); },
+			e.infofn = [this](char* bfr) { snprintf(bfr, 64, "tooltip: %s", ui::Tooltip::IsSet(GetNativeWindow()) ? "set" : "<none>"); },
 			0;);
 
 		ui::MakeWithText<ui::Button>("Draggable") + ui::MakeDraggable([]()

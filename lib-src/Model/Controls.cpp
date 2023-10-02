@@ -1454,11 +1454,14 @@ struct CursorFollowingPLE : PlacementLayoutElement
 };
 
 
+// TODO any need for this to be a member?
+static NativeWindowBase* _lastMouseMoveWindow = nullptr;
 void DefaultOverlayBuilder::Build()
 {
 	auto& cfple = ui::Push<PlacementLayoutElement>();
 	BuildMulticastDelegateAdd(OnMouseMoved, [&cfple](NativeWindowBase* win, int, int)
 	{
+		_lastMouseMoveWindow = win;
 		if (win == cfple.GetNativeWindow())
 			cfple._OnChangeStyle();
 	});
@@ -1467,14 +1470,14 @@ void DefaultOverlayBuilder::Build()
 	if (drawTooltip)
 	{
 		BuildMulticastDelegateAdd(OnTooltipChanged, [this]() { Rebuild(); });
-		if (Tooltip::IsSet())
+		if (Tooltip::IsSet(GetNativeWindow()))
 		{
 			tmpl->measure = false;
 			tmpl->placement = &placement;
 
 			Push<OverlayElement>().Init(1000);
 			Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::ListBox);
-			Tooltip::Build();
+			Tooltip::Build(GetNativeWindow());
 			Pop();
 			Pop();
 		}
@@ -1485,7 +1488,7 @@ void DefaultOverlayBuilder::Build()
 		BuildMulticastDelegateAdd(OnDragDropDataChanged, [this]() { Rebuild(); });
 		if (auto* ddd = DragDrop::GetData())
 		{
-			if (ddd->ShouldBuild())
+			if (ddd->ShouldBuild() && _lastMouseMoveWindow == GetNativeWindow())
 			{
 				tmpl->measure = false;
 				tmpl->placement = &placement;

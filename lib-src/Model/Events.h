@@ -364,8 +364,8 @@ struct Tooltip
 	using BuildFunc = std::function<void()>;
 
 	static void Set(const OwnerID& oid, const BuildFunc& f);
-	static bool IsSet();
-	static void Build();
+	static bool IsSet(NativeWindowBase* curWindow);
+	static void Build(NativeWindowBase* curWindow);
 };
 
 struct ContextMenu
