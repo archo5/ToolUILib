@@ -216,6 +216,8 @@ struct NativeWindowBase
 	void StopExclusiveFullscreen();
 	void StartExclusiveFullscreen(ExclusiveFullscreenInfo info);
 
+	void SetVSyncInterval(unsigned interval);
+
 	bool IsInnerUIEnabled();
 	void SetInnerUIEnabled(bool enabled);
 

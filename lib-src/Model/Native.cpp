@@ -1418,6 +1418,11 @@ void NativeWindowBase::StartExclusiveFullscreen(ExclusiveFullscreenInfo info)
 	_impl->UpdateExclusiveFullscreen();
 }
 
+void NativeWindowBase::SetVSyncInterval(unsigned interval)
+{
+	rhi::SetVSyncInterval(_impl->renderCtx, interval);
+}
+
 bool NativeWindowBase::IsInnerUIEnabled()
 {
 	return _impl->innerUIEnabled;

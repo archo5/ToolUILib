@@ -233,6 +233,7 @@ struct RenderContext
 
 	unsigned width = 0;
 	unsigned height = 0;
+	unsigned vsyncInterval = 0;
 
 	static RenderContext* first;
 	static RenderContext* last;
@@ -847,6 +848,11 @@ void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInf
 	RC->SetFullScreen(info);
 }
 
+void SetVSyncInterval(RenderContext* RC, unsigned interval)
+{
+	RC->vsyncInterval = interval;
+}
+
 void BeginFrame(RenderContext* RC)
 {
 	SetActiveContext(RC);
@@ -914,7 +920,7 @@ void ClearDepthOnly()
 
 void Present(RenderContext* RC)
 {
-	RC->swapChain->Present(0, 0);
+	RC->swapChain->Present(RC->vsyncInterval, 0);
 }
 
 Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags)

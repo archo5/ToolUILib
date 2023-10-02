@@ -63,6 +63,7 @@ void FreeRenderContext(RenderContext* RC);
 void SetActiveContext(RenderContext* RC);
 void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
 void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info);
+void SetVSyncInterval(RenderContext* RC, unsigned interval);
 
 void AttachListener(IRHIListener*);
 void DetachListener(IRHIListener*);
