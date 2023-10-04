@@ -34,6 +34,13 @@ void TextMeasureEnd();
 void TextMeasureReset();
 float TextMeasureAddChar(uint32_t ch);
 
+enum class TextHAlign
+{
+	Left,
+	Center,
+	Right,
+};
+
 enum class TextBaseline
 {
 	Default, // no adjustment
@@ -43,7 +50,20 @@ enum class TextBaseline
 };
 
 namespace draw {
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline = TextBaseline::Default, AABB2f* clipBox = nullptr);
+void TextLine(
+	Font* font,
+	int size,
+	float x,
+	float y,
+	StringView text,
+	Color4b color,
+	TextHAlign align = TextHAlign::Left,
+	TextBaseline baseline = TextBaseline::Default,
+	AABB2f* clipBox = nullptr);
+inline void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox = nullptr)
+{
+	TextLine(font, size, x, y, text, color, TextHAlign::Left, baseline, clipBox);
+}
 } // draw
 
 struct CachedFontRef

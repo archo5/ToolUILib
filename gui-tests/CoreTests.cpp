@@ -995,19 +995,19 @@ struct SubUITest : ui::Buildable
 		const int size = 12;
 
 		ui::draw::RectCol(r.x0, r.y0, r.x0 + 50, r.y0 + 50, PickColor(0, { 0, 0, 1, 0.5f }, { 0, 1, 0, 0.5f }, { 1, 0, 0, 0.5f }));
-		ui::draw::TextLine(font, size, r.x0 + 25 - ui::GetTextWidth(font, size, "Button") / 2, r.y0 + 25 + size / 2, "Button", ui::Color4b::White());
+		ui::draw::TextLine(font, size, r.x0 + 25, r.y0 + 25, "Button", ui::Color4b::White(), ui::TextHAlign::Center, ui::TextBaseline::Middle);
 
 		auto ddr = ui::UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + draggableY, 10);
 		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(1, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
-		ui::draw::TextLine(font, size, r.x0 + draggableX - ui::GetTextWidth(font, size, "D&D") / 2, r.y0 + draggableY + size / 2, "D&D", ui::Color4b::White());
+		ui::draw::TextLine(font, size, r.x0 + draggableX, r.y0 + draggableY, "D&D", ui::Color4b::White(), ui::TextHAlign::Center, ui::TextBaseline::Middle);
 
 		ddr = ui::UIRect::FromCenterExtents(r.x0 + draggableX, r.y0 + 5, 10, 5);
 		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(2, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
-		ui::draw::TextLine(font, size, r.x0 + draggableX - ui::GetTextWidth(font, size, "x") / 2, r.y0 + 5 + size / 2, "x", ui::Color4b::White());
+		ui::draw::TextLine(font, size, r.x0 + draggableX, r.y0 + 5, "x", ui::Color4b::White(), ui::TextHAlign::Center, ui::TextBaseline::Middle);
 
 		ddr = ui::UIRect::FromCenterExtents(r.x0 + 5, r.y0 + draggableY, 5, 10);
 		ui::draw::RectCol(ddr.x0, ddr.y0, ddr.x1, ddr.y1, PickColor(3, { 0, 1, 1, 0.5f }, { 1, 1, 0, 0.5f }, { 1, 0, 1, 0.5f }));
-		ui::draw::TextLine(font, size, r.x0 + 5 - ui::GetTextWidth(font, size, "y") / 2, r.y0 + draggableY + size / 2, "y", ui::Color4b::White());
+		ui::draw::TextLine(font, size, r.x0 + 5, r.y0 + draggableY, "y", ui::Color4b::White(), ui::TextHAlign::Center, ui::TextBaseline::Middle);
 	}
 	void OnEvent(ui::Event& e) override
 	{

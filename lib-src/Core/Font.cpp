@@ -251,7 +251,7 @@ float MultiplyTextResolutionScale(float ntrs)
 
 float GetTextWidth(Font* font, int size, StringView text)
 {
-	auto& sctx = font->GetSizeContext(size * g_textResScale);
+	auto& sctx = font->GetSizeContext(int(roundf(size * g_textResScale)));
 	float invScale = 1.0f / g_textResScale;
 	int out = 0;
 
@@ -274,7 +274,7 @@ int g_tmWidth;
 void TextMeasureBegin(Font* font, int size)
 {
 	g_tmFont = font;
-	g_tmSizeCtx = &font->GetSizeContext(size * g_textResScale);
+	g_tmSizeCtx = &font->GetSizeContext(int(roundf(size * g_textResScale)));
 	g_tmInvScale = 1.0f / g_textResScale;
 	g_tmWidth = 0;
 }
@@ -299,27 +299,29 @@ float TextMeasureAddChar(uint32_t ch)
 
 namespace draw {
 
-void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox)
+void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
 {
 	if (clipBox && !clipBox->IsValid())
 		return;
 
+	if (align != TextHAlign::Left)
+		x -= GetTextWidth(font, size, text) * (float(align) * 0.5f);
 	float scale = g_textResScale;
 	float invScale = 1.0f / scale;
-	auto& sctx = font->GetSizeContext(size * scale);
+	auto& sctx = font->GetSizeContext(int(roundf(size * scale)));
 	if (baseline != TextBaseline::Default)
 	{
 		// https://drafts.csswg.org/css-inline/#baseline-synthesis-em
 		switch (baseline)
 		{
 		case TextBaseline::Top:
-			y += sctx.asc * (sctx.size / (sctx.asc - sctx.desc));
+			y += sctx.asc * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
 			break;
 		case TextBaseline::Middle:
-			y += (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc));
+			y += (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
 			break;
 		case TextBaseline::Bottom:
-			y += sctx.desc * (sctx.size / (sctx.asc - sctx.desc));
+			y += sctx.desc * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
 			break;
 		}
 	}

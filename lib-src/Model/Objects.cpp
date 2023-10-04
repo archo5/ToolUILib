@@ -902,7 +902,7 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 
 	auto r = GetFinalRect();
 	float w = r.x1 - r.x0;
-	draw::TextLine(font, fs->size, r.x0, (r.y0 + r.y1) / 2, text, ctx.textColor, TextBaseline::Middle, &r);
+	draw::TextLine(font, fs->size, r.x0, r.GetCenterY(), text, ctx.textColor, TextBaseline::Middle, &r);
 }
 
 Rangef TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -930,9 +930,7 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
-	float w = r.x1 - r.x0;
-	float tw = GetTextWidth(font, fs->size, text);
-	draw::TextLine(font, fs->size, r.x0 + w * 0.5f - tw * 0.5f, (r.y0 + r.y1) / 2, text, ctx.textColor, TextBaseline::Middle);
+	draw::TextLine(font, fs->size, r.GetCenterX(), r.GetCenterY(), text, ctx.textColor, TextHAlign::Center, TextBaseline::Middle);
 }
 
 
