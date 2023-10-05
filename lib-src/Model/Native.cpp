@@ -2187,6 +2187,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_ERASEBKGND:
 		return FALSE;
 	case WM_PAINT:
+		// fix asserts causing recursive WM_PAINT redraw
+		::ValidateRect(hWnd, nullptr);
 		if (auto* window = GetNativeWindow(hWnd))
 		{
 			window->Redraw(false);
