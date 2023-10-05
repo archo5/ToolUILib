@@ -427,7 +427,7 @@ struct OrbitCamera : CameraBase
 {
 	OrbitCamera(bool rh = false);
 	// returns true if the camera was modified
-	bool OnEvent(Event& e);
+	bool OnEvent(Event& e, const UIRect* rect = nullptr);
 	void SerializeState(IObjectIterator& oi, const FieldInfo& FI);
 
 	void Rotate(float dx, float dy);

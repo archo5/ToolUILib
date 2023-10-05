@@ -1118,11 +1118,11 @@ OrbitCamera::OrbitCamera(bool rh) : rightHanded(rh)
 	_UpdateViewMatrix();
 }
 
-bool OrbitCamera::OnEvent(Event& e)
+bool OrbitCamera::OnEvent(Event& e, const UIRect* rect)
 {
 	if (e.IsPropagationStopped())
 		return false;
-	if (e.type == EventType::ButtonDown)
+	if (e.type == EventType::ButtonDown && (!rect || rect->Contains(e.topLevelPosition)))
 	{
 		if (e.GetButton() == rotateButton)
 		{
@@ -1151,7 +1151,10 @@ bool OrbitCamera::OnEvent(Event& e)
 		if (rotating)
 			Rotate(e.delta.x * rotationSpeed, e.delta.y * rotationSpeed);
 		if (panning)
-			Pan(e.delta.x / e.current->GetFinalRect().GetWidth(), e.delta.y / e.current->GetFinalRect().GetHeight());
+		{
+			auto& r = rect ? *rect : e.current->GetFinalRect();
+			Pan(e.delta.x / r.GetWidth(), e.delta.y / r.GetHeight());
+		}
 		return rotating || panning;
 	}
 	if (e.type == EventType::MouseScroll)
@@ -1220,10 +1223,11 @@ void OrbitCamera::_UpdateViewMatrix()
 	float cy = cosf(yaw * DEG2RAD);
 	float sy = sinf(yaw * DEG2RAD);
 	Vec3f dir = { cy * cp, sy * cp, sp };
+	Vec3f up = { cy * -sp, sy * -sp, cp };
 	Vec3f pos = pivot + dir * distance;
 	Mat4f vm = rightHanded
-		? Mat4f::LookAtRH(pos, pivot, { 0, 0, 1 })
-		: Mat4f::LookAtLH(pos, pivot, { 0, 0, 1 });
+		? Mat4f::LookAtRH(pos, pivot, up)
+		: Mat4f::LookAtLH(pos, pivot, up);
 
 	SetViewMatrix(vm);
 }
