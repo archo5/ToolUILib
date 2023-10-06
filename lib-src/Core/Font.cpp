@@ -129,6 +129,13 @@ struct Font
 		return *gv;
 	}
 
+	float FindKerning(int size, u32 prevCP, u32 currCP)
+	{
+		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(size));
+		int kern = stbtt_GetCodepointKernAdvance(&info, prevCP, currCP);
+		return kern * scale;
+	}
+
 	FontKey key;
 	BufferHandle data;
 	stbtt_fontinfo info;
@@ -254,6 +261,7 @@ float GetTextWidth(Font* font, int size, StringView text)
 	auto& sctx = font->GetSizeContext(int(roundf(size * g_textResScale)));
 	float invScale = 1.0f / g_textResScale;
 	int out = 0;
+	u32 prevChar = 0;
 
 	UTF8Iterator it(text);
 	for (;;)
@@ -262,21 +270,25 @@ float GetTextWidth(Font* font, int size, StringView text)
 		if (ch == UTF8Iterator::END)
 			break;
 
-		out += int(roundf(font->FindGlyph(sctx, ch, false).xadv * invScale));
+		float kern = font->FindKerning(sctx.size, prevChar, ch);
+		prevChar = ch;
+		out += int(roundf((font->FindGlyph(sctx, ch, false).xadv + kern) * invScale));
 	}
 	return float(out);
 }
 
 static Font* g_tmFont;
 static Font::SizeContext* g_tmSizeCtx;
-float g_tmInvScale;
-int g_tmWidth;
+static float g_tmInvScale;
+static int g_tmWidth;
+static u32 g_tmPrevChar;
 void TextMeasureBegin(Font* font, int size)
 {
 	g_tmFont = font;
 	g_tmSizeCtx = &font->GetSizeContext(int(roundf(size * g_textResScale)));
 	g_tmInvScale = 1.0f / g_textResScale;
 	g_tmWidth = 0;
+	g_tmPrevChar = 0;
 }
 
 void TextMeasureEnd()
@@ -284,16 +296,20 @@ void TextMeasureEnd()
 	g_tmFont = nullptr;
 	g_tmSizeCtx = nullptr;
 	g_tmInvScale = 0;
+	g_tmPrevChar = 0;
 }
 
 void TextMeasureReset()
 {
 	g_tmWidth = 0;
+	g_tmPrevChar = 0;
 }
 
 float TextMeasureAddChar(uint32_t ch)
 {
-	return float(g_tmWidth += int(roundf(g_tmFont->FindGlyph(*g_tmSizeCtx, ch, false).xadv * g_tmInvScale)));
+	float kern = g_tmFont->FindKerning(g_tmSizeCtx->size, g_tmPrevChar, ch);
+	g_tmPrevChar = ch;
+	return float(g_tmWidth += int(roundf((g_tmFont->FindGlyph(*g_tmSizeCtx, ch, false).xadv + kern) * g_tmInvScale)));
 }
 
 
@@ -328,6 +344,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
 
+	u32 prevChar = 0;
 	UTF8Iterator it(text);
 	for (;;)
 	{
@@ -335,8 +352,11 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 		if (ch == UTF8Iterator::END)
 			break;
 
+		float kern = font->FindKerning(sctx.size, prevChar, ch);
+		//if (::GetTickCount() % 1000 < 300) kern = 0;
+		prevChar = ch;
 		auto gv = font->FindGlyph(sctx, ch, true);
-		float x0 = gv.xoff * invScale + x;
+		float x0 = gv.xoff * invScale + x + kern;
 		float y0 = gv.yoff * invScale + y;
 		AABB2f posbox = { x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale };
 		if (clipBox)
@@ -359,7 +379,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 		{
 			draw::RectColTex(posbox, color, gv.img);
 		}
-		x += roundf(gv.xadv) * invScale;
+		x += roundf(gv.xadv + kern) * invScale;
 	}
 }
 
