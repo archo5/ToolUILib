@@ -132,7 +132,12 @@ struct Font
 	float FindKerning(int size, u32 prevCP, u32 currCP)
 	{
 		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(size));
+
+		u64 key = (u64(prevCP) << 32) | currCP;
+		if (auto* p = kerning.GetValuePtr(key))
+			return *p * scale;
 		int kern = stbtt_GetCodepointKernAdvance(&info, prevCP, currCP);
+		kerning.Insert(key, kern);
 		return kern * scale;
 	}
 
@@ -140,6 +145,7 @@ struct Font
 	BufferHandle data;
 	stbtt_fontinfo info;
 	HashMap<int, SizeContext> sizes;
+	HashMap<u64, int> kerning;
 };
 
 
