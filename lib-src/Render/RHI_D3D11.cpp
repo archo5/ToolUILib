@@ -191,7 +191,7 @@ static ID3D11PixelShader* g_psDraw3DUnlit = nullptr;
 ArrayView<IRHIListener*> GetListeners();
 
 
-Array<std::string> GraphicsAdapters::All()
+Array<GraphicsAdapters::Info> GraphicsAdapters::All(u32 flags)
 {
 	auto* factory = g_dxgiFactory;
 	if (factory)
@@ -201,17 +201,60 @@ Array<std::string> GraphicsAdapters::All()
 		D3DCHK(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
 	}
 
-	Array<std::string> ret;
+	Array<GraphicsAdapters::Info> ret;
 	for (UINT i = 0;; i++)
 	{
 		IDXGIAdapter* adapter = nullptr;
 		HRESULT hr = factory->EnumAdapters(i, &adapter);
 		if (hr == DXGI_ERROR_NOT_FOUND)
 			break;
+		D3DCHK(hr);
 
 		DXGI_ADAPTER_DESC desc;
 		D3DCHK(adapter->GetDesc(&desc));
-		ret.Append(WCHARtoUTF8(desc.Description));
+		ret.Append({ WCHARtoUTF8(desc.Description) });
+
+		if (flags & Info_Monitors)
+		{
+			for (UINT j = 0;; j++)
+			{
+				IDXGIOutput* output = nullptr;
+				hr = adapter->EnumOutputs(j, &output);
+				if (hr == DXGI_ERROR_NOT_FOUND)
+					break;
+				D3DCHK(hr);
+
+				DXGI_OUTPUT_DESC odesc;
+				D3DCHK(output->GetDesc(&odesc));
+				ret.Last().monitors.Append({ MonitorID(odesc.Monitor) });
+				auto& M = ret.Last().monitors.Last();
+
+				if (flags & Info_MonitorNames)
+					M.name = Monitors::GetName(MonitorID(odesc.Monitor));
+
+				if (flags & Info_DisplayModes)
+				{
+					auto fmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+					auto flags = DXGI_ENUM_MODES_SCALING;
+					Array<DXGI_MODE_DESC> modes;
+					UINT modeCount = 0;
+					D3DCHK(output->GetDisplayModeList(fmt, flags, &modeCount, nullptr));
+					modes.Resize(modeCount);
+					D3DCHK(output->GetDisplayModeList(fmt, flags, &modeCount, modes.Data()));
+					modes.Resize(modeCount);
+
+					M.displayModes.Reserve(modeCount / 2); // they seem to sometimes double/triple with scaling (unspecified/centered/stretched)
+					for (auto& mode : modes)
+					{
+						if (mode.Scaling != DXGI_MODE_SCALING_UNSPECIFIED)
+							continue;
+						M.displayModes.Append({ mode.Width, mode.Height, mode.RefreshRate.Numerator, mode.RefreshRate.Denominator });
+					}
+				}
+
+				SAFE_RELEASE(output);
+			}
+		}
 
 		SAFE_RELEASE(adapter);
 	}
@@ -384,10 +427,10 @@ struct RenderContext
 				mode.Width = desc.DesktopCoordinates.right - desc.DesktopCoordinates.left;
 				mode.Height = desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top;
 			}
-			if (efi.refreshRate)
+			if (efi.refreshRate.num)
 			{
-				mode.RefreshRate.Numerator = efi.refreshRate;
-				mode.RefreshRate.Denominator = 1;
+				mode.RefreshRate.Numerator = efi.refreshRate.num;
+				mode.RefreshRate.Denominator = efi.refreshRate.denom;
 			}
 			D3DCHK(swapChain->ResizeTarget(&mode));
 

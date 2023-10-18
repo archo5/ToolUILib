@@ -38,11 +38,29 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconT
 } // platform
 
 
+struct RefreshRate
+{
+	u32 num = 0;
+	u32 denom = 1;
+
+	bool operator == (const RefreshRate& o) const
+	{
+		// do not do more advanced checks since a driver may change behavior based on exact numbers
+		return num == o.num && denom == o.denom;
+	}
+	bool operator != (const RefreshRate& o) const { return !(*this == o); }
+
+	bool EqualTo(const RefreshRate& o) const
+	{
+		return num * o.denom == o.num * denom;
+	}
+};
+
 struct DisplayMode
 {
 	u32 width = 0;
 	u32 height = 0;
-	u32 refreshRate = 0;
+	RefreshRate refreshRate = { 0, 1 };
 };
 
 typedef struct Monitor_* MonitorID;
@@ -63,7 +81,27 @@ struct Monitors
 namespace rhi {
 struct GraphicsAdapters
 {
-	static Array<std::string> All();
+	enum InfoFlags
+	{
+		Info_Monitors = 1 << 0,
+		Info_MonitorNames = Info_Monitors | (1 << 1),
+		Info_DisplayModes = Info_Monitors | (1 << 2),
+		Info_All = Info_Monitors | Info_MonitorNames | Info_DisplayModes,
+	};
+
+	struct Info
+	{
+		struct Monitor
+		{
+			MonitorID id;
+			std::string name;
+			Array<DisplayMode> displayModes;
+		};
+		std::string name;
+		Array<Monitor> monitors;
+	};
+
+	static Array<Info> All(u32 flags = Info_All);
 
 	static void GetInitial(int& index, StringView& name);
 	static void SetInitialByName(StringView name); // empty = default
@@ -153,7 +191,7 @@ struct ExclusiveFullscreenInfo
 {
 	Size2i size;
 	MonitorID monitor = nullptr;
-	int refreshRate = 0;
+	RefreshRate refreshRate = { 0, 1 };
 
 	bool operator == (const ExclusiveFullscreenInfo& o) const
 	{

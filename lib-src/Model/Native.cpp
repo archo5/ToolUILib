@@ -569,15 +569,14 @@ Array<DisplayMode> Monitors::GetAvailableDisplayModes(MonitorID id)
 	if (::GetMonitorInfoW(HMONITOR(id), &info))
 	{
 		Array<DisplayMode> ret;
-		DWORD n = 0;
+		ret.Reserve(35); // 28-32 for a generic 1080p monitor (different collections)
 		DEVMODEW mode;
 		memset(&mode, 0, sizeof(mode));
 		mode.dmSize = sizeof(DEVMODEW);
-		while (::EnumDisplaySettingsExW(info.szDevice, n, &mode, 0))
+		for (DWORD n = 0; ::EnumDisplaySettingsExW(info.szDevice, n, &mode, 0); n++)
 		{
-			if (mode.dmBitsPerPel == 32)
-				ret.Append({ mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency });
-			n++;
+			if (mode.dmBitsPerPel == 32 && mode.dmDisplayFixedOutput == DMDFO_DEFAULT)
+				ret.Append({ mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency, 1 });
 		}
 		return ret;
 	}

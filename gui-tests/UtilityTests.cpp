@@ -339,7 +339,7 @@ void Test_Fullscreen()
 struct OSCommunicationTest : ui::Buildable
 {
 	ui::Array<std::string> monitors;
-	ui::Array<std::string> gfxAdapters;
+	ui::Array<ui::rhi::GraphicsAdapters::Info> gfxAdapters;
 
 	OSCommunicationTest()
 	{
@@ -397,7 +397,19 @@ struct OSCommunicationTest : ui::Buildable
 			WPush<ui::StackTopDownLayoutElement>();
 			{
 				for (auto& g : gfxAdapters)
-					WMakeWithText<ui::LabelFrame>(g);
+				{
+					auto text = g.name;
+					text += " monitors:(";
+					for (auto mon : g.monitors)
+					{
+						text += mon.name;
+						text += ",";
+					}
+					if (text.back() == ',')
+						text.pop_back();
+					text.push_back(')');
+					WMakeWithText<ui::LabelFrame>(text);
+				}
 			}
 			WPop();
 			WPop();
@@ -467,7 +479,7 @@ struct OSCommunicationTest : ui::Buildable
 			auto res = ui::Monitors::GetAvailableDisplayModes(id);
 			for (auto r : res)
 			{
-				printf("- resolution: %dx%d (%d Hz)\n", int(r.width), int(r.height), int(r.refreshRate));
+				printf("- resolution: %dx%d (%d Hz)\n", int(r.width), int(r.height), int(r.refreshRate.num));
 			}
 		}
 	}
@@ -475,6 +487,18 @@ struct OSCommunicationTest : ui::Buildable
 	void ReloadGfxAdapterInfo()
 	{
 		gfxAdapters = ui::rhi::GraphicsAdapters::All();
+		for (auto& A : gfxAdapters)
+		{
+			printf("Adapter: \"%s\"\n", A.name.c_str());
+			for (auto& M : A.monitors)
+			{
+				printf("  Monitor: \"%s\" (%p) [%zu modes]\n", M.name.c_str(), (void*)M.id, M.displayModes.Size());
+				for (auto& DM : M.displayModes)
+				{
+					printf("    Display mode: %dx%d, %g Hz\n", int(DM.width), int(DM.height), double(DM.refreshRate.num) / DM.refreshRate.denom);
+				}
+			}
+		}
 	}
 
 	ui::AnimationCallbackRequester animReq;
