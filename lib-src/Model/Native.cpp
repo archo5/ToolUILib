@@ -552,10 +552,34 @@ std::string Monitors::GetName(MonitorID id)
 		memset(&dd, 0, sizeof(dd));
 		dd.cb = sizeof(dd);
 
-		if (EnumDisplayDevicesW(info.szDevice, 0, &dd, 0))
+		if (::EnumDisplayDevicesW(info.szDevice, 0, &dd, 0))
 		{
 			return WCHARtoUTF8(dd.DeviceString);
 		}
+	}
+	return {};
+}
+
+Array<DisplayMode> Monitors::GetAvailableDisplayModes(MonitorID id)
+{
+	MONITORINFOEXW info;
+	memset(&info, 0, sizeof(info));
+	info.cbSize = sizeof(info);
+
+	if (::GetMonitorInfoW(HMONITOR(id), &info))
+	{
+		Array<DisplayMode> ret;
+		DWORD n = 0;
+		DEVMODEW mode;
+		memset(&mode, 0, sizeof(mode));
+		mode.dmSize = sizeof(DEVMODEW);
+		while (::EnumDisplaySettingsExW(info.szDevice, n, &mode, 0))
+		{
+			if (mode.dmBitsPerPel == 32)
+				ret.Append({ mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency });
+			n++;
+		}
+		return ret;
 	}
 	return {};
 }

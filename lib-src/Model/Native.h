@@ -38,6 +38,13 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconT
 } // platform
 
 
+struct DisplayMode
+{
+	u32 width = 0;
+	u32 height = 0;
+	u32 refreshRate = 0;
+};
+
 typedef struct Monitor_* MonitorID;
 struct Monitors
 {
@@ -49,6 +56,7 @@ struct Monitors
 	static bool IsPrimary(MonitorID id);
 	static AABB2i GetScreenArea(MonitorID id);
 	static std::string GetName(MonitorID id);
+	static Array<DisplayMode> GetAvailableDisplayModes(MonitorID id);
 };
 
 

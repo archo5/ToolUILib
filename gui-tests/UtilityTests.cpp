@@ -462,6 +462,13 @@ struct OSCommunicationTest : ui::Buildable
 				name.c_str(),
 				rect.x0, rect.y0, rect.x1, rect.y1);
 			monitors.Append(info);
+
+			puts(info.c_str());
+			auto res = ui::Monitors::GetAvailableDisplayModes(id);
+			for (auto r : res)
+			{
+				printf("- resolution: %dx%d (%d Hz)\n", int(r.width), int(r.height), int(r.refreshRate));
+			}
 		}
 	}
 
