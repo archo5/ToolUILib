@@ -261,6 +261,7 @@ struct SequenceEditor : Buildable
 	EditorItemContentsLayoutPreset itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 	bool allowDelete = true;
 	bool allowDuplicate = true;
+	bool allowDrag = true;
 
 	ISequence* _sequence = nullptr;
 	ISelectionStorage* _selStorage = nullptr;

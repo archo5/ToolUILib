@@ -32,7 +32,6 @@ void SequenceItemElement::OnReset()
 {
 	Selectable::OnReset();
 
-	SetFlag(UIObject_DB_Draggable, true);
 	SetPadding(16, 0, 0, 0);
 
 	seqEd = nullptr;
@@ -46,7 +45,7 @@ void SequenceItemElement::OnEvent(Event& e)
 	if (e.type == EventType::ContextMenu)
 		ContextMenu();
 
-	if (e.context->DragCheck(e, MouseButton::Left))
+	if (seqEd->allowDrag && e.target == e.current && e.context->DragCheck(e, MouseButton::Left))
 	{
 		DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->SetKeyboardFocus(nullptr);
@@ -125,6 +124,8 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 
 	Selectable::Init(isSel || dragging);
 	SetFlag(UIObject_NoPaint, dragging);
+	if (se->allowDrag)
+		SetFlag(UIObject_DB_Draggable, true);
 }
 
 
@@ -185,6 +186,9 @@ void SequenceEditor::OnReset()
 
 	itemUICallback = {};
 	itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
+	allowDelete = true;
+	allowDuplicate = true;
+	allowDrag = true;
 	_sequence = nullptr;
 	_selStorage = nullptr;
 	_ctxMenuSrc = nullptr;
