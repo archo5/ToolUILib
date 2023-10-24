@@ -53,6 +53,7 @@ static void SetName(ID3D11DeviceChild* dch, ui::StringView name)
 {
 	if (!dch)
 		return;
+	dch->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr); // in case there's any prior data
 	dch->SetPrivateData(WKPDID_D3DDebugObjectName, name.Size(), name.Data());
 }
 
