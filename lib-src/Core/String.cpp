@@ -83,6 +83,8 @@ size_t StringView::FindFirstAtCI(StringView sub, size_t from, size_t def) const
 
 size_t StringView::FindLastAt(StringView sub, size_t from, size_t def) const
 {
+	if (_size < sub._size)
+		return def;
 	for (size_t i = min(_size - sub._size, from) + 1; i <= _size; )
 	{
 		i--;
