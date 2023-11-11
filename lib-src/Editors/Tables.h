@@ -142,6 +142,8 @@ struct TableView : FrameElement
 	size_t GetHoverRow() const;
 
 	bool enableRowHeader = true;
+	bool enableColumnHeader = true;
+	bool expandLastColumn = false;
 	ScrollbarV scrollbarV;
 	float yOff = 0;
 

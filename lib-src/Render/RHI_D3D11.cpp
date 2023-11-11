@@ -814,12 +814,14 @@ void GlobalFree()
 
 	SAFE_RELEASE(g_dxgiFactory);
 	SAFE_RELEASE(g_dxgiAdapter);
-	SAFE_RELEASE(g_ctx);
 
 #ifdef D3D_DUMP_LIVE_OBJECTS
+	g_ctx->ClearState();
+	g_ctx->Flush();
 	ID3D11Debug* dbg = nullptr;
 	g_dev->QueryInterface(__uuidof(ID3D11Debug), (void**)&dbg);
 #endif
+	SAFE_RELEASE(g_ctx);
 	SAFE_RELEASE(g_dev);
 
 #ifdef D3D_DUMP_LIVE_OBJECTS

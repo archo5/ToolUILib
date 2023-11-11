@@ -240,6 +240,7 @@ void TableView::OnReset()
 	expandButtonStyle = *GetCurrentTheme()->GetStruct(sid_iconstyle_tree_expand);
 
 	enableRowHeader = true;
+	enableColumnHeader = true;
 	_impl->dataSource = nullptr;
 	_impl->selStorage = nullptr;
 	_impl->ctxMenuSrc = nullptr;
@@ -264,7 +265,6 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 
 	auto RC = GetContentRect();
 
-	auto padCH = style.colHeaderPadding;
 	auto padC = style.cellPadding;
 
 	UIRect padRH = {};
@@ -275,7 +275,13 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
-	float chh = 20 + padCH.y0 + padCH.y1;
+	UIRect padCH = {};
+	float chh = 0;
+	if (enableColumnHeader)
+	{
+		padCH = style.colHeaderPadding;
+		chh = 20 + padCH.y0 + padCH.y1;
+	}
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = max(rhh, cellh);
 
@@ -337,43 +343,48 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 		draw::PopScissorRect();
 	}
 
-	// - column header
-	ContentPaintAdvice colcpa = cpa;
-	draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh });
-	// background:
-	for (size_t c = 0; c < nc; c++)
+	if (enableColumnHeader)
 	{
-		info.rect =
+		// - column header
+		ContentPaintAdvice colcpa = cpa;
+		draw::PushScissorRect(UIRect{ RC.x0 + rhw, RC.y0, RC.x1, RC.y0 + chh });
+		// background:
+		for (size_t c = 0; c < nc; c++)
 		{
-			RC.x0 + rhw + _impl->colEnds[c],
-			RC.y0,
-			RC.x0 + rhw + _impl->colEnds[c + 1],
-			RC.y0 + chh,
-		};
-		colcpa = style.colHeaderBackgroundPainter->Paint(info);
-	}
-	// text:
-	auto* colHeaderFont = style.colHeaderFont.GetFont();
-	for (size_t c = 0; c < nc; c++)
-	{
-		UIRect rect =
+			info.rect =
+			{
+				RC.x0 + rhw + _impl->colEnds[c],
+				RC.y0,
+				RC.x0 + rhw + _impl->colEnds[c + 1],
+				RC.y0 + chh,
+			};
+			colcpa = style.colHeaderBackgroundPainter->Paint(info);
+		}
+		// text:
+		auto* colHeaderFont = style.colHeaderFont.GetFont();
+		for (size_t c = 0; c < nc; c++)
 		{
-			RC.x0 + rhw + _impl->colEnds[c],
-			RC.y0,
-			RC.x0 + rhw + _impl->colEnds[c + 1],
-			RC.y0 + chh,
-		};
-		rect = rect.ShrinkBy(padCH);
-		draw::TextLine(
-			colHeaderFont,
-			style.colHeaderFont.size,
-			rect.x0, (rect.y0 + rect.y1) / 2,
-			_impl->dataSource->GetColName(c),
-			colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
-			TextBaseline::Middle,
-			&rect);
+			UIRect rect =
+			{
+				RC.x0 + rhw + _impl->colEnds[c],
+				RC.y0,
+				RC.x0 + rhw + _impl->colEnds[c + 1],
+				RC.y0 + chh,
+			};
+			if (expandLastColumn && c + 1 == nc)
+				rect.x1 = RC.x1;
+			rect = rect.ShrinkBy(padCH);
+			draw::TextLine(
+				colHeaderFont,
+				style.colHeaderFont.size,
+				rect.x0, (rect.y0 + rect.y1) / 2,
+				_impl->dataSource->GetColName(c),
+				colcpa.HasTextColor() ? colcpa.GetTextColor() : ctx.textColor,
+				TextBaseline::Middle,
+				&rect);
+		}
+		draw::PopScissorRect();
 	}
-	draw::PopScissorRect();
 
 	// - cells
 	ContentPaintAdvice cellcpa = cpa;
@@ -398,6 +409,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				RC.x0 + rhw + _impl->colEnds[c + 1],
 				RC.y0 + chh - yOff + h * (r + 1),
 			};
+			if (expandLastColumn && c + 1 == nc)
+				info.rect.x1 = RC.x1;
 			cellcpa = style.cellBackgroundPainter->Paint(info);
 		}
 	}
@@ -441,6 +454,8 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 				rect.x0 += rowRef.depth * 20 + h;
 			if (_impl->dataSource->GetIcon(rowRef.id, c))
 				rect.x0 += h;
+			if (expandLastColumn && c + 1 == nc)
+				rect.x1 = RC.x1;
 			rect = rect.ShrinkBy(padC);
 			draw::TextLine(
 				cellFont,
@@ -488,7 +503,6 @@ void TableView::OnEvent(Event& e)
 {
 	auto RC = GetContentRect();
 
-	auto padCH = style.colHeaderPadding;
 	auto padC = style.cellPadding;
 
 	float rhw = 0, rhh = 0;
@@ -498,7 +512,12 @@ void TableView::OnEvent(Event& e)
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
-	float chh = 20 + padCH.y0 + padCH.y1;
+	float chh = 0;
+	if (enableColumnHeader)
+	{
+		auto padCH = style.colHeaderPadding;
+		chh = 20 + padCH.y0 + padCH.y1;
+	}
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = max(rhh, cellh);
 
@@ -678,7 +697,6 @@ size_t TableView::GetRowAt(float y)
 {
 	auto RC = GetContentRect();
 
-	auto padCH = style.colHeaderPadding;
 	auto padC = style.cellPadding;
 
 	float rhh = 0;
@@ -687,7 +705,12 @@ size_t TableView::GetRowAt(float y)
 		auto padRH = style.rowHeaderPadding;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
-	float chh = 20 + padCH.y0 + padCH.y1;
+	float chh = 0;
+	if (enableColumnHeader)
+	{
+		auto padCH = style.colHeaderPadding;
+		chh = 20 + padCH.y0 + padCH.y1;
+	}
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = max(rhh, cellh);
 
@@ -711,7 +734,6 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 
 	auto RC = GetContentRect();
 
-	auto padCH = style.colHeaderPadding;
 	auto padC = style.cellPadding;
 
 	float rhw = 0, rhh = 0;
@@ -721,7 +743,12 @@ UIRect TableView::GetCellRect(size_t col, size_t row)
 		rhw = 80 + padRH.x0 + padRH.x1;
 		rhh = 20 + padRH.y0 + padRH.y1;
 	}
-	float chh = 20 + padCH.y0 + padCH.y1;
+	float chh = 0;
+	if (enableColumnHeader)
+	{
+		auto padCH = style.colHeaderPadding;
+		chh = 20 + padCH.y0 + padCH.y1;
+	}
 	float cellh = 20 + padC.y0 + padC.y1;
 	float h = max(rhh, cellh);
 

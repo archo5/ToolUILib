@@ -58,7 +58,8 @@ struct COMInit
 
 	COMInit()
 	{
-		if (SUCCEEDED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)))
+		if (SUCCEEDED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)) ||
+			SUCCEEDED(::CoInitializeEx(nullptr, COINIT_MULTITHREADED)))
 			success = true;
 	}
 	~COMInit()
