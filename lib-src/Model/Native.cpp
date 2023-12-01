@@ -2345,7 +2345,7 @@ void operator delete[](void* p)
 
 void dumpallocinfo()
 {
-	printf("- allocs:%u new:%u delete:%u\n", (unsigned)numAllocs, (unsigned)numNew, (unsigned)numDelete);
+	fprintf(stderr, "- allocs:%u new:%u delete:%u\n", (unsigned)numAllocs, (unsigned)numNew, (unsigned)numDelete);
 }
 
 

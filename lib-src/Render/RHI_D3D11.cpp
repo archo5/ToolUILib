@@ -32,6 +32,10 @@ LogCategory LOG_RHI_D3D11("RHI-D3D11", LogLevel::Info);
 } // ui
 
 
+namespace ui {
+namespace rhi {
+
+
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
 
 #define D3DCHK(x) _Check(x, #x, __FILE__, __LINE__)
@@ -104,10 +108,6 @@ struct TempBuffer
 		g_ctx->Unmap(buffer, 0);
 	}
 };
-
-
-namespace ui {
-namespace rhi {
 
 
 struct Texture2D

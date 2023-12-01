@@ -90,7 +90,7 @@ void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, v
 	buf[at++] = '\n';
 	buf[at] = '\0';
 
-	fwrite(buf, 1, at, stdout);
+	fwrite(buf, 1, at, stderr);
 	OutputDebugStringA(buf);
 }
 
