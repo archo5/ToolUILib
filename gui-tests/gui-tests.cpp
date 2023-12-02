@@ -343,6 +343,7 @@ void Test_FileSelectionWindow();
 void Test_DirectoryChangeWatcher();
 void Test_SerializationSpeed();
 void Test_ConfigTweakable();
+void Test_TweakableValues();
 
 void Test_SequenceEditors();
 void Test_TreeEditors();
@@ -384,6 +385,7 @@ static const TestEntry coreTestEntries[] =
 	{ "Text baseline", Test_TextBaseline },
 	{ "Style painting", Test_StylePainting },
 	{ "Image set sizing", Test_ImageSetSizing },
+	{},
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },
 	{ "[Raw] Mouse", Test_RawMouseEvents },
@@ -458,6 +460,7 @@ static const TestEntry utilityTestEntries[] =
 	{},
 	{ "Serialization speed", Test_SerializationSpeed },
 	{ "Config tweakable", Test_ConfigTweakable },
+	{ "Tweakable values", Test_TweakableValues },
 };
 static const TestEntry dseditTestEntries[] =
 {

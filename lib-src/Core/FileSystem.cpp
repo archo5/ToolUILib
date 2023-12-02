@@ -502,6 +502,18 @@ uint64_t GetFileModTimeUnixMS(StringView path)
 	return t;
 }
 
+u64 GetTimeUnixMS()
+{
+	FILETIME t;
+	::GetSystemTimeAsFileTime(&t);
+	ULARGE_INTEGER uli;
+	uli.HighPart = t.dwHighDateTime;
+	uli.LowPart = t.dwLowDateTime;
+	u64 ms = uli.QuadPart / 10000; // to milliseconds
+	ms -= SEC_TO_UNIX_EPOCH * 1000;
+	return ms;
+}
+
 
 FileReadResult FileSourceSequence::ReadTextFile(StringView path)
 {

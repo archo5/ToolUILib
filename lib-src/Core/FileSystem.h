@@ -85,6 +85,7 @@ unsigned GetFileAttributes(StringView path);
 uint64_t GetFileSize(StringView path);
 uint64_t GetFileModTimeUTC(StringView path);
 uint64_t GetFileModTimeUnixMS(StringView path);
+u64 GetTimeUnixMS();
 
 // TODO allow single user only
 struct IDirectoryIterator : RefCountedST

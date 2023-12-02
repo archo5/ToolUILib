@@ -4,6 +4,7 @@
 #include "../lib-src/Model/Native.h"
 #include "../lib-src/Core/SerializationBKVT.h"
 #include "../lib-src/Core/SerializationDATO.h"
+#include "../lib-src/Core/TweakableValue.h"
 
 
 struct BasicEasingAnimTest : ui::Buildable
@@ -883,4 +884,30 @@ struct ConfigTweakableTest : ui::Buildable
 void Test_ConfigTweakable()
 {
 	ui::Make<ConfigTweakableTest>();
+}
+
+
+struct TweakableValuesTest : ui::Buildable
+{
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		float scale = UI_TWEAKABLE_VALUE(10);
+		ui::Color4b col(UI_TWEAKABLE_VALUE(200, "r"), UI_TWEAKABLE_VALUE(100, "g"), UI_TWEAKABLE_VALUE(35, "b"));
+		ui::draw::RectCol({ scale, scale, scale * 2, scale * 2 }, col);
+	}
+	void OnEnable() override
+	{
+		ui::TweakableValueSetMinReloadInterval(1000);
+	}
+	void OnDisable() override
+	{
+		ui::TweakableValueSetMinReloadInterval(-1);
+	}
+	void Build() override
+	{
+	}
+};
+void Test_TweakableValues()
+{
+	ui::Make<TweakableValuesTest>();
 }

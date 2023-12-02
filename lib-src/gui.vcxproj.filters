@@ -160,6 +160,9 @@
     <ClCompile Include="Model\ImmediateMode3D.cpp">
       <Filter>Model</Filter>
     </ClCompile>
+    <ClCompile Include="Core\TweakableValue.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -383,6 +386,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\SerializationBasic.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TweakableValue.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
