@@ -163,6 +163,9 @@
     <ClCompile Include="Core\TweakableValue.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\StrCatView.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -389,6 +392,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\TweakableValue.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\StrCatView.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

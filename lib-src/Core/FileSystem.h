@@ -55,6 +55,7 @@ std::string PathGetParent(StringView path);
 std::string PathJoin(StringView a, StringView b);
 bool PathIsAbsolute(StringView path);
 std::string PathGetAbsolute(StringView path);
+std::string PathGetResolvedIfReachable(StringView path);
 std::string PathGetRelativeTo(StringView path, StringView relativeTo);
 bool PathIsRelativeTo(StringView path, StringView relativeTo);
 

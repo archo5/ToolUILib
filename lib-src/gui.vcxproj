@@ -240,6 +240,7 @@
     <ClCompile Include="Core\SerializationDATO.cpp" />
     <ClCompile Include="Core\SerializationJSON.cpp" />
     <ClCompile Include="Core\StaticID.cpp" />
+    <ClCompile Include="Core\StrCatView.cpp" />
     <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Core\TweakableValue.cpp" />
@@ -317,6 +318,7 @@
     <ClInclude Include="Core\SerializationJSON.h" />
     <ClInclude Include="Core\SerializationBasic.h" />
     <ClInclude Include="Core\StaticID.h" />
+    <ClInclude Include="Core\StrCatView.h" />
     <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Test.h" />
     <ClInclude Include="Core\Threading.h" />

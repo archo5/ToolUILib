@@ -70,6 +70,28 @@ std::string PathGetAbsolute(StringView path)
 	return PathJoin(cwd, path);
 }
 
+std::string PathGetResolvedIfReachable(StringView path)
+{
+	auto wpath = UTF8toWCHAR(path);
+	HANDLE h = ::CreateFileW(
+		wpath.c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr);
+	if (h == INVALID_HANDLE_VALUE)
+		return {};
+	UI_DEFER(CloseHandle(h));
+
+	wchar_t buf[4096];
+	DWORD ret = GetFinalPathNameByHandleW(h, buf, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+	if (ret < 4096)
+		return WCHARtoUTF8(buf, ret);
+	return {};
+}
+
 std::string PathGetRelativeTo(StringView path, StringView relativeTo)
 {
 	auto abspath = PathGetAbsolute(path);
