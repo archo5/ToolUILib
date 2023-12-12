@@ -90,14 +90,38 @@ inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, float s) { return { lerp(a
 inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z) }; }
 
 
-struct Vec4f
+template <class T>
+struct Vec4
 {
-	float x, y, z, w;
+	T x, y, z, w;
 
-	UI_FORCEINLINE Vec3f GetVec3() const { return { x, y, z }; }
+	UI_FORCEINLINE Vec4(DoNotInitialize) {}
+	UI_FORCEINLINE Vec4() : x(0), y(0), z(0), w(0) {}
+	UI_FORCEINLINE Vec4(T f) : x(f), y(f), z(f), w(f) {}
+	UI_FORCEINLINE Vec4(T ax, T ay, T az, T aw) : x(ax), y(ay), z(az), w(aw) {}
+	UI_FORCEINLINE Vec4(Vec3<T> v, T aw = 0) : x(v.x), y(v.y), z(v.z), w(aw) {}
+
+	UI_FORCEINLINE Vec4 operator + () const { return *this; }
+	UI_FORCEINLINE Vec4 operator - () const { return { -x, -y, -z, -w }; }
+
+	UI_FORCEINLINE Vec3<T> GetVec3() const { return { x, y, z }; }
 	UI_FORCEINLINE Vec3f WDivide() const { return { x / w, y / w, z / w }; }
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		if (OnFieldMany(oi, FI, 4, &x))
+			return;
+		oi.BeginObject(FI, "Vec4");
+		OnField(oi, "x", x);
+		OnField(oi, "y", y);
+		OnField(oi, "z", z);
+		OnField(oi, "w", w);
+		oi.EndObject();
+	}
+
+	template <class U> UI_FORCEINLINE Vec4<U> Cast() const { return { U(x), U(y), U(z), U(w) }; }
 };
-UI_FORCEINLINE Vec4f V4(const Vec3f& v, float w) { return { v.x, v.y, v.z, w }; }
+using Vec4f = Vec4<float>;
 
 
 struct Quat

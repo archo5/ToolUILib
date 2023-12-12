@@ -256,6 +256,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE static AABB2 FromCenterExtents(T x, T y, T ex, T ey) { return { x - ex, y - ey, x + ex, y + ey }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, T e) { return { c.x - e, c.y - e, c.x + e, c.y + e }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, Vec2<T> e) { return { c.x - e.x, c.y - e.y, c.x + e.x, c.y + e.y }; }
+	UI_FORCEINLINE static AABB2 FromTwoPoints(Vec2<T> p0, Vec2<T> p1) { return AABB2(p0).Include(p1); }
 
 	UI_FORCEINLINE bool operator == (const AABB2& o) const { return x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1; }
 	UI_FORCEINLINE bool operator != (const AABB2& o) const { return !(*this == o); }
@@ -306,6 +307,7 @@ template<class T> struct AABB2
 
 	template <class U> UI_FORCEINLINE AABB2<U> Cast() const { return { U(x0), U(y0), U(x1), U(y1) }; }
 	template <class U> UI_FORCEINLINE AABB2<U> CastRounded() const { return { U(round(x0)), U(round(y0)), U(round(x1)), U(round(y1)) }; }
+	template <class U> UI_FORCEINLINE AABB2<U> CastFloored() const { return { U(floor(x0)), U(floor(y0)), U(floor(x1)), U(floor(y1)) }; }
 };
 template <class T> UI_FORCEINLINE AABB2<T> operator * (T f, const AABB2<T>& o) { return o * f; }
 

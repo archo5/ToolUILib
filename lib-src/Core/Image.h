@@ -71,7 +71,7 @@ struct Color4f
 {
 	static Color4f Zero() { return { 0, 0 }; }
 	static Color4f Black() { return { 0, 1 }; }
-	static Color4f White() { return { 1 }; }
+	static Color4f White() { return { 1, 1 }; }
 	static Color4f Hex(const char* hex, float a = 1)
 	{
 		char ntx[6] = {}; // copy hex with null termination to ignore garbage after the first null byte
@@ -94,12 +94,17 @@ struct Color4f
 	}
 
 	UI_FORCEINLINE Color4f() : r(1), g(1), b(1), a(1) {}
-	UI_FORCEINLINE Color4f(float f) : r(f), g(f), b(f), a(1) {}
+	UI_FORCEINLINE explicit Color4f(float f) : r(f), g(f), b(f), a(f) {}
 	UI_FORCEINLINE Color4f(float gray, float alpha) : r(gray), g(gray), b(gray), a(alpha) {}
 	UI_FORCEINLINE Color4f(float red, float green, float blue, float alpha = 1.0f) : r(red), g(green), b(blue), a(alpha) {}
 	UI_FORCEINLINE Color4f(const Color4b& c) : r(c.r / 255.f), g(c.g / 255.f), b(c.b / 255.f), a(c.a / 255.f) {}
 
 	UI_FORCEINLINE bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
+
+	Color4f operator + (const Color4f& o) const { return { r + o.r, g + o.g, b + o.b, a + o.a }; }
+	Color4f operator - (const Color4f& o) const { return { r - o.r, g - o.g, b - o.b, a - o.a }; }
+	Color4f operator * (const Color4f& o) const { return { r * o.r, g * o.g, b * o.b, a * o.a }; }
+	Color4f operator / (const Color4f& o) const { return { r / o.r, g / o.g, b / o.b, a / o.a }; }
 
 	void BlendOver(const Color4f& c)
 	{
@@ -145,6 +150,7 @@ inline Color4f Color4fLerp(const Color4f& a, const Color4f& b, const Color4f& s)
 		lerp(a.a, b.a, s.a),
 	};
 }
+UI_FORCEINLINE Color4f Color4fLerp(const Color4f& a, const Color4f& b, float s) { return Color4fLerp(a, b, Color4f(s)); }
 
 
 struct Canvas
