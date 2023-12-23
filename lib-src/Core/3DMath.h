@@ -123,6 +123,9 @@ struct Vec4
 };
 using Vec4f = Vec4<float>;
 
+inline Vec4f Vec4Lerp(const Vec4f& a, const Vec4f& b, float s) { return { lerp(a.x, b.x, s), lerp(a.y, b.y, s), lerp(a.z, b.z, s), lerp(a.w, b.w, s) }; }
+inline Vec4f Vec4Lerp(const Vec4f& a, const Vec4f& b, const Vec4f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z), lerp(a.w, b.w, s.w) }; }
+
 
 struct Quat
 {
