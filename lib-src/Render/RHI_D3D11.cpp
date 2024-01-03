@@ -168,7 +168,7 @@ static Texture2D* g_defTex = nullptr;
 static ID3D11RasterizerState* g_renderState2D = nullptr;
 static ID3D11RasterizerState* g_renderStates3D[4] = {};
 
-static ID3D11DepthStencilState* g_depthStencilStates[4] = {};
+static ID3D11DepthStencilState* g_depthStencilStates[8] = {};
 
 static ID3D11SamplerState* g_samplers[4] = {};
 
@@ -454,13 +454,14 @@ RenderContext* RenderContext::last;
 static RenderContext* g_RC;
 
 
-static void Reset2DRender()
+static void Reset2DRender(Optional<Vec2i> size = {})
 {
+	Vec2i sz = size.GetValueOrDefault(g_RC ? Vec2i(g_RC->width, g_RC->height) : Vec2i(2, 2));
 	g_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	g_ctx->RSSetState(g_renderState2D);
 	g_ctx->OMSetDepthStencilState(g_depthStencilStates[3], 0);
 	g_ctx->OMSetBlendState(g_bsAlphaBlend, nullptr, 0xffffffff);
-	float cbData[2] = { g_RC ? 2.0f / g_RC->width : 1.0f, g_RC ? -2.0f / g_RC->height : 1.0f };
+	float cbData[2] = { 2.f / sz.x, -2.f / sz.y };
 	g_tmpCB->Write(cbData, sizeof(cbData));
 	g_ctx->VSSetShader(g_vsDraw2D, nullptr, 0);
 	g_ctx->VSSetConstantBuffers(0, 1, &g_tmpCB->buffer);
@@ -619,13 +620,13 @@ void GlobalInit()
 		SetName(g_renderStates3D[i], "ui:rs3D");
 	}
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		D3D11_DEPTH_STENCIL_DESC dsd = {};
 		{
 			dsd.DepthEnable = i & 1 ? FALSE : TRUE;
 			dsd.DepthWriteMask = i & 2 ? D3D11_DEPTH_WRITE_MASK_ZERO : D3D11_DEPTH_WRITE_MASK_ALL;
-			dsd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+			dsd.DepthFunc = i & 4 ? D3D11_COMPARISON_GREATER_EQUAL : D3D11_COMPARISON_LESS_EQUAL;
 		}
 		D3DCHK(g_dev->CreateDepthStencilState(&dsd, &g_depthStencilStates[i]));
 		SetName(g_depthStencilStates[i], "ui:dss");
@@ -798,7 +799,7 @@ void GlobalFree()
 	for (int i = 0; i < 4; i++)
 		SAFE_RELEASE(g_samplers[i]);
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 8; i++)
 		SAFE_RELEASE(g_depthStencilStates[i]);
 
 	for (int i = 0; i < 4; i++)
@@ -959,9 +960,9 @@ void Clear(int r, int g, int b, int a)
 	}
 }
 
-void ClearDepthOnly()
+void ClearDepthOnly(float depth)
 {
-	g_ctx->ClearDepthStencilView(g_RC->depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	g_ctx->ClearDepthStencilView(g_RC->depthStencilView, D3D11_CLEAR_DEPTH, depth, 0);
 }
 
 void Present(RenderContext* RC)
@@ -1134,6 +1135,11 @@ void RestoreRenderStates()
 	Reset2DRender();
 }
 
+void SetupRenderStateForOutputSize(int w, int h)
+{
+	Reset2DRender(Vec2i(w, h));
+}
+
 void SetAmbientLight(const Color4f& col)
 {
 	// TODO
@@ -1196,8 +1202,10 @@ static void UploadShaderData(const Mat4f& world)
 	// DF_AlphaBlended
 	g_ctx->OMSetBlendState(g_drawFlags & DF_AlphaBlended ? g_bsAlphaBlend : g_bsNoBlend, nullptr, 0xffffffff);
 
-	// DF_ZTestOff / DF_ZWriteOff
-	unsigned dssidx = (g_drawFlags & DF_ZTestOff ? 1 : 0) | (g_drawFlags & DF_ZWriteOff ? 2 : 0);
+	// DF_ZTestOff / DF_ZWriteOff / DF_ZTestReverse
+	unsigned dssidx = (g_drawFlags & DF_ZTestOff ? 1 : 0)
+		| (g_drawFlags & DF_ZWriteOff ? 2 : 0)
+		| (g_drawFlags & DF_ZTestReverse ? 4 : 0);
 	g_ctx->OMSetDepthStencilState(g_depthStencilStates[dssidx], 0);
 
 	CBuf3D cbuf = {};

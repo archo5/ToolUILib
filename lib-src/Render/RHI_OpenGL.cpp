@@ -6,6 +6,8 @@
 #include "Render.h"
 #include "../Core/Math.h"
 
+#include "../Model/Native.h" // TODO?
+
 #define WIN32_LEAN_AND_MEAN
 #define NONLS
 #define NOMINMAX
@@ -18,6 +20,8 @@ namespace rhi {
 
 
 extern Stats g_stats;
+
+typedef BOOL __stdcall FNTY_wglSwapIntervalEXT(int);
 
 
 #define GLCHK(x) do { x; _Check(#x, __FILE__, __LINE__); } while (0)
@@ -61,6 +65,7 @@ struct RenderContext
 	HWND window;
 	HDC dc;
 	HGLRC rc;
+	FNTY_wglSwapIntervalEXT* wglSwapIntervalEXT;
 
 	static RenderContext* first;
 	static RenderContext* last;
@@ -71,6 +76,14 @@ RenderContext* RenderContext::first;
 RenderContext* RenderContext::last;
 
 ArrayView<IRHIListener*> GetListeners();
+
+
+Array<GraphicsAdapters::Info> GraphicsAdapters::All(u32 flags)
+{
+	// TODO (fallback to the platform method)
+	return {};
+}
+
 
 void GlobalInit()
 {
@@ -132,7 +145,9 @@ RenderContext* CreateRenderContext(void* window)
 	if (RenderContext::first)
 		wglShareLists(RenderContext::first->rc, RC->rc);
 
-	((BOOL(__stdcall *)(int))wglGetProcAddress("wglSwapIntervalEXT"))(0);
+	RC->wglSwapIntervalEXT = (FNTY_wglSwapIntervalEXT*)wglGetProcAddress("wglSwapIntervalEXT");
+	if (RC->wglSwapIntervalEXT)
+		RC->wglSwapIntervalEXT(0);
 
 	GLCHK(glDisable(GL_CULL_FACE));
 	GLCHK(glDisable(GL_DEPTH_TEST));
@@ -184,6 +199,20 @@ void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h)
 		L->OnAfterInitSwapChain(RC->GetPtrs());
 }
 
+void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info)
+{
+	// TODO
+}
+
+void SetVSyncInterval(RenderContext* RC, unsigned interval)
+{
+	if (RC->wglSwapIntervalEXT)
+	{
+		SetActiveContext(RC);
+		RC->wglSwapIntervalEXT(interval);
+	}
+}
+
 void BeginFrame(RenderContext* RC)
 {
 	SetActiveContext(RC);
@@ -230,9 +259,9 @@ void Clear(int r, int g, int b, int a)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void ClearDepthOnly()
+void ClearDepthOnly(float depth)
 {
-	glClearDepth(1);
+	glClearDepth(depth);
 	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
@@ -294,6 +323,11 @@ Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height,
 	GLCHK(glEnable(GL_TEXTURE_2D));
 
 	return (Texture2D*) tex;
+}
+
+void SetTextureDebugName(Texture2D* tex, StringView debugName)
+{
+	// unsupported
 }
 
 void DestroyTexture(Texture2D* tex)
@@ -373,6 +407,11 @@ void SetRenderState(unsigned drawFlags)
 		GLCHK(glDisable(GL_DEPTH_TEST));
 	else
 		GLCHK(glEnable(GL_DEPTH_TEST));
+
+	if (drawFlags & DF_ZTestReverse)
+		GLCHK(glDepthFunc(GL_GEQUAL));
+	else
+		GLCHK(glDepthFunc(GL_LEQUAL));
 
 	GLCHK(glDepthMask(drawFlags & DF_ZWriteOff ? GL_FALSE : GL_TRUE));
 

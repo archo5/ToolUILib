@@ -264,6 +264,9 @@ float MultiplyTextResolutionScale(float ntrs)
 
 float GetTextWidth(Font* font, int size, StringView text)
 {
+	if (size <= 0)
+		return 0;
+
 	auto& sctx = font->GetSizeContext(int(roundf(size * g_textResScale)));
 	float invScale = 1.0f / g_textResScale;
 	int out = 0;
@@ -324,6 +327,8 @@ namespace draw {
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
 {
 	if (clipBox && !clipBox->IsValid())
+		return;
+	if (size <= 0)
 		return;
 
 	if (align != TextHAlign::Left)

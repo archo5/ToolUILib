@@ -276,12 +276,12 @@
     <ClCompile Include="Render\RHI.cpp" />
     <ClCompile Include="Render\RHI_D3D11.cpp" />
     <ClCompile Include="Render\RHI_OpenGL.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Test|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Render\Primitives.cpp" />
     <ClCompile Include="Render\Render.cpp" />
@@ -347,7 +347,7 @@
     <ClInclude Include="Model\Graphics.h" />
     <ClInclude Include="Model\ImmediateMode.h" />
     <ClInclude Include="Model\ImmediateMode3D.h" />
-    <ClInclude Include="Model\Keyboard.h" />
+    <ClInclude Include="Model\InputDefs.h" />
     <ClInclude Include="Model\Painting.h" />
     <ClInclude Include="Model\Menu.h" />
     <ClInclude Include="Model\Native.h" />

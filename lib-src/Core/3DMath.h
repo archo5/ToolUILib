@@ -457,13 +457,6 @@ inline RayPlaneIntersectResult RayPlaneIntersect(const Vec3f& pos, const Vec3f& 
 	return { posdist / diralign, diralign };
 }
 
-inline Ray3f GetCameraRay(const Mat4f& invVP, float x, float y)
-{
-	Vec3f p0 = { x, y, 0 };
-	Vec3f p1 = { x, y, 0.5f };
-	p0 = invVP.TransformPoint(p0);
-	p1 = invVP.TransformPoint(p1);
-	return { p0, (p1 - p0).Normalized() };
-}
+Ray3f GetCameraRay(const Mat4f& invVP, float x, float y);
 
 } // ui

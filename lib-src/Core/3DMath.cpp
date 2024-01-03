@@ -431,6 +431,16 @@ TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale
 }
 
 
+Ray3f GetCameraRay(const Mat4f& invVP, float x, float y)
+{
+	Vec3f p0 = { x, y, invVP.m[2][3] > 0 ? 1.f : 0.f };
+	Vec3f p1 = { x, y, 0.5f };
+	p0 = invVP.TransformPoint(p0);
+	p1 = invVP.TransformPoint(p1);
+	return { p0, (p1 - p0).Normalized() };
+}
+
+
 #if UI_BUILD_TESTS
 #include "Test.h"
 

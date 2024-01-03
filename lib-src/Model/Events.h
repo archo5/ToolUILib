@@ -5,7 +5,7 @@
 #include "../Core/Delegate.h"
 #include "../Core/Math.h"
 
-#include "Keyboard.h"
+#include "InputDefs.h"
 
 #include <functional>
 
@@ -68,15 +68,6 @@ inline EventType UserEvent(int id)
 {
 	return EventType(int(EventType::User) + id);
 }
-
-enum class MouseButton
-{
-	Left = 0,
-	Right = 1,
-	Middle = 2,
-	X1 = 3,
-	X2 = 4,
-};
 
 enum class KeyAction
 {

@@ -76,7 +76,7 @@ void SetViewport(int x0, int y0, int x1, int y1);
 void SetScissorRect(int x0, int y0, int x1, int y1);
 
 void Clear(int r, int g, int b, int a);
-void ClearDepthOnly();
+void ClearDepthOnly(float depth = 1);
 void Present(RenderContext* RC);
 
 constexpr uint8_t TF_NOFILTER = 1 << 0;
@@ -103,6 +103,7 @@ void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, si
 void Begin3DMode(const AABB2i& rect);
 AABB2i End3DMode();
 void RestoreRenderStates();
+void SetupRenderStateForOutputSize(int w, int h);
 void SetViewMatrix(const Mat4f& m);
 void SetProjectionMatrix(const Mat4f& m);
 void SetForcedColor(const Color4b& col);
@@ -119,6 +120,7 @@ enum DrawFlags
 	DF_Cull         = 1 << 6,
 	DF_Wireframe    = 1 << 7,
 	DF_ForceColor   = 1 << 8,
+	DF_ZTestReverse = 1 << 9,
 };
 void SetRenderState(unsigned drawFlags);
 enum PrimitiveType
