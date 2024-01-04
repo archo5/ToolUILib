@@ -339,6 +339,7 @@ void Test_ThreadWorker();
 void Test_ThreadedImageRendering();
 void Test_Fullscreen();
 void Test_OSCommunication();
+void Test_SysDirPaths();
 void Test_FileSelectionWindow();
 void Test_DirectoryChangeWatcher();
 void Test_SerializationSpeed();
@@ -455,6 +456,7 @@ static const TestEntry utilityTestEntries[] =
 	{},
 	{ "Fullscreen", Test_Fullscreen },
 	{ "OS communication", Test_OSCommunication },
+	{ "System directory paths", Test_SysDirPaths },
 	{ "File selection window", Test_FileSelectionWindow },
 	{ "Directory change watcher", Test_DirectoryChangeWatcher },
 	{},

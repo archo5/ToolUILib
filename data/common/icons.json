@@ -3,6 +3,7 @@
 "close:imgset": { vectorimages = [{ path = "icons/close.svg" }] }
 "delete:imgset": { vectorimages = [{ path = "icons/delete.svg" }] }
 "play:imgset": { vectorimages = [{ path = "icons/play.svg" }] }
+"playrev:imgset": { vectorimages = [{ path = "icons/playrev.svg" }] }
 "pause:imgset": { vectorimages = [{ path = "icons/pause.svg" }] }
 "stop:imgset": { vectorimages = [{ path = "icons/stop.svg" }] }
 
@@ -10,6 +11,7 @@
 "close:painter" = { __ = "imgset", imgset = "close" }
 "delete:painter" = { __ = "imgset", imgset = "delete" }
 "play:painter" = { __ = "imgset", imgset = "play" }
+"playrev:painter" = { __ = "imgset", imgset = "playrev" }
 "pause:painter" = { __ = "imgset", imgset = "pause" }
 "stop:painter" = { __ = "imgset", imgset = "stop" }
 
@@ -17,5 +19,6 @@
 "close:IconStyle" = { width = 12, height = 12, painter = "close" }
 "delete:IconStyle" = { width = 12, height = 12, painter = "delete" }
 "play:IconStyle" = { width = 12, height = 12, painter = "play" }
+"playrev:IconStyle" = { width = 12, height = 12, painter = "playrev" }
 "pause:IconStyle" = { width = 12, height = 12, painter = "pause" }
 "stop:IconStyle" = { width = 12, height = 12, painter = "stop" }

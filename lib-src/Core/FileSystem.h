@@ -76,6 +76,21 @@ bool MoveFile(StringView from, StringView to);
 std::string GetWorkingDirectory();
 bool SetWorkingDirectory(StringView sv);
 
+enum class SystemDirectoryType : u8
+{
+	Documents,
+	Desktop,
+	Downloads,
+	Pictures,
+	Videos,
+	UserDataRoot,
+
+	Windows_LocalAppData,
+	Windows_LocalLowAppData,
+	Windows_RoamingAppData,
+};
+std::string GetSystemDirPath(SystemDirectoryType sdt);
+
 enum FileAttributes
 {
 	FA_Exists = 1 << 0,

@@ -514,6 +514,32 @@ void Test_OSCommunication()
 }
 
 
+struct SysDirPathsTest : ui::Buildable
+{
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+#define SDPE(name) WText(#name ": " + ui::GetSystemDirPath(ui::SystemDirectoryType::name))
+		SDPE(Documents);
+		SDPE(Desktop);
+		SDPE(Downloads);
+		SDPE(Pictures);
+		SDPE(Videos);
+		SDPE(UserDataRoot);
+
+		SDPE(Windows_LocalAppData);
+		SDPE(Windows_LocalLowAppData);
+		SDPE(Windows_RoamingAppData);
+#undef SDPE
+		WPop();
+	}
+};
+void Test_SysDirPaths()
+{
+	ui::Make<SysDirPathsTest>();
+}
+
+
 struct FileSelectionWindowTest : ui::Buildable
 {
 	void Build() override

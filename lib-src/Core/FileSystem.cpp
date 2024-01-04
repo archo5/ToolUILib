@@ -12,6 +12,8 @@
 
 #include <thread>
 
+#include <ShlObj.h>
+
 
 #undef CreateDirectory
 #undef MoveFile
@@ -20,6 +22,8 @@
 
 
 namespace ui {
+
+LogCategory LOG_FS("FS");
 
 std::string PathFromSystem(StringView path)
 {
@@ -254,6 +258,44 @@ std::string GetWorkingDirectory()
 bool SetWorkingDirectory(StringView sv)
 {
 	return ::SetCurrentDirectoryW(UTF8toWCHAR(sv).c_str()) != FALSE;
+}
+
+
+static KNOWNFOLDERID SDTtoKFI(SystemDirectoryType sdt)
+{
+	switch (sdt)
+	{
+	case SystemDirectoryType::Documents: return FOLDERID_Documents;
+	case SystemDirectoryType::Desktop: return FOLDERID_Desktop;
+	case SystemDirectoryType::Downloads: return FOLDERID_Downloads;
+	case SystemDirectoryType::Pictures: return FOLDERID_Pictures;
+	case SystemDirectoryType::Videos: return FOLDERID_Videos;
+	case SystemDirectoryType::UserDataRoot: return FOLDERID_Profile;
+	case SystemDirectoryType::Windows_LocalAppData: return FOLDERID_LocalAppData;
+	case SystemDirectoryType::Windows_LocalLowAppData: return FOLDERID_LocalAppDataLow;
+	case SystemDirectoryType::Windows_RoamingAppData: return FOLDERID_RoamingAppData;
+	default: return {};
+	}
+}
+
+std::string GetSystemDirPath(SystemDirectoryType sdt)
+{
+	KNOWNFOLDERID kfi = SDTtoKFI(sdt);
+	if (!InlineIsEqualGUID(kfi, {}))
+	{
+		WCHAR* str = nullptr;
+		HRESULT hr = ::SHGetKnownFolderPath(kfi, KF_FLAG_DEFAULT, nullptr, &str);
+		UI_DEFER(if (str) ::CoTaskMemFree(str));
+		if (SUCCEEDED(hr))
+			return PathFromSystem(WCHARtoUTF8(str));
+		else
+			LogError(LOG_FS, "GetSystemDirPath - SHGetKnownFolderPath failed (%08X)", unsigned(hr));
+	}
+	else
+	{
+		LogError(LOG_FS, "GetSystemDirPath - unknown type (%d)", int(sdt));
+	}
+	return {};
 }
 
 
