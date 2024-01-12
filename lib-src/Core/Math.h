@@ -95,7 +95,7 @@ template <class T> struct Vec2
 		float l = sqrtf(lsq);
 		return { x / l, y / l };
 	}
-	UI_FORCEINLINE T Abs() const { return { abs(x), abs(y) }; }
+	UI_FORCEINLINE Vec2 Abs() const { return { abs(x), abs(y) }; }
 	UI_FORCEINLINE Vec2 Perp() const { return { -y, x }; }
 	UI_FORCEINLINE Vec2 Perp2() const { return { y, -x }; }
 	Vec2 Rotated(float angle) const

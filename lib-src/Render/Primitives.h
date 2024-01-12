@@ -117,5 +117,29 @@ struct BoxSphereSettings
 void GenerateBoxSphere(const BoxSphereSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
+struct UVCapsuleSettings
+{
+	u16 numFacesH = 32; // 3+, covers 360 degrees
+	u16 numHalfFacesV = 8; // 1+, covers 90 degrees
+
+	constexpr u16 CalcVertexCount() const
+	{
+		// top: 1
+		// bottom: 1
+		// every hemisphere (of 2) strip (count = numHalfFacesV * 2): numFacesH
+		return numHalfFacesV * 2 * numFacesH + 2;
+	}
+	constexpr unsigned CalcIndexCount() const
+	{
+		// top: numFacesH
+		// bottom: numFacesH
+		// every hemisphere (of 2) strip (count = (numHalfFacesV - 1) * 2): numFacesH * 2
+		// connecting strip: numFacesH * 2
+		return 3 * (numFacesH * 2 * (2 + 2 * (numHalfFacesV - 1)));
+	}
+};
+void GenerateUVCapsule(const UVCapsuleSettings& S, Vertex_PF3CB4* outVerts, u16* outIndices, Vec3f p0, Vec3f p1, Vec3f tangent, float radius);
+
+
 } // prim
 } // ui

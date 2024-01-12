@@ -1112,14 +1112,31 @@ void DropdownMenu::OnBuildButton()
 	auto& btn = Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::DropdownButton);
 	btn.flags |= flags & UIObject_IsDisabled;
 	btn.SetFlag(UIObject_IsChecked, !!(flags & UIObject_IsChecked));
+	btn.flags |= UIObject_DB_FocusOnLeftClick;
 	if (!(flags & UIObject_IsDisabled))
 	{
-		btn.HandleEvent(EventType::ButtonDown) = [this](Event& e)
+		btn.HandleEvent() = [this](Event& e)
 		{
-			if (e.GetButton() != MouseButton::Left)
-				return;
-			SetFlag(UIObject_IsChecked, true);
-			Rebuild();
+			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
+			{
+				SetFlag(UIObject_IsChecked, true);
+				Rebuild();
+			}
+			if (e.type == EventType::KeyDown && e.shortCode == KSC_Escape)
+			{
+				SetFlag(UIObject_IsChecked, false);
+				Rebuild();
+			}
+			if (e.type == EventType::KeyAction)
+			{
+				if (e.GetKeyAction() == KeyAction::ActivateDown)
+				{
+					flags ^= UIObject_IsChecked;
+					Rebuild();
+				}
+				else
+					OnKeyActionEvent(e);
+			}
 		};
 	}
 	if (enableTooltip)
@@ -1185,9 +1202,48 @@ void CStrOptionList::BuildElement(const void* ptr, uintptr_t id, bool list)
 	Text(static_cast<const char*>(ptr));
 }
 
+uintptr_t CStrOptionList::FindAdjacent(uintptr_t start, int delta)
+{
+	auto ci = GetCount();
+	if (ci.count == 0)
+		return ci.hasEmpty ? emptyValue : start;
+
+	// convert to a combined range
+	size_t count = ci.count;
+	if (ci.hasEmpty)
+	{
+		start++;
+		count++;
+	}
+
+	if (count <= INT_MAX)
+		delta %= int(count);
+	if (delta < 0)
+		delta += count;
+	start += delta;
+	start %= count;
+
+	// revert from a combined range
+	if (ci.hasEmpty)
+		start--;
+
+	return start;
+}
+
 static const char* Next(const char* v)
 {
 	return v + strlen(v) + 1;
+}
+
+ZeroSepCStrOptionList::ZeroSepCStrOptionList(const char* s, const char* empty) : str(s), emptyStr(empty)
+{
+	size_t n = 0;
+	while (*s)
+	{
+		n++;
+		s = Next(s);
+	}
+	size = n;
 }
 
 void ZeroSepCStrOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
@@ -1207,6 +1263,19 @@ void ZeroSepCStrOptionList::IterateElements(size_t from, size_t count, std::func
 void ZeroSepCStrOptionList::BuildEmptyButtonContents()
 {
 	Text(emptyStr ? emptyStr : StringView());
+}
+
+CStrArrayOptionList::CStrArrayOptionList(NullTerminated, const char* const* a, const char* empty) : arr(a), emptyStr(empty)
+{
+	while (*a)
+		a++;
+	size = a - arr;
+}
+
+CStrArrayOptionList::CStrArrayOptionList(size_t sz, const char* const* a, const char* empty) : arr(a), size(sz), emptyStr(empty)
+{
+	while (size && !arr[size - 1])
+		size--;
 }
 
 void CStrArrayOptionList::IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
@@ -1274,6 +1343,30 @@ void DropdownMenuList::OnBuildMenuContents()
 	});
 }
 
+static void DDML_SetSelection(DropdownMenuList& ddml, ui::Event& e, uintptr_t nv)
+{
+	ddml._selected = nv;
+	e.context->OnChange(&ddml);
+	e.context->OnCommit(&ddml);
+	ddml.Rebuild();
+}
+
+void DropdownMenuList::OnKeyActionEvent(ui::Event& e)
+{
+	if (e.GetKeyAction() == KeyAction::Up)
+	{
+		auto nv = _options->FindAdjacent(_selected, -1);
+		if (_selected != nv)
+			DDML_SetSelection(*this, e, nv);
+	}
+	if (e.GetKeyAction() == KeyAction::Down)
+	{
+		auto nv = _options->FindAdjacent(_selected, +1);
+		if (_selected != nv)
+			DDML_SetSelection(*this, e, nv);
+	}
+}
+
 void DropdownMenuList::OnBuildEmptyButtonContents()
 {
 	_options->BuildEmptyButtonContents();
@@ -1294,11 +1387,8 @@ void DropdownMenuList::OnBuildMenuElement(const void* ptr, uintptr_t id)
 	{
 		if (e.GetButton() != MouseButton::Left)
 			return;
-		_selected = id;
 		SetFlag(UIObject_IsChecked, false);
-		e.context->OnChange(this);
-		e.context->OnCommit(this);
-		Rebuild();
+		DDML_SetSelection(*this, e, id);
 	});
 }
 

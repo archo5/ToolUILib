@@ -27,7 +27,7 @@ struct LogCategory
 	LogLevel level = LogLevel::Warn;
 	MulticastDelegate<LogLevel, StringView> onCategoryLogMessage;
 
-	LogCategory(const char* nm, LogLevel lev = LogLevel::Warn) : name(nm), level(lev) {}
+	explicit LogCategory(const char* nm, LogLevel lev = LogLevel::Warn) : name(nm), level(lev) {}
 };
 
 extern MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;

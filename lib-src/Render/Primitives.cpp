@@ -248,6 +248,81 @@ void GenerateBoxSphere(const BoxSphereSettings& S, Vertex_PF3CB4* outVerts, uint
 	}
 }
 
+static_assert(UVCapsuleSettings{ 4, 2 }.CalcVertexCount() == 18, "[uvcapsule] bad vertex count calculation");
+static_assert(UVCapsuleSettings{ 4, 2 }.CalcIndexCount() == (4 + 4 + 8 + 8 + 8) * 3, "[uvcapsule] bad index count calculation");
+void GenerateUVCapsule(const UVCapsuleSettings& S, Vertex_PF3CB4* outVerts, u16* outIndices, Vec3f p0, Vec3f p1, Vec3f tangent, float radius)
+{
+	Vec3f dz = p0 == p1 ? Vec3f(0, 0, 1) : (p1 - p0).Normalized();
+	Vec3f dx = Vec3Cross(dz, tangent).Normalized();
+	if (dx == Vec3f())
+		dx = Vec3Cross(dz, { dz.y, dz.z, dz.x }).Normalized();
+	Vec3f dy = Vec3Cross(dx, dz).Normalized();
+
+	u16 nfh = S.numFacesH;
+	u16 nhfv = S.numHalfFacesV;
+
+	u16 lastVert = S.CalcVertexCount() - 1;
+	auto* endVert = outVerts + lastVert;
+	outVerts++->pos = p0 - dz * radius;
+	endVert->pos = p1 + dz * radius;
+	endVert -= nfh;
+
+	for (u16 v = 1; v <= nhfv; v++)
+	{
+		float angVert = Range1F(v, nhfv) * 3.14159f * 0.5f;
+		float sinAngVert = sinf(angVert);
+		float z = cosf(angVert) * radius;
+		for (u16 h = 0; h < nfh; h++)
+		{
+			float angHor = Range1F(h, nfh) * 3.14159f * 2;
+			float x = cosf(angHor) * sinAngVert * radius;
+			float y = sinf(angHor) * sinAngVert * radius;
+			Vec3f plc = dx * x + dy * y;
+			Vec3f zc = dz * z;
+			outVerts++->pos = p0 + plc - zc;
+			endVert++->pos = p1 + plc + zc;
+		}
+		endVert -= nfh * 2;
+	}
+
+	// top row
+	for (u16 h = 0; h < nfh; h++)
+	{
+		*outIndices++ = 0;
+		*outIndices++ = (h + 1) % nfh + 1;
+		*outIndices++ = h + 1;
+	}
+
+	// middle rows
+	for (u16 v = 0; v < nhfv * 2 - 1; v++)
+	{
+		for (u16 h = 0; h < nfh; h++)
+		{
+			u16 h1 = (h + 1) % nfh;
+			u16 a = nfh * v + h + 1;
+			u16 b = nfh * v + h1 + 1;
+			u16 c = b + nfh;
+			u16 d = a + nfh;
+
+			*outIndices++ = a;
+			*outIndices++ = b;
+			*outIndices++ = c;
+			*outIndices++ = c;
+			*outIndices++ = d;
+			*outIndices++ = a;
+		}
+	}
+
+	// bottom row
+	u16 lastRow = (nhfv * 2 - 1) * nfh + 1;
+	for (u16 h = 0; h < nfh; h++)
+	{
+		*outIndices++ = h + lastRow;
+		*outIndices++ = (h + 1) % nfh + lastRow;
+		*outIndices++ = lastVert;
+	}
+}
+
 
 } // prim
 } // ui

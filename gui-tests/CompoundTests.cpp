@@ -1056,7 +1056,7 @@ struct DropdownTest : ui::Buildable
 
 	struct TypeInfoOptions : ui::OptionList
 	{
-		void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn)
+		ui::ArrayView<const type_info*> GetTypes()
 		{
 			static const type_info* types[] =
 			{
@@ -1067,12 +1067,28 @@ struct DropdownTest : ui::Buildable
 				&typeid(ui::Buildable),
 				&typeid(ui::TextElement),
 			};
-			for (size_t i = 0; i < count && i + from < sizeof(types) / sizeof(types[0]); i++)
+			return types;
+		}
+		void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override
+		{
+			auto types = GetTypes();
+			for (size_t i = 0; i < count && i + from < types.Size(); i++)
 			{
 				fn(types[i], uintptr_t(types[i]));
 			}
 		}
-		void BuildElement(const void* ptr, uintptr_t id, bool list)
+		uintptr_t FindAdjacent(uintptr_t start, int delta) override
+		{
+			auto types = GetTypes();
+			size_t pos = types.IndexOf((const type_info*)start);
+			delta %= int(types.Size());
+			if (delta < 0)
+				delta += types.Size();
+			pos += delta;
+			pos %= types.Size();
+			return uintptr_t(types[pos]);
+		}
+		void BuildElement(const void* ptr, uintptr_t id, bool list) override
 		{
 			WText(ptr ? static_cast<const type_info*>(ptr)->name() : "<none>");
 		}
@@ -1086,6 +1102,15 @@ struct DropdownTest : ui::Buildable
 			{
 				fn(nullptr, i + from);
 			}
+		}
+		uintptr_t FindAdjacent(uintptr_t val, int delta) override
+		{
+			delta %= 1000;
+			if (delta < 0)
+				delta += 1000;
+			val += delta;
+			val %= 1000;
+			return val;
 		}
 		void BuildElement(const void* ptr, uintptr_t id, bool list) override
 		{

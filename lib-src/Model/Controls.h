@@ -568,6 +568,7 @@ struct DropdownMenu : Buildable
 	virtual void OnBuildButton();
 	virtual void OnBuildMenuWithLayout();
 	virtual UIObject& OnBuildMenu();
+	virtual void OnKeyActionEvent(ui::Event& e) {}
 
 	virtual void OnBuildButtonContents() = 0;
 	virtual void OnBuildMenuContents() = 0;
@@ -579,15 +580,23 @@ struct OptionList
 	typedef void ElementFunc(const void* ptr, uintptr_t id);
 
 	virtual void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) = 0;
+	virtual uintptr_t FindAdjacent(uintptr_t start, int delta) = 0;
 	virtual void BuildElement(const void* ptr, uintptr_t id, bool list) = 0;
 	virtual void BuildEmptyButtonContents();
 };
 
 struct CStrOptionList : OptionList
 {
+	struct CountInfo
+	{
+		size_t count;
+		bool hasEmpty;
+	};
 	uintptr_t emptyValue = UINTPTR_MAX;
 
 	void BuildElement(const void* ptr, uintptr_t id, bool list) override;
+	uintptr_t FindAdjacent(uintptr_t start, int delta) override;
+	virtual CountInfo GetCount() const = 0;
 };
 
 struct ZeroSepCStrOptionList : CStrOptionList
@@ -596,9 +605,10 @@ struct ZeroSepCStrOptionList : CStrOptionList
 	size_t size = SIZE_MAX;
 	const char* emptyStr = nullptr;
 
-	ZeroSepCStrOptionList(const char* s, const char* empty = nullptr) : str(s), emptyStr(empty) {}
+	ZeroSepCStrOptionList(const char* s, const char* empty = nullptr);
 	ZeroSepCStrOptionList(size_t sz, const char* s, const char* empty = nullptr) : str(s), size(sz), emptyStr(empty) {}
 
+	CountInfo GetCount() const override { return { size, !!emptyStr }; }
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 	void BuildEmptyButtonContents() override;
 };
@@ -611,11 +621,12 @@ struct CStrArrayOptionList : CStrOptionList
 	size_t size = SIZE_MAX;
 	const char* emptyStr = nullptr;
 
-	CStrArrayOptionList(NullTerminated, const char* const* a, const char* empty = nullptr) : arr(a), emptyStr(empty) {}
+	CStrArrayOptionList(NullTerminated, const char* const* a, const char* empty = nullptr);
+	CStrArrayOptionList(size_t sz, const char* const* a, const char* empty = nullptr);
 	template <size_t N>
-	CStrArrayOptionList(const char* const (&a)[N], const char* empty = nullptr) : arr(a), size(N), emptyStr(empty) {}
-	CStrArrayOptionList(size_t sz, const char* const* a, const char* empty = nullptr) : arr(a), size(sz), emptyStr(empty) {}
+	UI_FORCEINLINE CStrArrayOptionList(const char* const (&a)[N], const char* empty = nullptr) : CStrArrayOptionList(N, a, empty) {}
 
+	CountInfo GetCount() const override { return { size, !!emptyStr }; }
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 	void BuildEmptyButtonContents() override;
 };
@@ -625,6 +636,7 @@ struct StringArrayOptionList : CStrOptionList
 	Array<std::string> options;
 	Optional<std::string> emptyStr;
 
+	CountInfo GetCount() const override { return { options.Size(), emptyStr.HasValue() }; }
 	void IterateElements(size_t from, size_t count, std::function<ElementFunc>&& fn) override;
 	void BuildEmptyButtonContents() override;
 };
@@ -642,6 +654,7 @@ struct DropdownMenuList : DropdownMenu
 	void OnReset() override;
 	void OnBuildButtonContents() override;
 	void OnBuildMenuContents() override;
+	void OnKeyActionEvent(ui::Event& e) override;
 
 	virtual void OnBuildEmptyButtonContents();
 	virtual void OnBuildMenuElement(const void* ptr, uintptr_t id);

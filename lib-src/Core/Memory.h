@@ -12,6 +12,9 @@ namespace ui {
 template <class T>
 struct ArrayView
 {
+	const T* _data;
+	size_t _size;
+
 	UI_FORCEINLINE ArrayView() : _data(nullptr), _size(0) {}
 	UI_FORCEINLINE ArrayView(const T* data, size_t size) : _data(data), _size(size) {}
 	UI_FORCEINLINE ArrayView(const std::initializer_list<T>& src) : _data(src.begin()), _size(src.size()) {}
@@ -67,8 +70,13 @@ struct ArrayView
 	UI_FORCEINLINE ArrayView<i8> AsI8() const { return { (const i8*)_data, _size * sizeof(T) }; }
 	UI_FORCEINLINE ArrayView<u8> AsU8() const { return { (const u8*)_data, _size * sizeof(T) }; }
 
-	const T* _data;
-	size_t _size;
+	size_t IndexOf(T what) const
+	{
+		for (size_t i = 0; i < _size; i++)
+			if (_data[i] == what)
+				return i;
+		return SIZE_MAX;
+	}
 };
 
 } // ui

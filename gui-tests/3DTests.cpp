@@ -165,6 +165,16 @@ struct The3DViewTest : ui::Buildable
 			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.8f, 0.5f, 0.2f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(-0.4f, 0, 0));
 		}
 
+		{
+			constexpr ui::prim::UVCapsuleSettings S = { 31, 5 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateUVCapsule(S, verts, idcs, { 0, 0, -1 }, { 0, 0, 1 }, { 1, 0, 0 }, 1);
+			DrawPrim(verts, vc, idcs, ic, ui::Color4f(0.5f, 0.8f, 0.2f, 0.7f), ui::Mat4f::Scale(0.1f) * ui::Mat4f::Translate(-0.6f, 0, 0));
+		}
+
 		SetRenderState(DF_ZTestOff | DF_ZWriteOff);
 		auto ray = camera.GetRayWP(mousePos);
 		auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { 0, 0, 1, -1 });
