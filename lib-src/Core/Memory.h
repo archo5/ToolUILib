@@ -70,7 +70,14 @@ struct ArrayView
 	UI_FORCEINLINE ArrayView<i8> AsI8() const { return { (const i8*)_data, _size * sizeof(T) }; }
 	UI_FORCEINLINE ArrayView<u8> AsU8() const { return { (const u8*)_data, _size * sizeof(T) }; }
 
-	size_t IndexOf(T what) const
+	bool Contains(const T& what) const
+	{
+		for (size_t i = 0; i < _size; i++)
+			if (_data[i] == what)
+				return true;
+		return false;
+	}
+	size_t IndexOf(const T& what) const
 	{
 		for (size_t i = 0; i < _size; i++)
 			if (_data[i] == what)

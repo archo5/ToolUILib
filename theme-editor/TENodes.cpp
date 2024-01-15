@@ -123,7 +123,7 @@ float TE_MaskRef::Eval(float x, float y, const TE_RenderContext& rc)
 	CornerRadiuses cr;
 	cr.r = radius;
 	cr = cr.Eval();
-	auto rr = rc.frame.ShrinkBy(UIRect::UniformBorder(border));
+	auto rr = rc.frame.ShrinkBy(border);
 	if (vbias < 0)
 		rr.y1 += vbias;
 	else

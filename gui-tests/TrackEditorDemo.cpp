@@ -53,7 +53,7 @@ struct TrackEditorDemo : ui::Buildable
 			for (Item& item : items)
 			{
 				ui::UIRect rect = { item.x0, item.track * TRACK_HEIGHT, item.x1, (item.track + 1) * TRACK_HEIGHT };
-				ui::UIRect clipRect = rect.ShrinkBy(ui::UIRect::UniformBorder(3));
+				ui::UIRect clipRect = rect.ShrinkBy(3);
 				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3 + 1, rect.y0 + 4 + 1, item.name, ui::Color4f(0.0f, 0.5f), ui::TextBaseline::Top, &clipRect);
 				ui::draw::TextLine(ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF), 10, rect.x0 + 3, rect.y0 + 4, item.name, ui::Color4f(0.9f, 1), ui::TextBaseline::Top, &clipRect);
 			}

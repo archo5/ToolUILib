@@ -239,7 +239,7 @@ ContentPaintAdvice PointAnchoredPlacementRectModPainter::Paint(const PaintInfo& 
 ContentPaintAdvice ColorFillPainter::Paint(const PaintInfo& info)
 {
 	AABB2f r = info.rect;
-	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
+	r = r.ShrinkBy(shrink);
 
 	if (r.GetWidth() > 0 && r.GetHeight() > 0)
 	{
@@ -280,7 +280,7 @@ ContentPaintAdvice ImageSetPainter::Paint(const PaintInfo& info)
 		return {};
 
 	AABB2f r = info.rect;
-	r = r.ShrinkBy(AABB2f::UniformBorder(shrink));
+	r = r.ShrinkBy(shrink);
 
 	imageSet->Draw(r, color);
 

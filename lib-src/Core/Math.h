@@ -281,6 +281,8 @@ template<class T> struct AABB2
 	UI_FORCEINLINE bool Contains(const AABB2& o) const { return o.x0 >= x0 && o.x1 <= x1 && o.y0 >= y0 && o.y1 <= y1; }
 	UI_FORCEINLINE bool Overlaps(const AABB2& o) const { return x0 <= o.x1 && o.x0 <= x1 && y0 <= o.y1 && o.y0 <= y1; }
 	UI_FORCEINLINE AABB2 Intersect(const AABB2& o) const { return { max(x0, o.x0), max(y0, o.y0), min(x1, o.x1), min(y1, o.y1) }; }
+	UI_FORCEINLINE AABB2 ExtendBy(T v) const { return { x0 - v, y0 - v, x1 + v, y1 + v }; }
+	UI_FORCEINLINE AABB2 ShrinkBy(T v) const { return { x0 + v, y0 + v, x1 - v, y1 - v }; }
 	UI_FORCEINLINE AABB2 ExtendBy(const AABB2& ext) const { return { x0 - ext.x0, y0 - ext.y0, x1 + ext.x1, y1 + ext.y1 }; }
 	UI_FORCEINLINE AABB2 ShrinkBy(const AABB2& ext) const { return { x0 + ext.x0, y0 + ext.y0, x1 - ext.x1, y1 - ext.y1 }; }
 	UI_FORCEINLINE AABB2 MoveBy(T dx, T dy) const { return { x0 + dx, y0 + dy, x1 + dx, y1 + dy }; }

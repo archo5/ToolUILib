@@ -470,7 +470,7 @@ void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& 
 	uint32_t numCurves = GetCurveCount();
 	auto vp = input.viewport;
 
-	if (draw::PushScissorRect(input.winRect.ExtendBy(AABB2f::UniformBorder(1))))
+	if (draw::PushScissorRect(input.winRect.ExtendBy(1)))
 	{
 		// curve lines
 		for (uint32_t cid = 0; cid < numCurves; cid++)

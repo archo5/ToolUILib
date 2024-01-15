@@ -158,7 +158,7 @@ struct ButtonPressHighlightDemo : ui::Buildable
 		{
 			float dist = anim->player.GetVariable("dist");
 			float alpha = anim->player.GetVariable("alpha", 1);
-			ui::draw::RectCutoutCol(anim->baseRect.ExtendBy(ui::AABB2f::UniformBorder(dist)), anim->baseRect, ui::Color4f(1, alpha));
+			ui::draw::RectCutoutCol(anim->baseRect.ExtendBy(dist), anim->baseRect, ui::Color4f(1, alpha));
 		}
 		for (size_t i = 0; i < anims.size(); i++)
 		{

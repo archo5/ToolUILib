@@ -52,7 +52,7 @@ DockingInsertionTarget DockingNode::FindInsertionTarget(Vec2f pos)
 		return { this, DockingInsertionSide_Here };
 
 	float margin = min(rect.GetWidth(), rect.GetHeight()) * 0.25f;
-	auto inner = rect.ShrinkBy(UIRect::UniformBorder(margin));
+	auto inner = rect.ShrinkBy(margin);
 	if (inner.Contains(pos))
 		return { this, DockingInsertionSide_Here };
 
@@ -412,7 +412,7 @@ void DockingWindowContentBuilder::OnPaint(const UIPaintContext& ctx)
 			// TODO
 			auto r = rs->GetFinalRect();
 			float margin = min(r.GetWidth(), r.GetHeight()) * 0.25f;
-			auto q = r.ShrinkBy(UIRect::UniformBorder(margin));
+			auto q = r.ShrinkBy(margin);
 
 			switch (tgt.tabOrSide)
 			{

@@ -749,7 +749,7 @@ void DebugDrawSelf(UIObject* o)
 	draw::RectCutoutCol(r, o->GetFinalRect(), Color4f(0.5f, 0.6f, 0.9f, a));
 	// border
 #if 1
-	draw::RectCutoutCol(r, r.ExtendBy(UIRect::UniformBorder(-1)), Color4f(0.5f, 0.9f, 0.6f, a));
+	draw::RectCutoutCol(r, r.ExtendBy(-1), Color4f(0.5f, 0.9f, 0.6f, a));
 #endif
 }
 
@@ -1036,13 +1036,13 @@ struct NativeWindow_Impl
 		for (auto* o = evsys.hoverObj; o; o = o->parent)
 		{
 			auto r = o->GetContentRect();
-			auto r2 = r.ExtendBy(UIRect::UniformBorder(1));
+			auto r2 = r.ExtendBy(1);
 			draw::RectCutoutCol(r2, r, Color4f(0.9f, 0.1f, 0.1f, 0.5f));
 		}
 		for (auto* o = evsys.dragHoverObj; o; o = o->parent)
 		{
 			auto r = o->GetContentRect();
-			auto r2 = r.ExtendBy(UIRect::UniformBorder(1));
+			auto r2 = r.ExtendBy(1);
 			draw::RectCutoutCol(r2, r, Color4f(0.9f, 0.9f, 0.1f, 0.5f));
 		}
 #endif

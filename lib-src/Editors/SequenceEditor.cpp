@@ -175,7 +175,7 @@ void SequenceEditor::OnPaint(const UIPaintContext& ctx)
 
 	if (_dragTargetPos < SIZE_MAX)
 	{
-		auto r = _dragTargetLine.ExtendBy(UIRect::UniformBorder(1));
+		auto r = _dragTargetLine.ExtendBy(1);
 		draw::RectCol(r.x0, r.y0, r.x1, r.y1, Color4f(0.1f, 0.7f, 0.9f, 0.6f));
 	}
 }

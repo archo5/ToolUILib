@@ -332,7 +332,7 @@ struct TreeNodeReorderTest : ui::Buildable
 		if (e.position.y < ui::lerp(R.y0, R.y1, 0.25f))
 		{
 			// above
-			dragTargetLine = ui::UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(ui::UIRect::UniformBorder(1));
+			dragTargetLine = ui::UIRect{ R.x0 + level * 12, R.y0, R.x1, R.y0 }.ExtendBy(1);
 			dragTargetArr = &nodes;
 			dragTargetCont = cont;
 			dragTargetInsertBefore = i;
@@ -340,7 +340,7 @@ struct TreeNodeReorderTest : ui::Buildable
 		else if (e.position.y > ui::lerp(R.y0, R.y1, 0.75f))
 		{
 			// below
-			dragTargetLine = ui::UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(ui::UIRect::UniformBorder(1));
+			dragTargetLine = ui::UIRect{ R.x0, R.y1, R.x1, R.y1 }.ExtendBy(1);
 			if (N->open && N->children.size())
 			{
 				// first child

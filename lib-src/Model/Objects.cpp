@@ -922,7 +922,7 @@ void Placeholder::OnPaint(const UIPaintContext& ctx)
 {
 	auto r = GetFinalRect();
 	draw::RectCol(r.x0, r.y0, r.x1, r.y1, Color4b(0, 127));
-	draw::RectCutoutCol(r, r.ShrinkBy(UIRect::UniformBorder(1)), Color4b(255, 127));
+	draw::RectCutoutCol(r, r.ShrinkBy(1), Color4b(255, 127));
 
 	char text[32];
 	snprintf(text, sizeof(text), "%gx%g", r.GetWidth(), r.GetHeight());
