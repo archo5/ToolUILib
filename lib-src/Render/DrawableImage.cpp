@@ -263,6 +263,16 @@ struct ImageImpl : IImage
 
 	std::string cacheKey;
 
+	static ImageImpl* NewFromAPIHandle(int w, int h, uintptr_t handle)
+	{
+		auto* I = new ImageImpl;
+		I->size = { w, h };
+		I->rhiTex = rhi::CreateTextureFromAPIHandle(w, h, handle);
+		return I;
+	}
+	ImageImpl()
+	{
+	}
 	ImageImpl(int w, int h, int pitch, const void* d, bool a8, TexFlags flg) :
 		size(w, h), flags(flg)
 	{
@@ -373,6 +383,11 @@ ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags)
 ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags)
 {
 	return ImageCreateRGBA8(c.GetWidth(), c.GetHeight(), c.GetPixels(), flags);
+}
+
+ImageHandle ImageCreateFromAPIHandle(int w, int h, uintptr_t handle)
+{
+	return ImageImpl::NewFromAPIHandle(w, h, handle);
 }
 
 

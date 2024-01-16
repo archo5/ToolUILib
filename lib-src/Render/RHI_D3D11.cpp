@@ -114,8 +114,16 @@ struct Texture2D
 {
 	ID3D11Texture2D* tex = nullptr;
 	ID3D11ShaderResourceView* srv = nullptr;
-	uint8_t _flags;
+	uint8_t _flags = 0;
 
+	static Texture2D* NewFromAPIHandle(unsigned width, unsigned height, uintptr_t handle)
+	{
+		auto* T = new Texture2D;
+		T->srv = (ID3D11ShaderResourceView*)handle;
+		T->srv->AddRef();
+		return T;
+	}
+	Texture2D() {}
 	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags & 3)
 	{
 		D3D11_TEXTURE2D_DESC t2d = {};
@@ -978,6 +986,11 @@ Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, ui
 Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags)
 {
 	return new Texture2D(data, width, height, flags, false);
+}
+
+Texture2D* CreateTextureFromAPIHandle(unsigned width, unsigned height, uintptr_t handle)
+{
+	return Texture2D::NewFromAPIHandle(width, height, handle);
 }
 
 void SetTextureDebugName(Texture2D* tex, StringView debugName)

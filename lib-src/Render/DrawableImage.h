@@ -63,6 +63,8 @@ ImageHandle ImageCreateRGBA8(int w, int h, const void* data, TexFlags flags = Te
 ImageHandle ImageCreateRGBA8(int w, int h, int pitch, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateA8(int w, int h, const void* data, TexFlags flags = TexFlags::None);
 ImageHandle ImageCreateFromCanvas(const Canvas& c, TexFlags flags = TexFlags::None);
+// for info on handle - see rhi::CreateTextureFromAPIHandle
+ImageHandle ImageCreateFromAPIHandle(int w, int h, uintptr_t handle);
 
 IImage* ImageCacheRead(StringView key);
 void ImageCacheWrite(IImage* image, StringView key);
