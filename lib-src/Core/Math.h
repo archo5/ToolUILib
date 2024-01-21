@@ -120,6 +120,8 @@ template <class T> struct Vec2
 	}
 
 	template <class U> UI_FORCEINLINE Vec2<U> Cast() const { return { U(x), U(y) }; }
+	template <class U> UI_FORCEINLINE Vec2<U> CastRounded() const { return { U(round(x)), U(round(y)) }; }
+	template <class U> UI_FORCEINLINE Vec2<U> CastFloored() const { return { U(floor(x)), U(floor(y)) }; }
 };
 template <class T>
 inline size_t HashValue(Vec2<T> v)

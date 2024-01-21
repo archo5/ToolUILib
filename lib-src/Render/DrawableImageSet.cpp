@@ -123,6 +123,8 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 	{
 		for (auto& e : bitmapImageEntries)
 		{
+			if (!e->image)
+				continue;
 			if (e->image->GetWidth() > size.x || e->image->GetHeight() > size.y)
 				break;
 			best = e;
@@ -139,6 +141,8 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 	{
 		for (auto& e : bitmapImageEntries)
 		{
+			if (!e->image)
+				continue;
 			best = e;
 			if (e->image->GetWidth() >= size.x && e->image->GetHeight() >= size.y)
 				break;
@@ -155,6 +159,8 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 		VectorImageEntry* backupVEntry = nullptr;
 		for (auto ve : vectorImageEntries)
 		{
+			if (!ve->image)
+				continue;
 			VectorImageEntry*& bve = ve->minSizeHint.x >= size.x && ve->minSizeHint.y >= size.y
 				? bestVEntry
 				: backupVEntry;
@@ -162,7 +168,11 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 				bve = ve;
 		}
 		if (!bestVEntry)
+		{
+			if (!backupVEntry)
+				return nullptr;
 			bestVEntry = backupVEntry;
+		}
 		Size2i clvsize = GetClosestLargerSize(size, bestVEntry->image->GetSize());
 
 		// raster image still better

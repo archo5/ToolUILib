@@ -1146,6 +1146,7 @@ AABB2i End3DMode()
 void RestoreRenderStates()
 {
 	Reset2DRender();
+	SetTexture(g_prevTex);
 }
 
 void SetupRenderStateForOutputSize(int w, int h)
