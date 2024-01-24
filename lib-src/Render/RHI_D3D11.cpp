@@ -110,6 +110,9 @@ struct TempBuffer
 };
 
 
+struct Texture2D;
+static Texture2D* g_prevTex;
+static Texture2D* g_curTex;
 struct Texture2D
 {
 	ID3D11Texture2D* tex = nullptr;
@@ -160,6 +163,10 @@ struct Texture2D
 	{
 		SAFE_RELEASE(srv);
 		SAFE_RELEASE(tex);
+		if (g_prevTex == this)
+			g_prevTex = nullptr;
+		if (g_curTex == this)
+			g_curTex = nullptr;
 	}
 };
 
@@ -1049,7 +1056,6 @@ void UnmapTexture(Texture2D* tex)
 #endif
 }
 
-static Texture2D* g_curTex;
 void SetTexture(Texture2D* tex)
 {
 	g_curTex = tex;
@@ -1112,7 +1118,6 @@ void SetForcedColor(const Color4b& col)
 	g_defVBCC->Write(&dv, sizeof(dv));
 }
 
-static Texture2D* g_prevTex;
 static AABB2i g_3DRect;
 void Begin3DMode(const AABB2i& rect)
 {

@@ -60,7 +60,7 @@ struct ArrayView
 	// subSize is clamped instead of range-checked
 	UI_FORCEINLINE ArrayView Subview(size_t subOff = 0, size_t subSize = SIZE_MAX) const
 	{
-		assert(subOff <= subSize);
+		assert(subOff <= _size);
 		if (subSize > _size - subOff)
 			subSize = _size - subOff;
 		return { _data + subOff, subSize };

@@ -68,6 +68,17 @@ struct ImageSet : RefCountedST
 	void _DrawAsRawImage(AABB2f rect, Color4b color);
 	void Draw(AABB2f rect, Color4b color = {});
 
+	ImageSet() {}
+	// quick single image constructors
+	ImageSet(IImage* image, AABB2f innerUV = { 0, 0, 1, 1 }, AABB2f edgeWidth = {})
+	{
+		AddBitmapImage(image, innerUV, edgeWidth);
+	}
+	ImageSet(IVectorImage* image, AABB2f innerUV = { 0, 0, 1, 1 }, AABB2f edgeWidth = {})
+	{
+		AddVectorImage(image, {}, innerUV, edgeWidth);
+	}
+
 	~ImageSet();
 
 	inline void AddBitmapImage(IImage* image, AABB2f innerUV = { 0, 0, 1, 1 }, AABB2f edgeWidth = {})
