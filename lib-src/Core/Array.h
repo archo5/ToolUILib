@@ -289,8 +289,15 @@ struct Array
 	{
 		size_t newSize = _size + n;
 		ReserveForAppend(newSize);
-		for (size_t i = 0; i < n; i++)
-			new (&_data[_size + i]) T(p[i]);
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_copy_constructible<T>::value)
+		{
+			memcpy(&_data[_size], p, sizeof(T) * n);
+		}
+		else
+		{
+			for (size_t i = 0; i < n; i++)
+				new (&_data[_size + i]) T(p[i]);
+		}
 		_size = newSize;
 	}
 	UI_FORCEINLINE void AppendMany(const T* bp, const T* ep)
@@ -311,8 +318,15 @@ struct Array
 	void RemoveLast(size_t n)
 	{
 		assert(_size >= n);
-		for (size_t i = 0; i < n; i++)
-			_data[--_size].~T();
+		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_destructible<T>::value)
+		{
+			_size -= n;
+		}
+		else
+		{
+			for (size_t i = 0; i < n; i++)
+				_data[--_size].~T();
+		}
 	}
 
 	// complex modification

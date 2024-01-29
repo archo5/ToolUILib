@@ -17,32 +17,32 @@ struct HashTableDataStorage_SeparateArrays
 		K& key;
 		V& value;
 
-		EntryRef* operator -> () { return this; }
-		const EntryRef* operator -> () const { return this; }
+		UI_FORCEINLINE EntryRef* operator -> () { return this; }
+		UI_FORCEINLINE const EntryRef* operator -> () const { return this; }
 	};
 	struct ConstIterator
 	{
 		const Self* _h;
 		size_t _pos;
 
-		bool operator == (const ConstIterator& o) const { return _pos == o._pos; }
-		bool operator != (const ConstIterator& o) const { return _pos != o._pos; }
-		ConstIterator& operator ++ () { _pos++; return *this; }
-		EntryRef operator * () const { return { _h->keys[_pos], _h->values[_pos] }; }
-		EntryRef operator -> () const { return { _h->keys[_pos], _h->values[_pos] }; }
-		bool is_valid() const { return _pos < _h->count; }
+		UI_FORCEINLINE bool operator == (const ConstIterator& o) const { return _pos == o._pos; }
+		UI_FORCEINLINE bool operator != (const ConstIterator& o) const { return _pos != o._pos; }
+		UI_FORCEINLINE ConstIterator& operator ++ () { _pos++; return *this; }
+		UI_FORCEINLINE EntryRef operator * () const { return { _h->keys[_pos], _h->values[_pos] }; }
+		UI_FORCEINLINE EntryRef operator -> () const { return { _h->keys[_pos], _h->values[_pos] }; }
+		UI_FORCEINLINE bool is_valid() const { return _pos < _h->count; }
 	};
 	struct Iterator
 	{
 		Self* _h;
 		size_t _pos;
 
-		bool operator == (const Iterator& o) const { return _pos == o._pos; }
-		bool operator != (const Iterator& o) const { return _pos != o._pos; }
-		Iterator& operator ++ () { _pos++; return *this; }
-		EntryRef operator * () const { return { _h->keys[_pos], _h->values[_pos] }; }
-		EntryRef operator -> () const { return { _h->keys[_pos], _h->values[_pos] }; }
-		bool is_valid() const { return _pos < _h->count; }
+		UI_FORCEINLINE bool operator == (const Iterator& o) const { return _pos == o._pos; }
+		UI_FORCEINLINE bool operator != (const Iterator& o) const { return _pos != o._pos; }
+		UI_FORCEINLINE Iterator& operator ++ () { _pos++; return *this; }
+		UI_FORCEINLINE EntryRef operator * () const { return { _h->keys[_pos], _h->values[_pos] }; }
+		UI_FORCEINLINE EntryRef operator -> () const { return { _h->keys[_pos], _h->values[_pos] }; }
+		UI_FORCEINLINE bool is_valid() const { return _pos < _h->count; }
 	};
 
 	K* keys = nullptr;

@@ -349,6 +349,9 @@ struct Mat4f
 	Mat4f RemoveScale() const;
 };
 
+// a fast definition that works best in MSVC debug builds
+static constexpr const Mat4f Mat4fIdentity = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 };
+
 
 struct Transform3Df
 {
