@@ -965,6 +965,7 @@ void ScrollArea::OnEvent(Event& e)
 		if (yoff != info.contentOff)
 			e.StopPropagation();
 		yoff = info.contentOff;
+		e.context->OnChange(this);
 		_OnChangeStyle();
 	}
 }

@@ -160,15 +160,24 @@ struct Array
 		return !(*this == o);
 	}
 
-	UI_FORCEINLINE bool Contains(const T& v) const { return IndexOf(v) != SIZE_MAX; }
-	size_t IndexOf(const T& v, size_t from = 0) const
+	template <class T2>
+	bool ContainsT(const T2& v, size_t from = 0) const
+	{
+		for (size_t i = from; i < _size; i++)
+			if (_data[i] == v)
+				return true;
+		return false;
+	}
+	template <class T2>
+	size_t IndexOfT(const T2& v, size_t from = 0) const
 	{
 		for (size_t i = from; i < _size; i++)
 			if (_data[i] == v)
 				return i;
 		return SIZE_MAX;
 	}
-	size_t LastIndexOf(const T& v) const
+	template <class T2>
+	size_t LastIndexOfT(const T2& v) const
 	{
 		for (size_t i = _size; i > 0; )
 		{
@@ -178,6 +187,10 @@ struct Array
 		}
 		return SIZE_MAX;
 	}
+
+	UI_FORCEINLINE bool Contains(const T& what, size_t from = 0) const { return ContainsT(what, from); }
+	UI_FORCEINLINE size_t IndexOf(const T& what, size_t from = 0) const { return IndexOfT(what, from); }
+	UI_FORCEINLINE size_t LastIndexOf(const T& what) const { return LastIndexOfT(what); }
 
 	// simple modification
 	void _Realloc(size_t newCap)

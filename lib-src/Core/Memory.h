@@ -37,6 +37,10 @@ struct ArrayView
 		assert(i < _size);
 		return _data[i];
 	}
+	UI_FORCEINLINE size_t GetElementIndex(const T& valFromThisArrayView) const
+	{
+		return &valFromThisArrayView - _data;
+	}
 	UI_FORCEINLINE const T& First() const
 	{
 		assert(_size);
@@ -70,20 +74,37 @@ struct ArrayView
 	UI_FORCEINLINE ArrayView<i8> AsI8() const { return { (const i8*)_data, _size * sizeof(T) }; }
 	UI_FORCEINLINE ArrayView<u8> AsU8() const { return { (const u8*)_data, _size * sizeof(T) }; }
 
-	bool Contains(const T& what) const
+	template <class T2>
+	bool ContainsT(const T2& what) const
 	{
 		for (size_t i = 0; i < _size; i++)
 			if (_data[i] == what)
 				return true;
 		return false;
 	}
-	size_t IndexOf(const T& what) const
+	template <class T2>
+	size_t IndexOfT(const T2& what) const
 	{
 		for (size_t i = 0; i < _size; i++)
 			if (_data[i] == what)
 				return i;
 		return SIZE_MAX;
 	}
+	template <class T2>
+	size_t LastIndexOfT(const T2& v) const
+	{
+		for (size_t i = _size; i > 0; )
+		{
+			i--;
+			if (_data[i] == v)
+				return i;
+		}
+		return SIZE_MAX;
+	}
+
+	UI_FORCEINLINE bool Contains(const T& what) const { return ContainsT(what); }
+	UI_FORCEINLINE size_t IndexOf(const T& what) const { return IndexOfT(what); }
+	UI_FORCEINLINE size_t LastIndexOf(const T& what) const { return LastIndexOfT(what); }
 };
 
 } // ui
