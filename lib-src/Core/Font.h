@@ -50,6 +50,20 @@ enum class TextBaseline
 };
 
 namespace draw {
+struct ImageQuad
+{
+	AABB2f box;
+	struct IImage* image;
+};
+Rangef TextLineGenerateQuads(
+	Array<ImageQuad>& retQuads,
+	Font* font,
+	int size,
+	float x,
+	float y,
+	StringView text,
+	TextHAlign align = TextHAlign::Left,
+	TextBaseline baseline = TextBaseline::Default);
 void TextLine(
 	Font* font,
 	int size,

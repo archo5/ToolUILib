@@ -33,6 +33,7 @@ void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpi
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectCol(const AABB2f& r, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
+void RectGradV(float x0, float y0, float x1, float y1, Color4b a, Color4b b);
 void RectTex(float x0, float y0, float x1, float y1, IImage* tex);
 void RectTex(const AABB2f& r, IImage* tex);
 void RectTex(float x0, float y0, float x1, float y1, IImage* tex, float u0, float v0, float u1, float v1);

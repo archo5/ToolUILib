@@ -120,6 +120,7 @@ struct Color4f
 	}
 	bool IsOpaque() const { return fabsf(a - 1) < 0.0001f; }
 	UI_FORCEINLINE Color4f GetOpaque() const { return { r, g, b, 1 }; }
+	UI_FORCEINLINE Color4f GetWithAlphaScale(float s) const { return { r, g, b, a * s }; }
 	UI_FORCEINLINE Color4f GetPremul() const { return { r * a, g * a, b * a, a }; }
 	UI_FORCEINLINE Color4f GetPremulWithAlphaScale(float s) const { float sa = a * s; return { r * sa, g * sa, b * sa, sa }; }
 

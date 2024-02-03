@@ -324,6 +324,68 @@ float TextMeasureAddChar(uint32_t ch)
 
 namespace draw {
 
+static float BaselineToYOff(Font::SizeContext& sctx, TextBaseline baseline)
+{
+	if (baseline != TextBaseline::Default)
+	{
+		// https://drafts.csswg.org/css-inline/#baseline-synthesis-em
+		switch (baseline)
+		{
+		case TextBaseline::Top:
+			return sctx.asc * (sctx.size / (sctx.asc - sctx.desc));
+		case TextBaseline::Middle:
+			return (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc));
+		case TextBaseline::Bottom:
+			return sctx.desc * (sctx.size / (sctx.asc - sctx.desc));
+		}
+	}
+	return 0;
+}
+
+Rangef TextLineGenerateQuads(
+	Array<ImageQuad>& retQuads,
+	Font* font,
+	int size,
+	float x,
+	float y,
+	StringView text,
+	TextHAlign align,
+	TextBaseline baseline)
+{
+	if (size <= 0)
+		return { x, x };
+
+	if (align != TextHAlign::Left)
+		x -= GetTextWidth(font, size, text) * (float(align) * 0.5f);
+	float scale = g_textResScale;
+	float invScale = 1.0f / scale;
+	auto& sctx = font->GetSizeContext(int(roundf(size * scale)));
+	y += BaselineToYOff(sctx, baseline) * invScale;
+	x = roundf(x * scale) * invScale;
+	y = roundf(y * scale) * invScale;
+	float x0 = x;
+
+	u32 prevChar = 0;
+	UTF8Iterator it(text);
+	for (;;)
+	{
+		uint32_t ch = it.Read();
+		if (ch == UTF8Iterator::END)
+			break;
+
+		float kern = font->FindKerning(sctx.size, prevChar, ch);
+		//if (::GetTickCount() % 1000 < 300) kern = 0;
+		prevChar = ch;
+		auto gv = font->FindGlyph(sctx, ch, true);
+		float x0 = gv.xoff * invScale + x + kern;
+		float y0 = gv.yoff * invScale + y;
+		AABB2f posbox = { x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale };
+		retQuads.Append({ posbox, gv.img });
+		x += roundf(gv.xadv + kern) * invScale;
+	}
+	return { x0, x };
+}
+
 void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
 {
 	if (clipBox && !clipBox->IsValid())
@@ -336,22 +398,7 @@ void TextLine(Font* font, int size, float x, float y, StringView text, Color4b c
 	float scale = g_textResScale;
 	float invScale = 1.0f / scale;
 	auto& sctx = font->GetSizeContext(int(roundf(size * scale)));
-	if (baseline != TextBaseline::Default)
-	{
-		// https://drafts.csswg.org/css-inline/#baseline-synthesis-em
-		switch (baseline)
-		{
-		case TextBaseline::Top:
-			y += sctx.asc * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
-			break;
-		case TextBaseline::Middle:
-			y += (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
-			break;
-		case TextBaseline::Bottom:
-			y += sctx.desc * (sctx.size / (sctx.asc - sctx.desc)) * invScale;
-			break;
-		}
-	}
+	y += BaselineToYOff(sctx, baseline) * invScale;
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
 

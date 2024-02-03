@@ -56,7 +56,10 @@ struct TweakValFile
 				auto content = after.UntilFirst(")"); // TODO support nested parentheses?
 
 				Num N;
-				N.number = content.take_float64();
+				if (content.starts_with("0x"))
+					N.number = content.take_int32();
+				else
+					N.number = content.take_float64();
 				N.uid = content.AfterLast(",").AfterFirst("\"").UntilLast("\"");
 				vals.Append(N);
 
@@ -73,11 +76,11 @@ struct TweakValFile
 
 struct TweakValFileHEC
 {
-	UI_FORCEINLINE static bool AreEqual(const const char* a, const const char* b)
+	UI_FORCEINLINE static bool AreEqual(const char* a, const char* b)
 	{
 		return a == b || strcmp(a, b) == 0;
 	}
-	UI_FORCEINLINE static size_t GetHash(const const char* v)
+	UI_FORCEINLINE static size_t GetHash(const char* v)
 	{
 		return HashValue(v);
 	}

@@ -453,6 +453,20 @@ void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 	IndexedTriangles(nullptr, verts, 4, indices, 6);
 }
 
+void RectGradV(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
+{
+	rhi::Vertex verts[4] =
+	{
+		{ x0, y0, 0.5f, 0.5f, a },
+		{ x1, y0, 0.5f, 0.5f, a },
+		{ x1, y1, 0.5f, 0.5f, b },
+		{ x0, y1, 0.5f, 0.5f, b },
+	};
+	uint16_t indices[6] = { 0, 1, 2, 2, 3, 0 };
+
+	IndexedTriangles(nullptr, verts, 4, indices, 6);
+}
+
 void RectTex(float x0, float y0, float x1, float y1, IImage* tex)
 {
 	RectColTex(x0, y0, x1, y1, Color4b::White(), tex, 0, 0, 1, 1);
