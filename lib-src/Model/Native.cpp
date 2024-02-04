@@ -1060,19 +1060,32 @@ struct NativeWindow_Impl
 #endif
 
 #if DEBUG_DRAW_ATLAS
-		if (draw::debug::GetAtlasTextureCount())
+		if (int count = draw::debug::GetAtlasTextureCount())
 		{
-			rhi::SetTexture(draw::debug::GetAtlasTexture(0, nullptr));
-			int D = 4;
-			rhi::Vertex verts[4] =
+			int W = min(evsys.width, evsys.height);
+
+			// find next square of count
+			int nsq = 1;
+			while (nsq * nsq < count)
+				nsq++;
+
+			int iw = W / nsq;
+
+			for (int i = 0; i < count; i++)
 			{
-				{ evsys.width / D, evsys.height / D, 0, 0, Color4b::White() },
-				{ evsys.width, evsys.height / D, 1, 0, Color4b::White() },
-				{ evsys.width, evsys.height, 1, 1, Color4b::White() },
-				{ evsys.width / D, evsys.height, 0, 1, Color4b::White() },
-			};
-			uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
-			rhi::DrawIndexedTriangles(verts, indices, 6);
+				int x = i % nsq;
+				int y = i / nsq;
+				rhi::Vertex verts[4] =
+				{
+					{ iw * x, iw * y, 0, 0, Color4b::White() },
+					{ iw * (x + 1), iw * y, 1, 0, Color4b::White() },
+					{ iw * (x + 1), iw * (y + 1), 1, 1, Color4b::White() },
+					{ iw * x, iw * (y + 1), 0, 1, Color4b::White() },
+				};
+				uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
+				rhi::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
+				rhi::DrawIndexedTriangles(verts, 4, indices, 6);
+			}
 		}
 #endif
 

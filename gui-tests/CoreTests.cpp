@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include <stdarg.h>
+#include "../lib-src/Render/RHI.h"
 
 
 struct RenderingPrimitives : ui::Buildable
@@ -487,6 +488,75 @@ struct ImageSetSizingTest : ui::Buildable
 void Test_ImageSetSizing()
 {
 	ui::Make<ImageSetSizingTest>();
+}
+
+
+struct AtlasOverflowTest : ui::Buildable
+{
+	float hue = 0;
+	void AddAtlasImage(int size)
+	{
+		ui::Canvas canvas;
+		canvas.SetSize(size, size);
+		auto col = ui::Color4f::HSV(hue, 0.5f, 0.9f).GetColor32();
+		auto* pixels = canvas.GetPixels();
+		for (int i = 0; i < size * size; i++)
+			pixels[i] = col;
+		hue = fmodf(hue + 0.02f, 1.f);
+
+		ui::draw::ImageCreateFromCanvas(canvas, ui::draw::TexFlags::Packed);
+		ui::draw::_::TextureStorage_FlushPendingAllocs();
+	}
+	void OnEvent(ui::Event& e) override
+	{
+		if (e.type == ui::EventType::ButtonDown)
+		{
+			if (e.GetButton() == ui::MouseButton::Left)
+				AddAtlasImage(128);
+			if (e.GetButton() == ui::MouseButton::Right)
+				AddAtlasImage(256);
+			if (e.GetButton() == ui::MouseButton::Middle)
+				AddAtlasImage(510); // max allowed size (+1px dilation border = 512)
+		}
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		using namespace ui;
+		if (int count = draw::debug::GetAtlasTextureCount())
+		{
+			int W = int(floorf(GetFinalRect().GetSize().Min()));
+
+			// find next square of count
+			int nsq = 1;
+			while (nsq * nsq < count)
+				nsq++;
+
+			int iw = W / nsq;
+
+			for (int i = 0; i < count; i++)
+			{
+				int x = i % nsq;
+				int y = i / nsq;
+				rhi::Vertex verts[4] =
+				{
+					{ iw * x, iw * y, 0, 0, Color4b::White() },
+					{ iw * (x + 1), iw * y, 1, 0, Color4b::White() },
+					{ iw * (x + 1), iw * (y + 1), 1, 1, Color4b::White() },
+					{ iw * x, iw * (y + 1), 0, 1, Color4b::White() },
+				};
+				uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
+				rhi::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
+				rhi::DrawIndexedTriangles(verts, 4, indices, 6);
+			}
+		}
+	}
+	void Build() override
+	{
+	}
+};
+void Test_AtlasOverflow()
+{
+	ui::Make<AtlasOverflowTest>();
 }
 
 

@@ -292,6 +292,7 @@ void Test_BlurMask();
 void Test_TextBaseline();
 void Test_StylePainting();
 void Test_ImageSetSizing();
+void Test_AtlasOverflow();
 void Test_KeyboardEvents();
 void Test_RawMouseEvents();
 void Test_OpenClose();
@@ -386,6 +387,7 @@ static const TestEntry coreTestEntries[] =
 	{ "Text baseline", Test_TextBaseline },
 	{ "Style painting", Test_StylePainting },
 	{ "Image set sizing", Test_ImageSetSizing },
+	{ "Atlas overflow", Test_AtlasOverflow },
 	{},
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },

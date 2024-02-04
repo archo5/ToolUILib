@@ -20,7 +20,6 @@ static int g_numVertices;
 static int g_numIndices;
 static ImageHandle g_whiteTex;
 static ImageHandle g_curTex;
-static rhi::Texture2D* g_curTexRHI;
 static rhi::Texture2D* g_appliedTex;
 
 static ImageHandle GetWhiteTex()
@@ -86,6 +85,8 @@ void Flush()
 
 void RestoreStates()
 {
+	assert(!g_numIndices && "leftover draw data detected when restoring states");
+	g_appliedTex = nullptr;
 	rhi::RestoreRenderStates();
 }
 

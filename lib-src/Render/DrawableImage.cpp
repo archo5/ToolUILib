@@ -19,6 +19,7 @@ double hqtime();
 namespace draw {
 
 
+LogCategory LOG_IMAGE_ATLAS("ImageAtlas", LogLevel::Info);
 LogCategory LOG_DRAWABLE_IMAGE("DrawableImage", LogLevel::Info);
 
 
@@ -118,6 +119,7 @@ struct TextureStorage
 
 			if (!P)
 			{
+				LogInfo(LOG_IMAGE_ATLAS, "Allocating a new page");
 				pages[page_num] = P = new TexturePage;
 				numPages++;
 			}
