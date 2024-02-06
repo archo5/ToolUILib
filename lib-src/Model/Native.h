@@ -104,8 +104,10 @@ struct GraphicsAdapters
 	static Array<Info> All(u32 flags = Info_All);
 
 	static void GetInitial(int& index, StringView& name);
-	static void SetInitialByName(StringView name); // empty = default
-	static void SetInitialByIndex(int index); // -1 = default
+	static bool IsInitialLocked();
+	static int GetLockedInitialAdapter();
+	static bool SetInitialByName(StringView name); // empty = default
+	static bool SetInitialByIndex(int index); // -1 = default
 };
 } // rhi
 

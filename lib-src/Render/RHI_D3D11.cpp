@@ -493,6 +493,9 @@ struct DefaultVertex
 	Color4b col;
 };
 
+void GraphicsAdapters_Lock(int which);
+void GraphicsAdapters_Unlock();
+
 void GlobalInit()
 {
 	UINT flags = 0;
@@ -538,6 +541,7 @@ void GlobalInit()
 			if (initName == WCHARtoUTF8(desc.Description))
 			{
 				initAdapter = adapter;
+				initIndex = i;
 				break;
 			}
 
@@ -559,7 +563,9 @@ void GlobalInit()
 	else
 	{
 		LogInfo(LOG_RHI_D3D11, "starting with the default adapter");
+		initIndex = 0;
 	}
+	GraphicsAdapters_Lock(initIndex);
 
 	D3DCHK(D3D11CreateDevice(
 		initAdapter,
@@ -847,6 +853,8 @@ void GlobalFree()
 		dbg->Release();
 	}
 #endif
+
+	GraphicsAdapters_Unlock();
 }
 
 void OnListenerAdd(IRHIListener* L)
