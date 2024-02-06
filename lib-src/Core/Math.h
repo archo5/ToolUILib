@@ -292,6 +292,9 @@ template<class T> struct AABB2
 	UI_FORCEINLINE AABB2 Include(const Vec2<T>& o) const { return { min(x0, o.x), min(y0, o.y), max(x1, o.x), max(y1, o.y) }; }
 	UI_FORCEINLINE AABB2 operator * (T f) const { return { x0 * f, y0 * f, x1 * f, y1 * f }; }
 	UI_FORCEINLINE AABB2 operator + (Vec2<T> v) const { return { x0 + v.x, y0 + v.y, x1 + v.x, y1 + v.y }; }
+	UI_FORCEINLINE AABB2 operator - (Vec2<T> v) const { return { x0 - v.x, y0 - v.y, x1 - v.x, y1 - v.y }; }
+	UI_FORCEINLINE AABB2& operator += (Vec2<T> v) const { x0 += v.x; y0 += v.y; x1 += v.x; y1 += v.y; return *this; }
+	UI_FORCEINLINE AABB2& operator -= (Vec2<T> v) const { x0 -= v.x; y0 -= v.y; x1 -= v.x; y1 -= v.y; return *this; }
 	UI_FORCEINLINE Vec2<T> Lerp(Vec2<T> q) const { return { lerp(x0, x1, q.x), lerp(y0, y1, q.y) }; }
 	UI_FORCEINLINE Vec2<T> LerpFlipY(Vec2<T> q) const { return { lerp(x0, x1, q.x), lerp(y1, y0, q.y) }; }
 	UI_FORCEINLINE Vec2<T> InverseLerp(Vec2<T> p) const { return { invlerp(x0, x1, p.x), invlerp(y0, y1, p.y) }; }

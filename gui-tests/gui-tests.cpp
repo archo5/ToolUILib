@@ -290,6 +290,7 @@ void Test_RenderingPrimitives();
 void Test_VectorImage();
 void Test_BlurMask();
 void Test_TextBaseline();
+void Test_TextMultiline();
 void Test_StylePainting();
 void Test_ImageSetSizing();
 void Test_AtlasOverflow();
@@ -385,6 +386,7 @@ static const TestEntry coreTestEntries[] =
 	{ "Vector image", Test_VectorImage },
 	{ "Blur mask", Test_BlurMask },
 	{ "Text baseline", Test_TextBaseline },
+	{ "Text (multiline)", Test_TextMultiline },
 	{ "Style painting", Test_StylePainting },
 	{ "Image set sizing", Test_ImageSetSizing },
 	{ "Atlas overflow", Test_AtlasOverflow },

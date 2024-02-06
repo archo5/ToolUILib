@@ -380,6 +380,65 @@ void Test_TextBaseline()
 }
 
 
+static const char* g_longText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec posuere, sem id luctus egestas, "
+"mi nisi iaculis dui, nec bibendum sapien mauris quis dolor. Maecenas in rhoncus metus. Aenean est augue, fringilla eget gravida vitae, "
+"vulputate id quam. Proin rutrum ante lacus, at pharetra est luctus sit amet. Nam est risus, sagittis id varius non, placerat quis diam. "
+"Donec ac enim ut enim faucibus ultrices sed sit amet nibh. Aliquam in neque tempor, aliquam enim id, viverra purus. "
+"Fusce nec ullamcorper nisi. Duis a sem fringilla metus fermentum dictum vel nec turpis. Curabitur fermentum scelerisque orci, "
+"et tincidunt nibh. Duis non ante et nibh posuere fermentum. Cras ullamcorper, ex eu scelerisque ornare, odio diam blandit sapien, "
+"nec efficitur libero lorem ut risus. Vivamus quis hendrerit eros.";
+struct TextMultilineTest : ui::Buildable
+{
+	float size = 12;
+	float lineHeightFactor = 1;
+	ui::TextHAlign halign = ui::TextHAlign::Left;
+	ui::TextVAlign valign = ui::TextVAlign::Top;
+
+	void OnReset() override
+	{
+		ui::Buildable::OnReset();
+		flags |= ui::UIObject_DB_FocusOnLeftClick;
+	}
+	void OnEvent(ui::Event& e) override
+	{
+		if (e.type == ui::EventType::KeyDown)
+		{
+			switch (e.shortCode)
+			{
+			case ui::KSC_L: halign = ui::TextHAlign::Left; break;
+			case ui::KSC_C: halign = ui::TextHAlign::Center; break;
+			case ui::KSC_R: halign = ui::TextHAlign::Right; break;
+			case ui::KSC_T: valign = ui::TextVAlign::Top; break;
+			case ui::KSC_M: valign = ui::TextVAlign::Middle; break;
+			case ui::KSC_B: valign = ui::TextVAlign::Bottom; break;
+			case ui::KSC_NumpadPlus: size++; break;
+			case ui::KSC_NumpadMinus: size--; break;
+			case ui::KSC_NumpadMultiply: lineHeightFactor *= 1.1f; break;
+			case ui::KSC_NumpadDivide: lineHeightFactor /= 1.1f; break;
+			}
+		}
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
+		ui::draw::TextMultiline(
+			font,
+			size,
+			GetFinalRect(),
+			size * lineHeightFactor,
+			g_longText,
+			{},
+			halign,
+			valign);
+	}
+	void Build() override {}
+};
+void Test_TextMultiline()
+{
+	ui::Make<TextMultilineTest>();
+}
+
+
 struct StylePaintingTest : ui::Buildable, ui::AnimationRequester
 {
 	ui::FrameStyle buttonStyle;
