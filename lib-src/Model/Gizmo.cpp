@@ -649,7 +649,7 @@ static Color4b GetColor(GizmoAction action)
 
 static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, const CameraBase& cam)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	constexpr prim::PlaneSettings PS = {};
 	constexpr uint16_t planeVC = PS.CalcVertexCount();
@@ -800,7 +800,7 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color, const CameraBase& cam, Vec3f darkZoneCenter, float darkZoneRadius)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	constexpr int NUMSEG = 64;
 
@@ -840,7 +840,7 @@ static void RenderCircleCulled(const Mat4f& transform, Vec3f axis, Color4b color
 
 static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, float size, const CameraBase& cam)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
 	auto wsp = cam.WorldToWindowPoint(worldPoint);
@@ -869,7 +869,7 @@ static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, f
 
 static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, float size, const CameraBase& cam)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	constexpr prim::PlaneSettings PS = {};
 	constexpr uint16_t planeVC = PS.CalcVertexCount();
@@ -930,7 +930,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 	// uniform scale area
 	{
-		auto prevRect = rhi::End3DMode();
+		auto prevRect = End3DMode();
 
 		auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
 		auto wsp = cam.WorldToWindowPoint(worldPoint);
@@ -940,9 +940,9 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 		draw::AACircleLineCol(wsp, sizeScale * size, 1, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
 		draw::AACircleLineCol(wsp, sizeScale * size * 0.2f, 1, Color4f(1, hoverPart == GizmoAction::ScaleUniform ? 0.5f : 0.2f));
 
-		rhi::Begin3DMode(prevRect);
-		rhi::SetViewMatrix(cam.GetViewMatrix());
-		rhi::SetProjectionMatrix(cam.GetProjectionMatrix());
+		Begin3DMode(prevRect);
+		SetViewMatrix(cam.GetViewMatrix());
+		SetProjectionMatrix(cam.GetProjectionMatrix());
 	}
 
 	for (int i = 0; i < NUM_PARTS; i++)
@@ -1028,7 +1028,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 static void RenderInfiniteLine(Color4b col, Vec3f origin, Vec3f dir)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	constexpr int COUNT = 35;
 	Vertex_PF3CB4 tmpVerts[COUNT];
@@ -1067,7 +1067,7 @@ static int GetOtherAxis(GizmoAction action, bool second)
 
 void Gizmo::Render(const CameraBase& cam, const IGizmoEditable& editable)
 {
-	using namespace rhi;
+	using namespace gfx;
 
 	float size = settings.size;
 	auto xf = editable.GetGizmoLocation();

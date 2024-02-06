@@ -33,7 +33,7 @@ LogCategory LOG_RHI_D3D11("RHI-D3D11", LogLevel::Info);
 
 
 namespace ui {
-namespace rhi {
+namespace gfx {
 
 
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
@@ -1278,5 +1278,5 @@ void DrawIndexed(
 }
 
 
-} // rhi
+} // gfx
 } // ui

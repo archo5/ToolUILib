@@ -92,7 +92,7 @@ struct The3DViewTest : ui::Buildable
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		camera.SetWindowRect(rect);
 		camera.SetProjectionMatrix(camera.rightHanded
@@ -183,7 +183,7 @@ struct The3DViewTest : ui::Buildable
 	}
 	void DrawPrim(ui::Vertex_PF3CB4* verts, uint16_t vc, uint16_t* idcs, unsigned ic, const ui::Color4b& col, const ui::Mat4f& m)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		ui::prim::SetVertexColor(verts, vc, col);
 
@@ -411,7 +411,7 @@ struct GizmoTest : ui::Buildable
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		camera.SetWindowRect(rect);
 		camera.SetProjectionMatrix(ui::Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
@@ -446,7 +446,7 @@ struct GizmoTest : ui::Buildable
 
 	void RenderObject(const ui::Mat4f& mtx)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		SetRenderState(DF_Cull);
 
@@ -573,7 +573,7 @@ struct QuaternionTest : ui::Buildable
 	}
 	void Render3DView(const ui::UIRect& rect)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		camera.SetWindowRect(rect);
 		camera.SetProjectionMatrix(ui::Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
@@ -598,7 +598,7 @@ struct QuaternionTest : ui::Buildable
 
 	void RenderObject(const ui::Mat4f& mtx)
 	{
-		using namespace ui::rhi;
+		using namespace ui::gfx;
 
 		SetRenderState(DF_Cull);
 

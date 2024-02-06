@@ -8,11 +8,11 @@
 
 
 namespace ui {
-namespace rhi {
+namespace gfx {
 
 struct Texture2D;
 
-} // rhi
+} // gfx
 namespace draw {
 
 // texture flags
@@ -40,7 +40,7 @@ inline TexFlags operator ~ (TexFlags f)
 namespace debug {
 
 int GetAtlasTextureCount();
-rhi::Texture2D* GetAtlasTexture(int n, int size[2]);
+gfx::Texture2D* GetAtlasTexture(int n, int size[2]);
 
 } // debug
 
@@ -49,8 +49,8 @@ struct IImage : IRefCounted
 	virtual Size2i GetSize() const = 0;
 	virtual StringView GetCacheKey() const = 0;
 	virtual TexFlags GetFlags() const = 0;
-	virtual rhi::Texture2D* GetInternal() const = 0;
-	virtual rhi::Texture2D* GetInternalExclusive() const = 0;
+	virtual gfx::Texture2D* GetInternal() const = 0;
+	virtual gfx::Texture2D* GetInternalExclusive() const = 0;
 	virtual void SetExclDebugName(StringView debugName) = 0;
 
 	Size2f GetSizeF() const { return GetSize().Cast<float>(); }

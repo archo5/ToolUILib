@@ -16,7 +16,7 @@
 
 
 namespace ui {
-namespace rhi {
+namespace gfx {
 
 
 extern Stats g_stats;
@@ -612,5 +612,5 @@ void DrawIndexed(
 	GLCHK(glDrawElements(ConvertPrimitiveType(primType), numIndices, i32 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, indices));
 }
 
-} // rhi
+} // gfx
 } // ui

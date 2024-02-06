@@ -998,12 +998,12 @@ void View3D::OnPaint(const UIPaintContext& ctx)
 	auto r = GetFinalRect();
 	if (draw::PushScissorRectIfNotEmpty(r))
 	{
-		rhi::Begin3DMode(r.Cast<int>());
+		gfx::Begin3DMode(r.Cast<int>());
 
 		if (onRender)
 			onRender(r);
 
-		rhi::End3DMode();
+		gfx::End3DMode();
 
 		if (onPaintOverlay)
 			onPaintOverlay(r);

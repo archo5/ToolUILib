@@ -13,14 +13,14 @@ namespace draw {
 
 constexpr int MAX_VERTICES = 4096;
 constexpr int MAX_INDICES = 16384;
-static rhi::Vertex g_bufVertices[MAX_VERTICES];
+static gfx::Vertex g_bufVertices[MAX_VERTICES];
 static uint16_t g_bufIndices[MAX_INDICES];
 static constexpr size_t sizeOfBuffers = sizeof(g_bufVertices) + sizeof(g_bufIndices);
 static int g_numVertices;
 static int g_numIndices;
 static ImageHandle g_whiteTex;
 static ImageHandle g_curTex;
-static rhi::Texture2D* g_appliedTex;
+static gfx::Texture2D* g_appliedTex;
 
 static ImageHandle GetWhiteTex()
 {
@@ -32,16 +32,16 @@ static ImageHandle GetWhiteTex()
 	return g_whiteTex;
 }
 
-static rhi::Texture2D* GetRHITex(IImage* tex)
+static gfx::Texture2D* GetRHITex(IImage* tex)
 {
 	return tex ? tex->GetInternal() : nullptr;
 }
 
-static void ApplyRHITex(rhi::Texture2D* tex)
+static void ApplyRHITex(gfx::Texture2D* tex)
 {
 	if (g_appliedTex == tex)
 		return;
-	rhi::SetTexture(tex);
+	gfx::SetTexture(tex);
 	g_appliedTex = tex;
 }
 
@@ -50,7 +50,7 @@ void _Flush()
 	if (!g_numIndices)
 		return;
 	ApplyRHITex(GetRHITex(g_curTex));
-	rhi::DrawIndexedTriangles(g_bufVertices, g_numVertices, g_bufIndices, g_numIndices);
+	gfx::DrawIndexedTriangles(g_bufVertices, g_numVertices, g_bufIndices, g_numIndices);
 	g_numVertices = 0;
 	g_numIndices = 0;
 }
@@ -87,14 +87,14 @@ void RestoreStates()
 {
 	assert(!g_numIndices && "leftover draw data detected when restoring states");
 	g_appliedTex = nullptr;
-	rhi::RestoreRenderStates();
+	gfx::RestoreRenderStates();
 }
 
 } // internals
 
 VertexTransformCallback g_curVertXFormCB;
 
-static void DebugOffScale(rhi::Vertex* verts, size_t count, float x, float y, float s)
+static void DebugOffScale(gfx::Vertex* verts, size_t count, float x, float y, float s)
 {
 	for (size_t i = 0; i < count; i++)
 	{
@@ -109,7 +109,7 @@ float YOFF = 0;
 float SCALE = 4;
 #endif
 
-void IndexedTriangles(IImage* tex, rhi::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
+void IndexedTriangles(IImage* tex, gfx::Vertex* verts, size_t num_vertices, uint16_t* indices, size_t num_indices)
 {
 	g_curVertXFormCB.Call(verts, num_vertices);
 #if DEBUG_SUBPIXEL
@@ -129,7 +129,7 @@ void IndexedTriangles(IImage* tex, rhi::Vertex* verts, size_t num_vertices, uint
 		_Flush();
 		g_curTex = tex;
 		ApplyRHITex(GetRHITex(g_curTex));
-		rhi::DrawIndexedTriangles(verts, num_vertices, indices, num_indices);
+		gfx::DrawIndexedTriangles(verts, num_vertices, indices, num_indices);
 		return;
 	}
 
@@ -145,8 +145,8 @@ void IndexedTriangles(IImage* tex, rhi::Vertex* verts, size_t num_vertices, uint
 	g_numVertices += num_vertices;
 	g_numIndices += num_indices;
 #else // for comparing performance
-	rhi::SetTexture(tex);
-	rhi::DrawIndexedTriangles(verts, indices, num_indices);
+	gfx::SetTexture(tex);
+	gfx::DrawIndexedTriangles(verts, indices, num_indices);
 #endif
 }
 
@@ -162,7 +162,7 @@ static inline void MidpixelAdjust(Point2f& p, const Point2f& d)
 #endif
 }
 
-static UI_FORCEINLINE rhi::Vertex ColorVert(const Point2f& p, Color4b col)
+static UI_FORCEINLINE gfx::Vertex ColorVert(const Point2f& p, Color4b col)
 {
 	return { p.x, p.y, 0.5f, 0.5f, col };
 }
@@ -183,7 +183,7 @@ void LineCol(float x0, float y0, float x1, float y1, float w, Color4b col, bool 
 		MidpixelAdjust(p1, d);
 	}
 
-	rhi::Vertex verts[4] =
+	gfx::Vertex verts[4] =
 	{
 		ColorVert(p0 + t, col),
 		ColorVert(p1 + t, col),
@@ -221,7 +221,7 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 		Color4b colM = col;
 		colM.a = uint8_t(colM.a * w);
 
-		rhi::Vertex verts[6] =
+		gfx::Vertex verts[6] =
 		{
 			// + side
 			ColorVert(p0 + t - d, colA0),
@@ -246,7 +246,7 @@ void AALineCol(float x0, float y0, float x1, float y1, float w, Color4b col, boo
 	{
 		Point2f tw = t * w;
 
-		rhi::Vertex verts[8] =
+		gfx::Vertex verts[8] =
 		{
 			// + side
 			ColorVert(p0 + tw + t - d, colA0),
@@ -285,7 +285,7 @@ void LineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool closed
 	else
 		t_prev = (points[1] - points[0]).Normalized().Perp();
 
-	Array<rhi::Vertex> verts;
+	Array<gfx::Vertex> verts;
 	verts.Reserve(size * 2);
 	for (size_t i = 0; i < size; i++)
 	{
@@ -342,7 +342,7 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 
 	size_t ncols = w <= 1 ? 3 : 4;
 
-	Array<rhi::Vertex> verts;
+	Array<gfx::Vertex> verts;
 	verts.Resize(size * ncols);
 	auto* vdest = verts.Data();
 	for (size_t i = 0; i < size; i++)
@@ -442,7 +442,7 @@ void RectCol(const AABB2f& r, Color4b col)
 
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 {
-	rhi::Vertex verts[4] =
+	gfx::Vertex verts[4] =
 	{
 		{ x0, y0, 0.5f, 0.5f, a },
 		{ x1, y0, 0.5f, 0.5f, b },
@@ -456,7 +456,7 @@ void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 
 void RectGradV(float x0, float y0, float x1, float y1, Color4b a, Color4b b)
 {
-	rhi::Vertex verts[4] =
+	gfx::Vertex verts[4] =
 	{
 		{ x0, y0, 0.5f, 0.5f, a },
 		{ x1, y0, 0.5f, 0.5f, a },
@@ -500,7 +500,7 @@ void RectColTex(const AABB2f& r, Color4b col, IImage* tex)
 
 void RectColTex(float x0, float y0, float x1, float y1, Color4b col, IImage* tex, float u0, float v0, float u1, float v1)
 {
-	rhi::Vertex verts[4] =
+	gfx::Vertex verts[4] =
 	{
 		{ x0, y0, u0, v0, col },
 		{ x1, y0, u1, v0, col },
@@ -523,7 +523,7 @@ void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IIm
 	//  4  5  6  7
 	//  8  9 10 11
 	// 12 13 14 15
-	rhi::Vertex verts[16] =
+	gfx::Vertex verts[16] =
 	{
 		// row 0
 		{ outer.x0, outer.y0, texouter.x0, texouter.y0, col },
@@ -568,7 +568,7 @@ void RectColTex9Slice(const AABB2f& outer, const AABB2f& inner, Color4b col, IIm
 void RectCutoutCol(const AABB2f& rect, const AABB2f& cutout, Color4b col)
 {
 	auto& cutr = cutout;
-	rhi::Vertex verts[8] =
+	gfx::Vertex verts[8] =
 	{
 		{ rect.x0, rect.y0, 0.5f, 0.5f, col },
 		{ rect.x1, rect.y0, 0.5f, 0.5f, col },
@@ -615,7 +615,7 @@ void ApplyScissor()
 {
 	_Flush();
 	AABB2i r = scissorStack[scissorCount - 1].raw;
-	rhi::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
+	gfx::SetScissorRect(r.x0, r.y0, r.x1, r.y1);
 }
 
 

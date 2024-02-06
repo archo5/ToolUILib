@@ -5,8 +5,9 @@
 
 
 namespace ui {
+namespace gfx {
+
 struct ExclusiveFullscreenInfo;
-namespace rhi {
 
 using Vertex = ::ui::Vertex;
 
@@ -157,5 +158,5 @@ void DrawIndexed(
 	bool i32 = false);
 
 
-} // rhi
+} // gfx
 } // ui

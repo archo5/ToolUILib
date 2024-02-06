@@ -476,114 +476,6 @@ draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 } // platform
 
 
-static BOOL CALLBACK MonitorEnumProc(HMONITOR monitor, HDC dc, LPRECT rect, LPARAM lp)
-{
-	auto* ret = reinterpret_cast<Array<MonitorID>*>(lp);
-	auto id = reinterpret_cast<MonitorID>(monitor);
-	if (rect->left == 0 && rect->top == 0)
-		ret->InsertAt(0, id); // make primary first
-	else
-		ret->Append(id);
-	return TRUE;
-}
-
-Array<MonitorID> Monitors::All()
-{
-	Array<MonitorID> ret;
-	if (!::EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&ret)))
-	{
-		LogWarn(LOG_WIN32, "EnumDisplayMonitors failed!");
-	}
-	return ret;
-}
-
-MonitorID Monitors::Primary()
-{
-	return MonitorID(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
-}
-
-MonitorID Monitors::FindFromPoint(Vec2i point, bool nearest)
-{
-	return MonitorID(::MonitorFromPoint({ point.x, point.y }, nearest ? MONITOR_DEFAULTTONEAREST : MONITOR_DEFAULTTONULL));
-}
-
-MonitorID Monitors::FindFromWindow(NativeWindowBase* w)
-{
-	return MonitorID(::MonitorFromWindow(HWND(w->GetNativeHandle()), MONITOR_DEFAULTTONEAREST));
-}
-
-bool Monitors::IsPrimary(MonitorID id)
-{
-	MONITORINFO info;
-	memset(&info, 0, sizeof(info));
-	info.cbSize = sizeof(info);
-
-	if (::GetMonitorInfoW(HMONITOR(id), &info))
-	{
-		auto r = info.rcMonitor;
-		return r.left == 0 && r.top == 0;
-	}
-	return false;
-}
-
-AABB2i Monitors::GetScreenArea(MonitorID id)
-{
-	MONITORINFO info;
-	memset(&info, 0, sizeof(info));
-	info.cbSize = sizeof(info);
-
-	if (::GetMonitorInfoW(HMONITOR(id), &info))
-	{
-		auto r = info.rcMonitor;
-		return { r.left, r.top, r.right, r.bottom };
-	}
-	return {};
-}
-
-std::string Monitors::GetName(MonitorID id)
-{
-	MONITORINFOEXW info;
-	memset(&info, 0, sizeof(info));
-	info.cbSize = sizeof(info);
-
-	if (::GetMonitorInfoW(HMONITOR(id), &info))
-	{
-		DISPLAY_DEVICEW dd;
-		memset(&dd, 0, sizeof(dd));
-		dd.cb = sizeof(dd);
-
-		if (::EnumDisplayDevicesW(info.szDevice, 0, &dd, 0))
-		{
-			return WCHARtoUTF8(dd.DeviceString);
-		}
-	}
-	return {};
-}
-
-Array<DisplayMode> Monitors::GetAvailableDisplayModes(MonitorID id)
-{
-	MONITORINFOEXW info;
-	memset(&info, 0, sizeof(info));
-	info.cbSize = sizeof(info);
-
-	if (::GetMonitorInfoW(HMONITOR(id), &info))
-	{
-		Array<DisplayMode> ret;
-		ret.Reserve(35); // 28-32 for a generic 1080p monitor (different collections)
-		DEVMODEW mode;
-		memset(&mode, 0, sizeof(mode));
-		mode.dmSize = sizeof(DEVMODEW);
-		for (DWORD n = 0; ::EnumDisplaySettingsExW(info.szDevice, n, &mode, 0); n++)
-		{
-			if (mode.dmBitsPerPel == 32 && mode.dmDisplayFixedOutput == DMDFO_DEFAULT)
-				ret.Append({ mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency, 1 });
-		}
-		return ret;
-	}
-	return {};
-}
-
-
 bool Clipboard::HasText()
 {
 	return ::IsClipboardFormatAvailable(CF_UNICODETEXT);
@@ -859,7 +751,7 @@ struct NativeWindow_Impl
 
 		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandleW(nullptr), this);
 		DragAcceptFiles(window, TRUE);
-		renderCtx = rhi::CreateRenderContext(window);
+		renderCtx = gfx::CreateRenderContext(window);
 
 		//UpdateVisibilityState();
 
@@ -906,7 +798,7 @@ struct NativeWindow_Impl
 
 		if (invalidated)
 			g_windowRepaintList->RemoveFirstOf(this);
-		rhi::FreeRenderContext(renderCtx);
+		gfx::FreeRenderContext(renderCtx);
 		renderCtx = nullptr;
 		DestroyWindow(window);
 	}
@@ -954,7 +846,7 @@ struct NativeWindow_Impl
 		curScaleW = w;
 		curScaleH = h;
 
-		rhi::OnResizeWindow(renderCtx, curScaleW, curScaleH);
+		gfx::OnResizeWindow(renderCtx, curScaleW, curScaleH);
 		draw::_ResetScissorRectStack(0, 0, curScaleW, curScaleH);
 
 		auto& evsys = GetEventSys();
@@ -973,7 +865,7 @@ struct NativeWindow_Impl
 	{
 		UpdateMenu();
 		//SetWindowLong(window, GWL_STYLE, WS_OVERLAPPED | WS_VISIBLE);
-		rhi::OnChangeFullscreen(renderCtx, exclFSInfo);
+		gfx::OnChangeFullscreen(renderCtx, exclFSInfo);
 	}
 
 	void Redraw(bool canRebuild)
@@ -983,7 +875,7 @@ struct NativeWindow_Impl
 
 		double t = hqtime();
 
-		rhi::BeginFrame(renderCtx);
+		gfx::BeginFrame(renderCtx);
 
 		auto& cont = GetContainer();
 		auto& evsys = GetEventSys();
@@ -1007,16 +899,16 @@ struct NativeWindow_Impl
 
 #if DRAW_STATS
 		double t0 = hqtime();
-		auto stats0 = rhi::Stats::Get();
+		auto stats0 = gfx::Stats::Get();
 #endif
 
-		rhi::SetActiveContext(renderCtx);
-		rhi::SetViewport(0, 0, evsys.width, evsys.height);
+		gfx::SetActiveContext(renderCtx);
+		gfx::SetViewport(0, 0, evsys.width, evsys.height);
 		draw::_ResetScissorRectStack(0, 0, evsys.width, evsys.height);
 		draw::_::OnBeginDrawFrame();
 
 		auto clearColor = GetCurrentTheme()->GetBackgroundColor(sid_color_clear);
-		rhi::Clear(clearColor.r, clearColor.g, clearColor.b, 255);
+		gfx::Clear(clearColor.r, clearColor.g, clearColor.b, 255);
 		if (cont.rootBuildable)
 			cont.rootBuildable->RootPaint();
 
@@ -1051,7 +943,7 @@ struct NativeWindow_Impl
 
 #if DRAW_STATS
 		double t1 = hqtime();
-		auto stats1 = rhi::Stats::Get();
+		auto stats1 = gfx::Stats::Get();
 		auto statsdiff = stats1 - stats0;
 		printf("render time: %g ms\n", (t1 - t0) * 1000);
 		printf("# SetTexture: %u\n", unsigned(statsdiff.num_SetTexture));
@@ -1075,7 +967,7 @@ struct NativeWindow_Impl
 			{
 				int x = i % nsq;
 				int y = i / nsq;
-				rhi::Vertex verts[4] =
+				gfx::Vertex verts[4] =
 				{
 					{ iw * x, iw * y, 0, 0, Color4b::White() },
 					{ iw * (x + 1), iw * y, 1, 0, Color4b::White() },
@@ -1083,13 +975,13 @@ struct NativeWindow_Impl
 					{ iw * x, iw * (y + 1), 0, 1, Color4b::White() },
 				};
 				uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
-				rhi::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
-				rhi::DrawIndexedTriangles(verts, 4, indices, 6);
+				gfx::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
+				gfx::DrawIndexedTriangles(verts, 4, indices, 6);
 			}
 		}
 #endif
 
-		rhi::EndFrame(renderCtx);
+		gfx::EndFrame(renderCtx);
 	}
 
 	void UpdateVisibilityState()
@@ -1148,7 +1040,7 @@ struct NativeWindow_Impl
 
 	HWND window;
 	HCURSOR cursor;
-	rhi::RenderContext* renderCtx = nullptr;
+	gfx::RenderContext* renderCtx = nullptr;
 
 	Menu* menu;
 
@@ -1160,7 +1052,7 @@ struct NativeWindow_Impl
 	float innerUIScale = 1;
 	u16 curRealW = 0, curRealH = 0;
 	u16 curScaleW = 0, curScaleH = 0;
-	Optional<ExclusiveFullscreenInfo> exclFSInfo;
+	Optional<gfx::ExclusiveFullscreenInfo> exclFSInfo;
 	bool debugDrawEnabled = false;
 	bool firstShow = true;
 	bool invalidated = false;
@@ -1446,7 +1338,7 @@ void NativeWindowBase::StopExclusiveFullscreen()
 	_impl->UpdateExclusiveFullscreen();
 }
 
-void NativeWindowBase::StartExclusiveFullscreen(ExclusiveFullscreenInfo info)
+void NativeWindowBase::StartExclusiveFullscreen(gfx::ExclusiveFullscreenInfo info)
 {
 	if (_impl->exclFSInfo.HasValue() && _impl->exclFSInfo.GetValue() == info)
 		return;
@@ -1456,7 +1348,7 @@ void NativeWindowBase::StartExclusiveFullscreen(ExclusiveFullscreenInfo info)
 
 void NativeWindowBase::SetVSyncInterval(unsigned interval)
 {
-	rhi::SetVSyncInterval(_impl->renderCtx, interval);
+	gfx::SetVSyncInterval(_impl->renderCtx, interval);
 }
 
 bool NativeWindowBase::IsInnerUIEnabled()
@@ -1807,7 +1699,7 @@ Application::Application(int argc, char* argv[])
 	assert(_instance == nullptr);
 	_instance = this;
 
-	ui::rhi::GlobalInit();
+	ui::gfx::GlobalInit();
 
 	if (FSGetDefault()->fileSystems.IsEmpty())
 	{
@@ -1845,7 +1737,7 @@ Application::~Application()
 	delete g_mainEventQueue;
 	g_mainEventQueue = nullptr;
 
-	ui::rhi::GlobalFree();
+	ui::gfx::GlobalFree();
 
 	assert(_instance == this);
 	_instance = nullptr;

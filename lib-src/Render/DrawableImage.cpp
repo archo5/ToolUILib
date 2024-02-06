@@ -47,15 +47,15 @@ struct TexturePage
 	TexturePage()
 	{
 		stbrp_init_target(&rectPackContext, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, rectPackNodes, MAX_TEXTURE_PAGE_NODES);
-		rhiTex = rhi::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, 0);
-		rhi::SetTextureDebugName(rhiTex, "ui:atlas-page");
+		rhiTex = gfx::CreateTextureRGBA8(nullptr, TEXTURE_PAGE_WIDTH, TEXTURE_PAGE_HEIGHT, 0);
+		gfx::SetTextureDebugName(rhiTex, "ui:atlas-page");
 	}
 	~TexturePage()
 	{
-		rhi::DestroyTexture(rhiTex);
+		gfx::DestroyTexture(rhiTex);
 	}
 
-	rhi::Texture2D* rhiTex = nullptr;
+	gfx::Texture2D* rhiTex = nullptr;
 	unsigned pixelsUsed = 0;
 	unsigned pixelsAllocated = 0;
 	stbrp_context rectPackContext;
@@ -147,13 +147,13 @@ struct TextureStorage
 			if (anyPacked)
 			{
 				// upload packed rects
-				rhi::MapData md = rhi::MapTexture(P->rhiTex);
+				gfx::MapData md = gfx::MapTexture(P->rhiTex);
 				for (int i = 0; i < numRemainingRects; i++)
 				{
 					const auto& R = rectsToPack[i];
 					if (R.was_packed)
 					{
-						rhi::CopyToMappedTextureRect(
+						gfx::CopyToMappedTextureRect(
 							P->rhiTex,
 							md,
 							R.x,
@@ -164,7 +164,7 @@ struct TextureStorage
 							false);
 					}
 				}
-				rhi::UnmapTexture(P->rhiTex);
+				gfx::UnmapTexture(P->rhiTex);
 			}
 
 			// removed packed rects from array
@@ -189,7 +189,7 @@ struct TextureStorage
 
 		numPendingAllocs = 0;
 	}
-	static void RemapUVs(rhi::Vertex* verts, size_t num_verts, TextureNode* node)
+	static void RemapUVs(gfx::Vertex* verts, size_t num_verts, TextureNode* node)
 	{
 		if (!node || node->page < 0)
 			return;
@@ -239,7 +239,7 @@ int GetAtlasTextureCount()
 	return g_textureStorage.numPages;
 }
 
-rhi::Texture2D* GetAtlasTexture(int n, int size[2])
+gfx::Texture2D* GetAtlasTexture(int n, int size[2])
 {
 	if (size)
 	{
@@ -260,7 +260,7 @@ struct ImageImpl : IImage
 	Size2i size = {};
 	uint8_t* data = nullptr;
 	TexFlags flags = TexFlags::None;
-	rhi::Texture2D* rhiTex = nullptr;
+	gfx::Texture2D* rhiTex = nullptr;
 	TextureNode* atlasNode = nullptr;
 
 	std::string cacheKey;
@@ -269,7 +269,7 @@ struct ImageImpl : IImage
 	{
 		auto* I = new ImageImpl;
 		I->size = { w, h };
-		I->rhiTex = rhi::CreateTextureFromAPIHandle(w, h, handle);
+		I->rhiTex = gfx::CreateTextureFromAPIHandle(w, h, handle);
 		return I;
 	}
 	ImageImpl()
@@ -324,14 +324,14 @@ struct ImageImpl : IImage
 		else
 		{
 			rhiTex = a8
-				? rhi::CreateTextureA8(d, w, h, uint8_t(flg))
-				: rhi::CreateTextureRGBA8(d, w, h, uint8_t(flg));
-			rhi::SetTextureDebugName(rhiTex, "ui:image");
+				? gfx::CreateTextureA8(d, w, h, uint8_t(flg))
+				: gfx::CreateTextureRGBA8(d, w, h, uint8_t(flg));
+			gfx::SetTextureDebugName(rhiTex, "ui:image");
 		}
 	}
 	~ImageImpl()
 	{
-		rhi::DestroyTexture(rhiTex);
+		gfx::DestroyTexture(rhiTex);
 		delete[] data;
 
 		if (!cacheKey.empty())
@@ -339,7 +339,7 @@ struct ImageImpl : IImage
 			g_loadedImages.Remove(cacheKey);
 		}
 	}
-	rhi::Texture2D* GetRHITex() const
+	gfx::Texture2D* GetRHITex() const
 	{
 		return rhiTex ? rhiTex : atlasNode && atlasNode->page >= 0 ? g_textureStorage.pages[atlasNode->page]->rhiTex : nullptr;
 	}
@@ -361,9 +361,9 @@ struct ImageImpl : IImage
 	Size2i GetSize() const override { return size; }
 	StringView GetCacheKey() const override { return cacheKey; }
 	TexFlags GetFlags() const override { return flags; }
-	rhi::Texture2D* GetInternal() const override { return GetRHITex(); }
-	rhi::Texture2D* GetInternalExclusive() const override { return rhiTex; }
-	void SetExclDebugName(StringView debugName) override { rhi::SetTextureDebugName(rhiTex, debugName); }
+	gfx::Texture2D* GetInternal() const override { return GetRHITex(); }
+	gfx::Texture2D* GetInternalExclusive() const override { return rhiTex; }
+	void SetExclDebugName(StringView debugName) override { gfx::SetTextureDebugName(rhiTex, debugName); }
 };
 
 
@@ -406,7 +406,7 @@ void ImageCacheWrite(IImage* image, StringView key)
 	auto* impl = static_cast<ImageImpl*>(image);
 	impl->cacheKey = to_string(key);
 	if (impl->rhiTex)
-		rhi::SetTextureDebugName(impl->rhiTex, key);
+		gfx::SetTextureDebugName(impl->rhiTex, key);
 	g_loadedImages[impl->cacheKey] = image;
 }
 

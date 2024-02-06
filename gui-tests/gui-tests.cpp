@@ -679,35 +679,35 @@ struct TEST : ui::Buildable
 
 
 
-struct RHIListener : ui::rhi::IRHIListener
+struct RHIListener : ui::gfx::IRHIListener
 {
-	static void PrintPointers(const char* when, const ui::rhi::RHIInternalPointers& ip)
+	static void PrintPointers(const char* when, const ui::gfx::RHIInternalPointers& ip)
 	{
 		printf("RHI %s device=%p context=%p window=%p swapChain=%p RTV=%p DSV=%p\n",
 			when, ip.device, ip.context, ip.window, ip.swapChain, ip.renderTargetView, ip.depthStencilView);
 	}
 
-	void OnAttach(const ui::rhi::RHIInternalPointers& ip) override
+	void OnAttach(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		PrintPointers("attach", ip);
 	}
-	void OnDetach(const ui::rhi::RHIInternalPointers& ip) override
+	void OnDetach(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		PrintPointers("detach", ip);
 	}
-	void OnAfterInitSwapChain(const ui::rhi::RHIInternalPointers& ip) override
+	void OnAfterInitSwapChain(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		PrintPointers("after init swapchain", ip);
 	}
-	void OnBeforeFreeSwapChain(const ui::rhi::RHIInternalPointers& ip) override
+	void OnBeforeFreeSwapChain(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		PrintPointers("before free swapchain", ip);
 	}
-	void OnBeginFrame(const ui::rhi::RHIInternalPointers& ip) override
+	void OnBeginFrame(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		//PrintPointers("begin frame", ip);
 	}
-	void OnEndFrame(const ui::rhi::RHIInternalPointers& ip) override
+	void OnEndFrame(const ui::gfx::RHIInternalPointers& ip) override
 	{
 		//PrintPointers("end frame", ip);
 	}
@@ -735,7 +735,7 @@ int uimain(int argc, char* argv[])
 {
 	ui::LOG_UISYS.level = ui::LogLevel::All;
 
-	ui::rhi::AttachListener(&g_rl);
+	ui::gfx::AttachListener(&g_rl);
 	ui::Application app(argc, argv);
 	ui::FSGetDefault()->fileSystems.Append(ui::CreateFileSystemSource("gui-tests/rsrc"));
 	MainWindow mw;

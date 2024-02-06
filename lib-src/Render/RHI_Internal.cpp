@@ -7,7 +7,7 @@
 
 
 namespace ui {
-namespace rhi {
+namespace gfx {
 
 
 static Array<IRHIListener*> g_listeners;
@@ -46,5 +46,5 @@ void DetachListener(IRHIListener* L)
 }
 
 
-} // rhi
+} // gfx
 } // ui

@@ -166,6 +166,9 @@
     <ClCompile Include="Core\StrCatView.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Render\Output.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -396,6 +399,9 @@
     </ClInclude>
     <ClInclude Include="Model\InputDefs.h">
       <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Output.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

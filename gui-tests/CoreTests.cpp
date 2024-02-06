@@ -596,7 +596,7 @@ struct AtlasOverflowTest : ui::Buildable
 			{
 				int x = i % nsq;
 				int y = i / nsq;
-				rhi::Vertex verts[4] =
+				gfx::Vertex verts[4] =
 				{
 					{ iw * x, iw * y, 0, 0, Color4b::White() },
 					{ iw * (x + 1), iw * y, 1, 0, Color4b::White() },
@@ -604,8 +604,8 @@ struct AtlasOverflowTest : ui::Buildable
 					{ iw * x, iw * (y + 1), 0, 1, Color4b::White() },
 				};
 				uint16_t indices[6] = { 0, 1, 2,  2, 3, 0 };
-				rhi::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
-				rhi::DrawIndexedTriangles(verts, 4, indices, 6);
+				gfx::SetTexture(draw::debug::GetAtlasTexture(i, nullptr));
+				gfx::DrawIndexedTriangles(verts, 4, indices, 6);
 			}
 		}
 	}

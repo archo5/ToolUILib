@@ -190,7 +190,7 @@ struct FullscreenTest : ui::Buildable
 	{
 		std::string name;
 		ui::AABB2i rect;
-		ui::MonitorID id;
+		ui::gfx::MonitorID id;
 	};
 
 	ui::Array<MonitorInfo> monitors;
@@ -226,11 +226,11 @@ struct FullscreenTest : ui::Buildable
 		{
 			ui::MakeWithText<ui::LabelFrame>("Windowed:");
 
-			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
 				if (ui::imm::Button("Current screen"))
 				{
-					auto rect = ui::Monitors::GetScreenArea(monid);
+					auto rect = ui::gfx::Monitors::GetScreenArea(monid);
 					SetWindowed();
 				}
 			}
@@ -249,11 +249,11 @@ struct FullscreenTest : ui::Buildable
 		{
 			ui::MakeWithText<ui::LabelFrame>("Borderless:");
 
-			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
 				if (ui::imm::Button("Current screen"))
 				{
-					auto rect = ui::Monitors::GetScreenArea(monid);
+					auto rect = ui::gfx::Monitors::GetScreenArea(monid);
 					SetBorderless(rect);
 				}
 			}
@@ -268,7 +268,7 @@ struct FullscreenTest : ui::Buildable
 		{
 			ui::MakeWithText<ui::LabelFrame>("Exclusive:");
 
-			if (auto monid = ui::Monitors::FindFromWindow(GetNativeWindow()))
+			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
 				if (ui::imm::Button("Current screen"))
 				{
@@ -290,11 +290,11 @@ struct FullscreenTest : ui::Buildable
 	{
 		monitors.Clear();
 
-		for (auto id : ui::Monitors::All())
+		for (auto id : ui::gfx::Monitors::All())
 		{
-			auto rect = ui::Monitors::GetScreenArea(id);
-			auto name = ui::Monitors::GetName(id);
-			bool prim = ui::Monitors::IsPrimary(id);
+			auto rect = ui::gfx::Monitors::GetScreenArea(id);
+			auto name = ui::gfx::Monitors::GetName(id);
+			bool prim = ui::gfx::Monitors::IsPrimary(id);
 
 			std::string info = ui::Format("\"%s\"%s (%d;%d - %d;%d)",
 				name.c_str(),
@@ -321,7 +321,7 @@ struct FullscreenTest : ui::Buildable
 		W->SetState(ui::WindowState::Maximized);
 	}
 
-	void SetExclusive(ui::MonitorID monitor)
+	void SetExclusive(ui::gfx::MonitorID monitor)
 	{
 		auto* W = GetNativeWindow();
 		W->SetStyle(ui::WindowStyle::WS_None);
@@ -340,7 +340,7 @@ void Test_Fullscreen()
 struct OSCommunicationTest : ui::Buildable
 {
 	ui::Array<std::string> monitors;
-	ui::Array<ui::rhi::GraphicsAdapters::Info> gfxAdapters;
+	ui::Array<ui::gfx::GraphicsAdapters::Info> gfxAdapters;
 
 	OSCommunicationTest()
 	{
@@ -463,11 +463,11 @@ struct OSCommunicationTest : ui::Buildable
 	{
 		monitors.Clear();
 
-		for (auto id : ui::Monitors::All())
+		for (auto id : ui::gfx::Monitors::All())
 		{
-			auto rect = ui::Monitors::GetScreenArea(id);
-			auto name = ui::Monitors::GetName(id);
-			bool prim = ui::Monitors::IsPrimary(id);
+			auto rect = ui::gfx::Monitors::GetScreenArea(id);
+			auto name = ui::gfx::Monitors::GetName(id);
+			bool prim = ui::gfx::Monitors::IsPrimary(id);
 
 			std::string info = ui::Format("Monitor %p%s: \"%s\" (%d;%d - %d;%d)",
 				(void*)id,
@@ -477,7 +477,7 @@ struct OSCommunicationTest : ui::Buildable
 			monitors.Append(info);
 
 			puts(info.c_str());
-			auto res = ui::Monitors::GetAvailableDisplayModes(id);
+			auto res = ui::gfx::Monitors::GetAvailableDisplayModes(id);
 			for (auto r : res)
 			{
 				printf("- resolution: %dx%d (%d Hz)\n", int(r.width), int(r.height), int(r.refreshRate.num));
@@ -487,7 +487,7 @@ struct OSCommunicationTest : ui::Buildable
 
 	void ReloadGfxAdapterInfo()
 	{
-		gfxAdapters = ui::rhi::GraphicsAdapters::All();
+		gfxAdapters = ui::gfx::GraphicsAdapters::All();
 		for (auto& A : gfxAdapters)
 		{
 			printf("Adapter: \"%s\"\n", A.name.c_str());
