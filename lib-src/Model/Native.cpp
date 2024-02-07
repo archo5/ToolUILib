@@ -993,11 +993,11 @@ struct NativeWindow_Impl
 
 	void UpdateStyle()
 	{
-		int ws = WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_DLGFRAME | WS_MAXIMIZEBOX);
+		int ws = WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_CAPTION | WS_MAXIMIZEBOX);
 		if (style & WS_Resizable)
 			ws |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 		if (style & WS_TitleBar)
-			ws |= WS_DLGFRAME;
+			ws |= WS_CAPTION;
 		if (visible)
 			ws |= WS_VISIBLE;
 		SetWindowLong(window, GWL_STYLE, ws);
