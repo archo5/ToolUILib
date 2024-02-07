@@ -1403,18 +1403,25 @@ void NativeWindowBase::InvalidateAll()
 	//PostMessage(_impl->window, WM_USER + 2, 0, 0);
 }
 
+// https://devblogs.microsoft.com/oldnewthing/20220921-00/?p=107203
+static void RecalcWindowCursor(HWND window)
+{
+	POINT pt;
+	if (GetCursorPos(&pt))
+	{
+		HWND child = WindowFromPoint(pt);
+		if (window == child || IsChild(window, child))
+		{
+			UINT code = SendMessageW(child, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y));
+			SendMessageW(child, WM_SETCURSOR, (WPARAM)child, MAKELPARAM(code, WM_MOUSEMOVE));
+		}
+	}
+}
+
 void NativeWindowBase::SetDefaultCursor(DefaultCursor cur)
 {
 	_impl->cursor = g_defaultCursors[(int)cur];
-	bool pointingAtWindow = ::GetCapture() == _impl->window;
-	if (!pointingAtWindow)
-	{
-		POINT pt;
-		if (::GetCursorPos(&pt))
-			pointingAtWindow = ::WindowFromPoint(pt) == _impl->window;
-	}
-	if (pointingAtWindow)
-		::SetCursor(_impl->cursor);
+	RecalcWindowCursor(_impl->window);
 }
 
 void NativeWindowBase::CaptureMouse()
