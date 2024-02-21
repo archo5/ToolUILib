@@ -104,6 +104,9 @@ struct Vec4
 	UI_FORCEINLINE Vec4 operator + () const { return *this; }
 	UI_FORCEINLINE Vec4 operator - () const { return { -x, -y, -z, -w }; }
 
+	UI_FORCEINLINE bool operator == (const Vec4& o) const { return x == o.x && y == o.y && z == o.z && w == o.w; }
+	UI_FORCEINLINE bool operator != (const Vec4& o) const { return x != o.x || y != o.y || z != o.z || w != o.w; }
+
 	UI_FORCEINLINE Vec3<T> GetVec3() const { return { x, y, z }; }
 	UI_FORCEINLINE Vec3f WDivide() const { return { x / w, y / w, z / w }; }
 

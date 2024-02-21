@@ -373,8 +373,8 @@ AABB2f TextLineGenerateQuads(
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
 	float x0 = x;
-	float y0 = y + BaselineToYOff(sctx, TextBaseline::Top);
-	float y1 = y + BaselineToYOff(sctx, TextBaseline::Bottom);
+	float y0 = y - BaselineToYOff(sctx, TextBaseline::Top);
+	float y1 = y - BaselineToYOff(sctx, TextBaseline::Bottom);
 
 	size_t startRetQuad = retQuads.Size();
 	u32 prevChar = 0;
