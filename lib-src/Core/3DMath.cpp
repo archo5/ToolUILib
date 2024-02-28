@@ -331,6 +331,8 @@ Quat Mat4f::GetRotationQuaternion() const
 {
 	auto mr = GetRotationMatrix();
 	Quat q;
+#if 0
+	// doesn't work with damaged 180deg rotation matrices (also, more sqrts)
 	q.x = sqrtf(max(0.0f, 1 + mr.m[0][0] - mr.m[1][1] - mr.m[2][2])) * 0.5f;
 	q.y = sqrtf(max(0.0f, 1 - mr.m[0][0] + mr.m[1][1] - mr.m[2][2])) * 0.5f;
 	q.z = sqrtf(max(0.0f, 1 - mr.m[0][0] - mr.m[1][1] + mr.m[2][2])) * 0.5f;
@@ -338,6 +340,51 @@ Quat Mat4f::GetRotationQuaternion() const
 	q.x = copysignf(q.x, mr.m[2][1] - mr.m[1][2]);
 	q.y = copysignf(q.y, mr.m[0][2] - mr.m[2][0]);
 	q.z = copysignf(q.z, mr.m[1][0] - mr.m[0][1]);
+#else
+	// https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	float m00 = mr.m[0][0];
+	float m10 = mr.m[1][0];
+	float m20 = mr.m[2][0];
+	float m01 = mr.m[0][1];
+	float m11 = mr.m[1][1];
+	float m21 = mr.m[2][1];
+	float m02 = mr.m[0][2];
+	float m12 = mr.m[1][2];
+	float m22 = mr.m[2][2];
+	float tr = m00 + m11 + m22;
+	if (tr > 0)
+	{ 
+		float S = sqrtf(tr + 1) * 2; // S=4*qw 
+		q.w = 0.25f * S;
+		q.x = (m21 - m12) / S;
+		q.y = (m02 - m20) / S; 
+		q.z = (m10 - m01) / S; 
+	}
+	else if (m00 > m11 && m00 > m22)
+	{ 
+		float S = sqrtf(1 + m00 - m11 - m22) * 2; // S=4*qx 
+		q.w = (m21 - m12) / S;
+		q.x = 0.25f * S;
+		q.y = (m01 + m10) / S; 
+		q.z = (m02 + m20) / S; 
+	}
+	else if (m11 > m22)
+	{
+		float S = sqrtf(1 + m11 - m00 - m22) * 2; // S=4*qy
+		q.w = (m02 - m20) / S;
+		q.x = (m01 + m10) / S; 
+		q.y = 0.25f * S;
+		q.z = (m12 + m21) / S; 
+	}
+	else
+	{
+		float S = sqrtf(1 + m22 - m00 - m11) * 2; // S=4*qz
+		q.w = (m10 - m01) / S;
+		q.x = (m02 + m20) / S;
+		q.y = (m12 + m21) / S;
+		q.z = 0.25f * S;
+	}
+#endif
 	return q;
 }
 
@@ -521,6 +568,50 @@ DEFINE_TEST(3DMath, TransformConsistency)
 		ASSERT_NEAR(xfv1.x, xfv2.x);
 		ASSERT_NEAR(xfv1.y, xfv2.y);
 		ASSERT_NEAR(xfv1.z, xfv2.z);
+	}
+}
+
+DEFINE_TEST(3DMath, MQMRoundtrips)
+{
+	puts("MQMRoundtrips");
+
+	for (int x = -1; x <= 1; x++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			for (int z = -1; z <= 1; z++)
+			{
+				if (x == 0 && y == 0 && z == 0)
+					continue;
+				for (int angle = -180; angle <= 180; angle += 45)
+				{
+					auto m0 = Mat4f::RotateAxisAngle(Vec3f(float(x), float(y), float(z)).Normalized(), float(angle));
+					auto q = m0.GetRotationQuaternion();
+					auto m1 = Mat4f::Rotate(q);
+
+					for (int i = 0; i < 16; i++)
+					{
+						ASSERT_NEAR(m0.a[i], m1.a[i]);
+					}
+				}
+			}
+		}
+	}
+}
+
+DEFINE_TEST(3DMath, MQMRoundtrip180)
+{
+	puts("MQMRoundtrip180");
+
+	auto m0 = Mat4f::RotateAxisAngle(Vec3f(1, 2, 3).Normalized(), 180);
+	// damage the matrix slightly
+	m0.m[0][2] -= 1e-4f;
+	auto q = m0.GetRotationQuaternion();
+	auto m1 = Mat4f::Rotate(q);
+
+	for (int i = 0; i < 16; i++)
+	{
+		ASSERT_NEAR(m0.a[i], m1.a[i]);
 	}
 }
 
