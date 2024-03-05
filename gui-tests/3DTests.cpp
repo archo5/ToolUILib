@@ -488,19 +488,32 @@ struct QuaternionTest : ui::Buildable
 	ui::OrbitCamera camera;
 	float fov = 45;
 	ui::Vec3f angles;
+	bool zyx = false;
 	bool useMtx = false;
 
 	ui::Quat GetQuat()
 	{
-		return ui::Quat::RotateEulerAnglesZYX(angles);
+		if (!zyx)
+			return ui::Quat::RotateEulerAnglesXYZ(angles);
+		else
+			return ui::Quat::RotateEulerAnglesZYX(angles);
 	}
 	ui::Mat4f GetMtx()
 	{
 		if (useMtx)
 		{
-			return ui::Mat4f::RotateZ(angles.z)
-				* ui::Mat4f::RotateY(angles.y)
-				* ui::Mat4f::RotateX(angles.x);
+			if (!zyx)
+			{
+				return ui::Mat4f::RotateX(angles.x)
+					* ui::Mat4f::RotateY(angles.y)
+					* ui::Mat4f::RotateZ(angles.z);
+			}
+			else
+			{
+				return ui::Mat4f::RotateZ(angles.z)
+					* ui::Mat4f::RotateY(angles.y)
+					* ui::Mat4f::RotateX(angles.x);
+			}
 		}
 		return ui::Mat4f::Rotate(GetQuat());
 	}
@@ -537,6 +550,7 @@ struct QuaternionTest : ui::Buildable
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
 					ui::imm::PropEditFloatVec("R", &angles.x, ui::imm::XYZ);
+					ui::imm::PropDropdownMenuList("Mode", zyx, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("XYZ\0" "ZYX\0"));
 					ui::imm::PropEditBool("Use mtx", useMtx);
 				}
 				ui::Pop();
@@ -556,9 +570,9 @@ struct QuaternionTest : ui::Buildable
 					auto m1 = GetMtx();
 					auto q2 = m1.GetRotationQuaternion();
 					ui::Textf("q2=%g;%g;%g;%g", q2.x, q2.y, q2.z, q2.w);
-					auto a2 = q2.ToEulerAnglesZYX();
+					auto a2 = zyx ? q2.ToEulerAnglesZYX() : q2.ToEulerAnglesXYZ();
 					ui::Textf("a2=%g;%g;%g", a2.x, a2.y, a2.z);
-					auto q3 = ui::Quat::RotateEulerAnglesZYX(a2);
+					auto q3 = zyx ? ui::Quat::RotateEulerAnglesZYX(a2) : ui::Quat::RotateEulerAnglesXYZ(a2);
 					ui::Textf("q3=%g;%g;%g;%g", q3.x, q3.y, q3.z, q3.w);
 				}
 				ui::Pop();

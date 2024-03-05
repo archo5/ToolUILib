@@ -146,6 +146,7 @@ struct Quat
 	float Angle() const;
 
 	Quat operator * (const Quat& o) const;
+	Vec3f ToEulerAnglesXYZ() const;
 	Vec3f ToEulerAnglesZYX() const;
 	Vec3f Rotate(Vec3f v) const;
 
@@ -166,6 +167,7 @@ struct Quat
 
 	static Quat Identity() { return { 0, 0, 0, 1 }; }
 	static Quat RotateAxisAngle(const Vec3f& axis, float angle);
+	static Quat RotateDirAxisLenAngle(const Vec3f& v);
 	static Quat RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b);
 	static Quat RotateBetweenDirections(const Vec3f& a, const Vec3f& b);
 	static Quat RotateX(float angle);
@@ -196,9 +198,10 @@ inline Quat QuatSLerp(const Quat& a, const Quat& b1, float s)
 	float dot = QuatDot(a, b1);
 	Quat b = dot >= 0 ? b1 : -b1;
 	float fl, fr;
-	if (fabsf(dot) < 0.99999f)
+	float absdot = fabsf(dot);
+	if (absdot < 0.99999f)
 	{
-		float a = acosf(dot);
+		float a = acosf(absdot);
 		float rsa = 1.0f / sinf(a);
 		fl = sinf((1 - s) * a) * rsa;
 		fr = sinf(s * a) * rsa;

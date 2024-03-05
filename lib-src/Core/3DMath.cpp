@@ -36,6 +36,75 @@ Quat Quat::operator * (const Quat& o) const
 	};
 }
 
+static Vec3f Q2EA(Quat q, int i, int j, int k)
+{
+	// https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0276302
+	bool notProper = true;
+	if (i == k)
+	{
+		notProper = false;
+		k = 6 - i - j;
+	}
+	float e_prod = (i - j) * (j - k) * (k - i) / 2.f;
+	float a, b, c, d;
+	float qp[4] = { q.w, q.x, q.y, q.z };
+	if (notProper)
+	{
+		a = qp[0] - qp[j];
+		b = qp[i] + qp[k] * e_prod;
+		c = qp[j] + qp[0];
+		d = qp[k] * e_prod - qp[i];
+	}
+	else
+	{
+		a = qp[0];
+		b = qp[i];
+		c = qp[j];
+		d = qp[k] * e_prod;
+	}
+	float a2 = a * a;
+	float b2 = b * b;
+	float c2 = c * c;
+	float d2 = d * d;
+	float cos_ang_2 = 2 * (a2 + b2) / (a2 + b2 + c2 + d2) - 1;
+	float ang_add = atan2f(b, a);
+	float ang_sub = atan2f(d, c);
+	float ang_1, ang_2, ang_3;
+	if (cos_ang_2 >= 0.999999f)
+	{
+		ang_1 = 0;
+		ang_2 = 0;
+		ang_3 = 2 * ang_add;
+	}
+	else if (cos_ang_2 <= -0.999999f)
+	{
+		ang_1 = 0;
+		ang_2 = PI / 2;
+		ang_3 = 2 * ang_sub;
+	}
+	else
+	{
+		ang_1 = ang_add - ang_sub;
+		ang_2 = acosf(cos_ang_2);
+		ang_3 = ang_add + ang_sub;
+	}
+	if (notProper)
+	{
+		ang_3 *= e_prod;
+		ang_2 -= PI / 2;
+	}
+	return Vec3f(
+		AngleNormalize360(ang_3 * RAD2DEG),
+		AngleNormalize360(ang_2 * RAD2DEG),
+		AngleNormalize360(ang_1 * RAD2DEG)
+	);
+}
+
+Vec3f Quat::ToEulerAnglesXYZ() const
+{
+	return Q2EA(*this, 3, 2, 1);
+}
+
 Vec3f Quat::ToEulerAnglesZYX() const
 {
 	float sinX = 2 * (w * x + y * z);
@@ -70,6 +139,15 @@ Quat Quat::RotateAxisAngle(const Vec3f& axis, float angle)
 	float c = cosf(har);
 	float s = sinf(har);
 	return { s * axis.x, s * axis.y, s * axis.z, c };
+}
+
+Quat Quat::RotateDirAxisLenAngle(const Vec3f& v)
+{
+	float lsq = v.LengthSq();
+	if (lsq == 0)
+		return Quat::Identity();
+	float len = sqrtf(lsq);
+	return RotateAxisAngle(v / len, len);
 }
 
 Quat Quat::RotateBetweenNormalDirections(const Vec3f& a, const Vec3f& b)

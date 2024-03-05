@@ -11,6 +11,7 @@ namespace imm {
 enum class QuatEditMode : u8
 {
 	Raw,
+	EulerXYZ,
 	EulerZYX,
 };
 
