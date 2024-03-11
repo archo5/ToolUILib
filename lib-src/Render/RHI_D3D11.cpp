@@ -18,6 +18,9 @@
 
 #define D3D_DUMP_LIVE_OBJECTS
 
+// not needed for nvidia but without this at least one intel driver will crash
+#define D3D_USE_STAGING_TEXTURE 1
+
 
 #include "clear.vs.h"
 #include "clear.ps.h"
@@ -115,6 +118,10 @@ static Texture2D* g_prevTex;
 static Texture2D* g_curTex;
 struct Texture2D
 {
+#if D3D_USE_STAGING_TEXTURE
+	ID3D11Texture2D* staging = nullptr;
+	AABB2i aabb;
+#endif
 	ID3D11Texture2D* tex = nullptr;
 	ID3D11ShaderResourceView* srv = nullptr;
 	uint8_t _flags = 0;
@@ -141,6 +148,9 @@ struct Texture2D
 			t2d.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			t2d.CPUAccessFlags = data ? 0 : D3D11_CPU_ACCESS_WRITE;
 		}
+#if D3D_USE_STAGING_TEXTURE
+		t2d.CPUAccessFlags = 0;
+#endif
 
 		D3D11_SUBRESOURCE_DATA srd;
 		{
@@ -149,6 +159,15 @@ struct Texture2D
 		}
 
 		D3DCHK(g_dev->CreateTexture2D(&t2d, data ? &srd : nullptr, &tex));
+#if D3D_USE_STAGING_TEXTURE
+		if (!data)
+		{
+			t2d.Usage = D3D11_USAGE_STAGING;
+			t2d.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			t2d.BindFlags = 0;
+			D3DCHK(g_dev->CreateTexture2D(&t2d, data ? &srd : nullptr, &staging));
+		}
+#endif
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
 		{
@@ -163,6 +182,7 @@ struct Texture2D
 	{
 		SAFE_RELEASE(srv);
 		SAFE_RELEASE(tex);
+		SAFE_RELEASE(staging);
 		if (g_prevTex == this)
 			g_prevTex = nullptr;
 		if (g_curTex == this)
@@ -1023,9 +1043,10 @@ void DestroyTexture(Texture2D* tex)
 
 MapData MapTexture(Texture2D* tex)
 {
-#if 0
+#if D3D_USE_STAGING_TEXTURE
+	tex->aabb = AABB2i::Empty();
 	D3D11_MAPPED_SUBRESOURCE msr = {};
-	D3DCHK(g_ctx->Map(tex->tex, 0, D3D11_MAP_WRITE, 0, &msr));
+	D3DCHK(g_ctx->Map(tex->staging, 0, D3D11_MAP_WRITE, 0, &msr));
 
 	MapData omd;
 	{
@@ -1041,7 +1062,7 @@ MapData MapTexture(Texture2D* tex)
 void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const void* data, bool a8)
 {
 	size_t bpp = a8 ? 1 : 4;
-#if 0
+#if D3D_USE_STAGING_TEXTURE
 	for (uint16_t curY = 0; curY < h; curY++)
 	{
 		memcpy(
@@ -1049,6 +1070,8 @@ void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint
 			static_cast<const char*>(data) + curY * w * bpp,
 			w * bpp);
 	}
+	AABB2i bbox(x, y, x + w, y + h);
+	tex->aabb = tex->aabb.Include(bbox);
 #else
 	if (w == 0 || h == 0)
 		return;
@@ -1059,8 +1082,19 @@ void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint
 
 void UnmapTexture(Texture2D* tex)
 {
-#if 0
-	g_ctx->Unmap(tex->tex, 0);
+#if D3D_USE_STAGING_TEXTURE
+	g_ctx->Unmap(tex->staging, 0);
+	D3D11_BOX box = {};
+	box.left = tex->aabb.x0;
+	box.top = tex->aabb.y0;
+	box.right = tex->aabb.x1;
+	box.bottom = tex->aabb.y1;
+	box.back = 1;
+	g_ctx->CopySubresourceRegion(
+		tex->tex, 0,
+		tex->aabb.x0, tex->aabb.y0, 0,
+		tex->staging, 0,
+		&box);
 #endif
 }
 
