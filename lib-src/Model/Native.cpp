@@ -30,6 +30,8 @@ namespace ui {
 LogCategory LOG_WIN32("Win32", LogLevel::Info);
 } // ui
 
+static thread_local bool g_mayCallWndProc = false;
+
 
 enum MoveSizeStateType
 {
@@ -749,8 +751,11 @@ struct NativeWindow_Impl
 	{
 		system.nativeWindow = owner;
 
-		window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandleW(nullptr), this);
-		DragAcceptFiles(window, TRUE);
+		{
+			TmpEdit<bool> te(g_mayCallWndProc, true);
+			window = CreateWindowExW(0, L"UIWindow", L"UI", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 400, NULL, NULL, GetModuleHandleW(nullptr), this);
+			DragAcceptFiles(window, TRUE);
+		}
 		renderCtx = gfx::CreateRenderContext(window);
 
 		//UpdateVisibilityState();
@@ -800,6 +805,8 @@ struct NativeWindow_Impl
 			g_windowRepaintList->RemoveFirstOf(this);
 		gfx::FreeRenderContext(renderCtx);
 		renderCtx = nullptr;
+
+		TmpEdit<bool> te(g_mayCallWndProc, true);
 		DestroyWindow(window);
 	}
 
@@ -988,6 +995,8 @@ struct NativeWindow_Impl
 	{
 		if (!visible)
 			ExitExclusiveMode();
+
+		TmpEdit<bool> te(g_mayCallWndProc, true);
 		ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
 	}
 
@@ -1000,6 +1009,8 @@ struct NativeWindow_Impl
 			ws |= WS_CAPTION;
 		if (visible)
 			ws |= WS_VISIBLE;
+
+		TmpEdit<bool> te(g_mayCallWndProc, true);
 		SetWindowLong(window, GWL_STYLE, ws);
 		SetWindowPos(window, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 	}
@@ -1009,6 +1020,8 @@ struct NativeWindow_Impl
 		auto* m = menu;
 		if (exclFSInfo)
 			m = nullptr;
+
+		TmpEdit<bool> te(g_mayCallWndProc, true);
 		::SetMenu(window, m ? (HMENU)m->GetNativeHandle() : nullptr);
 		// TODO is there a way to prevent partial redrawing results from showing up?
 	}
@@ -1107,6 +1120,7 @@ std::string NativeWindowBase::GetTitle()
 
 void NativeWindowBase::SetTitle(StringView title)
 {
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowTextW(_impl->window, UTF8toWCHAR(title).c_str());
 }
 
@@ -1191,6 +1205,7 @@ AABB2i NativeWindowBase::GetInnerRect()
 
 void NativeWindowBase::SetOuterRect(AABB2i bb)
 {
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowPos(_impl->window, nullptr, bb.x0, bb.y0, bb.GetWidth(), bb.GetHeight(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1198,6 +1213,8 @@ void NativeWindowBase::SetInnerRect(AABB2i bb)
 {
 	RECT r = { bb.x0, bb.y0, bb.x1, bb.y1 };
 	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo);
+
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowPos(_impl->window, nullptr, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1213,6 +1230,7 @@ Point2i NativeWindowBase::GetInnerPosition()
 
 void NativeWindowBase::SetOuterPosition(int x, int y)
 {
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowPos(_impl->window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1220,6 +1238,8 @@ void NativeWindowBase::SetInnerPosition(int x, int y)
 {
 	RECT r = { x, y, x, y };
 	AdjustWindowRect(&r, GetWindowStyle(_impl->window), !!_impl->menu && !_impl->exclFSInfo);
+
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowPos(_impl->window, nullptr, r.left, r.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1228,10 +1248,17 @@ void NativeWindowBase::ProcessEventsExclusive()
 	_impl->EnterExclusiveMode();
 
 	MSG msg;
-	while (!g_appQuit && _impl->visible && GetMessageW(&msg, NULL, 0, 0))
+	while (!g_appQuit && _impl->visible)
 	{
+		g_mayCallWndProc = true;
+		if (!GetMessageW(&msg, NULL, 0, 0))
+		{
+			g_mayCallWndProc = false;
+			break;
+		}
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
+		g_mayCallWndProc = false;
 		if (msg.hwnd)
 		{
 			if (auto* window = GetNativeWindow(msg.hwnd))
@@ -1254,6 +1281,7 @@ Size2i NativeWindowBase::GetInnerSize()
 
 void NativeWindowBase::SetOuterSize(int x, int y)
 {
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	SetWindowPos(_impl->window, nullptr, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 }
 
@@ -1409,6 +1437,7 @@ static void RecalcWindowCursor(HWND window)
 	POINT pt;
 	if (GetCursorPos(&pt))
 	{
+		TmpEdit<bool> te(g_mayCallWndProc, true);
 		HWND child = WindowFromPoint(pt);
 		if (window == child || IsChild(window, child))
 		{
@@ -1777,12 +1806,19 @@ void Application::_SignalEvent()
 int Application::Run()
 {
 	MSG msg;
-	while (!g_appQuit && GetMessageW(&msg, NULL, 0, 0))
+	while (!g_appQuit)
 	{
+		g_mayCallWndProc = true;
+		if (!GetMessageW(&msg, NULL, 0, 0))
+		{
+			g_mayCallWndProc = false;
+			break;
+		}
 		do
 		{
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
+			g_mayCallWndProc = false;
 
 			g_mainEventQueue->RunAllCurrent();
 
@@ -1790,8 +1826,11 @@ int Application::Run()
 				return g_appExitCode;
 			if (msg.message == WM_PAINT)
 				break; // redraw the UI and then continue the core loop
+
+			g_mayCallWndProc = true;
 		}
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE));
+		g_mayCallWndProc = false;
 
 		// TODO HACK: avoid repainting on every WM_INPUT as there's a lot of them (WM_MOUSEMOVE should still trigger repainting)
 		if (msg.hwnd && msg.message != WM_INPUT)
@@ -1825,6 +1864,7 @@ Optional<int> Application::GetExitCode()
 void Application::ProcessSystemMessagesNonBlocking()
 {
 	MSG msg;
+	TmpEdit<bool> te(g_mayCallWndProc, true);
 	while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) != 0)
 	{
 		TranslateMessage(&msg);
@@ -1857,6 +1897,10 @@ static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if (!g_mayCallWndProc)
+	{
+		//LogWarn(LOG_WIN32, "WindowProc called by an unknown event handler!");
+	}
 	switch (message)
 	{
 	case WM_NCCREATE:
