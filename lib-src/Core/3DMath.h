@@ -146,6 +146,8 @@ struct Quat
 	float Angle() const;
 
 	Quat operator * (const Quat& o) const;
+	Vec4f ToAxisAngle() const;
+	Vec3f ToDirAxisLenAngle() const;
 	Vec3f ToEulerAnglesXYZ() const;
 	Vec3f ToEulerAnglesZYX() const;
 	Vec3f Rotate(Vec3f v) const;

@@ -100,6 +100,22 @@ static Vec3f Q2EA(Quat q, int i, int j, int k)
 	);
 }
 
+Vec4f Quat::ToAxisAngle() const
+{
+	float hang = acosf(clamp(w, -1.f, 1.f));
+	float shang = sinf(hang);
+	if (shang == 0)
+		return {};
+	float ishang = 1.f / shang;
+	return { x * ishang, y * ishang, z * ishang, hang * (2 * RAD2DEG) };
+}
+
+Vec3f Quat::ToDirAxisLenAngle() const
+{
+	auto aa = ToAxisAngle();
+	return aa.GetVec3().Normalized() * AngleNormalize180(aa.w);
+}
+
 Vec3f Quat::ToEulerAnglesXYZ() const
 {
 	return Q2EA(*this, 3, 2, 1);
