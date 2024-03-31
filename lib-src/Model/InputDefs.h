@@ -85,6 +85,8 @@ enum KeyScanCode
 	KSC_PrintScreen = 55 | KSC_EXTENDED_MASK,
 
 	KSC_Alt = 56,
+	KSC_LeftAlt = 56,
+	KSC_RightAlt = KSC_Alt | KSC_EXTENDED_MASK,
 
 	KSC_Space = 57,
 

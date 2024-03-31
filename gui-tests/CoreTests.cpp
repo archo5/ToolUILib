@@ -648,6 +648,7 @@ struct KeyboardEventsTest : EventsTest
 				ui::platform::GetPhysicalKeyName(e.shortCode).c_str(),
 				e.GetModifierKeys(),
 				e.numRepeats);
+			if (e.shortCode == ui::KSC_LeftAlt || e.shortCode == ui::KSC_RightAlt) e.PreventFallback();
 		}
 		else if (e.type == ui::EventType::TextInput)
 		{

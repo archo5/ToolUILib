@@ -154,6 +154,7 @@ struct Event
 	uint8_t modifiers = 0;
 	bool down = false;
 	bool _stopPropagation = false;
+	bool _preventFallback = false;
 	// key: 0 = original press, 1+ = OS-generated keypress
 	// mouse button: 1 = first click, 2 = second etc.
 	uint16_t numRepeats = 0;
@@ -170,6 +171,8 @@ struct Event
 
 	bool IsPropagationStopped() const { return _stopPropagation; }
 	void StopPropagation() { _stopPropagation = true; }
+	bool IsFallbackPrevented() const { return _preventFallback; }
+	void PreventFallback() { _preventFallback = true; }
 
 	bool IsCtrlPressed() const { return (GetModifierKeys() & MK_Ctrl) != 0; }
 	bool IsShiftPressed() const { return (GetModifierKeys() & MK_Shift) != 0; }

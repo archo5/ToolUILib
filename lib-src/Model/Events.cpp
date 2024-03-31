@@ -661,7 +661,7 @@ void EventSystem::OnMouseScroll(Vec2f delta, u8 mod)
 	}
 }
 
-void EventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
+bool EventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 {
 	if (focusObj)
 	{
@@ -672,10 +672,12 @@ void EventSystem::OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bo
 		ev.arg0 = isRepeated;
 		ev.numRepeats = isRepeated;// numRepeats; -- TODO
 		BubblingEvent(ev);
+		return ev.IsFallbackPrevented();
 	}
+	return false;
 }
 
-void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier)
+bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier)
 {
 	Event ev(this, focusObj, EventType::KeyAction);
 	if (focusObj)
@@ -687,7 +689,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 		BubblingEvent(ev);
 	}
 
-	if (!ev.IsPropagationStopped())
+	if (!ev.IsFallbackPrevented())
 	{
 		if (act == KeyAction::Inspect)
 			Application::OpenInspector(GetNativeWindow(), hoverObj);
@@ -740,6 +742,7 @@ void EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			}
 		}
 	}
+	return ev.IsFallbackPrevented();
 }
 
 void EventSystem::OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)

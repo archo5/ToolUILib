@@ -698,7 +698,7 @@ struct ProxyEventSystem
 			return;
 		mainTarget.target->OnMouseScroll(delta, mod);
 	}
-	void OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
+	bool OnKeyInput(bool down, uint32_t vk, uint8_t pk, uint8_t mod, bool isRepeated, uint16_t numRepeats)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
@@ -714,16 +714,16 @@ struct ProxyEventSystem
 			OnWindowKeyEvent.Call(ev);
 		}
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
-			return;
-		mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);
+			return false;
+		return mainTarget.target->OnKeyInput(down, vk, pk, mod, isRepeated, numRepeats);
 	}
-	void OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
+	bool OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, bool modifier = false)
 	{
 		TmpEdit<decltype(g_curSystem)> tmp(g_curSystem, mainTarget.target->container->owner);
 
 		if (!mainTarget.target->GetNativeWindow()->IsInnerUIEnabled())
-			return;
-		mainTarget.target->OnKeyAction(act, mod, numRepeats, modifier);
+			return false;
+		return mainTarget.target->OnKeyAction(act, mod, numRepeats, modifier);
 	}
 	void OnTextInput(uint32_t ch, uint8_t mod, uint16_t numRepeats)
 	{
@@ -1895,6 +1895,95 @@ static void AdjustMouseCapture(HWND hWnd, WPARAM wParam)
 		ReleaseCapture();
 }
 
+static bool ProcessKeyMessage(ProxyEventSystem* evsys, bool down, WPARAM wParam, LPARAM lParam)
+{
+	uint16_t numRepeats = lParam & 0xffff;
+	auto M = GetModifierKeys();
+	uint8_t origScanCode = (lParam >> 16) & 0xff;
+	uint8_t extMask = lParam & (1 << 24) ? 0x80 : 0;
+	uint8_t scanCode = origScanCode | extMask;
+	bool processed = evsys->OnKeyInput(down, wParam, scanCode, M, (lParam & (1U << 30)) != 0U, numRepeats);
+	if (processed)
+		return true;
+	if (down)
+	{
+		switch (wParam)
+		{
+		case VK_SPACE: return evsys->OnKeyAction(KeyAction::ActivateDown, M, numRepeats); break;
+		case VK_RETURN: return evsys->OnKeyAction(KeyAction::Enter, M, numRepeats); break;
+
+		case VK_BACK:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelPrevWord : KeyAction::DelPrevLetter,
+				M,
+				numRepeats);
+			break;
+		case VK_DELETE:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelNextWord : KeyAction::DelNextLetter,
+				M,
+				numRepeats);
+			return evsys->OnKeyAction(KeyAction::Delete, M, numRepeats);
+			break;
+
+		case VK_LEFT:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::PrevWord : KeyAction::PrevLetter,
+				M,
+				numRepeats,
+				(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+		case VK_RIGHT:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::NextWord : KeyAction::NextLetter,
+				M,
+				numRepeats,
+				(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+		case VK_UP:
+			return evsys->OnKeyAction(KeyAction::Up, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+		case VK_DOWN:
+			return evsys->OnKeyAction(KeyAction::Down, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+		case VK_HOME:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToStart : KeyAction::GoToLineStart,
+				M,
+				numRepeats,
+				(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+		case VK_END:
+			return evsys->OnKeyAction(
+				GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToEnd : KeyAction::GoToLineEnd,
+				M,
+				numRepeats,
+				(GetKeyState(VK_SHIFT) & 0x8000) != 0);
+			break;
+
+		case VK_PRIOR: return evsys->OnKeyAction(KeyAction::PageUp, M, numRepeats); break;
+		case VK_NEXT: return evsys->OnKeyAction(KeyAction::PageDown, M, numRepeats); break;
+
+		case VK_TAB: return evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? KeyAction::FocusPrev : KeyAction::FocusNext, M, numRepeats); break;
+
+		case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) return evsys->OnKeyAction(KeyAction::Cut, M, numRepeats); break;
+		case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) return evsys->OnKeyAction(KeyAction::Copy, M, numRepeats); break;
+		case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) return evsys->OnKeyAction(KeyAction::Paste, M, numRepeats); break;
+		case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) return evsys->OnKeyAction(KeyAction::SelectAll, M, numRepeats); break;
+
+		case VK_F11: return evsys->OnKeyAction(KeyAction::Inspect, M, numRepeats); break;
+		}
+	}
+	else
+	{
+		switch (wParam)
+		{
+		case VK_SPACE: return evsys->OnKeyAction(KeyAction::ActivateUp, M, numRepeats); break;
+		}
+	}
+	return false;
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (!g_mayCallWndProc)
@@ -2068,94 +2157,22 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			evsys->OnMouseScroll({ float(GET_WHEEL_DELTA_WPARAM(wParam)), 0 }, GetModifierKeys());
 		}
 		return TRUE;
+	case WM_SYSKEYDOWN:
+	case WM_SYSKEYUP:
+		if (auto* evsys = GetEventSys(hWnd))
+		{
+			if (ProcessKeyMessage(evsys, message == WM_SYSKEYDOWN, wParam, lParam))
+				return 0;
+		}
+		break;
 	case WM_KEYDOWN:
 	case WM_KEYUP:
 		if (auto* evsys = GetEventSys(hWnd))
 		{
-			uint16_t numRepeats = lParam & 0xffff;
-			auto M = GetModifierKeys();
-			uint8_t origScanCode = (lParam >> 16) & 0xff;
-			uint8_t extMask = lParam & (1 << 24) ? 0x80 : 0;
-			uint8_t scanCode = origScanCode | extMask;
-			evsys->OnKeyInput(message == WM_KEYDOWN, wParam, scanCode, M, (lParam & (1U << 30)) != 0U, numRepeats);
-			if (message == WM_KEYDOWN)
-			{
-				switch (wParam)
-				{
-				case VK_SPACE: evsys->OnKeyAction(KeyAction::ActivateDown, M, numRepeats); break;
-				case VK_RETURN: evsys->OnKeyAction(KeyAction::Enter, M, numRepeats); break;
-
-				case VK_BACK:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelPrevWord : KeyAction::DelPrevLetter,
-						M,
-						numRepeats);
-					break;
-				case VK_DELETE:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::DelNextWord : KeyAction::DelNextLetter,
-						M,
-						numRepeats);
-					evsys->OnKeyAction(KeyAction::Delete, M, numRepeats);
-					break;
-
-				case VK_LEFT:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::PrevWord : KeyAction::PrevLetter,
-						M,
-						numRepeats,
-						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-				case VK_RIGHT:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::NextWord : KeyAction::NextLetter,
-						M,
-						numRepeats,
-						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-				case VK_UP:
-					evsys->OnKeyAction(KeyAction::Up, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-				case VK_DOWN:
-					evsys->OnKeyAction(KeyAction::Down, M, numRepeats, (GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-				case VK_HOME:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToStart : KeyAction::GoToLineStart,
-						M,
-						numRepeats,
-						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-				case VK_END:
-					evsys->OnKeyAction(
-						GetKeyState(VK_CONTROL) & 0x8000 ? KeyAction::GoToEnd : KeyAction::GoToLineEnd,
-						M,
-						numRepeats,
-						(GetKeyState(VK_SHIFT) & 0x8000) != 0);
-					break;
-
-				case VK_PRIOR: evsys->OnKeyAction(KeyAction::PageUp, M, numRepeats); break;
-				case VK_NEXT: evsys->OnKeyAction(KeyAction::PageDown, M, numRepeats); break;
-
-				case VK_TAB: evsys->OnKeyAction(GetKeyState(VK_SHIFT) & 0x8000 ? KeyAction::FocusPrev : KeyAction::FocusNext, M, numRepeats); break;
-
-				case 'X': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Cut, M, numRepeats); break;
-				case 'C': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Copy, M, numRepeats); break;
-				case 'V': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::Paste, M, numRepeats); break;
-				case 'A': if (GetKeyState(VK_CONTROL) & 0x8000) evsys->OnKeyAction(KeyAction::SelectAll, M, numRepeats); break;
-
-				case VK_F11: evsys->OnKeyAction(KeyAction::Inspect, M, numRepeats); break;
-				}
-			}
-			else
-			{
-				switch (wParam)
-				{
-				case VK_SPACE: evsys->OnKeyAction(KeyAction::ActivateUp, M, numRepeats); break;
-				}
-			}
+			if (ProcessKeyMessage(evsys, message == WM_KEYDOWN, wParam, lParam))
+				return 0;
 		}
-		return TRUE;
+		break;
 	case WM_CHAR:
 	case WM_UNICHAR:
 		if (wParam == UNICODE_NOCHAR)
