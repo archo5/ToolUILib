@@ -328,25 +328,29 @@ struct TextBaselineTest : ui::Buildable
 	void OnPaint(const ui::UIPaintContext& ctx) override
 	{
 		static const char* text = "Tyi";
-		ui::Font* fonts[] =
+		static constexpr const int num = 3;// 4;
+		ui::Font* fonts[num] =
 		{
 			ui::GetFont(ui::FONT_FAMILY_SANS_SERIF),
 			ui::GetFont(ui::FONT_FAMILY_SERIF),
 			ui::GetFont(ui::FONT_FAMILY_MONOSPACE),
+			//ui::GetFont("Atkinson Hyperlegible"),
 		};
-		ui::Color4b colors[] =
+		ui::Color4b colors[num] =
 		{
 			ui::Color4f(0.9f, 0.5f, 0.1f),
 			ui::Color4f(0.1f, 0.5f, 0.9f),
 			ui::Color4f(0.5f, 0.9f, 0.1f),
+			//ui::Color4f(0.1f, 0.9f, 0.5f),
 		};
 		int y = 20;
+		int gap = 130;// 170;
 		for (int i = 0; i < 12; i++)
 		{
 			ui::draw::LineCol(0, y, 10000, y, 1, ui::Color4b(255, 0, 0));
 
 			int size = 6 + 2 * i;
-			for (int j = 0; j < 3; j++)
+			for (int j = 0; j < num; j++)
 			{
 				int x = 2 + j * 40;
 				float width = ui::GetTextWidth(fonts[j], size, text);
@@ -354,17 +358,17 @@ struct TextBaselineTest : ui::Buildable
 				ui::draw::RectCol(x, y - size, x + width, y, ui::Color4b(64, 255));
 				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Default);
 
-				x += 130;
+				x += gap;
 
 				ui::draw::RectCol(x, y, x + width, y + size, ui::Color4b(64, 255));
 				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Top);
 
-				x += 130;
+				x += gap;
 
 				ui::draw::RectCol(x, y - size, x + width, y, ui::Color4b(64, 255));
 				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Bottom);
 
-				x += 130;
+				x += gap;
 
 				ui::draw::RectCol(x, y - size / 2, x + width, y + size / 2, ui::Color4b(64, 255));
 				ui::draw::TextLine(fonts[j], size, x, y, text, colors[j], ui::TextBaseline::Middle);

@@ -51,7 +51,7 @@ struct Font
 	struct SizeContext
 	{
 		int size = 0;
-		float asc = 0, desc = 0, lgap = 0;
+		float asc = 0, desc = 0, lgap = 0, xheight = 0, capheight = 0;
 		HashMap<uint32_t, GlyphValue> glyphMap;
 	};
 
@@ -84,12 +84,35 @@ struct Font
 		sctx.size = size;
 
 		float scale = stbtt_ScaleForMappingEmToPixels(&info, float(size));
-		int asc, desc, lgap;
-		stbtt_GetFontVMetrics(&info, &asc, &desc, &lgap);
+		int asc, desc, lgap, xheight = 0, capheight = 0;
+		if (stbtt_GetFontVMetricsOS2(&info, &asc, &desc, &lgap))
+		{
+			int tab = stbtt__find_table(info.data, info.fontstart, "OS/2");
+			int version = ttSHORT(info.data + tab);
+			if (version >= 2)
+			{
+				// int16	sTypoLineGap @ 72
+				// uint16	usWinAscent @ 74
+				// uint16	usWinDescent @ 76
+				// uint32	ulCodePageRange1 @ 78
+				// uint32	ulCodePageRange2 @ 82
+				// int16	sxHeight @ 86
+				// int16	sCapHeight @ 88
+				xheight = ttSHORT(info.data + tab + 86);
+				capheight = ttSHORT(info.data + tab + 88);
+			}
+		}
+		else
+		{
+			stbtt_GetFontVMetrics(&info, &asc, &desc, &lgap);
+		}
 		sctx.asc = asc * scale;
 		sctx.desc = desc * scale;
 		sctx.lgap = lgap * scale;
-		//printf("INFO size=%d em=%g asc=%g desc=%g lgap=%g\n", sctx.size, sctx.asc, sctx.desc, sctx.lgap);
+		sctx.xheight = xheight * scale;
+		sctx.capheight = capheight * scale;
+		//printf("INFO size=%d asc=%g desc=%g lgap=%g xheight=%g capheight=%g\n",
+		//	sctx.size, sctx.asc, sctx.desc, sctx.lgap, sctx.xheight, sctx.capheight);
 
 		return sctx;
 	}
@@ -269,7 +292,7 @@ float GetTextWidth(Font* font, int size, StringView text)
 
 	auto& sctx = font->GetSizeContext(int(roundf(size * g_textResScale)));
 	float invScale = 1.0f / g_textResScale;
-	int out = 0;
+	float out = 0;
 	u32 prevChar = 0;
 
 	UTF8Iterator it(text);
@@ -281,9 +304,9 @@ float GetTextWidth(Font* font, int size, StringView text)
 
 		float kern = font->FindKerning(sctx.size, prevChar, ch);
 		prevChar = ch;
-		out += int(roundf((font->FindGlyph(sctx, ch, false).xadv + kern) * invScale));
+		out += roundf(font->FindGlyph(sctx, ch, false).xadv + kern);
 	}
-	return float(out);
+	return out * invScale;
 }
 
 static Font* g_tmFont;
@@ -332,10 +355,16 @@ static float BaselineToYOff(Font::SizeContext& sctx, TextBaseline baseline)
 		switch (baseline)
 		{
 		case TextBaseline::Top:
+			if (sctx.capheight)
+				return sctx.capheight + (sctx.size - sctx.capheight) * 0.5f;
 			return sctx.asc * (sctx.size / (sctx.asc - sctx.desc));
 		case TextBaseline::Middle:
+			if (sctx.capheight)
+				return sctx.capheight * 0.5f;
 			return (sctx.asc + sctx.desc) * 0.5f * (sctx.size / (sctx.asc - sctx.desc));
 		case TextBaseline::Bottom:
+			if (sctx.capheight)
+				return -(sctx.size - sctx.capheight) * 0.5f;
 			return sctx.desc * (sctx.size / (sctx.asc - sctx.desc));
 		}
 	}
@@ -373,6 +402,7 @@ AABB2f TextLineGenerateQuads(
 	x = roundf(x * scale) * invScale;
 	y = roundf(y * scale) * invScale;
 	float x0 = x;
+	float x1 = x;
 	float y0 = y - BaselineToYOff(sctx, TextBaseline::Top);
 	float y1 = y - BaselineToYOff(sctx, TextBaseline::Bottom);
 
@@ -393,8 +423,9 @@ AABB2f TextLineGenerateQuads(
 
 		float x0 = roundf(gv.xoff + kern) * invScale + x;
 		float y0 = gv.yoff * invScale + y;
+		float x1 = x0 + gv.w * invScale;
 
-		AABB2f posbox = { x0, y0, x0 + gv.w * invScale, y0 + gv.h * invScale };
+		AABB2f posbox = { x0, y0, x1, y0 + gv.h * invScale };
 
 		retQuads.Append({ posbox, gv.img });
 		//RectCol(posbox, { 255, 0, 0, 127 });
@@ -405,18 +436,18 @@ AABB2f TextLineGenerateQuads(
 	// move quads according to alignment
 	if (align != TextHAlign::Left)
 	{
-		float w = x - x0;
+		float w = x1 - x0;
 		float diff = roundf(-w * (float(align) * 0.5f));
 		for (auto quad = retQuads.begin() + startRetQuad, qend = retQuads.end(); quad != qend; quad++)
 		{
 			quad->box.x0 += diff;
 			quad->box.x1 += diff;
 		}
-		x += diff;
 		x0 += diff;
+		x1 += diff;
 	}
 
-	return { x0, y0, x, y1 };
+	return { x0, y0, x1, y1 };
 }
 
 struct CharRange
