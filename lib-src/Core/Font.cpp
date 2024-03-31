@@ -423,14 +423,15 @@ AABB2f TextLineGenerateQuads(
 
 		float x0 = roundf(gv.xoff + kern) * invScale + x;
 		float y0 = gv.yoff * invScale + y;
-		float x1 = x0 + gv.w * invScale;
+		float qx1 = x0 + gv.w * invScale;
 
-		AABB2f posbox = { x0, y0, x1, y0 + gv.h * invScale };
+		AABB2f posbox = { x0, y0, qx1, y0 + gv.h * invScale };
 
 		retQuads.Append({ posbox, gv.img });
 		//RectCol(posbox, { 255, 0, 0, 127 });
 
 		x += roundf(gv.xadv + kern) * invScale;
+		x1 = max(x1, qx1);
 	}
 
 	// move quads according to alignment
