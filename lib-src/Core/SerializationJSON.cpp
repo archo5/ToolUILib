@@ -2,11 +2,14 @@
 #include "SerializationJSON.h"
 
 #include "Serialization.h"
+#include "Logging.h"
 
 #include "../../ThirdParty/json.h"
 
 
 namespace ui {
+
+LogCategory LOG_SERIALIZATION_JSON("SerializationJSON");
 
 JSONLinearWriter::JSONLinearWriter()
 {
@@ -74,6 +77,11 @@ void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 void JSONLinearWriter::WriteFloat(const char* key, double value)
 {
 	_WritePrefix(key);
+	if (!isfinite(value))
+	{
+		LogWarn(LOG_SERIALIZATION_JSON, "cannot serialize a NaN/inf number in JSON, replacing with 0");
+		value = 0;
+	}
 	char bfr[32];
 	snprintf(bfr, 32, "%g", value);
 	for (auto& c : bfr)
@@ -201,7 +209,13 @@ void JSONLinearReader::_Free()
 bool JSONLinearReader::Parse(StringView all, unsigned flags)
 {
 	_Free();
-	_root = json_parse_ex(all.data(), all.size(), flags, nullptr, nullptr, nullptr);
+	json_parse_result_s parseResult = {};
+	_root = json_parse_ex(all.data(), all.size(), flags, nullptr, nullptr, &parseResult);
+	if (!_root || parseResult.error != json_parse_error_none)
+	{
+		LogError(LOG_SERIALIZATION_JSON, "json_parse_ex failed with error=%zu (line=%zu offset=%zu row=%zu)",
+			parseResult.error, parseResult.error_line_no, parseResult.error_offset, parseResult.error_row_no);
+	}
 	_stack.Append({ _root });
 	return !!_root;
 }
