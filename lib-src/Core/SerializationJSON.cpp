@@ -177,12 +177,14 @@ void JSONLinearWriter::_OnEndObject()
 	if (_starts.Last().weight < 100U && indent)
 	{
 		size_t dst = _starts.Last().start;
-		for (size_t src = _starts.Last().start; src < _data.size(); src++)
+		char* data = &_data[0];
+		size_t dataSize = _data.size();
+		for (size_t src = _starts.Last().start; src < dataSize; src++)
 		{
-			if (_data[src] == '\n')
-				_data[dst++] = ' ';
-			else if (_data[src] != '\t')
-				_data[dst++] = _data[src];
+			if (data[src] == '\n')
+				data[dst++] = ' ';
+			else if (data[src] != '\t')
+				data[dst++] = data[src];
 		}
 		_data.resize(dst);
 	}
