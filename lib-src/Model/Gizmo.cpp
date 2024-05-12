@@ -355,7 +355,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				if (_totalMovedWinVec.x == 0 && _totalMovedWinVec.y == 0)
 				{
 					DataReader dr(_origData);
-					editableNC.Transform(dr, nullptr);
+					editableNC.Transform(dr, nullptr, 0);
 					return true;
 				}
 				if ((int(_selectedPart) & GAF_Shape_MASK) == GAF_Shape_Axis)
@@ -375,7 +375,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 						auto xf = Mat4f::Translate(worldAxis * diff);
 
 						DataReader dr(_origData);
-						editableNC.Transform(dr, &xf);
+						editableNC.Transform(dr, &xf, GPC_Move);
 						return true;
 					}
 				}
@@ -397,7 +397,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 						auto xf = Mat4f::Translate(diff);
 
 						DataReader dr(_origData);
-						editableNC.Transform(dr, &xf);
+						editableNC.Transform(dr, &xf, GPC_Move);
 						return true;
 					}
 				}
@@ -462,7 +462,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				}
 
 				DataReader dr(_origData);
-				editableNC.Transform(dr, &fullXF);
+				editableNC.Transform(dr, &fullXF, GPC_Move | GPC_Rotate);
 				return true;
 			}
 			else if (IsScaleAction(_selectedPart))
@@ -493,7 +493,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				auto fullXF = xfBasis.Inverted() * xf * xfBasis;
 
 				DataReader dr(_origData);
-				editableNC.Transform(dr, &fullXF);
+				editableNC.Transform(dr, &fullXF, GPC_Move | GPC_Scale);
 				return true;
 			}
 		}
@@ -541,7 +541,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 	{
 		_selectedPart = GizmoAction::None;
 		DataReader dr(_origData);
-		editableNC.Transform(dr, nullptr);
+		editableNC.Transform(dr, nullptr, 0);
 		return true;
 	}
 	else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
@@ -565,7 +565,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			{
 				_selectedPart = GizmoAction::None;
 				DataReader dr(_origData);
-				editableNC.Transform(dr, nullptr);
+				editableNC.Transform(dr, nullptr, 0);
 
 				e.StopPropagation();
 				return true;

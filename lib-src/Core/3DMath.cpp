@@ -358,6 +358,50 @@ Mat4f Mat4f::PerspectiveExtRH(float xscale, float yscale, float znear, float zfa
 	};
 }
 
+Mat4f Mat4f::OrthoLH(float width, float height, float znear, float zfar)
+{
+	return
+	{
+		2 / width, 0, 0, 0,
+		0, 2 / height, 0, 0,
+		0, 0, 1 / (zfar - znear), 0,
+		0, 0, znear / (znear - zfar), 1,
+	};
+}
+
+Mat4f Mat4f::OrthoRH(float width, float height, float znear, float zfar)
+{
+	return
+	{
+		2 / width, 0, 0, 0,
+		0, 2 / height, 0, 0,
+		0, 0, 1 / (znear - zfar), 0,
+		0, 0, znear / (znear - zfar), 1,
+	};
+}
+
+Mat4f Mat4f::OrthoOffCenterLH(float left, float right, float top, float bottom, float znear, float zfar)
+{
+	return
+	{
+		2 / (right - left), 0, 0, 0,
+		0, 2 / (top - bottom), 0, 0,
+		0, 0, 1 / (zfar - znear), 0,
+		(left + right) / (left - right), (top + bottom) / (bottom - top), znear / (znear - zfar), 1,
+	};
+}
+
+Mat4f Mat4f::OrthoOffCenterRH(float left, float right, float top, float bottom, float znear, float zfar)
+{
+	return
+	{
+		2 / (right - left), 0, 0, 0,
+		0, 2 / (top - bottom), 0, 0,
+		0, 0, 1 / (znear - zfar), 0,
+		(left + right) / (left - right), (top + bottom) / (bottom - top), znear / (znear - zfar), 1,
+	};
+}
+
 bool Mat4f::InvertTo(Mat4f& inv) const
 {
 	// https://stackoverflow.com/a/44446912

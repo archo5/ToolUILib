@@ -17,11 +17,13 @@ struct GUID
 		u8 v8[16];
 	};
 
-	GUID() { v64[0] = 0; v64[1] = 0; }
+	UI_FORCEINLINE GUID() { v64[0] = 0; v64[1] = 0; }
 	UI_FORCEINLINE GUID(DoNotInitialize) {}
 
-	bool operator == (const GUID& o) const { return v64[0] == o.v64[0] && v64[1] == o.v64[1]; }
-	bool operator != (const GUID& o) const { return v64[0] != o.v64[0] || v64[1] != o.v64[1]; }
+	UI_FORCEINLINE bool IsNull() const { return v64[0] == 0 && v64[1] == 0; }
+	UI_FORCEINLINE bool NotNull() const { return v64[0] != 0 || v64[1] != 0; }
+	UI_FORCEINLINE bool operator == (const GUID& o) const { return v64[0] == o.v64[0] && v64[1] == o.v64[1]; }
+	UI_FORCEINLINE bool operator != (const GUID& o) const { return v64[0] != o.v64[0] || v64[1] != o.v64[1]; }
 	bool operator < (const GUID& o) const { return memcmp(v8, o.v8, 16) < 0; }
 	bool operator <= (const GUID& o) const { return memcmp(v8, o.v8, 16) <= 0; }
 	bool operator > (const GUID& o) const { return memcmp(v8, o.v8, 16) > 0; }
@@ -38,7 +40,7 @@ struct GUID
 			*this = FromStringHex(tmp);
 	}
 
-	static GUID Null() { return {}; }
+	UI_FORCEINLINE static GUID Null() { return {}; }
 	static GUID New();
 	static bool ValidateStringHex(StringView str);
 	static bool ValidateStringHexSplit(StringView str);

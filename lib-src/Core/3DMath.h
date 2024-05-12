@@ -285,6 +285,11 @@ struct Mat4f
 	}
 	static Mat4f PerspectiveExtRH(float xscale, float yscale, float znear, float zfar);
 
+	static Mat4f OrthoLH(float width, float height, float znear, float zfar);
+	static Mat4f OrthoRH(float width, float height, float znear, float zfar);
+	static Mat4f OrthoOffCenterLH(float left, float right, float top, float bottom, float znear, float zfar);
+	static Mat4f OrthoOffCenterRH(float left, float right, float top, float bottom, float znear, float zfar);
+
 	UI_FORCEINLINE Mat4f Transposed() const
 	{
 		return

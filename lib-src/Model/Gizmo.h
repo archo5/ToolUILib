@@ -6,10 +6,17 @@
 
 namespace ui {
 
+enum GizmoPotentialChangeMask
+{
+	GPC_Move = 1 << 0,
+	GPC_Rotate = 1 << 1,
+	GPC_Scale = 1 << 2,
+};
+
 struct IGizmoEditable
 {
 	virtual void Backup(DataWriter& data) const = 0;
-	virtual void Transform(DataReader& data, const Mat4f* xf) = 0;
+	virtual void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) = 0;
 	virtual Transform3Df GetGizmoLocation() const = 0;
 };
 
@@ -22,10 +29,10 @@ struct GizmoEditablePosVec3f : IGizmoEditable
 	{
 		data << pos;
 	}
-	void Transform(DataReader& data, const Mat4f* xf) override
+	void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) override
 	{
 		data << pos;
-		if (xf)
+		if (xf && (ptnChanges && GPC_Move))
 			pos = xf->TransformPoint(pos);
 	}
 	Transform3Df GetGizmoLocation() const override
@@ -43,7 +50,7 @@ struct GizmoEditableMat4f : IGizmoEditable
 	{
 		data << mat4f;
 	}
-	void Transform(DataReader& data, const Mat4f* xf) override
+	void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) override
 	{
 		data << mat4f;
 		if (xf)
@@ -64,11 +71,17 @@ struct GizmoEditableTransform3Df : IGizmoEditable
 	{
 		data << xform;
 	}
-	void Transform(DataReader& data, const Mat4f* xf) override
+	void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) override
 	{
 		data << xform;
 		if (xf)
-			xform = xform * *xf;
+		{
+			auto nxf = xform * *xf;
+			if (ptnChanges & GPC_Move)
+				xform.position = nxf.position;
+			if (ptnChanges & GPC_Rotate)
+				xform.rotation = nxf.rotation;
+		}
 	}
 	Transform3Df GetGizmoLocation() const override
 	{
@@ -85,11 +98,19 @@ struct GizmoEditableTransformScale3Df : IGizmoEditable
 	{
 		data << xform;
 	}
-	void Transform(DataReader& data, const Mat4f* xf) override
+	void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) override
 	{
 		data << xform;
 		if (xf)
-			xform = xform.TransformLossy(*xf);
+		{
+			auto nxf = xform.TransformLossy(*xf);
+			if (ptnChanges & GPC_Move)
+				xform.position = nxf.position;
+			if (ptnChanges & GPC_Rotate)
+				xform.rotation = nxf.rotation;
+			if (ptnChanges & GPC_Scale)
+				xform.scale = nxf.scale;
+		}
 	}
 	Transform3Df GetGizmoLocation() const override
 	{

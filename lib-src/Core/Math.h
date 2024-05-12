@@ -21,6 +21,19 @@ UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }
 UI_FORCEINLINE float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
 UI_FORCEINLINE float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
 
+inline float MoveTowards(float cur, float tgt, float maxStep)
+{
+	float diff = tgt - cur;
+	float dist = fabsf(diff);
+	if (dist > maxStep)
+	{
+		float sgn = sign(diff);
+		return cur + maxStep * sgn;
+	}
+	else
+		return tgt;
+}
+
 
 inline float AngleNormalize360(float a)
 {
@@ -87,6 +100,7 @@ template <class T> struct Vec2
 	UI_FORCEINLINE T LengthSq() const { return x * x + y * y; }
 	UI_FORCEINLINE float Length() const { return sqrtf(x * x + y * y); }
 	UI_FORCEINLINE float Angle() const { return atan2(y, x) * RAD2DEG; }
+	UI_FORCEINLINE float Angle2() const { return atan2(x, y) * RAD2DEG; }
 	Vec2<float> Normalized() const
 	{
 		T lsq = LengthSq();
@@ -225,7 +239,18 @@ template <class T> struct Range
 		min = ui::min(min, o);
 		max = ui::max(max, o);
 	}
+	UI_FORCEINLINE void Include(Range o)
+	{
+		min = ui::min(min, o.min);
+		max = ui::max(max, o.max);
+	}
 	Range With(T o) const
+	{
+		Range r = *this;
+		r.Include(o);
+		return r;
+	}
+	Range With(Range o) const
 	{
 		Range r = *this;
 		r.Include(o);

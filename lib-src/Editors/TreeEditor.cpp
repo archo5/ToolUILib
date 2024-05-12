@@ -53,8 +53,13 @@ void TreeItemElement::OnEvent(Event& e)
 #if 1 // TODO
 	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
-		treeEd->GetTree()->ClearSelection();
-		treeEd->GetTree()->SetSelectionState(path, true);
+		auto* tree = treeEd->GetTree();
+		bool prevState = false;
+		if (e.GetModifierKeys() & MK_Ctrl)
+			prevState = tree->GetSelectionState(path);
+		else
+			tree->ClearSelection();
+		tree->SetSelectionState(path, !prevState);
 		Event selev(e.context, this, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
 		Rebuild();
@@ -94,12 +99,14 @@ void TreeItemElement::Init(TreeEditor* te, const TreePath& p)
 void TreeEditor::Build()
 {
 	Push<ListBoxFrame>();
+	Push<ScrollArea>();
 	Push<SizeConstraintElement>().SetMinHeight(22);
 	Push<StackTopDownLayoutElement>();
 
 	TreePath path;
 	OnBuildList(path);
 
+	Pop();
 	Pop();
 	Pop();
 	Pop();

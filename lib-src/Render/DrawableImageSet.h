@@ -56,6 +56,7 @@ struct ImageSet : RefCountedST
 	ImageSetSizeMode sizeMode = ImageSetSizeMode::Default;
 	AABB2f baseEdgeWidth = {};
 	Size2f baseSize = { 1, 1 };
+	Size2i maxSize = { 4096, 4096 };
 
 	std::string _cacheKey;
 

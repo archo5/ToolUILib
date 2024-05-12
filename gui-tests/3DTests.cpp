@@ -214,6 +214,7 @@ struct GizmoPersistentObject : IPersistentObject, IGizmoEditable
 	Array<char> _savedData;
 	Transform3Df _savedXF;
 	Optional<Mat4f> editMatrix;
+	u8 editPtnChanges = 0;
 	bool edited = false;
 
 	~GizmoPersistentObject();
@@ -230,13 +231,14 @@ struct GizmoPersistentObject : IPersistentObject, IGizmoEditable
 	{
 		data._data.AppendRange(_savedData);
 	}
-	void Transform(DataReader& data, const Mat4f* xf) override
+	void Transform(DataReader& data, const Mat4f* xf, u8 ptnChanges) override
 	{
 		_savedData = data._data;
 		if (xf)
 			editMatrix = *xf;
 		else
 			editMatrix = {};
+		editPtnChanges = ptnChanges;
 		edited = true;
 		if (_buildable)
 			_buildable->Rebuild();
@@ -286,7 +288,7 @@ bool EditTransform(GizmoContainer& gc, const IGizmoEditable& ge, const GizmoSett
 	if (edited)
 	{
 		DataReader dr(go._savedData);
-		const_cast<IGizmoEditable&>(ge).Transform(dr, go.editMatrix.GetValuePtrOrNull());
+		const_cast<IGizmoEditable&>(ge).Transform(dr, go.editMatrix.GetValuePtrOrNull(), go.editPtnChanges);
 		GetCurrentBuildable()->Rebuild();
 		go.edited = false;
 	}

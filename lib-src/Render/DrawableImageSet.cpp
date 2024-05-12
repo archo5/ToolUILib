@@ -51,20 +51,32 @@ static inline ImageSetSizeMode GetFinalSizeMode(ImageSetType type, ImageSetSizeM
 	return mode;
 }
 
-static Size2i GetClosestLargerSize(Size2i input, Size2f nominal/*, ArrayView<Size2i> specialSizes*/)
+static Size2i GetClosestLargerSize(Size2i input, Size2f nominal, Size2i maxSize/*, ArrayView<Size2i> specialSizes*/)
 {
-	float expX = log(input.x / nominal.x) / log(2);
-	float expY = log(input.y / nominal.y) / log(2);
+	float expX = logf(input.x / nominal.x) / logf(2);
+	float expY = logf(input.y / nominal.y) / logf(2);
 	float expMax = max(expX, expY);
-	float expMaxUp = ceil(expMax);
-	float mult = pow(2, expMaxUp);
+	float expMaxUp = ceilf(expMax);
+	float mult = powf(2, expMaxUp);
 	float x = mult * nominal.x;
 	float y = mult * nominal.y;
 	// unlikely to be a practical image
-	while (x > 4096 || y > 4096)
+	//maxSize.x = min(maxSize.x, 4096); -- TODO needed?
+	//maxSize.y = min(maxSize.y, 4096);
+	if (x > maxSize.x || y > maxSize.y)
 	{
-		x /= 2;
-		y /= 2;
+		float xds = x / maxSize.x;
+		float yds = y / maxSize.y;
+		if (xds > yds) // limited by x
+		{
+			y = x * maxSize.y / maxSize.x;
+			x = float(maxSize.x);
+		}
+		else // limited by y
+		{
+			x = y * maxSize.x / maxSize.y;
+			y = float(maxSize.y);
+		}
 	}
 	if (x < 1)
 		x = 1;
@@ -84,6 +96,12 @@ static Size2i GetClosestLargerSize(Size2i input, Size2f nominal/*, ArrayView<Siz
 static inline float SizeDiff(ImageSet::VectorImageEntry* e, Size2i size)
 {
 	return abs(e->minSizeHint.x - size.x) + abs(e->minSizeHint.y - size.y);
+}
+
+static inline float EdgeWidthDiff(ImageSet::VectorImageEntry* e, AABB2f edgeWidth)
+{
+	return abs(e->edgeWidth.x0 - edgeWidth.x0) + abs(e->edgeWidth.y0 - edgeWidth.y0)
+		+ abs(e->edgeWidth.x1 - edgeWidth.x1) + abs(e->edgeWidth.y1 - edgeWidth.y1);
 }
 
 RCHandle<ImageSet::BitmapImageEntry> ImageSet::VectorImageEntry::RequestImage(Size2i size)
@@ -173,7 +191,7 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 				return nullptr;
 			bestVEntry = backupVEntry;
 		}
-		Size2i clvsize = GetClosestLargerSize(size, bestVEntry->image->GetSize());
+		Size2i clvsize = GetClosestLargerSize(size, bestVEntry->image->GetSize(), maxSize);
 
 		// raster image still better
 		if (best && (clvsize.x > best->image->GetWidth() || clvsize.y > best->image->GetHeight()))
@@ -186,12 +204,83 @@ ImageSet::BitmapImageEntry* ImageSet::FindEntryForSize(Size2i size)
 
 ImageSet::BitmapImageEntry* ImageSet::FindEntryForEdgeWidth(AABB2f edgeWidth)
 {
-	if (bitmapImageEntries.IsEmpty())
+	if (bitmapImageEntries.IsEmpty() && vectorImageEntries.IsEmpty())
 		return nullptr;
 
-	BitmapImageEntry* last = bitmapImageEntries.First();
-	// TODO
-	return last;
+	auto mode = GetFinalSizeMode(type, sizeMode);
+
+	BitmapImageEntry* best = nullptr;
+	if (bitmapImageEntries.NotEmpty())
+		best = bitmapImageEntries.First();
+	if (mode == ImageSetSizeMode::NearestScaleUp || mode == ImageSetSizeMode::NearestNoScale)
+	{
+		for (auto& e : bitmapImageEntries)
+		{
+			if (e->edgeWidth.x0 >= edgeWidth.x0 || e->edgeWidth.y0 >= edgeWidth.y0 ||
+				e->edgeWidth.x1 >= edgeWidth.x1 || e->edgeWidth.y1 >= edgeWidth.y1)
+				break;
+			best = e;
+		}
+
+		// exact size found
+		if (best && best->edgeWidth == edgeWidth)
+			return best;
+
+		if (vectorImageEntries.IsEmpty())
+			return best;
+	}
+	else
+	{
+		for (auto& e : bitmapImageEntries)
+		{
+			if (!e->image)
+				continue;
+			best = e;
+			if (e->edgeWidth.x0 >= edgeWidth.x0 || e->edgeWidth.y0 >= edgeWidth.y0 ||
+				e->edgeWidth.x1 >= edgeWidth.x1 || e->edgeWidth.y1 >= edgeWidth.y1)
+				break;
+		}
+
+		// exact size found
+		if (best && best->edgeWidth == edgeWidth)
+			return best;
+
+		if (vectorImageEntries.IsEmpty())
+			return best;
+
+		VectorImageEntry* bestVEntry = nullptr;
+		VectorImageEntry* backupVEntry = nullptr;
+		for (auto ve : vectorImageEntries)
+		{
+			if (!ve->image)
+				continue;
+			VectorImageEntry*& bve =
+				ve->edgeWidth.x0 >= edgeWidth.x0 && ve->edgeWidth.y0 >= edgeWidth.y0 &&
+				ve->edgeWidth.x1 >= edgeWidth.x1 && ve->edgeWidth.y1 >= edgeWidth.y1
+				? bestVEntry
+				: backupVEntry;
+			if (!bve || EdgeWidthDiff(bve, edgeWidth) > EdgeWidthDiff(ve, edgeWidth))
+				bve = ve;
+		}
+		if (!bestVEntry)
+		{
+			if (!backupVEntry)
+				return nullptr;
+			bestVEntry = backupVEntry;
+		}
+		Vec2f tgtEWA = edgeWidth.GetCenter();
+		Vec2f imgEWA = bestVEntry->edgeWidth.GetCenter();
+		Vec2f neededSizeF = tgtEWA / imgEWA * bestVEntry->image->GetSize().ToVec2();
+		Size2i neededSize = { int(roundf(neededSizeF.x)), int(roundf(neededSizeF.y)) };
+		Size2i clvsize = GetClosestLargerSize(neededSize, bestVEntry->image->GetSize(), maxSize);
+
+		// raster image still better
+		if (best && (clvsize.x > best->image->GetWidth() || clvsize.y > best->image->GetHeight()))
+			return best;
+
+		return bestVEntry->RequestImage(clvsize);
+	}
+	return best;
 }
 
 void ImageSet::_DrawAsIcon(AABB2f rect, Color4b color)

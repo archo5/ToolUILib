@@ -107,7 +107,7 @@ struct DataReader
 		size_t tsz = sizeof(T) * n;
 		if (_off + tsz <= _data.Size())
 		{
-			memcpy(o, &_data[_off], tsz);
+			memcpy(o, _data.Data() + _off, tsz);
 			_off += tsz;
 		}
 		else

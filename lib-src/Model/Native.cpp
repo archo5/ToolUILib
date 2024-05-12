@@ -997,7 +997,16 @@ struct NativeWindow_Impl
 			ExitExclusiveMode();
 
 		TmpEdit<bool> te(g_mayCallWndProc, true);
-		ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
+		// hack to avoid the white background
+		// https://stackoverflow.com/a/76019928
+		if (visible && firstShow)
+		{
+			ShowWindow(window, SW_SHOWMINIMIZED);
+			ShowWindow(window, SW_RESTORE);
+			//firstShow = false; - updated elsewhere
+		}
+		else
+			ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
 	}
 
 	void UpdateStyle()
@@ -1058,7 +1067,7 @@ struct NativeWindow_Impl
 	Menu* menu;
 
 	double prevTime;
-	bool visible = true;
+	bool visible = false;
 	bool hitTest = true;
 	bool exclusiveMode = false;
 	bool innerUIEnabled = true;
