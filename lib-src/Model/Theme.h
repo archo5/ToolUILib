@@ -5,6 +5,7 @@
 #include "../Render/Render.h"
 #include "../Core/Array.h"
 #include "../Core/HashMap.h"
+#include "../Core/Optional.h"
 #include "../Core/StaticID.h"
 
 

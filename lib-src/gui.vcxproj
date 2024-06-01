@@ -312,6 +312,7 @@
     <ClInclude Include="Core\Memory.h" />
     <ClInclude Include="Core\ObjectIteration.h" />
     <ClInclude Include="Core\ObjectIterationCore.h" />
+    <ClInclude Include="Core\Optional.h" />
     <ClInclude Include="Core\Platform.h" />
     <ClInclude Include="Core\RefCounted.h" />
     <ClInclude Include="Core\Serialization.h" />

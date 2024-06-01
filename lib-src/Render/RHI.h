@@ -1,6 +1,7 @@
 
 #pragma once
 #include "../Core/Image.h"
+#include "../Core/Optional.h"
 #include "../Core/3DMath.h"
 
 

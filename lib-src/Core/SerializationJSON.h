@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ObjectIteration.h"
+#include "Optional.h"
 
 
 struct json_value_s;

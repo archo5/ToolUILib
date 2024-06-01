@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "../Core/Math.h"
+#include "../Core/Optional.h"
 #include "../Core/Threading.h"
 #include "../Render/Render.h"
 #include "../Render/Output.h"

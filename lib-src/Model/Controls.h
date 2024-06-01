@@ -3,6 +3,7 @@
 
 #include "Objects.h"
 #include "System.h"
+#include "../Core/Optional.h"
 #include "../Core/StaticID.h"
 
 

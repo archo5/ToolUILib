@@ -403,6 +403,9 @@
     <ClInclude Include="Render\Output.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Optional.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

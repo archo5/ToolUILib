@@ -2,7 +2,7 @@
 #pragma once
 
 #include "ObjectIteration.h"
-
+#include "Optional.h"
 #include "Array.h"
 
 #include "../../ThirdParty/dato_reader.hpp"
