@@ -13,7 +13,8 @@
 namespace ui {
 
 struct NoValue {};
-
+struct WithSize { size_t n; };
+struct WithCapacity { size_t n; };
 struct DoNotInitialize {};
 
 template <class T> UI_FORCEINLINE T min(T a, T b) { return a < b ? a : b; }
