@@ -543,6 +543,7 @@ std::string Base16Decode(StringView src, bool* valid)
 				*valid = false;
 			return {};
 		}
+		tmp[i] = (ihi << 4) | ilo;
 	}
 	if (valid)
 		*valid = true;
