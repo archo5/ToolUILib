@@ -433,3 +433,89 @@ void Test_Placement()
 	ui::Make<PlacementTest>();
 }
 
+
+namespace rgt {
+int mode = 3;
+bool roundPos = true;
+float basicMarginFrc = 0.3f;
+float fillMarginFrc = 0.4f;
+ui::Size2f size = { 100, 100 };
+float aspect = 1;
+ui::Rangef aspectRange = { 5.f / 4.f, 16.f / 9.f };
+ui::Vec2f placement = { 0.5f, 0.5f };
+struct RectGenTest : ui::Buildable
+{
+	struct VisualizeRectGen : ui::FillerElement
+	{
+		float marginFrc;
+		void OnPaint(const ui::UIPaintContext& ctx) override
+		{
+			ui::AABB2f rect = GetFinalRect();
+			float margin = roundf(marginFrc * rect.GetSize().Min());
+			ui::AABB2f space = rect.ShrinkBy(margin);
+			ui::AABB2f gen = space;
+			if (mode == 0) // centered
+			{
+				gen = ui::RectGenCentered(space, size, placement, roundPos);
+			}
+			else if (mode == 1) // fill (size)
+			{
+				gen = ui::RectGenFillSize(space, size, placement, roundPos);
+			}
+			else if (mode == 2) // fill (aspect)
+			{
+				gen = ui::RectGenFillAspect(space, aspect, placement, roundPos);
+			}
+			else if (mode == 3) // fit (size)
+			{
+				gen = ui::RectGenFitSize(space, size, placement, roundPos);
+			}
+			else if (mode == 4) // fit (aspect)
+			{
+				gen = ui::RectGenFitAspect(space, aspect, placement, roundPos);
+			}
+			else if (mode == 5) // fit (aspect range)
+			{
+				gen = ui::RectGenFitAspectRange(space, aspectRange, placement, roundPos);
+			}
+
+			ui::draw::AALineCol({ space.GetP00(), space.GetP10(), space.GetP11(), space.GetP01() }, 2, { 0, 0, 255 }, true);
+			ui::draw::AALineCol({ gen.GetP00(), gen.GetP10(), gen.GetP11(), gen.GetP01() }, 2, { 0, 255, 0 }, true);
+		}
+	};
+	void Build() override
+	{
+		ui::Push<ui::EdgeSliceLayoutElement>();
+		{
+			ui::Push<ui::StackLTRLayoutElement>();
+			ui::imm::RadioButton(mode, 0, "Centered", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(mode, 1, "Fill (size)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(mode, 2, "Fill (aspect)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(mode, 3, "Fit (size)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(mode, 4, "Fit (aspect)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imm::RadioButton(mode, 5, "Fit (aspect range)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::Pop();
+			ui::imm::PropEditBool("Round pos", roundPos);
+			if (mode == 1 || mode == 2)
+				ui::imm::PropEditFloat("Margin (fill)", fillMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+			else
+				ui::imm::PropEditFloat("Margin", basicMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+			if (mode == 1 || mode == 3)
+				ui::imm::PropEditFloatVec("Size", &size.x, ui::imm::WidthHeight, {}, {}, ui::Rangef::AtLeast(0));
+			if (mode == 2 || mode == 4)
+				ui::imm::PropEditFloat("Aspect", aspect, {}, { 0.1f, true }, { 0, 100 });
+			if (mode == 5)
+				ui::imm::PropEditFloatVec("Aspect range", &aspectRange.min, ui::imm::MinMax, {}, { 0.1f, true }, { 0, 100 });
+			ui::imm::PropEditFloatVec("Placement", &placement.x, ui::imm::XY, {}, { 0.01f }, { 0, 1 });
+		}
+		auto& v = ui::Make<VisualizeRectGen>();
+		v.marginFrc = mode == 1 ? fillMarginFrc : basicMarginFrc;
+		ui::Pop();
+	}
+};
+} // rgt
+void Test_RectGen()
+{
+	ui::Make<rgt::RectGenTest>();
+}
+

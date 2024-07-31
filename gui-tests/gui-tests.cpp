@@ -312,6 +312,7 @@ void Test_EdgeSlice();
 void Test_StackingLayoutVariations();
 void Test_Size();
 void Test_Placement();
+void Test_RectGen();
 
 void Test_DragDrop();
 void Test_StateButtons();
@@ -416,6 +417,7 @@ static const TestEntry layoutTestEntries[] =
 	{ "Stacking layout variations", Test_StackingLayoutVariations },
 	{ "Sizing", Test_Size },
 	{ "Placement", Test_Placement },
+	{ "Rect gen", Test_RectGen },
 };
 static const TestEntry compoundTestEntries[] =
 {

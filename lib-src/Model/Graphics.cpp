@@ -138,11 +138,11 @@ void DrawImage(UIRect c, draw::IImage* img, ScaleMode sm, Vec2f placement)
 			draw::RectTex(c, img);
 			break;
 		case ScaleMode::Fit: {
-			UIRect f = RectGenFit(c, img->GetSizeF(), placement, false);
+			UIRect f = RectGenFitSize(c, img->GetSizeF(), placement, false);
 			draw::RectTex(f, img);
 			break; }
 		case ScaleMode::Fill: {
-			auto f = RectGenFill(c, img->GetSizeF(), placement, false);
+			auto f = RectGenFillSize(c, img->GetSizeF(), placement, false);
 			f = RectInvLerp(f, c);
 			draw::RectTex(c, img, f);
 			break; }

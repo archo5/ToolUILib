@@ -359,9 +359,8 @@ inline AABB2f RectGenCentered(AABB2f space, Size2f size, Vec2f placement = { 0.5
 	return { x, y, x + size.x, y + size.y };
 }
 
-inline AABB2f RectGenFit(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+inline AABB2f RectGenFitAspect(AABB2f space, float iasp, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
 {
-	float iasp = size.GetAspectRatio();
 	Size2f scaledSize = space.GetSize();
 	float rasp = space.GetSize().GetAspectRatio();
 	if (iasp > rasp) // matched width, adjust height
@@ -371,9 +370,26 @@ inline AABB2f RectGenFit(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.
 	return RectGenCentered(space, scaledSize, placement, roundPos);
 }
 
-inline AABB2f RectGenFill(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+inline AABB2f RectGenFitSize(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
 {
 	float iasp = size.GetAspectRatio();
+	return RectGenFitAspect(space, iasp, placement, roundPos);
+}
+
+inline AABB2f RectGenFitAspectRange(AABB2f space, Rangef iaspRange, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
+	Size2f scaledSize = space.GetSize();
+	float rasp = space.GetSize().GetAspectRatio();
+	float iasp = iaspRange.Clamp(rasp);
+	if (iasp > rasp) // matched width, adjust height
+		scaledSize.y = scaledSize.x / iasp;
+	else
+		scaledSize.x = scaledSize.y * iasp;
+	return RectGenCentered(space, scaledSize, placement, roundPos);
+}
+
+inline AABB2f RectGenFillAspect(AABB2f space, float iasp, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
 	Size2f scaledSize = space.GetSize();
 	float rasp = space.GetSize().GetAspectRatio();
 	if (iasp < rasp) // matched width, adjust height
@@ -381,6 +397,12 @@ inline AABB2f RectGenFill(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0
 	else
 		scaledSize.x = scaledSize.y * iasp;
 	return RectGenCentered(space, scaledSize, placement, roundPos);
+}
+
+inline AABB2f RectGenFillSize(AABB2f space, Size2f size, Vec2f placement = { 0.5f, 0.5f }, bool roundPos = true)
+{
+	float iasp = size.GetAspectRatio();
+	return RectGenFillAspect(space, iasp, placement, roundPos);
 }
 
 inline AABB2f RectInvLerp(AABB2f space, AABB2f input)

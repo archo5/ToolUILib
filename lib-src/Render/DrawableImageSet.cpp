@@ -290,7 +290,7 @@ void ImageSet::_DrawAsIcon(AABB2f rect, Color4b color)
 		if (sizeMode == ImageSetSizeMode::NearestNoScale)
 			rect = RectGenCentered(rect, e->image->GetSizeF());
 		else
-			rect = RectGenFit(rect, baseSize);
+			rect = RectGenFitSize(rect, baseSize);
 		draw::RectColTex(rect.x0, rect.y0, rect.x1, rect.y1, color, e->image);
 	}
 }
