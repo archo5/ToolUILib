@@ -116,7 +116,7 @@ struct Array
 	UI_FORCEINLINE size_t Size() const { return _size; }
 	UI_FORCEINLINE size_t SizeInBytes() const { return _size * sizeof(T); }
 	UI_FORCEINLINE size_t Capacity() const { return _capacity; }
-	UI_FORCEINLINE ArrayView<T> View() { return { _data, _size }; }
+	UI_FORCEINLINE ArrayView<T> View() const { return { _data, _size }; }
 
 	T& At(size_t i)
 	{

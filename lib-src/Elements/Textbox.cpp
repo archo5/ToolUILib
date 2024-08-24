@@ -378,7 +378,10 @@ void Textbox::OnEvent(Event& e)
 		{
 		case KeyAction::Enter:
 			if (_impl->multiline)
-				EnterText("\n");
+			{
+				if (!IsInputDisabled())
+					EnterText("\n");
+			}
 			else
 				e.context->SetKeyboardFocus(nullptr);
 			break;
@@ -495,6 +498,7 @@ void Textbox::OnEvent(Event& e)
 				break;
 			}
 		}
+		e.StopPropagation();
 	}
 	else if (e.type == EventType::TextInput)
 	{
@@ -503,7 +507,12 @@ void Textbox::OnEvent(Event& e)
 			char ch[5];
 			if (e.GetUTF32Char() >= 32 && e.GetUTF32Char() != 127 && e.GetUTF8Text(ch))
 				EnterText(ch);
+			e.StopPropagation();
 		}
+	}
+	else if (e.type == EventType::KeyDown || e.type == EventType::KeyUp)
+	{
+		e.StopPropagation();
 	}
 }
 
