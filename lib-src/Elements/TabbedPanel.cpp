@@ -4,6 +4,8 @@
 #include "../Model/Theme.h"
 #include "../Model/System.h" // only for EventSystem
 
+#include "../Render/RenderText.h"
+
 
 namespace ui {
 

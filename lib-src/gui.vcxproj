@@ -276,6 +276,7 @@
     <ClCompile Include="Render\DrawableImage.cpp" />
     <ClCompile Include="Render\DrawableImageSet.cpp" />
     <ClCompile Include="Render\Output.cpp" />
+    <ClCompile Include="Render\RenderText.cpp" />
     <ClCompile Include="Render\RHI.cpp" />
     <ClCompile Include="Render\RHI_D3D11.cpp" />
     <ClCompile Include="Render\RHI_OpenGL.cpp">
@@ -302,6 +303,7 @@
     <ClInclude Include="Core\DynamicLib.h" />
     <ClInclude Include="Core\FileSystem.h" />
     <ClInclude Include="Core\Font.h" />
+    <ClInclude Include="Core\FontImpl.h" />
     <ClInclude Include="Core\GUID.h" />
     <ClInclude Include="Core\HashSet.h" />
     <ClInclude Include="Core\HashTableBase.h" />
@@ -363,6 +365,7 @@
     <ClInclude Include="Render\DrawableImage.h" />
     <ClInclude Include="Render\DrawableImageSet.h" />
     <ClInclude Include="Render\Output.h" />
+    <ClInclude Include="Render\RenderText.h" />
     <ClInclude Include="Render\RHI.h" />
     <ClInclude Include="Render\Primitives.h" />
     <ClInclude Include="Render\Render.h" />

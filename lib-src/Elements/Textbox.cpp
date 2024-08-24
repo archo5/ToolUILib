@@ -2,6 +2,7 @@
 #include "Textbox.h"
 
 #include "../Model/Native.h"
+#include "../Render/RenderText.h"
 
 
 namespace ui {

@@ -7,6 +7,8 @@
 #include "System.h"
 #include "Theme.h"
 
+#include "../Render/RenderText.h"
+
 
 namespace ui {
 

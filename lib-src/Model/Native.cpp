@@ -20,6 +20,7 @@
 
 #include "../Render/RHI.h"
 #include "../Render/Render.h"
+#include "../Render/RenderText.h"
 #include "../Core/WindowsUtils.h"
 #include "../Core/FileSystem.h"
 

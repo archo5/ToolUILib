@@ -172,6 +172,9 @@
     <ClCompile Include="Core\BitArray.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Render\RenderText.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -410,6 +413,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\BitArray.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RenderText.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\FontImpl.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

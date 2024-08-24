@@ -1,6 +1,7 @@
 
 #include "Tables.h"
 #include "../Model/Theme.h"
+#include "../Render/RenderText.h"
 
 
 namespace ui {
