@@ -45,14 +45,16 @@ struct GlyphValue
 };
 
 
+struct FontSizeContext
+{
+	int size = 0;
+	float asc = 0, desc = 0, lgap = 0, xheight = 0, capheight = 0;
+	HashMap<uint32_t, GlyphValue> glyphMap;
+};
+
 struct Font
 {
-	struct SizeContext
-	{
-		int size = 0;
-		float asc = 0, desc = 0, lgap = 0, xheight = 0, capheight = 0;
-		HashMap<uint32_t, GlyphValue> glyphMap;
-	};
+	using SizeContext = FontSizeContext;
 
 	FontKey key;
 	BufferHandle data;

@@ -7,10 +7,12 @@
 namespace ui {
 namespace draw {
 
+struct IImage;
+
 struct ImageQuad
 {
 	AABB2f box;
-	struct IImage* image;
+	IImage* image;
 };
 
 AABB2f TextLineGenerateQuadsUntransformed(

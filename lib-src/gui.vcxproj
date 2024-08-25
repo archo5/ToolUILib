@@ -275,6 +275,7 @@
     <ClCompile Include="Model\Layout.cpp" />
     <ClCompile Include="Render\DrawableImage.cpp" />
     <ClCompile Include="Render\DrawableImageSet.cpp" />
+    <ClCompile Include="Render\InlineLayout.cpp" />
     <ClCompile Include="Render\Output.cpp" />
     <ClCompile Include="Render\RenderText.cpp" />
     <ClCompile Include="Render\RHI.cpp" />
@@ -364,6 +365,7 @@
     <ClInclude Include="Model\Layout.h" />
     <ClInclude Include="Render\DrawableImage.h" />
     <ClInclude Include="Render\DrawableImageSet.h" />
+    <ClInclude Include="Render\InlineLayout.h" />
     <ClInclude Include="Render\Output.h" />
     <ClInclude Include="Render\RenderText.h" />
     <ClInclude Include="Render\RHI.h" />

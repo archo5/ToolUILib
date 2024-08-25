@@ -7,7 +7,7 @@
 namespace ui {
 namespace draw {
 
-static float BaselineToYOff(Font::SizeContext& sctx, TextBaseline baseline)
+float BaselineToYOff(Font::SizeContext& sctx, TextBaseline baseline)
 {
 	if (baseline != TextBaseline::Default)
 	{

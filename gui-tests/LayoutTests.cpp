@@ -1,6 +1,8 @@
 
 #include "pch.h"
 
+#include "../lib-src/Render/InlineLayout.h"
+
 
 struct EdgeSliceTest : ui::Buildable
 {
@@ -517,5 +519,58 @@ struct RectGenTest : ui::Buildable
 void Test_RectGen()
 {
 	ui::Make<rgt::RectGenTest>();
+}
+
+
+struct InlineLayoutTest : ui::Buildable
+{
+	ui::draw::ImageSetHandle checkerboard = ui::GetCurrentTheme()->FindImageSetByName("bgr-checkerboard");
+	ui::draw::ImageSetHandle add = ui::GetCurrentTheme()->FindImageSetByName("add");
+	ui::Font* font1 = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF);
+	ui::Font* font1b = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF, ui::FONT_WEIGHT_BOLD);
+	ui::Font* font1i = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF, ui::FONT_WEIGHT_NORMAL, true);
+
+	void Build() override
+	{
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		ui::InlineLayout il;
+		il.Begin();
+		il.SetFont(font1, 12, 16);
+		il.AddText("test ", { 255, 127, 127 });
+		il.SetFont(font1b, 12, 16);
+		il.AddText("bold", { 255, 255, 127 });
+		il.SetFont(font1, 12, 16);
+		il.AddText(" and ", { 127, 255, 127 });
+		il.SetFont(font1i, 12, 16);
+		il.AddText("italic", { 127, 255, 255 });
+		il.SetFont(font1, 12, 16);
+		il.AddText(" text", { 127, 127, 255 });
+		if (auto* img = checkerboard->FindEntryForSize({ 32, 32 }))
+		{
+			il.AddImage(img->image, { 32, 32 }, ui::IL_VAlign::Baseline);
+			il.AddImage(img->image, { 32, 32 }, ui::IL_VAlign::Top);
+			il.AddImage(img->image, { 32, 32 }, ui::IL_VAlign::Middle);
+			il.AddImage(img->image, { 32, 32 }, ui::IL_VAlign::Bottom);
+		}
+		if (auto* img = add->FindEntryForSize({ 10, 10 }))
+		{
+			il.AddImage(img->image, { 10, 10 }, ui::IL_VAlign::Baseline);
+		}
+		il.AddText(" longer textual fragments", {});
+		il.FinishLayout(GetFinalRect().GetWidth());
+		il.Render(GetFinalRect().GetMin());
+		for (auto& L : il.lines)
+		{
+			ui::draw::LineCol(0, L.lineTop, 9999, L.lineTop, 1, { 255, 0, 0, 127 });
+			if (&L == &il.lines.Last())
+				ui::draw::LineCol(0, L.lineBtm, 9999, L.lineBtm, 1, { 255, 0, 0, 127 });
+		}
+	}
+};
+void Test_InlineLayout()
+{
+	ui::Make<InlineLayoutTest>();
 }
 

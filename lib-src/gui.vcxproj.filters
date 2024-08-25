@@ -175,6 +175,9 @@
     <ClCompile Include="Render\RenderText.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\InlineLayout.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -420,6 +423,9 @@
     </ClInclude>
     <ClInclude Include="Core\FontImpl.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\InlineLayout.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
