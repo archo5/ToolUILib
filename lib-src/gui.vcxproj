@@ -168,6 +168,7 @@
       <AdditionalIncludeDirectories>$(OutDir)D3D11Shaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <UseFullPaths>false</UseFullPaths>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -223,6 +224,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(OutDir)D3D11Shaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
+      <UseFullPaths>false</UseFullPaths>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -244,6 +246,7 @@
     <ClCompile Include="Core\StaticID.cpp" />
     <ClCompile Include="Core\StrCatView.cpp" />
     <ClCompile Include="Core\String.cpp" />
+    <ClCompile Include="Core\SystemInfo.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
     <ClCompile Include="Core\TweakableValue.cpp" />
     <ClCompile Include="Core\VectorImage.cpp" />
@@ -328,6 +331,7 @@
     <ClInclude Include="Core\StaticID.h" />
     <ClInclude Include="Core\StrCatView.h" />
     <ClInclude Include="Core\String.h" />
+    <ClInclude Include="Core\SystemInfo.h" />
     <ClInclude Include="Core\Test.h" />
     <ClInclude Include="Core\Threading.h" />
     <ClInclude Include="Core\TweakableValue.h" />

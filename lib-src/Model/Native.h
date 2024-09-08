@@ -29,6 +29,7 @@ bool IsKeyPressed(u8 physicalKey);
 std::string GetPhysicalKeyName(u8 physicalKey);
 void ShowErrorMessage(StringView title, StringView text);
 void BrowseToFile(StringView path);
+void OpenURL(StringView url);
 
 enum class FileIconType
 {

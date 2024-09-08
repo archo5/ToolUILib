@@ -255,13 +255,16 @@ float InlineLayout::FinishLayout(float maxWidth)
 	return totalHeight;
 }
 
-void InlineLayout::Render(Vec2f offset)
+void InlineLayout::Render(Vec2f offset, float opacity)
 {
 	for (auto& P : pieces)
 	{
+		Color4b col = P.color;
+		if (opacity != 1)
+			col.a = u8(col.a * opacity);
 		for (auto& Q : quads.View().Subview(P.quadOff, P.quadCount))
 		{
-			ui::draw::RectColTex(Q.box + offset, P.color, Q.image);
+			ui::draw::RectColTex(Q.box + offset, col, Q.image);
 		}
 	}
 }

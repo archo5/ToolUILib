@@ -20,17 +20,23 @@ enum class LogLevel : uint8_t
 	All,
 };
 
+struct LogMsgRef
+{
+	StringView full;
+	StringView msgonly;
+};
+
 struct LogCategory
 {
 	const char* const name;
 
 	LogLevel level = LogLevel::Warn;
-	MulticastDelegate<LogLevel, StringView> onCategoryLogMessage;
+	MulticastDelegate<LogLevel, LogMsgRef> onCategoryLogMessage;
 
 	explicit LogCategory(const char* nm, LogLevel lev = LogLevel::Warn) : name(nm), level(lev) {}
 };
 
-extern MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;
+extern MulticastDelegate<LogLevel, const LogCategory&, LogMsgRef> OnAnyLogMessage;
 extern LogLevel GlobalLogLevel;
 
 bool CanLogDynLev(LogLevel level, const LogCategory& category);

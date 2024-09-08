@@ -15,7 +15,7 @@ extern "C"
 namespace ui {
 namespace log {
 
-MulticastDelegate<LogLevel, const LogCategory&, StringView> OnAnyLogMessage;
+MulticastDelegate<LogLevel, const LogCategory&, LogMsgRef> OnAnyLogMessage;
 LogLevel GlobalLogLevel = LogLevel::All;
 
 static tm CurTime()
@@ -84,8 +84,13 @@ void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, v
 
 	buf[at] = '\0';
 
-	category.onCategoryLogMessage.Call(level, msgonly);
-	OnAnyLogMessage.Call(level, category, msgonly);
+	LogMsgRef mref = {};
+	{
+		mref.full = StringView(buf, at);
+		mref.msgonly = StringView(msgonly, size_t(buf + at - msgonly));
+	}
+	category.onCategoryLogMessage.Call(level, mref);
+	OnAnyLogMessage.Call(level, category, mref);
 
 	buf[at++] = '\n';
 	buf[at] = '\0';

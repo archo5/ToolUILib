@@ -76,7 +76,7 @@ struct InlineLayout
 	void AddImage(draw::IImage* image, Vec2f size, IL_VAlign valign = IL_VAlign::Baseline);
 	// returns the total height of the line boxes
 	float FinishLayout(float maxWidth);
-	void Render(Vec2f offset);
+	void Render(Vec2f offset, float opacity);
 };
 
 } // ui

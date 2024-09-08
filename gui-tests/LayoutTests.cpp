@@ -560,7 +560,7 @@ struct InlineLayoutTest : ui::Buildable
 		}
 		il.AddText(" longer textual fragments", {});
 		il.FinishLayout(GetFinalRect().GetWidth());
-		il.Render(GetFinalRect().GetMin());
+		il.Render(GetFinalRect().GetMin(), 1);
 		for (auto& L : il.lines)
 		{
 			ui::draw::LineCol(0, L.lineTop, 9999, L.lineTop, 1, { 255, 0, 0, 127 });

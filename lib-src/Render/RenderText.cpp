@@ -335,12 +335,12 @@ void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color
 }
 
 static Array<ImageQuad> g_tmpTextQuads;
-void TextLine(Font* font, float size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
+AABB2f TextLine(Font* font, float size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
 {
 	if (clipBox && !clipBox->IsValid())
-		return;
+		return { x, y, x, y };
 	if (size <= 0)
-		return;
+		return { x, y, x, y };
 
 #if 0
 	if (align != TextHAlign::Left)
@@ -391,12 +391,13 @@ void TextLine(Font* font, float size, float x, float y, StringView text, Color4b
 	}
 #else
 	g_tmpTextQuads.Clear();
-	TextLineGenerateQuads(g_tmpTextQuads, font, size, x, y, text, align, baseline);
+	AABB2f rect = TextLineGenerateQuads(g_tmpTextQuads, font, size, x, y, text, align, baseline);
 	ImageQuadsCol(g_tmpTextQuads, color, clipBox);
+	return rect;
 #endif
 }
 
-void TextMultiline(
+AABB2f TextMultiline(
 	Font* font,
 	float size,
 	AABB2f rect,
@@ -421,6 +422,7 @@ void TextMultiline(
 	off = off.CastRounded<float>();
 	ImageQuadsColOffset(g_tmpTextQuads, off, color, clipBox);
 	//draw::RectCol(box + off, { 255, 0, 0, 127 });
+	return box;
 }
 
 } // draw

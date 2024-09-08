@@ -438,6 +438,9 @@ struct OSCommunicationTest : ui::Buildable
 		if (ui::imm::Button("Browse to file"))
 			ui::platform::BrowseToFile("gui-theme2.tga");
 
+		if (ui::imm::Button("Open URL"))
+			ui::platform::OpenURL("https://example.com/");
+
 		WPush<ui::StackLTRLayoutElement>();
 		{
 			for (auto icon : icons)

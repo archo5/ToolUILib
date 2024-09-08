@@ -41,7 +41,7 @@ AABB2f TextMultilineGenerateQuadsUntransformed(
 void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, AABB2f* clipBox = nullptr);
 void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, AABB2f* clipBox = nullptr);
 
-void TextLine(
+AABB2f TextLine(
 	Font* font,
 	float size,
 	float x,
@@ -51,11 +51,11 @@ void TextLine(
 	TextHAlign align = TextHAlign::Left,
 	TextBaseline baseline = TextBaseline::Default,
 	AABB2f* clipBox = nullptr);
-inline void TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox = nullptr)
+inline AABB2f TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox = nullptr)
 {
-	TextLine(font, float(size), x, y, text, color, TextHAlign::Left, baseline, clipBox);
+	return TextLine(font, float(size), x, y, text, color, TextHAlign::Left, baseline, clipBox);
 }
-void TextMultiline(
+AABB2f TextMultiline(
 	Font* font,
 	float size,
 	AABB2f rect,

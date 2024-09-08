@@ -129,6 +129,9 @@ struct StringView
 		return substr(0, at);
 	}
 
+	inline struct StringViewSplitPair SplitFirst(StringView sub) const;
+	inline struct StringViewSplitPair SplitLast(StringView sub) const;
+
 	bool SkipNumChars(size_t n)
 	{
 		if (n <= _size)
@@ -211,6 +214,28 @@ struct StringView
 	UI_FORCEINLINE float take_float32() { return float(take_float64()); }
 	UI_FORCEINLINE float to_float32() const { return float(StringView(*this).take_float64()); }
 };
+
+struct StringViewSplitPair
+{
+	StringView before;
+	StringView after;
+};
+
+StringViewSplitPair StringView::SplitFirst(StringView sub) const
+{
+	size_t pos = FindFirstAt(sub);
+	if (pos == SIZE_MAX)
+		return { *this, {} };
+	return { substr(0, pos), substr(pos + sub.Size()) };
+}
+
+StringViewSplitPair StringView::SplitLast(StringView sub) const
+{
+	size_t pos = FindLastAt(sub);
+	if (pos == SIZE_MAX)
+		return { {}, *this };
+	return { substr(0, pos), substr(pos + sub.Size()) };
+}
 
 inline size_t HashValue(StringView sv)
 {

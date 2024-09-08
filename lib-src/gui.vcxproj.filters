@@ -178,6 +178,9 @@
     <ClCompile Include="Render\InlineLayout.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Core\SystemInfo.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -426,6 +429,9 @@
     </ClInclude>
     <ClInclude Include="Render\InlineLayout.h">
       <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SystemInfo.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

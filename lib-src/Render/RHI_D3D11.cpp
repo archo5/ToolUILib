@@ -516,12 +516,30 @@ struct DefaultVertex
 void GraphicsAdapters_Lock(int which);
 void GraphicsAdapters_Unlock();
 
+static void DumpAdapterInfo(IDXGIAdapter* adapter)
+{
+	DXGI_ADAPTER_DESC desc;
+	D3DCHK(adapter->GetDesc(&desc));
+	LogInfo(LOG_RHI_D3D11, "starting with adapter \"%s\" (vendor=%04X device=%04X)",
+		WCHARtoUTF8(desc.Description).c_str(),
+		desc.VendorId,
+		desc.DeviceId);
+	double GB = 1024 * 1024 * 1024;
+	LogInfo(LOG_RHI_D3D11, "- graphics adapter memory available to the application%s:", sizeof(size_t) == 4 ? " (32-bit limit)" : "");
+	LogInfo(LOG_RHI_D3D11, "--- dedicated video memory: %zu bytes (%.3f GB)", desc.DedicatedVideoMemory, desc.DedicatedVideoMemory / GB);
+	LogInfo(LOG_RHI_D3D11, "--- dedicated system = %zu bytes (%.3f GB)", desc.DedicatedSystemMemory, desc.DedicatedSystemMemory / GB);
+	LogInfo(LOG_RHI_D3D11, "--- shared system = %zu bytes (%.3f GB)", desc.SharedSystemMemory, desc.SharedSystemMemory / GB);
+}
+
 void GlobalInit()
 {
 	UINT flags = 0;
 #ifndef NDEBUG
 	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
+
+	IDXGIFactory* factory = nullptr;
+	D3DCHK(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
 
 	D3D_FEATURE_LEVEL levels[] =
 	{
@@ -539,9 +557,6 @@ void GlobalInit()
 			LogInfo(LOG_RHI_D3D11, "requested the use of graphics adapter %d", initIndex);
 		else
 			LogInfo(LOG_RHI_D3D11, "requested the use of graphics adapter \"%.*s\"", int(initName.Size()), initName.Data());
-
-		IDXGIFactory* factory = nullptr;
-		D3DCHK(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory));
 
 		for (UINT i = 0;; i++)
 		{
@@ -567,24 +582,30 @@ void GlobalInit()
 
 			SAFE_RELEASE(adapter);
 		}
-
-		SAFE_RELEASE(factory);
 	}
 
 	if (initAdapter)
 	{
-		DXGI_ADAPTER_DESC desc;
-		D3DCHK(initAdapter->GetDesc(&desc));
-		LogInfo(LOG_RHI_D3D11, "starting with adapter \"%s\" (vendor=%04X device=%04X)",
-			WCHARtoUTF8(desc.Description).c_str(),
-			desc.VendorId,
-			desc.DeviceId);
+		DumpAdapterInfo(initAdapter);
 	}
 	else
 	{
 		LogInfo(LOG_RHI_D3D11, "starting with the default adapter");
 		initIndex = 0;
+
+		IDXGIAdapter* adapter = nullptr;
+		HRESULT hr = factory->EnumAdapters(0, &adapter);
+		UI_DEFER(SAFE_RELEASE(adapter));
+		if (hr == DXGI_ERROR_NOT_FOUND)
+			LogError(LOG_RHI_D3D11, "could not find adapter 0?");
+		else
+		{
+			DumpAdapterInfo(adapter);
+		}
 	}
+
+	SAFE_RELEASE(factory);
+
 	GraphicsAdapters_Lock(initIndex);
 
 	D3DCHK(D3D11CreateDevice(

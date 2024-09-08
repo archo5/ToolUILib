@@ -361,6 +361,11 @@ void BrowseToFile(StringView path)
 	}
 }
 
+void OpenURL(StringView url)
+{
+	::ShellExecuteW(nullptr, L"open", UTF8toWCHAR(url).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
 draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type)
 {
 	unsigned attr = 0;
