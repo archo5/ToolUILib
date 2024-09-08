@@ -27,6 +27,7 @@ struct CPUInfo
 struct SystemInfo
 {
 	CPUArchitecture osArch;
+	CPUArchitecture appArch;
 	u32 numAvailLogicalCPUCores;
 	u32 pageSize;
 	u64 totalPhysicalMemory;

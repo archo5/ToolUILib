@@ -46,21 +46,30 @@ void CPUInfo::Read()
 	}
 }
 
+static CPUArchitecture FromW32Arch(WORD arch)
+{
+	switch (arch)
+	{
+	case PROCESSOR_ARCHITECTURE_INTEL: return CPUArchitecture::x86;
+	case PROCESSOR_ARCHITECTURE_AMD64: return CPUArchitecture::x64;
+	case PROCESSOR_ARCHITECTURE_ARM: return CPUArchitecture::ARM32;
+	case 12/*PROCESSOR_ARCHITECTURE_ARM64*/: return CPUArchitecture::ARM64;
+	default: return CPUArchitecture::Unknown;
+	}
+}
+
 void SystemInfo::ReadAll()
 {
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
 
 	numAvailLogicalCPUCores = sysinfo.dwNumberOfProcessors;
-	switch (sysinfo.wProcessorArchitecture)
-	{
-	case PROCESSOR_ARCHITECTURE_INTEL: osArch = CPUArchitecture::x86; break;
-	case PROCESSOR_ARCHITECTURE_AMD64: osArch = CPUArchitecture::x64; break;
-	case PROCESSOR_ARCHITECTURE_ARM: osArch = CPUArchitecture::ARM32; break;
-	case 12/*PROCESSOR_ARCHITECTURE_ARM64*/: osArch = CPUArchitecture::ARM64; break;
-	default: osArch = CPUArchitecture::Unknown; break;
-	}
+	appArch = FromW32Arch(sysinfo.wProcessorArchitecture);
 	pageSize = sysinfo.dwPageSize;
+
+	SYSTEM_INFO nsysinfo;
+	GetNativeSystemInfo(&nsysinfo);
+	osArch = FromW32Arch(nsysinfo.wProcessorArchitecture);
 
 	MEMORYSTATUSEX mstatus = {};
 	mstatus.dwLength = sizeof(mstatus);
