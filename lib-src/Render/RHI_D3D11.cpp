@@ -41,17 +41,49 @@ namespace gfx {
 
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
 
-#define D3DCHK(x) _Check(x, #x, __FILE__, __LINE__)
-static HRESULT _Check(HRESULT hr, const char* code, const char* file, int line)
+// https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d11-graphics-reference-returnvalues
+static const wchar_t* D3D11HResultToWString(HRESULT hr)
+{
+	switch (hr)
+	{
+	case E_FAIL: return L"E_FAIL";
+	case E_INVALIDARG: return L"E_INVALIDARG";
+	case E_OUTOFMEMORY: return L"E_OUTOFMEMORY";
+	case E_NOTIMPL: return L"E_NOTIMPL";
+
+	case DXGI_ERROR_INVALID_CALL: return L"DXGI_ERROR_INVALID_CALL";
+	case DXGI_ERROR_WAS_STILL_DRAWING: return L"DXGI_ERROR_WAS_STILL_DRAWING";
+
+	case D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS: return L"D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS";
+	case D3D11_ERROR_FILE_NOT_FOUND: return L"D3D11_ERROR_FILE_NOT_FOUND";
+	case D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS: return L"D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS";
+	case D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD: return L"D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD";
+
+	default: return L"?";
+	}
+}
+
+#define WIDEN2(x) L##x
+#define WIDEN(x) WIDEN2(x)
+#define D3DCHK(x) _Check(x, WIDEN(#x), WIDEN(__FILE__), __LINE__)
+static HRESULT _Check(HRESULT hr, const wchar_t* code, const wchar_t* file, int line)
 {
 	if (FAILED(hr))
 	{
-		char bfr[2048];
-		sprintf(bfr, "Error: %08X\nCode: %s\nFile: %s\nLine: %d\nDo you wish to continue?", hr, code, file, line);
-		if (MessageBoxA(nullptr, bfr, "Direct3D11 error", MB_ICONERROR | MB_YESNO) == IDNO)
+		const wchar_t* err = D3D11HResultToWString(hr);
+		LogError(LOG_RHI_D3D11, "Error %s (%08X) returned by code \"%s\" at %s:%d", WCHARtoUTF8(err).c_str(), hr, code, file, line);
+		if (hr == E_OUTOFMEMORY)
 		{
-			exit(EXIT_FAILURE);
+			const wchar_t* err = L"Ran out of video memory available to the application!\nPlease try to reduce the graphics settings.";
+			MessageBoxW(nullptr, err, L"Fatal error: Direct3D 11 renderer ran out of available video memory!", MB_ICONERROR);
 		}
+		else
+		{
+			wchar_t bfr[2048];
+			swprintf(bfr, 2048, L"Error: %08X (%s)\nCode: %s\nFile: %s\nLine: %d", hr, err, code, file, line);
+			MessageBoxW(nullptr, bfr, L"Fatal Direct3D 11 error", MB_ICONERROR);
+		}
+		exit(EXIT_FAILURE);
 	}
 	return hr;
 }
@@ -516,10 +548,8 @@ struct DefaultVertex
 void GraphicsAdapters_Lock(int which);
 void GraphicsAdapters_Unlock();
 
-static void DumpAdapterInfo(IDXGIAdapter* adapter)
+static void DumpAdapterInfo(const DXGI_ADAPTER_DESC& desc)
 {
-	DXGI_ADAPTER_DESC desc;
-	D3DCHK(adapter->GetDesc(&desc));
 	LogInfo(LOG_RHI_D3D11, "starting with adapter \"%s\" (vendor=%04X device=%04X)",
 		WCHARtoUTF8(desc.Description).c_str(),
 		desc.VendorId,
@@ -547,6 +577,8 @@ void GlobalInit()
 		D3D_FEATURE_LEVEL_11_0,
 	};
 
+	DXGI_ADAPTER_DESC adapterDesc = {};
+
 	int initIndex = -1;
 	StringView initName;
 	GraphicsAdapters::GetInitial(initIndex, initName);
@@ -571,9 +603,8 @@ void GlobalInit()
 				break;
 			}
 
-			DXGI_ADAPTER_DESC desc;
-			D3DCHK(adapter->GetDesc(&desc));
-			if (initName == WCHARtoUTF8(desc.Description))
+			D3DCHK(adapter->GetDesc(&adapterDesc));
+			if (initName == WCHARtoUTF8(adapterDesc.Description))
 			{
 				initAdapter = adapter;
 				initIndex = i;
@@ -584,11 +615,7 @@ void GlobalInit()
 		}
 	}
 
-	if (initAdapter)
-	{
-		DumpAdapterInfo(initAdapter);
-	}
-	else
+	if (!initAdapter)
 	{
 		LogInfo(LOG_RHI_D3D11, "starting with the default adapter");
 		initIndex = 0;
@@ -600,15 +627,17 @@ void GlobalInit()
 			LogError(LOG_RHI_D3D11, "could not find adapter 0?");
 		else
 		{
-			DumpAdapterInfo(adapter);
+			D3DCHK(adapter->GetDesc(&adapterDesc));
 		}
 	}
+
+	DumpAdapterInfo(adapterDesc);
 
 	SAFE_RELEASE(factory);
 
 	GraphicsAdapters_Lock(initIndex);
 
-	D3DCHK(D3D11CreateDevice(
+	HRESULT cdhr = D3D11CreateDevice(
 		initAdapter,
 		initAdapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -618,7 +647,17 @@ void GlobalInit()
 		D3D11_SDK_VERSION,
 		&g_dev,
 		nullptr,
-		&g_ctx));
+		&g_ctx);
+	if (FAILED(cdhr))
+	{
+		wchar_t bfr[2048];
+		swprintf(bfr, sizeof(bfr), L"Failed to create a Direct3D 11 device!\nAdapter: %d%s \"%s\"\nError: %s (%08X)",
+			initIndex, initAdapter ? L"" : L" (default)", adapterDesc.Description, D3D11HResultToWString(cdhr), cdhr);
+		MessageBoxW(nullptr, bfr, L"Fatal Direct3D 11 error", MB_ICONERROR);
+		exit(EXIT_FAILURE);
+	}
+	LogInfo(LOG_RHI_D3D11, "created a device with adapter %d%s: \"%s\"",
+		initIndex, initAdapter ? L" (default)" : L"", WCHARtoUTF8(adapterDesc.Description, 128).c_str());
 
 	SAFE_RELEASE(initAdapter);
 
