@@ -12,6 +12,7 @@
 #include <Windows.h>
 
 #include <d3d11.h>
+#include <dxgi1_4.h>
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -42,36 +43,34 @@ namespace gfx {
 #define SAFE_RELEASE(x) if (x) { (x)->Release(); x = nullptr; }
 
 // https://learn.microsoft.com/en-us/windows/win32/direct3d11/d3d11-graphics-reference-returnvalues
-static const wchar_t* D3D11HResultToWString(HRESULT hr)
+static const char* D3D11HResultToString(HRESULT hr)
 {
 	switch (hr)
 	{
-	case E_FAIL: return L"E_FAIL";
-	case E_INVALIDARG: return L"E_INVALIDARG";
-	case E_OUTOFMEMORY: return L"E_OUTOFMEMORY";
-	case E_NOTIMPL: return L"E_NOTIMPL";
+	case E_FAIL: return "E_FAIL";
+	case E_INVALIDARG: return "E_INVALIDARG";
+	case E_OUTOFMEMORY: return "E_OUTOFMEMORY";
+	case E_NOTIMPL: return "E_NOTIMPL";
 
-	case DXGI_ERROR_INVALID_CALL: return L"DXGI_ERROR_INVALID_CALL";
-	case DXGI_ERROR_WAS_STILL_DRAWING: return L"DXGI_ERROR_WAS_STILL_DRAWING";
+	case DXGI_ERROR_INVALID_CALL: return "DXGI_ERROR_INVALID_CALL";
+	case DXGI_ERROR_WAS_STILL_DRAWING: return "DXGI_ERROR_WAS_STILL_DRAWING";
 
-	case D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS: return L"D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS";
-	case D3D11_ERROR_FILE_NOT_FOUND: return L"D3D11_ERROR_FILE_NOT_FOUND";
-	case D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS: return L"D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS";
-	case D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD: return L"D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD";
+	case D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS: return "D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS";
+	case D3D11_ERROR_FILE_NOT_FOUND: return "D3D11_ERROR_FILE_NOT_FOUND";
+	case D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS: return "D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS";
+	case D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD: return "D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD";
 
-	default: return L"?";
+	default: return "?";
 	}
 }
 
-#define WIDEN2(x) L##x
-#define WIDEN(x) WIDEN2(x)
-#define D3DCHK(x) _Check(x, WIDEN(#x), WIDEN(__FILE__), __LINE__)
-static HRESULT _Check(HRESULT hr, const wchar_t* code, const wchar_t* file, int line)
+#define D3DCHK(x) _Check(x, #x, __FILE__, __LINE__)
+static HRESULT _Check(HRESULT hr, const char* code, const char* file, int line)
 {
 	if (FAILED(hr))
 	{
-		const wchar_t* err = D3D11HResultToWString(hr);
-		LogError(LOG_RHI_D3D11, "Error %s (%08X) returned by code \"%s\" at %s:%d", WCHARtoUTF8(err).c_str(), hr, code, file, line);
+		const char* err = D3D11HResultToString(hr);
+		LogError(LOG_RHI_D3D11, "Error %s (%08X) returned by code \"%s\" at %s:%d", err, hr, code, file, line);
 		if (hr == E_OUTOFMEMORY)
 		{
 			const wchar_t* err = L"Ran out of video memory available to the application!\nPlease try to reduce the graphics settings.";
@@ -79,9 +78,9 @@ static HRESULT _Check(HRESULT hr, const wchar_t* code, const wchar_t* file, int 
 		}
 		else
 		{
-			wchar_t bfr[2048];
-			swprintf(bfr, 2048, L"Error: %08X (%s)\nCode: %s\nFile: %s\nLine: %d", hr, err, code, file, line);
-			MessageBoxW(nullptr, bfr, L"Fatal Direct3D 11 error", MB_ICONERROR);
+			char bfr[2048];
+			size_t len = snprintf(bfr, 2048, "Error: %08X (%s)\nCode: %s\nFile: %s\nLine: %d", hr, err, code, file, line);
+			MessageBoxW(nullptr, UTF8toWCHAR({ bfr, len }).c_str(), L"Fatal Direct3D 11 error", MB_ICONERROR);
 		}
 		exit(EXIT_FAILURE);
 	}
@@ -101,6 +100,7 @@ static ID3D11Device* g_dev = nullptr;
 static ID3D11DeviceContext* g_ctx = nullptr;
 static IDXGIAdapter* g_dxgiAdapter = nullptr;
 static IDXGIFactory* g_dxgiFactory = nullptr;
+static IDXGIAdapter3* g_dxgiAdapter3 = nullptr;
 
 
 struct TempBuffer
@@ -168,6 +168,18 @@ struct Texture2D
 	Texture2D() {}
 	Texture2D(const void* data, unsigned width, unsigned height, uint8_t flags, bool a8) : _flags(flags & 3)
 	{
+		LogInfo(LOG_RHI_D3D11, "Creating a 2D %ux%u texture (fmt=%s filter=%s addr=%s)%s",
+			width,
+			height,
+			a8 ? "A8" : "RGBA8",
+			flags & TF_NOFILTER ? "nearest" : "linear",
+			flags & TF_REPEAT ? "wrap" : "clamp",
+			data ? " from data" : "");
+#if 0
+		u64 vmu = GetVideoMemoryUsage();
+		double MB = 1024 * 1024;
+		LogInfo(LOG_RHI_D3D11, "- video memory usage before creating: %" PRIu64 " (%.3f MB)", vmu, vmu / MB);
+#endif
 		D3D11_TEXTURE2D_DESC t2d = {};
 		{
 			t2d.Width = width;
@@ -648,16 +660,17 @@ void GlobalInit()
 		&g_dev,
 		nullptr,
 		&g_ctx);
+	auto adapterDescText = WCHARtoUTF8(adapterDesc.Description, 128);
 	if (FAILED(cdhr))
 	{
-		wchar_t bfr[2048];
-		swprintf(bfr, sizeof(bfr), L"Failed to create a Direct3D 11 device!\nAdapter: %d%s \"%s\"\nError: %s (%08X)",
-			initIndex, initAdapter ? L"" : L" (default)", adapterDesc.Description, D3D11HResultToWString(cdhr), cdhr);
-		MessageBoxW(nullptr, bfr, L"Fatal Direct3D 11 error", MB_ICONERROR);
+		char bfr[2048];
+		size_t len = snprintf(bfr, sizeof(bfr), "Failed to create a Direct3D 11 device!\nAdapter: %d%s \"%s\"\nError: %s (%08X)",
+			initIndex, initAdapter ? "" : " (default)", adapterDescText.c_str(), D3D11HResultToString(cdhr), cdhr);
+		MessageBoxW(nullptr, UTF8toWCHAR({ bfr, len }).c_str(), L"Fatal Direct3D 11 error", MB_ICONERROR);
 		exit(EXIT_FAILURE);
 	}
 	LogInfo(LOG_RHI_D3D11, "created a device with adapter %d%s: \"%s\"",
-		initIndex, initAdapter ? L" (default)" : L"", WCHARtoUTF8(adapterDesc.Description, 128).c_str());
+		initIndex, initAdapter ? " (default)" : "", adapterDescText.c_str());
 
 	SAFE_RELEASE(initAdapter);
 
@@ -678,6 +691,7 @@ void GlobalInit()
 	SAFE_RELEASE(dxgiDevice);
 
 	D3DCHK(g_dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&g_dxgiFactory));
+	D3DCHK(g_dxgiAdapter->QueryInterface(__uuidof(IDXGIAdapter3), (void**)&g_dxgiAdapter3));
 
 	g_tmpVB = new TempBuffer(D3D11_BIND_VERTEX_BUFFER);
 	g_tmpIB = new TempBuffer(D3D11_BIND_INDEX_BUFFER);
@@ -915,6 +929,7 @@ void GlobalFree()
 	delete g_tmpVB;
 
 	SAFE_RELEASE(g_dxgiFactory);
+	SAFE_RELEASE(g_dxgiAdapter3);
 	SAFE_RELEASE(g_dxgiAdapter);
 
 #ifdef D3D_DUMP_LIVE_OBJECTS
@@ -935,6 +950,17 @@ void GlobalFree()
 #endif
 
 	GraphicsAdapters_Unlock();
+}
+
+u64 GetVideoMemoryUsage()
+{
+	if (g_dxgiAdapter3)
+	{
+		DXGI_QUERY_VIDEO_MEMORY_INFO vmi = {};
+		D3DCHK(g_dxgiAdapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &vmi));
+		return vmi.CurrentUsage;
+	}
+	return 0;
 }
 
 void OnListenerAdd(IRHIListener* L)

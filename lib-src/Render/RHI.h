@@ -59,6 +59,7 @@ struct RenderContext;
 
 void GlobalInit();
 void GlobalFree();
+u64 GetVideoMemoryUsage();
 
 RenderContext* CreateRenderContext(void* window);
 void FreeRenderContext(RenderContext* RC);
