@@ -259,6 +259,7 @@ struct SequenceEditor : Buildable
 	std::function<void(SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 	std::function<EditorActionResponse(size_t idx)> onBeforeRemoveElement;
 	EditorItemContentsLayoutPreset itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
+	bool buildFrame = true;
 	bool allowDelete = true;
 	bool allowDuplicate = true;
 	bool allowDrag = true;

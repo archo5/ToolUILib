@@ -109,6 +109,11 @@ inline constexpr WindowStyle operator | (WindowStyle a, WindowStyle b)
 	return WindowStyle(int(a) | int(b));
 }
 
+enum WindowFlags
+{
+	WF_DisableKeyMenu = 1 << 0, // disables window menu opened by pressing Alt+<char/space>
+};
+
 struct NativeWindowGeometry
 {
 	Point2i position;
@@ -137,6 +142,9 @@ struct NativeWindowBase
 
 	WindowStyle GetStyle();
 	void SetStyle(WindowStyle ws);
+
+	u32 GetFlags();
+	void SetFlags(u32 windowFlags);
 
 	bool IsVisible();
 	void SetVisible(bool v);
@@ -204,6 +212,9 @@ struct NativeWindowBase
 	bool IsDragged() const;
 
 	static NativeWindowBase* FindFromScreenPos(Point2i p);
+	static NativeWindowBase* GetCursorClipWindow();
+	static void SetCursorClipWindow(NativeWindowBase* w);
+	void ClipCursorToThisWindow() { SetCursorClipWindow(this); }
 
 	NativeWindow_Impl* _impl = nullptr;
 };

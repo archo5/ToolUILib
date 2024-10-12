@@ -131,7 +131,10 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 
 void SequenceEditor::Build()
 {
-	Push<ListBoxFrame>();
+	if (buildFrame)
+	{
+		Push<ListBoxFrame>();
+	}
 	Push<StackTopDownLayoutElement>();
 
 	_sequence->IterateElements(0, [this](size_t idx, void* ptr)
@@ -155,7 +158,10 @@ void SequenceEditor::Build()
 	});
 
 	Pop();
-	Pop();
+	if (buildFrame)
+	{
+		Pop();
+	}
 }
 
 void SequenceEditor::OnEvent(Event& e)

@@ -37,6 +37,7 @@ enum class EventType
 	Paint,
 	Timer,
 	Tooltip,
+	Scroll,
 
 	MouseEnter,
 	MouseLeave,

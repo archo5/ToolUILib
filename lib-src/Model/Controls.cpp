@@ -886,6 +886,7 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 
 	float maxOff = max(contentSize - viewportSize, 0.0f);
 
+	float prevContentOff = info.contentOff;
 	bool contentOffsetChanged = false;
 	switch (uiState.DragOnEvent(0, GetThumbRect(info), e))
 	{
@@ -929,6 +930,10 @@ bool ScrollbarV::OnEvent(const ScrollbarData& info, Event& e)
 	{
 		info.contentOff = max(0.0f, min(maxOff, info.contentOff));
 	}
+	if (e.type == EventType::MouseScroll && prevContentOff != info.contentOff)
+	{
+		e.StopPropagation();
+	}
 
 	uiState.FinalizeOnEvent(e);
 
@@ -967,7 +972,10 @@ void ScrollArea::OnEvent(Event& e)
 		if (yoff != info.contentOff)
 			e.StopPropagation();
 		yoff = info.contentOff;
-		e.context->OnChange(this);
+
+		Event ev(e.context, this, EventType::Scroll);
+		e.context->BubblingEvent(ev);
+
 		_OnChangeStyle();
 	}
 }

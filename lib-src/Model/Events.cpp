@@ -39,6 +39,7 @@ const char* EventTypeToBaseString(EventType type)
 		X(Paint);
 		X(Timer);
 		X(Tooltip);
+		X(Scroll);
 
 		X(MouseEnter);
 		X(MouseLeave);

@@ -743,10 +743,12 @@ struct ProxyEventSystem
 	Target mainTarget;
 };
 
+static NativeWindowBase* g_cursorClipWindow = nullptr;
 struct NativeWindow_Impl;
 static Array<NativeWindow_Impl*>* g_allWindows = nullptr;
 static Array<NativeWindow_Impl*>* g_windowRepaintList = nullptr;
 static Array<NativeWindow_Impl*>* g_curWindowRepaintList = nullptr;
+static size_t g_cwrlIterPos = 0;
 static int g_rsrcUsers = 0;
 
 static StaticID_Color sid_color_clear("clear");
@@ -799,6 +801,9 @@ struct NativeWindow_Impl
 	}
 	~NativeWindow_Impl()
 	{
+		if (g_cursorClipWindow == this->GetOwner())
+			g_cursorClipWindow = nullptr;
+
 		g_allWindows->RemoveFirstOf(this);
 		if (--g_rsrcUsers == 0)
 		{
@@ -807,8 +812,14 @@ struct NativeWindow_Impl
 			draw::_::FreeResources();
 		}
 
-		if (invalidated)
-			g_windowRepaintList->RemoveFirstOf(this);
+		g_windowRepaintList->RemoveFirstOf(this);
+		size_t cwrlPos = g_curWindowRepaintList->IndexOf(this);
+		if (cwrlPos != SIZE_MAX)
+		{
+			g_curWindowRepaintList->RemoveAt(cwrlPos);
+			if (cwrlPos < g_cwrlIterPos)
+				g_cwrlIterPos--;
+		}
 		gfx::FreeRenderContext(renderCtx);
 		renderCtx = nullptr;
 
@@ -1086,6 +1097,7 @@ struct NativeWindow_Impl
 	bool invalidated = false;
 	uint8_t sysMoveSizeState = MSST_None;
 	WindowStyle style = WS_Default;
+	u32 flags = 0;
 };
 
 static NativeWindow_Impl* GetNativeWindow(HWND hWnd)
@@ -1150,6 +1162,16 @@ void NativeWindowBase::SetStyle(WindowStyle ws)
 		return;
 	_impl->style = ws;
 	_impl->UpdateStyle();
+}
+
+u32 NativeWindowBase::GetFlags()
+{
+	return _impl->flags;
+}
+
+void NativeWindowBase::SetFlags(u32 windowFlags)
+{
+	_impl->flags = windowFlags;
 }
 
 bool NativeWindowBase::IsVisible()
@@ -1500,6 +1522,47 @@ NativeWindowBase* NativeWindowBase::FindFromScreenPos(Point2i p)
 	auto ptr = GetWindowLongPtr(win, GWLP_USERDATA);
 	auto* impl = reinterpret_cast<NativeWindow_Impl*>(ptr);
 	return impl->system.nativeWindow;
+}
+
+NativeWindowBase* NativeWindowBase::GetCursorClipWindow()
+{
+	return g_cursorClipWindow;
+}
+
+static void _UpdateCursorClipWindow(NativeWindowBase* w)
+{
+	if (!w ||
+		w != g_cursorClipWindow ||
+		w->_impl->sysMoveSizeState != MSST_None ||
+		w->GetState() == ui::WindowState::Minimized)
+		return;
+	auto rect = w->GetInnerRect();
+	RECT wrect = { rect.x0, rect.y0, rect.x1, rect.y1 };
+	if (!ClipCursor(&wrect))
+		LogError(LOG_WIN32, "ClipCursor(%d,%d,%d,%d) failed: %08X", rect.x0, rect.y0, rect.x1, rect.y1, GetLastError());
+}
+
+static void _RemoveCursorClipAnyWindow()
+{
+	if (!ClipCursor(nullptr))
+		LogError(LOG_WIN32, "ClipCursor(NULL) failed: %08X", GetLastError());
+}
+
+static void _RemoveCursorClipWindow(NativeWindowBase* w)
+{
+	if (w == g_cursorClipWindow)
+		_RemoveCursorClipAnyWindow();
+}
+
+void NativeWindowBase::SetCursorClipWindow(NativeWindowBase* w)
+{
+	if (g_cursorClipWindow == w)
+		return;
+	g_cursorClipWindow = w;
+	if (!w)
+		_RemoveCursorClipAnyWindow();
+	else
+		_UpdateCursorClipWindow(w);
 }
 
 
@@ -1860,8 +1923,11 @@ int Application::Run()
 		for (auto* win : *g_curWindowRepaintList)
 			win->invalidated = false;
 
-		for (auto* win : *g_curWindowRepaintList)
+		for (g_cwrlIterPos = 0; g_cwrlIterPos < g_curWindowRepaintList->Size(); g_cwrlIterPos++)
+		{
+			auto* win = (*g_curWindowRepaintList)[g_cwrlIterPos];
 			win->Redraw(true);
+		}
 		g_curWindowRepaintList->Clear();
 
 		assert(g_curWindowRepaintList->IsEmpty());
@@ -2021,6 +2087,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_SETFOCUS:
 		if (auto* win = GetNativeWindow(hWnd))
 		{
+			_UpdateCursorClipWindow(win->GetOwner());
 			win->GetOwner()->OnFocusReceived();
 			return TRUE;
 		}
@@ -2028,8 +2095,22 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_KILLFOCUS:
 		if (auto* win = GetNativeWindow(hWnd))
 		{
+			_RemoveCursorClipWindow(win->GetOwner());
 			win->GetOwner()->OnFocusLost();
 			return TRUE;
+		}
+		break;
+	case WM_ACTIVATE:
+		if (auto* win = GetNativeWindow(hWnd))
+		{
+			if ((LOWORD(wParam) == WA_ACTIVE || LOWORD(wParam) == WA_CLICKACTIVE) && HIWORD(wParam) == 0)
+			{
+				_UpdateCursorClipWindow(win->GetOwner());
+			}
+			else
+			{
+				_RemoveCursorClipWindow(win->GetOwner());
+			}
 		}
 		break;
 	case WM_NCHITTEST:
@@ -2210,24 +2291,40 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			if (auto* window = GetNativeWindow(hWnd))
 			{
+				_UpdateCursorClipWindow(window->GetOwner());
 				auto w = LOWORD(lParam);
 				auto h = HIWORD(lParam);
 				window->OnResizeTo(w, h);
 			}
 		}
+		else if (wParam == SIZE_MINIMIZED)
+		{
+			if (auto* window = GetNativeWindow(hWnd))
+				_RemoveCursorClipWindow(window->GetOwner());
+		}
 		break;
 	case WM_ENTERSIZEMOVE:
 		if (auto* window = GetNativeWindow(hWnd))
+		{
+			_RemoveCursorClipWindow(window->GetOwner());
 			window->sysMoveSizeState = MSST_Unknown;
+		}
 		break;
 	case WM_EXITSIZEMOVE:
 		if (auto* window = GetNativeWindow(hWnd))
+		{
 			window->sysMoveSizeState = MSST_None;
+			_UpdateCursorClipWindow(window->GetOwner());
+		}
 		break;
 	case WM_MOVING:
 		if (auto* window = GetNativeWindow(hWnd))
 			if (window->sysMoveSizeState == MSST_Unknown)
 				window->sysMoveSizeState = MSST_Move;
+		break;
+	case WM_DISPLAYCHANGE:
+		if (auto* window = GetNativeWindow(hWnd))
+			_UpdateCursorClipWindow(window->GetOwner());
 		break;
 	case WM_COMMAND:
 		if (auto* window = GetNativeWindow(hWnd))
@@ -2237,6 +2334,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				window->menu->CallActivationFunction(LOWORD(wParam) - 1);
 				return TRUE;
 			}
+		}
+		break;
+	case WM_SYSCOMMAND:
+		if (auto* window = GetNativeWindow(hWnd))
+		{
+			if ((wParam & 0xffff) == SC_KEYMENU && (window->flags & WF_DisableKeyMenu))
+				return 0;
 		}
 		break;
 	case WM_DROPFILES:

@@ -443,6 +443,21 @@ struct OSCommunicationTest : ui::Buildable
 
 		WPush<ui::StackLTRLayoutElement>();
 		{
+			if (ui::imm::Button("Limit cursor to this window"))
+				GetNativeWindow()->ClipCursorToThisWindow();
+			if (ui::imm::Button("Remove cursor limit"))
+				ui::NativeWindowBase::SetCursorClipWindow(nullptr);
+			if (ui::imm::Button("Minimize"))
+				GetNativeWindow()->SetState(ui::WindowState::Minimized);
+			if (ui::imm::Button("Maximize"))
+				GetNativeWindow()->SetState(ui::WindowState::Maximized);
+			if (ui::imm::Button("Restore"))
+				GetNativeWindow()->SetState(ui::WindowState::Normal);
+		}
+		WPop();
+
+		WPush<ui::StackLTRLayoutElement>();
+		{
 			for (auto icon : icons)
 			{
 				if (icon)
