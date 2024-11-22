@@ -79,7 +79,7 @@ void InlineLayout::AddText(StringView text, Color4b col, IL_VAlign valign)
 			break;
 
 		bool curBreaking = IsBreakingSpace(ch);
-		if (curBreaking != prevBreaking && !isFirstChar)
+		if (ch == '\n' || (curBreaking != prevBreaking && !isFirstChar))
 		{
 			// commit the piece so far and start a new one
 			p.quadCount = quads.Size() - p.quadOff;
@@ -87,6 +87,7 @@ void InlineLayout::AddText(StringView text, Color4b col, IL_VAlign valign)
 			pieces.Append(p);
 
 			p.quadOff = quads.Size();
+			p.needsLineBreak = ch == '\n';
 			x0 = x = 0;
 		}
 		isFirstChar = false;
@@ -95,6 +96,9 @@ void InlineLayout::AddText(StringView text, Color4b col, IL_VAlign valign)
 		float kern = curFont->FindKerning(sctx.size, lastChar, ch);
 		//if (::GetTickCount() % 1000 < 300) kern = 0;
 		lastChar = ch;
+
+		if (ch == '\n')
+			continue;
 
 		auto gv = curFont->FindGlyph(sctx, ch, true);
 
@@ -151,7 +155,7 @@ float InlineLayout::FinishLayout(float maxWidth)
 	for (u32 i = 0; i < pieces.Size(); i++)
 	{
 		Piece& P = pieces[i];
-		if (curLineW + P.width > maxWidth && !P.IsSpace())
+		if (P.needsLineBreak || (curLineW + P.width > maxWidth && !P.IsSpace()))
 		{
 			curLineW = 0;
 			lines.Append({ i, 0 });

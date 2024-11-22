@@ -559,6 +559,7 @@ struct InlineLayoutTest : ui::Buildable
 			il.AddImage(img->image, { 10, 10 }, ui::IL_VAlign::Baseline);
 		}
 		il.AddText(" longer textual fragments", {});
+		il.AddText("\n\nand line breaks", {});
 		il.FinishLayout(GetFinalRect().GetWidth());
 		il.Render(GetFinalRect().GetMin(), 1);
 		for (auto& L : il.lines)

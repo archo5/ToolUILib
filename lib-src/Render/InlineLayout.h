@@ -29,6 +29,7 @@ struct InlineLayout
 		// input
 		Color4b color;
 		IL_VAlign valign = IL_VAlign::Baseline;
+		bool needsLineBreak = false;
 
 		// quad ref
 		u32 quadOff = 0;
