@@ -1157,7 +1157,7 @@ void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint
 			w * bpp);
 	}
 	AABB2i bbox(x, y, x + w, y + h);
-	tex->aabb = tex->aabb.Include(bbox);
+	tex->aabb.Include(bbox);
 #else
 	if (w == 0 || h == 0)
 		return;

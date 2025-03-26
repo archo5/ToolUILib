@@ -399,6 +399,186 @@ void AALineCol(const ArrayView<Point2f>& points, float w, Color4b col, bool clos
 	IndexedTriangles(nullptr, verts.data(), verts.size(), indices.data(), indices.size());
 }
 
+static bool IsConvexPolygon(const ArrayView<Point2f>& points)
+{
+	bool pos = false;
+	bool neg = false;
+	for (size_t i = 0; i < points.Size(); i++)
+	{
+		Vec2f p0 = points[(i + points.Size() - 1) % points.Size()];
+		Vec2f pi = points[i];
+		Vec2f p1 = points[(i + 1) % points.Size()];
+		Vec2f dir1 = p1 - pi;
+		Vec2f tng0 = (pi - p0).Perp();
+		float dot = Vec2Dot(dir1, tng0);
+		if (dot > 0)
+			pos = true;
+		else if (dot < 0)
+			neg = true;
+		if (pos && neg)
+			return false;
+	}
+	return true;
+}
+
+// https://stackoverflow.com/a/2049593
+static float DiffCross2D(Vec2f p1, Vec2f p2, Vec2f p3)
+{
+	return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+}
+
+static bool PointInTriangle(Vec2f pt, Vec2f v1, Vec2f v2, Vec2f v3)
+{
+	float d1 = DiffCross2D(pt, v1, v2);
+	float d2 = DiffCross2D(pt, v2, v3);
+	float d3 = DiffCross2D(pt, v3, v1);
+
+	bool has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+	bool has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+	return !(has_neg && has_pos);
+}
+
+static void Triangulate(Array<u16>& outIndices, const ArrayView<Point2f>& points)
+{
+	if (IsConvexPolygon(points))
+	{
+		for (size_t i = 1; i + 1 < points.Size(); i++)
+		{
+			outIndices.Append(0);
+			outIndices.Append(u16(i));
+			outIndices.Append(u16(i + 1));
+		}
+		return;
+	}
+
+	Array<Vec2f> poly = points;
+	bool cutAny = true;
+	while (poly.Size() >= 3 && cutAny)
+	{
+		cutAny = false;
+		for (size_t i = 0; i < poly.Size(); i++)
+		{
+			size_t i0 = (i + points.Size() - 1) % points.Size();
+			size_t i1 = (i + 1) % points.Size();
+			Vec2f p0 = points[i0];
+			Vec2f pi = points[i];
+			Vec2f p1 = points[i1];
+			Vec2f dir1 = p1 - pi;
+			Vec2f tng0 = (pi - p0).Perp();
+			float dot = Vec2Dot(dir1, tng0);
+			if (dot > 0)
+			{
+				// check if there are no points inside the triangle
+				bool canCut = true;
+				for (size_t j = 0; j + 3 < poly.Size(); j++)
+				{
+					size_t rj = (i + 2 + j) % poly.Size();
+					Vec2f prj = points[rj];
+					if (PointInTriangle(prj, p0, pi, p1))
+					{
+						canCut = false;
+						break;
+					}
+				}
+
+				if (canCut)
+				{
+					outIndices.Append(u16(i0));
+					outIndices.Append(u16(i));
+					outIndices.Append(u16(i1));
+					poly.RemoveAt(i--);
+					cutAny = true;
+				}
+			}
+		}
+	}
+}
+
+void PolyCol(const ArrayView<Point2f>& points, Color4b col, bool midpixel)
+{
+	if (points.Size() < 3)
+		return;
+
+	Array<gfx::Vertex> verts;
+	verts.Reserve(points.Size());
+
+	Array<u16> indices;
+	indices.Reserve((points.Size() - 2) * 3);
+
+	for (Vec2f p : points)
+	{
+		if (midpixel)
+			MidpixelAdjust(p, {});
+
+		verts.Append(ColorVert(p, col));
+	}
+
+	Triangulate(indices, points);
+
+	IndexedTriangles(nullptr, verts.Data(), verts.Size(), indices.Data(), indices.Size());
+}
+
+void AAPolyCol(const ArrayView<Point2f>& points, Color4b col, bool midpixel)
+{
+	size_t sz = points.Size();
+	if (sz < 3)
+		return;
+
+	Array<gfx::Vertex> verts;
+	verts.Resize(sz * 2);
+
+	Array<u16> indices;
+	indices.Reserve((sz - 2) * 3 + sz * 6);
+
+	Color4b colA0 = col;
+	colA0.a = 0;
+	for (size_t i = 0; i < sz; i++)
+	{
+		size_t i0 = (i + sz - 1) % sz;
+		size_t i1 = (i + 1) % sz;
+		Vec2f p0 = points[i0];
+		Vec2f pi = points[i];
+		Vec2f p1 = points[i1];
+
+		Vec2f t_prev = (pi - p0).Normalized().Perp();
+		Vec2f t_next = (p1 - pi).Normalized().Perp();
+		Vec2f t_avg = (t_prev + t_next).Normalized();
+
+		float dot = Vec2Dot(t_prev, t_avg);
+		float scale = dot != 0 ? 0.5f / dot : 0.5f;
+
+		Vec2f t_scaled = t_avg * scale;
+
+		Vec2f p = pi;
+
+		if (midpixel)
+			MidpixelAdjust(p, {});
+
+		verts[i] = ColorVert(p - t_scaled, col);
+		verts[i + sz] = ColorVert(p + t_scaled, colA0);
+	}
+
+	// the inside
+	Triangulate(indices, points);
+
+	// the edge
+	for (size_t i = 0; i < sz; i++)
+	{
+		size_t i1 = (i + 1) % sz;
+
+		indices.Append(u16(i));
+		indices.Append(u16(i + sz));
+		indices.Append(u16(i1 + sz));
+
+		indices.Append(u16(i1 + sz));
+		indices.Append(u16(i1));
+		indices.Append(u16(i));
+	}
+
+	IndexedTriangles(nullptr, verts.Data(), verts.Size(), indices.Data(), indices.Size());
+}
+
 struct CircleList
 {
 	Array<Point2f> points;
@@ -428,6 +608,16 @@ void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixe
 void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
 {
 	AALineCol(CircleList(center, rad).points, w, col, true, midpixel);
+}
+
+void CircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+{
+	PolyCol(CircleList(center, rad).points, col, midpixel);
+}
+
+void AACircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+{
+	AAPolyCol(CircleList(center, rad).points, col, midpixel);
 }
 
 void RectCol(float x0, float y0, float x1, float y1, Color4b col)

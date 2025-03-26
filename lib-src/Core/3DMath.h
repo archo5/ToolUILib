@@ -69,6 +69,16 @@ template <class T> struct Vec3
 	template <class U> UI_FORCEINLINE Vec3<U> Cast() const { return { U(x), U(y), U(z) }; }
 };
 template <class T>
+inline size_t HashValue(Vec3<T> v)
+{
+	size_t h = HashValue(v.x);
+	h *= 121;
+	h ^= HashValue(v.y);
+	h *= 121;
+	h ^= HashValue(v.z);
+	return h;
+}
+template <class T>
 UI_FORCEINLINE Vec3<T> operator * (T f, Vec3<T> v) { return { f * v.x, f * v.y, f * v.z }; }
 template <class T>
 UI_FORCEINLINE float Vec3Dot(const Vec3<T>& a, const Vec3<T>& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
@@ -328,6 +338,16 @@ struct Mat4f
 		return Mat4f::Identity();
 	}
 
+	Vec4f Transform(const Vec4f& p) const
+	{
+		return
+		{
+			p.x * v00 + p.y * v01 + p.z * v02 + p.w * v03,
+			p.x * v10 + p.y * v11 + p.z * v12 + p.w * v13,
+			p.x * v20 + p.y * v21 + p.z * v22 + p.w * v23,
+			p.x * v30 + p.y * v31 + p.z * v32 + p.w * v33,
+		};
+	}
 	Vec4f TransformPointNoDivide(const Vec3f& p) const
 	{
 		return

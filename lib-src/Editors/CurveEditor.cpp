@@ -92,7 +92,7 @@ AABB2f ICurveView::GetPreferredViewport(bool includeTangents)
 	AABB2f bbox = AABB2f::Empty();
 	for (uint32_t cid = 0, numcurves = GetCurveCount(); cid < numcurves; cid++)
 	{
-		bbox = bbox.Include(GetPreferredCurveViewport(includeTangents, cid, { 0, GetPointCount(cid) }));
+		bbox.Include(GetPreferredCurveViewport(includeTangents, cid, { 0, GetPointCount(cid) }));
 	}
 	return bbox;
 }
@@ -104,11 +104,11 @@ AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, uint32_t curv
 	AABB2f bbox = AABB2f::Empty();
 	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
 	{
-		bbox = bbox.Include(GetPoint(curveid, pid));
+		bbox.Include(GetPoint(curveid, pid));
 		if (includeTangents)
 		{
-			bbox = bbox.Include(GetLeftTangentPoint(curveid, pid));
-			bbox = bbox.Include(GetRightTangentPoint(curveid, pid));
+			bbox.Include(GetLeftTangentPoint(curveid, pid));
+			bbox.Include(GetRightTangentPoint(curveid, pid));
 		}
 	}
 	return bbox;

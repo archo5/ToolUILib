@@ -19,6 +19,7 @@ constexpr float RAD2DEG = 180 / PI;
 
 UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }
 UI_FORCEINLINE float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
+UI_FORCEINLINE float invlerpc(float a, float b, float x) { return clamp01((x - a) / (b - a)); }
 UI_FORCEINLINE float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
 
 inline float MoveTowards(float cur, float tgt, float maxStep)
@@ -140,7 +141,10 @@ template <class T> struct Vec2
 template <class T>
 inline size_t HashValue(Vec2<T> v)
 {
-	return HashValue(v.x) ^ HashValue(v.y);
+	size_t h = HashValue(v.x);
+	h *= 121;
+	h ^= HashValue(v.y);
+	return h;
 }
 
 using Vec2f = Vec2<float>;
@@ -283,7 +287,7 @@ template<class T> struct AABB2
 	UI_FORCEINLINE static AABB2 FromCenterExtents(T x, T y, T ex, T ey) { return { x - ex, y - ey, x + ex, y + ey }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, T e) { return { c.x - e, c.y - e, c.x + e, c.y + e }; }
 	UI_FORCEINLINE static AABB2 FromCenterExtents(Vec2<T> c, Vec2<T> e) { return { c.x - e.x, c.y - e.y, c.x + e.x, c.y + e.y }; }
-	UI_FORCEINLINE static AABB2 FromTwoPoints(Vec2<T> p0, Vec2<T> p1) { return AABB2(p0).Include(p1); }
+	UI_FORCEINLINE static AABB2 FromTwoPoints(Vec2<T> p0, Vec2<T> p1) { return AABB2(p0).With(p1); }
 
 	UI_FORCEINLINE bool operator == (const AABB2& o) const { return x0 == o.x0 && y0 == o.y0 && x1 == o.x1 && y1 == o.y1; }
 	UI_FORCEINLINE bool operator != (const AABB2& o) const { return !(*this == o); }
@@ -313,8 +317,10 @@ template<class T> struct AABB2
 	UI_FORCEINLINE AABB2 ExtendBy(const AABB2& ext) const { return { x0 - ext.x0, y0 - ext.y0, x1 + ext.x1, y1 + ext.y1 }; }
 	UI_FORCEINLINE AABB2 ShrinkBy(const AABB2& ext) const { return { x0 + ext.x0, y0 + ext.y0, x1 - ext.x1, y1 - ext.y1 }; }
 	UI_FORCEINLINE AABB2 MoveBy(T dx, T dy) const { return { x0 + dx, y0 + dy, x1 + dx, y1 + dy }; }
-	UI_FORCEINLINE AABB2 Include(const AABB2& o) const { return { min(x0, o.x0), min(y0, o.y0), max(x1, o.x1), max(y1, o.y1) }; }
-	UI_FORCEINLINE AABB2 Include(const Vec2<T>& o) const { return { min(x0, o.x), min(y0, o.y), max(x1, o.x), max(y1, o.y) }; }
+	UI_FORCEINLINE void Include(const AABB2& o) { x0 = min(x0, o.x0); y0 = min(y0, o.y0); x1 = max(x1, o.x1); y1 = max(y1, o.y1); }
+	UI_FORCEINLINE void Include(const Vec2<T>& o) { x0 = min(x0, o.x); y0 = min(y0, o.y); x1 = max(x1, o.x); y1 = max(y1, o.y); }
+	UI_FORCEINLINE AABB2 With(const AABB2& o) const { return { min(x0, o.x0), min(y0, o.y0), max(x1, o.x1), max(y1, o.y1) }; }
+	UI_FORCEINLINE AABB2 With(const Vec2<T>& o) const { return { min(x0, o.x), min(y0, o.y), max(x1, o.x), max(y1, o.y) }; }
 	UI_FORCEINLINE AABB2 operator * (T f) const { return { x0 * f, y0 * f, x1 * f, y1 * f }; }
 	UI_FORCEINLINE AABB2 operator + (Vec2<T> v) const { return { x0 + v.x, y0 + v.y, x1 + v.x, y1 + v.y }; }
 	UI_FORCEINLINE AABB2 operator - (Vec2<T> v) const { return { x0 - v.x, y0 - v.y, x1 - v.x, y1 - v.y }; }

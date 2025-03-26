@@ -29,12 +29,13 @@ struct RenderingPrimitives : ui::Buildable
 		for (int t = 0; t <= 5; t++)
 		{
 			float w = powf(3.0f, t * 0.2f);
-			float xo = t * 74 + 10;
+			float xo = t * 90 + 10;
 			float x0 = 10 + xo;
 			float x1 = 25 + xo;
 			float x2 = 45 + xo;
 			float x3 = 60 + xo;
 			float x4 = 72 + xo;
+			float x5 = 88 + xo;
 			for (int i = 0; i < 8; i++)
 			{
 				if (i % 2 == 0)
@@ -82,6 +83,7 @@ struct RenderingPrimitives : ui::Buildable
 				ui::draw::AALineCol(x - c * r, y - s * r, x + c * r, y + s * r, w, colO);
 				ui::draw::AALineCol(x - c * r, y2 - s * r, x + c * r, y2 + s * r, w, col);
 			}
+
 			{
 				ui::Point2f pts[4] =
 				{
@@ -116,6 +118,41 @@ struct RenderingPrimitives : ui::Buildable
 			ui::draw::CircleLineCol({ x4, 110 }, 5, w, col);
 			ui::draw::AACircleLineCol({ x4, 110 }, 5, w, colO);
 			ui::draw::AACircleLineCol({ x4, 110 + 200 }, 5, w, col);
+			
+			{
+				ui::Point2f pts[4] =
+				{
+					{ x5 - 5, 10 },
+					{ x5 + 5, 10 },
+					{ x5 + 5, 20 },
+					{ x5 - 5, 20 },
+				};
+				ui::draw::PolyCol(pts, col, true);
+				ui::draw::AAPolyCol(pts, colO, true);
+				for (auto& p : pts)
+					p.y += 200;
+				ui::draw::AAPolyCol(pts, col, true);
+			}
+			for (int i = 0; i < 4; i++)
+			{
+				ui::Point2f p = { x5, 32.0f + i * 20 };
+				int ptcount = i + 3;
+				ui::Point2f pts[6];
+				for (int j = 0; j < ptcount; j++)
+				{
+					float a = 3.14159f * 2 * j / float(ptcount);
+					pts[j] = p + ui::Point2f{ sinf(a), cosf(a) } *6.0f;
+				}
+
+				ui::draw::PolyCol(ui::ArrayView<ui::Point2f>(pts, ptcount), col, true);
+				ui::draw::AAPolyCol(ui::ArrayView<ui::Point2f>(pts, ptcount), colO, true);
+				for (int j = 0; j < ptcount; j++)
+					pts[j].y += 200;
+				ui::draw::AAPolyCol(ui::ArrayView<ui::Point2f>(pts, ptcount), col, true);
+			}
+			ui::draw::CircleCol({ x5, 110 }, 5, w, col);
+			ui::draw::AACircleCol({ x5, 110 }, 5, w, colO);
+			ui::draw::AACircleCol({ x5, 110 + 200 }, 5, w, col);
 		}
 
 		ui::draw::RectCol(40, 10, 50, 20, col);

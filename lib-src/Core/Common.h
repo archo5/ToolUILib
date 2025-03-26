@@ -20,6 +20,7 @@ struct DoNotInitialize {};
 template <class T> UI_FORCEINLINE T min(T a, T b) { return a < b ? a : b; }
 template <class T> UI_FORCEINLINE T max(T a, T b) { return a > b ? a : b; }
 template <class T> UI_FORCEINLINE T clamp(T x, T vmin, T vmax) { return x < vmin ? vmin : x > vmax ? vmax : x; }
+UI_FORCEINLINE float clamp01(float x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
 
 template <class T>
 struct TmpEdit
