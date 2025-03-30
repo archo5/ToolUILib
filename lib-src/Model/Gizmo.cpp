@@ -260,7 +260,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 		_origXF = editable.GetGizmoLocation();
 
 		_origCursorWinPos = cursorPoint;
-		auto pointWP = cam.WorldToWindowPoint(_origXF.TransformPoint({ 0, 0, 0 }));
+		auto pointWP = cam.WorldToWindowPoint(_origXF.position);
 		_origCenterWinPos = pointWP;
 		_totalMovedWinVec = {};
 		_totalAngleDiff = 0;
@@ -307,7 +307,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		{
 			if (settings.visible)
 			{
-				auto wp = _combinedXF.TransformPoint({ 0, 0, 0 });
+				auto wp = _combinedXF.GetTranslation();
 				_hoveredPart = GetIntersectingPart(
 					settings.type,
 					cam.GetLocalRayEP(e, _combinedXF.Inverted()),
@@ -350,7 +350,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 					worldTg1 = cam.GetInverseViewMatrix().TransformDirection({ 1, 0, 0 }).Normalized();
 					worldTg2 = cam.GetInverseViewMatrix().TransformDirection({ 0, 1, 0 }).Normalized();
 				}
-				Vec3f worldOrigPos = xfBasis.TransformPoint({ 0, 0, 0 });
+				Vec3f worldOrigPos = xfBasis.GetTranslation();
 
 				if (_totalMovedWinVec.x == 0 && _totalMovedWinVec.y == 0)
 				{
@@ -361,7 +361,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				if ((int(_selectedPart) & GAF_Shape_MASK) == GAF_Shape_Axis)
 				{
 					// generate a plane
-					Vec3f cam2center = (xfBasis.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
+					Vec3f cam2center = (xfBasis.GetTranslation() - cam.GetCameraEyePos()).Normalized();
 					Vec3f rt = Vec3Cross(cam2center, worldAxis);
 					Vec3f pn = Vec3Cross(rt, worldAxis);
 					auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { pn.x, pn.y, pn.z, Vec3Dot(pn, worldOrigPos) });
@@ -507,10 +507,10 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		}
 		else if (_hoveredPart != GizmoAction::None)
 		{
-			Vec3f cam2center = (_combinedXF.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-			float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-			float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-			float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
+			Vec3f cam2center = (_combinedXF.GetTranslation() - cam.GetCameraEyePos()).Normalized();
+			float dotX = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 1, 0, 0 }) - _combinedXF.GetTranslation()).Normalized(), cam2center));
+			float dotY = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 1, 0 }) - _combinedXF.GetTranslation()).Normalized(), cam2center));
+			float dotZ = fabsf(Vec3Dot((_combinedXF.TransformPoint({ 0, 0, 1 }) - _combinedXF.GetTranslation()).Normalized(), cam2center));
 
 			float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
 			float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
@@ -677,10 +677,10 @@ static void Gizmo_Render_Move(GizmoAction hoverPart, const Mat4f& transform, con
 
 	Vertex_PF3CB4 tmpVerts[2] = {};
 
-	Vec3f cam2center = (transform.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotY = fabsf(Vec3Dot((transform.TransformPoint({ 0, 1, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotZ = fabsf(Vec3Dot((transform.TransformPoint({ 0, 0, 1 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
+	Vec3f cam2center = (transform.GetTranslation() - cam.GetCameraEyePos()).Normalized();
+	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.GetTranslation()).Normalized(), cam2center));
+	float dotY = fabsf(Vec3Dot((transform.TransformPoint({ 0, 1, 0 }) - transform.GetTranslation()).Normalized(), cam2center));
+	float dotZ = fabsf(Vec3Dot((transform.TransformPoint({ 0, 0, 1 }) - transform.GetTranslation()).Normalized(), cam2center));
 
 	float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
 	float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
@@ -842,7 +842,7 @@ static void Gizmo_Render_Rotate(GizmoAction hoverPart, const Mat4f& transform, f
 {
 	using namespace gfx;
 
-	auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
+	auto worldPoint = transform.GetTranslation();
 	auto wsp = cam.WorldToWindowPoint(worldPoint);
 	float sizeScale = fabsf(cam.WorldToWindowSize(1.0f, worldPoint));
 
@@ -890,10 +890,10 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 
 	Vertex_PF3CB4 tmpVerts[2] = {};
 
-	Vec3f cam2center = (transform.TransformPoint({ 0, 0, 0 }) - cam.GetInverseViewProjectionMatrix().TransformPoint({ 0, 0, -10000 })).Normalized();
-	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotY = fabsf(Vec3Dot((transform.TransformPoint({ 0, 1, 0 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
-	float dotZ = fabsf(Vec3Dot((transform.TransformPoint({ 0, 0, 1 }) - transform.TransformPoint({ 0, 0, 0 })).Normalized(), cam2center));
+	Vec3f cam2center = (transform.GetTranslation() - cam.GetCameraEyePos()).Normalized();
+	float dotX = fabsf(Vec3Dot((transform.TransformPoint({ 1, 0, 0 }) - transform.GetTranslation()).Normalized(), cam2center));
+	float dotY = fabsf(Vec3Dot((transform.TransformPoint({ 0, 1, 0 }) - transform.GetTranslation()).Normalized(), cam2center));
+	float dotZ = fabsf(Vec3Dot((transform.TransformPoint({ 0, 0, 1 }) - transform.GetTranslation()).Normalized(), cam2center));
 
 	float visX = clamp(invlerp(0.99f, 0.97f, dotX), 0.0f, 1.0f);
 	float visY = clamp(invlerp(0.99f, 0.97f, dotY), 0.0f, 1.0f);
@@ -932,7 +932,7 @@ static void Gizmo_Render_Scale(GizmoAction hoverPart, const Mat4f& transform, fl
 	{
 		auto prevRect = End3DMode();
 
-		auto worldPoint = transform.TransformPoint({ 0, 0, 0 });
+		auto worldPoint = transform.GetTranslation();
 		auto wsp = cam.WorldToWindowPoint(worldPoint);
 		float sizeScale = fabsf(cam.WorldToWindowSize(1.0f, worldPoint));
 
@@ -1050,7 +1050,7 @@ static void RenderInfiniteAxisLine(int axisFlag, Mat4f basis)
 	Vec3f axis = GetAxis(action);
 	RenderInfiniteLine(
 		GetColor(action),
-		basis.TransformPoint({ 0, 0, 0 }),
+		basis.GetTranslation(),
 		basis.TransformDirection(axis).Normalized());
 }
 

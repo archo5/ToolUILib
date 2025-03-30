@@ -610,12 +610,12 @@ void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpi
 	AALineCol(CircleList(center, rad).points, w, col, true, midpixel);
 }
 
-void CircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+void CircleCol(Point2f center, float rad, Color4b col, bool midpixel)
 {
 	PolyCol(CircleList(center, rad).points, col, midpixel);
 }
 
-void AACircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel)
+void AACircleCol(Point2f center, float rad, Color4b col, bool midpixel)
 {
 	AAPolyCol(CircleList(center, rad).points, col, midpixel);
 }

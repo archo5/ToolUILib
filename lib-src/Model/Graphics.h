@@ -403,7 +403,12 @@ struct CameraBase
 	virtual Vec3f GetCameraUpDir() const { return Vec3f(_mtxInvView.v01, _mtxInvView.v11, _mtxInvView.v21).Normalized(); }
 	virtual Vec3f GetCameraForwardDir() const { return Vec3f(_mtxInvView.v02, _mtxInvView.v12, _mtxInvView.v22).Normalized(); }
 	// the location of the "eye" (source of rays)
-	virtual Vec3f GetCameraEyePos() const { return GetCameraEyePosEstimate(); }
+	virtual Vec3f GetCameraEyePos() const
+	{
+		if (_mtxProj.v32)
+			return GetCameraPosition(); // perspective projection, can get exact eye pos
+		return GetCameraEyePosEstimate();
+	}
 	// https://terathon.com/gdc07_lengyel.pdf (slide 6)
 	Vec3f GetCameraEyePosEstimate(float z = -10000) const { return _mtxInvViewProj.TransformPoint({ 0, 0, z }); }
 

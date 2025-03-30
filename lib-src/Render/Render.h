@@ -32,8 +32,8 @@ void PolyCol(const ArrayView<Point2f>& points, Color4b col, bool midpixel = true
 void AAPolyCol(const ArrayView<Point2f>& points, Color4b col, bool midpixel = true);
 void CircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
 void AACircleLineCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
-void CircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
-void AACircleCol(Point2f center, float rad, float w, Color4b col, bool midpixel = true);
+void CircleCol(Point2f center, float rad, Color4b col, bool midpixel = true);
+void AACircleCol(Point2f center, float rad, Color4b col, bool midpixel = true);
 void RectCol(float x0, float y0, float x1, float y1, Color4b col);
 void RectCol(const AABB2f& r, Color4b col);
 void RectGradH(float x0, float y0, float x1, float y1, Color4b a, Color4b b);

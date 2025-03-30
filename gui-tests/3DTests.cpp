@@ -355,6 +355,13 @@ struct GizmoTest : ui::Buildable
 				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
+					if (ui::imm::Button("Add test offset"))
+					{
+						xf = xf * ui::Mat4f::Translate(100, 200, 300);
+						camera.pivot += ui::Vec3f(100, 200, 300);
+						camera._UpdateViewMatrix();
+						camera._UpdateViewProjMatrix();
+					}
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
 

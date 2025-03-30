@@ -150,9 +150,9 @@ struct RenderingPrimitives : ui::Buildable
 					pts[j].y += 200;
 				ui::draw::AAPolyCol(ui::ArrayView<ui::Point2f>(pts, ptcount), col, true);
 			}
-			ui::draw::CircleCol({ x5, 110 }, 5, w, col);
-			ui::draw::AACircleCol({ x5, 110 }, 5, w, colO);
-			ui::draw::AACircleCol({ x5, 110 + 200 }, 5, w, col);
+			ui::draw::CircleCol({ x5, 110 }, 5, col);
+			ui::draw::AACircleCol({ x5, 110 }, 5, colO);
+			ui::draw::AACircleCol({ x5, 110 + 200 }, 5, col);
 		}
 
 		ui::draw::RectCol(40, 10, 50, 20, col);
