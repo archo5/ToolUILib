@@ -13,6 +13,12 @@ namespace ui {
 extern FrameContents* g_curSystem;
 
 
+AABB2f UIObject_GetFinalRect(UIObject* obj)
+{
+	return obj->GetFinalRect();
+}
+
+
 PersistentObjectList::~PersistentObjectList()
 {
 	DeleteAll();

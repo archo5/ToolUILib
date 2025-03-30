@@ -4,6 +4,8 @@
 #include "../Render/RHI.h"
 #include "../Render/Primitives.h"
 
+#include "../Core/3DCamera.h"
+
 #include <algorithm>
 
 

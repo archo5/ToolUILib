@@ -218,6 +218,8 @@ struct GizmoSettings
 	GizmoSizeMode sizeMode = GizmoSizeMode::ViewPixels;
 };
 
+struct CameraBase;
+
 struct Gizmo
 {
 	GizmoSettings settings;

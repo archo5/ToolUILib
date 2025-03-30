@@ -228,6 +228,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Core\3DCamera.cpp" />
     <ClCompile Include="Core\3DMath.cpp" />
     <ClCompile Include="Core\BitArray.cpp" />
     <ClCompile Include="Core\Config.cpp" />
@@ -298,6 +299,7 @@
   <ItemGroup>
     <ClInclude Include="..\ThirdParty\nanosvg.h" />
     <ClInclude Include="..\ThirdParty\nanosvgrast.h" />
+    <ClInclude Include="Core\3DCamera.h" />
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Array.h" />
     <ClInclude Include="Core\BitArray.h" />

@@ -181,6 +181,9 @@
     <ClCompile Include="Core\SystemInfo.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\3DCamera.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -431,6 +434,9 @@
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="Core\SystemInfo.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\3DCamera.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

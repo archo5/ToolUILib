@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "../lib-src/Core/3DMath.h"
+#include "../lib-src/Core/3DCamera.h"
 #include "../lib-src/Model/Gizmo.h"
 #include "../lib-src/Render/RHI.h"
 #include "../lib-src/Render/Primitives.h"
