@@ -78,6 +78,11 @@ Ray3f CameraBase::GetRayNP(Point2f p) const
 	return GetCameraRay(GetInverseViewProjectionMatrix(), p.x, p.y);
 }
 
+Ray3f CameraBase::GetViewRayNP(Point2f p) const
+{
+	return GetCameraRay(GetInverseProjectionMatrix(), p.x, p.y);
+}
+
 Ray3f CameraBase::GetLocalRayNP(Point2f p, const Mat4f& world2local) const
 {
 	return GetCameraRay(GetInverseViewProjectionMatrix() * world2local, p.x, p.y);
@@ -88,6 +93,11 @@ Ray3f CameraBase::GetRayWP(Point2f p) const
 	return GetRayNP(WindowToNormalizedPoint(p));
 }
 
+Ray3f CameraBase::GetViewRayWP(Point2f p) const
+{
+	return GetViewRayNP(WindowToNormalizedPoint(p));
+}
+
 Ray3f CameraBase::GetLocalRayWP(Point2f p, const Mat4f& world2local) const
 {
 	return GetLocalRayNP(WindowToNormalizedPoint(p), world2local);
@@ -96,6 +106,11 @@ Ray3f CameraBase::GetLocalRayWP(Point2f p, const Mat4f& world2local) const
 Ray3f CameraBase::GetRayEP(const Event& e) const
 {
 	return GetRayNP(WindowToNormalizedPoint(e.position));
+}
+
+Ray3f CameraBase::GetViewRayEP(const Event& e) const
+{
+	return GetViewRayNP(WindowToNormalizedPoint(e.position));
 }
 
 Ray3f CameraBase::GetLocalRayEP(const Event& e, const Mat4f& world2local) const

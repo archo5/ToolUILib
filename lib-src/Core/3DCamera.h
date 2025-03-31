@@ -60,10 +60,13 @@ struct CameraBase
 	float WindowToWorldSize(float size, const Vec3f& refp) const;
 
 	Ray3f GetRayNP(Point2f p) const;
+	Ray3f GetViewRayNP(Point2f p) const;
 	Ray3f GetLocalRayNP(Point2f p, const Mat4f& world2local) const;
 	Ray3f GetRayWP(Point2f p) const;
+	Ray3f GetViewRayWP(Point2f p) const;
 	Ray3f GetLocalRayWP(Point2f p, const Mat4f& world2local) const;
 	Ray3f GetRayEP(const Event& e) const;
+	Ray3f GetViewRayEP(const Event& e) const;
 	Ray3f GetLocalRayEP(const Event& e, const Mat4f& world2local) const;
 };
 
