@@ -85,7 +85,7 @@ Ray3f CameraBase::GetViewRayNP(Point2f p) const
 
 Ray3f CameraBase::GetLocalRayNP(Point2f p, const Mat4f& world2local) const
 {
-	return GetCameraRay(GetInverseViewProjectionMatrix() * world2local, p.x, p.y);
+	return GetCameraRay(_mtxInvProj * (_mtxInvView * world2local), p.x, p.y);
 }
 
 Ray3f CameraBase::GetRayWP(Point2f p) const

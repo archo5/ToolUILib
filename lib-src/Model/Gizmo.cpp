@@ -339,7 +339,6 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				float snapDist = slowMotion ? settings.edit.moveSlowSnapDist : settings.edit.moveSnapDist;
 
 				Ray3f vray = cam.GetViewRayWP(_origCenterWinPos + _totalMovedWinVec);
-				Ray3f ray = cam.GetRayWP(_origCenterWinPos + _totalMovedWinVec);
 
 				Vec3f worldOrigPos = xfBasis.GetTranslation();
 				Vec3f worldAxis = xfBasis.TransformDirection(axis).Normalized();
@@ -381,22 +380,30 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				}
 				else
 				{
-					auto rpir = RayPlaneIntersect(ray.origin, ray.direction, { worldAxis.x, worldAxis.y, worldAxis.z, Vec3Dot(worldAxis, worldOrigPos) });
+					auto rpir = RayPlaneIntersect(vray.origin, vray.direction, { viewAxis.x, viewAxis.y, viewAxis.z, Vec3Dot(viewAxis, viewOrigPos) });
 					if (rpir.angcos)
 					{
-						Vec3f tg1(axis.z, axis.x, axis.y);
-						Vec3f tg2(axis.y, axis.z, axis.x);
-						Vec3f worldTg1 = xfBasis.TransformDirection(tg1).Normalized();
-						Vec3f worldTg2 = xfBasis.TransformDirection(tg2).Normalized();
+						Vec3f worldTg1, worldTg2, viewTg1, viewTg2;
 						if (_selectedPart == GizmoAction::MoveScreenPlane)
 						{
-							worldTg1 = cam.GetInverseViewMatrix().TransformDirection({ 1, 0, 0 }).Normalized();
-							worldTg2 = cam.GetInverseViewMatrix().TransformDirection({ 0, 1, 0 }).Normalized();
+							viewTg1 = { 1, 0, 0 };
+							viewTg2 = { 0, 1, 0 };
+							worldTg1 = cam.GetInverseViewMatrix().TransformDirection(viewTg1).Normalized();
+							worldTg2 = cam.GetInverseViewMatrix().TransformDirection(viewTg2).Normalized();
+						}
+						else
+						{
+							Vec3f tg1(axis.z, axis.x, axis.y);
+							Vec3f tg2(axis.y, axis.z, axis.x);
+							worldTg1 = xfBasis.TransformDirection(tg1).Normalized();
+							worldTg2 = xfBasis.TransformDirection(tg2).Normalized();
+							viewTg1 = cam.GetViewMatrix().TransformDirection(worldTg1).Normalized();
+							viewTg2 = cam.GetViewMatrix().TransformDirection(worldTg2).Normalized();
 						}
 
-						Vec3f diff = ray.GetPoint(rpir.dist) - worldOrigPos;
-						float diffX = Vec3Dot(diff, worldTg1);
-						float diffY = Vec3Dot(diff, worldTg2);
+						Vec3f diff = vray.GetPoint(rpir.dist) - viewOrigPos;
+						float diffX = Vec3Dot(diff, viewTg1);
+						float diffY = Vec3Dot(diff, viewTg2);
 						if (snapping)
 						{
 							Snap(diffX, snapDist);
