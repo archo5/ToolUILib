@@ -119,7 +119,7 @@ struct DATOSerializer : DATOLinearWriter, IObjectIterator
 {
 	using DATOLinearWriter::DATOLinearWriter;
 
-	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped | OITF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
@@ -147,7 +147,7 @@ struct DATOSerializer : DATOLinearWriter, IObjectIterator
 
 struct DATOUnserializer : DATOLinearReader, IObjectIterator
 {
-	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped | OITF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;

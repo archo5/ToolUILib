@@ -124,7 +124,7 @@ struct JSONLinearReader
 
 struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
 {
-	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped; }
+	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
@@ -141,7 +141,7 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 
 struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinTypeUnserializeBase
 {
-	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OIF_KeyMapped; }
+	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;

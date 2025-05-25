@@ -25,15 +25,20 @@ struct FieldInfo
 	UI_FORCEINLINE const char* GetNameOrEmptyStr() const { return name ? name : ""; }
 };
 
+// - type flags
 // is the data format binary-optimized
-constexpr unsigned OIF_Binary = 1U << 31;
+constexpr unsigned OITF_Binary = 1U << 31;
 // instead of simple sequential serialization, keys are serialized with values, and value lookups by key are performed when unserializing
-constexpr unsigned OIF_KeyMapped = 1U << 30;
-constexpr unsigned OI_ALL_FLAGS = 3U << 30;
+constexpr unsigned OITF_KeyMapped = 1U << 30;
+constexpr unsigned OI_TYPE_PART = 0xffffU;
+constexpr unsigned OI_FLAG_PART = ~OI_TYPE_PART;
 constexpr unsigned OI_TYPE_Unserializer = 0; // the only type that reads the values
 constexpr unsigned OI_TYPE_Serializer = 1;
 constexpr unsigned OI_TYPE_InfoDumper = 2;
 constexpr unsigned OI_TYPE_Unknown = 3;
+// - usage flags
+// is the data editor-only (not for runtime use)
+constexpr unsigned OIUF_EditorOnly = 1U << 29;
 
 // an app-specific interface to use for constructing and finding objects
 struct IUnserializeStorage {};
@@ -76,13 +81,15 @@ struct IObjectIterator
 	virtual bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) = 0;
 
 	IUnserializeStorage* unserializeStorage = nullptr;
+	u32 usageFlags = 0;
 
 	// utility functions
 	template <class T> T* GetUnserializeStorage() const { return static_cast<T*>(unserializeStorage); }
-	bool IsSerializer() const { return (GetFlags() & ~OI_ALL_FLAGS) == OI_TYPE_Serializer; }
-	bool IsUnserializer() const { return (GetFlags() & ~OI_ALL_FLAGS) == OI_TYPE_Unserializer; }
-	bool IsBinary() const { return (GetFlags() & OIF_Binary) != 0; }
-	bool IsKeyMapped() const { return (GetFlags() & OIF_KeyMapped) != 0; }
+	bool IsSerializer() const { return (GetFlags() & OI_TYPE_PART) == OI_TYPE_Serializer; }
+	bool IsUnserializer() const { return (GetFlags() & OI_TYPE_PART) == OI_TYPE_Unserializer; }
+	bool IsBinary() const { return (GetFlags() & OITF_Binary) != 0; }
+	bool IsKeyMapped() const { return (GetFlags() & OITF_KeyMapped) != 0; }
+	bool IsEditorOnly() const { return (usageFlags & OIUF_EditorOnly) != 0; }
 
 	template <class T>
 	void ImplManyCopy(u32 count, T* dst, ArrayView<T> src)

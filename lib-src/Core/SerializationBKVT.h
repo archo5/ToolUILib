@@ -231,7 +231,7 @@ struct BKVTLinearReader
 
 struct BKVTSerializer : BKVTLinearWriter, IObjectIterator
 {
-	unsigned GetFlags() const override { return OI_TYPE_Serializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped | OITF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
@@ -259,7 +259,7 @@ struct BKVTSerializer : BKVTLinearWriter, IObjectIterator
 
 struct BKVTUnserializer : BKVTLinearReader, IObjectIterator
 {
-	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OIF_KeyMapped | OIF_Binary; }
+	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped | OITF_Binary; }
 
 	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
