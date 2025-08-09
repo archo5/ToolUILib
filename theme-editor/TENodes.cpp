@@ -159,12 +159,12 @@ void TE_MaskRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 void TE_CombineMask::PropertyUI()
 {
-	imm::RadioButton(mode, TEMCM_Intersect, "Intersect");
-	imm::RadioButton(mode, TEMCM_Union, "Union");
-	imm::RadioButton(mode, TEMCM_SoftDifference, "Difference (soft)");
-	imm::RadioButton(mode, TEMCM_HardDifference, "Difference (hard)");
-	imm::RadioButton(mode, TEMCM_AMinusB, "A-B");
-	imm::RadioButton(mode, TEMCM_BMinusA, "B-A");
+	imRadioButton(mode, TEMCM_Intersect, "Intersect");
+	imRadioButton(mode, TEMCM_Union, "Union");
+	imRadioButton(mode, TEMCM_SoftDifference, "Difference (soft)");
+	imRadioButton(mode, TEMCM_HardDifference, "Difference (hard)");
+	imRadioButton(mode, TEMCM_AMinusB, "A-B");
+	imRadioButton(mode, TEMCM_BMinusA, "B-A");
 }
 
 void TE_CombineMask::Serialize(IObjectIterator& oi)

@@ -246,7 +246,9 @@ imCtrlInfo EditBool(bool& val, const char* text, ModInitList mods, const IStateT
 	return ci;
 }
 
-imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+} // namespace imm
+
+imCtrlInfo imRadioButtonRaw(bool val, const char* text, ModInitList mods, const imm::IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -256,13 +258,13 @@ imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IS
 	Pop();
 
 	rb.flags |= UIObject_DB_IMEdit;
-	if (!GetEnabled())
+	if (!imm::GetEnabled())
 		rb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&rb);
 	rb.InitReadOnly(val);
 
-	for (auto& mod : ReverseIterate(mods))
+	for (auto& mod : imm::ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (rb.flags & UIObject_AfterIMEdit)
@@ -281,8 +283,6 @@ imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IS
 
 	return { edited, &rb };
 }
-
-} // namespace imm
 
 float DragConfig::GetSpeed(uint8_t modifierKeys) const
 {

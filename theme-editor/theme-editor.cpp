@@ -98,16 +98,16 @@ struct TE_MainPreviewNode : Buildable
 			{
 				Push<StackExpandLTRLayoutElement>();
 				{
-					imm::RadioButton(g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
-					imm::RadioButton(g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
+					imRadioButton(g_previewMode, TEPM_Original, "Original", {}, imm::ButtonStateToggleSkin());
+					imRadioButton(g_previewMode, TEPM_Sliced, "Sliced", {}, imm::ButtonStateToggleSkin());
 				}
 				Pop();
 				if (g_previewMode == TEPM_Original)
 				{
 					Push<StackExpandLTRLayoutElement>();
 					{
-						imm::RadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
-						imm::RadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
+						imRadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", {}, imm::ButtonStateToggleSkin());
+						imRadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", {}, imm::ButtonStateToggleSkin());
 					}
 					Pop();
 				}
@@ -202,7 +202,7 @@ struct TE_ImageEditorNode : Buildable
 				imm::EditBool(img->expanded, nullptr, {}, imm::TreeStateToggleSkin());
 
 				stmpl->DisableScaling();
-				if (imm::RadioButtonRaw(tmpl->curPreviewImage == img, "P", {}, imm::ButtonStateToggleSkin()))
+				if (imRadioButtonRaw(tmpl->curPreviewImage == img, "P", {}, imm::ButtonStateToggleSkin()))
 				{
 					tmpl->SetCurPreviewImage(img);
 				}

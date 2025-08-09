@@ -76,10 +76,10 @@ struct SequenceEditorsTest : ui::Buildable
 
 		{
 			ui::LabeledProperty::Scope ps("\bSelection type:");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::imRadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imRadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
 			ui::imm::EditBool(setSelectionStorage, "Storage");
 		}
 
@@ -622,10 +622,10 @@ struct TableViewTest : ui::Buildable
 
 		{
 			ui::LabeledProperty::Scope ps("\bSelection type:");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::imRadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imRadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
 		}
 
 		auto& tv = ui::Make<ui::TableView>();
@@ -698,10 +698,10 @@ struct TreeViewTest : ui::Buildable
 
 		{
 			ui::LabeledProperty::Scope ps("\bSelection type:");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::None, "None");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Single, "Single");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
-			ui::imm::RadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
+			ui::imRadioButton(selectionType, ui::SelectionMode::None, "None");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Single, "Single");
+			ui::imRadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
+			ui::imRadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
 		}
 
 		auto& tv = ui::Make<ui::TableView>();

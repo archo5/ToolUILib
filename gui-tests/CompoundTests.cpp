@@ -786,25 +786,25 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("int format: %d");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(tmp, 0, "working"))
+			if (ui::imRadioButton(tmp, 0, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
-			if (ui::imm::RadioButton(tmp, 0, "disabled", { ui::Enable(false) }))
+			if (ui::imRadioButton(tmp, 0, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
 		}
 		{
 			ui::imLabel ls("int format: %x");
 			auto tmp = intFmt;
-			if (ui::imm::RadioButton(tmp, 1, "working"))
+			if (ui::imRadioButton(tmp, 1, "working"))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
-			if (ui::imm::RadioButton(tmp, 1, "disabled", { ui::Enable(false) }))
+			if (ui::imRadioButton(tmp, 1, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imm::RadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
 		}
 		{

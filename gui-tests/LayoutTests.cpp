@@ -490,12 +490,12 @@ struct RectGenTest : ui::Buildable
 		ui::Push<ui::EdgeSliceLayoutElement>();
 		{
 			ui::Push<ui::StackLTRLayoutElement>();
-			ui::imm::RadioButton(mode, 0, "Centered", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(mode, 1, "Fill (size)", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(mode, 2, "Fill (aspect)", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(mode, 3, "Fit (size)", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(mode, 4, "Fit (aspect)", {}, ui::imm::ButtonStateToggleSkin());
-			ui::imm::RadioButton(mode, 5, "Fit (aspect range)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 0, "Centered", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 1, "Fill (size)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 2, "Fill (aspect)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 3, "Fit (size)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 4, "Fit (aspect)", {}, ui::imm::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 5, "Fit (aspect range)", {}, ui::imm::ButtonStateToggleSkin());
 			ui::Pop();
 			ui::imm::PropEditBool("Round pos", roundPos);
 			if (mode == 1 || mode == 2)

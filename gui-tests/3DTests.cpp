@@ -394,14 +394,14 @@ struct GizmoTest : ui::Buildable
 					ui::imLabel("Size mode"), ui::imDropdownMenuList(gizmoSettings.sizeMode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
-						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imRadioButton(gizmoSettings.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imRadioButton(gizmoSettings.type, ui::GizmoType::Rotate, "R", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imRadioButton(gizmoSettings.type, ui::GizmoType::Scale, "S", {}, ui::imm::ButtonStateToggleSkin());
 					}
 					{
 						ui::LabeledProperty::Scope ps("Space");
-						ui::imm::RadioButton(gizmoSettings.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
-						ui::imm::RadioButton(gizmoSettings.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imRadioButton(gizmoSettings.isWorldSpace, false, "Local", {}, ui::imm::ButtonStateToggleSkin());
+						ui::imRadioButton(gizmoSettings.isWorldSpace, true, "World", {}, ui::imm::ButtonStateToggleSkin());
 					}
 
 					if (useImmediate)

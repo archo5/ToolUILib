@@ -111,18 +111,19 @@ template <class T> imCtrlInfo EditFlag(T& val, T cur, const char* text, ModInitL
 	}
 	return ci;
 }
-imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> imCtrlInfo RadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+
+} // namespace imm
+
+imCtrlInfo imRadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const imm::IStateToggleSkin& skin = imm::RadioButtonStateToggleSkin());
+template <class T> imCtrlInfo imRadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const imm::IStateToggleSkin& skin = imm::RadioButtonStateToggleSkin())
 {
-	imCtrlInfo ci = RadioButtonRaw(val == cur, text, mods, skin);
+	imCtrlInfo ci = imRadioButtonRaw(val == cur, text, mods, skin);
 	if (ci)
 	{
 		val = cur;
 	}
 	return ci;
 }
-
-} // namespace imm
 
 struct DragConfig
 {
