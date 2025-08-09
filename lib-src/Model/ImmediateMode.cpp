@@ -97,6 +97,26 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Make<TreeExpandIcon>();
 }
 
+void StdText(StringView text, ModInitList mods)
+{
+	for (auto& mod : mods)
+		mod->OnBeforeControl();
+
+	auto& ctrl = Push<LabelFrame>();
+	for (auto& mod : mods)
+		mod->OnBeforeContent();
+	ui::Text(text);
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterContent();
+	Pop();
+
+	for (auto& mod : mods)
+		mod->Apply(&ctrl);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+}
+
 CtrlInfo Button(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
@@ -619,34 +639,6 @@ struct LabelPropScope : LabeledProperty::Scope
 			mod->ApplyToLabel(label);
 	}
 };
-
-void PropText(const char* label, const char* text, ModInitList mods)
-{
-	LabelPropScope ps(label, mods);
-
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
-	auto& ctrl = Push<LabelFrame>();
-	for (auto& mod : mods)
-		mod->OnBeforeContent();
-	Text(text);
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterContent();
-	Pop();
-
-	for (auto& mod : mods)
-		mod->Apply(&ctrl);
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-}
-
-CtrlInfo PropButton(const char* label, const char* text, ModInitList mods)
-{
-	LabelPropScope ps(label, mods);
-	return Button(text, mods);
-}
 
 CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
 {

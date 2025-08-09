@@ -23,9 +23,39 @@ struct SetMinWidth : Modifier
 
 namespace imm {
 
-
 bool GetEnabled();
 bool SetEnabled(bool newValue);
+
+
+struct Label
+{
+	LabeledProperty::ContentLayoutType layoutType;
+	LabeledProperty* label;
+
+	Label(StringView lblstr = {}, LabeledProperty::ContentLayoutType layout = LabeledProperty::StackExpandLTR) : layoutType(layout)
+	{
+		label = &LabeledProperty::Begin(lblstr, layoutType);
+		if (!imm::GetEnabled())
+			label->flags |= UIObject_IsDisabled;
+	}
+	~Label()
+	{
+		LabeledProperty::End(layoutType);
+	}
+	Label& WithTooltip(Tooltip::BuildFunc&& tbfn)
+	{
+		label->_tooltipBuildFunc = Move(tbfn);
+		return *this;
+	}
+	Label& WithTooltip(StringView tt)
+	{
+		label->_tooltipBuildFunc = [tt{ to_string(tt) }]()
+		{
+			Text(tt);
+		};
+		return *this;
+	}
+};
 
 struct IStateToggleSkin
 {
@@ -47,6 +77,8 @@ struct TreeStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
+
+void StdText(StringView text, ModInitList mods = {});
 
 CtrlInfo Button(UIObject& obj, ModInitList mods = {});
 
@@ -141,8 +173,6 @@ extern const char* WidthHeight[];
 bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
-void PropText(const char* label, const char* text, ModInitList mods = {});
-CtrlInfo PropButton(const char* label, const char* text, ModInitList mods = {});
 CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods = {});
 bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");

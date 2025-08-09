@@ -650,14 +650,14 @@ void PropertyList::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
-LabeledProperty& LabeledProperty::Begin(const char* label, ContentLayoutType layout)
+LabeledProperty& LabeledProperty::Begin(StringView label, ContentLayoutType layout)
 {
 	auto& lp = Push<LabeledProperty>();
-	if (label)
+	if (label.NotEmpty())
 	{
-		if (*label == '\b')
+		if (label.First() == '\b')
 		{
-			lp.SetText(label + 1);
+			lp.SetText(label.substr(1));
 			lp.SetBrief(true);
 		}
 		else

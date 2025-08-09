@@ -427,7 +427,7 @@ struct LabeledProperty : WrapperElement
 		ContentLayoutType layoutType;
 		LabeledProperty* label;
 
-		Scope(const char* lblstr = nullptr, ContentLayoutType layout = StackExpandLTR) : layoutType(layout)
+		Scope(StringView lblstr = {}, ContentLayoutType layout = StackExpandLTR) : layoutType(layout)
 		{
 			label = &Begin(lblstr, layoutType);
 		}
@@ -437,7 +437,7 @@ struct LabeledProperty : WrapperElement
 		}
 	};
 
-	static LabeledProperty& Begin(const char* label = nullptr, ContentLayoutType layout = StackExpandLTR);
+	static LabeledProperty& Begin(StringView label = {}, ContentLayoutType layout = StackExpandLTR);
 	static void End(ContentLayoutType layout = StackExpandLTR);
 
 	LabeledProperty()

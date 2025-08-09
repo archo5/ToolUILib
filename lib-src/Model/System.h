@@ -294,6 +294,20 @@ template <class MD, class F> void BuildMulticastDelegateAddNoArgs(MD& md, F&& f)
 }
 
 
+template <class T>
+struct WrapIn : Modifier
+{
+	void OnBeforeControl() const override
+	{
+		Push<T>();
+	}
+	void OnAfterControl() const override
+	{
+		Pop();
+	}
+};
+
+
 class BuildCallback : public Buildable
 {
 public:
