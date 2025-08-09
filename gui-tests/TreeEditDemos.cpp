@@ -117,7 +117,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			ui::LabeledProperty::Scope s("\b#");
 
 			WPush<ui::SizeConstraintElement>().SetWidth(50);
-			ui::imm::EditInt(s.label, number);
+			ui::imEditInt(s.label, number);
 			WPop();
 		}
 		int Compute(ComputeInfo&) override { return number; }

@@ -300,7 +300,6 @@ float DragConfig::GetSnap(uint8_t modifierKeys) const
 	return snap;
 }
 
-namespace imm {
 
 struct NumFmtBox
 {
@@ -463,30 +462,33 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	return edited;
 }
 
-bool EditInt(UIObject* dragObj, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
+bool imEditInt(UIObject* dragObj, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
+bool imEditInt(UIObject* dragObj, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
+bool imEditInt(UIObject* dragObj, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
+bool imEditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
 
-bool EditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool imEditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	return EditNumber(dragObj, val, mods, cfg, range, fmt);
 }
+
+
+namespace imm {
 
 bool EditStringImpl(bool multiline, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
@@ -611,27 +613,27 @@ bool EditFloatVec(float* val, const char** axes, ModInitList mods, const DragCon
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return EditFloat(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imEditFloat(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
