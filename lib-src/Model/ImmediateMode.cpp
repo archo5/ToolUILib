@@ -46,6 +46,8 @@ bool SetEnabled(bool newValue)
 	return old;
 }
 
+} // namespace imm
+
 
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
@@ -54,7 +56,7 @@ void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView 
 		Push<StackExpandLTRLayoutElement>();
 		Make<CheckboxIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!GetEnabled())
+		if (!imm::GetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -69,7 +71,7 @@ void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringVi
 		Push<StackExpandLTRLayoutElement>();
 		Make<RadioButtonIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!GetEnabled())
+		if (!imm::GetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -89,7 +91,7 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Push<StackExpandLTRLayoutElement>();
 		Make<TreeExpandIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!GetEnabled())
+		if (!imm::GetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -97,7 +99,6 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Make<TreeExpandIcon>();
 }
 
-} // namespace imm
 
 void StdText(StringView text, ModInitList mods)
 {
@@ -162,7 +163,9 @@ imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods)
 	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
-imCtrlInfo Selectable(UIObject& obj, ModInitList mods)
+} // namespace imm
+
+imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -172,12 +175,12 @@ imCtrlInfo Selectable(UIObject& obj, ModInitList mods)
 	Pop();
 
 	btn.flags |= UIObject_DB_IMEdit;
-	if (!GetEnabled())
+	if (!imm::GetEnabled())
 		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
 
-	for (auto& mod : ReverseIterate(mods))
+	for (auto& mod : imm::ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (btn.flags & UIObject_AfterIMEdit)
@@ -197,28 +200,28 @@ imCtrlInfo Selectable(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo Selectable(StringView text, ModInitList mods)
+imCtrlInfo imSelectable(StringView text, ModInitList mods)
 {
-	return Selectable(NewText(text), mods);
+	return imSelectable(NewText(text), mods);
 }
 
-imCtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& cb = Push<StateToggle>();
-	skin.BuildContents(cb, text ? text : StringView(), val);
+	skin.BuildContents(cb, text, val);
 	Pop();
 
 	cb.flags |= UIObject_DB_IMEdit;
-	if (!GetEnabled())
+	if (!imm::GetEnabled())
 		cb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&cb);
 	cb.InitReadOnly(val);
 
-	for (auto& mod : ReverseIterate(mods))
+	for (auto& mod : imm::ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (cb.flags & UIObject_AfterIMEdit)
@@ -238,23 +241,21 @@ imCtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const ISta
 	return { edited, &cb };
 }
 
-imCtrlInfo EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo imEditBool(bool& val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	imCtrlInfo ci = CheckboxRaw(val, text, mods, skin);
+	imCtrlInfo ci = imCheckboxRaw(val, text, mods, skin);
 	if (ci)
 		val = !val;
 	return ci;
 }
 
-} // namespace imm
-
-imCtrlInfo imRadioButtonRaw(bool val, const char* text, ModInitList mods, const imm::IStateToggleSkin& skin)
+imCtrlInfo imRadioButtonRaw(bool val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& rb = Push<StateToggle>();
-	skin.BuildContents(rb, text ? text : StringView(), val);
+	skin.BuildContents(rb, text, val);
 	Pop();
 
 	rb.flags |= UIObject_DB_IMEdit;
@@ -612,11 +613,6 @@ bool EditFloatVec(float* val, const char** axes, ModInitList mods, const DragCon
 	return any;
 }
 
-
-imCtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
-{
-	return imLabel(label), EditBool(val, nullptr, mods);
-}
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {

@@ -22,7 +22,7 @@ static const SetPropEntry entries[] =
 {
 	{ "General", "Intro", "Integer", [](Settings& S) { ui::imm::PropEditInt("Integer", S.introInt); } },
 	{ "General", "Misc", "Other", [](Settings& S) { ui::imm::PropEditFloat("Other", S.otherInt); } },
-	{ "Extended", "Advanced", "Hidden", [](Settings& S) { ui::imm::PropEditBool("Hidden", S.extAdvHidden); } },
+	{ "Extended", "Advanced", "Hidden", [](Settings& S) { ui::imLabel("Hidden"), ui::imEditBool(S.extAdvHidden); } },
 };
 
 

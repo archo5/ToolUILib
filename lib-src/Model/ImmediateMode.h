@@ -60,8 +60,6 @@ struct imLabel
 
 void StdText(StringView text, ModInitList mods = {});
 
-namespace imm {
-
 struct IStateToggleSkin
 {
 	virtual void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const = 0;
@@ -83,25 +81,29 @@ struct TreeStateToggleSkin : IStateToggleSkin
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
+namespace imm {
+
 imCtrlInfo Button(UIObject& obj, ModInitList mods = {});
 
 imCtrlInfo Button(StringView text, ModInitList mods = {});
 imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods = {});
 
-imCtrlInfo Selectable(UIObject& obj, ModInitList mods = {});
-imCtrlInfo Selectable(StringView text, ModInitList mods = {});
+} // namespace imm
 
-imCtrlInfo CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE imCtrlInfo CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo imSelectable(UIObject& obj, ModInitList mods = {});
+imCtrlInfo imSelectable(StringView text, ModInitList mods = {});
+
+imCtrlInfo imCheckboxExtRaw(u8 state, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE imCtrlInfo imCheckboxRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
-	return CheckboxExtRaw(val ? 1 : 0, text, mods, skin);
+	return imCheckboxExtRaw(val ? 1 : 0, text, mods, skin);
 }
-imCtrlInfo EditBool(bool& val, const char* text = nullptr, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> imCtrlInfo EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo imEditBool(bool& val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> imCtrlInfo imEditFlag(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	imCtrlInfo ci = CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
+	imCtrlInfo ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
 	if (ci)
 	{
 		if ((val & cur) != cur)
@@ -112,10 +114,8 @@ template <class T> imCtrlInfo EditFlag(T& val, T cur, const char* text, ModInitL
 	return ci;
 }
 
-} // namespace imm
-
-imCtrlInfo imRadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const imm::IStateToggleSkin& skin = imm::RadioButtonStateToggleSkin());
-template <class T> imCtrlInfo imRadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const imm::IStateToggleSkin& skin = imm::RadioButtonStateToggleSkin())
+imCtrlInfo imRadioButtonRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> imCtrlInfo imRadioButton(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
 	imCtrlInfo ci = imRadioButtonRaw(val == cur, text, mods, skin);
 	if (ci)
@@ -186,7 +186,6 @@ extern const char* WidthHeight[];
 bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
-imCtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods = {});
 bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);

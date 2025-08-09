@@ -13,7 +13,7 @@ void TE_TmplSettings::UI()
 	imm::PropEditInt("Right", r, {}, {}, { 0, 1024 });
 	imm::PropEditInt("Top", t, {}, {}, { 0, 1024 });
 	imm::PropEditInt("Bottom", b, {}, {}, { 0, 1024 });
-	imm::PropEditBool("Gamma", gamma);
+	imLabel("Gamma"), imEditBool(gamma);
 }
 
 void TE_TmplSettings::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)

@@ -531,7 +531,7 @@ struct ScrollbarsTest : ui::Buildable
 		WPush<ui::EdgeSliceLayoutElement>();
 
 		ui::imm::PropEditInt("\bCount", count);
-		ui::imm::PropEditBool("\bExpanding", expanding);
+		ui::imLabel("\bExpanding"), ui::imEditBool(expanding);
 
 		auto& sc = WPush<ui::SizeConstraintElement>();
 		if (!expanding)
@@ -757,7 +757,7 @@ struct IMGUITest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::LabeledProperty::Begin("All disabled");
-		ui::imm::EditBool(imguiTestDisableAll, nullptr);
+		ui::imEditBool(imguiTestDisableAll);
 		ui::LabeledProperty::End();
 
 		bool oldEnabled = ui::imm::SetEnabled(!imguiTestDisableAll);
@@ -773,13 +773,13 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("bool");
 			auto tmp = boolVal;
-			if (ui::imm::EditBool(tmp, "working"))
+			if (ui::imEditBool(tmp, "working"))
 				boolVal = tmp;
-			if (ui::imm::CheckboxRaw(tmp, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imCheckboxRaw(tmp, "w2", {}, ui::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			if (ui::imm::EditBool(tmp, "disabled", { ui::Enable(false) }))
+			if (ui::imEditBool(tmp, "disabled", { ui::Enable(false) }))
 				boolVal = tmp;
-			if (ui::imm::CheckboxRaw(tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imCheckboxRaw(tmp, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
 				boolVal = !tmp;
 		}
 
@@ -788,11 +788,11 @@ struct IMGUITest : ui::Buildable
 			auto tmp = intFmt;
 			if (ui::imRadioButton(tmp, 0, "working"))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 0, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 0, "w2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 0;
 			if (ui::imRadioButton(tmp, 0, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
 				intFmt = 0;
 		}
 		{
@@ -800,11 +800,11 @@ struct IMGUITest : ui::Buildable
 			auto tmp = intFmt;
 			if (ui::imRadioButton(tmp, 1, "working"))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 1, "w2", {}, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 1, "w2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 1;
 			if (ui::imRadioButton(tmp, 1, "disabled", { ui::Enable(false) }))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
+			if (ui::imRadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
 				intFmt = 1;
 		}
 		{
@@ -914,8 +914,8 @@ struct TooltipTest : ui::Buildable
 			ui::Push<ui::SizeConstraintElement>().SetMinWidth(100);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			bool t = true, f = false;
-			ui::imm::EditBool(t, "Done", { ui::Enable(false) });
-			ui::imm::EditBool(f, "Not done", { ui::Enable(false) });
+			ui::imEditBool(t, "Done", { ui::Enable(false) });
+			ui::imEditBool(f, "Not done", { ui::Enable(false) });
 			ui::Pop();
 			ui::Pop();
 		});

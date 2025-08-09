@@ -87,7 +87,7 @@ void TE_RectMask::PropertyUI()
 	}
 	{
 		Text("Radius");
-		imm::PropEditBool("\bUniform", crad.uniform);
+		imLabel("\bUniform"), imEditBool(crad.uniform);
 		if (crad.uniform)
 		{
 			imm::PropEditFloat("\bRadius", crad.r);
@@ -297,7 +297,7 @@ void TE_LayerBlendRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 
 void TE_BlendLayer::InputPinUI(int pin)
 {
-	imm::EditBool(layers[pin].enabled, nullptr);
+	imEditBool(layers[pin].enabled);
 	imm::PropEditFloat("\bO", layers[pin].opacity);
 }
 

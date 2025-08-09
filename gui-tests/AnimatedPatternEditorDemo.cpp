@@ -187,7 +187,7 @@ struct APL_Combiner : APLayer
 	void FullUI() override
 	{
 		imLabel("Mode"), imDropdownMenuList(mode, UI_BUILD_ALLOC(ZeroSepCStrOptionList)("Union\0Intersect\0Subtract\0"));
-		imLabel("Invert"), imm::EditBool(invert);
+		imLabel("Invert"), imEditBool(invert);
 	}
 	APLayer* CloneBase() override
 	{
@@ -395,7 +395,7 @@ struct AnimPattern : ITree
 		{
 			char tmp[32];
 			snprintf(tmp, 32, "%X", i);
-			imRadioButton(curCurve, i, tmp, {}, imm::ButtonStateToggleSkin());
+			imRadioButton(curCurve, i, tmp, {}, ButtonStateToggleSkin());
 		}
 		Pop();
 

@@ -80,7 +80,7 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imRadioButton(selectionType, ui::SelectionMode::Single, "Single");
 			ui::imRadioButton(selectionType, ui::SelectionMode::MultipleToggle, "Multiple (toggle)");
 			ui::imRadioButton(selectionType, ui::SelectionMode::Multiple, "Multiple");
-			ui::imm::EditBool(setSelectionStorage, "Storage");
+			ui::imEditBool(setSelectionStorage, "Storage");
 		}
 
 		for (int i = 0; i < 5; i++)

@@ -264,7 +264,7 @@ void ProcGraphEditor_Node::OnBuildTitleBar()
 	if (hasPreview)
 	{
 		bool showPreview = _graph->IsPreviewEnabled(_node);
-		imm::EditBool(showPreview, nullptr);
+		imEditBool(showPreview);
 		_graph->SetPreviewEnabled(_node, showPreview);
 	}
 	auto& lf = MakeWithText<LabelFrame>(_graph->GetNodeName(_node));

@@ -269,7 +269,7 @@ struct DataEditor : ui::Buildable
 			ui::Pop();
 
 			ui::imm::PropEditString("Name", items[editing].name.c_str(), [&](const char* v) { items[editing].name = v; });
-			ui::imm::PropEditBool("Enable", items[editing].enable);
+			ui::imLabel("Enable"), ui::imEditBool(items[editing].enable);
 		}
 
 		ui::Pop();

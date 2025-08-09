@@ -54,7 +54,7 @@ struct VExpandAnimTest : ui::Buildable
 	{
 		WPush<ui::StackTopDownLayoutElement>();
 		{
-			ui::imm::EditBool(expand, "Expand", {}, ui::imm::TreeStateToggleSkin());
+			ui::imEditBool(expand, "Expand", {}, ui::TreeStateToggleSkin());
 			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::VExpandContainer>().Init(expand, 0.4f);
 			{
@@ -364,7 +364,7 @@ struct OSCommunicationTest : ui::Buildable
 			ui::LabeledProperty::Scope ps("\bClipboard");
 			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 			bool hasText = ui::Clipboard::HasText();
-			ui::imm::EditBool(hasText, nullptr, { ui::Enable(false) });
+			ui::imEditBool(hasText, {}, { ui::Enable(false) });
 			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
 
 			tmpl->SetScaleWeight(0.1f);
@@ -588,8 +588,8 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::imm::PropEditString("Default extension", fsw.defaultExt.c_str(), [&](const char* s) { fsw.defaultExt = s; });
 		ui::imm::PropEditString("Title", fsw.title.c_str(), [&](const char* s) { fsw.title = s; });
 		ui::LabeledProperty::Begin("Options");
-		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::imm::ButtonStateToggleSkin());
-		ui::imm::EditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::imm::ButtonStateToggleSkin());
+		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::ButtonStateToggleSkin());
+		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::ButtonStateToggleSkin());
 		ui::LabeledProperty::End();
 
 		ui::Text("Inputs / outputs");
@@ -916,7 +916,8 @@ struct ConfigTweakableTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 
 		bool edit = false;
-		edit |= ui::imm::PropEditBool("Value 1", g_twkSettings.val1);
+		ui::imLabel("Value 1"),
+			edit |= ui::imEditBool(g_twkSettings.val1);
 		edit |= ui::imm::PropEditInt("Value 2", g_twkSettings.val2);
 		edit |= ui::imm::PropEditString("Value 3", g_twkSettings.val3.c_str(), [](const char* v) { g_twkSettings.val3 = v; });
 		if (edit)
