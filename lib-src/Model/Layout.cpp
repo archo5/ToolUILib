@@ -50,16 +50,6 @@ void PaddingElement::OnLayout(const UIRect& rect, LayoutInfo info)
 	}
 }
 
-void AddContentPadding::OnBeforeContent() const
-{
-	Push<PaddingElement>().SetPadding(padding);
-}
-
-void AddContentPadding::OnAfterContent() const
-{
-	Pop();
-}
-
 
 StackLTRLayoutElement::Slot StackLTRLayoutElement::_slotTemplate;
 

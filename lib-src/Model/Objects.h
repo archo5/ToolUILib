@@ -548,12 +548,8 @@ struct Buildable : WrapperElement
 
 struct Modifier
 {
-	virtual void OnBeforeControlGroup() const {}
-	virtual void OnAfterControlGroup() const {}
 	virtual void OnBeforeControl() const {}
 	virtual void OnAfterControl() const {}
-	virtual void OnBeforeContent() const {}
-	virtual void OnAfterContent() const {}
 	virtual void Apply(UIObject* obj) const {}
 };
 
@@ -618,9 +614,7 @@ struct MakeDraggable : AddEventHandler
 };
 
 // utilities for immediate mode controls
-namespace imm {
-
-struct CtrlInfo
+struct imCtrlInfo
 {
 	bool edited;
 	UIObject* root;
@@ -628,9 +622,7 @@ struct CtrlInfo
 	// void* to avoid unwanted implicit casting
 	UI_FORCEINLINE operator void* () const { return (void*)edited; }
 };
-UI_FORCEINLINE bool operator | (bool v, const CtrlInfo& ci) { return v | !!ci; }
-UI_FORCEINLINE bool& operator |= (bool& v, const CtrlInfo& ci) { return v |= !!ci; }
-
-} // imm
+UI_FORCEINLINE bool operator | (bool v, const imCtrlInfo& ci) { return v | !!ci; }
+UI_FORCEINLINE bool& operator |= (bool& v, const imCtrlInfo& ci) { return v |= !!ci; }
 
 } // ui

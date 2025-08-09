@@ -651,9 +651,7 @@ struct DropdownMenuList : DropdownMenu
 	virtual void OnBuildMenuElement(const void* ptr, uintptr_t id);
 };
 
-namespace imm {
-
-template <class MT, class T> CtrlInfo DropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> imCtrlInfo imDropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
 {
 	auto& ddml = Make<MT>();
 	ddml.SetOptions(ol);
@@ -687,12 +685,10 @@ template <class MT, class T> CtrlInfo DropdownMenuListCustom(T& val, OptionList*
 
 	return { edited, &ddml };
 }
-template <class T> CtrlInfo DropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
+template <class T> imCtrlInfo imDropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
 {
-	return DropdownMenuListCustom<ui::DropdownMenuList>(val, ol, mods);
+	return imDropdownMenuListCustom<ui::DropdownMenuList>(val, ol, mods);
 }
-
-} // imm
 
 
 struct ModalWindowContainer

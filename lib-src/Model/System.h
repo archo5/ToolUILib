@@ -295,16 +295,13 @@ template <class MD, class F> void BuildMulticastDelegateAddNoArgs(MD& md, F&& f)
 
 
 template <class T>
-struct WrapIn : Modifier
+struct PushScope
 {
-	void OnBeforeControl() const override
-	{
-		Push<T>();
-	}
-	void OnAfterControl() const override
-	{
-		Pop();
-	}
+	T& elem;
+	UI_FORCEINLINE PushScope() : elem(Push<T>()) {}
+	UI_FORCEINLINE ~PushScope() { Pop(); }
+	UI_FORCEINLINE T* operator -> () const { return &elem; }
+	UI_FORCEINLINE T& operator * () const { return elem; }
 };
 
 

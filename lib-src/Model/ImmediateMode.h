@@ -26,28 +26,29 @@ namespace imm {
 bool GetEnabled();
 bool SetEnabled(bool newValue);
 
+} // namespace imm
 
-struct Label
+struct imLabel
 {
 	LabeledProperty::ContentLayoutType layoutType;
 	LabeledProperty* label;
 
-	Label(StringView lblstr = {}, LabeledProperty::ContentLayoutType layout = LabeledProperty::StackExpandLTR) : layoutType(layout)
+	imLabel(StringView lblstr = {}, LabeledProperty::ContentLayoutType layout = LabeledProperty::StackExpandLTR) : layoutType(layout)
 	{
 		label = &LabeledProperty::Begin(lblstr, layoutType);
 		if (!imm::GetEnabled())
 			label->flags |= UIObject_IsDisabled;
 	}
-	~Label()
+	~imLabel()
 	{
 		LabeledProperty::End(layoutType);
 	}
-	Label& WithTooltip(Tooltip::BuildFunc&& tbfn)
+	imLabel& WithTooltip(Tooltip::BuildFunc&& tbfn)
 	{
 		label->_tooltipBuildFunc = Move(tbfn);
 		return *this;
 	}
-	Label& WithTooltip(StringView tt)
+	imLabel& WithTooltip(StringView tt)
 	{
 		label->_tooltipBuildFunc = [tt{ to_string(tt) }]()
 		{
@@ -56,6 +57,10 @@ struct Label
 		return *this;
 	}
 };
+
+void StdText(StringView text, ModInitList mods = {});
+
+namespace imm {
 
 struct IStateToggleSkin
 {
@@ -78,27 +83,25 @@ struct TreeStateToggleSkin : IStateToggleSkin
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
-void StdText(StringView text, ModInitList mods = {});
+imCtrlInfo Button(UIObject& obj, ModInitList mods = {});
 
-CtrlInfo Button(UIObject& obj, ModInitList mods = {});
+imCtrlInfo Button(StringView text, ModInitList mods = {});
+imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods = {});
 
-CtrlInfo Button(StringView text, ModInitList mods = {});
-CtrlInfo Button(DefaultIconStyle icon, ModInitList mods = {});
+imCtrlInfo Selectable(UIObject& obj, ModInitList mods = {});
+imCtrlInfo Selectable(StringView text, ModInitList mods = {});
 
-CtrlInfo Selectable(UIObject& obj, ModInitList mods = {});
-CtrlInfo Selectable(StringView text, ModInitList mods = {});
-
-CtrlInfo CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE CtrlInfo CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE imCtrlInfo CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	return CheckboxExtRaw(val ? 1 : 0, text, mods, skin);
 }
-CtrlInfo EditBool(bool& val, const char* text = nullptr, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> CtrlInfo EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo EditBool(bool& val, const char* text = nullptr, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> imCtrlInfo EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	CtrlInfo ci = CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
+	imCtrlInfo ci = CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
 	if (ci)
 	{
 		if ((val & cur) != cur)
@@ -108,10 +111,10 @@ template <class T> CtrlInfo EditFlag(T& val, T cur, const char* text, ModInitLis
 	}
 	return ci;
 }
-CtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> CtrlInfo RadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> imCtrlInfo RadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	CtrlInfo ci = RadioButtonRaw(val == cur, text, mods, skin);
+	imCtrlInfo ci = RadioButtonRaw(val == cur, text, mods, skin);
 	if (ci)
 	{
 		val = cur;
@@ -173,7 +176,7 @@ extern const char* WidthHeight[];
 bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
-CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods = {});
+imCtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods = {});
 bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);

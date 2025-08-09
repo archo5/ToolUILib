@@ -186,8 +186,8 @@ struct APL_Combiner : APLayer
 	}
 	void FullUI() override
 	{
-		imm::Label("Mode"), imm::DropdownMenuList(mode, UI_BUILD_ALLOC(ZeroSepCStrOptionList)("Union\0Intersect\0Subtract\0"));
-		imm::Label("Invert"), imm::EditBool(invert);
+		imLabel("Mode"), imDropdownMenuList(mode, UI_BUILD_ALLOC(ZeroSepCStrOptionList)("Union\0Intersect\0Subtract\0"));
+		imLabel("Invert"), imm::EditBool(invert);
 	}
 	APLayer* CloneBase() override
 	{

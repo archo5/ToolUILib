@@ -97,37 +97,33 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Make<TreeExpandIcon>();
 }
 
+} // namespace imm
+
 void StdText(StringView text, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& ctrl = Push<LabelFrame>();
-	for (auto& mod : mods)
-		mod->OnBeforeContent();
 	ui::Text(text);
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterContent();
 	Pop();
 
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
 
-	for (auto& mod : ReverseIterate(mods))
+	for (auto& mod : imm::ReverseIterate(mods))
 		mod->OnAfterControl();
 }
 
-CtrlInfo Button(UIObject& obj, ModInitList mods)
+namespace imm {
+
+imCtrlInfo Button(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& btn = Push<ui::Button>();
-	for (auto& mod : mods)
-		mod->OnBeforeContent();
 	Add(obj);
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterContent();
 	Pop();
 
 	btn.flags |= UIObject_DB_IMEdit;
@@ -156,27 +152,23 @@ CtrlInfo Button(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-CtrlInfo Button(StringView text, ModInitList mods)
+imCtrlInfo Button(StringView text, ModInitList mods)
 {
 	return Button(NewText(text), mods);
 }
 
-CtrlInfo Button(DefaultIconStyle icon, ModInitList mods)
+imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods)
 {
 	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
-CtrlInfo Selectable(UIObject& obj, ModInitList mods)
+imCtrlInfo Selectable(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
 
 	auto& btn = Push<ui::Selectable>();
-	for (auto& mod : mods)
-		mod->OnBeforeContent();
 	Add(obj);
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterContent();
 	Pop();
 
 	btn.flags |= UIObject_DB_IMEdit;
@@ -205,12 +197,12 @@ CtrlInfo Selectable(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-CtrlInfo Selectable(StringView text, ModInitList mods)
+imCtrlInfo Selectable(StringView text, ModInitList mods)
 {
 	return Selectable(NewText(text), mods);
 }
 
-CtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -246,15 +238,15 @@ CtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IState
 	return { edited, &cb };
 }
 
-CtrlInfo EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	CtrlInfo ci = CheckboxRaw(val, text, mods, skin);
+	imCtrlInfo ci = CheckboxRaw(val, text, mods, skin);
 	if (ci)
 		val = !val;
 	return ci;
 }
 
-CtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -596,97 +588,83 @@ const char* WidthHeight[] = { "\bWidth", "\bHeight", nullptr };
 
 bool EditIntVec(int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControlGroup();
-
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
 		any |= PropEditInt(*plabel, *val++, mods, cfg, range, fmt);
 	}
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControlGroup();
-
 	return any;
 }
 
 bool EditFloatVec(float* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControlGroup();
-
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
 		any |= PropEditFloat(*plabel, *val++, mods, cfg, range, fmt);
 	}
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControlGroup();
-
 	return any;
 }
 
 
-CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
+imCtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
 {
-	return Label(label), EditBool(val, nullptr, mods);
+	return imLabel(label), EditBool(val, nullptr, mods);
 }
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
+	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
+	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
+	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
+	return EditInt(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return EditFloat(Label(label).label, val, mods, cfg, range, fmt);
+	return EditFloat(imLabel(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	return Label(label), EditString(text, retfn, mods);
+	return imLabel(label), EditString(text, retfn, mods);
 }
 
 bool PropEditStringMultiline(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	return Label(label), EditStringMultiline(text, retfn, mods);
+	return imLabel(label), EditStringMultiline(text, retfn, mods);
 }
 
 bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)
 {
-	return Label(label), EditColor(val, delayed, mods);
+	return imLabel(label), EditColor(val, delayed, mods);
 }
 
 bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mods)
 {
-	return Label(label), EditColor(val, delayed, mods);
+	return imLabel(label), EditColor(val, delayed, mods);
 }
 
 bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return Label(label), EditIntVec(val, axes, mods, cfg, range, fmt);
+	return imLabel(label), EditIntVec(val, axes, mods, cfg, range, fmt);
 }
 
 bool PropEditFloatVec(const char* label, float* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return Label(label), EditFloatVec(val, axes, mods, cfg, range, fmt);
+	return imLabel(label), EditFloatVec(val, axes, mods, cfg, range, fmt);
 }
 
 } // imm

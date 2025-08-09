@@ -27,19 +27,6 @@ struct PaddingElement : UIObjectSingleChild
 	PaddingElement& SetPaddingBottom(float p) { padding.y1 = p; return *this; }
 };
 
-struct AddContentPadding : Modifier
-{
-	AABB2f padding;
-
-	AddContentPadding(float p) : padding(AABB2f::UniformBorder(p)) {}
-	AddContentPadding(float h, float v) : padding({ h, v, h, v }) {}
-	AddContentPadding(float l, float t, float r, float b) : padding({ l, t, r, b }) {}
-	AddContentPadding(AABB2f p) : padding(p) {}
-
-	void OnBeforeContent() const override;
-	void OnAfterContent() const override;
-};
-
 
 template <class SlotT>
 struct LayoutElement : UIObject

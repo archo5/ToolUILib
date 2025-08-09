@@ -565,7 +565,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::Text("Check for change");
-		ui::imm::Label("Current working directory"), ui::imm::StdText(ui::GetWorkingDirectory());
+		ui::imLabel("Current working directory"), ui::StdText(ui::GetWorkingDirectory());
 
 		ui::Text("Inputs");
 		ui::LabeledProperty::Begin("Filters");
@@ -619,7 +619,7 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::LabeledProperty::End();
 
 		ui::Text("Outputs");
-		ui::imm::Label("Last returned value"), ui::imm::StdText(lastRet);
+		ui::imLabel("Last returned value"), ui::StdText(lastRet);
 
 		WPop();
 	}

@@ -763,7 +763,7 @@ struct IMGUITest : ui::Buildable
 		bool oldEnabled = ui::imm::SetEnabled(!imguiTestDisableAll);
 
 		{
-			ui::imm::Label ls("buttons");
+			ui::imLabel ls("buttons");
 			if (ui::imm::Button("working button"))
 				puts("working button");
 			if (ui::imm::Button("disabled button", { ui::Enable(false) }))
@@ -771,7 +771,7 @@ struct IMGUITest : ui::Buildable
 		}
 
 		{
-			ui::imm::Label ls("bool");
+			ui::imLabel ls("bool");
 			auto tmp = boolVal;
 			if (ui::imm::EditBool(tmp, "working"))
 				boolVal = tmp;
@@ -784,7 +784,7 @@ struct IMGUITest : ui::Buildable
 		}
 
 		{
-			ui::imm::Label ls("int format: %d");
+			ui::imLabel ls("int format: %d");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(tmp, 0, "working"))
 				intFmt = tmp;
@@ -796,7 +796,7 @@ struct IMGUITest : ui::Buildable
 				intFmt = 0;
 		}
 		{
-			ui::imm::Label ls("int format: %x");
+			ui::imLabel ls("int format: %x");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(tmp, 1, "working"))
 				intFmt = tmp;
@@ -808,11 +808,11 @@ struct IMGUITest : ui::Buildable
 				intFmt = 1;
 		}
 		{
-			ui::imm::Label("dropdown"), ui::imm::DropdownMenuList(intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
+			ui::imLabel("dropdown"), ui::imDropdownMenuList(intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
 		}
 
 		{
-			ui::imm::Label ls("int");
+			ui::imLabel ls("int");
 			auto tmp = intVal;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
@@ -822,7 +822,7 @@ struct IMGUITest : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
 		}
 		{
-			ui::imm::Label ls("uint");
+			ui::imLabel ls("uint");
 			auto tmp = uintVal;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
@@ -832,7 +832,7 @@ struct IMGUITest : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
 		}
 		{
-			ui::imm::Label ls("int64");
+			ui::imLabel ls("int64");
 			auto tmp = int64Val;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
@@ -842,7 +842,7 @@ struct IMGUITest : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
 		}
 		{
-			ui::imm::Label ls("uint64");
+			ui::imLabel ls("uint64");
 			auto tmp = uint64Val;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
@@ -852,7 +852,7 @@ struct IMGUITest : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));
 		}
 		{
-			ui::imm::Label ls("float");
+			ui::imLabel ls("float");
 			auto tmp = floatVal;
 			if (ui::imm::PropEditFloat("\bworking", tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
@@ -984,8 +984,8 @@ struct DropdownTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			WText("immediate mode");
-			ui::imm::DropdownMenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("First\0Second\0Third\0"));
-			ui::imm::DropdownMenuList(selPtrReal, UI_BUILD_ALLOC(TypeInfoOptions)());
+			ui::imDropdownMenuList(sel3opts, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("First\0Second\0Third\0"));
+			ui::imDropdownMenuList(selPtrReal, UI_BUILD_ALLOC(TypeInfoOptions)());
 
 			WPush<ui::PropertyList>();
 			{
