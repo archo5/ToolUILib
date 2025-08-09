@@ -870,12 +870,12 @@ struct IMGUITest : ui::Buildable
 			ui::imm::PropEditFloat("multiplier (limited fmt)", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f }, "%.1f");
 		}
 		{
-			ui::imm::PropEditColor("color B (Delayed)", colorValB, true);
-			ui::imm::PropEditColor("color F (Delayed)", colorValF, true);
+			ui::imLabel("color B (Delayed)"), ui::imEditColor(colorValB, true);
+			ui::imLabel("color F (Delayed)"), ui::imEditColor(colorValF, true);
 		}
 		{
-			ui::imm::PropEditColor("color B (Immediate)", colorValB, false);
-			ui::imm::PropEditColor("color F (Immediate)", colorValF, false);
+			ui::imLabel("color B (Immediate)"), ui::imEditColor(colorValB, false);
+			ui::imLabel("color F (Immediate)"), ui::imEditColor(colorValF, false);
 		}
 
 		ui::imm::SetEnabled(oldEnabled);

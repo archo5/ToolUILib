@@ -537,7 +537,9 @@ bool EditStringMultiline(const char* text, const std::function<void(const char*)
 	return EditStringImpl(true, text, retfn, mods);
 }
 
-bool EditColor(Color4f& val, bool delayed, ModInitList mods)
+} // namespace imm
+
+imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -545,7 +547,7 @@ bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
-	if (!GetEnabled())
+	if (!imm::GetEnabled())
 		ced.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&ced);
@@ -566,22 +568,22 @@ bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 		ced.RebuildContainer();
 	};
 
-	for (auto& mod : ReverseIterate(mods))
+	for (auto& mod : imm::ReverseIterate(mods))
 		mod->OnAfterControl();
 
-	return changed;
+	return { changed, &ced };
 }
 
-bool EditColor(Color4b& val, bool delayed, ModInitList mods)
+imCtrlInfo imEditColor(Color4b& val, bool delayed, ModInitList mods)
 {
 	Color4f tmp = val;
-	if (EditColor(tmp, delayed, mods))
-	{
+	imCtrlInfo ci = imEditColor(tmp, delayed, mods);
+	if (ci)
 		val = tmp;
-		return true;
-	}
-	return false;
+	return ci;
 }
+
+namespace imm {
 
 const char* XY[] = { "\bX", "\bY", nullptr };
 const char* XYZ[] = { "\bX", "\bY", "\bZ", nullptr };
@@ -644,21 +646,6 @@ bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragCo
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
 	return imLabel(label), EditString(text, retfn, mods);
-}
-
-bool PropEditStringMultiline(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
-{
-	return imLabel(label), EditStringMultiline(text, retfn, mods);
-}
-
-bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)
-{
-	return imLabel(label), EditColor(val, delayed, mods);
-}
-
-bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mods)
-{
-	return imLabel(label), EditColor(val, delayed, mods);
 }
 
 bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)

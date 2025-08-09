@@ -239,7 +239,7 @@ struct TE_ImageEditorNode : Buildable
 							EditNCRef(co.ncref);
 
 						ui::Push<ui::SizeConstraintElement>().SetWidth(40);
-						imm::EditColor(co.color, false);
+						imEditColor(co.color, false);
 						ui::Pop();
 					};
 
@@ -325,7 +325,7 @@ struct TE_TemplateEditorNode : Buildable
 							ced.itemUICallback = [this](SequenceEditor* se, size_t idx, void* ptr)
 							{
 								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
-								imm::EditColor(NC->color);
+								imEditColor(NC->color);
 								imm::EditString(NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
 							};
 						}

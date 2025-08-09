@@ -179,6 +179,6 @@ void TE_ColorRef::UI()
 	}
 	else
 	{
-		imm::EditColor(color);
+		imEditColor(color);
 	}
 }

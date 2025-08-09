@@ -168,8 +168,13 @@ bool EditInt(UIObject* dragObj, uint64_t& val, ModInitList mods = {}, const Drag
 bool EditFloat(UIObject* dragObj, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
 bool EditStringMultiline(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
-bool EditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
-bool EditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
+
+} // namespace imm
+
+imCtrlInfo imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
+imCtrlInfo imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
+
+namespace imm {
 
 extern const char* XY[];
 extern const char* XYZ[];
@@ -188,9 +193,6 @@ bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const D
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
 bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
-bool PropEditStringMultiline(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods = {});
-bool PropEditColor(const char* label, Color4f& val, bool delayed = false, ModInitList mods = {});
-bool PropEditColor(const char* label, Color4b& val, bool delayed = false, ModInitList mods = {});
 
 // length of `val` = length of `axes` (null-terminated)
 bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
