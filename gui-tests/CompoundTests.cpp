@@ -762,15 +762,16 @@ struct IMGUITest : ui::Buildable
 
 		bool oldEnabled = ui::imm::SetEnabled(!imguiTestDisableAll);
 
-		ui::LabeledProperty::Begin("buttons");
-		if (ui::imm::Button("working button"))
-			puts("working button");
-		if (ui::imm::Button("disabled button", { ui::Enable(false) }))
-			puts("DISABLED button SHOULD NOT APPEAR");
-		ui::LabeledProperty::End();
+		{
+			ui::imm::Label ls("buttons");
+			if (ui::imm::Button("working button"))
+				puts("working button");
+			if (ui::imm::Button("disabled button", { ui::Enable(false) }))
+				puts("DISABLED button SHOULD NOT APPEAR");
+		}
 
 		{
-			ui::LabeledProperty::Begin("bool");
+			ui::imm::Label ls("bool");
 			auto tmp = boolVal;
 			if (ui::imm::EditBool(tmp, "working"))
 				boolVal = tmp;
@@ -780,11 +781,10 @@ struct IMGUITest : ui::Buildable
 				boolVal = tmp;
 			if (ui::imm::CheckboxRaw(tmp, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			ui::LabeledProperty::End();
 		}
 
 		{
-			ui::LabeledProperty::Begin("int format: %d");
+			ui::imm::Label ls("int format: %d");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(tmp, 0, "working"))
 				intFmt = tmp;
@@ -794,10 +794,9 @@ struct IMGUITest : ui::Buildable
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 0;
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin("int format: %x");
+			ui::imm::Label ls("int format: %x");
 			auto tmp = intFmt;
 			if (ui::imm::RadioButton(tmp, 1, "working"))
 				intFmt = tmp;
@@ -807,14 +806,13 @@ struct IMGUITest : ui::Buildable
 				intFmt = tmp;
 			if (ui::imm::RadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::imm::ButtonStateToggleSkin()))
 				intFmt = 1;
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::imm::PropDropdownMenuList("dropdown", intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
+			ui::imm::Label("dropdown"), ui::imm::DropdownMenuList(intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
 		}
 
 		{
-			ui::LabeledProperty::Begin("int");
+			ui::imm::Label ls("int");
 			auto tmp = intVal;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
@@ -822,10 +820,9 @@ struct IMGUITest : ui::Buildable
 				intVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin("uint");
+			ui::imm::Label ls("uint");
 			auto tmp = uintVal;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
@@ -833,10 +830,9 @@ struct IMGUITest : ui::Buildable
 				uintVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin("int64");
+			ui::imm::Label ls("int64");
 			auto tmp = int64Val;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
@@ -844,10 +840,9 @@ struct IMGUITest : ui::Buildable
 				int64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin("uint64");
+			ui::imm::Label ls("uint64");
 			auto tmp = uint64Val;
 			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
@@ -855,10 +850,9 @@ struct IMGUITest : ui::Buildable
 				uint64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));
-			ui::LabeledProperty::End();
 		}
 		{
-			ui::LabeledProperty::Begin("float");
+			ui::imm::Label ls("float");
 			auto tmp = floatVal;
 			if (ui::imm::PropEditFloat("\bworking", tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
@@ -866,7 +860,6 @@ struct IMGUITest : ui::Buildable
 				floatVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
-			ui::LabeledProperty::End();
 		}
 		{
 			ui::imm::PropEditFloatVec("float3", float4val, ui::imm::XYZ);

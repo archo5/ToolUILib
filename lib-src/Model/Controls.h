@@ -480,16 +480,6 @@ struct LabeledProperty : WrapperElement
 	Tooltip::BuildFunc _tooltipBuildFunc;
 };
 
-struct AddLabelTooltip : AddTooltip
-{
-	using AddTooltip::AddTooltip;
-	void ApplyToLabel(struct LabeledProperty* lp) const override
-	{
-		lp->_tooltipBuildFunc = _evfn;
-	}
-	void Apply(UIObject* obj) const override {}
-};
-
 
 struct ScrollbarData
 {
@@ -700,17 +690,6 @@ template <class MT, class T> CtrlInfo DropdownMenuListCustom(T& val, OptionList*
 template <class T> CtrlInfo DropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
 {
 	return DropdownMenuListCustom<ui::DropdownMenuList>(val, ol, mods);
-}
-
-template <class MT, class T> CtrlInfo PropDropdownMenuListCustom(const char* label, T& val, OptionList* ol, ModInitList mods = {})
-{
-	LabeledProperty::Scope ps(label);
-	return DropdownMenuListCustom<MT, T>(val, ol, mods);
-}
-template <class T> CtrlInfo PropDropdownMenuList(const char* label, T& val, OptionList* ol, ModInitList mods = {})
-{
-	LabeledProperty::Scope ps(label);
-	return DropdownMenuList<T>(val, ol, mods);
 }
 
 } // imm

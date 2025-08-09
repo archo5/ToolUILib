@@ -555,7 +555,6 @@ struct Modifier
 	virtual void OnBeforeContent() const {}
 	virtual void OnAfterContent() const {}
 	virtual void Apply(UIObject* obj) const {}
-	virtual void ApplyToLabel(struct LabeledProperty* lp) const {}
 };
 
 template <class T>

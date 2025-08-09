@@ -391,7 +391,7 @@ struct GizmoTest : ui::Buildable
 					ui::imm::EditBool(useImmediate, "Use immediate");
 					ui::MakeWithText<ui::Header>("Gizmo");
 					ui::imm::PropEditFloat("Size", gizmoSettings.size, {}, {}, { 0.001f, 200.0f });
-					ui::imm::PropDropdownMenuList("Size mode", gizmoSettings.sizeMode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Scene\0View normalized (Y)\0View pixels\0"));
+					ui::imm::Label("Size mode"), ui::imm::DropdownMenuList(gizmoSettings.sizeMode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
 						ui::imm::RadioButton(gizmoSettings.type, ui::GizmoType::Move, "M", {}, ui::imm::ButtonStateToggleSkin());
@@ -560,7 +560,7 @@ struct QuaternionTest : ui::Buildable
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
 					ui::imm::PropEditFloatVec("R", &angles.x, ui::imm::XYZ);
-					ui::imm::PropDropdownMenuList("Mode", zyx, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("XYZ\0" "ZYX\0"));
+					ui::imm::Label("Mode"), ui::imm::DropdownMenuList(zyx, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("XYZ\0" "ZYX\0"));
 					ui::imm::PropEditBool("Use mtx", useMtx);
 				}
 				ui::Pop();

@@ -93,7 +93,7 @@ UI_FORCEINLINE CtrlInfo CheckboxRaw(bool val, const char* text, ModInitList mods
 {
 	return CheckboxExtRaw(val ? 1 : 0, text, mods, skin);
 }
-CtrlInfo EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+CtrlInfo EditBool(bool& val, const char* text = nullptr, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 template <class T> CtrlInfo EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;

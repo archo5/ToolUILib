@@ -629,87 +629,64 @@ bool EditFloatVec(float* val, const char** axes, ModInitList mods, const DragCon
 }
 
 
-struct LabelPropScope : LabeledProperty::Scope
-{
-	LabelPropScope(const char* lblstr, ModInitList mods) : Scope(lblstr)
-	{
-		if (!GetEnabled())
-			label->flags |= UIObject_IsDisabled;
-		for (auto& mod : mods)
-			mod->ApplyToLabel(label);
-	}
-};
-
 CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
 {
-	LabelPropScope ps(label, mods);
-	return EditBool(val, nullptr, mods);
+	return Label(label), EditBool(val, nullptr, mods);
 }
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditInt(ps.label, val, mods, cfg, range, fmt);
+	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditInt(ps.label, val, mods, cfg, range, fmt);
+	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditInt(ps.label, val, mods, cfg, range, fmt);
+	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditInt(ps.label, val, mods, cfg, range, fmt);
+	return EditInt(Label(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditFloat(ps.label, val, mods, cfg, range, fmt);
+	return EditFloat(Label(label).label, val, mods, cfg, range, fmt);
 }
 
 bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	LabelPropScope ps(label, mods);
-	return EditString(text, retfn, mods);
+	return Label(label), EditString(text, retfn, mods);
 }
 
 bool PropEditStringMultiline(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
 {
-	LabelPropScope ps(label, mods);
-	return EditStringMultiline(text, retfn, mods);
+	return Label(label), EditStringMultiline(text, retfn, mods);
 }
 
 bool PropEditColor(const char* label, Color4f& val, bool delayed, ModInitList mods)
 {
-	LabelPropScope ps(label, mods);
-	return EditColor(val, delayed, mods);
+	return Label(label), EditColor(val, delayed, mods);
 }
 
 bool PropEditColor(const char* label, Color4b& val, bool delayed, ModInitList mods)
 {
-	LabelPropScope ps(label, mods);
-	return EditColor(val, delayed, mods);
+	return Label(label), EditColor(val, delayed, mods);
 }
 
 bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditIntVec(val, axes, mods, cfg, range, fmt);
+	return Label(label), EditIntVec(val, axes, mods, cfg, range, fmt);
 }
 
 bool PropEditFloatVec(const char* label, float* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	LabelPropScope ps(label, mods);
-	return EditFloatVec(val, axes, mods, cfg, range, fmt);
+	return Label(label), EditFloatVec(val, axes, mods, cfg, range, fmt);
 }
 
 } // imm
