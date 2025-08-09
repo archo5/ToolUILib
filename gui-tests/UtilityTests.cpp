@@ -19,12 +19,12 @@ struct BasicEasingAnimTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 
 		ui::LabeledProperty::Begin("Control");
-		if (ui::imm::Button(ui::DefaultIconStyle::Play))
+		if (ui::imButton(ui::DefaultIconStyle::Play))
 		{
 			animPlayer.SetVariable("test", 0);
 			animPlayer.PlayAnim(anim);
 		}
-		if (ui::imm::Button(ui::DefaultIconStyle::Stop))
+		if (ui::imButton(ui::DefaultIconStyle::Stop))
 		{
 			animPlayer.StopAnim(anim);
 		}
@@ -60,14 +60,14 @@ struct VExpandAnimTest : ui::Buildable
 			{
 				WPush<ui::StackTopDownLayoutElement>();
 				{
-					ui::imm::Button("Button 1");
-					ui::imm::Button("Button 2");
+					ui::imButton("Button 1");
+					ui::imButton("Button 2");
 				}
 				WPop();
 			}
 			WPop();
 			WPop();
-			ui::imm::Button("Button 3");
+			ui::imButton("Button 3");
 		}
 		WPop();
 	}
@@ -206,19 +206,19 @@ struct FullscreenTest : ui::Buildable
 
 #if 0
 		{
-			if (ui::imm::Button("1 (reset)"))
+			if (ui::imButton("1 (reset)"))
 				GetNativeWindow()->SetInnerUIScale(1);
-			if (ui::imm::Button("0.75"))
+			if (ui::imButton("0.75"))
 				GetNativeWindow()->SetInnerUIScale(0.75f);
-			if (ui::imm::Button("0.5"))
+			if (ui::imButton("0.5"))
 				GetNativeWindow()->SetInnerUIScale(0.5f);
-			if (ui::imm::Button("0.25"))
+			if (ui::imButton("0.25"))
 				GetNativeWindow()->SetInnerUIScale(0.25f);
 			ui::MakeWithTextf<ui::LabelFrame>("- scale: %.2f", GetNativeWindow()->GetInnerUIScale());
 		}
 #endif
 
-		if (ui::imm::Button("Refresh screen info"))
+		if (ui::imButton("Refresh screen info"))
 		{
 			ReloadMonitorInfo();
 		}
@@ -228,7 +228,7 @@ struct FullscreenTest : ui::Buildable
 
 			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
-				if (ui::imm::Button("Current screen"))
+				if (ui::imButton("Current screen"))
 				{
 					auto rect = ui::gfx::Monitors::GetScreenArea(monid);
 					SetWindowed();
@@ -237,7 +237,7 @@ struct FullscreenTest : ui::Buildable
 
 			for (auto& m : monitors)
 			{
-				if (ui::imm::Button(m.name.c_str()))
+				if (ui::imButton(m.name.c_str()))
 				{
 					SetWindowed();
 					auto* W = GetNativeWindow();
@@ -251,7 +251,7 @@ struct FullscreenTest : ui::Buildable
 
 			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
-				if (ui::imm::Button("Current screen"))
+				if (ui::imButton("Current screen"))
 				{
 					auto rect = ui::gfx::Monitors::GetScreenArea(monid);
 					SetBorderless(rect);
@@ -260,7 +260,7 @@ struct FullscreenTest : ui::Buildable
 
 			for (auto& m : monitors)
 			{
-				if (ui::imm::Button(m.name.c_str()))
+				if (ui::imButton(m.name.c_str()))
 					SetBorderless(m.rect);
 			}
 		}
@@ -270,7 +270,7 @@ struct FullscreenTest : ui::Buildable
 
 			if (auto monid = ui::gfx::Monitors::FindFromWindow(GetNativeWindow()))
 			{
-				if (ui::imm::Button("Current screen"))
+				if (ui::imButton("Current screen"))
 				{
 					SetExclusive(monid);
 				}
@@ -278,7 +278,7 @@ struct FullscreenTest : ui::Buildable
 
 			for (auto& m : monitors)
 			{
-				if (ui::imm::Button(m.name.c_str()))
+				if (ui::imButton(m.name.c_str()))
 					SetExclusive(m.id);
 			}
 		}
@@ -368,18 +368,18 @@ struct OSCommunicationTest : ui::Buildable
 			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
 
 			tmpl->SetScaleWeight(0.1f);
-			if (ui::imm::Button("Read"))
+			if (ui::imButton("Read"))
 				clipboardData = ui::Clipboard::GetText();
 
 			tmpl->SetScaleWeight(0.1f);
-			if (ui::imm::Button("Write"))
+			if (ui::imButton("Write"))
 				ui::Clipboard::SetText(clipboardData);
 		}
 
 		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 		WPush<ui::StackTopDownLayoutElement>();
 		{
-			if (ui::imm::Button("Reload"))
+			if (ui::imButton("Reload"))
 			{
 				ReloadMonitorInfo();
 				ReloadGfxAdapterInfo();
@@ -432,26 +432,26 @@ struct OSCommunicationTest : ui::Buildable
 		auto* win = ui::NativeWindowBase::FindFromScreenPos(pt);
 		ui::MakeWithTextf<ui::LabelFrame>("window under cursor: %p (%s)", win, win ? win->GetTitle().c_str() : "-");
 
-		if (ui::imm::Button("Show error message"))
+		if (ui::imButton("Show error message"))
 			ui::platform::ShowErrorMessage("Error", "Message");
 
-		if (ui::imm::Button("Browse to file"))
+		if (ui::imButton("Browse to file"))
 			ui::platform::BrowseToFile("gui-theme2.tga");
 
-		if (ui::imm::Button("Open URL"))
+		if (ui::imButton("Open URL"))
 			ui::platform::OpenURL("https://example.com/");
 
 		WPush<ui::StackLTRLayoutElement>();
 		{
-			if (ui::imm::Button("Limit cursor to this window"))
+			if (ui::imButton("Limit cursor to this window"))
 				GetNativeWindow()->ClipCursorToThisWindow();
-			if (ui::imm::Button("Remove cursor limit"))
+			if (ui::imButton("Remove cursor limit"))
 				ui::NativeWindowBase::SetCursorClipWindow(nullptr);
-			if (ui::imm::Button("Minimize"))
+			if (ui::imButton("Minimize"))
 				GetNativeWindow()->SetState(ui::WindowState::Minimized);
-			if (ui::imm::Button("Maximize"))
+			if (ui::imButton("Maximize"))
 				GetNativeWindow()->SetState(ui::WindowState::Maximized);
-			if (ui::imm::Button("Restore"))
+			if (ui::imButton("Restore"))
 				GetNativeWindow()->SetState(ui::WindowState::Normal);
 		}
 		WPop();
@@ -579,7 +579,7 @@ struct FileSelectionWindowTest : ui::Buildable
 				ui::imm::PropEditString("\bName", filter->name.c_str(), [filter](const char* v) { filter->name = v; });
 				ui::imm::PropEditString("\bExts", filter->exts.c_str(), [filter](const char* v) { filter->exts = v; });
 			};
-			if (ui::imm::Button("Add"))
+			if (ui::imButton("Add"))
 				fsw.filters.Append({});
 		}
 		ui::Pop();
@@ -604,7 +604,7 @@ struct FileSelectionWindowTest : ui::Buildable
 				auto* file = static_cast<std::string*>(ptr);
 				ui::imm::PropEditString("\bFile", file->c_str(), [file](const char* v) { *file = v; });
 			};
-			if (ui::imm::Button("Add"))
+			if (ui::imButton("Add"))
 				fsw.selectedFiles.Append({});
 		}
 		ui::Pop();
@@ -612,9 +612,9 @@ struct FileSelectionWindowTest : ui::Buildable
 
 		ui::Text("Controls");
 		ui::LabeledProperty::Begin("Open file selection window");
-		if (ui::imm::Button("Open"))
+		if (ui::imButton("Open"))
 			Show(false);
-		if (ui::imm::Button("Save"))
+		if (ui::imButton("Save"))
 			Show(true);
 		ui::LabeledProperty::End();
 
@@ -765,7 +765,7 @@ struct SerializationSpeed : ui::Buildable
 	void Build() override
 	{
 		WPush<ui::StackTopDownLayoutElement>();
-		if (ui::imm::Button("Run tests"))
+		if (ui::imButton("Run tests"))
 			RunTests();
 		for (auto& r : results)
 			WText(r);

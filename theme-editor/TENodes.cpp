@@ -303,7 +303,7 @@ void TE_BlendLayer::InputPinUI(int pin)
 
 void TE_BlendLayer::PropertyUI()
 {
-	if (imm::Button("Add pin"))
+	if (imButton("Add pin"))
 		layers.Append({});
 }
 

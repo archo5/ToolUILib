@@ -58,18 +58,18 @@ struct SequenceEditorsTest : ui::Buildable
 		WPush<ui::EdgeSliceLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
 
-		if (ui::imm::Button("Reset"))
+		if (ui::imButton("Reset"))
 		{
 			arraydata = { 1, 2, 3, 4 };
 			vectordata = { 1, 2, 3, 4 };
 			listdata = { 1, 2, 3, 4 };
 			dequedata = { 1, 2, 3, 4 };
 		}
-		if (ui::imm::Button("100 values"))
+		if (ui::imButton("100 values"))
 			AdjustSizeAll(100);
-		if (ui::imm::Button("1000 values"))
+		if (ui::imButton("1000 values"))
 			AdjustSizeAll(1000);
-		if (ui::imm::Button("10000 values"))
+		if (ui::imButton("10000 values"))
 			AdjustSizeAll(10000);
 
 		WPop();
@@ -500,37 +500,37 @@ struct TreeEditorsTest : ui::Buildable
 		WPush<ui::EdgeSliceLayoutElement>();
 		{
 			WPush<ui::StackExpandLTRLayoutElement>();
-			if (ui::imm::Button("Default"))
+			if (ui::imButton("Default"))
 			{
 				cpaTree.SetDefault();
 				cvaTree.SetDefault();
 			}
-			if (ui::imm::Button("Flat 10"))
+			if (ui::imButton("Flat 10"))
 			{
 				cpaTree.SetFlat(10);
 				cvaTree.SetFlat(10);
 			}
-			if (ui::imm::Button("Flat 100"))
+			if (ui::imButton("Flat 100"))
 			{
 				cpaTree.SetFlat(100);
 				cvaTree.SetFlat(100);
 			}
-			if (ui::imm::Button("Flat 1K"))
+			if (ui::imButton("Flat 1K"))
 			{
 				cpaTree.SetFlat(1000);
 				cvaTree.SetFlat(1000);
 			}
-			if (ui::imm::Button("Branchy 2"))
+			if (ui::imButton("Branchy 2"))
 			{
 				cpaTree.SetBranchy(2);
 				cvaTree.SetBranchy(2);
 			}
-			if (ui::imm::Button("Branchy 4"))
+			if (ui::imButton("Branchy 4"))
 			{
 				cpaTree.SetBranchy(4);
 				cvaTree.SetBranchy(4);
 			}
-			if (ui::imm::Button("Branchy 8"))
+			if (ui::imButton("Branchy 8"))
 			{
 				cpaTree.SetBranchy(8);
 				cvaTree.SetBranchy(8);
@@ -870,17 +870,17 @@ struct MessageLogViewTest : ui::Buildable
 
 		WPush<ui::StackExpandLTRLayoutElement>();
 		{
-			if (ui::imm::Button("Clear"))
+			if (ui::imButton("Clear"))
 				messages.Clear();
-			if (ui::imm::Button("Add 1 line"))
+			if (ui::imButton("Add 1 line"))
 				AddMessages(1);
-			if (ui::imm::Button("Add 10"))
+			if (ui::imButton("Add 10"))
 				AddMessages(10);
-			if (ui::imm::Button("Add 100"))
+			if (ui::imButton("Add 100"))
 				AddMessages(100);
-			if (ui::imm::Button("Add 1K"))
+			if (ui::imButton("Add 1K"))
 				AddMessages(1000);
-			if (ui::imm::Button("Add 10K"))
+			if (ui::imButton("Add 10K"))
 				AddMessages(10000);
 		};
 		WPop();

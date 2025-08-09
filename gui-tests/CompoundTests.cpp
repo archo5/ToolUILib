@@ -764,9 +764,9 @@ struct IMGUITest : ui::Buildable
 
 		{
 			ui::imLabel ls("buttons");
-			if (ui::imm::Button("working button"))
+			if (ui::imButton("working button"))
 				puts("working button");
-			if (ui::imm::Button("disabled button", { ui::Enable(false) }))
+			if (ui::imButton("disabled button", { ui::Enable(false) }))
 				puts("DISABLED button SHOULD NOT APPEAR");
 		}
 
@@ -1270,36 +1270,34 @@ struct DockingTest : ui::Buildable, ui::DockableContentsSource
 	}
 	void Build() override
 	{
-		using namespace ui::imm;
-
 		WPush<ui::EdgeSliceLayoutElement>();
 		{
 			WPush<ui::StackLTRLayoutElement>();
-			if (Button("Reset"))
+			if (ui::imButton("Reset"))
 				Reset();
-			if (Button("Show 1"))
+			if (ui::imButton("Show 1"))
 			{
 				if (!area->HasDockable("dockable1"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable1" }));
 			}
-			if (Button("Show 2"))
+			if (ui::imButton("Show 2"))
 			{
 				if (!area->HasDockable("dockable2"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable2" }));
 			}
-			if (Button("Show 3"))
+			if (ui::imButton("Show 3"))
 			{
 				if (!area->HasDockable("dockable3"))
 					area->AddSubwindow(ui::dockdef::Tabs({ "dockable3" }));
 			}
-			if (Button("->Mem"))
+			if (ui::imButton("->Mem"))
 			{
 				ui::JSONSerializerObjectIterator w;
 				area->OnSerialize(w, {});
 				mem = w.GetData();
 				printf("[->Mem] serialized to json:\n%s\n", mem.c_str());
 			}
-			if (Button("Mem->"))
+			if (ui::imButton("Mem->"))
 			{
 				ui::JSONUnserializerObjectIterator u;
 				if (u.Parse(mem))

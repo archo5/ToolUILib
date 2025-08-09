@@ -347,7 +347,7 @@ struct AnimPattern : ITree
 		MakeWithText<Header>("Preview");
 
 		tmpl->DisableScaling();
-		if (imm::Button(playing ? DefaultIconStyle::Pause : DefaultIconStyle::Play))
+		if (imButton(playing ? DefaultIconStyle::Pause : DefaultIconStyle::Play))
 			SetPlaying(!playing);
 
 		auto& slider = Make<Slider>().SetValue(curTime / globalSettings.duration);

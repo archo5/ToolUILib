@@ -86,7 +86,7 @@ struct TE_MainPreviewNode : Buildable
 		Push<StackExpandLTRLayoutElement>();
 		{
 			MakeWithText<LabelFrame>("Preview");
-			if (tmpl->curPreviewImage && imm::Button("Reset to template"))
+			if (tmpl->curPreviewImage && imButton("Reset to template"))
 			{
 				tmpl->SetCurPreviewImage(nullptr);
 			}
@@ -169,7 +169,7 @@ struct TE_ImageEditorNode : Buildable
 		Push<StackLTRLayoutElement>();
 		{
 			MakeWithText<LabelFrame>("Images");
-			if (imm::Button("Add"))
+			if (imButton("Add"))
 			{
 				auto img = std::make_shared<TE_Image>();
 				img->name = "<unnamed>";
@@ -243,7 +243,7 @@ struct TE_ImageEditorNode : Buildable
 						ui::Pop();
 					};
 
-					if (imm::Button("Add override"))
+					if (imButton("Add override"))
 					{
 						Array<MenuItem> items;
 						for (auto& col : theme->curTemplate->colors)
@@ -403,7 +403,7 @@ struct TE_ThemeEditorNode : Buildable
 		};
 
 		auto& w = PushNoAppend<StackLTRLayoutElement>();
-		if (imm::Button("+"))
+		if (imButton("+"))
 		{
 			auto* p = new TE_Template(theme);
 			p->name = "<name>";

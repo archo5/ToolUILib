@@ -114,9 +114,8 @@ void StdText(StringView text, ModInitList mods)
 		mod->OnAfterControl();
 }
 
-namespace imm {
 
-imCtrlInfo Button(UIObject& obj, ModInitList mods)
+imCtrlInfo imButton(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -151,17 +150,15 @@ imCtrlInfo Button(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo Button(StringView text, ModInitList mods)
+imCtrlInfo imButton(StringView text, ModInitList mods)
 {
-	return Button(NewText(text), mods);
+	return imButton(NewText(text), mods);
 }
 
-imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods)
+imCtrlInfo imButton(DefaultIconStyle icon, ModInitList mods)
 {
-	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
+	return imButton(New<IconElement>().SetDefaultStyle(icon), mods);
 }
-
-} // namespace imm
 
 imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
 {

@@ -89,7 +89,7 @@ void EditNCRef(std::weak_ptr<TE_NamedColor>& ncref)
 {
 	// TODO internal selection with color previews
 	auto ncr = ncref.lock();
-	if (imm::Button(ncr ? ncr->name.c_str() : "<none>"))
+	if (imButton(ncr ? ncr->name.c_str() : "<none>"))
 	{
 		MenuItemCollection mic;
 		mic.Add("<none>", false, false, -1) = [&ncref]() { ncref = {}; };

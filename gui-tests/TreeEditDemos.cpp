@@ -227,7 +227,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			ui::LabeledProperty::Begin();
 
 			ui::Push<ui::SizeConstraintElement>().SetWidth(20);
-			if (ui::imm::Button(ui::DefaultIconStyle::Delete))
+			if (ui::imButton(ui::DefaultIconStyle::Delete))
 			{
 				del = &v;
 			}
@@ -244,7 +244,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			Rebuild();
 		}
 
-		if (ui::imm::Button("Add"))
+		if (ui::imButton("Add"))
 		{
 			variables.Append({ "unnamed", 0 });
 		}
@@ -289,7 +289,7 @@ void CompactTreeNodeEditDemo::NodeUI(ExprNode*& node)
 	}
 	else
 	{
-		if (ui::imm::Button(ui::DefaultIconStyle::Add))
+		if (ui::imButton(ui::DefaultIconStyle::Add))
 		{
 			ui::MenuItem items[] =
 			{

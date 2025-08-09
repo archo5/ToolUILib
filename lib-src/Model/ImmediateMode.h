@@ -79,14 +79,10 @@ struct TreeStateToggleSkin : IStateToggleSkin
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
-namespace imm {
 
-imCtrlInfo Button(UIObject& obj, ModInitList mods = {});
-
-imCtrlInfo Button(StringView text, ModInitList mods = {});
-imCtrlInfo Button(DefaultIconStyle icon, ModInitList mods = {});
-
-} // namespace imm
+imCtrlInfo imButton(UIObject& obj, ModInitList mods = {});
+imCtrlInfo imButton(StringView text, ModInitList mods = {});
+imCtrlInfo imButton(DefaultIconStyle icon, ModInitList mods = {});
 
 imCtrlInfo imSelectable(UIObject& obj, ModInitList mods = {});
 imCtrlInfo imSelectable(StringView text, ModInitList mods = {});

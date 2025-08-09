@@ -59,7 +59,7 @@ struct Calculator : ui::Buildable
 			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = calcOpAnchors[i];
 			tmpl->placement = rap;
-			if (ui::imm::Button(calcOpNames[i]))
+			if (ui::imButton(calcOpNames[i]))
 			{
 				AddChar(calcOpNames[i][0]);
 			}
@@ -70,7 +70,7 @@ struct Calculator : ui::Buildable
 			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = CalcBoxButton(2, 4);
 			tmpl->placement = rap;
-			if (ui::imm::Button("="))
+			if (ui::imButton("="))
 			{
 				operation = ToString(Calculate());
 			}
@@ -81,7 +81,7 @@ struct Calculator : ui::Buildable
 			auto* rap = UI_BUILD_ALLOC(ui::RectAnchoredPlacement)();
 			rap->anchor = CalcBoxButton(2, 0);
 			tmpl->placement = rap;
-			if (ui::imm::Button("<"))
+			if (ui::imButton("<"))
 			{
 				if (!operation.empty())
 					operation.pop_back();

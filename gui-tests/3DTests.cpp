@@ -356,7 +356,7 @@ struct GizmoTest : ui::Buildable
 				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
-					if (ui::imm::Button("Add test offset"))
+					if (ui::imButton("Add test offset"))
 					{
 						xf = xf * ui::Mat4f::Translate(100, 200, 300);
 						camera.pivot += ui::Vec3f(100, 200, 300);
@@ -369,7 +369,7 @@ struct GizmoTest : ui::Buildable
 					{
 						ui::LabeledProperty::Scope ps;
 						ui::MakeWithText<ui::Header>("Object");
-						if (ui::imm::Button("Reset"))
+						if (ui::imButton("Reset"))
 							xf = ui::Mat4f::Translate(0.01f, 0.02f, 0.03f);
 					}
 

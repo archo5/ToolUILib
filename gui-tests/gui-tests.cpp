@@ -175,11 +175,11 @@ struct DataEditor : ui::Buildable
 
 						ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 						ui::Push<ui::StackLTRLayoutElement>(); // TODO RTL
-						if (ui::imm::Button(ui::DefaultIconStyle::Close))
+						if (ui::imButton(ui::DefaultIconStyle::Close))
 							OnClose();
-						if (ui::imm::Button("[]"))
+						if (ui::imButton("[]"))
 							SetState(GetState() == ui::WindowState::Maximized ? ui::WindowState::Normal : ui::WindowState::Maximized);
-						if (ui::imm::Button("_"))
+						if (ui::imButton("_"))
 							SetState(ui::WindowState::Minimized);
 						ui::Pop();
 						ui::Pop();
@@ -260,7 +260,7 @@ struct DataEditor : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("Item:");
 			ui::Text(items[editing].name);
 			ui::Push<ui::SizeConstraintElement>().SetWidth(80);
-			if (ui::imm::Button("Go back"))
+			if (ui::imButton("Go back"))
 			{
 				editing = SIZE_MAX;
 				ItemSelectionChanged.Call();
