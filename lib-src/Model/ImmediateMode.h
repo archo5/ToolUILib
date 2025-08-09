@@ -48,43 +48,43 @@ struct TreeStateToggleSkin : IStateToggleSkin
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
-bool Button(UIObject& obj, ModInitList mods = {});
+CtrlInfo Button(UIObject& obj, ModInitList mods = {});
 
-bool Button(StringView text, ModInitList mods = {});
-bool Button(DefaultIconStyle icon, ModInitList mods = {});
+CtrlInfo Button(StringView text, ModInitList mods = {});
+CtrlInfo Button(DefaultIconStyle icon, ModInitList mods = {});
 
-bool Selectable(UIObject& obj, ModInitList mods = {});
-bool Selectable(StringView text, ModInitList mods = {});
+CtrlInfo Selectable(UIObject& obj, ModInitList mods = {});
+CtrlInfo Selectable(StringView text, ModInitList mods = {});
 
-bool CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE bool CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+CtrlInfo CheckboxExtRaw(u8 state, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE CtrlInfo CheckboxRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	return CheckboxExtRaw(val ? 1 : 0, text, mods, skin);
 }
-bool EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> bool EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+CtrlInfo EditBool(bool& val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> CtrlInfo EditFlag(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	if (CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin))
+	CtrlInfo ci = CheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
+	if (ci)
 	{
 		if ((val & cur) != cur)
 			val |= cur;
 		else
 			val &= ~cur;
-		return true;
 	}
-	return false;
+	return ci;
 }
-bool RadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> bool RadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+CtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> CtrlInfo RadioButton(T& val, T cur, const char* text, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	if (RadioButtonRaw(val == cur, text, mods, skin))
+	CtrlInfo ci = RadioButtonRaw(val == cur, text, mods, skin);
+	if (ci)
 	{
 		val = cur;
-		return true;
 	}
-	return false;
+	return ci;
 }
 
 struct DragConfig
@@ -142,8 +142,8 @@ bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragCo
 bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 void PropText(const char* label, const char* text, ModInitList mods = {});
-bool PropButton(const char* label, const char* text, ModInitList mods = {});
-bool PropEditBool(const char* label, bool& val, ModInitList mods = {});
+CtrlInfo PropButton(const char* label, const char* text, ModInitList mods = {});
+CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods = {});
 bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);

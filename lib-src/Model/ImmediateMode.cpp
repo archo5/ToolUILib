@@ -97,7 +97,7 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Make<TreeExpandIcon>();
 }
 
-bool Button(UIObject& obj, ModInitList mods)
+CtrlInfo Button(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -115,31 +115,38 @@ bool Button(UIObject& obj, ModInitList mods)
 		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
+	if (btn.flags & UIObject_AfterIMEdit)
+	{
+		btn._OnIMChange();
+		btn.flags &= ~UIObject_AfterIMEdit;
+	}
 	bool clicked = false;
 	if (btn.flags & UIObject_IsEdited)
 	{
 		clicked = true;
 		btn.flags &= ~UIObject_IsEdited;
-		btn._OnIMChange();
+		btn.flags |= UIObject_AfterIMEdit;
+		btn.RebuildContainer();
 	}
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
-	return clicked;
+	return { clicked, &btn };
 }
 
-bool Button(StringView text, ModInitList mods)
+CtrlInfo Button(StringView text, ModInitList mods)
 {
 	return Button(NewText(text), mods);
 }
 
-bool Button(DefaultIconStyle icon, ModInitList mods)
+CtrlInfo Button(DefaultIconStyle icon, ModInitList mods)
 {
 	return Button(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
-bool Selectable(UIObject& obj, ModInitList mods)
+CtrlInfo Selectable(UIObject& obj, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -157,26 +164,33 @@ bool Selectable(UIObject& obj, ModInitList mods)
 		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
+
+	for (auto& mod : ReverseIterate(mods))
+		mod->OnAfterControl();
+
+	if (btn.flags & UIObject_AfterIMEdit)
+	{
+		btn._OnIMChange();
+		btn.flags &= ~UIObject_AfterIMEdit;
+	}
 	bool clicked = false;
 	if (btn.flags & UIObject_IsEdited)
 	{
 		clicked = true;
 		btn.flags &= ~UIObject_IsEdited;
-		btn._OnIMChange();
+		btn.flags |= UIObject_AfterIMEdit;
+		btn.RebuildContainer();
 	}
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
-	return clicked;
+	return { clicked, &btn };
 }
 
-bool Selectable(StringView text, ModInitList mods)
+CtrlInfo Selectable(StringView text, ModInitList mods)
 {
 	return Selectable(NewText(text), mods);
 }
 
-bool CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+CtrlInfo CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -190,32 +204,37 @@ bool CheckboxExtRaw(u8 val, const char* text, ModInitList mods, const IStateTogg
 		cb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&cb);
-	bool edited = false;
-	if (cb.flags & UIObject_IsEdited)
-	{
-		cb.flags &= ~UIObject_IsEdited;
-		edited = true;
-		cb._OnIMChange();
-	}
 	cb.InitReadOnly(val);
 
 	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
-	return edited;
-}
-
-bool EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
-{
-	if (CheckboxRaw(val, text, mods, skin))
+	if (cb.flags & UIObject_AfterIMEdit)
 	{
-		val = !val;
-		return true;
+		cb._OnIMChange();
+		cb.flags &= ~UIObject_AfterIMEdit;
 	}
-	return false;
+	bool edited = false;
+	if (cb.flags & UIObject_IsEdited)
+	{
+		edited = true;
+		cb.flags &= ~UIObject_IsEdited;
+		cb.flags |= UIObject_AfterIMEdit;
+		cb.RebuildContainer();
+	}
+
+	return { edited, &cb };
 }
 
-bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+CtrlInfo EditBool(bool& val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
+{
+	CtrlInfo ci = CheckboxRaw(val, text, mods, skin);
+	if (ci)
+		val = !val;
+	return ci;
+}
+
+CtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateToggleSkin& skin)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -229,19 +248,26 @@ bool RadioButtonRaw(bool val, const char* text, ModInitList mods, const IStateTo
 		rb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&rb);
-	bool edited = false;
-	if (rb.flags & UIObject_IsEdited)
-	{
-		rb.flags &= ~UIObject_IsEdited;
-		edited = true;
-		rb._OnIMChange();
-	}
 	rb.InitReadOnly(val);
 
 	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
-	return edited;
+	if (rb.flags & UIObject_AfterIMEdit)
+	{
+		rb._OnIMChange();
+		rb.flags &= ~UIObject_AfterIMEdit;
+	}
+	bool edited = false;
+	if (rb.flags & UIObject_IsEdited)
+	{
+		edited = true;
+		rb.flags &= ~UIObject_IsEdited;
+		rb.flags |= UIObject_AfterIMEdit;
+		rb.RebuildContainer();
+	}
+
+	return { edited, &rb };
 }
 
 float DragConfig::GetSpeed(uint8_t modifierKeys) const
@@ -346,6 +372,7 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		tb.edited = 0;
 		edited = true;
 		tb._OnIMChange();
+		tb.RebuildContainer();
 	}
 
 	char buf[1024];
@@ -467,6 +494,7 @@ bool EditStringImpl(bool multiline, const char* text, const std::function<void(c
 		retfn(tb.GetText().c_str());
 		tb.flags &= ~UIObject_IsEdited;
 		tb._OnIMChange();
+		tb.RebuildContainer();
 		changed = true;
 	}
 	else // text can be invalidated if retfn is called
@@ -511,6 +539,7 @@ bool EditColor(Color4f& val, bool delayed, ModInitList mods)
 		val = ced.GetColor().GetRGBA();
 		ced.flags &= ~UIObject_IsEdited;
 		ced._OnIMChange();
+		ced.RebuildContainer();
 		changed = true;
 	}
 	else
@@ -613,13 +642,13 @@ void PropText(const char* label, const char* text, ModInitList mods)
 		mod->OnAfterControl();
 }
 
-bool PropButton(const char* label, const char* text, ModInitList mods)
+CtrlInfo PropButton(const char* label, const char* text, ModInitList mods)
 {
 	LabelPropScope ps(label, mods);
 	return Button(text, mods);
 }
 
-bool PropEditBool(const char* label, bool& val, ModInitList mods)
+CtrlInfo PropEditBool(const char* label, bool& val, ModInitList mods)
 {
 	LabelPropScope ps(label, mods);
 	return EditBool(val, nullptr, mods);

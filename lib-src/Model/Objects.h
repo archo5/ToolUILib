@@ -105,6 +105,7 @@ enum UIObjectFlags
 	UIObject_IsInTree = 1 << 27,
 	UIObject_NeedsTreeUpdates = 1 << 28,
 	UIObject_SetsChildTextStyle = 1 << 29,
+	UIObject_AfterIMEdit = 1 << 30, // to queue event for next construction after the editing state was returned
 
 	UIObject_DB__Defaults = 0,
 };
@@ -616,5 +617,21 @@ struct MakeDraggable : AddEventHandler
 		obj->SetFlag(UIObjectFlags::UIObject_DB_Draggable, true);
 	}
 };
+
+// utilities for immediate mode controls
+namespace imm {
+
+struct CtrlInfo
+{
+	bool edited;
+	UIObject* root;
+
+	// void* to avoid unwanted implicit casting
+	UI_FORCEINLINE operator void* () const { return (void*)edited; }
+};
+UI_FORCEINLINE bool operator | (bool v, const CtrlInfo& ci) { return v | !!ci; }
+UI_FORCEINLINE bool& operator |= (bool& v, const CtrlInfo& ci) { return v |= !!ci; }
+
+} // imm
 
 } // ui

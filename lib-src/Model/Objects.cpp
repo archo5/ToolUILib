@@ -110,7 +110,8 @@ void UIObject::PO_ResetConfiguration()
 		UIObject_IsEdited |
 		UIObject_IsChecked |
 		UIObject_IsPressedAny |
-		UIObject_NeedsTreeUpdates;
+		UIObject_NeedsTreeUpdates |
+		UIObject_AfterIMEdit;
 	flags = UIObject_DB__Defaults | (origFlags & KEEP_MASK);
 
 	_InitReset();
@@ -567,7 +568,6 @@ void UIObject::RebuildContainer()
 void UIObject::_OnIMChange()
 {
 	system->eventSystem.OnIMChange(this);
-	RebuildContainer();
 }
 
 bool UIObject::IsHovered() const

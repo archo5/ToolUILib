@@ -663,19 +663,25 @@ struct DropdownMenuList : DropdownMenu
 
 namespace imm {
 
-template <class MT, class T> bool DropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> CtrlInfo DropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
 {
 	auto& ddml = Make<MT>();
 	ddml.SetOptions(ol);
 	for (auto& mod : mods)
 		mod->Apply(&ddml);
 
+	if (ddml.flags & UIObject_AfterIMEdit)
+	{
+		ddml._OnIMChange();
+		ddml.flags &= ~UIObject_AfterIMEdit;
+	}
 	bool edited = false;
 	if (ddml.flags & UIObject_IsEdited)
 	{
 		val = T(ddml.GetSelected());
 		ddml.flags &= ~UIObject_IsEdited;
-		ddml._OnIMChange();
+		ddml.flags |= UIObject_AfterIMEdit;
+		ddml.RebuildContainer();
 		edited = true;
 	}
 	else
@@ -689,19 +695,19 @@ template <class MT, class T> bool DropdownMenuListCustom(T& val, OptionList* ol,
 		e.current->RebuildContainer();
 	};
 
-	return edited;
+	return { edited, &ddml };
 }
-template <class T> bool DropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
+template <class T> CtrlInfo DropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
 {
 	return DropdownMenuListCustom<ui::DropdownMenuList>(val, ol, mods);
 }
 
-template <class MT, class T> bool PropDropdownMenuListCustom(const char* label, T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> CtrlInfo PropDropdownMenuListCustom(const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
 	LabeledProperty::Scope ps(label);
 	return DropdownMenuListCustom<MT, T>(val, ol, mods);
 }
-template <class T> bool PropDropdownMenuList(const char* label, T& val, OptionList* ol, ModInitList mods = {})
+template <class T> CtrlInfo PropDropdownMenuList(const char* label, T& val, OptionList* ol, ModInitList mods = {})
 {
 	LabeledProperty::Scope ps(label);
 	return DropdownMenuList<T>(val, ol, mods);
