@@ -282,6 +282,8 @@ imCtrlInfo RadioButtonRaw(bool val, const char* text, ModInitList mods, const IS
 	return { edited, &rb };
 }
 
+} // namespace imm
+
 float DragConfig::GetSpeed(uint8_t modifierKeys) const
 {
 	if (modifierKeys & slowdownKey)
@@ -301,6 +303,8 @@ float DragConfig::GetSnap(uint8_t modifierKeys) const
 		return boostSnap;
 	return snap;
 }
+
+namespace imm {
 
 struct NumFmtBox
 {

@@ -6,7 +6,6 @@
 
 
 namespace ui {
-namespace imm {
 
 enum class QuatEditMode : u8
 {
@@ -15,7 +14,7 @@ enum class QuatEditMode : u8
 	EulerZYX,
 };
 
-bool EditQuat(
+bool imEditQuat(
 	Quat& val,
 	QuatEditMode mode = QuatEditMode::Raw,
 	ModInitList mods = {},
@@ -23,5 +22,4 @@ bool EditQuat(
 	Range<float> range = All{},
 	const char* fmt = "%g");
 
-} // imm
 } // ui

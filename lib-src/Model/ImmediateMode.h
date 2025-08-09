@@ -122,6 +122,8 @@ template <class T> imCtrlInfo RadioButton(T& val, T cur, const char* text, ModIn
 	return ci;
 }
 
+} // namespace imm
+
 struct DragConfig
 {
 	// all speed values are in units/px
@@ -155,6 +157,8 @@ struct DragConfig
 	float GetSpeed(uint8_t modifierKeys) const;
 	float GetSnap(uint8_t modifierKeys) const;
 };
+
+namespace imm {
 
 bool EditInt(UIObject* dragObj, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool EditInt(UIObject* dragObj, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
