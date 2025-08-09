@@ -123,7 +123,7 @@ struct Array
 		assert(i < _size);
 		return _data[i];
 	}
-	UI_FORCEINLINE const T& At(size_t i) const { return const_cast<Array*>(this)->operator[](i); }
+	UI_FORCEINLINE const T& At(size_t i) const { return const_cast<Array*>(this)->At(i); }
 
 	T& operator [] (size_t i)
 	{
@@ -141,6 +141,32 @@ struct Array
 	const T& First() const { assert(NotEmpty()); return *_data; }
 	T& Last() { assert(NotEmpty()); return _data[_size - 1]; }
 	const T& Last() const { assert(NotEmpty()); return _data[_size - 1]; }
+
+	T& PrevWrap(size_t i)
+	{
+		assert(i < _size);
+		return _data[(i + _size - 1) % _size];
+	}
+	UI_FORCEINLINE const T& PrevWrap(size_t i) const { return const_cast<Array*>(this)->PrevWrap(i); }
+	T& NextWrap(size_t i)
+	{
+		assert(i < _size);
+		return _data[(i + 1) % _size];
+	}
+	UI_FORCEINLINE const T& NextWrap(size_t i) const { return const_cast<Array*>(this)->NextWrap(i); }
+
+	T& PrevClamp(size_t i)
+	{
+		assert(i < _size);
+		return _data[i ? i - 1 : 0];
+	}
+	UI_FORCEINLINE const T& PrevClamp(size_t i) const { return const_cast<Array*>(this)->PrevClamp(i); }
+	T& NextClamp(size_t i)
+	{
+		assert(i < _size);
+		return _data[i + 1 == _size ? i : i + 1];
+	}
+	UI_FORCEINLINE const T& NextClamp(size_t i) const { return const_cast<Array*>(this)->NextClamp(i); }
 
 	template <class T>
 	bool operator == (const Array<T>& b) const

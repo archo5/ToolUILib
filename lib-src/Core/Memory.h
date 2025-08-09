@@ -61,6 +61,29 @@ struct ArrayView
 		assert(_size);
 		return { _data, _size - 1 };
 	}
+
+	const T& PrevWrap(size_t i) const
+	{
+		assert(i < _size);
+		return _data[(i + _size - 1) % _size];
+	}
+	const T& NextWrap(size_t i) const
+	{
+		assert(i < _size);
+		return _data[(i + 1) % _size];
+	}
+
+	const T& PrevClamp(size_t i) const
+	{
+		assert(i < _size);
+		return _data[i ? i - 1 : 0];
+	}
+	const T& NextClamp(size_t i) const
+	{
+		assert(i < _size);
+		return _data[i + 1 == _size ? i : i + 1];
+	}
+
 	// subSize is clamped instead of range-checked
 	UI_FORCEINLINE ArrayView Subview(size_t subOff = 0, size_t subSize = SIZE_MAX) const
 	{
@@ -106,5 +129,18 @@ struct ArrayView
 	UI_FORCEINLINE size_t IndexOf(const T& what) const { return IndexOfT(what); }
 	UI_FORCEINLINE size_t LastIndexOf(const T& what) const { return LastIndexOfT(what); }
 };
+
+template <class T1, class T2>
+bool operator == (const ArrayView<T1>& a, const ArrayView<T2>& b)
+{
+	if (a._size != b._size)
+		return false;
+	for (size_t i = 0; i < a._size; i++)
+		if (a._data[i] != b._data[i])
+			return false;
+	return true;
+}
+template <class T1, class T2>
+UI_FORCEINLINE bool operator != (const ArrayView<T1>& a, const ArrayView<T2>& b) { return !(a == b); }
 
 } // ui

@@ -14,7 +14,7 @@ struct Optional
 	bool _hasValue = false;
 
 	UI_FORCEINLINE Optional() {}
-	UI_FORCEINLINE Optional(const T& v) : _value(v), _hasValue(true) {}
+	UI_FORCEINLINE Optional(const T& v, bool hasValue = true) : _value(v), _hasValue(hasValue) {}
 
 	UI_FORCEINLINE bool operator == (const Optional& o) const
 	{
@@ -58,6 +58,14 @@ struct Optional
 		return {};
 	}
 
+	template <class Func>
+	void OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
+	{
+		oi.BeginObject(FI, "Optional<T>");
+		OnField(oi, "hasValue", _hasValue);
+		func(oi, "value", _value);
+		oi.EndObject();
+	}
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		oi.BeginObject(FI, "Optional<T>");

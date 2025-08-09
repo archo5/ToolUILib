@@ -101,6 +101,11 @@ struct Color4f
 
 	UI_FORCEINLINE bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		OnFieldMany(oi, FI, 4, &r);
+	}
+
 	Color4f operator + (const Color4f& o) const { return { r + o.r, g + o.g, b + o.b, a + o.a }; }
 	Color4f operator - (const Color4f& o) const { return { r - o.r, g - o.g, b - o.b, a - o.a }; }
 	Color4f operator * (const Color4f& o) const { return { r * o.r, g * o.g, b * o.b, a * o.a }; }

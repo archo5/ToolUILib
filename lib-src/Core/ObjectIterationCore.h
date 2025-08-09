@@ -125,7 +125,9 @@ UI_FORCEINLINE bool OnFieldMany(IObjectIterator& oi, const FieldInfo& FI, u32 co
 // TODO split String into StringView/String
 struct StdStringRW : IBufferRW
 {
-	std::string* S;
+	std::string* S = nullptr;
+	UI_FORCEINLINE StdStringRW() {}
+	UI_FORCEINLINE StdStringRW(std::string& s) : S(&s) {}
 	void Assign(StringView sv) const override
 	{
 		S->assign(sv.data(), sv.size());
@@ -135,6 +137,6 @@ struct StdStringRW : IBufferRW
 		return *S;
 	}
 };
-inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::string& val) { StdStringRW rw; rw.S = &val; oi.OnFieldString(FI, rw); }
+inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::string& val) { oi.OnFieldString(FI, StdStringRW(val)); }
 
 } // ui
