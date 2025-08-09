@@ -21,12 +21,10 @@ struct SetMinWidth : Modifier
 	}
 };
 
-namespace imm {
 
-bool GetEnabled();
-bool SetEnabled(bool newValue);
+bool imGetEnabled();
+bool imSetEnabled(bool newValue);
 
-} // namespace imm
 
 struct imLabel
 {
@@ -36,7 +34,7 @@ struct imLabel
 	imLabel(StringView lblstr = {}, LabeledProperty::ContentLayoutType layout = LabeledProperty::StackExpandLTR) : layoutType(layout)
 	{
 		label = &LabeledProperty::Begin(lblstr, layoutType);
-		if (!imm::GetEnabled())
+		if (!imGetEnabled())
 			label->flags |= UIObject_IsDisabled;
 	}
 	~imLabel()

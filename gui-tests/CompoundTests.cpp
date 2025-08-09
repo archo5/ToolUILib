@@ -760,7 +760,7 @@ struct IMGUITest : ui::Buildable
 		ui::imEditBool(imguiTestDisableAll);
 		ui::LabeledProperty::End();
 
-		bool oldEnabled = ui::imm::SetEnabled(!imguiTestDisableAll);
+		bool oldEnabled = ui::imSetEnabled(!imguiTestDisableAll);
 
 		{
 			ui::imLabel ls("buttons");
@@ -878,7 +878,7 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel("color F (Immediate)"), ui::imEditColor(colorValF, false);
 		}
 
-		ui::imm::SetEnabled(oldEnabled);
+		ui::imSetEnabled(oldEnabled);
 
 		WMake<ui::DefaultOverlayBuilder>();
 		WPop();

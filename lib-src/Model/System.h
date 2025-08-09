@@ -86,11 +86,8 @@ struct UIObjectPendingDeactivationSet
 	}
 };
 
-namespace imm
-{
-bool GetEnabled();
-bool SetEnabled(bool);
-}
+bool imGetEnabled();
+bool imSetEnabled(bool);
 
 template <class T>
 using NotBuildable = std::enable_if_t<!std::is_base_of<Buildable, T>::value>;
@@ -122,7 +119,7 @@ struct UIContainer
 	void Add(Buildable* obj)
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
-		if (!imm::GetEnabled())
+		if (!imGetEnabled())
 			obj->flags |= UIObject_IsDisabled;
 		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
 

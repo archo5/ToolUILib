@@ -10,7 +10,7 @@
 
 
 namespace ui {
-namespace imm {
+
 
 struct ModInitListReverseIter
 {
@@ -32,21 +32,19 @@ struct ModInitListReverseRange
 inline ModInitListReverseRange ReverseIterate(const ModInitList& iterable) { return { iterable }; }
 
 
-static bool g_enabled = true;
+static bool g_imEnabled = true;
 
-bool GetEnabled()
+bool imGetEnabled()
 {
-	return g_enabled;
+	return g_imEnabled;
 }
 
-bool SetEnabled(bool newValue)
+bool imSetEnabled(bool newValue)
 {
-	bool old = g_enabled;
-	g_enabled = newValue;
+	bool old = g_imEnabled;
+	g_imEnabled = newValue;
 	return old;
 }
-
-} // namespace imm
 
 
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
@@ -56,7 +54,7 @@ void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView 
 		Push<StackExpandLTRLayoutElement>();
 		Make<CheckboxIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!imm::GetEnabled())
+		if (!imGetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -71,7 +69,7 @@ void RadioButtonStateToggleSkin::BuildContents(StateToggleBase& parent, StringVi
 		Push<StackExpandLTRLayoutElement>();
 		Make<RadioButtonIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!imm::GetEnabled())
+		if (!imGetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -91,7 +89,7 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 		Push<StackExpandLTRLayoutElement>();
 		Make<TreeExpandIcon>();
 		auto& lbl = MakeWithText<LabelFrame>(text);
-		if (!imm::GetEnabled())
+		if (!imGetEnabled())
 			lbl.flags |= UIObject_IsDisabled;
 		Pop();
 	}
@@ -112,7 +110,7 @@ void StdText(StringView text, ModInitList mods)
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
 
-	for (auto& mod : imm::ReverseIterate(mods))
+	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 }
 
@@ -128,7 +126,7 @@ imCtrlInfo Button(UIObject& obj, ModInitList mods)
 	Pop();
 
 	btn.flags |= UIObject_DB_IMEdit;
-	if (!GetEnabled())
+	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
@@ -175,12 +173,12 @@ imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
 	Pop();
 
 	btn.flags |= UIObject_DB_IMEdit;
-	if (!imm::GetEnabled())
+	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&btn);
 
-	for (auto& mod : imm::ReverseIterate(mods))
+	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (btn.flags & UIObject_AfterIMEdit)
@@ -215,13 +213,13 @@ imCtrlInfo imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const ISt
 	Pop();
 
 	cb.flags |= UIObject_DB_IMEdit;
-	if (!imm::GetEnabled())
+	if (!imGetEnabled())
 		cb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&cb);
 	cb.InitReadOnly(val);
 
-	for (auto& mod : imm::ReverseIterate(mods))
+	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (cb.flags & UIObject_AfterIMEdit)
@@ -259,13 +257,13 @@ imCtrlInfo imRadioButtonRaw(bool val, StringView text, ModInitList mods, const I
 	Pop();
 
 	rb.flags |= UIObject_DB_IMEdit;
-	if (!imm::GetEnabled())
+	if (!imGetEnabled())
 		rb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&rb);
 	rb.InitReadOnly(val);
 
-	for (auto& mod : imm::ReverseIterate(mods))
+	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	if (rb.flags & UIObject_AfterIMEdit)
@@ -362,7 +360,7 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 		mod->OnBeforeControl();
 
 	auto& tb = Make<NumberTextbox<TNum>>();
-	if (!GetEnabled())
+	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&tb);
@@ -501,7 +499,7 @@ bool EditStringImpl(bool multiline, const char* text, const std::function<void(c
 	auto& tb = Make<Textbox>();
 	if (multiline)
 		tb.SetMultiline(true);
-	if (!GetEnabled())
+	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&tb);
@@ -548,7 +546,7 @@ imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
-	if (!imm::GetEnabled())
+	if (!imGetEnabled())
 		ced.flags |= UIObject_IsDisabled;
 	for (auto& mod : mods)
 		mod->Apply(&ced);
@@ -569,7 +567,7 @@ imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
 		ced.RebuildContainer();
 	};
 
-	for (auto& mod : imm::ReverseIterate(mods))
+	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
 	return { changed, &ced };
