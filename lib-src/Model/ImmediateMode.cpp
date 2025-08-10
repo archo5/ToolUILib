@@ -493,15 +493,11 @@ imCtrlInfoTextbox& imCtrlInfoTextbox::Placeholder(StringView pch)
 	return *this;
 }
 
-static imCtrlInfoTextbox imEditStringImpl(bool multiline, const IBufferRW& textRW, ModInitList mods)
+static imCtrlInfoTextbox imEditStringImpl(const IBufferRW& textRW)
 {
 	auto& tb = Make<Textbox>();
-	if (multiline)
-		tb.SetMultiline(true);
 	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&tb);
 	bool changed = false;
 	if (tb.flags & UIObject_IsEdited)
 	{
@@ -522,14 +518,14 @@ static imCtrlInfoTextbox imEditStringImpl(bool multiline, const IBufferRW& textR
 	return { changed, &tb };
 }
 
-imCtrlInfoTextbox imEditString(std::string& text, ModInitList mods)
+imCtrlInfoTextbox imEditString(std::string& text)
 {
-	return imEditStringImpl(false, StdStringRW(text), mods);
+	return imEditStringImpl(StdStringRW(text));
 }
 
-imCtrlInfoTextbox imEditString(const IBufferRW& textRW, ModInitList mods)
+imCtrlInfoTextbox imEditString(const IBufferRW& textRW)
 {
-	return imEditStringImpl(false, textRW, mods);
+	return imEditStringImpl(textRW);
 }
 
 

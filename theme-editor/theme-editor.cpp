@@ -386,7 +386,7 @@ struct TE_ThemeEditorNode : Buildable
 
 				auto& w = PushNoAppend<WrapperElement>();
 				Push<SizeConstraintElement>().SetWidth(100);
-				imEditString(tmpl->name, { AddEventHandler(efn) });
+				imEditString(tmpl->name).Modify({ AddEventHandler(efn) });
 				Pop();
 				Pop();
 				tp.AddUITab(&w, uintptr_t(tmpl));

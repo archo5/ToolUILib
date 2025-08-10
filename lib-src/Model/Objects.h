@@ -632,6 +632,7 @@ struct imCtrlInfo : imCtrlInfoBase
 	{
 		for (auto& mod : mods)
 			mod->Apply(root);
+		return *this;
 	}
 };
 } // imm

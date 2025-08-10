@@ -48,17 +48,4 @@ struct Textbox : FrameElement
 	struct TextboxImpl* _impl;
 };
 
-struct TextboxPlaceholder : Modifier
-{
-	StringView placeholder;
-
-	TextboxPlaceholder(StringView pch) : placeholder(pch) {}
-
-	void Apply(UIObject* obj) const override
-	{
-		if (auto* tb = dynamic_cast<Textbox*>(obj))
-			tb->SetPlaceholder(placeholder);
-	}
-};
-
 } // ui

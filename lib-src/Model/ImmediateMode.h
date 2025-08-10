@@ -181,8 +181,8 @@ struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
 	imCtrlInfoTextbox& Multiline(bool is = true);
 	imCtrlInfoTextbox& Placeholder(StringView pch);
 };
-imCtrlInfoTextbox imEditString(std::string& text, ModInitList mods = {});
-imCtrlInfoTextbox imEditString(const IBufferRW& textRW, ModInitList mods = {});
+imCtrlInfoTextbox imEditString(std::string& text);
+imCtrlInfoTextbox imEditString(const IBufferRW& textRW);
 
 imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
 imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
