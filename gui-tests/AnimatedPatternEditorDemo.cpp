@@ -34,7 +34,7 @@ struct APGlobalSettings
 	{
 		imLabel("Image resolution"), imEditInt(imageRes, {}, {}, { 32, 512 });
 		imLabel("Step count"), imEditInt(numSteps, {}, {}, { 1, 64 });
-		imm::PropEditFloat("Duration (sec)", duration, {}, {}, { 1.0f, 30.0f });
+		imLabel("Duration (sec)"), imEditFloat(duration, {}, {}, { 1.0f, 30.0f });
 	}
 };
 

@@ -854,9 +854,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("float");
 			auto tmp = floatVal;
-			if (ui::imm::PropEditFloat("\bworking", tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
+			if (ui::imLabel("\bworking"), ui::imEditFloat(tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
-			if (ui::imm::PropEditFloat("\bdisabled", tmp, { ui::Enable(false) }, { 0.1f }, { -37.4f, 154.1f }))
+			if (ui::imLabel("\bdisabled"), ui::imEditFloat(tmp, { ui::Enable(false) }, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
@@ -866,8 +866,8 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel("float4"), ui::imEditFloatVec(float4val, ui::axesRGBA);
 		}
 		{
-			ui::imm::PropEditFloat("multiplier", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });
-			ui::imm::PropEditFloat("multiplier (limited fmt)", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f }, "%.1f");
+			ui::imLabel("multiplier"), ui::imEditFloat(multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });
+			ui::imLabel("multiplier (limited fmt)"), ui::imEditFloat(multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f }, "%.1f");
 		}
 		{
 			ui::imLabel("color B (Delayed)"), ui::imEditColor(colorValB, true);

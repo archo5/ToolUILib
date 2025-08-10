@@ -176,12 +176,6 @@ extern const char* axesWidthHeight[];
 bool imEditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool imEditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
 
-namespace imm {
-
-bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
-
-} // imm
-
 inline bool imEditVec2f(Vec2f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
 {
 	return imEditFloatVec(&val.x, axesXY, mods, cfg, range, fmt);

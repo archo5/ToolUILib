@@ -635,18 +635,11 @@ bool imEditFloatVec(float* val, const char** axes, ModInitList mods, const DragC
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		any |= imm::PropEditFloat(*plabel, *val++, mods, cfg, range, fmt);
+		imLabel(*plabel),
+			any |= imEditFloat(*val++, mods, cfg, range, fmt);
 	}
 	return any;
 }
 
 
-namespace imm {
-
-bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
-{
-	return imLabel(label), imEditFloat(val, mods, cfg, range, fmt);
-}
-
-} // imm
 } // ui

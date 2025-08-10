@@ -361,7 +361,7 @@ struct GizmoTest : ui::Buildable
 						camera._UpdateViewProjMatrix();
 					}
 					ui::MakeWithText<ui::Header>("Camera");
-					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
+					ui::imLabel("FOV"), ui::imEditFloat(fov, {}, {}, { 1.0f, 179.0f });
 
 					{
 						ui::LabeledProperty::Scope ps;
@@ -387,7 +387,7 @@ struct GizmoTest : ui::Buildable
 				{
 					ui::imEditBool(useImmediate, "Use immediate");
 					ui::MakeWithText<ui::Header>("Gizmo");
-					ui::imm::PropEditFloat("Size", gizmoSettings.size, {}, {}, { 0.001f, 200.0f });
+					ui::imLabel("Size"), ui::imEditFloat(gizmoSettings.size, {}, {}, { 0.001f, 200.0f });
 					ui::imLabel("Size mode"), ui::imDropdownMenuList(gizmoSettings.sizeMode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Scene\0View normalized (Y)\0View pixels\0"));
 					{
 						ui::LabeledProperty::Scope ps("Type");
@@ -555,7 +555,7 @@ struct QuaternionTest : ui::Buildable
 				ui::Push<ui::StackTopDownLayoutElement>();
 				{
 					ui::MakeWithText<ui::Header>("Camera");
-					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
+					ui::imLabel("FOV"), ui::imEditFloat(fov, {}, {}, { 1.0f, 179.0f });
 					ui::imLabel("R"), ui::imEditVec3f(angles);
 					ui::imLabel("Mode"), ui::imDropdownMenuList(zyx, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("XYZ\0" "ZYX\0"));
 					ui::imLabel("Use mtx"), ui::imEditBool(useMtx);

@@ -21,7 +21,7 @@ struct SetPropEntry
 static const SetPropEntry entries[] =
 {
 	{ "General", "Intro", "Integer", [](Settings& S) { ui::imLabel("Integer"), ui::imEditInt(S.introInt); } },
-	{ "General", "Misc", "Other", [](Settings& S) { ui::imm::PropEditFloat("Other", S.otherInt); } },
+	{ "General", "Misc", "Other", [](Settings& S) { ui::imLabel("Other"), ui::imEditFloat(S.otherInt); } },
 	{ "Extended", "Advanced", "Hidden", [](Settings& S) { ui::imLabel("Hidden"), ui::imEditBool(S.extAdvHidden); } },
 };
 

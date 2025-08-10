@@ -385,7 +385,7 @@ struct InspectorView : ui::Buildable
 
 		ui::MakeWithText<ui::Header>("Camera");
 		auto& cameraBox = ui::Push<ui::StackTopDownLayoutElement>();
-		ui::imm::PropEditFloat("FOV", cameraFOV);
+		ui::imLabel("FOV"), ui::imEditFloat(cameraFOV);
 		ui::imLabel("Position"), ui::imEditFloatVec(&cameraPos.x, ui::axesXYZ);
 		ui::imLabel("Direction"), ui::imEditFloatVec(&cameraDir.x, ui::axesXYZ);
 		cameraBox.HandleEvent(ui::EventType::Commit) = [](ui::Event& e)

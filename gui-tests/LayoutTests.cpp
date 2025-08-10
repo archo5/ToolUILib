@@ -498,13 +498,13 @@ struct RectGenTest : ui::Buildable
 			ui::Pop();
 			ui::imLabel("Round pos"), ui::imEditBool(roundPos);
 			if (mode == 1 || mode == 2)
-				ui::imm::PropEditFloat("Margin (fill)", fillMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+				ui::imLabel("Margin (fill)"), ui::imEditFloat(fillMarginFrc, {}, { 0.01f }, { 0, 0.5f });
 			else
-				ui::imm::PropEditFloat("Margin", basicMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+				ui::imLabel("Margin"), ui::imEditFloat(basicMarginFrc, {}, { 0.01f }, { 0, 0.5f });
 			if (mode == 1 || mode == 3)
 				ui::imLabel("Size"), ui::imEditFloatVec(&size.x, ui::axesWidthHeight, {}, {}, ui::Rangef::AtLeast(0));
 			if (mode == 2 || mode == 4)
-				ui::imm::PropEditFloat("Aspect", aspect, {}, { 0.1f, true }, { 0, 100 });
+				ui::imLabel("Aspect"), ui::imEditFloat(aspect, {}, { 0.1f, true }, { 0, 100 });
 			if (mode == 5)
 				ui::imLabel("Aspect range"), ui::imEditFloatVec(&aspectRange.min, ui::axesMinMax, {}, { 0.1f, true }, { 0, 100 });
 			ui::imLabel("Placement"), ui::imEditFloatVec(&placement.x, ui::axesXY, {}, { 0.01f }, { 0, 1 });
