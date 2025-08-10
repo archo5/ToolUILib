@@ -32,8 +32,8 @@ struct APGlobalSettings
 	}
 	void UI()
 	{
-		imLabel("Image resolution"), imEditInt(imageRes, {}, {}, { 32, 512 });
-		imLabel("Step count"), imEditInt(numSteps, {}, {}, { 1, 64 });
+		imLabel("Image resolution"), imEditInt(imageRes, {}, { 32, 512 });
+		imLabel("Step count"), imEditInt(numSteps, {}, { 1, 64 });
 		imLabel("Duration (sec)"), imEditFloat(duration, {}, {}, { 1.0f, 30.0f });
 	}
 };

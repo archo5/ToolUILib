@@ -319,7 +319,7 @@ static bool HasMoreThanOneChild(UIObject* obj)
 	return false;
 }
 
-template <class TNum> bool EditNumber(TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
+template <class TNum> imCtrlInfo<UIObject> EditNumber(TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
 	auto& tb = Make<NumberTextbox<TNum>>();
 	if (!imGetEnabled())
@@ -439,30 +439,30 @@ template <class TNum> bool EditNumber(TNum& val, ModInitList mods, const DragCon
 		tb.RebuildContainer();
 	};
 
-	return edited;
+	return { edited, &tb };
 }
 
-bool imEditInt(int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
+imCtrlInfo<UIObject> imEditInt(int& val, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return EditNumber(val, mods, cfg, range, fmt);
+	return EditNumber(val, {}, cfg, range, fmt);
 }
 
-bool imEditInt(unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
+imCtrlInfo<UIObject> imEditInt(unsigned& val, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return EditNumber(val, mods, cfg, range, fmt);
+	return EditNumber(val, {}, cfg, range, fmt);
 }
 
-bool imEditInt(int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
+imCtrlInfo<UIObject> imEditInt(int64_t& val, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return EditNumber(val, mods, cfg, range, fmt);
+	return EditNumber(val, {}, cfg, range, fmt);
 }
 
-bool imEditInt(uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
+imCtrlInfo<UIObject> imEditInt(uint64_t& val, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return EditNumber(val, mods, cfg, range, fmt);
+	return EditNumber(val, {}, cfg, range, fmt);
 }
 
-bool imEditFloat(float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+imCtrlInfo<UIObject> imEditFloat(float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	return EditNumber(val, mods, cfg, range, fmt);
 }
@@ -570,7 +570,7 @@ bool imEditIntVec(int* val, const char** axes, ModInitList mods, const DragConfi
 		for (auto& mod : mods)
 			mod->OnBeforeControl();
 
-		any |= imEditInt(*val++, mods, cfg, range, fmt);
+		any |= EditNumber(*val++, mods, cfg, range, fmt);
 
 		for (auto& mod : ReverseIterate(mods))
 			mod->OnAfterControl();

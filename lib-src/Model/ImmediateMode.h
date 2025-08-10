@@ -168,11 +168,11 @@ struct DragConfig
 	float GetSnap(uint8_t modifierKeys) const;
 };
 
-bool imEditInt(int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool imEditInt(unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
-bool imEditInt(int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
-bool imEditInt(uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
-bool imEditFloat(float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+imCtrlInfo<UIObject> imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+imCtrlInfo<UIObject> imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
+imCtrlInfo<UIObject> imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
+imCtrlInfo<UIObject> imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
+imCtrlInfo<UIObject> imEditFloat(float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
 struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
 {
