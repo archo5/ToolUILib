@@ -159,6 +159,7 @@ bool imEditInt(UIObject* dragObj, int64_t& val, ModInitList mods = {}, const Dra
 bool imEditInt(UIObject* dragObj, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
 bool imEditFloat(UIObject* dragObj, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
+imCtrlInfo imEditString(std::string& text, ModInitList mods = {});
 imCtrlInfo imEditString(const IBufferRW& textRW, ModInitList mods = {});
 imCtrlInfo imEditStringMultiline(const IBufferRW& textRW, ModInitList mods = {});
 

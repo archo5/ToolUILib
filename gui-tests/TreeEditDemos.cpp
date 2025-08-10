@@ -37,7 +37,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				};
 			}
 
-			ui::imLabel("Name"), ui::imEditString(ui::StdStringRW(tgt->name));
+			ui::imLabel("Name"), ui::imEditString(tgt->name);
 
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
@@ -132,7 +132,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			WMakeWithText<ui::LabelFrame>("Name:");
 
 			WPush<ui::SizeConstraintElement>().SetWidth(50);
-			ui::imEditString(ui::StdStringRW(name));
+			ui::imEditString(name);
 			WPop();
 
 			WPop();
@@ -233,7 +233,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			}
 			ui::Pop();
 
-			ui::imLabel("\bName"), ui::imEditString(ui::StdStringRW(v.name));
+			ui::imLabel("\bName"), ui::imEditString(v.name);
 			ui::imm::PropEditInt("\bValue", v.value);
 			ui::LabeledProperty::End();
 		}
@@ -367,7 +367,7 @@ struct PrintNode : Node
 	Node* CloneBase() override { return new PrintNode(*this); }
 	virtual void ItemUI()
 	{
-		ui::imLabel("\bPrint text:"), ui::imEditString(ui::StdStringRW(text));
+		ui::imLabel("\bPrint text:"), ui::imEditString(text);
 	}
 	void Do() override
 	{

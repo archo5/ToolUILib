@@ -523,6 +523,11 @@ static imCtrlInfo imEditStringImpl(bool multiline, const IBufferRW& textRW, ModI
 	return { changed, &tb };
 }
 
+imCtrlInfo imEditString(std::string& text, ModInitList mods)
+{
+	return imEditStringImpl(false, StdStringRW(text), mods);
+}
+
 imCtrlInfo imEditString(const IBufferRW& textRW, ModInitList mods)
 {
 	return imEditStringImpl(false, textRW, mods);

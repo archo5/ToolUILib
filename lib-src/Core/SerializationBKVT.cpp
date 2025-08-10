@@ -699,7 +699,7 @@ void BKVTUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std
 	if (outName)
 	{
 		if (auto s = ReadString("__"))
-			*outName = to_string(s.GetValue());
+			*outName <<= s.GetValue();
 	}
 }
 

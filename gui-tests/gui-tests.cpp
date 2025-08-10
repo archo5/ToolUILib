@@ -268,7 +268,7 @@ struct DataEditor : ui::Buildable
 			ui::Pop();
 			ui::Pop();
 
-			ui::imLabel("Name"), ui::imEditString(ui::StdStringRW(items[editing].name));
+			ui::imLabel("Name"), ui::imEditString(items[editing].name);
 			ui::imLabel("Enable"), ui::imEditBool(items[editing].enable);
 		}
 

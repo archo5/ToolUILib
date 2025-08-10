@@ -404,7 +404,7 @@ void ImageCacheWrite(IImage* image, StringView key)
 		static_cast<ImageImpl*>(prev)->cacheKey.clear();
 
 	auto* impl = static_cast<ImageImpl*>(image);
-	impl->cacheKey = to_string(key);
+	impl->cacheKey <<= key;
 	if (impl->rhiTex)
 		gfx::SetTextureDebugName(impl->rhiTex, key);
 	g_loadedImages[impl->cacheKey] = image;

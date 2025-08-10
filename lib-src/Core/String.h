@@ -305,12 +305,13 @@ struct CStr
 };
 
 inline bool operator == (const StringView& a, const StringView& b) { return a._size == b._size && memcmp(a._data, b._data, b._size) == 0; }
-inline bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
-inline bool operator < (const StringView& a, const StringView& b) { return a.compare(b) < 0; }
-inline bool operator > (const StringView& a, const StringView& b) { return a.compare(b) > 0; }
-inline bool operator <= (const StringView& a, const StringView& b) { return a.compare(b) <= 0; }
-inline bool operator >= (const StringView& a, const StringView& b) { return a.compare(b) >= 0; }
-inline std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
+UI_FORCEINLINE bool operator != (const StringView& a, const StringView& b) { return !(a == b); }
+UI_FORCEINLINE bool operator < (const StringView& a, const StringView& b) { return a.compare(b) < 0; }
+UI_FORCEINLINE bool operator > (const StringView& a, const StringView& b) { return a.compare(b) > 0; }
+UI_FORCEINLINE bool operator <= (const StringView& a, const StringView& b) { return a.compare(b) <= 0; }
+UI_FORCEINLINE bool operator >= (const StringView& a, const StringView& b) { return a.compare(b) >= 0; }
+UI_FORCEINLINE std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
+UI_FORCEINLINE std::string& operator <<= (std::string& d, StringView s) { d.assign(s._data, s._size); return d; }
 
 inline std::string FormatVA(const char* fmt, va_list args)
 {

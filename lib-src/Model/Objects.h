@@ -476,7 +476,7 @@ struct TextElement : UIObjectNoChildren
 
 	TextElement& SetText(StringView t)
 	{
-		text.assign(t.data(), t.size());
+		text <<= t;
 		return *this;
 	}
 };

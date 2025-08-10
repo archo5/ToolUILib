@@ -641,7 +641,7 @@ Textbox& Textbox::SetText(StringView s)
 	if (InUse())
 		return *this;
 	auto& text = _impl->text;
-	text.assign(s.data(), s.size());
+	text <<= s;
 	if (_impl->startCursor > text.size())
 		_impl->startCursor = text.size();
 	if (_impl->endCursor > text.size())
@@ -651,7 +651,7 @@ Textbox& Textbox::SetText(StringView s)
 
 Textbox& Textbox::SetPlaceholder(StringView s)
 {
-	_impl->placeholder.assign(s.data(), s.size());
+	_impl->placeholder <<= s;
 	return *this;
 }
 

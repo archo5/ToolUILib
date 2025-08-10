@@ -39,7 +39,7 @@ struct SettingsWindowDemo : ui::Buildable
 		ui::Push<ui::ListBoxFrame>();
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		ui::imEditString(ui::StdStringRW(search), { ui::TextboxPlaceholder("Search") });
+		ui::imEditString(search, { ui::TextboxPlaceholder("Search") });
 
 		ui::HashSet<ui::StringView> sections;
 		for (auto& entry : entries)
@@ -51,7 +51,7 @@ struct SettingsWindowDemo : ui::Buildable
 				ui::MakeWithText<ui::Selectable>(entry.section).Init(entry.section == currentSection)
 					+ ui::AddEventHandler(ui::EventType::Activate, [this, &entry](ui::Event&)
 				{
-					currentSection.assign(entry.section.data(), entry.section.size());
+					currentSection <<= entry.section;
 					Rebuild();
 				});
 			}

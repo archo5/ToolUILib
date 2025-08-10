@@ -233,7 +233,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		{
 			std::string activeID;
 			if (curActiveTab)
-				activeID = to_string(curActiveTab->contents->GetID());
+				activeID <<= curActiveTab->contents->GetID();
 			OnField(oi, "activeID", activeID);
 
 			oi.BeginArray(tabs.Size(), "tabs");

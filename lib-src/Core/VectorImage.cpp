@@ -88,7 +88,7 @@ void VectorImageCacheWrite(IVectorImage* image, StringView key)
 		static_cast<VectorImageImpl*>(prev)->cacheKey.clear();
 
 	auto* impl = static_cast<VectorImageImpl*>(image);
-	impl->cacheKey = to_string(key);
+	impl->cacheKey <<= key;
 	g_loadedVectorImages[impl->cacheKey] = image;
 }
 

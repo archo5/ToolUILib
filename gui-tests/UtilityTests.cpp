@@ -365,7 +365,7 @@ struct OSCommunicationTest : ui::Buildable
 			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 			bool hasText = ui::Clipboard::HasText();
 			ui::imEditBool(hasText, {}, { ui::Enable(false) });
-			ui::imEditString(ui::StdStringRW(clipboardData));
+			ui::imEditString(clipboardData);
 
 			tmpl->SetScaleWeight(0.1f);
 			if (ui::imButton("Read"))
@@ -576,8 +576,8 @@ struct FileSelectionWindowTest : ui::Buildable
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* filter = static_cast<ui::FileSelectionWindow::Filter*>(ptr);
-				ui::imLabel("\bName"), ui::imEditString(ui::StdStringRW(filter->name));
-				ui::imLabel("\bExts"), ui::imEditString(ui::StdStringRW(filter->exts));
+				ui::imLabel("\bName"), ui::imEditString(filter->name);
+				ui::imLabel("\bExts"), ui::imEditString(filter->exts);
 			};
 			if (ui::imButton("Add"))
 				fsw.filters.Append({});
@@ -585,15 +585,15 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::Pop();
 		ui::LabeledProperty::End();
 
-		ui::imLabel("Default extension"), ui::imEditString(ui::StdStringRW(fsw.defaultExt));
-		ui::imLabel("Title"), ui::imEditString(ui::StdStringRW(fsw.title));
+		ui::imLabel("Default extension"), ui::imEditString(fsw.defaultExt);
+		ui::imLabel("Title"), ui::imEditString(fsw.title);
 		ui::LabeledProperty::Begin("Options");
 		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::ButtonStateToggleSkin());
 		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::ButtonStateToggleSkin());
 		ui::LabeledProperty::End();
 
 		ui::Text("Inputs / outputs");
-		ui::imLabel("Current directory"), ui::imEditString(ui::StdStringRW(fsw.currentDir));
+		ui::imLabel("Current directory"), ui::imEditString(fsw.currentDir);
 		ui::LabeledProperty::Begin("Selected files");
 		ui::Push<ui::StackTopDownLayoutElement>();
 		{
@@ -602,7 +602,7 @@ struct FileSelectionWindowTest : ui::Buildable
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* file = static_cast<std::string*>(ptr);
-				ui::imLabel("\bFile"), ui::imEditString(ui::StdStringRW(*file));
+				ui::imLabel("\bFile"), ui::imEditString(*file);
 			};
 			if (ui::imButton("Add"))
 				fsw.selectedFiles.Append({});
@@ -920,7 +920,7 @@ struct ConfigTweakableTest : ui::Buildable
 			edit |= ui::imEditBool(g_twkSettings.val1);
 		edit |= ui::imm::PropEditInt("Value 2", g_twkSettings.val2);
 		ui::imLabel("Value 3"),
-			edit |= ui::imEditString(ui::StdStringRW(g_twkSettings.val3));
+			edit |= ui::imEditString(g_twkSettings.val3);
 		if (edit)
 			g_twkSettings.SetDirty();
 

@@ -48,7 +48,7 @@ void TabbedPanel::SetTabBarExtension(UIObject* obj)
 void TabbedPanel::AddTextTab(StringView text, uintptr_t uid)
 {
 	Tab tab;
-	tab.text = to_string(text);
+	tab.text <<= text;
 	tab.uid = uid;
 	_tabs.Append(tab);
 }

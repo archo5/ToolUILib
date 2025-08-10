@@ -363,7 +363,7 @@ void ImageSetCacheWrite(ImageSet* set, StringView key)
 	if (auto* prev = ImageSetCacheRead(key))
 		prev->_cacheKey.clear();
 
-	set->_cacheKey = to_string(key);
+	set->_cacheKey <<= key;
 	g_loadedImageSets[set->_cacheKey] = set;
 }
 

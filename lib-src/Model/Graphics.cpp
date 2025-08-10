@@ -239,7 +239,7 @@ ImageElement& ImageElement::SetDelayLoadPath(StringView path)
 		return *this;
 	_image = nullptr;
 	_tryDelayLoad = true;
-	_delayLoadPath = to_string(path);
+	_delayLoadPath <<= path;
 	return *this;
 }
 

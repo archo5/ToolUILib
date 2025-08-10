@@ -644,7 +644,7 @@ struct AllFileSourceIterator : IDirectoryIterator
 DirectoryIteratorHandle FileSourceSequence::CreateDirectoryIterator(StringView path)
 {
 	auto* it = new AllFileSourceIterator;
-	it->path.assign(path.data(), path.size());
+	it->path <<= path;
 	it->fs = this;
 	return it;
 }

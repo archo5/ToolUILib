@@ -786,7 +786,7 @@ void LabeledProperty::OnEvent(Event& e)
 
 LabeledProperty& LabeledProperty::SetText(StringView text)
 {
-	_labelText.assign(text.data(), text.size());
+	_labelText <<= text;
 	return *this;
 }
 
