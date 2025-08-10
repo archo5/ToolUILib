@@ -145,7 +145,7 @@ struct SequenceEditorsTest : ui::Buildable
 			.SetContextMenuSource(&g_infoDumpCMS)
 			.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
-			ui::imm::PropEditInt("\bvalue", *static_cast<int*>(ptr));
+			ui::imLabel("\bvalue"), ui::imEditInt(*static_cast<int*>(ptr));
 		};
 	}
 
@@ -576,7 +576,7 @@ struct TreeEditorsTest : ui::Buildable
 			.SetTree(itree)
 			.itemUICallback = [](ui::TreeEditor* te, ui::TreePathRef path, void* data)
 		{
-			ui::imm::PropEditInt("\bvalue", *static_cast<int*>(data));
+			ui::imLabel("\bvalue"), ui::imEditInt(*static_cast<int*>(data));
 		};
 	}
 

@@ -530,7 +530,7 @@ struct ScrollbarsTest : ui::Buildable
 	{
 		WPush<ui::EdgeSliceLayoutElement>();
 
-		ui::imm::PropEditInt("\bCount", count);
+		ui::imLabel("\bCount"), ui::imEditInt(count);
 		ui::imLabel("\bExpanding"), ui::imEditBool(expanding);
 
 		auto& sc = WPush<ui::SizeConstraintElement>();
@@ -814,9 +814,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("int");
 			auto tmp = intVal;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
@@ -824,9 +824,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("uint");
 			auto tmp = uintVal;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
@@ -834,9 +834,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("int64");
 			auto tmp = int64Val;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
@@ -844,9 +844,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("uint64");
 			auto tmp = uint64Val;
-			if (ui::imm::PropEditInt("\bworking", tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
-			if (ui::imm::PropEditInt("\bdisabled", tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));

@@ -319,7 +319,7 @@ struct PlacementTest : ui::Buildable
 
 			ui::Text("opened");
 			ui::imLabel("One"), ui::imEditBool(one);
-			ui::imm::PropEditInt("Two", two);
+			ui::imLabel("Two"), ui::imEditInt(two);
 
 			ui::Pop();
 			ui::Pop();

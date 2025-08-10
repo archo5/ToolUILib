@@ -918,7 +918,8 @@ struct ConfigTweakableTest : ui::Buildable
 		bool edit = false;
 		ui::imLabel("Value 1"),
 			edit |= ui::imEditBool(g_twkSettings.val1);
-		edit |= ui::imm::PropEditInt("Value 2", g_twkSettings.val2);
+		ui::imLabel("Value 2"),
+			edit |= ui::imEditInt(g_twkSettings.val2);
 		ui::imLabel("Value 3"),
 			edit |= ui::imEditString(g_twkSettings.val3);
 		if (edit)

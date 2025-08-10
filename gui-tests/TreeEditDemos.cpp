@@ -234,7 +234,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			ui::Pop();
 
 			ui::imLabel("\bName"), ui::imEditString(v.name);
-			ui::imm::PropEditInt("\bValue", v.value);
+			ui::imLabel("\bValue"), ui::imEditInt(v.value);
 			ui::LabeledProperty::End();
 		}
 
@@ -350,7 +350,7 @@ struct RepeatNode : Node
 	Node* CloneBase() override { return new RepeatNode(*this); }
 	virtual void ItemUI()
 	{
-		ui::imm::PropEditInt("\bRepeat #", times);
+		ui::imLabel("\bRepeat #"), ui::imEditInt(times);
 	}
 	void Do() override
 	{

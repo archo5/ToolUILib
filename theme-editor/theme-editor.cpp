@@ -115,8 +115,8 @@ struct TE_MainPreviewNode : Buildable
 				{
 					Push<StackExpandLTRLayoutElement>();
 					{
-						imm::PropEditInt("\bWidth", g_previewSlicedWidth, { SetMinWidth(20) });
-						imm::PropEditInt("\bHeight", g_previewSlicedHeight, { SetMinWidth(20) });
+						imLabel("\bWidth"), imEditInt(g_previewSlicedWidth, { SetMinWidth(20) });
+						imLabel("\bHeight"), imEditInt(g_previewSlicedHeight, { SetMinWidth(20) });
 					}
 					Pop();
 				}

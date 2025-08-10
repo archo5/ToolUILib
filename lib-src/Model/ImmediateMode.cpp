@@ -624,7 +624,8 @@ bool imEditIntVec(int* val, const char** axes, ModInitList mods, const DragConfi
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		any |= imm::PropEditInt(*plabel, *val++, mods, cfg, range, fmt);
+		imLabel(*plabel),
+			any |= imEditInt(*val++, mods, cfg, range, fmt);
 	}
 	return any;
 }
@@ -641,26 +642,6 @@ bool imEditFloatVec(float* val, const char** axes, ModInitList mods, const DragC
 
 
 namespace imm {
-
-bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
-{
-	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
-}
-
-bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
-{
-	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
-}
-
-bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
-{
-	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
-}
-
-bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
-{
-	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
-}
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
