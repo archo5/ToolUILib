@@ -3,6 +3,7 @@
 
 
 namespace ui {
+namespace imm {
 
 bool imEditQuat(Quat& val, QuatEditMode mode, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
@@ -29,4 +30,5 @@ bool imEditQuat(Quat& val, QuatEditMode mode, ModInitList mods, const DragConfig
 	return false;
 }
 
+} // imm
 } // ui

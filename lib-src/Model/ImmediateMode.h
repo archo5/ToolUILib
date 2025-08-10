@@ -22,6 +22,9 @@ struct SetMinWidth : Modifier
 };
 
 
+namespace imm {
+
+
 bool imGetEnabled();
 bool imSetEnabled(bool newValue);
 
@@ -197,5 +200,8 @@ inline bool imEditRangef(Rangef& val, ModInitList mods = {}, const DragConfig& c
 {
 	return imEditFloatVec(&val.min, axesMinMax, mods, cfg, range, fmt);
 }
+
+} // imm
+using namespace imm;
 
 } // ui

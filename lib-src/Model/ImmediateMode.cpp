@@ -10,6 +10,7 @@
 
 
 namespace ui {
+namespace imm {
 
 
 struct ModInitListReverseIter
@@ -642,4 +643,5 @@ bool imEditFloatVec(float* val, const char** axes, ModInitList mods, const DragC
 }
 
 
+} // imm
 } // ui

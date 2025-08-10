@@ -263,6 +263,7 @@ template <class T> struct Range
 	UI_FORCEINLINE T Clamp(T val) const { return clamp(val, min, max); }
 };
 
+using Rangei = Range<int>;
 using Rangef = Range<float>;
 
 

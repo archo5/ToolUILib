@@ -115,7 +115,7 @@ void UIContainer::Free()
 
 void UIContainer::ProcessSingleBuildable(Buildable* curB)
 {
-	bool oldEnabled = imSetEnabled(!(curB->flags & UIObject_IsDisabled));
+	bool oldEnabled = imm::imSetEnabled(!(curB->flags & UIObject_IsDisabled));
 
 	objectStackSize = 0;
 	_Push(curB);
@@ -160,7 +160,7 @@ void UIContainer::ProcessSingleBuildable(Buildable* curB)
 
 	_Pop(); // root
 
-	imSetEnabled(oldEnabled);
+	imm::imSetEnabled(oldEnabled);
 }
 
 static void CopyBuildablesFromSetWithoutChildren(Array<Buildable*>& outArr, const HashSet<Buildable*>& set)

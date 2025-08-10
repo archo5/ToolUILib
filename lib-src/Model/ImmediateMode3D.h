@@ -6,6 +6,7 @@
 
 
 namespace ui {
+namespace imm {
 
 inline bool imEditVec3f(Vec3f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
 {
@@ -27,4 +28,5 @@ bool imEditQuat(
 	Range<float> range = All{},
 	const char* fmt = "%g");
 
+} // imm
 } // ui
