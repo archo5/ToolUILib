@@ -350,7 +350,18 @@ struct NumberTextbox : Textbox
 	int edited = 0; // 1=text, -1=numberValue
 };
 
-template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
+static bool HasMoreThanOneChild(UIObject* obj)
+{
+	UIObjectIteratorData oid;
+	obj->SlotIterator_Init(oid);
+	if (!obj->SlotIterator_GetNext(oid))
+		return false;
+	if (obj->SlotIterator_GetNext(oid))
+		return true;
+	return false;
+}
+
+template <class TNum> bool EditNumber(TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -391,7 +402,24 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	tb.numberValue = val;
 	tb.SetText(RemoveNegZero(buf));
 
-	if (dragObj)
+	UIObject* dragObj = &tb;
+	bool foundDragObj = false;
+	for (int i = 0; i < 5; i++)
+	{
+		UIObject* p = dragObj->parent;
+		if (!p)
+			break;
+		if (HasMoreThanOneChild(p))
+			break;
+		dragObj = p;
+		if (dynamic_cast<LabeledProperty*>(dragObj))
+		{
+			foundDragObj = true;
+			break;
+		}
+	}
+
+	if (foundDragObj)
 	{
 		dragObj->SetFlag(UIObject_DB_CaptureMouseOnLeftClick, true);
 		dragObj->HandleEvent() = [val, cfg = cfg, range, &tb, fb](Event& e)
@@ -462,29 +490,29 @@ template <class TNum> bool EditNumber(UIObject* dragObj, TNum& val, ModInitList 
 	return edited;
 }
 
-bool imEditInt(UIObject* dragObj, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
+bool imEditInt(int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, cfg, range, fmt);
+	return EditNumber(val, mods, cfg, range, fmt);
 }
 
-bool imEditInt(UIObject* dragObj, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
+bool imEditInt(unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, cfg, range, fmt);
+	return EditNumber(val, mods, cfg, range, fmt);
 }
 
-bool imEditInt(UIObject* dragObj, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
+bool imEditInt(int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, cfg, range, fmt);
+	return EditNumber(val, mods, cfg, range, fmt);
 }
 
-bool imEditInt(UIObject* dragObj, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
+bool imEditInt(uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, cfg, range, fmt);
+	return EditNumber(val, mods, cfg, range, fmt);
 }
 
-bool imEditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool imEditFloat(float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return EditNumber(dragObj, val, mods, cfg, range, fmt);
+	return EditNumber(val, mods, cfg, range, fmt);
 }
 
 
@@ -616,27 +644,27 @@ namespace imm {
 
 bool PropEditInt(const char* label, int& val, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)
 {
-	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
 {
-	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
 {
-	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
 }
 
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
 {
-	return imEditInt(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imLabel(label), imEditInt(val, mods, cfg, range, fmt);
 }
 
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
-	return imEditFloat(imLabel(label).label, val, mods, cfg, range, fmt);
+	return imLabel(label), imEditFloat(val, mods, cfg, range, fmt);
 }
 
 } // imm
