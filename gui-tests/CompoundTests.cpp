@@ -908,8 +908,8 @@ struct TooltipTest : ui::Buildable
 	{
 		WPush<ui::StackTopDownLayoutElement>();
 
-		ui::MakeWithText<ui::Button>("Text-only tooltip") + ui::AddTooltip("Text only");
-		ui::MakeWithText<ui::Button>("Checklist tooltip") + ui::AddTooltip([]()
+		ui::MakeWithText<ui::Button>("Text-only tooltip") + ui::modAddTooltip("Text only");
+		ui::MakeWithText<ui::Button>("Checklist tooltip") + ui::modAddTooltip([]()
 		{
 			ui::Push<ui::SizeConstraintElement>().SetMinWidth(100);
 			ui::Push<ui::StackTopDownLayoutElement>();

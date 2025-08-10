@@ -1156,7 +1156,7 @@ void DropdownMenu::OnBuildButton()
 		{
 			OnBuildButtonContents();
 		};
-		btn + AddTooltip(tooltipFn);
+		btn + modAddTooltip(tooltipFn);
 	}
 
 	Push<ChildScaleOffsetElement>(); // clip only (TODO optimize?)

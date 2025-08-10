@@ -1429,7 +1429,7 @@ struct GlobalEventsTest : ui::Buildable
 		{
 			ui::DragDrop::SetData(new ui::DragDropText("test", "text"));
 		});
-		ui::MakeWithText<ui::Button>("Tooltip") + ui::AddTooltip("Tooltip");
+		ui::MakeWithText<ui::Button>("Tooltip") + ui::modAddTooltip("Tooltip");
 		ui::Make<ui::DefaultOverlayBuilder>();
 
 		WPop();

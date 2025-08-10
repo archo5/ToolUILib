@@ -1094,15 +1094,16 @@ void Buildable::Rebuild()
 }
 
 
-AddTooltip::AddTooltip(const std::string& s)
+modAddTooltip::modAddTooltip(StringView sv)
 {
-	_evfn = [s]()
+	std::string str(sv.Data(), sv.Size());
+	_evfn = [str{ Move(str) }]()
 	{
-		Text(s);
+		Text(str);
 	};
 }
 
-void AddTooltip::Apply(UIObject* obj) const
+void modAddTooltip::Apply(UIObject* obj) const
 {
 	auto fn = _evfn;
 	obj->HandleEvent(EventType::Tooltip) = [fn{ Move(fn) }](Event& e)

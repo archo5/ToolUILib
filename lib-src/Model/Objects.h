@@ -587,12 +587,12 @@ struct AddEventHandler : Modifier
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = Move(_evfn); }
 };
 
-struct AddTooltip : Modifier
+struct modAddTooltip : Modifier
 {
 	ui::Tooltip::BuildFunc _evfn;
 
-	AddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(Move(fn)) {}
-	AddTooltip(const std::string& s);
+	modAddTooltip(ui::Tooltip::BuildFunc&& fn) : _evfn(Move(fn)) {}
+	modAddTooltip(StringView sv);
 	void Apply(UIObject* obj) const override;
 };
 
@@ -628,11 +628,20 @@ struct imCtrlInfo : imCtrlInfoBase
 	UI_FORCEINLINE imCtrlInfo(bool ed, UIObjT* o) : imCtrlInfoBase(ed), root(o) {}
 	UI_FORCEINLINE UIObjT& operator * () const { return *root; }
 	UI_FORCEINLINE UIObjT* operator -> () const { return root; }
+	UI_FORCEINLINE imCtrlInfo& Modify(const Modifier& mod)
+	{
+		mod.Apply(root);
+		return *this;
+	}
 	UI_FORCEINLINE imCtrlInfo& Modify(ModInitList mods)
 	{
 		for (auto& mod : mods)
 			mod->Apply(root);
 		return *this;
+	}
+	imCtrlInfo& Tooltip(StringView sv)
+	{
+		return Modify(modAddTooltip(sv));
 	}
 };
 } // imm
