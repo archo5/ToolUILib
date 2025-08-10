@@ -110,7 +110,7 @@ void StdText(StringView text, ModInitList mods)
 }
 
 
-imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods)
+imCtrlInfo<Button> imButton(UIObject& obj)
 {
 	auto& btn = Push<ui::Button>();
 	Add(obj);
@@ -119,8 +119,6 @@ imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods)
 	btn.flags |= UIObject_DB_IMEdit;
 	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&btn);
 
 	if (btn.flags & UIObject_AfterIMEdit)
 	{
@@ -139,17 +137,17 @@ imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo<Button> imButton(StringView text, ModInitList mods)
+imCtrlInfo<Button> imButton(StringView text)
 {
-	return imButton(NewText(text), mods);
+	return imButton(NewText(text));
 }
 
-imCtrlInfo<Button> imButton(DefaultIconStyle icon, ModInitList mods)
+imCtrlInfo<Button> imButton(DefaultIconStyle icon)
 {
-	return imButton(New<IconElement>().SetDefaultStyle(icon), mods);
+	return imButton(New<IconElement>().SetDefaultStyle(icon));
 }
 
-imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods)
+imCtrlInfo<Selectable> imSelectable(UIObject& obj)
 {
 	auto& btn = Push<ui::Selectable>();
 	Add(obj);
@@ -158,8 +156,6 @@ imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods)
 	btn.flags |= UIObject_DB_IMEdit;
 	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&btn);
 
 	if (btn.flags & UIObject_AfterIMEdit)
 	{
@@ -178,9 +174,9 @@ imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo<Selectable> imSelectable(StringView text, ModInitList mods)
+imCtrlInfo<Selectable> imSelectable(StringView text)
 {
-	return imSelectable(NewText(text), mods);
+	return imSelectable(NewText(text));
 }
 
 imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const IStateToggleSkin& skin)

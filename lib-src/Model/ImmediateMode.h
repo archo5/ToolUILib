@@ -95,12 +95,12 @@ struct TreeStateToggleSkin : IStateToggleSkin
 };
 
 
-imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods = {});
-imCtrlInfo<Button> imButton(StringView text, ModInitList mods = {});
-imCtrlInfo<Button> imButton(DefaultIconStyle icon, ModInitList mods = {});
+imCtrlInfo<Button> imButton(UIObject& obj);
+imCtrlInfo<Button> imButton(StringView text);
+imCtrlInfo<Button> imButton(DefaultIconStyle icon);
 
-imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods = {});
-imCtrlInfo<Selectable> imSelectable(StringView text, ModInitList mods = {});
+imCtrlInfo<Selectable> imSelectable(UIObject& obj);
+imCtrlInfo<Selectable> imSelectable(StringView text);
 
 imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 UI_FORCEINLINE imCtrlInfo<StateToggle> imCheckboxRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
