@@ -570,10 +570,10 @@ inline UIObject& operator + (UIObject& o, const Modifier& m)
 	return o;
 }
 
-struct Enable : Modifier
+struct modEnable : Modifier
 {
 	bool _enable;
-	Enable(bool e) : _enable(e) {}
+	modEnable(bool e) : _enable(e) {}
 	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
 };
 
@@ -585,11 +585,6 @@ struct AddEventHandler : Modifier
 	AddEventHandler(std::function<void(Event&)>&& fn) : _evfn(Move(fn)) {}
 	AddEventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(Move(fn)), _type(t) {}
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = Move(_evfn); }
-};
-
-struct RebuildOnChange : Modifier
-{
-	void Apply(UIObject* obj) const override { obj->SetFlag(UIObject_DB_RebuildOnChange, true); }
 };
 
 struct AddTooltip : Modifier
@@ -613,16 +608,33 @@ struct MakeDraggable : AddEventHandler
 	}
 };
 
+namespace imm {
 // utilities for immediate mode controls
-struct imCtrlInfo
+struct imCtrlInfoBase
 {
 	bool edited;
-	UIObject* root;
 
+	UI_FORCEINLINE imCtrlInfoBase(bool ed) : edited(ed) {}
 	// void* to avoid unwanted implicit casting
 	UI_FORCEINLINE operator void* () const { return (void*)edited; }
 };
-UI_FORCEINLINE bool operator | (bool v, const imCtrlInfo& ci) { return v | !!ci; }
-UI_FORCEINLINE bool& operator |= (bool& v, const imCtrlInfo& ci) { return v |= !!ci; }
+UI_FORCEINLINE bool operator | (bool v, const imCtrlInfoBase& ci) { return v | !!ci; }
+UI_FORCEINLINE bool& operator |= (bool& v, const imCtrlInfoBase& ci) { return v |= !!ci; }
+template <class UIObjT>
+struct imCtrlInfo : imCtrlInfoBase
+{
+	UIObjT* root;
+
+	UI_FORCEINLINE imCtrlInfo(bool ed, UIObjT* o) : imCtrlInfoBase(ed), root(o) {}
+	UI_FORCEINLINE UIObjT& operator * () const { return *root; }
+	UI_FORCEINLINE UIObjT* operator -> () const { return root; }
+	UI_FORCEINLINE imCtrlInfo& Modify(ModInitList mods)
+	{
+		for (auto& mod : mods)
+			mod->Apply(root);
+	}
+};
+} // imm
+using namespace imm;
 
 } // ui

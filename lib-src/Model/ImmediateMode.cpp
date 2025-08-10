@@ -101,26 +101,17 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 
 void StdText(StringView text, ModInitList mods)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& ctrl = Push<LabelFrame>();
 	ui::Text(text);
 	Pop();
 
 	for (auto& mod : mods)
 		mod->Apply(&ctrl);
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
 }
 
 
-imCtrlInfo imButton(UIObject& obj, ModInitList mods)
+imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& btn = Push<ui::Button>();
 	Add(obj);
 	Pop();
@@ -131,9 +122,6 @@ imCtrlInfo imButton(UIObject& obj, ModInitList mods)
 	for (auto& mod : mods)
 		mod->Apply(&btn);
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
 	if (btn.flags & UIObject_AfterIMEdit)
 	{
 		btn._OnIMChange();
@@ -151,21 +139,18 @@ imCtrlInfo imButton(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo imButton(StringView text, ModInitList mods)
+imCtrlInfo<Button> imButton(StringView text, ModInitList mods)
 {
 	return imButton(NewText(text), mods);
 }
 
-imCtrlInfo imButton(DefaultIconStyle icon, ModInitList mods)
+imCtrlInfo<Button> imButton(DefaultIconStyle icon, ModInitList mods)
 {
 	return imButton(New<IconElement>().SetDefaultStyle(icon), mods);
 }
 
-imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
+imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& btn = Push<ui::Selectable>();
 	Add(obj);
 	Pop();
@@ -176,9 +161,6 @@ imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
 	for (auto& mod : mods)
 		mod->Apply(&btn);
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
 	if (btn.flags & UIObject_AfterIMEdit)
 	{
 		btn._OnIMChange();
@@ -196,16 +178,13 @@ imCtrlInfo imSelectable(UIObject& obj, ModInitList mods)
 	return { clicked, &btn };
 }
 
-imCtrlInfo imSelectable(StringView text, ModInitList mods)
+imCtrlInfo<Selectable> imSelectable(StringView text, ModInitList mods)
 {
 	return imSelectable(NewText(text), mods);
 }
 
-imCtrlInfo imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& cb = Push<StateToggle>();
 	skin.BuildContents(cb, text, val);
 	Pop();
@@ -216,9 +195,6 @@ imCtrlInfo imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const ISt
 	for (auto& mod : mods)
 		mod->Apply(&cb);
 	cb.InitReadOnly(val);
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
 
 	if (cb.flags & UIObject_AfterIMEdit)
 	{
@@ -237,19 +213,16 @@ imCtrlInfo imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const ISt
 	return { edited, &cb };
 }
 
-imCtrlInfo imEditBool(bool& val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	imCtrlInfo ci = imCheckboxRaw(val, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imCheckboxRaw(val, text, mods, skin);
 	if (ci)
 		val = !val;
 	return ci;
 }
 
-imCtrlInfo imRadioButtonRaw(bool val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& rb = Push<StateToggle>();
 	skin.BuildContents(rb, text, val);
 	Pop();
@@ -260,9 +233,6 @@ imCtrlInfo imRadioButtonRaw(bool val, StringView text, ModInitList mods, const I
 	for (auto& mod : mods)
 		mod->Apply(&rb);
 	rb.InitReadOnly(val);
-
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
 
 	if (rb.flags & UIObject_AfterIMEdit)
 	{
@@ -364,9 +334,6 @@ static bool HasMoreThanOneChild(UIObject* obj)
 
 template <class TNum> bool EditNumber(TNum& val, ModInitList mods, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& tb = Make<NumberTextbox<TNum>>();
 	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
@@ -485,9 +452,6 @@ template <class TNum> bool EditNumber(TNum& val, ModInitList mods, const DragCon
 		tb.RebuildContainer();
 	};
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
 	return edited;
 }
 
@@ -517,11 +481,20 @@ bool imEditFloat(float& val, ModInitList mods, const DragConfig& cfg, Range<floa
 }
 
 
-static imCtrlInfo imEditStringImpl(bool multiline, const IBufferRW& textRW, ModInitList mods)
+imCtrlInfoTextbox& imCtrlInfoTextbox::Multiline(bool is)
 {
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
+	static_cast<Textbox*>(root)->SetMultiline(is);
+	return *this;
+}
 
+imCtrlInfoTextbox& imCtrlInfoTextbox::Placeholder(StringView pch)
+{
+	static_cast<Textbox*>(root)->SetPlaceholder(pch);
+	return *this;
+}
+
+static imCtrlInfoTextbox imEditStringImpl(bool multiline, const IBufferRW& textRW, ModInitList mods)
+{
 	auto& tb = Make<Textbox>();
 	if (multiline)
 		tb.SetMultiline(true);
@@ -546,33 +519,22 @@ static imCtrlInfo imEditStringImpl(bool multiline, const IBufferRW& textRW, ModI
 		tb.RebuildContainer();
 	};
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
 	return { changed, &tb };
 }
 
-imCtrlInfo imEditString(std::string& text, ModInitList mods)
+imCtrlInfoTextbox imEditString(std::string& text, ModInitList mods)
 {
 	return imEditStringImpl(false, StdStringRW(text), mods);
 }
 
-imCtrlInfo imEditString(const IBufferRW& textRW, ModInitList mods)
+imCtrlInfoTextbox imEditString(const IBufferRW& textRW, ModInitList mods)
 {
 	return imEditStringImpl(false, textRW, mods);
 }
 
-imCtrlInfo imEditStringMultiline(const IBufferRW& textRW, ModInitList mods)
+
+imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed, ModInitList mods)
 {
-	return imEditStringImpl(true, textRW, mods);
-}
-
-
-imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
-{
-	for (auto& mod : mods)
-		mod->OnBeforeControl();
-
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
@@ -597,16 +559,13 @@ imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
 		ced.RebuildContainer();
 	};
 
-	for (auto& mod : ReverseIterate(mods))
-		mod->OnAfterControl();
-
 	return { changed, &ced };
 }
 
-imCtrlInfo imEditColor(Color4b& val, bool delayed, ModInitList mods)
+imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed, ModInitList mods)
 {
 	Color4f tmp = val;
-	imCtrlInfo ci = imEditColor(tmp, delayed, mods);
+	imCtrlInfo<UIObject> ci = imEditColor(tmp, delayed, mods);
 	if (ci)
 		val = tmp;
 	return ci;
@@ -625,8 +584,15 @@ bool imEditIntVec(int* val, const char** axes, ModInitList mods, const DragConfi
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		imLabel(*plabel),
-			any |= imEditInt(*val++, mods, cfg, range, fmt);
+		imLabel lbl(*plabel);
+
+		for (auto& mod : mods)
+			mod->OnBeforeControl();
+
+		any |= imEditInt(*val++, mods, cfg, range, fmt);
+
+		for (auto& mod : ReverseIterate(mods))
+			mod->OnAfterControl();
 	}
 	return any;
 }
@@ -636,8 +602,15 @@ bool imEditFloatVec(float* val, const char** axes, ModInitList mods, const DragC
 	bool any = false;
 	for (const char** plabel = axes; *plabel; plabel++)
 	{
-		imLabel(*plabel),
-			any |= imEditFloat(*val++, mods, cfg, range, fmt);
+		imLabel lbl(*plabel);
+
+		for (auto& mod : mods)
+			mod->OnBeforeControl();
+
+		any |= imEditFloat(*val++, mods, cfg, range, fmt);
+
+		for (auto& mod : ReverseIterate(mods))
+			mod->OnAfterControl();
 	}
 	return any;
 }

@@ -625,7 +625,7 @@ void ColorPicker::OnReset()
 
 void ColorPicker::Build()
 {
-	*this + RebuildOnChange();
+	SetFlag(UIObject_DB_RebuildOnChange, true);
 
 	Push<StackTopDownLayoutElement>();
 

@@ -7,10 +7,10 @@
 
 namespace ui {
 
-struct SetMinWidth : Modifier
+struct modSetMinWidth : Modifier
 {
 	float w;
-	SetMinWidth(float _w) : w(_w) {}
+	modSetMinWidth(float _w) : w(_w) {}
 	void OnBeforeControl() const override
 	{
 		Push<SizeConstraintElement>().SetMinWidth(w);
@@ -95,24 +95,24 @@ struct TreeStateToggleSkin : IStateToggleSkin
 };
 
 
-imCtrlInfo imButton(UIObject& obj, ModInitList mods = {});
-imCtrlInfo imButton(StringView text, ModInitList mods = {});
-imCtrlInfo imButton(DefaultIconStyle icon, ModInitList mods = {});
+imCtrlInfo<Button> imButton(UIObject& obj, ModInitList mods = {});
+imCtrlInfo<Button> imButton(StringView text, ModInitList mods = {});
+imCtrlInfo<Button> imButton(DefaultIconStyle icon, ModInitList mods = {});
 
-imCtrlInfo imSelectable(UIObject& obj, ModInitList mods = {});
-imCtrlInfo imSelectable(StringView text, ModInitList mods = {});
+imCtrlInfo<Selectable> imSelectable(UIObject& obj, ModInitList mods = {});
+imCtrlInfo<Selectable> imSelectable(StringView text, ModInitList mods = {});
 
-imCtrlInfo imCheckboxExtRaw(u8 state, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE imCtrlInfo imCheckboxRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE imCtrlInfo<StateToggle> imCheckboxRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	return imCheckboxExtRaw(val ? 1 : 0, text, mods, skin);
 }
-imCtrlInfo imEditBool(bool& val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> imCtrlInfo imEditFlag(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	imCtrlInfo ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
 	if (ci)
 	{
 		if ((val & cur) != cur)
@@ -123,10 +123,10 @@ template <class T> imCtrlInfo imEditFlag(T& val, T cur, StringView text = {}, Mo
 	return ci;
 }
 
-imCtrlInfo imRadioButtonRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> imCtrlInfo imRadioButton(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> imCtrlInfo<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	imCtrlInfo ci = imRadioButtonRaw(val == cur, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imRadioButtonRaw(val == cur, text, mods, skin);
 	if (ci)
 	{
 		val = cur;
@@ -174,12 +174,18 @@ bool imEditInt(int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, 
 bool imEditInt(uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
 bool imEditFloat(float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
-imCtrlInfo imEditString(std::string& text, ModInitList mods = {});
-imCtrlInfo imEditString(const IBufferRW& textRW, ModInitList mods = {});
-imCtrlInfo imEditStringMultiline(const IBufferRW& textRW, ModInitList mods = {});
+struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
+{
+	using imCtrlInfo<UIObject>::imCtrlInfo;
 
-imCtrlInfo imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
-imCtrlInfo imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
+	imCtrlInfoTextbox& Multiline(bool is = true);
+	imCtrlInfoTextbox& Placeholder(StringView pch);
+};
+imCtrlInfoTextbox imEditString(std::string& text, ModInitList mods = {});
+imCtrlInfoTextbox imEditString(const IBufferRW& textRW, ModInitList mods = {});
+
+imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
+imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
 
 extern const char* axesXY[];
 extern const char* axesXYZ[];

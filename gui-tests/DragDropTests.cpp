@@ -306,7 +306,7 @@ struct TreeNodeReorderTest : ui::Buildable
 
 			ui::Make<ui::SizeConstraintElement>().SetWidth(level * 12);
 
-			ui::Push<ui::CheckboxFlagT<bool>>().Init(N->open) + ui::RebuildOnChange();
+			ui::Push<ui::CheckboxFlagT<bool>>().Init(N->open).SetFlag(ui::UIObject_DB_RebuildOnChange, true);
 			ui::Make<ui::TreeExpandIcon>();
 			ui::Pop();
 

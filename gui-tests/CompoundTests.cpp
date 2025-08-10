@@ -131,7 +131,7 @@ struct StateButtonsTest : ui::Buildable
 
 			for (int i = 0; i < NUM_STYLES; i++)
 			{
-				*(stb = &WPush<ui::CheckboxFlagT<bool>>().Init(cb1)) + ui::RebuildOnChange();
+				(stb = &WPush<ui::CheckboxFlagT<bool>>().Init(cb1))->SetFlag(ui::UIObject_DB_RebuildOnChange, true);
 				MakeContents("three", i);
 				WPop();
 			}
@@ -187,11 +187,11 @@ struct StateButtonsTest : ui::Buildable
 			{
 				WPush<ui::StackExpandLTRLayoutElement>();
 
-				*(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 0)) + ui::RebuildOnChange();
+				(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 0))->SetFlag(ui::UIObject_DB_RebuildOnChange, true);
 				MakeContents("r2a", i);
 				WPop();
 
-				*(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 1)) + ui::RebuildOnChange();
+				(stb = &WPush<ui::RadioButtonT<int>>().Init(rb1, 1))->SetFlag(ui::UIObject_DB_RebuildOnChange, true);
 				MakeContents("r2b", i);
 				WPop();
 

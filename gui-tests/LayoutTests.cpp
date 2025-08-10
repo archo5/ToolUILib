@@ -55,7 +55,7 @@ struct StackingLayoutVariationsTest : ui::Buildable
 		WPush<ui::StackLTRLayoutElement>();
 		for (int i = 0; i < layoutCount; i++)
 		{
-			BasicRadioButton2(layoutShortNames[i], mode, i) + ui::RebuildOnChange();
+			BasicRadioButton2(layoutShortNames[i], mode, i).SetFlag(ui::UIObject_DB_RebuildOnChange, true);
 		}
 		WText(layoutLongNames[mode]);
 		WPop();
