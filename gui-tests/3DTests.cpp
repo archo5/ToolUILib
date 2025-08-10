@@ -4,6 +4,7 @@
 #include "../lib-src/Core/3DMath.h"
 #include "../lib-src/Core/3DCamera.h"
 #include "../lib-src/Model/Gizmo.h"
+#include "../lib-src/Model/ImmediateMode3D.h"
 #include "../lib-src/Render/RHI.h"
 #include "../lib-src/Render/Primitives.h"
 
@@ -272,9 +273,7 @@ GizmoPersistentObject::~GizmoPersistentObject()
 		_cont->_gizmos.RemoveFirstOf(this);
 }
 
-namespace imm {
-
-bool EditTransform(GizmoContainer& gc, const IGizmoEditable& ge, const GizmoSettings& settings = {})
+bool imEditTransform(GizmoContainer& gc, const IGizmoEditable& ge, const GizmoSettings& settings = {})
 {
 	auto& go = New<GizmoPersistentObject>();
 	go.gizmo.settings = settings;
@@ -303,8 +302,6 @@ bool EditTransform(GizmoContainer& gc, const IGizmoEditable& ge, const GizmoSett
 
 	return edited;
 }
-
-} // imm
 
 } // ui
 
@@ -406,7 +403,7 @@ struct GizmoTest : ui::Buildable
 
 					if (useImmediate)
 					{
-						ui::imm::EditTransform(gizmoCont, ui::GizmoEditableMat4f(xf), gizmoSettings);
+						ui::imEditTransform(gizmoCont, ui::GizmoEditableMat4f(xf), gizmoSettings);
 					}
 				}
 				ui::Pop();
@@ -559,7 +556,7 @@ struct QuaternionTest : ui::Buildable
 				{
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imm::PropEditFloat("FOV", fov, {}, {}, { 1.0f, 179.0f });
-					ui::imm::PropEditFloatVec("R", &angles.x, ui::imm::XYZ);
+					ui::imLabel("R"), ui::imEditVec3f(angles);
 					ui::imLabel("Mode"), ui::imDropdownMenuList(zyx, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("XYZ\0" "ZYX\0"));
 					ui::imLabel("Use mtx"), ui::imEditBool(useMtx);
 				}

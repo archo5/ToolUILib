@@ -411,9 +411,9 @@ struct PlacementTest : ui::Buildable
 		tmpl->placement = &buttonPlacement;
 		ui::MakeWithText<ui::Button>("This should not cover the entire parent");
 		ui::Pop();
-		const char* LTRB[] = { "\bL", "\bT", "\bR", "\bB", nullptr };
-		ui::imm::PropEditFloatVec("Anchor", &buttonPlacement.anchor.x0, LTRB, {}, 0.01f);
-		ui::imm::PropEditFloatVec("Bias", &buttonPlacement.bias.x0, LTRB);
+		const char* axesLTRB[] = { "\bL", "\bT", "\bR", "\bB", nullptr };
+		ui::imLabel("Anchor"), ui::imEditFloatVec(&buttonPlacement.anchor.x0, axesLTRB, {}, 0.01f);
+		ui::imLabel("Bias"), ui::imEditFloatVec(&buttonPlacement.bias.x0, axesLTRB);
 
 		ui::Pop();
 		ui::Pop();
@@ -502,12 +502,12 @@ struct RectGenTest : ui::Buildable
 			else
 				ui::imm::PropEditFloat("Margin", basicMarginFrc, {}, { 0.01f }, { 0, 0.5f });
 			if (mode == 1 || mode == 3)
-				ui::imm::PropEditFloatVec("Size", &size.x, ui::imm::WidthHeight, {}, {}, ui::Rangef::AtLeast(0));
+				ui::imLabel("Size"), ui::imEditFloatVec(&size.x, ui::axesWidthHeight, {}, {}, ui::Rangef::AtLeast(0));
 			if (mode == 2 || mode == 4)
 				ui::imm::PropEditFloat("Aspect", aspect, {}, { 0.1f, true }, { 0, 100 });
 			if (mode == 5)
-				ui::imm::PropEditFloatVec("Aspect range", &aspectRange.min, ui::imm::MinMax, {}, { 0.1f, true }, { 0, 100 });
-			ui::imm::PropEditFloatVec("Placement", &placement.x, ui::imm::XY, {}, { 0.01f }, { 0, 1 });
+				ui::imLabel("Aspect range"), ui::imEditFloatVec(&aspectRange.min, ui::axesMinMax, {}, { 0.1f, true }, { 0, 100 });
+			ui::imLabel("Placement"), ui::imEditFloatVec(&placement.x, ui::axesXY, {}, { 0.01f }, { 0, 1 });
 		}
 		auto& v = ui::Make<VisualizeRectGen>();
 		v.marginFrc = mode == 1 ? fillMarginFrc : basicMarginFrc;

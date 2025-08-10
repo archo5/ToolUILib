@@ -7,6 +7,11 @@
 
 namespace ui {
 
+inline bool imEditVec3f(Vec3f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+{
+	return imEditFloatVec(&val.x, axesXYZ, mods, cfg, range, fmt);
+}
+
 enum class QuatEditMode : u8
 {
 	Raw,

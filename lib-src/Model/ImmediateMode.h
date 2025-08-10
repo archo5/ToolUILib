@@ -166,27 +166,34 @@ imCtrlInfo imEditStringMultiline(const IBufferRW& textRW, ModInitList mods = {})
 imCtrlInfo imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
 imCtrlInfo imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
 
-namespace imm {
-
-extern const char* XY[];
-extern const char* XYZ[];
-extern const char* XYZW[];
-extern const char* RGBA[];
-extern const char* MinMax[];
-extern const char* WidthHeight[];
+extern const char* axesXY[];
+extern const char* axesXYZ[];
+extern const char* axesXYZW[];
+extern const char* axesRGBA[];
+extern const char* axesMinMax[];
+extern const char* axesWidthHeight[];
 // length of `val` = length of `axes` (null-terminated)
-bool EditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool EditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+bool imEditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool imEditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
+
+namespace imm {
 
 bool PropEditInt(const char* label, int& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
 bool PropEditInt(const char* label, unsigned& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
 bool PropEditInt(const char* label, int64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
 bool PropEditInt(const char* label, uint64_t& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
-bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
-
-// length of `val` = length of `axes` (null-terminated)
-bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool PropEditFloatVec(const char* label, float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+bool PropEditFloat(const char* label, float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
 
 } // imm
+
+inline bool imEditVec2f(Vec2f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+{
+	return imEditFloatVec(&val.x, axesXY, mods, cfg, range, fmt);
+}
+
+inline bool imEditRangef(Rangef& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+{
+	return imEditFloatVec(&val.min, axesMinMax, mods, cfg, range, fmt);
+}
+
 } // ui

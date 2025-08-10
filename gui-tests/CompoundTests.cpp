@@ -862,8 +862,8 @@ struct IMGUITest : ui::Buildable
 			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
 		}
 		{
-			ui::imm::PropEditFloatVec("float3", float4val, ui::imm::XYZ);
-			ui::imm::PropEditFloatVec("float4", float4val, ui::imm::RGBA);
+			ui::imLabel("float3"), ui::imEditFloatVec(float4val, ui::axesXYZ);
+			ui::imLabel("float4"), ui::imEditFloatVec(float4val, ui::axesRGBA);
 		}
 		{
 			ui::imm::PropEditFloat("multiplier", multiplierVal, {}, { 1.0f, true }, { 0.001f, 1000.0f });
