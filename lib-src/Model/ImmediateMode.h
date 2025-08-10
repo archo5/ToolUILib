@@ -25,6 +25,12 @@ struct SetMinWidth : Modifier
 bool imGetEnabled();
 bool imSetEnabled(bool newValue);
 
+struct imEnable
+{
+	bool prev;
+	imEnable(bool e) { prev = imSetEnabled(e); }
+	~imEnable() { imSetEnabled(prev); }
+};
 
 struct imLabel
 {
@@ -54,6 +60,12 @@ struct imLabel
 		};
 		return *this;
 	}
+};
+
+struct imMinWidth
+{
+	imMinWidth(float w) { Push<SizeConstraintElement>().SetMinWidth(w); }
+	~imMinWidth() { Pop(); }
 };
 
 void StdText(StringView text, ModInitList mods = {});

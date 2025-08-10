@@ -364,7 +364,7 @@ struct OSCommunicationTest : ui::Buildable
 			ui::LabeledProperty::Scope ps("\bClipboard");
 			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 			bool hasText = ui::Clipboard::HasText();
-			ui::imEditBool(hasText, {}, { ui::Enable(false) });
+			ui::imEnable(false), ui::imEditBool(hasText);
 			ui::imEditString(clipboardData);
 
 			tmpl->SetScaleWeight(0.1f);

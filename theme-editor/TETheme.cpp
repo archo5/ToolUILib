@@ -6,8 +6,8 @@ void TE_TmplSettings::UI()
 {
 	{
 		LabeledProperty::Scope ps("Size");
-		imLabel("\bW"), imEditInt(w, { SetMinWidth(20) }, {}, { 1, 1024 });
-		imLabel("\bH"), imEditInt(h, { SetMinWidth(20) }, {}, { 1, 1024 });
+		imLabel("\bW"), imMinWidth(20), imEditInt(w, {}, {}, { 1, 1024 });
+		imLabel("\bH"), imMinWidth(20), imEditInt(h, {}, {}, { 1, 1024 });
 	}
 	imLabel("Left"), imEditInt(l, {}, {}, { 0, 1024 });
 	imLabel("Right"), imEditInt(r, {}, {}, { 0, 1024 });

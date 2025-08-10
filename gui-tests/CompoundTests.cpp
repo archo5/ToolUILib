@@ -766,7 +766,7 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel ls("buttons");
 			if (ui::imButton("working button"))
 				puts("working button");
-			if (ui::imButton("disabled button", { ui::Enable(false) }))
+			if (ui::imEnable(false), ui::imButton("disabled button"))
 				puts("DISABLED button SHOULD NOT APPEAR");
 		}
 
@@ -777,9 +777,9 @@ struct IMGUITest : ui::Buildable
 				boolVal = tmp;
 			if (ui::imCheckboxRaw(tmp, "w2", {}, ui::ButtonStateToggleSkin()))
 				boolVal = !tmp;
-			if (ui::imEditBool(tmp, "disabled", { ui::Enable(false) }))
+			if (ui::imEnable(false), ui::imEditBool(tmp, "disabled"))
 				boolVal = tmp;
-			if (ui::imCheckboxRaw(tmp, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
+			if (ui::imEnable(false), ui::imCheckboxRaw(tmp, "d2", {}, ui::ButtonStateToggleSkin()))
 				boolVal = !tmp;
 		}
 
@@ -790,9 +790,9 @@ struct IMGUITest : ui::Buildable
 				intFmt = tmp;
 			if (ui::imRadioButtonRaw(tmp == 0, "w2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 0;
-			if (ui::imRadioButton(tmp, 0, "disabled", { ui::Enable(false) }))
+			if (ui::imEnable(false), ui::imRadioButton(tmp, 0, "disabled", {}))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 0, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
+			if (ui::imEnable(false), ui::imRadioButtonRaw(tmp == 0, "d2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 0;
 		}
 		{
@@ -802,9 +802,9 @@ struct IMGUITest : ui::Buildable
 				intFmt = tmp;
 			if (ui::imRadioButtonRaw(tmp == 1, "w2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 1;
-			if (ui::imRadioButton(tmp, 1, "disabled", { ui::Enable(false) }))
+			if (ui::imEnable(false), ui::imRadioButton(tmp, 1, "disabled", {}))
 				intFmt = tmp;
-			if (ui::imRadioButtonRaw(tmp == 1, "d2", { ui::Enable(false) }, ui::ButtonStateToggleSkin()))
+			if (ui::imEnable(false), ui::imRadioButtonRaw(tmp == 1, "d2", {}, ui::ButtonStateToggleSkin()))
 				intFmt = 1;
 		}
 		{
@@ -816,7 +816,7 @@ struct IMGUITest : ui::Buildable
 			auto tmp = intVal;
 			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
 				intVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
@@ -826,7 +826,7 @@ struct IMGUITest : ui::Buildable
 			auto tmp = uintVal;
 			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
 				uintVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
@@ -836,7 +836,7 @@ struct IMGUITest : ui::Buildable
 			auto tmp = int64Val;
 			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
 				int64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
@@ -846,7 +846,7 @@ struct IMGUITest : ui::Buildable
 			auto tmp = uint64Val;
 			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEditInt(tmp, { ui::Enable(false) }, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
 				uint64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));
@@ -856,7 +856,7 @@ struct IMGUITest : ui::Buildable
 			auto tmp = floatVal;
 			if (ui::imLabel("\bworking"), ui::imEditFloat(tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEditFloat(tmp, { ui::Enable(false) }, { 0.1f }, { -37.4f, 154.1f }))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditFloat(tmp, {}, { 0.1f }, { -37.4f, 154.1f }))
 				floatVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
@@ -914,8 +914,8 @@ struct TooltipTest : ui::Buildable
 			ui::Push<ui::SizeConstraintElement>().SetMinWidth(100);
 			ui::Push<ui::StackTopDownLayoutElement>();
 			bool t = true, f = false;
-			ui::imEditBool(t, "Done", { ui::Enable(false) });
-			ui::imEditBool(f, "Not done", { ui::Enable(false) });
+			ui::imEnable(false), ui::imEditBool(t, "Done");
+			ui::imEnable(false), ui::imEditBool(f, "Not done");
 			ui::Pop();
 			ui::Pop();
 		});

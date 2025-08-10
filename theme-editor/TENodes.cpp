@@ -139,9 +139,9 @@ void TE_MaskRef::UI()
 	pl.splitPos = Coord::Percent(30);
 	pl.minSplitPos = 50;
 	Push<StackTopDownLayoutElement>();
-	imLabel("Border"), imEditInt(border, { SetMinWidth(20) });
-	imLabel("Radius"), imEditInt(radius, { SetMinWidth(20) });
-	imLabel("V.bias"), imEditInt(vbias, { SetMinWidth(20) });
+	imLabel("Border"), imMinWidth(20), imEditInt(border);
+	imLabel("Radius"), imMinWidth(20), imEditInt(radius);
+	imLabel("V.bias"), imMinWidth(20), imEditInt(vbias);
 	Pop();
 	Pop();
 }
