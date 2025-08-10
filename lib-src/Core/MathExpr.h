@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Platform.h"
+#include "String.h"
 
 
 namespace ui {
@@ -34,7 +35,7 @@ struct MathExpr
 	MathExpr& operator = (const MathExpr&);
 	MathExpr& operator = (MathExpr&&);
 
-	bool Compile(const char* str, IMathExprDataSource* src = nullptr, IMathExprErrorOutput* errOut = nullptr);
+	bool Compile(StringView str, IMathExprDataSource* src = nullptr, IMathExprErrorOutput* errOut = nullptr);
 	float Evaluate(IMathExprDataSource* src = nullptr);
 
 	bool IsConstant() const;

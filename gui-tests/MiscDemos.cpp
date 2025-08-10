@@ -39,7 +39,7 @@ struct SettingsWindowDemo : ui::Buildable
 		ui::Push<ui::ListBoxFrame>();
 		ui::Push<ui::StackTopDownLayoutElement>();
 
-		ui::imm::EditString(search.c_str(), [this](const char* v) { search = v; }, { ui::TextboxPlaceholder("Search") });
+		ui::imEditString(ui::StdStringRW(search), { ui::TextboxPlaceholder("Search") });
 
 		ui::HashSet<ui::StringView> sections;
 		for (auto& entry : entries)

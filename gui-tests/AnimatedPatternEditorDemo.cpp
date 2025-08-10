@@ -99,16 +99,16 @@ struct MathExprStr : IMathExprErrorOutput
 	std::string error;
 	MathExpr compiled;
 
-	void SetExpr(const char* str)
+	void SetExpr(StringView str)
 	{
-		expr = str;
+		expr = ui::to_string(str);
 		error.clear();
 		APMathExprDataSource compileOnlyDS;
 		compiled.Compile(str, &compileOnlyDS, this);
 	}
 	bool IMUI(const char* label)
 	{
-		bool ret = imm::PropEditString(label, expr.c_str(), [this](const char* v) { SetExpr(v); });
+		bool ret = (imLabel(label), imEditString(BRW(expr, [this](StringView v) { SetExpr(v); })));
 		if (!error.empty())
 		{
 			auto& fe = MakeWithText<LabelFrame>(error);

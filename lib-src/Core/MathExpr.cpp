@@ -1012,10 +1012,10 @@ struct MathExprData
 		}
 	};
 
-	static MathExprData* Compile(const char* str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
+	static MathExprData* Compile(StringView str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
 	{
 		Compiler C;
-		C.start = str;
+		C.start = str.Data();
 		C.src = src ? src : &g_dummyEval;
 		C.errOut = errOut ? errOut : &g_defErrOut;
 		if (C.Compile(str))
@@ -1067,7 +1067,7 @@ MathExpr& MathExpr::operator = (MathExpr&& o)
 	return *this;
 }
 
-bool MathExpr::Compile(const char* str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
+bool MathExpr::Compile(StringView str, IMathExprDataSource* src, IMathExprErrorOutput* errOut)
 {
 	delete static_cast<MathExprData*>(_data);
 	_data = MathExprData::Compile(str, src, errOut);

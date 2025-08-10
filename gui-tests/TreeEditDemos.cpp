@@ -37,7 +37,7 @@ struct BasicTreeNodeEditDemo : ui::Buildable
 				};
 			}
 
-			ui::imm::PropEditString("Name", tgt->name.c_str(), [this](const char* v) { tgt->name = v; });
+			ui::imLabel("Name"), ui::imEditString(ui::StdStringRW(tgt->name));
 
 			ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			ui::Push<ui::StackTopDownLayoutElement>();
@@ -132,7 +132,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			WMakeWithText<ui::LabelFrame>("Name:");
 
 			WPush<ui::SizeConstraintElement>().SetWidth(50);
-			ui::imm::EditString(name.c_str(), [this](const char* s) { name = s; });
+			ui::imEditString(ui::StdStringRW(name));
 			WPop();
 
 			WPop();
@@ -233,7 +233,7 @@ struct CompactTreeNodeEditDemo : ui::Buildable
 			}
 			ui::Pop();
 
-			ui::imm::PropEditString("\bName", v.name.c_str(), [&v](const char* s) { v.name = s; });
+			ui::imLabel("\bName"), ui::imEditString(ui::StdStringRW(v.name));
 			ui::imm::PropEditInt("\bValue", v.value);
 			ui::LabeledProperty::End();
 		}
@@ -367,7 +367,7 @@ struct PrintNode : Node
 	Node* CloneBase() override { return new PrintNode(*this); }
 	virtual void ItemUI()
 	{
-		ui::imm::PropEditString("\bPrint text:", text.c_str(), [this](const char* v) { text = v; });
+		ui::imLabel("\bPrint text:"), ui::imEditString(ui::StdStringRW(text));
 	}
 	void Do() override
 	{

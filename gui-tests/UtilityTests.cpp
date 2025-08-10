@@ -365,7 +365,7 @@ struct OSCommunicationTest : ui::Buildable
 			auto tmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 			bool hasText = ui::Clipboard::HasText();
 			ui::imEditBool(hasText, {}, { ui::Enable(false) });
-			ui::imm::EditString(clipboardData.c_str(), [this](const char* v) { clipboardData = v; });
+			ui::imEditString(ui::StdStringRW(clipboardData));
 
 			tmpl->SetScaleWeight(0.1f);
 			if (ui::imButton("Read"))
@@ -576,8 +576,8 @@ struct FileSelectionWindowTest : ui::Buildable
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* filter = static_cast<ui::FileSelectionWindow::Filter*>(ptr);
-				ui::imm::PropEditString("\bName", filter->name.c_str(), [filter](const char* v) { filter->name = v; });
-				ui::imm::PropEditString("\bExts", filter->exts.c_str(), [filter](const char* v) { filter->exts = v; });
+				ui::imLabel("\bName"), ui::imEditString(ui::StdStringRW(filter->name));
+				ui::imLabel("\bExts"), ui::imEditString(ui::StdStringRW(filter->exts));
 			};
 			if (ui::imButton("Add"))
 				fsw.filters.Append({});
@@ -585,15 +585,15 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::Pop();
 		ui::LabeledProperty::End();
 
-		ui::imm::PropEditString("Default extension", fsw.defaultExt.c_str(), [&](const char* s) { fsw.defaultExt = s; });
-		ui::imm::PropEditString("Title", fsw.title.c_str(), [&](const char* s) { fsw.title = s; });
+		ui::imLabel("Default extension"), ui::imEditString(ui::StdStringRW(fsw.defaultExt));
+		ui::imLabel("Title"), ui::imEditString(ui::StdStringRW(fsw.title));
 		ui::LabeledProperty::Begin("Options");
 		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::ButtonStateToggleSkin());
 		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::ButtonStateToggleSkin());
 		ui::LabeledProperty::End();
 
 		ui::Text("Inputs / outputs");
-		ui::imm::PropEditString("Current directory", fsw.currentDir.c_str(), [&](const char* s) { fsw.currentDir = s; });
+		ui::imLabel("Current directory"), ui::imEditString(ui::StdStringRW(fsw.currentDir));
 		ui::LabeledProperty::Begin("Selected files");
 		ui::Push<ui::StackTopDownLayoutElement>();
 		{
@@ -602,7 +602,7 @@ struct FileSelectionWindowTest : ui::Buildable
 			se.itemUICallback = [this](ui::SequenceEditor* se, size_t idx, void* ptr)
 			{
 				auto* file = static_cast<std::string*>(ptr);
-				ui::imm::PropEditString("\bFile", file->c_str(), [file](const char* v) { *file = v; });
+				ui::imLabel("\bFile"), ui::imEditString(ui::StdStringRW(*file));
 			};
 			if (ui::imButton("Add"))
 				fsw.selectedFiles.Append({});
@@ -919,7 +919,8 @@ struct ConfigTweakableTest : ui::Buildable
 		ui::imLabel("Value 1"),
 			edit |= ui::imEditBool(g_twkSettings.val1);
 		edit |= ui::imm::PropEditInt("Value 2", g_twkSettings.val2);
-		edit |= ui::imm::PropEditString("Value 3", g_twkSettings.val3.c_str(), [](const char* v) { g_twkSettings.val3 = v; });
+		ui::imLabel("Value 3"),
+			edit |= ui::imEditString(ui::StdStringRW(g_twkSettings.val3));
 		if (edit)
 			g_twkSettings.SetDirty();
 

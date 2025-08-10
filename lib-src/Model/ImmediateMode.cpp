@@ -488,9 +488,7 @@ bool imEditFloat(UIObject* dragObj, float& val, ModInitList mods, const DragConf
 }
 
 
-namespace imm {
-
-bool EditStringImpl(bool multiline, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+static imCtrlInfo imEditStringImpl(bool multiline, const IBufferRW& textRW, ModInitList mods)
 {
 	for (auto& mod : mods)
 		mod->OnBeforeControl();
@@ -505,14 +503,14 @@ bool EditStringImpl(bool multiline, const char* text, const std::function<void(c
 	bool changed = false;
 	if (tb.flags & UIObject_IsEdited)
 	{
-		retfn(tb.GetText().c_str());
+		textRW.Assign(tb.GetText());
 		tb.flags &= ~UIObject_IsEdited;
 		tb._OnIMChange();
 		tb.RebuildContainer();
 		changed = true;
 	}
 	else // text can be invalidated if retfn is called
-		tb.SetText(text);
+		tb.SetText(textRW.Read());
 	tb.HandleEvent(EventType::Change) = [&tb](Event&)
 	{
 		tb.flags |= UIObject_IsEdited;
@@ -522,20 +520,19 @@ bool EditStringImpl(bool multiline, const char* text, const std::function<void(c
 	for (auto& mod : ReverseIterate(mods))
 		mod->OnAfterControl();
 
-	return changed;
+	return { changed, &tb };
 }
 
-bool EditString(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+imCtrlInfo imEditString(const IBufferRW& textRW, ModInitList mods)
 {
-	return EditStringImpl(false, text, retfn, mods);
+	return imEditStringImpl(false, textRW, mods);
 }
 
-bool EditStringMultiline(const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
+imCtrlInfo imEditStringMultiline(const IBufferRW& textRW, ModInitList mods)
 {
-	return EditStringImpl(true, text, retfn, mods);
+	return imEditStringImpl(true, textRW, mods);
 }
 
-} // namespace imm
 
 imCtrlInfo imEditColor(Color4f& val, bool delayed, ModInitList mods)
 {
@@ -634,11 +631,6 @@ bool PropEditInt(const char* label, uint64_t& val, ModInitList mods, const DragC
 bool PropEditFloat(const char* label, float& val, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	return imEditFloat(imLabel(label).label, val, mods, cfg, range, fmt);
-}
-
-bool PropEditString(const char* label, const char* text, const std::function<void(const char*)>& retfn, ModInitList mods)
-{
-	return imLabel(label), EditString(text, retfn, mods);
 }
 
 bool PropEditIntVec(const char* label, int* val, const char** axes, ModInitList mods, const DragConfig& cfg, Range<int> range, const char* fmt)

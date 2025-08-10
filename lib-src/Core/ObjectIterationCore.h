@@ -49,6 +49,20 @@ struct IBufferRW
 	virtual StringView Read() const = 0;
 };
 
+template <class AssignFunc>
+struct BRWImpl : IBufferRW
+{
+	StringView bufferSourceRef;
+	AssignFunc assignFunc;
+
+	BRWImpl(StringView src, AssignFunc&& af) : bufferSourceRef(src), assignFunc(af) {}
+
+	void Assign(StringView sv) const override { assignFunc(sv); }
+	StringView Read() const override { return bufferSourceRef; }
+};
+template <class AssignFunc>
+BRWImpl<AssignFunc> BRW(StringView src, AssignFunc&& af) { return BRWImpl<AssignFunc>(src, Move(af)); }
+
 struct IObjectIterator
 {
 	virtual unsigned GetFlags() const = 0;

@@ -207,7 +207,7 @@ struct TE_ImageEditorNode : Buildable
 					tmpl->SetCurPreviewImage(img);
 				}
 
-				imm::EditString(img->name.c_str(), [&img](const char* v) { img->name = v; });
+				imEditString(StdStringRW(img->name));
 				se->OnBuildDeleteButton();
 			}
 			Pop();
@@ -326,7 +326,7 @@ struct TE_TemplateEditorNode : Buildable
 							{
 								auto& NC = *static_cast<std::shared_ptr<TE_NamedColor>*>(ptr);
 								imEditColor(NC->color);
-								imm::EditString(NC->name.c_str(), [&NC](const char* v) { NC->name = v; });
+								imEditString(StdStringRW(NC->name));
 							};
 						}
 					}
@@ -386,10 +386,7 @@ struct TE_ThemeEditorNode : Buildable
 
 				auto& w = PushNoAppend<WrapperElement>();
 				Push<SizeConstraintElement>().SetWidth(100);
-				imm::EditString(
-					tmpl->name.c_str(),
-					[tmpl](const char* v) { tmpl->name = v; },
-					{ AddEventHandler(efn) });
+				imEditString(StdStringRW(tmpl->name), { AddEventHandler(efn) });
 				Pop();
 				Pop();
 				tp.AddUITab(&w, uintptr_t(tmpl));

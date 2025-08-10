@@ -331,8 +331,7 @@ struct PlacementTest : ui::Buildable
 		ui::Text("Autocomplete example:");
 		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
 		ple = &ui::Push<ui::PlacementLayoutElement>();
-		ui::imm::EditString(text.c_str(),
-			[this](const char* v) { text = v; }, {
+		ui::imEditString(ui::StdStringRW(text), {
 			ui::AddEventHandler(ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),
 			ui::AddEventHandler(ui::EventType::LostFocus, [this](ui::Event&) { showDropdown = false; Rebuild(); }),
 			ui::AddEventHandler(ui::EventType::KeyAction, [this](ui::Event& e)
