@@ -71,7 +71,7 @@ struct imMinWidth
 	~imMinWidth() { Pop(); }
 };
 
-void StdText(StringView text, ModInitList mods = {});
+LabelFrame& StdText(StringView text);
 
 struct IStateToggleSkin
 {
@@ -102,17 +102,17 @@ imCtrlInfo<Button> imButton(DefaultIconStyle icon);
 imCtrlInfo<Selectable> imSelectable(UIObject& obj);
 imCtrlInfo<Selectable> imSelectable(StringView text);
 
-imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE imCtrlInfo<StateToggle> imCheckboxRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE imCtrlInfo<StateToggle> imCheckboxRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
-	return imCheckboxExtRaw(val ? 1 : 0, text, mods, skin);
+	return imCheckboxExtRaw(val ? 1 : 0, text, skin);
 }
-imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	imCtrlInfo<StateToggle> ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, skin);
 	if (ci)
 	{
 		if ((val & cur) != cur)
@@ -123,10 +123,10 @@ template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView 
 	return ci;
 }
 
-imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> imCtrlInfo<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, ModInitList mods = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> imCtrlInfo<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	imCtrlInfo<StateToggle> ci = imRadioButtonRaw(val == cur, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imRadioButtonRaw(val == cur, text, skin);
 	if (ci)
 	{
 		val = cur;

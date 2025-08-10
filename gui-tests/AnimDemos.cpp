@@ -14,9 +14,9 @@ struct SlidingHighlightAnimDemo : ui::Buildable
 	{
 		WPush<ui::StackTopDownLayoutElement>();
 
-		ui::imRadioButton(layout, 0, "No button", {}, ui::ButtonStateToggleSkin());
-		ui::imRadioButton(layout, 1, "Left", {}, ui::ButtonStateToggleSkin());
-		ui::imRadioButton(layout, 2, "Right", {}, ui::ButtonStateToggleSkin());
+		ui::imRadioButton(layout, 0, "No button", ui::ButtonStateToggleSkin());
+		ui::imRadioButton(layout, 1, "Left", ui::ButtonStateToggleSkin());
+		ui::imRadioButton(layout, 2, "Right", ui::ButtonStateToggleSkin());
 
 		tgt = nullptr;
 		if (layout != 0)

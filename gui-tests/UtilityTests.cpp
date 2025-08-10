@@ -54,7 +54,7 @@ struct VExpandAnimTest : ui::Buildable
 	{
 		WPush<ui::StackTopDownLayoutElement>();
 		{
-			ui::imEditBool(expand, "Expand", {}, ui::TreeStateToggleSkin());
+			ui::imEditBool(expand, "Expand", ui::TreeStateToggleSkin());
 			WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
 			WPush<ui::VExpandContainer>().Init(expand, 0.4f);
 			{
@@ -588,8 +588,8 @@ struct FileSelectionWindowTest : ui::Buildable
 		ui::imLabel("Default extension"), ui::imEditString(fsw.defaultExt);
 		ui::imLabel("Title"), ui::imEditString(fsw.title);
 		ui::LabeledProperty::Begin("Options");
-		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", {}, ui::ButtonStateToggleSkin());
-		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", {}, ui::ButtonStateToggleSkin());
+		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::MultiSelect), "Multi-select", ui::ButtonStateToggleSkin());
+		ui::imEditFlag(fsw.flags, unsigned(ui::FileSelectionWindow::CreatePrompt), "Create prompt", ui::ButtonStateToggleSkin());
 		ui::LabeledProperty::End();
 
 		ui::Text("Inputs / outputs");

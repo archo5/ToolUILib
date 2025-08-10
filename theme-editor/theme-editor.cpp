@@ -98,16 +98,16 @@ struct TE_MainPreviewNode : Buildable
 			{
 				Push<StackExpandLTRLayoutElement>();
 				{
-					imRadioButton(g_previewMode, TEPM_Original, "Original", {}, ButtonStateToggleSkin());
-					imRadioButton(g_previewMode, TEPM_Sliced, "Sliced", {}, ButtonStateToggleSkin());
+					imRadioButton(g_previewMode, TEPM_Original, "Original", ButtonStateToggleSkin());
+					imRadioButton(g_previewMode, TEPM_Sliced, "Sliced", ButtonStateToggleSkin());
 				}
 				Pop();
 				if (g_previewMode == TEPM_Original)
 				{
 					Push<StackExpandLTRLayoutElement>();
 					{
-						imRadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", {}, ButtonStateToggleSkin());
-						imRadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", {}, ButtonStateToggleSkin());
+						imRadioButton(g_previewScaleMode, ScaleMode::None, "No scaling", ButtonStateToggleSkin());
+						imRadioButton(g_previewScaleMode, ScaleMode::Fit, "Fit", ButtonStateToggleSkin());
 					}
 					Pop();
 				}
@@ -199,10 +199,10 @@ struct TE_ImageEditorNode : Buildable
 				auto stmpl = ui::StackExpandLTRLayoutElement::GetSlotTemplate();
 
 				stmpl->DisableScaling();
-				imEditBool(img->expanded, {}, {}, TreeStateToggleSkin());
+				imEditBool(img->expanded, {}, TreeStateToggleSkin());
 
 				stmpl->DisableScaling();
-				if (imRadioButtonRaw(tmpl->curPreviewImage == img, "P", {}, ButtonStateToggleSkin()))
+				if (imRadioButtonRaw(tmpl->curPreviewImage == img, "P", ButtonStateToggleSkin()))
 				{
 					tmpl->SetCurPreviewImage(img);
 				}
@@ -311,13 +311,13 @@ struct TE_TemplateEditorNode : Buildable
 						+ AddEventHandler(EventType::IMChange, [this](Event&) { tmpl->InvalidateAllNodes(); });
 					Push<StackTopDownLayoutElement>();
 					{
-						imEditBool(showRenderSettings, "Render settings", {}, TreeStateToggleSkin());
+						imEditBool(showRenderSettings, "Render settings", TreeStateToggleSkin());
 						if (showRenderSettings)
 						{
 							tmpl->renderSettings.UI();
 						}
 
-						imEditBool(showColors, "Colors", {}, TreeStateToggleSkin());
+						imEditBool(showColors, "Colors", TreeStateToggleSkin());
 						if (showColors)
 						{
 							auto& ced = Make<SequenceEditor>();

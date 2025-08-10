@@ -172,7 +172,7 @@ void TE_ColorRef::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 void TE_ColorRef::UI()
 {
 	LabeledProperty::Scope ps("\bColor");
-	imEditBool(useRef, useRef ? "N" : "C", {}, ButtonStateToggleSkin());
+	imEditBool(useRef, useRef ? "N" : "C", ButtonStateToggleSkin());
 	if (useRef)
 	{
 		EditNCRef(ncref);

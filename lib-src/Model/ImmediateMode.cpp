@@ -99,14 +99,9 @@ void TreeStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text
 }
 
 
-void StdText(StringView text, ModInitList mods)
+LabelFrame& StdText(StringView text)
 {
-	auto& ctrl = Push<LabelFrame>();
-	ui::Text(text);
-	Pop();
-
-	for (auto& mod : mods)
-		mod->Apply(&ctrl);
+	return MakeWithText<LabelFrame>(text);
 }
 
 
@@ -179,7 +174,7 @@ imCtrlInfo<Selectable> imSelectable(StringView text)
 	return imSelectable(NewText(text));
 }
 
-imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, const IStateToggleSkin& skin)
 {
 	auto& cb = Push<StateToggle>();
 	skin.BuildContents(cb, text, val);
@@ -188,8 +183,6 @@ imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, ModInitList mo
 	cb.flags |= UIObject_DB_IMEdit;
 	if (!imGetEnabled())
 		cb.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&cb);
 	cb.InitReadOnly(val);
 
 	if (cb.flags & UIObject_AfterIMEdit)
@@ -209,15 +202,15 @@ imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 val, StringView text, ModInitList mo
 	return { edited, &cb };
 }
 
-imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text, const IStateToggleSkin& skin)
 {
-	imCtrlInfo<StateToggle> ci = imCheckboxRaw(val, text, mods, skin);
+	imCtrlInfo<StateToggle> ci = imCheckboxRaw(val, text, skin);
 	if (ci)
 		val = !val;
 	return ci;
 }
 
-imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text, ModInitList mods, const IStateToggleSkin& skin)
+imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text, const IStateToggleSkin& skin)
 {
 	auto& rb = Push<StateToggle>();
 	skin.BuildContents(rb, text, val);
@@ -226,8 +219,6 @@ imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text, ModInitList 
 	rb.flags |= UIObject_DB_IMEdit;
 	if (!imGetEnabled())
 		rb.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&rb);
 	rb.InitReadOnly(val);
 
 	if (rb.flags & UIObject_AfterIMEdit)

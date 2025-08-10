@@ -489,12 +489,12 @@ struct RectGenTest : ui::Buildable
 		ui::Push<ui::EdgeSliceLayoutElement>();
 		{
 			ui::Push<ui::StackLTRLayoutElement>();
-			ui::imRadioButton(mode, 0, "Centered", {}, ui::ButtonStateToggleSkin());
-			ui::imRadioButton(mode, 1, "Fill (size)", {}, ui::ButtonStateToggleSkin());
-			ui::imRadioButton(mode, 2, "Fill (aspect)", {}, ui::ButtonStateToggleSkin());
-			ui::imRadioButton(mode, 3, "Fit (size)", {}, ui::ButtonStateToggleSkin());
-			ui::imRadioButton(mode, 4, "Fit (aspect)", {}, ui::ButtonStateToggleSkin());
-			ui::imRadioButton(mode, 5, "Fit (aspect range)", {}, ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 0, "Centered", ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 1, "Fill (size)", ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 2, "Fill (aspect)", ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 3, "Fit (size)", ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 4, "Fit (aspect)", ui::ButtonStateToggleSkin());
+			ui::imRadioButton(mode, 5, "Fit (aspect range)", ui::ButtonStateToggleSkin());
 			ui::Pop();
 			ui::imLabel("Round pos"), ui::imEditBool(roundPos);
 			if (mode == 1 || mode == 2)

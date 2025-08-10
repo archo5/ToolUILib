@@ -395,7 +395,7 @@ struct AnimPattern : ITree
 		{
 			char tmp[32];
 			snprintf(tmp, 32, "%X", i);
-			imRadioButton(curCurve, i, tmp, {}, ButtonStateToggleSkin());
+			imRadioButton(curCurve, i, tmp, ButtonStateToggleSkin());
 		}
 		Pop();
 
