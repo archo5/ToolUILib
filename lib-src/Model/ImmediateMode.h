@@ -184,8 +184,8 @@ struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
 imCtrlInfoTextbox imEditString(std::string& text);
 imCtrlInfoTextbox imEditString(const IBufferRW& textRW);
 
-imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed = false, ModInitList mods = {});
-imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed = false, ModInitList mods = {});
+imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed = false);
+imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed = false);
 
 extern const char* axesXY[];
 extern const char* axesXYZ[];

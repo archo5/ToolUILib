@@ -516,15 +516,13 @@ imCtrlInfoTextbox imEditString(const IBufferRW& textRW)
 }
 
 
-imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed, ModInitList mods)
+imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed)
 {
 	auto& ced = delayed
 		? (IColorEdit&)Make<ColorEdit>()
 		: (IColorEdit&)Make<ColorEditRT>();
 	if (!imGetEnabled())
 		ced.flags |= UIObject_IsDisabled;
-	for (auto& mod : mods)
-		mod->Apply(&ced);
 	bool changed = false;
 	if (ced.flags & UIObject_IsEdited)
 	{
@@ -545,10 +543,10 @@ imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed, ModInitList mods)
 	return { changed, &ced };
 }
 
-imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed, ModInitList mods)
+imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed)
 {
 	Color4f tmp = val;
-	imCtrlInfo<UIObject> ci = imEditColor(tmp, delayed, mods);
+	imCtrlInfo<UIObject> ci = imEditColor(tmp, delayed);
 	if (ci)
 		val = tmp;
 	return ci;
