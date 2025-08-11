@@ -653,7 +653,7 @@ struct DropdownMenuList : DropdownMenu
 
 namespace imm {
 
-template <class MT, class T> imCtrlInfo<MT> imDropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
+template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
 {
 	auto& ddml = Make<MT>();
 	ddml.SetOptions(ol);
@@ -687,7 +687,7 @@ template <class MT, class T> imCtrlInfo<MT> imDropdownMenuListCustom(T& val, Opt
 
 	return { edited, &ddml };
 }
-template <class T> imCtrlInfo<DropdownMenuList> imDropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
+template <class T> imCtrlInfoT<DropdownMenuList> imDropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
 {
 	return imDropdownMenuListCustom<DropdownMenuList>(val, ol, mods);
 }

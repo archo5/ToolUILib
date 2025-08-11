@@ -77,13 +77,13 @@ void TE_RectMask::PropertyUI()
 {
 	{
 		Text("Anchors");
-		imLabel("\bMin"), imEditFloatVec(&rect.anchors.x0, ui::axesXY, { modSetMinWidth(20) }, 0.01f);
-		imLabel("\bMax"), imEditFloatVec(&rect.anchors.x1, ui::axesXY, { modSetMinWidth(20) }, 0.01f);
+		imLabel("\bMin"), imEditFloatVec(&rect.anchors.x0, imAxisLoop(ui::axesXY, 20), 0.01f);
+		imLabel("\bMax"), imEditFloatVec(&rect.anchors.x1, imAxisLoop(ui::axesXY, 20), 0.01f);
 	}
 	{
 		Text("Offsets");
-		imLabel("\bMin"), imEditFloatVec(&rect.offsets.x0, ui::axesXY, { modSetMinWidth(20) }, 0.5f);
-		imLabel("\bMax"), imEditFloatVec(&rect.offsets.x1, ui::axesXY, { modSetMinWidth(20) }, 0.5f);
+		imLabel("\bMin"), imEditFloatVec(&rect.offsets.x0, imAxisLoop(ui::axesXY, 20), 0.5f);
+		imLabel("\bMax"), imEditFloatVec(&rect.offsets.x1, imAxisLoop(ui::axesXY, 20), 0.5f);
 	}
 	{
 		Text("Radius");
@@ -244,13 +244,13 @@ void TE_2ColorLinearGradientColorLayer::PropertyUI()
 	color1.UI();
 	{
 		Text("Start pos.");
-		imLabel("Anchor"), imEditFloatVec(&pos0.anchor.x, ui::axesXY, { modSetMinWidth(20) }, 0.01f);
-		imLabel("Offset"), imEditFloatVec(&pos0.offset.x, ui::axesXY, { modSetMinWidth(20) }, 0.5f);
+		imLabel("Anchor"), imEditFloatVec(&pos0.anchor.x, imAxisLoop(ui::axesXY, 20), 0.01f);
+		imLabel("Offset"), imEditFloatVec(&pos0.offset.x, imAxisLoop(ui::axesXY, 20), 0.5f);
 	}
 	{
 		Text("End pos.");
-		imLabel("Anchor"), imEditFloatVec(&pos1.anchor.x, ui::axesXY, { modSetMinWidth(20) }, 0.01f);
-		imLabel("Offset"), imEditFloatVec(&pos1.offset.x, ui::axesXY, { modSetMinWidth(20) }, 0.5f);
+		imLabel("Anchor"), imEditFloatVec(&pos1.anchor.x, imAxisLoop(ui::axesXY, 20), 0.01f);
+		imLabel("Offset"), imEditFloatVec(&pos1.offset.x, imAxisLoop(ui::axesXY, 20), 0.5f);
 	}
 }
 

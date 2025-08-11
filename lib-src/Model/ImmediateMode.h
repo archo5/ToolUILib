@@ -6,22 +6,6 @@
 
 
 namespace ui {
-
-struct modSetMinWidth : Modifier
-{
-	float w;
-	modSetMinWidth(float _w) : w(_w) {}
-	void OnBeforeControl() const override
-	{
-		Push<SizeConstraintElement>().SetMinWidth(w);
-	}
-	void OnAfterControl() const override
-	{
-		Pop();
-	}
-};
-
-
 namespace imm {
 
 
@@ -95,24 +79,24 @@ struct TreeStateToggleSkin : IStateToggleSkin
 };
 
 
-imCtrlInfo<Button> imButton(UIObject& obj);
-imCtrlInfo<Button> imButton(StringView text);
-imCtrlInfo<Button> imButton(DefaultIconStyle icon);
+imCtrlInfoT<Button> imButton(UIObject& obj);
+imCtrlInfoT<Button> imButton(StringView text);
+imCtrlInfoT<Button> imButton(DefaultIconStyle icon);
 
-imCtrlInfo<Selectable> imSelectable(UIObject& obj);
-imCtrlInfo<Selectable> imSelectable(StringView text);
+imCtrlInfoT<Selectable> imSelectable(UIObject& obj);
+imCtrlInfoT<Selectable> imSelectable(StringView text);
 
-imCtrlInfo<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-UI_FORCEINLINE imCtrlInfo<StateToggle> imCheckboxRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfoT<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_FORCEINLINE imCtrlInfoT<StateToggle> imCheckboxRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	return imCheckboxExtRaw(val ? 1 : 0, text, skin);
 }
-imCtrlInfo<StateToggle> imEditBool(bool& val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
-template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
+imCtrlInfoT<StateToggle> imEditBool(bool& val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+template <class T> imCtrlInfoT<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
 	bool any = (val & cur) != 0;
-	imCtrlInfo<StateToggle> ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, skin);
+	imCtrlInfoT<StateToggle> ci = imCheckboxExtRaw(any ? all ? 1 : 2 : 0, text, skin);
 	if (ci)
 	{
 		if ((val & cur) != cur)
@@ -123,10 +107,10 @@ template <class T> imCtrlInfo<StateToggle> imEditFlag(T& val, T cur, StringView 
 	return ci;
 }
 
-imCtrlInfo<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
-template <class T> imCtrlInfo<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
+imCtrlInfoT<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+template <class T> imCtrlInfoT<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
-	imCtrlInfo<StateToggle> ci = imRadioButtonRaw(val == cur, text, skin);
+	imCtrlInfoT<StateToggle> ci = imRadioButtonRaw(val == cur, text, skin);
 	if (ci)
 	{
 		val = cur;
@@ -168,15 +152,15 @@ struct DragConfig
 	float GetSnap(uint8_t modifierKeys) const;
 };
 
-imCtrlInfo<UIObject> imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-imCtrlInfo<UIObject> imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
-imCtrlInfo<UIObject> imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
-imCtrlInfo<UIObject> imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
-imCtrlInfo<UIObject> imEditFloat(float& val, ModInitList mods = {}, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+imCtrlInfo imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
+imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
+imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
+imCtrlInfo imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
 
-struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
+struct imCtrlInfoTextbox : imCtrlInfo
 {
-	using imCtrlInfo<UIObject>::imCtrlInfo;
+	using imCtrlInfo::imCtrlInfo;
 
 	imCtrlInfoTextbox& Multiline(bool is = true);
 	imCtrlInfoTextbox& Placeholder(StringView pch);
@@ -184,8 +168,8 @@ struct imCtrlInfoTextbox : imCtrlInfo<UIObject>
 imCtrlInfoTextbox imEditString(std::string& text);
 imCtrlInfoTextbox imEditString(const IBufferRW& textRW);
 
-imCtrlInfo<UIObject> imEditColor(Color4f& val, bool delayed = false);
-imCtrlInfo<UIObject> imEditColor(Color4b& val, bool delayed = false);
+imCtrlInfo imEditColor(Color4f& val, bool delayed = false);
+imCtrlInfo imEditColor(Color4b& val, bool delayed = false);
 
 extern const char* axesXY[];
 extern const char* axesXYZ[];
@@ -193,18 +177,58 @@ extern const char* axesXYZW[];
 extern const char* axesRGBA[];
 extern const char* axesMinMax[];
 extern const char* axesWidthHeight[];
-// length of `val` = length of `axes` (null-terminated)
-bool imEditIntVec(int* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool imEditFloatVec(float* val, const char** axes, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
 
-inline bool imEditVec2f(Vec2f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+typedef imCtrlInfo imLoopCallback(void* data);
+
+struct imLoop
 {
-	return imEditFloatVec(&val.x, axesXY, mods, cfg, range, fmt);
+	virtual bool Iterate(imLoopCallback* cb, void* ud) const = 0;
+};
+
+struct imAxisLoop : imLoop
+{
+	const char** axes;
+	float minWidth;
+	imAxisLoop(const char** axes_, float minWidth_ = 0) : axes(axes_), minWidth(minWidth_) {}
+	bool Iterate(imLoopCallback* cb, void* ud) const override
+	{
+		bool any = false;
+		int n = 0;
+		for (const char** plabel = axes; *plabel; plabel++, n++)
+		{
+			any |= SingleIteration(n, *plabel, cb, ud);
+		}
+		return any;
+	}
+	virtual imCtrlInfo SingleIteration(int n, const char* label, imLoopCallback* cb, void* ud) const
+	{
+		imLabel lbl(label, LabeledProperty::OneElement);
+
+		if (minWidth > 0)
+			Push<SizeConstraintElement>().SetMinWidth(minWidth);
+		UI_DEFER(if (minWidth > 0) Pop());
+
+		return cb(ud);
+	}
+};
+
+bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg = {}, Rangef range = All{}, const char* fmt = "%g");
+
+// length of `val` = length of `axes` (null-terminated)
+bool imEditIntVec(int* val, const char** axes, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
+bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
+
+inline bool imEditVec2f(Vec2f& val, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+{
+	bool chg = (imLabel("\bX", LabeledProperty::OneElement), imEditFloat(val.x, cfg, range, fmt));
+	return chg | (imLabel("\bY", LabeledProperty::OneElement), imEditFloat(val.y, cfg, range, fmt));
 }
 
-inline bool imEditRangef(Rangef& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+inline bool imEditRangef(Rangef& val, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
 {
-	return imEditFloatVec(&val.min, axesMinMax, mods, cfg, range, fmt);
+	bool chg = (imLabel("\bMin", LabeledProperty::OneElement), imEditFloat(val.min, cfg, range, fmt));
+	return chg | (imLabel("\bMax", LabeledProperty::OneElement), imEditFloat(val.max, cfg, range, fmt));
 }
 
 } // imm

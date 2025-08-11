@@ -8,9 +8,11 @@
 namespace ui {
 namespace imm {
 
-inline bool imEditVec3f(Vec3f& val, ModInitList mods = {}, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+inline bool imEditVec3f(Vec3f& val, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
 {
-	return imEditFloatVec(&val.x, axesXYZ, mods, cfg, range, fmt);
+	bool chg = (imLabel("\bX", LabeledProperty::OneElement), imEditFloat(val.x, cfg, range, fmt));
+	chg |= (imLabel("\bY", LabeledProperty::OneElement), imEditFloat(val.y, cfg, range, fmt));
+	return chg | (imLabel("\bZ", LabeledProperty::OneElement), imEditFloat(val.z, cfg, range, fmt));
 }
 
 enum class QuatEditMode : u8
@@ -23,7 +25,6 @@ enum class QuatEditMode : u8
 bool imEditQuat(
 	Quat& val,
 	QuatEditMode mode = QuatEditMode::Raw,
-	ModInitList mods = {},
 	const DragConfig& cfg = {},
 	Range<float> range = All{},
 	const char* fmt = "%g");

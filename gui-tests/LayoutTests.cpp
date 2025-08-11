@@ -412,7 +412,7 @@ struct PlacementTest : ui::Buildable
 		ui::MakeWithText<ui::Button>("This should not cover the entire parent");
 		ui::Pop();
 		const char* axesLTRB[] = { "\bL", "\bT", "\bR", "\bB", nullptr };
-		ui::imLabel("Anchor"), ui::imEditFloatVec(&buttonPlacement.anchor.x0, axesLTRB, {}, 0.01f);
+		ui::imLabel("Anchor"), ui::imEditFloatVec(&buttonPlacement.anchor.x0, axesLTRB, 0.01f);
 		ui::imLabel("Bias"), ui::imEditFloatVec(&buttonPlacement.bias.x0, axesLTRB);
 
 		ui::Pop();
@@ -498,16 +498,16 @@ struct RectGenTest : ui::Buildable
 			ui::Pop();
 			ui::imLabel("Round pos"), ui::imEditBool(roundPos);
 			if (mode == 1 || mode == 2)
-				ui::imLabel("Margin (fill)"), ui::imEditFloat(fillMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+				ui::imLabel("Margin (fill)"), ui::imEditFloat(fillMarginFrc, { 0.01f }, { 0, 0.5f });
 			else
-				ui::imLabel("Margin"), ui::imEditFloat(basicMarginFrc, {}, { 0.01f }, { 0, 0.5f });
+				ui::imLabel("Margin"), ui::imEditFloat(basicMarginFrc, { 0.01f }, { 0, 0.5f });
 			if (mode == 1 || mode == 3)
-				ui::imLabel("Size"), ui::imEditFloatVec(&size.x, ui::axesWidthHeight, {}, {}, ui::Rangef::AtLeast(0));
+				ui::imLabel("Size"), ui::imEditFloatVec(&size.x, ui::axesWidthHeight, {}, ui::Rangef::AtLeast(0));
 			if (mode == 2 || mode == 4)
-				ui::imLabel("Aspect"), ui::imEditFloat(aspect, {}, { 0.1f, true }, { 0, 100 });
+				ui::imLabel("Aspect"), ui::imEditFloat(aspect, { 0.1f, true }, { 0, 100 });
 			if (mode == 5)
-				ui::imLabel("Aspect range"), ui::imEditFloatVec(&aspectRange.min, ui::axesMinMax, {}, { 0.1f, true }, { 0, 100 });
-			ui::imLabel("Placement"), ui::imEditFloatVec(&placement.x, ui::axesXY, {}, { 0.01f }, { 0, 1 });
+				ui::imLabel("Aspect range"), ui::imEditFloatVec(&aspectRange.min, ui::axesMinMax, { 0.1f, true }, { 0, 100 });
+			ui::imLabel("Placement"), ui::imEditFloatVec(&placement.x, ui::axesXY, { 0.01f }, { 0, 1 });
 		}
 		auto& v = ui::Make<VisualizeRectGen>();
 		v.marginFrc = mode == 1 ? fillMarginFrc : basicMarginFrc;

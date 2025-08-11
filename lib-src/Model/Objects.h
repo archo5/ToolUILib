@@ -570,13 +570,6 @@ inline UIObject& operator + (UIObject& o, const Modifier& m)
 	return o;
 }
 
-struct modEnable : Modifier
-{
-	bool _enable;
-	modEnable(bool e) : _enable(e) {}
-	void Apply(UIObject* obj) const override { obj->SetInputDisabled(!_enable); }
-};
-
 struct AddEventHandler : Modifier
 {
 	std::function<void(Event&)> _evfn;
@@ -610,24 +603,15 @@ struct MakeDraggable : AddEventHandler
 
 namespace imm {
 // utilities for immediate mode controls
-struct imCtrlInfoBase
+struct imCtrlInfo
 {
 	bool edited;
+	UIObject* root;
 
-	UI_FORCEINLINE imCtrlInfoBase(bool ed) : edited(ed) {}
+	UI_FORCEINLINE imCtrlInfo(bool ed, UIObject* o) : edited(ed), root(o) {}
 	// void* to avoid unwanted implicit casting
 	UI_FORCEINLINE operator void* () const { return (void*)edited; }
-};
-UI_FORCEINLINE bool operator | (bool v, const imCtrlInfoBase& ci) { return v | !!ci; }
-UI_FORCEINLINE bool& operator |= (bool& v, const imCtrlInfoBase& ci) { return v |= !!ci; }
-template <class UIObjT>
-struct imCtrlInfo : imCtrlInfoBase
-{
-	UIObjT* root;
 
-	UI_FORCEINLINE imCtrlInfo(bool ed, UIObjT* o) : imCtrlInfoBase(ed), root(o) {}
-	UI_FORCEINLINE UIObjT& operator * () const { return *root; }
-	UI_FORCEINLINE UIObjT* operator -> () const { return root; }
 	UI_FORCEINLINE imCtrlInfo& Modify(const Modifier& mod)
 	{
 		mod.Apply(root);
@@ -639,10 +623,19 @@ struct imCtrlInfo : imCtrlInfoBase
 			mod->Apply(root);
 		return *this;
 	}
-	imCtrlInfo& Tooltip(StringView sv)
+	UI_FORCEINLINE imCtrlInfo& Tooltip(StringView sv)
 	{
 		return Modify(modAddTooltip(sv));
 	}
+};
+UI_FORCEINLINE bool operator | (bool v, const imCtrlInfo& ci) { return v | !!ci; }
+UI_FORCEINLINE bool& operator |= (bool& v, const imCtrlInfo& ci) { return v |= !!ci; }
+template <class UIObjT>
+struct imCtrlInfoT : imCtrlInfo
+{
+	UI_FORCEINLINE imCtrlInfoT(bool ed, UIObjT* o) : imCtrlInfo(ed, o) {}
+	UI_FORCEINLINE UIObjT& operator * () const { return *root; }
+	UI_FORCEINLINE UIObjT* operator -> () const { return root; }
 };
 } // imm
 using namespace imm;

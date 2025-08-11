@@ -5,14 +5,14 @@
 namespace ui {
 namespace imm {
 
-bool imEditQuat(Quat& val, QuatEditMode mode, ModInitList mods, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool imEditQuat(Quat& val, QuatEditMode mode, const DragConfig& cfg, Range<float> range, const char* fmt)
 {
 	if (mode == QuatEditMode::Raw)
-		return imEditFloatVec(&val.x, ui::axesXYZW, mods, cfg, range, fmt);
+		return imEditFloatVec(&val.x, ui::axesXYZW, cfg, range, fmt);
 	else if (mode == QuatEditMode::EulerXYZ)
 	{
 		Vec3f angles = val.ToEulerAnglesXYZ();
-		if (imEditVec3f(angles, mods, cfg, range, fmt))
+		if (imEditVec3f(angles, cfg, range, fmt))
 		{
 			val = Quat::RotateEulerAnglesXYZ(angles);
 			return true;
@@ -21,7 +21,7 @@ bool imEditQuat(Quat& val, QuatEditMode mode, ModInitList mods, const DragConfig
 	else if (mode == QuatEditMode::EulerZYX)
 	{
 		Vec3f angles = val.ToEulerAnglesZYX();
-		if (imEditVec3f(angles, mods, cfg, range, fmt))
+		if (imEditVec3f(angles, cfg, range, fmt))
 		{
 			val = Quat::RotateEulerAnglesZYX(angles);
 			return true;
