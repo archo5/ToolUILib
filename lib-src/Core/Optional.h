@@ -40,6 +40,10 @@ struct Optional
 	{
 		return _hasValue ? _value : def;
 	}
+	UI_FORCEINLINE Optional<T> Or(const Optional<T>& next) const
+	{
+		return _hasValue ? *this : next;
+	}
 	UI_FORCEINLINE void SetValue(const T& v)
 	{
 		_value = v;

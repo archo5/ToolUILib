@@ -213,6 +213,8 @@ struct StringView
 	UI_FORCEINLINE double to_float64() const { return StringView(*this).take_float64(); }
 	UI_FORCEINLINE float take_float32() { return float(take_float64()); }
 	UI_FORCEINLINE float to_float32() const { return float(StringView(*this).take_float64()); }
+
+	UI_FORCEINLINE std::string str() const { return { _data, _size }; }
 };
 
 struct StringViewSplitPair

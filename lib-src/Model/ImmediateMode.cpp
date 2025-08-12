@@ -307,6 +307,11 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 
 	NumFmtBox fb(fmt);
 
+	if (tb.flags & UIObject_AfterIMEdit)
+	{
+		tb._OnIMChange();
+		tb.flags &= ~UIObject_AfterIMEdit;
+	}
 	bool edited = false;
 	if (tb.edited)
 	{
@@ -326,7 +331,7 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 		val = tmp;
 		tb.edited = 0;
 		edited = true;
-		tb._OnIMChange();
+		tb.flags |= UIObject_AfterIMEdit;
 		tb.RebuildContainer();
 	}
 
