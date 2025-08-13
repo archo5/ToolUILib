@@ -402,7 +402,7 @@ struct Slider : UIObjectNoChildren
 };
 
 
-struct PropertyList : WrapperElement // TODO should this be a stack layout?
+struct PropertyList : HFillVWrapElement // TODO should this be a stack layout?
 {
 	void OnReset() override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -414,7 +414,7 @@ struct PropertyList : WrapperElement // TODO should this be a stack layout?
 	float _calcSplitX = 0;
 };
 
-struct LabeledProperty : WrapperElement
+struct LabeledProperty : HFillVWrapElement
 {
 	enum ContentLayoutType
 	{

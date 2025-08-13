@@ -817,6 +817,36 @@ void FillerElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
+Rangef HFillVWrapElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	return Rangef::Exact(containerSize.x);
+}
+
+Rangef HFillVWrapElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	if (!_child || !_child->_NeedsLayout())
+		return Rangef::AtLeast(0);
+	return _child->CalcEstimatedHeight(containerSize, type);
+}
+
+void HFillVWrapElement::OnLayout(const UIRect& rect, LayoutInfo info)
+{
+	if (_child && _child->_NeedsLayout())
+	{
+		_child->PerformLayout(rect, info);
+
+		info.flags |= LayoutInfo::FillH;
+		//info.flags &= ~LayoutInfo::FillV;
+		ApplyLayoutInfo(_child->GetFinalRect(), rect, info);
+	}
+	else
+	{
+		_finalRect = rect;
+		_finalRect.y1 = rect.y0;
+	}
+}
+
+
 void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();

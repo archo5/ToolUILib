@@ -406,6 +406,13 @@ struct FillerElement : UIObjectSingleChild
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
+struct HFillVWrapElement : UIObjectSingleChild
+{
+	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
+};
+
 struct SizeConstraintElement : WrapperElement
 {
 	Rangef widthRange = Rangef::AtLeast(0);
