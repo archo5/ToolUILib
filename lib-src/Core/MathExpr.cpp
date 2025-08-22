@@ -600,14 +600,11 @@ struct MathExprData
 			case TMP_LParen: return 1;
 			case LogicalAnd: return 2;
 			case LogicalOr: return 2;
-			case Add: return 3;
-			case Sub: return 3;
-			case Mul: return 4;
-			case Div: return 4;
-			case Mod: return 4;
-			case Pow: return 5;
-			case Negate: return 6;
-			case LogicalNot: return 6;
+			case IfEQ: case IfNE: case IfGT: case IfGE: case IfLT: case IfLE: return 3;
+			case Add: case Sub: return 4;
+			case Mul: case Div: case Mod: return 5;
+			case Pow: return 6;
+			case Negate: case LogicalNot: return 7;
 			default: return 0;
 			}
 		}
@@ -751,7 +748,10 @@ struct MathExprData
 				ch == '^' ||
 				ch == '!' ||
 				ch == '&' ||
-				ch == '|')
+				ch == '|' ||
+				ch == '=' ||
+				ch == '<' ||
+				ch == '>')
 				return TTOperator;
 			if (IsDigit(ch))
 				return TTNumber;
@@ -1011,11 +1011,31 @@ struct MathExprData
 					case '/': op = Div; break;
 					case '%': op = Mod; break;
 					case '^': op = Pow; break;
-					case '&': if (it.FirstCharEquals('&')) it.take_char(), dbgText._size++, op = LogicalAnd;
-							  else return Error(dbgText, "unexpected binary operator (starting with &)"); break;
-					case '|': if (it.FirstCharEquals('|')) it.take_char(), dbgText._size++, op = LogicalOr;
-							  else return Error(dbgText, "unexpected binary operator (starting with |)"); break;
-					case '!': return Error(dbgText, "unexpected binary operator (starting with !)");
+					case '&':
+						if (it.FirstCharEquals('&')) it.take_char(), dbgText._size++, op = LogicalAnd;
+						else return Error(dbgText, "unexpected binary operator (starting with &)");
+						break;
+					case '|':
+						if (it.FirstCharEquals('|')) it.take_char(), dbgText._size++, op = LogicalOr;
+						else return Error(dbgText, "unexpected binary operator (starting with |)");
+						break;
+					case '!':
+						if (it.FirstCharEquals('=')) it.take_char(), dbgText._size++, op = IfNE;
+						else return Error(dbgText, "unexpected binary operator (starting with !)");
+						break;
+					case '=':
+						if (it.FirstCharEquals('=')) it.take_char(), dbgText._size++, op = IfEQ; // support both == and =
+						else op = IfEQ;
+						break;
+					case '<':
+						if (it.FirstCharEquals('=')) it.take_char(), dbgText._size++, op = IfLE;
+						else if (it.FirstCharEquals('>')) it.take_char(), dbgText._size++, op = IfNE; // "<>" - not equal
+						else op = IfLT;
+						break;
+					case '>':
+						if (it.FirstCharEquals('=')) it.take_char(), dbgText._size++, op = IfGE;
+						else op = IfGT;
+						break;
 					default:
 						return Error(dbgText, "internal error (bad op)");
 					}
