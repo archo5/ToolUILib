@@ -43,6 +43,7 @@ struct MathExprData
 		Return, // finish the evaluation and return the topmost value on stack
 		// unary ops
 		Negate,
+		LogicalNot,
 		// binary ops
 		Add,
 		Sub,
@@ -57,6 +58,9 @@ struct MathExprData
 		IfGE,
 		IfLT,
 		IfLE,
+		// binary logic ops
+		LogicalAnd,
+		LogicalOr,
 		// one arg functions
 		Abs,
 		Sign,
@@ -150,6 +154,7 @@ struct MathExprData
 				return *stackLast;
 
 			case Negate: *stackLast = -*stackLast; break;
+			case LogicalNot: *stackLast = !*stackLast; break;
 
 			case Add: stackLast--; *stackLast += stackLast[1]; break;
 			case Sub: stackLast--; *stackLast -= stackLast[1]; break;
@@ -177,6 +182,9 @@ struct MathExprData
 			case IfGE: stackLast--; *stackLast = stackLast[0] >= stackLast[1]; break;
 			case IfLT: stackLast--; *stackLast = stackLast[0] < stackLast[1]; break;
 			case IfLE: stackLast--; *stackLast = stackLast[0] <= stackLast[1]; break;
+
+			case LogicalAnd: stackLast--; *stackLast = stackLast[0] && stackLast[1]; break;
+			case LogicalOr: stackLast--; *stackLast = stackLast[0] || stackLast[1]; break;
 
 			case Abs: *stackLast = fabsf(*stackLast); break;
 			case Sign: *stackLast = sign(*stackLast); break;
@@ -354,7 +362,7 @@ struct MathExprData
 
 		MathExprData* CreateExpr()
 		{
-			LogDebug(LOG_MATHEXPR, ">> EXPR: const=%d instrB=%d vars=%d stack=%d\n",
+			LogDebug(LOG_MATHEXPR, ">> EXPR: const=%d instrB=%d vars=%d stack=%d",
 				int(constants.size()), int(instructions.size()), int(foundVars.size()), int(maxTempStackSize));
 
 			return new MathExprData(constants, instructions, foundVars, maxTempStackSize);
@@ -421,7 +429,7 @@ struct MathExprData
 		void PushValue(float v)
 		{
 			if (CanLogDebug(LOG_MATHEXPR))
-				LogDebug(LOG_MATHEXPR, "> PushConst %g\n", v);
+				LogDebug(LOG_MATHEXPR, "> PushConst %g", v);
 
 			constStreak++;
 			constants.Append(v);
@@ -437,7 +445,7 @@ struct MathExprData
 
 			if (CanLogDebug(LOG_MATHEXPR))
 			{
-				LogDebug(LOG_MATHEXPR, "> Op[%d]%.*s expargs=%d realargs=%d\n",
+				LogDebug(LOG_MATHEXPR, "> Op[%d]%.*s expargs=%d realargs=%d",
 					op.realOp, int(op.refText.size()), op.refText.data(), op.expArgCount, op.realArgCount);
 			}
 
@@ -496,6 +504,7 @@ struct MathExprData
 			switch (op & ~BIF_Degrees)
 			{
 			case Negate: ret = -cd[0]; break;
+			case LogicalNot: ret = !cd[0]; break;
 
 			case Add: ret = cd[0] + cd[1]; break;
 			case Sub: ret = cd[0] - cd[1]; break;
@@ -522,6 +531,9 @@ struct MathExprData
 			case IfGE: ret = cd[0] >= cd[1] ? 1.0f : 0.0f; break;
 			case IfLT: ret = cd[0] < cd[1] ? 1.0f : 0.0f; break;
 			case IfLE: ret = cd[0] <= cd[1] ? 1.0f : 0.0f; break;
+
+			case LogicalAnd: ret = cd[0] && cd[1]; break;
+			case LogicalOr: ret = cd[0] || cd[1]; break;
 
 			case Abs: ret = fabsf(cd[0]); break;
 			case Sign: ret = sign(cd[0]); break;
@@ -586,13 +598,16 @@ struct MathExprData
 			switch (op)
 			{
 			case TMP_LParen: return 1;
-			case Add: return 2;
-			case Sub: return 2;
-			case Mul: return 3;
-			case Div: return 3;
-			case Mod: return 3;
-			case Pow: return 4;
-			case Negate: return 5;
+			case LogicalAnd: return 2;
+			case LogicalOr: return 2;
+			case Add: return 3;
+			case Sub: return 3;
+			case Mul: return 4;
+			case Div: return 4;
+			case Mod: return 4;
+			case Pow: return 5;
+			case Negate: return 6;
+			case LogicalNot: return 6;
 			default: return 0;
 			}
 		}
@@ -604,7 +619,7 @@ struct MathExprData
 			while (opStack.NotEmpty())
 			{
 				auto top = opStack.Last();
-				if (top.precedence < curPrecedence || top.op == Negate) // unary ops can't be committed by other unary ops
+				if (top.precedence < curPrecedence || top.op == Negate || top.op == LogicalNot) // unary ops can't be committed by other unary ops
 					break;
 
 				CommitOp(top);
@@ -643,6 +658,10 @@ struct MathExprData
 				{ "ifge", 2, IfGE },
 				{ "iflt", 2, IfLT },
 				{ "ifle", 2, IfLE },
+
+				{ "and", 2, LogicalAnd },
+				{ "or", 2, LogicalOr },
+				{ "not", 1, LogicalNot },
 
 				{ "abs", 1, Abs },
 				{ "sign", 1, Sign },
@@ -729,7 +748,10 @@ struct MathExprData
 				ch == '*' ||
 				ch == '/' ||
 				ch == '%' ||
-				ch == '^')
+				ch == '^' ||
+				ch == '!' ||
+				ch == '&' ||
+				ch == '|')
 				return TTOperator;
 			if (IsDigit(ch))
 				return TTNumber;
@@ -965,6 +987,15 @@ struct MathExprData
 								LastScopePushValue();
 							}
 						}
+						else if (ch == '!')
+						{
+							it = it.ltrim();
+							// logical not operator
+							AddOpToStack(LogicalNot, 1);
+							opStack.Last().realArgCount = 1;
+							opStack.Last().refText = dbgText;
+							LastScopePushValue();
+						}
 						else
 							return Error(dbgText, "unexpected binary operator");
 
@@ -980,6 +1011,11 @@ struct MathExprData
 					case '/': op = Div; break;
 					case '%': op = Mod; break;
 					case '^': op = Pow; break;
+					case '&': if (it.FirstCharEquals('&')) it.take_char(), dbgText._size++, op = LogicalAnd;
+							  else return Error(dbgText, "unexpected binary operator (starting with &)"); break;
+					case '|': if (it.FirstCharEquals('|')) it.take_char(), dbgText._size++, op = LogicalOr;
+							  else return Error(dbgText, "unexpected binary operator (starting with |)"); break;
+					case '!': return Error(dbgText, "unexpected binary operator (starting with !)");
 					default:
 						return Error(dbgText, "internal error (bad op)");
 					}
@@ -1171,10 +1207,14 @@ struct TestMathExpr
 		ASSERT_EQUAL(true, MathExpr().Compile("-pi", nullptr));
 		ASSERT_EQUAL(true, MathExpr().Compile("2*pi", nullptr));
 		ASSERT_EQUAL(true, MathExpr().Compile("3/pi", nullptr));
+		ASSERT_EQUAL(true, MathExpr().Compile("!pi", nullptr));
+		ASSERT_EQUAL(true, MathExpr().Compile("4&&pi", nullptr));
+		ASSERT_EQUAL(true, MathExpr().Compile("5||pi", nullptr));
 
 		// unusual cases
 		ASSERT_EQUAL(true, MathExpr().Compile("+++0", nullptr));
 		ASSERT_EQUAL(true, MathExpr().Compile("---0", nullptr));
+		ASSERT_EQUAL(true, MathExpr().Compile("!!!0", nullptr));
 
 		// basic parentheses
 		ASSERT_EQUAL(true, MathExpr().Compile("(1)", nullptr));
@@ -1242,6 +1282,9 @@ struct TestMathExpr
 		ASSERT_ERR("1+sin()", "[3] unexpected argument count (expected 1, got 0)");
 		ASSERT_ERR("12+sin(1,2)", "[4] unexpected argument count (expected 1, got 2)");
 		ASSERT_ERR("123+qq()", "[5] function not found: qq");
+		ASSERT_ERR("1&2", "[2] unexpected binary operator (starting with &)");
+		ASSERT_ERR("1|2", "[2] unexpected binary operator (starting with |)");
+		ASSERT_ERR("1 !2", "[3] unexpected binary operator (starting with !)");
 	}
 
 	float Eval(const char* expr)
@@ -1341,6 +1384,10 @@ struct TestMathExpr
 		ASSERT_NEAR(1 + 2 - 3 * 4, Eval("1+2-3*4"));
 		ASSERT_NEAR(1.0f * 2.0f / 3.0f, Eval("1*2/3"));
 		ASSERT_NEAR(1 + 2 - 3.0f * 4.0f / 5.0f, Eval("1+2-3*4/5"));
+
+		// precedence with logical ops
+		ASSERT_NEAR(2 - 2 && 1, Eval("2-2&&1"));
+		ASSERT_NEAR(3 - 1 || 0, Eval("3-1||0"));
 
 		// functions
 		ASSERT_NEAR(sinf(1), Eval("sin(1)"));

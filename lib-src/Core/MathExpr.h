@@ -14,7 +14,7 @@ struct IMathExprErrorOutput
 
 struct IMathExprDataSource
 {
-	using ID = uint16_t;
+	using ID = u16;
 	static constexpr ID NOT_FOUND = UINT16_MAX;
 	static bool IsNameEqualTo(const char* name, const char* name2);
 
