@@ -856,7 +856,6 @@ struct MathExprData
 					else
 					{
 						// variable
-						if (!TryBuiltInConst(name))
 						{
 							IMathExprDataSource::ID vid = IMathExprDataSource::NOT_FOUND;
 
@@ -899,8 +898,8 @@ struct MathExprData
 								TSSPush();
 								LastScopePushValue();
 							}
-							else
-								return Error(name, "variable not found: %.*s", int(name.size()), name.data());
+							else if (!TryBuiltInConst(name))
+								return Error(name, "variable/constant not found: %.*s", int(name.size()), name.data());
 						}
 					}
 				}
@@ -1294,7 +1293,7 @@ struct TestMathExpr
 		ASSERT_ERR("+", "[2] unexpected end of expression");
 		ASSERT_ERR("(1", "[1] no matching right parenthesis found");
 		ASSERT_ERR("12)", "[3] no matching left parenthesis found");
-		ASSERT_ERR("12+qq", "[4] variable not found: qq");
+		ASSERT_ERR("12+qq", "[4] variable/constant not found: qq");
 		ASSERT_ERR("()", "[1] empty subexpression");
 		ASSERT_ERR("(1,)", "[4] unexpected end of expression");
 		ASSERT_ERR("(1,,)", "[4] unexpected end of expression");
