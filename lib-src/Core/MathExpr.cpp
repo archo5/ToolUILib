@@ -1129,7 +1129,7 @@ bool MathExpr::Compile(StringView str, IMathExprDataSource* src, IMathExprErrorO
 	return !!_data;
 }
 
-float MathExpr::Evaluate(IMathExprDataSource* src)
+float MathExpr::Evaluate(IMathExprDataSource* src) const
 {
 	if (!_data)
 		return 0;

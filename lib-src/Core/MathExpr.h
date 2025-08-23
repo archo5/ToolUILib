@@ -36,7 +36,7 @@ struct MathExpr
 	MathExpr& operator = (MathExpr&&);
 
 	bool Compile(StringView str, IMathExprDataSource* src = nullptr, IMathExprErrorOutput* errOut = nullptr);
-	float Evaluate(IMathExprDataSource* src = nullptr);
+	float Evaluate(IMathExprDataSource* src = nullptr) const;
 
 	bool IsConstant() const;
 	bool IsConstant(float cmp) const;
