@@ -561,7 +561,7 @@ bool imEditTNumVec(TNum* val, const imLoop& loop, const DragConfig& dragcfg, Ran
 		auto* vecfg = (VecEditConfig<TNum>*)ud;
 		return EditNumber(*vecfg->val++, vecfg->dragcfg, vecfg->range, vecfg->fmt);
 	};
-	return loop.Iterate(cb, &val);
+	return loop.Iterate(cb, &vecfg);
 }
 
 bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg, Range<int> range, const char* fmt)
