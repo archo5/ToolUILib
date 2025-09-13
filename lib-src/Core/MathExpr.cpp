@@ -38,6 +38,8 @@ struct MathExprData
 		PushConst, // push constant on stack, increment push marker
 		PushVar, // push variable on stack [1-byte index] in variable ID array
 		PushVar16, // push variable on stack [2-byte index] in variable ID array
+		PushRTVar, // push variable on stack [1-byte index] in runtime variable name array
+		PushRTVar16, // push variable on stack [2-byte index] in runtime variable name array
 		FuncCall, // call a function [#args, 1-byte ID], replacing arguments with the return value
 		FuncCall16, // call a function [#args, 2-byte ID], replacing arguments with the return value
 		Return, // finish the evaluation and return the topmost value on stack
@@ -100,12 +102,15 @@ struct MathExprData
 	uint8_t* code = nullptr;
 	float* varMem = nullptr;
 	uint16_t* varIDs = nullptr;
+	float* rtVarMem = nullptr;
+	std::string* rtVarNames = nullptr;
 
 	float* stack = nullptr;
 
 	size_t numConstants;
 	size_t numCodeBytes;
 	size_t numVars;
+	size_t numRTVars;
 	size_t stackSize;
 
 	float Eval(IMathExprDataSource* src)
@@ -118,6 +123,10 @@ struct MathExprData
 				*curVarMem++ = src->GetVariable(varIDs[i]);
 			}
 		}
+
+		// load runtime variables
+		for (size_t i = 0; i < numRTVars; i++)
+			rtVarMem[i] = src->GetRuntimeVariable(rtVarNames[i]);
 
 		float* stackLast = stack - 1;
 		float* curConst = constants;
@@ -134,6 +143,13 @@ struct MathExprData
 				break;
 			case PushVar16:
 				*++stackLast = varMem[ip[0] | (uint16_t(ip[1]) << 8)];
+				ip += 2;
+				break;
+			case PushRTVar:
+				*++stackLast = rtVarMem[*ip++];
+				break;
+			case PushRTVar16:
+				*++stackLast = rtVarMem[ip[0] | (uint16_t(ip[1]) << 8)];
 				ip += 2;
 				break;
 
@@ -195,7 +211,7 @@ struct MathExprData
 			case Int: *stackLast = float(int(*stackLast)); break;
 			case Frac: {
 				double dummy;
-				*stackLast = modf(*stackLast, &dummy);
+				*stackLast = float(modf(*stackLast, &dummy));
 				break; }
 
 			case Sqrt: *stackLast = sqrtf(*stackLast); break;
@@ -252,6 +268,8 @@ struct MathExprData
 	~MathExprData()
 	{
 		delete[] stack;
+		delete[] rtVarNames;
+		delete[] rtVarMem;
 		delete[] varIDs;
 		delete[] varMem;
 		delete[] code;
@@ -262,20 +280,27 @@ struct MathExprData
 		const Array<float>& arg_constants,
 		const Array<uint8_t>& arg_instructions,
 		const Array<uint16_t>& arg_variables,
+		const Array<std::string>& arg_rtvariables,
 		size_t arg_maxTempStackSize)
 	{
-		constants = new float[arg_constants.size()];
-		memcpy(constants, arg_constants.data(), sizeof(*constants) * arg_constants.size());
-		numConstants = arg_constants.size();
+		constants = new float[arg_constants.Size()];
+		memcpy(constants, arg_constants.Data(), sizeof(*constants) * arg_constants.Size());
+		numConstants = arg_constants.Size();
 
-		code = new uint8_t[arg_instructions.size()];
-		memcpy(code, arg_instructions.data(), sizeof(*code) * arg_instructions.size());
-		numCodeBytes = arg_instructions.size();
+		code = new uint8_t[arg_instructions.Size()];
+		memcpy(code, arg_instructions.Data(), sizeof(*code) * arg_instructions.Size());
+		numCodeBytes = arg_instructions.Size();
 
-		varMem = new float[arg_variables.size()];
-		varIDs = new uint16_t[arg_variables.size()];
-		memcpy(varIDs, arg_variables.data(), sizeof(*varIDs) * arg_variables.size());
-		numVars = arg_variables.size();
+		varMem = new float[arg_variables.Size()];
+		varIDs = new uint16_t[arg_variables.Size()];
+		memcpy(varIDs, arg_variables.Data(), sizeof(*varIDs) * arg_variables.Size());
+		numVars = arg_variables.Size();
+
+		numRTVars = arg_rtvariables.Size();
+		rtVarMem = new float[numRTVars];
+		rtVarNames = new std::string[numRTVars];
+		for (size_t i = 0; i < numRTVars; i++)
+			rtVarNames[i] = arg_rtvariables[i];
 
 		stack = new float[arg_maxTempStackSize];
 		stackSize = arg_maxTempStackSize;
@@ -295,6 +320,12 @@ struct MathExprData
 		varMem = new float[numVars];
 		varIDs = new uint16_t[numVars];
 		memcpy(varIDs, o.varIDs, sizeof(*varIDs) * numVars);
+
+		numRTVars = o.numRTVars;
+		rtVarMem = new float[numRTVars];
+		rtVarNames = new std::string[numRTVars];
+		for (size_t i = 0; i < numRTVars; i++)
+			rtVarNames[i] = o.rtVarNames[i];
 
 		stackSize = o.stackSize;
 		stack = new float[stackSize];
@@ -351,6 +382,7 @@ struct MathExprData
 		Array<float> constants;
 		Array<uint8_t> instructions;
 		Array<uint16_t> foundVars;
+		Array<std::string> foundRTVars;
 		Array<Op> opStack;
 		int constStreak = 0;
 		size_t maxTempStackSize = 0;
@@ -362,10 +394,10 @@ struct MathExprData
 
 		MathExprData* CreateExpr()
 		{
-			LogDebug(LOG_MATHEXPR, ">> EXPR: const=%d instrB=%d vars=%d stack=%d",
-				int(constants.size()), int(instructions.size()), int(foundVars.size()), int(maxTempStackSize));
+			LogDebug(LOG_MATHEXPR, ">> EXPR: const=%d instrB=%d vars=%d rtvars=%d stack=%d",
+				int(constants.Size()), int(instructions.Size()), int(foundVars.Size()), int(foundRTVars.Size()), int(maxTempStackSize));
 
-			return new MathExprData(constants, instructions, foundVars, maxTempStackSize);
+			return new MathExprData(constants, instructions, foundVars, foundRTVars, maxTempStackSize);
 		}
 
 		int EPos(const StringView& sv)
@@ -544,7 +576,7 @@ struct MathExprData
 			case Int: ret = float(int(cd[0])); break;
 			case Frac: {
 				double dummy;
-				ret = modf(cd[0], &dummy);
+				ret = float(modf(cd[0], &dummy));
 				break; }
 
 			case Sqrt: ret = sqrtf(cd[0]); break;
@@ -732,6 +764,11 @@ struct MathExprData
 			return false;
 		}
 
+		static bool IsFirstNameChar(char ch)
+		{
+			return IsAlpha(ch) || ch == '_' || ch == '@' || ch == '#' || ch == '$' || ch == '.' || ch == ':';
+		}
+
 		TokenType ClassifyChar(char ch)
 		{
 			if (ch == '(')
@@ -755,7 +792,7 @@ struct MathExprData
 				return TTOperator;
 			if (IsDigit(ch))
 				return TTNumber;
-			if (IsAlpha(ch) || ch == '_')
+			if (IsFirstNameChar(ch))
 				return TTName;
 			return TTUnknown;
 		}
@@ -824,7 +861,7 @@ struct MathExprData
 				else if (curTokenType == TTName)
 				{
 					// variable or function
-					StringView name = it.take_while([](char c) { return IsAlphaNum(c) || c == '_'; });
+					StringView name = it.take_while([](char c) { return IsFirstNameChar(c) || IsDigit(c); });
 					it = it.ltrim();
 					if (it.FirstCharIs([](char c) { return c == '('; }))
 					{
@@ -870,31 +907,61 @@ struct MathExprData
 							if (vid != IMathExprDataSource::NOT_FOUND)
 							{
 								size_t at = SIZE_MAX;
-								for (size_t i = 0; i < foundVars.size(); i++)
+								if (vid == IMathExprDataSource::RUNTIME_VAR)
 								{
-									if (foundVars[i] == vid)
+									for (size_t i = 0; i < foundRTVars.Size(); i++)
 									{
-										at = i;
-										break;
+										if (foundRTVars[i] == bfr)
+										{
+											at = i;
+											break;
+										}
 									}
-								}
-								if (at == SIZE_MAX)
-								{
-									at = foundVars.size();
-									foundVars.Append(vid);
-								}
-								constStreak = 0;
-								if (at > UINT8_MAX)
-								{
-									instructions.Append(PushVar16);
-									instructions.Append(at & 0xff);
-									instructions.Append((at >> 8) & 0xff);
+									if (at == SIZE_MAX)
+									{
+										at = foundRTVars.Size();
+										foundRTVars.Append(bfr);
+									}
+									if (at > UINT8_MAX)
+									{
+										instructions.Append(PushRTVar16);
+										instructions.Append(at & 0xff);
+										instructions.Append((at >> 8) & 0xff);
+									}
+									else
+									{
+										instructions.Append(PushRTVar);
+										instructions.Append(at & 0xff);
+									}
 								}
 								else
 								{
-									instructions.Append(PushVar);
-									instructions.Append(at & 0xff);
+									for (size_t i = 0; i < foundVars.size(); i++)
+									{
+										if (foundVars[i] == vid)
+										{
+											at = i;
+											break;
+										}
+									}
+									if (at == SIZE_MAX)
+									{
+										at = foundVars.Size();
+										foundVars.Append(vid);
+									}
+									if (at > UINT8_MAX)
+									{
+										instructions.Append(PushVar16);
+										instructions.Append(at & 0xff);
+										instructions.Append((at >> 8) & 0xff);
+									}
+									else
+									{
+										instructions.Append(PushVar);
+										instructions.Append(at & 0xff);
+									}
 								}
+								constStreak = 0;
 								TSSPush();
 								LastScopePushValue();
 							}

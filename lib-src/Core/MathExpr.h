@@ -16,11 +16,13 @@ struct IMathExprDataSource
 {
 	using ID = u16;
 	static constexpr ID NOT_FOUND = UINT16_MAX;
+	static constexpr ID RUNTIME_VAR = UINT16_MAX - 1;
 	static bool IsNameEqualTo(const char* name, const char* name2);
 
 	virtual ID FindVariable(const char* name) { return NOT_FOUND; }
 	virtual ID FindFunction(const char* name, int& outNumArgs) { return NOT_FOUND; }
 	virtual float GetVariable(ID id) { return 0; }
+	virtual float GetRuntimeVariable(StringView name) { return 0; } // any logging of unknown runtime vars can happen from here
 	virtual float CallFunction(ID id, const float* args, int numArgs) { return 0; }
 };
 

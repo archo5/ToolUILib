@@ -328,11 +328,14 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 			tmp = range.max;
 		if (tmp < range.min)
 			tmp = range.min;
-		val = tmp;
+		if (val != tmp)
+		{
+			val = tmp;
+			edited = true;
+			tb.flags |= UIObject_AfterIMEdit;
+			tb.RebuildContainer();
+		}
 		tb.edited = 0;
-		edited = true;
-		tb.flags |= UIObject_AfterIMEdit;
-		tb.RebuildContainer();
 	}
 
 	char buf[1024];
@@ -406,7 +409,6 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 				tb.SetText(RemoveNegZero(buf));
 				tb.edited = -1;
 
-				e.context->OnCommit(e.target);
 				tb.RebuildContainer();
 			}
 			if (e.type == EventType::SetCursor)
