@@ -5,6 +5,8 @@
 #include "../lib-src/Core/SerializationBKVT.h"
 #include "../lib-src/Core/SerializationDATO.h"
 #include "../lib-src/Core/TweakableValue.h"
+#include "../lib-src/Core/TriangulatorComplex.h"
+#include "../lib-src/Render/RHI.h"
 
 
 struct BasicEasingAnimTest : ui::Buildable
@@ -957,4 +959,257 @@ struct TweakableValuesTest : ui::Buildable
 void Test_TweakableValues()
 {
 	ui::Make<TweakableValuesTest>();
+}
+
+
+struct TriangulatorComplexTest : ui::Buildable
+{
+	struct Tri
+	{
+		ui::Vec2f pos[3];
+
+		void Shrink(float amt)
+		{
+			using namespace ui;
+			Vec2f pa = pos[0];
+			Vec2f pb = pos[1];
+			Vec2f pc = pos[2];
+			Vec2f da = (pb - pa).Normalized();
+			Vec2f db = (pc - pb).Normalized();
+			Vec2f dc = (pa - pc).Normalized();
+			Vec2f ta = da.Perp();
+			Vec2f tb = db.Perp();
+			Vec2f tc = dc.Perp();
+			Vec2f ha = (ta + tc).Normalized();
+			Vec2f hb = (tb + ta).Normalized();
+			Vec2f hc = (tc + tb).Normalized();
+			float sa = amt / Vec2Dot(ta, ha);
+			float sb = amt / Vec2Dot(tb, hb);
+			float sc = amt / Vec2Dot(tc, hc);
+			pos[0] += ha * sa;
+			pos[1] += hb * sb;
+			pos[2] += hc * sc;
+		}
+	};
+
+	bool shrinktris = true;
+	ui::TriangulatorComplex* TC = ui::TriangulatorComplex_Create();
+	ui::Array<Tri> triangles;
+	ui::HashSet<ui::u32> usedverts;
+
+	void DumpResult()
+	{
+		using namespace ui;
+
+		TriangulatorComplex_Triangulate(TC);
+
+		triangles.Clear();
+		usedverts.Clear();
+		u32 tricount = TriangulatorComplex_GetTriangleCount(TC);
+		for (u32 t = 0; t < tricount; t++)
+		{
+			u32 verts[3] = {};
+			bool ret = TriangulatorComplex_GetTriangle(TC, t, verts); assert(ret);
+			usedverts.Insert(verts[0]);
+			usedverts.Insert(verts[1]);
+			usedverts.Insert(verts[2]);
+			u32 dummy;
+			Vec2f v0, v1, v2;
+			ret = TriangulatorComplex_GetVertexInfo(TC, verts[0], v0, dummy); assert(ret);
+			ret = TriangulatorComplex_GetVertexInfo(TC, verts[1], v1, dummy); assert(ret);
+			ret = TriangulatorComplex_GetVertexInfo(TC, verts[2], v2, dummy); assert(ret);
+			triangles.Append({ v0, v1, v2 });
+		}
+	}
+
+	struct PolyAndHoles
+	{
+		ui::Array<ui::Vec2f> mainpoly;
+		ui::Array<ui::Array<ui::Vec2f>> holepolys;
+
+		bool IsInside(ui::Vec2f point) const
+		{
+			if (!ui::TriangulatorComplexUtil_PointInOrNearPolygon(point, mainpoly, 0.0001f))
+				return false;
+
+			for (auto& hp : holepolys)
+			{
+				if (ui::TriangulatorComplexUtil_PointInButNotNearPolygon(point, hp, 0.0001f))
+					return false;
+			}
+
+			return true;
+		}
+		static bool IsInsideFunc(void* userdata, ui::Vec2f point)
+		{
+			return static_cast<PolyAndHoles*>(userdata)->IsInside(point);
+		}
+	};
+
+	void InitPNH(PolyAndHoles& pnh)
+	{
+		using namespace ui;
+		TriangulatorComplex_Reset(TC);
+		TriangulatorComplex_SetInsideFunc(TC, &pnh, &PolyAndHoles::IsInsideFunc);
+		TriangulatorComplex_AddPolygon(TC, pnh.mainpoly);
+		for (auto& hp : pnh.holepolys)
+			TriangulatorComplex_AddPolygon(TC, hp);
+	}
+
+	void DoTest_BasicRect()
+	{
+		using namespace ui;
+		TriangulatorComplex_Reset(TC);
+		Array<Vec2f> verts;
+		verts.Append({ 200, 200 });
+		verts.Append({ 500, 200 });
+		verts.Append({ 500, 400 });
+		verts.Append({ 200, 400 });
+		TriangulatorComplex_SetInsideFunc(TC, &verts, [](void* userdata, Vec2f point) -> bool
+		{
+			return TriangulatorComplexUtil_PointInOrNearPolygon(point, *(Array<Vec2f>*)userdata, 0.0001f);
+		});
+		TriangulatorComplex_AddPolygon(TC, verts);
+
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRect()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectAndDupHoleRect()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRectPeekingOut()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 500), Vec2f(300, 500) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectAndOverlappingHoleRects()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		pnh.holepolys.Append({ Vec2f(350, 300), Vec2f(450, 300), Vec2f(450, 380), Vec2f(350, 380) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectBiggerHoleCover()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(100, 100), Vec2f(600, 100), Vec2f(600, 500), Vec2f(100, 500) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectExactHoleCover()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		ui::Buildable::OnPaint(ctx);
+
+		for (auto t : triangles)
+		{
+			if (shrinktris)
+			{
+				t.Shrink(1);
+			}
+			ui::gfx::Vertex verts[3] = {};
+			verts[0].x = t.pos[0].x;
+			verts[0].y = t.pos[0].y;
+			verts[0].col = { 255, 0, 0, 127 };
+			verts[1].x = t.pos[1].x;
+			verts[1].y = t.pos[1].y;
+			verts[1].col = { 0, 255, 0, 127 };
+			verts[2].x = t.pos[2].x;
+			verts[2].y = t.pos[2].y;
+			verts[2].col = { 0, 0, 255, 127 };
+			ui::gfx::SetTexture(nullptr);
+			ui::gfx::DrawTriangles(verts, 3);
+			ui::gfx::RestoreRenderStates();
+		}
+
+		auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF);
+		int tsize = 7;
+		for (ui::u32 v : usedverts)
+		{
+			ui::Vec2f pos;
+			ui::u32 node = 0;
+			if (ui::TriangulatorComplex_GetVertexInfo(TC, v, pos, node))
+			{
+				while (node != ui::TriangulatorComplex_NodeID_NULL)
+				{
+					ui::TriangulatorComplex_VertexInfoNode vinfo = {};
+					if (ui::TriangulatorComplex_GetVertexInfoNode(TC, node, vinfo))
+					{
+						auto text = ui::Format("p=%d e=%d q=%g", int(vinfo.polyID), int(vinfo.edgeID), vinfo.edgeQ);
+						ui::draw::TextLine(font, tsize, pos.x, pos.y, text, {}, ui::TextBaseline::Top);
+						pos.y += tsize;
+						node = vinfo.nextnode;
+					}
+				}
+			}
+		}
+	}
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::SizeConstraintElement>().SetMaxWidth(200);
+		WPush<ui::StackTopDownLayoutElement>();
+		{
+			ui::imEditBool(shrinktris, "Shrink tris");
+			if (ui::imButton("Basic rect")) DoTest_BasicRect();
+			if (ui::imButton("Rect + hole rect")) DoTest_RectAndHoleRect();
+			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
+			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
+			if (ui::imButton("Rect + overlapping hole rects")) DoTest_RectAndOverlappingHoleRects();
+			if (ui::imButton("Rect + bigger hole cover")) DoTest_RectBiggerHoleCover();
+			if (ui::imButton("Rect + exact hole cover")) DoTest_RectExactHoleCover();
+		}
+		WPop();
+		WPop();
+		WPop();
+	}
+};
+void Test_TriangulatorComplex()
+{
+	ui::Make<TriangulatorComplexTest>();
 }

@@ -249,6 +249,7 @@
     <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\SystemInfo.cpp" />
     <ClCompile Include="Core\Threading.cpp" />
+    <ClCompile Include="Core\TriangulatorComplex.cpp" />
     <ClCompile Include="Core\TweakableValue.cpp" />
     <ClCompile Include="Core\VectorImage.cpp" />
     <ClCompile Include="Editors\CurveEditor.cpp" />
@@ -336,6 +337,7 @@
     <ClInclude Include="Core\SystemInfo.h" />
     <ClInclude Include="Core\Test.h" />
     <ClInclude Include="Core\Threading.h" />
+    <ClInclude Include="Core\TriangulatorComplex.h" />
     <ClInclude Include="Core\TweakableValue.h" />
     <ClInclude Include="Core\VectorImage.h" />
     <ClInclude Include="Core\WeakPtr.h" />

@@ -349,6 +349,7 @@ void Test_DirectoryChangeWatcher();
 void Test_SerializationSpeed();
 void Test_ConfigTweakable();
 void Test_TweakableValues();
+void Test_TriangulatorComplex();
 
 void Test_SequenceEditors();
 void Test_TreeEditors();
@@ -471,6 +472,8 @@ static const TestEntry utilityTestEntries[] =
 	{ "Serialization speed", Test_SerializationSpeed },
 	{ "Config tweakable", Test_ConfigTweakable },
 	{ "Tweakable values", Test_TweakableValues },
+	{},
+	{ "Triangulator (complex)", Test_TriangulatorComplex },
 };
 static const TestEntry dseditTestEntries[] =
 {
