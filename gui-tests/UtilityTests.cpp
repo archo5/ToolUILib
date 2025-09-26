@@ -1108,6 +1108,17 @@ struct TriangulatorComplexTest : ui::Buildable
 		DumpResult();
 	}
 
+	void DoTest_RectAndHoleRectEdgeOverlap()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 400), Vec2f(300, 400) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
 	void DoTest_RectAndOverlappingHoleRects()
 	{
 		using namespace ui;
@@ -1200,6 +1211,7 @@ struct TriangulatorComplexTest : ui::Buildable
 			if (ui::imButton("Rect + hole rect")) DoTest_RectAndHoleRect();
 			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
 			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
+			if (ui::imButton("Rect + hole rect edge overlap")) DoTest_RectAndHoleRectEdgeOverlap();
 			if (ui::imButton("Rect + overlapping hole rects")) DoTest_RectAndOverlappingHoleRects();
 			if (ui::imButton("Rect + bigger hole cover")) DoTest_RectBiggerHoleCover();
 			if (ui::imButton("Rect + exact hole cover")) DoTest_RectExactHoleCover();

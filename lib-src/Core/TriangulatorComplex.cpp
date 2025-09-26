@@ -211,6 +211,27 @@ struct TriangulatorComplex
 				auto& ej0 = vertices[ej.v0];
 				auto& ej1 = vertices[ej.v1];
 
+				LineSegmentOverlapInfo lso;
+				if (AreLineSegmentsOverlapping(ei0.pos, ei1.pos, ej0.pos, ej1.pos, &lso))
+				{
+					// overlap point 0
+					{
+						Vec2f isp = ui::Vec2fLerp(ei0.pos, ei1.pos, lso.aq0);
+						if (lso.aq0 > 0 && lso.aq0 < 1)
+							ei.splits.Append({ lso.aq0, InsertVertex(isp, ei.polyID, ei.edgeID, lso.aq0) });
+						if (lso.bq0 > 0 && lso.bq0 < 1)
+							ej.splits.Append({ lso.bq0, InsertVertex(isp, ej.polyID, ej.edgeID, lso.bq0) });
+					}
+					// overlap point 1
+					{
+						Vec2f isp = ui::Vec2fLerp(ei0.pos, ei1.pos, lso.aq1);
+						if (lso.aq1 > 0 && lso.aq1 < 1)
+							ei.splits.Append({ lso.aq1, InsertVertex(isp, ei.polyID, ei.edgeID, lso.aq1) });
+						if (lso.bq1 > 0 && lso.bq1 < 1)
+							ej.splits.Append({ lso.bq1, InsertVertex(isp, ej.polyID, ej.edgeID, lso.bq1) });
+					}
+					continue;
+				}
 				Vec2f isq;
 				if (LineSegmentIntersectionQ_EE(ei0.pos, ei1.pos, ej0.pos, ej1.pos, isq))
 				{
@@ -263,7 +284,12 @@ struct TriangulatorComplex
 		return (a0 == b0 && a1 == b1) || (a0 == b1 && a1 == b0);
 	}
 
-	static bool AreLineSegmentsOverlapping(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1)
+	struct LineSegmentOverlapInfo
+	{
+		float aq0, aq1;
+		float bq0, bq1;
+	};
+	static bool AreLineSegmentsOverlapping(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, LineSegmentOverlapInfo* overlapinfo = nullptr)
 	{
 		Vec2f ad = (a1 - a0).Normalized();
 		Vec2f bd = (b1 - b0).Normalized();
@@ -276,15 +302,32 @@ struct TriangulatorComplex
 		if (fabsf(Vec2Dot(tng, a0 - b0)) > 0.00001f)
 			return false;
 
-		Rangef ar = Rangef::Exact(Vec2Dot(dir, a0));
-		ar.Include(Vec2Dot(dir, a1));
-		Rangef br = Rangef::Exact(Vec2Dot(dir, b0));
-		br.Include(Vec2Dot(dir, b1));
+		float ap0 = Vec2Dot(dir, a0);
+		float ap1 = Vec2Dot(dir, a1);
+		Rangef ar = Rangef::Exact(ap0);
+		ar.Include(ap1);
+
+		float bp0 = Vec2Dot(dir, b0);
+		float bp1 = Vec2Dot(dir, b1);
+		Rangef br = Rangef::Exact(bp0);
+		br.Include(bp1);
 		if (!ar.Overlaps(br))
 			return false;
 
 		float ovr = min(ar.max - br.min, br.max - ar.min);
-		return ovr > 0.00001f;
+		if (ovr <= 0.00001f)
+			return false;
+
+		if (overlapinfo)
+		{
+			float op0 = min(ar.max, br.max);
+			float op1 = max(ar.min, br.min);
+			overlapinfo->aq0 = invlerpc(ap0, ap1, op0);
+			overlapinfo->bq0 = invlerpc(bp0, bp1, op0);
+			overlapinfo->aq1 = invlerpc(ap0, ap1, op1);
+			overlapinfo->bq1 = invlerpc(bp0, bp1, op1);
+		}
+		return true;
 	}
 
 	bool IntersectsAnyOrigEdge(u32 v0, u32 v1)
