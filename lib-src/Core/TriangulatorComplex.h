@@ -27,6 +27,7 @@ typedef bool TriangulatorComplex_InsideFunc(void* userdata, Vec2f point);
 void TriangulatorComplex_SetInsideFunc(TriangulatorComplex* TC, void* userdata, TriangulatorComplex_InsideFunc* func);
 
 void TriangulatorComplex_AddPolygon(TriangulatorComplex* TC, ArrayView<Vec2f> verts);
+void TriangulatorComplex_AddPoints(TriangulatorComplex* TC, ArrayView<Vec2f> points);
 
 void TriangulatorComplex_Triangulate(TriangulatorComplex* TC);
 

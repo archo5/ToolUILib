@@ -98,6 +98,7 @@ struct TriangulatorComplex
 	Array<TCVertInfoNode> vertinfos;
 	HashMap<Vec2f, u32> pos2vert;
 	Array<TCOrigEdge> origedges;
+	Array<u32> origpoints;
 	HashMap<u32, Counter> refvertidxset; // indices + reference counts of referenced vertices
 	Array<TCEdge> edges;
 	Array<CandidateSplit> csplits;
@@ -117,6 +118,7 @@ struct TriangulatorComplex
 		vertinfos.Clear();
 		pos2vert.Clear();
 		origedges.Clear();
+		origpoints.Clear();
 		refvertidxset.Clear();
 		edges.Clear();
 		csplits.Clear();
@@ -173,6 +175,18 @@ struct TriangulatorComplex
 				v1 = InsertVertex(pverts.NextWrap(i), pid, (i + 1) % pverts.Size(), 0);
 			origedges.Append({ v0, v1, pid, u32(i) });
 			vprev = v1;
+		}
+	}
+
+	void AddPoints(ArrayView<Vec2f> points)
+	{
+		u32 pid = nextPolyID++;
+
+		for (size_t i = 0; i < points.Size(); i++)
+		{
+			u32 v = InsertVertex(points[i], pid, u32(i), 0);
+			InsertReferencedVertex(v);
+			origpoints.Append(v);
 		}
 	}
 
@@ -242,6 +256,14 @@ struct TriangulatorComplex
 					assert(v0 == v0again);
 					ei.splits.Append({ isq.x, v0 });
 					ej.splits.Append({ isq.y, v0 });
+				}
+			}
+			for (u32 op : origpoints)
+			{
+				Vec2f dq = PointLineDistanceQ(vertices[op].pos, ei0.pos, ei1.pos);
+				if (dq.x < 0.0001f && dq.y > 0.0001f && dq.y < 0.9999f)
+				{
+					ei.splits.Append({ dq.y, op });
 				}
 			}
 		}
@@ -391,6 +413,21 @@ struct TriangulatorComplex
 		float v = (cc * pb - bc * pc) / denom;
 
 		return u > 0 && v > 0 && 1 - u - v > 0;
+	}
+
+	static Vec2f PointLineDistanceQ(Vec2f p, Vec2f A, Vec2f B)
+	{
+		if (A == B)
+			return { (p - A).Length(), 0.f };
+		Vec2f dir = (B - A).Normalized();
+		Vec2f tng = dir.Perp();
+		float dirp = Vec2Dot(dir, p);
+		float dirA = Vec2Dot(dir, A);
+		float dirB = Vec2Dot(dir, B);
+		float tngp = Vec2Dot(tng, p);
+		float tngA = Vec2Dot(tng, A);
+		float dirpc = clamp(dirp, dirA, dirB);
+		return { Vec2f(dirpc - dirp, tngp - tngA).Length(), invlerpc(dirA, dirB, dirp) };
 	}
 
 	static float PointLineDistance(Vec2f p, Vec2f A, Vec2f B, Vec2f* onp = nullptr)
@@ -563,6 +600,11 @@ void TriangulatorComplex_SetInsideFunc(TriangulatorComplex* TC, void* userdata, 
 void TriangulatorComplex_AddPolygon(TriangulatorComplex* TC, ArrayView<Vec2f> verts)
 {
 	TC->AddPolygon(verts);
+}
+
+void TriangulatorComplex_AddPoints(TriangulatorComplex* TC, ArrayView<Vec2f> points)
+{
+	TC->AddPoints(points);
 }
 
 void TriangulatorComplex_Triangulate(TriangulatorComplex* TC)

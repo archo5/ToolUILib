@@ -1060,16 +1060,43 @@ struct TriangulatorComplexTest : ui::Buildable
 	{
 		using namespace ui;
 		TriangulatorComplex_Reset(TC);
-		Array<Vec2f> verts;
-		verts.Append({ 200, 200 });
-		verts.Append({ 500, 200 });
-		verts.Append({ 500, 400 });
-		verts.Append({ 200, 400 });
+		Array<Vec2f> verts = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
 		TriangulatorComplex_SetInsideFunc(TC, &verts, [](void* userdata, Vec2f point) -> bool
 		{
 			return TriangulatorComplexUtil_PointInOrNearPolygon(point, *(Array<Vec2f>*)userdata, 0.0001f);
 		});
 		TriangulatorComplex_AddPolygon(TC, verts);
+
+		DumpResult();
+	}
+
+	void DoTest_RectDummyPP()
+	{
+		using namespace ui;
+		TriangulatorComplex_Reset(TC);
+		Array<Vec2f> verts = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		TriangulatorComplex_SetInsideFunc(TC, &verts, [](void* userdata, Vec2f point) -> bool
+		{
+			return TriangulatorComplexUtil_PointInOrNearPolygon(point, *(Array<Vec2f>*)userdata, 0.0001f);
+		});
+		TriangulatorComplex_AddPolygon(TC, verts);
+		TriangulatorComplex_AddPolygon(TC, { Vec2f(300, 300), Vec2f(400, 300), Vec2f(350, 350) });
+		TriangulatorComplex_AddPoints(TC, { Vec2f(350, 320), Vec2f(350, 250) });
+
+		DumpResult();
+	}
+
+	void DoTest_RectEdgePoints()
+	{
+		using namespace ui;
+		TriangulatorComplex_Reset(TC);
+		Array<Vec2f> verts = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		TriangulatorComplex_SetInsideFunc(TC, &verts, [](void* userdata, Vec2f point) -> bool
+		{
+			return TriangulatorComplexUtil_PointInOrNearPolygon(point, *(Array<Vec2f>*)userdata, 0.0001f);
+		});
+		TriangulatorComplex_AddPolygon(TC, verts);
+		TriangulatorComplex_AddPoints(TC, { Vec2f(200, 350), Vec2f(350, 400) });
 
 		DumpResult();
 	}
@@ -1208,6 +1235,8 @@ struct TriangulatorComplexTest : ui::Buildable
 		{
 			ui::imEditBool(shrinktris, "Shrink tris");
 			if (ui::imButton("Basic rect")) DoTest_BasicRect();
+			if (ui::imButton("Rect + dummy polygon and points")) DoTest_RectDummyPP();
+			if (ui::imButton("Rect + dummy points on edge")) DoTest_RectEdgePoints();
 			if (ui::imButton("Rect + hole rect")) DoTest_RectAndHoleRect();
 			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
 			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
