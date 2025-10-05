@@ -217,20 +217,20 @@ struct TriangulatorComplex
 		for (size_t i = 0; i < origedges.Size(); i++)
 		{
 			auto& ei = origedges[i];
-			auto& ei0 = vertices[ei.v0];
-			auto& ei1 = vertices[ei.v1];
+			Vec2f ei0pos = vertices[ei.v0].pos;
+			Vec2f ei1pos = vertices[ei.v1].pos;
 			for (size_t j = i + 1; j < origedges.Size(); j++)
 			{
 				auto& ej = origedges[j];
-				auto& ej0 = vertices[ej.v0];
-				auto& ej1 = vertices[ej.v1];
+				Vec2f ej0pos = vertices[ej.v0].pos;
+				Vec2f ej1pos = vertices[ej.v1].pos;
 
 				LineSegmentOverlapInfo lso;
-				if (AreLineSegmentsOverlapping(ei0.pos, ei1.pos, ej0.pos, ej1.pos, &lso))
+				if (AreLineSegmentsOverlapping(ei0pos, ei1pos, ej0pos, ej1pos, &lso))
 				{
 					// overlap point 0
 					{
-						Vec2f isp = ui::Vec2fLerp(ei0.pos, ei1.pos, lso.aq0);
+						Vec2f isp = ui::Vec2fLerp(ei0pos, ei1pos, lso.aq0);
 						if (lso.aq0 > 0 && lso.aq0 < 1)
 							ei.splits.Append({ lso.aq0, InsertVertex(isp, ei.polyID, ei.edgeID, lso.aq0) });
 						if (lso.bq0 > 0 && lso.bq0 < 1)
@@ -238,7 +238,7 @@ struct TriangulatorComplex
 					}
 					// overlap point 1
 					{
-						Vec2f isp = ui::Vec2fLerp(ei0.pos, ei1.pos, lso.aq1);
+						Vec2f isp = ui::Vec2fLerp(ei0pos, ei1pos, lso.aq1);
 						if (lso.aq1 > 0 && lso.aq1 < 1)
 							ei.splits.Append({ lso.aq1, InsertVertex(isp, ei.polyID, ei.edgeID, lso.aq1) });
 						if (lso.bq1 > 0 && lso.bq1 < 1)
@@ -247,9 +247,9 @@ struct TriangulatorComplex
 					continue;
 				}
 				Vec2f isq;
-				if (LineSegmentIntersectionQ_EE(ei0.pos, ei1.pos, ej0.pos, ej1.pos, isq))
+				if (LineSegmentIntersectionQ_EE(ei0pos, ei1pos, ej0pos, ej1pos, isq))
 				{
-					Vec2f isp = ui::Vec2fLerp(ei0.pos, ei1.pos, isq.x);
+					Vec2f isp = ui::Vec2fLerp(ei0pos, ei1pos, isq.x);
 					u32 v0 = InsertVertex(isp, ei.polyID, ei.edgeID, isq.x);
 					// adding metadata from the other edge to the same vertex
 					u32 v0again = InsertVertex(isp, ej.polyID, ej.edgeID, isq.y);
@@ -260,9 +260,12 @@ struct TriangulatorComplex
 			}
 			for (u32 op : origpoints)
 			{
-				Vec2f dq = PointLineDistanceQ(vertices[op].pos, ei0.pos, ei1.pos);
+				Vec2f oppos = vertices[op].pos;
+				Vec2f dq = PointLineDistanceQ(oppos, ei0pos, ei1pos);
 				if (dq.x < 0.0001f && dq.y > 0.0001f && dq.y < 0.9999f)
 				{
+					u32 vagain = InsertVertex(oppos, ei.polyID, ei.edgeID, dq.y);
+					assert(op == vagain);
 					ei.splits.Append({ dq.y, op });
 				}
 			}
@@ -361,12 +364,26 @@ struct TriangulatorComplex
 		{
 			if (IsSameEdge(oe.v0, oe.v1, v0, v1))
 				return true;
+
 			Vec2f oep0 = vertices[oe.v0].pos;
 			Vec2f oep1 = vertices[oe.v1].pos;
 			if (AreLineSegmentsOverlapping(p0, p1, oep0, oep1))
 				return true;
+
 			if (oe.v0 == v0 || oe.v0 == v1 || oe.v1 == v0 || oe.v1 == v1)
 				continue;
+			bool connected = false;
+			for (auto& oes : oe.splits)
+			{
+				if (oes.vert == v0 || oes.vert == v1)
+				{
+					connected = true;
+					break;
+				}
+			}
+			if (connected)
+				continue;
+
 			Vec2f dummy;
 			if (LineSegmentIntersectionQ_EE(p0, p1, oep0, oep1, dummy))
 				return true;

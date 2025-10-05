@@ -993,6 +993,7 @@ struct TriangulatorComplexTest : ui::Buildable
 	};
 
 	bool shrinktris = true;
+	ui::Vec2f userpos = { 500, 350 };
 	ui::TriangulatorComplex* TC = ui::TriangulatorComplex_Create();
 	ui::Array<Tri> triangles;
 	ui::HashSet<ui::u32> usedverts;
@@ -1026,6 +1027,8 @@ struct TriangulatorComplexTest : ui::Buildable
 	{
 		ui::Array<ui::Vec2f> mainpoly;
 		ui::Array<ui::Array<ui::Vec2f>> holepolys;
+		ui::Array<ui::Array<ui::Vec2f>> cutpolys;
+		ui::Array<ui::Vec2f> cutpoints;
 
 		bool IsInside(ui::Vec2f point) const
 		{
@@ -1054,6 +1057,9 @@ struct TriangulatorComplexTest : ui::Buildable
 		TriangulatorComplex_AddPolygon(TC, pnh.mainpoly);
 		for (auto& hp : pnh.holepolys)
 			TriangulatorComplex_AddPolygon(TC, hp);
+		for (auto& cp : pnh.cutpolys)
+			TriangulatorComplex_AddPolygon(TC, cp);
+		TriangulatorComplex_AddPoints(TC, pnh.cutpoints);
 	}
 
 	void DoTest_BasicRect()
@@ -1101,6 +1107,21 @@ struct TriangulatorComplexTest : ui::Buildable
 		DumpResult();
 	}
 
+	void DoTest_RectPointExplore()
+	{
+		using namespace ui;
+		TriangulatorComplex_Reset(TC);
+		Array<Vec2f> verts = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		TriangulatorComplex_SetInsideFunc(TC, &verts, [](void* userdata, Vec2f point) -> bool
+		{
+			return TriangulatorComplexUtil_PointInOrNearPolygon(point, *(Array<Vec2f>*)userdata, 0.0001f);
+		});
+		TriangulatorComplex_AddPolygon(TC, verts);
+		TriangulatorComplex_AddPoints(TC, { Vec2f(500, 250), userpos });
+
+		DumpResult();
+	}
+
 	void DoTest_RectAndHoleRect()
 	{
 		using namespace ui;
@@ -1141,6 +1162,18 @@ struct TriangulatorComplexTest : ui::Buildable
 		PolyAndHoles pnh;
 		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
 		pnh.holepolys.Append({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 400), Vec2f(300, 400) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
+	void DoTest_RectAndCutterRectEdgeOvrUP()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.cutpolys.Append({ Vec2f(350, 150), Vec2f(550, 300), Vec2f(350, 450), Vec2f(150, 300) });
+		pnh.cutpoints.Append(userpos);
 
 		InitPNH(pnh);
 		DumpResult();
@@ -1234,13 +1267,16 @@ struct TriangulatorComplexTest : ui::Buildable
 		WPush<ui::StackTopDownLayoutElement>();
 		{
 			ui::imEditBool(shrinktris, "Shrink tris");
+			ui::imEditVec2f(userpos, { 0.01f });
 			if (ui::imButton("Basic rect")) DoTest_BasicRect();
 			if (ui::imButton("Rect + dummy polygon and points")) DoTest_RectDummyPP();
 			if (ui::imButton("Rect + dummy points on edge")) DoTest_RectEdgePoints();
+			if (ui::imButton("Rect + dummy user point")) DoTest_RectPointExplore();
 			if (ui::imButton("Rect + hole rect")) DoTest_RectAndHoleRect();
 			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
 			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
 			if (ui::imButton("Rect + hole rect edge overlap")) DoTest_RectAndHoleRectEdgeOverlap();
+			if (ui::imButton("Rect + cutter rect edge ovr + UP")) DoTest_RectAndCutterRectEdgeOvrUP();
 			if (ui::imButton("Rect + overlapping hole rects")) DoTest_RectAndOverlappingHoleRects();
 			if (ui::imButton("Rect + bigger hole cover")) DoTest_RectBiggerHoleCover();
 			if (ui::imButton("Rect + exact hole cover")) DoTest_RectExactHoleCover();
