@@ -231,6 +231,25 @@ inline bool imEditRangef(Rangef& val, const DragConfig& cfg = {}, Rangef range =
 	return chg | (imLabel("\bMax", LabeledProperty::OneElement), imEditFloat(val.max, cfg, range, fmt));
 }
 
+struct imVectorEditGroupBase : WrapperElement
+{
+	bool _ongoingEdit = false;
+};
+
+template <class VecT>
+struct imVectorEditGroup : imVectorEditGroupBase
+{
+	VecT value = {};
+	VecT _latest = {};
+
+	void SetValue(VecT v)
+	{
+		if (!_ongoingEdit)
+			value = v;
+		_latest = v;
+	}
+};
+
 } // imm
 using namespace imm;
 

@@ -369,6 +369,9 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 				return;
 			if (e.type == EventType::MouseMove && e.target->IsPressed() && e.delta.x != 0)
 			{
+				if (auto* veg = e.target->FindParentOfType<imVectorEditGroupBase>())
+					veg->_ongoingEdit = true;
+
 				if (tb.IsFocused())
 					e.context->SetKeyboardFocus(nullptr);
 
@@ -410,6 +413,14 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 				tb.edited = -1;
 
 				tb.RebuildContainer();
+			}
+			if (e.type == EventType::ButtonUp && e.context->GetMouseCapture() == e.target)
+			{
+				if (auto* veg = e.target->FindParentOfType<imVectorEditGroupBase>())
+				{
+					veg->_ongoingEdit = false;
+					tb.RebuildContainer();
+				}
 			}
 			if (e.type == EventType::SetCursor)
 			{

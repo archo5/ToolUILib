@@ -1,6 +1,8 @@
 
 #include "ImmediateMode3D.h"
 
+#include "Layout.h"
+
 
 namespace ui {
 namespace imm {
@@ -11,19 +13,23 @@ bool imEditQuat(Quat& val, QuatEditMode mode, const DragConfig& cfg, Range<float
 		return imEditFloatVec(&val.x, ui::axesXYZW, cfg, range, fmt);
 	else if (mode == QuatEditMode::EulerXYZ)
 	{
-		Vec3f angles = val.ToEulerAnglesXYZ();
-		if (imEditVec3f(angles, cfg, range, fmt))
+		ui::PushScope<imVectorEditGroup<Vec3f>> group;
+		group->SetValue(val.ToEulerAnglesXYZ());
+		ui::PushScope<StackExpandLTRLayoutElement> layout;
+		if (imEditVec3f(group->value, cfg, range, fmt))
 		{
-			val = Quat::RotateEulerAnglesXYZ(angles);
+			val = Quat::RotateEulerAnglesXYZ(group->value);
 			return true;
 		}
 	}
 	else if (mode == QuatEditMode::EulerZYX)
 	{
-		Vec3f angles = val.ToEulerAnglesZYX();
-		if (imEditVec3f(angles, cfg, range, fmt))
+		ui::PushScope<imVectorEditGroup<Vec3f>> group;
+		group->SetValue(val.ToEulerAnglesZYX());
+		ui::PushScope<StackExpandLTRLayoutElement> layout;
+		if (imEditVec3f(group->value, cfg, range, fmt))
 		{
-			val = Quat::RotateEulerAnglesZYX(angles);
+			val = Quat::RotateEulerAnglesZYX(group->value);
 			return true;
 		}
 	}
