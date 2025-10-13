@@ -79,7 +79,7 @@ static Vec3f Q2EA(Quat q, int i, int j, int k)
 	else if (cos_ang_2 <= -0.999999f)
 	{
 		ang_1 = 0;
-		ang_2 = PI / 2;
+		ang_2 = PI;
 		ang_3 = 2 * ang_sub;
 	}
 	else
@@ -123,18 +123,19 @@ Vec3f Quat::ToEulerAnglesXYZ() const
 
 Vec3f Quat::ToEulerAnglesZYX() const
 {
-	float sinX = 2 * (w * x + y * z);
-	float cosX = 1 - 2 * (x * x + y * y);
-	float angleX = atan2f(sinX, cosX);
-
-	float sinY = 2 * (w * y - z * x);
-	float angleY = asinf(clamp(sinY, -1.0f, 1.0f));
-
-	float sinZ = 2 * (w * z + x * y);
-	float cosZ = 1 - 2 * (y * y + z * z);
-	float angleZ = atan2f(sinZ, cosZ);
-
-	return Vec3f(angleX, angleY, angleZ) * RAD2DEG;
+	float x_plus_z = x + z;
+	float w_sub_y = w - y;
+	float a1 = atan2f(x_plus_z, w_sub_y);
+	float a2 = atan2f(z - x, y + w);
+	Vec3f ret;
+	ret.x = a1 - a2;
+	ret.y = acosf(clamp(w_sub_y * w_sub_y + x_plus_z * x_plus_z - 1, -1.f, 1.f)) - (PI / 2);
+	ret.z = a1 + a2;
+	ret *= RAD2DEG;
+	ret.x = AngleNormalize360(ret.x);
+	ret.y = AngleNormalize360(ret.y);
+	ret.z = AngleNormalize360(ret.z);
+	return ret;
 }
 
 Vec3f Quat::Rotate(Vec3f v) const
@@ -750,6 +751,61 @@ DEFINE_TEST(3DMath, MQMRoundtrip180)
 	for (int i = 0; i < 16; i++)
 	{
 		ASSERT_NEAR(m0.a[i], m1.a[i]);
+	}
+}
+
+DEFINE_TEST(3DMath, QAQRoundtrip)
+{
+	puts("QAQRoundtrip");
+
+	for (int w = -1; w <= 1; w += 2)
+	{
+		for (int x = -1; x <= 1; x++)
+		{
+			for (int y = -1; y <= 1; y++)
+			{
+				for (int z = -1; z <= 1; z++)
+				{
+					if (x == 0 && y == 0 && z == 0)
+						continue;
+
+					Quat q = Quat(x, y, z, w).Normalized();
+					Vec3f xyz = q.ToEulerAnglesXYZ();
+					Vec3f zyx = q.ToEulerAnglesZYX();
+					Quat qxyz = Quat::RotateEulerAnglesXYZ(xyz);
+					Quat qzyx = Quat::RotateEulerAnglesZYX(zyx);
+					Vec4f aa = q.ToAxisAngle();
+					if (fabsf(aa.w) > 180)
+						aa = Vec4f(-aa.GetVec3(), 360 * sign(aa.w) - aa.w);
+					Vec4f aaxyz = qxyz.ToAxisAngle();
+					if (fabsf(aaxyz.w) > 180)
+						aaxyz = Vec4f(-aaxyz.GetVec3(), 360 * sign(aaxyz.w) - aaxyz.w);
+					if (sign(aa.w) != sign(aaxyz.w))
+						aaxyz = -aaxyz;
+					Vec4f aazyx = qzyx.ToAxisAngle();
+					if (fabsf(aazyx.w) > 180)
+						aazyx = Vec4f(-aazyx.GetVec3(), 360 * sign(aazyx.w) - aazyx.w);
+					if (sign(aa.w) != sign(aazyx.w))
+						aazyx = -aazyx;
+
+					if ((aa.GetVec3() - aaxyz.GetVec3()).Length() > 0.0001f || fabsf(aa.w - aaxyz.w) > 0.05f)
+					{
+						ASSERT_NEAR(aa.x, aaxyz.x);
+						ASSERT_NEAR(aa.y, aaxyz.y);
+						ASSERT_NEAR(aa.z, aaxyz.z);
+						ASSERT_NEAR(aa.w, aaxyz.w);
+					}
+					//
+					if ((aa.GetVec3() - aazyx.GetVec3()).Length() > 0.0001f || fabsf(aa.w - aazyx.w) > 0.05f)
+					{
+						ASSERT_NEAR(aa.x, aazyx.x);
+						ASSERT_NEAR(aa.y, aazyx.y);
+						ASSERT_NEAR(aa.z, aazyx.z);
+						ASSERT_NEAR(aa.w, aazyx.w);
+					}
+				}
+			}
+		}
 	}
 }
 
