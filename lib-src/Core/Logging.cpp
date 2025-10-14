@@ -1,7 +1,8 @@
 
 #include "Logging.h"
 
-#include <stdio.h>
+#include "../../ThirdParty/stb_sprintf.h"
+
 #include <time.h>
 
 
@@ -76,9 +77,9 @@ void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, v
 	char buf[1024];
 	tm t = CurTime();
 	size_t at = strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-	at += snprintf(buf + at, sizeof(buf) - at, " % 5ld %s|%s ", GetCurrentThreadId(), g_levelNames[int(level)], category.name);
+	at += stbsp_snprintf(buf + at, sizeof(buf) - at, " % 5ld %s|%s ", GetCurrentThreadId(), g_levelNames[int(level)], category.name);
 	const char* msgonly = buf + at;
-	at += vsnprintf(buf + at, sizeof(buf) - at, fmt, args);
+	at += stbsp_vsnprintf(buf + at, sizeof(buf) - at, fmt, args);
 	if (at + 2 > sizeof(buf))
 		at = sizeof(buf) - 2;
 

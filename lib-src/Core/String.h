@@ -315,28 +315,7 @@ UI_FORCEINLINE bool operator >= (const StringView& a, const StringView& b) { ret
 UI_FORCEINLINE std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
 UI_FORCEINLINE std::string& operator <<= (std::string& d, StringView s) { d.assign(s._data, s._size); return d; }
 
-inline std::string FormatVA(const char* fmt, va_list args)
-{
-	va_list args2;
-	va_copy(args2, args);
-	int len = vsnprintf(nullptr, 0, fmt, args2);
-	va_end(args2);
-	if (len > 0)
-	{
-		std::string ret;
-		ret.resize(len + 1);
-		va_copy(args2, args);
-		int len2 = vsnprintf(&ret[0], ret.size(), fmt, args2);
-		va_end(args2);
-		if (len2 > 0)
-		{
-			ret.resize(len2);
-			return ret;
-		}
-	}
-	return {};
-}
-
+std::string FormatVA(const char* fmt, va_list args);
 inline std::string Format(const char* fmt, ...)
 {
 	va_list args;

@@ -37,7 +37,9 @@ struct JSONLinearWriter
 	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
 	void WriteInt(const char* key, int64_t value);
 	void WriteInt(const char* key, uint64_t value);
-	void WriteFloat(const char* key, double value);
+	void _WriteFloatPrec(const char* key, double value, int prec);
+	void WriteFloatSingle(const char* key, float value) { _WriteFloatPrec(key, value, 9); }
+	void WriteFloatDouble(const char* key, double value) { _WriteFloatPrec(key, value, 17); }
 	void WriteRawNumber(const char* key, StringView value);
 
 	void BeginArray(const char* key);
@@ -134,6 +136,7 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 	void OnFieldBool(const FieldInfo& FI, bool& val) override;
 	void OnFieldS64(const FieldInfo& FI, int64_t& val) override;
 	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override;
+	void OnFieldF32(const FieldInfo& FI, float& val) override;
 	void OnFieldF64(const FieldInfo& FI, double& val) override;
 	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
 	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;

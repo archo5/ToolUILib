@@ -1,6 +1,9 @@
 
 #include "String.h"
 
+#define STB_SPRINTF_IMPLEMENTATION
+#include "../../ThirdParty/stb_sprintf.h"
+
 
 namespace ui {
 
@@ -310,6 +313,29 @@ double StringView::take_float64()
 	_size = end - _data;
 
 	return ret * sign;
+}
+
+
+std::string FormatVA(const char* fmt, va_list args)
+{
+	va_list args2;
+	va_copy(args2, args);
+	int len = stbsp_vsnprintf(nullptr, 0, fmt, args2);
+	va_end(args2);
+	if (len > 0)
+	{
+		std::string ret;
+		ret.resize(len + 1);
+		va_copy(args2, args);
+		int len2 = stbsp_vsnprintf(&ret[0], ret.size(), fmt, args2);
+		va_end(args2);
+		if (len2 > 0)
+		{
+			ret.resize(len2);
+			return ret;
+		}
+	}
+	return {};
 }
 
 

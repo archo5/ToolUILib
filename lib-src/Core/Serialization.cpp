@@ -1,6 +1,8 @@
 
 #include "Serialization.h"
 
+#include "../../ThirdParty/stb_sprintf.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOGDI
 #define NOUSER
@@ -125,7 +127,7 @@ void NamedTextSerializeWriter::WriteInt(const char* key, int64_t value)
 	data += key;
 	data += '=';
 	char bfr[32];
-	snprintf(bfr, 32, "%" PRId64 "\n", value);
+	stbsp_snprintf(bfr, 32, "%" PRId64 "\n", value);
 	data += bfr;
 }
 
@@ -135,17 +137,27 @@ void NamedTextSerializeWriter::WriteInt(const char* key, uint64_t value)
 	data += key;
 	data += '=';
 	char bfr[32];
-	snprintf(bfr, 32, "%" PRIu64 "\n", value);
+	stbsp_snprintf(bfr, 32, "%" PRIu64 "\n", value);
 	data += bfr;
 }
 
-void NamedTextSerializeWriter::WriteFloat(const char* key, double value)
+void NamedTextSerializeWriter::WriteFloatSingle(const char* key, float value)
 {
 	_WriteIndent();
 	data += key;
 	data += '=';
 	char bfr[64];
-	snprintf(bfr, 64, "%g\n", value);
+	stbsp_snprintf(bfr, 64, "%.9g\n", value);
+	data += bfr;
+}
+
+void NamedTextSerializeWriter::WriteFloatDouble(const char* key, double value)
+{
+	_WriteIndent();
+	data += key;
+	data += '=';
+	char bfr[64];
+	stbsp_snprintf(bfr, 64, "%.17g\n", value);
 	data += bfr;
 }
 

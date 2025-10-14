@@ -300,6 +300,7 @@
   <ItemGroup>
     <ClInclude Include="..\ThirdParty\nanosvg.h" />
     <ClInclude Include="..\ThirdParty\nanosvgrast.h" />
+    <ClInclude Include="..\ThirdParty\stb_sprintf.h" />
     <ClInclude Include="Core\3DCamera.h" />
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Array.h" />

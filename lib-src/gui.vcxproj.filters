@@ -445,6 +445,9 @@
     <ClInclude Include="Core\TriangulatorComplex.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\ThirdParty\stb_sprintf.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

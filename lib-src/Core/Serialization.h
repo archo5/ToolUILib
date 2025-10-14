@@ -44,7 +44,8 @@ struct NamedTextSerializeWriter
 	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
 	void WriteInt(const char* key, int64_t value);
 	void WriteInt(const char* key, uint64_t value);
-	void WriteFloat(const char* key, double value);
+	void WriteFloatSingle(const char* key, float value);
+	void WriteFloatDouble(const char* key, double value);
 	void BeginArray(const char* key);
 	void EndArray();
 	void BeginDict(const char* key);

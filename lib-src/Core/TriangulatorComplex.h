@@ -19,6 +19,11 @@ TriangulatorComplex* TriangulatorComplex_Create();
 void TriangulatorComplex_Destroy(TriangulatorComplex* TC);
 void TriangulatorComplex_Reset(TriangulatorComplex* TC);
 
+// debugging features
+bool TriangulatorComplex_LoadFromFile(TriangulatorComplex* TC, StringView path);
+bool TriangulatorComplex_SaveToFile(TriangulatorComplex* TC, StringView path);
+void TriangulatorComplex_SaveToFileAutoPath(TriangulatorComplex* TC);
+
 // expectations from this function:
 // - consistently return the same output for the same `point`
 // - return the same result anywhere inside polygons implicitly created from the intersections of the polygons passed in via AddPolygon

@@ -5,6 +5,7 @@
 #include "Logging.h"
 
 #include "../../ThirdParty/json.h"
+#include "../../ThirdParty/stb_sprintf.h"
 
 
 namespace ui {
@@ -60,7 +61,7 @@ void JSONLinearWriter::WriteInt(const char* key, int64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
-	snprintf(bfr, 32, "%" PRId64, value);
+	stbsp_snprintf(bfr, 32, "%" PRId64, value);
 	_data += bfr;
 	_starts.Last().weight += 6;
 }
@@ -69,12 +70,12 @@ void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
-	snprintf(bfr, 32, "%" PRIu64, value);
+	stbsp_snprintf(bfr, 32, "%" PRIu64, value);
 	_data += bfr;
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteFloat(const char* key, double value)
+void JSONLinearWriter::_WriteFloatPrec(const char* key, double value, int precision)
 {
 	_WritePrefix(key);
 	if (!isfinite(value))
@@ -83,7 +84,7 @@ void JSONLinearWriter::WriteFloat(const char* key, double value)
 		value = 0;
 	}
 	char bfr[32];
-	snprintf(bfr, 32, "%g", value);
+	stbsp_snprintf(bfr, 32, "%.*g", precision, value);
 	for (auto& c : bfr)
 		if (c == ',')
 			c = '.';
@@ -414,9 +415,14 @@ void JSONSerializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val
 	WriteInt(FI.GetNameOrEmptyStr(), val);
 }
 
+void JSONSerializerObjectIterator::OnFieldF32(const FieldInfo& FI, float& val)
+{
+	WriteFloatSingle(FI.GetNameOrEmptyStr(), val);
+}
+
 void JSONSerializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	WriteFloat(FI.GetNameOrEmptyStr(), val);
+	WriteFloatDouble(FI.GetNameOrEmptyStr(), val);
 }
 
 void JSONSerializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)

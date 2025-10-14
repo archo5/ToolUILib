@@ -10,6 +10,10 @@
 #include "HashMap.h"
 #include "HashSet.h"
 
+#include "FileSystem.h"
+#include "SerializationJSON.h"
+#define SF(x) #x, x
+
 
 // this triangulator attempts to support arbitrary inside/outside logic reliably
 // it is expected that the resulting triangulation may not be optimal, it may be improved using other methods separately
@@ -24,23 +28,57 @@ struct TCVertInfoNode
 	u32 polyID;
 	u32 edgeID;
 	float edgeQ; // original vertex: edgeID = vertexID, edgeQ = 0
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCVertInfoNode");
+		ui::OnField(oi, SF(next));
+		ui::OnField(oi, SF(polyID));
+		ui::OnField(oi, SF(edgeID));
+		ui::OnField(oi, SF(edgeQ));
+		oi.EndObject();
+	}
 };
 
 struct TCVert
 {
 	Vec2f pos;
 	u32 infochain;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCVert");
+		ui::OnField(oi, SF(pos));
+		ui::OnField(oi, SF(infochain));
+		oi.EndObject();
+	}
 };
 
 struct TCEdge
 {
 	u32 v0, v1;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCEdge");
+		ui::OnField(oi, SF(v0));
+		ui::OnField(oi, SF(v1));
+		oi.EndObject();
+	}
 };
 
 struct TCSplit
 {
 	float q;
 	u32 vert;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCSplit");
+		ui::OnField(oi, SF(q));
+		ui::OnField(oi, SF(vert));
+		oi.EndObject();
+	}
 };
 
 struct TCOrigEdge
@@ -50,16 +88,43 @@ struct TCOrigEdge
 	u32 edgeID;
 	// TODO figure out something better if possible
 	Array<TCSplit> splits;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCOrigEdge");
+		ui::OnField(oi, SF(v0));
+		ui::OnField(oi, SF(v1));
+		ui::OnField(oi, SF(polyID));
+		ui::OnField(oi, SF(edgeID));
+		ui::OnField(oi, SF(splits));
+		oi.EndObject();
+	}
 };
 
 struct Counter
 {
 	u32 count = 0;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "Counter");
+		ui::OnField(oi, SF(count));
+		oi.EndObject();
+	}
 };
 
 struct TCTriangle
 {
 	u32 a, b, c;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	{
+		oi.BeginObject(FI, "TCTriangle");
+		ui::OnField(oi, SF(a));
+		ui::OnField(oi, SF(b));
+		ui::OnField(oi, SF(c));
+		oi.EndObject();
+	}
 
 	static TCTriangle Make(u32 a, u32 b, u32 c)
 	{
@@ -89,6 +154,15 @@ struct TriangulatorComplex
 	{
 		u32 v0, v1;
 		float distsq;
+
+		void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+		{
+			oi.BeginObject(FI, "TriangulatorComplex::CandidateSplit");
+			ui::OnField(oi, SF(v0));
+			ui::OnField(oi, SF(v1));
+			ui::OnField(oi, SF(distsq));
+			oi.EndObject();
+		}
 	};
 
 	TriangulatorComplex_InsideFunc* insideFunc = &DefaultInsideFunc;
@@ -98,7 +172,7 @@ struct TriangulatorComplex
 	Array<TCVertInfoNode> vertinfos;
 	HashMap<Vec2f, u32> pos2vert;
 	Array<TCOrigEdge> origedges;
-	Array<u32> origpoints;
+	//Array<u32> origpoints;
 	HashMap<u32, Counter> refvertidxset; // indices + reference counts of referenced vertices
 	Array<TCEdge> edges;
 	Array<CandidateSplit> csplits;
@@ -118,7 +192,7 @@ struct TriangulatorComplex
 		vertinfos.Clear();
 		pos2vert.Clear();
 		origedges.Clear();
-		origpoints.Clear();
+		//origpoints.Clear();
 		refvertidxset.Clear();
 		edges.Clear();
 		csplits.Clear();
@@ -127,6 +201,24 @@ struct TriangulatorComplex
 		proctris.Clear();
 		triangles.Clear();
 		nextPolyID = 0;
+	}
+
+	void OnSerialize(IObjectIterator& oi)
+	{
+		// optimized for extensibility, not speed
+		OnField(oi, SF(vertices));
+		OnField(oi, SF(vertinfos));
+		OnField(oi, SF(pos2vert));
+		OnField(oi, SF(origedges));
+		//OnField(oi, SF(origpoints));
+		OnField(oi, SF(refvertidxset));
+		OnField(oi, SF(edges));
+		OnField(oi, SF(csplits));
+		OnField(oi, SF(spledges));
+		OnField(oi, SF(vert2edge));
+		OnField(oi, SF(proctris));
+		OnField(oi, SF(triangles));
+		OnField(oi, SF(nextPolyID));
 	}
 
 	static bool DefaultInsideFunc(void* userdata, Vec2f point)
@@ -186,7 +278,7 @@ struct TriangulatorComplex
 		{
 			u32 v = InsertVertex(points[i], pid, u32(i), 0);
 			InsertReferencedVertex(v);
-			origpoints.Append(v);
+			//origpoints.Append(v);
 		}
 	}
 
@@ -213,19 +305,50 @@ struct TriangulatorComplex
 
 	void GenerateSplits()
 	{
+		size_t numinitverts = vertices.Size();
+
 		// generate virtual splits
 		for (size_t i = 0; i < origedges.Size(); i++)
 		{
 			auto& ei = origedges[i];
 			Vec2f ei0pos = vertices[ei.v0].pos;
 			Vec2f ei1pos = vertices[ei.v1].pos;
-			Vec2f eid = (ei1pos - ei0pos).Normalized();
+			//Vec2f eid = (ei1pos - ei0pos).Normalized();
+
+			//for (u32 op : origpoints)
+			for (u32 op = 0; op < numinitverts; op++)
+			{
+				if (ei.v0 == op || ei.v1 == op)
+					continue;
+				Vec2f oppos = vertices[op].pos;
+				Vec2f dq = PointLineDistanceQ(oppos, ei0pos, ei1pos);
+				if (dq.x < 0.0001f && dq.y > 0.0001f && dq.y < 0.9999f)
+				{
+					u32 vagain = InsertVertex(oppos, ei.polyID, ei.edgeID, dq.y);
+					assert(op == vagain);
+					ei.splits.Append({ dq.y, op });
+				}
+			}
+
 			for (size_t j = i + 1; j < origedges.Size(); j++)
 			{
 				auto& ej = origedges[j];
+				if (ei.v0 == ej.v0 || ei.v0 == ej.v1 || ei.v1 == ej.v0 || ei.v1 == ej.v1)
+					continue;
+				bool alreadySplitting = false;
+				for (auto& split : ei.splits)
+				{
+					if (split.vert == ej.v0 || split.vert == ej.v1)
+					{
+						alreadySplitting = true;
+						break;
+					}
+				}
+				if (alreadySplitting)
+					continue;
 				Vec2f ej0pos = vertices[ej.v0].pos;
 				Vec2f ej1pos = vertices[ej.v1].pos;
-
+#if 0
 				LineSegmentOverlapInfo lso;
 				if (AreLineSegmentsOverlapping(ei0pos, ei1pos, eid, ej0pos, ej1pos, &lso))
 				{
@@ -247,6 +370,7 @@ struct TriangulatorComplex
 					}
 					continue;
 				}
+#endif
 				Vec2f isq;
 				if (LineSegmentIntersectionQ_EE(ei0pos, ei1pos, ej0pos, ej1pos, isq))
 				{
@@ -257,17 +381,6 @@ struct TriangulatorComplex
 					assert(v0 == v0again);
 					ei.splits.Append({ isq.x, v0 });
 					ej.splits.Append({ isq.y, v0 });
-				}
-			}
-			for (u32 op : origpoints)
-			{
-				Vec2f oppos = vertices[op].pos;
-				Vec2f dq = PointLineDistanceQ(oppos, ei0pos, ei1pos);
-				if (dq.x < 0.0001f && dq.y > 0.0001f && dq.y < 0.9999f)
-				{
-					u32 vagain = InsertVertex(oppos, ei.polyID, ei.edgeID, dq.y);
-					assert(op == vagain);
-					ei.splits.Append({ dq.y, op });
 				}
 			}
 		}
@@ -601,6 +714,33 @@ void TriangulatorComplex_Destroy(TriangulatorComplex* TC)
 void TriangulatorComplex_Reset(TriangulatorComplex* TC)
 {
 	TC->Reset();
+}
+
+bool TriangulatorComplex_LoadFromFile(TriangulatorComplex* TC, StringView path)
+{
+	auto frr = ReadTextFile(path);
+	if (!frr.data)
+		return false;
+	JSONUnserializerObjectIterator u;
+	if (!u.Parse(frr.data->GetStringView()))
+		return false;
+	TC->OnSerialize(u);
+	return true;
+}
+
+bool TriangulatorComplex_SaveToFile(TriangulatorComplex* TC, StringView path)
+{
+	JSONSerializerObjectIterator s;
+	TC->OnSerialize(s);
+	return WriteTextFile(path, s.GetData());
+}
+
+void TriangulatorComplex_SaveToFileAutoPath(TriangulatorComplex* TC)
+{
+	char path[48];
+	static u32 inc = 0;
+	snprintf(path, 32, "TC_%" PRIu64 "_%" PRIu32 ".json", GetTimeUnixMS(), ++inc);
+	TriangulatorComplex_SaveToFile(TC, path);
 }
 
 void TriangulatorComplex_SetInsideFunc(TriangulatorComplex* TC, void* userdata, TriangulatorComplex_InsideFunc* func)

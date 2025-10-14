@@ -293,10 +293,16 @@ struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 		snprintf(bfr, 32, "%llu", val);
 		OnFieldAsString(FI, bfr);
 	}
+	void OnFieldF32(const FieldInfo& FI, float& val) override
+	{
+		char bfr[32];
+		snprintf(bfr, 32, "%.9g", val);
+		OnFieldAsString(FI, bfr);
+	}
 	void OnFieldF64(const FieldInfo& FI, double& val) override
 	{
 		char bfr[32];
-		snprintf(bfr, 32, "%g", val);
+		snprintf(bfr, 32, "%.17g", val);
 		OnFieldAsString(FI, bfr);
 	}
 };
