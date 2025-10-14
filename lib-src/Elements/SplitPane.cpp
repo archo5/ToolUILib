@@ -274,7 +274,8 @@ void SplitPane::OnEvent(Event& e)
 				ClampSplit(this, i);
 				_OnChangeStyle();
 				{
-					Event ev(e.context, this, EventType::Change);
+					Event ev(e.context, this, EventType::Resize);
+					ev.shortCode = 0;
 					ev.arg0 = i;
 					e.context->BubblingEvent(ev);
 				}
@@ -283,7 +284,8 @@ void SplitPane::OnEvent(Event& e)
 				if (e.context->GetMouseCapture() == this)
 					e.context->ReleaseMouse();
 				{
-					Event ev(e.context, this, EventType::Commit);
+					Event ev(e.context, this, EventType::Resize);
+					ev.shortCode = 1;
 					ev.arg0 = i;
 					e.context->BubblingEvent(ev);
 				}
@@ -303,7 +305,8 @@ void SplitPane::OnEvent(Event& e)
 				ClampSplit(this, i);
 				_OnChangeStyle();
 				{
-					Event ev(e.context, this, EventType::Change);
+					Event ev(e.context, this, EventType::Resize);
+					ev.shortCode = 0;
 					ev.arg0 = i;
 					e.context->BubblingEvent(ev);
 				}
@@ -312,7 +315,8 @@ void SplitPane::OnEvent(Event& e)
 				if (e.context->GetMouseCapture() == this)
 					e.context->ReleaseMouse();
 				{
-					Event ev(e.context, this, EventType::Commit);
+					Event ev(e.context, this, EventType::Resize);
+					ev.shortCode = 1;
 					ev.arg0 = i;
 					e.context->BubblingEvent(ev);
 				}
@@ -500,7 +504,7 @@ SplitPane& SplitPane::Init(Direction d, float* splits, size_t numSplits)
 {
 	SetDirection(d);
 	SetSplits(splits, numSplits);
-	HandleEvent(this, EventType::Change) = [this, splits](ui::Event& e)
+	HandleEvent(this, EventType::Resize) = [this, splits](ui::Event& e)
 	{
 		splits[e.arg0] = GetSplitPos(e.arg0);
 	};

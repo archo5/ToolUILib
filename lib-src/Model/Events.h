@@ -38,6 +38,7 @@ enum class EventType
 	Timer,
 	Tooltip,
 	Scroll,
+	Resize,
 
 	MouseEnter,
 	MouseLeave,

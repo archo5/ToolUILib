@@ -219,6 +219,7 @@ struct TriangulatorComplex
 			auto& ei = origedges[i];
 			Vec2f ei0pos = vertices[ei.v0].pos;
 			Vec2f ei1pos = vertices[ei.v1].pos;
+			Vec2f eid = (ei1pos - ei0pos).Normalized();
 			for (size_t j = i + 1; j < origedges.Size(); j++)
 			{
 				auto& ej = origedges[j];
@@ -226,7 +227,7 @@ struct TriangulatorComplex
 				Vec2f ej1pos = vertices[ej.v1].pos;
 
 				LineSegmentOverlapInfo lso;
-				if (AreLineSegmentsOverlapping(ei0pos, ei1pos, ej0pos, ej1pos, &lso))
+				if (AreLineSegmentsOverlapping(ei0pos, ei1pos, eid, ej0pos, ej1pos, &lso))
 				{
 					// overlap point 0
 					{
@@ -314,9 +315,9 @@ struct TriangulatorComplex
 		float aq0, aq1;
 		float bq0, bq1;
 	};
-	static bool AreLineSegmentsOverlapping(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, LineSegmentOverlapInfo* overlapinfo = nullptr)
+	static bool AreLineSegmentsOverlapping(Vec2f a0, Vec2f a1, Vec2f ad, Vec2f b0, Vec2f b1, LineSegmentOverlapInfo* overlapinfo = nullptr)
 	{
-		Vec2f ad = (a1 - a0).Normalized();
+		//Vec2f ad = (a1 - a0).Normalized();
 		Vec2f bd = (b1 - b0).Normalized();
 		float dot = Vec2Dot(ad, bd);
 		if (fabsf(dot) < 0.999999f)
@@ -359,6 +360,7 @@ struct TriangulatorComplex
 	{
 		Vec2f p0 = vertices[v0].pos;
 		Vec2f p1 = vertices[v1].pos;
+		Vec2f pd = (p1 - p0).Normalized();
 
 		for (auto& oe : origedges)
 		{
@@ -367,7 +369,7 @@ struct TriangulatorComplex
 
 			Vec2f oep0 = vertices[oe.v0].pos;
 			Vec2f oep1 = vertices[oe.v1].pos;
-			if (AreLineSegmentsOverlapping(p0, p1, oep0, oep1))
+			if (AreLineSegmentsOverlapping(p0, p1, pd, oep0, oep1))
 				return true;
 
 			if (oe.v0 == v0 || oe.v0 == v1 || oe.v1 == v0 || oe.v1 == v1)
@@ -395,6 +397,7 @@ struct TriangulatorComplex
 	{
 		Vec2f p0 = vertices[v0].pos;
 		Vec2f p1 = vertices[v1].pos;
+		Vec2f pd = (p1 - p0).Normalized();
 
 		for (auto& se : spledges)
 		{
@@ -402,7 +405,7 @@ struct TriangulatorComplex
 				return true;
 			Vec2f sep0 = vertices[se.v0].pos;
 			Vec2f sep1 = vertices[se.v1].pos;
-			if (AreLineSegmentsOverlapping(p0, p1, sep0, sep1))
+			if (AreLineSegmentsOverlapping(p0, p1, pd, sep0, sep1))
 				return true;
 			if (se.v0 == v0 || se.v0 == v1 || se.v1 == v0 || se.v1 == v1)
 				continue;
