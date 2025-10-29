@@ -631,7 +631,7 @@ double Slider::ValueToQ(double v)
 
 void PropertyList::OnReset()
 {
-	HFillVWrapElement::OnReset();
+	WrapperElement::OnReset();
 
 	splitPos = Coord::Percent(40);
 	minSplitPos = 0;
@@ -646,7 +646,7 @@ void PropertyList::OnLayout(const UIRect& rect, LayoutInfo info)
 	float finalSplitPosR = max(splitPosR, minSplitPosR);
 	_calcSplitX = roundf(finalSplitPosR + rect.x0);
 
-	HFillVWrapElement::OnLayout(rect, info);
+	WrapperElement::OnLayout(rect, info);
 }
 
 
@@ -677,7 +677,7 @@ void LabeledProperty::End(ContentLayoutType layout)
 
 void LabeledProperty::OnReset()
 {
-	HFillVWrapElement::OnReset();
+	WrapperElement::OnReset();
 
 	flags |= UIObject_SetsChildTextStyle;
 	_labelStyle = *GetCurrentTheme()->GetStruct(sid_framestyle_label);
@@ -688,7 +688,7 @@ void LabeledProperty::OnReset()
 
 void LabeledProperty::OnEnterTree()
 {
-	HFillVWrapElement::OnEnterTree();
+	WrapperElement::OnEnterTree();
 
 	_propList = FindParentOfType<PropertyList>();
 }

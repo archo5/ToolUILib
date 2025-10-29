@@ -549,12 +549,12 @@ imCtrlInfo imEditColor(Color4b& val, bool delayed)
 }
 
 
-const char* axesXY[] = { "\bX", "\bY", nullptr };
-const char* axesXYZ[] = { "\bX", "\bY", "\bZ", nullptr };
-const char* axesXYZW[] = { "\bX", "\bY", "\bZ", "\bW", nullptr };
-const char* axesRGBA[] = { "\bR", "\bG", "\bB", "\bA", nullptr };
-const char* axesMinMax[] = { "\bMin", "\bMax", nullptr };
-const char* axesWidthHeight[] = { "\bWidth", "\bHeight", nullptr };
+const char* axesXY[] = { "X", "Y", nullptr };
+const char* axesXYZ[] = { "X", "Y", "Z", nullptr };
+const char* axesXYZW[] = { "X", "Y", "Z", "W", nullptr };
+const char* axesRGBA[] = { "R", "G", "B", "A", nullptr };
+const char* axesMinMax[] = { "Min", "Max", nullptr };
+const char* axesWidthHeight[] = { "Width", "Height", nullptr };
 
 template <class T>
 struct VecEditConfig

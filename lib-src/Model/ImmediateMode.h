@@ -196,13 +196,17 @@ struct imAxisLoop : imLoop
 		int n = 0;
 		for (const char** plabel = axes; *plabel; plabel++, n++)
 		{
-			any |= SingleIteration(n, *plabel, cb, ud);
+			const char* lbl = *plabel;
+			if (*lbl == '\b')
+				lbl++;
+			any |= SingleIteration(n, lbl, cb, ud);
 		}
 		return any;
 	}
 	virtual imCtrlInfo SingleIteration(int n, const char* label, imLoopCallback* cb, void* ud) const
 	{
-		imLabel lbl(label, LabeledProperty::OneElement);
+		LabeledProperty::Scope lps(label, LabeledProperty::OneElement);
+		lps.label->SetBrief(true);
 
 		if (minWidth > 0)
 			Push<SizeConstraintElement>().SetMinWidth(minWidth);
