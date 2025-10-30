@@ -271,6 +271,7 @@ static bool HasMoreThanOneChild(UIObject* obj)
 
 template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Range<TNum> range, const char* fmt)
 {
+#if 0
 	auto& tb = Make<NumberTextbox<TNum>>();
 	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
@@ -406,6 +407,31 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 	};
 
 	return { edited, &tb };
+#else
+	auto& ne = Make<NumberEditorT<TNum>>();
+	ne.dragConfig = cfg;
+	ne.range = range;
+	if (!imGetEnabled())
+		ne.flags |= UIObject_IsDisabled;
+	bool changed = false;
+	if (ne.flags & UIObject_IsEdited)
+	{
+		val = ne.value;
+		ne.flags &= ~UIObject_IsEdited;
+		ne._OnIMChange();
+		ne.RebuildContainer();
+		changed = true;
+	}
+	else
+		ne.SetValue(val);
+	ne.HandleEvent(EventType::Change) = [&ne](Event&)
+	{
+		ne.flags |= UIObject_IsEdited;
+		ne.RebuildContainer();
+	};
+
+	return { changed, &ne };
+#endif
 }
 
 imCtrlInfo imEditInt(int& val, const DragConfig& cfg, Range<int> range, const char* fmt)

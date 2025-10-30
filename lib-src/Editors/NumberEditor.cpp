@@ -50,7 +50,11 @@ void NumberEditorBase::OnEvent(Event& e)
 	{
 		if (e.type == EventType::LostFocus || e.type == EventType::Commit)
 		{
-			SetValueFromString(_activeTextbox->GetText());
+			if (!IsInputDisabled() && SetValueFromString(_activeTextbox->GetText()))
+			{
+				e.context->OnChange(this);
+				e.context->OnCommit(this);
+			}
 			_activeTextbox->DetachParent();
 			DeleteUIObject(_activeTextbox);
 			_activeTextbox = nullptr;
@@ -58,32 +62,50 @@ void NumberEditorBase::OnEvent(Event& e)
 	}
 	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
-		dragged = false;
+		_dragged = false;
+		_anyChg = false;
 	}
-	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
+	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left && !IsInputDisabled())
 	{
-		if (!dragged)
+		if (!_dragged)
 		{
 			_activeTextbox = new Textbox;
 			_activeTextbox->SetText(ValueToString(true));
 			AppendChild(_activeTextbox);
 			e.context->SetKeyboardFocus(_activeTextbox);
 		}
+		else
+		{
+			if (_anyChg)
+				e.context->OnCommit(this);
+		}
 	}
-	if (e.type == EventType::MouseMove && e.target->IsPressed() && e.delta.x != 0)
+	if (e.type == EventType::MouseMove && e.target->IsPressed() && e.delta.x != 0 && !IsInputDisabled())
 	{
 		float speed = dragConfig.GetSpeed(e.GetModifierKeys());
 		float snap = dragConfig.GetSnap(e.GetModifierKeys());
 		float diff = e.delta.x * speed;
 
-		OnDragEdit(diff, snap);
-		dragged = true;
+		_dragged = true;
+		if (OnDragEdit(diff, snap))
+		{
+			_anyChg = true;
+			e.context->OnChange(this);
+		}
 	}
-	if (e.type == EventType::SetCursor)
+	if (e.type == EventType::SetCursor && !IsInputDisabled())
 	{
 		e.context->SetDefaultCursor(DefaultCursor::ResizeHorizontal);
 		e.StopPropagation();
 	}
+}
+
+void NumberEditorBase::_AttachToFrameContents(FrameContents* owner)
+{
+	FrameElement::_AttachToFrameContents(owner);
+
+	if (_activeTextbox)
+		AppendChild(_activeTextbox);
 }
 
 Rangef NumberEditorBase::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)

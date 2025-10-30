@@ -589,6 +589,15 @@ struct NumberEditorTest : ui::Buildable
 		WText("Integer");
 		WMake<ui::NumberEditorT<int>>().SetValue(5);
 
+		WText("Byte");
+		WMake<ui::NumberEditorT<ui::u8>>().SetValue(123);
+
+		WText("FP32");
+		WMake<ui::NumberEditorT<float>>().SetValue(24.f);
+
+		WText("FP64");
+		WMake<ui::NumberEditorT<double>>().SetValue(57.);
+
 		WPop();
 	}
 };

@@ -16,18 +16,20 @@ struct NumberEditorBase : FrameElement
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
+	void _AttachToFrameContents(FrameContents* owner) override;
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
-	virtual void OnDragEdit(float diff, float snap) = 0;
+	virtual bool OnDragEdit(float diff, float snap) = 0;
 	virtual std::string ValueToString(bool forEditing) = 0;
-	virtual void SetValueFromString(StringView str) = 0;
+	virtual bool SetValueFromString(StringView str) = 0;
 
 	DragConfig dragConfig;
 
 	Textbox* _activeTextbox = nullptr;
-	bool dragged = false;
+	bool _dragged = false;
+	bool _anyChg = false;
 };
 
 struct NumberFormatSettings
@@ -41,6 +43,10 @@ struct NumberFormatSettings
 };
 
 template <class TVal> const char* GetScanFormat(NumberFormatSettings nfs);
+template <> inline const char* GetScanFormat<signed char>(NumberFormatSettings nfs) { return nfs.hex ? "%hhx" : "%hhd"; }
+template <> inline const char* GetScanFormat<unsigned char>(NumberFormatSettings nfs) { return nfs.hex ? "%hhx" : "%hhu"; }
+template <> inline const char* GetScanFormat<signed short>(NumberFormatSettings nfs) { return nfs.hex ? "%hx" : "%hd"; }
+template <> inline const char* GetScanFormat<unsigned short>(NumberFormatSettings nfs) { return nfs.hex ? "%hx" : "%hu"; }
 template <> inline const char* GetScanFormat<signed int>(NumberFormatSettings nfs) { return nfs.hex ? "%x" : "%d"; }
 template <> inline const char* GetScanFormat<unsigned int>(NumberFormatSettings nfs) { return nfs.hex ? "%x" : "%u"; }
 template <> inline const char* GetScanFormat<signed long>(NumberFormatSettings nfs) { return nfs.hex ? "%lx" : "%ld"; }
@@ -48,7 +54,7 @@ template <> inline const char* GetScanFormat<unsigned long>(NumberFormatSettings
 template <> inline const char* GetScanFormat<signed long long>(NumberFormatSettings nfs) { return nfs.hex ? "%llx" : "%lld"; }
 template <> inline const char* GetScanFormat<unsigned long long>(NumberFormatSettings nfs) { return nfs.hex ? "%llx" : "%llu"; }
 template <> inline const char* GetScanFormat<float>(NumberFormatSettings nfs) { return nfs.hex ? "%a" : "%g"; }
-template <> inline const char* GetScanFormat<double>(NumberFormatSettings nfs) { return nfs.hex ? "%A" : "%G"; }
+template <> inline const char* GetScanFormat<double>(NumberFormatSettings nfs) { return nfs.hex ? "%la" : "%lg"; }
 
 template <class TVal> void GetPrintFormat(NumberFormatSettings nfs, char bfr[32]);
 template <> inline void GetPrintFormat<signed int>(NumberFormatSettings nfs, char bfr[32])
@@ -59,6 +65,8 @@ template <> inline void GetPrintFormat<signed int>(NumberFormatSettings nfs, cha
 	*bfr++ = nfs.hex ? 'x' : 'd';
 	*bfr = 0;
 }
+template <> inline void GetPrintFormat<signed short>(NumberFormatSettings nfs, char bfr[32]) { GetPrintFormat<signed int>(nfs, bfr); }
+template <> inline void GetPrintFormat<signed char>(NumberFormatSettings nfs, char bfr[32]) { GetPrintFormat<signed int>(nfs, bfr); }
 template <> inline void GetPrintFormat<unsigned int>(NumberFormatSettings nfs, char bfr[32])
 {
 	*bfr++ = '%';
@@ -67,6 +75,8 @@ template <> inline void GetPrintFormat<unsigned int>(NumberFormatSettings nfs, c
 	*bfr++ = nfs.hex ? 'x' : 'u';
 	*bfr = 0;
 }
+template <> inline void GetPrintFormat<unsigned short>(NumberFormatSettings nfs, char bfr[32]) { GetPrintFormat<unsigned int>(nfs, bfr); }
+template <> inline void GetPrintFormat<unsigned char>(NumberFormatSettings nfs, char bfr[32]) { GetPrintFormat<unsigned int>(nfs, bfr); }
 template <> inline void GetPrintFormat<signed long>(NumberFormatSettings nfs, char bfr[32])
 {
 	*bfr++ = '%';
@@ -133,7 +143,7 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 		range = Range<TNum>::All();
 		format = {};
 	}
-	void OnDragEdit(float diff, float snap) override
+	bool OnDragEdit(float diff, float snap) override
 	{
 		if (dragConfig.relativeSpeed)
 		{
@@ -163,7 +173,9 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 		if (nv < range.min || (diff < 0 && nv > value))
 			nv = range.min;
 
+		bool chgd = nv != value;
 		SetValue(nv);
+		return chgd;
 	}
 	std::string ValueToString(bool forEditing) override
 	{
@@ -179,9 +191,17 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 		snprintf(buf, 1024, fmt, value);
 		return buf;
 	}
-	void SetValueFromString(StringView str) override
+	bool SetValueFromString(StringView str) override
 	{
-		sscanf(str.Data(), GetScanFormat<TNum>(format), &const_cast<TNum&>(value));
+		TNum nv = 0;
+		sscanf(str.Data(), GetScanFormat<TNum>(format), &nv);
+		nv = range.Clamp(nv);
+		if (nv != value)
+		{
+			const_cast<TNum&>(value) = nv;
+			return true;
+		}
+		return false;
 	}
 
 	const TNum value = 0;
