@@ -454,7 +454,7 @@
     <ClInclude Include="Editors\NumberEditor.h">
       <Filter>Editors</Filter>
     </ClInclude>
-    <ClInclude Include="Editors\DragConfig.h">
+    <ClInclude Include="Editors\NumEditConfig.h">
       <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>

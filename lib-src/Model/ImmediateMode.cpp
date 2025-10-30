@@ -269,7 +269,7 @@ static bool HasMoreThanOneChild(UIObject* obj)
 	return false;
 }
 
-template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Range<TNum> range, const char* fmt)
+template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Range<TNum> range, NumberFormatSettings fmt)
 {
 #if 0
 	auto& tb = Make<NumberTextbox<TNum>>();
@@ -411,6 +411,7 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 	auto& ne = Make<NumberEditorT<TNum>>();
 	ne.dragConfig = cfg;
 	ne.range = range;
+	ne.format = fmt;
 	if (!imGetEnabled())
 		ne.flags |= UIObject_IsDisabled;
 	bool changed = false;
@@ -434,27 +435,27 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 #endif
 }
 
-imCtrlInfo imEditInt(int& val, const DragConfig& cfg, Range<int> range, const char* fmt)
+imCtrlInfo imEditInt(int& val, const DragConfig& cfg, Range<int> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg, Range<unsigned> range, const char* fmt)
+imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg, Range<unsigned> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg, Range<int64_t> range, const char* fmt)
+imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg, Range<int64_t> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg, Range<uint64_t> range, const char* fmt)
+imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg, Range<uint64_t> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditFloat(float& val, const DragConfig& cfg, Range<float> range, const char* fmt)
+imCtrlInfo imEditFloat(float& val, const DragConfig& cfg, Range<float> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
@@ -558,11 +559,11 @@ struct VecEditConfig
 	T* val;
 	DragConfig dragcfg;
 	Range<T> range;
-	const char* fmt;
+	NumberFormatSettings fmt;
 };
 
 template <class TNum>
-bool imEditTNumVec(TNum* val, const imLoop& loop, const DragConfig& dragcfg, Range<TNum> range, const char* fmt)
+bool imEditTNumVec(TNum* val, const imLoop& loop, const DragConfig& dragcfg, Range<TNum> range, NumberFormatSettings fmt)
 {
 	VecEditConfig<TNum> vecfg = { val, dragcfg, range, fmt };
 	imLoopCallback* cb = [](void* ud) -> imCtrlInfo
@@ -573,22 +574,22 @@ bool imEditTNumVec(TNum* val, const imLoop& loop, const DragConfig& dragcfg, Ran
 	return loop.Iterate(cb, &vecfg);
 }
 
-bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg, Range<int> range, const char* fmt)
+bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg, Range<int> range, NumberFormatSettings fmt)
 {
 	return imEditTNumVec(val, loop, dragcfg, range, fmt);
 }
 
-bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg, Rangef range, const char* fmt)
+bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg, Rangef range, NumberFormatSettings fmt)
 {
 	return imEditTNumVec(val, loop, dragcfg, range, fmt);
 }
 
-bool imEditIntVec(int* val, const char** axes, const DragConfig& dragcfg, Range<int> range, const char* fmt)
+bool imEditIntVec(int* val, const char** axes, const DragConfig& dragcfg, Range<int> range, NumberFormatSettings fmt)
 {
 	return imEditIntVec(val, imAxisLoop(axes), dragcfg, range, fmt);
 }
 
-bool imEditFloatVec(float* val, const char** axes, const DragConfig& dragcfg, Range<float> range, const char* fmt)
+bool imEditFloatVec(float* val, const char** axes, const DragConfig& dragcfg, Range<float> range, NumberFormatSettings fmt)
 {
 	return imEditFloatVec(val, imAxisLoop(axes), dragcfg, range, fmt);
 }

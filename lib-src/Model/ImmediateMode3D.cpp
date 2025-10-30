@@ -7,7 +7,7 @@
 namespace ui {
 namespace imm {
 
-bool imEditQuat(Quat& val, QuatEditMode mode, const DragConfig& cfg, Range<float> range, const char* fmt)
+bool imEditQuat(Quat& val, QuatEditMode mode, const DragConfig& cfg, Range<float> range, NumberFormatSettings fmt)
 {
 	if (mode == QuatEditMode::Raw)
 		return imEditFloatVec(&val.x, ui::axesXYZW, cfg, range, fmt);

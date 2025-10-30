@@ -345,7 +345,7 @@
     <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
-    <ClInclude Include="Editors\DragConfig.h" />
+    <ClInclude Include="Editors\NumEditConfig.h" />
     <ClInclude Include="Editors\EditCommon.h" />
     <ClInclude Include="Editors\FileTreeDataSource.h" />
     <ClInclude Include="Editors\NumberEditor.h" />

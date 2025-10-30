@@ -513,7 +513,9 @@ void Textbox::OnEvent(Event& e)
 	}
 	else if (e.type == EventType::KeyDown || e.type == EventType::KeyUp)
 	{
-		e.StopPropagation();
+		// TODO limit the scope of these events to capture only the processed keys
+		if (e.shortCode != ui::KSC_Escape)
+			e.StopPropagation();
 	}
 }
 

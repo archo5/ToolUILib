@@ -261,6 +261,24 @@ template <class T> struct Range
 		return r;
 	}
 	UI_FORCEINLINE T Clamp(T val) const { return clamp(val, min, max); }
+
+	template <class U> static U _CastSingle(T val)
+	{
+		if (val == Limits::lowest())
+			return Range<U>::Limits::lowest();
+		if (val == Limits::max())
+			return Range<U>::Limits::max();
+		if (!Limits::is_integer && Range<U>::Limits::is_integer)
+			return U(round(val));
+		return U(val);
+	}
+	template <class U> Range<U> Cast() const
+	{
+		Range<U> ret = DoNotInitialize{};
+		ret.min = _CastSingle<U>(min);
+		ret.max = _CastSingle<U>(max);
+		return ret;
+	}
 };
 
 using Rangei = Range<int>;

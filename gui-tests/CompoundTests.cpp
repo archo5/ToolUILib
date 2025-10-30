@@ -589,6 +589,11 @@ struct NumberEditorTest : ui::Buildable
 		WText("Integer");
 		WMake<ui::NumberEditorT<int>>().SetValue(5);
 
+		WText("Hex integer");
+		ui::NumberFormatSettings hexfmt;
+		hexfmt.hex = true;
+		WMake<ui::NumberEditorT<int>>().SetValue(13).SetFormat(hexfmt);
+
 		WText("Byte");
 		WMake<ui::NumberEditorT<ui::u8>>().SetValue(123);
 
@@ -839,12 +844,16 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel("dropdown"), ui::imDropdownMenuList(intFmt, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Decimal\0Hex\0"));
 		}
 
+		ui::NumberFormatSettings fmt;
+		if (intFmt)
+			fmt.hex = true;
+
 		{
 			ui::imLabel ls("int");
 			auto tmp = intVal;
-			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { -543, 1234 }, fmt))
 				intVal = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { -543, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { -543, 1234 }, fmt))
 				intVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int: " + std::to_string(intVal));
@@ -852,9 +861,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("uint");
 			auto tmp = uintVal;
-			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { 0, 1234 }, fmt))
 				uintVal = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { 0, 1234 }, intFmt ? "%x" : "%d"))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { 0, 1234 }, fmt))
 				uintVal = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint: " + std::to_string(uintVal));
@@ -862,9 +871,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("int64");
 			auto tmp = int64Val;
-			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { -543, 1234 }, fmt))
 				int64Val = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { -543, 1234 }, intFmt ? "%" PRIx64 : "%" PRId64))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { -543, 1234 }, fmt))
 				int64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("int64: " + std::to_string(int64Val));
@@ -872,9 +881,9 @@ struct IMGUITest : ui::Buildable
 		{
 			ui::imLabel ls("uint64");
 			auto tmp = uint64Val;
-			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imLabel("\bworking"), ui::imEditInt(tmp, {}, { 0, 1234 }, fmt))
 				uint64Val = tmp;
-			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { 0, 1234 }, intFmt ? "%" PRIx64 : "%" PRIu64))
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imEditInt(tmp, {}, { 0, 1234 }, fmt))
 				uint64Val = tmp;
 
 			ui::MakeWithText<ui::LabelFrame>("uint64: " + std::to_string(uint64Val));
@@ -895,7 +904,10 @@ struct IMGUITest : ui::Buildable
 		}
 		{
 			ui::imLabel("multiplier"), ui::imEditFloat(multiplierVal, { 1.0f, true }, { 0.001f, 1000.0f });
-			ui::imLabel("multiplier (limited fmt)"), ui::imEditFloat(multiplierVal, { 1.0f, true }, { 0.001f, 1000.0f }, "%.1f");
+			ui::NumberFormatSettings lfmt;
+			lfmt.digits = 1;
+			lfmt.shortFloat = false;
+			ui::imLabel("multiplier (limited fmt)"), ui::imEditFloat(multiplierVal, { 1.0f, true }, { 0.001f, 1000.0f }, lfmt);
 		}
 		{
 			ui::imLabel("color B (Delayed)"), ui::imEditColor(colorValB, true);

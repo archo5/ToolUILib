@@ -54,4 +54,22 @@ struct DragConfig
 	}
 };
 
+struct NumberFormatSettings
+{
+	i8 digits = -1;
+	//bool beautify : 1; -- TODO add actual support
+	bool shortFloat : 1;
+	bool hex : 1;
+
+	NumberFormatSettings() : /*beautify(true),*/ shortFloat(true), hex(false) {}
+
+	static NumberFormatSettings DecimalDigits(i8 num)
+	{
+		NumberFormatSettings nfs;
+		nfs.digits = num;
+		nfs.shortFloat = false;
+		return nfs;
+	}
+};
+
 } // ui

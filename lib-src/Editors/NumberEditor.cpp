@@ -2,6 +2,7 @@
 #include "NumberEditor.h"
 
 #include "../Elements/Textbox.h"
+#include "../Core/MathExpr.h"
 #include "../Model/ImmediateMode.h"
 #include "../Render/RenderText.h"
 
@@ -50,11 +51,17 @@ void NumberEditorBase::OnEvent(Event& e)
 	{
 		if (e.type == EventType::LostFocus || e.type == EventType::Commit)
 		{
-			if (!IsInputDisabled() && SetValueFromString(_activeTextbox->GetText()))
+			if (!IsInputDisabled() && SetValueFromString(StringView(_activeTextbox->GetText()).trim()))
 			{
 				e.context->OnChange(this);
 				e.context->OnCommit(this);
 			}
+			_activeTextbox->DetachParent();
+			DeleteUIObject(_activeTextbox);
+			_activeTextbox = nullptr;
+		}
+		if (e.type == EventType::KeyDown && e.shortCode == ui::KSC_Escape)
+		{
 			_activeTextbox->DetachParent();
 			DeleteUIObject(_activeTextbox);
 			_activeTextbox = nullptr;
@@ -118,6 +125,15 @@ Rangef NumberEditorBase::CalcEstimatedHeight(const Size2f& containerSize, EstSiz
 {
 	float minHeight = frameStyle.font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
 	return FrameElement::CalcEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
+}
+
+Optional<double> NumberEditorBase::ParseMathExpr(StringView str)
+{
+	MathExpr me;
+	if (!me.Compile(str))
+		return {};
+
+	return me.Evaluate();
 }
 
 } // ui

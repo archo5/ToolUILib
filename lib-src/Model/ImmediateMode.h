@@ -3,7 +3,7 @@
 #include "Objects.h"
 #include "Controls.h"
 #include "../Core/Image.h"
-#include "../Editors/DragConfig.h"
+#include "../Editors/NumEditConfig.h"
 
 
 namespace ui {
@@ -119,11 +119,11 @@ template <class T> imCtrlInfoT<StateToggle> imRadioButton(T& val, T cur, StringV
 	return ci;
 }
 
-imCtrlInfo imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, const char* fmt = "%u");
-imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, const char* fmt = "%" PRId64);
-imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, const char* fmt = "%" PRIu64);
-imCtrlInfo imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, const char* fmt = "%g");
+imCtrlInfo imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfo imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, NumberFormatSettings fmt = {});
 
 struct imCtrlInfoTextbox : imCtrlInfo
 {
@@ -183,20 +183,20 @@ struct imAxisLoop : imLoop
 	}
 };
 
-bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg = {}, Rangef range = All{}, const char* fmt = "%g");
+bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
 
 // length of `val` = length of `axes` (null-terminated)
-bool imEditIntVec(int* val, const char** axes, const DragConfig& cfg = {}, Range<int> range = All{}, const char* fmt = "%d");
-bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g");
+bool imEditIntVec(int* val, const char** axes, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
 
-inline bool imEditVec2f(Vec2f& val, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+inline bool imEditVec2f(Vec2f& val, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {})
 {
 	bool chg = (imLabel("\bX", LabeledProperty::OneElement), imEditFloat(val.x, cfg, range, fmt));
 	return chg | (imLabel("\bY", LabeledProperty::OneElement), imEditFloat(val.y, cfg, range, fmt));
 }
 
-inline bool imEditRangef(Rangef& val, const DragConfig& cfg = {}, Rangef range = All{}, const char* fmt = "%g")
+inline bool imEditRangef(Rangef& val, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {})
 {
 	bool chg = (imLabel("\bMin", LabeledProperty::OneElement), imEditFloat(val.min, cfg, range, fmt));
 	return chg | (imLabel("\bMax", LabeledProperty::OneElement), imEditFloat(val.max, cfg, range, fmt));
