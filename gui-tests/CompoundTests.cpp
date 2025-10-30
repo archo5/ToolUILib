@@ -592,7 +592,7 @@ struct NumberEditorTest : ui::Buildable
 		WText("Hex integer");
 		ui::NumberFormatSettings hexfmt;
 		hexfmt.hex = true;
-		WMake<ui::NumberEditorT<int>>().SetValue(13).SetFormat(hexfmt);
+		WMake<ui::NumberEditorT<int>>().SetLabel("HexInt:").SetValue(13).SetFormat(hexfmt);
 
 		WText("Byte");
 		WMake<ui::NumberEditorT<ui::u8>>().SetValue(123);

@@ -227,7 +227,7 @@ struct GraphImpl : ui::IProcGraph
 		switch (type)
 		{
 		case Graph::Type::Scalar:
-			ui::imLabel("\b="), ui::imEditFloat(*data);
+			ui::StdText("="), ui::imEditFloat(*data);
 			break;
 		case Graph::Type::Vector:
 			ui::imEditFloatVec(data, ui::axesXYZ);

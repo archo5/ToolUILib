@@ -269,7 +269,7 @@ static bool HasMoreThanOneChild(UIObject* obj)
 	return false;
 }
 
-template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Range<TNum> range, NumberFormatSettings fmt)
+template <class TNum> imCtrlInfoNumberEditor EditNumber(TNum& val, const DragConfig& cfg, Range<TNum> range, NumberFormatSettings fmt)
 {
 #if 0
 	auto& tb = Make<NumberTextbox<TNum>>();
@@ -435,27 +435,33 @@ template <class TNum> imCtrlInfo EditNumber(TNum& val, const DragConfig& cfg, Ra
 #endif
 }
 
-imCtrlInfo imEditInt(int& val, const DragConfig& cfg, Range<int> range, NumberFormatSettings fmt)
+imCtrlInfoNumberEditor& imCtrlInfoNumberEditor::SetLabel(StringView label)
+{
+	static_cast<NumberEditorBase*>(root)->label <<= label;
+	return *this;
+}
+
+imCtrlInfoNumberEditor imEditInt(int& val, const DragConfig& cfg, Range<int> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg, Range<unsigned> range, NumberFormatSettings fmt)
+imCtrlInfoNumberEditor imEditInt(unsigned& val, const DragConfig& cfg, Range<unsigned> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg, Range<int64_t> range, NumberFormatSettings fmt)
+imCtrlInfoNumberEditor imEditInt(int64_t& val, const DragConfig& cfg, Range<int64_t> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg, Range<uint64_t> range, NumberFormatSettings fmt)
+imCtrlInfoNumberEditor imEditInt(uint64_t& val, const DragConfig& cfg, Range<uint64_t> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
 
-imCtrlInfo imEditFloat(float& val, const DragConfig& cfg, Range<float> range, NumberFormatSettings fmt)
+imCtrlInfoNumberEditor imEditFloat(float& val, const DragConfig& cfg, Range<float> range, NumberFormatSettings fmt)
 {
 	return EditNumber(val, cfg, range, fmt);
 }
@@ -566,10 +572,10 @@ template <class TNum>
 bool imEditTNumVec(TNum* val, const imLoop& loop, const DragConfig& dragcfg, Range<TNum> range, NumberFormatSettings fmt)
 {
 	VecEditConfig<TNum> vecfg = { val, dragcfg, range, fmt };
-	imLoopCallback* cb = [](void* ud) -> imCtrlInfo
+	imLoopCallback* cb = [](void* ud, const char* label) -> imCtrlInfo
 	{
 		auto* vecfg = (VecEditConfig<TNum>*)ud;
-		return EditNumber(*vecfg->val++, vecfg->dragcfg, vecfg->range, vecfg->fmt);
+		return EditNumber(*vecfg->val++, vecfg->dragcfg, vecfg->range, vecfg->fmt).SetLabel(label);
 	};
 	return loop.Iterate(cb, &vecfg);
 }

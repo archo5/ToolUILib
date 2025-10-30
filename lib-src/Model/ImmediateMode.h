@@ -119,11 +119,17 @@ template <class T> imCtrlInfoT<StateToggle> imRadioButton(T& val, T cur, StringV
 	return ci;
 }
 
-imCtrlInfo imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfo imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfo imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfo imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfo imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, NumberFormatSettings fmt = {});
+struct imCtrlInfoNumberEditor : imCtrlInfo
+{
+	using imCtrlInfo::imCtrlInfo;
+
+	imCtrlInfoNumberEditor& SetLabel(StringView label);
+};
+imCtrlInfoNumberEditor imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfoNumberEditor imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfoNumberEditor imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfoNumberEditor imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, NumberFormatSettings fmt = {});
+imCtrlInfoNumberEditor imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, NumberFormatSettings fmt = {});
 
 struct imCtrlInfoTextbox : imCtrlInfo
 {
@@ -145,7 +151,7 @@ extern const char* axesRGBA[];
 extern const char* axesMinMax[];
 extern const char* axesWidthHeight[];
 
-typedef imCtrlInfo imLoopCallback(void* data);
+typedef imCtrlInfo imLoopCallback(void* data, const char* label);
 
 struct imLoop
 {
@@ -172,14 +178,11 @@ struct imAxisLoop : imLoop
 	}
 	virtual imCtrlInfo SingleIteration(int n, const char* label, imLoopCallback* cb, void* ud) const
 	{
-		LabeledProperty::Scope lps(label, LabeledProperty::OneElement);
-		lps.label->SetBrief(true);
-
 		if (minWidth > 0)
 			Push<SizeConstraintElement>().SetMinWidth(minWidth);
 		UI_DEFER(if (minWidth > 0) Pop());
 
-		return cb(ud);
+		return cb(ud, label);
 	}
 };
 
@@ -192,14 +195,14 @@ bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, R
 
 inline bool imEditVec2f(Vec2f& val, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {})
 {
-	bool chg = (imLabel("\bX", LabeledProperty::OneElement), imEditFloat(val.x, cfg, range, fmt));
-	return chg | (imLabel("\bY", LabeledProperty::OneElement), imEditFloat(val.y, cfg, range, fmt));
+	bool chg = imEditFloat(val.x, cfg, range, fmt).SetLabel("X");
+	return chg | imEditFloat(val.y, cfg, range, fmt).SetLabel("Y");
 }
 
 inline bool imEditRangef(Rangef& val, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {})
 {
-	bool chg = (imLabel("\bMin", LabeledProperty::OneElement), imEditFloat(val.min, cfg, range, fmt));
-	return chg | (imLabel("\bMax", LabeledProperty::OneElement), imEditFloat(val.max, cfg, range, fmt));
+	bool chg = imEditFloat(val.min, cfg, range, fmt).SetLabel("Min");
+	return chg | imEditFloat(val.max, cfg, range, fmt).SetLabel("Max");
 }
 
 struct imVectorEditGroupBase : WrapperElement

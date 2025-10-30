@@ -20,6 +20,7 @@ struct NumberEditorBase : FrameElement
 
 	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	virtual bool OnDragEdit(float diff, float snap) = 0;
 	virtual std::string ValueToString(bool forEditing) = 0;
@@ -28,6 +29,7 @@ struct NumberEditorBase : FrameElement
 	static Optional<double> ParseMathExpr(StringView str);
 
 	DragConfig dragConfig;
+	std::string label;
 
 	Textbox* _activeTextbox = nullptr;
 	bool _dragged = false;
@@ -207,6 +209,7 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 	}
 
 	NumberEditorT& SetDragConfig(DragConfig cfg) { dragConfig = cfg; return *this; }
+	NumberEditorT& SetLabel(StringView lbl) { label <<= lbl; return *this; }
 
 	const TNum value = 0;
 	NumberEditorT& SetValue(TNum v) { const_cast<TNum&>(value) = v; return *this; }
