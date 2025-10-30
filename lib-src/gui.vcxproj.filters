@@ -187,6 +187,9 @@
     <ClCompile Include="Core\TriangulatorComplex.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Editors\NumberEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -447,6 +450,12 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\stb_sprintf.h">
       <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\NumberEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors\DragConfig.h">
+      <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

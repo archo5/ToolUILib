@@ -255,6 +255,7 @@
     <ClCompile Include="Editors\CurveEditor.cpp" />
     <ClCompile Include="Editors\EditCommon.cpp" />
     <ClCompile Include="Editors\FileTreeDataSource.cpp" />
+    <ClCompile Include="Editors\NumberEditor.cpp" />
     <ClCompile Include="Editors\ProcGraphEditor.cpp" />
     <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Editors\Tables.cpp" />
@@ -344,8 +345,10 @@
     <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
+    <ClInclude Include="Editors\DragConfig.h" />
     <ClInclude Include="Editors\EditCommon.h" />
     <ClInclude Include="Editors\FileTreeDataSource.h" />
+    <ClInclude Include="Editors\NumberEditor.h" />
     <ClInclude Include="Editors\ProcGraphEditor.h" />
     <ClInclude Include="Editors\SequenceEditor.h" />
     <ClInclude Include="Editors\Tables.h" />

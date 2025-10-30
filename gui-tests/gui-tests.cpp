@@ -326,6 +326,7 @@ void Test_Scrollbars();
 void Test_Tooltip();
 void Test_Dropdown();
 void Test_Textbox();
+void Test_NumberEditor();
 void Test_ColorBlock();
 void Test_Image();
 void Test_ColorPicker();
@@ -438,6 +439,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Tooltip", Test_Tooltip },
 	{ "Dropdown", Test_Dropdown },
 	{ "Textbox", Test_Textbox },
+	{ "Number editor", Test_NumberEditor },
 	{},
 	{ "Color block", Test_ColorBlock },
 	{ "Image", Test_Image },

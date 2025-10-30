@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "../lib-src/Model/Docking.h"
+#include "../lib-src/Editors/NumberEditor.h"
 
 
 struct StateButtonsTest : ui::Buildable
@@ -576,6 +577,24 @@ struct TextboxTest : ui::Buildable
 void Test_Textbox()
 {
 	ui::Make<TextboxTest>();
+}
+
+
+struct NumberEditorTest : ui::Buildable
+{
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+
+		WText("Integer");
+		WMake<ui::NumberEditorT<int>>().SetValue(5);
+
+		WPop();
+	}
+};
+void Test_NumberEditor()
+{
+	ui::Make<NumberEditorTest>();
 }
 
 

@@ -7,6 +7,7 @@
 #include "System.h"
 
 #include "../Elements/Textbox.h"
+#include "../Editors/NumberEditor.h"
 
 
 namespace ui {
@@ -218,26 +219,6 @@ imCtrlInfoT<StateToggle> imRadioButtonRaw(bool val, StringView text, const IStat
 	return { edited, &rb };
 }
 
-float DragConfig::GetSpeed(uint8_t modifierKeys) const
-{
-	if (modifierKeys & slowdownKey)
-		return slowdownSpeed;
-	if (modifierKeys & boostKey)
-		return boostSpeed;
-	return speed;
-}
-
-float DragConfig::GetSnap(uint8_t modifierKeys) const
-{
-	if (modifierKeys & snapOffKey)
-		return 0;
-	if (modifierKeys & slowdownKey)
-		return slowdownSnap;
-	if (modifierKeys & boostKey)
-		return boostSnap;
-	return snap;
-}
-
 
 struct NumFmtBox
 {
@@ -254,17 +235,6 @@ const char* RemoveNegZero(const char* str)
 {
 	return strncmp(str, "-0", 3) == 0 ? "0" : str;
 }
-
-template <class T> struct MakeSigned {};
-template <> struct MakeSigned<int> { using type = int; };
-template <> struct MakeSigned<unsigned> { using type = int; };
-template <> struct MakeSigned<int64_t> { using type = int64_t; };
-template <> struct MakeSigned<uint64_t> { using type = int64_t; };
-template <> struct MakeSigned<float> { using type = float; };
-
-template <class T> float GetMinSnap(T) { return 1; }
-float GetMinSnap(float v) { return max(nextafterf(v, INFINITY) - v, FLT_EPSILON); }
-float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON); }
 
 static inline bool fstrhas(const char* s, char c)
 {
