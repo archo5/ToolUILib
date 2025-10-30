@@ -14,18 +14,18 @@
 namespace ui {
 
 
-Rangef PreferredSizeLayout::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange PreferredSizeLayout::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
 	case ImageLayoutMode::PreferredExact:
-		return Rangef::Exact(GetSize().x);
+		return EstSizeRange::SoftExact(GetSize().x);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef::AtLeast(GetSize().x);
+		return EstSizeRange::SoftAtLeast(GetSize().x);
 	case ImageLayoutMode::Fill:
-		return Rangef::Exact(containerSize.x);
+		return EstSizeRange::SoftExact(containerSize.x);
 	default:
-		return Rangef::AtLeast(0);
+		return {};
 	}
 }
 
@@ -185,18 +185,18 @@ void ImageElement::OnPaint(const UIPaintContext& ctx)
 	UIObjectSingleChild::OnPaint(ctx);
 }
 
-Rangef ImageElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ImageElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
 	case ImageLayoutMode::PreferredExact:
-		return Rangef::Exact(_image ? _image->GetWidth() : 0);
+		return EstSizeRange::SoftExact(_image ? _image->GetWidth() : 0);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef::AtLeast(_image ? _image->GetWidth() : 0);
+		return EstSizeRange::SoftAtLeast(_image ? _image->GetWidth() : 0);
 	case ImageLayoutMode::Fill:
-		return Rangef::Exact(containerSize.x);
+		return EstSizeRange::SoftExact(containerSize.x);
 	default:
-		return Rangef::AtLeast(0);
+		return {};
 	}
 }
 

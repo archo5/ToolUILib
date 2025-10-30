@@ -773,10 +773,10 @@ void UIObjectSingleChild::_DetachFromTree()
 }
 
 
-Rangef WrapperElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange WrapperElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_child || !_child->_NeedsLayout())
-		return Rangef::AtLeast(0);
+		return {};
 	return _child->CalcEstimatedWidth(containerSize, type);
 }
 
@@ -799,9 +799,9 @@ void WrapperElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
-Rangef FillerElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange FillerElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(containerSize.x);
+	return EstSizeRange::Exact(containerSize.x);
 }
 
 Rangef FillerElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -817,9 +817,9 @@ void FillerElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
-Rangef HFillVWrapElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange HFillVWrapElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(containerSize.x);
+	return EstSizeRange::Exact(containerSize.x);
 }
 
 Rangef HFillVWrapElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -850,13 +850,13 @@ void HFillVWrapElement::OnLayout(const UIRect& rect, LayoutInfo info)
 void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();
-	widthRange = Rangef::AtLeast(0);
+	widthRange = {};
 	heightRange = Rangef::AtLeast(0);
 }
 
-Rangef SizeConstraintElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange SizeConstraintElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	if (widthRange.min >= widthRange.max)
+	if (widthRange.hardMin >= widthRange.hardMax)
 		return widthRange;
 	return WrapperElement::CalcEstimatedWidth(containerSize, type).LimitTo(widthRange);
 }
@@ -882,7 +882,7 @@ void CenteringElement::OnLayout(const UIRect& rect, LayoutInfo info)
 	{
 		auto wr = CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Exact);
 		auto hr = CalcEstimatedHeight(rect.GetSize(), ui::EstSizeType::Exact);
-		float w = roundf(wr.min);
+		float w = roundf(wr.ExpandToFill(rect.GetWidth()));
 		float h = roundf(hr.min);
 		float x = roundf(rect.x0 + (rect.GetWidth() - w) * align.x);
 		float y = roundf(rect.y0 + (rect.GetHeight() - h) * align.y);
@@ -943,10 +943,11 @@ void TextElement::OnPaint(const UIPaintContext& ctx)
 	draw::TextLine(font, fs->size, r.x0, r.GetCenterY(), text, ctx.textColor, TextBaseline::Middle, &r);
 }
 
-Rangef TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	auto* fs = _FindClosestParentFontSettings();
-	return Rangef::Exact(ceilf(GetTextWidth(fs->GetFont(), fs->size, text)));
+	float w = ceilf(GetTextWidth(fs->GetFont(), fs->size, text));
+	return EstSizeRange::SoftExact(w);
 }
 
 Rangef TextElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -1059,12 +1060,13 @@ UIObject* ChildScaleOffsetElement::FindObjectAtPoint(Point2f pos)
 	return nullptr;
 }
 
-Rangef ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	Rangef r = WrapperElement::CalcEstimatedWidth(containerSize / transform.scale, type);
-	r.min *= transform.scale;
-	if (r.max < FLT_MAX)
-		r.max *= transform.scale;
+	EstSizeRange r = WrapperElement::CalcEstimatedWidth(containerSize / transform.scale, type);
+	r.softMin *= transform.scale;
+	r.hardMin *= transform.scale;
+	if (r.hardMax < FLT_MAX)
+		r.hardMax *= transform.scale;
 	return r;
 }
 

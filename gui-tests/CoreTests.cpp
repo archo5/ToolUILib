@@ -739,7 +739,7 @@ struct OpenCloseTest : ui::Buildable
 		{
 			puts("STATE: disabled");
 		}
-		ui::Rangef CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override { return ui::Rangef::AtLeast(0); }
+		ui::EstSizeRange CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override { return {}; }
 		ui::Rangef CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override { return ui::Rangef::AtLeast(0); }
 	};
 	void Build() override
@@ -1256,9 +1256,9 @@ struct HighElementCountTest : ui::Buildable
 			auto r = GetFinalRect();
 			ui::draw::RectCol(r.x0, r.y0, r.x1, r.y1, ui::Color4f(fmodf(uintptr_t(this) / (8 * 256.0f), 1.0f), 0.0f, 0.0f));
 		}
-		ui::Rangef CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override
+		ui::EstSizeRange CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override
 		{
-			return ui::Rangef::Exact(100);
+			return ui::EstSizeRange::SoftExact(100);
 		}
 		ui::Rangef CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override
 		{

@@ -87,7 +87,7 @@ struct TabbedPanel : UIObjectSingleChild
 	void OnEvent(Event& e) override;
 
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 

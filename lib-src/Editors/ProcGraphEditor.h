@@ -216,7 +216,7 @@ struct ProcGraphEditor : Buildable
 	void Build() override;
 	void OnReset() override;
 	void OnEvent(Event& e) override;
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return Rangef::Exact(containerSize.x); }
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return EstSizeRange::SoftExact(containerSize.x); }
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::Exact(containerSize.y); }
 	void OnPaint(const UIPaintContext& ctx) override;
 

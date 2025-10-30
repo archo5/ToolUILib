@@ -101,10 +101,10 @@ Size2f FrameElement::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef FrameElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange FrameElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
-	return (_child ? Rangef::AtLeast(_child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).min) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
 Rangef FrameElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -188,9 +188,9 @@ void IconElement::OnPaint(const UIPaintContext& ctx)
 		style.painter->Paint(this);
 }
 
-Rangef IconElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange IconElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(style.size.x);
+	return EstSizeRange::Exact(style.size.x);
 }
 
 Rangef IconElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -246,10 +246,10 @@ void LabelFrame::OnReset()
 	SetDefaultFrameStyle(DefaultFrameStyle::Label);
 }
 
-Rangef LabelFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange LabelFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.x0 + frameStyle.padding.x1;
-	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
 Rangef LabelFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -275,9 +275,9 @@ void Button::OnReset()
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 }
 
-Rangef Button::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange Button::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(FrameElement::CalcEstimatedWidth(containerSize, type).min);
+	return FrameElement::CalcEstimatedWidth(containerSize, type).WithoutHardMax();
 }
 
 Rangef Button::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -291,11 +291,12 @@ void Button::OnLayout(const UIRect& rect, LayoutInfo info)
 	{
 		UIRect r = rect.ShrinkBy(frameStyle.padding);
 		auto rSize = r.GetSize();
-		float minw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding).min;
+		EstSizeRange srw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding);
+		float sizew = srw.ExpandToFill(r.GetWidth());
 		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).min;
-		float ox = roundf((rSize.x - minw) * 0.5f);
+		float ox = roundf((rSize.x - sizew) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
-		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + sizew, r.y0 + oy + minh };
 		fr = fr.Intersect(r);
 		_child->PerformLayout(fr, info);
 	}
@@ -421,11 +422,12 @@ void StateButtonSkin::OnLayout(const UIRect& rect, LayoutInfo info)
 	{
 		UIRect r = rect.ShrinkBy(frameStyle.padding);
 		auto rSize = r.GetSize();
-		float minw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding).min;
+		EstSizeRange srw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding);
+		float sizew = srw.ExpandToFill(r.GetWidth());
 		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).min;
-		float ox = roundf((rSize.x - minw) * 0.5f);
+		float ox = roundf((rSize.x - sizew) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
-		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + minw, r.y0 + oy + minh };
+		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + sizew, r.y0 + oy + minh };
 		fr = fr.Intersect(r);
 		_child->PerformLayout(fr, info);
 	}
@@ -496,10 +498,10 @@ Size2f ProgressBar::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef ProgressBar::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ProgressBar::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = style.padding.x0 + style.padding.x1;
-	return Rangef::AtLeast(_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).min : 0).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
 Rangef ProgressBar::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -747,7 +749,8 @@ void LabeledProperty::OnLayout(const UIRect& rect, LayoutInfo info)
 			auto* font = labelStyle.font.GetFont();
 
 			float labelPartWidth = GetTextWidth(font, labelStyle.font.size, _labelText) + labelStyle.padding.x0 + labelStyle.padding.x1;
-			float childPartWidth = _child ? _child->CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Expanding).min : 0;
+			EstSizeRange srw = _child ? _child->CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Expanding) : EstSizeRange();
+			float childPartWidth = srw.ExpandToFill(rect.GetWidth());
 			if (labelPartWidth + childPartWidth > rect.GetWidth())
 			{
 				// reduce size proportionally since cannot fit both
@@ -1056,14 +1059,14 @@ struct DropdownMenuPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override
 	{
-		Rangef rw = curObj->CalcEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
+		EstSizeRange rw = curObj->CalcEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
 		Rangef rh = curObj->CalcEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
 
-		rw = rw.Intersect(Rangef::AtLeast(outRect.GetWidth()));
+		rw = rw.WithSoftMin(outRect.GetWidth());
 
 		float x = outRect.x0;
 		float y = outRect.y1;
-		float w = rw.min;
+		float w = rw.softMin;
 		float h = rh.min;
 
 		auto windowInnerSize = curObj->GetNativeWindow()->GetInnerRect().GetSize();
@@ -1516,7 +1519,7 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 		minContSize.y = contSize.y;
 #endif
 
-	float w = curObj->CalcEstimatedWidth(minContSize, EstSizeType::Expanding).min;
+	float w = curObj->CalcEstimatedWidth(minContSize, EstSizeType::Expanding).softMin;
 	float h = curObj->CalcEstimatedHeight(minContSize, EstSizeType::Expanding).min;
 
 	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMousePos, 16);

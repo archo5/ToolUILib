@@ -198,6 +198,8 @@ struct BasicLinear01Curve : ICurveView
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override { points[pointid] = { p.x, clamp(p.y, 0.0f, 1.0f) }; }
 	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
 	{
+		if (firstpointid + 1 >= points.Size())
+			return points.Last();
 		return Vec2fLerp(points[firstpointid], points[firstpointid + 1], q);
 	}
 	int GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut) override

@@ -332,9 +332,9 @@ void SplitPane::OnEvent(Event& e)
 	_splitUI.FinalizeOnEvent(e);
 }
 
-Rangef SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(containerSize.x);
+	return EstSizeRange::SoftExact(containerSize.x);
 }
 
 Rangef SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)

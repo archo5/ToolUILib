@@ -185,6 +185,69 @@ enum class EstSizeType
 	Expanding,
 };
 
+struct EstSizeRange
+{
+	float softMin = 0;
+	float hardMin = 0;
+	float hardMax = FLT_MAX;
+
+	EstSizeRange WithSoftMin(float osm) const
+	{
+		EstSizeRange r = *this;
+		r.softMin = max(r.softMin, osm);
+		return r;
+	}
+	EstSizeRange WithMins(EstSizeRange o) const
+	{
+		EstSizeRange r = *this;
+		r.softMin = max(r.softMin, o.softMin);
+		r.hardMin = max(r.hardMin, o.hardMin);
+		return r;
+	}
+	EstSizeRange LimitTo(EstSizeRange o) const
+	{
+		EstSizeRange r = *this;
+		r.softMin = clamp(max(r.softMin, o.softMin), o.hardMin, o.hardMax);
+		r.hardMin = max(r.hardMin, o.hardMin);
+		r.hardMax = min(r.hardMax, o.hardMax);
+		return r;
+	}
+	EstSizeRange WithoutHardMax() const
+	{
+		return { softMin, hardMin };
+	}
+	EstSizeRange Add(float padding) const
+	{
+		EstSizeRange r = *this;
+		r.softMin += padding;
+		if (r.hardMin > 0)
+			r.hardMin += padding;
+		if (r.hardMax < FLT_MAX)
+			r.hardMax += padding;
+		return r;
+	}
+	EstSizeRange AddMins(EstSizeRange o) const
+	{
+		EstSizeRange r = *this;
+		r.hardMin += o.hardMin;
+		r.softMin += o.softMin;
+		return r;
+	}
+
+	float ExpandToFill(float w) const
+	{
+		return max(hardMin, min(max(softMin, w), hardMax));
+	}
+	float GetMin() const
+	{
+		return max(hardMin, min(softMin, hardMax));
+	}
+
+	static EstSizeRange Exact(float size) { return { size, size, size }; }
+	static EstSizeRange SoftExact(float size) { return { size, 0, size }; }
+	static EstSizeRange SoftAtLeast(float size) { return { size }; }
+};
+
 struct LayoutInfo
 {
 	enum
@@ -241,7 +304,7 @@ struct UIObject : IPersistentObject
 
 	void PerformLayout(const UIRect& rect, LayoutInfo info);
 	void ApplyLayoutInfo(const UIRect& rectFromChild, const UIRect& layoutRect, LayoutInfo info);
-	virtual Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) = 0;
+	virtual EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) = 0;
 	virtual Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) = 0;
 	virtual void OnLayout(const UIRect& rect, LayoutInfo info) = 0;
 	virtual void OnLayoutChanged() {}
@@ -394,56 +457,54 @@ struct UIObjectSingleChild : UIObject
 // TODO: slowly port to these
 struct WrapperElement : UIObjectSingleChild
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct FillerElement : UIObjectSingleChild
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct HFillVWrapElement : UIObjectSingleChild
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 struct SizeConstraintElement : WrapperElement
 {
-	Rangef widthRange = Rangef::AtLeast(0);
+	EstSizeRange widthRange;
 	Rangef heightRange = Rangef::AtLeast(0);
 
 	void OnReset() override;
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
-	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = r; return *this; }
+	SizeConstraintElement& SetWidthRange(Rangef r) { widthRange = { r.min, r.min, r.max }; return *this; }
 	SizeConstraintElement& SetHeightRange(Rangef r) { heightRange = r; return *this; }
 
-	SizeConstraintElement& SetMinWidth(float w) { widthRange.min = w; return *this; }
-	SizeConstraintElement& SetMaxWidth(float w) { widthRange.max = w; return *this; }
+	SizeConstraintElement& SetMinWidth(float w) { widthRange.hardMin = w; widthRange.softMin = w; return *this; }
+	SizeConstraintElement& SetMaxWidth(float w) { widthRange.hardMax = w; return *this; }
 	SizeConstraintElement& SetMinHeight(float h) { heightRange.min = h; return *this; }
 	SizeConstraintElement& SetMaxHeight(float h) { heightRange.max = h; return *this; }
 
-	SizeConstraintElement& SetWidth(float w) { widthRange.min = w; widthRange.max = w; return *this; }
+	SizeConstraintElement& SetWidth(float w) { widthRange = { w, w, w }; return *this; }
 	SizeConstraintElement& SetHeight(float h) { heightRange.min = h; heightRange.max = h; return *this; }
 	SizeConstraintElement& SetSize(float w, float h)
 	{
-		widthRange.min = w;
-		widthRange.max = w;
+		widthRange = { w, w, w };
 		heightRange.min = h;
 		heightRange.max = h;
 		return *this;
 	}
 	SizeConstraintElement& SetSize(Size2f s)
 	{
-		widthRange.min = s.x;
-		widthRange.max = s.x;
+		widthRange = { s.x, s.x, s.x };
 		heightRange.min = s.y;
 		heightRange.max = s.y;
 		return *this;
@@ -478,7 +539,7 @@ struct TextElement : UIObjectNoChildren
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	TextElement& SetText(StringView t)
@@ -509,7 +570,7 @@ struct ChildScaleOffsetElement : WrapperElement
 	Point2f LocalToChildPoint(Point2f pos) const override;
 	UIObject* FindObjectAtPoint(Point2f pos) override;
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };

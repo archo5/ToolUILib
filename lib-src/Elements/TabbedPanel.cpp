@@ -382,13 +382,13 @@ Size2f TabbedPanel::GetReducedContainerSize(Size2f size)
 	return size;
 }
 
-Rangef TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = 
 		+ style.tabPanelPadding.x0
 		+ style.tabPanelPadding.x1
 		+ (showCloseButton ? style.tabInnerButtonMargin + style.tabCloseButtonSize.x : 0);
-	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
 Rangef TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
@@ -419,7 +419,7 @@ void TabbedPanel::OnLayout(const UIRect& rect, LayoutInfo info)
 	{
 		if (tab.obj)
 		{
-			tab._contentWidth = tab.obj->CalcEstimatedWidth(btnRectSize, EstSizeType::Exact).min;
+			tab._contentWidth = tab.obj->CalcEstimatedWidth(btnRectSize, EstSizeType::Expanding).softMin;
 		}
 		else
 		{

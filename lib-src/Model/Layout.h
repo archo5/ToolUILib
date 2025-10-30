@@ -12,7 +12,7 @@ struct PaddingElement : UIObjectSingleChild
 
 	void OnReset() override;
 	Size2f GetReducedContainerSize(Size2f size);
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
@@ -44,7 +44,7 @@ struct LayoutElement : UIObject
 	// size cache
 	uint32_t _cacheFrameWidth = {};
 	uint32_t _cacheFrameHeight = {};
-	Rangef _cacheValueWidth = { 0, 0 };
+	EstSizeRange _cacheValueWidth;
 	Rangef _cacheValueHeight = { 0, 0 };
 
 	void OnReset() override
@@ -169,7 +169,7 @@ struct StackLTRLayoutElement : LayoutElement<_::StackLTRLayoutElement_Slot>
 {
 	float paddingBetweenElements = 0;
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
@@ -186,7 +186,7 @@ struct StackTopDownLayoutElement_Slot
 
 struct StackTopDownLayoutElement : LayoutElement<_::StackTopDownLayoutElement_Slot>
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
@@ -210,7 +210,7 @@ struct StackExpandLTRLayoutElement : LayoutElement<_::StackExpandLTRLayoutElemen
 {
 	float paddingBetweenElements = 0;
 
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
@@ -227,7 +227,7 @@ struct WrapperLTRLayoutElement_Slot
 
 struct WrapperLTRLayoutElement : LayoutElement<_::WrapperLTRLayoutElement_Slot>
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
@@ -251,7 +251,7 @@ struct EdgeSliceLayoutElement_Slot
 
 struct EdgeSliceLayoutElement : LayoutElement<_::EdgeSliceLayoutElement_Slot>
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
@@ -266,7 +266,7 @@ struct LayerLayoutElement_Slot
 
 struct LayerLayoutElement : LayoutElement<_::LayerLayoutElement_Slot>
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
@@ -283,7 +283,7 @@ struct PlacementLayoutElement_Slot
 
 struct PlacementLayoutElement : LayoutElement<_::PlacementLayoutElement_Slot>
 {
-	Rangef CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };

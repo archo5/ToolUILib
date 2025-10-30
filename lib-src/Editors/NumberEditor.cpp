@@ -131,10 +131,10 @@ void NumberEditorBase::_AttachToFrameContents(FrameContents* owner)
 		AppendChild(_activeTextbox);
 }
 
-Rangef NumberEditorBase::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange NumberEditorBase::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	float minWidth = frameStyle.font.size * 2 + frameStyle.padding.x0 + frameStyle.padding.x1;
-	return FrameElement::CalcEstimatedWidth(containerSize, type).Intersect(Rangef::AtLeast(minWidth));
+	return FrameElement::CalcEstimatedWidth(containerSize, type).WithSoftMin(minWidth);
 }
 
 Rangef NumberEditorBase::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)

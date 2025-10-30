@@ -473,9 +473,9 @@ void InlineFrame::OnPaint(const UIPaintContext& ctx)
 		_frameContents->container.rootBuildable->OnPaint({ ctx, {} });
 }
 
-Rangef InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+EstSizeRange InlineFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(100); // default width
+	return { 100 }; // default width
 }
 
 Rangef InlineFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)

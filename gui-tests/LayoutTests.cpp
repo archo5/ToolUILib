@@ -261,11 +261,13 @@ struct SizeTest : ui::Buildable
 		{
 			auto ew = obj->CalcEstimatedWidth({ 500, 500 }, ui::EstSizeType::Exact);
 			auto eh = obj->CalcEstimatedHeight({ 500, 500 }, ui::EstSizeType::Exact);
-			if (ew.max < ew.min)
-				return "est.width: max < min";
+			if (ew.hardMax < ew.hardMin)
+				return "est.width: hard max < hard min";
+			if (ew.hardMax < ew.softMin)
+				return "est.width: hard max < soft min";
 			if (eh.max < eh.min)
 				return "est.height: max < min";
-			ui::UIRect r{ 0, 0, ew.min, eh.min };
+			ui::UIRect r{ 0, 0, ew.softMin, eh.min };
 			return TestSize(r, w, h);
 		};
 		tests.Append({ &obj, fn });
