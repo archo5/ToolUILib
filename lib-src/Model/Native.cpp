@@ -1655,8 +1655,24 @@ struct Inspector : NativeDialogWindow
 		float scrollPos = 0;
 		float scrollMax = FLT_MAX;
 		FontSettings mainFont;
+		int rectX, sizeX, estwX, esthX, stateX;
 
 		Inspector* insp;
+
+		InspectorUI()
+		{
+			mainFont.size = 11;
+			RecalcXOffsets();
+		}
+
+		void RecalcXOffsets()
+		{
+			rectX = 500;
+			sizeX = rectX + 120;
+			estwX = sizeX + 70;
+			esthX = estwX + 90;
+			stateX = esthX + 90;
+		}
 
 		void Build() override {}
 
@@ -1688,8 +1704,12 @@ struct Inspector : NativeDialogWindow
 				char bfr[1024];
 				{
 					auto fr = obj->GetFinalRect();
+
 					snprintf(bfr, 1024, "%g;%g - %g;%g", fr.x0, fr.y0, fr.x1, fr.y1);
-					draw::TextLine(font, fontSize, 400, ys, bfr, Color4b::White(), TextBaseline::Top);
+					draw::TextLine(font, fontSize, rectX, ys, bfr, Color4b::White(), TextBaseline::Top);
+
+					snprintf(bfr, 1024, "%g;%g", fr.GetWidth(), fr.GetHeight());
+					draw::TextLine(font, fontSize, sizeX, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 
 				{
@@ -1698,18 +1718,20 @@ struct Inspector : NativeDialogWindow
 						contSize = obj->parent->GetFinalRect().GetSize();
 					else if (obj->system)
 						contSize = { obj->system->eventSystem.width, obj->system->eventSystem.height };
+
 					EstSizeRange estw = obj->CalcEstimatedWidth(contSize, ui::EstSizeType::Expanding);
 					if (estw.hardMax == FLT_MAX)
 						snprintf(bfr, 1024, "%g/%g-max", estw.hardMin, estw.softMin);
 					else
 						snprintf(bfr, 1024, "%g/%g-%g", estw.hardMin, estw.softMin, estw.hardMax);
-					draw::TextLine(font, fontSize, 500, ys, bfr, Color4b::White(), TextBaseline::Top);
+					draw::TextLine(font, fontSize, estwX, ys, bfr, Color4b::White(), TextBaseline::Top);
+
 					Rangef esth = obj->CalcEstimatedHeight(contSize, ui::EstSizeType::Expanding);
 					if (esth.max == FLT_MAX)
 						snprintf(bfr, 1024, "%g-max", esth.min);
 					else
 						snprintf(bfr, 1024, "%g-%g", esth.min, esth.max);
-					draw::TextLine(font, fontSize, 600, ys, bfr, Color4b::White(), TextBaseline::Top);
+					draw::TextLine(font, fontSize, esthX, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 
 				{
@@ -1742,7 +1764,7 @@ struct Inspector : NativeDialogWindow
 						if (obj->flags & (1 << i))
 							p += snprintf(p, e - p, "%s ", flagText[i]);
 					}
-					draw::TextLine(font, fontSize, 700, ys, bfr, Color4b::White(), TextBaseline::Top);
+					draw::TextLine(font, fontSize, stateX, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 			}
 
@@ -1773,10 +1795,11 @@ struct Inspector : NativeDialogWindow
 			auto& c = insp->selWindow->_impl->GetContainer();
 			int y = 0;
 			draw::TextLine(font, mainFont.size, 0, y, "Address / Name", Color4b(255, 153), TextBaseline::Top);
-			draw::TextLine(font, mainFont.size, 400, y, "Rect (final)", Color4b(255, 153), TextBaseline::Top);
-			draw::TextLine(font, mainFont.size, 500, y, "est.W", Color4b(255, 153), TextBaseline::Top);
-			draw::TextLine(font, mainFont.size, 600, y, "est.H", Color4b(255, 153), TextBaseline::Top);
-			draw::TextLine(font, mainFont.size, 700, y, "State", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, rectX, y, "Rect (final)", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, sizeX, y, "Size", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, estwX, y, "Est.width", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, esthX, y, "Est.height", Color4b(255, 153), TextBaseline::Top);
+			draw::TextLine(font, mainFont.size, stateX, y, "State", Color4b(255, 153), TextBaseline::Top);
 			PaintObject(c.rootBuildable, 0, y);
 			scrollMax = y;
 			//draw::TextLine(font, mainFont.size, 10, 10, "inspector", Color4b::White());

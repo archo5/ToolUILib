@@ -236,7 +236,7 @@ struct EstSizeRange
 
 	float ExpandToFill(float w) const
 	{
-		return max(hardMin, min(max(softMin, w), hardMax));
+		return max(hardMin, min(w, hardMax));
 	}
 	float GetMin() const
 	{

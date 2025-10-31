@@ -290,6 +290,10 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 			{
 				auto& item = items[idx];
 				item.w = max(item.hardMin, roundf(item.w * rectW / sum));
+				rectW -= item.w;
+				sum -= item.softMin;
+				if (sum <= 0)
+					break;
 			}
 		}
 	}

@@ -750,7 +750,8 @@ void LabeledProperty::OnLayout(const UIRect& rect, LayoutInfo info)
 
 			float labelPartWidth = GetTextWidth(font, labelStyle.font.size, _labelText) + labelStyle.padding.x0 + labelStyle.padding.x1;
 			EstSizeRange srw = _child ? _child->CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Expanding) : EstSizeRange();
-			float childPartWidth = srw.ExpandToFill(rect.GetWidth());
+			float childPartWidth = srw.ExpandToFill(rect.GetWidth() - labelPartWidth);
+			//printf("CPW=%g softMin=%g\n", childPartWidth, srw.softMin);
 			if (labelPartWidth + childPartWidth > rect.GetWidth())
 			{
 				// reduce size proportionally since cannot fit both
