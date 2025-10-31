@@ -113,11 +113,22 @@ void UIContainer::Free()
 	}
 }
 
+void GIMUISS_SaveAll();
+void GIMUISS_RestoreAll();
+void GIMUISS_Apply(ArrayView<void*>);
+void GIMUISS_ResaveTo(Array<void*>&);
+
+namespace imm {
+bool imGetEnabled();
+bool imSetEnabled(bool);
+} // imm
+
 void UIContainer::ProcessSingleBuildable(Buildable* curB)
 {
 	bool oldEnabled = imm::imSetEnabled(!(curB->flags & UIObject_IsDisabled));
 
 	objectStackSize = 0;
+	GIMUISS_Apply(curB->_globalStateCopies);
 	_Push(curB);
 	_curObjectList = &curB->_objList;
 	_curObjectList->BeginAllocations();
@@ -222,10 +233,14 @@ void UIContainer::ProcessBuildStack()
 		CopyBuildablesFromSetWithoutChildren(bldQueue, pendingBuildSet);
 		pendingBuildSet.Clear();
 
+		GIMUISS_SaveAll();
+
 		for (Buildable* curB : bldQueue)
 		{
 			ProcessSingleBuildable(curB);
 		}
+
+		GIMUISS_RestoreAll();
 	}
 
 	for (Buildable* B : pendingNextBuildSet)
@@ -302,6 +317,20 @@ void UIContainer::_BuildUsing(Buildable* B, bool transferOwnership)
 
 	ProcessBuildStack();
 	ProcessLayoutStack();
+}
+
+void UIContainer::Add(Buildable* obj)
+{
+	objectStack[objectStackSize - 1]->AppendChild(obj);
+
+	if (!imm::imGetEnabled())
+		obj->flags |= UIObject_IsDisabled;
+	GIMUISS_ResaveTo(obj->_globalStateCopies);
+
+	obj->_lastBuildFrameID = _lastBuildFrameID - 1;
+
+	UI_DEBUG_FLOW(printf("add %p to build set [add]\n", obj));
+	pendingBuildSet.Insert(obj);
 }
 
 void UIContainer::_Push(UIObject* obj)

@@ -589,6 +589,21 @@ template <class T> UI_FORCEINLINE void* CallNew_DefSize(std::true_type) { return
 template <class T> UI_FORCEINLINE void* CallNew_DefSize() { return CallNew_DefSize<T>(has_operator_new<T>()); }
 } // _
 
+// intended to allow creating APIs for modifying global immediate mode UI state ..
+// .. so that it travels through buildables correctly
+// buildables are built out of order, which requires the global states ..
+// .. to be copied into them and applied later when they're built
+// note that a copy of these settings will be stored in *every* buildable ..
+// .. therefore it is important to make these very efficient!
+struct IGlobalIMUIStateSaver
+{
+	virtual void* CreateCurrentStateCopy() = 0;
+	virtual void DestroyStateCopy(void* sc) = 0;
+	virtual void ApplyStateCopy(void* sc) = 0;
+};
+// the saver is expected to remain available until the last builder is destroyed
+void RegisterGlobalIMUIStateSaver(IGlobalIMUIStateSaver* saver);
+
 struct Buildable : WrapperElement
 {
 	void PO_ResetConfiguration() override; // IPersistentObject
@@ -611,6 +626,7 @@ struct Buildable : WrapperElement
 	PersistentObjectList _objList;
 	uint64_t _lastBuildFrameID = 0;
 	Array<std::function<void()>> _deferredDestructors;
+	Array<void*> _globalStateCopies;
 };
 
 

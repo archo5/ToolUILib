@@ -1096,6 +1096,54 @@ void ChildScaleOffsetElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
+struct IMUIStateSaverEntry
+{
+	IGlobalIMUIStateSaver* saver;
+	void* tmpcopy;
+};
+Array<IMUIStateSaverEntry> g_imuiStateSavers;
+
+void RegisterGlobalIMUIStateSaver(IGlobalIMUIStateSaver* saver)
+{
+	g_imuiStateSavers.Append({ saver });
+}
+
+void GIMUISS_SaveAll()
+{
+	for (auto& s : g_imuiStateSavers)
+		s.tmpcopy = s.saver->CreateCurrentStateCopy();
+}
+
+void GIMUISS_RestoreAll()
+{
+	for (auto& s : g_imuiStateSavers)
+	{
+		s.saver->ApplyStateCopy(s.tmpcopy);
+		s.saver->DestroyStateCopy(s.tmpcopy);
+		s.tmpcopy = nullptr;
+	}
+}
+
+void GIMUISS_Apply(ArrayView<void*> states)
+{
+	for (size_t i = 0; i < states.Size(); i++)
+		g_imuiStateSavers[i].saver->ApplyStateCopy(states[i]);
+}
+
+void GIMUISS_ResaveTo(Array<void*>& states)
+{
+	for (size_t i = 0; i < states.Size(); i++)
+	{
+		g_imuiStateSavers[i].saver->DestroyStateCopy(states[i]);
+	}
+	states.Resize(g_imuiStateSavers.Size());
+	for (size_t i = 0; i < states.Size(); i++)
+	{
+		states[i] = g_imuiStateSavers[i].saver->CreateCurrentStateCopy();
+	}
+}
+
+
 void Buildable::PO_ResetConfiguration()
 {
 	decltype(_deferredDestructors) ddList;
@@ -1113,6 +1161,10 @@ void Buildable::PO_BeforeDelete()
 		_deferredDestructors.Last()();
 		_deferredDestructors.RemoveLast();
 	}
+
+	for (size_t i = 0; i < _globalStateCopies.Size(); i++)
+		g_imuiStateSavers[i].saver->DestroyStateCopy(_globalStateCopies[i]);
+	_globalStateCopies.Clear();
 
 	WrapperElement::PO_BeforeDelete();
 }

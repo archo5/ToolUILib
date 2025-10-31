@@ -86,11 +86,6 @@ struct UIObjectPendingDeactivationSet
 	}
 };
 
-namespace imm {
-bool imGetEnabled();
-bool imSetEnabled(bool);
-} // imm
-
 template <class T>
 using NotBuildable = std::enable_if_t<!std::is_base_of<Buildable, T>::value>;
 
@@ -118,16 +113,7 @@ struct UIContainer
 	{
 		objectStack[objectStackSize - 1]->AppendChild(obj);
 	}
-	void Add(Buildable* obj)
-	{
-		objectStack[objectStackSize - 1]->AppendChild(obj);
-		if (!imm::imGetEnabled())
-			obj->flags |= UIObject_IsDisabled;
-		obj->_lastBuildFrameID = _lastBuildFrameID - 1;
-
-		UI_DEBUG_FLOW(printf("add %p to build set [add]\n", obj));
-		pendingBuildSet.Insert(obj);
-	}
+	void Add(Buildable* obj);
 	void _Push(UIObject* obj);
 	void _Pop();
 	void Pop()
