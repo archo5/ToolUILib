@@ -365,6 +365,7 @@ void Test_FileTreeView();
 
 void Demo_Calculator();
 void Demo_SettingsWindow();
+void Demo_NonLinearRedirectedConstruction();
 void Demo_BasicTreeNodeEdit();
 void Demo_CompactTreeNodeEdit();
 void Demo_ScriptTree();
@@ -502,6 +503,7 @@ static const TestEntry demoEntries[] =
 {
 	{ "- Layout -" },
 	{ "Calculator (grid layout)", Demo_Calculator },
+	{ "Non-linear redirected construction", Demo_NonLinearRedirectedConstruction },
 	{},
 	{ "- Editors -" },
 	{ "Settings window", Demo_SettingsWindow },

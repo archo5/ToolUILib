@@ -113,3 +113,74 @@ void Demo_SettingsWindow()
 {
 	ui::Make<SettingsWindowDemo>();
 }
+
+
+struct NLRCReceiver : ui::WrapperElement
+{
+	ui::StackTopDownLayoutElement* layout = ui::CreateUIObject<ui::StackTopDownLayoutElement>();
+	ui::LabelFrame* toplabel = ui::CreateUIObject<ui::LabelFrame>();
+	ui::TextElement* toplabeltext = ui::CreateUIObject<ui::TextElement>();
+
+	void OnReset() override
+	{
+		ui::WrapperElement::OnReset();
+		AppendChild(layout);
+		layout->AppendChild(toplabel);
+		toplabel->AppendChild(toplabeltext);
+		toplabeltext->SetText("Receiver content");
+	}
+	~NLRCReceiver()
+	{
+		ui::DeleteUIObject(toplabeltext);
+		ui::DeleteUIObject(toplabel);
+		ui::DeleteUIObject(layout);
+	}
+};
+int testnum1 = 5;
+float testnum2 = 6;
+bool pullout = true;
+struct NLRCContents : ui::Buildable
+{
+	NLRCReceiver* receiver = nullptr;
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+		ui::StdText("Main content");
+		ui::imm::imEditInt(testnum1);
+		ui::imm::imEditBool(pullout, "Pull out the content below to a separate column");
+		if (pullout)
+			ui::PushPremade(receiver->layout);
+		ui::StdText("Could be side content");
+		ui::imm::imEditFloat(testnum2);
+		if (pullout)
+			ui::Pop();
+		WPop();
+	}
+};
+struct NonLinearRedirectedConstructionDemo : ui::Buildable
+{
+	NLRCReceiver* receiver = ui::CreateUIObject<NLRCReceiver>();
+	~NonLinearRedirectedConstructionDemo()
+	{
+		ui::DeleteUIObject(receiver);
+	}
+	void Build() override
+	{
+		WPush<ui::StackLTRLayoutElement>();
+		{
+			WPush<ui::SizeConstraintElement>().SetWidth(300);
+			WMake<NLRCContents>().receiver = receiver;
+			WPop();
+		}
+		{
+			WPush<ui::SizeConstraintElement>().SetWidth(300);
+			ui::Add(receiver);
+			WPop();
+		}
+		WPop();
+	}
+};
+void Demo_NonLinearRedirectedConstruction()
+{
+	ui::Make<NonLinearRedirectedConstructionDemo>();
+}

@@ -235,6 +235,8 @@ template <class T, class = typename NotBuildable<T>> inline T& Push()
 {
 	return _::g_curContainer->Push<T>();
 }
+inline void PushPremade(UIObject* o) { _::g_curContainer->_Push(o); }
+inline void PushPremade(UIObject& o) { _::g_curContainer->_Push(&o); }
 inline void Add(UIObject* o)
 {
 	_::g_curContainer->Add(o);
