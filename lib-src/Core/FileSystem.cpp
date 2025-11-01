@@ -308,7 +308,9 @@ struct DirectoryIteratorImpl : IDirectoryIterator
 	DirectoryIteratorImpl(StringView srcPath)
 	{
 		path = UTF8toWCHAR(srcPath);
-		path.append(L"/*");
+		if (path.empty() || (path.back() != L'/' && path.back() != L'\\'))
+			path.push_back(L'/');
+		path.push_back(L'*');
 	}
 	~DirectoryIteratorImpl()
 	{
