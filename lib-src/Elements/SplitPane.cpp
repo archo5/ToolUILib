@@ -7,6 +7,7 @@
 
 namespace ui {
 
+// TODO move?
 void SeparatorLineStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 {
 	OnField(oi, "size", size);

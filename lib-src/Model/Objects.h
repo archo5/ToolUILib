@@ -110,10 +110,18 @@ enum UIObjectFlags
 	UIObject_DB__Defaults = 0,
 };
 
-enum class Direction
+enum class Direction : u8
 {
 	Horizontal,
 	Vertical,
+};
+
+enum class Edge : u8
+{
+	Left,
+	Top,
+	Right,
+	Bottom,
 };
 
 // objects whose configuration can be reset without also resetting the state

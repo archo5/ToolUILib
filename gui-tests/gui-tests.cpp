@@ -309,6 +309,7 @@ void Test_Frames();
 void Test_DialogWindow();
 
 void Test_EdgeSlice();
+void Test_ResizablePaneEdgeSlice();
 void Test_StackingLayoutVariations();
 void Test_Size();
 void Test_Placement();
@@ -418,6 +419,7 @@ static const TestEntry coreTestEntries[] =
 static const TestEntry layoutTestEntries[] =
 {
 	{ "Edge slice", Test_EdgeSlice },
+	{ "Resizable pane edge slice", Test_ResizablePaneEdgeSlice },
 	{ "Stacking layout variations", Test_StackingLayoutVariations },
 	{ "Sizing", Test_Size },
 	{ "Placement", Test_Placement },

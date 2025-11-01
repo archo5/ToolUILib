@@ -57,6 +57,17 @@
 	backgroundPainter = "button"
 }
 
+"resizable_pane_separator_horizontal:SeparatorLineStyle":
+{
+	size = 8
+	backgroundPainter = "button"
+}
+"resizable_pane_separator_vertical:SeparatorLineStyle":
+{
+	size = 8
+	backgroundPainter = "button"
+}
+
 "progress_bar:ProgressBarStyle":
 {
 	padding = 5

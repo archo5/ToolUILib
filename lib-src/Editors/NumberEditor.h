@@ -183,6 +183,8 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 		GetPrintFormat<TNum>(nfs, fmt);
 		char buf[128];
 		snprintf(buf, 128, fmt, value);
+		if (strcmp(buf, "-0") == 0)
+			return buf + 1;
 		return buf;
 	}
 	bool SetValueFromString(StringView str) override

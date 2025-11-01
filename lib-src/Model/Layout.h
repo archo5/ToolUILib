@@ -233,14 +233,6 @@ struct WrapperLTRLayoutElement : LayoutElement<_::WrapperLTRLayoutElement_Slot>
 };
 
 
-enum class Edge : uint8_t
-{
-	Left,
-	Top,
-	Right,
-	Bottom,
-};
-
 namespace _ {
 struct EdgeSliceLayoutElement_Slot
 {

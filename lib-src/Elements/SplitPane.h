@@ -1,19 +1,11 @@
 
 #pragma once
+
 #include "../Model/Objects.h"
+#include "SeparatorLineStyle.h"
 
 
 namespace ui {
-
-struct SeparatorLineStyle
-{
-	static constexpr const char* NAME = "SeparatorLineStyle";
-
-	float size = 8;
-	PainterHandle backgroundPainter;
-
-	void Serialize(ThemeData& td, IObjectIterator& oi);
-};
 
 struct SplitPane : UIObject
 {

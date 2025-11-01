@@ -2,6 +2,7 @@
 #include "pch.h"
 
 #include "../lib-src/Render/InlineLayout.h"
+#include "../lib-src/Elements/ResizablePane.h"
 
 
 struct EdgeSliceTest : ui::Buildable
@@ -30,6 +31,53 @@ struct EdgeSliceTest : ui::Buildable
 void Test_EdgeSlice()
 {
 	WMake<EdgeSliceTest>();
+}
+
+
+bool rpesRel = false;
+ui::AABB2f rpesSizeAbs = ui::AABB2f::UniformBorder(100);
+ui::AABB2f rpesSizeRel = ui::AABB2f::UniformBorder(0.2f);
+struct ResizablePaneEdgeSliceTest : ui::Buildable
+{
+	void Build() override
+	{
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+
+		WPush<ui::EdgeSliceLayoutElement>();
+
+		ui::imEditBool(rpesRel, "Relative");
+		auto& rpesSize = rpesRel ? rpesSizeRel : rpesSizeAbs;
+
+		auto tmpl = ui::EdgeSliceLayoutElement::GetSlotTemplate();
+
+		tmpl->edge = ui::Edge::Top;
+		WPush<ui::ResizablePane>().InitEditable(ui::Edge::Bottom, rpesRel, rpesSize.y0);
+		WMakeWithText<ui::Button>("Top");
+		WPop();
+
+		tmpl->edge = ui::Edge::Right;
+		WPush<ui::ResizablePane>().InitEditable(ui::Edge::Left, rpesRel, rpesSize.x1);
+		WMakeWithText<ui::Button>("Right");
+		WPop();
+
+		tmpl->edge = ui::Edge::Bottom;
+		WPush<ui::ResizablePane>().InitEditable(ui::Edge::Top, rpesRel, rpesSize.y1);
+		WMakeWithText<ui::Button>("Bottom");
+		WPop();
+
+		tmpl->edge = ui::Edge::Left;
+		WPush<ui::ResizablePane>().InitEditable(ui::Edge::Right, rpesRel, rpesSize.x0);
+		WMakeWithText<ui::Button>("Left");
+		WPop();
+
+		WPop();
+
+		WPop();
+	}
+};
+void Test_ResizablePaneEdgeSlice()
+{
+	WMake<ResizablePaneEdgeSliceTest>();
 }
 
 

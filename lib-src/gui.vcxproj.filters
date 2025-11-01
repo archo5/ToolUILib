@@ -190,6 +190,9 @@
     <ClCompile Include="Editors\NumberEditor.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Elements\ResizablePane.cpp">
+      <Filter>Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -456,6 +459,12 @@
     </ClInclude>
     <ClInclude Include="Editors\NumEditConfig.h">
       <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Elements\ResizablePane.h">
+      <Filter>Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="Elements\SeparatorLineStyle.h">
+      <Filter>Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
