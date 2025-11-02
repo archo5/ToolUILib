@@ -480,24 +480,36 @@ struct TriangulatorComplex
 			if (IsSameEdge(oe.v0, oe.v1, v0, v1))
 				return true;
 
-			Vec2f oep0 = vertices[oe.v0].pos;
-			Vec2f oep1 = vertices[oe.v1].pos;
-			if (AreLineSegmentsOverlapping(p0, p1, pd, oep0, oep1))
-				return true;
-
-			if (oe.v0 == v0 || oe.v0 == v1 || oe.v1 == v0 || oe.v1 == v1)
-				continue;
 			bool connected = false;
-			for (auto& oes : oe.splits)
+			if (oe.v0 == v0 || oe.v0 == v1 || oe.v1 == v0 || oe.v1 == v1)
+				connected = true;
+			if (!connected)
 			{
-				if (oes.vert == v0 || oes.vert == v1)
+				for (auto& oes : oe.splits)
 				{
-					connected = true;
-					break;
+					if (oes.vert == v0 || oes.vert == v1)
+					{
+						connected = true;
+						break;
+					}
 				}
 			}
+			Vec2f oep0 = vertices[oe.v0].pos;
+			Vec2f oep1 = vertices[oe.v1].pos;
 			if (connected)
+			{
+				// more complex overlap test (area of triangle)
+				Vec2f vecfe = p1 - p0;
+				Vec2f vecoe = oep1 - oep0;
+				float area2x = Vec2Cross(vecfe, vecoe);
+				if (fabsf(area2x) < 1e-6f)
+					if (AreLineSegmentsOverlapping(p0, p1, pd, oep0, oep1))
+						return true;
 				continue;
+			}
+
+			if (AreLineSegmentsOverlapping(p0, p1, pd, oep0, oep1))
+				return true;
 
 			Vec2f dummy;
 			if (LineSegmentIntersectionQ_EE(p0, p1, oep0, oep1, dummy))

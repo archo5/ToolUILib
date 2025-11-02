@@ -994,6 +994,7 @@ struct TriangulatorComplexTest : ui::Buildable
 
 	bool shrinktris = true;
 	ui::Vec2f userpos = { 500, 350 };
+	ui::Vec2f useroff = {};
 	ui::TriangulatorComplex* TC = ui::TriangulatorComplex_Create();
 	ui::Array<Tri> triangles;
 	ui::HashSet<ui::u32> usedverts;
@@ -1051,6 +1052,9 @@ struct TriangulatorComplexTest : ui::Buildable
 
 	void InitPNH(PolyAndHoles& pnh)
 	{
+		for (auto& hp : pnh.holepolys)
+			for (auto& hpv : hp)
+				hpv += useroff;
 		using namespace ui;
 		TriangulatorComplex_Reset(TC);
 		TriangulatorComplex_SetInsideFunc(TC, &pnh, &PolyAndHoles::IsInsideFunc);
@@ -1167,6 +1171,18 @@ struct TriangulatorComplexTest : ui::Buildable
 		DumpResult();
 	}
 
+	void DoTest_RectAndHoleRectEdgeOverlap2X()
+	{
+		using namespace ui;
+		PolyAndHoles pnh;
+		pnh.mainpoly = { Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) };
+		pnh.holepolys.Append({ Vec2f(250, 250), Vec2f(300, 250), Vec2f(300, 400), Vec2f(250, 400) });
+		pnh.holepolys.Append({ Vec2f(400, 250), Vec2f(450, 250), Vec2f(450, 400), Vec2f(400, 400) });
+
+		InitPNH(pnh);
+		DumpResult();
+	}
+
 	void DoTest_RectAndCutterRectEdgeOvrUP()
 	{
 		using namespace ui;
@@ -1263,11 +1279,16 @@ struct TriangulatorComplexTest : ui::Buildable
 	void Build() override
 	{
 		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::StackExpandLTRLayoutElement>();
+		ui::imEditBool(shrinktris, "Shrink tris");
+		ui::StdText("User pos.:");
+		ui::imEditVec2f(userpos, { 0.01f });
+		ui::StdText("User off.:");
+		ui::imEditVec2f(useroff, { 1e-6f });
+		WPop();
 		WPush<ui::SizeConstraintElement>().SetMaxWidth(200);
 		WPush<ui::StackTopDownLayoutElement>();
 		{
-			ui::imEditBool(shrinktris, "Shrink tris");
-			ui::imEditVec2f(userpos, { 0.01f });
 			if (ui::imButton("Basic rect")) DoTest_BasicRect();
 			if (ui::imButton("Rect + dummy polygon and points")) DoTest_RectDummyPP();
 			if (ui::imButton("Rect + dummy points on edge")) DoTest_RectEdgePoints();
@@ -1276,6 +1297,7 @@ struct TriangulatorComplexTest : ui::Buildable
 			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
 			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
 			if (ui::imButton("Rect + hole rect edge overlap")) DoTest_RectAndHoleRectEdgeOverlap();
+			if (ui::imButton("Rect + hole rect (2x) edge overlap")) DoTest_RectAndHoleRectEdgeOverlap2X();
 			if (ui::imButton("Rect + cutter rect edge ovr + UP")) DoTest_RectAndCutterRectEdgeOvrUP();
 			if (ui::imButton("Rect + overlapping hole rects")) DoTest_RectAndOverlappingHoleRects();
 			if (ui::imButton("Rect + bigger hole cover")) DoTest_RectBiggerHoleCover();
