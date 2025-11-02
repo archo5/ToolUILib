@@ -405,7 +405,17 @@ struct TriangulatorComplex
 				Vec2f midpoint = (vertices[prevvpos].pos + vertices[nextvpos].pos) * 0.5f;
 				if (Inside(midpoint))
 				{
-					edges.Append({ prevvpos, nextvpos });
+					bool exists = false;
+					for (auto& E : edges)
+					{
+						if (IsSameEdge(E.v0, E.v1, prevvpos, nextvpos))
+						{
+							exists = true;
+							break;
+						}
+					}
+					if (!exists)
+						edges.Append({ prevvpos, nextvpos });
 				}
 
 				prevvpos = nextvpos;
@@ -663,9 +673,11 @@ struct TriangulatorComplex
 						continue; // same edge as E
 
 					// shared third vertex
-					if (AE.v0 == BE.v0 || AE.v1 == BE.v0 || AE.v0 == BE.v1 || AE.v1 == BE.v1)
+					u32 ovA = AE.v0 == E.v0 ? AE.v1 : AE.v0;
+					u32 ovB = BE.v0 == E.v1 ? BE.v1 : BE.v0;
+					if (ovA == ovB)
 					{
-						u32 ovid = AE.v0 == E.v0 ? AE.v1 : AE.v0;
+						u32 ovid = ovA;
 
 						Vec2f tp0 = vertices[E.v0].pos;
 						Vec2f tp1 = vertices[E.v1].pos;
