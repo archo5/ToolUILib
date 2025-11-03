@@ -372,6 +372,7 @@ void Textbox::OnEvent(Event& e)
 	else if (e.type == EventType::LostFocus)
 	{
 		e.context->OnCommit(this);
+		e.StopPropagation();
 	}
 	else if (e.type == EventType::KeyAction)
 	{

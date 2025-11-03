@@ -66,10 +66,12 @@ void NumberEditorBase::OnEvent(Event& e)
 				e.context->OnCommit(this);
 			}
 			_activeTextbox->DetachParent();
-			DeleteUIObject(_activeTextbox);
+			DeleteUIObject(_activeTextbox); // TODO: delay the deletion - it works for now but is accessing deleted memory
 			_activeTextbox = nullptr;
-			e.StopPropagation();
+			e.StopPropagation(); // don't let the commit event through
 		}
+		if (e.type == EventType::Change)
+			e.StopPropagation(); // don't let the change event through
 		if (e.type == EventType::KeyDown && e.shortCode == ui::KSC_Escape)
 		{
 			_activeTextbox->DetachParent();

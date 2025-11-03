@@ -63,6 +63,7 @@ struct EventHandlerEntry
 	UIObject* target;
 	EventType type;
 	bool isLocal;
+	bool early;
 	EventFunc func;
 };
 
@@ -178,22 +179,45 @@ void UIObject::_DetachFromFrameContents()
 void UIObject::_DoEvent(Event& e)
 {
 	e.current = this;
-	for (auto* n = _firstEH; n && !e.IsPropagationStopped(); n = n->next)
+
+	if (e.IsPropagationStopped())
+		return;
+
+	for (auto* n = _firstEH; n; n = n->next)
 	{
+		if (!n->early)
+			continue;
 		if (n->type != EventType::Any && n->type != e.type)
 			continue;
 		if (n->target && !e.target->IsChildOrSame(n->target))
 			continue;
 		n->func(e);
+		if (e.IsPropagationStopped())
+			return;
 	}
 
-	if (!e.IsPropagationStopped())
-		OnEvent(e);
+	OnEvent(e);
 
-	if (!e.IsPropagationStopped())
+	if (e.IsPropagationStopped())
+		return;
+
+	// default behaviors
+	_PerformDefaultBehaviors(e, flags);
+
+	if (e.IsPropagationStopped())
+		return;
+
+	for (auto* n = _firstEH; n; n = n->next)
 	{
-		// default behaviors
-		_PerformDefaultBehaviors(e, flags);
+		if (n->early)
+			continue;
+		if (n->type != EventType::Any && n->type != e.type)
+			continue;
+		if (n->target && !e.target->IsChildOrSame(n->target))
+			continue;
+		n->func(e);
+		if (e.IsPropagationStopped())
+			return;
 	}
 }
 
@@ -303,7 +327,7 @@ void UIObject::SendUserEvent(int id, uintptr_t arg0, uintptr_t arg1)
 	system->eventSystem.OnUserEvent(this, id, arg0, arg1);
 }
 
-EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
+EventFunc& UIObject::HandleEvent(UIObject* target, EventType type, bool early)
 {
 	auto eh = new EventHandlerEntry;
 	if (_lastEH)
@@ -314,6 +338,7 @@ EventFunc& UIObject::HandleEvent(UIObject* target, EventType type)
 	eh->target = target;
 	eh->type = type;
 	eh->isLocal = system && system->container._curBuildable == this;
+	eh->early = early;
 	_lastEH = eh;
 	return eh->func;
 }

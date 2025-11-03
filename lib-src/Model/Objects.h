@@ -300,8 +300,8 @@ struct UIObject : IPersistentObject
 	void _PerformDefaultBehaviors(Event& e, uint32_t f);
 
 	void SendUserEvent(int id, uintptr_t arg0 = 0, uintptr_t arg1 = 0);
-	ui::EventFunc& HandleEvent(EventType type) { return HandleEvent(nullptr, type); }
-	ui::EventFunc& HandleEvent(UIObject* target = nullptr, EventType type = EventType::Any);
+	ui::EventFunc& HandleEvent(EventType type, bool early = false) { return HandleEvent(nullptr, type, early); }
+	ui::EventFunc& HandleEvent(UIObject* target = nullptr, EventType type = EventType::Any, bool early = false);
 	void ClearEventHandlers();
 	void ClearLocalEventHandlers();
 
