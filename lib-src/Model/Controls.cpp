@@ -1130,7 +1130,7 @@ void DropdownMenu::OnBuildButton()
 	btn.flags |= UIObject_DB_FocusOnLeftClick;
 	if (!(flags & UIObject_IsDisabled))
 	{
-		btn.HandleEvent() = [this](Event& e)
+		btn.HandleEvent(EventType::Any, true) = [this](Event& e)
 		{
 			if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 			{
