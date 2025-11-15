@@ -1156,9 +1156,11 @@ void DropdownMenu::OnBuildButton()
 	}
 	if (enableTooltip)
 	{
-		auto tooltipFn = [this]()
+		WeakPtr<DropdownMenu> ptr = this;
+		auto tooltipFn = [ptr]()
 		{
-			OnBuildButtonContents();
+			if (auto* me = ptr.Get())
+				me->OnBuildButtonContents();
 		};
 		btn + modAddTooltip(tooltipFn);
 	}

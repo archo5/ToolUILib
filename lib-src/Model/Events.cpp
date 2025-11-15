@@ -795,7 +795,10 @@ DragDropData* DragDrop::GetData(const char* type)
 void Tooltip::Set(const OwnerID& oid, const BuildFunc& f)
 {
 	if (!g_tooltipInChangeContext)
+	{
+		assert(!"Tooltip::Set called outside change event");
 		return; // TODO error
+	}
 
 	g_newTooltipOwner = oid;
 	g_newTooltipBuildFn = f;
