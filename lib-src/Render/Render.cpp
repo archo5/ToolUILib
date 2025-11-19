@@ -421,6 +421,19 @@ static bool IsConvexPolygon(const ArrayView<Point2f>& points)
 	return true;
 }
 
+static float PolyArea2(ArrayView<Vec2f> poly)
+{
+	float area2 = 0;
+	Vec2f prev = poly.Last();
+	for (size_t i = 0; i < poly.Size(); i++)
+	{
+		Vec2f curr = poly[i];
+		area2 += prev.x * curr.y - prev.y * curr.x;
+		prev = curr;
+	}
+	return area2;
+}
+
 // https://stackoverflow.com/a/2049593
 static float DiffCross2D(Vec2f p1, Vec2f p2, Vec2f p3)
 {
@@ -452,46 +465,65 @@ static void Triangulate(Array<u16>& outIndices, const ArrayView<Point2f>& points
 		return;
 	}
 
-	Array<Vec2f> poly = points;
-	bool cutAny = true;
-	while (poly.Size() >= 3 && cutAny)
+	float area2 = PolyArea2(points);
+	float areasign = sign(area2);
+	Array<u16> idcs;
+	idcs.Resize(points.Size());
+	for (size_t i = 0; i < points.Size(); i++)
+		idcs[i] = u16(i);
+	while (idcs.Size() >= 3)
 	{
-		cutAny = false;
-		for (size_t i = 0; i < poly.Size(); i++)
-		{
-			size_t i0 = (i + points.Size() - 1) % points.Size();
-			size_t i1 = (i + 1) % points.Size();
-			Vec2f p0 = points[i0];
-			Vec2f pi = points[i];
-			Vec2f p1 = points[i1];
-			Vec2f dir1 = p1 - pi;
-			Vec2f tng0 = (pi - p0).Perp();
-			float dot = Vec2Dot(dir1, tng0);
-			if (dot > 0)
-			{
-				// check if there are no points inside the triangle
-				bool canCut = true;
-				for (size_t j = 0; j + 3 < poly.Size(); j++)
-				{
-					size_t rj = (i + 2 + j) % poly.Size();
-					Vec2f prj = points[rj];
-					if (PointInTriangle(prj, p0, pi, p1))
-					{
-						canCut = false;
-						break;
-					}
-				}
+		bool anyFound = false;
 
-				if (canCut)
+		for (size_t i = 0; i < idcs.Size() && idcs.Size() >= 3; i++)
+		{
+			u32 ii = idcs[i];
+			u32 ip = idcs.PrevWrap(i);
+			u32 in = idcs.NextWrap(i);
+
+			Vec2f pi = points[ii];
+			Vec2f pp = points[ip];
+			Vec2f pn = points[in];
+
+			if (Vec2Dot(pn - pi, (pi - pp).Perp2()) * areasign > 0)
+				continue;
+
+			bool nothingInside = true;
+
+			for (u32 ji : idcs)
+			{
+				Vec2f pj = points[ji];
+				if (pj == pi)
+					continue;
+				if (pj == pp)
+					continue;
+				if (pj == pn)
+					continue;
+
+				if (PointInTriangle(pj, pp, pi, pn) /*&&
+					// skip edge hits
+					PointLineDistance(pj, pp, pi) >= 0.001f &&
+					PointLineDistance(pj, pi, pn) >= 0.001f &&
+					PointLineDistance(pj, pn, pp) >= 0.001f*/)
 				{
-					outIndices.Append(u16(i0));
-					outIndices.Append(u16(i));
-					outIndices.Append(u16(i1));
-					poly.RemoveAt(i--);
-					cutAny = true;
+					nothingInside = false;
+					break;
 				}
 			}
+
+			if (nothingInside)
+			{
+				anyFound = true;
+				outIndices.Append(in);
+				outIndices.Append(ii);
+				outIndices.Append(ip);
+				idcs.RemoveAt(i--);
+			}
 		}
+
+		// failsafe
+		if (!anyFound)
+			break;
 	}
 }
 
