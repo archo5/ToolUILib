@@ -1312,3 +1312,249 @@ void Test_TriangulatorComplex()
 {
 	ui::Make<TriangulatorComplexTest>();
 }
+
+
+struct PolygonCutterTest : ui::Buildable
+{
+	bool shrinkpolygons = true;
+	ui::Vec2f userpos = { 500, 350 };
+	ui::Vec2f useroff = {};
+	ui::PolygonCutter* PC = ui::PolygonCutter_Create();
+	ui::u8 mode = ui::PolygonCutterMode_Combine;
+	bool keepInnerEdges = true;
+	ui::PolygonOutput polyOut;
+	ui::HashMap<ui::u32, ui::Vec2f> usedverts;
+
+	void Reset()
+	{
+		ui::PolygonCutter_Reset(PC, mode, keepInnerEdges);
+	}
+
+	void AddA(ui::ArrayView<ui::Vec2f> poly)
+	{
+		ui::PolygonCutter_AddPolygonA(PC, poly);
+	}
+
+	void AddB(ui::ArrayView<ui::Vec2f> poly)
+	{
+		using namespace ui;
+		if (useroff != Vec2f())
+		{
+			Array<Vec2f> tmp = poly;
+			for (auto& v : tmp)
+				v += useroff;
+			ui::PolygonCutter_AddPolygonB(PC, tmp);
+		}
+		else
+			ui::PolygonCutter_AddPolygonB(PC, poly);
+	}
+
+	void AddCutPath(ui::ArrayView<ui::Vec2f> path)
+	{
+
+		using namespace ui;
+		if (useroff != Vec2f())
+		{
+			Array<Vec2f> tmp = path;
+			for (auto& v : tmp)
+				v += useroff;
+			ui::PolygonCutter_AddCuttingPath(PC, tmp);
+		}
+		else
+			ui::PolygonCutter_AddCuttingPath(PC, path);
+	}
+
+	void DumpResult()
+	{
+		using namespace ui;
+
+		PolygonCutter_Cut(PC, polyOut);
+
+		usedverts.Clear();
+		for (auto v : polyOut.verts)
+			usedverts.Insert(v.nodeID, v.pos);
+	}
+
+	struct PolyAndHoles
+	{
+		ui::Array<ui::Array<ui::Vec2f>> A;
+		ui::Array<ui::Array<ui::Vec2f>> B;
+		ui::Array<ui::Array<ui::Vec2f>> paths;
+		ui::Array<ui::Vec2f> cutpoints;
+	};
+
+	void DoTest_BasicRect()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRect()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndDupHoleRect()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRectPeekingOut()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 500), Vec2f(300, 500) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRectEdgeOverlap()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 400), Vec2f(300, 400) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndHoleRectEdgeOverlap2X()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(250, 250), Vec2f(300, 250), Vec2f(300, 400), Vec2f(250, 400) });
+		AddB({ Vec2f(400, 250), Vec2f(450, 250), Vec2f(450, 400), Vec2f(400, 400) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndCutterRectEdgeOvrUP()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(350, 150), Vec2f(550, 300), Vec2f(350, 450), Vec2f(150, 300) });
+		DumpResult();
+	}
+
+	void DoTest_RectAndOverlappingHoleRects()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(300, 250), Vec2f(400, 250), Vec2f(400, 350), Vec2f(300, 350) });
+		AddB({ Vec2f(350, 300), Vec2f(450, 300), Vec2f(450, 380), Vec2f(350, 380) });
+		DumpResult();
+	}
+
+	void DoTest_RectBiggerHoleCover()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(100, 100), Vec2f(600, 100), Vec2f(600, 500), Vec2f(100, 500) });
+		DumpResult();
+	}
+
+	void DoTest_RectExactHoleCover()
+	{
+		using namespace ui;
+		Reset();
+		AddA({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		AddB({ Vec2f(200, 200), Vec2f(500, 200), Vec2f(500, 400), Vec2f(200, 400) });
+		DumpResult();
+	}
+
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		using namespace ui;
+		Buildable::OnPaint(ctx);
+
+		for (auto P : polyOut.polygons)
+		{
+			Array<Vec2f> poly;
+			for (u32 v = P.firstVertex; v <= P.lastVertex; v++)
+				poly.Append(polyOut.verts[v].pos);
+			if (shrinkpolygons)
+			{
+				Array<Vec2f> bdir;
+				for (size_t i = 0; i < poly.Size(); i++)
+				{
+					Vec2f p = poly.PrevWrap(i);
+					Vec2f c = poly[i];
+					Vec2f n = poly.NextWrap(i);
+					Vec2f fwdnrm = (n - c).Normalized().Perp();
+					Vec2f bwdnrm = (c - p).Normalized().Perp();
+					Vec2f nrm = (fwdnrm + bwdnrm).Normalized();
+					nrm /= Vec2Dot(nrm, fwdnrm) * 0.5f;
+					bdir.Append(nrm);
+				}
+				for (size_t i = 0; i < poly.Size(); i++)
+					poly[i] += bdir[i];
+			}
+			draw::AAPolyCol(poly, { 40, 80, 120, 127 });
+			draw::AALineCol(poly, 1, { 120, 80, 40, 127 }, true);
+		}
+
+		auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SANS_SERIF);
+		int tsize = 7;
+		for (const auto& kvp : usedverts)
+		{
+			u32 node = kvp.key;
+			ui::Vec2f pos = kvp.value;
+			while (node != ui::PolygonOutput::NodeID_NULL)
+			{
+				auto& vinfo = polyOut.infos[node];
+				auto text = ui::Format("p=%d e=%d q=%g", int(vinfo.polyID), int(vinfo.edgeID), vinfo.edgeQ);
+				ui::draw::TextLine(font, tsize, pos.x, pos.y, text, {}, ui::TextBaseline::Top);
+				pos.y += tsize;
+				node = vinfo.nextNodeID;
+			}
+		}
+	}
+	void Build() override
+	{
+		WPush<ui::StackTopDownLayoutElement>();
+		WPush<ui::StackExpandLTRLayoutElement>();
+		ui::StdText("Mode:");
+		ui::imDropdownMenuList(mode, UI_BUILD_ALLOC(ui::ZeroSepCStrOptionList)("Combine\0Subtract\0Intersect\0"));
+		ui::imEditBool(keepInnerEdges, "Keep inner edges");
+		ui::imEditBool(shrinkpolygons, "Shrink polygons");
+		ui::StdText("User pos.:");
+		ui::imEditVec2f(userpos, { 0.01f });
+		ui::StdText("User off.:");
+		ui::imEditVec2f(useroff, { 1e-6f });
+		WPop();
+		WPush<ui::SizeConstraintElement>().SetMaxWidth(200);
+		WPush<ui::StackTopDownLayoutElement>();
+		{
+			if (ui::imButton("Basic rect")) DoTest_BasicRect();
+			if (ui::imButton("Rect + hole rect")) DoTest_RectAndHoleRect();
+			if (ui::imButton("Rect + duplicated hole rect")) DoTest_RectAndDupHoleRect();
+			if (ui::imButton("Rect + hole rect peeking out")) DoTest_RectAndHoleRectPeekingOut();
+			if (ui::imButton("Rect + hole rect edge overlap")) DoTest_RectAndHoleRectEdgeOverlap();
+			if (ui::imButton("Rect + hole rect (2x) edge overlap")) DoTest_RectAndHoleRectEdgeOverlap2X();
+			if (ui::imButton("Rect + cutter rect edge ovr + UP")) DoTest_RectAndCutterRectEdgeOvrUP();
+			if (ui::imButton("Rect + overlapping hole rects")) DoTest_RectAndOverlappingHoleRects();
+			if (ui::imButton("Rect + bigger hole cover")) DoTest_RectBiggerHoleCover();
+			if (ui::imButton("Rect + exact hole cover")) DoTest_RectExactHoleCover();
+		}
+		WPop();
+		WPop();
+		WPop();
+	}
+};
+void Test_PolygonCutter()
+{
+	ui::Make<PolygonCutterTest>();
+}

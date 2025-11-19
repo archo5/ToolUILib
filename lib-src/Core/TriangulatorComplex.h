@@ -55,4 +55,48 @@ bool TriangulatorComplexUtil_PointNearPolygonEdge(Vec2f point, ArrayView<Vec2f> 
 bool TriangulatorComplexUtil_PointInOrNearPolygon(Vec2f point, ArrayView<Vec2f> verts, float dist);
 bool TriangulatorComplexUtil_PointInButNotNearPolygon(Vec2f point, ArrayView<Vec2f> verts, float dist);
 
+
+struct PolygonOutput
+{
+	static constexpr const u32 NodeID_NULL = -1;
+	struct VertexInfoNode
+	{
+		u32 nextNodeID;
+		u32 polyID;
+		u32 edgeID;
+		float edgeQ;
+	};
+	struct Vertex
+	{
+		Vec2f pos;
+		u32 nodeID;
+	};
+	struct Polygon
+	{
+		u32 firstVertex;
+		u32 lastVertex;
+	};
+
+	Array<Vertex> verts;
+	Array<VertexInfoNode> infos;
+	Array<Polygon> polygons;
+};
+
+
+struct PolygonCutter;
+
+PolygonCutter* PolygonCutter_Create();
+void PolygonCutter_Destroy(PolygonCutter* PC);
+enum
+{
+	PolygonCutterMode_Combine = 0, // A and B are treated equally
+	PolygonCutterMode_Subtract = 1,
+	PolygonCutterMode_Intersect = 2,
+};
+void PolygonCutter_Reset(PolygonCutter* PC, u8 mode, bool keepInnerEdges);
+void PolygonCutter_AddPolygonA(PolygonCutter* PC, ArrayView<Vec2f> poly);
+void PolygonCutter_AddPolygonB(PolygonCutter* PC, ArrayView<Vec2f> poly);
+void PolygonCutter_AddCuttingPath(PolygonCutter* PC, ArrayView<Vec2f> path);
+void PolygonCutter_Cut(PolygonCutter* PC, PolygonOutput& output);
+
 } // ui

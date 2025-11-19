@@ -352,6 +352,7 @@ void Test_SerializationSpeed();
 void Test_ConfigTweakable();
 void Test_TweakableValues();
 void Test_TriangulatorComplex();
+void Test_PolygonCutter();
 
 void Test_SequenceEditors();
 void Test_TreeEditors();
@@ -479,6 +480,7 @@ static const TestEntry utilityTestEntries[] =
 	{ "Tweakable values", Test_TweakableValues },
 	{},
 	{ "Triangulator (complex)", Test_TriangulatorComplex },
+	{ "Polygon cutter", Test_PolygonCutter },
 };
 static const TestEntry dseditTestEntries[] =
 {
