@@ -592,11 +592,12 @@ StringView BKVTLinearReader::_GetString(u32 pos)
 }
 
 
-void BKVTSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool BKVTSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
 	BKVTLinearWriter::BeginObject(FI.GetNameOrEmptyStr());
 	if (outName)
 		WriteString("__", *outName);
+	return true;
 }
 
 void BKVTSerializer::EndObject()
@@ -615,69 +616,88 @@ void BKVTSerializer::EndArray()
 	BKVTLinearWriter::EndArray();
 }
 
-void BKVTSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
+bool BKVTSerializer::OnFieldNull(const FieldInfo& FI)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteNull(FI.GetNameOrEmptyStr());
+	return true;
 }
 
-void BKVTSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
+bool BKVTSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
+{
+	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
+}
+
+bool BKVTSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
+bool BKVTSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
+bool BKVTSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
+bool BKVTSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
+bool BKVTSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
+bool BKVTSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
+bool BKVTSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
 	WriteInt64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
+bool BKVTSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
 	WriteUInt64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldF32(const FieldInfo& FI, float& val)
+bool BKVTSerializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
 	WriteFloat32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldF64(const FieldInfo& FI, double& val)
+bool BKVTSerializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
 	WriteFloat64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void BKVTSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool BKVTSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
 	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	return true;
 }
 
-void BKVTSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool BKVTSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
 	WriteBytes(FI.GetNameOrEmptyStr(), brw.Read());
+	return true;
 }
 
 bool BKVTSerializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
@@ -693,14 +713,15 @@ bool BKVTSerializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 }
 
 
-void BKVTUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool BKVTUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	BKVTLinearReader::BeginObject(FI.GetNameOrEmptyStr());
+	bool ret = BKVTLinearReader::BeginObject(FI.GetNameOrEmptyStr());
 	if (outName)
 	{
 		if (auto s = ReadString("__"))
 			*outName <<= s.GetValue();
 	}
+	return ret;
 }
 
 void BKVTUnserializer::EndObject()
@@ -729,82 +750,88 @@ bool BKVTUnserializer::HasField(const char* name)
 	return FindEntry(name).type != BKVT_Type::NotFound;
 }
 
-void BKVTUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
+bool BKVTUnserializer::OnFieldNull(const FieldInfo& FI)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue() != 0;
+	auto e = FindEntry(FI.GetNameOrEmptyStr());
+	return e.type == BKVT_Type::Null;
 }
 
-void BKVTUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
+bool BKVTUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = i8(v.GetValue());
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue() != 0, true : false;
 }
 
-void BKVTUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
+bool BKVTUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = u8(v.GetValue());
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = i8(v.GetValue()), true : false;
 }
 
-void BKVTUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
+bool BKVTUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = i16(v.GetValue());
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = u8(v.GetValue()), true : false;
 }
 
-void BKVTUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
+bool BKVTUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = u16(v.GetValue());
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = i16(v.GetValue()), true : false;
 }
 
-void BKVTUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
+bool BKVTUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = u16(v.GetValue()), true : false;
 }
 
-void BKVTUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
+bool BKVTUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
+bool BKVTUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	if (auto v = ReadInt64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
+bool BKVTUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	if (auto v = ReadUInt64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadInt64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
+bool BKVTUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	if (auto v = ReadFloat32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
+bool BKVTUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	if (auto v = ReadFloat64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadFloat32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool BKVTUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	if (auto v = ReadString(FI.GetNameOrEmptyStr()))
-		brw.Assign(v.GetValue());
+	auto v = ReadFloat64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void BKVTUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool BKVTUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	if (auto v = ReadBytes(FI.GetNameOrEmptyStr()))
-		brw.Assign(v.GetValue());
+	auto v = ReadString(FI.GetNameOrEmptyStr());
+	return v ? brw.Assign(v.GetValue()), true : false;
+}
+
+bool BKVTUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+{
+	auto v = ReadBytes(FI.GetNameOrEmptyStr());
+	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)

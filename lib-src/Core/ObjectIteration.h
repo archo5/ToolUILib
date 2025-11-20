@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ObjectIterationCore.h"
+#include "Optional.h"
 #include "Array.h"
 
 #include <stdio.h>
@@ -214,14 +215,14 @@ template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const Fiel
 
 struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 {
-	void OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); }
-	void OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); }
-	void OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); }
-	void OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); }
-	void OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); }
-	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); }
+	bool OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
+	bool OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
+	bool OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
 
-	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); }
+	bool OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp), true; }
 
 	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override
 	{
@@ -245,30 +246,30 @@ struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 
 struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 {
-	void OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int8_t>(tmp); }
-	void OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint8_t>(tmp); }
-	void OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int16_t>(tmp); }
-	void OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint16_t>(tmp); }
-	void OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp); val = static_cast<int32_t>(tmp); }
-	void OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp); val = static_cast<uint32_t>(tmp); }
+	bool OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int8_t>(tmp), true : false; }
+	bool OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint8_t>(tmp), true : false; }
+	bool OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int16_t>(tmp), true : false; }
+	bool OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint16_t>(tmp), true : false; }
+	bool OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int32_t>(tmp), true : false; }
+	bool OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint32_t>(tmp), true : false; }
 
-	void OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp); val = static_cast<float>(tmp); }
+	bool OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp) ? val = static_cast<float>(tmp), true : false; }
 
 	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override
 	{
 		BeginArray(count, FI);
-		bool ret = HasMoreArrayElements();
+		bool ret = true;
 		for (u32 i = 0; i < count; i++)
-			OnFieldS32({}, arr[i]);
+			ret &= OnFieldS32({}, arr[i]);
 		EndArray();
 		return ret;
 	}
 	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override
 	{
 		BeginArray(count, FI);
-		bool ret = HasMoreArrayElements();
+		bool ret = true;
 		for (u32 i = 0; i < count; i++)
-			OnFieldF32({}, arr[i]);
+			ret &= OnFieldF32({}, arr[i]);
 		EndArray();
 		return ret;
 	}
@@ -280,30 +281,30 @@ struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 {
 	virtual void OnFieldAsString(const FieldInfo& FI, const char* str) = 0;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override { OnFieldAsString(FI, val ? "true" : "false"); }
-	void OnFieldS64(const FieldInfo& FI, int64_t& val) override
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override { return OnFieldAsString(FI, val ? "true" : "false"), true; }
+	bool OnFieldS64(const FieldInfo& FI, int64_t& val) override
 	{
 		char bfr[32];
 		snprintf(bfr, 32, "%lld", val);
-		OnFieldAsString(FI, bfr);
+		return OnFieldAsString(FI, bfr), true;
 	}
-	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override
+	bool OnFieldU64(const FieldInfo& FI, uint64_t& val) override
 	{
 		char bfr[32];
 		snprintf(bfr, 32, "%llu", val);
-		OnFieldAsString(FI, bfr);
+		return OnFieldAsString(FI, bfr), true;
 	}
-	void OnFieldF32(const FieldInfo& FI, float& val) override
+	bool OnFieldF32(const FieldInfo& FI, float& val) override
 	{
 		char bfr[32];
 		snprintf(bfr, 32, "%.9g", val);
-		OnFieldAsString(FI, bfr);
+		return OnFieldAsString(FI, bfr), true;
 	}
-	void OnFieldF64(const FieldInfo& FI, double& val) override
+	bool OnFieldF64(const FieldInfo& FI, double& val) override
 	{
 		char bfr[32];
 		snprintf(bfr, 32, "%.17g", val);
-		OnFieldAsString(FI, bfr);
+		return OnFieldAsString(FI, bfr), true;
 	}
 };
 
@@ -311,24 +312,48 @@ struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 
 struct IObjectStringReaderIteratorBase : IObjectIteratorMinTypeUnserializeBase
 {
-	virtual std::string GetFieldString(const FieldInfo& FI) = 0;
+	virtual Optional<std::string> GetFieldString(const FieldInfo& FI) = 0;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override
 	{
-		auto str = GetFieldString(FI);
-		val = str == "true" || atoi(str.c_str()) != 0;
+		if (auto str = GetFieldString(FI))
+		{
+			if (str.GetValue() == "true" || atoi(str.GetValue().c_str()))
+				return val = true, true;
+			if (str.GetValue() == "false" || str.GetValue() == "0")
+				return val = false, true;
+		}
+		return false;
 	}
-	void OnFieldS64(const FieldInfo& FI, int64_t& val) override
+	bool OnFieldS64(const FieldInfo& FI, int64_t& val) override
 	{
-		val = strtoll(GetFieldString(FI).c_str(), nullptr, 10);
+		if (auto str = GetFieldString(FI))
+		{
+			char* ret = nullptr;
+			val = strtoll(str.GetValue().c_str(), &ret, 10);
+			return *ret == 0 && ret != str.GetValue().c_str();
+		}
+		return false;
 	}
-	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override
+	bool OnFieldU64(const FieldInfo& FI, uint64_t& val) override
 	{
-		val = strtoull(GetFieldString(FI).c_str(), nullptr, 10);
+		if (auto str = GetFieldString(FI))
+		{
+			char* ret = nullptr;
+			val = strtoull(str.GetValue().c_str(), &ret, 10);
+			return *ret == 0 && ret != str.GetValue().c_str();
+		}
+		return false;
 	}
-	void OnFieldF64(const FieldInfo& FI, double& val) override
+	bool OnFieldF64(const FieldInfo& FI, double& val) override
 	{
-		val = atof(GetFieldString(FI).c_str());
+		if (auto str = GetFieldString(FI))
+		{
+			char* ret = nullptr;
+			val = strtod(str.GetValue().c_str(), &ret);
+			return *ret == 0 && ret != str.GetValue().c_str();
+		}
+		return false;
 	}
 };
 

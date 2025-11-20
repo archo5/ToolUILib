@@ -333,11 +333,12 @@ void DATOLinearReader::EndEntry()
 }
 
 
-void DATOSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool DATOSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
 	DATOLinearWriter::BeginObject(FI.GetNameOrEmptyStr());
 	if (outName)
 		WriteString("__", *outName);
+	return true;
 }
 
 void DATOSerializer::EndObject()
@@ -356,69 +357,88 @@ void DATOSerializer::EndArray()
 	DATOLinearWriter::EndArray();
 }
 
-void DATOSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
+bool DATOSerializer::OnFieldNull(const FieldInfo& FI)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteNull(FI.GetNameOrEmptyStr());
+	return true;
 }
 
-void DATOSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
+bool DATOSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
+{
+	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
+}
+
+bool DATOSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
+bool DATOSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
+bool DATOSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
+bool DATOSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
+bool DATOSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
 	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
+bool DATOSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
 	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
+bool DATOSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
 	WriteInt64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
+bool DATOSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
 	WriteUInt64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldF32(const FieldInfo& FI, float& val)
+bool DATOSerializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
 	WriteFloat32(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldF64(const FieldInfo& FI, double& val)
+bool DATOSerializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
 	WriteFloat64(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void DATOSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool DATOSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
 	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	return true;
 }
 
-void DATOSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool DATOSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
 	WriteBytes(FI.GetNameOrEmptyStr(), brw.Read());
+	return true;
 }
 
 bool DATOSerializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
@@ -434,14 +454,15 @@ bool DATOSerializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 }
 
 
-void DATOUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool DATOUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	DATOLinearReader::BeginObject(FI.GetNameOrEmptyStr());
+	bool ret = DATOLinearReader::BeginObject(FI.GetNameOrEmptyStr());
 	if (outName)
 	{
 		if (auto s = ReadString("__"))
 			*outName <<= s.GetValue();
 	}
+	return ret;
 }
 
 void DATOUnserializer::EndObject()
@@ -470,82 +491,88 @@ bool DATOUnserializer::HasField(const char* name)
 	return FindEntry(name).IsValid();
 }
 
-void DATOUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
+bool DATOUnserializer::OnFieldNull(const FieldInfo& FI)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue() != 0;
+	auto e = FindEntry(FI.GetNameOrEmptyStr());
+	return e.IsNull();
 }
 
-void DATOUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
+bool DATOUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = i8(v.GetValue());
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue() != 0, true : false;
 }
 
-void DATOUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
+bool DATOUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = u8(v.GetValue());
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = i8(v.GetValue()), true : false;
 }
 
-void DATOUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
+bool DATOUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = i16(v.GetValue());
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = u8(v.GetValue()), true : false;
 }
 
-void DATOUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
+bool DATOUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = u16(v.GetValue());
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = i16(v.GetValue()), true : false;
 }
 
-void DATOUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
+bool DATOUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	if (auto v = ReadInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = u16(v.GetValue()), true : false;
 }
 
-void DATOUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
+bool DATOUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	if (auto v = ReadUInt32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
+bool DATOUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	if (auto v = ReadInt64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
+bool DATOUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	if (auto v = ReadUInt64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadInt64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
+bool DATOUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	if (auto v = ReadFloat32(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadUInt64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
+bool DATOUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	if (auto v = ReadFloat64(FI.GetNameOrEmptyStr()))
-		val = v.GetValue();
+	auto v = ReadFloat32(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool DATOUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	if (auto v = ReadString(FI.GetNameOrEmptyStr()))
-		brw.Assign(v.GetValue());
+	auto v = ReadFloat64(FI.GetNameOrEmptyStr());
+	return v ? val = v.GetValue(), true : false;
 }
 
-void DATOUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool DATOUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	if (auto v = ReadBytes(FI.GetNameOrEmptyStr()))
-		brw.Assign(v.GetValue());
+	auto v = ReadString(FI.GetNameOrEmptyStr());
+	return v ? brw.Assign(v.GetValue()), true : false;
+}
+
+bool DATOUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+{
+	auto v = ReadBytes(FI.GetNameOrEmptyStr());
+	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)

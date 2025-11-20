@@ -46,14 +46,15 @@ struct Color4b
 	UI_FORCEINLINE bool IsOpaque() const { return a == 255; }
 	UI_FORCEINLINE Color4b GetOpaque() const { return { r, g, b, 255 }; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		oi.BeginObject(FI, "Color4b");
-		OnField(oi, "r", r);
-		OnField(oi, "g", g);
-		OnField(oi, "b", b);
-		OnField(oi, "a", a);
+		bool ret = oi.BeginObject(FI, "Color4b");
+		ret &= OnField(oi, "r", r);
+		ret &= OnField(oi, "g", g);
+		ret &= OnField(oi, "b", b);
+		ret &= OnField(oi, "a", a);
 		oi.EndObject();
+		return ret;
 	}
 
 	union
@@ -101,9 +102,9 @@ struct Color4f
 
 	UI_FORCEINLINE bool operator == (const Color4f& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		OnFieldMany(oi, FI, 4, &r);
+		return OnFieldMany(oi, FI, 4, &r);
 	}
 
 	Color4f operator + (const Color4f& o) const { return { r + o.r, g + o.g, b + o.b, a + o.a }; }

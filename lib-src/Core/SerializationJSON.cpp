@@ -377,11 +377,12 @@ void JSONLinearReader::EndEntry()
 }
 
 
-void JSONSerializerObjectIterator::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool JSONSerializerObjectIterator::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
 	BeginDict(FI.GetNameOrEmptyStr());
 	if (outName)
 		WriteString("__", *outName);
+	return true;
 }
 
 void JSONSerializerObjectIterator::EndObject()
@@ -400,48 +401,62 @@ void JSONSerializerObjectIterator::EndArray()
 	JSONLinearWriter::EndArray();
 }
 
-void JSONSerializerObjectIterator::OnFieldBool(const FieldInfo& FI, bool& val)
+bool JSONSerializerObjectIterator::OnFieldNull(const FieldInfo& FI)
+{
+	WriteNull(FI.GetNameOrEmptyStr());
+	return true;
+}
+
+bool JSONSerializerObjectIterator::OnFieldBool(const FieldInfo& FI, bool& val)
 {
 	WriteBool(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldS64(const FieldInfo& FI, int64_t& val)
+bool JSONSerializerObjectIterator::OnFieldS64(const FieldInfo& FI, int64_t& val)
 {
 	WriteInt(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val)
+bool JSONSerializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val)
 {
 	WriteInt(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldF32(const FieldInfo& FI, float& val)
+bool JSONSerializerObjectIterator::OnFieldF32(const FieldInfo& FI, float& val)
 {
 	WriteFloatSingle(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
+bool JSONSerializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
 {
 	WriteFloatDouble(FI.GetNameOrEmptyStr(), val);
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool JSONSerializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
 	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	return true;
 }
 
-void JSONSerializerObjectIterator::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool JSONSerializerObjectIterator::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
 	auto src = brw.Read();
 	WriteString(FI.GetNameOrEmptyStr(), Base16Encode(src.data(), src.size()));
+	return true;
 }
 
 
-void JSONUnserializerObjectIterator::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
+bool JSONUnserializerObjectIterator::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	BeginDict(FI.name);
+	bool ret = BeginDict(FI.name);
 	if (outName)
 		*outName = ReadString("__").GetValueOrDefault({});
+	return ret;
 }
 
 void JSONUnserializerObjectIterator::EndObject()
@@ -470,40 +485,46 @@ bool JSONUnserializerObjectIterator::HasField(const char* name)
 	return !!FindEntry(name);
 }
 
-void JSONUnserializerObjectIterator::OnFieldBool(const FieldInfo& FI, bool& val)
+bool JSONUnserializerObjectIterator::OnFieldNull(const FieldInfo& FI)
 {
-	if (auto v = ReadBool(FI.name))
-		val = v.GetValue();
+	auto* e = FindEntry(FI.name);
+	return e ? e->type == json_type_null : false;
 }
 
-void JSONUnserializerObjectIterator::OnFieldS64(const FieldInfo& FI, int64_t& val)
+bool JSONUnserializerObjectIterator::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	if (auto v = ReadInt64(FI.name))
-		val = v.GetValue();
+	auto v = ReadBool(FI.name);
+	return v ? val = v.GetValue(), true : false;
 }
 
-void JSONUnserializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val)
+bool JSONUnserializerObjectIterator::OnFieldS64(const FieldInfo& FI, int64_t& val)
 {
-	if (auto v = ReadUInt64(FI.name))
-		val = v.GetValue();
+	auto v = ReadInt64(FI.name);
+	return v ? val = v.GetValue(), true : false;
 }
 
-void JSONUnserializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
+bool JSONUnserializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val)
 {
-	if (auto v = ReadFloat(FI.name))
-		val = v.GetValue();
+	auto v = ReadUInt64(FI.name);
+	return v ? val = v.GetValue(), true : false;
 }
 
-void JSONUnserializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
+bool JSONUnserializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	if (auto v = ReadString(FI.name))
-		brw.Assign(v.GetValue());
+	auto v = ReadFloat(FI.name);
+	return v ? val = v.GetValue(), true : false;
 }
 
-void JSONUnserializerObjectIterator::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+bool JSONUnserializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	if (auto v = ReadString(FI.name))
-		brw.Assign(Base16Decode(v.GetValue()));
+	auto v = ReadString(FI.name);
+	return v ? brw.Assign(v.GetValue()), true : false;
+}
+
+bool JSONUnserializerObjectIterator::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
+{
+	auto v = ReadString(FI.name);
+	return v ? brw.Assign(Base16Decode(v.GetValue())), true : false;
 }
 
 } // ui

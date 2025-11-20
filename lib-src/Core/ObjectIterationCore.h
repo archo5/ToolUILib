@@ -67,7 +67,8 @@ struct IObjectIterator
 {
 	virtual unsigned GetFlags() const = 0;
 
-	virtual void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) = 0;
+	// EndObject needs to be called regardless of the return value!
+	virtual bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) = 0;
 	virtual void EndObject() = 0;
 	virtual size_t BeginArray(size_t size, const FieldInfo& FI) = 0;
 	virtual void EndArray() = 0;
@@ -75,20 +76,21 @@ struct IObjectIterator
 	virtual bool HasMoreArrayElements() { return false; }
 	virtual bool HasField(const char* name) { return true; }
 
-	virtual void OnFieldBool(const FieldInfo& FI, bool& val) = 0;
-	virtual void OnFieldS8(const FieldInfo& FI, int8_t& val) = 0;
-	virtual void OnFieldU8(const FieldInfo& FI, uint8_t& val) = 0;
-	virtual void OnFieldS16(const FieldInfo& FI, int16_t& val) = 0;
-	virtual void OnFieldU16(const FieldInfo& FI, uint16_t& val) = 0;
-	virtual void OnFieldS32(const FieldInfo& FI, int32_t& val) = 0;
-	virtual void OnFieldU32(const FieldInfo& FI, uint32_t& val) = 0;
-	virtual void OnFieldS64(const FieldInfo& FI, int64_t& val) = 0;
-	virtual void OnFieldU64(const FieldInfo& FI, uint64_t& val) = 0;
-	virtual void OnFieldF32(const FieldInfo& FI, float& val) = 0;
-	virtual void OnFieldF64(const FieldInfo& FI, double& val) = 0;
+	virtual bool OnFieldNull(const FieldInfo& FI) = 0;
+	virtual bool OnFieldBool(const FieldInfo& FI, bool& val) = 0;
+	virtual bool OnFieldS8(const FieldInfo& FI, int8_t& val) = 0;
+	virtual bool OnFieldU8(const FieldInfo& FI, uint8_t& val) = 0;
+	virtual bool OnFieldS16(const FieldInfo& FI, int16_t& val) = 0;
+	virtual bool OnFieldU16(const FieldInfo& FI, uint16_t& val) = 0;
+	virtual bool OnFieldS32(const FieldInfo& FI, int32_t& val) = 0;
+	virtual bool OnFieldU32(const FieldInfo& FI, uint32_t& val) = 0;
+	virtual bool OnFieldS64(const FieldInfo& FI, int64_t& val) = 0;
+	virtual bool OnFieldU64(const FieldInfo& FI, uint64_t& val) = 0;
+	virtual bool OnFieldF32(const FieldInfo& FI, float& val) = 0;
+	virtual bool OnFieldF64(const FieldInfo& FI, double& val) = 0;
 
-	virtual void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) = 0;
-	virtual void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) = 0;
+	virtual bool OnFieldString(const FieldInfo& FI, const IBufferRW& brw) = 0;
+	virtual bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) = 0;
 
 	// return true if serializing or if successfully unserialized (data had the expected type)
 	virtual bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) = 0;
@@ -120,18 +122,18 @@ struct IObjectIterator
 	}
 };
 
-template <class T> UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, T& val) { val.OnSerialize(oi, FI); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, bool& val) { oi.OnFieldBool(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, int8_t& val) { oi.OnFieldS8(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, uint8_t& val) { oi.OnFieldU8(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, int16_t& val) { oi.OnFieldS16(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, uint16_t& val) { oi.OnFieldU16(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, int32_t& val) { oi.OnFieldS32(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, uint32_t& val) { oi.OnFieldU32(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, int64_t& val) { oi.OnFieldS64(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, uint64_t& val) { oi.OnFieldU64(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, float& val) { oi.OnFieldF32(FI, val); }
-UI_FORCEINLINE void OnField(IObjectIterator& oi, const FieldInfo& FI, double& val) { oi.OnFieldF64(FI, val); }
+template <class T> UI_FORCEINLINE auto OnField(IObjectIterator& oi, const FieldInfo& FI, T& val) { return val.OnSerialize(oi, FI); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, bool& val) { return oi.OnFieldBool(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, int8_t& val) { return oi.OnFieldS8(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, uint8_t& val) { return oi.OnFieldU8(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, int16_t& val) { return oi.OnFieldS16(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, uint16_t& val) { return oi.OnFieldU16(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, int32_t& val) { return oi.OnFieldS32(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, uint32_t& val) { return oi.OnFieldU32(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, int64_t& val) { return oi.OnFieldS64(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, uint64_t& val) { return oi.OnFieldU64(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, float& val) { return oi.OnFieldF32(FI, val); }
+UI_FORCEINLINE bool OnField(IObjectIterator& oi, const FieldInfo& FI, double& val) { return oi.OnFieldF64(FI, val); }
 
 UI_FORCEINLINE bool OnFieldMany(IObjectIterator& oi, const FieldInfo& FI, u32 count, i32* arr) { return oi.OnFieldManyS32(FI, count, arr); }
 UI_FORCEINLINE bool OnFieldMany(IObjectIterator& oi, const FieldInfo& FI, u32 count, float* arr) { return oi.OnFieldManyF32(FI, count, arr); }
@@ -151,6 +153,6 @@ struct StdStringRW : IBufferRW
 		return *S;
 	}
 };
-inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::string& val) { oi.OnFieldString(FI, StdStringRW(val)); }
+inline bool OnField(IObjectIterator& oi, const FieldInfo& FI, std::string& val) { return oi.OnFieldString(FI, StdStringRW(val)); }
 
 } // ui

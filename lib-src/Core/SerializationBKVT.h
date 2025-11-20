@@ -233,25 +233,26 @@ struct BKVTSerializer : BKVTLinearWriter, IObjectIterator
 {
 	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped | OITF_Binary; }
 
-	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
+	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
 	size_t BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override;
-	void OnFieldS8(const FieldInfo& FI, i8& val) override;
-	void OnFieldU8(const FieldInfo& FI, u8& val) override;
-	void OnFieldS16(const FieldInfo& FI, i16& val) override;
-	void OnFieldU16(const FieldInfo& FI, u16& val) override;
-	void OnFieldS32(const FieldInfo& FI, i32& val) override;
-	void OnFieldU32(const FieldInfo& FI, u32& val) override;
-	void OnFieldS64(const FieldInfo& FI, i64& val) override;
-	void OnFieldU64(const FieldInfo& FI, u64& val) override;
-	void OnFieldF32(const FieldInfo& FI, float& val) override;
-	void OnFieldF64(const FieldInfo& FI, double& val) override;
+	bool OnFieldNull(const FieldInfo& FI) override;
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override;
+	bool OnFieldS8(const FieldInfo& FI, i8& val) override;
+	bool OnFieldU8(const FieldInfo& FI, u8& val) override;
+	bool OnFieldS16(const FieldInfo& FI, i16& val) override;
+	bool OnFieldU16(const FieldInfo& FI, u16& val) override;
+	bool OnFieldS32(const FieldInfo& FI, i32& val) override;
+	bool OnFieldU32(const FieldInfo& FI, u32& val) override;
+	bool OnFieldS64(const FieldInfo& FI, i64& val) override;
+	bool OnFieldU64(const FieldInfo& FI, u64& val) override;
+	bool OnFieldF32(const FieldInfo& FI, float& val) override;
+	bool OnFieldF64(const FieldInfo& FI, double& val) override;
 
-	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
-	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
 
 	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override;
 	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override;
@@ -261,7 +262,7 @@ struct BKVTUnserializer : BKVTLinearReader, IObjectIterator
 {
 	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped | OITF_Binary; }
 
-	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
+	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
 	size_t BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
@@ -269,20 +270,21 @@ struct BKVTUnserializer : BKVTLinearReader, IObjectIterator
 	bool HasMoreArrayElements() override;
 	bool HasField(const char* name) override;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override;
-	void OnFieldS8(const FieldInfo& FI, i8& val) override;
-	void OnFieldU8(const FieldInfo& FI, u8& val) override;
-	void OnFieldS16(const FieldInfo& FI, i16& val) override;
-	void OnFieldU16(const FieldInfo& FI, u16& val) override;
-	void OnFieldS32(const FieldInfo& FI, i32& val) override;
-	void OnFieldU32(const FieldInfo& FI, u32& val) override;
-	void OnFieldS64(const FieldInfo& FI, i64& val) override;
-	void OnFieldU64(const FieldInfo& FI, u64& val) override;
-	void OnFieldF32(const FieldInfo& FI, float& val) override;
-	void OnFieldF64(const FieldInfo& FI, double& val) override;
+	bool OnFieldNull(const FieldInfo& FI) override;
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override;
+	bool OnFieldS8(const FieldInfo& FI, i8& val) override;
+	bool OnFieldU8(const FieldInfo& FI, u8& val) override;
+	bool OnFieldS16(const FieldInfo& FI, i16& val) override;
+	bool OnFieldU16(const FieldInfo& FI, u16& val) override;
+	bool OnFieldS32(const FieldInfo& FI, i32& val) override;
+	bool OnFieldU32(const FieldInfo& FI, u32& val) override;
+	bool OnFieldS64(const FieldInfo& FI, i64& val) override;
+	bool OnFieldU64(const FieldInfo& FI, u64& val) override;
+	bool OnFieldF32(const FieldInfo& FI, float& val) override;
+	bool OnFieldF64(const FieldInfo& FI, double& val) override;
 
-	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
-	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
 
 	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override;
 	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override;

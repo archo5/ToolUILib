@@ -128,37 +128,39 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 {
 	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped; }
 
-	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
+	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
 	size_t BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override;
-	void OnFieldS64(const FieldInfo& FI, int64_t& val) override;
-	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override;
-	void OnFieldF32(const FieldInfo& FI, float& val) override;
-	void OnFieldF64(const FieldInfo& FI, double& val) override;
-	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
-	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldNull(const FieldInfo& FI) override;
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override;
+	bool OnFieldS64(const FieldInfo& FI, int64_t& val) override;
+	bool OnFieldU64(const FieldInfo& FI, uint64_t& val) override;
+	bool OnFieldF32(const FieldInfo& FI, float& val) override;
+	bool OnFieldF64(const FieldInfo& FI, double& val) override;
+	bool OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
 };
 
 struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinTypeUnserializeBase
 {
 	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped; }
 
-	void BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
+	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
 	size_t BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 	bool HasMoreArrayElements() override;
 	bool HasField(const char* name) override;
 
-	void OnFieldBool(const FieldInfo& FI, bool& val) override;
-	void OnFieldS64(const FieldInfo& FI, int64_t& val) override;
-	void OnFieldU64(const FieldInfo& FI, uint64_t& val) override;
-	void OnFieldF64(const FieldInfo& FI, double& val) override;
-	void OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
-	void OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldNull(const FieldInfo& FI) override;
+	bool OnFieldBool(const FieldInfo& FI, bool& val) override;
+	bool OnFieldS64(const FieldInfo& FI, int64_t& val) override;
+	bool OnFieldU64(const FieldInfo& FI, uint64_t& val) override;
+	bool OnFieldF64(const FieldInfo& FI, double& val) override;
+	bool OnFieldString(const FieldInfo& FI, const IBufferRW& brw) override;
+	bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
 };
 
 } // ui

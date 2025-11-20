@@ -259,9 +259,9 @@ struct Mat4f
 		};
 	}
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		OnFieldMany(oi, FI, 16, a);
+		return OnFieldMany(oi, FI, 16, a);
 	}
 
 	UI_FORCEINLINE static Mat4f Translate(const Vec3f& v) { return Translate(v.x, v.y, v.z); }
