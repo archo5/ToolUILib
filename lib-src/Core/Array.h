@@ -482,9 +482,9 @@ struct Array
 	}
 
 	template <class Func>
-	void OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
+	bool OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
 	{
-		size_t estNewSize = oi.BeginArray(_size, FI);
+		ArrayFieldState afs = oi.BeginArray(_size, FI);
 		FieldInfo chfi("", FI.flags);
 		if (oi.IsUnserializer())
 		{
@@ -497,7 +497,7 @@ struct Array
 			else
 			{
 				Clear();
-				Reserve(estNewSize);
+				Reserve(afs.maybeSize);
 				while (oi.HasMoreArrayElements())
 				{
 					Append(T());
@@ -511,12 +511,13 @@ struct Array
 				func(oi, chfi, item);
 		}
 		oi.EndArray();
+		return afs.exists;
 	}
 
-	UI_FORCEINLINE void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	UI_FORCEINLINE bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		// TODO force-inline the lambda
-		OnSerializeCustom(oi, FI, [](IObjectIterator& oi, const FieldInfo& FI, T& val) { OnField(oi, FI, val); });
+		return OnSerializeCustom(oi, FI, [](IObjectIterator& oi, const FieldInfo& FI, T& val) { OnField(oi, FI, val); });
 	}
 };
 

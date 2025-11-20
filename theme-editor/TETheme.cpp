@@ -37,11 +37,11 @@ void TE_Image::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	OnField(oi, "name", name);
 	OnField(oi, "expanded", expanded);
 
-	size_t sz = oi.BeginArray(overrides.size(), "overrides");
+	ArrayFieldState afs = oi.BeginArray(overrides.size(), "overrides");
 	if (oi.IsUnserializer())
 	{
 		overrides.Clear();
-		overrides.Reserve(sz);
+		overrides.Reserve(afs.maybeSize);
 		while (oi.HasMoreArrayElements())
 		{
 			oi.BeginObject({}, "Override");

@@ -164,13 +164,13 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 		return ret;
 	}
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		size_t n = oi.BeginArray(this->Size(), FI);
+		ArrayFieldState afs = oi.BeginArray(this->Size(), FI);
 		if (oi.IsUnserializer())
 		{
 			this->Clear();
-			this->Reserve(n);
+			this->Reserve(afs.maybeSize);
 			while (oi.HasMoreArrayElements())
 			{
 				K k{};
@@ -184,6 +184,7 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 				OnField(oi, {}, k);
 		}
 		oi.EndArray();
+		return afs.exists;
 	}
 };
 

@@ -55,15 +55,16 @@ template <class T> struct Vec3
 
 	UI_FORCEINLINE Vec2<T> ToVec2() const { return { x, y }; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 3, &x))
-			return;
-		oi.BeginObject(FI, "Vec3");
-		OnField(oi, "x", x);
-		OnField(oi, "y", y);
-		OnField(oi, "z", z);
+			return true;
+		bool ret = oi.BeginObject(FI, "Vec3");
+		ret &= OnField(oi, "x", x);
+		ret &= OnField(oi, "y", y);
+		ret &= OnField(oi, "z", z);
 		oi.EndObject();
+		return ret;
 	}
 
 	template <class U> UI_FORCEINLINE Vec3<U> Cast() const { return { U(x), U(y), U(z) }; }
@@ -120,16 +121,17 @@ struct Vec4
 	UI_FORCEINLINE Vec3<T> GetVec3() const { return { x, y, z }; }
 	UI_FORCEINLINE Vec3f WDivide() const { return { x / w, y / w, z / w }; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 4, &x))
-			return;
-		oi.BeginObject(FI, "Vec4");
-		OnField(oi, "x", x);
-		OnField(oi, "y", y);
-		OnField(oi, "z", z);
-		OnField(oi, "w", w);
+			return true;
+		bool ret = oi.BeginObject(FI, "Vec4");
+		ret &= OnField(oi, "x", x);
+		ret &= OnField(oi, "y", y);
+		ret &= OnField(oi, "z", z);
+		ret &= OnField(oi, "w", w);
 		oi.EndObject();
+		return ret;
 	}
 
 	template <class U> UI_FORCEINLINE Vec4<U> Cast() const { return { U(x), U(y), U(z), U(w) }; }
@@ -165,16 +167,17 @@ struct Quat
 	UI_FORCEINLINE bool operator == (const Quat& o) const { return x == o.x && y == o.y && z == o.z && w == o.w; }
 	UI_FORCEINLINE bool operator != (const Quat& o) const { return x != o.x || y != o.y || z != o.z || w != o.w; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 4, &x))
-			return;
-		oi.BeginObject(FI, "Quat");
-		OnField(oi, "x", x);
-		OnField(oi, "y", y);
-		OnField(oi, "z", z);
-		OnField(oi, "w", w);
+			return true;
+		bool ret = oi.BeginObject(FI, "Quat");
+		ret &= OnField(oi, "x", x);
+		ret &= OnField(oi, "y", y);
+		ret &= OnField(oi, "z", z);
+		ret &= OnField(oi, "w", w);
 		oi.EndObject();
+		return ret;
 	}
 
 	static Quat Identity() { return { 0, 0, 0, 1 }; }
@@ -399,7 +402,7 @@ struct Transform3Df
 	static UI_FORCEINLINE Transform3Df Identity() { return {}; }
 	static Transform3Df FromMatrixLossy(const Mat4f& m);
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	inline Transform3Df Inverted() const
 	{
@@ -443,7 +446,7 @@ struct TransformScale3Df
 	static UI_FORCEINLINE TransformScale3Df Identity() { return {}; }
 	static TransformScale3Df FromMatrixLossy(const Mat4f& m);
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	Transform3Df WithoutScale() const { return { position, rotation }; }
 	Mat4f ToMatrix() const;

@@ -130,7 +130,7 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 
 	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
-	size_t BeginArray(size_t size, const FieldInfo& FI) override;
+	ArrayFieldState BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 
 	bool OnFieldNull(const FieldInfo& FI) override;
@@ -149,7 +149,7 @@ struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinType
 
 	bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) override;
 	void EndObject() override;
-	size_t BeginArray(size_t size, const FieldInfo& FI) override;
+	ArrayFieldState BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 	bool HasMoreArrayElements() override;
 	bool HasField(const char* name) override;

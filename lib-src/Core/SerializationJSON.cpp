@@ -390,10 +390,10 @@ void JSONSerializerObjectIterator::EndObject()
 	EndDict();
 }
 
-size_t JSONSerializerObjectIterator::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState JSONSerializerObjectIterator::BeginArray(size_t size, const FieldInfo& FI)
 {
 	JSONLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
-	return 0;
+	return {};
 }
 
 void JSONSerializerObjectIterator::EndArray()
@@ -464,10 +464,10 @@ void JSONUnserializerObjectIterator::EndObject()
 	EndDict();
 }
 
-size_t JSONUnserializerObjectIterator::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState JSONUnserializerObjectIterator::BeginArray(size_t size, const FieldInfo& FI)
 {
-	JSONLinearReader::BeginArray(FI.name);
-	return GetCurrentArraySize();
+	bool exists = JSONLinearReader::BeginArray(FI.name);
+	return { exists, GetCurrentArraySize() };
 }
 
 void JSONUnserializerObjectIterator::EndArray()

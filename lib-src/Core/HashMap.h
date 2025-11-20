@@ -247,13 +247,13 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 		return this->_storage.GetValueAt(ipos);
 	}
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		size_t n = oi.BeginArray(this->Size(), FI);
+		ArrayFieldState afs = oi.BeginArray(this->Size(), FI);
 		if (oi.IsUnserializer())
 		{
 			this->Clear();
-			this->Reserve(n);
+			this->Reserve(afs.maybeSize);
 			while (oi.HasMoreArrayElements())
 			{
 				oi.BeginObject({}, "KeyValuePair");
@@ -276,6 +276,7 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 			}
 		}
 		oi.EndArray();
+		return afs.exists;
 	}
 };
 

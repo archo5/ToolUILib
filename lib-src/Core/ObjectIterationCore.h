@@ -63,6 +63,14 @@ struct BRWImpl : IBufferRW
 template <class AssignFunc>
 BRWImpl<AssignFunc> BRW(StringView src, AssignFunc&& af) { return BRWImpl<AssignFunc>(src, Move(af)); }
 
+struct ArrayFieldState
+{
+	bool exists = true;
+	// only available if the format supports it!
+	// (all currently implemented formats do but NamedText didn't and a differently structured JSON parser doesn't have to)
+	size_t maybeSize = 0;
+};
+
 struct IObjectIterator
 {
 	virtual unsigned GetFlags() const = 0;
@@ -70,7 +78,7 @@ struct IObjectIterator
 	// EndObject needs to be called regardless of the return value!
 	virtual bool BeginObject(const FieldInfo& FI, const char* objname, std::string* outName = nullptr) = 0;
 	virtual void EndObject() = 0;
-	virtual size_t BeginArray(size_t size, const FieldInfo& FI) = 0;
+	virtual ArrayFieldState BeginArray(size_t size, const FieldInfo& FI) = 0;
 	virtual void EndArray() = 0;
 
 	virtual bool HasMoreArrayElements() { return false; }

@@ -554,12 +554,13 @@ Transform3Df Transform3Df::FromMatrixLossy(const Mat4f& m)
 	return { m.GetTranslation(), m.GetRotationQuaternion() };
 }
 
-void Transform3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+bool Transform3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
-	oi.BeginObject(FI, "Transform3D");
-	OnField(oi, "position", position);
-	OnField(oi, "rotation", rotation);
+	bool ret = oi.BeginObject(FI, "Transform3D");
+	ret &= OnField(oi, "position", position);
+	ret &= OnField(oi, "rotation", rotation);
 	oi.EndObject();
+	return ret;
 }
 
 Transform3Df TransformLerp(const Transform3Df& a, const Transform3Df& b, float q)
@@ -576,13 +577,14 @@ TransformScale3Df TransformScale3Df::FromMatrixLossy(const Mat4f& m)
 	return { m.GetTranslation(), m.GetRotationQuaternion(), m.GetScale() };
 }
 
-void TransformScale3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+bool TransformScale3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
-	oi.BeginObject(FI, "TransformScale3D");
-	OnField(oi, "position", position);
-	OnField(oi, "rotation", rotation);
-	OnField(oi, "scale", scale);
+	bool ret = oi.BeginObject(FI, "TransformScale3D");
+	ret &= OnField(oi, "position", position);
+	ret &= OnField(oi, "rotation", rotation);
+	ret &= OnField(oi, "scale", scale);
 	oi.EndObject();
+	return ret;
 }
 
 Mat4f TransformScale3Df::ToMatrix() const

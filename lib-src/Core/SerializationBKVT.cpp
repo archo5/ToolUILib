@@ -605,10 +605,10 @@ void BKVTSerializer::EndObject()
 	BKVTLinearWriter::EndObject();
 }
 
-size_t BKVTSerializer::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState BKVTSerializer::BeginArray(size_t size, const FieldInfo& FI)
 {
 	BKVTLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
-	return 0;
+	return {};
 }
 
 void BKVTSerializer::EndArray()
@@ -729,10 +729,10 @@ void BKVTUnserializer::EndObject()
 	BKVTLinearReader::EndObject();
 }
 
-size_t BKVTUnserializer::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState BKVTUnserializer::BeginArray(size_t size, const FieldInfo& FI)
 {
-	BKVTLinearReader::BeginArray(FI.GetNameOrEmptyStr());
-	return GetCurrentArraySize();
+	bool exists = BKVTLinearReader::BeginArray(FI.GetNameOrEmptyStr());
+	return { exists, GetCurrentArraySize() };
 }
 
 void BKVTUnserializer::EndArray()

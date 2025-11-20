@@ -533,8 +533,8 @@ void ThemeData::LoadTheme(StringView folder)
 				hasBaseType = true;
 			}
 
-			size_t count = u.BeginArray(0, "images");
-			for (size_t i = 0; i < count; i++)
+			u.BeginArray(0, "images");
+			while (u.HasMoreArrayElements())
 			{
 				draw::ImageSet::BitmapImageEntry e;
 
@@ -580,8 +580,8 @@ void ThemeData::LoadTheme(StringView folder)
 			}
 			u.EndArray();
 
-			count = u.BeginArray(0, "vectorimages");
-			for (size_t i = 0; i < count; i++)
+			u.BeginArray(0, "vectorimages");
+			while (u.HasMoreArrayElements())
 			{
 				draw::ImageSet::VectorImageEntry e;
 

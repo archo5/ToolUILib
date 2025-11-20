@@ -124,14 +124,15 @@ template <class T> struct Vec2
 		};
 	}
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 2, &x))
-			return;
-		oi.BeginObject(FI, "Vec2");
-		OnField(oi, "x", x);
-		OnField(oi, "y", y);
+			return true;
+		bool ret = oi.BeginObject(FI, "Vec2");
+		ret &= OnField(oi, "x", x);
+		ret &= OnField(oi, "y", y);
 		oi.EndObject();
+		return ret;
 	}
 
 	template <class U> UI_FORCEINLINE Vec2<U> Cast() const { return { U(x), U(y) }; }
@@ -179,14 +180,15 @@ template <class T> struct Size2
 	template <class U> UI_FORCEINLINE Size2<U> Cast() const { return { U(x), U(y) }; }
 	UI_FORCEINLINE Vec2<T> ToVec2() const { return { x, y }; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 2, &x))
-			return;
-		oi.BeginObject(FI, "Size2");
-		OnField(oi, "x", x);
-		OnField(oi, "y", y);
+			return true;
+		bool ret = oi.BeginObject(FI, "Size2");
+		ret &= OnField(oi, "x", x);
+		ret &= OnField(oi, "y", y);
 		oi.EndObject();
+		return ret;
 	}
 };
 
@@ -213,14 +215,15 @@ template <class T> struct Range
 	UI_FORCEINLINE bool operator == (const Range& o) const { return min == o.min && max == o.max; }
 	UI_FORCEINLINE bool operator != (const Range& o) const { return min != o.min || max != o.max; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 2, &min))
-			return;
-		oi.BeginObject(FI, "Range");
-		OnField(oi, "min", min);
-		OnField(oi, "max", max);
+			return true;
+		bool ret = oi.BeginObject(FI, "Range");
+		ret &= OnField(oi, "min", min);
+		ret &= OnField(oi, "max", max);
 		oi.EndObject();
+		return ret;
 	}
 
 	UI_FORCEINLINE T GetWidth() const { return max - min; }
@@ -350,16 +353,17 @@ template<class T> struct AABB2
 	UI_FORCEINLINE Vec2<T> InverseLerp(Vec2<T> p) const { return { invlerp(x0, x1, p.x), invlerp(y0, y1, p.y) }; }
 	UI_FORCEINLINE Vec2<T> InverseLerpFlipY(Vec2<T> p) const { return { invlerp(x0, x1, p.x), invlerp(y1, y0, p.y) }; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		if (OnFieldMany(oi, FI, 4, &x0))
-			return;
-		oi.BeginObject(FI, "AABB2");
-		OnField(oi, "x0", x0);
-		OnField(oi, "y0", y0);
-		OnField(oi, "x1", x1);
-		OnField(oi, "y1", y1);
+			return true;
+		bool ret = oi.BeginObject(FI, "AABB2");
+		ret &= OnField(oi, "x0", x0);
+		ret &= OnField(oi, "y0", y0);
+		ret &= OnField(oi, "x1", x1);
+		ret &= OnField(oi, "y1", y1);
 		oi.EndObject();
+		return ret;
 	}
 
 	template <class U> UI_FORCEINLINE AABB2<U> Cast() const { return { U(x0), U(y0), U(x1), U(y1) }; }

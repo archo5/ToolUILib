@@ -63,19 +63,21 @@ struct Optional
 	}
 
 	template <class Func>
-	void OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
+	bool OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
 	{
-		oi.BeginObject(FI, "Optional<T>");
-		OnField(oi, "hasValue", _hasValue);
+		bool ret = oi.BeginObject(FI, "Optional<T>");
+		ret &= OnField(oi, "hasValue", _hasValue);
 		func(oi, "value", _value);
 		oi.EndObject();
+		return ret;
 	}
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
-		oi.BeginObject(FI, "Optional<T>");
-		OnField(oi, "hasValue", _hasValue);
+		bool ret = oi.BeginObject(FI, "Optional<T>");
+		ret &= OnField(oi, "hasValue", _hasValue);
 		OnField(oi, "value", _value);
 		oi.EndObject();
+		return ret;
 	}
 };
 

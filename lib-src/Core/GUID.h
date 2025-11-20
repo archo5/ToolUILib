@@ -29,15 +29,19 @@ struct GUID
 	bool operator > (const GUID& o) const { return memcmp(v8, o.v8, 16) > 0; }
 	bool operator >= (const GUID& o) const { return memcmp(v8, o.v8, 16) >= 0; }
 
-	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+	bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		bool un = oi.IsUnserializer();
 		std::string tmp;
 		if (!un)
 			tmp = ToStringHex();
-		OnField(oi, FI, tmp);
+		bool ret = OnField(oi, FI, tmp);
 		if (un)
+		{
+			ret &= ValidateStringHex(tmp);
 			*this = FromStringHex(tmp);
+		}
+		return ret;
 	}
 
 	UI_FORCEINLINE static GUID Null() { return {}; }

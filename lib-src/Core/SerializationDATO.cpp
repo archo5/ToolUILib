@@ -346,10 +346,10 @@ void DATOSerializer::EndObject()
 	DATOLinearWriter::EndObject();
 }
 
-size_t DATOSerializer::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState DATOSerializer::BeginArray(size_t size, const FieldInfo& FI)
 {
 	DATOLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
-	return 0;
+	return {};
 }
 
 void DATOSerializer::EndArray()
@@ -470,10 +470,10 @@ void DATOUnserializer::EndObject()
 	DATOLinearReader::EndObject();
 }
 
-size_t DATOUnserializer::BeginArray(size_t size, const FieldInfo& FI)
+ArrayFieldState DATOUnserializer::BeginArray(size_t size, const FieldInfo& FI)
 {
 	DATOLinearReader::BeginArray(FI.GetNameOrEmptyStr());
-	return GetCurrentArraySize();
+	return { true, GetCurrentArraySize() };
 }
 
 void DATOUnserializer::EndArray()

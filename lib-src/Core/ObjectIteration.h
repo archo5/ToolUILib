@@ -15,9 +15,9 @@
 namespace ui {
 
 #ifdef UI_USE_STD_VECTOR
-template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val)
+template <class T> inline bool OnField(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val)
 {
-	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	ArrayFieldState afs = oi.BeginArray(val.size(), FI);
 	if (oi.IsUnserializer())
 	{
 		FieldInfo chfi(nullptr, FI.flags);
@@ -30,7 +30,7 @@ template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI,
 		else
 		{
 			val.clear();
-			val.reserve(estNewSize);
+			val.reserve(afs.maybeSize);
 			while (oi.HasMoreArrayElements())
 			{
 				val.push_back(T());
@@ -44,13 +44,14 @@ template <class T> inline void OnField(IObjectIterator& oi, const FieldInfo& FI,
 			OnField(oi, {}, item);
 	}
 	oi.EndArray();
+	return afs.exists;
 }
 #endif // UI_USE_STD_VECTOR
 
 template <class T, class XF, class CF>
-inline void OnFieldPtrArray(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val, XF&& transform, CF&& construct)
+inline bool OnFieldPtrArray(IObjectIterator& oi, const FieldInfo& FI, Array<T>& val, XF&& transform, CF&& construct)
 {
-	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	ArrayFieldState afs = oi.BeginArray(val.size(), FI);
 	if (oi.IsUnserializer())
 	{
 		FieldInfo chfi(nullptr, FI.flags);
@@ -66,7 +67,7 @@ inline void OnFieldPtrArray(IObjectIterator& oi, const FieldInfo& FI, Array<T>& 
 		else
 		{
 			val.Clear();
-			val.Reserve(estNewSize);
+			val.Reserve(afs.maybeSize);
 			while (oi.HasMoreArrayElements())
 			{
 				val.Append(construct());
@@ -84,13 +85,14 @@ inline void OnFieldPtrArray(IObjectIterator& oi, const FieldInfo& FI, Array<T>& 
 		}
 	}
 	oi.EndArray();
+	return afs.exists;
 }
 
 #ifdef UI_USE_STD_VECTOR
 template <class T, class XF, class CF>
-inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val, XF&& transform, CF&& construct)
+inline bool OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vector<T>& val, XF&& transform, CF&& construct)
 {
-	size_t estNewSize = oi.BeginArray(val.size(), FI);
+	ArrayFieldState afs = oi.BeginArray(val.size(), FI);
 	if (oi.IsUnserializer())
 	{
 		FieldInfo chfi(nullptr, FI.flags);
@@ -106,7 +108,7 @@ inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vect
 		else
 		{
 			val.clear();
-			val.reserve(estNewSize);
+			val.reserve(afs.maybeSize);
 			while (oi.HasMoreArrayElements())
 			{
 				val.push_back(construct());
@@ -124,6 +126,7 @@ inline void OnFieldPtrVector(IObjectIterator& oi, const FieldInfo& FI, std::vect
 		}
 	}
 	oi.EndArray();
+	return afs.exists;
 }
 #endif // UI_USE_STD_VECTOR
 
@@ -158,12 +161,13 @@ inline void OnFieldArrayValIndex(IObjectIterator& oi, const FieldInfo& FI, T& pt
 	OnFieldArrayValIndex(oi, FI, ptr, cont, [](const T& v) { return v; });
 }
 
-template <class E> inline void OnFieldEnumInt(IObjectIterator& oi, const FieldInfo& FI, E& val)
+template <class E> inline bool OnFieldEnumInt(IObjectIterator& oi, const FieldInfo& FI, E& val)
 {
 	int64_t iv = int64_t(val);
-	OnField(oi, FI, iv);
+	bool ret = OnField(oi, FI, iv);
 	if (oi.IsUnserializer())
 		val = (E)iv;
+	return ret;
 }
 
 
@@ -199,28 +203,28 @@ template <class E, const char** list, E def = (E)0> struct EnumKeysStringList
 	}
 };
 
-template <class E> inline void OnFieldEnumString(IObjectIterator& oi, const FieldInfo& FI, E& val)
+template <class E> inline bool OnFieldEnumString(IObjectIterator& oi, const FieldInfo& FI, E& val)
 {
 	std::string str;
 	if (!oi.IsUnserializer())
 		str = EnumKeys<E>::ValueToString(val);
-	if (oi.IsUnserializer() && !oi.HasField(FI.GetNameOrEmptyStr()))
-		return;
-	OnField(oi, FI, str);
+	if (!OnField(oi, FI, str))
+		return false;
 	if (oi.IsUnserializer())
 		val = EnumKeys<E>::StringToValue(str.c_str());
+	return true;
 }
 
 
 
 struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 {
-	bool OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
-	bool OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
-	bool OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
-	bool OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
-	bool OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
-	bool OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
+	bool OnFieldS8(const FieldInfo& FI, i8& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU8(const FieldInfo& FI, u8& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
+	bool OnFieldS16(const FieldInfo& FI, i16& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU16(const FieldInfo& FI, u16& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
+	bool OnFieldS32(const FieldInfo& FI, i32& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
+	bool OnFieldU32(const FieldInfo& FI, u32& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
 
 	bool OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp), true; }
 
@@ -246,19 +250,18 @@ struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 
 struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 {
-	bool OnFieldS8(const FieldInfo& FI, int8_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int8_t>(tmp), true : false; }
-	bool OnFieldU8(const FieldInfo& FI, uint8_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint8_t>(tmp), true : false; }
-	bool OnFieldS16(const FieldInfo& FI, int16_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int16_t>(tmp), true : false; }
-	bool OnFieldU16(const FieldInfo& FI, uint16_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint16_t>(tmp), true : false; }
-	bool OnFieldS32(const FieldInfo& FI, int32_t& val) override { int64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<int32_t>(tmp), true : false; }
-	bool OnFieldU32(const FieldInfo& FI, uint32_t& val) override { uint64_t tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<uint32_t>(tmp), true : false; }
+	bool OnFieldS8(const FieldInfo& FI, i8& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<i8>(tmp), true : false; }
+	bool OnFieldU8(const FieldInfo& FI, u8& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<u8>(tmp), true : false; }
+	bool OnFieldS16(const FieldInfo& FI, i16& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<i16>(tmp), true : false; }
+	bool OnFieldU16(const FieldInfo& FI, u16& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<u16>(tmp), true : false; }
+	bool OnFieldS32(const FieldInfo& FI, i32& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<i32>(tmp), true : false; }
+	bool OnFieldU32(const FieldInfo& FI, u32& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<u32>(tmp), true : false; }
 
 	bool OnFieldF32(const FieldInfo& FI, float& val) override { double tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldF64(FI, tmp) ? val = static_cast<float>(tmp), true : false; }
 
 	bool OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr) override
 	{
-		BeginArray(count, FI);
-		bool ret = true;
+		bool ret = BeginArray(count, FI).exists;
 		for (u32 i = 0; i < count; i++)
 			ret &= OnFieldS32({}, arr[i]);
 		EndArray();
@@ -266,8 +269,7 @@ struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 	}
 	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override
 	{
-		BeginArray(count, FI);
-		bool ret = true;
+		bool ret = BeginArray(count, FI).exists;
 		for (u32 i = 0; i < count; i++)
 			ret &= OnFieldF32({}, arr[i]);
 		EndArray();
