@@ -209,7 +209,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 			std::string activeID;
 			OnField(oi, "activeID", activeID);
 
-			tabs.Reserve(oi.BeginArray(0, "tabs"));
+			tabs.Reserve(oi.BeginArray(0, "tabs").maybeSize);
 
 			while (oi.HasMoreArrayElements())
 			{
@@ -254,7 +254,7 @@ void DockingNode::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		if (oi.IsUnserializer())
 		{
 			childNodes.Clear();
-			childNodes.Reserve(oi.BeginArray(0, "childNodes"));
+			childNodes.Reserve(oi.BeginArray(0, "childNodes").maybeSize);
 
 			while (oi.HasMoreArrayElements())
 			{
@@ -834,7 +834,7 @@ void DockingMainArea::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 		OnField(oi, "rootNode", *_mainAreaRootNode);
 
 		RemoveSubwindows();
-		_subwindows.Reserve(oi.BeginArray(0, "subwindows"));
+		_subwindows.Reserve(oi.BeginArray(0, "subwindows").maybeSize);
 
 		while (oi.HasMoreArrayElements())
 		{
