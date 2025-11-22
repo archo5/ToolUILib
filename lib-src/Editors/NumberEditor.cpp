@@ -23,6 +23,8 @@ void NumberEditorBase::OnReset()
 	FrameElement::OnReset();
 
 	flags |= UIObject_DB_CaptureMouseOnLeftClick;
+	if (!_activeTextbox)
+		flags |= UIObject_IsFocusable;
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 
 	dragConfig = {};
@@ -54,6 +56,24 @@ void NumberEditorBase::OnPaint(const UIPaintContext& ctx)
 	PaintChildren(ctx, cpa);
 }
 
+static void NEB_CreateTextbox(NumberEditorBase& neb)
+{
+	if (neb._activeTextbox)
+		return;
+	neb._activeTextbox = new Textbox;
+	neb._activeTextbox->SetText(neb.ValueToString(true));
+	neb.AppendChild(neb._activeTextbox);
+	neb.SetFlag(UIObject_IsFocusable, false);
+}
+
+static void NEB_DestroyTextbox(NumberEditorBase& neb)
+{
+	neb._activeTextbox->DetachParent();
+	DeleteUIObject(neb._activeTextbox); // TODO: delay the deletion - it works for now but is accessing deleted memory
+	neb._activeTextbox = nullptr;
+	neb.SetFlag(UIObject_IsFocusable, true);
+}
+
 void NumberEditorBase::OnEvent(Event& e)
 {
 	if (_activeTextbox && e.target == _activeTextbox)
@@ -65,20 +85,22 @@ void NumberEditorBase::OnEvent(Event& e)
 				e.context->OnChange(this);
 				e.context->OnCommit(this);
 			}
-			_activeTextbox->DetachParent();
-			DeleteUIObject(_activeTextbox); // TODO: delay the deletion - it works for now but is accessing deleted memory
-			_activeTextbox = nullptr;
+			NEB_DestroyTextbox(*this); // TODO: delay the deletion - it works for now but is accessing deleted memory
 			e.StopPropagation(); // don't let the commit event through
 		}
 		if (e.type == EventType::Change)
 			e.StopPropagation(); // don't let the change event through
 		if (e.type == EventType::KeyDown && e.shortCode == ui::KSC_Escape)
 		{
-			_activeTextbox->DetachParent();
-			DeleteUIObject(_activeTextbox);
-			_activeTextbox = nullptr;
+			NEB_DestroyTextbox(*this); // TODO: delay the deletion - it works for now but is accessing deleted memory
 			e.StopPropagation();
 		}
+	}
+	if (e.type == EventType::GotFocus && e.arg0 && !IsInputDisabled())
+	{
+		NEB_CreateTextbox(*this);
+		e.context->SetKeyboardFocus(_activeTextbox);
+		e.StopPropagation();
 	}
 	if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Left)
 	{
@@ -90,9 +112,7 @@ void NumberEditorBase::OnEvent(Event& e)
 	{
 		if (!_dragged)
 		{
-			_activeTextbox = new Textbox;
-			_activeTextbox->SetText(ValueToString(true));
-			AppendChild(_activeTextbox);
+			NEB_CreateTextbox(*this);
 			e.context->SetKeyboardFocus(_activeTextbox);
 		}
 		else

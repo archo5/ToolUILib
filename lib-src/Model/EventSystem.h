@@ -28,7 +28,7 @@ struct EventSystem
 	void OnChange(UIObject* o);
 	void OnIMChange(UIObject* o);
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
-	void SetKeyboardFocus(UIObject* o);
+	void SetKeyboardFocus(UIObject* o, bool nav = false);
 
 	bool DragCheck(Event& e, MouseButton btn);
 

@@ -267,7 +267,7 @@ void EventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg
 	BubblingEvent(ev);
 }
 
-void EventSystem::SetKeyboardFocus(UIObject* o)
+void EventSystem::SetKeyboardFocus(UIObject* o, bool nav)
 {
 	wasFocusSet = true;
 	if (focusObj == o)
@@ -276,6 +276,7 @@ void EventSystem::SetKeyboardFocus(UIObject* o)
 	if (focusObj)
 	{
 		Event ev(this, focusObj, EventType::LostFocus);
+		ev.arg0 = nav;
 		focusObj->_DoEvent(ev);
 	}
 
@@ -286,6 +287,7 @@ void EventSystem::SetKeyboardFocus(UIObject* o)
 	if (focusObj)
 	{
 		Event ev(this, focusObj, EventType::GotFocus);
+		ev.arg0 = nav;
 		focusObj->_DoEvent(ev);
 	}
 }
@@ -701,7 +703,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
-					SetKeyboardFocus(it);
+					SetKeyboardFocus(it, true);
 					found = true;
 					break;
 				}
@@ -712,7 +714,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
-						SetKeyboardFocus(it);
+						SetKeyboardFocus(it, true);
 						break;
 					}
 				}
@@ -725,7 +727,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
-					SetKeyboardFocus(it);
+					SetKeyboardFocus(it, true);
 					found = true;
 					break;
 				}
@@ -736,7 +738,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
-						SetKeyboardFocus(it);
+						SetKeyboardFocus(it, true);
 						break;
 					}
 				}
