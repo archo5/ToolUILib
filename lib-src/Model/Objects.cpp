@@ -951,34 +951,94 @@ void OverlayElement::_DetachFromFrameContents()
 }
 
 
+void TextElement::_UpdateCache()
+{
+	if (multiline)
+	{
+		_lines.Clear();
+		StringView it = text;
+		it = it.trim();
+		while (it.NotEmpty())
+		{
+			StringView line = it.UntilFirst("\n").trim();
+			_lines.Append(line);
+			it = it.AfterFirst("\n");
+		}
+		if (_lines.NotEmpty() && _lines.Last().IsEmpty())
+			_lines.RemoveLast();
+	}
+	else
+	{
+		// do not allocate for single line text
+		_lines.Clear();
+	}
+	_cachedLines = true;
+}
+
 void TextElement::OnReset()
 {
 	UIObjectNoChildren::OnReset();
 
 	text = {};
+	_cachedLines = false;
+	_lines.Clear();
 }
 
 void TextElement::OnPaint(const UIPaintContext& ctx)
 {
+	if (!_cachedLines)
+		_UpdateCache();
 	auto* fs = _FindClosestParentFontSettings();
 	auto* font = fs->GetFont();
 
 	auto r = GetFinalRect();
-	float w = r.x1 - r.x0;
-	draw::TextLine(font, fs->size, r.x0, r.GetCenterY(), text, ctx.textColor, TextBaseline::Middle, &r);
+	if (multiline)
+	{
+		float y = roundf(r.GetCenterY() - (_lines.Size() - 1) * fs->size * 0.5f);
+		for (size_t i = 0; i < _lines.Size(); i++)
+		{
+			draw::TextLine(font, fs->size, r.x0, y, _lines[i], ctx.textColor, TextBaseline::Middle, &r);
+			y += fs->size;
+		}
+	}
+	else
+	{
+		draw::TextLine(font, fs->size, r.x0, r.GetCenterY(), text, ctx.textColor, TextBaseline::Middle, &r);
+	}
 }
 
 EstSizeRange TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
+	if (!_cachedLines)
+		_UpdateCache();
 	auto* fs = _FindClosestParentFontSettings();
-	float w = ceilf(GetTextWidth(fs->GetFont(), fs->size, text));
-	return EstSizeRange::SoftExact(w);
+	if (multiline)
+	{
+		float maxw = 0;
+		for (StringView line : _lines)
+			maxw = max(maxw, GetTextWidth(fs->GetFont(), fs->size, line));
+		return EstSizeRange::SoftExact(ceilf(maxw));
+	}
+	else
+	{
+		float w = ceilf(GetTextWidth(fs->GetFont(), fs->size, text));
+		return EstSizeRange::SoftExact(w);
+	}
 }
 
 Rangef TextElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
+	if (!_cachedLines)
+		_UpdateCache();
 	auto* fs = _FindClosestParentFontSettings();
-	return Rangef::Exact(fs->size);
+	if (multiline)
+	{
+		return Rangef::Exact(fs->size * _lines.Size());
+	}
+	else
+	{
+		return Rangef::Exact(fs->size);
+	}
 }
 
 
@@ -1208,7 +1268,7 @@ modAddTooltip::modAddTooltip(StringView sv)
 	std::string str(sv.Data(), sv.Size());
 	_evfn = [str{ Move(str) }]()
 	{
-		Text(str);
+		Text(str).SetMultiline(true);
 	};
 }
 

@@ -44,7 +44,7 @@ struct imLabel
 	{
 		label->_tooltipBuildFunc = [tt{ to_string(tt) }]()
 		{
-			Text(tt);
+			Text(tt).SetMultiline(true);
 		};
 		return *this;
 	}

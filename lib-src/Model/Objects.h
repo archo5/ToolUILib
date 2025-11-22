@@ -543,6 +543,12 @@ struct OverlayElement : WrapperElement
 struct TextElement : UIObjectNoChildren
 {
 	std::string text;
+	bool multiline = false;
+
+	bool _cachedLines = false;
+	Array<StringView> _lines;
+	void _UpdateCache();
+	void InvalidateStyle() { _cachedLines = false; }
 
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
@@ -553,6 +559,13 @@ struct TextElement : UIObjectNoChildren
 	TextElement& SetText(StringView t)
 	{
 		text <<= t;
+		_cachedLines = false;
+		return *this;
+	}
+	TextElement& SetMultiline(bool ml)
+	{
+		multiline = ml;
+		_cachedLines = false;
 		return *this;
 	}
 };
