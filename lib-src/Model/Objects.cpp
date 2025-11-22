@@ -980,6 +980,7 @@ void TextElement::OnReset()
 	UIObjectNoChildren::OnReset();
 
 	text = {};
+	multiline = false;
 	_cachedLines = false;
 	_lines.Clear();
 }
