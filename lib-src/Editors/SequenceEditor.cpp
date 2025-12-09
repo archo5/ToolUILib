@@ -38,6 +38,35 @@ void SequenceItemElement::OnReset()
 	num = 0;
 }
 
+static bool IsInnerMove(SequenceEditor* seqEd, SequenceDragData* ddd)
+{
+	bool innermove = seqEd->dragSupport >= SequenceElementDragSupport::SameSequenceEditor && ddd->scope == seqEd;
+	innermove |= seqEd->dragSupport >= SequenceElementDragSupport::SameContainer && ddd->scope->_sequence->AreContainersEqual(seqEd->_sequence);
+	return innermove;
+}
+
+static bool IsCrossMove(SequenceEditor* seqEd, SequenceDragData* ddd)
+{
+	if (seqEd->dragSupport >= SequenceElementDragSupport::SameType && ddd->scope->_sequence->AreElementTypesEqual(seqEd->_sequence))
+	{
+		if (seqEd->sameTypeDragParentCheck)
+		{
+			void* itemptr = nullptr;
+			ddd->scope->_sequence->IterateElements(ddd->at, [&itemptr](size_t idx, void* ptr)
+			{
+				itemptr = ptr;
+				return false;
+			});
+			if (!itemptr) // means the array is somehow already too small to contain the element
+				return false;
+			return !seqEd->sameTypeDragParentCheck->SEPC_IsThisContainedBy(itemptr);
+		}
+		// no checks, assume it's fine
+		return true;
+	}
+	return false;
+}
+
 void SequenceItemElement::OnEvent(Event& e)
 {
 	Selectable::OnEvent(e);
@@ -45,7 +74,7 @@ void SequenceItemElement::OnEvent(Event& e)
 	if (e.type == EventType::ContextMenu)
 		ContextMenu();
 
-	if (seqEd->allowDrag && e.target == e.current && e.context->DragCheck(e, MouseButton::Left))
+	if (seqEd->dragSupport > SequenceElementDragSupport::None && e.target == e.current && e.context->DragCheck(e, MouseButton::Left))
 	{
 		DragDrop::SetData(new SequenceDragData(seqEd, GetContentRect().GetWidth(), num));
 		e.context->SetKeyboardFocus(nullptr);
@@ -55,7 +84,8 @@ void SequenceItemElement::OnEvent(Event& e)
 	{
 		if (auto* ddd = DragDrop::GetData<SequenceDragData>())
 		{
-			if (ddd->scope == seqEd)
+			bool validmove = IsInnerMove(seqEd, ddd) || IsCrossMove(seqEd, ddd);
+			if (validmove)
 			{
 				auto r = GetFinalRect();
 				bool after = e.position.y > (r.y0 + r.y1) * 0.5f;
@@ -65,15 +95,25 @@ void SequenceItemElement::OnEvent(Event& e)
 			}
 		}
 	}
-	if (e.type == EventType::DragDrop)
+	if (e.type == EventType::DragDrop && seqEd->dragSupport > SequenceElementDragSupport::None && seqEd->_dragTargetPos != SIZE_MAX)
 	{
 		if (auto* ddd = DragDrop::GetData<SequenceDragData>())
 		{
-			if (ddd->scope == seqEd)
+			if (IsInnerMove(seqEd, ddd))
 			{
 				size_t tgt = seqEd->_dragTargetPos - (seqEd->_dragTargetPos > ddd->at);
 				seqEd->GetSequence()->MoveElementTo(ddd->at, tgt);
 				seqEd->_OnEdit(this);
+				if (ddd->scope != seqEd)
+					ddd->scope->_OnEdit(ddd->scope);
+			}
+			else if (IsCrossMove(seqEd, ddd))
+			{
+				assert(!ddd->scope->GetSequence()->AreContainersEqual(seqEd->GetSequence()));
+				size_t tgt = seqEd->_dragTargetPos;
+				seqEd->GetSequence()->MoveElementFromOtherSeq(tgt, ddd->scope->GetSequence(), ddd->at);
+				seqEd->_OnEdit(this);
+				ddd->scope->_OnEdit(ddd->scope);
 			}
 		}
 	}
@@ -124,7 +164,7 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 
 	Selectable::Init(isSel || dragging);
 	SetFlag(UIObject_NoPaint, dragging);
-	if (se->allowDrag)
+	if (se->dragSupport > SequenceElementDragSupport::None)
 		SetFlag(UIObject_DB_Draggable, true);
 }
 
@@ -194,7 +234,7 @@ void SequenceEditor::OnReset()
 	itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 	allowDelete = true;
 	allowDuplicate = true;
-	allowDrag = true;
+	dragSupport = SequenceElementDragSupport::SameSequenceEditor;
 	_sequence = nullptr;
 	_selStorage = nullptr;
 	_ctxMenuSrc = nullptr;

@@ -49,7 +49,7 @@ static void TreeFillListContextMenu(ui::MenuItemCollection& mic)
 
 struct SequenceEditorsTest : ui::Buildable
 {
-	ui::RectAnchoredPlacement parts[5];
+	ui::RectAnchoredPlacement parts[6];
 
 	void Build() override
 	{
@@ -83,10 +83,21 @@ struct SequenceEditorsTest : ui::Buildable
 			ui::imEditBool(setSelectionStorage, "Storage");
 		}
 
-		for (int i = 0; i < 5; i++)
 		{
-			parts[i].anchor.x0 = i / 5.0f;
-			parts[i].anchor.x1 = (i + 1) / 5.0f;
+			ui::LabeledProperty::Scope ps("\bDrag support:");
+			ui::imRadioButton(dragSupport, ui::SequenceElementDragSupport::None, "None");
+			ui::imRadioButton(dragSupport, ui::SequenceElementDragSupport::SameSequenceEditor, "Same seq.editor");
+			ui::imRadioButton(dragSupport, ui::SequenceElementDragSupport::SameContainer, "Same container");
+			ui::imRadioButton(dragSupport, ui::SequenceElementDragSupport::SameType, "Same type");
+		}
+
+		bool issct = dragSupport == ui::SequenceElementDragSupport::SameContainer;
+
+		int numcols = issct ? 6 : 5;
+		for (int i = 0; i < numcols; i++)
+		{
+			parts[i].anchor.x0 = i / float(numcols);
+			parts[i].anchor.x1 = (i + 1) / float(numcols);
 		}
 
 		auto& ple = WPush<ui::PlacementLayoutElement>();
@@ -94,40 +105,57 @@ struct SequenceEditorsTest : ui::Buildable
 
 		WMake<ui::FillerElement>();
 
-		tmpl->placement = &parts[0];
-		tmpl->measure = false;
-		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("Array<int>:");
-		SeqEdit(UI_BUILD_ALLOC(ui::ArraySequence<decltype(arraydata)>)(arraydata), &arraysel);
-		ui::Pop();
+		int a = 0;
 
-		tmpl->placement = &parts[1];
-		tmpl->measure = false;
-		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("std::vector<int>:");
-		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(vectordata)>)(vectordata), &vectorsel);
-		ui::Pop();
+		for (int i = 0; i < (issct ? 2 : 1); i++)
+		{
+			tmpl->placement = &parts[a++];
+			tmpl->measure = false;
+			ui::Push<ui::StackTopDownLayoutElement>();
+			ui::Text("Array<int>:");
+			SeqEdit(UI_BUILD_ALLOC(ui::ArraySequence<decltype(arraydata)>)(arraydata), &arraysel);
+			ui::Pop();
+		}
 
-		tmpl->placement = &parts[2];
-		tmpl->measure = false;
-		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("std::list<int>:");
-		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(listdata)>)(listdata), &listsel);
-		ui::Pop();
+		for (int i = 0; i < (issct ? 2 : 1); i++)
+		{
+			tmpl->placement = &parts[a++];
+			tmpl->measure = false;
+			ui::Push<ui::StackTopDownLayoutElement>();
+			ui::Text("std::vector<int>:");
+			SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(vectordata)>)(vectordata), &vectorsel);
+			ui::Pop();
+		}
 
-		tmpl->placement = &parts[3];
-		tmpl->measure = false;
-		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("std::deque<int>:");
-		SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(dequedata)>)(dequedata), &dequesel);
-		ui::Pop();
+		if (!issct)
+		{
+			tmpl->placement = &parts[a++];
+			tmpl->measure = false;
+			ui::Push<ui::StackTopDownLayoutElement>();
+			ui::Text("std::list<int>:");
+			SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(listdata)>)(listdata), &listsel);
+			ui::Pop();
+		}
 
-		tmpl->placement = &parts[4];
-		tmpl->measure = false;
-		ui::Push<ui::StackTopDownLayoutElement>();
-		ui::Text("int[5]:");
-		SeqEdit(UI_BUILD_ALLOC(ui::BufferSequence<int, uint8_t>)(bufdata, buflen), &bufsel);
-		ui::Pop();
+		if (!issct)
+		{
+			tmpl->placement = &parts[a++];
+			tmpl->measure = false;
+			ui::Push<ui::StackTopDownLayoutElement>();
+			ui::Text("std::deque<int>:");
+			SeqEdit(UI_BUILD_ALLOC(ui::StdSequence<decltype(dequedata)>)(dequedata), &dequesel);
+			ui::Pop();
+		}
+
+		for (int i = 0; i < (issct ? 2 : 1); i++)
+		{
+			tmpl->placement = &parts[a++];
+			tmpl->measure = false;
+			ui::Push<ui::StackTopDownLayoutElement>();
+			ui::Text("int[5]:");
+			SeqEdit(UI_BUILD_ALLOC(ui::BufferSequence<int, uint8_t>)(bufdata, buflen), &bufsel);
+			ui::Pop();
+		}
 
 		WPop(); // PlacementLayoutElement
 		WPop(); // EdgeSliceLayoutElement
@@ -142,6 +170,7 @@ struct SequenceEditorsTest : ui::Buildable
 			.SetSequence(seq)
 			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
+			.SetDragSupport(dragSupport)
 			.SetContextMenuSource(&g_infoDumpCMS)
 			.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
@@ -182,6 +211,7 @@ struct SequenceEditorsTest : ui::Buildable
 	ui::BasicSelection bufsel;
 
 	ui::SelectionMode selectionType = ui::SelectionMode::Single;
+	ui::SequenceElementDragSupport dragSupport = ui::SequenceElementDragSupport::SameSequenceEditor;
 	bool setSelectionStorage = true;
 };
 void Test_SequenceEditors()

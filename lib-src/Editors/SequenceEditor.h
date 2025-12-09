@@ -21,12 +21,45 @@ struct ISequence
 	// insert a copy from [off] at [off + 1]
 	virtual void Duplicate(size_t off) {}
 	virtual void MoveElementTo(size_t off, size_t to) {}
+
+	// drag & drop between different sequences
+	virtual void* GetContainerPtr() const { return nullptr; }
+	bool AreContainersEqual(ISequence* o) const
+	{
+		void* cpc = GetContainerPtr();
+		if (!cpc)
+			return false;
+		void* cpo = o->GetContainerPtr();
+		if (!cpo)
+			return false;
+		return cpc == cpo;
+	}
+	virtual const type_info* GetElementType() const { return nullptr; }
+	bool AreElementTypesEqual(ISequence* o) const
+	{
+		const type_info* etc = GetElementType();
+		if (!etc)
+			return false;
+		const type_info* eto = o->GetElementType();
+		if (!eto)
+			return false;
+		return etc == eto;
+	}
+	// - assume same element type
+	// - assume the containers are NOT equal
+	virtual bool MoveElementFromOtherSeq(size_t dstoff, ISequence* src, size_t srcoff) { return false; }
 };
 
 
 template <class Cont>
 struct ArraySequence : ISequence
 {
+	using ContainerType = std::remove_reference_t<Cont>;
+	ContainerType& cont;
+	size_t sizeLimit = SIZE_MAX;
+
+	ArraySequence(ContainerType& c) : cont(c) {}
+
 	size_t GetSizeLimit() override
 	{
 		return sizeLimit;
@@ -74,16 +107,39 @@ struct ArraySequence : ISequence
 		}
 	}
 
-	ArraySequence(Cont& c) : cont(c) {}
-
-	Cont& cont;
-	size_t sizeLimit = SIZE_MAX;
+	void* GetContainerPtr() const override
+	{
+		return &cont;
+	}
+	const type_info* GetElementType() const override
+	{
+		return &typeid(ContainerType::ValueType);
+	}
+	bool MoveElementFromOtherSeq(size_t insoff, ISequence* src, size_t srcoff) override
+	{
+		bool found = false;
+		src->IterateElements(srcoff, [this, insoff, &found](size_t idx, void* ptr) -> bool
+		{
+			cont.InsertAt(insoff, std::move(*static_cast<typename ContainerType::ValueType*>(ptr)));
+			found = true;
+			return false;
+		});
+		if (found)
+			src->Remove(srcoff);
+		return found;
+	}
 };
 
 
 template <class Cont>
 struct StdSequence : ISequence
 {
+	using ContainerType = std::remove_reference_t<Cont>;
+	ContainerType& cont;
+	size_t sizeLimit = SIZE_MAX;
+
+	StdSequence(ContainerType& c) : cont(c) {}
+
 	size_t GetSizeLimit() override
 	{
 		return sizeLimit;
@@ -138,16 +194,43 @@ struct StdSequence : ISequence
 		}
 	}
 
-	StdSequence(Cont& c) : cont(c) {}
-
-	Cont& cont;
-	size_t sizeLimit = SIZE_MAX;
+	void* GetContainerPtr() const override
+	{
+		return &cont;
+	}
+	const type_info* GetElementType() const override
+	{
+		return &typeid(ContainerType::value_type);
+	}
+	bool MoveElementFromOtherSeq(size_t insoff, ISequence* src, size_t srcoff) override
+	{
+		bool found = false;
+		src->IterateElements(srcoff, [this, insoff, &found](size_t idx, void* ptr) -> bool
+		{
+			auto it = cont.begin();
+			std::advance(it, insoff);
+			cont.insert(it, std::move(*static_cast<typename ContainerType::value_type*>(ptr)));
+			found = true;
+			return false;
+		});
+		if (found)
+			src->Remove(srcoff);
+		return found;
+	}
 };
 
 
 template <class Type, class Size>
 struct BufferSequence : ISequence
 {
+	Type* data;
+	Size& size;
+	size_t limit;
+
+	BufferSequence(Type* d, Size& sz, size_t lim) : data(d), size(sz), limit(lim) {}
+	template <size_t N>
+	BufferSequence(Type(&d)[N], Size& sz) : data(d), size(sz), limit(N) {}
+
 	size_t GetSizeLimit() override
 	{
 		return limit;
@@ -195,13 +278,32 @@ struct BufferSequence : ISequence
 		}
 	}
 
-	BufferSequence(Type* d, Size& sz, size_t lim) : data(d), size(sz), limit(lim) {}
-	template <size_t N>
-	BufferSequence(Type(&d)[N], Size& sz) : data(d), size(sz), limit(N) {}
-
-	Type* data;
-	Size& size;
-	size_t limit;
+	void* GetContainerPtr() const override
+	{
+		return data;
+	}
+	const type_info* GetElementType() const override
+	{
+		return &typeid(Type);
+	}
+	bool MoveElementFromOtherSeq(size_t insoff, ISequence* src, size_t srcoff) override
+	{
+		if (size == limit)
+			return false;
+		bool found = false;
+		src->IterateElements(srcoff, [this, insoff, &found](size_t idx, void* ptr) -> bool
+		{
+			if (insoff < size)
+				std::move_backward(data + insoff, data + size, data + size + 1);
+			data[insoff] = std::move(*(Type*)ptr);
+			size++;
+			found = true;
+			return false;
+		});
+		if (found)
+			src->Remove(srcoff);
+		return found;
+	}
 };
 
 
@@ -235,6 +337,19 @@ struct SequenceItemElement : Selectable
 	size_t num = 0;
 };
 
+enum SequenceElementDragSupport : u8
+{
+	None,
+	SameSequenceEditor,
+	SameContainer,
+	SameType,
+};
+
+struct ISequenceElementParentCheck
+{
+	virtual bool SEPC_IsThisContainedBy(void* itemptr) = 0;
+};
+
 struct SequenceEditor : Buildable
 {
 	void Build() override;
@@ -262,7 +377,10 @@ struct SequenceEditor : Buildable
 	bool buildFrame = true;
 	bool allowDelete = true;
 	bool allowDuplicate = true;
-	bool allowDrag = true;
+	SequenceElementDragSupport dragSupport = SequenceElementDragSupport::SameSequenceEditor;
+	SequenceEditor& SetDragSupport(SequenceElementDragSupport ds) { dragSupport = ds; return *this; }
+	ISequenceElementParentCheck* sameTypeDragParentCheck = nullptr;
+	SequenceEditor& SetSameTypeDragParentCheck(ISequenceElementParentCheck* sepc) { sameTypeDragParentCheck = sepc; return *this; }
 
 	ISequence* _sequence = nullptr;
 	ISelectionStorage* _selStorage = nullptr;

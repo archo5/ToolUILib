@@ -83,20 +83,21 @@ struct PolygonOutput
 };
 
 
-struct PolygonCutter;
-
-PolygonCutter* PolygonCutter_Create();
-void PolygonCutter_Destroy(PolygonCutter* PC);
-enum
+struct PolygonCutter
 {
-	PolygonCutterMode_Combine = 0, // A and B are treated equally
-	PolygonCutterMode_Subtract = 1,
-	PolygonCutterMode_Intersect = 2,
+	static PolygonCutter* Create();
+	void Destroy();
+	enum
+	{
+		Mode_Combine = 0, // A and B are treated equally
+		Mode_Subtract = 1,
+		Mode_Intersect = 2,
+	};
+	void Reset(u8 mode, bool keepInnerEdges);
+	void AddPolygonA(ArrayView<Vec2f> poly);
+	void AddPolygonB(ArrayView<Vec2f> poly);
+	void AddCuttingPath(ArrayView<Vec2f> path);
+	void Cut(PolygonOutput& output);
 };
-void PolygonCutter_Reset(PolygonCutter* PC, u8 mode, bool keepInnerEdges);
-void PolygonCutter_AddPolygonA(PolygonCutter* PC, ArrayView<Vec2f> poly);
-void PolygonCutter_AddPolygonB(PolygonCutter* PC, ArrayView<Vec2f> poly);
-void PolygonCutter_AddCuttingPath(PolygonCutter* PC, ArrayView<Vec2f> path);
-void PolygonCutter_Cut(PolygonCutter* PC, PolygonOutput& output);
 
 } // ui

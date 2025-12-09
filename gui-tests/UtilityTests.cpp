@@ -1319,20 +1319,20 @@ struct PolygonCutterTest : ui::Buildable
 	bool shrinkpolygons = true;
 	ui::Vec2f userpos = { 500, 350 };
 	ui::Vec2f useroff = {};
-	ui::PolygonCutter* PC = ui::PolygonCutter_Create();
-	ui::u8 mode = ui::PolygonCutterMode_Combine;
+	ui::PolygonCutter* PC = ui::PolygonCutter::Create();
+	ui::u8 mode = ui::PolygonCutter::Mode_Combine;
 	bool keepInnerEdges = true;
 	ui::PolygonOutput polyOut;
 	ui::HashMap<ui::u32, ui::Vec2f> usedverts;
 
 	void Reset()
 	{
-		ui::PolygonCutter_Reset(PC, mode, keepInnerEdges);
+		PC->Reset(mode, keepInnerEdges);
 	}
 
 	void AddA(ui::ArrayView<ui::Vec2f> poly)
 	{
-		ui::PolygonCutter_AddPolygonA(PC, poly);
+		PC->AddPolygonA(poly);
 	}
 
 	void AddB(ui::ArrayView<ui::Vec2f> poly)
@@ -1343,10 +1343,10 @@ struct PolygonCutterTest : ui::Buildable
 			Array<Vec2f> tmp = poly;
 			for (auto& v : tmp)
 				v += useroff;
-			ui::PolygonCutter_AddPolygonB(PC, tmp);
+			PC->AddPolygonB(tmp);
 		}
 		else
-			ui::PolygonCutter_AddPolygonB(PC, poly);
+			PC->AddPolygonB(poly);
 	}
 
 	void AddCutPath(ui::ArrayView<ui::Vec2f> path)
@@ -1358,17 +1358,17 @@ struct PolygonCutterTest : ui::Buildable
 			Array<Vec2f> tmp = path;
 			for (auto& v : tmp)
 				v += useroff;
-			ui::PolygonCutter_AddCuttingPath(PC, tmp);
+			PC->AddCuttingPath(tmp);
 		}
 		else
-			ui::PolygonCutter_AddCuttingPath(PC, path);
+			PC->AddCuttingPath(path);
 	}
 
 	void DumpResult()
 	{
 		using namespace ui;
 
-		PolygonCutter_Cut(PC, polyOut);
+		PC->Cut(polyOut);
 
 		usedverts.Clear();
 		for (auto v : polyOut.verts)

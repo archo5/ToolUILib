@@ -906,7 +906,7 @@ struct PCEdge
 	bool lin, rin; // left/right is inside
 };
 
-struct PolygonCutter : CutterSharedBase
+struct PolygonCutterImpl : PolygonCutter, CutterSharedBase
 {
 	Array<i8> polyCats;
 	Array<Array<Vec2f>> polygons;
@@ -956,7 +956,7 @@ struct PolygonCutter : CutterSharedBase
 	bool Inside(Vec2f point, u32 assocEdgePolyID)
 	{
 		// skip all polygon edges if combining - all are inside
-		if (mode == PolygonCutterMode_Combine)
+		if (mode == Mode_Combine)
 		{
 			if (assocEdgePolyID < polyCats.Size() && polyCats[assocEdgePolyID] >= 0)
 				return true;
@@ -969,9 +969,9 @@ struct PolygonCutter : CutterSharedBase
 			}
 			return false;
 		}
-		else if (mode == PolygonCutterMode_Subtract)
+		else if (mode == Mode_Subtract)
 			return NotInsidePolygon(1, point) && IsInsidePolygon(0, point);
-		else if (mode == PolygonCutterMode_Intersect)
+		else if (mode == Mode_Intersect)
 			return IsInsidePolygon(0, point) && IsInsidePolygon(1, point);
 
 		return false;
@@ -1168,45 +1168,48 @@ struct PolygonCutter : CutterSharedBase
 	}
 };
 
-PolygonCutter* PolygonCutter_Create()
+PolygonCutter* PolygonCutter::Create()
 {
-	return new PolygonCutter;
+	return new PolygonCutterImpl;
 }
 
-void PolygonCutter_Destroy(PolygonCutter* PC)
+void PolygonCutter::Destroy()
 {
-	delete PC;
+	delete static_cast<PolygonCutterImpl*>(this);
 }
 
-void PolygonCutter_Reset(PolygonCutter* PC, u8 mode, bool keepInnerEdges)
+void PolygonCutter::Reset(u8 mode, bool keepInnerEdges)
 {
-	PC->Reset(mode, keepInnerEdges);
+	static_cast<PolygonCutterImpl*>(this)->Reset(mode, keepInnerEdges);
 }
 
-void PolygonCutter_AddPolygonA(PolygonCutter* PC, ArrayView<Vec2f> poly)
+void PolygonCutter::AddPolygonA(ArrayView<Vec2f> poly)
 {
-	PC->polyCats.Append(0);
-	PC->polygons.Append(poly);
-	PC->AddPathOrPolygon(poly, true);
+	auto* PCI = static_cast<PolygonCutterImpl*>(this);
+	PCI->polyCats.Append(0);
+	PCI->polygons.Append(poly);
+	PCI->AddPathOrPolygon(poly, true);
 }
 
-void PolygonCutter_AddPolygonB(PolygonCutter* PC, ArrayView<Vec2f> poly)
+void PolygonCutter::AddPolygonB(ArrayView<Vec2f> poly)
 {
-	PC->polyCats.Append(1);
-	PC->polygons.Append(poly);
-	PC->AddPathOrPolygon(poly, true);
+	auto* PCI = static_cast<PolygonCutterImpl*>(this);
+	PCI->polyCats.Append(1);
+	PCI->polygons.Append(poly);
+	PCI->AddPathOrPolygon(poly, true);
 }
 
-void PolygonCutter_AddCuttingPath(PolygonCutter* PC, ArrayView<Vec2f> path)
+void PolygonCutter::AddCuttingPath(ArrayView<Vec2f> path)
 {
-	PC->polyCats.Append(-1);
-	PC->polygons.Append({});
-	PC->AddPathOrPolygon(path, false);
+	auto* PCI = static_cast<PolygonCutterImpl*>(this);
+	PCI->polyCats.Append(-1);
+	PCI->polygons.Append({});
+	PCI->AddPathOrPolygon(path, false);
 }
 
-void PolygonCutter_Cut(PolygonCutter* PC, PolygonOutput& output)
+void PolygonCutter::Cut(PolygonOutput& output)
 {
-	PC->Cut(output);
+	static_cast<PolygonCutterImpl*>(this)->Cut(output);
 }
 
 } // ui
