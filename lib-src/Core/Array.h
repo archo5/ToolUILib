@@ -326,6 +326,7 @@ struct Array
 	}
 	void AppendMany(const T* p, size_t n)
 	{
+		static_assert(std::is_copy_constructible<T>::value, "T not copy constructible");
 		size_t newSize = _size + n;
 		ReserveForAppend(newSize);
 		UI_IF_MAYBE_CONSTEXPR(std::is_trivially_copy_constructible<T>::value)
@@ -400,7 +401,7 @@ struct Array
 				_HardMove(p, p + n);
 		}
 	}
-	void InsertAt(size_t at, const T& v)
+	void _MakeHole(size_t at)
 	{
 		assert(at <= _size);
 		ReserveForAppend(_size + 1);
@@ -412,8 +413,17 @@ struct Array
 				_HardMove(p + 1, p);
 			}
 		}
-		new (&_data[at]) T(v);
 		_size++;
+	}
+	void InsertAt(size_t at, const T& v)
+	{
+		_MakeHole(at);
+		new (&_data[at]) T(v);
+	}
+	void InsertAt(size_t at, T&& v)
+	{
+		_MakeHole(at);
+		new (&_data[at]) T(Move(v));
 	}
 	UI_FORCEINLINE void Prepend(const T& v)
 	{

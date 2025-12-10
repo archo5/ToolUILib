@@ -26,8 +26,9 @@ MenuItem::MenuItem(StringView text, StringView shortcut, bool disabled, bool che
 
 MenuItemCollection::Entry::~Entry()
 {
-	for (const auto& ch : children)
-		delete ch.value;
+	for (const auto& cha : children)
+		for (Entry* ch : cha.value)
+			delete ch;
 }
 
 void MenuItemCollection::Entry::Finalize()
@@ -36,8 +37,9 @@ void MenuItemCollection::Entry::Finalize()
 		return;
 
 	Array<Entry*> sortedChildren;
-	for (const auto& ch : children)
-		sortedChildren.Append(ch.value);
+	for (const auto& cha : children)
+		for (Entry* ch : cha.value)
+			sortedChildren.Append(ch);
 
 	std::sort(sortedChildren.begin(), sortedChildren.end(), [](const Entry* a, const Entry* b)
 	{
@@ -69,7 +71,7 @@ void MenuItemCollection::Entry::Finalize()
 	}
 }
 
-MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int priority)
+MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int priority, bool isfolder)
 {
 	if (path.IsEmpty())
 		return &root;
@@ -79,13 +81,25 @@ MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int 
 	auto name = path.substr(sep == SIZE_MAX ? 0 : sep + strlen(SEPARATOR));
 	std::string nameStr(name.data(), name.size());
 
-	auto* parent = CreateEntry(parentPath, priority);
+	auto* parent = CreateEntry(parentPath, priority, true);
 
-	if (Entry* E = parent->children.GetValueOrDefault(nameStr))
+	auto& cha = parent->children[nameStr];
+	Entry* E = nullptr;
+	if (isfolder)
+	{
+		for (Entry* ch : cha)
+		{
+			if (ch->isfolder)
+			{
+				E = ch;
+				break;
+			}
+		}
+	}
+	if (E)
 	{
 		E->minPriority = min(E->minPriority, priority);
 		E->maxPriority = max(E->maxPriority, priority);
-		return E;
 	}
 	else
 	{
@@ -93,10 +107,10 @@ MenuItemCollection::Entry* MenuItemCollection::CreateEntry(StringView path, int 
 		E->name = nameStr;
 		E->minPriority = priority;
 		E->maxPriority = priority;
-		parent->children.Insert(E->name, E);
-
-		return E;
+		E->isfolder = isfolder;
+		cha.Append(E);
 	}
+	return E;
 }
 
 

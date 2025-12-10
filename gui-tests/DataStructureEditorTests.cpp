@@ -166,13 +166,14 @@ struct SequenceEditorsTest : ui::Buildable
 
 	void SeqEdit(ui::ISequence* seq, ui::ISelectionStorage* sel)
 	{
-		ui::Make<ui::SequenceEditor>()
+		auto& se = ui::Make<ui::SequenceEditor>()
 			.SetSequence(seq)
 			.SetSelectionStorage(setSelectionStorage ? sel : nullptr)
 			.SetSelectionMode(selectionType)
 			.SetDragSupport(dragSupport)
-			.SetContextMenuSource(&g_infoDumpCMS)
-			.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
+			.SetContextMenuSource(&g_infoDumpCMS);
+		se.addEmptyItem = true;
+		se.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
 			ui::imLabel("\bvalue"), ui::imEditInt(*static_cast<int*>(ptr));
 		};
@@ -217,6 +218,124 @@ struct SequenceEditorsTest : ui::Buildable
 void Test_SequenceEditors()
 {
 	ui::Make<SequenceEditorsTest>();
+}
+
+
+struct NestedSequenceEditorsTest : ui::Buildable
+{
+	struct Sublist
+	{
+		ui::Array<int> numbers;
+		//ui::Array<std::unique_ptr<int>> numbers;
+	};
+	ui::Array<Sublist> root1 = { Sublist{ { 1, 2, 3 } } };
+	ui::Array<Sublist> root2 = { Sublist{ { 4, 5 } } };
+
+	struct SublistUI : ui::Buildable
+	{
+		Sublist* ptr = nullptr;
+
+		void OnReset() override
+		{
+			ptr = nullptr;
+		}
+		void Build() override
+		{
+			ui::PushScope<ui::StackTopDownLayoutElement> layout;
+
+			ui::StdText("Number sublist");
+
+			auto& se = ui::Make<ui::SequenceEditor>();
+			se.addEmptyItem = true;
+			se.dragSupport = ui::SequenceElementDragSupport::SameType;
+			se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(ptr->numbers)>)(ptr->numbers));
+			se.itemUICallback = [](ui::SequenceEditor*, size_t idx, void* ptr)
+			{
+				ui::imLabel("Number"), ui::imEditInt(*static_cast<int*>(ptr));
+				//ui::imLabel("Number"), ui::imEditInt(*static_cast<std::unique_ptr<int>*>(ptr)->get());
+			};
+
+			if (ui::imButton(ui::DefaultIconStyle::Add))
+				ptr->numbers.Append(123);
+				//ptr->numbers.Append(std::make_unique<int>(123));
+		}
+	};
+
+	void AddEditor(ui::Array<Sublist>& root)
+	{
+		auto& se = ui::Make<ui::SequenceEditor>();
+		se.addEmptyItem = true;
+		se.dragSupport = ui::SequenceElementDragSupport::SameType;
+		se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(root)>)(root));
+		se.itemUICallback = [](ui::SequenceEditor*, size_t idx, void* ptr)
+		{
+			ui::Make<SublistUI>().ptr = static_cast<Sublist*>(ptr);
+		};
+
+		if (ui::imButton(ui::DefaultIconStyle::Add))
+			root.Append({});
+	}
+
+	void Build() override
+	{
+		ui::PushScope<ui::StackTopDownLayoutElement> layout;
+
+		ui::StdText("List 1");
+		AddEditor(root1);
+		ui::StdText("List 2");
+		AddEditor(root2);
+	}
+};
+void Test_NestedSequenceEditors()
+{
+	ui::Make<NestedSequenceEditorsTest>();
+}
+
+
+struct SameTypeNestedSequenceEditorsTest : ui::Buildable
+{
+	struct Sublist
+	{
+		ui::Array<Sublist*> lists;
+	};
+	Sublist root;
+
+	struct SublistUI : ui::Buildable
+	{
+		Sublist* ptr = nullptr;
+
+		void OnReset() override
+		{
+			ptr = nullptr;
+		}
+		void Build() override
+		{
+			ui::PushScope<ui::StackTopDownLayoutElement> layout;
+
+			ui::StdText("Number list");
+
+			auto& se = ui::Make<ui::SequenceEditor>();
+			se.addEmptyItem = true;
+			se.dragSupport = ui::SequenceElementDragSupport::SameType;
+			se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(ptr->lists)>)(ptr->lists));
+			se.itemUICallback = [](ui::SequenceEditor*, size_t idx, void* ptr)
+			{
+				ui::Make<SublistUI>().ptr = *static_cast<Sublist**>(ptr);
+			};
+
+			if (ui::imButton(ui::DefaultIconStyle::Add))
+				ptr->lists.Append(new Sublist);
+		}
+	};
+
+	void Build() override
+	{
+		ui::Make<SublistUI>().ptr = &root;
+	}
+};
+void Test_SameTypeNestedSequenceEditors()
+{
+	ui::Make<SameTypeNestedSequenceEditorsTest>();
 }
 
 

@@ -337,6 +337,23 @@ struct SequenceItemElement : Selectable
 	size_t num = 0;
 };
 
+struct SequenceEmptyItemElement : WrapperElement
+{
+	SequenceEditor* seqEd = nullptr;
+
+	void Init(SequenceEditor* se)
+	{
+		seqEd = se;
+	}
+
+	void OnReset() override
+	{
+		WrapperElement::OnReset();
+		seqEd = nullptr;
+	}
+	void OnEvent(Event& e) override;
+};
+
 enum SequenceElementDragSupport : u8
 {
 	None,
@@ -359,6 +376,7 @@ struct SequenceEditor : Buildable
 
 	virtual void OnBuildItem(size_t idx, void* ptr);
 	virtual void OnBuildDeleteButton();
+	virtual void OnBuildEmptyListContents();
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
@@ -377,6 +395,7 @@ struct SequenceEditor : Buildable
 	bool buildFrame = true;
 	bool allowDelete = true;
 	bool allowDuplicate = true;
+	bool addEmptyItem = false;
 	SequenceElementDragSupport dragSupport = SequenceElementDragSupport::SameSequenceEditor;
 	SequenceEditor& SetDragSupport(SequenceElementDragSupport ds) { dragSupport = ds; return *this; }
 	ISequenceElementParentCheck* sameTypeDragParentCheck = nullptr;

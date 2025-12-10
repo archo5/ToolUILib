@@ -355,6 +355,8 @@ void Test_TriangulatorComplex();
 void Test_PolygonCutter();
 
 void Test_SequenceEditors();
+void Test_NestedSequenceEditors();
+void Test_SameTypeNestedSequenceEditors();
 void Test_TreeEditors();
 void Test_MessageLogView();
 void Test_CurveEditor();
@@ -486,6 +488,9 @@ static const TestEntry dseditTestEntries[] =
 {
 	{ "- Non-virtualized -" },
 	{ "Sequence editors", Test_SequenceEditors },
+	{ "Nested sequence editors", Test_NestedSequenceEditors },
+	{ "Same-type nested sequence editors", Test_SameTypeNestedSequenceEditors },
+	{},
 	{ "Tree editors", Test_TreeEditors },
 	{},
 	{ "- Partially virtualized (real UI, visible items only) -" },

@@ -72,11 +72,12 @@ struct MenuItemCollection
 		std::string name;
 		int minPriority = 0;
 		int maxPriority = 0;
+		bool isfolder = false;
 		bool checked = false;
 		bool disabled = false;
 		std::function<void()> function;
 
-		HashMap<std::string, Entry*> children;
+		HashMap<std::string, Array<Entry*>> children;
 
 		Array<MenuItem> _finalizedChildItems;
 
@@ -84,10 +85,10 @@ struct MenuItemCollection
 		void Finalize();
 	};
 
-	Entry* CreateEntry(StringView path, int priority);
+	Entry* CreateEntry(StringView path, int priority, bool isfolder);
 	std::function<void()>& Add(StringView path, bool disabled = false, bool checked = false, int priorityTweak = 0)
 	{
-		Entry* E = CreateEntry(path, basePriority + priorityTweak);
+		Entry* E = CreateEntry(path, basePriority + priorityTweak, false);
 		E->checked = checked;
 		E->disabled = disabled;
 		return E->function;
@@ -103,6 +104,7 @@ struct MenuItemCollection
 	{
 		root.~Entry();
 		new (&root) Entry;
+		root.isfolder = true;
 		basePriority = 0;
 	}
 	void NewOrderedSet()
@@ -130,7 +132,7 @@ struct MenuItemCollection
 		return root._finalizedChildItems;
 	}
 
-	Entry root;
+	Entry root = { {}, 0, 0, true };
 	int basePriority = 0;
 	uint32_t _version = 0;
 };

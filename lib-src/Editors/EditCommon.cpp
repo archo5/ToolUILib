@@ -61,6 +61,7 @@ bool SelectionImplementation::OnEvent(Event& e, ISelectionStorage* sel, uintptr_
 				sel->ClearSelection();
 			sel->SetSelectionState(hoverItem, !sel->GetSelectionState(hoverItem));
 
+			e.StopPropagation();
 			selChanged = true;
 		}
 		return selChanged;

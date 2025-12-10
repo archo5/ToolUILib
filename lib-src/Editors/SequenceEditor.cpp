@@ -92,7 +92,14 @@ void SequenceItemElement::OnEvent(Event& e)
 				seqEd->_dragTargetPos = num + after;
 				float y = after ? r.y1 : r.y0;
 				seqEd->_dragTargetLine = UIRect{ r.x0, y, r.x1, y };
+
+				if (seqEd->parent)
+				{
+					Event ev(e.context, seqEd->parent, ui::EventType::DragLeave);
+					e.context->BubblingEvent(ev);
+				}
 			}
+			e.StopPropagation();
 		}
 	}
 	if (e.type == EventType::DragDrop && seqEd->dragSupport > SequenceElementDragSupport::None && seqEd->_dragTargetPos != SIZE_MAX)
@@ -115,12 +122,19 @@ void SequenceItemElement::OnEvent(Event& e)
 				seqEd->_OnEdit(this);
 				ddd->scope->_OnEdit(ddd->scope);
 			}
+			e.StopPropagation();
 		}
 	}
 	else if (e.type == EventType::DragLeave)
 	{
 		if (auto* p = FindParentOfType<SequenceEditor>())
-			p->_dragTargetPos = SIZE_MAX;
+		{
+			if (p->_dragTargetPos != SIZE_MAX)
+			{
+				p->_dragTargetPos = SIZE_MAX;
+				e.StopPropagation();
+			}
+		}
 	}
 
 	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSelectionStorage(), num, true, true))
@@ -138,11 +152,18 @@ void SequenceItemElement::ContextMenu()
 
 	auto& CM = ContextMenu::Get();
 
-	if (seqEd->allowDuplicate)
-		CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
+	if (seqEd->allowDuplicate || seqEd->allowDelete)
+	{
+		CM.basePriority += CM.SEPARATOR_THRESHOLD;
 
-	if (seqEd->allowDelete)
-		CM.Add("Remove") = [this]() { seqEd->_OnDelete(this); };
+		if (seqEd->allowDuplicate)
+			CM.Add("Duplicate", !canInsertOne) = [this]() { seqEd->GetSequence()->Duplicate(num); seqEd->_OnEdit(this); };
+
+		if (seqEd->allowDelete)
+			CM.Add("Remove") = [this]() { seqEd->_OnDelete(this); };
+
+		CM.basePriority += CM.SEPARATOR_THRESHOLD;
+	}
 
 	if (auto* cms = seqEd->GetContextMenuSource())
 		cms->FillItemContextMenu(CM, num, 0);
@@ -169,6 +190,62 @@ void SequenceItemElement::Init(SequenceEditor* se, size_t n)
 }
 
 
+void SequenceEmptyItemElement::OnEvent(Event& e)
+{
+	if (e.type == EventType::DragMove || e.type == EventType::DragLeave || e.type == EventType::DragDrop)
+	{
+		if (e.type == EventType::DragMove)
+		{
+			if (auto* ddd = DragDrop::GetData<SequenceDragData>())
+			{
+				bool validmove = IsInnerMove(seqEd, ddd) || IsCrossMove(seqEd, ddd);
+				if (validmove)
+				{
+					auto r = GetFinalRect();
+					seqEd->_dragTargetPos = seqEd->_sequence->GetCurrentSize();
+					float y = r.y1;
+					seqEd->_dragTargetLine = UIRect{ r.x0, y, r.x1, y };
+
+					if (seqEd->parent)
+					{
+						Event ev(e.context, seqEd->parent, ui::EventType::DragLeave);
+						e.context->BubblingEvent(ev);
+					}
+				}
+				e.StopPropagation();
+			}
+		}
+		if (e.type == EventType::DragDrop && seqEd->dragSupport > SequenceElementDragSupport::None && seqEd->_dragTargetPos != SIZE_MAX)
+		{
+			if (auto* ddd = DragDrop::GetData<SequenceDragData>())
+			{
+				assert(!IsInnerMove(seqEd, ddd));
+				if (IsCrossMove(seqEd, ddd))
+				{
+					assert(!ddd->scope->_sequence->AreContainersEqual(seqEd->_sequence));
+					size_t tgt = seqEd->_sequence->GetCurrentSize();
+					seqEd->_sequence->MoveElementFromOtherSeq(tgt, ddd->scope->_sequence, ddd->at);
+					seqEd->_OnEdit(seqEd);
+					ddd->scope->_OnEdit(ddd->scope);
+				}
+				e.StopPropagation();
+			}
+		}
+		else if (e.type == EventType::DragLeave)
+		{
+			if (auto* p = FindParentOfType<SequenceEditor>())
+			{
+				if (p->_dragTargetPos != SIZE_MAX)
+				{
+					p->_dragTargetPos = SIZE_MAX;
+					e.StopPropagation();
+				}
+			}
+		}
+	}
+}
+
+
 void SequenceEditor::Build()
 {
 	if (buildFrame)
@@ -177,8 +254,10 @@ void SequenceEditor::Build()
 	}
 	Push<StackTopDownLayoutElement>();
 
-	_sequence->IterateElements(0, [this](size_t idx, void* ptr)
+	bool any = false;
+	_sequence->IterateElements(0, [this, &any](size_t idx, void* ptr)
 	{
+		any = true;
 		Push<SequenceItemElement>().Init(this, idx);
 
 		if ((itemLayoutPreset & EditorItemContentsLayoutPreset::MASK) == EditorItemContentsLayoutPreset::StackExpandLTR)
@@ -196,6 +275,15 @@ void SequenceEditor::Build()
 		Pop();
 		return true;
 	});
+
+	if (addEmptyItem && !any)
+	{
+		Push<SequenceEmptyItemElement>().seqEd = this;
+		Push<StackExpandLTRLayoutElement>();
+		OnBuildEmptyListContents();
+		Pop();
+		Pop();
+	}
 
 	Pop();
 	if (buildFrame)
@@ -259,6 +347,11 @@ void SequenceEditor::OnBuildDeleteButton()
 		auto* sie = delBtn.FindParentOfType<SequenceItemElement>();
 		_OnDelete(sie);
 	});
+}
+
+void SequenceEditor::OnBuildEmptyListContents()
+{
+	MakeWithText<LabelFrame>("<empty>");
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
