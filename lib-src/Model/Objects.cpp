@@ -189,7 +189,7 @@ void UIObject::_DoEvent(Event& e)
 			continue;
 		if (n->type != EventType::Any && n->type != e.type)
 			continue;
-		if (n->target && !e.target->IsChildOrSame(n->target))
+		if (n->target && e.target != n->target)
 			continue;
 		n->func(e);
 		if (e.IsPropagationStopped())
@@ -213,7 +213,7 @@ void UIObject::_DoEvent(Event& e)
 			continue;
 		if (n->type != EventType::Any && n->type != e.type)
 			continue;
-		if (n->target && !e.target->IsChildOrSame(n->target))
+		if (n->target && e.target != n->target)
 			continue;
 		n->func(e);
 		if (e.IsPropagationStopped())

@@ -292,6 +292,7 @@ void Test_NestedSequenceEditors()
 }
 
 
+static ui::MulticastDelegate<> STNSET_OnChangeSel;
 struct SameTypeNestedSequenceEditorsTest : ui::Buildable
 {
 	struct Sublist
@@ -299,10 +300,12 @@ struct SameTypeNestedSequenceEditorsTest : ui::Buildable
 		ui::Array<Sublist*> lists;
 	};
 	Sublist root;
+	Sublist* selected = nullptr;
 
-	struct SublistUI : ui::Buildable
+	struct SublistUI : ui::Buildable, ui::ISelectionStorage
 	{
 		Sublist* ptr = nullptr;
+		Sublist** psel = nullptr;
 
 		void OnReset() override
 		{
@@ -310,6 +313,8 @@ struct SameTypeNestedSequenceEditorsTest : ui::Buildable
 		}
 		void Build() override
 		{
+			ui::BuildMulticastDelegateAdd(STNSET_OnChangeSel, [this]() { Rebuild(); });
+
 			ui::PushScope<ui::StackTopDownLayoutElement> layout;
 
 			ui::StdText("Number list");
@@ -318,19 +323,43 @@ struct SameTypeNestedSequenceEditorsTest : ui::Buildable
 			se.addEmptyItem = true;
 			se.dragSupport = ui::SequenceElementDragSupport::SameType;
 			se.SetSequence(UI_BUILD_ALLOC(ui::ArraySequence<decltype(ptr->lists)>)(ptr->lists));
-			se.itemUICallback = [](ui::SequenceEditor*, size_t idx, void* ptr)
+			se.SetSelectionMode(ui::SelectionMode::Single);
+			se.SetSelectionStorage(this);
+			se.itemUICallback = [this](ui::SequenceEditor*, size_t idx, void* ptr)
 			{
-				ui::Make<SublistUI>().ptr = *static_cast<Sublist**>(ptr);
+				auto& sl = ui::Make<SublistUI>();
+				sl.ptr = *static_cast<Sublist**>(ptr);
+				sl.psel = psel;
 			};
 
 			if (ui::imButton(ui::DefaultIconStyle::Add))
 				ptr->lists.Append(new Sublist);
 		}
+		// ISelectionStorage
+		void ClearSelection() override
+		{
+			*psel = nullptr;
+			STNSET_OnChangeSel.Call();
+		}
+		bool GetSelectionState(uintptr_t item) override
+		{
+			return *psel == ptr->lists[item];
+		}
+		void SetSelectionState(uintptr_t item, bool sel) override
+		{
+			if (sel)
+				*psel = ptr->lists[item];
+			else if (*psel == ptr->lists[item])
+				*psel = nullptr;
+			STNSET_OnChangeSel.Call();
+		}
 	};
 
 	void Build() override
 	{
-		ui::Make<SublistUI>().ptr = &root;
+		auto& sl = ui::Make<SublistUI>();
+		sl.ptr = &root;
+		sl.psel = &selected;
 	}
 };
 void Test_SameTypeNestedSequenceEditors()

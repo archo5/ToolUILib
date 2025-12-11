@@ -139,7 +139,7 @@ void SequenceItemElement::OnEvent(Event& e)
 
 	if (seqEd->_selImpl.OnEvent(e, seqEd->GetSelectionStorage(), num, true, true))
 	{
-		Event selev(e.context, this, EventType::SelectionChange);
+		Event selev(e.context, seqEd, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
 		Rebuild();
 	}

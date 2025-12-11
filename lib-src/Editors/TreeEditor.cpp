@@ -60,14 +60,14 @@ void TreeItemElement::OnEvent(Event& e)
 		else
 			tree->ClearSelection();
 		tree->SetSelectionState(path, !prevState);
-		Event selev(e.context, this, EventType::SelectionChange);
+		Event selev(e.context, treeEd, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
 		Rebuild();
 	}
 #else
 	if (treeEd->_selImpl.OnEvent(e, treeEd->GetSelectionStorage(), num, true, true))
 	{
-		Event selev(e.context, this, EventType::SelectionChange);
+		Event selev(e.context, treeEd, EventType::SelectionChange);
 		e.context->BubblingEvent(selev);
 		Rebuild();
 	}
