@@ -121,6 +121,10 @@ void NumberEditorBase::OnEvent(Event& e)
 				e.context->OnCommit(this);
 		}
 	}
+	if (e.type == EventType::Click)
+	{
+		e.StopPropagation();
+	}
 	if (e.type == EventType::MouseMove && e.target->IsPressed() && !IsInputDisabled())
 	{
 		if (e.delta.x != 0)

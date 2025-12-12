@@ -534,6 +534,39 @@ void EventSystem::OnMouseMove(Point2f cursorPos, uint8_t mod)
 		OnMouseMoved.Call(GetNativeWindow(), cursorPos.x, cursorPos.y);
 }
 
+Array<UIObject*> g_tmpHoverA;
+Array<UIObject*> g_tmpHoverB;
+static UIObject* FindSharedUIObject(UIObject* a, UIObject* b)
+{
+	g_tmpHoverA.Clear();
+	g_tmpHoverB.Clear();
+
+	while (a)
+	{
+		g_tmpHoverA.Append(a);
+		a = a->parent;
+	}
+	while (b)
+	{
+		g_tmpHoverB.Append(b);
+		b = b->parent;
+	}
+
+	if (g_tmpHoverA.IsEmpty() || g_tmpHoverB.IsEmpty() || g_tmpHoverA.Last() != g_tmpHoverB.Last())
+		return nullptr;
+
+	size_t ia = g_tmpHoverA.Size() - 1;
+	size_t ib = g_tmpHoverB.Size() - 1;
+	while (ia > 0 && ib > 0)
+	{
+		if (g_tmpHoverA[ia - 1] != g_tmpHoverB[ib - 1])
+			break;
+		ia--;
+		ib--;
+	}
+	return g_tmpHoverA[ia];
+}
+
 void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos, uint8_t mod)
 {
 	int id = int(which);
@@ -566,46 +599,6 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 	}
 	else
 	{
-		for (auto* p = ev.target; p; p = p->parent)
-			p->flags &= ~(_UIObject_IsClicked_First << id);
-
-		if (clickObj[id] == hoverObj)
-		{
-			unsigned clickCount = (t - clickLastTimes[id] < platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
-			clickLastTimes[id] = t;
-			clickCounts[id] = clickCount;
-
-			ev.type = EventType::Click;
-			ev.numRepeats = clickCount;
-			ev._stopPropagation = false;
-			BubblingEvent(ev);
-
-			if (which == MouseButton::Right && !ev._stopPropagation)
-			{
-				auto& CM = ContextMenu::Get();
-				CM.StartNew();
-
-				ev.type = EventType::ContextMenu;
-				{
-					UIObject* obj = ev.target;
-					while (obj != nullptr && !ev.IsPropagationStopped())
-					{
-						UpdateEventPosition(ev, obj);
-						obj->_DoEvent(ev);
-						obj = obj->parent;
-						CM.basePriority += MenuItemCollection::BASE_ADVANCE;
-					}
-				}
-
-				if (CM.HasAny())
-				{
-					Menu menu(CM.Finalize());
-					menu.Show(container->rootBuildable);
-					CM.Clear();
-				}
-			}
-		}
-
 		if (which == MouseButton::Left)
 		{
 			if (DragDrop::GetData())
@@ -647,8 +640,50 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		ev.type = EventType::ButtonUp;
 		ev._stopPropagation = false;
 		ev.target = hoverObj;
-		clickObj[id] = nullptr;
 		BubblingEvent(ev);
+
+		for (auto* p = ev.target; p; p = p->parent)
+			p->flags &= ~(_UIObject_IsClicked_First << id);
+
+		if (UIObject* shel = FindSharedUIObject(clickObj[id], hoverObj))
+		{
+			unsigned clickCount = (t - clickLastTimes[id] < platform::GetDoubleClickTime() ? clickCounts[id] : 0) + 1;
+			clickLastTimes[id] = t;
+			clickCounts[id] = clickCount;
+
+			ev.type = EventType::Click;
+			ev.numRepeats = clickCount;
+			ev._stopPropagation = false;
+			ev.target = shel;
+			BubblingEvent(ev);
+
+			if (which == MouseButton::Right && !ev._stopPropagation)
+			{
+				auto& CM = ContextMenu::Get();
+				CM.StartNew();
+
+				ev.type = EventType::ContextMenu;
+				{
+					UIObject* obj = ev.target;
+					while (obj != nullptr && !ev.IsPropagationStopped())
+					{
+						UpdateEventPosition(ev, obj);
+						obj->_DoEvent(ev);
+						obj = obj->parent;
+						CM.basePriority += MenuItemCollection::BASE_ADVANCE;
+					}
+				}
+
+				if (CM.HasAny())
+				{
+					Menu menu(CM.Finalize());
+					menu.Show(container->rootBuildable);
+					CM.Clear();
+				}
+			}
+		}
+
+		clickObj[id] = nullptr;
 	}
 }
 

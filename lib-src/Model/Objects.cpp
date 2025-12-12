@@ -246,6 +246,10 @@ void UIObject::_PerformDefaultBehaviors(Event& e, uint32_t f)
 			{
 				e.context->OnActivate(this);
 			}
+			if (e.type == EventType::Click)
+			{
+				e.StopPropagation();
+			}
 			if (e.type == EventType::MouseMove)
 			{
 				if (e.context->GetMouseCapture() == this) // TODO separate flag for this!

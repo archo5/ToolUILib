@@ -895,7 +895,7 @@ void ColorEdit::Build()
 {
 	auto& cib = Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
 	cib.SetFlag(UIObject_DB_Button, true);
-	cib + AddEventHandler(EventType::Click, [this](Event& e)
+	cib + AddEventHandler(EventType::Activate, [this](Event& e)
 	{
 		if (e.GetButton() == MouseButton::Left && !IsInputDisabled())
 		{
@@ -953,7 +953,7 @@ void ColorEditRT::Build()
 {
 	auto& cib = Make<ColorInspectBlock>().SetColor(_color.GetRGBA());
 	cib.SetFlag(UIObject_DB_Button, true);
-	cib + AddEventHandler(EventType::Click, [this](Event& e)
+	cib + AddEventHandler(EventType::Activate, [this](Event& e)
 	{
 		if (e.GetButton() == MouseButton::Left && !IsInputDisabled())
 		{
