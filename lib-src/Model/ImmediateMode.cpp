@@ -425,10 +425,16 @@ template <class TNum> imCtrlInfoNumberEditor EditNumber(TNum& val, const DragCon
 	}
 	else
 		ne.SetValue(val);
-	ne.HandleEvent(EventType::Change) = [&ne](Event&)
+	ne.HandleEvent() = [&ne](Event& ev)
 	{
-		ne.flags |= UIObject_IsEdited;
-		ne.RebuildContainer();
+		if (ev.type == EventType::Change)
+		{
+			ev.StopPropagation();
+			ne.flags |= UIObject_IsEdited;
+			ne.RebuildContainer();
+		}
+		if (ev.type == EventType::Commit)
+			ev.StopPropagation();
 	};
 
 	return { changed, &ne };
@@ -495,10 +501,16 @@ static imCtrlInfoTextbox imEditStringImpl(const IBufferRW& textRW)
 	}
 	else // text can be invalidated if retfn is called
 		tb.SetText(textRW.Read());
-	tb.HandleEvent(EventType::Change) = [&tb](Event&)
+	tb.HandleEvent() = [&tb](Event& ev)
 	{
-		tb.flags |= UIObject_IsEdited;
-		tb.RebuildContainer();
+		if (ev.type == EventType::Change)
+		{
+			ev.StopPropagation();
+			tb.flags |= UIObject_IsEdited;
+			tb.RebuildContainer();
+		}
+		if (ev.type == EventType::Commit)
+			ev.StopPropagation();
 	};
 
 	return { changed, &tb };
@@ -533,10 +545,16 @@ imCtrlInfo imEditColor(Color4f& val, bool delayed)
 	}
 	else
 		ced.SetColorAny(val);
-	ced.HandleEvent(EventType::Change) = [&ced](Event&)
+	ced.HandleEvent() = [&ced](Event& ev)
 	{
-		ced.flags |= UIObject_IsEdited;
-		ced.RebuildContainer();
+		if (ev.type == EventType::Change)
+		{
+			ev.StopPropagation();
+			ced.flags |= UIObject_IsEdited;
+			ced.RebuildContainer();
+		}
+		if (ev.type == EventType::Commit)
+			ev.StopPropagation();
 	};
 
 	return { changed, &ced };

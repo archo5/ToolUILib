@@ -677,12 +677,16 @@ template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, Op
 	else
 		ddml.SetSelected(uintptr_t(val));
 
-	ddml.HandleEvent(EventType::Commit) = [&ddml](Event& e)
+	ddml.HandleEvent(&ddml) = [&ddml](Event& e)
 	{
-		if (e.target != &ddml)
-			return;
-		e.current->flags |= UIObject_IsEdited;
-		e.current->RebuildContainer();
+		if (e.type == EventType::Change)
+			e.StopPropagation();
+		if (e.type == EventType::Commit)
+		{
+			e.StopPropagation();
+			e.current->flags |= UIObject_IsEdited;
+			e.current->RebuildContainer();
+		}
 	};
 
 	return { edited, &ddml };

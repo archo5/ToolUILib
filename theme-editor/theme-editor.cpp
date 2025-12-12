@@ -218,7 +218,7 @@ struct TE_ImageEditorNode : Buildable
 					.SetDefaultFrameStyle(DefaultFrameStyle::GroupBox)
 					.HandleEvent() = [this](Event& e)
 				{
-					if (e.type == EventType::Change || e.type == EventType::Commit || e.type == EventType::IMChange)
+					if (e.type == EventType::Change || e.type == EventType::IMChange)
 						tmpl->InvalidateAllNodes();
 				};
 				Push<StackTopDownLayoutElement>();
