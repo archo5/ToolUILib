@@ -740,7 +740,7 @@ struct OpenCloseTest : ui::Buildable
 			puts("STATE: disabled");
 		}
 		ui::EstSizeRange CalcEstimatedWidth(const ui::Size2f& containerSize, ui::EstSizeType type) override { return {}; }
-		ui::Rangef CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override { return ui::Rangef::AtLeast(0); }
+		ui::EstSizeRange CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override { return {}; }
 	};
 	void Build() override
 	{
@@ -1260,9 +1260,9 @@ struct HighElementCountTest : ui::Buildable
 		{
 			return ui::EstSizeRange::SoftExact(100);
 		}
-		ui::Rangef CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override
+		ui::EstSizeRange CalcEstimatedHeight(const ui::Size2f& containerSize, ui::EstSizeType type) override
 		{
-			return ui::Rangef::Exact(1);
+			return ui::EstSizeRange::SoftExact(1);
 		}
 	};
 	void Build() override

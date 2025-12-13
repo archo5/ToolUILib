@@ -239,7 +239,7 @@ class NativeWindowNode : public UIObjectNoChildren
 {
 public:
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return {}; }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return {}; }
 
 	NativeWindowBase* GetWindow() { return &_window; }
 

@@ -30,18 +30,18 @@ EstSizeRange PreferredSizeLayout::CalcEstimatedWidth(const Size2f& containerSize
 	}
 }
 
-Rangef PreferredSizeLayout::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange PreferredSizeLayout::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
 	case ImageLayoutMode::PreferredExact:
-		return Rangef::Exact(GetSize().y);
+		return EstSizeRange::SoftExact(GetSize().y);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef::AtLeast(GetSize().y);
+		return EstSizeRange::SoftAtLeast(GetSize().y);
 	case ImageLayoutMode::Fill:
-		return Rangef::Exact(containerSize.y);
+		return EstSizeRange::SoftExact(containerSize.y);
 	default:
-		return Rangef::AtLeast(0);
+		return {};
 	}
 }
 
@@ -201,18 +201,18 @@ EstSizeRange ImageElement::CalcEstimatedWidth(const Size2f& containerSize, EstSi
 	}
 }
 
-Rangef ImageElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ImageElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	switch (_layoutMode)
 	{
 	case ImageLayoutMode::PreferredExact:
-		return Rangef::Exact(_image ? _image->GetHeight() : 0);
+		return EstSizeRange::SoftExact(_image ? _image->GetHeight() : 0);
 	case ImageLayoutMode::PreferredMin:
-		return Rangef::AtLeast(_image ? _image->GetHeight() : 0);
+		return EstSizeRange::SoftAtLeast(_image ? _image->GetHeight() : 0);
 	case ImageLayoutMode::Fill:
-		return Rangef::Exact(containerSize.y);
+		return EstSizeRange::SoftExact(containerSize.y);
 	default:
-		return Rangef::AtLeast(0);
+		return {};
 	}
 }
 

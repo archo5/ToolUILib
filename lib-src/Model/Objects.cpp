@@ -809,10 +809,10 @@ EstSizeRange WrapperElement::CalcEstimatedWidth(const Size2f& containerSize, Est
 	return _child->CalcEstimatedWidth(containerSize, type);
 }
 
-Rangef WrapperElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange WrapperElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_child || !_child->_NeedsLayout())
-		return Rangef::AtLeast(0);
+		return {};
 	return _child->CalcEstimatedHeight(containerSize, type);
 }
 
@@ -833,9 +833,9 @@ EstSizeRange FillerElement::CalcEstimatedWidth(const Size2f& containerSize, EstS
 	return EstSizeRange::Exact(containerSize.x);
 }
 
-Rangef FillerElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange FillerElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(containerSize.y);
+	return EstSizeRange::Exact(containerSize.y);
 }
 
 void FillerElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -851,10 +851,10 @@ EstSizeRange HFillVWrapElement::CalcEstimatedWidth(const Size2f& containerSize, 
 	return EstSizeRange::Exact(containerSize.x);
 }
 
-Rangef HFillVWrapElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange HFillVWrapElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_child || !_child->_NeedsLayout())
-		return Rangef::AtLeast(0);
+		return {};
 	return _child->CalcEstimatedHeight(containerSize, type);
 }
 
@@ -880,7 +880,7 @@ void SizeConstraintElement::OnReset()
 {
 	WrapperElement::OnReset();
 	widthRange = {};
-	heightRange = Rangef::AtLeast(0);
+	heightRange = {};
 }
 
 EstSizeRange SizeConstraintElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
@@ -890,9 +890,9 @@ EstSizeRange SizeConstraintElement::CalcEstimatedWidth(const Size2f& containerSi
 	return WrapperElement::CalcEstimatedWidth(containerSize, type).LimitTo(widthRange);
 }
 
-Rangef SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange SizeConstraintElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (heightRange.min >= heightRange.max)
+	if (heightRange.hardMin >= heightRange.hardMax)
 		return heightRange;
 	return WrapperElement::CalcEstimatedHeight(containerSize, type).LimitTo(heightRange);
 }
@@ -912,7 +912,7 @@ void CenteringElement::OnLayout(const UIRect& rect, LayoutInfo info)
 		auto wr = CalcEstimatedWidth(rect.GetSize(), ui::EstSizeType::Exact);
 		auto hr = CalcEstimatedHeight(rect.GetSize(), ui::EstSizeType::Exact);
 		float w = roundf(wr.ExpandToFill(rect.GetWidth()));
-		float h = roundf(hr.min);
+		float h = roundf(hr.ExpandToFill(rect.GetHeight()));
 		float x = roundf(rect.x0 + (rect.GetWidth() - w) * align.x);
 		float y = roundf(rect.y0 + (rect.GetHeight() - h) * align.y);
 		UIRect r = { x, y, x + w, y + h };
@@ -1031,18 +1031,18 @@ EstSizeRange TextElement::CalcEstimatedWidth(const Size2f& containerSize, EstSiz
 	}
 }
 
-Rangef TextElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange TextElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (!_cachedLines)
 		_UpdateCache();
 	auto* fs = _FindClosestParentFontSettings();
 	if (multiline)
 	{
-		return Rangef::Exact(fs->size * _lines.Size());
+		return EstSizeRange::Exact(fs->size * _lines.Size());
 	}
 	else
 	{
-		return Rangef::Exact(fs->size);
+		return EstSizeRange::Exact(fs->size);
 	}
 }
 
@@ -1160,12 +1160,13 @@ EstSizeRange ChildScaleOffsetElement::CalcEstimatedWidth(const Size2f& container
 	return r;
 }
 
-Rangef ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ChildScaleOffsetElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	Rangef r = WrapperElement::CalcEstimatedHeight(containerSize / transform.scale, type);
-	r.min *= transform.scale;
-	if (r.max < FLT_MAX)
-		r.max *= transform.scale;
+	EstSizeRange r = WrapperElement::CalcEstimatedHeight(containerSize / transform.scale, type);
+	r.softMin *= transform.scale;
+	r.hardMin *= transform.scale;
+	if (r.hardMax < FLT_MAX)
+		r.hardMax *= transform.scale;
 	return r;
 }
 

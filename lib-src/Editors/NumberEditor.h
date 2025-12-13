@@ -19,7 +19,7 @@ struct NumberEditorBase : FrameElement
 	void _AttachToFrameContents(FrameContents* owner) override;
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	virtual bool OnDragEdit(float diff, float snap) = 0;

@@ -163,10 +163,10 @@ EstSizeRange NumberEditorBase::CalcEstimatedWidth(const Size2f& containerSize, E
 	return FrameElement::CalcEstimatedWidth(containerSize, type).WithSoftMin(minWidth);
 }
 
-Rangef NumberEditorBase::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange NumberEditorBase::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float minHeight = frameStyle.font.size + frameStyle.padding.y0 + frameStyle.padding.y1;
-	return FrameElement::CalcEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
+	return FrameElement::CalcEstimatedHeight(containerSize, type).WithSoftMin(minHeight);
 }
 
 void NumberEditorBase::OnLayout(const UIRect& rect, LayoutInfo info)

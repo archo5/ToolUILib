@@ -157,15 +157,15 @@ EstSizeRange ResizablePane::CalcEstimatedWidth(const Size2f& containerSize, EstS
 	return EstSizeRange::SoftExact(containerSize.x);
 }
 
-Rangef ResizablePane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ResizablePane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (resizableEdge == Edge::Top || resizableEdge == Edge::Bottom)
 	{
 		_contSize = containerSize;
 		float y = (isRelSplit ? splitPos * containerSize.y : splitPos) + roundf((1 - edgeQ) * horSepStyle.size);
-		return Rangef::Exact(clamp(y, horSepStyle.size, containerSize.y));
+		return EstSizeRange::SoftExact(clamp(y, horSepStyle.size, containerSize.y));
 	}
-	return Rangef::Exact(containerSize.y);
+	return EstSizeRange::SoftExact(containerSize.y);
 }
 
 void ResizablePane::OnLayout(const UIRect& rect, LayoutInfo info)

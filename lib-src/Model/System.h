@@ -338,7 +338,7 @@ struct InlineFrame : Buildable
 	void OnEvent(Event& ev) override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayoutChanged() override;
 	void Build() override;
 

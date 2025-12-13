@@ -1726,11 +1726,11 @@ struct Inspector : NativeDialogWindow
 						snprintf(bfr, 1024, "%g/%g-%g", estw.hardMin, estw.softMin, estw.hardMax);
 					draw::TextLine(font, fontSize, estwX, ys, bfr, Color4b::White(), TextBaseline::Top);
 
-					Rangef esth = obj->CalcEstimatedHeight(contSize, ui::EstSizeType::Expanding);
-					if (esth.max == FLT_MAX)
-						snprintf(bfr, 1024, "%g-max", esth.min);
+					EstSizeRange esth = obj->CalcEstimatedHeight(contSize, ui::EstSizeType::Expanding);
+					if (esth.hardMax == FLT_MAX)
+						snprintf(bfr, 1024, "%g/%g-max", esth.hardMin, esth.softMin);
 					else
-						snprintf(bfr, 1024, "%g-%g", esth.min, esth.max);
+						snprintf(bfr, 1024, "%g/%g-%g", esth.hardMin, esth.softMin, esth.hardMax);
 					draw::TextLine(font, fontSize, esthX, ys, bfr, Color4b::White(), TextBaseline::Top);
 				}
 
@@ -1779,9 +1779,9 @@ struct Inspector : NativeDialogWindow
 		{
 			return EstSizeRange::SoftExact(containerSize.x);
 		}
-		Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+		EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 		{
-			return Rangef::Exact(containerSize.y);
+			return EstSizeRange::SoftExact(containerSize.y);
 		}
 		void OnLayout(const ui::UIRect& rect, LayoutInfo info) override
 		{

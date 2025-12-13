@@ -18,7 +18,7 @@ struct VExpandContainer : WrapperElement, private AnimationRequester
 	// WrapperElement
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	VExpandContainer& Init(bool open = true, float animTimeSec = 0.1f);
 	VExpandContainer& SetOpen(bool open);

@@ -16,9 +16,9 @@ EstSizeRange EdgeSliceLayoutElement::CalcEstimatedWidth(const Size2f& containerS
 	return EstSizeRange::SoftAtLeast(containerSize.x);
 }
 
-Rangef EdgeSliceLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange EdgeSliceLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(containerSize.y);
+	return EstSizeRange::SoftAtLeast(containerSize.y);
 }
 
 void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -31,7 +31,7 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 			continue;
 
 		auto e = slot.edge;
-		Rangef r(DoNotInitialize{});
+		EstSizeRange r;//(DoNotInitialize{});
 		float d;
 		LayoutInfo cinfo = info;
 		switch (e)
@@ -40,18 +40,18 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 			r = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding);
 			if (&slot == &_slots.Last())
 			{
-				d = min(r.Clamp(subr.GetHeight()), subr.GetHeight());
+				d = min(r.ExpandToFill(subr.GetHeight()), subr.GetHeight());
 			}
 			else
 			{
-				d = r.min;
+				d = r.GetMin();
 				cinfo = info.WithoutFillV();
 			}
 			ch->PerformLayout({ subr.x0, subr.y0, subr.x1, subr.y0 + d }, cinfo);
 			subr.y0 += d;
 			break;
 		case Edge::Bottom:
-			d = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).min;
+			d = ch->CalcEstimatedHeight(subr.GetSize(), EstSizeType::Expanding).GetMin();
 			ch->PerformLayout({ subr.x0, subr.y1 - d, subr.x1, subr.y1 }, info.WithoutFillV());
 			subr.y1 -= d;
 			break;
@@ -85,16 +85,16 @@ EstSizeRange LayerLayoutElement::CalcEstimatedWidth(const Size2f& containerSize,
 	return r;
 }
 
-Rangef LayerLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange LayerLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	Rangef r = Rangef::AtLeast(0);
+	EstSizeRange r;
 	for (auto& slot : _slots)
 	{
 		if (!slot._obj->_NeedsLayout())
 			continue;
 
 		auto cr = slot._obj->CalcEstimatedHeight(containerSize, type);
-		r = r.Intersect(cr);
+		r = r.LimitTo(cr);
 	}
 	return r;
 }
@@ -137,12 +137,12 @@ EstSizeRange PlacementLayoutElement::CalcEstimatedWidth(const Size2f& containerS
 	return r;
 }
 
-Rangef PlacementLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange PlacementLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	if (g_curLayoutFrame == _cacheFrameHeight)
 		return _cacheValueHeight;
 
-	Rangef r = Rangef::AtLeast(0);
+	EstSizeRange r;
 	for (auto& slot : _slots)
 	{
 		if (!slot._obj->_NeedsLayout())
@@ -151,7 +151,7 @@ Rangef PlacementLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, 
 		if (slot.measure)
 		{
 			auto cr = slot._obj->CalcEstimatedHeight(containerSize, type);
-			r = r.Intersect(cr);
+			r = r.LimitTo(cr);
 		}
 	}
 
@@ -189,7 +189,7 @@ void PointAnchoredPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect)
 	Size2f contSize = parentRect.GetSize();
 
 	float w = curObj->CalcEstimatedWidth(contSize, EstSizeType::Expanding).softMin;
-	float h = curObj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).min;
+	float h = curObj->CalcEstimatedHeight(contSize, EstSizeType::Expanding).softMin;
 
 	float x = lerp(parentRect.x0, parentRect.x1, anchor.x) - w * pivot.x + bias.x;
 	float y = lerp(parentRect.y0, parentRect.y1, anchor.y) - h * pivot.y + bias.y;

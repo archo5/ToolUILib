@@ -12,7 +12,7 @@ struct StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
@@ -23,7 +23,7 @@ struct StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	StackTopDownLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
@@ -51,7 +51,7 @@ struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayo
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
@@ -59,7 +59,7 @@ struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayo
 struct WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 

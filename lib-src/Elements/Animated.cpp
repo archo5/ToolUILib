@@ -46,14 +46,15 @@ void VExpandContainer::OnPaint(const UIPaintContext& ctx)
 	}
 }
 
-Rangef VExpandContainer::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange VExpandContainer::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	Rangef ret = WrapperElement::CalcEstimatedHeight(containerSize, type);
+	EstSizeRange ret = WrapperElement::CalcEstimatedHeight(containerSize, type);
 
 	if (_openState < 1)
 	{
-		ret.min *= _openState;
-		ret.max *= _openState;
+		ret.hardMin *= _openState;
+		ret.softMin *= _openState;
+		ret.hardMax *= _openState;
 	}
 
 	return ret;

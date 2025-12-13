@@ -73,7 +73,7 @@ struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 	const FontSettings* _GetFontSettings() const override;
 	Size2f GetReducedContainerSize(Size2f size);
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	FrameElement& RemoveFrameStyle();
@@ -112,7 +112,7 @@ struct IconElement : UIObjectNoChildren
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	IconElement& SetStyle(const StaticID<IconStyle>& id);
@@ -123,7 +123,7 @@ struct LabelFrame : FrameElement
 {
 	void OnReset() override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 };
 
 struct Header : FrameElement
@@ -136,7 +136,7 @@ struct Button : FrameElement
 	void OnReset() override;
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
@@ -331,7 +331,7 @@ struct ProgressBar : UIObjectSingleChild
 
 	Size2f GetReducedContainerSize(Size2f size);
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
@@ -373,7 +373,7 @@ struct Slider : UIObjectNoChildren
 	void OnEvent(Event& e) override;
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return {}; }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(style.minSize); }
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return EstSizeRange::SoftAtLeast(style.minSize); }
 
 	double PosToQ(double x);
 	double QToValue(double q);
@@ -543,7 +543,7 @@ struct BackgroundBlocker : FillerElement
 
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return {}; }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return Rangef::AtLeast(0); }
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override { return {}; }
 
 	void OnButton();
 };

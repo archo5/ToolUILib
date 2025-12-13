@@ -15,7 +15,7 @@ struct Textbox : FrameElement
 	void OnEvent(Event& e) override;
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 
 	bool IsMultiline() const;
 	Textbox& SetMultiline(bool ml);

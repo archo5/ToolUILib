@@ -391,14 +391,14 @@ EstSizeRange TabbedPanel::CalcEstimatedWidth(const Size2f& containerSize, EstSiz
 	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
-Rangef TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange TabbedPanel::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad =
 		+ style.tabPanelPadding.y0
 		+ style.tabPanelPadding.y1
 		+ tabHeight
 		- style.tabButtonOverlap;
-	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
 void TabbedPanel::OnLayout(const UIRect& rect, LayoutInfo info)

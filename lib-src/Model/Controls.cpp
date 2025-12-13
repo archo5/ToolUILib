@@ -107,10 +107,10 @@ EstSizeRange FrameElement::CalcEstimatedWidth(const Size2f& containerSize, EstSi
 	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
-Rangef FrameElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange FrameElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
-	return (_child ? Rangef::AtLeast(_child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type).min) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
 void FrameElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -193,9 +193,9 @@ EstSizeRange IconElement::CalcEstimatedWidth(const Size2f& containerSize, EstSiz
 	return EstSizeRange::Exact(style.size.x);
 }
 
-Rangef IconElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange IconElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(style.size.y);
+	return EstSizeRange::Exact(style.size.y);
 }
 
 void IconElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -252,10 +252,10 @@ EstSizeRange LabelFrame::CalcEstimatedWidth(const Size2f& containerSize, EstSize
 	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
-Rangef LabelFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange LabelFrame::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = frameStyle.padding.y0 + frameStyle.padding.y1;
-	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
 
@@ -280,9 +280,9 @@ EstSizeRange Button::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType
 	return FrameElement::CalcEstimatedWidth(containerSize, type).WithoutHardMax();
 }
 
-Rangef Button::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange Button::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::AtLeast(FrameElement::CalcEstimatedHeight(containerSize, type).min);
+	return FrameElement::CalcEstimatedHeight(containerSize, type).WithoutHardMax();
 }
 
 void Button::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -293,7 +293,7 @@ void Button::OnLayout(const UIRect& rect, LayoutInfo info)
 		auto rSize = r.GetSize();
 		EstSizeRange srw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding);
 		float sizew = srw.ExpandToFill(r.GetWidth());
-		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).min;
+		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).GetMin();
 		float ox = roundf((rSize.x - sizew) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + sizew, r.y0 + oy + minh };
@@ -424,7 +424,7 @@ void StateButtonSkin::OnLayout(const UIRect& rect, LayoutInfo info)
 		auto rSize = r.GetSize();
 		EstSizeRange srw = _child->CalcEstimatedWidth(rSize, EstSizeType::Expanding);
 		float sizew = srw.ExpandToFill(r.GetWidth());
-		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).min;
+		float minh = _child->CalcEstimatedHeight(rSize, EstSizeType::Expanding).GetMin();
 		float ox = roundf((rSize.x - sizew) * 0.5f);
 		float oy = roundf((rSize.y - minh) * 0.5f);
 		UIRect fr = { r.x0 + ox, r.y0 + oy, r.x0 + ox + sizew, r.y0 + oy + minh };
@@ -504,10 +504,10 @@ EstSizeRange ProgressBar::CalcEstimatedWidth(const Size2f& containerSize, EstSiz
 	return (_child ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
-Rangef ProgressBar::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange ProgressBar::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = style.padding.y0 + style.padding.y1;
-	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type).WithoutHardMax() : EstSizeRange()).Add(pad);
 }
 
 void ProgressBar::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -992,7 +992,7 @@ void ScrollArea::OnLayout(const UIRect& rect, LayoutInfo info)
 	float vScrollWidth = ResolveUnits(sbv.GetWidth(), rect.GetWidth());
 	//if (hasVScroll)
 		realContSize.x -= vScrollWidth;
-	estContentSize.y = _child ? _child->CalcEstimatedHeight(realContSize, EstSizeType::Exact).min : 0;
+	estContentSize.y = _child ? _child->CalcEstimatedHeight(realContSize, EstSizeType::Exact).GetMin() : 0;
 	float maxYOff = max(0.0f, estContentSize.y - rect.GetHeight());
 	if (yoff > maxYOff)
 		yoff = maxYOff;
@@ -1061,14 +1061,14 @@ struct DropdownMenuPlacement : IPlacement
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override
 	{
 		EstSizeRange rw = curObj->CalcEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
-		Rangef rh = curObj->CalcEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
+		EstSizeRange rh = curObj->CalcEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
 
 		rw = rw.WithSoftMin(outRect.GetWidth());
 
 		float x = outRect.x0;
 		float y = outRect.y1;
 		float w = rw.softMin;
-		float h = rh.min;
+		float h = rh.softMin;
 
 		auto windowInnerSize = curObj->GetNativeWindow()->GetInnerRect().GetSize();
 		if (y + h > windowInnerSize.y)
@@ -1523,7 +1523,7 @@ void OverlayInfoPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) c
 #endif
 
 	float w = curObj->CalcEstimatedWidth(minContSize, EstSizeType::Expanding).softMin;
-	float h = curObj->CalcEstimatedHeight(minContSize, EstSizeType::Expanding).min;
+	float h = curObj->CalcEstimatedHeight(minContSize, EstSizeType::Expanding).softMin;
 
 	UIRect avoidRect = UIRect::FromCenterExtents(curObj->system->eventSystem.prevMousePos, 16);
 

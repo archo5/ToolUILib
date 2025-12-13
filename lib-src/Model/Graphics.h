@@ -37,7 +37,7 @@ struct PreferredSizeLayout
 	virtual Size2f GetSize() = 0;
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type);
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 };
 
 struct ColorBlock : FrameElement, PreferredSizeLayout
@@ -58,7 +58,7 @@ struct ColorBlock : FrameElement, PreferredSizeLayout
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Color4b GetColor() const { return _color; }
@@ -81,7 +81,7 @@ struct ImageElement : UIObjectSingleChild
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 
 	ImageElement& SetImage(draw::IImage* img);
@@ -125,7 +125,7 @@ struct HueSatPicker : FrameElement, PreferredSizeLayout
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Size2f GetSize() override { return size; }
@@ -209,7 +209,7 @@ struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedWidth(containerSize, type).Add(frameStyle.padding.x0 + frameStyle.padding.x1); }
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{ return PreferredSizeLayout::CalcEstimatedHeight(containerSize, type).Add(frameStyle.padding.y0 + frameStyle.padding.y1); }
 
 	Size2f GetSize() override { return size; }

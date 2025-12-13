@@ -312,9 +312,9 @@ struct ProcGraphLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	{
 		return EstSizeRange::SoftExact(containerSize.x);
 	}
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
 	{
-		return Rangef::Exact(containerSize.y);
+		return EstSizeRange::SoftExact(containerSize.y);
 	}
 	void OnLayout(const UIRect& rect, LayoutInfo info) override
 	{
@@ -325,7 +325,7 @@ struct ProcGraphLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 			auto pos = PGE->_graph->GetNodePosition(N->_node) + PGE->viewOffset + rect.GetMin();
 			auto wr = N->CalcEstimatedWidth(rectSize, ui::EstSizeType::Expanding);
 			auto hr = N->CalcEstimatedHeight(rectSize, ui::EstSizeType::Expanding);
-			N->PerformLayout({ pos.x, pos.y, pos.x + wr.softMin, pos.y + hr.min }, info.WithoutAnyFill());
+			N->PerformLayout({ pos.x, pos.y, pos.x + wr.softMin, pos.y + hr.softMin }, info.WithoutAnyFill());
 		}
 		_finalRect = rect;
 	}

@@ -526,7 +526,7 @@ EstSizeRange Textbox::CalcEstimatedWidth(const Size2f& containerSize, EstSizeTyp
 	return FrameElement::CalcEstimatedWidth(containerSize, type).WithSoftMin(minWidth);
 }
 
-Rangef Textbox::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange Textbox::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	bool usePlaceholder = !IsFocused() && _impl->text.empty();
 	StringView text = usePlaceholder ? _impl->placeholder : _impl->text;
@@ -538,7 +538,7 @@ Rangef Textbox::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType typ
 	float minHeight = frameStyle.font.size * ui::max(size_t(1), _impl->lines.lines.size());
 
 	minHeight += frameStyle.padding.y0 + frameStyle.padding.y1;
-	return FrameElement::CalcEstimatedHeight(containerSize, type).Intersect(Rangef::AtLeast(minHeight));
+	return FrameElement::CalcEstimatedHeight(containerSize, type).WithSoftMin(minHeight);
 }
 
 bool Textbox::IsMultiline() const

@@ -23,7 +23,7 @@ struct ListLayoutElementBase : UIObject
 	uint32_t _cacheFrameWidth = {};
 	uint32_t _cacheFrameHeight = {};
 	EstSizeRange _cacheValueWidth;
-	Rangef _cacheValueHeight = { 0, 0 };
+	EstSizeRange _cacheValueHeight;
 
 	virtual Slot _CopyAndResetSlotTemplate() { return {}; }
 

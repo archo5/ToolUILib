@@ -338,9 +338,9 @@ EstSizeRange SplitPane::CalcEstimatedWidth(const Size2f& containerSize, EstSizeT
 	return EstSizeRange::SoftExact(containerSize.x);
 }
 
-Rangef SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange SplitPane::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	return Rangef::Exact(containerSize.y);
+	return EstSizeRange::SoftExact(containerSize.y);
 }
 
 void SplitPane::OnLayout(const UIRect& rect, LayoutInfo info)

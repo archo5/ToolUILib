@@ -24,10 +24,10 @@ EstSizeRange PaddingElement::CalcEstimatedWidth(const Size2f& containerSize, Est
 	return (_child && _child->_NeedsLayout() ? _child->CalcEstimatedWidth(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
-Rangef PaddingElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+EstSizeRange PaddingElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
 	float pad = padding.y0 + padding.y1;
-	return (_child && _child->_NeedsLayout() ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : Rangef::AtLeast(0)).Add(pad);
+	return (_child && _child->_NeedsLayout() ? _child->CalcEstimatedHeight(GetReducedContainerSize(containerSize), type) : EstSizeRange()).Add(pad);
 }
 
 void PaddingElement::OnLayout(const UIRect& rect, LayoutInfo info)

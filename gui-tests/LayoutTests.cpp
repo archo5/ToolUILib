@@ -313,9 +313,11 @@ struct SizeTest : ui::Buildable
 				return "est.width: hard max < hard min";
 			if (ew.hardMax < ew.softMin)
 				return "est.width: hard max < soft min";
-			if (eh.max < eh.min)
-				return "est.height: max < min";
-			ui::UIRect r{ 0, 0, ew.softMin, eh.min };
+			if (eh.hardMax < eh.hardMin)
+				return "est.height: hard max < hard min";
+			if (eh.hardMax < eh.softMin)
+				return "est.height: hard max < soft min";
+			ui::UIRect r{ 0, 0, ew.softMin, eh.softMin };
 			return TestSize(r, w, h);
 		};
 		tests.Append({ &obj, fn });
