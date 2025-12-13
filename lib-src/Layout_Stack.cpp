@@ -74,6 +74,65 @@ static EstSizeRange Stack_CalcEstHeight(ListLayoutBaseT& lb, const Size2f& conta
 	return r;
 }
 
+// put items one after another in the indicated direction
+// container size adapts to child elements in stacking direction, and to parent in the other
+template <bool LTR, class ListLayoutBaseT>
+static void Stack_OnLayout_H(ListLayoutBaseT& lb, const UIRect& rect, LayoutInfo info)
+{
+	info = info.WithoutFillH();
+	float p = LTR ? rect.x0 : rect.x1;
+	auto rectsize = rect.GetSize();
+	for (auto& slot : lb._slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		EstSizeRange wr = slot._obj->CalcEstimatedWidth(rectsize, EstSizeType::Exact);
+		float w = wr.GetMin();
+		EstSizeRange hr = slot._obj->CalcEstimatedHeight(rectsize, EstSizeType::Expanding);
+		float h = hr.ExpandToFill(rect.GetHeight());
+		UI_IF_MAYBE_CONSTEXPR(LTR)
+		{
+			slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h }, info);
+			p += w + lb.paddingBetweenElements;
+		}
+		else
+		{
+			slot._obj->PerformLayout({ p - w, rect.y0, p, rect.y0 + h }, info);
+			p -= w + lb.paddingBetweenElements;
+		}
+	}
+	lb._finalRect = rect;
+}
+template <bool TTB, class ListLayoutBaseT>
+static void Stack_OnLayout_V(ListLayoutBaseT& lb, const UIRect& rect, LayoutInfo info)
+{
+	info = info.WithoutFillV();
+	float p = TTB ? rect.y0 : rect.y1;
+	auto rectsize = rect.GetSize();
+	for (auto& slot : lb._slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		EstSizeRange wr = slot._obj->CalcEstimatedWidth(rectsize, EstSizeType::Expanding);
+		float w = wr.ExpandToFill(rect.GetWidth());
+		EstSizeRange hr = slot._obj->CalcEstimatedHeight(rectsize, EstSizeType::Exact);
+		float h = hr.GetMin();
+		UI_IF_MAYBE_CONSTEXPR(TTB)
+		{
+			slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h }, info);
+			p += h + lb.paddingBetweenElements;
+		}
+		else
+		{
+			slot._obj->PerformLayout({ rect.x0, p - h, rect.x0 + w, p }, info);
+			p -= h + lb.paddingBetweenElements;
+		}
+	}
+	lb._finalRect = rect;
+}
+
 
 EstSizeRange StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
@@ -87,23 +146,7 @@ EstSizeRange StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerS
 
 void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
-	// put items one after another in the indicated direction
-	// container size adapts to child elements in stacking direction, and to parent in the other
-	float p = rect.x0;
-	auto rectSize = rect.GetSize();
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		EstSizeRange wr = slot._obj->CalcEstimatedWidth(rectSize, EstSizeType::Exact);
-		float w = wr.GetMin();
-		EstSizeRange hr = slot._obj->CalcEstimatedHeight(rectSize, EstSizeType::Expanding);
-		float h = hr.ExpandToFill(rect.GetHeight());
-		slot._obj->PerformLayout({ p, rect.y0, p + w, rect.y0 + h }, info.WithoutFillH());
-		p += w + paddingBetweenElements;
-	}
-	_finalRect = rect;
+	Stack_OnLayout_H<false>(*this, rect, info);
 }
 
 
@@ -119,22 +162,56 @@ EstSizeRange StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& contai
 
 void StackTopDownLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
-	// put items one after another in the indicated direction
-	// container size adapts to child elements in stacking direction, and to parent in the other
-	float p = rect.y0;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
+	Stack_OnLayout_V<true>(*this, rect, info);
+}
 
-		EstSizeRange wr = slot._obj->CalcEstimatedWidth(rect.GetSize(), EstSizeType::Expanding);
-		float w = wr.ExpandToFill(rect.GetWidth());
-		EstSizeRange hr = slot._obj->CalcEstimatedHeight(rect.GetSize(), EstSizeType::Exact);
-		float h = hr.GetMin();
-		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h }, info.WithoutFillV());
-		p += h + paddingBetweenElements;
+
+EstSizeRange StackLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	switch (direction)
+	{
+	case StackingDirection::LeftToRight:
+	case StackingDirection::RightToLeft:
+		return Stack_CalcEstWidth<true>(*this, containerSize);
+	default:
+	case StackingDirection::TopDown:
+	case StackingDirection::BottomUp:
+		return Stack_CalcEstWidth<false>(*this, containerSize);
 	}
-	_finalRect = rect;
+}
+
+EstSizeRange StackLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
+{
+	switch (direction)
+	{
+	case StackingDirection::LeftToRight:
+	case StackingDirection::RightToLeft:
+		return Stack_CalcEstHeight<false>(*this, containerSize);
+	default:
+	case StackingDirection::TopDown:
+	case StackingDirection::BottomUp:
+		return Stack_CalcEstHeight<true>(*this, containerSize);
+	}
+}
+
+void StackLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
+{
+	switch (direction)
+	{
+	case StackingDirection::LeftToRight:
+		Stack_OnLayout_H<true>(*this, rect, info);
+		break;
+	case StackingDirection::RightToLeft:
+		Stack_OnLayout_H<false>(*this, rect, info);
+		break;
+	default:
+	case StackingDirection::TopDown:
+		Stack_OnLayout_V<true>(*this, rect, info);
+		break;
+	case StackingDirection::BottomUp:
+		Stack_OnLayout_V<false>(*this, rect, info);
+		break;
+	}
 }
 
 

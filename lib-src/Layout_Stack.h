@@ -28,6 +28,27 @@ struct StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 };
 
 
+enum class StackingDirection : u8
+{
+	LeftToRight,
+	RightToLeft,
+	TopDown,
+	BottomUp,
+};
+
+struct StackLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+{
+	StackingDirection direction = StackingDirection::TopDown;
+	StackLayoutElement& SetDirection(StackingDirection d) { direction = d; return *this; }
+	float paddingBetweenElements = 0;
+	StackLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
+
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
+};
+
+
 namespace _ {
 struct StackExpandLTRLayoutElement_Slot : ListLayoutSlotBase
 {
