@@ -71,8 +71,6 @@ void EdgeSliceLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
-LayerLayoutElement::Slot LayerLayoutElement::_slotTemplate;
-
 EstSizeRange LayerLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	EstSizeRange r;

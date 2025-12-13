@@ -304,12 +304,7 @@ void ProcGraphEditor_Node::OnBuildPreview()
 }
 
 
-struct ProcGraphLayoutElement_Slot
-{
-	UIObject* _obj = nullptr;
-};
-
-struct ProcGraphLayoutElement : ListLayoutElementBase<ProcGraphLayoutElement_Slot>
+struct ProcGraphLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	ProcGraphEditor* PGE = nullptr;
 
@@ -335,7 +330,6 @@ struct ProcGraphLayoutElement : ListLayoutElementBase<ProcGraphLayoutElement_Slo
 		_finalRect = rect;
 	}
 };
-ProcGraphLayoutElement_Slot ProcGraphLayoutElement::_slotTemplate;
 
 
 void ProcGraphEditor::Build()

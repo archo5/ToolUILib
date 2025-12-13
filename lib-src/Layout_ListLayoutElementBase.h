@@ -6,16 +6,16 @@
 namespace ui {
 
 
+struct ListLayoutSlotBase
+{
+	UIObject* _obj = nullptr;
+};
+
+
 template <class SlotT>
 struct ListLayoutElementBase : UIObject
 {
 	using Slot = SlotT;
-
-	static TempEditable<Slot> GetSlotTemplate()
-	{
-		return { &_slotTemplate };
-	}
-	static Slot _slotTemplate;
 
 	Array<Slot> _slots;
 
@@ -24,6 +24,8 @@ struct ListLayoutElementBase : UIObject
 	uint32_t _cacheFrameHeight = {};
 	EstSizeRange _cacheValueWidth;
 	Rangef _cacheValueHeight = { 0, 0 };
+
+	virtual Slot _CopyAndResetSlotTemplate() { return {}; }
 
 	void OnReset() override
 	{
@@ -79,11 +81,9 @@ struct ListLayoutElementBase : UIObject
 		obj->DetachParent();
 
 		obj->parent = this;
-		Slot slot = _slotTemplate;
+		Slot slot = _CopyAndResetSlotTemplate();
 		slot._obj = obj;
 		_slots.Append(slot);
-		// reset the template
-		_slotTemplate = {};
 
 		if (system)
 			obj->_AttachToFrameContents(system);

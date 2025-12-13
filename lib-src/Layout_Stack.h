@@ -6,34 +6,22 @@
 namespace ui {
 
 
-namespace _ {
-struct StackLTRLayoutElement_Slot
-{
-	UIObject* _obj = nullptr;
-};
-} // _
-
-struct StackLTRLayoutElement : ListLayoutElementBase<_::StackLTRLayoutElement_Slot>
+struct StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	float paddingBetweenElements = 0;
-
-	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, LayoutInfo info) override;
-
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
+
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 
-namespace _ {
-struct StackTopDownLayoutElement_Slot
+struct StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
-	UIObject* _obj = nullptr;
-};
-} // _
+	float paddingBetweenElements = 0;
+	StackTopDownLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
-struct StackTopDownLayoutElement : ListLayoutElementBase<_::StackTopDownLayoutElement_Slot>
-{
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -41,11 +29,10 @@ struct StackTopDownLayoutElement : ListLayoutElementBase<_::StackTopDownLayoutEl
 
 
 namespace _ {
-struct StackExpandLTRLayoutElement_Slot
+struct StackExpandLTRLayoutElement_Slot : ListLayoutSlotBase
 {
 	using T = StackExpandLTRLayoutElement_Slot;
 
-	UIObject* _obj = nullptr;
 	float fraction = 1;
 
 	T& DisableScaling() { fraction = 0; return *this; }
@@ -56,24 +43,20 @@ struct StackExpandLTRLayoutElement_Slot
 
 struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayoutElement_Slot>
 {
+	static Slot _slotTemplate;
+	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
+	Slot _CopyAndResetSlotTemplate() override { Slot ret = _slotTemplate; _slotTemplate = {}; return ret; }
+
 	float paddingBetweenElements = 0;
+	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
-
-	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 };
 
 
-namespace _ {
-struct WrapperLTRLayoutElement_Slot
-{
-	UIObject* _obj = nullptr;
-};
-} // _
-
-struct WrapperLTRLayoutElement : ListLayoutElementBase<_::WrapperLTRLayoutElement_Slot>
+struct WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;

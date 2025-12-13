@@ -8,15 +8,26 @@
 namespace ui {
 
 namespace _ {
-struct EdgeSliceLayoutElement_Slot
+struct EdgeSliceLayoutElement_Slot : ListLayoutSlotBase
 {
-	UIObject* _obj = nullptr;
 	Edge edge = Edge::Top;
 };
 } // _
 
 struct EdgeSliceLayoutElement : ListLayoutElementBase<_::EdgeSliceLayoutElement_Slot>
 {
+	static Slot _slotTemplate;
+	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
+	Slot _CopyAndResetSlotTemplate() override { Slot ret = _slotTemplate; _slotTemplate = {}; return ret; }
+
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
+	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
+	void OnLayout(const UIRect& rect, LayoutInfo info) override;
+};
+
+
+struct LayerLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+{
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -24,24 +35,8 @@ struct EdgeSliceLayoutElement : ListLayoutElementBase<_::EdgeSliceLayoutElement_
 
 
 namespace _ {
-struct LayerLayoutElement_Slot
+struct PlacementLayoutElement_Slot : ListLayoutSlotBase
 {
-	UIObject* _obj = nullptr;
-};
-}
-
-struct LayerLayoutElement : ListLayoutElementBase<_::LayerLayoutElement_Slot>
-{
-	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
-	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
-	void OnLayout(const UIRect& rect, LayoutInfo info) override;
-};
-
-
-namespace _ {
-struct PlacementLayoutElement_Slot
-{
-	UIObject* _obj = nullptr;
 	const IPlacement* placement = nullptr;
 	bool measure = true;
 };
@@ -49,6 +44,10 @@ struct PlacementLayoutElement_Slot
 
 struct PlacementLayoutElement : ListLayoutElementBase<_::PlacementLayoutElement_Slot>
 {
+	static Slot _slotTemplate;
+	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
+	Slot _CopyAndResetSlotTemplate() override { Slot ret = _slotTemplate; _slotTemplate = {}; return ret; }
+
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	Rangef CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;

@@ -10,8 +10,6 @@ namespace ui {
 extern uint32_t g_curLayoutFrame;
 
 
-StackLTRLayoutElement::Slot StackLTRLayoutElement::_slotTemplate;
-
 EstSizeRange StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (g_curLayoutFrame == _cacheFrameWidth)
@@ -77,8 +75,6 @@ void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 }
 
 
-StackTopDownLayoutElement::Slot StackTopDownLayoutElement::_slotTemplate;
-
 EstSizeRange StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
 	if (g_curLayoutFrame == _cacheFrameWidth)
@@ -104,11 +100,16 @@ Rangef StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSiz
 		return _cacheValueHeight;
 
 	float size = 0;
+	bool first = true;
 	for (auto& slot : _slots)
 	{
 		if (!slot._obj->_NeedsLayout())
 			continue;
 
+		if (!first)
+			size += paddingBetweenElements;
+		else
+			first = false;
 		size += slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Exact).min;
 	}
 	Rangef r = Rangef::AtLeast(size);
@@ -132,7 +133,7 @@ void StackTopDownLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 		float w = wr.ExpandToFill(rect.GetWidth());
 		float h = slot._obj->CalcEstimatedHeight(rect.GetSize(), EstSizeType::Exact).min;
 		slot._obj->PerformLayout({ rect.x0, p, rect.x0 + w, p + h }, info.WithoutFillV());
-		p += h;
+		p += h + paddingBetweenElements;
 	}
 	_finalRect = rect;
 }
@@ -264,8 +265,6 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 	_finalRect = rect;
 }
 
-
-WrapperLTRLayoutElement::Slot WrapperLTRLayoutElement::_slotTemplate;
 
 EstSizeRange WrapperLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
