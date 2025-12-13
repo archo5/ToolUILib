@@ -196,6 +196,9 @@
     <ClCompile Include="Layout_PaddingElement.cpp">
       <Filter>Layout</Filter>
     </ClCompile>
+    <ClCompile Include="Layout_Stack.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -473,6 +476,9 @@
       <Filter>Layout</Filter>
     </ClInclude>
     <ClInclude Include="Layout_ListLayoutElementBase.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout_Stack.h">
       <Filter>Layout</Filter>
     </ClInclude>
   </ItemGroup>

@@ -266,6 +266,7 @@
     <ClCompile Include="Elements\TabbedPanel.cpp" />
     <ClCompile Include="Elements\Textbox.cpp" />
     <ClCompile Include="Layout_PaddingElement.cpp" />
+    <ClCompile Include="Layout_Stack.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
     <ClCompile Include="Model\Controls.cpp" />
     <ClCompile Include="Model\Docking.cpp" />
@@ -364,6 +365,7 @@
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Layout_ListLayoutElementBase.h" />
     <ClInclude Include="Layout_PaddingElement.h" />
+    <ClInclude Include="Layout_Stack.h" />
     <ClInclude Include="Model\Animation.h" />
     <ClInclude Include="Model\Controls.h" />
     <ClInclude Include="Model\Docking.h" />
