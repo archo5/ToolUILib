@@ -10,47 +10,79 @@ namespace ui {
 extern uint32_t g_curLayoutFrame;
 
 
-EstSizeRange StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+template <bool ADD, bool FLIP_EST = false, class ListLayoutBaseT>
+static EstSizeRange Stack_CalcEstWidth(ListLayoutBaseT& lb, const Size2f& containerSize)
 {
-	if (g_curLayoutFrame == _cacheFrameWidth)
-		return _cacheValueWidth;
+	if (g_curLayoutFrame == lb._cacheFrameWidth)
+		return lb._cacheValueWidth;
 
 	EstSizeRange r;
 	bool first = true;
-	for (auto& slot : _slots)
+	for (auto& slot : lb._slots)
 	{
 		if (!slot._obj->_NeedsLayout())
 			continue;
 
-		if (!first)
-			r = r.Add(paddingBetweenElements);
+		UI_IF_MAYBE_CONSTEXPR(ADD)
+		{
+			if (!first)
+				r = r.Add(lb.paddingBetweenElements);
+			else
+				first = false;
+			r = r.AddMins(slot._obj->CalcEstimatedWidth(containerSize, !FLIP_EST ? EstSizeType::Exact : EstSizeType::Expanding));
+		}
 		else
-			first = false;
-		r = r.AddMins(slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Exact));
+		{
+			r = r.WithMins(slot._obj->CalcEstimatedWidth(containerSize, !FLIP_EST ? EstSizeType::Expanding : EstSizeType::Exact));
+		}
 	}
 
-	_cacheFrameWidth = g_curLayoutFrame;
-	_cacheValueWidth = r;
+	lb._cacheFrameWidth = g_curLayoutFrame;
+	lb._cacheValueWidth = r;
 	return r;
+}
+
+template <bool ADD, bool FLIP_EST = false, class ListLayoutBaseT>
+static EstSizeRange Stack_CalcEstHeight(ListLayoutBaseT& lb, const Size2f& containerSize)
+{
+	if (g_curLayoutFrame == lb._cacheFrameHeight)
+		return lb._cacheValueHeight;
+
+	EstSizeRange r;
+	bool first = true;
+	for (auto& slot : lb._slots)
+	{
+		if (!slot._obj->_NeedsLayout())
+			continue;
+
+		UI_IF_MAYBE_CONSTEXPR(ADD)
+		{
+			if (!first)
+				r = r.Add(lb.paddingBetweenElements);
+			else
+				first = false;
+			r = r.AddMins(slot._obj->CalcEstimatedHeight(containerSize, !FLIP_EST ? EstSizeType::Exact : EstSizeType::Expanding));
+		}
+		else
+		{
+			r = r.WithMins(slot._obj->CalcEstimatedHeight(containerSize, !FLIP_EST ? EstSizeType::Expanding : EstSizeType::Exact));
+		}
+	}
+
+	lb._cacheFrameHeight = g_curLayoutFrame;
+	lb._cacheValueHeight = r;
+	return r;
+}
+
+
+EstSizeRange StackLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
+{
+	return Stack_CalcEstWidth<true>(*this, containerSize);
 }
 
 EstSizeRange StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameHeight)
-		return _cacheValueHeight;
-
-	EstSizeRange r;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		r = r.WithMins(slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Expanding));
-	}
-
-	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = r;
-	return r;
+	return Stack_CalcEstHeight<false>(*this, containerSize);
 }
 
 void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -77,45 +109,12 @@ void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 
 EstSizeRange StackTopDownLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameWidth)
-		return _cacheValueWidth;
-
-	EstSizeRange r;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		r = r.WithMins(slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Expanding));
-	}
-
-	_cacheFrameWidth = g_curLayoutFrame;
-	_cacheValueWidth = r;
-	return r;
+	return Stack_CalcEstWidth<false>(*this, containerSize);
 }
 
 EstSizeRange StackTopDownLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameHeight)
-		return _cacheValueHeight;
-
-	EstSizeRange r;
-	bool first = true;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		if (!first)
-			r = r.Add(paddingBetweenElements);
-		else
-			first = false;
-		r = r.AddMins(slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Exact));
-	}
-
-	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = r;
-	return r;
+	return Stack_CalcEstHeight<true>(*this, containerSize);
 }
 
 void StackTopDownLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -169,21 +168,7 @@ EstSizeRange StackExpandLTRLayoutElement::CalcEstimatedWidth(const Size2f& conta
 
 EstSizeRange StackExpandLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameHeight)
-		return _cacheValueHeight;
-
-	EstSizeRange r;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		r = r.WithMins(slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Exact));
-	}
-
-	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = r;
-	return r;
+	return Stack_CalcEstHeight<false, true>(*this, containerSize);
 }
 
 void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
@@ -267,40 +252,14 @@ void StackExpandLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 
 EstSizeRange WrapperLTRLayoutElement::CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameWidth)
-		return _cacheValueWidth;
-
-	EstSizeRange r;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		r = r.AddMins(slot._obj->CalcEstimatedWidth(containerSize, EstSizeType::Expanding));
-	}
-
-	_cacheFrameWidth = g_curLayoutFrame;
-	_cacheValueWidth = r;
-	return r;
+	return Stack_CalcEstWidth<true, true>(*this, containerSize);
 }
+
 EstSizeRange WrapperLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type)
 {
-	if (g_curLayoutFrame == _cacheFrameHeight)
-		return _cacheValueHeight;
-
-	EstSizeRange r;
-	for (auto& slot : _slots)
-	{
-		if (!slot._obj->_NeedsLayout())
-			continue;
-
-		r = r.WithMins(slot._obj->CalcEstimatedHeight(containerSize, EstSizeType::Expanding));
-	}
-
-	_cacheFrameHeight = g_curLayoutFrame;
-	_cacheValueHeight = r;
-	return r;
+	return Stack_CalcEstHeight<false>(*this, containerSize);
 }
+
 void WrapperLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
 	auto contSize = rect.GetSize();

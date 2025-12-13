@@ -56,8 +56,12 @@ struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayo
 };
 
 
+// TODO is this still valuable?
 struct WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
+	float paddingBetweenElements = 0;
+	WrapperLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
+
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
