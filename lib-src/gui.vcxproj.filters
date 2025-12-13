@@ -193,6 +193,9 @@
     <ClCompile Include="Elements\ResizablePane.cpp">
       <Filter>Elements</Filter>
     </ClCompile>
+    <ClCompile Include="Layout_PaddingElement.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -466,6 +469,12 @@
     <ClInclude Include="Elements\SeparatorLineStyle.h">
       <Filter>Elements</Filter>
     </ClInclude>
+    <ClInclude Include="Layout_PaddingElement.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="Layout_ListLayoutElementBase.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -488,6 +497,9 @@
     </Filter>
     <Filter Include="Elements">
       <UniqueIdentifier>{baa39f61-fc91-4fdf-899f-7741eeb43f96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Layout">
+      <UniqueIdentifier>{e85e8aed-258c-4653-a052-077abcbe8bde}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

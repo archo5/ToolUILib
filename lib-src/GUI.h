@@ -25,6 +25,7 @@
 #include "Model/Events.h"
 #include "Model/Controls.h"
 #include "Model/Layout.h"
+#include "Layout_PaddingElement.h"
 #include "Model/Native.h"
 #include "Model/System.h"
 #include "Model/Menu.h"

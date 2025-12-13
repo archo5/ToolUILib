@@ -5,6 +5,7 @@
 #include "../Model/Graphics.h"
 #include "../Model/ImmediateMode.h"
 #include "../Model/Layout.h"
+#include "../Layout_PaddingElement.h"
 #include "../Model/Menu.h"
 #include "../Model/System.h"
 #include "../Model/Theme.h"
@@ -308,7 +309,7 @@ struct ProcGraphLayoutElement_Slot
 	UIObject* _obj = nullptr;
 };
 
-struct ProcGraphLayoutElement : LayoutElement<ProcGraphLayoutElement_Slot>
+struct ProcGraphLayoutElement : ListLayoutElementBase<ProcGraphLayoutElement_Slot>
 {
 	ProcGraphEditor* PGE = nullptr;
 
