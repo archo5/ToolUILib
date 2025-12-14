@@ -146,7 +146,7 @@ EstSizeRange StackLTRLayoutElement::CalcEstimatedHeight(const Size2f& containerS
 
 void StackLTRLayoutElement::OnLayout(const UIRect& rect, LayoutInfo info)
 {
-	Stack_OnLayout_H<false>(*this, rect, info);
+	Stack_OnLayout_H<true>(*this, rect, info);
 }
 
 

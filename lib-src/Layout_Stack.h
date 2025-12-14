@@ -11,6 +11,11 @@ struct StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	float paddingBetweenElements = 0;
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
+	void OnReset() override
+	{
+		ListLayoutElementBase::OnReset();
+		paddingBetweenElements = 0;
+	}
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -22,6 +27,11 @@ struct StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	float paddingBetweenElements = 0;
 	StackTopDownLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
+	void OnReset() override
+	{
+		ListLayoutElementBase::OnReset();
+		paddingBetweenElements = 0;
+	}
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -43,6 +53,12 @@ struct StackLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	float paddingBetweenElements = 0;
 	StackLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
+	void OnReset() override
+	{
+		ListLayoutElementBase::OnReset();
+		direction = StackingDirection::TopDown;
+		paddingBetweenElements = 0;
+	}
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -71,6 +87,11 @@ struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayo
 	float paddingBetweenElements = 0;
 	StackExpandLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
+	void OnReset() override
+	{
+		ListLayoutElementBase::OnReset();
+		paddingBetweenElements = 0;
+	}
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -83,6 +104,11 @@ struct WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 	float paddingBetweenElements = 0;
 	WrapperLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
 
+	void OnReset() override
+	{
+		ListLayoutElementBase::OnReset();
+		paddingBetweenElements = 0;
+	}
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
