@@ -16,7 +16,7 @@ HashMap<StringView, IVectorImage*> g_loadedVectorImages;
 
 struct VectorImageImpl : IVectorImage
 {
-	int refcount = 0;
+	i32 refcount = 0;
 	Size2f size = {};
 	NSVGrasterizer* rasterizer = nullptr;
 	NSVGimage* image = nullptr;
@@ -24,6 +24,10 @@ struct VectorImageImpl : IVectorImage
 	std::string cacheKey;
 
 	// IRefCounted
+	i32 GetRefCount() override
+	{
+		return refcount;
+	}
 	void AddRef() override
 	{
 		refcount++;

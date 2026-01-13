@@ -256,7 +256,7 @@ static HashMap<StringView, IImage*> g_loadedImages;
 
 struct ImageImpl : IImage
 {
-	int refcount = 0;
+	i32 refcount = 0;
 	Size2i size = {};
 	uint8_t* data = nullptr;
 	TexFlags flags = TexFlags::None;
@@ -345,6 +345,10 @@ struct ImageImpl : IImage
 	}
 
 	// IRefCounted
+	i32 GetRefCount() override
+	{
+		return refcount;
+	}
 	void AddRef() override
 	{
 		refcount++;

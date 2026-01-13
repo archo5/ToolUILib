@@ -22,6 +22,52 @@
 	</Expand>
 </Type>
 
+<Type Name="ui::HashMap&lt;*&gt;">
+  <DisplayString>{{ size={_storage.count} capacity={_storage.capacity} }}</DisplayString>
+  <Expand>
+    <Item Name="[size]">_storage.count</Item>
+    <Item Name="[capacity]">_storage.capacity</Item>
+    <Synthetic Name="[keys]">
+      <Expand>
+        <IndexListItems>
+          <Size>_storage.count</Size>
+          <ValueNode>_storage.keys[$i]</ValueNode>
+        </IndexListItems>
+      </Expand>
+    </Synthetic>
+    <Synthetic Name="[values]">
+      <Expand>
+        <IndexListItems>
+          <Size>_storage.count</Size>
+          <ValueNode>_storage.values[$i]</ValueNode>
+        </IndexListItems>
+      </Expand>
+    </Synthetic>
+    <CustomListItems>
+      <Variable Name="i" InitialValue="0"/>
+      <Loop>
+        <If Condition="i >= _storage.count">
+          <Break />
+        </If>
+        <Item Name="{_storage.keys[i]}">_storage.values[i]</Item>
+        <Exec>i++</Exec>
+      </Loop>
+    </CustomListItems>
+  </Expand>
+</Type>
+
+<Type Name="ui::HashSet&lt;*&gt;">
+  <DisplayString>{{ size={_storage.count} capacity={_storage.capacity} }}</DisplayString>
+  <Expand>
+    <Item Name="[size]">_storage.count</Item>
+    <Item Name="[capacity]">_storage.capacity</Item>
+    <IndexListItems>
+      <Size>_storage.count</Size>
+      <ValueNode>_storage.keys[$i]</ValueNode>
+    </IndexListItems>
+  </Expand>
+</Type>
+
 <Type Name="ui::StringView">
 	<DisplayString>[{_size}]{_data,[_size]s}</DisplayString>
 	<Expand>

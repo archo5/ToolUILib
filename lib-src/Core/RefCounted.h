@@ -8,6 +8,7 @@ namespace ui {
 
 struct IRefCounted
 {
+	virtual i32 GetRefCount() = 0;
 	virtual void AddRef() = 0;
 	virtual void Release() = 0;
 };
@@ -19,8 +20,9 @@ class RefCountedST : IRefCounted
 public:
 	virtual ~RefCountedST() {}
 
-	void AddRef() { _refCount++; }
-	void Release()
+	i32 GetRefCount() override { return _refCount; }
+	void AddRef() override { _refCount++; }
+	void Release() override
 	{
 		if (--_refCount == 0)
 			delete this;
@@ -34,8 +36,9 @@ class RefCountedMT : IRefCounted
 public:
 	virtual ~RefCountedMT() {}
 
-	void AddRef() { _refCount++; }
-	void Release()
+	i32 GetRefCount() override { return _refCount; }
+	void AddRef() override { _refCount++; }
+	void Release() override
 	{
 		if (--_refCount == 0)
 			delete this;
