@@ -192,4 +192,18 @@ Optional<double> NumberEditorBase::ParseMathExpr(StringView str)
 	return me.Evaluate();
 }
 
+void RemoveDecimalError(float& v)
+{
+	char bfr[32];
+	snprintf(bfr, sizeof(bfr), "%.5g", v); // FLT_DIG - 1
+	sscanf(bfr, "%g", &v);
+}
+
+void RemoveDecimalError(double& v)
+{
+	char bfr[32];
+	snprintf(bfr, sizeof(bfr), "%.14g", v); // DBL_DIG - 1
+	sscanf(bfr, "%lg", &v);
+}
+
 } // ui

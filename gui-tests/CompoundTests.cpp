@@ -603,6 +603,9 @@ struct NumberEditorTest : ui::Buildable
 		WText("FP64");
 		WMake<ui::NumberEditorT<double>>().SetValue(57.);
 
+		WText("FP32 accumulator precision");
+		WMake<ui::NumberEditorT<float>>().SetDragConfig(0.1f).SetValue(0);
+
 		WPop();
 	}
 };

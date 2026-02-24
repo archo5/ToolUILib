@@ -124,9 +124,13 @@ template <> inline void GetPrintFormat<float>(NumberFormatSettings nfs, char bfr
 }
 template <> inline void GetPrintFormat<double>(NumberFormatSettings nfs, char bfr[32]) { GetPrintFormat<float>(nfs, bfr); }
 
-template <class T> float GetMinSnap(T) { return 1; }
+template <class T> inline float GetMinSnap(T) { return 1; }
 inline float GetMinSnap(float v) { return max(nextafterf(v, INFINITY) - v, FLT_EPSILON); }
 inline float GetMinSnap(double v) { return max(nextafter(v, INFINITY) - v, DBL_EPSILON); }
+
+template <class T> inline void RemoveDecimalError(T&) {}
+void RemoveDecimalError(float& v);
+void RemoveDecimalError(double& v);
 
 template <class TNum> struct NumberEditorT : NumberEditorBase
 {
@@ -159,6 +163,7 @@ template <class TNum> struct NumberEditorT : NumberEditorBase
 		if (abs(_accumulator) >= snap)
 		{
 			nv += trunc(_accumulator / snap) * snap;
+			RemoveDecimalError(nv);
 			_accumulator = fmod(_accumulator, snap);
 		}
 
