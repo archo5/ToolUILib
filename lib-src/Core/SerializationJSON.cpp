@@ -75,7 +75,7 @@ void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::_WriteFloatPrec(const char* key, double value, int precision)
+void JSONLinearWriter::WriteFloatSingle(const char* key, float value)
 {
 	_WritePrefix(key);
 	if (!isfinite(value))
@@ -83,11 +83,22 @@ void JSONLinearWriter::_WriteFloatPrec(const char* key, double value, int precis
 		LogWarn(LOG_SERIALIZATION_JSON, "cannot serialize a NaN/inf number in JSON, replacing with 0");
 		value = 0;
 	}
-	char bfr[32];
-	stbsp_snprintf(bfr, 32, "%.*g", precision, value);
-	for (auto& c : bfr)
-		if (c == ',')
-			c = '.';
+	char bfr[zmij::float_buffer_size];
+	zmij::write(bfr, sizeof(bfr), value);
+	_data += bfr;
+	_starts.Last().weight += 6;
+}
+
+void JSONLinearWriter::WriteFloatDouble(const char* key, double value)
+{
+	_WritePrefix(key);
+	if (!isfinite(value))
+	{
+		LogWarn(LOG_SERIALIZATION_JSON, "cannot serialize a NaN/inf number in JSON, replacing with 0");
+		value = 0;
+	}
+	char bfr[zmij::double_buffer_size];
+	zmij::write(bfr, sizeof(bfr), value);
 	_data += bfr;
 	_starts.Last().weight += 6;
 }

@@ -146,8 +146,8 @@ void NamedTextSerializeWriter::WriteFloatSingle(const char* key, float value)
 	_WriteIndent();
 	data += key;
 	data += '=';
-	char bfr[64];
-	stbsp_snprintf(bfr, 64, "%.9g\n", value);
+	char bfr[zmij::float_buffer_size];
+	zmij::write(bfr, sizeof(bfr), value);
 	data += bfr;
 }
 
@@ -156,8 +156,8 @@ void NamedTextSerializeWriter::WriteFloatDouble(const char* key, double value)
 	_WriteIndent();
 	data += key;
 	data += '=';
-	char bfr[64];
-	stbsp_snprintf(bfr, 64, "%.17g\n", value);
+	char bfr[zmij::double_buffer_size];
+	zmij::write(bfr, sizeof(bfr), value);
 	data += bfr;
 }
 

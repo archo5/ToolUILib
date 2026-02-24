@@ -5,6 +5,8 @@
 #include "Optional.h"
 #include "Array.h"
 
+#include "../../ThirdParty/zmij/zmij.h"
+
 #include <stdio.h>
 
 #ifdef UI_USE_STD_VECTOR
@@ -298,14 +300,14 @@ struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 	}
 	bool OnFieldF32(const FieldInfo& FI, float& val) override
 	{
-		char bfr[32];
-		snprintf(bfr, 32, "%.9g", val);
+		char bfr[zmij::float_buffer_size];
+		zmij::write(bfr, sizeof(bfr), val);
 		return OnFieldAsString(FI, bfr), true;
 	}
 	bool OnFieldF64(const FieldInfo& FI, double& val) override
 	{
-		char bfr[32];
-		snprintf(bfr, 32, "%.17g", val);
+		char bfr[zmij::double_buffer_size];
+		zmij::write(bfr, sizeof(bfr), val);
 		return OnFieldAsString(FI, bfr), true;
 	}
 };

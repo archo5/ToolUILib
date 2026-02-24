@@ -199,6 +199,9 @@
     <ClCompile Include="Layout_Stack.cpp">
       <Filter>Layout</Filter>
     </ClCompile>
+    <ClCompile Include="..\ThirdParty\zmij\zmij.cc">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -480,6 +483,9 @@
     </ClInclude>
     <ClInclude Include="Layout_Stack.h">
       <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\zmij\zmij.h">
+      <Filter>ThirdParty</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -37,9 +37,8 @@ struct JSONLinearWriter
 	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
 	void WriteInt(const char* key, int64_t value);
 	void WriteInt(const char* key, uint64_t value);
-	void _WriteFloatPrec(const char* key, double value, int prec);
-	void WriteFloatSingle(const char* key, float value) { _WriteFloatPrec(key, value, 9); }
-	void WriteFloatDouble(const char* key, double value) { _WriteFloatPrec(key, value, 17); }
+	void WriteFloatSingle(const char* key, float value);
+	void WriteFloatDouble(const char* key, double value);
 	void WriteRawNumber(const char* key, StringView value);
 
 	void BeginArray(const char* key);

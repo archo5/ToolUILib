@@ -228,6 +228,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ThirdParty\zmij\zmij.cc" />
     <ClCompile Include="Core\3DCamera.cpp" />
     <ClCompile Include="Core\3DMath.cpp" />
     <ClCompile Include="Core\BitArray.cpp" />
@@ -305,6 +306,7 @@
     <ClInclude Include="..\ThirdParty\nanosvg.h" />
     <ClInclude Include="..\ThirdParty\nanosvgrast.h" />
     <ClInclude Include="..\ThirdParty\stb_sprintf.h" />
+    <ClInclude Include="..\ThirdParty\zmij\zmij.h" />
     <ClInclude Include="Core\3DCamera.h" />
     <ClInclude Include="Core\3DMath.h" />
     <ClInclude Include="Core\Array.h" />
