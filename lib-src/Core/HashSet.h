@@ -131,6 +131,9 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 			Insert(key);
 	}
 
+	UI_FORCEINLINE K* data() { return this->_storage.keys; }
+	UI_FORCEINLINE const K* data() const { return this->_storage.keys; }
+
 	K& At(size_t pos)
 	{
 		assert(pos < this->_storage.count);
