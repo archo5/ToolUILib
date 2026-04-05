@@ -99,6 +99,7 @@ struct HashTableExtBase : HashTableBase
 	UI_FORCEINLINE size_t Size() const { return _storage.count; }
 	UI_FORCEINLINE size_t Capacity() const { return _storage.capacity; }
 
+	template <class T> UI_FORCEINLINE bool ContainsT(const T& key) const { return _FindPosT(key, SIZE_MAX) != SIZE_MAX; }
 	UI_FORCEINLINE bool Contains(const K& key) const { return _FindPos(key, SIZE_MAX) != SIZE_MAX; }
 
 	// TODO needed?
@@ -279,9 +280,10 @@ struct HashTableExtBase : HashTableBase
 		return pos;
 	}
 
-	bool Remove(const K& key)
+	template <class T>
+	bool RemoveT(const T& key)
 	{
-		size_t htidx = _FindHashTableIndex(key);
+		size_t htidx = _FindHashTableIndexT(key);
 		if (htidx == SIZE_MAX)
 			return false;
 
@@ -290,7 +292,7 @@ struct HashTableExtBase : HashTableBase
 		size_t lastPos = _storage.count - 1;
 		if (pos != lastPos)
 		{
-			size_t newidx = _FindHashTableIndex(_storage.GetKeyAt(lastPos));
+			size_t newidx = _FindHashTableIndexT(_storage.GetKeyAt(lastPos));
 			assert(newidx < _hashCap);
 			_storage.MoveEntry(pos, lastPos);
 			_hashes[pos] = _hashes[lastPos];
@@ -302,6 +304,10 @@ struct HashTableExtBase : HashTableBase
 		if (_removed > _storage.count / 2)
 			_Rehash(_hashCap);
 		return true;
+	}
+	bool Remove(const K& key)
+	{
+		return RemoveT(key);
 	}
 };
 
