@@ -84,9 +84,9 @@ struct ThemeData : RefCountedST
 
 	HashMap<std::string, RCHandle<RefCountedST>> _customStructSources;
 
-	Optional<Color4b> FindColorByName(const std::string& name);
-	draw::ImageSetHandle FindImageSetByName(const std::string& name);
-	PainterHandle FindPainterByName(const std::string& name);
+	Optional<Color4b> FindColorByName(StringView name);
+	draw::ImageSetHandle FindImageSetByName(StringView name);
+	PainterHandle FindPainterByName(StringView name);
 	void* _FindStructByNameImpl(IThemeStructLoader* loader, const std::string& name);
 	template <class T> T* FindStructByName(const std::string& name)
 	{

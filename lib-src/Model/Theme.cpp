@@ -134,19 +134,19 @@ static const char* EnumKeys_HAlign[] =
 template <> struct EnumKeys<HAlign> : EnumKeysStringList<HAlign, EnumKeys_HAlign> {};
 
 
-Optional<Color4b> ThemeData::FindColorByName(const std::string& name)
+Optional<Color4b> ThemeData::FindColorByName(StringView name)
 {
-	return colors.GetValueOrDefault(name);
+	return colors.GetValueOrDefaultT(name);
 }
 
-draw::ImageSetHandle ThemeData::FindImageSetByName(const std::string& name)
+draw::ImageSetHandle ThemeData::FindImageSetByName(StringView name)
 {
-	return imageSets.GetValueOrDefault(name);
+	return imageSets.GetValueOrDefaultT(name);
 }
 
-PainterHandle ThemeData::FindPainterByName(const std::string& name)
+PainterHandle ThemeData::FindPainterByName(StringView name)
 {
-	return painters.GetValueOrDefault(name);
+	return painters.GetValueOrDefaultT(name);
 }
 
 static void InitStruct(ThemeData& td, ThemeData::CustomStructData& csd, IThemeStructLoader* loader)

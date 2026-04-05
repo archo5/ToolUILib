@@ -206,7 +206,8 @@ struct HashTableExtBase : HashTableBase
 		_storage.Reserve(newcap);
 	}
 
-	size_t _FindHashTableIndex(const K& key) const
+	template <class T>
+	size_t _FindHashTableIndexT(const T& key) const
 	{
 		if (!_storage.count)
 			return SIZE_MAX;
@@ -226,10 +227,20 @@ struct HashTableExtBase : HashTableBase
 		}
 		return SIZE_MAX;
 	}
+	UI_FORCEINLINE size_t _FindHashTableIndex(const K& key) const
+	{
+		return _FindHashTableIndexT(key);
+	}
+
+	template <class T>
+	inline size_t _FindPosT(const T& key, size_t def) const
+	{
+		size_t i = _FindHashTableIndexT(key);
+		return i != SIZE_MAX ? _hashTable[i] : def;
+	}
 	inline size_t _FindPos(const K& key, size_t def) const
 	{
-		size_t i = _FindHashTableIndex(key);
-		return i != SIZE_MAX ? _hashTable[i] : def;
+		return _FindPosT(key, def);
 	}
 
 	size_t _FindInsertPos(const K& key)

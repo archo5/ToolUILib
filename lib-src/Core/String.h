@@ -339,4 +339,26 @@ struct UTF8Iterator
 	uint32_t Read();
 };
 
+
+template <>
+struct HashEqualityComparer<std::string>
+{
+	UI_FORCEINLINE static bool AreEqual(const std::string& a, const std::string& b)
+	{
+		return a == b;
+	}
+	UI_FORCEINLINE static bool AreEqual(StringView a, const std::string& b)
+	{
+		return a == b;
+	}
+	UI_FORCEINLINE static size_t GetHash(const std::string& v)
+	{
+		return HashValue(v);
+	}
+	UI_FORCEINLINE static size_t GetHash(StringView v)
+	{
+		return HashValue(v);
+	}
+};
+
 } // ui

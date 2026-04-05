@@ -218,6 +218,22 @@ struct HashMap : HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K,
 
 	using HashTableExtBase<K, HEC, HashTableDataStorage_SeparateArrays<K, V>>::HashTableExtBase;
 
+	template <class T>
+	UI_FORCEINLINE V GetValueOrDefaultT(const T& key, const V& def = {}) const
+	{
+		auto pos = Base::_FindPosT(key, SIZE_MAX);
+		return pos != SIZE_MAX ? this->_storage.GetValueAt(pos) : def;
+	}
+
+	template <class T>
+	UI_FORCEINLINE const V* GetValuePtrT(const T& key) const { return const_cast<HashMap*>(this)->GetValuePtrT(key); }
+	template <class T>
+	UI_FORCEINLINE V* GetValuePtrT(const T& key)
+	{
+		auto pos = Base::_FindPosT(key, SIZE_MAX);
+		return pos == SIZE_MAX ? nullptr : &this->_storage.GetValueAt(pos);
+	}
+
 	UI_FORCEINLINE V GetValueOrDefault(const K& key, const V& def = {}) const
 	{
 		auto pos = Base::_FindPos(key, SIZE_MAX);

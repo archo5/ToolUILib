@@ -775,7 +775,7 @@ struct ZipFileSource : IFileSource
 	}
 	FileReadResult ReadBinaryFile(StringView path) override
 	{
-		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		auto* zfs = fileMap.GetValuePtrT(path);
 		if (zfs && zfs->dir == false && zfs->id != mz_uint(-1))
 		{
 			mz_zip_archive_file_stat s;
@@ -794,7 +794,7 @@ struct ZipFileSource : IFileSource
 
 	unsigned GetFileAttributes(StringView path) override
 	{
-		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		auto* zfs = fileMap.GetValuePtrT(path);
 		if (zfs)
 		{
 			unsigned attr = FA_Exists;
@@ -823,7 +823,7 @@ struct ZipFileSource : IFileSource
 	};
 	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override
 	{
-		auto* zfs = fileMap.GetValuePtr(to_string(path));
+		auto* zfs = fileMap.GetValuePtrT(path);
 		if (zfs && zfs->dir)
 		{
 			auto ret = AsRCHandle(new DirIter);
