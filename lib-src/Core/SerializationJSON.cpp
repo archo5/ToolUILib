@@ -19,7 +19,7 @@ JSONLinearWriter::JSONLinearWriter()
 	_inArray = { false };
 }
 
-void JSONLinearWriter::WriteString(const char* key, StringView value)
+void JSONLinearWriter::WriteString(StringView key, StringView value)
 {
 	_WritePrefix(key);
 	_data += "\"";
@@ -43,21 +43,21 @@ void JSONLinearWriter::WriteString(const char* key, StringView value)
 	_starts.Last().weight += 9999;
 }
 
-void JSONLinearWriter::WriteNull(const char* key)
+void JSONLinearWriter::WriteNull(StringView key)
 {
 	_WritePrefix(key);
 	_data += "null";
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteBool(const char* key, bool value)
+void JSONLinearWriter::WriteBool(StringView key, bool value)
 {
 	_WritePrefix(key);
 	_data += value ? "true" : "false";
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteInt(const char* key, int64_t value)
+void JSONLinearWriter::WriteInt(StringView key, int64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
@@ -66,7 +66,7 @@ void JSONLinearWriter::WriteInt(const char* key, int64_t value)
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
+void JSONLinearWriter::WriteInt(StringView key, uint64_t value)
 {
 	_WritePrefix(key);
 	char bfr[32];
@@ -75,7 +75,7 @@ void JSONLinearWriter::WriteInt(const char* key, uint64_t value)
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteFloatSingle(const char* key, float value)
+void JSONLinearWriter::WriteFloatSingle(StringView key, float value)
 {
 	_WritePrefix(key);
 	if (!isfinite(value))
@@ -89,7 +89,7 @@ void JSONLinearWriter::WriteFloatSingle(const char* key, float value)
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteFloatDouble(const char* key, double value)
+void JSONLinearWriter::WriteFloatDouble(StringView key, double value)
 {
 	_WritePrefix(key);
 	if (!isfinite(value))
@@ -103,14 +103,14 @@ void JSONLinearWriter::WriteFloatDouble(const char* key, double value)
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::WriteRawNumber(const char* key, StringView value)
+void JSONLinearWriter::WriteRawNumber(StringView key, StringView value)
 {
 	_WritePrefix(key);
 	_data.append(value.data(), value.size());
 	_starts.Last().weight += 6;
 }
 
-void JSONLinearWriter::BeginArray(const char* key)
+void JSONLinearWriter::BeginArray(StringView key)
 {
 	_WritePrefix(key);
 	_starts.Append({ _data.size(), 2U });
@@ -126,7 +126,7 @@ void JSONLinearWriter::EndArray()
 	_OnEndObject();
 }
 
-void JSONLinearWriter::BeginDict(const char* key)
+void JSONLinearWriter::BeginDict(StringView key)
 {
 	_WriteIndent();
 	if (!_inArray.Last())
@@ -171,7 +171,7 @@ void JSONLinearWriter::_WriteIndent(bool skipComma)
 	}
 }
 
-void JSONLinearWriter::_WritePrefix(const char* key)
+void JSONLinearWriter::_WritePrefix(StringView key)
 {
 	_WriteIndent();
 	if (!_inArray.Last())
@@ -179,7 +179,7 @@ void JSONLinearWriter::_WritePrefix(const char* key)
 		_data += "\"";
 		_data += key;
 		_data += indent ? "\": " : "\":";
-		_starts.Last().weight += strlen(key) + 4;
+		_starts.Last().weight += key.Size() + 4;
 	}
 }
 
@@ -247,7 +247,7 @@ size_t JSONLinearReader::GetCurrentArraySize()
 	return 0;
 }
 
-JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
+JSONLinearReader::Entry* JSONLinearReader::FindEntry(StringView key)
 {
 	if (auto*& e = _stack.Last().curElem)
 	{
@@ -255,7 +255,7 @@ JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 		e = e->next;
 		return r;
 	}
-	if (key)
+	if (key.NotEmpty())
 	{
 		if (auto* e = _stack.Last().entry)
 		{
@@ -263,7 +263,7 @@ JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 			{
 				for (auto* c = o->start; c; c = c->next)
 				{
-					if (strcmp(c->name->string, key) == 0)
+					if (c->name->string_size == key.Size() && memcmp(c->name->string, key.Data(), key.Size()) == 0)
 						return c->value;
 				}
 			}
@@ -272,7 +272,7 @@ JSONLinearReader::Entry* JSONLinearReader::FindEntry(const char* key)
 	return nullptr;
 }
 
-Optional<std::string> JSONLinearReader::ReadString(const char* key)
+Optional<std::string> JSONLinearReader::ReadString(StringView key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -288,7 +288,7 @@ Optional<std::string> JSONLinearReader::ReadString(const char* key)
 	return {};
 }
 
-Optional<bool> JSONLinearReader::ReadBool(const char* key)
+Optional<bool> JSONLinearReader::ReadBool(StringView key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -300,17 +300,17 @@ Optional<bool> JSONLinearReader::ReadBool(const char* key)
 	return {};
 }
 
-Optional<int> JSONLinearReader::ReadInt(const char* key)
+Optional<int> JSONLinearReader::ReadInt(StringView key)
 {
 	return ReadInt64(key).StaticCast<int>();
 }
 
-Optional<unsigned> JSONLinearReader::ReadUInt(const char* key)
+Optional<unsigned> JSONLinearReader::ReadUInt(StringView key)
 {
 	return ReadUInt64(key).StaticCast<unsigned>();
 }
 
-Optional<int64_t> JSONLinearReader::ReadInt64(const char* key)
+Optional<int64_t> JSONLinearReader::ReadInt64(StringView key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -322,7 +322,7 @@ Optional<int64_t> JSONLinearReader::ReadInt64(const char* key)
 	return {};
 }
 
-Optional<uint64_t> JSONLinearReader::ReadUInt64(const char* key)
+Optional<uint64_t> JSONLinearReader::ReadUInt64(StringView key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -334,7 +334,7 @@ Optional<uint64_t> JSONLinearReader::ReadUInt64(const char* key)
 	return {};
 }
 
-Optional<double> JSONLinearReader::ReadFloat(const char* key)
+Optional<double> JSONLinearReader::ReadFloat(StringView key)
 {
 	if (auto* e = FindEntry(key))
 	{
@@ -346,7 +346,7 @@ Optional<double> JSONLinearReader::ReadFloat(const char* key)
 	return {};
 }
 
-bool JSONLinearReader::BeginArray(const char* key)
+bool JSONLinearReader::BeginArray(StringView key)
 {
 	auto* e = FindEntry(key);
 	_stack.Append({});
@@ -363,7 +363,7 @@ void JSONLinearReader::EndArray()
 	_stack.RemoveLast();
 }
 
-bool JSONLinearReader::BeginDict(const char* key)
+bool JSONLinearReader::BeginDict(StringView key)
 {
 	_stack.Append({ FindEntry(key) });
 	if (auto* e = _stack.Last().entry)
@@ -390,7 +390,7 @@ void JSONLinearReader::EndEntry()
 
 bool JSONSerializerObjectIterator::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	BeginDict(FI.GetNameOrEmptyStr());
+	BeginDict(FI.name);
 	if (outName)
 		WriteString("__", *outName);
 	return true;
@@ -403,7 +403,7 @@ void JSONSerializerObjectIterator::EndObject()
 
 ArrayFieldState JSONSerializerObjectIterator::BeginArray(size_t size, const FieldInfo& FI)
 {
-	JSONLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
+	JSONLinearWriter::BeginArray(FI.name);
 	return {};
 }
 
@@ -414,50 +414,50 @@ void JSONSerializerObjectIterator::EndArray()
 
 bool JSONSerializerObjectIterator::OnFieldNull(const FieldInfo& FI)
 {
-	WriteNull(FI.GetNameOrEmptyStr());
+	WriteNull(FI.name);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	WriteBool(FI.GetNameOrEmptyStr(), val);
+	WriteBool(FI.name, val);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldS64(const FieldInfo& FI, int64_t& val)
 {
-	WriteInt(FI.GetNameOrEmptyStr(), val);
+	WriteInt(FI.name, val);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldU64(const FieldInfo& FI, uint64_t& val)
 {
-	WriteInt(FI.GetNameOrEmptyStr(), val);
+	WriteInt(FI.name, val);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	WriteFloatSingle(FI.GetNameOrEmptyStr(), val);
+	WriteFloatSingle(FI.name, val);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	WriteFloatDouble(FI.GetNameOrEmptyStr(), val);
+	WriteFloatDouble(FI.name, val);
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	WriteString(FI.name, brw.Read());
 	return true;
 }
 
 bool JSONSerializerObjectIterator::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
 	auto src = brw.Read();
-	WriteString(FI.GetNameOrEmptyStr(), Base16Encode(src.data(), src.size()));
+	WriteString(FI.name, Base16Encode(src.data(), src.size()));
 	return true;
 }
 
@@ -491,7 +491,7 @@ bool JSONUnserializerObjectIterator::HasMoreArrayElements()
 	return JSONLinearReader::HasMoreArrayElements();
 }
 
-bool JSONUnserializerObjectIterator::HasField(const char* name)
+bool JSONUnserializerObjectIterator::HasField(StringView name)
 {
 	return !!FindEntry(name);
 }

@@ -30,26 +30,26 @@ struct JSONLinearWriter
 
 	JSONLinearWriter();
 
-	void WriteString(const char* key, StringView value);
-	void WriteNull(const char* key);
-	void WriteBool(const char* key, bool value);
-	void WriteInt(const char* key, int value) { WriteInt(key, int64_t(value)); }
-	void WriteInt(const char* key, unsigned value) { WriteInt(key, uint64_t(value)); }
-	void WriteInt(const char* key, int64_t value);
-	void WriteInt(const char* key, uint64_t value);
-	void WriteFloatSingle(const char* key, float value);
-	void WriteFloatDouble(const char* key, double value);
-	void WriteRawNumber(const char* key, StringView value);
+	void WriteString(StringView key, StringView value);
+	void WriteNull(StringView key);
+	void WriteBool(StringView key, bool value);
+	void WriteInt(StringView key, int value) { WriteInt(key, int64_t(value)); }
+	void WriteInt(StringView key, unsigned value) { WriteInt(key, uint64_t(value)); }
+	void WriteInt(StringView key, int64_t value);
+	void WriteInt(StringView key, uint64_t value);
+	void WriteFloatSingle(StringView key, float value);
+	void WriteFloatDouble(StringView key, double value);
+	void WriteRawNumber(StringView key, StringView value);
 
-	void BeginArray(const char* key);
+	void BeginArray(StringView key);
 	void EndArray();
-	void BeginDict(const char* key);
+	void BeginDict(StringView key);
 	void EndDict();
 
 	std::string& GetData();
 
 	void _WriteIndent(bool skipComma = false);
-	void _WritePrefix(const char* key);
+	void _WritePrefix(StringView key);
 	void _OnEndObject();
 };
 
@@ -107,17 +107,17 @@ struct JSONLinearReader
 
 	bool HasMoreArrayElements();
 	size_t GetCurrentArraySize();
-	Entry* FindEntry(const char* key);
-	Optional<std::string> ReadString(const char* key);
-	Optional<bool> ReadBool(const char* key);
-	Optional<int> ReadInt(const char* key);
-	Optional<unsigned> ReadUInt(const char* key);
-	Optional<int64_t> ReadInt64(const char* key);
-	Optional<uint64_t> ReadUInt64(const char* key);
-	Optional<double> ReadFloat(const char* key);
-	bool BeginArray(const char* key);
+	Entry* FindEntry(StringView key);
+	Optional<std::string> ReadString(StringView key);
+	Optional<bool> ReadBool(StringView key);
+	Optional<int> ReadInt(StringView key);
+	Optional<unsigned> ReadUInt(StringView key);
+	Optional<int64_t> ReadInt64(StringView key);
+	Optional<uint64_t> ReadUInt64(StringView key);
+	Optional<double> ReadFloat(StringView key);
+	bool BeginArray(StringView key);
 	void EndArray();
-	bool BeginDict(const char* key);
+	bool BeginDict(StringView key);
 	void EndDict();
 	void BeginEntry(Entry* E);
 	void EndEntry();
@@ -151,7 +151,7 @@ struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinType
 	ArrayFieldState BeginArray(size_t size, const FieldInfo& FI) override;
 	void EndArray() override;
 	bool HasMoreArrayElements() override;
-	bool HasField(const char* name) override;
+	bool HasField(StringView name) override;
 
 	bool OnFieldNull(const FieldInfo& FI) override;
 	bool OnFieldBool(const FieldInfo& FI, bool& val) override;

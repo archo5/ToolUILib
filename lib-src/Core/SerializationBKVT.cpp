@@ -12,21 +12,19 @@ static To BitCast(From v)
 	return ret;
 }
 
-u32 BKVTLinearWriter::_AppendKey(const char* key)
+u32 BKVTLinearWriter::_AppendKey(StringView key)
 {
-	if (!key)
-		key = "";
-	u8 len = u8(min(strlen(key), size_t(255)));
+	u8 len = u8(min(key.Size(), size_t(255)));
 
 	if (skipDuplicateKeys)
 	{
-		KeyStringRef ref = { &key, 0, len };
+		KeyStringRef ref = { &key._data, 0, len };
 		if (auto* poff = _writtenKeys.GetValuePtr(ref))
 			return *poff;
 
 		u32 ret = _data.Size() - 4;
 		_data.Append(len);
-		_data.AppendMany(key, len);
+		_data.AppendMany(key.Data(), len);
 		_data.Append(0);
 
 		KeyStringRef wkey = { &_data._data, ret + 5, len };
@@ -38,7 +36,7 @@ u32 BKVTLinearWriter::_AppendKey(const char* key)
 	{
 		u32 ret = _data.Size() - 4;
 		_data.Append(len);
-		_data.AppendMany(key, len);
+		_data.AppendMany(key.Data(), len);
 		_data.Append(0);
 		return ret;
 	}
@@ -59,48 +57,48 @@ u32 BKVTLinearWriter::_AppendArray(size_t num, size_t nbytes, const void* data)
 	return spos;
 }
 
-void BKVTLinearWriter::_WriteElem(const char* key, BKVT_Type type, u32 val)
+void BKVTLinearWriter::_WriteElem(StringView key, BKVT_Type type, u32 val)
 {
 	auto& S = _stack.Last();
 	S.entries.Append({ u8(type), S.hasKeys ? _AppendKey(key) : 0, val });
 }
 
-void BKVTLinearWriter::WriteNull(const char* key)
+void BKVTLinearWriter::WriteNull(StringView key)
 {
 	_WriteElem(key, BKVT_Type::Null, 0);
 }
 
-void BKVTLinearWriter::WriteInt32(const char* key, i32 v)
+void BKVTLinearWriter::WriteInt32(StringView key, i32 v)
 {
 	_WriteElem(key, BKVT_Type::S32, v);
 }
 
-void BKVTLinearWriter::WriteUInt32(const char* key, u32 v)
+void BKVTLinearWriter::WriteUInt32(StringView key, u32 v)
 {
 	_WriteElem(key, BKVT_Type::U32, v);
 }
 
-void BKVTLinearWriter::WriteFloat32(const char* key, float v)
+void BKVTLinearWriter::WriteFloat32(StringView key, float v)
 {
 	_WriteElem(key, BKVT_Type::F32, BitCast<u32>(v));
 }
 
-void BKVTLinearWriter::WriteInt64(const char* key, i64 v)
+void BKVTLinearWriter::WriteInt64(StringView key, i64 v)
 {
 	_WriteElem(key, BKVT_Type::S64, _AppendMem(&v, sizeof(v)));
 }
 
-void BKVTLinearWriter::WriteUInt64(const char* key, u64 v)
+void BKVTLinearWriter::WriteUInt64(StringView key, u64 v)
 {
 	_WriteElem(key, BKVT_Type::U64, _AppendMem(&v, sizeof(v)));
 }
 
-void BKVTLinearWriter::WriteFloat64(const char* key, double v)
+void BKVTLinearWriter::WriteFloat64(StringView key, double v)
 {
 	_WriteElem(key, BKVT_Type::F64, _AppendMem(&v, sizeof(v)));
 }
 
-void BKVTLinearWriter::WriteString(const char* key, StringView s)
+void BKVTLinearWriter::WriteString(StringView key, StringView s)
 {
 	u32 slen = s.Size();
 	u32 spos = _AppendMem(&slen, sizeof(slen));
@@ -109,7 +107,7 @@ void BKVTLinearWriter::WriteString(const char* key, StringView s)
 	_WriteElem(key, BKVT_Type::String, spos);
 }
 
-void BKVTLinearWriter::WriteBytes(const char* key, StringView ba)
+void BKVTLinearWriter::WriteBytes(StringView key, StringView ba)
 {
 	u32 slen = ba.Size();
 	u32 spos = _AppendMem(&slen, sizeof(slen));
@@ -117,52 +115,52 @@ void BKVTLinearWriter::WriteBytes(const char* key, StringView ba)
 	_WriteElem(key, BKVT_Type::ByteArray, spos);
 }
 
-void BKVTLinearWriter::WriteTypedArrayInt8(const char* key, ArrayView<i8> v)
+void BKVTLinearWriter::WriteTypedArrayInt8(StringView key, ArrayView<i8> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayS8, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayUInt8(const char* key, ArrayView<u8> v)
+void BKVTLinearWriter::WriteTypedArrayUInt8(StringView key, ArrayView<u8> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayU8, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayInt16(const char* key, ArrayView<i16> v)
+void BKVTLinearWriter::WriteTypedArrayInt16(StringView key, ArrayView<i16> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayS16, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayUInt16(const char* key, ArrayView<u16> v)
+void BKVTLinearWriter::WriteTypedArrayUInt16(StringView key, ArrayView<u16> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayU16, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayInt32(const char* key, ArrayView<i32> v)
+void BKVTLinearWriter::WriteTypedArrayInt32(StringView key, ArrayView<i32> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayS32, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayUInt32(const char* key, ArrayView<u32> v)
+void BKVTLinearWriter::WriteTypedArrayUInt32(StringView key, ArrayView<u32> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayU32, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayInt64(const char* key, ArrayView<i64> v)
+void BKVTLinearWriter::WriteTypedArrayInt64(StringView key, ArrayView<i64> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayS64, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayUInt64(const char* key, ArrayView<u64> v)
+void BKVTLinearWriter::WriteTypedArrayUInt64(StringView key, ArrayView<u64> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayU64, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayFloat32(const char* key, ArrayView<float> v)
+void BKVTLinearWriter::WriteTypedArrayFloat32(StringView key, ArrayView<float> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayF32, _AppendTypedArray(v));
 }
 
-void BKVTLinearWriter::WriteTypedArrayFloat64(const char* key, ArrayView<double> v)
+void BKVTLinearWriter::WriteTypedArrayFloat64(StringView key, ArrayView<double> v)
 {
 	_WriteElem(key, BKVT_Type::TypedArrayF64, _AppendTypedArray(v));
 }
@@ -184,7 +182,7 @@ u32 BKVTLinearWriter::_WriteAndRemoveTopObject()
 	return pos;
 }
 
-void BKVTLinearWriter::BeginObject(const char* key)
+void BKVTLinearWriter::BeginObject(StringView key)
 {
 	_WriteElem(key, BKVT_Type::Object, 0); // value to be filled in later
 	_stack.Append({});
@@ -197,7 +195,7 @@ void BKVTLinearWriter::EndObject()
 	_stack.Last().entries.Last().value = pos;
 }
 
-void BKVTLinearWriter::BeginArray(const char* key)
+void BKVTLinearWriter::BeginArray(StringView key)
 {
 	_WriteElem(key, BKVT_Type::Array, 0); // value to be filled in later
 	_stack.Append({});
@@ -281,7 +279,7 @@ size_t BKVTLinearReader::GetCurrentArraySize()
 	return _ReadU32(_stack.Last().entry.pos);
 }
 
-BKVTLinearReader::EntryRef BKVTLinearReader::FindEntry(const char* key)
+BKVTLinearReader::EntryRef BKVTLinearReader::FindEntry(StringView key)
 {
 	if (_stack.IsEmpty())
 		return { 0, BKVT_Type::NotFound };
@@ -303,14 +301,12 @@ BKVTLinearReader::EntryRef BKVTLinearReader::FindEntry(const char* key)
 	}
 	else if (S.entry.type == BKVT_Type::Object)
 	{
-		//StringView svkey = key;
 		u32 pos = S.entry.pos;
 		u32 num = _ReadU16(pos);
 		pos += 2;
 		for (u32 i = 0; i < num; i++)
 		{
-			//if (_GetKeyString(_ReadU32(pos + i * 4)) == svkey)
-			if (strcmp(_GetKeyString(_ReadU32(pos + i * 4)).Data(), key) == 0) // slightly faster than the other option
+			if (_GetKeyString(_ReadU32(pos + i * 4)) == key)
 			{
 				EntryRef e;
 				{
@@ -324,7 +320,7 @@ BKVTLinearReader::EntryRef BKVTLinearReader::FindEntry(const char* key)
 	return { 0, BKVT_Type::NotFound };
 }
 
-Optional<i32> BKVTLinearReader::ReadInt32(const char* key)
+Optional<i32> BKVTLinearReader::ReadInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32 || e.type == BKVT_Type::U32)
@@ -340,7 +336,7 @@ Optional<i32> BKVTLinearReader::ReadInt32(const char* key)
 	return {};
 }
 
-Optional<u32> BKVTLinearReader::ReadUInt32(const char* key)
+Optional<u32> BKVTLinearReader::ReadUInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32 || e.type == BKVT_Type::U32)
@@ -354,7 +350,7 @@ Optional<u32> BKVTLinearReader::ReadUInt32(const char* key)
 	return {};
 }
 
-Optional<i64> BKVTLinearReader::ReadInt64(const char* key)
+Optional<i64> BKVTLinearReader::ReadInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32)
@@ -370,7 +366,7 @@ Optional<i64> BKVTLinearReader::ReadInt64(const char* key)
 	return {};
 }
 
-Optional<u64> BKVTLinearReader::ReadUInt64(const char* key)
+Optional<u64> BKVTLinearReader::ReadUInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32)
@@ -386,7 +382,7 @@ Optional<u64> BKVTLinearReader::ReadUInt64(const char* key)
 	return {};
 }
 
-Optional<float> BKVTLinearReader::ReadFloat32(const char* key)
+Optional<float> BKVTLinearReader::ReadFloat32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32)
@@ -404,7 +400,7 @@ Optional<float> BKVTLinearReader::ReadFloat32(const char* key)
 	return {};
 }
 
-Optional<double> BKVTLinearReader::ReadFloat64(const char* key)
+Optional<double> BKVTLinearReader::ReadFloat64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::S32)
@@ -422,7 +418,7 @@ Optional<double> BKVTLinearReader::ReadFloat64(const char* key)
 	return {};
 }
 
-Optional<StringView> BKVTLinearReader::ReadString(const char* key)
+Optional<StringView> BKVTLinearReader::ReadString(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::String)
@@ -430,7 +426,7 @@ Optional<StringView> BKVTLinearReader::ReadString(const char* key)
 	return {};
 }
 
-Optional<StringView> BKVTLinearReader::ReadBytes(const char* key)
+Optional<StringView> BKVTLinearReader::ReadBytes(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::ByteArray)
@@ -438,7 +434,7 @@ Optional<StringView> BKVTLinearReader::ReadBytes(const char* key)
 	return {};
 }
 
-Optional<ArrayView<i8>> BKVTLinearReader::ReadTypedArrayInt8(const char* key)
+Optional<ArrayView<i8>> BKVTLinearReader::ReadTypedArrayInt8(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayS8)
@@ -446,7 +442,7 @@ Optional<ArrayView<i8>> BKVTLinearReader::ReadTypedArrayInt8(const char* key)
 	return {};
 }
 
-Optional<ArrayView<u8>> BKVTLinearReader::ReadTypedArrayUInt8(const char* key)
+Optional<ArrayView<u8>> BKVTLinearReader::ReadTypedArrayUInt8(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayU8)
@@ -454,7 +450,7 @@ Optional<ArrayView<u8>> BKVTLinearReader::ReadTypedArrayUInt8(const char* key)
 	return {};
 }
 
-Optional<ArrayView<i16>> BKVTLinearReader::ReadTypedArrayInt16(const char* key)
+Optional<ArrayView<i16>> BKVTLinearReader::ReadTypedArrayInt16(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayS16)
@@ -462,7 +458,7 @@ Optional<ArrayView<i16>> BKVTLinearReader::ReadTypedArrayInt16(const char* key)
 	return {};
 }
 
-Optional<ArrayView<u16>> BKVTLinearReader::ReadTypedArrayUInt16(const char* key)
+Optional<ArrayView<u16>> BKVTLinearReader::ReadTypedArrayUInt16(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayU16)
@@ -470,7 +466,7 @@ Optional<ArrayView<u16>> BKVTLinearReader::ReadTypedArrayUInt16(const char* key)
 	return {};
 }
 
-Optional<ArrayView<i32>> BKVTLinearReader::ReadTypedArrayInt32(const char* key)
+Optional<ArrayView<i32>> BKVTLinearReader::ReadTypedArrayInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayS32)
@@ -478,7 +474,7 @@ Optional<ArrayView<i32>> BKVTLinearReader::ReadTypedArrayInt32(const char* key)
 	return {};
 }
 
-Optional<ArrayView<u32>> BKVTLinearReader::ReadTypedArrayUInt32(const char* key)
+Optional<ArrayView<u32>> BKVTLinearReader::ReadTypedArrayUInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayU32)
@@ -486,7 +482,7 @@ Optional<ArrayView<u32>> BKVTLinearReader::ReadTypedArrayUInt32(const char* key)
 	return {};
 }
 
-Optional<ArrayView<i64>> BKVTLinearReader::ReadTypedArrayInt64(const char* key)
+Optional<ArrayView<i64>> BKVTLinearReader::ReadTypedArrayInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayS64)
@@ -494,7 +490,7 @@ Optional<ArrayView<i64>> BKVTLinearReader::ReadTypedArrayInt64(const char* key)
 	return {};
 }
 
-Optional<ArrayView<u64>> BKVTLinearReader::ReadTypedArrayUInt64(const char* key)
+Optional<ArrayView<u64>> BKVTLinearReader::ReadTypedArrayUInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayU64)
@@ -502,7 +498,7 @@ Optional<ArrayView<u64>> BKVTLinearReader::ReadTypedArrayUInt64(const char* key)
 	return {};
 }
 
-Optional<ArrayView<float>> BKVTLinearReader::ReadTypedArrayFloat32(const char* key)
+Optional<ArrayView<float>> BKVTLinearReader::ReadTypedArrayFloat32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayF32)
@@ -510,7 +506,7 @@ Optional<ArrayView<float>> BKVTLinearReader::ReadTypedArrayFloat32(const char* k
 	return {};
 }
 
-Optional<ArrayView<double>> BKVTLinearReader::ReadTypedArrayFloat64(const char* key)
+Optional<ArrayView<double>> BKVTLinearReader::ReadTypedArrayFloat64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.type == BKVT_Type::TypedArrayF64)
@@ -518,7 +514,7 @@ Optional<ArrayView<double>> BKVTLinearReader::ReadTypedArrayFloat64(const char* 
 	return {};
 }
 
-bool BKVTLinearReader::BeginArray(const char* key)
+bool BKVTLinearReader::BeginArray(StringView key)
 {
 	auto e = FindEntry(key);
 	_stack.Append({ e, 0 });
@@ -530,7 +526,7 @@ void BKVTLinearReader::EndArray()
 	_stack.RemoveLast();
 }
 
-bool BKVTLinearReader::BeginObject(const char* key)
+bool BKVTLinearReader::BeginObject(StringView key)
 {
 	auto e = FindEntry(key);
 	_stack.Append({ e, 0 });
@@ -594,7 +590,7 @@ StringView BKVTLinearReader::_GetString(u32 pos)
 
 bool BKVTSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	BKVTLinearWriter::BeginObject(FI.GetNameOrEmptyStr());
+	BKVTLinearWriter::BeginObject(FI.name);
 	if (outName)
 		WriteString("__", *outName);
 	return true;
@@ -607,7 +603,7 @@ void BKVTSerializer::EndObject()
 
 ArrayFieldState BKVTSerializer::BeginArray(size_t size, const FieldInfo& FI)
 {
-	BKVTLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
+	BKVTLinearWriter::BeginArray(FI.name);
 	return {};
 }
 
@@ -618,104 +614,104 @@ void BKVTSerializer::EndArray()
 
 bool BKVTSerializer::OnFieldNull(const FieldInfo& FI)
 {
-	WriteNull(FI.GetNameOrEmptyStr());
+	WriteNull(FI.name);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	WriteInt64(FI.GetNameOrEmptyStr(), val);
+	WriteInt64(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	WriteUInt64(FI.GetNameOrEmptyStr(), val);
+	WriteUInt64(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	WriteFloat32(FI.GetNameOrEmptyStr(), val);
+	WriteFloat32(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	WriteFloat64(FI.GetNameOrEmptyStr(), val);
+	WriteFloat64(FI.name, val);
 	return true;
 }
 
 bool BKVTSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	WriteString(FI.name, brw.Read());
 	return true;
 }
 
 bool BKVTSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
-	WriteBytes(FI.GetNameOrEmptyStr(), brw.Read());
+	WriteBytes(FI.name, brw.Read());
 	return true;
 }
 
 bool BKVTSerializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 {
-	WriteTypedArrayInt32(FI.GetNameOrEmptyStr(), { arr, count });
+	WriteTypedArrayInt32(FI.name, { arr, count });
 	return true;
 }
 
 bool BKVTSerializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 {
-	WriteTypedArrayFloat32(FI.GetNameOrEmptyStr(), { arr, count });
+	WriteTypedArrayFloat32(FI.name, { arr, count });
 	return true;
 }
 
 
 bool BKVTUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	bool ret = BKVTLinearReader::BeginObject(FI.GetNameOrEmptyStr());
+	bool ret = BKVTLinearReader::BeginObject(FI.name);
 	if (outName)
 	{
 		if (auto s = ReadString("__"))
@@ -731,7 +727,7 @@ void BKVTUnserializer::EndObject()
 
 ArrayFieldState BKVTUnserializer::BeginArray(size_t size, const FieldInfo& FI)
 {
-	bool exists = BKVTLinearReader::BeginArray(FI.GetNameOrEmptyStr());
+	bool exists = BKVTLinearReader::BeginArray(FI.name);
 	return { exists, GetCurrentArraySize() };
 }
 
@@ -745,98 +741,98 @@ bool BKVTUnserializer::HasMoreArrayElements()
 	return BKVTLinearReader::HasMoreArrayElements();
 }
 
-bool BKVTUnserializer::HasField(const char* name)
+bool BKVTUnserializer::HasField(StringView name)
 {
 	return FindEntry(name).type != BKVT_Type::NotFound;
 }
 
 bool BKVTUnserializer::OnFieldNull(const FieldInfo& FI)
 {
-	auto e = FindEntry(FI.GetNameOrEmptyStr());
+	auto e = FindEntry(FI.name);
 	return e.type == BKVT_Type::Null;
 }
 
 bool BKVTUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = v.GetValue() != 0, true : false;
 }
 
 bool BKVTUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = i8(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = u8(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = i16(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = u16(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	auto v = ReadInt64(FI.GetNameOrEmptyStr());
+	auto v = ReadInt64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	auto v = ReadUInt64(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	auto v = ReadFloat32(FI.GetNameOrEmptyStr());
+	auto v = ReadFloat32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	auto v = ReadFloat64(FI.GetNameOrEmptyStr());
+	auto v = ReadFloat64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool BKVTUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	auto v = ReadString(FI.GetNameOrEmptyStr());
+	auto v = ReadString(FI.name);
 	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
-	auto v = ReadBytes(FI.GetNameOrEmptyStr());
+	auto v = ReadBytes(FI.name);
 	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool BKVTUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 {
-	if (auto v = ReadTypedArrayInt32(FI.GetNameOrEmptyStr()))
+	if (auto v = ReadTypedArrayInt32(FI.name))
 	{
 		ImplManyCopy(count, arr, v.GetValue());
 		return true;
@@ -846,7 +842,7 @@ bool BKVTUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 
 bool BKVTUnserializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 {
-	if (auto v = ReadTypedArrayFloat32(FI.GetNameOrEmptyStr()))
+	if (auto v = ReadTypedArrayFloat32(FI.name))
 	{
 		ImplManyCopy(count, arr, v.GetValue());
 		return true;

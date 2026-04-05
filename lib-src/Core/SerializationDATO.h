@@ -32,35 +32,35 @@ struct DATOLinearWriter
 
 	DATOLinearWriter(StringView prefix = "DATO", bool aligned = true, bool sortKeys = true, bool skipDuplicateKeys = true);
 
-	void _AppendElem(const char* key, dato::ValueRef vref);
+	void _AppendElem(StringView key, dato::ValueRef vref);
 
-	void WriteNull(const char* key) { _AppendElem(key, _writer.WriteNull()); }
-	void WriteBool(const char* key, bool v) { _AppendElem(key, _writer.WriteBool(v)); }
-	void WriteInt32(const char* key, i32 v) { _AppendElem(key, _writer.WriteS32(v)); }
-	void WriteUInt32(const char* key, u32 v) { _AppendElem(key, _writer.WriteU32(v)); }
-	void WriteFloat32(const char* key, float v) { _AppendElem(key, _writer.WriteF32(v)); }
-	void WriteInt64(const char* key, i64 v) { _AppendElem(key, _writer.WriteS64(v)); }
-	void WriteUInt64(const char* key, u64 v) { _AppendElem(key, _writer.WriteU64(v)); }
-	void WriteFloat64(const char* key, double v) { _AppendElem(key, _writer.WriteF64(v)); }
+	void WriteNull(StringView key) { _AppendElem(key, _writer.WriteNull()); }
+	void WriteBool(StringView key, bool v) { _AppendElem(key, _writer.WriteBool(v)); }
+	void WriteInt32(StringView key, i32 v) { _AppendElem(key, _writer.WriteS32(v)); }
+	void WriteUInt32(StringView key, u32 v) { _AppendElem(key, _writer.WriteU32(v)); }
+	void WriteFloat32(StringView key, float v) { _AppendElem(key, _writer.WriteF32(v)); }
+	void WriteInt64(StringView key, i64 v) { _AppendElem(key, _writer.WriteS64(v)); }
+	void WriteUInt64(StringView key, u64 v) { _AppendElem(key, _writer.WriteU64(v)); }
+	void WriteFloat64(StringView key, double v) { _AppendElem(key, _writer.WriteF64(v)); }
 
-	void WriteString(const char* key, StringView s) { _AppendElem(key, _writer.WriteString8(s.Data(), s.Size())); }
-	void WriteBytes(const char* key, StringView ba) { _AppendElem(key, _writer.WriteByteArray(ba.Data(), ba.Size())); }
+	void WriteString(StringView key, StringView s) { _AppendElem(key, _writer.WriteString8(s.Data(), s.Size())); }
+	void WriteBytes(StringView key, StringView ba) { _AppendElem(key, _writer.WriteByteArray(ba.Data(), ba.Size())); }
 
-	void WriteVectorInt8(const char* key, u8 num, const i8* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorUInt8(const char* key, u8 num, const u8* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorInt16(const char* key, u8 num, const i16* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorUInt16(const char* key, u8 num, const u16* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorInt32(const char* key, u8 num, const i32* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorUInt32(const char* key, u8 num, const u32* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorInt64(const char* key, u8 num, const i64* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorUInt64(const char* key, u8 num, const u64* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorFloat32(const char* key, u8 num, const float* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
-	void WriteVectorFloat64(const char* key, u8 num, const double* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorInt8(StringView key, u8 num, const i8* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorUInt8(StringView key, u8 num, const u8* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorInt16(StringView key, u8 num, const i16* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorUInt16(StringView key, u8 num, const u16* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorInt32(StringView key, u8 num, const i32* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorUInt32(StringView key, u8 num, const u32* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorInt64(StringView key, u8 num, const i64* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorUInt64(StringView key, u8 num, const u64* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorFloat32(StringView key, u8 num, const float* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
+	void WriteVectorFloat64(StringView key, u8 num, const double* v) { _AppendElem(key, _writer.WriteVectorT(v, num)); }
 
 	dato::ValueRef _WriteAndRemoveTopObject();
-	void BeginObject(const char* key);
+	void BeginObject(StringView key);
 	void EndObject();
-	void BeginArray(const char* key);
+	void BeginArray(StringView key);
 	void EndArray();
 
 	StringView GetData();
@@ -83,32 +83,32 @@ struct DATOLinearReader
 
 	bool HasMoreArrayElements();
 	size_t GetCurrentArraySize();
-	dato::Reader::DynamicAccessor FindEntry(const char* key);
+	dato::Reader::DynamicAccessor FindEntry(StringView key);
 
-	Optional<i32> ReadInt32(const char* key);
-	Optional<u32> ReadUInt32(const char* key);
-	Optional<i64> ReadInt64(const char* key);
-	Optional<u64> ReadUInt64(const char* key);
-	Optional<float> ReadFloat32(const char* key);
-	Optional<double> ReadFloat64(const char* key);
+	Optional<i32> ReadInt32(StringView key);
+	Optional<u32> ReadUInt32(StringView key);
+	Optional<i64> ReadInt64(StringView key);
+	Optional<u64> ReadUInt64(StringView key);
+	Optional<float> ReadFloat32(StringView key);
+	Optional<double> ReadFloat64(StringView key);
 
-	Optional<StringView> ReadString(const char* key);
-	Optional<StringView> ReadBytes(const char* key);
+	Optional<StringView> ReadString(StringView key);
+	Optional<StringView> ReadBytes(StringView key);
 
-	Optional<ArrayView<i8>> ReadVectorInt8(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<u8>> ReadVectorUInt8(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<i16>> ReadVectorInt16(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<u16>> ReadVectorUInt16(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<i32>> ReadVectorInt32(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<u32>> ReadVectorUInt32(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<i64>> ReadVectorInt64(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<u64>> ReadVectorUInt64(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<float>> ReadVectorFloat32(const char* key, u8 expectedElemCount);
-	Optional<ArrayView<double>> ReadVectorFloat64(const char* key, u8 expectedElemCount);
+	Optional<ArrayView<i8>> ReadVectorInt8(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<u8>> ReadVectorUInt8(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<i16>> ReadVectorInt16(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<u16>> ReadVectorUInt16(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<i32>> ReadVectorInt32(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<u32>> ReadVectorUInt32(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<i64>> ReadVectorInt64(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<u64>> ReadVectorUInt64(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<float>> ReadVectorFloat32(StringView key, u8 expectedElemCount);
+	Optional<ArrayView<double>> ReadVectorFloat64(StringView key, u8 expectedElemCount);
 
-	bool BeginArray(const char* key);
+	bool BeginArray(StringView key);
 	void EndArray();
-	bool BeginObject(const char* key);
+	bool BeginObject(StringView key);
 	void EndObject();
 	void BeginEntry(const dato::Reader::DynamicAccessor& E);
 	void EndEntry();
@@ -156,7 +156,7 @@ struct DATOUnserializer : DATOLinearReader, IObjectIterator
 	void EndArray() override;
 
 	bool HasMoreArrayElements() override;
-	bool HasField(const char* name) override;
+	bool HasField(StringView name) override;
 
 	bool OnFieldNull(const FieldInfo& FI) override;
 	bool OnFieldBool(const FieldInfo& FI, bool& val) override;

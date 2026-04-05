@@ -31,56 +31,56 @@ void OnFieldBorderBox(IObjectIterator& oi, const FieldInfo& FI, AABB2f& bbox)
 	if (!oi.IsUnserializer())
 		return;
 
-	std::string name = FI.name;
+	std::string name = FI.name.str();
 	FieldInfo FIcopy = FI;
 
 	float val = 0;
 	OnField(oi, FIcopy, val);
 	bbox = AABB2f::UniformBorder(val);
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "H";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))
 		bbox.x0 = bbox.x1 = val;
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "V";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))
 		bbox.y0 = bbox.y1 = val;
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "Left";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))
 		bbox.x0 = val;
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "Right";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))
 		bbox.x1 = val;
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "Top";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))
 		bbox.y0 = val;
 
-	name = FI.name;
+	name <<= FI.name;
 	name += "Bottom";
-	FIcopy.name = name.c_str();
+	FIcopy.name = name;
 	val = NAN;
 	OnField(oi, FIcopy, val);
 	if (isfinite(val))

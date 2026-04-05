@@ -123,41 +123,41 @@ struct BKVTLinearWriter
 
 	bool skipDuplicateKeys = true;
 
-	u32 _AppendKey(const char* key);
+	u32 _AppendKey(StringView key);
 	u32 _AppendMem(const void* mem, size_t size);
 	u32 _AppendArray(size_t num, size_t nbytes, const void* data);
 	template <class R> UI_FORCEINLINE u32 _AppendTypedArray(const R& r)
 	{
 		return _AppendArray(r.Size(), r.SizeInBytes(), r.Data());
 	}
-	void _WriteElem(const char* key, BKVT_Type type, u32 val);
+	void _WriteElem(StringView key, BKVT_Type type, u32 val);
 
-	void WriteNull(const char* key);
-	void WriteInt32(const char* key, i32 v);
-	void WriteUInt32(const char* key, u32 v);
-	void WriteFloat32(const char* key, float v);
-	void WriteInt64(const char* key, i64 v);
-	void WriteUInt64(const char* key, u64 v);
-	void WriteFloat64(const char* key, double v);
+	void WriteNull(StringView key);
+	void WriteInt32(StringView key, i32 v);
+	void WriteUInt32(StringView key, u32 v);
+	void WriteFloat32(StringView key, float v);
+	void WriteInt64(StringView key, i64 v);
+	void WriteUInt64(StringView key, u64 v);
+	void WriteFloat64(StringView key, double v);
 
-	void WriteString(const char* key, StringView s);
-	void WriteBytes(const char* key, StringView ba);
+	void WriteString(StringView key, StringView s);
+	void WriteBytes(StringView key, StringView ba);
 
-	void WriteTypedArrayInt8(const char* key, ArrayView<i8> v);
-	void WriteTypedArrayUInt8(const char* key, ArrayView<u8> v);
-	void WriteTypedArrayInt16(const char* key, ArrayView<i16> v);
-	void WriteTypedArrayUInt16(const char* key, ArrayView<u16> v);
-	void WriteTypedArrayInt32(const char* key, ArrayView<i32> v);
-	void WriteTypedArrayUInt32(const char* key, ArrayView<u32> v);
-	void WriteTypedArrayInt64(const char* key, ArrayView<i64> v);
-	void WriteTypedArrayUInt64(const char* key, ArrayView<u64> v);
-	void WriteTypedArrayFloat32(const char* key, ArrayView<float> v);
-	void WriteTypedArrayFloat64(const char* key, ArrayView<double> v);
+	void WriteTypedArrayInt8(StringView key, ArrayView<i8> v);
+	void WriteTypedArrayUInt8(StringView key, ArrayView<u8> v);
+	void WriteTypedArrayInt16(StringView key, ArrayView<i16> v);
+	void WriteTypedArrayUInt16(StringView key, ArrayView<u16> v);
+	void WriteTypedArrayInt32(StringView key, ArrayView<i32> v);
+	void WriteTypedArrayUInt32(StringView key, ArrayView<u32> v);
+	void WriteTypedArrayInt64(StringView key, ArrayView<i64> v);
+	void WriteTypedArrayUInt64(StringView key, ArrayView<u64> v);
+	void WriteTypedArrayFloat32(StringView key, ArrayView<float> v);
+	void WriteTypedArrayFloat64(StringView key, ArrayView<double> v);
 
 	u32 _WriteAndRemoveTopObject();
-	void BeginObject(const char* key);
+	void BeginObject(StringView key);
 	void EndObject();
-	void BeginArray(const char* key);
+	void BeginArray(StringView key);
 	void EndArray();
 
 	StringView GetData(bool withPrefix);
@@ -181,32 +181,32 @@ struct BKVTLinearReader
 
 	bool HasMoreArrayElements();
 	size_t GetCurrentArraySize();
-	EntryRef FindEntry(const char* key);
+	EntryRef FindEntry(StringView key);
 
-	Optional<i32> ReadInt32(const char* key);
-	Optional<u32> ReadUInt32(const char* key);
-	Optional<i64> ReadInt64(const char* key);
-	Optional<u64> ReadUInt64(const char* key);
-	Optional<float> ReadFloat32(const char* key);
-	Optional<double> ReadFloat64(const char* key);
+	Optional<i32> ReadInt32(StringView key);
+	Optional<u32> ReadUInt32(StringView key);
+	Optional<i64> ReadInt64(StringView key);
+	Optional<u64> ReadUInt64(StringView key);
+	Optional<float> ReadFloat32(StringView key);
+	Optional<double> ReadFloat64(StringView key);
 
-	Optional<StringView> ReadString(const char* key);
-	Optional<StringView> ReadBytes(const char* key);
+	Optional<StringView> ReadString(StringView key);
+	Optional<StringView> ReadBytes(StringView key);
 
-	Optional<ArrayView<i8>> ReadTypedArrayInt8(const char* key);
-	Optional<ArrayView<u8>> ReadTypedArrayUInt8(const char* key);
-	Optional<ArrayView<i16>> ReadTypedArrayInt16(const char* key);
-	Optional<ArrayView<u16>> ReadTypedArrayUInt16(const char* key);
-	Optional<ArrayView<i32>> ReadTypedArrayInt32(const char* key);
-	Optional<ArrayView<u32>> ReadTypedArrayUInt32(const char* key);
-	Optional<ArrayView<i64>> ReadTypedArrayInt64(const char* key);
-	Optional<ArrayView<u64>> ReadTypedArrayUInt64(const char* key);
-	Optional<ArrayView<float>> ReadTypedArrayFloat32(const char* key);
-	Optional<ArrayView<double>> ReadTypedArrayFloat64(const char* key);
+	Optional<ArrayView<i8>> ReadTypedArrayInt8(StringView key);
+	Optional<ArrayView<u8>> ReadTypedArrayUInt8(StringView key);
+	Optional<ArrayView<i16>> ReadTypedArrayInt16(StringView key);
+	Optional<ArrayView<u16>> ReadTypedArrayUInt16(StringView key);
+	Optional<ArrayView<i32>> ReadTypedArrayInt32(StringView key);
+	Optional<ArrayView<u32>> ReadTypedArrayUInt32(StringView key);
+	Optional<ArrayView<i64>> ReadTypedArrayInt64(StringView key);
+	Optional<ArrayView<u64>> ReadTypedArrayUInt64(StringView key);
+	Optional<ArrayView<float>> ReadTypedArrayFloat32(StringView key);
+	Optional<ArrayView<double>> ReadTypedArrayFloat64(StringView key);
 
-	bool BeginArray(const char* key);
+	bool BeginArray(StringView key);
 	void EndArray();
-	bool BeginObject(const char* key);
+	bool BeginObject(StringView key);
 	void EndObject();
 	void BeginEntry(EntryRef E);
 	void EndEntry();
@@ -268,7 +268,7 @@ struct BKVTUnserializer : BKVTLinearReader, IObjectIterator
 	void EndArray() override;
 
 	bool HasMoreArrayElements() override;
-	bool HasField(const char* name) override;
+	bool HasField(StringView name) override;
 
 	bool OnFieldNull(const FieldInfo& FI) override;
 	bool OnFieldBool(const FieldInfo& FI, bool& val) override;

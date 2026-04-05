@@ -152,7 +152,7 @@ inline void OnFieldArrayValIndex(IObjectIterator& oi, const FieldInfo& FI, T& pt
 	OnField(oi, FI, idx);
 	if (oi.IsUnserializer())
 	{
-		if (!oi.HasField(FI.GetNameOrEmptyStr()))
+		if (!oi.HasField(FI.name))
 			idx = -1;
 		ptr = idx >= 0 && idx < int32_t(cont.size()) ? transform(cont[idx]) : nullptr;
 	}

@@ -15,14 +15,14 @@ struct FieldInfo
 		Preallocated = 1 << 1,
 	};
 
-	const char* name = nullptr;
+	StringView name;
 	uint32_t flags = 0;
 
 	UI_FORCEINLINE FieldInfo() {}
 	UI_FORCEINLINE FieldInfo(const char* nm, uint32_t f = 0) : name(nm), flags(f) {}
+	UI_FORCEINLINE FieldInfo(StringView nm, uint32_t f = 0) : name(nm), flags(f) {}
 
-	UI_FORCEINLINE bool NeedObject() const { return name != nullptr; }
-	UI_FORCEINLINE const char* GetNameOrEmptyStr() const { return name ? name : ""; }
+	UI_FORCEINLINE bool NeedObject() const { return name.NotEmpty(); }
 };
 
 // - type flags
@@ -82,7 +82,7 @@ struct IObjectIterator
 	virtual void EndArray() = 0;
 
 	virtual bool HasMoreArrayElements() { return false; }
-	virtual bool HasField(const char* name) { return true; }
+	virtual bool HasField(StringView name) { return true; }
 
 	virtual bool OnFieldNull(const FieldInfo& FI) = 0;
 	virtual bool OnFieldBool(const FieldInfo& FI, bool& val) = 0;

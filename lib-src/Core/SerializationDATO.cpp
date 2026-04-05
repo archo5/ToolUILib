@@ -14,11 +14,11 @@ DATOLinearWriter::DATOLinearWriter(StringView prefix, bool aligned, bool sortKey
 {
 }
 
-void DATOLinearWriter::_AppendElem(const char* key, dato::ValueRef vref)
+void DATOLinearWriter::_AppendElem(StringView key, dato::ValueRef vref)
 {
 	auto& S = _stack.Last();
 	if (S.hasKeys)
-		S.entriesStrMap.Append({ _writer.WriteStringKey(key), vref });
+		S.entriesStrMap.Append({ _writer.WriteStringKey(key.Data(), u32(key.Size())), vref });
 	else
 		S.entriesArr.Append(vref);
 }
@@ -31,7 +31,7 @@ dato::ValueRef DATOLinearWriter::_WriteAndRemoveTopObject()
 	return vref;
 }
 
-void DATOLinearWriter::BeginObject(const char* key)
+void DATOLinearWriter::BeginObject(StringView key)
 {
 	_AppendElem(key, {}); // value to be filled in later
 	_stack.Append({});
@@ -48,7 +48,7 @@ void DATOLinearWriter::EndObject()
 		S.entriesArr.Last() = vref;
 }
 
-void DATOLinearWriter::BeginArray(const char* key)
+void DATOLinearWriter::BeginArray(StringView key)
 {
 	_AppendElem(key, {}); // value to be filled in later
 	_stack.Append({});
@@ -117,7 +117,7 @@ size_t DATOLinearReader::GetCurrentArraySize()
 	return S.arr.GetSize();
 }
 
-dato::Reader::DynamicAccessor DATOLinearReader::FindEntry(const char* key)
+dato::Reader::DynamicAccessor DATOLinearReader::FindEntry(StringView key)
 {
 	if (_stack.IsEmpty())
 		return {};
@@ -130,12 +130,12 @@ dato::Reader::DynamicAccessor DATOLinearReader::FindEntry(const char* key)
 	}
 	else if (S.type == dato::TYPE_StringMap)
 	{
-		return S.smap.FindValueByKey(key);
+		return S.smap.FindValueByKey(key.Data(), key.Size());
 	}
 	return {};
 }
 
-Optional<i32> DATOLinearReader::ReadInt32(const char* key)
+Optional<i32> DATOLinearReader::ReadInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -143,7 +143,7 @@ Optional<i32> DATOLinearReader::ReadInt32(const char* key)
 	return {};
 }
 
-Optional<u32> DATOLinearReader::ReadUInt32(const char* key)
+Optional<u32> DATOLinearReader::ReadUInt32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -151,7 +151,7 @@ Optional<u32> DATOLinearReader::ReadUInt32(const char* key)
 	return {};
 }
 
-Optional<i64> DATOLinearReader::ReadInt64(const char* key)
+Optional<i64> DATOLinearReader::ReadInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -159,7 +159,7 @@ Optional<i64> DATOLinearReader::ReadInt64(const char* key)
 	return {};
 }
 
-Optional<u64> DATOLinearReader::ReadUInt64(const char* key)
+Optional<u64> DATOLinearReader::ReadUInt64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -167,7 +167,7 @@ Optional<u64> DATOLinearReader::ReadUInt64(const char* key)
 	return {};
 }
 
-Optional<float> DATOLinearReader::ReadFloat32(const char* key)
+Optional<float> DATOLinearReader::ReadFloat32(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -175,7 +175,7 @@ Optional<float> DATOLinearReader::ReadFloat32(const char* key)
 	return {};
 }
 
-Optional<double> DATOLinearReader::ReadFloat64(const char* key)
+Optional<double> DATOLinearReader::ReadFloat64(StringView key)
 {
 	auto e = FindEntry(key);
 	if (e.IsNumber())
@@ -183,7 +183,7 @@ Optional<double> DATOLinearReader::ReadFloat64(const char* key)
 	return {};
 }
 
-Optional<StringView> DATOLinearReader::ReadString(const char* key)
+Optional<StringView> DATOLinearReader::ReadString(StringView key)
 {
 	auto e = FindEntry(key);
 	if (auto s = e.TryGetString8())
@@ -191,7 +191,7 @@ Optional<StringView> DATOLinearReader::ReadString(const char* key)
 	return {};
 }
 
-Optional<StringView> DATOLinearReader::ReadBytes(const char* key)
+Optional<StringView> DATOLinearReader::ReadBytes(StringView key)
 {
 	auto e = FindEntry(key);
 	if (auto b = e.TryGetByteArray())
@@ -199,7 +199,7 @@ Optional<StringView> DATOLinearReader::ReadBytes(const char* key)
 	return {};
 }
 
-Optional<ArrayView<i8>> DATOLinearReader::ReadVectorInt8(const char* key, u8 expectedElemCount)
+Optional<ArrayView<i8>> DATOLinearReader::ReadVectorInt8(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<i8>(expectedElemCount))
@@ -207,7 +207,7 @@ Optional<ArrayView<i8>> DATOLinearReader::ReadVectorInt8(const char* key, u8 exp
 	return {};
 }
 
-Optional<ArrayView<u8>> DATOLinearReader::ReadVectorUInt8(const char* key, u8 expectedElemCount)
+Optional<ArrayView<u8>> DATOLinearReader::ReadVectorUInt8(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<u8>(expectedElemCount))
@@ -215,7 +215,7 @@ Optional<ArrayView<u8>> DATOLinearReader::ReadVectorUInt8(const char* key, u8 ex
 	return {};
 }
 
-Optional<ArrayView<i16>> DATOLinearReader::ReadVectorInt16(const char* key, u8 expectedElemCount)
+Optional<ArrayView<i16>> DATOLinearReader::ReadVectorInt16(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<i16>(expectedElemCount))
@@ -223,7 +223,7 @@ Optional<ArrayView<i16>> DATOLinearReader::ReadVectorInt16(const char* key, u8 e
 	return {};
 }
 
-Optional<ArrayView<u16>> DATOLinearReader::ReadVectorUInt16(const char* key, u8 expectedElemCount)
+Optional<ArrayView<u16>> DATOLinearReader::ReadVectorUInt16(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<u16>(expectedElemCount))
@@ -231,7 +231,7 @@ Optional<ArrayView<u16>> DATOLinearReader::ReadVectorUInt16(const char* key, u8 
 	return {};
 }
 
-Optional<ArrayView<i32>> DATOLinearReader::ReadVectorInt32(const char* key, u8 expectedElemCount)
+Optional<ArrayView<i32>> DATOLinearReader::ReadVectorInt32(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<i32>(expectedElemCount))
@@ -239,7 +239,7 @@ Optional<ArrayView<i32>> DATOLinearReader::ReadVectorInt32(const char* key, u8 e
 	return {};
 }
 
-Optional<ArrayView<u32>> DATOLinearReader::ReadVectorUInt32(const char* key, u8 expectedElemCount)
+Optional<ArrayView<u32>> DATOLinearReader::ReadVectorUInt32(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<u32>(expectedElemCount))
@@ -247,7 +247,7 @@ Optional<ArrayView<u32>> DATOLinearReader::ReadVectorUInt32(const char* key, u8 
 	return {};
 }
 
-Optional<ArrayView<i64>> DATOLinearReader::ReadVectorInt64(const char* key, u8 expectedElemCount)
+Optional<ArrayView<i64>> DATOLinearReader::ReadVectorInt64(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<i64>(expectedElemCount))
@@ -255,7 +255,7 @@ Optional<ArrayView<i64>> DATOLinearReader::ReadVectorInt64(const char* key, u8 e
 	return {};
 }
 
-Optional<ArrayView<u64>> DATOLinearReader::ReadVectorUInt64(const char* key, u8 expectedElemCount)
+Optional<ArrayView<u64>> DATOLinearReader::ReadVectorUInt64(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<u64>(expectedElemCount))
@@ -263,7 +263,7 @@ Optional<ArrayView<u64>> DATOLinearReader::ReadVectorUInt64(const char* key, u8 
 	return {};
 }
 
-Optional<ArrayView<float>> DATOLinearReader::ReadVectorFloat32(const char* key, u8 expectedElemCount)
+Optional<ArrayView<float>> DATOLinearReader::ReadVectorFloat32(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<float>(expectedElemCount))
@@ -271,7 +271,7 @@ Optional<ArrayView<float>> DATOLinearReader::ReadVectorFloat32(const char* key, 
 	return {};
 }
 
-Optional<ArrayView<double>> DATOLinearReader::ReadVectorFloat64(const char* key, u8 expectedElemCount)
+Optional<ArrayView<double>> DATOLinearReader::ReadVectorFloat64(StringView key, u8 expectedElemCount)
 {
 	auto e = FindEntry(key);
 	if (auto v = e.TryGetVector<double>(expectedElemCount))
@@ -279,7 +279,7 @@ Optional<ArrayView<double>> DATOLinearReader::ReadVectorFloat64(const char* key,
 	return {};
 }
 
-bool DATOLinearReader::BeginArray(const char* key)
+bool DATOLinearReader::BeginArray(StringView key)
 {
 	if (auto e = FindEntry(key))
 	{
@@ -298,7 +298,7 @@ void DATOLinearReader::EndArray()
 	_stack.RemoveLast();
 }
 
-bool DATOLinearReader::BeginObject(const char* key)
+bool DATOLinearReader::BeginObject(StringView key)
 {
 	if (auto e = FindEntry(key))
 	{
@@ -335,7 +335,7 @@ void DATOLinearReader::EndEntry()
 
 bool DATOSerializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	DATOLinearWriter::BeginObject(FI.GetNameOrEmptyStr());
+	DATOLinearWriter::BeginObject(FI.name);
 	if (outName)
 		WriteString("__", *outName);
 	return true;
@@ -348,7 +348,7 @@ void DATOSerializer::EndObject()
 
 ArrayFieldState DATOSerializer::BeginArray(size_t size, const FieldInfo& FI)
 {
-	DATOLinearWriter::BeginArray(FI.GetNameOrEmptyStr());
+	DATOLinearWriter::BeginArray(FI.name);
 	return {};
 }
 
@@ -359,104 +359,104 @@ void DATOSerializer::EndArray()
 
 bool DATOSerializer::OnFieldNull(const FieldInfo& FI)
 {
-	WriteNull(FI.GetNameOrEmptyStr());
+	WriteNull(FI.name);
 	return true;
 }
 
 bool DATOSerializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	WriteInt32(FI.GetNameOrEmptyStr(), val);
+	WriteInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	WriteUInt32(FI.GetNameOrEmptyStr(), val);
+	WriteUInt32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	WriteInt64(FI.GetNameOrEmptyStr(), val);
+	WriteInt64(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	WriteUInt64(FI.GetNameOrEmptyStr(), val);
+	WriteUInt64(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	WriteFloat32(FI.GetNameOrEmptyStr(), val);
+	WriteFloat32(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	WriteFloat64(FI.GetNameOrEmptyStr(), val);
+	WriteFloat64(FI.name, val);
 	return true;
 }
 
 bool DATOSerializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	WriteString(FI.GetNameOrEmptyStr(), brw.Read());
+	WriteString(FI.name, brw.Read());
 	return true;
 }
 
 bool DATOSerializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
-	WriteBytes(FI.GetNameOrEmptyStr(), brw.Read());
+	WriteBytes(FI.name, brw.Read());
 	return true;
 }
 
 bool DATOSerializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 {
-	WriteVectorInt32(FI.GetNameOrEmptyStr(), count, arr);
+	WriteVectorInt32(FI.name, count, arr);
 	return true;
 }
 
 bool DATOSerializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 {
-	WriteVectorFloat32(FI.GetNameOrEmptyStr(), count, arr);
+	WriteVectorFloat32(FI.name, count, arr);
 	return true;
 }
 
 
 bool DATOUnserializer::BeginObject(const FieldInfo& FI, const char* objname, std::string* outName)
 {
-	bool ret = DATOLinearReader::BeginObject(FI.GetNameOrEmptyStr());
+	bool ret = DATOLinearReader::BeginObject(FI.name);
 	if (outName)
 	{
 		if (auto s = ReadString("__"))
@@ -472,7 +472,7 @@ void DATOUnserializer::EndObject()
 
 ArrayFieldState DATOUnserializer::BeginArray(size_t size, const FieldInfo& FI)
 {
-	DATOLinearReader::BeginArray(FI.GetNameOrEmptyStr());
+	DATOLinearReader::BeginArray(FI.name);
 	return { true, GetCurrentArraySize() };
 }
 
@@ -486,98 +486,98 @@ bool DATOUnserializer::HasMoreArrayElements()
 	return DATOLinearReader::HasMoreArrayElements();
 }
 
-bool DATOUnserializer::HasField(const char* name)
+bool DATOUnserializer::HasField(StringView name)
 {
 	return FindEntry(name).IsValid();
 }
 
 bool DATOUnserializer::OnFieldNull(const FieldInfo& FI)
 {
-	auto e = FindEntry(FI.GetNameOrEmptyStr());
+	auto e = FindEntry(FI.name);
 	return e.IsNull();
 }
 
 bool DATOUnserializer::OnFieldBool(const FieldInfo& FI, bool& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = v.GetValue() != 0, true : false;
 }
 
 bool DATOUnserializer::OnFieldS8(const FieldInfo& FI, i8& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = i8(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldU8(const FieldInfo& FI, u8& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = u8(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldS16(const FieldInfo& FI, i16& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = i16(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldU16(const FieldInfo& FI, u16& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = u16(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldS32(const FieldInfo& FI, i32& val)
 {
-	auto v = ReadInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadInt32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldU32(const FieldInfo& FI, u32& val)
 {
-	auto v = ReadUInt32(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldS64(const FieldInfo& FI, i64& val)
 {
-	auto v = ReadInt64(FI.GetNameOrEmptyStr());
+	auto v = ReadInt64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldU64(const FieldInfo& FI, u64& val)
 {
-	auto v = ReadUInt64(FI.GetNameOrEmptyStr());
+	auto v = ReadUInt64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldF32(const FieldInfo& FI, float& val)
 {
-	auto v = ReadFloat32(FI.GetNameOrEmptyStr());
+	auto v = ReadFloat32(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldF64(const FieldInfo& FI, double& val)
 {
-	auto v = ReadFloat64(FI.GetNameOrEmptyStr());
+	auto v = ReadFloat64(FI.name);
 	return v ? val = v.GetValue(), true : false;
 }
 
 bool DATOUnserializer::OnFieldString(const FieldInfo& FI, const IBufferRW& brw)
 {
-	auto v = ReadString(FI.GetNameOrEmptyStr());
+	auto v = ReadString(FI.name);
 	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw)
 {
-	auto v = ReadBytes(FI.GetNameOrEmptyStr());
+	auto v = ReadBytes(FI.name);
 	return v ? brw.Assign(v.GetValue()), true : false;
 }
 
 bool DATOUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 {
-	if (auto v = ReadVectorInt32(FI.GetNameOrEmptyStr(), count))
+	if (auto v = ReadVectorInt32(FI.name, count))
 	{
 		ImplManyCopy(count, arr, v.GetValue());
 		return true;
@@ -587,7 +587,7 @@ bool DATOUnserializer::OnFieldManyS32(const FieldInfo& FI, u32 count, i32* arr)
 
 bool DATOUnserializer::OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr)
 {
-	if (auto v = ReadVectorFloat32(FI.GetNameOrEmptyStr(), count))
+	if (auto v = ReadVectorFloat32(FI.name, count))
 	{
 		ImplManyCopy(count, arr, v.GetValue());
 		return true;
