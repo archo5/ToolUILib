@@ -3,6 +3,9 @@
 
 #include "../Model/Menu.h"
 
+#include "../Editor_Curve_Sequence01.h"
+#include "../Editor_Curve_CubicNrmRemap.h"
+
 
 namespace ui {
 
@@ -557,9 +560,9 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 }
 
 
-void Sequence01Curve::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+void Curve_Sequence01::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 {
-	oi.BeginObject(FI, "Sequence01Curve::Point");
+	oi.BeginObject(FI, "Curve_Sequence01::Point");
 
 	OnField(oi, "deltaX", deltaX);
 	OnField(oi, "posX", posX);
@@ -570,7 +573,7 @@ void Sequence01Curve::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& F
 	oi.EndObject();
 }
 
-void Sequence01Curve::SerializeData(IObjectIterator& oi)
+void Curve_Sequence01::SerializeData(IObjectIterator& oi)
 {
 	OnField(oi, "points", points);
 }
@@ -582,7 +585,7 @@ static float DoPowerCurve(float q, float tweak)
 		: powf(q, exp2(-tweak));
 }
 
-float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q)
+float Curve_Sequence01::EvaluateSegment(const Point& p0, const Point& p1, float q)
 {
 	switch (p1.mode)
 	{
@@ -616,7 +619,7 @@ float Sequence01Curve::EvaluateSegment(const Point& p0, const Point& p1, float q
 	return lerp(p0.posY, p1.posY, q);
 }
 
-float Sequence01Curve::Evaluate(float t)
+float Curve_Sequence01::Evaluate(float t)
 {
 	if (points.IsEmpty())
 		return 0;
@@ -637,7 +640,7 @@ float Sequence01Curve::Evaluate(float t)
 	return points.Last().posY;
 }
 
-void Sequence01Curve::RemovePoint(size_t i)
+void Curve_Sequence01::RemovePoint(size_t i)
 {
 	points.RemoveAt(i);
 	if (i > 0)
@@ -646,13 +649,13 @@ void Sequence01Curve::RemovePoint(size_t i)
 		points[i].deltaX = points[i].posX;
 }
 
-void Sequence01Curve::AddPoint(Vec2f pos)
+void Curve_Sequence01::AddPoint(Vec2f pos)
 {
 	size_t before = 0;
 	while (before < points.size() && points[before].posX <= pos.x)
 		before++;
 
-	Sequence01Curve::Point p = {};
+	Curve_Sequence01::Point p = {};
 	if (points.NotEmpty())
 		p = before < points.size() ? points[before] : points.Last();
 	p.posX = pos.x;
@@ -668,7 +671,7 @@ void Sequence01Curve::AddPoint(Vec2f pos)
 }
 
 
-void Sequence01CurveView::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
+void Curve_Sequence01_View::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
 {
 	float newX = p.x;
 	float newY = clamp(p.y, 0.0f, 1.0f);
@@ -688,7 +691,7 @@ void Sequence01CurveView::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
 	}
 }
 
-Vec2f Sequence01CurveView::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
+Vec2f Curve_Sequence01_View::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
 {
 	auto& p0 = curve->points[firstpointid];
 	auto& p1 = curve->points[firstpointid + 1];
@@ -697,33 +700,33 @@ Vec2f Sequence01CurveView::GetInterpolatedPoint(uint32_t, uint32_t firstpointid,
 	return { retX, retY };
 }
 
-float Sequence01CurveView::GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid)
+float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid)
 {
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];
-	if (p1.mode == Sequence01Curve::Mode::SinglePowerCurve)
+	if (p1.mode == Curve_Sequence01::Mode::SinglePowerCurve)
 		return p0.posY < p1.posY ? 1 : -1;
 	return 1;
 }
 
-Vec2f Sequence01CurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
+Vec2f Curve_Sequence01_View::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
 {
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];
 	switch (p1.mode)
 	{
-	case Sequence01Curve::Mode::SawWave:
-	case Sequence01Curve::Mode::PulseWave:
-	case Sequence01Curve::Mode::Steps:
+	case Curve_Sequence01::Mode::SawWave:
+	case Curve_Sequence01::Mode::PulseWave:
+	case Curve_Sequence01::Mode::Steps:
 		return { (p0.posX + p1.posX) * 0.5f, (p0.posY + p1.posY) * 0.5f };
 	default:
 		return ICurveView::GetSliceMidpointPosition(curveid, sliceid);
 	}
 }
 
-void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
+void Curve_Sequence01_View::OnEvent(const CurveEditorInput& input, Event& e)
 {
-	using Mode = Sequence01Curve::Mode;
+	using Mode = Curve_Sequence01::Mode;
 	if (e.type == EventType::ContextMenu)
 	{
 		auto hp = HitTest(input, e.position);
@@ -776,14 +779,14 @@ void Sequence01CurveView::OnEvent(const CurveEditorInput& input, Event& e)
 }
 
 
-void CubicNormalizedRemapCurveView::OnEvent(const CurveEditorInput& input, Event& e)
+void Curve_CubicNormalizedRemap_View::OnEvent(const CurveEditorInput& input, Event& e)
 {
 	if (e.type == EventType::ContextMenu)
 	{
 		auto& cm = ContextMenu::Get();
 		cm.Add("Reset") = [this]()
 		{
-			*curve = CubicNormalizedRemapCurve();
+			*curve = Curve_CubicNormalizedRemap();
 		};
 	}
 }

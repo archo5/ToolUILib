@@ -7,6 +7,8 @@
 #include <deque>
 #include "../lib-src/Editors/TreeEditor.h"
 #include "../lib-src/Editors/CurveEditor.h"
+#include "../lib-src/Editor_Curve_Sequence01.h"
+#include "../lib-src/Editor_Curve_CubicNrmRemap.h"
 
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
@@ -1126,10 +1128,10 @@ struct CurveEditorTest : ui::Buildable
 
 		sequence01Curve.points =
 		{
-			{ 0, 0, 0, ui::Sequence01Curve::Mode::Hold, 0 },
-			{ 1, 1, 1, ui::Sequence01Curve::Mode::SinglePowerCurve, 0 },
-			{ 1, 2, 0, ui::Sequence01Curve::Mode::DoublePowerCurve, 0 },
-			{ 1, 3, 1, ui::Sequence01Curve::Mode::SawWave, 0 },
+			{ 0, 0, 0, ui::Curve_Sequence01::Mode::Hold, 0 },
+			{ 1, 1, 1, ui::Curve_Sequence01::Mode::SinglePowerCurve, 0 },
+			{ 1, 2, 0, ui::Curve_Sequence01::Mode::DoublePowerCurve, 0 },
+			{ 1, 3, 1, ui::Curve_Sequence01::Mode::SawWave, 0 },
 		};
 	}
 	void Build() override
@@ -1145,7 +1147,7 @@ struct CurveEditorTest : ui::Buildable
 		WPush<ui::SizeConstraintElement>().SetHeight(50);
 		auto& ce3 = ui::Make<ui::CurveEditorElement>();
 		WPop();
-		auto* s01cv = UI_BUILD_ALLOC(ui::Sequence01CurveView)();
+		auto* s01cv = UI_BUILD_ALLOC(ui::Curve_Sequence01_View)();
 		s01cv->curve = &sequence01Curve;
 		ce3.curveView = s01cv;
 		ce3.viewport = { 0, 0, 5, 1 };
@@ -1153,15 +1155,15 @@ struct CurveEditorTest : ui::Buildable
 		WPush<ui::SizeConstraintElement>().SetHeight(200);
 		auto& ce2 = ui::Make<ui::CurveEditorElement>();
 		WPop();
-		auto* cnrcv = UI_BUILD_ALLOC(ui::CubicNormalizedRemapCurveView)();
+		auto* cnrcv = UI_BUILD_ALLOC(ui::Curve_CubicNormalizedRemap_View)();
 		cnrcv->curve = &cubicNormalizedRemapCurve;
 		ce2.curveView = cnrcv;
 
 		WPop();
 	}
 	ui::BasicLinear01Curve basicLinear01Curve;
-	ui::Sequence01Curve sequence01Curve;
-	ui::CubicNormalizedRemapCurve cubicNormalizedRemapCurve;
+	ui::Curve_Sequence01 sequence01Curve;
+	ui::Curve_CubicNormalizedRemap cubicNormalizedRemapCurve;
 };
 void Test_CurveEditor()
 {

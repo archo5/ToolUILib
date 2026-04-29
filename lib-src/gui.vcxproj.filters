@@ -493,6 +493,18 @@
     <ClInclude Include="Curve_QuadSpline.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Curve_CubicNrmRemap.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor_Curve_CubicNrmRemap.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Curve_Sequence01.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor_Curve_Sequence01.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

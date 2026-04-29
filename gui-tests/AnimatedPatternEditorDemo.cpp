@@ -4,6 +4,7 @@
 #include "../lib-src/Core/MathExpr.h"
 #include "../lib-src/Editors/TreeEditor.h"
 #include "../lib-src/Editors/CurveEditor.h"
+#include "../lib-src/Editor_Curve_Sequence01.h"
 
 
 using namespace ui;
@@ -20,7 +21,7 @@ struct APGlobalSettings
 	int numSteps = 16;
 	float duration = 2;
 
-	Sequence01Curve curves[NUM_CURVES];
+	Curve_Sequence01 curves[NUM_CURVES];
 
 	APGlobalSettings()
 	{
@@ -399,7 +400,7 @@ struct AnimPattern : ITree
 		}
 		Pop();
 
-		auto* cv = UI_BUILD_ALLOC(Sequence01CurveView)();
+		auto* cv = UI_BUILD_ALLOC(Curve_Sequence01_View)();
 		cv->curve = &globalSettings.curves[curCurve];
 		auto& ced = Make<CurveEditorElement>();
 		ced.curveView = cv;

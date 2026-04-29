@@ -350,7 +350,9 @@
     <ClInclude Include="Core\VectorImage.h" />
     <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
+    <ClInclude Include="Curve_CubicNrmRemap.h" />
     <ClInclude Include="Curve_QuadSpline.h" />
+    <ClInclude Include="Curve_Sequence01.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
     <ClInclude Include="Editors\NumEditConfig.h" />
     <ClInclude Include="Editors\EditCommon.h" />
@@ -360,6 +362,8 @@
     <ClInclude Include="Editors\SequenceEditor.h" />
     <ClInclude Include="Editors\Tables.h" />
     <ClInclude Include="Editors\TreeEditor.h" />
+    <ClInclude Include="Editor_Curve_CubicNrmRemap.h" />
+    <ClInclude Include="Editor_Curve_Sequence01.h" />
     <ClInclude Include="Elements\Animated.h" />
     <ClInclude Include="Elements\ResizablePane.h" />
     <ClInclude Include="Elements\SeparatorLineStyle.h" />
