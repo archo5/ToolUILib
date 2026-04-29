@@ -202,6 +202,9 @@
     <ClCompile Include="..\ThirdParty\zmij\zmij.cc">
       <Filter>ThirdParty</Filter>
     </ClCompile>
+    <ClCompile Include="Curve_QuadSpline.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -486,6 +489,9 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\zmij\zmij.h">
       <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Curve_QuadSpline.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

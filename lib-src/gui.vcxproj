@@ -253,6 +253,7 @@
     <ClCompile Include="Core\TriangulatorComplex.cpp" />
     <ClCompile Include="Core\TweakableValue.cpp" />
     <ClCompile Include="Core\VectorImage.cpp" />
+    <ClCompile Include="Curve_QuadSpline.cpp" />
     <ClCompile Include="Editors\CurveEditor.cpp" />
     <ClCompile Include="Editors\EditCommon.cpp" />
     <ClCompile Include="Editors\FileTreeDataSource.cpp" />
@@ -349,6 +350,7 @@
     <ClInclude Include="Core\VectorImage.h" />
     <ClInclude Include="Core\WeakPtr.h" />
     <ClInclude Include="Core\WindowsUtils.h" />
+    <ClInclude Include="Curve_QuadSpline.h" />
     <ClInclude Include="Editors\CurveEditor.h" />
     <ClInclude Include="Editors\NumEditConfig.h" />
     <ClInclude Include="Editors\EditCommon.h" />
