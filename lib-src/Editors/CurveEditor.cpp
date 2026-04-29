@@ -204,7 +204,7 @@ Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpi
 		p = GetPoint(cpid.curveID, cpid.pointID);
 		break;
 	case CPT_Midpoint:
-		p = GetSliceMidpoint(cpid.curveID, cpid.pointID);
+		p = GetSliceMidpointPosition(cpid.curveID, cpid.pointID);
 		break;
 	}
 	return input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
@@ -493,13 +493,13 @@ void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& 
 
 			DrawCurve(input, cid);
 		}
+
+		if (GetFeatures() & Tangents)
+			DrawAllTangentLines(input, state);
+
+		DrawAllPoints(input, state);
 	}
 	draw::PopScissorRect();
-
-	if (GetFeatures() & Tangents)
-		DrawAllTangentLines(input, state);
-
-	DrawAllPoints(input, state);
 }
 
 
