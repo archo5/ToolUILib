@@ -141,7 +141,6 @@ struct ICurveView
 	virtual float GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid) { return 1; }
 	virtual Vec2f GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid);
 
-	Vec2f GetTangentPoint(const CurveEditorInput& input, u32 curveid, u32 pointid, bool right);
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
 	uint32_t _FixPointOrder(uint32_t curveid, uint32_t pointid);

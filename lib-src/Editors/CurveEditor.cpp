@@ -174,32 +174,34 @@ Vec2f ICurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
 	return GetInterpolatedPoint(curveid, sliceid, p.x);
 }
 
-Vec2f ICurveView::GetTangentPoint(const CurveEditorInput& input, u32 curveid, u32 pointid, bool right)
-{
-	Vec2f pt = GetPoint(curveid, pointid);
-	Vec2f td = right ? GetRightTangentDiff(curveid, pointid) : GetLeftTangentDiff(curveid, pointid);
-	if (GetFeatures() & DirOnlyTangents)
-	{
-		Vec2f size2 = Vec2f(10) / input.winRect.GetSize().ToVec2() * input.viewport.GetSize().ToVec2();
-		float size = max(fabsf(size2.x), fabsf(size2.y));
-		td = td.Normalized() * size;
-	}
-	return pt + td;
-}
-
 Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
 {
+	if (cpid.pointType == CPT_LTangent || cpid.pointType == CPT_RTangent)
+	{
+		Vec2f pt = GetPoint(cpid.curveID, cpid.pointID);
+		Vec2f td = cpid.pointType == CPT_RTangent
+			? GetRightTangentDiff(cpid.curveID, cpid.pointID)
+			: GetLeftTangentDiff(cpid.curveID, cpid.pointID);
+
+		if (GetFeatures() & DirOnlyTangents)
+		{
+			pt = input.winRect.Lerp(input.viewport.InverseLerpFlipY(pt));
+			td.y = -td.y;
+			td *= input.winRect.GetSize().ToVec2() / input.viewport.GetSize().ToVec2();
+			td = td.Normalized();
+			pt += td * input.settings->pointRadius * 3; // TODO separate setting
+			return pt;
+		}
+		else
+		{
+			return input.winRect.Lerp(input.viewport.InverseLerpFlipY(pt + td));
+		}
+	}
 	Vec2f p = {};
 	switch (cpid.pointType)
 	{
 	case CPT_Point:
 		p = GetPoint(cpid.curveID, cpid.pointID);
-		break;
-	case CPT_LTangent:
-		p = GetTangentPoint(input, cpid.curveID, cpid.pointID, false);
-		break;
-	case CPT_RTangent:
-		p = GetTangentPoint(input, cpid.curveID, cpid.pointID, true);
 		break;
 	case CPT_Midpoint:
 		p = GetSliceMidpoint(cpid.curveID, cpid.pointID);
@@ -306,13 +308,13 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 				}
 				if (HasRightTangent(cid, pid))
 				{
-					Vec2f p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(GetTangentPoint(input, cid, pid, true)));
+					Vec2f p = GetScreenPoint(input, CurvePointID(cid, CPT_RTangent, pid));
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_RTangent, pid };
 				}
 				if (HasLeftTangent(cid, pid))
 				{
-					Vec2f p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(GetTangentPoint(input, cid, pid, true)));
+					Vec2f p = GetScreenPoint(input, CurvePointID(cid, CPT_LTangent, pid));
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_LTangent, pid };
 				}
@@ -332,13 +334,13 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 				if (HasRightTangent(cid, pid))
 				{
-					Vec2f p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(GetTangentPoint(input, cid, pid, true)));
+					Vec2f p = GetScreenPoint(input, CurvePointID(cid, CPT_RTangent, pid));
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_RTangent, pid };
 				}
 				if (HasLeftTangent(cid, pid))
 				{
-					Vec2f p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(GetTangentPoint(input, cid, pid, false)));
+					Vec2f p = GetScreenPoint(input, CurvePointID(cid, CPT_LTangent, pid));
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_LTangent, pid };
 				}
@@ -377,27 +379,19 @@ void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveE
 	auto col = GetCurveColor(curveid);
 	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
 	{
-		Vec2f p;
 		switch (type)
 		{
 		case CPT_Midpoint:
 			if (!HasSliceMidpoint(curveid, pid))
 				continue;
-			p = GetSliceMidpointPosition(curveid, pid);
 			break;
 		case CPT_LTangent:
 			if (!HasLeftTangent(curveid, pid))
 				continue;
-			p = GetTangentPoint(input, curveid, pid, false);
 			break;
 		case CPT_RTangent:
 			if (!HasRightTangent(curveid, pid))
 				continue;
-			p = GetTangentPoint(input, curveid, pid, true);
-			break;
-		case CPT_Point:
-		default:
-			p = GetPoint(curveid, pid);
 			break;
 		}
 
@@ -408,7 +402,7 @@ void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveE
 		else if (state.uiState.IsHovered(cpid))
 			pcol = Color4fLerp(col, Color4f::White(), 0.2f);
 
-		p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
+		Vec2f p = GetScreenPoint(input, cpid);
 		draw::AACircleLineCol(p, input.settings->pointRadius - 0.5f, 1, pcol);
 	}
 }
@@ -470,15 +464,13 @@ void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveE
 
 			if (HasLeftTangent(cid, pid))
 			{
-				auto tanpt = GetTangentPoint(input, cid, pid, false);
-				tanpt = input.winRect.Lerp(input.viewport.InverseLerpFlipY(tanpt));
+				auto tanpt = GetScreenPoint(input, CurvePointID(cid, CPT_LTangent, pid));
 
 				draw::AALineCol({ pt, tanpt }, input.settings->tangentLineThickness, col, false);
 			}
 			if (HasRightTangent(cid, pid))
 			{
-				auto tanpt = GetTangentPoint(input, cid, pid, true);
-				tanpt = input.winRect.Lerp(input.viewport.InverseLerpFlipY(tanpt));
+				auto tanpt = GetScreenPoint(input, CurvePointID(cid, CPT_RTangent, pid));
 
 				draw::AALineCol({ pt, tanpt }, input.settings->tangentLineThickness, col, false);
 			}

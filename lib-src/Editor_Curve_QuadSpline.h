@@ -35,10 +35,10 @@ struct Curve_QuadSpline_View : ICurveView
 
 	bool HasLeftTangent(u32, u32 pointid) override { return true; }
 	Vec2f GetLeftTangentDiff(u32, u32 pointid) override { return GetTangentDiff(pointid, false); }
-	void SetLeftTangentDiff(u32, u32 pointid, Vec2f d) override { curve->points[pointid].velocity = divf_safe(d.x, d.y); }
+	void SetLeftTangentDiff(u32, u32 pointid, Vec2f d) override { curve->points[pointid].velocity = divf_safe(d.y, d.x); }
 	bool HasRightTangent(u32, u32 pointid) override { return true; }
 	Vec2f GetRightTangentDiff(u32, u32 pointid) override { return GetTangentDiff(pointid, true); }
-	void SetRightTangentDiff(u32, u32 pointid, Vec2f d) override { curve->points[pointid].velocity = divf_safe(d.x, d.y); }
+	void SetRightTangentDiff(u32, u32 pointid, Vec2f d) override { curve->points[pointid].velocity = divf_safe(d.y, d.x); }
 
 	Vec2f GetInterpolatedPoint(u32, u32 firstpointid, float q) override;
 
