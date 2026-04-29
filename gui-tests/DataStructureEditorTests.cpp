@@ -9,6 +9,7 @@
 #include "../lib-src/Editors/CurveEditor.h"
 #include "../lib-src/Editor_Curve_Sequence01.h"
 #include "../lib-src/Editor_Curve_CubicNrmRemap.h"
+#include "../lib-src/Editor_Curve_QuadSpline.h"
 
 
 struct InfoDumpContextMenuSource : ui::IListContextMenuSource
@@ -1133,6 +1134,13 @@ struct CurveEditorTest : ui::Buildable
 			{ 1, 2, 0, ui::Curve_Sequence01::Mode::DoublePowerCurve, 0 },
 			{ 1, 3, 1, ui::Curve_Sequence01::Mode::SawWave, 0 },
 		};
+
+		quadSplineCurve.timeRange = { 0, 2 };
+		quadSplineCurve.points =
+		{
+			{ 0.5f, 0.3f, 1 },
+			{ 1.5f, 0.7f, -1 },
+		};
 	}
 	void Build() override
 	{
@@ -1159,11 +1167,20 @@ struct CurveEditorTest : ui::Buildable
 		cnrcv->curve = &cubicNormalizedRemapCurve;
 		ce2.curveView = cnrcv;
 
+		WPush<ui::SizeConstraintElement>().SetHeight(100);
+		auto& ce4 = ui::Make<ui::CurveEditorElement>();
+		WPop();
+		auto* cqscv = UI_BUILD_ALLOC(ui::Curve_QuadSpline_View)();
+		cqscv->curve = &quadSplineCurve;
+		ce4.curveView = cqscv;
+		ce4.viewport = { 0, -1, 2, 2 };
+
 		WPop();
 	}
 	ui::BasicLinear01Curve basicLinear01Curve;
 	ui::Curve_Sequence01 sequence01Curve;
 	ui::Curve_CubicNormalizedRemap cubicNormalizedRemapCurve;
+	ui::Curve_QuadSpline quadSplineCurve;
 };
 void Test_CurveEditor()
 {

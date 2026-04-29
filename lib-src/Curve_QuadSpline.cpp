@@ -126,20 +126,20 @@ float Curve_QuadSpline::Sample(float t)
 		t = curvewrap(timeRange, t);
 	else
 		t = timeRange.Clamp(t);
-	return curvesample(curvePoints, timeRange, t, flags & AccelSmoothing);
+	return curvesample(points, timeRange, t, flags & AccelSmoothing);
 }
 
 Rangef Curve_QuadSpline::CalcHeightRange()
 {
 	Rangef range = Rangef::Empty();
-	for (size_t i = 0; i < curvePoints.Size(); i++)
+	for (size_t i = 0; i < points.Size(); i++)
 	{
-		range.Include(curvePoints[i].value);
+		range.Include(points[i].value);
 
-		if ((flags & Loop) || i + 1 < curvePoints.Size())
+		if ((flags & Loop) || i + 1 < points.Size())
 		{
-			auto pa = curvePoints[i];
-			auto pb = curvePoints.NextWrap(i);
+			auto pa = points[i];
+			auto pb = points.NextWrap(i);
 			Vec2f cmp;
 			if (FindCurveMidpoint(pa, pb, cmp))
 			{

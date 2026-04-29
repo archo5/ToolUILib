@@ -102,6 +102,7 @@ struct ICurveView
 	{
 		SliceMidpoints = 1 << 0,
 		Tangents = 1 << 1,
+		DirOnlyTangents = 1 << 2,
 	};
 	virtual uint32_t GetFeatures() = 0;
 
@@ -127,11 +128,11 @@ struct ICurveView
 	virtual int GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, AABB2f vp, float winWidth, Vec2f* out, int maxOut);
 
 	virtual bool HasLeftTangent(uint32_t curveid, uint32_t pointid) { return false; }
-	virtual Vec2f GetLeftTangentPoint(uint32_t curveid, uint32_t pointid) { return {}; }
-	virtual void SetLeftTangentPoint(uint32_t curveid, uint32_t pointid, Vec2f p) {}
+	virtual Vec2f GetLeftTangentDiff(uint32_t curveid, uint32_t pointid) { return {}; }
+	virtual void SetLeftTangentDiff(uint32_t curveid, uint32_t pointid, Vec2f d) {}
 	virtual bool HasRightTangent(uint32_t curveid, uint32_t pointid) { return false; }
-	virtual Vec2f GetRightTangentPoint(uint32_t curveid, uint32_t pointid) { return {}; }
-	virtual void SetRightTangentPoint(uint32_t curveid, uint32_t pointid, Vec2f p) {}
+	virtual Vec2f GetRightTangentDiff(uint32_t curveid, uint32_t pointid) { return {}; }
+	virtual void SetRightTangentDiff(uint32_t curveid, uint32_t pointid, Vec2f d) {}
 
 	virtual bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) { return false; }
 	// slice midpoint coordinates: x = lerp factor, y = modifier (screen pixel units)
@@ -140,6 +141,7 @@ struct ICurveView
 	virtual float GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid) { return 1; }
 	virtual Vec2f GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid);
 
+	Vec2f GetTangentPoint(const CurveEditorInput& input, u32 curveid, u32 pointid, bool right);
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
 	uint32_t _FixPointOrder(uint32_t curveid, uint32_t pointid);

@@ -505,6 +505,9 @@
     <ClInclude Include="Editor_Curve_Sequence01.h">
       <Filter>Editors</Filter>
     </ClInclude>
+    <ClInclude Include="Editor_Curve_QuadSpline.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

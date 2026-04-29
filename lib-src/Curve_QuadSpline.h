@@ -22,7 +22,7 @@ struct Curve_QuadSpline
 			oi.OnFieldManyF32(fi, 3, &time);
 		}
 	};
-	Array<Point> curvePoints;
+	Array<Point> points;
 	enum
 	{
 		Loop = 1 << 0,
@@ -34,7 +34,7 @@ struct Curve_QuadSpline
 	{
 		oi.BeginObject(fi, "Curve_QuadSpline");
 		ui::OnField(oi, "timeRange", timeRange);
-		ui::OnField(oi, "curvePoints", curvePoints);
+		ui::OnField(oi, "points", points);
 		ui::OnField(oi, "flags", flags);
 		oi.EndObject();
 	}

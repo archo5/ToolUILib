@@ -363,6 +363,7 @@
     <ClInclude Include="Editors\Tables.h" />
     <ClInclude Include="Editors\TreeEditor.h" />
     <ClInclude Include="Editor_Curve_CubicNrmRemap.h" />
+    <ClInclude Include="Editor_Curve_QuadSpline.h" />
     <ClInclude Include="Editor_Curve_Sequence01.h" />
     <ClInclude Include="Elements\Animated.h" />
     <ClInclude Include="Elements\ResizablePane.h" />
