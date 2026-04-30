@@ -33,6 +33,7 @@ struct Curve_Sequence01
 
 	void SerializeData(IObjectIterator& oi);
 
+	static void GenSawWaveMiddlePoints(float tweak, const std::function<void(Vec2f)>& outpts);
 	float EvaluateSegment(const Point& p0, const Point& p1, float q);
 	float Evaluate(float t);
 

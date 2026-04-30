@@ -453,29 +453,33 @@ void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& 
 
 bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, Event& e)
 {
+	auto& pid = uiState._pressed;
 	uiState.InitOnEvent(e);
 	auto ret = uiState.GlobalDragOnEvent(curves->HitTest(input, e.position), e);
 	//printf("CEUI: ret=%d hover=%d press=%d\n", ret, uiState._hovered.pointID, uiState._pressed.pointID);
 	switch (ret)
 	{
 	case SubUIDragState::Start:
-		dragPointStart = curves->GetScreenPoint(input, uiState._pressed);
+		dragPointStart = pid.pointType == CPT_Midpoint
+			? curves->GetSliceMidpoint(pid.curveID, pid.pointID)
+			: curves->GetScreenPoint(input, pid);
 		dragCursorStart = e.position;
 		e.context->CaptureMouse(e.current);
 		break;
-	case SubUIDragState::Move: {
-		auto& pid = uiState._pressed;
-
-		float q = 1;
+	case SubUIDragState::Move:
 		if (pid.pointType == CPT_Midpoint)
-			q = curves->GetSliceMidpointVertDragFactor(pid.curveID, pid.pointID);
+		{
+			float q = -curves->GetSliceMidpointVertDragFactor(pid.curveID, pid.pointID);
+			curves->SetSliceMidpoint(pid.curveID, pid.pointID, dragPointStart + (e.position - dragCursorStart) * q);
+		}
+		else
+		{
+			curves->SetScreenPoint(input, pid, dragPointStart + e.position - dragCursorStart);
 
-		curves->SetScreenPoint(input, pid, dragPointStart + (e.position - dragCursorStart) * q);
-
-		if (pid.pointType == CPT_Point)
-			pid.pointID = curves->_FixPointOrder(pid.curveID, pid.pointID);
-
-		break; }
+			if (pid.pointType == CPT_Point)
+				pid.pointID = curves->_FixPointOrder(pid.curveID, pid.pointID);
+		}
+		break;
 	case SubUIDragState::Stop:
 		e.context->ReleaseMouse();
 		break;
@@ -544,6 +548,28 @@ void Curve_Sequence01::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& 
 void Curve_Sequence01::SerializeData(IObjectIterator& oi)
 {
 	OnField(oi, "points", points);
+}
+
+void Curve_Sequence01::GenSawWaveMiddlePoints(float tweak, const std::function<void(Vec2f)>& outpts)
+{
+	int count = int(floorf(fabsf(tweak)));
+	if (tweak >= 0)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			float q = (i + 1.f) / (count + 1.f);
+			outpts({ q, 1 });
+			outpts({ q, 0 });
+		}
+	}
+	else
+	{
+		for (int i = 0; i < count; i++)
+		{
+			outpts({ i / float(count), 1 });
+			outpts({ (i + 1) / float(count), 0 });
+		}
+	}
 }
 
 static float DoPowerCurve(float q, float tweak)
@@ -683,6 +709,13 @@ void Curve_Sequence01_View::GetScreenCurvePoints(const CurveEditorInput& input, 
 		{
 			curvepoints.Append(input.ScreenFromCurve({ p1.posX, p0.posY }));
 		}
+		else if (p1.mode == Curve_Sequence01::Mode::SawWave)
+		{
+			Curve_Sequence01::GenSawWaveMiddlePoints(p1.tweak, [&](Vec2f q)
+			{
+				curvepoints.Append(input.ScreenFromCurve({ lerp(p0.posX, p1.posX, q.x), lerp(p0.posY, p1.posY, q.y) }));
+			});
+		}
 		else
 		{
 			float xstep = 1.f * input.viewport.GetWidth() / input.winRect.GetWidth();
@@ -707,8 +740,8 @@ float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(uint32_t curveid, ui
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];
 	if (p1.mode == Curve_Sequence01::Mode::SinglePowerCurve)
-		return p0.posY < p1.posY ? 1 : -1;
-	return 1;
+		return p0.posY < p1.posY ? 0.1f : -0.1f;
+	return 0.1f;
 }
 
 Vec2f Curve_Sequence01_View::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
