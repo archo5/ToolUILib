@@ -249,34 +249,16 @@ uint32_t ICurveView::_FixPointOrder(uint32_t curveid, uint32_t pointid)
 {
 	while (pointid > 0 && GetPoint(curveid, pointid).x < GetPoint(curveid, pointid - 1).x)
 	{
-		_SwapPoints(curveid, pointid - 1, pointid);
+		SwapPoints(curveid, pointid - 1);
 		pointid--;
 	}
 	auto end = GetPointCount(curveid);
 	while (pointid + 1 < end && GetPoint(curveid, pointid).x > GetPoint(curveid, pointid + 1).x)
 	{
-		_SwapPoints(curveid, pointid, pointid + 1);
+		SwapPoints(curveid, pointid);
 		pointid++;
 	}
 	return pointid;
-}
-
-void ICurveView::_SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1)
-{
-	auto tmp = GetPoint(curveid, p0);
-	SetPoint(curveid, p0, GetPoint(curveid, p1));
-	SetPoint(curveid, p1, tmp);
-
-	if (GetFeatures() & Tangents)
-	{
-		tmp = GetLeftTangentDiff(curveid, p0);
-		SetLeftTangentDiff(curveid, p0, GetLeftTangentDiff(curveid, p1));
-		SetLeftTangentDiff(curveid, p1, tmp);
-
-		tmp = GetRightTangentDiff(curveid, p0);
-		SetRightTangentDiff(curveid, p0, GetRightTangentDiff(curveid, p1));
-		SetRightTangentDiff(curveid, p1, tmp);
-	}
 }
 
 CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
@@ -520,7 +502,7 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 		e.context->CaptureMouse(e.current);
 		break;
 	case SubUIDragState::Move: {
-		auto pid = uiState._pressed;
+		auto& pid = uiState._pressed;
 
 		float q = 1;
 		if (pid.pointType == CPT_Midpoint)

@@ -23,6 +23,7 @@ struct Curve_QuadSpline_View : ICurveView
 		return { curve->points[pointid].time, curve->points[pointid].value };
 	}
 	void SetPoint(u32, u32 pointid, Vec2f p) override;
+	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(curve->points[pointid], curve->points[pointid + 1]); }
 
 	Vec2f GetTangentDiff(u32 pointid, bool right)
 	{

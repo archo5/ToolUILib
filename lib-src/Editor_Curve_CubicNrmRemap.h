@@ -20,6 +20,7 @@ struct Curve_CubicNormalizedRemap_View : ICurveView
 
 	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return pointid == 0 ? Vec2f(0, 0) : Vec2f(1, 1); }
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override {}
+	void SwapPoints(u32 curveid, u32 pointid) override {}
 
 	bool HasLeftTangent(uint32_t, uint32_t pointid) override { return pointid == 1; }
 	Vec2f GetLeftTangentDiff(uint32_t, uint32_t) override { return -curve->t1l; }

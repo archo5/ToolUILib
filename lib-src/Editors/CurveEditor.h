@@ -125,6 +125,7 @@ struct ICurveView
 
 	virtual Vec2f GetPoint(uint32_t curveid, uint32_t pointid) = 0;
 	virtual void SetPoint(uint32_t curveid, uint32_t pointid, Vec2f p) = 0;
+	virtual void SwapPoints(u32 curveid, u32 pointid) = 0;
 
 	virtual Vec2f GetInterpolatedPoint(uint32_t curveid, uint32_t firstpointid, float q) = 0;
 	virtual int GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut);
@@ -147,7 +148,6 @@ struct ICurveView
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
 	uint32_t _FixPointOrder(uint32_t curveid, uint32_t pointid);
-	void _SwapPoints(uint32_t curveid, uint32_t p0, uint32_t p1);
 
 	virtual CurvePointID HitTest(const CurveEditorInput& input, Vec2f cursorPos);
 	virtual void OnEvent(const CurveEditorInput& input, Event& e) {}
@@ -200,6 +200,7 @@ struct BasicLinear01Curve : ICurveView
 
 	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return points[pointid]; }
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override { points[pointid] = { p.x, clamp(p.y, 0.0f, 1.0f) }; }
+	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(points[pointid], points[pointid + 1]); }
 	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
 	{
 		if (firstpointid + 1 >= points.Size())

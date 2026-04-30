@@ -23,6 +23,7 @@ struct Curve_Sequence01_View : ICurveView
 		return { curve->points[pointid].posX, curve->points[pointid].posY };
 	}
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override;
+	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(curve->points[pointid], curve->points[pointid + 1]); }
 	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override;
 
 	bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) override { return true; }
