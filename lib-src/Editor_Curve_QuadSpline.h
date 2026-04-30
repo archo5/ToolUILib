@@ -25,6 +25,8 @@ struct Curve_QuadSpline_View : ICurveView
 	void SetPoint(u32, u32 pointid, Vec2f p) override;
 	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(curve->points[pointid], curve->points[pointid + 1]); }
 
+	float SampleCurve(u32, float x) override;
+
 	Vec2f GetTangentDiff(u32 pointid, bool right)
 	{
 		auto& P = curve->points[pointid];
@@ -40,8 +42,6 @@ struct Curve_QuadSpline_View : ICurveView
 	bool HasRightTangent(u32, u32 pointid) override { return true; }
 	Vec2f GetRightTangentDiff(u32, u32 pointid) override { return GetTangentDiff(pointid, true); }
 	void SetRightTangentDiff(u32, u32 pointid, Vec2f d) override { curve->points[pointid].velocity = divf_safe(d.y, d.x); }
-
-	Vec2f GetInterpolatedPoint(u32, u32 firstpointid, float q) override;
 
 	void OnEvent(const CurveEditorInput& input, Event& e) override;
 

@@ -140,49 +140,22 @@ Range<uint32_t> ICurveView::ExpandForTangents(uint32_t curveid, Range<uint32_t> 
 	return src;
 }
 
-int ICurveView::GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut)
+void ICurveView::GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid, Array<Vec2f>& curvepoints)
 {
-	if (maxOut < 2)
-		return 0;
-	int imin = 0;
-	int imax = maxOut;
-	if (qrange.min == 0)
+	for (float sx = input.winRect.x0; sx <= input.winRect.x1; sx++)
 	{
-		out[imin++] = GetPoint(curveid, firstpointid);
+		float vx = lerp(input.viewport.x0, input.viewport.x1, invlerp(input.winRect.x0, input.winRect.x1, sx));
+		float vy = SampleCurve(curveid, vx);
+		float sy = lerp(input.winRect.y1, input.winRect.y0, invlerp(input.viewport.y0, input.viewport.y1, vy));
+		curvepoints.Append({ sx, sy });
 	}
-	if (qrange.max == 1)
-	{
-		out[--imax] = GetPoint(curveid, firstpointid + 1);
-	}
-	for (int i = imin; i < imax; i++)
-	{
-		float f = float(i) / float(maxOut - 1);
-		float q = lerp(qrange.min, qrange.max, f);
-		out[i] = GetInterpolatedPoint(curveid, firstpointid, q);
-	}
-	return maxOut;
-}
-
-int ICurveView::GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, AABB2f vp, float winWidth, Vec2f* out, int maxOut)
-{
-	if (winWidth <= 0 || !vp.IsValid() || GetPointCount(curveid) < 2)
-		return 0;
-	Rangef vpRange = { vp.x0, vp.x1 };
-	auto p0 = GetPoint(curveid, firstpointid);
-	auto p1 = GetPoint(curveid, firstpointid + 1);
-	auto intersection = vpRange.Intersect({ p0.x, p1.x });
-	float issw = winWidth * intersection.GetWidth() / vp.GetWidth();
-	if (maxOut > issw)
-		maxOut = issw;
-	float qmin = clamp(invlerp(p0.x, p1.x, intersection.min), 0.0f, 1.0f);
-	float qmax = clamp(invlerp(p0.x, p1.x, intersection.max), 0.0f, 1.0f);
-	return GetCurvePointsForRange(curveid, firstpointid, { qmin, qmax }, out, maxOut);
 }
 
 Vec2f ICurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
 {
 	auto p = GetSliceMidpoint(curveid, sliceid);
-	return GetInterpolatedPoint(curveid, sliceid, p.x);
+	float x = lerp(GetPoint(curveid, sliceid).x, GetPoint(curveid, sliceid + 1).x, p.x);
+	return { x, SampleCurve(curveid, x) };
 }
 
 Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid)
@@ -346,25 +319,14 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 void ICurveView::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 {
-	auto vp = input.viewport;
+	if (!input.viewport.IsValid() || !input.winRect.IsValid() || GetPointCount(curveid) < 2)
+		return;
+
 	auto col = GetCurveColor(curveid);
-	auto pointRange = GetLeastPointRange(curveid, { vp.x0, vp.x1 });
 
-	// include adjacent points for edge curves
-	pointRange = ExpandForCurves(pointRange, GetPointCount(curveid));
-	if (pointRange.max == GetPointCount(curveid) && pointRange.max)
-		pointRange.max--;
-
-	constexpr int MAX_CURVE_POINTS = 1024;
-	Vec2f curvePoints[MAX_CURVE_POINTS];
-
-	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
-	{
-		int numPoints = GetCurvePointsForViewport(curveid, pid, vp, input.winRect.GetWidth(), curvePoints, MAX_CURVE_POINTS);
-		for (int i = 0; i < numPoints; i++)
-			curvePoints[i] = input.ScreenFromCurve(curvePoints[i]);
-		draw::AALineCol({ curvePoints, size_t(numPoints) }, 1.0f, col, false);
-	}
+	Array<Vec2f> curvepoints;
+	GetScreenCurvePoints(input, curveid, curvepoints);
+	draw::AALineCol(curvepoints, 1.0f, col, false);
 }
 
 void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveEditorState& state, uint32_t curveid, CurvePointType type, Range<uint32_t> pointRange)
@@ -697,13 +659,47 @@ void Curve_Sequence01_View::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
 	}
 }
 
-Vec2f Curve_Sequence01_View::GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q)
+float Curve_Sequence01_View::SampleCurve(u32, float x)
 {
-	auto& p0 = curve->points[firstpointid];
-	auto& p1 = curve->points[firstpointid + 1];
-	float retX = lerp(p0.posX, p1.posX, q);
-	float retY = curve->EvaluateSegment(p0, p1, q);
-	return { retX, retY };
+	return curve->Evaluate(x);
+}
+
+void Curve_Sequence01_View::GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid, Array<Vec2f>& curvepoints)
+{
+	auto pointrange = GetLeastPointRange(curveid, { input.viewport.x0, input.viewport.x1 });
+	pointrange = ExpandForCurves(pointrange, curve->points.Size());
+
+	if (input.viewport.x0 < curve->points.First().posX)
+		curvepoints.Append(input.ScreenFromCurve({ input.viewport.x0, curve->points.First().posY }));
+
+	for (u32 i = pointrange.min; i < pointrange.max; i++)
+	{
+		auto& p0 = curve->points[i];
+		auto& p1 = curve->points[i + 1];
+
+		curvepoints.Append(input.ScreenFromCurve({ p0.posX, p0.posY }));
+
+		if (p1.mode == Curve_Sequence01::Mode::Hold)
+		{
+			curvepoints.Append(input.ScreenFromCurve({ p1.posX, p0.posY }));
+		}
+		else
+		{
+			float xstep = 1.f * input.viewport.GetWidth() / input.winRect.GetWidth();
+			for (float x = p0.posX + xstep, xend = p1.posX; x < xend; x += xstep)
+			{
+				curvepoints.Append(input.ScreenFromCurve({ x, SampleCurve(0, x) }));
+			}
+		}
+	}
+
+	{
+		auto& pm = curve->points[pointrange.max];
+		curvepoints.Append(input.ScreenFromCurve({ pm.posX, pm.posY }));
+	}
+
+	if (input.viewport.x1 > curve->points.Last().posX)
+		curvepoints.Append(input.ScreenFromCurve({ input.viewport.x1, curve->points.Last().posY }));
 }
 
 float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid)
@@ -805,13 +801,9 @@ void Curve_QuadSpline_View::SetPoint(u32, u32 pointid, Vec2f p)
 	P.value = p.y;
 }
 
-Vec2f Curve_QuadSpline_View::GetInterpolatedPoint(u32, u32 firstpointid, float q)
+float Curve_QuadSpline_View::SampleCurve(u32, float x)
 {
-	float t = lerp(
-		curve->points[firstpointid].time,
-		curve->points.NextWrap(firstpointid).time,
-		q);
-	return { t, curve->Sample(t) };
+	return curve->Sample(x);
 }
 
 void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)

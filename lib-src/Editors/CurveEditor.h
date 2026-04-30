@@ -127,9 +127,8 @@ struct ICurveView
 	virtual void SetPoint(uint32_t curveid, uint32_t pointid, Vec2f p) = 0;
 	virtual void SwapPoints(u32 curveid, u32 pointid) = 0;
 
-	virtual Vec2f GetInterpolatedPoint(uint32_t curveid, uint32_t firstpointid, float q) = 0;
-	virtual int GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut);
-	virtual int GetCurvePointsForViewport(uint32_t curveid, uint32_t firstpointid, AABB2f vp, float winWidth, Vec2f* out, int maxOut);
+	virtual float SampleCurve(u32 curveid, float x) = 0;
+	virtual void GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid, Array<Vec2f>& curvepoints);
 
 	virtual bool HasLeftTangent(uint32_t curveid, uint32_t pointid) { return false; }
 	virtual Vec2f GetLeftTangentDiff(uint32_t curveid, uint32_t pointid) { return {}; }
@@ -201,19 +200,24 @@ struct BasicLinear01Curve : ICurveView
 	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return points[pointid]; }
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override { points[pointid] = { p.x, clamp(p.y, 0.0f, 1.0f) }; }
 	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(points[pointid], points[pointid + 1]); }
-	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
+	float SampleCurve(u32, float x) override
 	{
-		if (firstpointid + 1 >= points.Size())
-			return points.Last();
-		return Vec2fLerp(points[firstpointid], points[firstpointid + 1], q);
-	}
-	int GetCurvePointsForRange(uint32_t curveid, uint32_t firstpointid, Rangef qrange, Vec2f* out, int maxOut) override
-	{
-		if (maxOut < 2)
+		if (points.IsEmpty())
 			return 0;
-		out[0] = GetInterpolatedPoint(curveid, firstpointid, qrange.min);
-		out[1] = GetInterpolatedPoint(curveid, firstpointid + 1, qrange.min);
-		return 2;
+		if (points.Size() == 1)
+			return points[0].y;
+		size_t pos = 0;
+		for (size_t i = 0; i < points.Size(); i++)
+		{
+			if (x > points[i].x)
+			{
+				pos = i;
+			}
+		}
+		if (pos + 1 == points.Size())
+			return points.Last().y;
+		float q = invlerpc(points[pos].x, points[pos + 1].x, x);
+		return lerp(points[pos].y, points[pos + 1].y, q);
 	}
 };
 

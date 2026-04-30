@@ -22,17 +22,14 @@ struct Curve_CubicNormalizedRemap_View : ICurveView
 	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override {}
 	void SwapPoints(u32 curveid, u32 pointid) override {}
 
+	float SampleCurve(u32 curveid, float x) override { return curve->InterpolateSlow(x); }
+
 	bool HasLeftTangent(uint32_t, uint32_t pointid) override { return pointid == 1; }
 	Vec2f GetLeftTangentDiff(uint32_t, uint32_t) override { return -curve->t1l; }
 	void SetLeftTangentDiff(uint32_t, uint32_t, Vec2f d) override { curve->t1l = { clamp01(-d.x), -d.y }; }
 	bool HasRightTangent(uint32_t, uint32_t pointid) override { return pointid == 0; }
 	Vec2f GetRightTangentDiff(uint32_t, uint32_t) override { return curve->t0r; }
 	void SetRightTangentDiff(uint32_t, uint32_t, Vec2f d) override { curve->t0r = { clamp01(d.x), d.y }; }
-
-	Vec2f GetInterpolatedPoint(uint32_t, uint32_t firstpointid, float q) override
-	{
-		return { q, curve->InterpolateSlow(q) };
-	}
 
 	void OnEvent(const CurveEditorInput& input, Event& e) override;
 };
