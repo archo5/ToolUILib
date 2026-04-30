@@ -23,7 +23,7 @@ struct Curve_CubicNormalizedRemap_View : ICurveView
 
 	bool HasLeftTangent(uint32_t, uint32_t pointid) override { return pointid == 1; }
 	Vec2f GetLeftTangentDiff(uint32_t, uint32_t) override { return -curve->t1l; }
-	void SetLeftTangentDiff(uint32_t, uint32_t, Vec2f d) override { curve->t1l = -Vec2f(clamp01(d.x), d.y); }
+	void SetLeftTangentDiff(uint32_t, uint32_t, Vec2f d) override { curve->t1l = { clamp01(-d.x), -d.y }; }
 	bool HasRightTangent(uint32_t, uint32_t pointid) override { return pointid == 0; }
 	Vec2f GetRightTangentDiff(uint32_t, uint32_t) override { return curve->t0r; }
 	void SetRightTangentDiff(uint32_t, uint32_t, Vec2f d) override { curve->t0r = { clamp01(d.x), d.y }; }

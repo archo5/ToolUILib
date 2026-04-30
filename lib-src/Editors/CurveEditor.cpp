@@ -834,6 +834,41 @@ Vec2f Curve_QuadSpline_View::GetInterpolatedPoint(u32, u32 firstpointid, float q
 
 void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 {
+	if (e.type == EventType::ContextMenu)
+	{
+		auto hp = HitTest(input, e.position);
+		auto& cm = ContextMenu::Get();
+		if (hp.IsValid())
+		{
+			if (hp.pointType == CPT_Point)
+			{
+				cm.AddNext("Delete point") = [this, hp]()
+				{
+					curve->points.RemoveAt(hp.pointID);
+				};
+				cm.NewSection();
+			}
+		}
+		else
+		{
+			Vec2f cwp = input.CurveFromScreen(e.position);
+			if (float s = input.settings->snapX)
+				cwp.x = roundf(cwp.x / s) * s;
+			cm.AddNext("Add point") = [this, cwp]()
+			{
+				curve->InsertPoint(cwp.x, cwp.y, 0);
+			};
+		}
+		cm.NewSection();
+		cm.AddNext("Loop", false, curve->flags & Curve_QuadSpline::Loop) = [this]()
+		{
+			curve->flags ^= Curve_QuadSpline::Loop;
+		};
+		cm.AddNext("Acceleration smoothing", false, curve->flags & Curve_QuadSpline::AccelSmoothing) = [this]()
+		{
+			curve->flags ^= Curve_QuadSpline::AccelSmoothing;
+		};
+	}
 }
 
 // Curve_QuadSpline.cpp

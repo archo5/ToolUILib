@@ -159,5 +159,19 @@ Rangef Curve_QuadSpline::CalcHeightRange()
 	return range;
 }
 
+void Curve_QuadSpline::InsertPoint(float time, float value, float velocity)
+{
+	size_t inspos = 0;
+	for (size_t i = 0; i < points.Size(); i++)
+	{
+		if (time > points[i].time)
+		{
+			inspos = i + 1;
+		}
+	}
+
+	points.InsertAt(inspos, { time, value, velocity });
+}
+
 
 } // ui

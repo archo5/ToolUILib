@@ -40,6 +40,7 @@ struct Curve_QuadSpline
 	}
 	float Sample(float t);
 	Rangef CalcHeightRange();
+	void InsertPoint(float time, float value, float velocity);
 };
 
 
