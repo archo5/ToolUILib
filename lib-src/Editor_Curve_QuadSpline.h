@@ -43,6 +43,8 @@ struct Curve_QuadSpline_View : ICurveView
 	Vec2f GetInterpolatedPoint(u32, u32 firstpointid, float q) override;
 
 	void OnEvent(const CurveEditorInput& input, Event& e) override;
+
+	void DrawAll(const CurveEditorInput& input, const CurveEditorState& state) override;
 };
 
 

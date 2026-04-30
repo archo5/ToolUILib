@@ -1138,8 +1138,8 @@ struct CurveEditorTest : ui::Buildable
 		quadSplineCurve.timeRange = { 0, 2 };
 		quadSplineCurve.points =
 		{
-			{ 0.5f, 0.3f, 1 },
-			{ 1.5f, 0.7f, -1 },
+			{ 0.5f, 0.3f, 6 },
+			{ 1.5f, 0.7f, -5 },
 		};
 	}
 	void Build() override

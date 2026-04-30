@@ -79,6 +79,17 @@ void GridSettings::Draw(AABB2f viewport, AABB2f winRect)
 }
 
 
+Vec2f CurveEditorInput::ScreenFromCurve(Vec2f p) const
+{
+	return winRect.Lerp(viewport.InverseLerpFlipY(p));
+}
+
+Vec2f CurveEditorInput::CurveFromScreen(Vec2f p) const
+{
+	return viewport.LerpFlipY(winRect.InverseLerp(p));
+}
+
+
 Range<uint32_t> ICurveView::ExpandForCurves(Range<uint32_t> src, uint32_t max)
 {
 	if (src.min > 0)
@@ -185,7 +196,7 @@ Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpi
 
 		if (GetFeatures() & DirOnlyTangents)
 		{
-			pt = input.winRect.Lerp(input.viewport.InverseLerpFlipY(pt));
+			pt = input.ScreenFromCurve(pt);
 			td.y = -td.y;
 			td *= input.winRect.GetSize().ToVec2() / input.viewport.GetSize().ToVec2();
 			td = td.Normalized();
@@ -194,7 +205,7 @@ Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpi
 		}
 		else
 		{
-			return input.winRect.Lerp(input.viewport.InverseLerpFlipY(pt + td));
+			return input.ScreenFromCurve(pt + td);
 		}
 	}
 	Vec2f p = {};
@@ -207,12 +218,12 @@ Vec2f ICurveView::GetScreenPoint(const CurveEditorInput& input, CurvePointID cpi
 		p = GetSliceMidpointPosition(cpid.curveID, cpid.pointID);
 		break;
 	}
-	return input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
+	return input.ScreenFromCurve(p);
 }
 
 void ICurveView::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp)
 {
-	Vec2f p = input.viewport.LerpFlipY(input.winRect.InverseLerp(sp));
+	Vec2f p = input.CurveFromScreen(sp);
 	if (float snapX = input.settings->snapX)
 		p.x = roundf(p.x / snapX) * snapX;
 	switch (cpid.pointType)
@@ -282,7 +293,7 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 		for (uint32_t pid = pointRange.max; pid > pointRange.min; )
 		{
 			pid--;
-			Vec2f p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(GetPoint(cid, pid)));
+			Vec2f p = input.ScreenFromCurve(GetPoint(cid, pid));
 			if ((p - cursorPos).LengthSq() <= pradsq)
 				return { cid, CPT_Point, pid };
 		}
@@ -302,7 +313,7 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 				if (HasSliceMidpoint(cid, pid))
 				{
 					Vec2f p = GetSliceMidpointPosition(cid, pid);
-					p = input.winRect.Lerp(input.viewport.InverseLerpFlipY(p));
+					p = input.ScreenFromCurve(p);
 					if ((p - cursorPos).LengthSq() <= pradsq)
 						return { cid, CPT_Midpoint, pid };
 				}
@@ -369,7 +380,7 @@ void ICurveView::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 	{
 		int numPoints = GetCurvePointsForViewport(curveid, pid, vp, input.winRect.GetWidth(), curvePoints, MAX_CURVE_POINTS);
 		for (int i = 0; i < numPoints; i++)
-			curvePoints[i] = input.winRect.Lerp(input.viewport.InverseLerpFlipY(curvePoints[i]));
+			curvePoints[i] = input.ScreenFromCurve(curvePoints[i]);
 		draw::AALineCol({ curvePoints, size_t(numPoints) }, 1.0f, col, false);
 	}
 }
@@ -460,7 +471,7 @@ void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveE
 		for (uint32_t pid = tangentRange.min; pid < tangentRange.max; pid++)
 		{
 			auto pt = GetPoint(cid, pid);
-			pt = input.winRect.Lerp(input.viewport.InverseLerpFlipY(pt));
+			pt = input.ScreenFromCurve(pt);
 
 			if (HasLeftTangent(cid, pid))
 			{
@@ -480,26 +491,19 @@ void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveE
 
 void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& state)
 {
-	uint32_t numCurves = GetCurveCount();
-	auto vp = input.viewport;
-
-	if (draw::PushScissorRect(input.winRect.ExtendBy(1)))
+	// curve lines
+	for (uint32_t cid = 0, numCurves = GetCurveCount(); cid < numCurves; cid++)
 	{
-		// curve lines
-		for (uint32_t cid = 0; cid < numCurves; cid++)
-		{
-			if (!IsCurveVisible(cid))
-				continue;
+		if (!IsCurveVisible(cid))
+			continue;
 
-			DrawCurve(input, cid);
-		}
-
-		if (GetFeatures() & Tangents)
-			DrawAllTangentLines(input, state);
-
-		DrawAllPoints(input, state);
+		DrawCurve(input, cid);
 	}
-	draw::PopScissorRect();
+
+	if (GetFeatures() & Tangents)
+		DrawAllTangentLines(input, state);
+
+	DrawAllPoints(input, state);
 }
 
 
@@ -541,7 +545,12 @@ void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 {
 	if (!curves)
 		return;
-	curves->DrawAll(input, *this);
+
+	if (draw::PushScissorRect(input.winRect.ExtendBy(1)))
+	{
+		curves->DrawAll(input, *this);
+	}
+	draw::PopScissorRect();
 }
 
 
@@ -782,7 +791,7 @@ void Curve_Sequence01_View::OnEvent(const CurveEditorInput& input, Event& e)
 		}
 		else
 		{
-			Vec2f cwp = input.viewport.LerpFlipY(input.winRect.InverseLerp(e.position));
+			Vec2f cwp = input.CurveFromScreen(e.position);
 			if (float s = input.settings->snapX)
 				cwp.x = roundf(cwp.x / s) * s;
 			cm.AddNext("Add") = [this, cwp]()
@@ -825,6 +834,56 @@ Vec2f Curve_QuadSpline_View::GetInterpolatedPoint(u32, u32 firstpointid, float q
 
 void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 {
+}
+
+// Curve_QuadSpline.cpp
+bool CQS_FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp);
+
+static void DrawTangentSwordfight(const CurveEditorInput& input, const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb)
+{
+	Vec2f cmp;
+	if (CQS_FindCurveMidpoint(pa, pb, cmp))
+	{
+		Vec2f pts[3] =
+		{
+			input.ScreenFromCurve({ pa.time, pa.value }),
+			input.ScreenFromCurve(cmp),
+			input.ScreenFromCurve({ pb.time, pb.value }),
+		};
+		draw::AALineCol(pts, 1, { 255, 127, 0, 63 }, false);
+	}
+	else
+	{
+		auto pa0 = input.ScreenFromCurve({ pa.time, pa.value });
+		auto pb0 = input.ScreenFromCurve({ pb.time, pb.value });
+		float w = fabsf(pb.time - pa.time);
+		auto pa1 = input.ScreenFromCurve({ pb.time, pa.value + pa.velocity * w });
+		auto pb1 = input.ScreenFromCurve({ pa.time, pb.value - pb.velocity * w });
+		draw::AALineCol(pa0.x, pa0.y, pa1.x, pa1.y, 1, { 255, 0, 0, 63 });
+		draw::AALineCol(pb0.x, pb0.y, pb1.x, pb1.y, 1, { 255, 0, 0, 63 });
+	}
+}
+
+void Curve_QuadSpline_View::DrawAll(const CurveEditorInput& input, const CurveEditorState& state)
+{
+	if (curve->points.NotEmpty() && (curve->flags & Curve_QuadSpline::Loop))
+	{
+		auto p0 = curve->points.Last();
+		p0.time -= curve->timeRange.GetWidth();
+		DrawTangentSwordfight(input, p0, curve->points.First());
+	}
+	for (size_t i = 0; i + 1 < curve->points.Size(); i++)
+	{
+		DrawTangentSwordfight(input, curve->points[i], curve->points[i + 1]);
+	}
+	if (curve->points.NotEmpty() && (curve->flags & Curve_QuadSpline::Loop))
+	{
+		auto p1 = curve->points.First();
+		p1.time += curve->timeRange.GetWidth();
+		DrawTangentSwordfight(input, curve->points.Last(), p1);
+	}
+
+	ICurveView::DrawAll(input, state);
 }
 
 

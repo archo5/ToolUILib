@@ -22,7 +22,7 @@ static bool StraightLineIntersection(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec
 	return true;
 }
 
-static bool FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp)
+bool CQS_FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp)
 {
 	Vec2f pa2 = { pa.time, pa.value };
 	Vec2f pb2 = { pb.time, pb.value };
@@ -99,7 +99,7 @@ static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range,
 		pb.time += range.GetWidth();
 
 	Vec2f cmp;
-	if (FindCurveMidpoint(pa, pb, cmp))
+	if (CQS_FindCurveMidpoint(pa, pb, cmp))
 	{
 		float q = invqslerp(pa.time, cmp.x, pb.time, sx);
 		float cv = qslerp(pa.value, cmp.y, pb.value, q);
@@ -141,7 +141,7 @@ Rangef Curve_QuadSpline::CalcHeightRange()
 			auto pa = points[i];
 			auto pb = points.NextWrap(i);
 			Vec2f cmp;
-			if (FindCurveMidpoint(pa, pb, cmp))
+			if (CQS_FindCurveMidpoint(pa, pb, cmp))
 			{
 				// excessive
 				//range.Include(cmp.y);

@@ -46,6 +46,9 @@ struct CurveEditorInput
 	AABB2f viewport;
 	AABB2f winRect;
 	CurveEditorSettings* settings;
+
+	Vec2f ScreenFromCurve(Vec2f p) const;
+	Vec2f CurveFromScreen(Vec2f p) const;
 };
 
 enum CurvePointType
