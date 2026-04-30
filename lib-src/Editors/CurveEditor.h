@@ -121,7 +121,7 @@ struct ICurveView
 	virtual Range<uint32_t> ExpandForTangents(uint32_t curveid, Range<uint32_t> src);
 
 	virtual bool IsCurveVisible(uint32_t curveid) { return true; }
-	virtual Color4b GetCurveColor(uint32_t curveid) { return { 127, 255 }; }
+	virtual Color4b GetCurveColor(uint32_t curveid) { return { 191, 255 }; }
 
 	virtual Vec2f GetPoint(uint32_t curveid, uint32_t pointid) = 0;
 	virtual void SetPoint(uint32_t curveid, uint32_t pointid, Vec2f p) = 0;

@@ -843,6 +843,9 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 {
 	if (e.type == EventType::ContextMenu)
 	{
+		Vec2f cwp = input.CurveFromScreen(e.position);
+		if (float s = input.settings->snapX)
+			cwp.x = roundf(cwp.x / s) * s;
 		auto hp = HitTest(input, e.position);
 		auto& cm = ContextMenu::Get();
 		if (hp.IsValid())
@@ -858,14 +861,20 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 		}
 		else
 		{
-			Vec2f cwp = input.CurveFromScreen(e.position);
-			if (float s = input.settings->snapX)
-				cwp.x = roundf(cwp.x / s) * s;
 			cm.AddNext("Add point") = [this, cwp]()
 			{
 				curve->InsertPoint(cwp.x, cwp.y, 0);
 			};
 		}
+		cm.NewSection();
+		cm.AddNext("Set loop start") = [this, cwp]()
+		{
+			curve->timeRange.min = cwp.x;
+		};
+		cm.AddNext("Set loop end") = [this, cwp]()
+		{
+			curve->timeRange.max = cwp.x;
+		};
 		cm.NewSection();
 		cm.AddNext("Loop", false, curve->flags & Curve_QuadSpline::Loop) = [this]()
 		{
@@ -924,6 +933,12 @@ void Curve_QuadSpline_View::DrawAll(const CurveEditorInput& input, const CurveEd
 		p1.time += curve->timeRange.GetWidth();
 		DrawTangentSwordfight(input, curve->points.Last(), p1);
 	}
+
+	// loop range
+	float strmin = input.ScreenFromCurve({ curve->timeRange.min, 0 }).x;
+	float strmax = input.ScreenFromCurve({ curve->timeRange.max, 0 }).x;
+	draw::AALineCol(strmin, input.winRect.y0, strmin, input.winRect.y1, 1, { 255, 32, 0 });
+	draw::AALineCol(strmax, input.winRect.y0, strmax, input.winRect.y1, 1, { 255, 0, 63 });
 
 	ICurveView::DrawAll(input, state);
 }
