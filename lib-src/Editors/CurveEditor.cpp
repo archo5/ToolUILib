@@ -90,7 +90,7 @@ Vec2f CurveEditorInput::CurveFromScreen(Vec2f p) const
 }
 
 
-Range<uint32_t> ICurveView::ExpandForCurves(Range<uint32_t> src, uint32_t max)
+Range<u32> ICurveView::ExpandForCurves(Range<u32> src, u32 max)
 {
 	if (src.min > 0)
 		src.min--;
@@ -105,20 +105,20 @@ Range<uint32_t> ICurveView::ExpandForCurves(Range<uint32_t> src, uint32_t max)
 AABB2f ICurveView::GetPreferredViewport(bool includeTangents)
 {
 	AABB2f bbox = AABB2f::Empty();
-	for (uint32_t cid = 0, numcurves = GetCurveCount(); cid < numcurves; cid++)
+	for (u32 cid = 0, numcurves = GetCurveCount(); cid < numcurves; cid++)
 	{
 		bbox.Include(GetPreferredCurveViewport(includeTangents, cid, { 0, GetPointCount(cid) }));
 	}
 	return bbox;
 }
 
-AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, uint32_t curveid, Range<uint32_t> pointRange)
+AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, u32 curveid, Range<u32> pointRange)
 {
 	auto features = GetFeatures();
 	if (!(features & Tangents) || (features & DirOnlyTangents))
 		includeTangents = false;
 	AABB2f bbox = AABB2f::Empty();
-	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
+	for (u32 pid = pointRange.min; pid < pointRange.max; pid++)
 	{
 		Vec2f pt = GetPoint(curveid, pid);
 		bbox.Include(pt);
@@ -131,7 +131,7 @@ AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, uint32_t curv
 	return bbox;
 }
 
-Range<uint32_t> ICurveView::ExpandForTangents(uint32_t curveid, Range<uint32_t> src)
+Range<u32> ICurveView::ExpandForTangents(u32 curveid, Range<u32> src)
 {
 	if (src.min > 0)
 		src.min--;
@@ -151,7 +151,7 @@ void ICurveView::GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid
 	}
 }
 
-Vec2f ICurveView::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
+Vec2f ICurveView::GetSliceMidpointPosition(u32 curveid, u32 sliceid)
 {
 	auto p = GetSliceMidpoint(curveid, sliceid);
 	float x = lerp(GetPoint(curveid, sliceid).x, GetPoint(curveid, sliceid + 1).x, p.x);
@@ -218,7 +218,7 @@ void ICurveView::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid
 	}
 }
 
-uint32_t ICurveView::_FixPointOrder(uint32_t curveid, uint32_t pointid)
+u32 ICurveView::_FixPointOrder(u32 curveid, u32 pointid)
 {
 	while (pointid > 0 && GetPoint(curveid, pointid).x < GetPoint(curveid, pointid - 1).x)
 	{
@@ -236,16 +236,16 @@ uint32_t ICurveView::_FixPointOrder(uint32_t curveid, uint32_t pointid)
 
 CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 {
-	uint32_t numCurves = GetCurveCount();
+	u32 numCurves = GetCurveCount();
 	auto vp = input.viewport;
 
 	float pradsq = input.settings->pointRadius * input.settings->pointRadius;
 
-	for (uint32_t cid = 0; cid < numCurves; cid++)
+	for (u32 cid = 0; cid < numCurves; cid++)
 	{
 		auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 
-		for (uint32_t pid = pointRange.max; pid > pointRange.min; )
+		for (u32 pid = pointRange.max; pid > pointRange.min; )
 		{
 			pid--;
 			Vec2f p = input.ScreenFromCurve(GetPoint(cid, pid));
@@ -256,12 +256,12 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 	if (GetFeatures() & SliceMidpoints)
 	{
-		for (uint32_t cid = 0; cid < numCurves; cid++)
+		for (u32 cid = 0; cid < numCurves; cid++)
 		{
 			auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 			auto midptRange = ExpandForCurves(pointRange, GetPointCount(cid));
 
-			for (uint32_t pid = midptRange.max; pid > midptRange.min; )
+			for (u32 pid = midptRange.max; pid > midptRange.min; )
 			{
 				pid--;
 
@@ -290,11 +290,11 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 	if (GetFeatures() & Tangents)
 	{
-		for (uint32_t cid = 0; cid < numCurves; cid++)
+		for (u32 cid = 0; cid < numCurves; cid++)
 		{
 			auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 
-			for (uint32_t pid = pointRange.max; pid > pointRange.min; )
+			for (u32 pid = pointRange.max; pid > pointRange.min; )
 			{
 				pid--;
 
@@ -317,7 +317,7 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 	return SubUIValueHelper<CurvePointID>::GetNullValue();
 }
 
-void ICurveView::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
+void ICurveView::DrawCurve(const CurveEditorInput& input, u32 curveid)
 {
 	if (!input.viewport.IsValid() || !input.winRect.IsValid() || GetPointCount(curveid) < 2)
 		return;
@@ -329,10 +329,10 @@ void ICurveView::DrawCurve(const CurveEditorInput& input, uint32_t curveid)
 	draw::AALineCol(curvepoints, 1.0f, col, false);
 }
 
-void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveEditorState& state, uint32_t curveid, CurvePointType type, Range<uint32_t> pointRange)
+void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveEditorState& state, u32 curveid, CurvePointType type, Range<u32> pointRange)
 {
 	auto col = GetCurveColor(curveid);
-	for (uint32_t pid = pointRange.min; pid < pointRange.max; pid++)
+	for (u32 pid = pointRange.min; pid < pointRange.max; pid++)
 	{
 		switch (type)
 		{
@@ -364,10 +364,10 @@ void ICurveView::DrawCurvePointsType(const CurveEditorInput& input, const CurveE
 
 void ICurveView::DrawAllPoints(const CurveEditorInput& input, const CurveEditorState& state)
 {
-	uint32_t numCurves = GetCurveCount();
+	u32 numCurves = GetCurveCount();
 	auto vp = input.viewport;
 
-	for (uint32_t cid = 0; cid < numCurves; cid++)
+	for (u32 cid = 0; cid < numCurves; cid++)
 	{
 		if (!IsCurveVisible(cid))
 			continue;
@@ -397,10 +397,10 @@ void ICurveView::DrawAllPoints(const CurveEditorInput& input, const CurveEditorS
 
 void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveEditorState& state)
 {
-	uint32_t numCurves = GetCurveCount();
+	u32 numCurves = GetCurveCount();
 	auto vp = input.viewport;
 
-	for (uint32_t cid = 0; cid < numCurves; cid++)
+	for (u32 cid = 0; cid < numCurves; cid++)
 	{
 		if (!IsCurveVisible(cid))
 			continue;
@@ -412,7 +412,7 @@ void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveE
 		auto tangentRange = ExpandForTangents(cid, pointRange);
 
 		auto col = GetCurveColor(cid);
-		for (uint32_t pid = tangentRange.min; pid < tangentRange.max; pid++)
+		for (u32 pid = tangentRange.min; pid < tangentRange.max; pid++)
 		{
 			auto pt = GetPoint(cid, pid);
 			pt = input.ScreenFromCurve(pt);
@@ -436,7 +436,7 @@ void ICurveView::DrawAllTangentLines(const CurveEditorInput& input, const CurveE
 void ICurveView::DrawAll(const CurveEditorInput& input, const CurveEditorState& state)
 {
 	// curve lines
-	for (uint32_t cid = 0, numCurves = GetCurveCount(); cid < numCurves; cid++)
+	for (u32 cid = 0, numCurves = GetCurveCount(); cid < numCurves; cid++)
 	{
 		if (!IsCurveVisible(cid))
 			continue;
@@ -665,7 +665,7 @@ void Curve_Sequence01::AddPoint(Vec2f pos)
 }
 
 
-void Curve_Sequence01_View::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
+void Curve_Sequence01_View::SetPoint(u32, u32 pointid, Vec2f p)
 {
 	float newX = p.x;
 	float newY = clamp(p.y, 0.0f, 1.0f);
@@ -679,7 +679,7 @@ void Curve_Sequence01_View::SetPoint(uint32_t, uint32_t pointid, Vec2f p)
 		dp.deltaX = 0;
 	dp.posX = prevX + dp.deltaX;
 
-	for (uint32_t i = pointid + 1; i < uint32_t(curve->points.size()); i++)
+	for (u32 i = pointid + 1; i < u32(curve->points.size()); i++)
 	{
 		curve->points[i].posX = curve->points[i - 1].posX + curve->points[i].deltaX;
 	}
@@ -735,7 +735,7 @@ void Curve_Sequence01_View::GetScreenCurvePoints(const CurveEditorInput& input, 
 		curvepoints.Append(input.ScreenFromCurve({ input.viewport.x1, curve->points.Last().posY }));
 }
 
-float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid)
+float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(u32 curveid, u32 sliceid)
 {
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];
@@ -744,7 +744,7 @@ float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(uint32_t curveid, ui
 	return 0.1f;
 }
 
-Vec2f Curve_Sequence01_View::GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid)
+Vec2f Curve_Sequence01_View::GetSliceMidpointPosition(u32 curveid, u32 sliceid)
 {
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];

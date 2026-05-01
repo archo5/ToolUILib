@@ -61,11 +61,11 @@ enum CurvePointType
 
 struct CurvePointID
 {
-	uint32_t curveID : 30;
-	uint32_t pointType : 2; // CurvePointType
-	uint32_t pointID;
+	u32 curveID : 30;
+	u32 pointType : 2; // CurvePointType
+	u32 pointID;
 
-	constexpr CurvePointID(uint32_t cid, CurvePointType t, uint32_t pid)
+	constexpr CurvePointID(u32 cid, CurvePointType t, u32 pid)
 		: curveID(cid), pointType(t), pointID(pid)
 	{
 	}
@@ -99,7 +99,7 @@ struct CurveEditorState
 
 struct ICurveView
 {
-	static Range<uint32_t> ExpandForCurves(Range<uint32_t> src, uint32_t max);
+	static Range<u32> ExpandForCurves(Range<u32> src, u32 max);
 
 	enum Feature
 	{
@@ -107,57 +107,57 @@ struct ICurveView
 		Tangents = 1 << 1,
 		DirOnlyTangents = 1 << 2,
 	};
-	virtual uint32_t GetFeatures() = 0;
+	virtual u32 GetFeatures() = 0;
 
 	virtual AABB2f GetPreferredViewport(bool includeTangents);
-	virtual AABB2f GetPreferredCurveViewport(bool includeTangents, uint32_t curveid, Range<uint32_t> pointRange);
+	virtual AABB2f GetPreferredCurveViewport(bool includeTangents, u32 curveid, Range<u32> pointRange);
 
-	virtual uint32_t GetCurveCount() { return 1; }
-	virtual uint32_t GetPointCount(uint32_t curveid) = 0;
+	virtual u32 GetCurveCount() { return 1; }
+	virtual u32 GetPointCount(u32 curveid) = 0;
 
 	// only guarantees that at least the points you need will be in the range, as an optimization
 	// does not guarantee that the smallest set of points is there
-	virtual Range<uint32_t> GetLeastPointRange(uint32_t curveid, Rangef xrange) { return { 0, GetPointCount(curveid) }; }
-	virtual Range<uint32_t> ExpandForTangents(uint32_t curveid, Range<uint32_t> src);
+	virtual Range<u32> GetLeastPointRange(u32 curveid, Rangef xrange) { return { 0, GetPointCount(curveid) }; }
+	virtual Range<u32> ExpandForTangents(u32 curveid, Range<u32> src);
 
-	virtual bool IsCurveVisible(uint32_t curveid) { return true; }
-	virtual Color4b GetCurveColor(uint32_t curveid) { return { 191, 255 }; }
+	virtual bool IsCurveVisible(u32 curveid) { return true; }
+	virtual Color4b GetCurveColor(u32 curveid) { return { 191, 255 }; }
 
-	virtual Vec2f GetPoint(uint32_t curveid, uint32_t pointid) = 0;
-	virtual void SetPoint(uint32_t curveid, uint32_t pointid, Vec2f p) = 0;
+	virtual Vec2f GetPoint(u32 curveid, u32 pointid) = 0;
+	virtual void SetPoint(u32 curveid, u32 pointid, Vec2f p) = 0;
 	virtual void SwapPoints(u32 curveid, u32 pointid) = 0;
 
 	virtual float SampleCurve(u32 curveid, float x) = 0;
 	virtual void GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid, Array<Vec2f>& curvepoints);
 
-	virtual bool HasLeftTangent(uint32_t curveid, uint32_t pointid) { return false; }
-	virtual Vec2f GetLeftTangentDiff(uint32_t curveid, uint32_t pointid) { return {}; }
-	virtual void SetLeftTangentDiff(uint32_t curveid, uint32_t pointid, Vec2f d) {}
-	virtual bool HasRightTangent(uint32_t curveid, uint32_t pointid) { return false; }
-	virtual Vec2f GetRightTangentDiff(uint32_t curveid, uint32_t pointid) { return {}; }
-	virtual void SetRightTangentDiff(uint32_t curveid, uint32_t pointid, Vec2f d) {}
+	virtual bool HasLeftTangent(u32 curveid, u32 pointid) { return false; }
+	virtual Vec2f GetLeftTangentDiff(u32 curveid, u32 pointid) { return {}; }
+	virtual void SetLeftTangentDiff(u32 curveid, u32 pointid, Vec2f d) {}
+	virtual bool HasRightTangent(u32 curveid, u32 pointid) { return false; }
+	virtual Vec2f GetRightTangentDiff(u32 curveid, u32 pointid) { return {}; }
+	virtual void SetRightTangentDiff(u32 curveid, u32 pointid, Vec2f d) {}
 
-	virtual bool HasSliceMidpoint(uint32_t curveid, uint32_t sliceid) { return false; }
+	virtual bool HasSliceMidpoint(u32 curveid, u32 sliceid) { return false; }
 	// slice midpoint coordinates: x = lerp factor, y = modifier (screen pixel units)
-	virtual Vec2f GetSliceMidpoint(uint32_t curveid, uint32_t sliceid) { return { 0.5f, 0 }; }
-	virtual void SetSliceMidpoint(uint32_t curveid, uint32_t sliceid, Vec2f p) {}
-	virtual float GetSliceMidpointVertDragFactor(uint32_t curveid, uint32_t sliceid) { return 1; }
-	virtual Vec2f GetSliceMidpointPosition(uint32_t curveid, uint32_t sliceid);
+	virtual Vec2f GetSliceMidpoint(u32 curveid, u32 sliceid) { return { 0.5f, 0 }; }
+	virtual void SetSliceMidpoint(u32 curveid, u32 sliceid, Vec2f p) {}
+	virtual float GetSliceMidpointVertDragFactor(u32 curveid, u32 sliceid) { return 1; }
+	virtual Vec2f GetSliceMidpointPosition(u32 curveid, u32 sliceid);
 
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
-	uint32_t _FixPointOrder(uint32_t curveid, uint32_t pointid);
+	u32 _FixPointOrder(u32 curveid, u32 pointid);
 
 	virtual CurvePointID HitTest(const CurveEditorInput& input, Vec2f cursorPos);
 	virtual void OnEvent(const CurveEditorInput& input, Event& e) {}
 
-	virtual void DrawCurve(const CurveEditorInput& input, uint32_t curveid);
+	virtual void DrawCurve(const CurveEditorInput& input, u32 curveid);
 	virtual void DrawCurvePointsType(
 		const CurveEditorInput& input,
 		const CurveEditorState& state,
-		uint32_t curveid,
+		u32 curveid,
 		CurvePointType type,
-		Range<uint32_t> pointRange);
+		Range<u32> pointRange);
 
 	// overriding the order of point types to match hit test
 	virtual void DrawAllPoints(const CurveEditorInput& input, const CurveEditorState& state);
@@ -192,13 +192,13 @@ struct BasicLinear01Curve : ICurveView
 {
 	Array<Vec2f> points;
 
-	uint32_t GetFeatures() override { return 0; }
+	u32 GetFeatures() override { return 0; }
 
-	uint32_t GetCurveCount() override { return 1; }
-	uint32_t GetPointCount(uint32_t) override { return points.size(); }
+	u32 GetCurveCount() override { return 1; }
+	u32 GetPointCount(u32) override { return points.size(); }
 
-	Vec2f GetPoint(uint32_t, uint32_t pointid) override { return points[pointid]; }
-	void SetPoint(uint32_t, uint32_t pointid, Vec2f p) override { points[pointid] = { p.x, clamp(p.y, 0.0f, 1.0f) }; }
+	Vec2f GetPoint(u32, u32 pointid) override { return points[pointid]; }
+	void SetPoint(u32, u32 pointid, Vec2f p) override { points[pointid] = { p.x, clamp(p.y, 0.0f, 1.0f) }; }
 	void SwapPoints(u32 curveid, u32 pointid) override { std::swap(points[pointid], points[pointid + 1]); }
 	float SampleCurve(u32, float x) override
 	{
