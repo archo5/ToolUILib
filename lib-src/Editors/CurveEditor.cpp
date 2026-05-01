@@ -2,6 +2,7 @@
 #include "CurveEditor.h"
 
 #include "../Model/Menu.h"
+#include "../Model/Native.h"
 
 #include "../Editor_Curve_Sequence01.h"
 #include "../Editor_Curve_CubicNrmRemap.h"
@@ -479,6 +480,7 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 			if (pid.pointType == CPT_Point)
 				pid.pointID = curves->_FixPointOrder(pid.curveID, pid.pointID);
 		}
+		e.context->OnChange(e.current);
 		break;
 	case SubUIDragState::Stop:
 		e.context->ReleaseMouse();
@@ -530,6 +532,124 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 
 	PaintChildren(ctx, cpa);
 }
+
+
+struct Curve_RTEditorWindowContents : Buildable
+{
+	Curve_RTEditButton* _editor = nullptr;
+
+	void Build() override
+	{
+		auto& cee = Make<CurveEditorElement>();
+		cee.curveView = _editor->curveView;
+		cee.HandleEvent(EventType::Change) = [this, &cee](Event& e)
+		{
+			e.context->OnChange(_editor);
+			e.context->OnCommit(_editor);
+		};
+	}
+};
+
+
+struct Curve_RTEditorWindow : NativeWindowBase
+{
+	Curve_RTEditorWindow(Curve_RTEditButton* editor)
+	{
+		SetTitle("Curve editor");
+		SetInnerSize(700, 300);
+
+		auto* B = CreateUIObject<Curve_RTEditorWindowContents>();
+		B->_editor = editor;
+		SetContents(B, true);
+	}
+};
+
+
+Curve_RTEditButton& Curve_RTEditButton::SetCurveView(ICurveView* cv)
+{
+	curveView = cv;
+	if (_rtWindow)
+		_rtWindow->RebuildRoot();
+	return *this;
+}
+
+void Curve_RTEditButton::OnDisable()
+{
+	delete _rtWindow;
+	_rtWindow = nullptr;
+}
+
+void Curve_RTEditButton::OnReset()
+{
+	FrameElement::OnReset();
+
+	SetDefaultFrameStyle(DefaultFrameStyle::Button);
+	SetFlag(UIObject_DB_Button, true);
+
+	curveView = nullptr;
+}
+
+void Curve_RTEditButton::OnPaint(const UIPaintContext& ctx)
+{
+	auto cpa = PaintFrame();
+
+	auto r = GetFinalRect().ShrinkBy(frameStyle.padding);
+
+	CurveEditorInput cei;
+	cei.viewport = curveView->GetPreferredViewport(false);
+	cei.winRect = r;
+	for (u32 cid = 0, cnum = curveView->GetCurveCount(); cid < cnum; cid++)
+		curveView->DrawCurve(cei, cid);
+}
+
+void Curve_RTEditButton::OnEvent(Event& e)
+{
+	if (e.type == EventType::Activate)
+	{
+		if (!_rtWindow)
+			_rtWindow = new Curve_RTEditorWindow(this);
+		_rtWindow->SetVisible(true);
+	}
+}
+
+
+namespace imm {
+
+imCtrlInfoT<Curve_RTEditButton> imEditCurveRT(ICurveView* curveView)
+{
+	auto& ceb = Make<Curve_RTEditButton>();
+	ceb.Init(curveView);
+
+	if (ceb.flags & UIObject_AfterIMEdit)
+	{
+		ceb._OnIMChange();
+		ceb.flags &= ~UIObject_AfterIMEdit;
+	}
+	bool edited = false;
+	if (ceb.flags & UIObject_IsEdited)
+	{
+		ceb.flags &= ~UIObject_IsEdited;
+		ceb.flags |= UIObject_AfterIMEdit;
+		ceb.RebuildContainer();
+		edited = true;
+	}
+
+	ceb.HandleEvent(&ceb) = [&ceb](Event& e)
+	{
+		if (e.type == EventType::Change)
+			e.StopPropagation();
+		if (e.type == EventType::Commit)
+		{
+			e.StopPropagation();
+			e.current->flags |= UIObject_IsEdited;
+			e.current->RebuildContainer();
+		}
+	};
+
+	return { edited, &ceb };
+}
+
+} // imm
 
 
 void Curve_Sequence01::Point::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)

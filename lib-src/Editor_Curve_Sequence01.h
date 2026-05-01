@@ -13,6 +13,9 @@ struct Curve_Sequence01_View : ICurveView
 {
 	Curve_Sequence01* curve = nullptr;
 
+	Curve_Sequence01_View() {}
+	Curve_Sequence01_View(Curve_Sequence01& c) : curve(&c) {}
+
 	u32 GetFeatures() override { return SliceMidpoints; }
 
 	u32 GetCurveCount() override { return 1; }

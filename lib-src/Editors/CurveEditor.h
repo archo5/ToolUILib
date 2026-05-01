@@ -188,6 +188,38 @@ struct CurveEditorElement : FrameElement
 };
 
 
+struct Curve_RTEditButton : FrameElement
+{
+	struct Curve_RTEditorWindow* _rtWindow = nullptr;
+
+	ICurveView* curveView = nullptr;
+	Curve_RTEditButton& SetCurveView(ICurveView* cv);
+
+	Curve_RTEditButton& Init(ICurveView* c) { return SetCurveView(c); }
+
+	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
+	{
+		return EstSizeRange::SoftExact(containerSize.x);
+	}
+	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override
+	{
+		return EstSizeRange::SoftAtLeast(14).Add(frameStyle.padding.y0 + frameStyle.padding.y1);
+	}
+
+	void OnDisable() override;
+	void OnReset() override;
+	void OnPaint(const UIPaintContext& ctx) override;
+	void OnEvent(Event& e) override;
+};
+
+
+namespace imm {
+
+imCtrlInfoT<Curve_RTEditButton> imEditCurveRT(ICurveView* curveView);
+
+} // imm
+
+
 struct BasicLinear01Curve : ICurveView
 {
 	Array<Vec2f> points;
@@ -220,5 +252,6 @@ struct BasicLinear01Curve : ICurveView
 		return lerp(points[pos].y, points[pos + 1].y, q);
 	}
 };
+
 
 } // ui

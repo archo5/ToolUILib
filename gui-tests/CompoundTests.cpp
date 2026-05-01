@@ -3,6 +3,8 @@
 
 #include "../lib-src/Model/Docking.h"
 #include "../lib-src/Editors/NumberEditor.h"
+#include "../lib-src/Editors/CurveEditor.h"
+#include "../lib-src/Editor_Curve_CubicNrmRemap.h"
 
 
 struct StateButtonsTest : ui::Buildable
@@ -920,6 +922,9 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel("color B (Immediate)"), ui::imEditColor(colorValB, false);
 			ui::imLabel("color F (Immediate)"), ui::imEditColor(colorValF, false);
 		}
+		{
+			ui::imLabel("curve"), ui::imEditCurveRT(UI_BUILD_ALLOC(ui::Curve_CubicNormalizedRemap_View)(curveCNR));
+		}
 
 		ui::imSetEnabled(oldEnabled);
 
@@ -938,6 +943,7 @@ struct IMGUITest : ui::Buildable
 	float multiplierVal = 2;
 	ui::Color4b colorValB = { 180, 200, 220, 255 };
 	ui::Color4f colorValF = { 0.9f, 0.7f, 0.5f, 0.8f };
+	ui::Curve_CubicNormalizedRemap curveCNR;
 };
 void Test_IMGUI()
 {

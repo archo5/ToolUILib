@@ -13,6 +13,9 @@ struct Curve_CubicNormalizedRemap_View : ICurveView
 {
 	Curve_CubicNormalizedRemap* curve = nullptr;
 
+	Curve_CubicNormalizedRemap_View() {}
+	Curve_CubicNormalizedRemap_View(Curve_CubicNormalizedRemap& c) : curve(&c) {}
+
 	u32 GetFeatures() override { return Tangents; }
 
 	u32 GetCurveCount() override { return 1; }

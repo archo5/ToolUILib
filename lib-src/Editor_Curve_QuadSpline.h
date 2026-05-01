@@ -13,6 +13,9 @@ struct Curve_QuadSpline_View : ICurveView
 {
 	Curve_QuadSpline* curve = nullptr;
 
+	Curve_QuadSpline_View() {}
+	Curve_QuadSpline_View(Curve_QuadSpline& c) : curve(&c) {}
+
 	u32 GetFeatures() override { return Tangents | DirOnlyTangents; }
 
 	u32 GetCurveCount() override { return 1; }
