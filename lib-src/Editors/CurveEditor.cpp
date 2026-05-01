@@ -514,7 +514,6 @@ void CurveEditorElement::OnReset()
 	gridSettings = {};
 
 	SetDefaultFrameStyle(DefaultFrameStyle::ListBox); // TODO custom style
-	flags |= UIObject_DB_CaptureMouseOnLeftClick;
 }
 
 void CurveEditorElement::OnEvent(Event& e)
@@ -534,14 +533,44 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 }
 
 
+struct CurveProxyEditorElement : FrameElement
+{
+	Curve_RTEditButton* _editor = nullptr;
+	CurveEditorUI _ui;
+
+	void OnReset() override
+	{
+		FrameElement::OnReset();
+
+		_editor = nullptr;
+
+		SetDefaultFrameStyle(DefaultFrameStyle::ListBox); // TODO custom style
+	}
+	void OnEvent(Event& e) override
+	{
+		if (_ui.OnEvent({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView, e))
+			e.StopPropagation();
+	}
+	void OnPaint(const UIPaintContext& ctx) override
+	{
+		auto cpa = PaintFrame();
+
+		_editor->gridSettings.Draw(_editor->viewport, GetContentRect());
+		_ui.Render({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView);
+
+		PaintChildren(ctx, cpa);
+	}
+};
+
+
 struct Curve_RTEditorWindowContents : Buildable
 {
 	Curve_RTEditButton* _editor = nullptr;
 
 	void Build() override
 	{
-		auto& cee = Make<CurveEditorElement>();
-		cee.curveView = _editor->curveView;
+		auto& cee = Make<CurveProxyEditorElement>();
+		cee._editor = _editor;
 		cee.HandleEvent(EventType::Change) = [this, &cee](Event& e)
 		{
 			e.context->OnChange(_editor);
