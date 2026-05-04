@@ -125,8 +125,10 @@ AABB2f ICurveView::GetPreferredCurveViewport(bool includeTangents, u32 curveid, 
 		bbox.Include(pt);
 		if (includeTangents)
 		{
-			bbox.Include(pt + GetLeftTangentDiff(curveid, pid));
-			bbox.Include(pt + GetRightTangentDiff(curveid, pid));
+			if (HasLeftTangent(curveid, pid))
+				bbox.Include(pt + GetLeftTangentDiff(curveid, pid));
+			if (HasRightTangent(curveid, pid))
+				bbox.Include(pt + GetRightTangentDiff(curveid, pid));
 		}
 	}
 	return bbox;
@@ -509,7 +511,6 @@ void CurveEditorElement::OnReset()
 	FrameElement::OnReset();
 
 	curveView = nullptr;
-	viewport = { 0, 0, 1, 1 };
 	settings = {};
 	gridSettings = {};
 
@@ -596,6 +597,11 @@ struct Curve_RTEditorWindow : NativeWindowBase
 
 Curve_RTEditButton& Curve_RTEditButton::SetCurveView(ICurveView* cv)
 {
+	if (autoViewport)
+	{
+		autoViewport = false;
+		viewport = cv->GetPreferredViewport(true);
+	}
 	curveView = cv;
 	if (_rtWindow)
 		_rtWindow->RebuildRoot();
@@ -616,6 +622,8 @@ void Curve_RTEditButton::OnReset()
 	SetFlag(UIObject_DB_Button, true);
 
 	curveView = nullptr;
+	settings = {};
+	gridSettings = {};
 }
 
 void Curve_RTEditButton::OnPaint(const UIPaintContext& ctx)
@@ -624,11 +632,15 @@ void Curve_RTEditButton::OnPaint(const UIPaintContext& ctx)
 
 	auto r = GetFinalRect().ShrinkBy(frameStyle.padding);
 
-	CurveEditorInput cei;
-	cei.viewport = curveView->GetPreferredViewport(false);
-	cei.winRect = r;
-	for (u32 cid = 0, cnum = curveView->GetCurveCount(); cid < cnum; cid++)
-		curveView->DrawCurve(cei, cid);
+	if (draw::PushScissorRect(r.ExtendBy(1)))
+	{
+		CurveEditorInput cei;
+		cei.viewport = curveView->GetPreferredViewport(false);
+		cei.winRect = r;
+		for (u32 cid = 0, cnum = curveView->GetCurveCount(); cid < cnum; cid++)
+			curveView->DrawCurve(cei, cid);
+	}
+	draw::PopScissorRect();
 }
 
 void Curve_RTEditButton::OnEvent(Event& e)
@@ -644,24 +656,17 @@ void Curve_RTEditButton::OnEvent(Event& e)
 
 namespace imm {
 
+bool imGetEnabled();
+bool imProcessEventFlags(UIObject& uiobj);
+
 imCtrlInfoT<Curve_RTEditButton> imEditCurveRT(ICurveView* curveView)
 {
 	auto& ceb = Make<Curve_RTEditButton>();
 	ceb.Init(curveView);
+	if (!imGetEnabled())
+		ceb.flags |= UIObject_IsDisabled;
 
-	if (ceb.flags & UIObject_AfterIMEdit)
-	{
-		ceb._OnIMChange();
-		ceb.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool edited = false;
-	if (ceb.flags & UIObject_IsEdited)
-	{
-		ceb.flags &= ~UIObject_IsEdited;
-		ceb.flags |= UIObject_AfterIMEdit;
-		ceb.RebuildContainer();
-		edited = true;
-	}
+	bool edited = imProcessEventFlags(ceb);
 
 	ceb.HandleEvent(&ceb) = [&ceb](Event& e)
 	{

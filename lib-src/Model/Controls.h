@@ -653,27 +653,16 @@ struct DropdownMenuList : DropdownMenu
 
 namespace imm {
 
-template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, OptionList* ol, ModInitList mods = {})
+bool imProcessEventFlags(UIObject& uiobj);
+
+template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, OptionList* ol)
 {
 	auto& ddml = Make<MT>();
 	ddml.SetOptions(ol);
-	for (auto& mod : mods)
-		mod->Apply(&ddml);
 
-	if (ddml.flags & UIObject_AfterIMEdit)
-	{
-		ddml._OnIMChange();
-		ddml.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool edited = false;
-	if (ddml.flags & UIObject_IsEdited)
-	{
+	bool edited = imProcessEventFlags(ddml);
+	if (edited)
 		val = T(ddml.GetSelected());
-		ddml.flags &= ~UIObject_IsEdited;
-		ddml.flags |= UIObject_AfterIMEdit;
-		ddml.RebuildContainer();
-		edited = true;
-	}
 	else
 		ddml.SetSelected(uintptr_t(val));
 
@@ -691,9 +680,9 @@ template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, Op
 
 	return { edited, &ddml };
 }
-template <class T> imCtrlInfoT<DropdownMenuList> imDropdownMenuList(T& val, OptionList* ol, ModInitList mods = {})
+template <class T> imCtrlInfoT<DropdownMenuList> imDropdownMenuList(T& val, OptionList* ol)
 {
-	return imDropdownMenuListCustom<DropdownMenuList>(val, ol, mods);
+	return imDropdownMenuListCustom<DropdownMenuList>(val, ol);
 }
 
 } // imm

@@ -192,6 +192,7 @@ struct Curve_RTEditButton : FrameElement
 {
 	struct Curve_RTEditorWindow* _rtWindow = nullptr;
 
+	bool autoViewport = true;
 	ICurveView* curveView = nullptr;
 	Curve_RTEditButton& SetCurveView(ICurveView* cv);
 
@@ -199,7 +200,11 @@ struct Curve_RTEditButton : FrameElement
 	CurveEditorSettings settings;
 	GridSettings gridSettings;
 
-	Curve_RTEditButton& Init(ICurveView* c) { return SetCurveView(c); }
+	Curve_RTEditButton& Init(ICurveView* c)
+	{
+		SetCurveView(c);
+		return *this;
+	}
 
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override
 	{

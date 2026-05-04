@@ -129,6 +129,7 @@ void IndexedTriangles(IImage* tex, gfx::Vertex* verts, size_t num_vertices, uint
 		_Flush();
 		g_curTex = tex;
 		ApplyRHITex(GetRHITex(g_curTex));
+		_::TextureStorage_RemapUVs(verts, num_vertices, g_curTex);
 		gfx::DrawIndexedTriangles(verts, num_vertices, indices, num_indices);
 		return;
 	}

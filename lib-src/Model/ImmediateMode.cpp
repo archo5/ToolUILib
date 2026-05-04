@@ -29,6 +29,24 @@ bool imSetEnabled(bool newValue)
 }
 
 
+bool imProcessEventFlags(UIObject& uiobj)
+{
+	if (uiobj.flags & UIObject_AfterIMEdit)
+	{
+		uiobj._OnIMChange();
+		uiobj.flags &= ~UIObject_AfterIMEdit;
+	}
+	if (uiobj.flags & UIObject_IsEdited)
+	{
+		uiobj.flags &= ~UIObject_IsEdited;
+		uiobj.flags |= UIObject_AfterIMEdit;
+		uiobj.RebuildContainer();
+		return true;
+	}
+	return false;
+}
+
+
 void CheckboxStateToggleSkin::BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const
 {
 	if (text.NotEmpty())
@@ -96,19 +114,7 @@ imCtrlInfoT<Button> imButton(UIObject& obj)
 	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
 
-	if (btn.flags & UIObject_AfterIMEdit)
-	{
-		btn._OnIMChange();
-		btn.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool clicked = false;
-	if (btn.flags & UIObject_IsEdited)
-	{
-		clicked = true;
-		btn.flags &= ~UIObject_IsEdited;
-		btn.flags |= UIObject_AfterIMEdit;
-		btn.RebuildContainer();
-	}
+	bool clicked = imProcessEventFlags(btn);
 
 	return { clicked, &btn };
 }
@@ -133,19 +139,7 @@ imCtrlInfoT<Selectable> imSelectable(UIObject& obj)
 	if (!imGetEnabled())
 		btn.flags |= UIObject_IsDisabled;
 
-	if (btn.flags & UIObject_AfterIMEdit)
-	{
-		btn._OnIMChange();
-		btn.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool clicked = false;
-	if (btn.flags & UIObject_IsEdited)
-	{
-		clicked = true;
-		btn.flags &= ~UIObject_IsEdited;
-		btn.flags |= UIObject_AfterIMEdit;
-		btn.RebuildContainer();
-	}
+	bool clicked = imProcessEventFlags(btn);
 
 	return { clicked, &btn };
 }
@@ -166,19 +160,7 @@ imCtrlInfoT<StateToggle> imCheckboxExtRaw(u8 val, StringView text, const IStateT
 		cb.flags |= UIObject_IsDisabled;
 	cb.InitReadOnly(val);
 
-	if (cb.flags & UIObject_AfterIMEdit)
-	{
-		cb._OnIMChange();
-		cb.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool edited = false;
-	if (cb.flags & UIObject_IsEdited)
-	{
-		edited = true;
-		cb.flags &= ~UIObject_IsEdited;
-		cb.flags |= UIObject_AfterIMEdit;
-		cb.RebuildContainer();
-	}
+	bool edited = imProcessEventFlags(cb);
 
 	return { edited, &cb };
 }
@@ -202,19 +184,7 @@ imCtrlInfoT<StateToggle> imRadioButtonRaw(bool val, StringView text, const IStat
 		rb.flags |= UIObject_IsDisabled;
 	rb.InitReadOnly(val);
 
-	if (rb.flags & UIObject_AfterIMEdit)
-	{
-		rb._OnIMChange();
-		rb.flags &= ~UIObject_AfterIMEdit;
-	}
-	bool edited = false;
-	if (rb.flags & UIObject_IsEdited)
-	{
-		edited = true;
-		rb.flags &= ~UIObject_IsEdited;
-		rb.flags |= UIObject_AfterIMEdit;
-		rb.RebuildContainer();
-	}
+	bool edited = imProcessEventFlags(rb);
 
 	return { edited, &rb };
 }
@@ -414,17 +384,13 @@ template <class TNum> imCtrlInfoNumberEditor EditNumber(TNum& val, const DragCon
 	ne.format = fmt;
 	if (!imGetEnabled())
 		ne.flags |= UIObject_IsDisabled;
-	bool changed = false;
-	if (ne.flags & UIObject_IsEdited)
-	{
+
+	bool changed = imProcessEventFlags(ne);
+	if (changed)
 		val = ne.value;
-		ne.flags &= ~UIObject_IsEdited;
-		ne._OnIMChange();
-		ne.RebuildContainer();
-		changed = true;
-	}
 	else
 		ne.SetValue(val);
+
 	ne.HandleEvent() = [&ne](Event& ev)
 	{
 		if (ev.type == EventType::Change)
@@ -490,17 +456,13 @@ static imCtrlInfoTextbox imEditStringImpl(const IBufferRW& textRW)
 	auto& tb = Make<Textbox>();
 	if (!imGetEnabled())
 		tb.flags |= UIObject_IsDisabled;
-	bool changed = false;
-	if (tb.flags & UIObject_IsEdited)
-	{
+
+	bool changed = imProcessEventFlags(tb);
+	if (changed)
 		textRW.Assign(tb.GetText());
-		tb.flags &= ~UIObject_IsEdited;
-		tb._OnIMChange();
-		tb.RebuildContainer();
-		changed = true;
-	}
-	else // text can be invalidated if retfn is called
+	else
 		tb.SetText(textRW.Read());
+
 	tb.HandleEvent() = [&tb](Event& ev)
 	{
 		if (ev.type == EventType::Change)
@@ -534,17 +496,13 @@ imCtrlInfo imEditColor(Color4f& val, bool delayed)
 		: (IColorEdit&)Make<ColorEditRT>();
 	if (!imGetEnabled())
 		ced.flags |= UIObject_IsDisabled;
-	bool changed = false;
-	if (ced.flags & UIObject_IsEdited)
-	{
+
+	bool changed = imProcessEventFlags(ced);
+	if (changed)
 		val = ced.GetColor().GetRGBA();
-		ced.flags &= ~UIObject_IsEdited;
-		ced._OnIMChange();
-		ced.RebuildContainer();
-		changed = true;
-	}
 	else
 		ced.SetColorAny(val);
+
 	ced.HandleEvent() = [&ced](Event& ev)
 	{
 		if (ev.type == EventType::Change)

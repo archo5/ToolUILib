@@ -12,6 +12,7 @@ namespace imm {
 
 bool imGetEnabled();
 bool imSetEnabled(bool newValue);
+bool imProcessEventFlags(UIObject& uiobj);
 
 struct imEnable
 {
