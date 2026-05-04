@@ -20,6 +20,7 @@ struct ISequence
 	virtual void Remove(size_t off) {}
 	// insert a copy from [off] at [off + 1]
 	virtual void Duplicate(size_t off) {}
+	virtual void AppendNewItem() {}
 	virtual void MoveElementTo(size_t off, size_t to) {}
 
 	// drag & drop between different sequences
@@ -84,6 +85,10 @@ struct ArraySequence : ISequence
 	{
 		auto val = cont[off];
 		cont.InsertAt(off + 1, val);
+	}
+	void AppendNewItem() override
+	{
+		cont.Append({});
 	}
 	void MoveElementTo(size_t off, size_t to) override
 	{
@@ -171,6 +176,10 @@ struct StdSequence : ISequence
 		auto val = *it;
 		std::advance(it, 1);
 		cont.insert(it, val);
+	}
+	void AppendNewItem() override
+	{
+		cont.emplace_back();
 	}
 	void MoveElementTo(size_t off, size_t to) override
 	{
@@ -263,6 +272,11 @@ struct BufferSequence : ISequence
 			std::move_backward(data + off + 1, data + size, data + size + 1);
 		data[off + 1] = data[off];
 		size++;
+	}
+	void AppendNewItem() override
+	{
+		assert(size < limit);
+		data[size++] = {};
 	}
 	void MoveElementTo(size_t off, size_t to) override
 	{
@@ -362,6 +376,13 @@ enum SequenceElementDragSupport : u8
 	SameType,
 };
 
+enum class SequenceAddItemButtonType : u8
+{
+	None,
+	AppendEmpty,
+	AppendDuplicateOfLast,
+};
+
 struct ISequenceElementParentCheck
 {
 	virtual bool SEPC_IsThisContainedBy(void* itemptr) = 0;
@@ -377,6 +398,7 @@ struct SequenceEditor : Buildable
 	virtual void OnBuildItem(size_t idx, void* ptr);
 	virtual void OnBuildDeleteButton();
 	virtual void OnBuildEmptyListContents();
+	virtual void OnBuildAppendButton();
 
 	ISequence* GetSequence() const { return _sequence; }
 	SequenceEditor& SetSequence(ISequence* s);
@@ -388,6 +410,7 @@ struct SequenceEditor : Buildable
 
 	void _OnEdit(UIObject* who);
 	void _OnDelete(SequenceItemElement* sie);
+	void _OnAppendItem();
 
 	std::function<void(SequenceEditor* se, size_t idx, void* ptr)> itemUICallback;
 	std::function<EditorActionResponse(size_t idx)> onBeforeRemoveElement;
@@ -396,6 +419,7 @@ struct SequenceEditor : Buildable
 	bool allowDelete = true;
 	bool allowDuplicate = true;
 	bool addEmptyItem = false;
+	SequenceAddItemButtonType addAppendButton = SequenceAddItemButtonType::None;
 	SequenceElementDragSupport dragSupport = SequenceElementDragSupport::SameSequenceEditor;
 	SequenceEditor& SetDragSupport(SequenceElementDragSupport ds) { dragSupport = ds; return *this; }
 	ISequenceElementParentCheck* sameTypeDragParentCheck = nullptr;

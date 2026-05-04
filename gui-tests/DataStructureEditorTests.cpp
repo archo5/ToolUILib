@@ -176,6 +176,7 @@ struct SequenceEditorsTest : ui::Buildable
 			.SetDragSupport(dragSupport)
 			.SetContextMenuSource(&g_infoDumpCMS);
 		se.addEmptyItem = true;
+		se.addAppendButton = ui::SequenceAddItemButtonType::AppendDuplicateOfLast;
 		se.itemUICallback = [](ui::SequenceEditor* se, size_t idx, void* ptr)
 		{
 			ui::imLabel("\bvalue"), ui::imEditInt(*static_cast<int*>(ptr));

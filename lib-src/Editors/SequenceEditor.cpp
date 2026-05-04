@@ -285,6 +285,11 @@ void SequenceEditor::Build()
 		Pop();
 	}
 
+	if (addAppendButton != SequenceAddItemButtonType::None && _sequence->GetCurrentSize() < _sequence->GetSizeLimit())
+	{
+		OnBuildAppendButton();
+	}
+
 	Pop();
 	if (buildFrame)
 	{
@@ -322,6 +327,8 @@ void SequenceEditor::OnReset()
 	itemLayoutPreset = EditorItemContentsLayoutPreset::StackExpandLTRWithDeleteButton;
 	allowDelete = true;
 	allowDuplicate = true;
+	addEmptyItem = false;
+	addAppendButton = SequenceAddItemButtonType::None;
 	dragSupport = SequenceElementDragSupport::SameSequenceEditor;
 	_sequence = nullptr;
 	_selStorage = nullptr;
@@ -352,6 +359,17 @@ void SequenceEditor::OnBuildDeleteButton()
 void SequenceEditor::OnBuildEmptyListContents()
 {
 	MakeWithText<LabelFrame>("<empty>");
+}
+
+void SequenceEditor::OnBuildAppendButton()
+{
+	auto& addBtn = Push<Button>();
+	Make<IconElement>().SetDefaultStyle(DefaultIconStyle::Add);
+	Pop();
+	addBtn + AddEventHandler(EventType::Activate, [this](Event& e)
+	{
+		_OnAppendItem();
+	});
 }
 
 SequenceEditor& SequenceEditor::SetSequence(ISequence* s)
@@ -400,5 +418,22 @@ void SequenceEditor::_OnDelete(SequenceItemElement* sie)
 	if (ear != EditorActionResponse::Stop)
 		_OnEdit(sie);
 }
+
+void SequenceEditor::_OnAppendItem()
+{
+	if (addAppendButton == SequenceAddItemButtonType::AppendDuplicateOfLast)
+	{
+		size_t num = _sequence->GetCurrentSize();
+		if (num)
+		{
+			_sequence->Duplicate(num - 1);
+			_OnEdit(this);
+			return;
+		}
+	}
+	_sequence->AppendNewItem();
+	_OnEdit(this);
+}
+
 
 } // ui
