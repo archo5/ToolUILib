@@ -338,6 +338,7 @@ void Test_Docking();
 void Test_3DView();
 void Test_Gizmo();
 void Test_Quaternion();
+void Test_RotInterp();
 
 void Test_BasicEasingAnim();
 void Test_VExpandAnim();
@@ -460,6 +461,7 @@ static const TestEntry _3dTestEntries[] =
 	{ "3D view", Test_3DView },
 	{ "Gizmo", Test_Gizmo },
 	{ "Quaternion", Test_Quaternion },
+	{ "Rotation interpolation", Test_RotInterp },
 };
 static const TestEntry utilityTestEntries[] =
 {

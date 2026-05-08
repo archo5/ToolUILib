@@ -81,21 +81,34 @@ static float qslerp(float a, float b, float c, float q)
 	return lerp(ab, bc, q);
 }
 
-static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool accelsmoothing)
+static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool loop, bool accelsmoothing)
 {
 	size_t pos = curve.Size() - 1;
-	for (size_t i = 0; i < curve.Size(); i++)
+	size_t p1 = 0;
+	if (sx <= curve.First().time && loop)
 	{
-		if (sx > curve[i].time)
+		pos = 0;
+	}
+	else
+	{
+		for (size_t i = 0; i < curve.Size(); i++)
 		{
-			pos = i;
+			if (sx > curve[i].time)
+			{
+				pos = i;
+				p1 = i + 1;
+			}
 		}
 	}
+	if (loop)
+		p1 %= curve.Size();
+	else
+		p1 = min(p1, curve.Size() - 1);
 	auto pa = curve[pos];
-	if (pa.time > sx)
+	if (pa.time > sx && loop)
 		pa.time -= range.GetWidth();
-	auto pb = curve.NextWrap(pos);
-	if (pb.time < sx)
+	auto pb = curve[p1];
+	if (pb.time < sx && loop)
 		pb.time += range.GetWidth();
 
 	Vec2f cmp;
@@ -126,7 +139,7 @@ float Curve_QuadSpline::Sample(float t)
 		t = curvewrap(timeRange, t);
 	else
 		t = timeRange.Clamp(t);
-	return curvesample(points, timeRange, t, flags & AccelSmoothing);
+	return curvesample(points, timeRange, t, flags & Loop, flags & AccelSmoothing);
 }
 
 Rangef Curve_QuadSpline::CalcHeightRange()

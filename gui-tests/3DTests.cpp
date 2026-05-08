@@ -3,6 +3,8 @@
 
 #include "../lib-src/Core/3DMath.h"
 #include "../lib-src/Core/3DCamera.h"
+#include "../lib-src/Curve_QuadSpline.h"
+#include "../lib-src/Editor_Curve_QuadSpline.h"
 #include "../lib-src/Model/Gizmo.h"
 #include "../lib-src/Model/ImmediateMode3D.h"
 #include "../lib-src/Render/RHI.h"
@@ -653,4 +655,225 @@ struct QuaternionTest : ui::Buildable
 void Test_Quaternion()
 {
 	ui::Make<QuaternionTest>();
+}
+
+
+struct RotInterpTest : ui::Buildable
+{
+	ui::OrbitCamera camera;
+	float fov = 45;
+
+	ui::Vec3f rstart = { 80, 0, 0 };
+	ui::Vec3f rstartvel = { -100, 0, 0 };
+	ui::Vec3f rend = { 0, 80, 0 };
+	ui::Vec3f rendvel = { 0, 100, 0 };
+	float erpq = 0.5f;
+	enum RotMode
+	{
+		Slerp,
+		DiffAxisAngleScale,
+		QLIF1,
+	};
+	RotMode rotmode = Slerp;
+
+	ui::Quat GetErpRot()
+	{
+		using namespace ui;
+		Quat q0 = Quat::RotateEulerAnglesXYZ(rstart);
+		Quat q1 = Quat::RotateEulerAnglesXYZ(rend);
+		if (rotmode == Slerp)
+		{
+			return QuatSLerp(q0, q1, erpq);
+		}
+		else if (rotmode == DiffAxisAngleScale)
+		{
+			Quat diff = q1 * q0.Inverted();
+			Vec4f aa = diff.ToAxisAngle();
+			Quat pdif = Quat::RotateAxisAngle(aa.GetVec3(), aa.w * erpq);
+			return pdif * q0;
+		}
+		else if (rotmode == QLIF1)
+		{
+			Quat diff = q1 * q0.Inverted();
+			Vec3f dv = diff.ToDirAxisLenAngle();
+			Curve_QuadSpline xs, ys, zs;
+			xs.flags &= ~xs.Loop;
+			ys.flags &= ~ys.Loop;
+			zs.flags &= ~zs.Loop;
+			xs.points.Append({ 0.f, 0.f, rstartvel.x });
+			ys.points.Append({ 0.f, 0.f, rstartvel.y });
+			zs.points.Append({ 0.f, 0.f, rstartvel.z });
+			xs.points.Append({ 1.f, dv.x, rendvel.x });
+			ys.points.Append({ 1.f, dv.y, rendvel.y });
+			zs.points.Append({ 1.f, dv.z, rendvel.z });
+			Vec3f pdifv;
+			pdifv.x = xs.Sample(erpq);
+			pdifv.y = ys.Sample(erpq);
+			pdifv.z = zs.Sample(erpq);
+			Quat pdif = Quat::RotateDirAxisLenAngle(pdifv);
+			return pdif * q0;
+		}
+		return q0; // fallback
+	}
+
+	struct VertPC
+	{
+		float x, y, z;
+		ui::Color4b col;
+	};
+	void Build() override
+	{
+		ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+		{
+			auto& v = ui::Push<ui::View3D>();
+			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
+			v.HandleEvent() = [this](ui::Event& e)
+			{
+				if (e.type == ui::EventType::ButtonDown)
+					e.context->SetKeyboardFocus(e.current);
+				camera.OnEvent(e);
+			};
+			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
+			{
+				auto tmpl = ui::Push<ui::PlacementLayoutElement>().GetSlotTemplate();
+
+				auto* leftTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
+				leftTop->SetAnchorAndPivot({ 0, 0 });
+				tmpl->placement = leftTop;
+				tmpl->measure = false;
+				ui::Push<ui::SizeConstraintElement>().SetWidth(200);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::StackTopDownLayoutElement>();
+				{
+					ui::MakeWithText<ui::Header>("Camera");
+					ui::imLabel("FOV"), ui::imEditFloat(fov, {}, { 1.0f, 179.0f });
+					ui::imLabel("Start rotation"), ui::imEditVec3f(rstart);
+					ui::imEnable(rotmode == QLIF1), ui::imLabel("Start ang.vel."), ui::imEditVec3f(rstartvel);
+					ui::imLabel("End rotation"), ui::imEditVec3f(rend);
+					ui::imEnable(rotmode == QLIF1), ui::imLabel("End ang.vel."), ui::imEditVec3f(rendvel);
+					ui::imLabel("Interpolation factor"), ui::imEditFloat(erpq, 0.05f, { 0, 1 });
+					ui::imRadioButton(rotmode, Slerp, "Slerp");
+					ui::imRadioButton(rotmode, DiffAxisAngleScale, "Diff axis angle scale");
+					ui::imRadioButton(rotmode, QLIF1, "QLIF 1");
+				}
+				ui::Pop();
+				ui::Pop();
+				ui::Pop();
+
+				auto* rightTop = UI_BUILD_ALLOC(ui::PointAnchoredPlacement)();
+				rightTop->SetAnchorAndPivot({ 1, 0 });
+				tmpl->placement = rightTop;
+				tmpl->measure = false;
+				ui::Push<ui::SizeConstraintElement>().SetWidth(240);
+				ui::Push<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::GroupBox);
+				ui::Push<ui::StackTopDownLayoutElement>();
+				{
+					auto q1 = GetErpRot();
+					ui::Textf("q1=%g;%g;%g;%g", q1.x, q1.y, q1.z, q1.w);
+
+					if (rotmode == QLIF1)
+					{
+						using namespace ui;
+						Quat q0 = Quat::RotateEulerAnglesXYZ(rstart);
+						Quat q1 = Quat::RotateEulerAnglesXYZ(rend);
+						Quat diff = q1 * q0.Inverted();
+						Vec3f dv = diff.ToDirAxisLenAngle();
+						static Curve_QuadSpline xs, ys, zs;
+						xs.flags &= ~xs.Loop;
+						ys.flags &= ~ys.Loop;
+						zs.flags &= ~zs.Loop;
+						xs.points = { { 0.f, 0.f, rstartvel.x }, { 1.f, dv.x, rendvel.x } };
+						ys.points = { { 0.f, 0.f, rstartvel.y }, { 1.f, dv.y, rendvel.y } };
+						zs.points = { { 0.f, 0.f, rstartvel.z }, { 1.f, dv.z, rendvel.z } };
+
+						ui::Push<ui::SizeConstraintElement>().SetHeight(60);
+						auto& ex = ui::Make<ui::CurveEditorElement>();
+						ex.curveView = UI_BUILD_ALLOC(ui::Curve_QuadSpline_View)(xs);
+						ex.viewport = ex.curveView->GetPreferredViewport(false);
+						ui::Pop();
+
+						ui::Push<ui::SizeConstraintElement>().SetHeight(60);
+						auto& ey = ui::Make<ui::CurveEditorElement>();
+						ey.curveView = UI_BUILD_ALLOC(ui::Curve_QuadSpline_View)(ys);
+						ey.viewport = ey.curveView->GetPreferredViewport(false);
+						ui::Pop();
+
+						ui::Push<ui::SizeConstraintElement>().SetHeight(60);
+						auto& ez = ui::Make<ui::CurveEditorElement>();
+						ez.curveView = UI_BUILD_ALLOC(ui::Curve_QuadSpline_View)(zs);
+						ez.viewport = ez.curveView->GetPreferredViewport(false);
+						ui::Pop();
+					}
+				}
+				ui::Pop();
+				ui::Pop();
+				ui::Pop();
+
+				ui::Pop();
+			}
+			ui::Pop();
+		}
+		ui::Pop();
+	}
+	void Render3DView(const ui::UIRect& rect)
+	{
+		using namespace ui::gfx;
+
+		camera.SetWindowRect(rect);
+		camera.SetProjectionMatrix(ui::Mat4f::PerspectiveFOVLH(fov, rect.GetAspectRatio(), 0.01f, 1000));
+
+		Clear(16, 15, 14, 255);
+		SetProjectionMatrix(camera.GetProjectionMatrix());
+		SetViewMatrix(camera.GetViewMatrix());
+		VertPC verts[] =
+		{
+			{ -1, -1, 0, { 100, 150, 200, 255 } },
+			{ 1, -1, 0, { 100, 0, 200, 255 } },
+			{ -1, 1, 0, { 200, 150, 0, 255 } },
+			{ 1, 1, 0, { 150, 50, 0, 255 } },
+		};
+		uint16_t indices[] = { 0, 1, 2, 1, 3, 2 };
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateX(90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+		DrawIndexed(ui::Mat4f::Translate(0, 0, -1) * ui::Mat4f::RotateY(-90), PT_Triangles, VF_Color, verts, 4, indices, 6);
+
+		RenderObject(ui::Mat4f::Scale(0.1f) * ui::Mat4f::Rotate(GetErpRot()));
+	}
+
+	void RenderObject(const ui::Mat4f& mtx)
+	{
+		using namespace ui::gfx;
+
+		SetRenderState(DF_Cull);
+
+		{
+			constexpr ui::prim::BoxSettings S = {};
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateBox(S, verts, idcs);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0.1f, 1));
+			DrawIndexed(mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+		}
+
+		{
+			constexpr ui::prim::ConeSettings S = { 32 };
+			constexpr auto vc = S.CalcVertexCount();
+			constexpr auto ic = S.CalcIndexCount();
+			ui::Vertex_PF3CB4 verts[vc];
+			uint16_t idcs[ic];
+			ui::prim::GenerateCone(S, verts, idcs);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0.2f, 0, 0, 1));
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * ui::Mat4f::RotateY(-90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0.2f, 0, 1));
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * ui::Mat4f::RotateX(90) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+			ui::prim::SetVertexColor(verts, vc, ui::Color4f(0, 0, 0.2f, 1));
+			DrawIndexed(ui::Mat4f::Translate(0, 0, 1) * mtx, PT_Triangles, VF_Color, verts, vc, idcs, ic);
+		}
+	}
+};
+void Test_RotInterp()
+{
+	ui::Make<RotInterpTest>();
 }
