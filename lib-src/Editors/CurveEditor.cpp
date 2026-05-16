@@ -246,6 +246,9 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 
 	for (u32 cid = 0; cid < numCurves; cid++)
 	{
+		if (!IsCurveVisible(cid))
+			continue;
+
 		auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 
 		for (u32 pid = pointRange.max; pid > pointRange.min; )
@@ -261,6 +264,9 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 	{
 		for (u32 cid = 0; cid < numCurves; cid++)
 		{
+			if (!IsCurveVisible(cid))
+				continue;
+
 			auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 			auto midptRange = ExpandForCurves(pointRange, GetPointCount(cid));
 
@@ -295,6 +301,9 @@ CurvePointID ICurveView::HitTest(const CurveEditorInput& input, Vec2f cursorPos)
 	{
 		for (u32 cid = 0; cid < numCurves; cid++)
 		{
+			if (!IsCurveVisible(cid))
+				continue;
+
 			auto pointRange = GetLeastPointRange(cid, { vp.x0, vp.x1 });
 
 			for (u32 pid = pointRange.max; pid > pointRange.min; )
@@ -1038,11 +1047,12 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 		{
 			curve->flags ^= Curve_QuadSpline::AccelSmoothing;
 		};
+		cm.AddNext("Extrapolate", false, curve->flags & Curve_QuadSpline::Extrapolate) = [this]()
+		{
+			curve->flags ^= Curve_QuadSpline::Extrapolate;
+		};
 	}
 }
-
-// Curve_QuadSpline.cpp
-bool CQS_FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp);
 
 static void DrawTangentSwordfight(const CurveEditorInput& input, const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb)
 {

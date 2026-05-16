@@ -55,7 +55,7 @@ static float curvewrap(Rangef range, float sx)
 	return sx;
 }
 
-static float invqslerp(float p0, float p1, float p2, float v)
+float invqslerp(float p0, float p1, float p2, float v)
 {
 	// convert quadratic bezier to polynomial factors
 	// y =  (A-2B+C)x^2  +  2(B-A)x  +  A
@@ -74,43 +74,62 @@ static float invqslerp(float p0, float p1, float p2, float v)
 	return clamp01(away1 < away2 ? r1 : r2);
 }
 
-static float qslerp(float a, float b, float c, float q)
+float qslerp(float a, float b, float c, float q)
 {
 	float ab = lerp(a, b, q);
 	float bc = lerp(b, c, q);
 	return lerp(ab, bc, q);
 }
 
-static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool loop, bool accelsmoothing)
+size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, float x)
 {
-	size_t pos = curve.Size() - 1;
-	size_t p1 = 0;
-	if (sx <= curve.First().time && loop)
+	// TODO binary search
+	for (size_t i = 0; i < count; i++)
 	{
-		pos = 0;
+		if (x < *timevalues)
+			return i;
+		timevalues = (const float*)(((const char*)timevalues) + stride);
 	}
-	else
-	{
-		for (size_t i = 0; i < curve.Size(); i++)
-		{
-			if (sx > curve[i].time)
-			{
-				pos = i;
-				p1 = i + 1;
-			}
-		}
-	}
-	if (loop)
-		p1 %= curve.Size();
-	else
-		p1 = min(p1, curve.Size() - 1);
-	auto pa = curve[pos];
-	if (pa.time > sx && loop)
-		pa.time -= range.GetWidth();
-	auto pb = curve[p1];
-	if (pb.time < sx && loop)
-		pb.time += range.GetWidth();
+	return count;
+}
 
+void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t& p1)
+{
+	if (loop)
+	{
+		p0 = cs ? cs - 1 : numcs - 1;
+		p1 = cs == numcs ? 0 : cs;
+	}
+	else
+	{
+		p0 = cs ? cs - 1 : 0;
+		p1 = cs == numcs ? cs - 1 : cs;
+	}
+}
+
+static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool loop, bool accelsmoothing, bool extrapolate)
+{
+	size_t cs = FindCurveSection(&curve.Data()->time, sizeof(Curve_QuadSpline::Point), curve.Size(), sx);
+	size_t p0, p1;
+	CurveSectionToPoints(cs, curve.Size(), loop, p0, p1);
+	auto pa = curve[p0];
+	auto pb = curve[p1];
+	if (loop)
+	{
+		if (pa.time > sx) pa.time -= range.GetWidth();
+		if (pb.time < sx) pb.time += range.GetWidth();
+	}
+	else if (extrapolate)
+	{
+		if (sx < pa.time) return pa.value + pa.velocity * (sx - pa.time);
+		if (sx > pb.time) return pb.value + pb.velocity * (sx - pb.time);
+	}
+
+	return CQS_Interpolate(pa, pb, sx, accelsmoothing);
+}
+
+float CQS_Interpolate(const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb, float sx, bool accelsmoothing)
+{
 	Vec2f cmp;
 	if (CQS_FindCurveMidpoint(pa, pb, cmp))
 	{
@@ -137,9 +156,7 @@ float Curve_QuadSpline::Sample(float t)
 {
 	if (flags & Loop)
 		t = curvewrap(timeRange, t);
-	else
-		t = timeRange.Clamp(t);
-	return curvesample(points, timeRange, t, flags & Loop, flags & AccelSmoothing);
+	return curvesample(points, timeRange, t, flags & Loop, flags & AccelSmoothing, flags & Extrapolate);
 }
 
 Rangef Curve_QuadSpline::CalcHeightRange()
