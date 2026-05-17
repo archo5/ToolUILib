@@ -42,6 +42,48 @@ bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoi
 	return true;
 }
 
+QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp)
+{
+	float tdiff = pb.time - pa.time;
+
+	QLIFSplinePoint x0a = pa;
+	QLIFSplinePoint x0b = { pa.time, pb.value - tdiff * pb.velocity, pb.velocity };
+	QLIFSplinePoint x1a = { pb.time, pa.value + tdiff * pa.velocity, pa.velocity };
+	QLIFSplinePoint x1b = pb;
+
+	QLIFSplinePoint itrp;
+	itrp.time = lerp(pa.time, pb.time, xp.qx);
+
+	Vec2f isp;
+	float qy = xp.qy;
+	if (QLIFSpline_FindCurveMidpoint(pa, pb, isp))
+	{
+		// tangents are intersecting - the interpolation space is one of two quads between tangent and lerp
+		if (itrp.time < isp.x) // TODO assumes that pa.time <= pb.time
+		{
+			x1a = x1b;
+		}
+		else
+		{
+			x0b = x0a;
+			qy = 1 - qy;
+		}
+	}
+	else
+	{
+		// tangents are not intersecting - the interpolation space is a quad
+	}
+	itrp.value = lerp(
+		lerp(x0a.value, x1a.value, xp.qx),
+		lerp(x0b.value, x1b.value, xp.qx), qy);
+
+	// an acceptable velocity is one that causes the line to hit both tangents
+	// the ranges can be calculated for each tangent line individually and then intersected
+	itrp.velocity = 0;
+
+	return itrp;
+}
+
 static float curvewrap(Rangef range, float sx)
 {
 	if (!range.Contains(sx))
@@ -83,7 +125,26 @@ float qslerp(float a, float b, float c, float q)
 
 size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, float x)
 {
-	// TODO binary search
+#if 1 // binary search
+	size_t iterpos = 0;
+	size_t itercount = count;
+	while (count > 0)
+	{
+		size_t it = iterpos; 
+		size_t step = count / 2;
+		it += step;
+
+		if (*(const float*)(((const char*)timevalues) + stride * it) < x)
+		{
+			iterpos = ++it;
+			count -= step + 1;
+		} 
+		else
+			count = step;
+	}
+
+	return iterpos;
+#else
 	for (size_t i = 0; i < count; i++)
 	{
 		if (x < *timevalues)
@@ -91,6 +152,7 @@ size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, fl
 		timevalues = (const float*)(((const char*)timevalues) + stride);
 	}
 	return count;
+#endif
 }
 
 void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t& p1)
@@ -107,9 +169,9 @@ void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t
 	}
 }
 
-static float curvesample(ArrayView<QLIFSplinePoint> curve, Rangef range, float sx, bool loop, bool accelsmoothing, bool extrapolate)
+static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool loop, bool accelsmoothing, bool extrapolate)
 {
-	size_t cs = FindCurveSection(&curve.Data()->time, sizeof(QLIFSplinePoint), curve.Size(), sx);
+	size_t cs = FindCurveSection(&curve.Data()->time, sizeof(curve[0]), curve.Size(), sx);
 	size_t p0, p1;
 	CurveSectionToPoints(cs, curve.Size(), loop, p0, p1);
 	auto pa = curve[p0];
@@ -123,6 +185,15 @@ static float curvesample(ArrayView<QLIFSplinePoint> curve, Rangef range, float s
 	{
 		if (sx < pa.time) return pa.value + pa.velocity * (sx - pa.time);
 		if (sx > pb.time) return pb.value + pb.velocity * (sx - pb.time);
+	}
+
+	if (pa.enableTransitionPoint)
+	{
+		auto itp = QLIFSpline_InstantiateTransitionPoint(pa, pb, pa);
+		if (sx < itp.time)
+			return QLIFSpline_Interpolate(pa, itp, sx, accelsmoothing);
+		else
+			return QLIFSpline_Interpolate(itp, pb, sx, accelsmoothing);
 	}
 
 	return QLIFSpline_Interpolate(pa, pb, sx, accelsmoothing);

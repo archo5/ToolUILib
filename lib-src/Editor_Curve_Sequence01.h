@@ -40,7 +40,7 @@ struct Curve_Sequence01_View : ICurveView
 	{
 		curve->points[sliceid + 1].tweak = p.y;
 	}
-	float GetSliceMidpointVertDragFactor(u32 curveid, u32 sliceid) override;
+	Vec2f GetSliceMidpointDragFactor(u32 curveid, u32 sliceid) override;
 	Vec2f GetSliceMidpointPosition(u32 curveid, u32 sliceid) override;
 
 	void OnEvent(const CurveEditorInput& input, Event& e) override;

@@ -481,7 +481,8 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 	case SubUIDragState::Move:
 		if (pid.pointType == CPT_Midpoint)
 		{
-			float q = -curves->GetSliceMidpointVertDragFactor(pid.curveID, pid.pointID);
+			Vec2f q = curves->GetSliceMidpointDragFactor(pid.curveID, pid.pointID);
+			q.y = -q.y;
 			curves->SetSliceMidpoint(pid.curveID, pid.pointID, dragPointStart + (e.position - dragCursorStart) * q);
 		}
 		else
@@ -898,7 +899,7 @@ void Curve_Sequence01_View::GetScreenCurvePoints(const CurveEditorInput& input, 
 		curvepoints.Append(input.ScreenFromCurve({ input.viewport.x1, curve->points.Last().posY }));
 }
 
-float Curve_Sequence01_View::GetSliceMidpointVertDragFactor(u32 curveid, u32 sliceid)
+Vec2f Curve_Sequence01_View::GetSliceMidpointDragFactor(u32 curveid, u32 sliceid)
 {
 	auto& p0 = curve->points[sliceid];
 	auto& p1 = curve->points[sliceid + 1];
@@ -1011,6 +1012,25 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 			cwp.x = roundf(cwp.x / s) * s;
 		auto hp = HitTest(input, e.position);
 		auto& cm = ContextMenu::Get();
+		if (curve->points.NotEmpty())
+		{
+			size_t secid = FindCurveSection(&curve->points.Data()->time, sizeof(curve->points[0]), curve->points.Size(), cwp.x);
+			secid = secid ? secid - 1 : curve->points.Size() - 1;
+
+			cm.AddNext("Enable transition point", false, curve->points[secid].enableTransitionPoint) = [this, secid]()
+			{
+				curve->points[secid].enableTransitionPoint ^= true;
+			};
+			if (curve->points[secid].enableTransitionPoint)
+			{
+				cm.AddNext("Reset transition point") = [this, secid]()
+				{
+					auto& pt = curve->points[secid];
+					pt.qx = 0.5f, pt.qy = 0.5f, pt.qs = 0.5f;
+				};
+			}
+			cm.NewSection();
+		}
 		if (hp.IsValid())
 		{
 			if (hp.pointType == CPT_Point)

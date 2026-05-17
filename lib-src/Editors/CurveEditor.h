@@ -141,8 +141,9 @@ struct ICurveView
 	// slice midpoint coordinates: x = lerp factor, y = modifier (screen pixel units)
 	virtual Vec2f GetSliceMidpoint(u32 curveid, u32 sliceid) { return { 0.5f, 0 }; }
 	virtual void SetSliceMidpoint(u32 curveid, u32 sliceid, Vec2f p) {}
-	virtual float GetSliceMidpointVertDragFactor(u32 curveid, u32 sliceid) { return 1; }
+	virtual Vec2f GetSliceMidpointDragFactor(u32 curveid, u32 sliceid) { return 1; }
 	virtual Vec2f GetSliceMidpointPosition(u32 curveid, u32 sliceid);
+	virtual void SetSliceMidpointPosition(u32 curveid, u32 sliceid, Vec2f p) {}
 
 	Vec2f GetScreenPoint(const CurveEditorInput& input, CurvePointID cpid);
 	void SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid, Vec2f sp);
