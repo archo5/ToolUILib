@@ -42,6 +42,45 @@ bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoi
 	return true;
 }
 
+Vec2f QLIFSpline_TransitionPointFromPosition(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f pos)
+{
+	float tdiff = pb.time - pa.time;
+
+	QLIFSplinePoint x0a = pa;
+	QLIFSplinePoint x0b = { pa.time, pb.value - tdiff * pb.velocity, pb.velocity };
+	QLIFSplinePoint x1a = { pb.time, pa.value + tdiff * pa.velocity, pa.velocity };
+	QLIFSplinePoint x1b = pb;
+
+	float qx = invlerpc(pa.time, pb.time, pos.x);
+
+	Vec2f isp;
+	bool flipy = false;
+	if (QLIFSpline_FindCurveMidpoint(pa, pb, isp))
+	{
+		// tangents are intersecting - the interpolation space is one of two quads between tangent and lerp
+		if (pos.x < isp.x) // TODO assumes that pa.time <= pb.time
+		{
+			x1a = x1b;
+		}
+		else
+		{
+			x0b = x0a;
+			flipy = true;
+		}
+	}
+	else
+	{
+		// tangents are not intersecting - the interpolation space is a quad
+	}
+	float y0 = lerp(x0a.value, x1a.value, qx);
+	float y1 = lerp(x0b.value, x1b.value, qx);
+	float qy = invlerpc(y0, y1, pos.y);
+	if (flipy)
+		qy = 1 - qy;
+
+	return { qx, qy };
+}
+
 QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp)
 {
 	float tdiff = pb.time - pa.time;
@@ -54,9 +93,10 @@ QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa,
 	QLIFSplinePoint itrp;
 	itrp.time = lerp(pa.time, pb.time, xp.qx);
 
+	bool midp;
 	Vec2f isp;
 	float qy = xp.qy;
-	if (QLIFSpline_FindCurveMidpoint(pa, pb, isp))
+	if (midp = QLIFSpline_FindCurveMidpoint(pa, pb, isp))
 	{
 		// tangents are intersecting - the interpolation space is one of two quads between tangent and lerp
 		if (itrp.time < isp.x) // TODO assumes that pa.time <= pb.time
@@ -80,6 +120,42 @@ QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa,
 	// an acceptable velocity is one that causes the line to hit both tangents
 	// the ranges can be calculated for each tangent line individually and then intersected
 	itrp.velocity = 0;
+
+	const float BIG = 10000;
+	Rangef avr = { -BIG, BIG };
+	Rangef bvr = { -BIG, BIG };
+	float ispvel = divf_safe(itrp.value - isp.y, fabsf(itrp.time - isp.x));
+	float avel = divf_safe(itrp.value - pa.value, itrp.time - pa.time);
+	float bvel = divf_safe(pb.value - itrp.value, pb.time - itrp.time);
+	if (itrp.value > pa.value + pa.velocity * (itrp.time - pa.time)) // point above tangent
+	{
+		avr.min = avel;
+		if (midp && isp.x < itrp.time)
+			avr.max = ispvel;
+	}
+	else // point below tangent
+	{
+		avr.max = avel;
+		if (midp && isp.x < itrp.time)
+			avr.min = ispvel;
+	}
+	if (itrp.value > pb.value + pb.velocity * (itrp.time - pb.time)) // point above tangent
+	{
+		bvr.max = bvel;
+		if (midp && itrp.time < isp.x)
+			bvr.min = ispvel;
+	}
+	else // point below tangent
+	{
+		bvr.min = bvel;
+		if (midp && itrp.time < isp.x)
+			bvr.max = ispvel;
+	}
+	Rangef svr = avr.Intersect(bvr);
+	if (svr.IsValid())
+	{
+		itrp.velocity = tanf(lerp(atanf(svr.min), atanf(svr.max), xp.qs));
+	}
 
 	return itrp;
 }

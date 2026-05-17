@@ -16,7 +16,7 @@ struct Curve_QuadSpline_View : ICurveView
 	Curve_QuadSpline_View() {}
 	Curve_QuadSpline_View(Curve_QuadSpline& c) : curve(&c) {}
 
-	u32 GetFeatures() override { return SliceMidpoints | Tangents | DirOnlyTangents; }
+	u32 GetFeatures() override { return SliceMidpoints | Tangents | DirOnlyTangents | MovableSliceMidpoints; }
 
 	u32 GetCurveCount() override { return 1; }
 	u32 GetPointCount(u32) override { return curve->points.Size(); }
@@ -59,8 +59,9 @@ struct Curve_QuadSpline_View : ICurveView
 	}
 	void SetSliceMidpoint(u32, u32 sliceid, Vec2f p) override
 	{
-		curve->points[sliceid].qx = clamp01(p.x);
-		curve->points[sliceid].qy = clamp01(p.y);
+		//curve->points[sliceid].qx = clamp01(p.x);
+		//curve->points[sliceid].qy = clamp01(p.y);
+		curve->points[sliceid].qs = clamp01(p.y);
 	}
 	Vec2f GetSliceMidpointDragFactor(u32, u32 sliceid) override { return 0.01f; }
 	Vec2f GetSliceMidpointPosition(u32, u32 sliceid) override
@@ -73,6 +74,13 @@ struct Curve_QuadSpline_View : ICurveView
 	}
 	void SetSliceMidpointPosition(u32, u32 sliceid, Vec2f p) override
 	{
+		auto q = QLIFSpline_TransitionPointFromPosition(
+			curve->points[sliceid],
+			curve->points.NextWrap(sliceid),
+			p);
+		auto& pt = curve->points[sliceid];
+		pt.qx = q.x;
+		pt.qy = q.y;
 	}
 
 	void OnEvent(const CurveEditorInput& input, Event& e) override;

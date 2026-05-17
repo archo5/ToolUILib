@@ -94,6 +94,7 @@ struct CurveEditorState
 {
 	SubUI<CurvePointID> uiState;
 	Vec2f dragPointStart;
+	Vec2f dragMidpointStart;
 	Vec2f dragCursorStart;
 };
 
@@ -106,6 +107,7 @@ struct ICurveView
 		SliceMidpoints = 1 << 0,
 		Tangents = 1 << 1,
 		DirOnlyTangents = 1 << 2,
+		MovableSliceMidpoints = 1 << 3,
 	};
 	virtual u32 GetFeatures() = 0;
 

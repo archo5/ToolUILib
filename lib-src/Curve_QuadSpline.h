@@ -28,6 +28,7 @@ struct QLIFSplineTransitionPoint
 };
 
 bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f& outcmp);
+Vec2f QLIFSpline_TransitionPointFromPosition(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f pos);
 QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp);
 float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing);
 

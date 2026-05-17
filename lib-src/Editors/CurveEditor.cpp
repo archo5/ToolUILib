@@ -216,7 +216,7 @@ void ICurveView::SetScreenPoint(const CurveEditorInput& input, CurvePointID cpid
 		SetRightTangentDiff(cpid.curveID, cpid.pointID, p);
 		break;
 	case CPT_Midpoint:
-		SetSliceMidpoint(cpid.curveID, cpid.pointID, p);
+		SetSliceMidpointPosition(cpid.curveID, cpid.pointID, p);
 		break;
 	}
 }
@@ -472,18 +472,18 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 	switch (ret)
 	{
 	case SubUIDragState::Start:
-		dragPointStart = pid.pointType == CPT_Midpoint
-			? curves->GetSliceMidpoint(pid.curveID, pid.pointID)
-			: curves->GetScreenPoint(input, pid);
+		dragPointStart = curves->GetScreenPoint(input, pid);
+		if (pid.pointType == CPT_Midpoint)
+			dragMidpointStart = curves->GetSliceMidpoint(pid.curveID, pid.pointID);
 		dragCursorStart = e.position;
 		e.context->CaptureMouse(e.current);
 		break;
 	case SubUIDragState::Move:
-		if (pid.pointType == CPT_Midpoint)
+		if (pid.pointType == CPT_Midpoint && (curves->GetFeatures() & ICurveView::MovableSliceMidpoints ? platform::IsKeyPressed(ui::KSC_LeftShift) : true))
 		{
 			Vec2f q = curves->GetSliceMidpointDragFactor(pid.curveID, pid.pointID);
 			q.y = -q.y;
-			curves->SetSliceMidpoint(pid.curveID, pid.pointID, dragPointStart + (e.position - dragCursorStart) * q);
+			curves->SetSliceMidpoint(pid.curveID, pid.pointID, dragMidpointStart + (e.position - dragCursorStart) * q);
 		}
 		else
 		{
@@ -1028,6 +1028,9 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 					auto& pt = curve->points[secid];
 					pt.qx = 0.5f, pt.qy = 0.5f, pt.qs = 0.5f;
 				};
+				cm.AddNext("Reset transition point X factor") = [this, secid]() { curve->points[secid].qx = 0.5f; };
+				cm.AddNext("Reset transition point Y factor") = [this, secid]() { curve->points[secid].qy = 0.5f; };
+				cm.AddNext("Reset transition point slope factor") = [this, secid]() { curve->points[secid].qs = 0.5f; };
 			}
 			cm.NewSection();
 		}
