@@ -7,6 +7,7 @@
 #include "System.h"
 #include "Theme.h"
 
+#include "../Editor_Slider.h"
 #include "../Elements/Textbox.h"
 
 #include "../Render/RHI.h"

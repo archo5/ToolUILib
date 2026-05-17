@@ -6,6 +6,7 @@
 #include "../lib-src/Core/SerializationDATO.h"
 #include "../lib-src/Core/TweakableValue.h"
 #include "../lib-src/Core/TriangulatorComplex.h"
+#include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Render/RHI.h"
 
 

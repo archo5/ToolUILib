@@ -205,6 +205,9 @@
     <ClCompile Include="Curve_QuadSpline.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Editor_Slider.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -506,6 +509,9 @@
       <Filter>Editors</Filter>
     </ClInclude>
     <ClInclude Include="Editor_Curve_QuadSpline.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor_Slider.h">
       <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>

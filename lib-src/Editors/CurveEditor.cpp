@@ -1054,10 +1054,10 @@ void Curve_QuadSpline_View::OnEvent(const CurveEditorInput& input, Event& e)
 	}
 }
 
-static void DrawTangentSwordfight(const CurveEditorInput& input, const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb)
+static void DrawTangentSwordfight(const CurveEditorInput& input, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb)
 {
 	Vec2f cmp;
-	if (CQS_FindCurveMidpoint(pa, pb, cmp))
+	if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
 	{
 		Vec2f pts[3] =
 		{

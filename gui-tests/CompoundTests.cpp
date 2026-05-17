@@ -4,6 +4,7 @@
 #include "../lib-src/Model/Docking.h"
 #include "../lib-src/Editors/NumberEditor.h"
 #include "../lib-src/Editors/CurveEditor.h"
+#include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Editor_Curve_CubicNrmRemap.h"
 
 

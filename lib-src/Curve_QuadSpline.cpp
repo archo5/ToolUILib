@@ -22,7 +22,7 @@ static bool StraightLineIntersection(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec
 	return true;
 }
 
-bool CQS_FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp)
+bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f& outcmp)
 {
 	Vec2f pa2 = { pa.time, pa.value };
 	Vec2f pb2 = { pb.time, pb.value };
@@ -107,9 +107,9 @@ void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t
 	}
 }
 
-static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range, float sx, bool loop, bool accelsmoothing, bool extrapolate)
+static float curvesample(ArrayView<QLIFSplinePoint> curve, Rangef range, float sx, bool loop, bool accelsmoothing, bool extrapolate)
 {
-	size_t cs = FindCurveSection(&curve.Data()->time, sizeof(Curve_QuadSpline::Point), curve.Size(), sx);
+	size_t cs = FindCurveSection(&curve.Data()->time, sizeof(QLIFSplinePoint), curve.Size(), sx);
 	size_t p0, p1;
 	CurveSectionToPoints(cs, curve.Size(), loop, p0, p1);
 	auto pa = curve[p0];
@@ -125,13 +125,13 @@ static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range,
 		if (sx > pb.time) return pb.value + pb.velocity * (sx - pb.time);
 	}
 
-	return CQS_Interpolate(pa, pb, sx, accelsmoothing);
+	return QLIFSpline_Interpolate(pa, pb, sx, accelsmoothing);
 }
 
-float CQS_Interpolate(const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb, float sx, bool accelsmoothing)
+float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing)
 {
 	Vec2f cmp;
-	if (CQS_FindCurveMidpoint(pa, pb, cmp))
+	if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
 	{
 		float q = invqslerp(pa.time, cmp.x, pb.time, sx);
 		float cv = qslerp(pa.value, cmp.y, pb.value, q);
@@ -171,7 +171,7 @@ Rangef Curve_QuadSpline::CalcHeightRange()
 			auto pa = points[i];
 			auto pb = points.NextWrap(i);
 			Vec2f cmp;
-			if (CQS_FindCurveMidpoint(pa, pb, cmp))
+			if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
 			{
 				// excessive
 				//range.Include(cmp.y);

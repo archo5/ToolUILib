@@ -262,6 +262,7 @@
     <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Editors\Tables.cpp" />
     <ClCompile Include="Editors\TreeEditor.cpp" />
+    <ClCompile Include="Editor_Slider.cpp" />
     <ClCompile Include="Elements\Animated.cpp" />
     <ClCompile Include="Elements\ResizablePane.cpp" />
     <ClCompile Include="Elements\SplitPane.cpp" />
@@ -365,6 +366,7 @@
     <ClInclude Include="Editor_Curve_CubicNrmRemap.h" />
     <ClInclude Include="Editor_Curve_QuadSpline.h" />
     <ClInclude Include="Editor_Curve_Sequence01.h" />
+    <ClInclude Include="Editor_Slider.h" />
     <ClInclude Include="Elements\Animated.h" />
     <ClInclude Include="Elements\ResizablePane.h" />
     <ClInclude Include="Elements\SeparatorLineStyle.h" />

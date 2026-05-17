@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Render/RHI.h"
 
 

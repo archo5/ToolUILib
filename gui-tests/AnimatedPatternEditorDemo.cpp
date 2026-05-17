@@ -4,6 +4,7 @@
 #include "../lib-src/Core/MathExpr.h"
 #include "../lib-src/Editors/TreeEditor.h"
 #include "../lib-src/Editors/CurveEditor.h"
+#include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Editor_Curve_Sequence01.h"
 
 

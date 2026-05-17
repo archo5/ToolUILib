@@ -13,21 +13,25 @@ float qslerp(float a, float b, float c, float q);
 size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, float x);
 void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t& p1);
 
+struct QLIFSplinePoint
+{
+	float time;
+	float value;
+	float velocity;
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& fi)
+	{
+		oi.OnFieldManyF32(fi, 3, &time);
+	}
+};
+
+bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f& outcmp);
+float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing);
 
 struct Curve_QuadSpline
 {
 	Rangef timeRange = { 0, 1 };
-	struct Point
-	{
-		float time;
-		float value;
-		float velocity;
-
-		void OnSerialize(IObjectIterator& oi, const FieldInfo& fi)
-		{
-			oi.OnFieldManyF32(fi, 3, &time);
-		}
-	};
+	using Point = QLIFSplinePoint;
 	Array<Point> points;
 	enum
 	{
@@ -51,9 +55,6 @@ struct Curve_QuadSpline
 	Rangef CalcHeightRange();
 	void InsertPoint(float time, float value, float velocity);
 };
-
-bool CQS_FindCurveMidpoint(Curve_QuadSpline::Point pa, Curve_QuadSpline::Point pb, Vec2f& outcmp);
-float CQS_Interpolate(const Curve_QuadSpline::Point& pa, const Curve_QuadSpline::Point& pb, float sx, bool accelsmoothing);
 
 
 } // ui
