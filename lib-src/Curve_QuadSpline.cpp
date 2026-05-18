@@ -289,7 +289,14 @@ float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& p
 			? lerp(pa.value, cmp.y, invlerpc(pa.time, cmp.x, sx))
 			: lerp(cmp.y, pb.value, invlerpc(cmp.x, pb.time, sx));
 
+#if QLIF_V1_ACCEL_SMOOTHING
 		float qq = sinf(acosf(q * 2 - 1));
+#else // v2
+		float qqq = sx <= cmp.x ? invlerpc(cmp.x, pa.time, sx) * -1 : invlerpc(cmp.x, pb.time, sx);
+		float qq = qqq * qqq;
+		qq *= qq;
+		qq = 1 - qq;
+#endif
 		return lerp(pwlv, cv, qq);
 	}
 	else
