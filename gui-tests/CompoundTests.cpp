@@ -916,6 +916,16 @@ struct IMGUITest : ui::Buildable
 			ui::imLabel("multiplier (limited fmt)"), ui::imEditFloat(multiplierVal, { 1.0f, true }, { 0.001f, 1000.0f }, lfmt);
 		}
 		{
+			ui::imLabel ls("slider");
+			auto tmp = floatVal;
+			if (ui::imLabel("\bworking"), ui::imSliderFloat(tmp, { -37.4f, 154.1f }))
+				floatVal = tmp;
+			if (ui::imLabel("\bdisabled"), ui::imEnable(false), ui::imSliderFloat(tmp, { -37.4f, 154.1f }))
+				floatVal = tmp;
+
+			ui::MakeWithText<ui::LabelFrame>("float: " + std::to_string(floatVal));
+		}
+		{
 			ui::imLabel("color B (Delayed)"), ui::imEditColor(colorValB, true);
 			ui::imLabel("color F (Delayed)"), ui::imEditColor(colorValF, true);
 		}

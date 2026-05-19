@@ -28,8 +28,8 @@ void Slider::OnReset()
 	flags |= UIObject_SetsChildTextStyle;
 	style = *GetCurrentTheme()->GetStruct(sid_slider_style_hor);
 
-	_value = 0;
 	_limits = { 0, 1, 0 };
+	format = {};
 }
 
 void Slider::OnPaint(const UIPaintContext& ctx)
@@ -70,8 +70,10 @@ void Slider::OnEvent(Event& e)
 	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
 		e.context->ReleaseMouse();
+		if (!IsInputDisabled())
+			e.context->OnCommit(this);
 	}
-	if (e.type == EventType::MouseMove && IsClicked())
+	if (e.type == EventType::MouseMove && IsClicked() && !IsInputDisabled())
 	{
 		_value = PosToValue(e.position.x + _mxoff);
 		e.context->OnChange(this);
