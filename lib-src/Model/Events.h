@@ -198,9 +198,9 @@ template <class T> struct SubUIValueHelper
 	}
 };
 
-template <class T> struct SubUI
+template <class T, class TVH = SubUIValueHelper<T>> struct SubUI
 {
-	static constexpr T NoValue = SubUIValueHelper<T>::GetNullValue();
+	static constexpr T NoValue = TVH::GetNullValue();
 
 	bool IsAnyHovered() const { return _hovered != NoValue; }
 	bool IsAnyPressed() const { return _pressed != NoValue; }
