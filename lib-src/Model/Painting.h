@@ -116,7 +116,7 @@ struct PaintInfo
 	uint8_t state = 0;
 	uint8_t checkState = 0;
 
-	PaintInfo() {}
+	PaintInfo() : obj(nullptr) {}
 	PaintInfo(const UIObject* o);
 	void SetChecked(bool checked);
 	void SetCheckState(uint8_t cs);

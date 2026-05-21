@@ -208,6 +208,9 @@
     <ClCompile Include="Editor_Slider.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="UILayer_Editor_Viewport.cpp">
+      <Filter>UI Layers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -514,6 +517,9 @@
     <ClInclude Include="Editor_Slider.h">
       <Filter>Editors</Filter>
     </ClInclude>
+    <ClInclude Include="UILayer_Editor_Viewport.h">
+      <Filter>UI Layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -539,6 +545,9 @@
     </Filter>
     <Filter Include="Layout">
       <UniqueIdentifier>{e85e8aed-258c-4653-a052-077abcbe8bde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI Layers">
+      <UniqueIdentifier>{2ce3a1a9-a6e1-4867-aba0-0f95f47d675c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

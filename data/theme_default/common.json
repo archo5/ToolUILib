@@ -178,3 +178,26 @@
 	size = 16
 	images = [{ path = "images/bgr-checkerboard.png" }]
 }
+
+"viewport-editor-track:painter":
+{
+	__ = "color_fill"
+	color = "b:0;127"
+}
+"viewport-editor-edge:painter":
+{
+	__ = "color_fill"
+	color = "b:255;127"
+}
+"viewport_editor_style_hor:ViewportEditorStyle":
+{
+	trackPainter = "viewport-editor-track"
+	edge1Painter = "viewport-editor-edge"
+	edge2Painter = "viewport-editor-edge"
+}
+"viewport_editor_style_vert:ViewportEditorStyle":
+{
+	trackPainter = "viewport-editor-track"
+	edge1Painter = "viewport-editor-edge"
+	edge2Painter = "viewport-editor-edge"
+}

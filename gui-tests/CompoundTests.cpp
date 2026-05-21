@@ -6,6 +6,7 @@
 #include "../lib-src/Editors/CurveEditor.h"
 #include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Editor_Curve_CubicNrmRemap.h"
+#include "../lib-src/UILayer_Editor_Viewport.h"
 
 
 struct StateButtonsTest : ui::Buildable
@@ -785,6 +786,78 @@ struct ColorPickerTest : ui::Buildable
 void Test_ColorPicker()
 {
 	WMake<ColorPickerTest>();
+}
+
+
+struct ViewportEditorLayerTest : ui::Buildable
+{
+	const ui::AABB2f fullarea = { 0, 0, 300, 300 };
+	ui::AABB2f viewport = fullarea;
+	ui::ViewportEditor vped;
+	ui::AABB2f winrect;
+	void OnReset() override
+	{
+		vped.OnReset();
+	}
+	void Build() override
+	{
+		WPush<ui::EdgeSliceLayoutElement>();
+		WPush<ui::StackLTRLayoutElement>();
+		WMakeWithText<ui::Button>("Reset").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { viewport = fullarea; };
+		WPop();
+		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ProcGraphNode);
+		WPush<ui::SizeConstraintElement>()
+			.SetMinWidth(300)
+			.SetMaxWidth(500)
+			.SetMinHeight(300)
+			.SetMaxHeight(400);
+		auto& view = WMake<ui::View2D>();
+		view.onPaint = [this](ui::UIRect rect) { ViewDraw(rect); };
+		view.HandleEvent() = [this](ui::Event& e) { ViewOnEvent(e); };
+		WPop();
+		WPop();
+		WPop();
+	}
+	static void VertexTransformCallback(void* userdata, ui::Vertex* vertices, size_t count)
+	{
+		auto* me = static_cast<ViewportEditorLayerTest*>(userdata);
+		for (size_t i = 0; i < count; i++)
+		{
+			auto& v = vertices[i];
+			auto vpco = me->viewport.InverseLerp({ v.x, v.y });
+			auto wco = me->winrect.Lerp(vpco);
+			v.x = wco.x, v.y = wco.y;
+		}
+	}
+	void ViewDraw(ui::UIRect rect)
+	{
+		winrect = rect;
+		ui::RectInvLerp(fullarea, viewport);
+
+		ui::draw::VertexTransformCallback vtc;
+		vtc.userdata = this;
+		vtc.func = VertexTransformCallback;
+		auto prevVTC = ui::draw::SetVertexTransformCallback(vtc);
+		{
+			ui::Vec2f rectpoly[] = { fullarea.GetP00(), fullarea.GetP10(), fullarea.GetP11(), fullarea.GetP01() };
+			ui::draw::AALineCol(rectpoly, 2, { 0, 255, 0 }, true, false);
+
+			auto* font = ui::GetFontByFamily(ui::FONT_FAMILY_SERIF);
+			ui::draw::TextLine(font, 64, 32, 32, "TEST", {}, ui::TextBaseline::Top, &winrect);
+			ui::draw::TextLine(font, 64, 64, 112, "TEXT", {}, ui::TextBaseline::Top, &winrect);
+			ui::draw::TextLine(font, 64, 96, 192, "TEST", {}, ui::TextBaseline::Top, &winrect);
+		}
+		ui::draw::SetVertexTransformCallback(prevVTC);
+		vped.Draw(winrect, fullarea, viewport);
+	}
+	void ViewOnEvent(ui::Event& e)
+	{
+		vped.OnEvent(e, winrect, fullarea, viewport);
+	}
+};
+void Test_ViewportEditorLayer()
+{
+	WMake<ViewportEditorLayerTest>();
 }
 
 
