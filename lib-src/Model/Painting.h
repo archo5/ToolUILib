@@ -252,6 +252,10 @@ struct ColorFillPainter : IPainter
 	int shrink = 0;
 	float borderWidth = 0;
 	Vec2f contentOffset;
+	float borderRadiusLT = 0;
+	float borderRadiusRT = 0;
+	float borderRadiusLB = 0;
+	float borderRadiusRB = 0;
 
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };

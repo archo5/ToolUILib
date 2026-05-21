@@ -254,7 +254,45 @@ ContentPaintAdvice ColorFillPainter::Paint(const PaintInfo& info)
 			baseColor = borderColor;
 		}
 
-		if (drawBorder)
+		if (borderRadiusLT > 0 || borderRadiusRT > 0 || borderRadiusLB > 0 || borderRadiusRB > 0)
+		{
+			float hrw = r.GetWidth() * 0.5f;
+			float hrh = r.GetHeight() * 0.5f;
+			float hme = min(hrw, hrh);
+			float brLT = max(0.f, min(hme, borderRadiusLT));
+			float brRT = max(0.f, min(hme, borderRadiusRT));
+			float brLB = max(0.f, min(hme, borderRadiusLB));
+			float brRB = max(0.f, min(hme, borderRadiusRB));
+			Array<Vec2f> poly;
+			auto GenerateCorner = [&](Vec2f cnr, Vec2f vec1, Vec2f vec2, float radius)
+			{
+				if (!radius)
+				{
+					if (poly.IsEmpty() || poly.Last() != cnr)
+						poly.Append(cnr);
+					return;
+				}
+				int n = int(ceilf(radius));
+				for (int i = 0; i <= n; i++)
+				{
+					float q = i * PI * 0.5f / n;
+					float v2s = (1 - cosf(q)) * radius;
+					float v1s = (1 - sinf(q)) * radius;
+					Vec2f pt = cnr + vec1 * v1s + vec2 * v2s;
+					if (poly.IsEmpty() || poly.Last() != pt)
+						poly.Append(pt);
+				}
+			};
+			GenerateCorner(r.GetP00(), { 0, 1 }, { 1, 0 }, brLT);
+			GenerateCorner(r.GetP10(), { -1, 0 }, { 0, 1 }, brRT);
+			GenerateCorner(r.GetP11(), { 0, -1 }, { -1, 0 }, brRB);
+			GenerateCorner(r.GetP01(), { 1, 0 }, { 0, -1 }, brLB);
+			std::reverse(poly.begin(), poly.end()); // TODO
+			draw::AAPolyCol(poly, baseColor);
+			if (drawBorder)
+				draw::AALineCol(poly, borderWidth, borderColor, true);
+		}
+		else if (drawBorder)
 		{
 			draw::RectCol(r.x0 + w, r.y0 + w, r.x1 - w, r.y1 - w, color);
 			draw::RectCol(r.x0, r.y0, r.x1, r.y0 + w, borderColor);

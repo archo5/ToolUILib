@@ -776,6 +776,24 @@ static IPainter* ColorFillPainterCreateFunc(IThemeLoader* loader, IObjectIterato
 	OnField(OI, "borderWidth", p->borderWidth);
 	OnField(OI, "contentOffset", p->contentOffset);
 
+	if (OI.HasField("borderRadius"))
+	{
+		float val = 0;
+		OnField(OI, "borderRadius", val);
+		p->borderRadiusLT = val;
+		p->borderRadiusRT = val;
+		p->borderRadiusLB = val;
+		p->borderRadiusRB = val;
+	}
+	if (OI.HasField("borderRadiusLT"))
+		OnField(OI, "borderRadiusLT", p->borderRadiusLT);
+	if (OI.HasField("borderRadiusRT"))
+		OnField(OI, "borderRadiusRT", p->borderRadiusRT);
+	if (OI.HasField("borderRadiusLB"))
+		OnField(OI, "borderRadiusLB", p->borderRadiusLB);
+	if (OI.HasField("borderRadiusRB"))
+		OnField(OI, "borderRadiusRB", p->borderRadiusRB);
+
 	return p;
 }
 

@@ -183,11 +183,13 @@
 {
 	__ = "color_fill"
 	color = "b:0;127"
+	borderRadius = 9999
 }
 "viewport-editor-edge:painter":
 {
 	__ = "color_fill"
 	color = "b:255;127"
+	borderRadius = 9999
 }
 "viewport_editor_style_hor:ViewportEditorStyle":
 {
