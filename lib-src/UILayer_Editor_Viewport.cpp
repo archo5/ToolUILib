@@ -32,6 +32,7 @@ struct ViewportEditorLayout
 	AABB2f hsliderect, vsliderect;
 	AABB2f hedgelrect, hedgerrect, vedgetrect, vedgebrect;
 	float htracklen, vtracklen;
+	float htrackwidth, vtrackwidth;
 
 	ViewportEditorLayout(const ViewportEditorStyle& styleH, const ViewportEditorStyle& styleV, AABB2f winrect, AABB2f fullarea, AABB2f viewport)
 	{
@@ -39,11 +40,16 @@ struct ViewportEditorLayout
 
 		float amH = roundf(styleH.areaMargin.Eval(vpmin));
 		float twH = roundf(styleH.trackWidth.Eval(vpmin));
-		float tewH = roundf(styleH.trackEdgeMargin.Eval(vpmin));
+		float temH = roundf(styleH.trackEdgeMargin.Eval(vpmin));
+		float tmlH = roundf(styleH.trackMinLength.Eval(vpmin));
 
 		float amV = roundf(styleV.areaMargin.Eval(vpmin));
 		float twV = roundf(styleV.trackWidth.Eval(vpmin));
-		float tewV = roundf(styleV.trackEdgeMargin.Eval(vpmin));
+		float temV = roundf(styleV.trackEdgeMargin.Eval(vpmin));
+		float tmlV = roundf(styleV.trackMinLength.Eval(vpmin));
+
+		htrackwidth = amH * 2 + twH;
+		vtrackwidth = amV * 2 + twV;
 
 		AABB2f hscrollrect, vscrollrect;
 
@@ -105,8 +111,11 @@ struct ViewportEditorLayout
 		vsliderect.y0 = lerp(vscrollrect.y0, vscrollrect.y1, qy0);
 		vsliderect.y1 = lerp(vscrollrect.y0, vscrollrect.y1, qy1);
 
-		AABB2f hitrect = hsliderect.ShrinkBy(tewH);
-		AABB2f vitrect = vsliderect.ShrinkBy(tewV);
+		MinAndClamp(hsliderect.x0, hsliderect.x1, tmlH, { winrect.x0, winrect.x1 });
+		MinAndClamp(vsliderect.y0, vsliderect.y1, tmlV, { winrect.y0, winrect.y1 });
+
+		AABB2f hitrect = hsliderect.ShrinkBy(temH);
+		AABB2f vitrect = vsliderect.ShrinkBy(temV);
 
 		hedgelrect = hedgerrect = hitrect;
 		vedgetrect = vedgebrect = vitrect;
@@ -115,6 +124,24 @@ struct ViewportEditorLayout
 		hedgerrect.x0 = hedgerrect.x1 - hedgerrect.GetHeight();
 		vedgetrect.y1 = vedgetrect.y0 + vedgetrect.GetWidth();
 		vedgebrect.y0 = vedgebrect.y1 - vedgebrect.GetWidth();
+	}
+
+	static void MinAndClamp(float& tmin, float& tmax, float minlen, Rangef winrange)
+	{
+		if (tmax < tmin)
+			tmin = tmax = (tmin + tmax) * 0.5f;
+		float curlen = tmax - tmin;
+		if (curlen >= minlen)
+			return;
+		float hldiff = (minlen - curlen) * 0.5f;
+		tmin -= hldiff;
+		tmax += hldiff;
+		if (tmin < winrange.min)
+			tmin = winrange.min, tmax = winrange.min + minlen;
+		if (tmax > winrange.max)
+			tmax = winrange.max, tmin = winrange.max - minlen;
+		if (tmin < winrange.min)
+			tmin = winrange.min;
 	}
 };
 
@@ -131,12 +158,12 @@ bool ViewportEditor::OnEvent(Event& e, AABB2f winrect, AABB2f fullarea, AABB2f& 
 	e.StopPropagation(); \
 //
 #define HSAVE \
-	origmin = viewport.x0; \
-	origmax = viewport.x1; \
+	origvp.x0 = viewport.x0; \
+	origvp.x1 = viewport.x1; \
 //
 #define VSAVE \
-	origmin = viewport.y0; \
-	origmax = viewport.y1; \
+	origvp.y0 = viewport.y0; \
+	origvp.y1 = viewport.y1; \
 //
 #define ENDMOVE \
 	edited = true; \
@@ -149,19 +176,19 @@ bool ViewportEditor::OnEvent(Event& e, AABB2f winrect, AABB2f fullarea, AABB2f& 
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; HSAVE; break;
-		case SubUIDragState::Move: viewport.x0 = origmin + diff; viewport.x1 = origmax + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.x0 = origvp.x0 + diff; viewport.x1 = origvp.x1 + diff; ENDMOVE; break;
 		}
 		switch (state.DragOnEvent(HEdgeL, layout.hedgelrect, e))
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; HSAVE; break;
-		case SubUIDragState::Move: viewport.x0 = origmin + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.x0 = origvp.x0 + diff; ENDMOVE; break;
 		}
 		switch (state.DragOnEvent(HEdgeR, layout.hedgerrect, e))
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; HSAVE; break;
-		case SubUIDragState::Move: viewport.x1 = origmax + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.x1 = origvp.x1 + diff; ENDMOVE; break;
 		}
 	}
 	// vertical
@@ -171,19 +198,19 @@ bool ViewportEditor::OnEvent(Event& e, AABB2f winrect, AABB2f fullarea, AABB2f& 
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; VSAVE; break;
-		case SubUIDragState::Move: viewport.y0 = origmin + diff; viewport.y1 = origmax + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.y0 = origvp.y0 + diff; viewport.y1 = origvp.y1 + diff; ENDMOVE; break;
 		}
 		switch (state.DragOnEvent(VEdgeT, layout.vedgetrect, e))
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; VSAVE; break;
-		case SubUIDragState::Move: viewport.y0 = origmin + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.y0 = origvp.y0 + diff; ENDMOVE; break;
 		}
 		switch (state.DragOnEvent(VEdgeB, layout.vedgebrect, e))
 		{
 		case SubUIDragState::Stop: e.context->ReleaseMouse(); break;
 		case SubUIDragState::Start: START; VSAVE; break;
-		case SubUIDragState::Move: viewport.y1 = origmax + diff; ENDMOVE; break;
+		case SubUIDragState::Move: viewport.y1 = origvp.y1 + diff; ENDMOVE; break;
 		}
 	}
 #undef ENDMOVE
@@ -191,6 +218,80 @@ bool ViewportEditor::OnEvent(Event& e, AABB2f winrect, AABB2f fullarea, AABB2f& 
 #undef HSAVE
 #undef START
 	state.FinalizeOnEvent(e);
+	bool ish = styleH.otherSide ? e.position.y < winrect.y0 + layout.htrackwidth : e.position.y > winrect.y1 - layout.htrackwidth;
+	bool isv = styleV.otherSide ? e.position.x < winrect.x0 + layout.vtrackwidth : e.position.x > winrect.x1 - layout.vtrackwidth;
+	if (e.type == ui::EventType::MouseScroll)
+	{
+		ViewportEditorScrollMode vesm = config.baseScrollMode;
+		if (config.hScrollMode != ViewportEditorScrollMode::Inherit)
+		{
+			if (ish)
+				vesm = config.hScrollMode;
+		}
+		if (config.vScrollMode != ViewportEditorScrollMode::Inherit)
+		{
+			if (isv)
+				vesm = config.vScrollMode;
+		}
+
+		if (vesm == ViewportEditorScrollMode::Scroll)
+		{
+			Vec2f d = e.delta;
+			d.x = sign(d.x), d.y = sign(d.y);
+			if (ish) d = { d.y, d.x };
+			if (e.GetModifierKeys() & MK_Ctrl) d = { d.y, d.x };
+			d.x *= divf_safe(fullarea.GetWidth() * config.hScrollAmountPx, layout.htracklen);
+			d.y *= divf_safe(fullarea.GetHeight() * config.vScrollAmountPx, layout.vtracklen);
+			viewport -= d;
+		}
+		else if (vesm == ViewportEditorScrollMode::Zoom)
+		{
+			Vec2f vpcpos = viewport.Lerp(winrect.InverseLerp(e.position));
+			viewport -= vpcpos;
+			viewport = viewport * (e.delta.y < 0 ? config.zoomScrollAmount : 1.f / config.zoomScrollAmount);
+			viewport += vpcpos;
+		}
+	}
+	if (e.type == ui::EventType::ButtonDown && e.GetButton() == ui::MouseButton::Middle)
+	{
+		e.context->CaptureMouse(e.current);
+		dragstartcursor = e.position;
+		dragstartvpcur = viewport.Lerp(winrect.InverseLerp(dragstartcursor));
+		origvp = viewport;
+		isMMBDown = true;
+		isOnHScroll = ish && !isv;
+		isOnVScroll = isv && !ish;
+		isZooming = !!(e.GetModifierKeys() & MK_Ctrl) ^ !!(config.middleMouseBtnFlags & config.MMB_Flip);
+	}
+	if (e.type == ui::EventType::MouseMove && isMMBDown)
+	{
+		if (config.middleMouseBtnFlags & config.MMB_Enable)
+		{
+			viewport = origvp;
+			if (!isZooming)
+			{
+				float diffx = divf_safe(e.position.x - dragstartcursor.x, winrect.GetWidth()) * origvp.GetWidth();
+				float diffy = divf_safe(e.position.y - dragstartcursor.y, winrect.GetHeight()) * origvp.GetHeight();
+				viewport.x0 -= diffx, viewport.x1 -= diffx;
+				viewport.y0 -= diffy, viewport.y1 -= diffy;
+			}
+			else
+			{
+				viewport -= dragstartvpcur;
+				viewport = viewport * powf(config.zoomDragAmount, e.position.y - dragstartcursor.y);
+				viewport += dragstartvpcur;
+				if (isOnHScroll)
+					viewport.y0 = origvp.y0, viewport.y1 = origvp.y1;
+				if (isOnVScroll)
+					viewport.x0 = origvp.x0, viewport.x1 = origvp.x1;
+			}
+		}
+	}
+	if (e.type == ui::EventType::ButtonUp && e.GetButton() == ui::MouseButton::Middle)
+	{
+		e.context->ReleaseMouse();
+		isMMBDown = false;
+	}
 	return edited;
 }
 
