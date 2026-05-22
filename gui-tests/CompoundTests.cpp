@@ -848,11 +848,11 @@ struct ViewportEditorLayerTest : ui::Buildable
 			ui::draw::TextLine(font, 64, 96, 192, "TEST", {}, ui::TextBaseline::Top, &winrect);
 		}
 		ui::draw::SetVertexTransformCallback(prevVTC);
-		vped.Draw(winrect, fullarea, viewport);
+		vped.Draw({ winrect, fullarea, viewport });
 	}
 	void ViewOnEvent(ui::Event& e)
 	{
-		vped.OnEvent(e, winrect, fullarea, viewport);
+		vped.OnEvent(e, { winrect, fullarea, viewport });
 	}
 };
 void Test_ViewportEditorLayer()

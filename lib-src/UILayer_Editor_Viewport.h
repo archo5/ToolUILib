@@ -67,6 +67,14 @@ struct ViewportEditorConfig
 	u8 middleMouseBtnFlags = MMB_Enable;
 };
 
+struct ViewportEditorInputs
+{
+	AABB2f winrect;
+	AABB2f fullarea;
+	AABB2f& viewport;
+	bool flipY = false;
+};
+
 struct ViewportEditor
 {
 	enum Elements : u8
@@ -98,8 +106,8 @@ struct ViewportEditor
 		config = {};
 	}
 	void LoadStyle();
-	bool OnEvent(Event& e, AABB2f winrect, AABB2f fullarea, AABB2f& viewport);
-	void Draw(AABB2f winrect, AABB2f fullarea, AABB2f viewport);
+	bool OnEvent(Event& e, const ViewportEditorInputs& inputs);
+	void Draw(const ViewportEditorInputs& inputs);
 };
 
 

@@ -523,13 +523,19 @@ void CurveEditorElement::OnReset()
 	curveView = nullptr;
 	settings = {};
 	gridSettings = {};
+	viewportEditor.OnReset();
 
 	SetDefaultFrameStyle(DefaultFrameStyle::ListBox); // TODO custom style
 }
 
 void CurveEditorElement::OnEvent(Event& e)
 {
-	if (_ui.OnEvent({ viewport, GetContentRect(), &settings }, curveView, e))
+	if (viewportEditor.OnEvent(e, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true }))
+	{
+		Event se(e.context, this, EventType::Scroll);
+		e.context->BubblingEvent(se);
+	}
+	if (!e.IsPropagationStopped() && _ui.OnEvent({ viewport, GetContentRect(), &settings }, curveView, e))
 		e.StopPropagation();
 }
 
@@ -539,6 +545,7 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
+	viewportEditor.Draw({ GetContentRect(), curveView->GetPreferredViewport(true), viewport, true });
 
 	PaintChildren(ctx, cpa);
 }
@@ -559,7 +566,12 @@ struct CurveProxyEditorElement : FrameElement
 	}
 	void OnEvent(Event& e) override
 	{
-		if (_ui.OnEvent({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView, e))
+		if (_editor->viewportEditor.OnEvent(e, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true }))
+		{
+			Event se(e.context, this, EventType::Scroll);
+			e.context->BubblingEvent(se);
+		}
+		if (!e.IsPropagationStopped() && _ui.OnEvent({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView, e))
 			e.StopPropagation();
 	}
 	void OnPaint(const UIPaintContext& ctx) override
@@ -568,6 +580,7 @@ struct CurveProxyEditorElement : FrameElement
 
 		_editor->gridSettings.Draw(_editor->viewport, GetContentRect());
 		_ui.Render({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView);
+		_editor->viewportEditor.Draw({ GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true });
 
 		PaintChildren(ctx, cpa);
 	}
@@ -634,6 +647,7 @@ void Curve_RTEditButton::OnReset()
 	curveView = nullptr;
 	settings = {};
 	gridSettings = {};
+	viewportEditor.OnReset();
 }
 
 void Curve_RTEditButton::OnPaint(const UIPaintContext& ctx)

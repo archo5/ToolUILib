@@ -4,6 +4,7 @@
 #include "../Model/Objects.h"
 
 #include "../Model/Controls.h" // TODO: only for FrameElement
+#include "../UILayer_Editor_Viewport.h"
 
 
 namespace ui {
@@ -180,6 +181,7 @@ struct CurveEditorUI : CurveEditorState
 struct CurveEditorElement : FrameElement
 {
 	CurveEditorUI _ui;
+	ViewportEditor viewportEditor;
 	ICurveView* curveView = nullptr;
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
@@ -202,6 +204,7 @@ struct Curve_RTEditButton : FrameElement
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
 	GridSettings gridSettings;
+	ViewportEditor viewportEditor;
 
 	Curve_RTEditButton& Init(ICurveView* c)
 	{
