@@ -31,7 +31,7 @@ struct Curve_Sequence01_View : ICurveView
 	float SampleCurve(u32 curveid, float x) override;
 	void GetScreenCurvePoints(const CurveEditorInput& input, u32 curveid, Array<Vec2f>& curvepoints) override;
 
-	bool HasSliceMidpoint(u32 curveid, u32 sliceid) override { return true; }
+	bool HasSliceMidpoint(u32 curveid, u32 sliceid) override { return sliceid + 1 < curve->points.Size(); }
 	Vec2f GetSliceMidpoint(u32 curveid, u32 sliceid) override
 	{
 		return { 0.5f, curve->points[sliceid + 1].tweak };

@@ -262,7 +262,8 @@ bool ViewportEditorUI::OnEvent(Event& e, const ViewportEditorSettings& cfg, cons
 		}
 		else if (vesm == ViewportEditorScrollMode::Zoom)
 		{
-			Vec2f vpcpos = viewport.Lerp(winrect.InverseLerp(e.position));
+			Vec2f q = winrect.InverseLerp(e.position);
+			Vec2f vpcpos = inputs.flipY ? viewport.LerpFlipY(q) : viewport.Lerp(q);
 			viewport -= vpcpos;
 			viewport = viewport * (e.delta.y < 0 ? cfg.ctrl.zoomScrollAmount : 1.f / cfg.ctrl.zoomScrollAmount);
 			viewport += vpcpos;

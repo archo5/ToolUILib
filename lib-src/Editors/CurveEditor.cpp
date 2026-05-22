@@ -98,8 +98,8 @@ Range<u32> ICurveView::ExpandForCurves(Range<u32> src, u32 max)
 	if (src.max < max)
 		src.max++;
 	// exclude last point (for which there is no matching curve)
-	if (src.max == max && max)
-		src.max--;
+	//if (src.max == max && max)
+	//	src.max--;
 	return src;
 }
 
@@ -873,6 +873,8 @@ void Curve_Sequence01_View::GetScreenCurvePoints(const CurveEditorInput& input, 
 {
 	auto pointrange = GetLeastPointRange(curveid, { input.viewport.x0, input.viewport.x1 });
 	pointrange = ExpandForCurves(pointrange, curve->points.Size());
+	if (pointrange.max == curve->points.Size())
+		pointrange.max--;
 
 	if (input.viewport.x0 < curve->points.First().posX)
 		curvepoints.Append(input.ScreenFromCurve({ input.viewport.x0, curve->points.First().posY }));
