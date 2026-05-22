@@ -523,14 +523,14 @@ void CurveEditorElement::OnReset()
 	curveView = nullptr;
 	settings = {};
 	gridSettings = {};
-	viewportEditor.OnReset();
+	viewportEditorSettings.OnReset();
 
 	SetDefaultFrameStyle(DefaultFrameStyle::ListBox); // TODO custom style
 }
 
 void CurveEditorElement::OnEvent(Event& e)
 {
-	if (viewportEditor.OnEvent(e, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true }))
+	if (_vped.OnEvent(e, viewportEditorSettings, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true }))
 	{
 		Event se(e.context, this, EventType::Scroll);
 		e.context->BubblingEvent(se);
@@ -545,7 +545,7 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
-	viewportEditor.Draw({ GetContentRect(), curveView->GetPreferredViewport(true), viewport, true });
+	_vped.Draw(viewportEditorSettings, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true });
 
 	PaintChildren(ctx, cpa);
 }
@@ -555,6 +555,7 @@ struct CurveProxyEditorElement : FrameElement
 {
 	Curve_RTEditButton* _editor = nullptr;
 	CurveEditorUI _ui;
+	ViewportEditorUI _vped;
 
 	void OnReset() override
 	{
@@ -566,7 +567,7 @@ struct CurveProxyEditorElement : FrameElement
 	}
 	void OnEvent(Event& e) override
 	{
-		if (_editor->viewportEditor.OnEvent(e, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true }))
+		if (_vped.OnEvent(e, _editor->viewportEditorSettings, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true }))
 		{
 			Event se(e.context, this, EventType::Scroll);
 			e.context->BubblingEvent(se);
@@ -580,7 +581,7 @@ struct CurveProxyEditorElement : FrameElement
 
 		_editor->gridSettings.Draw(_editor->viewport, GetContentRect());
 		_ui.Render({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView);
-		_editor->viewportEditor.Draw({ GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true });
+		_vped.Draw(_editor->viewportEditorSettings, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true });
 
 		PaintChildren(ctx, cpa);
 	}
@@ -647,7 +648,7 @@ void Curve_RTEditButton::OnReset()
 	curveView = nullptr;
 	settings = {};
 	gridSettings = {};
-	viewportEditor.OnReset();
+	viewportEditorSettings.OnReset();
 }
 
 void Curve_RTEditButton::OnPaint(const UIPaintContext& ctx)

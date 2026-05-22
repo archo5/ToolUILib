@@ -21,7 +21,7 @@ void ViewportEditorStyle::Serialize(ThemeData& td, IObjectIterator& oi)
 StaticID<ViewportEditorStyle> sid_viewport_editor_style_hor("viewport_editor_style_hor");
 StaticID<ViewportEditorStyle> sid_viewport_editor_style_vert("viewport_editor_style_vert");
 
-void ViewportEditor::LoadStyle()
+void ViewportEditorSettings::LoadStyle()
 {
 	styleH = *GetCurrentTheme()->GetStruct<ViewportEditorStyle>(sid_viewport_editor_style_hor);
 	styleV = *GetCurrentTheme()->GetStruct<ViewportEditorStyle>(sid_viewport_editor_style_vert);
@@ -155,11 +155,11 @@ struct ViewportEditorLayout
 	}
 };
 
-bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
+bool ViewportEditorUI::OnEvent(Event& e, const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs)
 {
 	auto winrect = inputs.winrect;
 	auto& viewport = inputs.viewport;
-	ViewportEditorLayout layout(styleH, styleV, inputs);
+	ViewportEditorLayout layout(cfg.styleH, cfg.styleV, inputs);
 
 	float diff;
 	bool edited = false;
@@ -231,20 +231,20 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 #undef HSAVE
 #undef START
 	state.FinalizeOnEvent(e);
-	bool ish = styleH.otherSide ? e.position.y < winrect.y0 + layout.htrackwidth : e.position.y > winrect.y1 - layout.htrackwidth;
-	bool isv = styleV.otherSide ? e.position.x < winrect.x0 + layout.vtrackwidth : e.position.x > winrect.x1 - layout.vtrackwidth;
+	bool ish = cfg.styleH.otherSide ? e.position.y < winrect.y0 + layout.htrackwidth : e.position.y > winrect.y1 - layout.htrackwidth;
+	bool isv = cfg.styleV.otherSide ? e.position.x < winrect.x0 + layout.vtrackwidth : e.position.x > winrect.x1 - layout.vtrackwidth;
 	if (e.type == ui::EventType::MouseScroll)
 	{
-		ViewportEditorScrollMode vesm = config.baseScrollMode;
-		if (config.hScrollMode != ViewportEditorScrollMode::Inherit)
+		ViewportEditorScrollMode vesm = cfg.ctrl.baseScrollMode;
+		if (cfg.ctrl.hScrollMode != ViewportEditorScrollMode::Inherit)
 		{
 			if (ish)
-				vesm = config.hScrollMode;
+				vesm = cfg.ctrl.hScrollMode;
 		}
-		if (config.vScrollMode != ViewportEditorScrollMode::Inherit)
+		if (cfg.ctrl.vScrollMode != ViewportEditorScrollMode::Inherit)
 		{
 			if (isv)
-				vesm = config.vScrollMode;
+				vesm = cfg.ctrl.vScrollMode;
 		}
 
 		if (vesm == ViewportEditorScrollMode::Scroll)
@@ -255,8 +255,8 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 			if (e.GetModifierKeys() & MK_Ctrl) d = { d.y, d.x };
 			if (inputs.flipY)
 				d.y = -d.y;
-			d.x *= divf_safe(inputs.fullarea.GetWidth() * config.hScrollAmountPx, layout.htracklen);
-			d.y *= divf_safe(inputs.fullarea.GetHeight() * config.vScrollAmountPx, layout.vtracklen);
+			d.x *= divf_safe(inputs.fullarea.GetWidth() * cfg.ctrl.hScrollAmountPx, layout.htracklen);
+			d.y *= divf_safe(inputs.fullarea.GetHeight() * cfg.ctrl.vScrollAmountPx, layout.vtracklen);
 			viewport -= d;
 			ENDMOVE;
 		}
@@ -264,7 +264,7 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 		{
 			Vec2f vpcpos = viewport.Lerp(winrect.InverseLerp(e.position));
 			viewport -= vpcpos;
-			viewport = viewport * (e.delta.y < 0 ? config.zoomScrollAmount : 1.f / config.zoomScrollAmount);
+			viewport = viewport * (e.delta.y < 0 ? cfg.ctrl.zoomScrollAmount : 1.f / cfg.ctrl.zoomScrollAmount);
 			viewport += vpcpos;
 			ENDMOVE;
 		}
@@ -279,12 +279,12 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 		isMMBDown = true;
 		isOnHScroll = ish && !isv;
 		isOnVScroll = isv && !ish;
-		isZooming = !!(e.GetModifierKeys() & MK_Ctrl) ^ !!(config.middleMouseBtnFlags & config.MMB_Flip);
+		isZooming = !!(e.GetModifierKeys() & MK_Ctrl) ^ !!(cfg.ctrl.middleMouseBtnFlags & cfg.ctrl.MMB_Flip);
 		e.StopPropagation();
 	}
 	if (e.type == ui::EventType::MouseMove && isMMBDown)
 	{
-		if (config.middleMouseBtnFlags & config.MMB_Enable)
+		if (cfg.ctrl.middleMouseBtnFlags & cfg.ctrl.MMB_Enable)
 		{
 			viewport = origvp;
 			if (!isZooming)
@@ -299,7 +299,7 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 			else
 			{
 				viewport -= dragstartvpcur;
-				viewport = viewport * powf(config.zoomDragAmount, e.position.y - dragstartcursor.y);
+				viewport = viewport * powf(cfg.ctrl.zoomDragAmount, e.position.y - dragstartcursor.y);
 				viewport += dragstartvpcur;
 				if (isOnHScroll)
 					viewport.y0 = origvp.y0, viewport.y1 = origvp.y1;
@@ -319,52 +319,52 @@ bool ViewportEditor::OnEvent(Event& e, const ViewportEditorInputs& inputs)
 	return edited;
 }
 
-void ViewportEditor::Draw(const ViewportEditorInputs& inputs)
+void ViewportEditorUI::Draw(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs)
 {
-	ViewportEditorLayout layout(styleH, styleV, inputs);
+	ViewportEditorLayout layout(cfg.styleH, cfg.styleV, inputs);
 
 	PaintInfo pi;
 
-	if (styleH.trackPainter)
+	if (cfg.styleH.trackPainter)
 	{
 		pi.rect = layout.hsliderect;
 		pi.state = (state.IsPressed(HSlide) ? PS_Down : 0) | (state.IsHovered(HSlide) ? PS_Hover : 0);
-		styleH.trackPainter->Paint(pi);
+		cfg.styleH.trackPainter->Paint(pi);
 	}
 
-	if (styleV.trackPainter)
+	if (cfg.styleV.trackPainter)
 	{
 		pi.rect = layout.vsliderect;
 		pi.state = (state.IsPressed(VSlide) ? PS_Down : 0) | (state.IsHovered(VSlide) ? PS_Hover : 0);
-		styleV.trackPainter->Paint(pi);
+		cfg.styleV.trackPainter->Paint(pi);
 	}
 
-	if (styleH.edge1Painter)
+	if (cfg.styleH.edge1Painter)
 	{
 		pi.rect = layout.hedgelrect;
 		pi.state = (state.IsPressed(HEdgeL) ? PS_Down : 0) | (state.IsHovered(HEdgeL) ? PS_Hover : 0);
-		styleH.edge1Painter->Paint(pi);
+		cfg.styleH.edge1Painter->Paint(pi);
 	}
 
-	if (styleH.edge2Painter)
+	if (cfg.styleH.edge2Painter)
 	{
 		pi.rect = layout.hedgerrect;
 		pi.state = (state.IsPressed(HEdgeR) ? PS_Down : 0) | (state.IsHovered(HEdgeR) ? PS_Hover : 0);
-		styleH.edge2Painter->Paint(pi);
+		cfg.styleH.edge2Painter->Paint(pi);
 	}
 
-	if (styleV.edge1Painter)
+	if (cfg.styleV.edge1Painter)
 	{
 		pi.rect = layout.vedgetrect;
 		pi.state = (state.IsPressed(VEdgeT) ? PS_Down : 0) | (state.IsHovered(VEdgeT) ? PS_Hover : 0);
-		styleV.edge1Painter->Paint(pi);
+		cfg.styleV.edge1Painter->Paint(pi);
 	}
 
-	if (styleV.edge2Painter)
+	if (cfg.styleV.edge2Painter)
 	{
 		pi.rect = layout.vedgebrect;
 		pi.state = (state.IsPressed(VEdgeB) ? PS_Down : 0) | (state.IsHovered(VEdgeB) ? PS_Hover : 0);
-		styleV.edge2Painter->Paint(pi);
+		cfg.styleV.edge2Painter->Paint(pi);
 	}
 }
 

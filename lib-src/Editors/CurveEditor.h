@@ -181,11 +181,13 @@ struct CurveEditorUI : CurveEditorState
 struct CurveEditorElement : FrameElement
 {
 	CurveEditorUI _ui;
-	ViewportEditor viewportEditor;
+	ViewportEditorUI _vped;
+
 	ICurveView* curveView = nullptr;
 	AABB2f viewport = { 0, 0, 1, 1 };
 	CurveEditorSettings settings;
 	GridSettings gridSettings;
+	ViewportEditorSettings viewportEditorSettings;
 
 	void OnReset() override;
 	void OnEvent(Event& e) override;
@@ -201,10 +203,12 @@ struct Curve_RTEditButton : FrameElement
 	ICurveView* curveView = nullptr;
 	Curve_RTEditButton& SetCurveView(ICurveView* cv);
 
+	// state
 	AABB2f viewport = { 0, 0, 1, 1 };
+
 	CurveEditorSettings settings;
 	GridSettings gridSettings;
-	ViewportEditor viewportEditor;
+	ViewportEditorSettings viewportEditorSettings;
 
 	Curve_RTEditButton& Init(ICurveView* c)
 	{

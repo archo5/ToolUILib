@@ -793,11 +793,12 @@ struct ViewportEditorLayerTest : ui::Buildable
 {
 	const ui::AABB2f fullarea = { 0, 0, 300, 300 };
 	ui::AABB2f viewport = fullarea;
-	ui::ViewportEditor vped;
+	ui::ViewportEditorSettings vpcfg;
+	ui::ViewportEditorUI vped;
 	ui::AABB2f winrect;
 	void OnReset() override
 	{
-		vped.OnReset();
+		vpcfg.OnReset();
 	}
 	void Build() override
 	{
@@ -848,11 +849,11 @@ struct ViewportEditorLayerTest : ui::Buildable
 			ui::draw::TextLine(font, 64, 96, 192, "TEST", {}, ui::TextBaseline::Top, &winrect);
 		}
 		ui::draw::SetVertexTransformCallback(prevVTC);
-		vped.Draw({ winrect, fullarea, viewport });
+		vped.Draw(vpcfg, { winrect, fullarea, viewport });
 	}
 	void ViewOnEvent(ui::Event& e)
 	{
-		vped.OnEvent(e, { winrect, fullarea, viewport });
+		vped.OnEvent(e, vpcfg, { winrect, fullarea, viewport });
 	}
 };
 void Test_ViewportEditorLayer()

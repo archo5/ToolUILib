@@ -50,7 +50,7 @@ enum class ViewportEditorScrollMode : u8
 	Zoom,
 };
 
-struct ViewportEditorConfig
+struct ViewportEditorControlConfig
 {
 	float zoomScrollAmount = 1.25f;
 	float zoomDragAmount = 1.01f;
@@ -67,6 +67,21 @@ struct ViewportEditorConfig
 	u8 middleMouseBtnFlags = MMB_Enable;
 };
 
+struct ViewportEditorSettings
+{
+	ViewportEditorStyle styleH;
+	ViewportEditorStyle styleV;
+	ViewportEditorControlConfig ctrl;
+
+	ViewportEditorSettings() { OnReset(); }
+	void OnReset()
+	{
+		LoadStyle();
+		ctrl = {};
+	}
+	void LoadStyle();
+};
+
 struct ViewportEditorInputs
 {
 	AABB2f winrect;
@@ -75,7 +90,7 @@ struct ViewportEditorInputs
 	bool flipY = false;
 };
 
-struct ViewportEditor
+struct ViewportEditorUI
 {
 	enum Elements : u8
 	{
@@ -87,9 +102,6 @@ struct ViewportEditor
 		VEdgeT,
 		VEdgeB,
 	};
-	ViewportEditorStyle styleH;
-	ViewportEditorStyle styleV;
-	ViewportEditorConfig config;
 	SubUI<u8> state;
 	u8 isMMBDown : 1;
 	u8 isOnHScroll : 1;
@@ -99,15 +111,9 @@ struct ViewportEditor
 	Vec2f dragstartcursor;
 	Vec2f dragstartvpcur;
 
-	ViewportEditor() : isMMBDown(0), isOnHScroll(0), isOnVScroll(0), isZooming(0) { OnReset(); }
-	void OnReset()
-	{
-		LoadStyle();
-		config = {};
-	}
-	void LoadStyle();
-	bool OnEvent(Event& e, const ViewportEditorInputs& inputs);
-	void Draw(const ViewportEditorInputs& inputs);
+	ViewportEditorUI() : isMMBDown(0), isOnHScroll(0), isOnVScroll(0), isZooming(0) {}
+	bool OnEvent(Event& e, const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs);
+	void Draw(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs);
 };
 
 
