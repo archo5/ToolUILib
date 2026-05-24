@@ -121,8 +121,8 @@ struct ViewportEditorLayout
 		vsliderect.y0 = lerp(vscrollrect.y0, vscrollrect.y1, qy0);
 		vsliderect.y1 = lerp(vscrollrect.y0, vscrollrect.y1, qy1);
 
-		MinAndClamp(hsliderect.x0, hsliderect.x1, tmlH, { winrect.x0, winrect.x1 });
-		MinAndClamp(vsliderect.y0, vsliderect.y1, tmlV, { winrect.y0, winrect.y1 });
+		MinAndClamp(hsliderect.x0, hsliderect.x1, tmlH, { hscrollrect.x0, hscrollrect.x1 });
+		MinAndClamp(vsliderect.y0, vsliderect.y1, tmlV, { vscrollrect.y0, vscrollrect.y1 });
 
 		AABB2f hitrect = hsliderect.ShrinkBy(temH);
 		AABB2f vitrect = vsliderect.ShrinkBy(temV);
