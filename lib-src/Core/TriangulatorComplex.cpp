@@ -1083,7 +1083,7 @@ struct PolygonCutterImpl : PolygonCutter, CutterSharedBase
 
 	void EmitPolygonAndDowngradeEdgeLoop(u32 ei, PolygonOutput& output)
 	{
-		size_t origvcount = output.verts.Size();
+		u32 origvcount = output.verts.Size();
 		output.polygons.Append({ origvcount, origvcount });
 		auto& E0 = edges[ei];
 		output.verts.Append({ vertices[E0.v0].pos, vertices[E0.v0].infochain });

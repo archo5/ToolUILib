@@ -442,6 +442,7 @@ struct TransformScale3Df
 	{}
 	UI_FORCEINLINE TransformScale3Df() {}
 	UI_FORCEINLINE TransformScale3Df(Vec3f p) : position(p) {}
+	UI_FORCEINLINE TransformScale3Df(Quat r) : rotation(r) {}
 	UI_FORCEINLINE TransformScale3Df(Vec3f p, Quat r) : position(p), rotation(r) {}
 	UI_FORCEINLINE TransformScale3Df(Vec3f p, Quat r, Vec3f s) : position(p), rotation(r), scale(s) {}
 	static UI_FORCEINLINE TransformScale3Df Identity() { return {}; }

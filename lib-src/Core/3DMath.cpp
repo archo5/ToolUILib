@@ -582,7 +582,8 @@ bool TransformScale3Df::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	bool ret = oi.BeginObject(FI, "TransformScale3D");
 	ret &= OnField(oi, "position", position);
 	ret &= OnField(oi, "rotation", rotation);
-	ret &= OnField(oi, "scale", scale);
+	if (!oi.IsSerializer() || scale != 1)
+		ret &= OnField(oi, "scale", scale);
 	oi.EndObject();
 	return ret;
 }
