@@ -699,9 +699,7 @@ struct RotInterpTest : ui::Buildable
 			if (rotmode == QLIF1)
 				diff = q1 * q0.Inverted();
 			else if (rotmode == QLIF2)
-			{
-				diff = q0.Inverted() * q1 * q0.Inverted() * q0;
-			}
+				diff = q0.Inverted() * q1;
 			Vec3f dv = diff.ToDirAxisLenAngle();
 			Curve_QuadSpline xs, ys, zs;
 			xs.flags &= ~xs.Loop;
