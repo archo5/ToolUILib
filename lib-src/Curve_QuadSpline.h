@@ -31,6 +31,7 @@ bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoi
 Vec2f QLIFSpline_TransitionPointFromPosition(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f pos);
 QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp);
 float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing);
+void QLIFSpline_RootVertRange(Rangef& outrange, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb);
 
 struct Curve_QuadSpline
 {

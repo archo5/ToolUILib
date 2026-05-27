@@ -124,32 +124,23 @@ QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa,
 	const float BIG = 10000;
 	Rangef avr = { -BIG, BIG };
 	Rangef bvr = { -BIG, BIG };
-	float ispvel = divf_safe(itrp.value - isp.y, fabsf(itrp.time - isp.x));
 	float avel = divf_safe(itrp.value - pa.value, itrp.time - pa.time);
 	float bvel = divf_safe(pb.value - itrp.value, pb.time - itrp.time);
 	if (itrp.value > pa.value + pa.velocity * (itrp.time - pa.time)) // point above tangent
 	{
 		avr.min = avel;
-		if (midp && isp.x < itrp.time)
-			avr.max = ispvel;
 	}
 	else // point below tangent
 	{
 		avr.max = avel;
-		if (midp && isp.x < itrp.time)
-			avr.min = ispvel;
 	}
 	if (itrp.value > pb.value + pb.velocity * (itrp.time - pb.time)) // point above tangent
 	{
 		bvr.max = bvel;
-		if (midp && itrp.time < isp.x)
-			bvr.min = ispvel;
 	}
 	else // point below tangent
 	{
 		bvr.min = bvel;
-		if (midp && itrp.time < isp.x)
-			bvr.max = ispvel;
 	}
 	Rangef svr = avr.Intersect(bvr);
 	if (svr.IsValid())
@@ -306,6 +297,24 @@ float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& p
 	}
 }
 
+void QLIFSpline_RootVertRange(Rangef& outrange, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb)
+{
+	Vec2f cmp;
+	if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
+	{
+		// excessive
+		//range.Include(cmp.y);
+
+		float da = 2 * (cmp.y - pa.value);
+		float db = 2 * (pb.value - cmp.y);
+		float root_t = invlerp(da, db, 0);
+		if (root_t >= 0 && root_t <= 1)
+		{
+			outrange.Include(qslerp(pa.value, cmp.y, pb.value, root_t));
+		}
+	}
+}
+
 float Curve_QuadSpline::Sample(float t)
 {
 	if (flags & Loop)
@@ -322,22 +331,7 @@ Rangef Curve_QuadSpline::CalcHeightRange()
 
 		if ((flags & Loop) || i + 1 < points.Size())
 		{
-			auto pa = points[i];
-			auto pb = points.NextWrap(i);
-			Vec2f cmp;
-			if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
-			{
-				// excessive
-				//range.Include(cmp.y);
-
-				float da = 2 * (cmp.y - pa.value);
-				float db = 2 * (pb.value - cmp.y);
-				float root_t = invlerp(da, db, 0);
-				if (root_t >= 0 && root_t <= 1)
-				{
-					range.Include(qslerp(pa.value, cmp.y, pb.value, root_t));
-				}
-			}
+			QLIFSpline_RootVertRange(range, points[i], points.NextWrap(i));
 		}
 	}
 	return range;
