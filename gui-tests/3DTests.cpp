@@ -673,6 +673,7 @@ struct RotInterpTest : ui::Buildable
 		Slerp,
 		DiffAxisAngleScale,
 		QLIF1,
+		QLIF2,
 	};
 	RotMode rotmode = Slerp;
 
@@ -692,9 +693,15 @@ struct RotInterpTest : ui::Buildable
 			Quat pdif = Quat::RotateAxisAngle(aa.GetVec3(), aa.w * erpq);
 			return pdif * q0;
 		}
-		else if (rotmode == QLIF1)
+		else if (rotmode == QLIF1 || rotmode == QLIF2)
 		{
-			Quat diff = q1 * q0.Inverted();
+			Quat diff;
+			if (rotmode == QLIF1)
+				diff = q1 * q0.Inverted();
+			else if (rotmode == QLIF2)
+			{
+				diff = q0.Inverted() * q1 * q0.Inverted() * q0;
+			}
 			Vec3f dv = diff.ToDirAxisLenAngle();
 			Curve_QuadSpline xs, ys, zs;
 			xs.flags &= ~xs.Loop;
@@ -711,7 +718,12 @@ struct RotInterpTest : ui::Buildable
 			pdifv.y = ys.Sample(erpq);
 			pdifv.z = zs.Sample(erpq);
 			Quat pdif = Quat::RotateDirAxisLenAngle(pdifv);
-			return pdif * q0;
+			if (rotmode == QLIF1)
+				return pdif * q0;
+			else if (rotmode == QLIF2)
+				return q0 * pdif;
+			else
+				return {};
 		}
 		return q0; // fallback
 	}
@@ -748,13 +760,14 @@ struct RotInterpTest : ui::Buildable
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imLabel("FOV"), ui::imEditFloat(fov, {}, { 1.0f, 179.0f });
 					ui::imLabel("Start rotation"), ui::imEditVec3f(rstart);
-					ui::imEnable(rotmode == QLIF1), ui::imLabel("Start ang.vel."), ui::imEditVec3f(rstartvel);
+					ui::imEnable(rotmode == QLIF1 || rotmode == QLIF2), ui::imLabel("Start ang.vel."), ui::imEditVec3f(rstartvel);
 					ui::imLabel("End rotation"), ui::imEditVec3f(rend);
-					ui::imEnable(rotmode == QLIF1), ui::imLabel("End ang.vel."), ui::imEditVec3f(rendvel);
+					ui::imEnable(rotmode == QLIF1 || rotmode == QLIF2), ui::imLabel("End ang.vel."), ui::imEditVec3f(rendvel);
 					ui::imLabel("Interpolation factor"), ui::imEditFloat(erpq, 0.05f, { 0, 1 });
 					ui::imRadioButton(rotmode, Slerp, "Slerp");
 					ui::imRadioButton(rotmode, DiffAxisAngleScale, "Diff axis angle scale");
 					ui::imRadioButton(rotmode, QLIF1, "QLIF 1");
+					ui::imRadioButton(rotmode, QLIF2, "QLIF 2");
 				}
 				ui::Pop();
 				ui::Pop();
@@ -771,7 +784,7 @@ struct RotInterpTest : ui::Buildable
 					auto q1 = GetErpRot();
 					ui::Textf("q1=%g;%g;%g;%g", q1.x, q1.y, q1.z, q1.w);
 
-					if (rotmode == QLIF1)
+					if (rotmode == QLIF1 || rotmode == QLIF2)
 					{
 						using namespace ui;
 						Quat q0 = Quat::RotateEulerAnglesXYZ(rstart);

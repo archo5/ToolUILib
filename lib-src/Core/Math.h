@@ -17,11 +17,12 @@ constexpr float DEG2RAD = PI / 180;
 constexpr float RAD2DEG = 180 / PI;
 
 
-UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }
-UI_FORCEINLINE float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
-UI_FORCEINLINE float invlerpc(float a, float b, float x) { return clamp01((x - a) / (b - a)); }
 UI_FORCEINLINE float sign(float x) { return x == 0 ? 0.0f : x > 0 ? 1.0f : -1.0f; }
 UI_FORCEINLINE float divf_safe(float a, float b) { return b ? a / b : 0; }
+
+UI_FORCEINLINE float lerp(float a, float b, float s) { return a + (b - a) * s; }
+UI_FORCEINLINE float invlerp(float a, float b, float x) { return (x - a) / (b - a); }
+UI_FORCEINLINE float invlerpc(float a, float b, float x) { return clamp01(divf_safe(x - a, b - a)); }
 
 inline float MoveTowards(float cur, float tgt, float maxStep)
 {
