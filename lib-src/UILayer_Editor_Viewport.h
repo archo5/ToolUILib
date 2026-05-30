@@ -88,6 +88,8 @@ struct ViewportEditorInputs
 	AABB2f fullarea;
 	AABB2f& viewport;
 	bool flipY = false;
+	bool showH = true;
+	bool showV = true;
 };
 
 struct ViewportEditorUI
@@ -113,6 +115,7 @@ struct ViewportEditorUI
 
 	ViewportEditorUI() : isMMBDown(0), isOnHScroll(0), isOnVScroll(0), isZooming(0) {}
 	bool OnEvent(Event& e, const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs);
+	AABB2f CalcSafeContentScreenRect(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs);
 	void Draw(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs);
 };
 

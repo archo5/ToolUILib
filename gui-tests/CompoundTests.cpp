@@ -796,15 +796,34 @@ struct ViewportEditorLayerTest : ui::Buildable
 	ui::ViewportEditorSettings vpcfg;
 	ui::ViewportEditorUI vped;
 	ui::AABB2f winrect;
+	bool showH = true;
+	bool showV = true;
+	bool flipY = false;
+	bool otherSideH = false;
+	bool otherSideV = false;
 	void OnReset() override
 	{
 		vpcfg.OnReset();
+	}
+	void Checkbox(ui::StringView name, bool& val)
+	{
+		WPush<ui::CheckboxFlagT<bool>>().Init(val);
+		WPush<ui::StackLTRLayoutElement>();
+		WMake<ui::CheckboxIcon>();
+		ui::StdText(name);
+		WPop();
+		WPop();
 	}
 	void Build() override
 	{
 		WPush<ui::EdgeSliceLayoutElement>();
 		WPush<ui::StackLTRLayoutElement>();
 		WMakeWithText<ui::Button>("Reset").HandleEvent(ui::EventType::Activate) = [this](ui::Event&) { viewport = fullarea; };
+		Checkbox("Show H", showH);
+		Checkbox("Show V", showV);
+		Checkbox("Flip Y", flipY);
+		Checkbox("Other side H", otherSideH);
+		Checkbox("Other side V", otherSideV);
 		WPop();
 		WPush<ui::FrameElement>().SetDefaultFrameStyle(ui::DefaultFrameStyle::ProcGraphNode);
 		WPush<ui::SizeConstraintElement>()
@@ -830,6 +849,10 @@ struct ViewportEditorLayerTest : ui::Buildable
 			v.x = wco.x, v.y = wco.y;
 		}
 	}
+	ui::ViewportEditorInputs CalcInnerScreenRect()
+	{
+		return { winrect, fullarea, viewport, flipY, showH, showV };
+	}
 	void ViewDraw(ui::UIRect rect)
 	{
 		winrect = rect;
@@ -849,11 +872,20 @@ struct ViewportEditorLayerTest : ui::Buildable
 			ui::draw::TextLine(font, 64, 96, 192, "TEST", {}, ui::TextBaseline::Top, &winrect);
 		}
 		ui::draw::SetVertexTransformCallback(prevVTC);
-		vped.Draw(vpcfg, { winrect, fullarea, viewport });
+
+		vpcfg.styleH.otherSide = otherSideH;
+		vpcfg.styleV.otherSide = otherSideV;
+		{
+			auto crect = vped.CalcSafeContentScreenRect(vpcfg, CalcInnerScreenRect());
+			ui::Vec2f rectpoly[] = { crect.GetP00(), crect.GetP10(), crect.GetP11(), crect.GetP01() };
+			ui::draw::AALineCol(rectpoly, 2, { 0, 0, 255, 63 }, true, false);
+		}
+
+		vped.Draw(vpcfg, CalcInnerScreenRect());
 	}
 	void ViewOnEvent(ui::Event& e)
 	{
-		vped.OnEvent(e, vpcfg, { winrect, fullarea, viewport });
+		vped.OnEvent(e, vpcfg, CalcInnerScreenRect());
 	}
 };
 void Test_ViewportEditorLayer()

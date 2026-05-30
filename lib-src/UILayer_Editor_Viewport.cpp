@@ -42,15 +42,18 @@ struct ViewportEditorLayout
 
 		float vpmin = winrect.GetSize().Min();
 
-		float amH = roundf(styleH.areaMargin.Eval(vpmin));
-		float twH = roundf(styleH.trackWidth.Eval(vpmin));
-		float temH = roundf(styleH.trackEdgeMargin.Eval(vpmin));
-		float tmlH = roundf(styleH.trackMinLength.Eval(vpmin));
+		bool showH = inputs.showH;
+		bool showV = inputs.showV;
 
-		float amV = roundf(styleV.areaMargin.Eval(vpmin));
-		float twV = roundf(styleV.trackWidth.Eval(vpmin));
-		float temV = roundf(styleV.trackEdgeMargin.Eval(vpmin));
-		float tmlV = roundf(styleV.trackMinLength.Eval(vpmin));
+		float amH = showH ? roundf(styleH.areaMargin.Eval(vpmin)) : 0;
+		float twH = showH ? roundf(styleH.trackWidth.Eval(vpmin)) : 0;
+		float temH = showH ? roundf(styleH.trackEdgeMargin.Eval(vpmin)) : 0;
+		float tmlH = showH ? roundf(styleH.trackMinLength.Eval(vpmin)) : 0;
+
+		float amV = showV ? roundf(styleV.areaMargin.Eval(vpmin)) : 0;
+		float twV = showV ? roundf(styleV.trackWidth.Eval(vpmin)) : 0;
+		float temV = showV ? roundf(styleV.trackEdgeMargin.Eval(vpmin)) : 0;
+		float tmlV = showV ? roundf(styleV.trackMinLength.Eval(vpmin)) : 0;
 
 		htrackwidth = amH * 2 + twH;
 		vtrackwidth = amV * 2 + twV;
@@ -90,13 +93,13 @@ struct ViewportEditorLayout
 		}
 		if (styleH.otherSide)
 		{
-			vscrollrect.y0 = hscrollrect.y1 + amH;
-			vscrollrect.y1 = winrect.y1 - amH;
+			vscrollrect.y0 = hscrollrect.y1 + amV;
+			vscrollrect.y1 = winrect.y1 - amV;
 		}
 		else
 		{
-			vscrollrect.y0 = winrect.y0 + amH;
-			vscrollrect.y1 = hscrollrect.y0 - amH;
+			vscrollrect.y0 = winrect.y0 + amV;
+			vscrollrect.y1 = hscrollrect.y0 - amV;
 		}
 
 		htracklen = hscrollrect.GetWidth();
@@ -182,6 +185,7 @@ bool ViewportEditorUI::OnEvent(Event& e, const ViewportEditorSettings& cfg, cons
 	e.StopPropagation(); \
 //
 	// horizontal
+	if (inputs.showH)
 	{
 		diff = divf_safe(e.position.x - dragstartcursor.x, layout.htracklen) * inputs.fullarea.GetWidth();
 		switch (state.DragOnEvent(HSlide, layout.hsliderect, e))
@@ -204,6 +208,7 @@ bool ViewportEditorUI::OnEvent(Event& e, const ViewportEditorSettings& cfg, cons
 		}
 	}
 	// vertical
+	if (inputs.showV)
 	{
 		diff = divf_safe(e.position.y - dragstartcursor.y, layout.vtracklen) * inputs.fullarea.GetHeight();
 		if (inputs.flipY)
@@ -320,48 +325,64 @@ bool ViewportEditorUI::OnEvent(Event& e, const ViewportEditorSettings& cfg, cons
 	return edited;
 }
 
+AABB2f ViewportEditorUI::CalcSafeContentScreenRect(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs)
+{
+	ViewportEditorLayout layout(cfg.styleH, cfg.styleV, inputs);
+
+	AABB2f rect = inputs.winrect;
+	if (!cfg.styleH.otherSide)
+		rect.y1 -= layout.htrackwidth;
+	else
+		rect.y0 += layout.htrackwidth;
+	if (!cfg.styleV.otherSide)
+		rect.x1 -= layout.vtrackwidth;
+	else
+		rect.x0 += layout.vtrackwidth;
+	return rect;
+}
+
 void ViewportEditorUI::Draw(const ViewportEditorSettings& cfg, const ViewportEditorInputs& inputs)
 {
 	ViewportEditorLayout layout(cfg.styleH, cfg.styleV, inputs);
 
 	PaintInfo pi;
 
-	if (cfg.styleH.trackPainter)
+	if (inputs.showH && cfg.styleH.trackPainter)
 	{
 		pi.rect = layout.hsliderect;
 		pi.state = (state.IsPressed(HSlide) ? PS_Down : 0) | (state.IsHovered(HSlide) ? PS_Hover : 0);
 		cfg.styleH.trackPainter->Paint(pi);
 	}
 
-	if (cfg.styleV.trackPainter)
+	if (inputs.showV && cfg.styleV.trackPainter)
 	{
 		pi.rect = layout.vsliderect;
 		pi.state = (state.IsPressed(VSlide) ? PS_Down : 0) | (state.IsHovered(VSlide) ? PS_Hover : 0);
 		cfg.styleV.trackPainter->Paint(pi);
 	}
 
-	if (cfg.styleH.edge1Painter)
+	if (inputs.showH && cfg.styleH.edge1Painter)
 	{
 		pi.rect = layout.hedgelrect;
 		pi.state = (state.IsPressed(HEdgeL) ? PS_Down : 0) | (state.IsHovered(HEdgeL) ? PS_Hover : 0);
 		cfg.styleH.edge1Painter->Paint(pi);
 	}
 
-	if (cfg.styleH.edge2Painter)
+	if (inputs.showH && cfg.styleH.edge2Painter)
 	{
 		pi.rect = layout.hedgerrect;
 		pi.state = (state.IsPressed(HEdgeR) ? PS_Down : 0) | (state.IsHovered(HEdgeR) ? PS_Hover : 0);
 		cfg.styleH.edge2Painter->Paint(pi);
 	}
 
-	if (cfg.styleV.edge1Painter)
+	if (inputs.showV && cfg.styleV.edge1Painter)
 	{
 		pi.rect = layout.vedgetrect;
 		pi.state = (state.IsPressed(VEdgeT) ? PS_Down : 0) | (state.IsHovered(VEdgeT) ? PS_Hover : 0);
 		cfg.styleV.edge1Painter->Paint(pi);
 	}
 
-	if (cfg.styleV.edge2Painter)
+	if (inputs.showV && cfg.styleV.edge2Painter)
 	{
 		pi.rect = layout.vedgebrect;
 		pi.state = (state.IsPressed(VEdgeB) ? PS_Down : 0) | (state.IsHovered(VEdgeB) ? PS_Hover : 0);
