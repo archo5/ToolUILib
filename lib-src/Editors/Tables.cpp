@@ -412,7 +412,10 @@ void TableView::OnPaint(const UIPaintContext& ctx)
 			};
 			if (expandLastColumn && c + 1 == nc)
 				info.rect.x1 = RC.x1;
-			cellcpa = style.cellBackgroundPainter->Paint(info);
+			if (_impl->dataSource->DrawCellBackground(rowRef.id, c, info))
+				cellcpa = cpa;
+			else
+				cellcpa = style.cellBackgroundPainter->Paint(info);
 		}
 	}
 	// icons:
