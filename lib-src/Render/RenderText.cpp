@@ -301,12 +301,12 @@ AABB2f TextMultilineGenerateQuadsUntransformed(
 	return ret;
 }
 
-void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, AABB2f* clipBox)
+void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, const AABB2f* clipBox)
 {
 	ImageQuadsColOffset(quads, {}, color, clipBox);
 }
 
-void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, AABB2f* clipBox)
+void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, const AABB2f* clipBox)
 {
 	for (auto& quad : quads)
 	{
@@ -335,7 +335,7 @@ void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color
 }
 
 static Array<ImageQuad> g_tmpTextQuads;
-AABB2f TextLine(Font* font, float size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, AABB2f* clipBox)
+AABB2f TextLine(Font* font, float size, float x, float y, StringView text, Color4b color, TextHAlign align, TextBaseline baseline, const AABB2f* clipBox)
 {
 	if (clipBox && !clipBox->IsValid())
 		return { x, y, x, y };
@@ -406,7 +406,7 @@ AABB2f TextMultiline(
 	Color4b color,
 	TextHAlign halign,
 	TextVAlign valign,
-	AABB2f* clipBox)
+	const AABB2f* clipBox)
 {
 	g_tmpTextQuads.Clear();
 	AABB2f box = TextMultilineGenerateQuadsUntransformed(g_tmpTextQuads, font, size, rect.GetWidth(), lineHeight, text, halign);

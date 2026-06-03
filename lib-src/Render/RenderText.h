@@ -38,8 +38,8 @@ AABB2f TextMultilineGenerateQuadsUntransformed(
 	StringView text,
 	TextHAlign halign = TextHAlign::Left);
 
-void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, AABB2f* clipBox = nullptr);
-void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, AABB2f* clipBox = nullptr);
+void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, const AABB2f* clipBox = nullptr);
+void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, const AABB2f* clipBox = nullptr);
 
 AABB2f TextLine(
 	Font* font,
@@ -50,8 +50,8 @@ AABB2f TextLine(
 	Color4b color,
 	TextHAlign align = TextHAlign::Left,
 	TextBaseline baseline = TextBaseline::Default,
-	AABB2f* clipBox = nullptr);
-inline AABB2f TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, AABB2f* clipBox = nullptr)
+	const AABB2f* clipBox = nullptr);
+inline AABB2f TextLine(Font* font, int size, float x, float y, StringView text, Color4b color, TextBaseline baseline, const AABB2f* clipBox = nullptr)
 {
 	return TextLine(font, float(size), x, y, text, color, TextHAlign::Left, baseline, clipBox);
 }
@@ -64,7 +64,7 @@ AABB2f TextMultiline(
 	Color4b color,
 	TextHAlign halign = TextHAlign::Left,
 	TextVAlign valign = TextVAlign::Top,
-	AABB2f* clipBox = nullptr);
+	const AABB2f* clipBox = nullptr);
 
 } // draw
 } // ui
