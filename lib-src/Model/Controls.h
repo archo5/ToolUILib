@@ -483,10 +483,25 @@ struct BackgroundBlocker : FillerElement
 };
 
 
+struct DropdownMenuPlacement : IPlacement
+{
+	float defaultXAlign = 0;
+
+	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
+};
+
+
 struct DropdownMenu : Buildable
 {
 	bool enableTooltip = true;
 
+	DropdownMenuPlacement placement;
+
+	void OnReset() override
+	{
+		enableTooltip = true;
+		placement = {};
+	}
 	void Build() override;
 	void OnEvent(Event& e) override;
 

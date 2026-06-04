@@ -950,39 +950,39 @@ void BackgroundBlocker::OnButton()
 }
 
 
-struct DropdownMenuPlacement : IPlacement
+void DropdownMenuPlacement::OnApplyPlacement(UIObject* curObj, UIRect& outRect) const
 {
-	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override
+	EstSizeRange rw = curObj->CalcEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
+	EstSizeRange rh = curObj->CalcEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
+
+	rw = rw.WithSoftMin(outRect.GetWidth());
+
+	float x = outRect.x0;
+	float y = outRect.y1;
+	float w = rw.softMin;
+	float h = rh.softMin;
+
+	if (defaultXAlign)
+		x = roundf(x + (outRect.GetWidth() - w) * defaultXAlign);
+
+	auto windowInnerSize = curObj->GetNativeWindow()->GetInnerRect().GetSize();
+	if (y + h > windowInnerSize.y)
 	{
-		EstSizeRange rw = curObj->CalcEstimatedWidth(outRect.GetSize(), ui::EstSizeType::Expanding);
-		EstSizeRange rh = curObj->CalcEstimatedHeight(outRect.GetSize(), ui::EstSizeType::Expanding);
-
-		rw = rw.WithSoftMin(outRect.GetWidth());
-
-		float x = outRect.x0;
-		float y = outRect.y1;
-		float w = rw.softMin;
-		float h = rh.softMin;
-
-		auto windowInnerSize = curObj->GetNativeWindow()->GetInnerRect().GetSize();
-		if (y + h > windowInnerSize.y)
+		// try putting on top if there's more space
+		if (outRect.y0 > windowInnerSize.y - y)
 		{
-			// try putting on top if there's more space
-			if (outRect.y0 > windowInnerSize.y - y)
-			{
-				y = max(outRect.y0 - h, 0.0f);
-				h = min(h, outRect.y0);
-			}
-			else
-			{
-				// clamp vertical height in the same place
-				h = min(h, windowInnerSize.y - y);
-			}
+			y = max(outRect.y0 - h, 0.0f);
+			h = min(h, outRect.y0);
 		}
-
-		outRect = { x, y, x + w, y + h };
+		else
+		{
+			// clamp vertical height in the same place
+			h = min(h, windowInnerSize.y - y);
+		}
 	}
-};
+
+	outRect = { x, y, x + w, y + h };
+}
 
 
 void DropdownMenu::Build()
@@ -998,7 +998,7 @@ void DropdownMenu::Build()
 		Pop();
 
 		tmpl->measure = false;
-		tmpl->placement = UI_BUILD_ALLOC(DropdownMenuPlacement)();
+		tmpl->placement = &placement;
 		OnBuildMenuWithLayout();
 	}
 
@@ -1086,20 +1086,16 @@ struct StopScroll : WrapperElement
 
 UIObject& DropdownMenu::OnBuildMenu()
 {
-	auto& ret = Push<StopScroll>();
-	Push<ListBoxFrame>();
-	Push<SizeConstraintElement>().SetMaxHeight(200);
-	Push<ScrollArea>();
-	Push<StackTopDownLayoutElement>();
+	PushScope<StopScroll> stopscroll;
+	PushScope<FrameElement> outerframe; outerframe->SetDefaultFrameStyle(DefaultFrameStyle::ProcGraphNode);
+	PushScope<FrameElement> innerframe; innerframe->SetDefaultFrameStyle(DefaultFrameStyle::ListBox);
+	PushScope<SizeConstraintElement> sizeconstraint; sizeconstraint->SetMaxHeight(200);
+	PushScope<ScrollArea> scrollarea;
+	PushScope<StackTopDownLayoutElement> layout;
 
 	OnBuildMenuContents();
 
-	Pop();
-	Pop();
-	Pop();
-	Pop();
-	Pop();
-	return ret;
+	return *stopscroll;
 }
 
 
