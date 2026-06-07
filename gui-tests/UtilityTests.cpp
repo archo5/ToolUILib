@@ -89,11 +89,11 @@ struct ThreadWorkerTest : ui::Buildable
 
 		ui::MakeWithText<ui::Button>("Do it").HandleEvent(ui::EventType::Activate) = [this](ui::Event&)
 		{
-			wq.Push([this]()
+			ajq.Push([this]()
 			{
 				for (int i = 0; i <= 100; i++)
 				{
-					if (wq.HasItems() || wq.IsQuitting())
+					if (ajq.HasItems() || ajq.IsQuitting())
 						return;
 					ui::Application::PushEvent(this, [this, i]()
 					{
@@ -113,7 +113,7 @@ struct ThreadWorkerTest : ui::Buildable
 
 	float progress = 0;
 
-	ui::WorkerQueue wq;
+	ui::AsyncJobQueue ajq;
 };
 void Test_ThreadWorker()
 {
@@ -145,14 +145,14 @@ struct ThreadedImageRenderingTest : ui::Buildable
 			if (image && image->GetWidth() == tw && image->GetHeight() == th)
 				return;
 
-			wq.Push([this, tw, th]()
+			ajq.Push([this, tw, th]()
 			{
 				ui::Canvas canvas(tw, th);
 
 				auto* px = canvas.GetPixels();
 				for (uint32_t y = 0; y < th; y++)
 				{
-					if (wq.HasItems() || wq.IsQuitting())
+					if (ajq.HasItems() || ajq.IsQuitting())
 						return;
 
 					for (uint32_t x = 0; x < tw; x++)
@@ -178,7 +178,7 @@ struct ThreadedImageRenderingTest : ui::Buildable
 		});
 	}
 
-	ui::WorkerQueue wq;
+	ui::AsyncJobQueue ajq;
 	ui::draw::ImageHandle image;
 };
 void Test_ThreadedImageRendering()

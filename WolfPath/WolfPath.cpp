@@ -303,7 +303,7 @@ struct RenderView : ui::Buildable
 			if (!force && image && image->GetWidth() == tw && image->GetHeight() == th)
 				return;
 
-			wq.Push([this, tw, th]()
+			ajq.Push([this, tw, th]()
 			{
 				ui::Canvas canvas(tw, th);
 
@@ -319,7 +319,7 @@ struct RenderView : ui::Buildable
 				{
 					for (uint32_t y = 0; y < th; y++)
 					{
-						if (wq.HasItems() || wq.IsQuitting())
+						if (ajq.HasItems() || ajq.IsQuitting())
 							return;
 
 						for (uint32_t x = 0; x < tw; x++)
@@ -364,7 +364,7 @@ struct RenderView : ui::Buildable
 		});
 	}
 
-	ui::WorkerQueue wq;
+	ui::AsyncJobQueue ajq;
 	ui::draw::ImageHandle image;
 	ui::ImageElement* imageEl = nullptr;
 };

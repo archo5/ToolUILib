@@ -141,16 +141,16 @@ void EventQueue::RunAllCurrent()
 }
 
 
-struct WorkerQueueImpl
+struct AsyncJobQueueImpl
 {
-	std::queue<WorkerQueue::Entry*> q;
+	std::queue<AsyncJobQueue::Entry*> q;
 	std::mutex m;
 	std::condition_variable cv;
 	std::thread t;
 	bool quit = false;
 };
 
-static void WorkerQueueProc(WorkerQueueImpl* wqi)
+static void AsyncJobQueueProc(AsyncJobQueueImpl* wqi)
 {
 	std::unique_lock<std::mutex> ulk(wqi->m);
 	for (;;)
@@ -168,13 +168,13 @@ static void WorkerQueueProc(WorkerQueueImpl* wqi)
 	}
 }
 
-WorkerQueue::WorkerQueue()
+AsyncJobQueue::AsyncJobQueue()
 {
-	_impl = new WorkerQueueImpl;
-	_impl->t = std::thread(WorkerQueueProc, _impl);
+	_impl = new AsyncJobQueueImpl;
+	_impl->t = std::thread(AsyncJobQueueProc, _impl);
 }
 
-WorkerQueue::~WorkerQueue()
+AsyncJobQueue::~AsyncJobQueue()
 {
 	{
 		std::lock_guard<std::mutex> g(_impl->m);
@@ -185,7 +185,7 @@ WorkerQueue::~WorkerQueue()
 	delete _impl;
 }
 
-void WorkerQueue::_AddToQueue(Entry* e, bool clear)
+void AsyncJobQueue::_AddToQueue(Entry* e, bool clear)
 {
 	{
 		std::lock_guard<std::mutex> g(_impl->m);
@@ -203,7 +203,7 @@ void WorkerQueue::_AddToQueue(Entry* e, bool clear)
 	_impl->cv.notify_one();
 }
 
-void WorkerQueue::Clear()
+void AsyncJobQueue::Clear()
 {
 	std::lock_guard<std::mutex> g(_impl->m);
 	while (!_impl->q.empty())
@@ -213,13 +213,13 @@ void WorkerQueue::Clear()
 	}
 }
 
-bool WorkerQueue::HasItems()
+bool AsyncJobQueue::HasItems()
 {
 	std::lock_guard<std::mutex> g(_impl->m);
 	return !_impl->q.empty();
 }
 
-bool WorkerQueue::IsQuitting()
+bool AsyncJobQueue::IsQuitting()
 {
 	return _impl->quit;
 }

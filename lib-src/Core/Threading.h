@@ -82,7 +82,7 @@ struct EventQueue
 	struct EventQueueImpl* _impl;
 };
 
-struct WorkerQueue
+struct AsyncJobQueue
 {
 	struct Entry
 	{
@@ -90,8 +90,8 @@ struct WorkerQueue
 		virtual void Run() = 0;
 	};
 
-	WorkerQueue();
-	~WorkerQueue();
+	AsyncJobQueue();
+	~AsyncJobQueue();
 	void _AddToQueue(Entry* e, bool clear);
 	void Clear();
 
@@ -113,7 +113,7 @@ struct WorkerQueue
 		_AddToQueue(new Func(Move(f)), clear);
 	}
 
-	struct WorkerQueueImpl* _impl;
+	struct AsyncJobQueueImpl* _impl;
 };
 
 } // ui
