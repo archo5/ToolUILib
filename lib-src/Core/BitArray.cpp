@@ -1,6 +1,8 @@
 
 #include "BitArray.h"
 
+#include "ObjectIterationCore.h"
+
 
 namespace ui {
 
@@ -85,6 +87,56 @@ void BitArray::_MoveBitsDown(size_t dst, size_t src, size_t n)
 	{
 		bool v = GetUnchecked(src + i);
 		SetUnchecked(dst + i, v);
+	}
+}
+
+void BitArray::OnSerialize(IObjectIterator& oi, const FieldInfo& fi)
+{
+	if (oi.IsBinary())
+	{
+		oi.BeginObject(fi, "BitArray");
+
+		u32 len = u32(Size());
+		OnField(oi, "nbits", len);
+		if (oi.IsUnserializer())
+			Resize(len);
+
+		// TODO assumes little endian
+		struct BRW : IBufferRW
+		{
+			BitArray* me;
+			void Assign(StringView sv) const override
+			{
+				memcpy(me->Data(), sv.Data(), min(sv.Size(), me->SizeInBytes()));
+			}
+			StringView Read() const override
+			{
+				return { (const char*)me->Data(), me->SizeInBytes() };
+			}
+		}
+		brw;
+		brw.me = this;
+		oi.OnFieldBytes("data", brw);
+
+		oi.EndObject();
+	}
+	else
+	{
+		std::string tmp;
+		if (!oi.IsUnserializer())
+		{
+			tmp.resize(Size(), '0');
+			for (size_t i = 0, num = Size(); i < num; i++)
+				if (Get(i))
+					tmp[i] = '1';
+		}
+		OnField(oi, fi, tmp);
+		if (oi.IsUnserializer())
+		{
+			Resize(tmp.size());
+			for (size_t i = 0, num = tmp.size(); i < num; i++)
+				Set(i, tmp[i] != '0');
+		}
 	}
 }
 

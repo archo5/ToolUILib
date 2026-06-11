@@ -8,6 +8,9 @@
 
 namespace ui {
 
+struct IObjectIterator;
+struct FieldInfo;
+
 struct BitArray
 {
 	using Word = uintptr_t;
@@ -298,6 +301,8 @@ struct BitArray
 	void RemoveAtN(size_t at, size_t n);
 	void RemoveRange(size_t from, size_t to);
 	void _MoveBitsDown(size_t dst, size_t src, size_t n);
+
+	void OnSerialize(IObjectIterator& oi, const FieldInfo& fi);
 };
 
 } // ui
