@@ -338,7 +338,7 @@ struct GizmoTest : ui::Buildable
 				}
 				else
 				{
-					if (gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
+					if (!!gizmo.OnEvent(e, camera, ui::GizmoEditableMat4f(xf)))
 						Rebuild();
 				}
 				camera.OnEvent(e);

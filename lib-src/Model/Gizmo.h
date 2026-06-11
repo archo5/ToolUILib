@@ -220,6 +220,25 @@ struct GizmoSettings
 
 struct CameraBase;
 
+enum class GizmoEventResult
+{
+	None,
+	Undo,
+	Finish,
+	SwitchAxis,
+	StartMove,
+	StartRotate,
+	StartScale,
+	SwitchToMove,
+	SwitchToRotate,
+	SwitchToScale,
+	OnMove,
+	OnRotate,
+	OnScale,
+};
+// use !! to check if any event occurred
+UI_FORCEINLINE bool operator !(GizmoEventResult res) { return res == GizmoEventResult::None; }
+
 struct Gizmo
 {
 	GizmoSettings settings;
@@ -240,9 +259,10 @@ struct Gizmo
 	Array<char> _origData;
 	Transform3Df _origXF;
 
-	void Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable);
-	// returns true if the event was processed (editable was modified or transforming started)
-	bool OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable);
+	// returns whether the gizmo started transforming (true) or merely changed state (false)
+	bool Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable);
+	// returns the result - None if nothing was done, something else if the event was processed (editable was modified or transforming started)
+	GizmoEventResult OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable);
 	void Render(const CameraBase& cam, const IGizmoEditable& editable);
 };
 

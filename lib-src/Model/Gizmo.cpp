@@ -255,9 +255,10 @@ static void Snap(float& delta, float snapDist)
 	delta = roundf(delta / snapDist) * snapDist;
 }
 
-void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable)
+bool Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam, const IGizmoEditable& editable)
 {
-	if (_selectedPart == GizmoAction::None)
+	bool started = _selectedPart == GizmoAction::None;
+	if (started)
 	{
 		_origXF = editable.GetGizmoLocation();
 
@@ -274,6 +275,7 @@ void Gizmo::Start(GizmoAction action, Point2f cursorPoint, const CameraBase& cam
 
 	_selectedPart = action;
 	_curXFWorldSpace = settings.isWorldSpace;
+	return started;
 }
 
 static bool IsButtonUsed(Gizmo& G, MouseButton btn)
@@ -284,10 +286,12 @@ static bool IsButtonUsed(Gizmo& G, MouseButton btn)
 	return btn == MouseButton::Left;
 }
 
-bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable)
+GizmoEventResult Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& editable)
 {
+	using GER = GizmoEventResult;
+
 	if (e.IsPropagationStopped())
-		return false;
+		return GER::None;
 
 	// consume button releases whose corresponding presses happened during a gizmo action
 	if (e.type == EventType::ButtonDown && (_selectedPart != GizmoAction::None || _hoveredPart != GizmoAction::None) && IsButtonUsed(*this, e.GetButton()))
@@ -354,7 +358,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				{
 					DataReader dr(_origData);
 					editableNC.Transform(dr, nullptr, 0);
-					return true;
+					return GER::OnMove;
 				}
 				if ((int(_selectedPart) & GAF_Shape_MASK) == GAF_Shape_Axis)
 				{
@@ -375,7 +379,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 						DataReader dr(_origData);
 						editableNC.Transform(dr, &xf, GPC_Move);
-						return true;
+						return GER::OnMove;
 					}
 				}
 				else
@@ -415,7 +419,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 						DataReader dr(_origData);
 						editableNC.Transform(dr, &xf, GPC_Move);
-						return true;
+						return GER::OnMove;
 					}
 				}
 			}
@@ -481,7 +485,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 				DataReader dr(_origData);
 				editableNC.Transform(dr, &fullXF, GPC_Move | GPC_Rotate);
-				return true;
+				return GER::OnRotate;
 			}
 			else if (IsScaleAction(_selectedPart))
 			{
@@ -512,7 +516,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 
 				DataReader dr(_origData);
 				editableNC.Transform(dr, &fullXF, GPC_Move | GPC_Scale);
-				return true;
+				return GER::OnScale;
 			}
 		}
 	}
@@ -522,6 +526,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		{
 			_selectedPart = GizmoAction::None;
 			e.StopPropagation();
+			return GER::Finish;
 		}
 		else if (_hoveredPart != GizmoAction::None)
 		{
@@ -541,12 +546,12 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			{
 				switch (int(_hoveredPart) & (GAF_Axis_MASK | GAF_Shape_MASK))
 				{
-				case GAF_Axis_X | GAF_Shape_Axis: if (visX <= 0) return false; break;
-				case GAF_Axis_Y | GAF_Shape_Axis: if (visY <= 0) return false; break;
-				case GAF_Axis_Z | GAF_Shape_Axis: if (visZ <= 0) return false; break;
-				case GAF_Axis_X | GAF_Shape_Plane: if (visPX <= 0) return false; break;
-				case GAF_Axis_Y | GAF_Shape_Plane: if (visPY <= 0) return false; break;
-				case GAF_Axis_Z | GAF_Shape_Plane: if (visPZ <= 0) return false; break;
+				case GAF_Axis_X | GAF_Shape_Axis: if (visX <= 0) return GER::None; break;
+				case GAF_Axis_Y | GAF_Shape_Axis: if (visY <= 0) return GER::None; break;
+				case GAF_Axis_Z | GAF_Shape_Axis: if (visZ <= 0) return GER::None; break;
+				case GAF_Axis_X | GAF_Shape_Plane: if (visPX <= 0) return GER::None; break;
+				case GAF_Axis_Y | GAF_Shape_Plane: if (visPY <= 0) return GER::None; break;
+				case GAF_Axis_Z | GAF_Shape_Plane: if (visPZ <= 0) return GER::None; break;
 				}
 			}
 
@@ -560,7 +565,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		_selectedPart = GizmoAction::None;
 		DataReader dr(_origData);
 		editableNC.Transform(dr, nullptr, 0);
-		return true;
+		return GER::Undo;
 	}
 	else if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left)
 	{
@@ -568,6 +573,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 		{
 			_selectedPart = GizmoAction::None;
 			e.StopPropagation();
+			return GER::Finish;
 		}
 	}
 	else if (e.type == EventType::KeyDown && (ModKeyCheck(e.GetModifierKeys(), 0) || ModKeyCheck(e.GetModifierKeys(), MK_Shift)))
@@ -586,32 +592,32 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 				editableNC.Transform(dr, nullptr, 0);
 
 				e.StopPropagation();
-				return true;
+				return GER::Undo;
 			}
 			break;
 
 		case KSC_G:
 			if (settings.detectsKeys & modeKeyMask)
 			{
-				Start(GizmoAction::MoveScreenPlane, _lastCursorPos, cam, editable);
+				bool started = Start(GizmoAction::MoveScreenPlane, _lastCursorPos, cam, editable);
 				e.StopPropagation();
-				return true;
+				return started ? GER::StartMove : GER::SwitchToMove;
 			}
 			break;
 		case KSC_R:
 			if (settings.detectsKeys & modeKeyMask)
 			{
-				Start(GizmoAction::RotateScreenAxis, _lastCursorPos, cam, editable);
+				bool started = Start(GizmoAction::RotateScreenAxis, _lastCursorPos, cam, editable);
 				e.StopPropagation();
-				return true;
+				return started ? GER::StartRotate : GER::SwitchToRotate;
 			}
 			break;
 		case KSC_S:
 			if (settings.detectsKeys & modeKeyMask)
 			{
-				Start(GizmoAction::ScaleUniform, _lastCursorPos, cam, editable);
+				bool started = Start(GizmoAction::ScaleUniform, _lastCursorPos, cam, editable);
 				e.StopPropagation();
-				return true;
+				return started ? GER::StartScale : GER::SwitchToScale;
 			}
 			break;
 
@@ -620,7 +626,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_X, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
-				return true;
+				return GER::SwitchAxis;
 			}
 			break;
 		case KSC_Y:
@@ -628,7 +634,7 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Y, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
-				return true;
+				return GER::SwitchAxis;
 			}
 			break;
 		case KSC_Z:
@@ -636,12 +642,12 @@ bool Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEditable& edita
 			{
 				ChangeAxis(_selectedPart, _curXFWorldSpace, GAF_Axis_Z, (e.GetModifierKeys() & MK_Shift) != 0);
 				e.StopPropagation();
-				return true;
+				return GER::SwitchAxis;
 			}
 			break;
 		}
 	}
-	return false;
+	return GER::None;
 }
 
 static Color4b GetColor(GizmoAction hoverAction, GizmoAction curr, float alpha)
