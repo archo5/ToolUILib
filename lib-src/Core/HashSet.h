@@ -141,6 +141,13 @@ struct HashSet : HashTableExtBase<K, HEC, HashSetDataStorage<K>>
 	}
 	UI_FORCEINLINE const K& At(size_t pos) const { return const_cast<HashSet*>(this)->At(pos); }
 
+	K& Last()
+	{
+		assert(this->_storage.count);
+		return this->_storage.GetKeyAt(this->_storage.count - 1);
+	}
+	UI_FORCEINLINE const K& Last(size_t pos) const { return const_cast<HashSet*>(this)->Last(pos); }
+
 	bool Insert(const K& key)
 	{
 		size_t ipos = Base::_FindInsertPos(key);
