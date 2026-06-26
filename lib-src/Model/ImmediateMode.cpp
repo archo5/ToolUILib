@@ -395,12 +395,21 @@ template <class TNum> imCtrlInfoNumberEditor EditNumber(TNum& val, const DragCon
 	{
 		if (ev.type == EventType::Change)
 		{
+			if (auto* veg = ev.target->FindParentOfType<imVectorEditGroupBase>())
+				veg->_ongoingEdit = true;
 			ev.StopPropagation();
 			ne.flags |= UIObject_IsEdited;
 			ne.RebuildContainer();
 		}
 		if (ev.type == EventType::Commit)
+		{
 			ev.StopPropagation();
+			if (auto* veg = ev.target->FindParentOfType<imVectorEditGroupBase>())
+			{
+				veg->_ongoingEdit = false;
+				ne.RebuildContainer();
+			}
+		}
 	};
 
 	return { changed, &ne };

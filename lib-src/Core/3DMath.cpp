@@ -116,9 +116,25 @@ Vec3f Quat::ToDirAxisLenAngle() const
 	return aa.GetVec3().Normalized() * AngleNormalize180(aa.w);
 }
 
+// the quat -> angle fns can return 360 on some axes - this moves the value towards 0
+static float Correct360DegF(float v)
+{
+	if (fabsf(v - 360) < 90)
+		v -= 360;
+	return v;
+}
+
+static Vec3f Correct360DegV(Vec3f v)
+{
+	v.x = Correct360DegF(v.x);
+	v.y = Correct360DegF(v.y);
+	v.z = Correct360DegF(v.z);
+	return v;
+}
+
 Vec3f Quat::ToEulerAnglesXYZ() const
 {
-	return Q2EA(*this, 3, 2, 1);
+	return Correct360DegV(Q2EA(*this, 3, 2, 1));
 }
 
 Vec3f Quat::ToEulerAnglesZYX() const
@@ -135,7 +151,7 @@ Vec3f Quat::ToEulerAnglesZYX() const
 	ret.x = AngleNormalize360(ret.x);
 	ret.y = AngleNormalize360(ret.y);
 	ret.z = AngleNormalize360(ret.z);
-	return ret;
+	return Correct360DegV(ret);
 }
 
 Vec3f Quat::Rotate(Vec3f v) const

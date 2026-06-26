@@ -68,13 +68,21 @@ struct BitArray
 		}
 	}
 
-	UI_FORCEINLINE BitArray() : _sized(0) {}
+	UI_FORCEINLINE BitArray() : _sized(0)
+	{
+		for (Word& w : _inld)
+			w = 0;
+	}
 	inline BitArray(WithCapacity wc) : _sized(0)
 	{
+		for (Word& w : _inld)
+			w = 0;
 		Reserve(wc.n);
 	}
 	inline BitArray(WithSize ws) : _sized(ws.n << 1)
 	{
+		for (Word& w : _inld)
+			w = 0;
 		if (ws.n > MAX_INLINE_BITS)
 		{
 			_sized |= 1;
