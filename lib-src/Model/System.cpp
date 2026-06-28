@@ -317,6 +317,7 @@ void UIContainer::_BuildUsing(Buildable* B, bool transferOwnership)
 
 	ProcessBuildStack();
 	ProcessLayoutStack();
+	owner->eventSystem.SetKeyboardFocus(B, true);
 }
 
 void UIContainer::Add(Buildable* obj)

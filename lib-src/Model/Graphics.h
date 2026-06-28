@@ -364,6 +364,7 @@ struct View3D : FillerElement
 	{
 		FillerElement::OnReset();
 
+		flags |= ui::UIObject_IsFocusable;
 		onRender = {};
 		onPaintOverlay = {};
 	}

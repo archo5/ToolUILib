@@ -330,8 +330,6 @@ struct GizmoTest : ui::Buildable
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](ui::Event& e)
 			{
-				if (e.type == ui::EventType::ButtonDown)
-					e.context->SetKeyboardFocus(e.current);
 				if (useImmediate)
 				{
 					gizmoCont.OnEvent(e, camera);
@@ -540,8 +538,6 @@ struct QuaternionTest : ui::Buildable
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](ui::Event& e)
 			{
-				if (e.type == ui::EventType::ButtonDown)
-					e.context->SetKeyboardFocus(e.current);
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };
@@ -739,8 +735,6 @@ struct RotInterpTest : ui::Buildable
 			v.SetFlag(ui::UIObject_DB_CaptureMouseOnLeftClick, true);
 			v.HandleEvent() = [this](ui::Event& e)
 			{
-				if (e.type == ui::EventType::ButtonDown)
-					e.context->SetKeyboardFocus(e.current);
 				camera.OnEvent(e);
 			};
 			v.onRender = [this](ui::UIRect r) { Render3DView(r); };

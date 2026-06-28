@@ -1021,7 +1021,7 @@ void DropdownMenu::OnBuildButton()
 	auto& btn = Push<FrameElement>().SetDefaultFrameStyle(DefaultFrameStyle::DropdownButton);
 	btn.flags |= flags & UIObject_IsDisabled;
 	btn.SetFlag(UIObject_IsChecked, !!(flags & UIObject_IsChecked));
-	btn.flags |= UIObject_DB_FocusOnLeftClick;
+	btn.flags |= UIObject_IsFocusable;
 	if (!(flags & UIObject_IsDisabled))
 	{
 		btn.HandleEvent(EventType::Any, true) = [this](Event& e)

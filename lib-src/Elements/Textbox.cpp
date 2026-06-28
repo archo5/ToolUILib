@@ -136,7 +136,7 @@ void Textbox::OnReset()
 {
 	FrameElement::OnReset();
 
-	flags |= UIObject_DB_FocusOnLeftClick | UIObject_DB_CaptureMouseOnLeftClick;
+	flags |= UIObject_IsFocusable | UIObject_DB_CaptureMouseOnLeftClick;
 	SetDefaultFrameStyle(DefaultFrameStyle::TextBox);
 
 	_impl->placeholder = {};

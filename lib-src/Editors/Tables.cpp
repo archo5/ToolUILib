@@ -236,6 +236,7 @@ void TableView::OnReset()
 {
 	FrameElement::OnReset();
 
+	flags |= UIObject_IsFocusable;
 	SetFrameStyle(sid_framestyle_table_frame);
 	style = *GetCurrentTheme()->GetStruct(sid_table_style);
 	expandButtonStyle = *GetCurrentTheme()->GetStruct(sid_iconstyle_tree_expand);
@@ -544,7 +545,7 @@ void TableView::OnEvent(Event& e)
 	ScrollbarData sbd = { this, sbrect, RC.GetHeight(), chh + nr * h, yOff };
 	scrollbarV.OnEvent(sbd, e);
 
-	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick);
+	_PerformDefaultBehaviors(e, UIObject_DB_CaptureMouseOnLeftClick);
 
 	if (e.type == EventType::ContextMenu)
 	{

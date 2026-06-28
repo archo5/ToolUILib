@@ -384,9 +384,9 @@ struct PlacementTest : ui::Buildable
 		static const char* suggestions[] = { "apple", "banana", "car", "duck", "elephant", "file", "grid" };
 		ple = &ui::Push<ui::PlacementLayoutElement>();
 		ui::imEditString(text).Modify({
-			ui::AddEventHandler(ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),
-			ui::AddEventHandler(ui::EventType::LostFocus, [this](ui::Event&) { showDropdown = false; Rebuild(); }),
-			ui::AddEventHandler(ui::EventType::KeyAction, [this](ui::Event& e)
+			ui::AddEventHandler(true, ui::EventType::GotFocus, [this](ui::Event&) { showDropdown = true; curSelection = 0; Rebuild(); }),
+			ui::AddEventHandler(true, ui::EventType::LostFocus, [this](ui::Event&) { showDropdown = false; Rebuild(); }),
+			ui::AddEventHandler(true, ui::EventType::KeyAction, [this](ui::Event& e)
 			{
 				switch (e.GetKeyAction())
 				{
@@ -443,8 +443,11 @@ struct PlacementTest : ui::Buildable
 			{
 				if (strstr(suggestions[i], text.c_str()))
 				{
-					ui::MakeWithText<ui::Selectable>(suggestions[i]).Init(curSelection == num)
-						+ ui::AddEventHandler(ui::EventType::Activate, [this, i](ui::Event& e) { text = suggestions[i]; e.context->SetKeyboardFocus(nullptr); });
+					ui::MakeWithText<ui::Selectable>(suggestions[i]).Init(curSelection == num).HandleEvent(ui::EventType::Activate) = [this, i](ui::Event& e)
+					{
+						text = suggestions[i];
+						e.context->SetKeyboardFocus(nullptr);
+					};
 					num++;
 				}
 			}

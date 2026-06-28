@@ -94,8 +94,7 @@ enum UIObjectFlags
 	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and Rebuild upon activation
 	UIObject_HitTestPassthrough = 1 << 17,
 	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
-	UIObject_DB_FocusOnLeftClick = UIObject_IsFocusable | (1 << 19),
-	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_DB_FocusOnLeftClick | (1 << 20),
+	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_IsFocusable | (1 << 20),
 	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
 	UIObject_DB_Selectable = 1 << 22,
 	UIObject_DisableCulling = 1 << 23,
@@ -677,10 +676,13 @@ struct AddEventHandler : Modifier
 {
 	std::function<void(Event&)> _evfn;
 	EventType _type = EventType::Any;
+	bool _early = false;
 	UIObject* _tgt = nullptr;
 	AddEventHandler(std::function<void(Event&)>&& fn) : _evfn(Move(fn)) {}
 	AddEventHandler(EventType t, std::function<void(Event&)>&& fn) : _evfn(Move(fn)), _type(t) {}
-	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type) = Move(_evfn); }
+	AddEventHandler(bool early, std::function<void(Event&)>&& fn) : _evfn(Move(fn)), _early(early) {}
+	AddEventHandler(bool early, EventType t, std::function<void(Event&)>&& fn) : _evfn(Move(fn)), _type(t), _early(early) {}
+	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type, _early) = Move(_evfn); }
 };
 
 struct modAddTooltip : Modifier

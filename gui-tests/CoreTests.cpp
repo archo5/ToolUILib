@@ -438,7 +438,7 @@ struct TextMultilineTest : ui::Buildable
 	void OnReset() override
 	{
 		ui::Buildable::OnReset();
-		flags |= ui::UIObject_DB_FocusOnLeftClick;
+		flags |= ui::UIObject_IsFocusable;
 	}
 	void OnEvent(ui::Event& e) override
 	{
@@ -665,7 +665,6 @@ struct KeyboardEventsTest : EventsTest
 	void OnReset() override
 	{
 		SetFlag(ui::UIObject_IsFocusable, true);
-		SetFlag(ui::UIObject_DB_FocusOnLeftClick, true);
 	}
 	void OnEnable() override
 	{

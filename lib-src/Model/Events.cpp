@@ -267,9 +267,11 @@ void EventSystem::OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg
 	BubblingEvent(ev);
 }
 
-void EventSystem::SetKeyboardFocus(UIObject* o, bool nav)
+void EventSystem::SetKeyboardFocus(UIObject* o, bool gotfocusevent, bool nav)
 {
-	wasFocusSet = true;
+	if (o == nullptr)
+		o = container->rootBuildable;
+
 	if (focusObj == o)
 		return;
 
@@ -284,7 +286,7 @@ void EventSystem::SetKeyboardFocus(UIObject* o, bool nav)
 	if (o)
 		lastFocusObj = o;
 
-	if (focusObj)
+	if (focusObj && gotfocusevent)
 	{
 		Event ev(this, focusObj, EventType::GotFocus);
 		ev.arg0 = nav;
@@ -572,8 +574,6 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 	int id = int(which);
 	uint32_t t = platform::GetTimeMs();
 
-	wasFocusSet = false;
-
 	Event ev(this, hoverObj, EventType::ButtonDown);
 	ev.shortCode = id;
 	ev.topLevelPosition = cursorPos;
@@ -594,8 +594,18 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		clickStartPositions[id] = cursorPos;
 		BubblingEvent(ev);
 
-		if (!wasFocusSet)
-			SetKeyboardFocus(nullptr);
+		// focus on click
+		UIObject* focused = container->rootBuildable;
+		for (UIObject* o = hoverObj; o; o = o->parent)
+		{
+			if (o->flags & UIObject_IsFocusable)
+			{
+				focused = o;
+				break;
+			}
+		}
+		if (focused)
+			SetKeyboardFocus(focused, true, true);
 	}
 	else
 	{
@@ -738,7 +748,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
-					SetKeyboardFocus(it, true);
+					SetKeyboardFocus(it, true, true);
 					found = true;
 					break;
 				}
@@ -749,7 +759,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
-						SetKeyboardFocus(it, true);
+						SetKeyboardFocus(it, true, true);
 						break;
 					}
 				}
@@ -762,7 +772,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				if (it->flags & UIObject_IsFocusable)
 				{
-					SetKeyboardFocus(it, true);
+					SetKeyboardFocus(it, true, true);
 					found = true;
 					break;
 				}
@@ -773,7 +783,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 				{
 					if (it->flags & UIObject_IsFocusable)
 					{
-						SetKeyboardFocus(it, true);
+						SetKeyboardFocus(it, true, true);
 						break;
 					}
 				}
