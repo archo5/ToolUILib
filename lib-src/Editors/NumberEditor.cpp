@@ -22,7 +22,7 @@ void NumberEditorBase::OnReset()
 {
 	FrameElement::OnReset();
 
-	flags |= UIObject_DB_CaptureMouseOnLeftClick;
+	flags |= UIObject_DB_CaptureMouseOnLeftClick | UIObject_IsFocusable_Tab;
 	SetDefaultFrameStyle(DefaultFrameStyle::Button);
 
 	dragConfig = {};
@@ -61,6 +61,7 @@ static void NEB_CreateTextbox(NumberEditorBase& neb)
 	neb._activeTextbox = new Textbox;
 	neb._activeTextbox->SetText(neb.ValueToString(true));
 	neb.AppendChild(neb._activeTextbox);
+	neb.flags &= ~UIObject_IsFocusable_Tab;
 }
 
 static void NEB_DestroyTextbox(NumberEditorBase& neb)
@@ -68,6 +69,7 @@ static void NEB_DestroyTextbox(NumberEditorBase& neb)
 	neb._activeTextbox->DetachParent();
 	DeleteUIObject(neb._activeTextbox); // TODO: delay the deletion - it works for now but is accessing deleted memory
 	neb._activeTextbox = nullptr;
+	neb.flags |= UIObject_IsFocusable_Tab;
 }
 
 void NumberEditorBase::OnEvent(Event& e)

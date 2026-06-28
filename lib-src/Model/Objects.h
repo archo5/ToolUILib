@@ -87,13 +87,15 @@ enum UIObjectFlags
 	UIObject_DragHovered = 1 << 10, // TODO reorder
 	UIObject_IsEdited = 1 << 11,
 	UIObject_IsChecked = 1 << 12,
-	UIObject_IsFocusable = 1 << 13,
+	UIObject_IsFocusable_Tab = 1 << 13,
 	UIObject_IsPressedMouse = 1 << 14,
 	UIObject_IsPressedOther = 1 << 15,
 	UIObject_IsPressedAny = UIObject_IsPressedMouse | UIObject_IsPressedOther,
 	UIObject_DB_IMEdit = 1 << 16, // +IsEdited and Rebuild upon activation
 	UIObject_HitTestPassthrough = 1 << 17,
 	UIObject_DB_CaptureMouseOnLeftClick = 1 << 18,
+	UIObject_IsFocusable_Pointer = 1 << 19,
+	UIObject_IsFocusable = UIObject_IsFocusable_Tab | UIObject_IsFocusable_Pointer,
 	UIObject_DB_Button = UIObject_DB_CaptureMouseOnLeftClick | UIObject_IsFocusable | (1 << 20),
 	UIObject_DB_Draggable = UIObject_DB_CaptureMouseOnLeftClick | (1 << 21),
 	UIObject_DB_Selectable = 1 << 22,

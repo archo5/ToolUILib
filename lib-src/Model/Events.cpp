@@ -598,7 +598,7 @@ void EventSystem::OnMouseButton(bool down, MouseButton which, Point2f cursorPos,
 		UIObject* focused = container->rootBuildable;
 		for (UIObject* o = hoverObj; o; o = o->parent)
 		{
-			if (o->flags & UIObject_IsFocusable)
+			if (o->flags & UIObject_IsFocusable_Pointer)
 			{
 				focused = o;
 				break;
@@ -746,7 +746,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			bool found = false;
 			for (UIObject* it = lastFocusObj->LPN_GetNextInForwardOrder(); it; it = it->LPN_GetNextInForwardOrder())
 			{
-				if (it->flags & UIObject_IsFocusable)
+				if (it->flags & UIObject_IsFocusable_Tab)
 				{
 					SetKeyboardFocus(it, true, true);
 					found = true;
@@ -757,7 +757,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				for (UIObject* it = container->rootBuildable->LPN_GetFirstInForwardOrder(); it && it != lastFocusObj; it = it->LPN_GetNextInForwardOrder())
 				{
-					if (it->flags & UIObject_IsFocusable)
+					if (it->flags & UIObject_IsFocusable_Tab)
 					{
 						SetKeyboardFocus(it, true, true);
 						break;
@@ -770,7 +770,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			bool found = false;
 			for (UIObject* it = lastFocusObj->LPN_GetPrevInReverseOrder(); it; it = it->LPN_GetPrevInReverseOrder())
 			{
-				if (it->flags & UIObject_IsFocusable)
+				if (it->flags & UIObject_IsFocusable_Tab)
 				{
 					SetKeyboardFocus(it, true, true);
 					found = true;
@@ -781,7 +781,7 @@ bool EventSystem::OnKeyAction(KeyAction act, uint8_t mod, uint16_t numRepeats, b
 			{
 				for (UIObject* it = container->rootBuildable->LPN_GetLastInReverseOrder(); it && it != lastFocusObj; it = it->LPN_GetPrevInReverseOrder())
 				{
-					if (it->flags & UIObject_IsFocusable)
+					if (it->flags & UIObject_IsFocusable_Tab)
 					{
 						SetKeyboardFocus(it, true, true);
 						break;
