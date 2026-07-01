@@ -39,6 +39,7 @@ enum class EventType
 	Tooltip,
 	Scroll,
 	Resize,
+	ChangeSyncPoint,
 
 	MouseEnter,
 	MouseLeave,

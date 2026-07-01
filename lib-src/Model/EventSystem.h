@@ -27,6 +27,7 @@ struct EventSystem
 	void OnCommit(UIObject* o);
 	void OnChange(UIObject* o);
 	void OnIMChange(UIObject* o);
+	void OnChangeSyncPoint(UIObject* o);
 	void OnUserEvent(UIObject* o, int id, uintptr_t arg0, uintptr_t arg1);
 	void SetKeyboardFocus(UIObject* o, bool gotfocusevent = false, bool nav = false);
 

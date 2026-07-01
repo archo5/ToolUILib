@@ -237,6 +237,8 @@ void EventSystem::Repaint(UIObject* o)
 
 void EventSystem::OnActivate(UIObject* o)
 {
+	OnChangeSyncPoint(o);
+
 	Event ev(this, o, EventType::Activate);
 	BubblingEvent(ev);
 }
@@ -256,6 +258,12 @@ void EventSystem::OnChange(UIObject* o)
 void EventSystem::OnIMChange(UIObject* o)
 {
 	Event ev(this, o, EventType::IMChange);
+	BubblingEvent(ev);
+}
+
+void EventSystem::OnChangeSyncPoint(UIObject* o)
+{
+	Event ev(this, o, EventType::ChangeSyncPoint);
 	BubblingEvent(ev);
 }
 
@@ -285,6 +293,8 @@ void EventSystem::SetKeyboardFocus(UIObject* o, bool gotfocusevent, bool nav)
 	focusObj = o;
 	if (o)
 		lastFocusObj = o;
+
+	OnChangeSyncPoint(o);
 
 	if (focusObj && gotfocusevent)
 	{

@@ -104,6 +104,7 @@ void NumberEditorBase::OnEvent(Event& e)
 	{
 		_dragged = false;
 		_anyChg = false;
+		e.context->OnChangeSyncPoint(this);
 	}
 	if (e.type == EventType::ButtonUp && e.GetButton() == MouseButton::Left && !IsInputDisabled())
 	{
