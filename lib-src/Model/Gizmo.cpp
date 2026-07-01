@@ -555,9 +555,17 @@ GizmoEventResult Gizmo::OnEvent(Event& e, const CameraBase& cam, const IGizmoEdi
 				}
 			}
 
-			Start(_hoveredPart, e.position, cam, editable);
-
+			bool started = Start(_hoveredPart, e.position, cam, editable);
 			e.StopPropagation();
+			if (started)
+			{
+				switch (u8(_selectedPart) & GAF_Mode_MASK)
+				{
+				case GAF_Mode_Move: return GER::StartMove;
+				case GAF_Mode_Rotate: return GER::StartRotate;
+				case GAF_Mode_Scale: return GER::StartScale;
+				}
+			}
 		}
 	}
 	else if (e.type == EventType::ButtonDown && e.GetButton() == MouseButton::Right && _selectedPart != GizmoAction::None && settings.visible)
