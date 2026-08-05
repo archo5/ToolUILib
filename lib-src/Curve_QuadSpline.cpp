@@ -145,7 +145,11 @@ QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa,
 	Rangef svr = avr.Intersect(bvr);
 	if (svr.IsValid())
 	{
-		itrp.velocity = tanf(lerp(atanf(svr.min), atanf(svr.max), xp.qs));
+		float q = xp.qs;
+		// a convenience feature - if tangents aren't intersecting, flip the q so that 1 = max steep and 0 = max flat
+		if (!midp && fabsf(svr.min) > fabsf(svr.max))
+			q = 1 - q;
+		itrp.velocity = tanf(lerp(atanf(svr.min), atanf(svr.max), q));
 	}
 
 	return itrp;

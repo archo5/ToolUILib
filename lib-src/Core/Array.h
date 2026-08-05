@@ -495,7 +495,7 @@ struct Array
 	bool OnSerializeCustom(IObjectIterator& oi, const FieldInfo& FI, Func&& func)
 	{
 		ArrayFieldState afs = oi.BeginArray(_size, FI);
-		FieldInfo chfi("", FI.flags);
+		FieldInfo chfi("-", FI.flags);
 		if (oi.IsUnserializer())
 		{
 			if (FI.flags & FieldInfo::Preallocated)
