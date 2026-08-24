@@ -719,6 +719,64 @@ void Test_RawMouseEvents()
 }
 
 
+namespace ui { double hqtime(); }
+struct BalancedEventHandlingTest : ui::FillerElement, ui::AnimationRequester
+{
+	bool slowMouseMove = false;
+	bool slowPaint = false;
+	int nframes = 0;
+	int nmousemove = 0;
+	void SpinWait(float t)
+	{
+		double dest = ui::hqtime() + t;
+		while (ui::hqtime() < dest);
+	}
+	void OnReset() override
+	{
+		SetFlag(ui::UIObject_IsFocusable, true);
+		BeginAnimation();
+	}
+	void OnEvent(ui::Event& e) override
+	{
+		if (e.type == ui::EventType::MouseMove)
+		{
+			if (e.delta != ui::Vec2f())
+			{
+				nmousemove++;
+				if (slowMouseMove)
+					SpinWait(0.1f);
+			}
+		}
+		if (e.type == ui::EventType::KeyDown)
+		{
+			if (e.shortCode == ui::KSC_M)
+				slowMouseMove ^= true;
+			if (e.shortCode == ui::KSC_P)
+				slowPaint ^= true;
+		}
+	}
+	void OnAnimationFrame() override
+	{
+		GetNativeWindow()->InvalidateAll();
+	}
+	void OnPaint(const ui::UIPaintContext& ctx) override
+	{
+		if (slowPaint)
+			SpinWait(0.1f);
+		auto* font = ui::GetFont(ui::FONT_FAMILY_SANS_SERIF);
+		int y = 0;
+		ui::draw::TextLine(font, 12, 0, y += 12, ui::Format("# frames: %d", ++nframes), {}, ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 12, 0, y += 12, ui::Format("# mouse move: %d", nmousemove), {}, ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 12, 0, y += 12, ui::Format("Slow [m]ouse move: %s", slowMouseMove ? "ON" : "off"), {}, ui::TextBaseline::Top);
+		ui::draw::TextLine(font, 12, 0, y += 12, ui::Format("Slow [p]aint: %s", slowPaint ? "ON" : "off"), {}, ui::TextBaseline::Top);
+	}
+};
+void Test_BalancedEventHandling()
+{
+	ui::Make<BalancedEventHandlingTest>();
+}
+
+
 struct OpenCloseTest : ui::Buildable
 {
 	struct AllocTest

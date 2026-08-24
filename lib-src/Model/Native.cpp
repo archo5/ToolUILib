@@ -1929,8 +1929,11 @@ void Application::_SignalEvent()
 int Application::Run()
 {
 	MSG msg;
+	float lastPaint = 0;
 	while (!g_appQuit)
 	{
+		double t0events = hqtime();
+
 		g_mayCallWndProc = true;
 		if (!GetMessageW(&msg, NULL, 0, 0))
 		{
@@ -1949,11 +1952,15 @@ int Application::Run()
 				return g_appExitCode;
 			if (msg.message == WM_PAINT)
 				break; // redraw the UI and then continue the core loop
+			if (hqtime() - t0events > lastPaint)
+				break; // do a paint for balance and then resume
 
 			g_mayCallWndProc = true;
 		}
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE));
 		g_mayCallWndProc = false;
+
+		double t0paint = hqtime();
 
 		// TODO HACK: avoid repainting on every WM_INPUT as there's a lot of them (WM_MOUSEMOVE should still trigger repainting)
 		if (msg.hwnd && msg.message != WM_INPUT)
@@ -1976,6 +1983,9 @@ int Application::Run()
 		g_curWindowRepaintList->Clear();
 
 		assert(g_curWindowRepaintList->IsEmpty());
+
+		double t1paint = hqtime();
+		lastPaint = float(t1paint - t0paint);
 	}
 	return g_appExitCode;
 }

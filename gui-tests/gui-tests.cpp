@@ -297,6 +297,7 @@ void Test_ImageSetSizing();
 void Test_AtlasOverflow();
 void Test_KeyboardEvents();
 void Test_RawMouseEvents();
+void Test_BalancedEventHandling();
 void Test_OpenClose();
 void Test_AppendMix();
 void Test_RebuildEvents();
@@ -406,6 +407,7 @@ static const TestEntry coreTestEntries[] =
 	{ "- Events -" },
 	{ "Keyboard", Test_KeyboardEvents },
 	{ "[Raw] Mouse", Test_RawMouseEvents },
+	{ "Balanced handling", Test_BalancedEventHandling },
 	{},
 	{ "- Basic logic -" },
 	{ "Open/Close", Test_OpenClose },
