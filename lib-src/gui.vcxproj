@@ -262,12 +262,14 @@
     <ClCompile Include="Editors\SequenceEditor.cpp" />
     <ClCompile Include="Editors\Tables.cpp" />
     <ClCompile Include="Editors\TreeEditor.cpp" />
+    <ClCompile Include="Editor_Gradient.cpp" />
     <ClCompile Include="Editor_Slider.cpp" />
     <ClCompile Include="Elements\Animated.cpp" />
     <ClCompile Include="Elements\ResizablePane.cpp" />
     <ClCompile Include="Elements\SplitPane.cpp" />
     <ClCompile Include="Elements\TabbedPanel.cpp" />
     <ClCompile Include="Elements\Textbox.cpp" />
+    <ClCompile Include="Gradient.cpp" />
     <ClCompile Include="Layout_PaddingElement.cpp" />
     <ClCompile Include="Layout_Stack.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
@@ -367,6 +369,7 @@
     <ClInclude Include="Editor_Curve_CubicNrmRemap.h" />
     <ClInclude Include="Editor_Curve_QuadSpline.h" />
     <ClInclude Include="Editor_Curve_Sequence01.h" />
+    <ClInclude Include="Editor_Gradient.h" />
     <ClInclude Include="Editor_Slider.h" />
     <ClInclude Include="Elements\Animated.h" />
     <ClInclude Include="Elements\ResizablePane.h" />
@@ -374,6 +377,7 @@
     <ClInclude Include="Elements\SplitPane.h" />
     <ClInclude Include="Elements\TabbedPanel.h" />
     <ClInclude Include="Elements\Textbox.h" />
+    <ClInclude Include="Gradient.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Layout_ListLayoutElementBase.h" />
     <ClInclude Include="Layout_PaddingElement.h" />

@@ -211,6 +211,12 @@
     <ClCompile Include="UILayer_Editor_Viewport.cpp">
       <Filter>UI Layers</Filter>
     </ClCompile>
+    <ClCompile Include="Gradient.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor_Gradient.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -519,6 +525,12 @@
     </ClInclude>
     <ClInclude Include="UILayer_Editor_Viewport.h">
       <Filter>UI Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Gradient.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor_Gradient.h">
+      <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

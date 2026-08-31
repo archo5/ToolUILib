@@ -7,6 +7,7 @@
 #include "../lib-src/Editor_Slider.h"
 #include "../lib-src/Editor_Curve_CubicNrmRemap.h"
 #include "../lib-src/UILayer_Editor_Viewport.h"
+#include "../lib-src/Editor_Gradient.h"
 
 
 struct StateButtonsTest : ui::Buildable
@@ -786,6 +787,34 @@ struct ColorPickerTest : ui::Buildable
 void Test_ColorPicker()
 {
 	WMake<ColorPickerTest>();
+}
+
+
+static ui::Gradient testEditableGradient;
+static struct InitEditableGradient
+{
+	InitEditableGradient()
+	{
+		testEditableGradient = ui::Gradient::ColorToColor({ 1, 0, 0 }, { 0, 1, 0 });
+		testEditableGradient.alphas.Append({ 0.25f, 1 });
+		testEditableGradient.alphas.Append({ 0.75f, 0 });
+	}
+}
+g_initTestEditableGradient;
+struct GradientEditorTest : ui::Buildable
+{
+	void Build() override
+	{
+		WPush<ui::LayerLayoutElement>();
+
+		WMake<ui::GradientEditor>().Init(&testEditableGradient);
+
+		WPop();
+	}
+};
+void Test_GradientEditor()
+{
+	WMake<GradientEditorTest>();
 }
 
 

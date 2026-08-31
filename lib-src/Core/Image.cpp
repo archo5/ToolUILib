@@ -7,6 +7,8 @@ namespace ui {
 Color4f Color4f::HSV(float h, float s, float v, float a)
 {
 	h = fmodf(h, 1);
+	if (h < 0)
+		h += 1;
 	h *= 6;
 	float c = v * s;
 	float x = c * (1 - fabsf(fmodf(h, 2) - 1));

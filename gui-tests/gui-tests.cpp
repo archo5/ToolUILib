@@ -333,6 +333,7 @@ void Test_NumberEditor();
 void Test_ColorBlock();
 void Test_Image();
 void Test_ColorPicker();
+void Test_GradientEditor();
 void Test_ViewportEditorLayer();
 void Test_IMGUI();
 void Test_ModalWindow();
@@ -455,6 +456,7 @@ static const TestEntry compoundTestEntries[] =
 	{ "Color block", Test_ColorBlock },
 	{ "Image", Test_Image },
 	{ "Color picker", Test_ColorPicker },
+	{ "Gradient editor", Test_GradientEditor },
 	{},
 	{ "Viewport editor layer", Test_ViewportEditorLayer },
 	{},

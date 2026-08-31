@@ -42,4 +42,34 @@
 			painter = { __ = "imgset", imgset = "button.normal", shrink = -3 }
 		}
 	]
-},
+}
+
+
+
+"gradient_slider_style:GradientSliderStyle":
+{
+	gradientHeight = 50
+	gradientMargin = 8
+	keypointOffset = 10
+	keypointSize = { x = 10, y = 10 }
+	keypointMargin = 4
+	trackFramePainter = "gradient_track_frame"
+	keypointFramePainter = "button"
+}
+
+// TODO replace with insetbox/outsetbox + shrink passthru painter?
+// TODO `if (r.GetWidth() > 0)` - needed?
+"gradient_track_frame:painter":
+{
+	__ = "select_first"
+	painters:
+	[
+		{
+			condition = ["disabled"]
+			painter = { __ = "imgset", imgset = "textbox.disabled", shrink = -3 }
+		}
+		{
+			painter = { __ = "imgset", imgset = "textbox.normal", shrink = -3 }
+		}
+	]
+}
