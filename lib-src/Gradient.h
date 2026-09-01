@@ -36,6 +36,8 @@ struct Gradient
 	{
 		Linear,
 		Smoothstep,
+		Cubic_CE, // constant extrapolation
+		Cubic_TE, // tangent extrapolation
 	};
 	static const char* InterpolationTypeKeys[];
 	static const char* InterpolationTypeNames[];
