@@ -273,32 +273,40 @@ static float curvesample(ArrayView<Curve_QuadSpline::Point> curve, Rangef range,
 float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing)
 {
 	Vec2f cmp;
+	float cv;
 	if (QLIFSpline_FindCurveMidpoint(pa, pb, cmp))
 	{
 		float q = invqslerp(pa.time, cmp.x, pb.time, sx);
-		float cv = qslerp(pa.value, cmp.y, pb.value, q);
-		if (!accelsmoothing)
-			return cv;
-
-		float pwlv = sx <= cmp.x
-			? lerp(pa.value, cmp.y, invlerpc(pa.time, cmp.x, sx))
-			: lerp(cmp.y, pb.value, invlerpc(cmp.x, pb.time, sx));
-
-#if QLIF_V1_ACCEL_SMOOTHING
-		float qq = sinf(acosf(q * 2 - 1));
-#else // v2
-		float qqq = sx <= cmp.x ? invlerpc(cmp.x, pa.time, sx) * -1 : invlerpc(cmp.x, pb.time, sx);
-		float qq = qqq * qqq;
-		qq *= qq;
-		qq = 1 - qq;
-#endif
-		return lerp(pwlv, cv, qq);
+		cv = qslerp(pa.value, cmp.y, pb.value, q);
 	}
 	else
 	{
-		float q = invlerpc(pa.time, pb.time, sx);
-		return lerp(pa.value, pb.value, q);
+		// cubic hermite fallback
+		float t = invlerpc(pa.time, pb.time, sx);
+		float dist = pb.time - pa.time;
+		float t2 = t * t;
+		float t3 = t2 * t;
+		float tga = pa.velocity * dist;
+		float tgb = pb.velocity * dist;
+		cv = pa.value * (2 * t3 - 3 * t2 + 1) + tga * (t3 - 2 * t2 + t) + pb.value * (-2 * t3 + 3 * t2) + tgb * (t3 - t2);
+		cmp.x = (pa.time + pb.time) * 0.5f;
 	}
+
+	if (!accelsmoothing)
+		return cv;
+	float pwlv = sx <= cmp.x
+		? pa.value + (sx - pa.time) * pa.velocity
+		: pb.value + (sx - pb.time) * pb.velocity;
+
+#if QLIF_V1_ACCEL_SMOOTHING
+	float qq = sinf(acosf(q * 2 - 1));
+#else // v2
+	float qqq = sx <= cmp.x ? invlerpc(cmp.x, pa.time, sx) * -1 : invlerpc(cmp.x, pb.time, sx);
+	float qq = qqq * qqq;
+	qq *= qq;
+	qq = 1 - qq;
+#endif
+	return lerp(pwlv, cv, qq);
 }
 
 void QLIFSpline_RootVertRange(Rangef& outrange, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb)
