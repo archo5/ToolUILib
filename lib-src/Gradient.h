@@ -92,19 +92,20 @@ struct Gradient
 
 	Color4f Sample(float pos) const;
 
-	template <class TCol> Array<TCol> GetApproxT() const
+	template <class TCol> Array<TCol> GetApproxT(Rangei stepLimit = { 1, 65536 }) const
 	{
 		Array<TCol> ret;
-		ret.Resize(approxSteps);
-		if (approxSteps == 1)
+		int steps = stepLimit.Clamp(approxSteps);
+		ret.Resize(steps);
+		if (steps == 1)
 			ret[0] = Sample(0.5f);
 		else
-			for (u32 i = 0; i < approxSteps; i++)
-				ret[i] = Sample(i / float(approxSteps - 1));
+			for (int i = 0; i < steps; i++)
+				ret[i] = Sample(i / float(steps - 1));
 		return ret;
 	}
-	Array<Color4f> GetApproxF() const { return GetApproxT<Color4f>(); }
-	Array<Color4b> GetApproxB() const { return GetApproxT<Color4b>(); }
+	Array<Color4f> GetApproxF(Rangei stepLimit = { 1, 65536 }) const { return GetApproxT<Color4f>(stepLimit); }
+	Array<Color4b> GetApproxB(Rangei stepLimit = { 1, 65536 }) const { return GetApproxT<Color4b>(stepLimit); }
 
 	template <class TKP> static void SortPoint(Array<TKP>& arr, i32& i)
 	{
@@ -122,7 +123,8 @@ template <> struct EnumKeys<Gradient::InterpolationType> : EnumKeysStringList<Gr
 
 void Gradient::Serialize(IObjectIterator& oi, const FieldInfo& fi)
 {
-	oi.BeginObject(fi, "Gradient");
+	if (fi.NeedObject())
+		oi.BeginObject(fi, "Gradient");
 
 	OnFieldEnumString(oi, "colorSpace", colorSpace);
 	OnFieldEnumString(oi, "colorCorrection", colorCorrection);
@@ -133,7 +135,8 @@ void Gradient::Serialize(IObjectIterator& oi, const FieldInfo& fi)
 	OnField(oi, "alphas", alphas);
 	OnField(oi, "approxSteps", approxSteps);
 
-	oi.EndObject();
+	if (fi.NeedObject())
+		oi.EndObject();
 }
 
 

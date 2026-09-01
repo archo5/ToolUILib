@@ -294,6 +294,7 @@ float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& p
 
 	if (!accelsmoothing)
 		return cv;
+
 	float pwlv = sx <= cmp.x
 		? pa.value + (sx - pa.time) * pa.velocity
 		: pb.value + (sx - pb.time) * pb.velocity;
