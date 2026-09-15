@@ -36,7 +36,7 @@ struct DisplayMode
 };
 
 typedef struct Monitor_* MonitorID;
-struct Monitors
+struct UI_API Monitors
 {
 	static Array<MonitorID> All();
 	static MonitorID Primary();
@@ -63,7 +63,7 @@ struct ExclusiveFullscreenInfo
 };
 
 
-struct GraphicsAdapters
+struct UI_API GraphicsAdapters
 {
 	enum InfoFlags
 	{

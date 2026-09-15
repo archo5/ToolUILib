@@ -14,8 +14,6 @@
 
 namespace ui {
 #include "Test.h"
-
-double hqtime();
 //} // ui
 //using namespace ui;
 

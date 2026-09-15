@@ -13,7 +13,7 @@
 namespace ui {
 
 template <class T>
-struct Array
+struct UI_API Array
 {
 	using ValueType = T;
 

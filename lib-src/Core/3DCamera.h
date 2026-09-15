@@ -10,7 +10,7 @@ namespace ui {
 
 struct Event;
 
-struct CameraBase
+struct UI_API CameraBase
 {
 	Mat4f _mtxView = Mat4f::Identity();
 	Mat4f _mtxInvView = Mat4f::Identity();
@@ -70,7 +70,7 @@ struct CameraBase
 	Ray3f GetLocalRayEP(const Event& e, const Mat4f& world2local) const;
 };
 
-struct OrbitCamera : CameraBase
+struct UI_API OrbitCamera : CameraBase
 {
 	OrbitCamera(bool rh = false);
 	// returns true if the camera was modified

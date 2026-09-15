@@ -669,9 +669,6 @@ void Test_DirectoryChangeWatcher()
 }
 
 
-namespace ui {
-double hqtime();
-} // ui
 struct SerializationSpeed : ui::Buildable
 {
 	struct Case1

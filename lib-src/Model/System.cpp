@@ -191,7 +191,6 @@ static void CopyBuildablesFromSetWithoutChildren(Array<Buildable*>& outArr, cons
 	}
 }
 
-double hqtime();
 void UIContainer::ProcessBuildStack()
 {
 	if (pendingBuildSet.IsEmpty())

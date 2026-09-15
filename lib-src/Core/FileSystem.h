@@ -50,31 +50,31 @@ struct FileReadResult
 };
 
 // returns an empty string if root was passed
-std::string PathFromSystem(StringView path);
-std::string PathGetParent(StringView path);
-std::string PathJoin(StringView a, StringView b);
-bool PathIsAbsolute(StringView path);
-std::string PathGetAbsolute(StringView path);
-std::string PathGetResolvedIfReachable(StringView path);
-std::string PathGetRelativeTo(StringView path, StringView relativeTo);
-bool PathIsRelativeTo(StringView path, StringView relativeTo);
+UI_API std::string PathFromSystem(StringView path);
+UI_API std::string PathGetParent(StringView path);
+UI_API std::string PathJoin(StringView a, StringView b);
+UI_API bool PathIsAbsolute(StringView path);
+UI_API std::string PathGetAbsolute(StringView path);
+UI_API std::string PathGetResolvedIfReachable(StringView path);
+UI_API std::string PathGetRelativeTo(StringView path, StringView relativeTo);
+UI_API bool PathIsRelativeTo(StringView path, StringView relativeTo);
 
-FileReadResult ReadTextFile(StringView path);
-bool WriteTextFile(StringView path, StringView text);
-FileReadResult ReadBinaryFile(StringView path);
-bool WriteBinaryFile(StringView path, const void* data, size_t size);
+UI_API FileReadResult ReadTextFile(StringView path);
+UI_API bool WriteTextFile(StringView path, StringView text);
+UI_API FileReadResult ReadBinaryFile(StringView path);
+UI_API bool WriteBinaryFile(StringView path, const void* data, size_t size);
 
-bool DirectoryExists(StringView path);
-bool CreateDirectory(StringView path);
-bool CreateMissingDirectories(StringView path);
-bool CreateMissingParentDirectories(StringView path);
+UI_API bool DirectoryExists(StringView path);
+UI_API bool CreateDirectory(StringView path);
+UI_API bool CreateMissingDirectories(StringView path);
+UI_API bool CreateMissingParentDirectories(StringView path);
 
-bool DeleteFile(StringView path);
-bool DeleteDirectory(StringView path);
-bool MoveFile(StringView from, StringView to);
+UI_API bool DeleteFile(StringView path);
+UI_API bool DeleteDirectory(StringView path);
+UI_API bool MoveFile(StringView from, StringView to);
 
-std::string GetWorkingDirectory();
-bool SetWorkingDirectory(StringView sv);
+UI_API std::string GetWorkingDirectory();
+UI_API bool SetWorkingDirectory(StringView sv);
 
 enum class SystemDirectoryType : u8
 {
@@ -89,7 +89,7 @@ enum class SystemDirectoryType : u8
 	Windows_LocalLowAppData,
 	Windows_RoamingAppData,
 };
-std::string GetSystemDirPath(SystemDirectoryType sdt);
+UI_API std::string GetSystemDirPath(SystemDirectoryType sdt);
 
 enum FileAttributes
 {
@@ -97,11 +97,11 @@ enum FileAttributes
 	FA_Directory = 1 << 1,
 	FA_Symlink = 1 << 2,
 };
-unsigned GetFileAttributes(StringView path);
-uint64_t GetFileSize(StringView path);
-uint64_t GetFileModTimeUTC(StringView path);
-uint64_t GetFileModTimeUnixMS(StringView path);
-u64 GetTimeUnixMS();
+UI_API unsigned GetFileAttributes(StringView path);
+UI_API uint64_t GetFileSize(StringView path);
+UI_API uint64_t GetFileModTimeUTC(StringView path);
+UI_API uint64_t GetFileModTimeUnixMS(StringView path);
+UI_API u64 GetTimeUnixMS();
 
 // TODO allow single user only
 struct IDirectoryIterator : RefCountedST
@@ -109,7 +109,7 @@ struct IDirectoryIterator : RefCountedST
 	virtual bool GetNext(std::string& retFile) = 0;
 };
 using DirectoryIteratorHandle = RCHandle<IDirectoryIterator>;
-DirectoryIteratorHandle CreateDirectoryIterator(StringView path);
+UI_API DirectoryIteratorHandle CreateDirectoryIterator(StringView path);
 
 
 struct NullDirectoryIterator : IDirectoryIterator
@@ -134,7 +134,7 @@ struct IDirectoryChangeWatcher : RefCountedST
 {
 };
 using DirectoryChangeWatcherHandle = RCHandle<IDirectoryChangeWatcher>;
-DirectoryChangeWatcherHandle CreateDirectoryChangeWatcher(StringView path, IDirectoryChangeListener* listener);
+UI_API DirectoryChangeWatcherHandle CreateDirectoryChangeWatcher(StringView path, IDirectoryChangeListener* listener);
 
 
 struct IFileSource : RefCountedST
@@ -156,17 +156,17 @@ struct FileSourceSequence : IFileSource
 	DirectoryIteratorHandle CreateDirectoryIterator(StringView path) override;
 };
 
-FileSourceHandle CreateFileSystemSource(StringView rootPath);
-FileSourceHandle CreateZipFileSource(StringView path);
-FileSourceHandle CreateZipFileMemorySource(BufferHandle memory);
+UI_API FileSourceHandle CreateFileSystemSource(StringView rootPath);
+UI_API FileSourceHandle CreateZipFileSource(StringView path);
+UI_API FileSourceHandle CreateZipFileMemorySource(BufferHandle memory);
 
 
-FileSourceSequence* FSGetDefault();
-IFileSource* FSGetCurrent();
-void FSSetCurrent(IFileSource* fs);
+UI_API FileSourceSequence* FSGetDefault();
+UI_API IFileSource* FSGetCurrent();
+UI_API void FSSetCurrent(IFileSource* fs);
 
-inline FileReadResult FSReadTextFile(StringView path) { return FSGetCurrent()->ReadTextFile(path); }
-inline FileReadResult FSReadBinaryFile(StringView path) { return FSGetCurrent()->ReadBinaryFile(path); }
-inline DirectoryIteratorHandle FSCreateDirectoryIterator(StringView path) { return FSGetCurrent()->CreateDirectoryIterator(path); }
+UI_API inline FileReadResult FSReadTextFile(StringView path) { return FSGetCurrent()->ReadTextFile(path); }
+UI_API inline FileReadResult FSReadBinaryFile(StringView path) { return FSGetCurrent()->ReadBinaryFile(path); }
+UI_API inline DirectoryIteratorHandle FSCreateDirectoryIterator(StringView path) { return FSGetCurrent()->CreateDirectoryIterator(path); }
 
 } // ui

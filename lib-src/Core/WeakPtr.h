@@ -6,7 +6,7 @@
 
 namespace ui {
 
-struct LivenessToken
+struct UI_API LivenessToken
 {
 	struct Data
 	{
@@ -62,7 +62,7 @@ struct LivenessToken
 	}
 };
 
-struct LivenessTokenOwner : LivenessToken
+struct UI_API LivenessTokenOwner : LivenessToken
 {
 	~LivenessTokenOwner()
 	{
@@ -75,7 +75,7 @@ struct LivenessTokenOwner : LivenessToken
 	::ui::LivenessToken& GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 
 template <class T>
-struct WeakPtr
+struct UI_API WeakPtr
 {
 	LivenessToken _token;
 	T* _obj = nullptr;

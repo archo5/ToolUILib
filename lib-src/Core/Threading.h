@@ -1,12 +1,14 @@
 
 #pragma once
 
+#include "Platform.h"
+
 #include <type_traits>
 
 
 namespace ui {
 
-struct AtomicBool
+struct UI_API AtomicBool
 {
 	AtomicBool(bool v);
 	bool Load() const;
@@ -18,7 +20,7 @@ private:
 	int32_t _mem;
 };
 
-struct AtomicInt32
+struct UI_API AtomicInt32
 {
 	AtomicInt32(int32_t v);
 	int32_t Load() const;
@@ -49,7 +51,7 @@ private:
 	int32_t _mem;
 };
 
-struct EventQueue
+struct UI_API EventQueue
 {
 	struct Entry
 	{
@@ -82,7 +84,7 @@ struct EventQueue
 	struct EventQueueImpl* _impl;
 };
 
-struct AsyncJobQueue
+struct UI_API AsyncJobQueue
 {
 	struct Entry
 	{

@@ -114,7 +114,7 @@ enum WindowFlags
 	WF_DisableKeyMenu = 1 << 0, // disables window menu opened by pressing Alt+<char/space>
 };
 
-struct NativeWindowGeometry
+struct UI_API NativeWindowGeometry
 {
 	Point2i position;
 	Point2i size;
@@ -125,7 +125,7 @@ struct NativeWindowGeometry
 
 
 struct NativeWindow_Impl;
-struct NativeWindowBase
+struct UI_API NativeWindowBase
 {
 	NativeWindowBase();
 	~NativeWindowBase();
@@ -219,13 +219,13 @@ struct NativeWindowBase
 	NativeWindow_Impl* _impl = nullptr;
 };
 
-class NativeMainWindow : public NativeWindowBase
+class UI_API NativeMainWindow : public NativeWindowBase
 {
 public:
 	void OnClose() override;
 };
 
-class NativeDialogWindow : public NativeWindowBase
+class UI_API NativeDialogWindow : public NativeWindowBase
 {
 public:
 	void Show()
@@ -235,7 +235,7 @@ public:
 	}
 };
 
-class NativeWindowNode : public UIObjectNoChildren
+class UI_API NativeWindowNode : public UIObjectNoChildren
 {
 public:
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override { return {}; }
@@ -247,7 +247,7 @@ private:
 	NativeWindowBase _window;
 };
 
-struct AnimationRequester
+struct UI_API AnimationRequester
 {
 	AnimationRequester(bool initial = false) { if (initial) BeginAnimation(); }
 	~AnimationRequester() { EndAnimation(); }
@@ -261,7 +261,7 @@ struct AnimationRequester
 	bool _animating = false;
 };
 
-struct AnimationCallbackRequester : AnimationRequester
+struct UI_API AnimationCallbackRequester : AnimationRequester
 {
 	void OnAnimationFrame() override
 	{
@@ -321,7 +321,7 @@ struct IntrusiveLinkedListNode
 	T* _next = nullptr;
 };
 
-struct RawMouseInputRequester : IntrusiveLinkedListNode<RawMouseInputRequester>
+struct UI_API RawMouseInputRequester : IntrusiveLinkedListNode<RawMouseInputRequester>
 {
 	bool _requesting = false;
 
@@ -335,7 +335,7 @@ struct RawMouseInputRequester : IntrusiveLinkedListNode<RawMouseInputRequester>
 
 struct Inspector;
 
-class Application
+class UI_API Application
 {
 public:
 	Application(int argc, char* argv[]);
@@ -409,7 +409,7 @@ private:
 };
 
 
-struct GlobalAppInit
+struct UI_API GlobalAppInit
 {
 	int argc;
 	char** argv;

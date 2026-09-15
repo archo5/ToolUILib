@@ -662,7 +662,7 @@ void DebugDraw(UIObject* o)
 		DebugDraw(ch);
 }
 
-double hqtime()
+UI_API double hqtime()
 {
 	LARGE_INTEGER freq, cnt;
 	QueryPerformanceFrequency(&freq);

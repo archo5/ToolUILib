@@ -8,7 +8,7 @@
 namespace ui {
 
 template <class T>
-struct Optional
+struct UI_API Optional
 {
 	T _value{};
 	bool _hasValue = false;

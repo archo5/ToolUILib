@@ -7,8 +7,6 @@
 #include <string.h>
 
 
-double hqtime();
-
 static void Impl_AssertEqual(bool xref, bool x, int line, const char* sxref, const char* sx)
 {
 	if (xref != x)

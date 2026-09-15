@@ -29,7 +29,7 @@ static char hexchar(uint8_t v)
 }
 
 
-struct Color4b
+struct UI_API Color4b
 {
 	UI_FORCEINLINE static Color4b Zero() { return { 0, 0 }; }
 	UI_FORCEINLINE static Color4b Black() { return { 0, 255 }; }
@@ -68,7 +68,7 @@ struct Color4b
 };
 
 
-struct Color4f
+struct UI_API Color4f
 {
 	static Color4f Zero() { return { 0, 0 }; }
 	static Color4f Black() { return { 0, 1 }; }
@@ -160,7 +160,7 @@ inline Color4f Color4fLerp(const Color4f& a, const Color4f& b, const Color4f& s)
 UI_FORCEINLINE Color4f Color4fLerp(const Color4f& a, const Color4f& b, float s) { return Color4fLerp(a, b, Color4f(s)); }
 
 
-struct Canvas
+struct UI_API Canvas
 {
 	Canvas() {}
 	Canvas(uint32_t w, uint32_t h) { SetSize(w, h); }
@@ -198,7 +198,7 @@ struct Canvas
 
 
 // for shadow images
-struct SimpleMaskBlurGen
+struct UI_API SimpleMaskBlurGen
 {
 	struct Input
 	{

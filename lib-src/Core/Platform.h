@@ -12,6 +12,19 @@
 
 
 #ifdef _MSC_VER
+# if !UI_DLL
+#  define UI_API
+# elif UI_BUILDING
+#  define UI_API __declspec(dllexport)
+# else
+#  define UI_API __declspec(dllimport)
+# endif
+#else
+# define UI_API
+#endif
+
+
+#ifdef _MSC_VER
 #define UI_FORCEINLINE __forceinline
 # if defined(UI_CHECK_FORCEINLINE) || defined(NDEBUG)
 #  pragma warning(error: 4714)
@@ -43,5 +56,7 @@ template <class T> struct RemoveReference<T&&> { typedef T Type; };
 
 template <class T> constexpr typename RemoveReference<T>::Type&& Move(T&& t) noexcept
 { return static_cast<typename RemoveReference<T>::Type&&>(t); }
+
+UI_API double hqtime();
 
 } // ui

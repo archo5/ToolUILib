@@ -11,7 +11,7 @@ namespace ui {
 typedef void MulticastDelegateGenericCallback(void* userdata);
 
 template <class... Args>
-struct MulticastDelegate
+struct UI_API MulticastDelegate
 {
 	struct Entry
 	{

@@ -44,7 +44,7 @@ static const constexpr unsigned OCTAL = 1 << 3;
 static const constexpr unsigned ALL_NUMBER_FORMATS = 0xf;
 
 
-struct StringView
+struct UI_API StringView
 {
 	const char* _data;
 	size_t _size;
@@ -315,7 +315,7 @@ UI_FORCEINLINE bool operator >= (const StringView& a, const StringView& b) { ret
 UI_FORCEINLINE std::string& operator += (std::string& d, const StringView& s) { d.append(s._data, s._size); return d; }
 UI_FORCEINLINE std::string& operator <<= (std::string& d, StringView s) { d.assign(s._data, s._size); return d; }
 
-std::string FormatVA(const char* fmt, va_list args);
+UI_API std::string FormatVA(const char* fmt, va_list args);
 inline std::string Format(const char* fmt, ...)
 {
 	va_list args;

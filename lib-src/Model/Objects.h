@@ -126,7 +126,7 @@ enum class Edge : u8
 };
 
 // objects whose configuration can be reset without also resetting the state
-struct IPersistentObject
+struct UI_API IPersistentObject
 {
 	IPersistentObject* _next = nullptr; // @ 0p1
 
@@ -144,7 +144,7 @@ inline void DeletePersistentObject(IPersistentObject* obj)
 	}
 }
 
-struct PersistentObjectList
+struct UI_API PersistentObjectList
 {
 	IPersistentObject* _firstPO = nullptr;
 	IPersistentObject** _curPO = nullptr;
@@ -272,7 +272,7 @@ struct LayoutInfo
 	UI_FORCEINLINE LayoutInfo WithoutAnyFill() const { return { u8(flags & ~(FillH | FillV)) }; }
 };
 
-struct UIObject : IPersistentObject
+struct UI_API UIObject : IPersistentObject
 {
 	UIObject();
 	// prevent accidental copies
@@ -433,7 +433,7 @@ inline void DeleteUIObject(UIObject* obj)
 	DeletePersistentObject(obj);
 }
 
-struct UIObjectNoChildren : UIObject
+struct UI_API UIObjectNoChildren : UIObject
 {
 	void SlotIterator_Init(UIObjectIteratorData& data) override {}
 	UIObject* SlotIterator_GetNext(UIObjectIteratorData& data) override { return nullptr; }
@@ -446,7 +446,7 @@ struct UIObjectNoChildren : UIObject
 	void OnLayout(const UIRect& rect, LayoutInfo info) override { _finalRect = rect; }
 };
 
-struct UIObjectSingleChild : UIObject
+struct UI_API UIObjectSingleChild : UIObject
 {
 	UIObject* _child = nullptr;
 
@@ -464,28 +464,28 @@ struct UIObjectSingleChild : UIObject
 };
 
 // TODO: slowly port to these
-struct WrapperElement : UIObjectSingleChild
+struct UI_API WrapperElement : UIObjectSingleChild
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
-struct FillerElement : UIObjectSingleChild
+struct UI_API FillerElement : UIObjectSingleChild
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
-struct HFillVWrapElement : UIObjectSingleChild
+struct UI_API HFillVWrapElement : UIObjectSingleChild
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
-struct SizeConstraintElement : WrapperElement
+struct UI_API SizeConstraintElement : WrapperElement
 {
 	EstSizeRange widthRange;
 	EstSizeRange heightRange;
@@ -518,7 +518,7 @@ struct SizeConstraintElement : WrapperElement
 	}
 };
 
-struct CenteringElement : WrapperElement
+struct UI_API CenteringElement : WrapperElement
 {
 	Vec2f align = { 0.5f, 0.5f };
 
@@ -526,7 +526,7 @@ struct CenteringElement : WrapperElement
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
-struct OverlayElement : WrapperElement
+struct UI_API OverlayElement : WrapperElement
 {
 	float _depth = 0;
 	bool _isRegistered = false;
@@ -539,7 +539,7 @@ struct OverlayElement : WrapperElement
 	void _DetachFromFrameContents() override;
 };
 
-struct TextElement : UIObjectNoChildren
+struct UI_API TextElement : UIObjectNoChildren
 {
 	std::string text;
 	bool multiline = false;
@@ -569,12 +569,12 @@ struct TextElement : UIObjectNoChildren
 	}
 };
 
-struct Placeholder : UIObject
+struct UI_API Placeholder : UIObject
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct ChildScaleOffsetElement : WrapperElement
+struct UI_API ChildScaleOffsetElement : WrapperElement
 {
 	ScaleOffset2D transform;
 
@@ -624,7 +624,7 @@ struct IGlobalIMUIStateSaver
 // the saver is expected to remain available until the last builder is destroyed
 void RegisterGlobalIMUIStateSaver(IGlobalIMUIStateSaver* saver);
 
-struct Buildable : WrapperElement
+struct UI_API Buildable : WrapperElement
 {
 	void PO_ResetConfiguration() override; // IPersistentObject
 	void PO_BeforeDelete() override; // IPersistentObject

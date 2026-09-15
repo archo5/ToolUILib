@@ -12,7 +12,7 @@ struct ExclusiveFullscreenInfo;
 
 using Vertex = ::ui::Vertex;
 
-struct Stats
+struct UI_API Stats
 {
 	uint64_t num_SetTexture;
 	uint64_t num_DrawTriangles;
@@ -57,64 +57,64 @@ struct IRHIListener
 struct Texture2D;
 struct RenderContext;
 
-void GlobalInit();
-void GlobalFree();
-u64 GetVideoMemoryUsage();
+UI_API void GlobalInit();
+UI_API void GlobalFree();
+UI_API u64 GetVideoMemoryUsage();
 
-RenderContext* CreateRenderContext(void* window);
-void FreeRenderContext(RenderContext* RC);
-void SetActiveContext(RenderContext* RC);
-void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
-void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info);
-void SetVSyncInterval(RenderContext* RC, unsigned interval);
+UI_API RenderContext* CreateRenderContext(void* window);
+UI_API void FreeRenderContext(RenderContext* RC);
+UI_API void SetActiveContext(RenderContext* RC);
+UI_API void OnResizeWindow(RenderContext* RC, unsigned w, unsigned h);
+UI_API void OnChangeFullscreen(RenderContext* RC, const Optional<ExclusiveFullscreenInfo>& info);
+UI_API void SetVSyncInterval(RenderContext* RC, unsigned interval);
 
-void AttachListener(IRHIListener*);
-void DetachListener(IRHIListener*);
+UI_API void AttachListener(IRHIListener*);
+UI_API void DetachListener(IRHIListener*);
 
-void BeginFrame(RenderContext* RC);
-void EndFrame(RenderContext* RC);
+UI_API void BeginFrame(RenderContext* RC);
+UI_API void EndFrame(RenderContext* RC);
 
-void ApplyViewport();
-void SetViewport(int x0, int y0, int x1, int y1);
-void SetScissorRect(int x0, int y0, int x1, int y1);
+UI_API void ApplyViewport();
+UI_API void SetViewport(int x0, int y0, int x1, int y1);
+UI_API void SetScissorRect(int x0, int y0, int x1, int y1);
 
-void Clear(int r, int g, int b, int a);
-void ClearDepthOnly(float depth = 1);
-void Present(RenderContext* RC);
+UI_API void Clear(int r, int g, int b, int a);
+UI_API void ClearDepthOnly(float depth = 1);
+UI_API void Present(RenderContext* RC);
 
 constexpr uint8_t TF_NOFILTER = 1 << 0;
 constexpr uint8_t TF_REPEAT = 1 << 1;
-Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags);
-Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags);
+UI_API Texture2D* CreateTextureA8(const void* data, unsigned width, unsigned height, uint8_t flags);
+UI_API Texture2D* CreateTextureRGBA8(const void* data, unsigned width, unsigned height, uint8_t flags);
 // D3D11: handle = ID3D11ShaderResourceView*
-Texture2D* CreateTextureFromAPIHandle(unsigned width, unsigned height, uintptr_t handle);
-void SetTextureDebugName(Texture2D* tex, StringView debugName);
-void DestroyTexture(Texture2D* tex);
+UI_API Texture2D* CreateTextureFromAPIHandle(unsigned width, unsigned height, uintptr_t handle);
+UI_API void SetTextureDebugName(Texture2D* tex, StringView debugName);
+UI_API void DestroyTexture(Texture2D* tex);
 
 struct MapData
 {
 	void* data;
 	uint32_t pitch;
 };
-MapData MapTexture(Texture2D* tex);
-void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const void* data, bool a8);
-void UnmapTexture(Texture2D* tex);
+UI_API MapData MapTexture(Texture2D* tex);
+UI_API void CopyToMappedTextureRect(Texture2D* tex, const MapData& md, uint16_t x, uint16_t y, uint16_t w, uint16_t h, const void* data, bool a8);
+UI_API void UnmapTexture(Texture2D* tex);
 
-void SetTexture(Texture2D* tex);
-void DrawTriangles(Vertex* verts, size_t num_verts);
-void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, size_t num_indices);
+UI_API void SetTexture(Texture2D* tex);
+UI_API void DrawTriangles(Vertex* verts, size_t num_verts);
+UI_API void DrawIndexedTriangles(Vertex* verts, size_t num_verts, uint16_t* indices, size_t num_indices);
 
 
-void Begin3DMode(const AABB2i& rect);
-AABB2i End3DMode();
-void RestoreRenderStates();
-void SetupRenderStateForOutputSize(int w, int h);
-void SetViewMatrix(const Mat4f& m);
-void SetProjectionMatrix(const Mat4f& m);
-void SetForcedColor(const Color4b& col);
-void SetAmbientLight(const Color4f& col);
-void SetLightOff(int n);
-void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col);
+UI_API void Begin3DMode(const AABB2i& rect);
+UI_API AABB2i End3DMode();
+UI_API void RestoreRenderStates();
+UI_API void SetupRenderStateForOutputSize(int w, int h);
+UI_API void SetViewMatrix(const Mat4f& m);
+UI_API void SetProjectionMatrix(const Mat4f& m);
+UI_API void SetForcedColor(const Color4b& col);
+UI_API void SetAmbientLight(const Color4f& col);
+UI_API void SetLightOff(int n);
+UI_API void SetDirectionalLight(int n, float x, float y, float z, const Color4f& col);
 enum DrawFlags
 {
 	DF_AlphaTest    = 1 << 1,
@@ -127,7 +127,7 @@ enum DrawFlags
 	DF_ForceColor   = 1 << 8,
 	DF_ZTestReverse = 1 << 9,
 };
-void SetRenderState(unsigned drawFlags);
+UI_API void SetRenderState(unsigned drawFlags);
 enum PrimitiveType
 {
 	PT_Points,
@@ -142,14 +142,14 @@ enum VertexFormat         // position:   float3
 	VF_Texcoord = 1 << 1, // + texcoord: float2
 	VF_Color    = 1 << 2, // + color:    ubyte4
 };
-size_t GetVertexSize(unsigned vertexFormat);
-void Draw(
+UI_API size_t GetVertexSize(unsigned vertexFormat);
+UI_API void Draw(
 	const Mat4f& xf,
 	PrimitiveType primType,
 	unsigned vertexFormat,
 	const void* vertices,
 	size_t numVertices);
-void DrawIndexed(
+UI_API void DrawIndexed(
 	const Mat4f& xf,
 	PrimitiveType primType,
 	unsigned vertexFormat,

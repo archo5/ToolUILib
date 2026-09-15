@@ -10,7 +10,7 @@
 namespace ui {
 
 
-template <class T> struct Vec3
+template <class T> struct UI_API Vec3
 {
 	T x, y, z;
 
@@ -102,7 +102,7 @@ inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return {
 
 
 template <class T>
-struct Vec4
+struct UI_API Vec4
 {
 	T x, y, z, w;
 
@@ -143,7 +143,7 @@ inline Vec4f Vec4Lerp(const Vec4f& a, const Vec4f& b, float s) { return { lerp(a
 inline Vec4f Vec4Lerp(const Vec4f& a, const Vec4f& b, const Vec4f& s) { return { lerp(a.x, b.x, s.x), lerp(a.y, b.y, s.y), lerp(a.z, b.z, s.z), lerp(a.w, b.w, s.w) }; }
 
 
-struct Quat
+struct UI_API Quat
 {
 	float x, y, z, w;
 
@@ -237,7 +237,7 @@ inline Quat QuatSLerp(const Quat& a, const Quat& b1, float s)
 }
 
 
-struct Mat4f
+struct UI_API Mat4f
 {
 	union
 	{
@@ -390,7 +390,7 @@ struct Mat4f
 static constexpr const Mat4f Mat4fIdentity = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 };
 
 
-struct Transform3Df
+struct UI_API Transform3Df
 {
 	Vec3f position;
 	Quat rotation;
@@ -426,10 +426,10 @@ inline Transform3Df operator * (const Transform3Df& a, const Mat4f& b)
 	return { b.TransformPoint(a.position), a.rotation * b.GetRotationQuaternion() };
 }
 
-Transform3Df TransformLerp(const Transform3Df& a, const Transform3Df& b, float q);
+UI_API Transform3Df TransformLerp(const Transform3Df& a, const Transform3Df& b, float q);
 
 
-struct TransformScale3Df
+struct UI_API TransformScale3Df
 {
 	Vec3f position;
 	Quat rotation;
@@ -462,7 +462,7 @@ struct TransformScale3Df
 	inline Vec3f TransformDirNoScale(Vec3f d) const { return rotation.Rotate(d); }
 };
 
-TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale3Df& b, float q);
+UI_API TransformScale3Df TransformLerp(const TransformScale3Df& a, const TransformScale3Df& b, float q);
 
 
 struct Ray3f

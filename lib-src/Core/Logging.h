@@ -20,13 +20,13 @@ enum class LogLevel : uint8_t
 	All,
 };
 
-struct LogMsgRef
+struct UI_API LogMsgRef
 {
 	StringView full;
 	StringView msgonly;
 };
 
-struct LogCategory
+struct UI_API LogCategory
 {
 	const char* const name;
 
@@ -36,22 +36,22 @@ struct LogCategory
 	explicit LogCategory(const char* nm, LogLevel lev = LogLevel::Warn) : name(nm), level(lev) {}
 };
 
-extern MulticastDelegate<LogLevel, const LogCategory&, LogMsgRef> OnAnyLogMessage;
-extern LogLevel GlobalLogLevel;
+UI_API extern MulticastDelegate<LogLevel, const LogCategory&, LogMsgRef> OnAnyLogMessage;
+UI_API extern LogLevel GlobalLogLevel;
 
-bool CanLogDynLev(LogLevel level, const LogCategory& category);
-bool CanLogError(const LogCategory& category);
-bool CanLogWarn(const LogCategory& category);
-bool CanLogInfo(const LogCategory& category);
-bool CanLogDebug(const LogCategory& category);
+UI_API bool CanLogDynLev(LogLevel level, const LogCategory& category);
+UI_API bool CanLogError(const LogCategory& category);
+UI_API bool CanLogWarn(const LogCategory& category);
+UI_API bool CanLogInfo(const LogCategory& category);
+UI_API bool CanLogDebug(const LogCategory& category);
 
-void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, va_list args);
-void LogDynLev(LogLevel level, const LogCategory& category, const char* fmt, ...);
+UI_API void LogDynLevVA(LogLevel level, const LogCategory& category, const char* fmt, va_list args);
+UI_API void LogDynLev(LogLevel level, const LogCategory& category, const char* fmt, ...);
 
-void LogError(const LogCategory& category, const char* fmt, ...);
-void LogWarn(const LogCategory& category, const char* fmt, ...);
-void LogInfo(const LogCategory& category, const char* fmt, ...);
-void LogDebug(const LogCategory& category, const char* fmt, ...);
+UI_API void LogError(const LogCategory& category, const char* fmt, ...);
+UI_API void LogWarn(const LogCategory& category, const char* fmt, ...);
+UI_API void LogInfo(const LogCategory& category, const char* fmt, ...);
+UI_API void LogDebug(const LogCategory& category, const char* fmt, ...);
 
 } // log
 using namespace ui::log;

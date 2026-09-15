@@ -7,14 +7,14 @@
 
 namespace ui {
 
-struct TimerData
+struct UI_API TimerData
 {
 	WeakPtr<UIObject> target;
 	float timeLeft;
 	int id;
 };
 
-struct EventSystem
+struct UI_API EventSystem
 {
 	EventSystem();
 	void BubblingEvent(Event& e, UIObject* tgt = nullptr, bool stopOnDisabled = false);

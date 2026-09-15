@@ -18,21 +18,21 @@ static constexpr const char* FONT_FAMILY_SANS_SERIF = "sans-serif";
 static constexpr const char* FONT_FAMILY_SERIF = "serif";
 static constexpr const char* FONT_FAMILY_MONOSPACE = "monospace";
 
-Font* GetFontByPath(const char* path);
-Font* GetFontByName(const char* name, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
-Font* GetFontByFamily(const char* family, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
-Font* GetFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
+UI_API Font* GetFontByPath(const char* path);
+UI_API Font* GetFontByName(const char* name, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
+UI_API Font* GetFontByFamily(const char* family, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
+UI_API Font* GetFont(const char* nameOrFamily, int weight = FONT_WEIGHT_NORMAL, bool italic = false);
 
-float GetTextResolutionScale();
-float SetTextResolutionScale(float ntrs);
-float MultiplyTextResolutionScale(float ntrs);
+UI_API float GetTextResolutionScale();
+UI_API float SetTextResolutionScale(float ntrs);
+UI_API float MultiplyTextResolutionScale(float ntrs);
 
-float GetTextWidth(Font* font, int size, StringView text);
+UI_API float GetTextWidth(Font* font, int size, StringView text);
 // ongoing measurement
-void TextMeasureBegin(Font* font, int size);
-void TextMeasureEnd();
-void TextMeasureReset();
-float TextMeasureAddChar(uint32_t ch);
+UI_API void TextMeasureBegin(Font* font, int size);
+UI_API void TextMeasureEnd();
+UI_API void TextMeasureReset();
+UI_API float TextMeasureAddChar(uint32_t ch);
 
 enum class TextHAlign
 {
@@ -56,7 +56,7 @@ enum class TextBaseline
 	Bottom,
 };
 
-struct CachedFontRef
+struct UI_API CachedFontRef
 {
 	mutable Font* _cachedFont = nullptr;
 	mutable std::string _cacheKeyNameOrFamily;

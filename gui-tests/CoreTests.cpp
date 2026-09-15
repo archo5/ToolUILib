@@ -719,7 +719,6 @@ void Test_RawMouseEvents()
 }
 
 
-namespace ui { double hqtime(); }
 struct BalancedEventHandlingTest : ui::FillerElement, ui::AnimationRequester
 {
 	bool slowMouseMove = false;

@@ -17,7 +17,7 @@ namespace ui {
 
 extern LogCategory LOG_UISYS;
 
-struct UIObjectDirtyStack
+struct UI_API UIObjectDirtyStack
 {
 	UIObjectDirtyStack(uint32_t f) : flag(f) {}
 	bool ContainsAny() const { return stack.NotEmpty(); }
@@ -42,7 +42,7 @@ struct UIObjectDirtyStack
 	uint32_t flag;
 };
 
-struct UIObjectPendingDeactivationSet
+struct UI_API UIObjectPendingDeactivationSet
 {
 	Array<UIObject*> _data;
 
@@ -89,7 +89,7 @@ struct UIObjectPendingDeactivationSet
 template <class T>
 using NotBuildable = std::enable_if_t<!std::is_base_of<Buildable, T>::value>;
 
-struct UIContainer
+struct UI_API UIContainer
 {
 	void Free();
 
@@ -185,7 +185,7 @@ struct UIContainer
 
 
 namespace _ {
-extern UIContainer* g_curContainer; // do not use directly, this is for optimization purposes only
+UI_API extern UIContainer* g_curContainer; // do not use directly, this is for optimization purposes only
 } // _
 
 void Pop();
@@ -239,12 +239,12 @@ inline void Add(Buildable& o)
 {
 	_::g_curContainer->Add(&o);
 }
-TextElement& NewText(StringView s);
-TextElement& NewTextVA(const char* fmt, va_list args);
-TextElement& NewTextf(const char* fmt, ...);
-TextElement& Text(StringView s);
-TextElement& TextVA(const char* fmt, va_list args);
-TextElement& Textf(const char* fmt, ...);
+UI_API TextElement& NewText(StringView s);
+UI_API TextElement& NewTextVA(const char* fmt, va_list args);
+UI_API TextElement& NewTextf(const char* fmt, ...);
+UI_API TextElement& Text(StringView s);
+UI_API TextElement& TextVA(const char* fmt, va_list args);
+UI_API TextElement& Textf(const char* fmt, ...);
 
 template <class T, class = typename NotBuildable<T>> inline T& MakeWithText(StringView text)
 {
@@ -263,10 +263,10 @@ template <class T, class = typename NotBuildable<T>> inline T& MakeWithTextf(con
 	return ret;
 }
 
-bool LastIsNew();
+UI_API bool LastIsNew();
 
-void RebuildCurrent();
-Buildable* GetCurrentBuildable();
+UI_API void RebuildCurrent();
+UI_API Buildable* GetCurrentBuildable();
 #define UI_BUILD_ALLOC(...) new (::ui::GetCurrentBuildable()->NewT<__VA_ARGS__>()) __VA_ARGS__
 template <class F> void BuildDefer(F&& f) { GetCurrentBuildable()->Defer(Move(f)); }
 template <class MD, class F> void BuildMulticastDelegateAdd(MD& md, F&& f)
@@ -303,7 +303,7 @@ public:
 	std::function<void()> buildFunc;
 };
 
-struct Overlays
+struct UI_API Overlays
 {
 	void Register(OverlayElement* oe);
 	void Unregister(OverlayElement* oe);
@@ -316,7 +316,7 @@ struct Overlays
 };
 
 struct InlineFrame;
-struct FrameContents
+struct UI_API FrameContents
 {
 	FrameContents();
 	~FrameContents();
@@ -329,7 +329,7 @@ struct FrameContents
 	WeakPtr<InlineFrame> owningFrame = nullptr;
 };
 
-struct InlineFrame : Buildable
+struct UI_API InlineFrame : Buildable
 {
 	FrameContents* _frameContents = nullptr;
 	bool _ownsContents = false;
