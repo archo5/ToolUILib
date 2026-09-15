@@ -2496,18 +2496,35 @@ void dumpallocinfo()
 }
 
 
-namespace ui { void RegisterPainters(); }
-struct GlobalResources
+namespace ui {
+
+void RegisterPainters();
+
+
+GlobalAppInit::GlobalAppInit()
 {
-	GlobalResources()
-	{
-		ui::RegisterPainters();
-		InitializeWin32();
-	}
-	~GlobalResources()
-	{
-	}
-};
+	auto argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
+	static ui::Array<std::string> args;
+	static ui::Array<char*> argp;
+	args.Reserve(argc);
+	argp.Reserve(argc);
+	for (int i = 0; i < argc; i++)
+		args.Append(ui::WCHARtoUTF8(argvw[i]));
+	for (int i = 0; i < argc; i++)
+		argp.Append(const_cast<char*>(args[i].c_str()));
+	LocalFree(argvw);
+	argv = argp.Data();
+
+	ui::RegisterPainters();
+	InitializeWin32();
+}
+
+GlobalAppInit::~GlobalAppInit()
+{
+	dumpallocinfo();
+}
+
+} // ui
 
 
 #if UI_BUILD_TESTS
@@ -2518,44 +2535,5 @@ int main(int argc, char* argv[])
 {
 	ui::TestStorage::Get().Run();
 	puts("Tests finished!");
-}
-#else
-int uimain(int argc, char* argv[]);
-void IncludeContainerTests();
-
-int RealMain()
-{
-	UI_DEFER(dumpallocinfo());
-
-	int argc = 0;
-	auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	ui::Array<std::string> args;
-	ui::Array<char*> argp;
-	args.Reserve(argc);
-	argp.Reserve(argc);
-	for (int i = 0; i < argc; i++)
-		args.Append(ui::WCHARtoUTF8(argv[i]));
-	for (int i = 0; i < argc; i++)
-		argp.Append(const_cast<char*>(args[i].c_str()));
-	LocalFree(argv);
-
-	GlobalResources grsrc;
-
-	return uimain(argc, argp.data());
-}
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-	return RealMain();
-}
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
-{
-	return RealMain();
-}
-
-int main(int argc, char* argv[])
-{
-	return RealMain();
 }
 #endif

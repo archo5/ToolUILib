@@ -179,6 +179,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\gui-main\gui-main.vcxproj">
+      <Project>{f6b76955-0079-4db9-886f-6aa92dec7c77}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib-src\gui.vcxproj">
       <Project>{e98c0101-91a1-491a-8aea-5a6ceb47fc36}</Project>
     </ProjectReference>

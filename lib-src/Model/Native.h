@@ -409,4 +409,14 @@ private:
 };
 
 
+struct GlobalAppInit
+{
+	int argc;
+	char** argv;
+
+	GlobalAppInit();
+	~GlobalAppInit();
+};
+
+
 } // ui

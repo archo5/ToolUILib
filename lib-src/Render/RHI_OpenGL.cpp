@@ -14,6 +14,8 @@
 #include <Windows.h>
 #include <gl/GL.h>
 
+#pragma comment(linker, "OpenGL32.lib")
+
 
 namespace ui {
 namespace gfx {
