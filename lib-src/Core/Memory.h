@@ -10,7 +10,7 @@
 namespace ui {
 
 template <class T>
-struct UI_API ArrayView
+struct ArrayView
 {
 	const T* _data;
 	size_t _size;

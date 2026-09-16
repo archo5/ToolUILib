@@ -219,7 +219,7 @@ template <class E> inline bool OnFieldEnumString(IObjectIterator& oi, const Fiel
 
 
 
-struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
+struct UI_API IObjectIteratorMinTypeSerializeBase : IObjectIterator
 {
 	bool OnFieldS8(const FieldInfo& FI, i8& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp), true; }
 	bool OnFieldU8(const FieldInfo& FI, u8& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp), true; }
@@ -250,7 +250,7 @@ struct IObjectIteratorMinTypeSerializeBase : IObjectIterator
 
 
 
-struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
+struct UI_API IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 {
 	bool OnFieldS8(const FieldInfo& FI, i8& val) override { i64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldS64(FI, tmp) ? val = static_cast<i8>(tmp), true : false; }
 	bool OnFieldU8(const FieldInfo& FI, u8& val) override { u64 tmp = val; return static_cast<IObjectIterator*>(this)->OnFieldU64(FI, tmp) ? val = static_cast<u8>(tmp), true : false; }
@@ -281,7 +281,7 @@ struct IObjectIteratorMinTypeUnserializeBase : IObjectIterator
 
 
 
-struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
+struct UI_API IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 {
 	virtual void OnFieldAsString(const FieldInfo& FI, const char* str) = 0;
 
@@ -314,7 +314,7 @@ struct IObjectStringWriterIteratorBase : IObjectIteratorMinTypeSerializeBase
 
 
 
-struct IObjectStringReaderIteratorBase : IObjectIteratorMinTypeUnserializeBase
+struct UI_API IObjectStringReaderIteratorBase : IObjectIteratorMinTypeUnserializeBase
 {
 	virtual Optional<std::string> GetFieldString(const FieldInfo& FI) = 0;
 

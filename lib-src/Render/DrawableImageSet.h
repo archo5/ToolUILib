@@ -26,11 +26,11 @@ enum class ImageSetSizeMode : uint8_t
 	NearestNoScale,
 };
 
-ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type);
-void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode);
-void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode);
+UI_API ImageSetSizeMode GetDefaultImageSetSizeMode(ImageSetType type);
+UI_API void SetDefaultImageSetSizeMode(ImageSetType type, ImageSetSizeMode sizeMode);
+UI_API void SetDefaultImageSetSizeModeAll(ImageSetSizeMode sizeMode);
 
-struct ImageSet : RefCountedST
+struct UI_API ImageSet : RefCountedST
 {
 	struct BitmapImageEntry : RefCountedST
 	{
@@ -102,8 +102,8 @@ struct ImageSet : RefCountedST
 };
 using ImageSetHandle = RCHandle<ImageSet>;
 
-ImageSet* ImageSetCacheRead(StringView key);
-void ImageSetCacheWrite(ImageSet* set, StringView key);
+UI_API ImageSet* ImageSetCacheRead(StringView key);
+UI_API void ImageSetCacheWrite(ImageSet* set, StringView key);
 
 } // draw
 } // ui

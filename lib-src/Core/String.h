@@ -325,7 +325,7 @@ inline std::string Format(const char* fmt, ...)
 	return ret;
 }
 
-struct UTF8Iterator
+struct UI_API UTF8Iterator
 {
 	static constexpr const uint32_t END = UINT32_MAX;
 	static constexpr const uint32_t SAFE_ERROR_VALUE = UINT32_MAX - 1;

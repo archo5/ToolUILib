@@ -650,7 +650,7 @@ struct UI_API Buildable : WrapperElement
 };
 
 
-struct Modifier
+struct UI_API Modifier
 {
 	virtual void OnBeforeControl() const {}
 	virtual void OnAfterControl() const {}
@@ -674,7 +674,7 @@ inline UIObject& operator + (UIObject& o, const Modifier& m)
 	return o;
 }
 
-struct AddEventHandler : Modifier
+struct UI_API AddEventHandler : Modifier
 {
 	std::function<void(Event&)> _evfn;
 	EventType _type = EventType::Any;
@@ -687,7 +687,7 @@ struct AddEventHandler : Modifier
 	void Apply(UIObject* obj) const override { if (_evfn) obj->HandleEvent(_tgt, _type, _early) = Move(_evfn); }
 };
 
-struct modAddTooltip : Modifier
+struct UI_API modAddTooltip : Modifier
 {
 	ui::Tooltip::BuildFunc _evfn;
 
@@ -696,7 +696,7 @@ struct modAddTooltip : Modifier
 	void Apply(UIObject* obj) const override;
 };
 
-struct MakeDraggable : AddEventHandler
+struct UI_API MakeDraggable : AddEventHandler
 {
 	MakeDraggable() : AddEventHandler({}) {}
 	MakeDraggable(std::function<void(Event&)>&& fn) : AddEventHandler(EventType::DragStart, Move(fn)) {}
@@ -710,7 +710,7 @@ struct MakeDraggable : AddEventHandler
 
 namespace imm {
 // utilities for immediate mode controls
-struct imCtrlInfo
+struct UI_API imCtrlInfo
 {
 	bool edited;
 	UIObject* root;

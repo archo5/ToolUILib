@@ -10,7 +10,7 @@
 namespace ui {
 
 // TODO move Grid
-struct GridAxisSettings
+struct UI_API GridAxisSettings
 {
 	float baseUnit = 1; // 0 disables the grid
 	float minPixelDist = 10;
@@ -24,7 +24,7 @@ struct GridAxisSettings
 	void Draw(AABB2f viewport, AABB2f winRect, bool vertical);
 };
 
-struct GridSettings
+struct UI_API GridSettings
 {
 	GridAxisSettings x;
 	GridAxisSettings y;
@@ -42,7 +42,7 @@ struct CurveEditorSettings
 	float tangentLineThickness = 1;
 };
 
-struct CurveEditorInput
+struct UI_API CurveEditorInput
 {
 	AABB2f viewport;
 	AABB2f winRect;
@@ -99,7 +99,7 @@ struct CurveEditorState
 	Vec2f dragCursorStart;
 };
 
-struct ICurveView
+struct UI_API ICurveView
 {
 	static Range<u32> ExpandForCurves(Range<u32> src, u32 max);
 
@@ -172,13 +172,13 @@ struct ICurveView
 };
 
 
-struct CurveEditorUI : CurveEditorState
+struct UI_API CurveEditorUI : CurveEditorState
 {
 	bool OnEvent(const CurveEditorInput& input, ICurveView* curves, Event& e);
 	void Render(const CurveEditorInput& input, ICurveView* curves);
 };
 
-struct CurveEditorElement : FrameElement
+struct UI_API CurveEditorElement : FrameElement
 {
 	CurveEditorUI _ui;
 	ViewportEditorUI _vped;
@@ -195,7 +195,7 @@ struct CurveEditorElement : FrameElement
 };
 
 
-struct Curve_RTEditButton : FrameElement
+struct UI_API Curve_RTEditButton : FrameElement
 {
 	struct Curve_RTEditorWindow* _rtWindow = nullptr;
 
@@ -234,7 +234,7 @@ struct Curve_RTEditButton : FrameElement
 
 namespace imm {
 
-imCtrlInfoT<Curve_RTEditButton> imEditCurveRT(ICurveView* curveView);
+UI_API imCtrlInfoT<Curve_RTEditButton> imEditCurveRT(ICurveView* curveView);
 
 } // imm
 

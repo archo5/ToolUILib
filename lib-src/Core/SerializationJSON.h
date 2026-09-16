@@ -11,7 +11,7 @@ struct json_array_element_s;
 
 namespace ui {
 
-struct JSONLinearWriter
+struct UI_API JSONLinearWriter
 {
 	struct CompactScope
 	{
@@ -88,7 +88,7 @@ enum JSONParseFlags
 	JPF_AllowAll = JPF_AllowSimplifiedJson | JPF_AllowJson5,
 };
 
-struct JSONLinearReader
+struct UI_API JSONLinearReader
 {
 	using Entry = json_value_s;
 	struct StackElement
@@ -123,7 +123,7 @@ struct JSONLinearReader
 	void EndEntry();
 };
 
-struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
+struct UI_API JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSerializeBase
 {
 	unsigned GetFlags() const override { return OI_TYPE_Serializer | OITF_KeyMapped; }
 
@@ -142,7 +142,7 @@ struct JSONSerializerObjectIterator : JSONLinearWriter, IObjectIteratorMinTypeSe
 	bool OnFieldBytes(const FieldInfo& FI, const IBufferRW& brw) override;
 };
 
-struct JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinTypeUnserializeBase
+struct UI_API JSONUnserializerObjectIterator : JSONLinearReader, IObjectIteratorMinTypeUnserializeBase
 {
 	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped; }
 

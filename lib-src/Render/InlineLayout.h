@@ -21,7 +21,7 @@ enum class IL_VAlign : u8
 	Bottom,
 };
 
-struct InlineLayout
+struct UI_API InlineLayout
 {
 	// moved together as much as possible (but split if doesn't fit in a line)
 	struct Piece

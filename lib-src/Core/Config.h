@@ -27,7 +27,7 @@ struct TweakableSet
 #define UI_CFG_TWEAKABLE_SET_DECLARE(name) ::ui::cfg::TweakableSet& name();
 #define UI_CFG_TWEAKABLE_SET_DEFINE(name) ::ui::cfg::TweakableSet& name() { static ::ui::cfg::TweakableSet name##_inst; return name##_inst; }
 
-struct ITweakable
+struct UI_API ITweakable
 {
 	StringView _type;
 	StringView _subType;
@@ -82,7 +82,7 @@ struct TweakableFilter
 	}
 };
 
-struct ConfigDB_JSONFile : ITweakableSetDatabase
+struct UI_API ConfigDB_JSONFile : ITweakableSetDatabase
 {
 	TweakableSet* _set;
 
@@ -100,7 +100,7 @@ struct ConfigDB_JSONFile : ITweakableSetDatabase
 	void OnSaveTweakable(ITweakable* T) override;
 };
 
-struct ConfigDB_JSONFiles : ITweakableSetDatabase
+struct UI_API ConfigDB_JSONFiles : ITweakableSetDatabase
 {
 	TweakableSet* _set;
 

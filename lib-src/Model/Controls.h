@@ -9,7 +9,7 @@
 
 namespace ui {
 
-struct FrameStyle
+struct UI_API FrameStyle
 {
 	static constexpr const char* NAME = "FrameStyle";
 
@@ -53,7 +53,7 @@ enum class DefaultFrameStyle
 	Checkerboard,
 };
 
-struct FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
+struct UI_API FrameElement : UIObjectSingleChild, PaddingStyleMixin<FrameElement>
 {
 	// avoiding naming conflicts with elements who might want to reuse FrameElement but add separate styling for the contents
 	FrameStyle frameStyle;
@@ -105,7 +105,7 @@ enum class DefaultIconStyle
 	Stop,
 };
 
-struct IconElement : UIObjectNoChildren
+struct UI_API IconElement : UIObjectNoChildren
 {
 	IconStyle style;
 
@@ -119,19 +119,19 @@ struct IconElement : UIObjectNoChildren
 	IconElement& SetDefaultStyle(DefaultIconStyle style);
 };
 
-struct LabelFrame : FrameElement
+struct UI_API LabelFrame : FrameElement
 {
 	void OnReset() override;
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
 };
 
-struct Header : FrameElement
+struct UI_API Header : FrameElement
 {
 	void OnReset() override;
 };
 
-struct Button : FrameElement
+struct UI_API Button : FrameElement
 {
 	void OnReset() override;
 
@@ -141,21 +141,21 @@ struct Button : FrameElement
 };
 
 
-struct StateButtonBase : WrapperElement
+struct UI_API StateButtonBase : WrapperElement
 {
 	void OnReset() override;
 
 	virtual uint8_t GetState() const = 0;
 };
 
-struct StateToggleBase : StateButtonBase
+struct UI_API StateToggleBase : StateButtonBase
 {
 	void OnEvent(Event& e) override;
 
 	virtual bool OnActivate() = 0;
 };
 
-struct StateToggle : StateToggleBase
+struct UI_API StateToggle : StateToggleBase
 {
 	uint8_t _state = 0;
 	uint8_t _maxNumStates = 0;
@@ -261,44 +261,44 @@ struct RadioButtonT : StateToggleBase
 	}
 };
 
-struct StateToggleIconBase : IconElement
+struct UI_API StateToggleIconBase : IconElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct StateToggleFrameBase : FrameElement
+struct UI_API StateToggleFrameBase : FrameElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct CheckboxIcon : StateToggleIconBase
+struct UI_API CheckboxIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct RadioButtonIcon : StateToggleIconBase
+struct UI_API RadioButtonIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct TreeExpandIcon : StateToggleIconBase
+struct UI_API TreeExpandIcon : StateToggleIconBase
 {
 	void OnReset() override;
 };
 
-struct StateButtonSkin : StateToggleFrameBase
+struct UI_API StateButtonSkin : StateToggleFrameBase
 {
 	void OnReset() override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
 
-struct ListBoxFrame : FrameElement
+struct UI_API ListBoxFrame : FrameElement
 {
 	void OnReset() override;
 };
 
-struct Selectable : FrameElement
+struct UI_API Selectable : FrameElement
 {
 	void OnReset() override;
 	Selectable& Init(bool selected)
@@ -321,7 +321,7 @@ struct ProgressBarStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct ProgressBar : UIObjectSingleChild
+struct UI_API ProgressBar : UIObjectSingleChild
 {
 	ProgressBarStyle style;
 	float progress = 0.5f;
@@ -336,7 +336,7 @@ struct ProgressBar : UIObjectSingleChild
 };
 
 
-struct PropertyList : WrapperElement // TODO should this be a stack layout?
+struct UI_API PropertyList : WrapperElement // TODO should this be a stack layout?
 {
 	void OnReset() override;
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
@@ -348,7 +348,7 @@ struct PropertyList : WrapperElement // TODO should this be a stack layout?
 	float _calcSplitX = 0;
 };
 
-struct LabeledProperty : WrapperElement
+struct UI_API LabeledProperty : WrapperElement
 {
 	enum ContentLayoutType
 	{
@@ -452,7 +452,7 @@ struct ScrollbarV
 	bool OnEvent(const ScrollbarData& info, Event& e);
 };
 
-struct ScrollArea : WrapperElement
+struct UI_API ScrollArea : WrapperElement
 {
 	Size2f estContentSize = {};
 	float yoff = 0;
@@ -465,7 +465,7 @@ struct ScrollArea : WrapperElement
 };
 
 
-struct BackgroundBlocker : FillerElement
+struct UI_API BackgroundBlocker : FillerElement
 {
 	Color4b _color = Color4b::Zero();
 
@@ -483,7 +483,7 @@ struct BackgroundBlocker : FillerElement
 };
 
 
-struct DropdownMenuPlacement : IPlacement
+struct UI_API DropdownMenuPlacement : IPlacement
 {
 	float defaultXAlign = 0;
 
@@ -491,7 +491,7 @@ struct DropdownMenuPlacement : IPlacement
 };
 
 
-struct DropdownMenu : Buildable
+struct UI_API DropdownMenu : Buildable
 {
 	bool enableTooltip = true;
 
@@ -515,7 +515,7 @@ struct DropdownMenu : Buildable
 };
 
 
-struct OptionList
+struct UI_API OptionList
 {
 	typedef void ElementFunc(const void* ptr, uintptr_t id);
 
@@ -525,7 +525,7 @@ struct OptionList
 	virtual void BuildEmptyButtonContents();
 };
 
-struct CStrOptionList : OptionList
+struct UI_API CStrOptionList : OptionList
 {
 	struct CountInfo
 	{
@@ -539,7 +539,7 @@ struct CStrOptionList : OptionList
 	virtual CountInfo GetCount() const = 0;
 };
 
-struct ZeroSepCStrOptionList : CStrOptionList
+struct UI_API ZeroSepCStrOptionList : CStrOptionList
 {
 	const char* str = nullptr;
 	size_t size = SIZE_MAX;
@@ -555,7 +555,7 @@ struct ZeroSepCStrOptionList : CStrOptionList
 
 struct NullTerminated {};
 
-struct CStrArrayOptionList : CStrOptionList
+struct UI_API CStrArrayOptionList : CStrOptionList
 {
 	const char* const* arr = nullptr;
 	size_t size = SIZE_MAX;
@@ -571,7 +571,7 @@ struct CStrArrayOptionList : CStrOptionList
 	void BuildEmptyButtonContents() override;
 };
 
-struct StringArrayOptionList : CStrOptionList
+struct UI_API StringArrayOptionList : CStrOptionList
 {
 	Array<std::string> options;
 	Optional<std::string> emptyStr;
@@ -582,7 +582,7 @@ struct StringArrayOptionList : CStrOptionList
 };
 
 
-struct DropdownMenuList : DropdownMenu
+struct UI_API DropdownMenuList : DropdownMenu
 {
 	OptionList* _options = nullptr;
 	uintptr_t _selected = UINTPTR_MAX;
@@ -602,7 +602,7 @@ struct DropdownMenuList : DropdownMenu
 
 namespace imm {
 
-bool imProcessEventFlags(UIObject& uiobj);
+UI_API bool imProcessEventFlags(UIObject& uiobj);
 
 template <class MT, class T> imCtrlInfoT<MT> imDropdownMenuListCustom(T& val, OptionList* ol)
 {
@@ -685,7 +685,7 @@ struct OverlayInfoPlacement : IPlacement
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 };
 
-struct DefaultOverlayBuilder : Buildable
+struct UI_API DefaultOverlayBuilder : Buildable
 {
 	bool drawTooltip = true;
 	bool drawDragDrop = true;

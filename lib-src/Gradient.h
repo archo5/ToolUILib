@@ -7,7 +7,7 @@
 namespace ui {
 
 
-struct Gradient
+struct UI_API Gradient
 {
 	enum class ColorSpace : u8
 	{

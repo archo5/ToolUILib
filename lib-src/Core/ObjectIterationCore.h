@@ -71,7 +71,7 @@ struct ArrayFieldState
 	size_t maybeSize = 0;
 };
 
-struct IObjectIterator
+struct UI_API IObjectIterator
 {
 	virtual unsigned GetFlags() const = 0;
 

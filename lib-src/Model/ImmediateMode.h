@@ -10,9 +10,9 @@ namespace ui {
 namespace imm {
 
 
-bool imGetEnabled();
-bool imSetEnabled(bool newValue);
-bool imProcessEventFlags(UIObject& uiobj);
+UI_API bool imGetEnabled();
+UI_API bool imSetEnabled(bool newValue);
+UI_API bool imProcessEventFlags(UIObject& uiobj);
 
 struct imEnable
 {
@@ -57,43 +57,43 @@ struct imMinWidth
 	~imMinWidth() { Pop(); }
 };
 
-LabelFrame& StdText(StringView text);
+UI_API LabelFrame& StdText(StringView text);
 
 struct IStateToggleSkin
 {
 	virtual void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const = 0;
 };
-struct CheckboxStateToggleSkin : IStateToggleSkin
+struct UI_API CheckboxStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
-struct RadioButtonStateToggleSkin : IStateToggleSkin
+struct UI_API RadioButtonStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
-struct ButtonStateToggleSkin : IStateToggleSkin
+struct UI_API ButtonStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
-struct TreeStateToggleSkin : IStateToggleSkin
+struct UI_API TreeStateToggleSkin : IStateToggleSkin
 {
 	void BuildContents(StateToggleBase& parent, StringView text, uint8_t state) const override;
 };
 
 
-imCtrlInfoT<Button> imButton(UIObject& obj);
-imCtrlInfoT<Button> imButton(StringView text);
-imCtrlInfoT<Button> imButton(DefaultIconStyle icon);
+UI_API imCtrlInfoT<Button> imButton(UIObject& obj);
+UI_API imCtrlInfoT<Button> imButton(StringView text);
+UI_API imCtrlInfoT<Button> imButton(DefaultIconStyle icon);
 
-imCtrlInfoT<Selectable> imSelectable(UIObject& obj);
-imCtrlInfoT<Selectable> imSelectable(StringView text);
+UI_API imCtrlInfoT<Selectable> imSelectable(UIObject& obj);
+UI_API imCtrlInfoT<Selectable> imSelectable(StringView text);
 
-imCtrlInfoT<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_API imCtrlInfoT<StateToggle> imCheckboxExtRaw(u8 state, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 UI_FORCEINLINE imCtrlInfoT<StateToggle> imCheckboxRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	return imCheckboxExtRaw(val ? 1 : 0, text, skin);
 }
-imCtrlInfoT<StateToggle> imEditBool(bool& val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
+UI_API imCtrlInfoT<StateToggle> imEditBool(bool& val, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin());
 template <class T> imCtrlInfoT<StateToggle> imEditFlag(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = CheckboxStateToggleSkin())
 {
 	bool all = (val & cur) == cur;
@@ -109,7 +109,7 @@ template <class T> imCtrlInfoT<StateToggle> imEditFlag(T& val, T cur, StringView
 	return ci;
 }
 
-imCtrlInfoT<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
+UI_API imCtrlInfoT<StateToggle> imRadioButtonRaw(bool val, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin());
 template <class T> imCtrlInfoT<StateToggle> imRadioButton(T& val, T cur, StringView text = {}, const IStateToggleSkin& skin = RadioButtonStateToggleSkin())
 {
 	imCtrlInfoT<StateToggle> ci = imRadioButtonRaw(val == cur, text, skin);
@@ -120,37 +120,37 @@ template <class T> imCtrlInfoT<StateToggle> imRadioButton(T& val, T cur, StringV
 	return ci;
 }
 
-struct imCtrlInfoNumberEditor : imCtrlInfo
+struct UI_API imCtrlInfoNumberEditor : imCtrlInfo
 {
 	using imCtrlInfo::imCtrlInfo;
 
 	imCtrlInfoNumberEditor& SetLabel(StringView label);
 };
-imCtrlInfoNumberEditor imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfoNumberEditor imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfoNumberEditor imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfoNumberEditor imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, NumberFormatSettings fmt = {});
-imCtrlInfoNumberEditor imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, NumberFormatSettings fmt = {});
+UI_API imCtrlInfoNumberEditor imEditInt(int& val, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+UI_API imCtrlInfoNumberEditor imEditInt(unsigned& val, const DragConfig& cfg = {}, Range<unsigned> range = All{}, NumberFormatSettings fmt = {});
+UI_API imCtrlInfoNumberEditor imEditInt(int64_t& val, const DragConfig& cfg = {}, Range<int64_t> range = All{}, NumberFormatSettings fmt = {});
+UI_API imCtrlInfoNumberEditor imEditInt(uint64_t& val, const DragConfig& cfg = {}, Range<uint64_t> range = All{}, NumberFormatSettings fmt = {});
+UI_API imCtrlInfoNumberEditor imEditFloat(float& val, const DragConfig& cfg = {}, Range<float> range = All{}, NumberFormatSettings fmt = {});
 
-struct imCtrlInfoTextbox : imCtrlInfo
+struct UI_API imCtrlInfoTextbox : imCtrlInfo
 {
 	using imCtrlInfo::imCtrlInfo;
 
 	imCtrlInfoTextbox& Multiline(bool is = true);
 	imCtrlInfoTextbox& Placeholder(StringView pch);
 };
-imCtrlInfoTextbox imEditString(std::string& text);
-imCtrlInfoTextbox imEditString(const IBufferRW& textRW);
+UI_API imCtrlInfoTextbox imEditString(std::string& text);
+UI_API imCtrlInfoTextbox imEditString(const IBufferRW& textRW);
 
-imCtrlInfo imEditColor(Color4f& val, bool delayed = false);
-imCtrlInfo imEditColor(Color4b& val, bool delayed = false);
+UI_API imCtrlInfo imEditColor(Color4f& val, bool delayed = false);
+UI_API imCtrlInfo imEditColor(Color4b& val, bool delayed = false);
 
-extern const char* axesXY[];
-extern const char* axesXYZ[];
-extern const char* axesXYZW[];
-extern const char* axesRGBA[];
-extern const char* axesMinMax[];
-extern const char* axesWidthHeight[];
+UI_API extern const char* axesXY[];
+UI_API extern const char* axesXYZ[];
+UI_API extern const char* axesXYZW[];
+UI_API extern const char* axesRGBA[];
+UI_API extern const char* axesMinMax[];
+UI_API extern const char* axesWidthHeight[];
 
 typedef imCtrlInfo imLoopCallback(void* data, const char* label);
 
@@ -187,12 +187,12 @@ struct imAxisLoop : imLoop
 	}
 };
 
-bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
-bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
+UI_API bool imEditIntVec(int* val, const imLoop& loop, const DragConfig& dragcfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+UI_API bool imEditFloatVec(float* val, const imLoop& loop, const DragConfig& dragcfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
 
 // length of `val` = length of `axes` (null-terminated)
-bool imEditIntVec(int* val, const char** axes, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
-bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
+UI_API bool imEditIntVec(int* val, const char** axes, const DragConfig& cfg = {}, Range<int> range = All{}, NumberFormatSettings fmt = {});
+UI_API bool imEditFloatVec(float* val, const char** axes, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {});
 
 inline bool imEditVec2f(Vec2f& val, const DragConfig& cfg = {}, Rangef range = All{}, NumberFormatSettings fmt = {})
 {

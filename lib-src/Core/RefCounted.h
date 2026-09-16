@@ -6,14 +6,14 @@
 
 namespace ui {
 
-struct IRefCounted
+struct UI_API IRefCounted
 {
 	virtual i32 GetRefCount() = 0;
 	virtual void AddRef() = 0;
 	virtual void Release() = 0;
 };
 
-class RefCountedST : IRefCounted
+class UI_API RefCountedST : IRefCounted
 {
 	int32_t _refCount = 0;
 
@@ -29,7 +29,7 @@ public:
 	}
 };
 
-class RefCountedMT : IRefCounted
+class UI_API RefCountedMT : IRefCounted
 {
 	AtomicInt32 _refCount = 0;
 

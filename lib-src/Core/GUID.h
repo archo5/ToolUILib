@@ -8,7 +8,7 @@
 
 namespace ui {
 
-struct GUID
+struct UI_API GUID
 {
 	union
 	{

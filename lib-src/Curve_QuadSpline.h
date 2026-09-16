@@ -8,10 +8,10 @@
 namespace ui {
 
 
-float invqslerp(float p0, float p1, float p2, float v);
-float qslerp(float a, float b, float c, float q);
-size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, float x);
-void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t& p1);
+UI_API float invqslerp(float p0, float p1, float p2, float v);
+UI_API float qslerp(float a, float b, float c, float q);
+UI_API size_t FindCurveSection(const float* timevalues, size_t stride, size_t count, float x);
+UI_API void CurveSectionToPoints(size_t cs, size_t numcs, bool loop, size_t& p0, size_t& p1);
 
 struct QLIFSplinePoint
 {
@@ -27,13 +27,13 @@ struct QLIFSplineTransitionPoint
 	float qs = 0.5f; // interpolates between min/max velocities given the position above
 };
 
-bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f& outcmp);
-Vec2f QLIFSpline_TransitionPointFromPosition(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f pos);
-QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp);
-float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing);
-void QLIFSpline_RootVertRange(Rangef& outrange, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb);
+UI_API bool QLIFSpline_FindCurveMidpoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f& outcmp);
+UI_API Vec2f QLIFSpline_TransitionPointFromPosition(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, Vec2f pos);
+UI_API QLIFSplinePoint QLIFSpline_InstantiateTransitionPoint(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, const QLIFSplineTransitionPoint& xp);
+UI_API float QLIFSpline_Interpolate(const QLIFSplinePoint& pa, const QLIFSplinePoint& pb, float sx, bool accelsmoothing);
+UI_API void QLIFSpline_RootVertRange(Rangef& outrange, const QLIFSplinePoint& pa, const QLIFSplinePoint& pb);
 
-struct Curve_QuadSpline
+struct UI_API Curve_QuadSpline
 {
 	Rangef timeRange = { 0, 1 };
 	struct Point : QLIFSplinePoint, QLIFSplineTransitionPoint

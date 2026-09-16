@@ -24,7 +24,7 @@ enum class Presence : uint8_t
 	None,
 };
 
-struct IPlacement
+struct UI_API IPlacement
 {
 	virtual void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const = 0;
 	bool fullScreenRelative = false;
@@ -79,7 +79,7 @@ enum class CoordTypeUnit
 	Fraction,
 };
 
-struct Coord
+struct UI_API Coord
 {
 	float value;
 	CoordTypeUnit unit;
@@ -109,7 +109,7 @@ enum PaintInfoItemState
 	PS_Checked = 1 << 4,
 };
 
-struct PaintInfo
+struct UI_API PaintInfo
 {
 	UIRect rect;
 	const UIObject* obj;
@@ -127,7 +127,7 @@ struct PaintInfo
 	bool IsFocused() const { return (state & PS_Focused) != 0; }
 };
 
-struct ContentPaintAdvice
+struct UI_API ContentPaintAdvice
 {
 	bool _hasTextColor = false;
 	Color4b _textColor;
@@ -149,7 +149,7 @@ struct ContentPaintAdvice
 	}
 };
 
-struct UIPaintContext
+struct UI_API UIPaintContext
 {
 	Color4b textColor;
 
@@ -169,13 +169,13 @@ struct UIPaintContext
 };
 
 
-struct IPainter : RefCountedST
+struct UI_API IPainter : RefCountedST
 {
 	virtual ContentPaintAdvice Paint(const PaintInfo&) = 0;
 };
 using PainterHandle = RCHandle<IPainter>;
 
-struct EmptyPainter : IPainter
+struct UI_API EmptyPainter : IPainter
 {
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static EmptyPainter* Get();
@@ -183,7 +183,7 @@ private:
 	EmptyPainter();
 };
 
-struct CheckerboardPainter : IPainter
+struct UI_API CheckerboardPainter : IPainter
 {
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 	static CheckerboardPainter* Get();
@@ -191,7 +191,7 @@ private:
 	CheckerboardPainter();
 };
 
-struct LayerPainter : IPainter
+struct UI_API LayerPainter : IPainter
 {
 	Array<PainterHandle> layers;
 
@@ -199,7 +199,7 @@ struct LayerPainter : IPainter
 	static RCHandle<LayerPainter> Create();
 };
 
-struct ConditionalPainter : IPainter
+struct UI_API ConditionalPainter : IPainter
 {
 	PainterHandle painter;
 	uint8_t condition = 0;
@@ -207,7 +207,7 @@ struct ConditionalPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
-struct SelectFirstPainter : IPainter
+struct UI_API SelectFirstPainter : IPainter
 {
 	struct Item
 	{
@@ -222,7 +222,7 @@ struct SelectFirstPainter : IPainter
 };
 
 // only modifies the text style, can refer to another painter as a passthrough mod
-struct TextStyleModPainter : IPainter
+struct UI_API TextStyleModPainter : IPainter
 {
 	PainterHandle painter;
 	Color4b textColor;
@@ -233,7 +233,7 @@ struct TextStyleModPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
-struct PointAnchoredPlacementRectModPainter : IPainter
+struct UI_API PointAnchoredPlacementRectModPainter : IPainter
 {
 	PainterHandle painter;
 	Vec2f anchor = { 0.5f, 0.5f };
@@ -245,7 +245,7 @@ struct PointAnchoredPlacementRectModPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
-struct ColorFillPainter : IPainter
+struct UI_API ColorFillPainter : IPainter
 {
 	Color4b color;
 	Color4b borderColor = Color4b::Zero();
@@ -260,7 +260,7 @@ struct ColorFillPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
-struct ImageSetPainter : IPainter
+struct UI_API ImageSetPainter : IPainter
 {
 	draw::ImageSetHandle imageSet;
 	Color4b color;
@@ -272,7 +272,7 @@ struct ImageSetPainter : IPainter
 	ContentPaintAdvice Paint(const PaintInfo&) override;
 };
 
-struct BoxShadowPainter : IPainter
+struct UI_API BoxShadowPainter : IPainter
 {
 	struct CacheValue
 	{
@@ -305,7 +305,7 @@ template <class F> inline PainterHandle CreateFunctionPainter(F&& f) { return ne
 
 struct ThemeData; // Theme.h
 
-struct FontSettings
+struct UI_API FontSettings
 {
 	static constexpr const char* NAME = "FontSettings";
 

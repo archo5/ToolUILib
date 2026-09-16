@@ -71,7 +71,7 @@ inline float AngleMoveTowards(float cur, float tgt, float maxdist)
 }
 
 
-template <class T> struct UI_API Vec2
+template <class T> struct Vec2
 {
 	T x, y;
 
@@ -161,7 +161,7 @@ UI_FORCEINLINE Vec2f Vec2fLerp(Vec2f a, Vec2f b, float q) { return a * (1 - q) +
 inline Vec2f Vec2fFromAngle(float angle) { angle *= DEG2RAD; return { cosf(angle), sinf(angle) }; }
 inline Vec2f Vec2fFromAngle2(float angle) { angle *= DEG2RAD; return { sinf(angle), cosf(angle) }; }
 
-template <class T> struct UI_API Size2
+template <class T> struct Size2
 {
 	T x, y;
 
@@ -199,7 +199,7 @@ using Size2i = Size2<int>;
 
 struct All {};
 
-template <class T> struct UI_API Range
+template <class T> struct Range
 {
 	using Limits = std::numeric_limits<T>;
 
@@ -290,7 +290,7 @@ using Rangei = Range<int>;
 using Rangef = Range<float>;
 
 
-template<class T> struct UI_API AABB2
+template<class T> struct AABB2
 {
 	T x0, y0, x1, y1;
 

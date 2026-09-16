@@ -75,7 +75,7 @@ struct UI_API LivenessTokenOwner : LivenessToken
 	::ui::LivenessToken& GetLivenessToken() { return _livenessToken.GetOrCreate(); }
 
 template <class T>
-struct UI_API WeakPtr
+struct WeakPtr
 {
 	LivenessToken _token;
 	T* _obj = nullptr;

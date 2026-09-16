@@ -388,7 +388,7 @@ struct ISequenceElementParentCheck
 	virtual bool SEPC_IsThisContainedBy(void* itemptr) = 0;
 };
 
-struct SequenceEditor : Buildable
+struct UI_API SequenceEditor : Buildable
 {
 	void Build() override;
 	void OnEvent(Event& e) override;

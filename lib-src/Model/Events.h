@@ -16,7 +16,7 @@ struct NativeWindowBase;
 struct Buildable;
 struct Overlays;
 struct DataCategoryTag;
-extern MulticastDelegate<NativeWindowBase*, int, int> OnMouseMoved;
+UI_API extern MulticastDelegate<NativeWindowBase*, int, int> OnMouseMoved;
 
 struct UIObject;
 struct UIContainer;
@@ -66,7 +66,7 @@ enum class EventType
 
 	User = 256,
 };
-const char* EventTypeToBaseString(EventType type);
+UI_API const char* EventTypeToBaseString(EventType type);
 inline EventType UserEvent(int id)
 {
 	return EventType(int(EventType::User) + id);
@@ -138,9 +138,9 @@ enum class DefaultCursor
 
 using MouseCoord = float;
 
-bool ModKeyCheck(u8 pressed, u8 expected);
+UI_API bool ModKeyCheck(u8 pressed, u8 expected);
 
-struct Event
+struct UI_API Event
 {
 	EventSystem* context;
 	UIObject* target;
@@ -296,7 +296,7 @@ template <class T, class TVH = SubUIValueHelper<T>> struct SubUI
 	T _pressed = NoValue;
 };
 
-struct DragDropData
+struct UI_API DragDropData
 {
 	DragDropData() {}
 	DragDropData(const std::string& t) : type(t) {}
@@ -322,8 +322,8 @@ struct DragDropFiles : DragDropData
 	Array<std::string> paths;
 };
 
-extern MulticastDelegate<> OnDragDropDataChanged;
-struct DragDrop
+UI_API extern MulticastDelegate<> OnDragDropDataChanged;
+struct UI_API DragDrop
 {
 	static void SetData(DragDropData* data);
 	static DragDropData* GetData(const char* type = nullptr);
@@ -355,8 +355,8 @@ struct OwnerID
 	}
 };
 
-extern MulticastDelegate<> OnTooltipChanged;
-struct Tooltip
+UI_API extern MulticastDelegate<> OnTooltipChanged;
+struct UI_API Tooltip
 {
 	using BuildFunc = std::function<void()>;
 
@@ -365,7 +365,7 @@ struct Tooltip
 	static void Build(NativeWindowBase* curWindow);
 };
 
-struct ContextMenu
+struct UI_API ContextMenu
 {
 	static struct MenuItemCollection& Get();
 };

@@ -6,7 +6,7 @@
 namespace ui {
 
 
-struct StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+struct UI_API StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	float paddingBetweenElements = 0;
 	StackLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
@@ -22,7 +22,7 @@ struct StackLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 };
 
 
-struct StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+struct UI_API StackTopDownLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	float paddingBetweenElements = 0;
 	StackTopDownLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }
@@ -46,7 +46,7 @@ enum class StackingDirection : u8
 	BottomUp,
 };
 
-struct StackLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+struct UI_API StackLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	StackingDirection direction = StackingDirection::TopDown;
 	StackLayoutElement& SetDirection(StackingDirection d) { direction = d; return *this; }
@@ -78,7 +78,7 @@ struct StackExpandLTRLayoutElement_Slot : ListLayoutSlotBase
 };
 } // _
 
-struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayoutElement_Slot>
+struct UI_API StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayoutElement_Slot>
 {
 	static Slot _slotTemplate;
 	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
@@ -99,7 +99,7 @@ struct StackExpandLTRLayoutElement : ListLayoutElementBase<_::StackExpandLTRLayo
 
 
 // TODO is this still valuable?
-struct WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+struct UI_API WrapperLTRLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	float paddingBetweenElements = 0;
 	WrapperLTRLayoutElement& SetPaddingBetweenElements(float p) { paddingBetweenElements = p; return *this; }

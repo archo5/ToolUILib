@@ -11,7 +11,7 @@
 
 namespace ui {
 
-struct DATOLinearWriter
+struct UI_API DATOLinearWriter
 {
 	struct Entry
 	{
@@ -66,7 +66,7 @@ struct DATOLinearWriter
 	StringView GetData();
 };
 
-struct DATOLinearReader
+struct UI_API DATOLinearReader
 {
 	struct StackElement
 	{
@@ -115,7 +115,7 @@ struct DATOLinearReader
 };
 
 
-struct DATOSerializer : DATOLinearWriter, IObjectIterator
+struct UI_API DATOSerializer : DATOLinearWriter, IObjectIterator
 {
 	using DATOLinearWriter::DATOLinearWriter;
 
@@ -146,7 +146,7 @@ struct DATOSerializer : DATOLinearWriter, IObjectIterator
 	bool OnFieldManyF32(const FieldInfo& FI, u32 count, float* arr) override;
 };
 
-struct DATOUnserializer : DATOLinearReader, IObjectIterator
+struct UI_API DATOUnserializer : DATOLinearReader, IObjectIterator
 {
 	unsigned GetFlags() const override { return OI_TYPE_Unserializer | OITF_KeyMapped | OITF_Binary; }
 

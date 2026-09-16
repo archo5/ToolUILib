@@ -188,7 +188,7 @@ namespace _ {
 UI_API extern UIContainer* g_curContainer; // do not use directly, this is for optimization purposes only
 } // _
 
-void Pop();
+UI_API void Pop();
 template <class T> inline T& New()
 {
 	return *_::g_curContainer->_Alloc<T>();

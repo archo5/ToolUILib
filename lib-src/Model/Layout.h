@@ -14,7 +14,7 @@ struct EdgeSliceLayoutElement_Slot : ListLayoutSlotBase
 };
 } // _
 
-struct EdgeSliceLayoutElement : ListLayoutElementBase<_::EdgeSliceLayoutElement_Slot>
+struct UI_API EdgeSliceLayoutElement : ListLayoutElementBase<_::EdgeSliceLayoutElement_Slot>
 {
 	static Slot _slotTemplate;
 	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
@@ -26,7 +26,7 @@ struct EdgeSliceLayoutElement : ListLayoutElementBase<_::EdgeSliceLayoutElement_
 };
 
 
-struct LayerLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
+struct UI_API LayerLayoutElement : ListLayoutElementBase<ListLayoutSlotBase>
 {
 	EstSizeRange CalcEstimatedWidth(const Size2f& containerSize, EstSizeType type) override;
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type) override;
@@ -42,7 +42,7 @@ struct PlacementLayoutElement_Slot : ListLayoutSlotBase
 };
 } // _
 
-struct PlacementLayoutElement : ListLayoutElementBase<_::PlacementLayoutElement_Slot>
+struct UI_API PlacementLayoutElement : ListLayoutElementBase<_::PlacementLayoutElement_Slot>
 {
 	static Slot _slotTemplate;
 	static TempEditable<Slot> GetSlotTemplate() { return { &_slotTemplate }; }
@@ -53,7 +53,7 @@ struct PlacementLayoutElement : ListLayoutElementBase<_::PlacementLayoutElement_
 	void OnLayout(const UIRect& rect, LayoutInfo info) override;
 };
 
-struct PointAnchoredPlacement : IPlacement
+struct UI_API PointAnchoredPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 
@@ -68,7 +68,7 @@ struct PointAnchoredPlacement : IPlacement
 	Point2f bias = { 0, 0 };
 };
 
-struct RectAnchoredPlacement : IPlacement
+struct UI_API RectAnchoredPlacement : IPlacement
 {
 	void OnApplyPlacement(UIObject* curObj, UIRect& outRect) const override;
 

@@ -19,17 +19,17 @@ class Menu;
 
 
 namespace platform {
-uint32_t GetTimeMs();
-uint32_t GetDoubleClickTime();
-Point2i GetCursorScreenPos();
-void SetCursorScreenPos(Point2i p);
-void RequestRawMouseInput();
-Color4b GetColorAtScreenPos(Point2i pos);
-bool IsKeyPressed(u8 physicalKey);
-std::string GetPhysicalKeyName(u8 physicalKey);
-void ShowErrorMessage(StringView title, StringView text);
-void BrowseToFile(StringView path);
-void OpenURL(StringView url);
+UI_API uint32_t GetTimeMs();
+UI_API uint32_t GetDoubleClickTime();
+UI_API Point2i GetCursorScreenPos();
+UI_API void SetCursorScreenPos(Point2i p);
+UI_API void RequestRawMouseInput();
+UI_API Color4b GetColorAtScreenPos(Point2i pos);
+UI_API bool IsKeyPressed(u8 physicalKey);
+UI_API std::string GetPhysicalKeyName(u8 physicalKey);
+UI_API void ShowErrorMessage(StringView title, StringView text);
+UI_API void BrowseToFile(StringView path);
+UI_API void OpenURL(StringView url);
 
 enum class FileIconType
 {
@@ -37,11 +37,11 @@ enum class FileIconType
 	GenericFile,
 	GenericDir,
 };
-draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconType::FromFile);
+UI_API draw::ImageSetHandle LoadFileIcon(StringView path, FileIconType type = FileIconType::FromFile);
 } // platform
 
 
-struct Clipboard
+struct UI_API Clipboard
 {
 	static bool HasText();
 	static std::string GetText();
@@ -50,7 +50,7 @@ struct Clipboard
 };
 
 
-struct FileSelectionWindow
+struct UI_API FileSelectionWindow
 {
 	struct Filter
 	{
@@ -76,7 +76,7 @@ struct FileSelectionWindow
 };
 
 
-extern MulticastDelegate<NativeWindowBase*> OnWindowResized;
+UI_API extern MulticastDelegate<NativeWindowBase*> OnWindowResized;
 struct WindowKeyEvent
 {
 	NativeWindowBase* window;
@@ -87,7 +87,7 @@ struct WindowKeyEvent
 	bool isRepeated;
 	u16 numRepeats;
 };
-extern MulticastDelegate<const WindowKeyEvent&> OnWindowKeyEvent;
+UI_API extern MulticastDelegate<const WindowKeyEvent&> OnWindowKeyEvent;
 
 
 enum class WindowState : uint8_t

@@ -10,7 +10,7 @@
 namespace ui {
 
 
-template <class T> struct UI_API Vec3
+template <class T> struct Vec3
 {
 	T x, y, z;
 
@@ -102,7 +102,7 @@ inline Vec3f Vec3Lerp(const Vec3f& a, const Vec3f& b, const Vec3f& s) { return {
 
 
 template <class T>
-struct UI_API Vec4
+struct Vec4
 {
 	T x, y, z, w;
 

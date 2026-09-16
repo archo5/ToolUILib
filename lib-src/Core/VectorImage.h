@@ -20,6 +20,6 @@ struct IVectorImage : IRefCounted
 };
 using VectorImageHandle = RCHandle<IVectorImage>;
 
-VectorImageHandle VectorImageLoadFromFile(StringView path);
+UI_API VectorImageHandle VectorImageLoadFromFile(StringView path);
 
 } // ui

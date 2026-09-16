@@ -8,6 +8,7 @@
 #include "../Core/Logging.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
+#define STBRP_STATIC
 #include "../../ThirdParty/stb_rect_pack.h"
 
 #define STB_IMAGE_IMPLEMENTATION

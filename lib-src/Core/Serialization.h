@@ -36,7 +36,7 @@ struct SettingsSerializer
 	}
 };
 
-struct NamedTextSerializeWriter
+struct UI_API NamedTextSerializeWriter
 {
 	void WriteString(const char* key, StringView value);
 	void WriteBool(const char* key, bool value);
@@ -58,7 +58,7 @@ struct NamedTextSerializeWriter
 	int _indent = 0;
 };
 
-struct NamedTextSerializeReader
+struct UI_API NamedTextSerializeReader
 {
 	struct Entry
 	{
@@ -117,9 +117,9 @@ struct NamedTextSerializeReader
 	Array<EntryRange> stack;
 };
 
-std::string Base16Encode(const void* src, size_t size);
-std::string Base16Decode(StringView src, bool* valid = nullptr);
-std::string Base64Encode(const void* src, size_t size, const char* endChars = "+/", bool pad = true);
-std::string Base64Decode(StringView src, const char* endChars = "+/", bool needPadding = false, bool* valid = nullptr);
+UI_API std::string Base16Encode(const void* src, size_t size);
+UI_API std::string Base16Decode(StringView src, bool* valid = nullptr);
+UI_API std::string Base64Encode(const void* src, size_t size, const char* endChars = "+/", bool pad = true);
+UI_API std::string Base64Decode(StringView src, const char* endChars = "+/", bool needPadding = false, bool* valid = nullptr);
 
 } // ui

@@ -22,7 +22,7 @@ enum class QuatEditMode : u8
 	EulerZYX,
 };
 
-bool imEditQuat(
+UI_API bool imEditQuat(
 	Quat& val,
 	QuatEditMode mode = QuatEditMode::Raw,
 	const DragConfig& cfg = {},

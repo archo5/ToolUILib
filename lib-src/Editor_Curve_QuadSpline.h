@@ -9,7 +9,7 @@
 namespace ui {
 
 
-struct Curve_QuadSpline_View : ICurveView
+struct UI_API Curve_QuadSpline_View : ICurveView
 {
 	Curve_QuadSpline* curve = nullptr;
 

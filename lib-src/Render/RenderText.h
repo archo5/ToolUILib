@@ -15,12 +15,12 @@ struct ImageQuad
 	IImage* image;
 };
 
-AABB2f TextLineGenerateQuadsUntransformed(
+UI_API AABB2f TextLineGenerateQuadsUntransformed(
 	Array<ImageQuad>& retQuads,
 	Font* font,
 	float size,
 	StringView text);
-AABB2f TextLineGenerateQuads(
+UI_API AABB2f TextLineGenerateQuads(
 	Array<ImageQuad>& retQuads,
 	Font* font,
 	float size,
@@ -29,7 +29,7 @@ AABB2f TextLineGenerateQuads(
 	StringView text,
 	TextHAlign align = TextHAlign::Left,
 	TextBaseline baseline = TextBaseline::Default);
-AABB2f TextMultilineGenerateQuadsUntransformed(
+UI_API AABB2f TextMultilineGenerateQuadsUntransformed(
 	Array<ImageQuad>& retQuads,
 	Font* font,
 	float size,
@@ -38,10 +38,10 @@ AABB2f TextMultilineGenerateQuadsUntransformed(
 	StringView text,
 	TextHAlign halign = TextHAlign::Left);
 
-void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, const AABB2f* clipBox = nullptr);
-void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, const AABB2f* clipBox = nullptr);
+UI_API void ImageQuadsCol(ArrayView<ImageQuad> quads, Color4b color, const AABB2f* clipBox = nullptr);
+UI_API void ImageQuadsColOffset(ArrayView<ImageQuad> quads, Vec2f offset, Color4b color, const AABB2f* clipBox = nullptr);
 
-AABB2f TextLine(
+UI_API AABB2f TextLine(
 	Font* font,
 	float size,
 	float x,
@@ -55,7 +55,7 @@ inline AABB2f TextLine(Font* font, int size, float x, float y, StringView text, 
 {
 	return TextLine(font, float(size), x, y, text, color, TextHAlign::Left, baseline, clipBox);
 }
-AABB2f TextMultiline(
+UI_API AABB2f TextMultiline(
 	Font* font,
 	float size,
 	AABB2f rect,

@@ -14,9 +14,9 @@ enum class CPUArchitecture : u8
 	ARM32,
 	ARM64,
 };
-const char* CPUArchitectureToString(CPUArchitecture arch);
+UI_API const char* CPUArchitectureToString(CPUArchitecture arch);
 
-struct CPUInfo
+struct UI_API CPUInfo
 {
 	char vendor[13];
 	char name[49];
@@ -24,7 +24,7 @@ struct CPUInfo
 	void Read();
 };
 
-struct SystemInfo
+struct UI_API SystemInfo
 {
 	CPUArchitecture osArch;
 	CPUArchitecture appArch;

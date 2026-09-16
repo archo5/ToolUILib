@@ -30,7 +30,7 @@ enum class ImageLayoutMode
 	Fill,
 };
 
-struct PreferredSizeLayout
+struct UI_API PreferredSizeLayout
 {
 	ImageLayoutMode _layoutMode = ImageLayoutMode::PreferredExact;
 
@@ -40,7 +40,7 @@ struct PreferredSizeLayout
 	EstSizeRange CalcEstimatedHeight(const Size2f& containerSize, EstSizeType type);
 };
 
-struct ColorBlock : FrameElement, PreferredSizeLayout
+struct UI_API ColorBlock : FrameElement, PreferredSizeLayout
 {
 	Color4b _color = Color4b::Black();
 	draw::ImageSetHandle _bgImageSet;
@@ -65,7 +65,7 @@ struct ColorBlock : FrameElement, PreferredSizeLayout
 	ColorBlock& SetColor(Color4b col) { _color = col; return *this; }
 };
 
-struct ColorInspectBlock : ColorBlock
+struct UI_API ColorInspectBlock : ColorBlock
 {
 	// TODO styled
 	Coord alphaBarHeight = 2;
@@ -74,9 +74,9 @@ struct ColorInspectBlock : ColorBlock
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, Vec2f placement = { 0.5f, 0.5f });
+UI_API void DrawImage(UIRect rect, draw::IImage* img, ScaleMode sm = ScaleMode::Fit, Vec2f placement = { 0.5f, 0.5f });
 
-struct ImageElement : UIObjectSingleChild
+struct UI_API ImageElement : UIObjectSingleChild
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;
@@ -104,7 +104,7 @@ struct ImageElement : UIObjectSingleChild
 	draw::ImageSetHandle _bgImageSet;
 };
 
-struct CursorStyle
+struct UI_API CursorStyle
 {
 	static constexpr const char* NAME = "CursorStyle";
 
@@ -115,7 +115,7 @@ struct CursorStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct HueSatPicker : FrameElement, PreferredSizeLayout
+struct UI_API HueSatPicker : FrameElement, PreferredSizeLayout
 {
 	Size2f size = { 256, 256 };
 
@@ -168,7 +168,7 @@ enum ColorComponent
 	CC_Val = 2,
 };
 
-struct ColorCompPicker2DSettings
+struct UI_API ColorCompPicker2DSettings
 {
 	ColorCompPicker2DSettings() : _mode(CM_HSV), _ccx(CC_Hue), _ccy(CC_Sat), _invx(false), _invy(true), _baseColor(1, 0, 0) {}
 	ColorCompPicker2DSettings(ColorMode cm, ColorComponent ccx, ColorComponent ccy, Color4f baseColor = Color4f(1, 0, 0)) :
@@ -191,7 +191,7 @@ struct ColorCompPicker2DSettings
 	Color4f _baseColor;
 };
 
-struct ColorDragDropData : DragDropData
+struct UI_API ColorDragDropData : DragDropData
 {
 	static constexpr const char* NAME = "color";
 	ColorDragDropData(const Color4f& c) : DragDropData(NAME), color(c) {}
@@ -199,7 +199,7 @@ struct ColorDragDropData : DragDropData
 	Color4f color;
 };
 
-struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
+struct UI_API ColorCompPicker2D : FrameElement, PreferredSizeLayout
 {
 	Size2f size = { 256, 256 };
 
@@ -244,7 +244,7 @@ struct ColorCompPicker2D : FrameElement, PreferredSizeLayout
 	draw::ImageHandle _bgImage;
 };
 
-struct MultiFormatColor
+struct UI_API MultiFormatColor
 {
 	MultiFormatColor() {}
 	MultiFormatColor(const Color4f& c);
@@ -274,7 +274,7 @@ struct MultiFormatColor
 	char hex[7] = "FFFFFF";
 };
 
-struct ColorPicker : Buildable
+struct UI_API ColorPicker : Buildable
 {
 	void OnReset() override;
 	void Build() override;
@@ -299,7 +299,7 @@ struct ColorPicker : Buildable
 	MultiFormatColor _color;
 };
 
-struct ColorPickerWindow : NativeDialogWindow
+struct UI_API ColorPickerWindow : NativeDialogWindow
 {
 	ColorPickerWindow();
 
@@ -309,13 +309,13 @@ struct ColorPickerWindow : NativeDialogWindow
 	MultiFormatColor _color;
 };
 
-struct IColorEdit : Buildable
+struct UI_API IColorEdit : Buildable
 {
 	virtual const MultiFormatColor& GetColor() const = 0;
 	virtual void SetColorAny(const MultiFormatColor& c) = 0;
 };
 
-struct ColorEdit : IColorEdit
+struct UI_API ColorEdit : IColorEdit
 {
 	MultiFormatColor _color;
 
@@ -327,7 +327,7 @@ struct ColorEdit : IColorEdit
 	ColorEdit& SetColor(const MultiFormatColor& c);
 };
 
-struct ColorEditRT : IColorEdit
+struct UI_API ColorEditRT : IColorEdit
 {
 	MultiFormatColor _color;
 	struct ColorPickerWindowRT* _rtWindow = nullptr;
@@ -341,7 +341,7 @@ struct ColorEditRT : IColorEdit
 	ColorEditRT& SetColor(const MultiFormatColor& c);
 };
 
-struct View2D : FillerElement
+struct UI_API View2D : FillerElement
 {
 	std::function<void(UIRect)> onPaint;
 
@@ -355,7 +355,7 @@ struct View2D : FillerElement
 	void OnPaint(const UIPaintContext& ctx) override;
 };
 
-struct View3D : FillerElement
+struct UI_API View3D : FillerElement
 {
 	std::function<void(UIRect)> onRender;
 	std::function<void(UIRect)> onPaintOverlay;
