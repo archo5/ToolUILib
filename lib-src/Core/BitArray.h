@@ -11,7 +11,7 @@ namespace ui {
 struct IObjectIterator;
 struct FieldInfo;
 
-struct BitArray
+struct UI_API BitArray
 {
 	using Word = uintptr_t;
 	static const constexpr size_t WORD_BYTES = sizeof(Word);

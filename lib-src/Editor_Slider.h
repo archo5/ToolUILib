@@ -16,7 +16,7 @@ struct FloatLimits
 	double step = 0;
 };
 
-struct SliderStyle
+struct UI_API SliderStyle
 {
 	static constexpr const char* NAME = "SliderStyle";
 
@@ -33,7 +33,7 @@ struct SliderStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct Slider : UIObjectNoChildren
+struct UI_API Slider : UIObjectNoChildren
 {
 	SliderStyle style;
 

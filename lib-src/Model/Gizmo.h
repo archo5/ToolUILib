@@ -239,7 +239,7 @@ enum class GizmoEventResult
 // use !! to check if any event occurred
 UI_FORCEINLINE bool operator !(GizmoEventResult res) { return res == GizmoEventResult::None; }
 
-struct Gizmo
+struct UI_API Gizmo
 {
 	GizmoSettings settings;
 

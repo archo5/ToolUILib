@@ -7,8 +7,8 @@ namespace ui {
 
 struct DynamicLib;
 
-DynamicLib* DynamicLibLoad(StringView path);
-void DynamicLibUnload(DynamicLib* lib);
-void* DynamicLibGetSymbol(DynamicLib* lib, const char* name);
+UI_API DynamicLib* DynamicLibLoad(StringView path);
+UI_API void DynamicLibUnload(DynamicLib* lib);
+UI_API void* DynamicLibGetSymbol(DynamicLib* lib, const char* name);
 
 } // ui

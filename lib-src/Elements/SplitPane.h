@@ -7,7 +7,7 @@
 
 namespace ui {
 
-struct SplitPane : UIObject
+struct UI_API SplitPane : UIObject
 {
 	void OnReset() override;
 	void OnPaint(const UIPaintContext& ctx) override;

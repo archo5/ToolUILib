@@ -15,7 +15,7 @@ namespace ui {
 
 class Menu;
 
-struct MenuItem
+struct UI_API MenuItem
 {
 	MenuItem() {}
 	MenuItem(StringView text, StringView shortcut = {}, bool disabled = false, bool checked = false, ArrayView<MenuItem> submenu = {});
@@ -59,7 +59,7 @@ struct MenuItem
 
 
 // text can be separated with "/", submenus are not supported
-struct MenuItemCollection
+struct UI_API MenuItemCollection
 {
 	static constexpr const char* SEPARATOR = "/";
 	static constexpr int SEPARATOR_THRESHOLD = 100;
@@ -138,7 +138,7 @@ struct MenuItemCollection
 };
 
 
-class Menu
+class UI_API Menu
 {
 public:
 	struct Item
@@ -165,7 +165,7 @@ private:
 	void* impl;
 };
 
-struct TopMenu
+struct UI_API TopMenu
 {
 	Array<MenuItem> _items;
 	Menu _menu;

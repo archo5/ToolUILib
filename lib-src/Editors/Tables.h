@@ -7,7 +7,7 @@
 
 namespace ui {
 
-struct MessageLogDataSource
+struct UI_API MessageLogDataSource
 {
 	FontSettings messageFont;
 	Color4b messageColor = Color4b::White();
@@ -22,7 +22,7 @@ struct MessageLogDataSource
 	virtual void OnDrawMessage(UIObject* context, size_t msg, UIRect area);
 };
 
-struct MessageLogView : FillerElement
+struct UI_API MessageLogView : FillerElement
 {
 	void OnPaint(const UIPaintContext& ctx) override;
 	void OnEvent(Event& e) override;
@@ -42,7 +42,7 @@ struct MessageLogView : FillerElement
 };
 
 
-struct TableStyle
+struct UI_API TableStyle
 {
 	static constexpr const char* NAME = "TableStyle";
 
@@ -59,7 +59,7 @@ struct TableStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct GenericGridDataSource
+struct UI_API GenericGridDataSource
 {
 	struct TreeElementRef
 	{
@@ -89,7 +89,7 @@ struct GenericGridDataSource
 	virtual void ToggleOpenState(uintptr_t id) = 0;
 };
 
-struct TableDataSource : GenericGridDataSource
+struct UI_API TableDataSource : GenericGridDataSource
 {
 	virtual size_t GetNumRows() = 0;
 	virtual std::string GetRowName(size_t row) = 0;
@@ -101,7 +101,7 @@ struct TableDataSource : GenericGridDataSource
 	void ToggleOpenState(uintptr_t id) override {}
 };
 
-struct TreeDataSource : GenericGridDataSource
+struct UI_API TreeDataSource : GenericGridDataSource
 {
 	static constexpr uintptr_t ROOT = uintptr_t(-1);
 
@@ -116,7 +116,7 @@ struct TreeDataSource : GenericGridDataSource
 	Optional<bool> GetOpenState(uintptr_t id) override;
 };
 
-struct TableView : FrameElement
+struct UI_API TableView : FrameElement
 {
 	TableStyle style;
 	IconStyle expandButtonStyle;

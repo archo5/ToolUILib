@@ -38,7 +38,7 @@ struct ITree
 
 
 struct TreeEditor;
-struct TreeDragData : DragDropData
+struct UI_API TreeDragData : DragDropData
 {
 	static constexpr const char* NAME = "TreeDragData";
 
@@ -48,7 +48,7 @@ struct TreeDragData : DragDropData
 	Array<TreePath> paths;
 };
 
-struct TreeItemElement : Selectable
+struct UI_API TreeItemElement : Selectable
 {
 	void OnReset() override;
 	void OnEvent(Event& e) override;
@@ -60,7 +60,7 @@ struct TreeItemElement : Selectable
 	TreePath path;
 };
 
-struct TreeEditor : Buildable
+struct UI_API TreeEditor : Buildable
 {
 	void Build() override;
 	void OnEvent(Event& e) override;

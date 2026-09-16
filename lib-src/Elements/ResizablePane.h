@@ -7,7 +7,7 @@
 
 namespace ui {
 
-struct ResizablePane : UIObjectSingleChild
+struct UI_API ResizablePane : UIObjectSingleChild
 {
 	SeparatorLineStyle vertSepStyle; // for horizontal resizing
 	SeparatorLineStyle horSepStyle; // for vertical resizing

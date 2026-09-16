@@ -6,7 +6,7 @@
 namespace ui {
 
 
-struct PaddingElement : UIObjectSingleChild
+struct UI_API PaddingElement : UIObjectSingleChild
 {
 	UIRect padding;
 

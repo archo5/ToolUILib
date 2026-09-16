@@ -7,12 +7,12 @@
 
 namespace ui {
 
-struct IMathExprErrorOutput
+struct UI_API IMathExprErrorOutput
 {
 	virtual void OnError(int pos, const char* error) = 0;
 };
 
-struct IMathExprDataSource
+struct UI_API IMathExprDataSource
 {
 	using ID = u16;
 	static constexpr ID NOT_FOUND = UINT16_MAX;
@@ -26,7 +26,7 @@ struct IMathExprDataSource
 	virtual float CallFunction(ID id, const float* args, int numArgs) { return 0; }
 };
 
-struct MathExpr
+struct UI_API MathExpr
 {
 	void* _data;
 

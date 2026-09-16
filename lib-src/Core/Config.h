@@ -9,7 +9,7 @@
 namespace ui {
 namespace cfg {
 
-extern LogCategory LOG_TWEAKABLE;
+UI_API extern LogCategory LOG_TWEAKABLE;
 
 struct ITweakable;
 

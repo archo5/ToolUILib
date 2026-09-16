@@ -26,7 +26,7 @@ struct CombinedCoord
 	}
 };
 
-struct ViewportEditorStyle
+struct UI_API ViewportEditorStyle
 {
 	static constexpr const char* NAME = "ViewportEditorStyle";
 
@@ -67,7 +67,7 @@ struct ViewportEditorControlConfig
 	u8 middleMouseBtnFlags = MMB_Enable;
 };
 
-struct ViewportEditorSettings
+struct UI_API ViewportEditorSettings
 {
 	ViewportEditorStyle styleH;
 	ViewportEditorStyle styleV;
@@ -92,7 +92,7 @@ struct ViewportEditorInputs
 	bool showV = true;
 };
 
-struct ViewportEditorUI
+struct UI_API ViewportEditorUI
 {
 	enum Elements : u8
 	{

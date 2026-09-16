@@ -5,7 +5,7 @@
 
 namespace ui {
 
-struct TabbedPanelStyle
+struct UI_API TabbedPanelStyle
 {
 	static constexpr const char* NAME = "TabbedPanelStyle";
 
@@ -25,7 +25,7 @@ struct TabbedPanelStyle
 };
 
 struct TabbedPanel;
-struct DragDropTab : DragDropData
+struct UI_API DragDropTab : DragDropData
 {
 	static constexpr const char* NAME = "tabbed_panel_tab";
 
@@ -36,7 +36,7 @@ struct DragDropTab : DragDropData
 	bool ShouldBuild() override { return false; }
 };
 
-struct TabbedPanel : UIObjectSingleChild
+struct UI_API TabbedPanel : UIObjectSingleChild
 {
 	struct Tab
 	{

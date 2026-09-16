@@ -6,7 +6,7 @@
 
 namespace ui {
 
-struct VExpandContainer : WrapperElement, private AnimationRequester
+struct UI_API VExpandContainer : WrapperElement, private AnimationRequester
 {
 	bool _firstFrame = true;
 	bool _open = true;

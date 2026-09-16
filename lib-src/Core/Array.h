@@ -214,8 +214,11 @@ struct Array
 		return SIZE_MAX;
 	}
 
+	template <class = void>
 	UI_FORCEINLINE bool Contains(const T& what, size_t from = 0) const { return ContainsT(what, from); }
+	template <class = void>
 	UI_FORCEINLINE size_t IndexOf(const T& what, size_t from = 0) const { return IndexOfT(what, from); }
+	template <class = void>
 	UI_FORCEINLINE size_t LastIndexOf(const T& what) const { return LastIndexOfT(what); }
 
 	// simple modification
@@ -458,6 +461,7 @@ struct Array
 	{
 		InsertManyAt(at, il.begin(), il.size());
 	}
+	template <class = void>
 	void RemoveAllOf(const T& v)
 	{
 		size_t diff = 0;
@@ -476,6 +480,7 @@ struct Array
 	}
 
 	// combined shorthands
+	template <class = void>
 	bool RemoveFirstOf(const T& v)
 	{
 		size_t i = IndexOf(v);
@@ -483,6 +488,7 @@ struct Array
 			RemoveAt(i);
 		return i != SIZE_MAX;
 	}
+	template <class = void>
 	bool UnorderedRemoveFirstOf(const T& v)
 	{
 		size_t i = IndexOf(v);
@@ -524,6 +530,7 @@ struct Array
 		return afs.exists;
 	}
 
+	template <class = void>
 	UI_FORCEINLINE bool OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
 	{
 		// TODO force-inline the lambda

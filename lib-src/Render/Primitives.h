@@ -38,7 +38,7 @@ struct PlaneSettings
 		return numFacesX * numFacesY * 6;
 	}
 };
-void GeneratePlane(const PlaneSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
+UI_API void GeneratePlane(const PlaneSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
 struct BoxSettings
@@ -58,7 +58,7 @@ struct BoxSettings
 		return (numFacesX * numFacesY + numFacesY * numFacesZ + numFacesZ * numFacesX) * 2 * 6;
 	}
 };
-void GenerateBox(const BoxSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
+UI_API void GenerateBox(const BoxSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
 struct ConeSettings
@@ -74,7 +74,7 @@ struct ConeSettings
 		return (numFacesH * 2 - 2) * 3;
 	}
 };
-void GenerateCone(const ConeSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
+UI_API void GenerateCone(const ConeSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
 struct UVSphereSettings
@@ -97,7 +97,7 @@ struct UVSphereSettings
 		return 3 * (numFacesH * 2 * (numFacesV - 1));
 	}
 };
-void GenerateUVSphere(const UVSphereSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
+UI_API void GenerateUVSphere(const UVSphereSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
 struct BoxSphereSettings
@@ -114,7 +114,7 @@ struct BoxSphereSettings
 		return numFacesQ * numFacesQ * 6 * 4 * 6;
 	}
 };
-void GenerateBoxSphere(const BoxSphereSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
+UI_API void GenerateBoxSphere(const BoxSphereSettings& S, Vertex_PF3CB4* outVerts, uint16_t* outIndices);
 
 
 struct UVCapsuleSettings
@@ -138,7 +138,7 @@ struct UVCapsuleSettings
 		return 3 * (numFacesH * 2 * (2 + 2 * (numHalfFacesV - 1)));
 	}
 };
-void GenerateUVCapsule(const UVCapsuleSettings& S, Vertex_PF3CB4* outVerts, u16* outIndices, Vec3f p0, Vec3f p1, Vec3f tangent, float radius);
+UI_API void GenerateUVCapsule(const UVCapsuleSettings& S, Vertex_PF3CB4* outVerts, u16* outIndices, Vec3f p0, Vec3f p1, Vec3f tangent, float radius);
 
 
 } // prim

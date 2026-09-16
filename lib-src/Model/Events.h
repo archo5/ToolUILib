@@ -332,7 +332,7 @@ struct UI_API DragDrop
 	static T* GetData() { return static_cast<T*>(GetData(T::NAME)); }
 };
 
-extern DataCategoryTag DCT_UIObject[1];
+UI_API extern DataCategoryTag DCT_UIObject[1];
 struct OwnerID
 {
 	DataCategoryTag* category;

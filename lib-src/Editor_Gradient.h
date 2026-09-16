@@ -8,7 +8,7 @@
 namespace ui {
 
 
-struct GradientSliderStyle
+struct UI_API GradientSliderStyle
 {
 	static constexpr const char* NAME = "GradientSliderStyle";
 
@@ -24,7 +24,7 @@ struct GradientSliderStyle
 	void Serialize(ThemeData& td, IObjectIterator& oi);
 };
 
-struct GradientSlider : UIObjectNoChildren
+struct UI_API GradientSlider : UIObjectNoChildren
 {
 	GradientSliderStyle style;
 	Gradient* gradient = nullptr;
@@ -61,7 +61,7 @@ struct GradientSlider : UIObjectNoChildren
 };
 
 
-struct GradientEditor : Buildable
+struct UI_API GradientEditor : Buildable
 {
 	Gradient* gradient = nullptr;
 
