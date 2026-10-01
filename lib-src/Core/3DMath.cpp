@@ -219,6 +219,51 @@ Quat Quat::RotateEulerAnglesZYX(const Vec3f& angles)
 }
 
 
+Quat QuatSLerp(const Quat& a, const Quat& b1, float s)
+{
+	float dot = QuatDot(a, b1);
+	Quat b = dot >= 0 ? b1 : -b1;
+	float fl, fr;
+	float absdot = fabsf(dot);
+	if (absdot < 0.99999f)
+	{
+		float a = acosf(absdot);
+		float rsa = 1.0f / sinf(a);
+		fl = sinf((1 - s) * a) * rsa;
+		fr = sinf(s * a) * rsa;
+	}
+	else
+	{
+		fl = 1 - s;
+		fr = s;
+	}
+	return Quat
+	{
+		a.x * fl + b.x * fr,
+		a.y * fl + b.y * fr,
+		a.z * fl + b.z * fr,
+		a.w * fl + b.w * fr,
+	};
+}
+
+Quat QuatScale(const Quat& b1, float scale)
+{
+	float dot = b1.w;
+	Quat b = dot >= 0 ? b1 : -b1;
+	float hang = acosf(min(fabsf(dot), 1.f));
+	float shang = sinf(hang);
+	if (shang == 0)
+		return {};
+
+	hang *= scale;
+
+	float c = cosf(hang);
+	float s = sinf(hang);
+	float ss = s / shang;
+	return { ss * b.x, ss * b.y, ss * b.z, c };
+}
+
+
 Mat4f Mat4f::Translate(float x, float y, float z)
 {
 	return

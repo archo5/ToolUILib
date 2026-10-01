@@ -209,32 +209,8 @@ inline Quat QuatNLerp(const Quat& a, const Quat& b1, float s)
 	}
 	.Normalized();
 }
-inline Quat QuatSLerp(const Quat& a, const Quat& b1, float s)
-{
-	float dot = QuatDot(a, b1);
-	Quat b = dot >= 0 ? b1 : -b1;
-	float fl, fr;
-	float absdot = fabsf(dot);
-	if (absdot < 0.99999f)
-	{
-		float a = acosf(absdot);
-		float rsa = 1.0f / sinf(a);
-		fl = sinf((1 - s) * a) * rsa;
-		fr = sinf(s * a) * rsa;
-	}
-	else
-	{
-		fl = 1 - s;
-		fr = s;
-	}
-	return Quat
-	{
-		a.x * fl + b.x * fr,
-		a.y * fl + b.y * fr,
-		a.z * fl + b.z * fr,
-		a.w * fl + b.w * fr,
-	};
-}
+UI_API Quat QuatSLerp(const Quat& a, const Quat& b1, float s);
+UI_API Quat QuatScale(const Quat& b1, float scale);
 
 
 struct UI_API Mat4f

@@ -667,6 +667,7 @@ struct RotInterpTest : ui::Buildable
 	enum RotMode
 	{
 		Slerp,
+		Slerp0Unltd,
 		DiffAxisAngleScale,
 		QLIF1,
 		QLIF2,
@@ -681,6 +682,13 @@ struct RotInterpTest : ui::Buildable
 		if (rotmode == Slerp)
 		{
 			return QuatSLerp(q0, q1, erpq);
+		}
+		else if (rotmode == Slerp0Unltd)
+		{
+			if (fmod(hqtime(), 1) < 0.5f)
+				return QuatScale(q1, erpq);
+			else
+				return QuatSLerp({}, q1, erpq);
 		}
 		else if (rotmode == DiffAxisAngleScale)
 		{
@@ -751,12 +759,13 @@ struct RotInterpTest : ui::Buildable
 				{
 					ui::MakeWithText<ui::Header>("Camera");
 					ui::imLabel("FOV"), ui::imEditFloat(fov, {}, { 1.0f, 179.0f });
-					ui::imLabel("Start rotation"), ui::imEditVec3f(rstart);
+					ui::imEnable(rotmode != Slerp0Unltd), ui::imLabel("Start rotation"), ui::imEditVec3f(rstart);
 					ui::imEnable(rotmode == QLIF1 || rotmode == QLIF2), ui::imLabel("Start ang.vel."), ui::imEditVec3f(rstartvel);
 					ui::imLabel("End rotation"), ui::imEditVec3f(rend);
 					ui::imEnable(rotmode == QLIF1 || rotmode == QLIF2), ui::imLabel("End ang.vel."), ui::imEditVec3f(rendvel);
-					ui::imLabel("Interpolation factor"), ui::imEditFloat(erpq, 0.05f, { 0, 1 });
+					ui::imLabel("Interpolation factor"), ui::imEditFloat(erpq, 0.05f, rotmode != Slerp0Unltd ? ui::Rangef(0, 1) : ui::Rangef(-100, 100));
 					ui::imRadioButton(rotmode, Slerp, "Slerp");
+					ui::imRadioButton(rotmode, Slerp0Unltd, "Slerp from 0 [unlimited]");
 					ui::imRadioButton(rotmode, DiffAxisAngleScale, "Diff axis angle scale");
 					ui::imRadioButton(rotmode, QLIF1, "QLIF 1");
 					ui::imRadioButton(rotmode, QLIF2, "QLIF 2");
