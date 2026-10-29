@@ -7,7 +7,7 @@
 
 namespace ui {
 
-struct ImageDataRef
+struct UI_API ImageDataRef
 {
 	u8* pixels = nullptr;
 	u32 width = 0;
