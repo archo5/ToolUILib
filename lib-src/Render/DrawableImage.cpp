@@ -6,13 +6,11 @@
 #include "../Core/FileSystem.h"
 #include "../Core/HashMap.h"
 #include "../Core/Logging.h"
+#include "../Image_Load.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #define STBRP_STATIC
 #include "../../ThirdParty/stb_rect_pack.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "../../ThirdParty/stb_image.h"
 
 
 namespace ui {
@@ -463,16 +461,15 @@ ImageHandle ImageLoadFromFile(StringView path, TexFlags flags)
 		return nullptr; // TODO return default?
 	}
 
-	int w = 0, h = 0, n = 0;
-	auto* imgData = stbi_load_from_memory((const stbi_uc*)frr.data->Data(), frr.data->Size(), &w, &h, &n, 4);
-	if (!imgData)
+	ImageDataRef imgdata;
+	if (!imgdata.LoadFromBytes(frr.data->Data(), frr.data->Size()))
 	{
 		LogError(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: failed to load %s - could not parse file", cacheKey.c_str());
 		return nullptr;
 	}
-	UI_DEFER(stbi_image_free(imgData));
+	UI_DEFER(imgdata.Free());
 
-	auto img = ImageCreateRGBA8(w, h, imgData, flags);
+	auto img = ImageCreateRGBA8(imgdata.width, imgdata.height, imgdata.pixels, flags);
 	if (!img)
 	{
 		LogError(LOG_DRAWABLE_IMAGE, "ImageLoadFromFile: failed to load %s - could not create image", cacheKey.c_str());

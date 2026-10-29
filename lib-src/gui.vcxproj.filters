@@ -217,6 +217,9 @@
     <ClCompile Include="Editor_Gradient.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Image_Load.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Math.h">
@@ -531,6 +534,9 @@
     </ClInclude>
     <ClInclude Include="Editor_Gradient.h">
       <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Image_Load.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

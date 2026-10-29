@@ -276,6 +276,7 @@
     <ClCompile Include="Elements\TabbedPanel.cpp" />
     <ClCompile Include="Elements\Textbox.cpp" />
     <ClCompile Include="Gradient.cpp" />
+    <ClCompile Include="Image_Load.cpp" />
     <ClCompile Include="Layout_PaddingElement.cpp" />
     <ClCompile Include="Layout_Stack.cpp" />
     <ClCompile Include="Model\Animation.cpp" />
@@ -385,6 +386,7 @@
     <ClInclude Include="Elements\Textbox.h" />
     <ClInclude Include="Gradient.h" />
     <ClInclude Include="GUI.h" />
+    <ClInclude Include="Image_Load.h" />
     <ClInclude Include="Layout_ListLayoutElementBase.h" />
     <ClInclude Include="Layout_PaddingElement.h" />
     <ClInclude Include="Layout_Stack.h" />
