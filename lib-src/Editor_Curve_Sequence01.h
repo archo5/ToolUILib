@@ -9,14 +9,24 @@
 namespace ui {
 
 
-struct Curve_Sequence01_View : ICurveView
+struct UI_API Curve_Sequence01_View : ICurveView
 {
 	Curve_Sequence01* curve = nullptr;
+	Rangef vertRange = { 0, 1 };
 
 	Curve_Sequence01_View() {}
 	Curve_Sequence01_View(Curve_Sequence01& c) : curve(&c) {}
 
 	u32 GetFeatures() override { return SliceMidpoints; }
+
+	AABB2f GetPreferredCurveViewport(bool includeTangents, u32 curveid, Range<u32> pointRange) override;
+	void InitViewportEditorInputs(ViewportEditorInputs& vei) override
+	{
+		ICurveView::InitViewportEditorInputs(vei);
+		vei.viewport.y0 = vertRange.min;
+		vei.viewport.y1 = vertRange.max;
+		vei.showV = false;
+	}
 
 	u32 GetCurveCount() override { return 1; }
 	u32 GetPointCount(u32) override { return curve->points.size(); }

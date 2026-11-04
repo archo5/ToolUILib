@@ -114,6 +114,10 @@ struct UI_API ICurveView
 
 	virtual AABB2f GetPreferredViewport(bool includeTangents);
 	virtual AABB2f GetPreferredCurveViewport(bool includeTangents, u32 curveid, Range<u32> pointRange);
+	virtual void InitViewportEditorInputs(ViewportEditorInputs& vei)
+	{
+		vei.fullarea = GetPreferredViewport(true);
+	}
 
 	virtual u32 GetCurveCount() { return 1; }
 	virtual u32 GetPointCount(u32 curveid) = 0;
@@ -189,6 +193,7 @@ struct UI_API CurveEditorElement : FrameElement
 	GridSettings gridSettings;
 	ViewportEditorSettings viewportEditorSettings;
 
+	virtual ViewportEditorInputs MakeViewportInput();
 	void OnReset() override;
 	void OnEvent(Event& e) override;
 	void OnPaint(const UIPaintContext& ctx) override;

@@ -516,6 +516,13 @@ void CurveEditorUI::Render(const CurveEditorInput& input, ICurveView* curves)
 }
 
 
+ViewportEditorInputs CurveEditorElement::MakeViewportInput()
+{
+	ViewportEditorInputs vei = { GetContentRect(), {}, viewport, true };
+	curveView->InitViewportEditorInputs(vei);
+	return vei;
+}
+
 void CurveEditorElement::OnReset()
 {
 	FrameElement::OnReset();
@@ -530,7 +537,7 @@ void CurveEditorElement::OnReset()
 
 void CurveEditorElement::OnEvent(Event& e)
 {
-	if (_vped.OnEvent(e, viewportEditorSettings, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true }))
+	if (_vped.OnEvent(e, viewportEditorSettings, MakeViewportInput()))
 	{
 		Event se(e.context, this, EventType::Scroll);
 		e.context->BubblingEvent(se);
@@ -545,7 +552,7 @@ void CurveEditorElement::OnPaint(const UIPaintContext& ctx)
 
 	gridSettings.Draw(viewport, GetContentRect());
 	_ui.Render({ viewport, GetContentRect(), &settings }, curveView);
-	_vped.Draw(viewportEditorSettings, { GetContentRect(), curveView->GetPreferredViewport(true), viewport, true });
+	_vped.Draw(viewportEditorSettings, MakeViewportInput());
 
 	PaintChildren(ctx, cpa);
 }
@@ -557,6 +564,12 @@ struct CurveProxyEditorElement : FrameElement
 	CurveEditorUI _ui;
 	ViewportEditorUI _vped;
 
+	ViewportEditorInputs MakeViewportInput()
+	{
+		ViewportEditorInputs vei = { GetContentRect(), {}, _editor->viewport, true };
+		_editor->curveView->InitViewportEditorInputs(vei);
+		return vei;
+	}
 	void OnReset() override
 	{
 		FrameElement::OnReset();
@@ -567,7 +580,7 @@ struct CurveProxyEditorElement : FrameElement
 	}
 	void OnEvent(Event& e) override
 	{
-		if (_vped.OnEvent(e, _editor->viewportEditorSettings, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true }))
+		if (_vped.OnEvent(e, _editor->viewportEditorSettings, MakeViewportInput()))
 		{
 			Event se(e.context, this, EventType::Scroll);
 			e.context->BubblingEvent(se);
@@ -581,7 +594,7 @@ struct CurveProxyEditorElement : FrameElement
 
 		_editor->gridSettings.Draw(_editor->viewport, GetContentRect());
 		_ui.Render({ _editor->viewport, GetContentRect(), &_editor->settings }, _editor->curveView);
-		_vped.Draw(_editor->viewportEditorSettings, { GetContentRect(), _editor->curveView->GetPreferredViewport(true), _editor->viewport, true });
+		_vped.Draw(_editor->viewportEditorSettings, MakeViewportInput());
 
 		PaintChildren(ctx, cpa);
 	}
@@ -729,6 +742,15 @@ void Curve_Sequence01::SerializeData(IObjectIterator& oi)
 	OnField(oi, "points", points);
 }
 
+void Curve_Sequence01::OnSerialize(IObjectIterator& oi, const FieldInfo& FI)
+{
+	oi.BeginObject(FI, "Curve_Sequence01");
+
+	SerializeData(oi);
+
+	oi.EndObject();
+}
+
 void Curve_Sequence01::GenSawWaveMiddlePoints(float tweak, const std::function<void(Vec2f)>& outpts)
 {
 	int count = int(floorf(fabsf(tweak)));
@@ -844,10 +866,24 @@ void Curve_Sequence01::AddPoint(Vec2f pos)
 }
 
 
+AABB2f Curve_Sequence01_View::GetPreferredCurveViewport(bool includeTangents, u32, Range<u32> pointRange)
+{
+	AABB2f bbox = AABB2f::Empty();
+	bbox.y0 = vertRange.min;
+	bbox.y1 = vertRange.max;
+	for (u32 pid = pointRange.min; pid < pointRange.max; pid++)
+	{
+		float x = curve->points[pid].posX;
+		bbox.x0 = min(bbox.x0, x);
+		bbox.x1 = max(bbox.x1, x);
+	}
+	return bbox;
+}
+
 void Curve_Sequence01_View::SetPoint(u32, u32 pointid, Vec2f p)
 {
 	float newX = p.x;
-	float newY = clamp(p.y, 0.0f, 1.0f);
+	float newY = vertRange.Clamp(p.y);
 
 	auto& dp = curve->points[pointid];
 	dp.posY = newY;
@@ -958,8 +994,10 @@ void Curve_Sequence01_View::OnEvent(const CurveEditorInput& input, Event& e)
 				cm.NewSection();
 
 				auto& p = curve->points[hp.pointID];
-				cm.AddNext("Set to 0") = [this, &p]() { p.posY = 0; };
-				cm.AddNext("Set to 1") = [this, &p]() { p.posY = 1; };
+				cm.AddNext(Format("Set to %g", vertRange.min)) = [this, &p]() { p.posY = vertRange.min; };
+				if (vertRange.min < 0 && 0 < vertRange.max)
+					cm.AddNext("Set to 0") = [this, &p]() { p.posY = 0; };
+				cm.AddNext(Format("Set to %g", vertRange.max)) = [this, &p]() { p.posY = vertRange.max; };
 			}
 			if (hp.pointType == CPT_Midpoint)
 			{

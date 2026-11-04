@@ -1119,6 +1119,7 @@ void Test_MessageLogView()
 
 struct CurveEditorTest : ui::Buildable
 {
+	ui::Rangef seq01vertrange = { 0, 1 };
 	void OnEnable() override
 	{
 		basicLinear01Curve.points =
@@ -1153,13 +1154,19 @@ struct CurveEditorTest : ui::Buildable
 		ce.curveView = &basicLinear01Curve;
 		ce.viewport = { 0, 0, 5, 1 };
 
-		WPush<ui::SizeConstraintElement>().SetHeight(50);
+		WPush<ui::StackExpandLTRLayoutElement>();
+		if (ui::imButton("0 to 1")) seq01vertrange = { 0, 1 };
+		if (ui::imButton("-1 to 1")) seq01vertrange = { -1, 1 };
+		WPop();
+
+		WPush<ui::SizeConstraintElement>().SetHeight(50 * seq01vertrange.GetWidth());
 		auto& ce3 = ui::Make<ui::CurveEditorElement>();
 		WPop();
 		auto* s01cv = UI_BUILD_ALLOC(ui::Curve_Sequence01_View)();
 		s01cv->curve = &sequence01Curve;
+		s01cv->vertRange = seq01vertrange;
 		ce3.curveView = s01cv;
-		ce3.viewport = { 0, 0, 5, 1 };
+		ce3.viewport = { 0, seq01vertrange.min, 5, seq01vertrange.max };
 
 		WPush<ui::SizeConstraintElement>().SetHeight(200);
 		auto& ce2 = ui::Make<ui::CurveEditorElement>();
