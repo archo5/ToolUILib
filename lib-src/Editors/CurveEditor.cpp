@@ -997,29 +997,45 @@ void Curve_Sequence01_View::OnEvent(const CurveEditorInput& input, Event& e)
 		{
 			if (hp.pointType == CPT_Point)
 			{
-				cm.AddNext("Delete point") = [this, hp]()
+				cm.AddNext("Delete point") = [this, hp, e]()
 				{
 					curve->RemovePoint(hp.pointID);
+					e.context->OnChange(e.current);
 				};
 				cm.NewSection();
 
 				auto& p = curve->points[hp.pointID];
-				cm.AddNext(Format("Set to %g", vertRange.min)) = [this, &p]() { p.posY = vertRange.min; };
+				cm.AddNext(Format("Set to %g", vertRange.min)) = [this, &p, e]()
+				{
+					p.posY = vertRange.min;
+					e.context->OnChange(e.current);
+				};
 				if (vertRange.min < 0 && 0 < vertRange.max)
-					cm.AddNext("Set to 0") = [this, &p]() { p.posY = 0; };
-				cm.AddNext(Format("Set to %g", vertRange.max)) = [this, &p]() { p.posY = vertRange.max; };
+				{
+					cm.AddNext("Set to 0") = [this, &p, e]()
+					{
+						p.posY = 0;
+						e.context->OnChange(e.current);
+					};
+				}
+				cm.AddNext(Format("Set to %g", vertRange.max)) = [this, &p, e]()
+				{
+					p.posY = vertRange.max;
+					e.context->OnChange(e.current);
+				};
 			}
 			if (hp.pointType == CPT_Midpoint)
 			{
-				cm.AddNext("Reset tweak value") = [this, hp]()
+				cm.AddNext("Reset tweak value") = [this, hp, e]()
 				{
 					auto& pts = curve->points;
 					pts[hp.pointID + 1].tweak = 0;
+					e.context->OnChange(e.current);
 				};
 				cm.NewSection();
 
 				auto& p = curve->points[hp.pointID + 1];
-#define UI_SETMODE(NAME, NEWMODE) cm.AddNext(NAME, false, p.mode == NEWMODE) = [this, &p]() { p.mode = NEWMODE; };
+#define UI_SETMODE(NAME, NEWMODE) cm.AddNext(NAME, false, p.mode == NEWMODE) = [this, &p, e]() { p.mode = NEWMODE; e.context->OnChange(e.current); };
 				UI_SETMODE("Hold", Mode::Hold);
 				UI_SETMODE("Single power curve", Mode::SinglePowerCurve);
 				UI_SETMODE("Double power curve", Mode::DoublePowerCurve);
@@ -1034,9 +1050,10 @@ void Curve_Sequence01_View::OnEvent(const CurveEditorInput& input, Event& e)
 			Vec2f cwp = input.CurveFromScreen(e.position);
 			if (float s = input.settings->snapX)
 				cwp.x = roundf(cwp.x / s) * s;
-			cm.AddNext("Add") = [this, cwp]()
+			cm.AddNext("Add") = [this, cwp, e]()
 			{
 				curve->AddPoint(cwp);
+				e.context->OnChange(e.current);
 			};
 		}
 	}
