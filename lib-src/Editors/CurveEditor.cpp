@@ -487,7 +487,17 @@ bool CurveEditorUI::OnEvent(const CurveEditorInput& input, ICurveView* curves, E
 		}
 		else
 		{
-			curves->SetScreenPoint(input, pid, dragPointStart + e.position - dragCursorStart);
+			Vec2f sp = dragPointStart + e.position - dragCursorStart;
+			if (pid.pointType == CPT_Point)
+			{
+				auto mk = e.GetModifierKeys();
+				// TODO: fine for now but ideally it should reset to the original value of the point, without any post-processing or back-and-forth transforms
+				if (mk & MK_Ctrl)
+					sp.x = dragPointStart.x;
+				if (mk & MK_Shift)
+					sp.y = dragPointStart.y;
+			}
+			curves->SetScreenPoint(input, pid, sp);
 
 			if (pid.pointType == CPT_Point)
 				pid.pointID = curves->_FixPointOrder(pid.curveID, pid.pointID);
