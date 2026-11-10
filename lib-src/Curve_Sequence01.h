@@ -35,8 +35,8 @@ struct UI_API Curve_Sequence01
 	void OnSerialize(IObjectIterator& oi, const FieldInfo& FI);
 
 	static void GenSawWaveMiddlePoints(float tweak, const std::function<void(Vec2f)>& outpts);
-	float EvaluateSegment(const Point& p0, const Point& p1, float q);
-	float Evaluate(float t);
+	float EvaluateSegment(const Point& p0, const Point& p1, float q) const;
+	float Evaluate(float t) const;
 
 	void RemovePoint(size_t i);
 	void AddPoint(Vec2f pos);

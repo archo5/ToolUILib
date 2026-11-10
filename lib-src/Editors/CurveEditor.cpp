@@ -790,7 +790,7 @@ static float DoPowerCurve(float q, float tweak)
 		: powf(q, exp2(-tweak));
 }
 
-float Curve_Sequence01::EvaluateSegment(const Point& p0, const Point& p1, float q)
+float Curve_Sequence01::EvaluateSegment(const Point& p0, const Point& p1, float q) const
 {
 	switch (p1.mode)
 	{
@@ -824,7 +824,7 @@ float Curve_Sequence01::EvaluateSegment(const Point& p0, const Point& p1, float 
 	return lerp(p0.posY, p1.posY, q);
 }
 
-float Curve_Sequence01::Evaluate(float t)
+float Curve_Sequence01::Evaluate(float t) const
 {
 	if (points.IsEmpty())
 		return 0;
@@ -848,10 +848,13 @@ float Curve_Sequence01::Evaluate(float t)
 void Curve_Sequence01::RemovePoint(size_t i)
 {
 	points.RemoveAt(i);
-	if (i > 0)
-		points[i].deltaX = points[i].posX - points[i - 1].posX;
-	else
-		points[i].deltaX = points[i].posX;
+	if (i < points.Size())
+	{
+		if (i > 0)
+			points[i].deltaX = points[i].posX - points[i - 1].posX;
+		else
+			points[i].deltaX = points[i].posX;
+	}
 }
 
 void Curve_Sequence01::AddPoint(Vec2f pos)
